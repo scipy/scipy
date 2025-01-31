@@ -759,7 +759,7 @@ class TestMMIOCoordinate:
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
+                assert_allclose(A.data, [float(f'{value:.{precision}g}')])
 
     def test_bad_number_of_coordinate_header_fields(self):
         s = """\

@@ -3,6 +3,7 @@ Test functions for multivariate normal distributions.
 
 """
 import pickle
+from dataclasses import dataclass
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
@@ -29,11 +30,13 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          dirichlet_multinomial, vonmises)
 
 from scipy.stats import _covariance, Covariance
+from scipy.stats._continuous_distns import _norm_pdf as norm_pdf
 from scipy import stats
 
-from scipy.integrate import tanhsinh
+from scipy.integrate import tanhsinh, cubature, quad
 from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
+import scipy.special as special
 
 from .common_tests import check_random_state_property
 from .data._mvt import _qsimvtv
@@ -289,6 +292,231 @@ def _sample_orthonormal_matrix(n):
     M = np.random.randn(n, n)
     u, s, v = scipy.linalg.svd(M)
     return u
+
+
+@dataclass
+class MVNProblem:
+    """Instantiate a multivariate normal integration problem with special structure.
+
+    When covariance matrix is a correlation matrix where the off-diagonal entries
+    ``covar[i, j] == lambdas[i]*lambdas[j]`` for ``i != j``, then the multidimensional
+    integral reduces to a simpler univariate integral that can be numerically integrated
+    easily.
+
+    The ``generate_*()`` classmethods provide a few options for creating variations
+    of this problem.
+
+    References
+    ----------
+    .. [1] Tong, Y.L. "The Multivariate Normal Distribution".
+           Springer-Verlag. p192. 1990.
+    """
+    ndim : int
+    low : np.ndarray
+    high : np.ndarray
+    lambdas : np.ndarray
+    covar : np.ndarray
+    target_val : float
+    target_err : float
+
+    #: The `generator_halves()` case has an analytically-known true value that we'll
+    #:  record here. It remain None for most cases, though.
+    true_val : float | None = None
+
+    def __init__(self, ndim, low, high, lambdas):
+        super().__init__()
+        self.ndim = ndim
+        self.low = low
+        self.high = high
+        self.lambdas = lambdas
+
+        self.covar = np.outer(self.lambdas, self.lambdas)
+        np.fill_diagonal(self.covar, 1.0)
+        self.find_target()
+
+    @classmethod
+    def generate_semigeneral(cls, ndim, rng=None):
+        """Random lambdas, random upper bounds, infinite lower bounds.
+        """
+        rng = np.random.default_rng(rng)
+        low = np.full(ndim, -np.inf)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        lambdas = rng.uniform(-1.0, 1.0, size=ndim)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+
+    @classmethod
+    def generate_constant(cls, ndim, rng=None):
+        """Constant off-diagonal covariance, random upper bounds, infinite lower bounds.
+        """
+        rng = np.random.default_rng(rng)
+        low = np.full(ndim, -np.inf)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        sigma = np.sqrt(rng.uniform(0.0, 1.0))
+        lambdas = np.full(ndim, sigma)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+
+    @classmethod
+    def generate_halves(cls, ndim, rng=None):
+        """Off-diagonal covariance of 0.5, negative orthant bounds.
+
+        True analytically-derived answer is 1/(ndim+1).
+        """
+        low = np.full(ndim, -np.inf)
+        high = np.zeros(ndim)
+        lambdas = np.sqrt(0.5)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        self.true_val = 1 / (ndim+1)
+        return self
+
+    def find_target(self, **kwds):
+        """Perform the simplified integral and store the results.
+        """
+        d = dict(
+            a=-9.0,
+            b=+9.0,
+        )
+        d.update(kwds)
+        self.target_val, self.target_err = quad(self.univariate_func, **d)
+
+    def _univariate_term(self, t):
+        """The parameter-specific term of the univariate integrand,
+        for separate plotting.
+        """
+        denom = np.sqrt(1 - self.lambdas**2)
+        return np.prod(
+            special.ndtr((self.high + self.lambdas*t[:, np.newaxis]) / denom) -
+            special.ndtr((self.low + self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+
+    def univariate_func(self, t):
+        """Univariate integrand.
+        """
+        t = np.atleast_1d(t)
+        return np.squeeze(norm_pdf(t) * self._univariate_term(t))
+
+    def plot_integrand(self):
+        """Plot the univariate integrand and its component terms for understanding.
+        """
+        from matplotlib import pyplot as plt
+
+        t = np.linspace(-9.0, 9.0, 1001)
+        plt.plot(t, norm_pdf(t), label=r'$\phi(t)$')
+        plt.plot(t, self._univariate_term(t), label=r'$f(t)$')
+        plt.plot(t, self.univariate_func(t), label=r'$f(t)*phi(t)$')
+        plt.legend()
+
+
+@dataclass
+class SingularMVNProblem:
+    """Instantiate a multivariate normal integration problem with a special singular
+    covariance structure.
+    
+    When covariance matrix is a correlation matrix where the off-diagonal entries
+    ``covar[i, j] == -lambdas[i]*lambdas[j]`` for ``i != j``, and
+    ``sum(lambdas**2 / (1+lambdas**2)) == 1``, then the matrix is singular, and
+    the multidimensional integral reduces to a simpler univariate integral that 
+    can be numerically integrated fairly easily.
+    
+    The lower bound must be infinite, though the upper bounds can be general.
+    
+    References
+    ----------
+    .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
+           singular multivariate normal distribution." Journal of Statistical
+           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+    """
+    ndim : int
+    low : np.ndarray
+    high : np.ndarray
+    lambdas : np.ndarray
+    covar : np.ndarray
+    target_val : float
+    target_err : float
+    
+    def __init__(self, ndim, high, lambdas):
+        self.ndim = ndim
+        self.high = high
+        self.lambdas = lambdas
+
+        self.low = np.full(ndim, -np.inf)
+        self.covar = -np.outer(self.lambdas, self.lambdas)
+        np.fill_diagonal(self.covar, 1.0)
+        self.find_target()
+
+    @classmethod
+    def generate_semiinfinite(cls, ndim, rng=None):
+        """Singular lambdas, random upper bounds.
+        """
+        rng = np.random.default_rng(rng)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        p = rng.dirichlet(np.full(ndim, 1.0))
+        lambdas = np.sqrt(p / (1-p)) * rng.choice([-1.0, 1.0], size=ndim)
+
+        self = cls(
+            ndim=ndim,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+    
+    def find_target(self, **kwds):
+        d = dict(
+            a=-9.0,
+            b=+9.0,
+        )
+        d.update(kwds)
+        self.target_val, self.target_err = quad(self.univariate_func, **d)
+
+    def _univariate_term(self, t):
+        denom = np.sqrt(1 + self.lambdas**2)
+        i1 = np.prod(
+            special.ndtr((self.high - 1j*self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+        i2 = np.prod(
+            special.ndtr((-self.high + 1j*self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+        # The imaginary part is an odd function, so it can be ignored; it will integrate
+        # out to 0.
+        return (i1 - (-1)**self.ndim * i2).real
+
+    def univariate_func(self, t):
+        t = np.atleast_1d(t)
+        return (norm_pdf(t) * self._univariate_term(t)).squeeze()
+    
+    def plot_integrand(self):
+        """Plot the univariate integrand and its component terms for understanding.
+        """
+        from matplotlib import pyplot as plt
+
+        t = np.linspace(-9.0, 9.0, 1001)
+        plt.plot(t, norm_pdf(t), label=r'$\phi(t)$')
+        plt.plot(t, self._univariate_term(t), label=r'$f(t)$')
+        plt.plot(t, self.univariate_func(t), label=r'$f(t)*phi(t)$')
+        plt.ylim(-0.1, 1.1)
+        plt.legend()
 
 
 class TestMultivariateNormal:
@@ -809,6 +1037,70 @@ class TestMultivariateNormal:
         expected_signs = np.array([1, -1, -1, 1])
         cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.slow
+    def test_cdf_vs_cubature(self):
+        ndim = 3
+        rng = np.random.default_rng(123)
+        a = rng.uniform(size=(ndim, ndim))
+        cov = a.T @ a
+        m = rng.uniform(size=ndim)
+        dist = multivariate_normal(mean=m, cov=cov)
+        x = rng.uniform(low=-3, high=3, size=(ndim,))
+        cdf = dist.cdf(x)
+        dist_i = multivariate_normal(mean=[0]*ndim, cov=cov)
+        cdf_i = cubature(dist_i.pdf, [-np.inf]*ndim, x - m).estimate
+        assert_allclose(cdf, cdf_i, atol=5e-6)
+
+    def test_cdf_known(self):
+        # https://github.com/scipy/scipy/pull/17410#issuecomment-1312628547
+        for ndim in range(2, 12):
+            cov = np.full((ndim, ndim), 0.5)
+            np.fill_diagonal(cov, 1.)
+            dist = multivariate_normal([0]*ndim, cov=cov)
+            assert_allclose(
+                dist.cdf([0]*ndim),
+                1. / (1. + ndim),
+                atol=5e-5
+            )
+
+    @pytest.mark.parametrize("ndim", range(2, 10))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_semigeneral(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=5e-5)
+
+    @pytest.mark.parametrize("ndim", range(2, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate_2(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_constant(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=5e-5)
+
+    @pytest.mark.parametrize("ndim", range(4, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e4])
+    def test_cdf_vs_univariate_singular(self, seed, ndim):
+        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds. 
+        # No idea why.
+        rng = np.random.default_rng(seed)
+        case = SingularMVNProblem.generate_semiinfinite(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar, allow_singular=True,
+                                   # default maxpts is too slow, limit it here
+                                   maxpts=10_000*case.covar.shape[0]
+        )
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=1e-3)
 
     def test_mean_cov(self):
         # test the interaction between a Covariance object and mean
@@ -1930,21 +2222,16 @@ class TestInvwishart:
 
 class TestSpecialOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = special_ortho_group.rvs(3)
-        expected = np.array([[-0.99394515, -0.04527879, 0.10011432],
-                             [0.04821555, -0.99846897, 0.02711042],
-                             [0.09873351, 0.03177334, 0.99460653]])
-        assert_array_almost_equal(x, expected)
-
-        random_state = np.random.RandomState(seed=514)
-        x = special_ortho_group.rvs(3, random_state=random_state)
+        x = special_ortho_group.rvs(3, random_state=np.random.default_rng(514))
+        expected = np.array([[-0.93200988, 0.01533561, -0.36210826],
+                             [0.35742128, 0.20446501, -0.91128705],
+                             [0.06006333, -0.97875374, -0.19604469]])
         assert_array_almost_equal(x, expected)
 
     def test_invalid_dim(self):
         assert_raises(ValueError, special_ortho_group.rvs, None)
         assert_raises(ValueError, special_ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, special_ortho_group.rvs, 1)
+        assert_raises(ValueError, special_ortho_group.rvs, -1)
         assert_raises(ValueError, special_ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -1979,8 +2266,9 @@ class TestSpecialOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(514)
-        xs = special_ortho_group.rvs(dim, size=samples)
+        xs = special_ortho_group.rvs(
+            dim, size=samples, random_state=np.random.default_rng(513)
+        )
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -1996,6 +2284,14 @@ class TestSpecialOrthoGroup:
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_one_by_one(self):
+        # Test that the distribution is a delta function at the identity matrix
+        # when dim=1
+        assert_allclose(special_ortho_group.rvs(1, size=1000), 1, rtol=1e-13)
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestOrthoGroup:
@@ -2015,7 +2311,7 @@ class TestOrthoGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, ortho_group.rvs, None)
         assert_raises(ValueError, ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, ortho_group.rvs, 1)
+        assert_raises(ValueError, ortho_group.rvs, -1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2084,6 +2380,20 @@ class TestOrthoGroup:
         pairs = [(e0, e1) for e0 in els for e1 in els if e0 > e1]
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
+
+    def test_one_by_one(self):
+        # Test that the 1x1 distribution gives ±1 with equal probability.
+        dim = 1
+        xs = ortho_group.rvs(dim, size=5000, random_state=np.random.default_rng(514))
+        assert_allclose(np.abs(xs), 1, rtol=1e-13)
+        k = np.sum(xs > 0)
+        n = len(xs)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
 
     @pytest.mark.slow
     def test_pairwise_distances(self):
@@ -2290,7 +2600,7 @@ class TestUnitaryGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, unitary_group.rvs, None)
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
-        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, -1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2319,17 +2629,22 @@ class TestUnitaryGroup:
         # the complex plane, are uncorrelated.
 
         # Generate samples
-        dim = 5
-        samples = 1000  # Not too many, or the test takes too long
-        np.random.seed(514)  # Note that the test is sensitive to seed too
-        xs = unitary_group.rvs(dim, size=samples)
+        for dim in (1, 5):
+            samples = 1000  # Not too many, or the test takes too long
+            # Note that the test is sensitive to seed too
+            xs = unitary_group.rvs(
+                dim, size=samples, random_state=np.random.default_rng(514)
+            )
 
-        # The angles "x" of the eigenvalues should be uniformly distributed
-        # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
-        x = np.arctan2(eigs.imag, eigs.real)
-        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
-        assert_(res.pvalue > 0.05)
+            # The angles "x" of the eigenvalues should be uniformly distributed
+            # Overall this seems to be a necessary but weak test of the distribution.
+            eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
+            x = np.arctan2(eigs.imag, eigs.real)
+            res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
+            assert_(res.pvalue > 0.05)
+
+    def test_zero_by_zero(self):
+        assert_equal(unitary_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestMultivariateT:

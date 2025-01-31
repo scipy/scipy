@@ -1,13 +1,17 @@
 import numpy as np
 import pytest
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
     np_compat, xp_default_dtype
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
+from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+lazy_xp_function(_asarray, static_argnames=(
+                 "dtype", "order", "copy", "xp", "check_finite", "subok"))
+lazy_xp_function(xp_copy, static_argnames=("xp", ))
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
@@ -24,7 +28,6 @@ class TestArrayAPI:
         assert 'array_api_compat.numpy' in xp.__name__
         _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
-    @array_api_compatible
     def test_asarray(self, xp):
         x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
@@ -47,11 +50,44 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             array_namespace('abc')
 
-    def test_array_likes(self):
-        # should be no exceptions
-        array_namespace([0, 1, 2])
-        array_namespace(1, 2, 3)
-        array_namespace(1)
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Array-likes")
+    def test_array_likes(self, xp):
+        """Test that if all parameters of array_namespace are Array-likes,
+        the output is array_api_compat.numpy
+        """
+        assert array_namespace([0, 1, 2]) is xp
+        assert array_namespace((0, 1, 2)) is xp
+        assert array_namespace(1, 2, 3) is xp
+        assert array_namespace(1) is xp
+        assert array_namespace(np.int64(1)) is xp
+        assert array_namespace([0, 1, 2], 3) is xp
+        assert array_namespace() is xp
+        assert array_namespace(None) is xp
+        assert array_namespace(1, None) is xp
+        assert array_namespace(None, 1) is xp
+
+        # This only works when xp is numpy!
+        assert array_namespace(np.asarray([1, 2]), [3, 4]) is xp
+        assert array_namespace(np.int64(1), [3, 4]) is xp
+
+    def test_array_and_array_likes_mix(self, xp):
+        """Test that if there is at least one Array API object among
+        the parameters of array_namespace, and all other parameters
+        are scalars, the output is its namespace.
+
+        If there are non-scalar Array-Likes, raise as in array-api-compat.
+        """
+        x = xp.asarray(1)
+        assert array_namespace(x) is xp
+        assert array_namespace(x, 1) is xp
+        assert array_namespace(1, x) is xp
+        assert array_namespace(None, x) is xp
+
+        if not is_numpy(xp):
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                array_namespace(x, [1, 2])
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                array_namespace(x, np.int64(1))
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by
@@ -61,7 +97,6 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             xpx.atleast_nd("abc", ndim=0)
 
-    @array_api_compatible
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])
@@ -76,7 +111,6 @@ class TestArrayAPI:
             else:
                 assert x[0] != y[0]
     
-    @array_api_compatible
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
@@ -88,7 +122,7 @@ class TestArrayAPI:
 
         kwarg_names = ["check_namespace", "check_dtype", "check_shape", "check_0d"]
         options = dict(zip(kwarg_names, [True, False, False, False]))
-        if xp == np:
+        if is_numpy(xp):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(
@@ -123,11 +157,8 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Array-ness does not match."):
                 xp_assert_equal(x, y, **options)
 
-    @array_api_compatible
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity always passes
         xp_assert_equal(xp.float64(0), xp.float64(0))
         xp_assert_equal(xp.asarray(0.), xp.asarray(0.))
@@ -157,11 +188,8 @@ class TestArrayAPI:
         # as an alternative to `check_0d=False`, explicitly expect scalar
         xp_assert_equal(xp.float64(0), xp.asarray(0.)[()])
 
-    @array_api_compatible
+    @pytest.mark.skip_xp_backends(np_only=True, reason="Scalars only exist in NumPy")
     def test_check_scalar_no_0d(self, xp):
-        if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy")
-
         # identity passes, if first argument is not 0d (or check_0d=True)
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0))
         xp_assert_equal_no_0d(xp.float64(0), xp.float64(0), check_0d=True)
@@ -195,6 +223,5 @@ class TestArrayAPI:
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
 
-    @array_api_compatible
     def test_default_dtype(self, xp):
         assert xp_default_dtype(xp) == xp.asarray(1.).dtype

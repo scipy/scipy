@@ -47,6 +47,7 @@
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
+extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
@@ -642,6 +643,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           "log1p", log1p_doc);
     PyModule_AddObjectRef(_special_ufuncs, "log1p", log1p);
 
+    PyObject *_log1mexp =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1mexp), static_cast<xsf::numpy::f_f>(xsf::log1mexp)},
+                          "_log1mexp", _log1mexp_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_log1mexp", _log1mexp);
+
     PyObject *_log1pmx =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1pmx), static_cast<xsf::numpy::f_f>(xsf::log1pmx)},
                           "_log1pmx", _log1pmx_doc);
@@ -911,7 +917,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *pro_cv = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::fff_f>(xsf::prolate_segv), static_cast<xsf::numpy::ddd_d>(xsf::prolate_segv)},
-        "obl_cv", pro_cv_doc);
+        "pro_cv", pro_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_cv", pro_cv);
 
     PyObject *pro_rad1 = xsf::numpy::ufunc({static_cast<xsf::numpy::ffff_ff>(xsf::prolate_radial1_nocv),

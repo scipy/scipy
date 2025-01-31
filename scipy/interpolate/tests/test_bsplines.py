@@ -2,6 +2,7 @@ import os
 import operator
 import itertools
 import math
+import threading
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -658,11 +659,12 @@ class TestBSpline:
 
         expected = b(xx)
 
-        t_mm = np.memmap(
-            str(tmpdir.join('t.dat')), mode='w+', dtype=b.t.dtype, shape=b.t.shape)
+        tid = threading.get_native_id()
+        t_mm = np.memmap(str(tmpdir.join(f't{tid}.dat')), mode='w+',
+                         dtype=b.t.dtype, shape=b.t.shape)
         t_mm[:] = b.t
-        c_mm = np.memmap(
-            str(tmpdir.join('c.dat')), mode='w+', dtype=b.c.dtype, shape=b.c.shape)
+        c_mm = np.memmap(str(tmpdir.join(f'c{tid}.dat')), mode='w+',
+                         dtype=b.c.dtype, shape=b.c.shape)
         c_mm[:] = b.c
         b.t = t_mm
         b.c = c_mm
@@ -2162,7 +2164,9 @@ class TestSmoothingSpline:
         # such tolerance is explained by the fact that the spline is built
         # using an iterative algorithm for minimizing the GCV criteria. These
         # algorithms may vary, so the tolerance should be rather low.
-        xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4)
+        # Not checking dtypes as gcvspl.npz stores little endian arrays, which
+        # result in conflicting dtypes on big endian systems. 
+        xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
     def test_non_regularized_case(self):
         """

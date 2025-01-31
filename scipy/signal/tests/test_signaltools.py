@@ -33,18 +33,11 @@ from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
-    array_namespace,
     assert_array_almost_equal, assert_almost_equal,
     xp_copy, xp_size, xp_default_dtype
 )
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [
-    array_api_compatible,
-    pytest.mark.usefixtures("skip_xp_backends"),
-    pytest.mark.usefixtures("xfail_xp_backends"),
-]
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -298,7 +291,6 @@ class TestConvolve:
             convolve(a, b)
 
 
-
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestConvolve2d:
 
@@ -481,11 +473,16 @@ class TestConvolve2d:
     )
     def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
-        a = xp.arange(5)
-        b = xp.asarray([3.2, 1.4, 3])
+        a_np = np.arange(5)
+        b_np = np.asarray([3.2, 1.4, 3])
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
+
         for mode in ['full', 'valid', 'same']:
-            xp_assert_close(xp.asarray(np.convolve(a, b, mode=mode)),
-                            signal.convolve(a, b, mode=mode))
+            xp_assert_close(
+                xp.asarray(np.convolve(a_np, b_np, mode=mode)),
+                signal.convolve(a, b, mode=mode)
+            )
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
@@ -513,7 +510,6 @@ class TestConvolve2d:
         count = signal.convolve2d(a, [[1, 1]])
         fails = np.where(count > 1)
         assert fails[0].size == 0
-
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -850,9 +846,11 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_random_data(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if axes == '':
             out = fftconvolve(a, b, 'full')
@@ -865,13 +863,15 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
-
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = np.convolve(a_np, b_np, 'full')
+        a_np = np.tile(a_np, [2, 1])
+        b_np = np.tile(b_np, [2, 1])
         expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -918,9 +918,11 @@ class TestFFTConvolve:
         list(range(1000, 1500)) +
         np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
     def test_many_sizes(self, n, xp):
-        a = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        b = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        a_np = np.random.rand(n) + 1j * np.random.rand(n)
+        b_np = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         out = fftconvolve(a, b, 'full')
         xp_assert_close(out, expected, atol=1e-10)
@@ -971,8 +973,8 @@ def gen_oa_shapes_eq(sizes):
             if a >= b]
 
 
-@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 @skip_xp_backends("jax.numpy", reason="fails all around")
+@xfail_xp_backends("dask.array", reason="wrong answer")
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
@@ -1111,7 +1113,7 @@ class TestOAConvolve:
         # Regression test for #1745: crashes with 0-length input.
         xp_assert_equal(
             oaconvolve(xp.asarray(a), xp.asarray(b)),
-            xp.asarray([]),
+            xp.asarray([]), check_dtype=False
         )
 
     def test_zero_rank(self, xp):
@@ -1437,7 +1439,6 @@ class TestResample:
         y = signal.resample(x, ny)
         xp_assert_close(y, np.asarray([1] * ny, dtype=y.dtype))
 
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype, xp):
         # Test that a mutable window is not modified
@@ -1585,7 +1586,7 @@ class TestResample:
                     xp_assert_close(y_g[::down], y_s)
 
     @pytest.mark.parametrize('dtype', [np.int32, np.float32])
-    def test_gh_15620(self, dtype):
+    def test_gh_15620(self, dtype, xp):
         data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
         actual = signal.resample_poly(data,
                                       up=2,
@@ -1627,6 +1628,7 @@ class TestCSpline1DEval:
         assert ynew.dtype == y.dtype
 
 
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestOrderFilt:
 
     def test_basic(self, xp):
@@ -2232,8 +2234,7 @@ class _TestCorrelateReal:
         # See gh-5897
         y = correlate(b, a, 'valid')
         if  y_r.dtype != object:
-            flip = array_namespace(y_r).flip
-            _assert_almost_equal(y, flip(y_r[1:4]))
+            _assert_almost_equal(y, xp.flip(y_r[1:4]))
         else:
             _assert_almost_equal(y, y_r[1:4][::-1])
         assert y.dtype == dt
@@ -2483,8 +2484,7 @@ class TestCorrelateComplex:
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        flip = array_namespace(y_r).flip
-        assert_array_almost_equal(y, xp.conj(flip(y_r)),
+        assert_array_almost_equal(y, xp.conj(xp.flip(y_r)),
                                   decimal=self.decimal(dt, xp))
         assert y.dtype == dt
 
@@ -2782,6 +2782,12 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
+@skip_xp_backends(
+    "dask.array", reason=(
+        "sosfiltfilt directly sets shape attributes on arrays "
+        "which dask doesn't like"
+    )
+)
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
@@ -2834,8 +2840,9 @@ def filtfilt_gust_opt(b, a, x):
                   full_output=True, disp=False)
     opt, fopt, niter, funcalls, warnflag = result
     if warnflag > 0:
-        raise RuntimeError("minimization failed in filtfilt_gust_opt: "
-                           "warnflag=%d" % warnflag)
+        raise RuntimeError(
+            f"minimization failed in filtfilt_gust_opt: warnflag={warnflag}"
+        )
     z0f = opt[:m]
     z0b = opt[m:]
 
@@ -3175,9 +3182,7 @@ class TestHilbert:
         h = hilbert(a)
         h_abs = xp.abs(h)
 
-        atan2 = array_namespace(h).atan2
-
-        h_angle = atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
+        h_angle = xp.atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
         h_real = xp.real(h)
 
         # The real part should be equal to the original signals:
@@ -3421,7 +3426,7 @@ class TestEnvelope:
         self.assert_close(Zr, np.array(Zr_desired).astype(complex),
                           msg="Residual calculation error")
 
-    def test_envelope_verify_axis_parameter(self):
+    def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
         z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
         Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
@@ -3503,7 +3508,7 @@ class TestPartialFractionExpansion:
         xp_assert_close(unique, [1.0, 2.0, 3.0])
         xp_assert_close(multiplicity, [3, 2, 1])
 
-    def test_residue_general(self):
+    def test_residue_general(self, xp):
         # Test are taken from issue #4464, note that poles in scipy are
         # in increasing by absolute value order, opposite to MATLAB.
         r, p, k = residue([5, 3, -2, 7], [-4, 0, 8, 3])
@@ -4044,8 +4049,7 @@ class TestSOSFilt:
         a = xp.asarray([1.0, 0, 0])
         x = xp.ones(8)
 
-        concat = array_namespace(b, a).concat
-        sos = concat((b, a))
+        sos = xp.concat((b, a))
         sos = xp.reshape(sos, (1, 6))
         y = sosfilt(sos, x)
         xp_assert_close(y, xp.asarray([1.0, 2, 2, 2, 2, 2, 2, 2]))
@@ -4115,15 +4119,14 @@ class TestSOSFilt:
         x = xp.asarray(x)
 
         dt = getattr(xp, dt)
-        concat = array_namespace(x).concat
 
         # Stopping filtering and continuing
         y_true, zi = lfilter(b, a, x[:20], zi=xp.zeros(6))
-        y_true = concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
+        y_true = xp.concat((y_true, lfilter(b, a, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, lfilter(b, a, x))
 
         y_sos, zi = sosfilt(sos, x[:20], zi=xp.zeros((3, 2)))
-        y_sos = concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
+        y_sos = xp.concat((y_sos, sosfilt(sos, x[20:], zi=zi)[0]))
         xp_assert_close(y_true, y_sos)
 
         # Use a step function
@@ -4191,8 +4194,7 @@ class TestSOSFilt:
         y2, z2 = sosfilt(sos, x[:, 5:, :], axis=axis, zi=z1)
 
         # y should equal yf, and z2 should equal zf.
-        concat = array_namespace(x).concat
-        y = concat((y1, y2), axis=axis)
+        y = xp.concat((y1, y2), axis=axis)
         xp_assert_close(y, yf, rtol=1e-10, atol=1e-13)
         xp_assert_close(z2, zf, rtol=1e-10, atol=1e-13)
 

@@ -137,8 +137,8 @@ def whiten(obs, check_finite=True):
     obs = _asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
-    if xp.any(zero_std_mask):
-        std_dev[zero_std_mask] = 1.0
+    std_dev = xpx.at(std_dev, zero_std_mask).set(1.0)
+    if check_finite and xp.any(zero_std_mask):
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
                       RuntimeWarning, stacklevel=2)
@@ -478,7 +478,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     if k != guess:
         raise ValueError("If k_or_guess is a scalar, it must be an integer.")
     if k < 1:
-        raise ValueError("Asked for %d clusters." % k)
+        raise ValueError(f"Asked for {k} clusters.")
 
     rng = check_random_state(rng)
 
@@ -607,15 +607,16 @@ def _kpp(data, k, rng, xp):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[rng_integers(rng, data.shape[0]), :]
-
+            data_idx = rng_integers(rng, data.shape[0])
         else:
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = rng.uniform()
             cumprobs = np.asarray(cumprobs)
-            init[i, :] = data[np.searchsorted(cumprobs, r), :]
+            data_idx = np.searchsorted(cumprobs, r)
+
+        init = xpx.at(init)[i, :].set(data[data_idx, :])
 
     if ndim == 1:
         init = init[:, 0]
@@ -797,8 +798,9 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         nc = int(code_book)
 
         if nc < 1:
-            raise ValueError("Cannot ask kmeans2 for %d clusters"
-                             " (k was %s)" % (nc, code_book))
+            raise ValueError(
+                f"Cannot ask kmeans2 for {nc} clusters (k was {code_book})"
+            )
         elif nc != code_book:
             warnings.warn("k was not an integer, was converted.", stacklevel=2)
 

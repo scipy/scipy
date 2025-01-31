@@ -237,8 +237,7 @@ class BSpline:
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
-            raise ValueError("Need at least %d knots for degree %d" %
-                             (2*k + 2, k))
+            raise ValueError(f"Need at least {2*k + 2} knots for degree {k}")
         if (np.diff(self.t) < 0).any():
             raise ValueError("Knots must be in a non-decreasing order.")
         if len(np.unique(self.t[k:n+1])) < 2:
@@ -503,25 +502,33 @@ class BSpline:
         # [self.t[k], self.t[n]].
         if extrapolate == 'periodic':
             n = self.t.size - self.k - 1
-            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] -
-                                                         self.t[self.k])
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] - self.t[self.k])
             extrapolate = False
 
-        out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
 
-        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
-        # floats though, so make a view---this expands the last axis, and
+        # if self.c is complex: the C code in _dierckxmodule.cc expects
+        # floats, so make a view---this expands the last axis, and
         # the view is C contiguous if the original is.
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
 
-        cc = self.c.view(float)
-        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
-            cc = cc.reshape(self.c.shape[0], 2)
+        is_complex = self.c.dtype.kind == 'c'
+        if is_complex:
+            cc = self.c.view(float)
+            if self.c.ndim == 1:
+                cc = cc.reshape(self.c.shape[0], 2)
+        else:
+            cc = self.c
 
-        _dierckx.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
-                              self.k, x, nu, extrapolate, out.view(float))
+        # flatten the trailing dims
+        cc = cc.reshape(cc.shape[0], -1)
+
+        # heavy lifting: actually perform the evaluations
+        out = _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate)
+
+        if is_complex:
+            out = out.view(complex)
 
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
@@ -682,8 +689,6 @@ class BSpline:
                 integral = _fitpack_impl.splint(a, b, self.tck)
                 return np.asarray(integral * sign)
 
-        out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
-
         # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
@@ -703,8 +708,8 @@ class BSpline:
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral = out[1] - out[0]
                 integral *= n_periods
             else:
@@ -719,24 +724,24 @@ class BSpline:
             # over [a, te] and from xs to what is remained.
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float64)
-                _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float64)
-            _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                  ka, x, 0, extrapolate, out)
+            out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                  ka, x, 0, extrapolate)
             integral = out[1] - out[0]
 
         integral *= sign
@@ -1565,8 +1570,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if t.size < x.size + k + 1:
-        raise ValueError('Got %d knots, need at least %d.' %
-                         (t.size, x.size + k + 1))
+        raise ValueError(f"Got {t.size} knots, need at least {x.size + k + 1}.")
     if (x[0] < t[k]) or (x[-1] > t[-k]):
         raise ValueError(f'Out of bounds w/ x = {x}.')
 
@@ -1632,8 +1636,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if info > 0:
         raise LinAlgError("Colocation matrix is singular.")
     elif info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
-
+        raise ValueError(f'illegal value in {-info}-th argument of internal gbsv')
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
     return BSpline.construct_fast(t, c, k, axis=axis)
 

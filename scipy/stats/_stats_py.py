@@ -39,11 +39,11 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
+from scipy._lib._array_api import is_lazy_array
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
 from scipy._lib.deprecation import _deprecate_positional_args
-
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -61,7 +61,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
@@ -79,6 +79,7 @@ from scipy._lib._array_api import (
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
+    xp_broadcast_promote,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
@@ -1319,11 +1320,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m3 = m3[can_correct]
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
-            vals[can_correct] = nval
+            vals = xp.where(can_correct, nval, vals)
 
     return vals[()] if vals.ndim == 0 else vals
 
@@ -1429,11 +1428,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     if not bias:
         can_correct = ~zero & (n > 3)
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m4 = m4[can_correct]
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            vals[can_correct] = nval + 3.0
+            vals = xp.where(can_correct, nval + 3.0, vals)
 
     vals = vals - 3 if fisher else vals
     return vals[()] if vals.ndim == 0 else vals
@@ -1517,9 +1514,11 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    contains_nan = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    # Test nan_policy before the implicit call to bool(contains_nan)
+    # to avoid raising on lazy xps on the default nan_policy='propagate'
+    if nan_policy == 'omit' and contains_nan:
         # only NumPy gets here; `_contains_nan` raises error for the rest
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
@@ -2172,11 +2171,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy)
-    cns, nps = _contains_nan(score, nan_policy)
-
-    if (cna or cns) and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
+    cna = _contains_nan(a, nan_policy)
+    cns = _contains_nan(score, nan_policy)
 
     if cns:
         # If a score is nan, then the output should be nan
@@ -3154,9 +3150,9 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if nan_policy == 'omit' and contains_nan:
         percentile_func = np.nanpercentile
     else:
         percentile_func = np.percentile
@@ -3334,7 +3330,7 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
             return np.nan
         return np.full(nan_shape, np.nan)
 
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
     if contains_nan:
         if axis is None:
@@ -5283,7 +5279,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             res.correlation = np.nan
             return res
 
-    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    a_contains_nan = _contains_nan(a, nan_policy)
     variable_has_nan = np.zeros(n_vars, dtype=bool)
     if a_contains_nan:
         if nan_policy == 'omit':
@@ -10149,7 +10145,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         dtype = float if method == 'average' else np.dtype("long")
         return np.empty(x.shape, dtype=dtype)
 
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan = _contains_nan(x, nan_policy)
 
     x = np.swapaxes(x, axis, -1)
     ranks = _rankdata(x, method)
@@ -10773,21 +10769,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    # handle non-broadcastable inputs
-    if weights is not None and x.shape != weights.shape:
-        try:
-            x, weights = _broadcast_arrays((x, weights), xp=xp)
-        except (ValueError, RuntimeError) as e:
-            message = "Array shapes are incompatible for broadcasting."
-            raise ValueError(message) from e
-
-    # convert integers to the default float of the array library
-    if not xp.isdtype(x.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        x = xp.asarray(x, dtype=dtype)
-    if weights is not None and not xp.isdtype(weights.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        weights = xp.asarray(weights, dtype=dtype)
+    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
 
     # handle the special case of zero-sized arrays
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
@@ -10800,20 +10782,22 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
-    contains_nan, _ = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
+    contains_nan = _contains_nan(x, nan_policy, xp_omit_okay=True, xp=xp)
     if weights is not None:
-        contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_omit_okay=True, xp=xp)
+        contains_nan_w = _contains_nan(weights, nan_policy, xp_omit_okay=True, xp=xp)
         contains_nan = contains_nan | contains_nan_w
 
     # Handle `nan_policy='omit'` by giving zero weight to NaNs, whether they
     # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
-    message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
-               else too_small_nd_omit)
-    if contains_nan and nan_policy == 'omit':
+    # Test nan_policy before the implicit call to bool(contains_nan)
+    # to avoid raising on lazy xps on the default nan_policy='propagate'
+    if nan_policy == 'omit' and contains_nan:
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
         if xp.any(xp.all(nan_mask, axis=axis)):
+            message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
+                       else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
         x = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), x)
@@ -10862,7 +10846,9 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
-    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
+    x_mean_conj = (xp.conj(x_mean) if xp.isdtype(x_mean.dtype, 'complex floating')
+                   else x_mean)  # crossref data-apis/array-api#824
+    var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
         if axis is None:

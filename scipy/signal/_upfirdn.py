@@ -33,6 +33,7 @@
 
 import numpy as np
 
+from scipy._lib._array_api import array_namespace
 from ._upfirdn_apply import _output_len, _apply, mode_enum
 
 __all__ = ['upfirdn', '_output_len']
@@ -210,7 +211,9 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
            [ 6.,  7.],
            [ 6.,  7.]])
     """
+    xp = array_namespace(h, x)
+
     x = np.asarray(x)
     ufd = _UpFIRDn(h, x.dtype, up, down)
     # This is equivalent to (but faster than) using np.apply_along_axis
-    return ufd.apply_filter(x, axis, mode, cval)
+    return xp.asarray(ufd.apply_filter(x, axis, mode, cval))

@@ -6,13 +6,11 @@ from numpy.testing import suppress_warnings
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
@@ -33,7 +31,7 @@ class TestVariation:
         xp_assert_close(v, expected, rtol=1e-10)
 
     @skip_xp_backends(np_only=True, reason="test plain python scalar input")
-    def test_scalar(self):
+    def test_scalar(self, xp):
         # A scalar is treated like a 1-d sequence with length 1.
         assert variation(4.0) == 0.0
 
@@ -114,6 +112,7 @@ class TestVariation:
         with pytest.raises((AxisError, IndexError)):
             variation(x, axis=10)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_mean_zero(self, xp):
         # Check that `variation` returns inf for a sequence that is not
         # identically zero but whose mean is zero.
@@ -125,6 +124,7 @@ class TestVariation:
         y2 = variation(x2, axis=1)
         xp_assert_equal(y2, xp.asarray([xp.inf, xp.inf]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.parametrize('x', [[0.]*5, [1, 2, np.inf, 9]])
     def test_return_nan(self, x, xp):
         x = xp.asarray(x)
@@ -132,6 +132,10 @@ class TestVariation:
         y = variation(x)
         xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
 
+    # internal dask warning we can't do anything about
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
