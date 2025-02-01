@@ -3910,6 +3910,31 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     return y_keep
 
 
+def _angle(z, xp):
+    """np.angle replacement
+    """
+    # XXX: https://github.com/data-apis/array-api/issues/595
+    if xp.isdtype(z.dtype, 'complex floating'):
+        zreal, zimag = xp.real(z), xp.imag(z)
+    else:
+        zreal, zimag = z, 0
+
+    a = xp.atan2(zimag, zreal)
+    return a
+
+
+def _mean(x, *args, xp, **kwds):
+    # https://github.com/data-apis/array-api/pull/850
+    if xp.isdtype(x.dtype, 'complex floating'):
+        I = xp.asarray(1j, dtype=xp.complex64
+                                 if x.dtype == xp.float32
+                                 else xp.complex128)
+        return (xp.mean(xp.real(x), *args, **kwds) +
+                I * xp.mean(xp.imag(x), *args, **kwds))
+    else:
+        return xp.mean(x, *args, **kwds)
+
+
 def vectorstrength(events, period):
     '''
     Determine the vector strength of the events corresponding to the given
@@ -3957,8 +3982,13 @@ def vectorstrength(events, period):
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
     '''
-    events = np.asarray(events)
-    period = np.asarray(period)
+    xp = array_namespace(events, period)
+
+    events = xp.asarray(events)
+    period = xp.asarray(period)
+    if xp.isdtype(period.dtype, 'integral'):
+        period = xp.astype(period, xp.float64)
+
     if events.ndim > 1:
         raise ValueError('events cannot have dimensions more than 1')
     if period.ndim > 1:
@@ -3967,19 +3997,23 @@ def vectorstrength(events, period):
     # we need to know later if period was originally a scalar
     scalarperiod = not period.ndim
 
-    events = np.atleast_2d(events)
-    period = np.atleast_2d(period)
-    if (period <= 0).any():
+    events = xpx.atleast_nd(events, ndim=2, xp=xp)
+    period = xpx.atleast_nd(period, ndim=2, xp=xp)
+    if xp.any(period <= 0):
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    vectors = np.exp(np.dot(2j*np.pi/period.T, events))
+    I2pi = xp.asarray(2j*xp.pi, dtype=xp.complex64
+                        if period.dtype == xp.float32
+                        else xp.complex128)
+    events_ = xp.astype(events, I2pi.dtype) if is_torch(xp) else events
+    vectors = xp.exp(I2pi/period.T @ events_)
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = np.mean(vectors, axis=1)
-    strength = abs(vectormean)
-    phase = np.angle(vectormean)
+    vectormean = _mean(vectors, axis=1, xp=xp)
+    strength = xp.abs(vectormean)
+    phase = _angle(vectormean, xp)
 
     # if the original period was a scalar, return scalars
     if scalarperiod:
