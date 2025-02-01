@@ -82,15 +82,16 @@ class TestQuantile:
                              [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
                               ((10, 2), None, 0), ((10, 2), None, 0)])
     def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
+        dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
         x = rng.random(size=shape_x)
         p = rng.random(size=shape_p)
         ref = np.quantile(x, p, method=method, axis=axis)
 
-        x, p = xp.asarray(x), xp.asarray(p)
-        res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method, axis=axis)
+        x, p = xp.asarray(x, dtype=dtype), xp.asarray(p, dtype=dtype)
+        res = stats.quantile(x, p, method=method, axis=axis)
 
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
@@ -127,7 +128,8 @@ class TestQuantile:
          ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
          ([], [0.5, 0.6], np.full(2, np.nan), {}),])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
-        x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref)
+        default_dtype = xp_default_dtype(xp)
+        x, p, ref = xp.asarray(x), xp.asarray(p), xp.asarray(ref, dtype=default_dtype)
         res = stats.quantile(x, p, **kwargs)
         xp_assert_equal(res, ref)
 
