@@ -278,7 +278,6 @@ def test_exceptions_properties_methods():
         SFT.fft_mode = 'twosided'
         SFT.extent(n=100)
 
-
 @pytest.mark.parametrize('m', ('onesided', 'onesided2X'))
 def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
     """Verify that one-sided spectra are not allowed with complex-valued
