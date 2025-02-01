@@ -1442,13 +1442,78 @@ class TestBetaInc:
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
                                       special.betaincc, special.betainccinv])
-    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (0, 2, 0.5),
-                                      (1.5, -2.0, 0.5), (1.5, 0, 0.5),
+    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
                 special.betainc(*args)
+
+    @pytest.mark.parametrize(
+        "args,expected",
+        [
+            ((0.0, 0.0, 0.0), np.nan),
+            ((0.0, 0.0, 0.5), np.nan),
+            ((0.0, 0.0, 1.0), np.nan),
+            ((np.inf, np.inf, 0.0), np.nan),
+            ((np.inf, np.inf, 0.5), np.nan),
+            ((np.inf, np.inf, 1.0), np.nan),
+            ((0.0, 1.0, 0.0), 0.0),
+            ((0.0, 1.0, 0.5), 1.0),
+            ((0.0, 1.0, 1.0), 1.0),
+            ((1.0, 0.0, 0.0), 0.0),
+            ((1.0, 0.0, 0.5), 0.0),
+            ((1.0, 0.0, 1.0), 1.0),
+            ((0.0, np.inf, 0.0), 0.0),
+            ((0.0, np.inf, 0.5), 1.0),
+            ((0.0, np.inf, 1.0), 1.0),
+            ((np.inf, 0.0, 0.0), 0.0),
+            ((np.inf, 0.0, 0.5), 0.0),
+            ((np.inf, 0.0, 1.0), 1.0),
+            ((1.0, np.inf, 0.0), 0.0),
+            ((1.0, np.inf, 0.5), 1.0),
+            ((1.0, np.inf, 1.0), 1.0),
+            ((np.inf, 1.0, 0.0), 0.0),
+            ((np.inf, 1.0, 0.5), 0.0),
+            ((np.inf, 1.0, 1.0), 1.0),
+        ]
+    )
+    def test_betainc_edge_cases(self, args, expected):
+        observed = special.betainc(*args)
+        assert_equal(observed, expected)
+
+    @pytest.mark.parametrize(
+        "args,expected",
+        [
+            ((0.0, 0.0, 0.0), np.nan),
+            ((0.0, 0.0, 0.5), np.nan),
+            ((0.0, 0.0, 1.0), np.nan),
+            ((np.inf, np.inf, 0.0), np.nan),
+            ((np.inf, np.inf, 0.5), np.nan),
+            ((np.inf, np.inf, 1.0), np.nan),
+            ((0.0, 1.0, 0.0), 1.0),
+            ((0.0, 1.0, 0.5), 0.0),
+            ((0.0, 1.0, 1.0), 0.0),
+            ((1.0, 0.0, 0.0), 1.0),
+            ((1.0, 0.0, 0.5), 1.0),
+            ((1.0, 0.0, 1.0), 0.0),
+            ((0.0, np.inf, 0.0), 1.0),
+            ((0.0, np.inf, 0.5), 0.0),
+            ((0.0, np.inf, 1.0), 0.0),
+            ((np.inf, 0.0, 0.0), 1.0),
+            ((np.inf, 0.0, 0.5), 1.0),
+            ((np.inf, 0.0, 1.0), 0.0),
+            ((1.0, np.inf, 0.0), 1.0),
+            ((1.0, np.inf, 0.5), 0.0),
+            ((1.0, np.inf, 1.0), 0.0),
+            ((np.inf, 1.0, 0.0), 1.0),
+            ((np.inf, 1.0, 0.5), 1.0),
+            ((np.inf, 1.0, 1.0), 0.0),
+        ]
+    )
+    def test_betaincc_edge_cases(self, args, expected):
+        observed = special.betaincc(*args)
+        assert_equal(observed, expected)
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_gh21426(self, dtype):
@@ -4249,6 +4314,26 @@ def test_chi2_smalldf():
 
 def test_ch2_inf():
     assert_equal(special.chdtr(0.7,np.inf), 1.0)
+
+
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_v_nan(x):
+    assert np.isnan(special.chdtr(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_x_nan(v):
+    assert np.isnan(special.chdtr(v, np.nan))
+
+
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_v_nan(x):
+    assert np.isnan(special.chdtrc(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_x_nan(v):
+    assert np.isnan(special.chdtrc(v, np.nan))
 
 
 def test_chi2c_smalldf():

@@ -25,6 +25,7 @@ python_sources = [
   'test_lambertw.py',
   'test_legendre.py',
   'test_log_softmax.py',
+  'test_log1mexp.py',
   'test_loggamma.py',
   'test_logit.py',
   'test_logsumexp.py',
