@@ -846,6 +846,20 @@ cdef class RigidTransformation:
         This implements the exponential map that converts 6-dimensional real
         vectors to SE(3).
 
+        An exponential coordinate vector consists of 6 elements - 3 for rotation (known
+        as a rotation vector) and 3 for translation. The exponential mapping can be
+        expressed as matrix exponential ``M = exp(m)``. Where ``M`` is a 4x4 matrix
+        representing a ridig transformation and ``m`` is a 4x4 matrix formed from
+        the elements of an exponential coordinate vector::
+
+            m = [  0 -rz  ry lx]
+                [ rz   0 -rx ly]
+                [-ry  rx   0 lz]
+                [  0   0   0  1]
+
+        With ``rx, ry, rz`` denoting the rotation part and ``lx, ly, lz`` denoting the
+        translation part.
+
         Parameters
         ----------
         exp_coords : array_like, shape (N, 6) or (6,)
@@ -1246,6 +1260,9 @@ cdef class RigidTransformation:
 
         This implements the logarithmic map that converts SE(3) to
         6-dimensional real vectors.
+
+        This is an inverse of `from_exp_coords` where details on the mapping can
+        be found.
 
         Returns
         -------
