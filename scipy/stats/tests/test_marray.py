@@ -9,7 +9,7 @@ skip_backend = pytest.mark.skip_xp_backends
 
 def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=84912165484321):
     marray = pytest.importorskip('marray')
-    xpm = marray._get_namespace(xp)
+    mxp = marray._get_namespace(xp)
     rng = np.random.default_rng(seed)
 
     datas, masks = [], []
@@ -25,12 +25,12 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
     marrays = []
     nan_arrays = []
     for array, mask in zip(datas, masks):
-        marrays.append(xpm.asarray(array, mask=mask))
+        marrays.append(mxp.asarray(array, mask=mask))
         nan_array = array.copy()
         nan_array[mask] = xp.nan
         nan_arrays.append(nan_array)
 
-    return xpm, marrays, nan_arrays
+    return mxp, marrays, nan_arrays
 
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
@@ -101,7 +101,7 @@ def test_several(fun, kwargs, axis, xp):
 @pytest.mark.parametrize('kwargs', [{}])
 def test_describe(axis, kwargs, xp):
     mxp, marrays, narrays = get_arrays(1, xp=xp)
-    kwargs.update(dict(axis=axis))
+    kwargs = dict(axis=axis) | kwargs
     res = stats.describe(marrays[0], **kwargs)
     ref = stats.describe(narrays[0], nan_policy='omit', **kwargs)
     xp_assert_close(res.nobs.data, xp.asarray(ref.nobs))
