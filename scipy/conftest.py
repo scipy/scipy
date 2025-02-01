@@ -599,4 +599,7 @@ if HAVE_SCPDT:
     }
 
     dt_config.strict_check = True
+
+    # ignore Matplotlib's `ax.text`:
+    dt_config.stopwords.add('.text(')
 ############################################################################

@@ -3407,7 +3407,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> ax0.set(xlabel=r"$\text{Re}\{z\}$", ylabel=r"$\text{Im}\{z\}$",
     ...         xlim=(-0.2, 0.65), aspect='equal')
     >>> ax0.plot(H[0].real, H[0].imag, 'k.')  # mark H(exp(1j*w[0]))
-    >>> _ = ax0.text(0, 0.2, r"$H(e^{j0})$")  # `_ =` needed to pass doctest
+    >>> ax0.text(0.2, 0, r"$H(e^{j0})$")
     >>> ax0.grid(True)
     >>> ax0.legend()
     >>> plt.show()
