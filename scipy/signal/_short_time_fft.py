@@ -776,7 +776,6 @@ class ShortTimeFFT:
         return SFT
 
 
-
     @property
     def win(self) -> np.ndarray:
         """Window function as real- or complex-valued 1d array.
