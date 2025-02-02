@@ -18,7 +18,7 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from ._rigid_transformation import RigidTransform
+from ._rigid_transform import RigidTransform
 from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
 
