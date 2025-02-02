@@ -145,10 +145,15 @@ py3.extension_module('_bglu_dense',
   subdir: 'scipy/optimize'
 )
 
-py3.extension_module('_cython_nnls',
-  opt_gen.process('_cython_nnls.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
+py3.extension_module('_slsqplib',
+  [
+    '__slsqp.h',
+    '__slsqp.c',
+    '__nnls.h',
+    '__nnls.c'
+  ],
+  c_args: ['-Wall', '-Wextra'],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
