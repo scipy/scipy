@@ -1601,6 +1601,14 @@ cdef class RigidTransform:
         transform is returned, if ``n == 0`` then the identity transform is
         returned, and if ``n == -1`` then the inverse transform is returned.
 
+        Note that fractional powers ``n`` which effectively take a root of
+        rotation, do so using the shortest path smallest representation of that
+        angle (the principal root). This means that powers of ``n`` and ``1/n``
+        are not necessarily inverses of each other. For example, a 0.5 power of
+        a +240 degree rotation will be calculated as the 0.5 power of a -120
+        degree rotation, with the result being a rotation of -60 rather than
+        +120 degrees.
+
         Examples
         --------
         >>> from scipy.spatial.transform import RigidTransform as Tf
