@@ -56,6 +56,11 @@ def xp_var(*args, **kwargs):
     return stats._stats_py._xp_var(*args, **kwargs)
 
 
+def gstd(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats.gstd(*args, **kwargs)
+
+
 def combine_pvalues_weighted(*args, **kwargs):
     return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
                                  method='stouffer', **kwargs)
@@ -164,6 +169,7 @@ axis_nan_policy_cases = [
     (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
