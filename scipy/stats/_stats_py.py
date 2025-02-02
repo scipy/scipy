@@ -3012,8 +3012,9 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     xp = array_namespace(a)
     a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
 
+    kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = xp.exp(_xp_var(xp.log(a), axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)**0.5)
+        res = xp.exp(_xp_var(xp.log(a), **kwargs)**0.5)
 
     if xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
