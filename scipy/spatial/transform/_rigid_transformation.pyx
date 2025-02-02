@@ -1487,9 +1487,9 @@ cdef class RigidTransformation:
         This function supports composition of multiple transformations at a
         time. The following cases are possible:
 
-            - Either ``p`` or ``q`` contains a single transformation. In this
-              case the result contains the result of composing each
-              transformation in the other object with the single
+            - Either ``p`` or ``q`` contains a single or length 1
+              transformation. In this case the result contains the result of
+              composing each transformation in the other object with the one
               transformation. If both are single transformations, the result is
               a single transformation.
             - Both ``p`` and ``q`` contain ``N`` transformations. In this case
