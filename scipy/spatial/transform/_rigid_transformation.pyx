@@ -847,7 +847,7 @@ cdef class RigidTransformation:
         vectors to SE(3).
 
         An exponential coordinate vector consists of 6 elements
-        ``(rx, ry, rz, vx, vy, vz)``. The first 3 encode rotation (and form a rotation
+        ``[rx, ry, rz, vx, vy, vz]``. The first 3 encode rotation (and form a rotation
         vector used in `Rotation.from_rotvec`) and the last 3 encode
         translation (and form a translation vector for pure translations).
         The exponential mapping can be expressed as matrix exponential ``T = exp(tau)``.
@@ -863,8 +863,9 @@ cdef class RigidTransformation:
         ----------
         exp_coords : array_like, shape (N, 6) or (6,)
             A single exponential coordinate vector or a stack of exponential
-            coordinate vectors. The first three components define the
-            rotation and the last three components define the translation.
+            coordinate vectors. The expected order of components is
+            ``[rx, ry, rz, vx, vy, vz]`` - the first 3 encode rotation and the last
+            3 encode translation.
 
         Returns
         -------
