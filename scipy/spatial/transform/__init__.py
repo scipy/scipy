@@ -4,9 +4,8 @@ Spatial Transformations (:mod:`scipy.spatial.transform`)
 
 .. currentmodule:: scipy.spatial.transform
 
-This package implements various spatial transformations. For now,
-rotations and rigid transformations (rotations and translations) are
-supported.
+This package implements various spatial transformations. For now, rotations
+and rigid transforms (rotations and translations) are supported.
 
 Rotations in 3 dimensions
 -------------------------
