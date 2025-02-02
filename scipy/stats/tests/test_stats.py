@@ -7293,11 +7293,7 @@ class TestPMean:
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends('array_api_strict', 'jax.numpy',
-                  reasons=["`array_api_strict.log` doesn't accept integers",
-                           "JAX doesn't allow item assignment."])
+@skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
 class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
     array_1d = (np.arange(2 * 3 * 4) + 1).tolist()
@@ -7308,8 +7304,7 @@ class TestGSTD:
         gstd_actual = stats.gstd(xp.asarray(self.array_1d))
         xp_assert_close(gstd_actual, xp.asarray(self.gstd_array_1d))
 
-    @skip_xp_backends(np_only=True,
-                      reasons=["Only NumPy supports array-like input"])
+    @skip_xp_backends(np_only=True, reason="Only NumPy supports array-like input")
     def test_1d_numeric_array_like_input(self, xp):
         gstd_actual = stats.gstd(tuple(self.array_1d))
         assert_allclose(gstd_actual, self.gstd_array_1d)
@@ -7380,18 +7375,6 @@ class TestGSTD:
             [1.0934830582351, 1.0724479791887, 1.0591498540749]
         ])
         xp_assert_close(gstd_actual, gstd_desired)
-
-    @skip_xp_invalid_arg
-    def test_masked_3d_array(self, xp):
-        x = xp.asarray(self.array_3d)
-        x = np.ma.masked_where(x > 16, x)
-        message = "`gstd` support for masked array input was deprecated in..."
-        with pytest.warns(DeprecationWarning, match=message):
-            gstd_actual = stats.gstd(x, axis=2)
-        gstd_desired = stats.gstd(self.array_3d, axis=2)
-        mask = [[0, 0, 0], [0, 1, 1]]
-        assert_allclose(gstd_actual, gstd_desired)
-        assert_equal(gstd_actual.mask, mask)
 
 
 def test_binomtest():

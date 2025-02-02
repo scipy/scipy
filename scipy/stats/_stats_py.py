@@ -3000,18 +3000,10 @@ def gstd(a, axis=0, ddof=1):
 
     """
     xp = array_namespace(a)
-    a = _asarray(a, subok=True)
-
-    if isinstance(a, ma.MaskedArray):
-        message = ("`gstd` support for masked array input was deprecated in "
-                   "SciPy 1.14.0 and will be removed in version 1.16.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-        log = ma.log
-    else:
-        log = xp.log
+    a = xp_broadcast_promote(a, force_floating=True)[0]  # promoting to correct float
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = xp.exp(_xp_var(log(a), axis=axis, correction=ddof)**0.5)
+        res = xp.exp(_xp_var(xp.log(a), axis=axis, correction=ddof)**0.5)
 
     if xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
