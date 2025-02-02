@@ -13,19 +13,19 @@ Rotations in 3 dimensions
 .. autosummary::
    :toctree: generated/
 
-   RigidTransformation
+   RigidTransform
    Rotation
    Slerp
    RotationSpline
 """
-from ._rigid_transformation import RigidTransformation
+from ._rigid_transformation import RigidTransform
 from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import rotation
 
-__all__ = ['Rotation', 'Slerp', 'RotationSpline', 'RigidTransformation']
+__all__ = ['Rotation', 'Slerp', 'RotationSpline', 'RigidTransform']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

@@ -2,29 +2,29 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.spatial.transform import Rotation, RigidTransformation
+from scipy.spatial.transform import Rotation, RigidTransform
 
 
 def test_repr():
-    actual = repr(RigidTransformation.identity())
+    actual = repr(RigidTransform.identity())
     expected = """\
-RigidTransformation.from_matrix(array([[1., 0., 0., 0.],
-                                       [0., 1., 0., 0.],
-                                       [0., 0., 1., 0.],
-                                       [0., 0., 0., 1.]]))"""
+RigidTransform.from_matrix(array([[1., 0., 0., 0.],
+                                  [0., 1., 0., 0.],
+                                  [0., 0., 1., 0.],
+                                  [0., 0., 0., 1.]]))"""
     assert actual == expected
 
-    actual = repr(RigidTransformation.identity(2))
+    actual = repr(RigidTransform.identity(2))
     expected = """\
-RigidTransformation.from_matrix(array([[[1., 0., 0., 0.],
-                                        [0., 1., 0., 0.],
-                                        [0., 0., 1., 0.],
-                                        [0., 0., 0., 1.]],
-                                
-                                       [[1., 0., 0., 0.],
-                                        [0., 1., 0., 0.],
-                                        [0., 0., 1., 0.],
-                                        [0., 0., 0., 1.]]]))"""
+RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
+                                   [0., 1., 0., 0.],
+                                   [0., 0., 1., 0.],
+                                   [0., 0., 0., 1.]],
+                           
+                                  [[1., 0., 0., 0.],
+                                   [0., 1., 0., 0.],
+                                   [0., 0., 1., 0.],
+                                   [0., 0., 0., 1.]]]))"""
     assert actual == expected
 
 
@@ -33,12 +33,12 @@ def test_from_rotation():
 
     # Test single rotation
     r = Rotation.identity()
-    tf = RigidTransformation.from_rotation(r)
+    tf = RigidTransform.from_rotation(r)
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
     assert tf.single
 
     r = Rotation.from_euler('z', 90, degrees=True)
-    tf = RigidTransformation.from_rotation(r)
+    tf = RigidTransform.from_rotation(r)
     assert_allclose(tf.as_matrix()[:3, :3], r.as_matrix(), atol=atol)
     assert_allclose(tf.as_matrix()[:3, 3], [0, 0, 0], atol=atol)
     assert_allclose(tf.as_matrix()[3], [0, 0, 0, 1], atol=atol)
@@ -46,7 +46,7 @@ def test_from_rotation():
 
     # Test multiple rotations
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
-    tf = RigidTransformation.from_rotation(r)
+    tf = RigidTransform.from_rotation(r)
     assert_allclose(tf.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
     assert_allclose(tf.as_matrix()[:, :3, 3], [[0, 0, 0], [0, 0, 0]], atol=atol)
     assert_allclose(tf.as_matrix()[:, 3], [[0, 0, 0, 1], [0, 0, 0, 1]], atol=atol)
@@ -56,7 +56,7 @@ def test_from_rotation():
 def test_from_translation():
     # Test single translation
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_translation(t)
+    tf = RigidTransform.from_translation(t)
     expected = np.eye(4)
     expected[:3, 3] = t
     assert_allclose(tf.as_matrix(), expected)
@@ -64,7 +64,7 @@ def test_from_translation():
 
     # Test multiple translations
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_translation(t)
+    tf = RigidTransform.from_translation(t)
     for i in range(len(t)):
         expected = np.eye(4)
         expected[:3, 3] = t[i]
@@ -75,24 +75,24 @@ def test_from_translation():
 def test_from_matrix():
     atol = 1e-12
 
-    # Test single transformation matrix
+    # Test single transform matrix
     matrix = np.eye(4)
     matrix[:3, 3] = [1, 2, 3]
-    tf = RigidTransformation.from_matrix(matrix)
+    tf = RigidTransform.from_matrix(matrix)
     assert_allclose(tf.as_matrix(), matrix, atol=atol)
     assert tf.single
 
-    # Test multiple transformation matrices
+    # Test multiple transform matrices
     matrices = np.array([np.eye(4)]*2)
     matrices[0, :3, 3] = [1, 2, 3]
     matrices[1, :3, 3] = [4, 5, 6]
-    tf = RigidTransformation.from_matrix(matrices)
+    tf = RigidTransform.from_matrix(matrices)
     assert_allclose(tf.as_matrix(), matrices, atol=atol)
     assert not tf.single
 
     # Test non-1 determinant
     matrix = np.diag([2, 2, 2, 1])
-    tf = RigidTransformation.from_matrix(matrix)
+    tf = RigidTransform.from_matrix(matrix)
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
 
     # Test non-orthogonal rotation matrix
@@ -100,7 +100,7 @@ def test_from_matrix():
                        [0, 1, 0, 0],
                        [0, 0, 1, 0],
                        [0, 0, 0, 1]])
-    tf = RigidTransformation.from_matrix(matrix)
+    tf = RigidTransform.from_matrix(matrix)
     expected = np.array([[0.894427,  0.447214, 0, 0],
                          [-0.447214,  0.894427, 0, 0],
                          [0, 0, 1, 0],
@@ -111,7 +111,7 @@ def test_from_matrix():
     with pytest.raises(ValueError):
         invalid = np.eye(4)
         invalid[3, 3] = 2  # Invalid last row
-        RigidTransformation.from_matrix(invalid)
+        RigidTransform.from_matrix(invalid)
 
 
 def test_from_components():
@@ -120,7 +120,7 @@ def test_from_components():
     # Test single rotation and translation
     t = np.array([1, 2, 3])
     r = Rotation.from_euler('zyx', [90, 0, 0], degrees=True)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     expected = np.zeros((4, 4))
     expected[:3, :3] = r.as_matrix()
@@ -132,7 +132,7 @@ def test_from_components():
     # Test single rotation and multiple translations
     t = np.array([[1, 2, 3], [4, 5, 6]])
     r = Rotation.from_euler('z', 90, degrees=True)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
     for i in range(len(t)):
@@ -145,7 +145,7 @@ def test_from_components():
     # Test multiple rotations and translations
     t = np.array([[1, 2, 3], [4, 5, 6]])
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
     for i in range(len(t)):
@@ -162,7 +162,7 @@ def test_as_components():
     rng = np.random.default_rng(123)
     t = rng.normal(size=(n, 3))
     r = Rotation.random(n, rng=rng)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
     new_t, new_r = tf.as_components()
     assert all(new_r.approx_equal(r, atol=atol))
     assert_allclose(new_t, t, atol=atol)
@@ -172,21 +172,21 @@ def test_from_exp_coords():
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
     angle1 = np.deg2rad(30.0)
-    tf1 = RigidTransformation.from_matrix([
+    tf1 = RigidTransform.from_matrix([
         [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
         [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
     angle2 = np.deg2rad(60.0)
-    tf2 = RigidTransformation.from_matrix([
+    tf2 = RigidTransform.from_matrix([
         [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
         [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
         [0.0, 0.0, 1.0, 0.0],
         [0.0, 0.0, 0.0, 1.0]
     ])
     expected = tf2 * tf1.inv()
-    actual = RigidTransformation.from_exp_coords(
+    actual = RigidTransform.from_exp_coords(
         np.deg2rad(30.0) * np.array([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
     assert_allclose(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
 
@@ -208,12 +208,12 @@ def test_from_exp_coords():
          [0., 0., 0., 1.]]
     ]
     assert_allclose(
-        RigidTransformation.from_exp_coords(exp_coords).as_matrix(),
+        RigidTransform.from_exp_coords(exp_coords).as_matrix(),
         expected_matrix, atol=1e-8)
 
     # identity
     assert_allclose(
-        RigidTransformation.from_exp_coords(np.zeros(6)).as_matrix(),
+        RigidTransform.from_exp_coords(np.zeros(6)).as_matrix(),
         np.eye(4), atol=1e-12)
 
     # only translation
@@ -227,7 +227,7 @@ def test_from_exp_coords():
          [0.0, 0.0, 1.0, 1.3],
          [0.0, 0.0, 0.0, 1.0]]
     ])
-    actual = RigidTransformation.from_exp_coords([
+    actual = RigidTransform.from_exp_coords([
         [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
         [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
     ])
@@ -242,7 +242,7 @@ def test_from_exp_coords():
     rotvec = rot.as_rotvec()
     expected_matrix = np.array([np.eye(4), np.eye(4)])
     expected_matrix[:, :3, :3] = rot.as_matrix()
-    actual = RigidTransformation.from_exp_coords(
+    actual = RigidTransform.from_exp_coords(
         np.hstack((rotvec, np.zeros((2, 3)))))
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
@@ -250,21 +250,21 @@ def test_from_exp_coords():
 def test_as_exp_coords():
     # identity
     expected = np.zeros(6)
-    actual = RigidTransformation.from_exp_coords(expected).as_exp_coords()
+    actual = RigidTransform.from_exp_coords(expected).as_exp_coords()
     assert_allclose(actual, expected, atol=1e-12)
 
     rng = np.random.default_rng(10)
 
     # pure rotation
     rot_vec = rng.normal(scale=0.1, size=(1000, 3))
-    tf = RigidTransformation.from_rotation(Rotation.from_rotvec(rot_vec))
+    tf = RigidTransform.from_rotation(Rotation.from_rotvec(rot_vec))
     exp_coords = tf.as_exp_coords()
     assert_allclose(exp_coords[:, :3], rot_vec, rtol=1e-13)
     assert_allclose(exp_coords[:, 3:], 0.0, atol=1e-16)
 
     # pure translation
     translation = rng.normal(scale=100.0, size=(1000, 3))
-    tf = RigidTransformation.from_translation(translation)
+    tf = RigidTransform.from_translation(translation)
     exp_coords = tf.as_exp_coords()
     assert_allclose(exp_coords[:, :3], 0.0, atol=1e-16)
     assert_allclose(exp_coords[:, 3:], translation, rtol=1e-15)
@@ -273,17 +273,17 @@ def test_as_exp_coords():
 def test_from_dual_quat():
     # identity
     assert_allclose(
-        RigidTransformation.from_dual_quat(
+        RigidTransform.from_dual_quat(
             np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])).as_matrix(),
         np.eye(4), atol=1e-12)
     assert_allclose(
-        RigidTransformation.from_dual_quat(
+        RigidTransform.from_dual_quat(
             np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
             scalar_first=True).as_matrix(),
         np.eye(4), atol=1e-12)
 
     # only translation
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         [0, 0, 0, 1, 0.25, 0.15, -0.7, 0])
     expected_matrix = np.array([
         [1, 0, 0, 0.5],
@@ -292,7 +292,7 @@ def test_from_dual_quat():
         [0, 0, 0, 1]
     ])
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         [1, 0, 0, 0, 0, 0.25, 0.15, -0.7], scalar_first=True)
     expected_matrix = np.array([
         [1, 0, 0, 0.5],
@@ -304,13 +304,13 @@ def test_from_dual_quat():
 
     # only rotation
     actual_rot = Rotation.from_euler("xyz", [65, -13, 90], degrees=True)
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         np.hstack((actual_rot.as_quat(), np.zeros(4))))
     expected_matrix = np.eye(4)
     expected_matrix[:3, :3] = actual_rot.as_matrix()
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         np.hstack((actual_rot.as_quat(scalar_first=True), np.zeros(4))),
         scalar_first=True)
     expected_matrix = np.eye(4)
@@ -318,7 +318,7 @@ def test_from_dual_quat():
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # rotation and translation
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         [[0.0617101, -0.06483886, 0.31432811, 0.94508498,
           0.04985168, -0.26119618, 0.1691491, -0.07743254],
          [0.19507259, 0.49404931, -0.06091285, 0.8450749,
@@ -334,7 +334,7 @@ def test_from_dual_quat():
           [0., 0., 0., 1.]]])
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
-    actual = RigidTransformation.from_dual_quat(
+    actual = RigidTransform.from_dual_quat(
         [[0.94508498, 0.0617101, -0.06483886, 0.31432811,
           -0.07743254, 0.04985168, -0.26119618, 0.1691491],
          [0.8450749, 0.19507259, 0.49404931, -0.06091285,
@@ -345,7 +345,7 @@ def test_from_dual_quat():
     # unnormalized dual quaternions
 
     # invalid real quaternion with norm 0
-    actual = RigidTransformation.from_dual_quat(np.zeros(8))
+    actual = RigidTransform.from_dual_quat(np.zeros(8))
     assert_allclose(actual.as_matrix(), np.eye(4), atol=1e-12)
 
     # real quaternion with norm != 1
@@ -356,7 +356,7 @@ def test_from_dual_quat():
     assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.3
     assert pytest.approx(np.dot(unnormalized_dual_quat[:4],
                                 unnormalized_dual_quat[4:]), abs=8) == 0.0
-    dual_quat = RigidTransformation.from_dual_quat(
+    dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
@@ -369,7 +369,7 @@ def test_from_dual_quat():
     assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.0
     assert np.dot(unnormalized_dual_quat[:4],
                   unnormalized_dual_quat[4:]) != 0.0
-    dual_quat = RigidTransformation.from_dual_quat(
+    dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
@@ -379,7 +379,7 @@ def test_from_dual_quat():
         [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935])
     assert np.dot(np.array([0.0, 0.0, 0.0, 1.0]),
                   unnormalized_dual_quat[4:]) != 0.0
-    dual_quat = RigidTransformation.from_dual_quat(
+    dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     assert_allclose(dual_quat[:4], np.array([0, 0, 0, 1]), atol=1e-12)
     assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
@@ -388,13 +388,13 @@ def test_from_dual_quat():
     rng = np.random.default_rng(1000)
     t = rng.normal(size=(3,))
     r = Rotation.random(10, rng=rng)
-    random_dual_quats = RigidTransformation.from_components(t, r).as_dual_quat()
+    random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
     random_dual_quats[:, :4] = random_dual_quats[:, :4].round(2)
     assert not np.any(np.isclose(
         np.linalg.norm(random_dual_quats[:, :4], axis=1), 1.0, atol=0.0001))
-    dual_quat_norm = RigidTransformation.from_dual_quat(
+    dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
     assert_allclose(
         np.linalg.norm(dual_quat_norm[:, :4], axis=1), 1.0, atol=1e-12)
@@ -403,7 +403,7 @@ def test_from_dual_quat():
     # of orthogonality constraint
     t = rng.normal(size=(10, 3))
     r = Rotation.random(10, rng=rng)
-    random_dual_quats = RigidTransformation.from_components(t, r).as_dual_quat()
+    random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
     random_dual_quats[:, 4:] = random_dual_quats[:, 4:].round(2)
@@ -412,7 +412,7 @@ def test_from_dual_quat():
                   random_dual_quats[:, :4],
                   random_dual_quats[:, 4:]),
         0.0, atol=0.0001))
-    dual_quat_norm = RigidTransformation.from_dual_quat(
+    dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
     assert_allclose(
         np.einsum("ij,ij->i", dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
@@ -424,11 +424,11 @@ def test_from_dual_quat():
 def test_as_dual_quat():
     # identity
     expected = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
-    actual = RigidTransformation.identity().as_dual_quat()
+    actual = RigidTransform.identity().as_dual_quat()
     assert_allclose(actual, expected, atol=1e-12)
 
     expected = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-    actual = RigidTransformation.identity().as_dual_quat(scalar_first=True)
+    actual = RigidTransform.identity().as_dual_quat(scalar_first=True)
     assert_allclose(actual, expected, atol=1e-12)
 
     rng = np.random.default_rng(10)
@@ -438,7 +438,7 @@ def test_as_dual_quat():
         real_part = Rotation.random(rng=rng).as_quat()
         dual_part = np.zeros(4)
         expected = np.hstack((real_part, dual_part))
-        actual = RigidTransformation.from_dual_quat(expected).as_dual_quat()
+        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
         # because of double cover:
         if np.sign(expected[0]) != np.sign(actual[0]):
             actual *= -1.0
@@ -448,7 +448,7 @@ def test_as_dual_quat():
     for _ in range(10):
         tf = rng.normal(size=3)
         expected = np.hstack(([0, 0, 0, 1], 0.5 * tf, [0]))
-        actual = RigidTransformation.from_dual_quat(expected).as_dual_quat()
+        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
         # because of double cover:
         if np.sign(expected[0]) != np.sign(actual[0]):
             actual *= -1.0
@@ -458,8 +458,8 @@ def test_as_dual_quat():
     for _ in range(10):
         t = rng.normal(size=3)
         r = Rotation.random(rng=rng)
-        expected = RigidTransformation.from_components(t, r).as_dual_quat()
-        actual = RigidTransformation.from_dual_quat(expected).as_dual_quat()
+        expected = RigidTransform.from_components(t, r).as_dual_quat()
+        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
         # because of double cover:
         if np.sign(expected[0]) != np.sign(actual[0]):
             actual *= -1.0
@@ -472,28 +472,28 @@ def test_from_as_internal_consistency():
     rng = np.random.default_rng(10)
     t = rng.normal(size=(n, 3))
     r = Rotation.random(n, rng=rng)
-    tf0 = RigidTransformation.from_components(t, r)
+    tf0 = RigidTransform.from_components(t, r)
 
-    tf1 = RigidTransformation.from_components(*tf0.as_components())
+    tf1 = RigidTransform.from_components(*tf0.as_components())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
-    tf1 = RigidTransformation.from_components(tf0.translation, tf0.rotation)
+    tf1 = RigidTransform.from_components(tf0.translation, tf0.rotation)
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
-    tf1 = RigidTransformation.from_exp_coords(tf0.as_exp_coords())
+    tf1 = RigidTransform.from_exp_coords(tf0.as_exp_coords())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
-    tf1 = RigidTransformation.from_matrix(tf0.as_matrix())
+    tf1 = RigidTransform.from_matrix(tf0.as_matrix())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
-    tf1 = RigidTransformation.from_dual_quat(tf0.as_dual_quat())
+    tf1 = RigidTransform.from_dual_quat(tf0.as_dual_quat())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     # exp_coords small rotation
-    tf0 = RigidTransformation.from_components(
+    tf0 = RigidTransform.from_components(
         rng.normal(scale=1000.0, size=(1000, 3)),
         Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))))
-    tf1 = RigidTransformation.from_exp_coords(tf0.as_exp_coords())
+    tf1 = RigidTransform.from_exp_coords(tf0.as_exp_coords())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
 
@@ -501,44 +501,44 @@ def test_identity():
     atol = 1e-12
 
     # Test single identity
-    tf = RigidTransformation.identity()
+    tf = RigidTransform.identity()
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
 
     # Test multiple identities
-    tf = RigidTransformation.identity(5)
+    tf = RigidTransform.identity(5)
     assert_allclose(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
 
 
 def test_apply():
     atol = 1e-12
 
-    ## Single transformation
+    ## Single transform
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([2, 3, 4])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
-    # Single vector, single transformation
+    # Single vector, single transform
     vec = np.array([1, 0, 0])
     expected = t + r.apply(vec)
     res = tf.apply(vec)
     assert_allclose(res, expected, atol=atol)
 
-    # Multiple vectors, single transformation
+    # Multiple vectors, single transform
     vecs = np.array([[1, 0, 0], [0, 1, 0]])
     expected = t + r.apply(vecs)
     assert_allclose(tf.apply(vecs), expected, atol=atol)
 
-    ## Multiple transformations
+    ## Multiple transforms
     r = Rotation.from_euler('z', [90, 0], degrees=True)
     t = np.array([[2, 3, 4], [5, 6, 7]])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
-    # Single vector, multiple transformations
+    # Single vector, multiple transforms
     vec = np.array([1, 0, 0])
     expected = t + r.apply(vec)
     assert_allclose(tf.apply(vec), expected, atol=atol)
 
-    # Multiple vectors, multiple transformations
+    # Multiple vectors, multiple transforms
     vecs = np.array([[1, 0, 0], [0, 1, 0]])
     expected = t + r.apply(vecs)
     assert_allclose(tf.apply(vecs), expected, atol=atol)
@@ -547,10 +547,10 @@ def test_apply():
 def test_inverse_apply():
     atol = 1e-12
 
-    # Test applying inverse transformation
+    # Test applying inverse transform
     t = np.array([1, 2, 3])
     r = Rotation.from_euler('z', 90, degrees=True)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     # Test single vector
     vec = np.array([1, 0, 0])
@@ -567,7 +567,7 @@ def test_rotation_alone():
     atol = 1e-12
 
     r = Rotation.from_euler('z', 90, degrees=True)
-    tf = RigidTransformation.from_rotation(r)
+    tf = RigidTransform.from_rotation(r)
     vec = np.array([1, 0, 0])
     expected = r.apply(vec)
     assert_allclose(tf.apply(vec), expected, atol=atol)
@@ -576,7 +576,7 @@ def test_rotation_alone():
 def test_translation_alone():
     atol = 1e-12
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_translation(t)
+    tf = RigidTransform.from_translation(t)
     vec = np.array([5, 6, 7])
     expected = t + vec
     assert_allclose(tf.apply(vec), expected, atol=atol)
@@ -585,14 +585,14 @@ def test_translation_alone():
 def test_composition():
     atol = 1e-12
 
-    # Test composing single transformations
+    # Test composing single transforms
     t1 = np.array([1, 0, 0])
     r1 = Rotation.from_euler('z', 90, degrees=True)
-    tf1 = RigidTransformation.from_components(t1, r1)
+    tf1 = RigidTransform.from_components(t1, r1)
 
     t2 = np.array([0, 1, 0])
     r2 = Rotation.from_euler('x', 90, degrees=True)
-    tf2 = RigidTransformation.from_components(t2, r2)
+    tf2 = RigidTransform.from_components(t2, r2)
 
     composed = tf2 * tf1
     vec = np.array([1, 0, 0])
@@ -603,9 +603,9 @@ def test_composition():
     expected = t2 + r2.apply(t1 + r1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
-    # Multiple transformations with single transformation
+    # Multiple transforms with single transform
     t2 = np.array([[1, 2, 3], [4, 5, 6]])
-    tf2 = RigidTransformation.from_components(t2, r2)
+    tf2 = RigidTransform.from_components(t2, r2)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -615,9 +615,9 @@ def test_composition():
     expected = t2 + r2.apply(t1 + r1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
-    # Multiple transformations with multiple transformations
+    # Multiple transforms with multiple transforms
     t1 = np.array([[1, 0, 0], [0, -1, 1]])
-    tf1 = RigidTransformation.from_components(t1, r1)
+    tf1 = RigidTransform.from_components(t1, r1)
 
     composed = tf2 * tf1
     expected = tf2.apply(tf1.apply(vec))
@@ -634,13 +634,13 @@ def test_pow():
     rng = np.random.default_rng(100)
     t = rng.normal(size=(num, 3))
     r = Rotation.random(num, rng=rng)
-    p = RigidTransformation.from_components(t, r)
+    p = RigidTransform.from_components(t, r)
     p_inv = p.inv()
 
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         q = p**n
-        r = RigidTransformation.identity(num)
+        r = RigidTransform.identity(num)
         for _ in range(abs(n)):
             if n > 0:
                 r = r * p
@@ -649,9 +649,9 @@ def test_pow():
         assert_allclose(q.as_matrix(), r.as_matrix(), atol=atol)
 
         # Test shape preservation
-        r = RigidTransformation.from_rotation(Rotation.from_quat([0, 0, 0, 1]))
+        r = RigidTransform.from_rotation(Rotation.from_quat([0, 0, 0, 1]))
         assert (r**n).as_matrix().shape == (4, 4)
-        r = RigidTransformation.from_rotation(Rotation.from_quat([[0, 0, 0, 1]]))
+        r = RigidTransform.from_rotation(Rotation.from_quat([[0, 0, 0, 1]]))
         assert (r**n).as_matrix().shape == (1, 4, 4)
 
     # Test fractional powers
@@ -665,17 +665,17 @@ def test_pow():
     assert_allclose((q * q).as_matrix(), (p**-3).as_matrix(), atol=atol)
 
     # pow function
-    tf = pow(RigidTransformation.identity(), 2)
+    tf = pow(RigidTransform.identity(), 2)
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
 
 
 def test_inverse():
     atol = 1e-12
 
-    # Test inverse transformation
+    # Test inverse transform
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     # Test that tf * tf.inv() equals identity
     tf_inv = tf.inv()
@@ -686,15 +686,15 @@ def test_inverse():
     rng = np.random.default_rng(1000)
     t = rng.normal(size=(n, 3))
     r = Rotation.random(n, rng=rng)
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * n), atol=atol)
 
-    # Test multiple transformations
+    # Test multiple transforms
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
     assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * 2), atol=atol)
@@ -703,19 +703,19 @@ def test_inverse():
 def test_properties():
     atol = 1e-12
 
-    # Test rotation and translation properties for single transformation
+    # Test rotation and translation properties for single transform
     r = Rotation.from_euler('z', 90, degrees=True)
     t = np.array([1, 2, 3])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert tf.rotation.approx_equal(r)
     assert_allclose(tf.translation, t, atol=atol)
 
-    # Test rotation and translation properties for multiple transformations
+    # Test rotation and translation properties for multiple transforms
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert all(tf.rotation.approx_equal(r))
@@ -725,10 +725,10 @@ def test_properties():
 def test_indexing():
     atol = 1e-12
 
-    # Test indexing for multiple transformations
+    # Test indexing for multiple transforms
     r = Rotation.from_euler('zyx', [[90, 0, 0], [0, 90, 0]], degrees=True)
     t = np.array([[1, 2, 3], [4, 5, 6]])
-    tf = RigidTransformation.from_components(t, r)
+    tf = RigidTransform.from_components(t, r)
 
     # Test single index
     assert_allclose(tf[0].as_matrix()[:3, :3], r[0].as_matrix(), atol=atol)
@@ -743,22 +743,22 @@ def test_indexing():
 def test_concatenate():
     atol = 1e-12
 
-    # Test concatenation of transformations
+    # Test concatenation of transforms
     t1 = np.array([1, 0, 0])
     r1 = Rotation.from_euler('z', 90, degrees=True)
-    tf1 = RigidTransformation.from_components(t1, r1)
+    tf1 = RigidTransform.from_components(t1, r1)
 
     t2 = np.array([0, 1, 0])
     r2 = Rotation.from_euler('x', 90, degrees=True)
-    tf2 = RigidTransformation.from_components(t2, r2)
+    tf2 = RigidTransform.from_components(t2, r2)
 
-    # Concatenate single transformations
-    concatenated1 = RigidTransformation.concatenate([tf1, tf2])
+    # Concatenate single transforms
+    concatenated1 = RigidTransform.concatenate([tf1, tf2])
     assert_allclose(concatenated1[0].as_matrix(), tf1.as_matrix(), atol=atol)
     assert_allclose(concatenated1[1].as_matrix(), tf2.as_matrix(), atol=atol)
 
-    # Concatenate multiple transformations
-    concatenated2 = RigidTransformation.concatenate([tf1, concatenated1])
+    # Concatenate multiple transforms
+    concatenated2 = RigidTransform.concatenate([tf1, concatenated1])
     assert_allclose(concatenated2[0].as_matrix(), tf1.as_matrix(), atol=atol)
     assert_allclose(concatenated2[1].as_matrix(), tf1.as_matrix(), atol=atol)
     assert_allclose(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
@@ -770,49 +770,49 @@ def test_input_validation():
               np.zeros((0, 4, 4)), np.zeros((1, 1, 4, 4))]
     for input in inputs:
         with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
-            RigidTransformation.from_matrix(input)
+            RigidTransform.from_matrix(input)
 
     # Test invalid last row
     with pytest.raises(ValueError, match="last row of transformation matrix 0"):
         matrix = np.eye(4)
         matrix[3, :] = [1, 0, 0, 1]
-        RigidTransformation.from_matrix(matrix)
+        RigidTransform.from_matrix(matrix)
 
-    # Test invalid last row for multiple transformations
+    # Test invalid last row for multiple transforms
     with pytest.raises(ValueError, match="last row of transformation matrix 1"):
         matrix = np.array([np.eye(4)] * 2)
         matrix[1, 3, :] = [1, 0, 0, 1]
-        RigidTransformation.from_matrix(matrix)
+        RigidTransform.from_matrix(matrix)
 
     # Test left handed rotation matrix
     with pytest.raises(ValueError, match="Non-positive determinant"):
         matrix = np.eye(4)
         matrix[0, 0] = -1
-        RigidTransformation(matrix, normalize=True)
+        RigidTransform(matrix, normalize=True)
 
     # Test non-Rotation input
     with pytest.raises(ValueError,
                        match="Expected `rotation` to be a `Rotation` instance"):
-        RigidTransformation.from_rotation(np.eye(3))
+        RigidTransform.from_rotation(np.eye(3))
 
 
 def test_translation_validation():
     # Test invalid translation shapes
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransformation.from_translation([1, 2])
+        RigidTransform.from_translation([1, 2])
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransformation.from_translation(np.zeros((2, 2)))
+        RigidTransform.from_translation(np.zeros((2, 2)))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransformation.from_translation(np.zeros((0, 3)))
+        RigidTransform.from_translation(np.zeros((0, 3)))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransformation.from_translation(np.zeros((1, 1, 3)))
+        RigidTransform.from_translation(np.zeros((1, 1, 3)))
 
 
 def test_vector_validation():
-    tf = RigidTransformation.identity(2)
+    tf = RigidTransform.identity(2)
 
     # Test invalid vector shapes
     with pytest.raises(ValueError, match="Expected vector to have shape"):
@@ -829,60 +829,60 @@ def test_vector_validation():
 
 
 def test_indexing_validation():
-    tf = RigidTransformation.identity()
+    tf = RigidTransform.identity()
 
-    # Test indexing on single transformation
-    with pytest.raises(TypeError, match="Single transformation is not subscriptable"):
+    # Test indexing on single transform
+    with pytest.raises(TypeError, match="Single transform is not subscriptable"):
         tf[0]
 
-    with pytest.raises(TypeError, match="Single transformation is not subscriptable"):
+    with pytest.raises(TypeError, match="Single transform is not subscriptable"):
         tf[0:1]
 
-    # Test length on single transformation
-    with pytest.raises(TypeError, match="Single transformation has no len"):
+    # Test length on single transform
+    with pytest.raises(TypeError, match="Single transform has no len"):
         len(tf)
 
 
 def test_composition_validation():
-    tf2 = RigidTransformation.from_translation([[1, 2, 3], [4, 5, 6]])
-    tf3 = RigidTransformation.from_translation([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    tf2 = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6]])
+    tf3 = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
     # Test incompatible shapes
-    with pytest.raises(ValueError, match="Expected equal number of transformations"):
+    with pytest.raises(ValueError, match="Expected equal number of transforms"):
         tf2 * tf3
 
 
 def test_concatenate_validation():
-    tf = RigidTransformation.identity()
+    tf = RigidTransform.identity()
 
     # Test invalid inputs
     with pytest.raises(TypeError,
-                       match="input must contain RigidTransformation objects"):
-        RigidTransformation.concatenate([tf, np.eye(4)])
+                       match="input must contain RigidTransform objects"):
+        RigidTransform.concatenate([tf, np.eye(4)])
 
 
 def test_setitem_validation():
-    tf = RigidTransformation.from_translation([[1, 2, 3], [4, 5, 6]])
-    single = RigidTransformation.identity()
+    tf = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6]])
+    single = RigidTransform.identity()
 
-    # Test setting item on single transformation
-    with pytest.raises(TypeError, match="Single transformation is not subscriptable"):
+    # Test setting item on single transform
+    with pytest.raises(TypeError, match="Single transform is not subscriptable"):
         single[0] = tf
 
     # Test invalid value type
-    with pytest.raises(TypeError, match="value must be a RigidTransformation"):
+    with pytest.raises(TypeError, match="value must be a RigidTransform"):
         tf[0] = np.eye(4)
 
 
 def test_copy_flag():
     # Test that copy=True creates new memory
     matrix = np.eye(4)
-    tf = RigidTransformation(matrix, normalize=False, copy=True)
+    tf = RigidTransform(matrix, normalize=False, copy=True)
     matrix[0, 0] = 2
     assert tf.as_matrix()[0, 0] == 1
 
     # Test that copy=False shares memory
     matrix = np.eye(4)
-    tf = RigidTransformation(matrix, normalize=False, copy=False)
+    tf = RigidTransform(matrix, normalize=False, copy=False)
     matrix[0, 0] = 2
     assert tf.as_matrix()[0, 0] == 2
