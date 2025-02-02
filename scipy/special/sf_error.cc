@@ -6,7 +6,7 @@
 
 #include "sf_error.h"
 
-#include "special/error.h"
+#include "xsf/error.h"
 // #include "sf_error.h"
 
 const char *sf_error_messages[] = {
@@ -20,6 +20,7 @@ const char *sf_error_messages[] = {
     "domain error",
     "invalid input argument",
     "other error",
+    "memory allocation failed",
     NULL
 };
 
@@ -35,7 +36,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     static PyObject *py_SpecialFunctionWarning = NULL;
     sf_action_t action;
 
-    if ((int) code < 0 || (int) code >= 10) {
+    if ((int) code < 0 || (int) code >= SF_ERROR__LAST) {
         code = SF_ERROR_OTHER;
     }
     action = scipy_sf_error_get_action(code);
@@ -129,11 +130,11 @@ void sf_error_check_fpe(const char *func_name) {
 
 #ifdef SP_SPECFUN_ERROR
 
-void special::set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
-    /* Definition of error handling for special C++ library of special
+void xsf::set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
+    /* Definition of error handling for xsf C++ library of special
      * functions used in SciPy.
      *
-     * See special/error.h for info on valid codes in enum sf_error_t.
+     * See xsf/error.h for info on valid codes in enum sf_error_t.
      *
      * Other packages making use of this library can supply their own implementation.
      */

@@ -7,15 +7,15 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-from typing import (
-    Optional,
-    Union,
-    TYPE_CHECKING,
-    TypeVar,
-)
+from types import ModuleType
+from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
+                                   is_numpy, xp_size)
+from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._sparse import issparse
+import scipy._lib.array_api_extra as xpx
 
 
 AxisError: type[Exception]
@@ -53,10 +53,10 @@ else:
     np_long = np.int_
     np_ulong = np.uint
 
-IntNumber = Union[int, np.integer]
-DecimalNumber = Union[float, np.floating, np.integer]
+IntNumber = int | np.integer
+DecimalNumber = float | np.floating | np.integer
 
-copy_if_needed: Optional[bool]
+copy_if_needed: bool | None
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     copy_if_needed = None
@@ -70,14 +70,14 @@ else:
     except TypeError:
         copy_if_needed = False
 
+
+_RNG: TypeAlias = np.random.Generator | np.random.RandomState
+SeedType: TypeAlias = IntNumber | _RNG | None
+
+GeneratorType = TypeVar("GeneratorType", bound=_RNG)
+
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
-if TYPE_CHECKING:
-    SeedType = Optional[Union[IntNumber, np.random.Generator,
-                              np.random.RandomState]]
-    GeneratorType = TypeVar("GeneratorType", bound=Union[np.random.Generator,
-                                                         np.random.RandomState])
-
 try:
     from numpy.random import Generator as Generator
 except ImportError:
@@ -117,7 +117,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     -----
     ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
     `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
-    onle where `cond` ``is True.
+    only where `cond` is True.
 
     Examples
     --------
@@ -157,9 +157,9 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
         dtype = xp.result_type(temp1, temp2)
         out = xp.empty(cond.shape, dtype=dtype)
-        out[ncond] = temp2
+        out = xpx.at(out, ncond).set(temp2)
 
-    out[cond] = temp1
+    out = xpx.at(out, cond).set(temp1)
 
     return out
 
@@ -248,8 +248,220 @@ def float_factorial(n: int) -> float:
     return float(math.factorial(n)) if n < 171 else np.inf
 
 
+_rng_desc = (
+    r"""If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+    passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+    If `rng` is already a ``Generator`` instance, then the provided instance is
+    used. Specify `rng` for repeatable function behavior.
+
+    If this argument is passed by position or `{old_name}` is passed by keyword,
+    legacy behavior for the argument `{old_name}` applies:
+
+    - If `{old_name}` is None (or `numpy.random`), the `numpy.random.RandomState`
+      singleton is used.
+    - If `{old_name}` is an int, a new ``RandomState`` instance is used,
+      seeded with `{old_name}`.
+    - If `{old_name}` is already a ``Generator`` or ``RandomState`` instance then
+      that instance is used.
+
+    .. versionchanged:: 1.15.0
+        As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+        transition from use of `numpy.random.RandomState` to
+        `numpy.random.Generator`, this keyword was changed from `{old_name}` to `rng`.
+        For an interim period, both keywords will continue to work, although only one
+        may be specified at a time. After the interim period, function calls using the
+        `{old_name}` keyword will emit warnings. The behavior of both `{old_name}` and
+        `rng` are outlined above, but only the `rng` keyword should be used in new code.
+        """
+)
+
+
+# SPEC 7
+def _transition_to_rng(old_name, *, position_num=None, end_version=None,
+                       replace_doc=True):
+    """Example decorator to transition from old PRNG usage to new `rng` behavior
+
+    Suppose the decorator is applied to a function that used to accept parameter
+    `old_name='random_state'` either by keyword or as a positional argument at
+    `position_num=1`. At the time of application, the name of the argument in the
+    function signature is manually changed to the new name, `rng`. If positional
+    use was allowed before, this is not changed.*
+
+    - If the function is called with both `random_state` and `rng`, the decorator
+      raises an error.
+    - If `random_state` is provided as a keyword argument, the decorator passes
+      `random_state` to the function's `rng` argument as a keyword. If `end_version`
+      is specified, the decorator will emit a `DeprecationWarning` about the
+      deprecation of keyword `random_state`.
+    - If `random_state` is provided as a positional argument, the decorator passes
+      `random_state` to the function's `rng` argument by position. If `end_version`
+      is specified, the decorator will emit a `FutureWarning` about the changing
+      interpretation of the argument.
+    - If `rng` is provided as a keyword argument, the decorator validates `rng` using
+      `numpy.random.default_rng` before passing it to the function.
+    - If `end_version` is specified and neither `random_state` nor `rng` is provided
+      by the user, the decorator checks whether `np.random.seed` has been used to set
+      the global seed. If so, it emits a `FutureWarning`, noting that usage of
+      `numpy.random.seed` will eventually have no effect. Either way, the decorator
+      calls the function without explicitly passing the `rng` argument.
+
+    If `end_version` is specified, a user must pass `rng` as a keyword to avoid
+    warnings.
+
+    After the deprecation period, the decorator can be removed, and the function
+    can simply validate the `rng` argument by calling `np.random.default_rng(rng)`.
+
+    * A `FutureWarning` is emitted when the PRNG argument is used by
+      position. It indicates that the "Hinsen principle" (same
+      code yielding different results in two versions of the software)
+      will be violated, unless positional use is deprecated. Specifically:
+
+      - If `None` is passed by position and `np.random.seed` has been used,
+        the function will change from being seeded to being unseeded.
+      - If an integer is passed by position, the random stream will change.
+      - If `np.random` or an instance of `RandomState` is passed by position,
+        an error will be raised.
+
+      We suggest that projects consider deprecating positional use of
+      `random_state`/`rng` (i.e., change their function signatures to
+      ``def my_func(..., *, rng=None)``); that might not make sense
+      for all projects, so this SPEC does not make that
+      recommendation, neither does this decorator enforce it.
+
+    Parameters
+    ----------
+    old_name : str
+        The old name of the PRNG argument (e.g. `seed` or `random_state`).
+    position_num : int, optional
+        The (0-indexed) position of the old PRNG argument (if accepted by position).
+        Maintainers are welcome to eliminate this argument and use, for example,
+        `inspect`, if preferred.
+    end_version : str, optional
+        The full version number of the library when the behavior described in
+        `DeprecationWarning`s and `FutureWarning`s will take effect. If left
+        unspecified, no warnings will be emitted by the decorator.
+    replace_doc : bool, default: True
+        Whether the decorator should replace the documentation for parameter `rng` with
+        `_rng_desc` (defined above), which documents both new `rng` keyword behavior
+        and typical legacy `random_state`/`seed` behavior. If True, manually replace
+        the first paragraph of the function's old `random_state`/`seed` documentation
+        with the desired *final* `rng` documentation; this way, no changes to
+        documentation are needed when the decorator is removed. Documentation of `rng`
+        after the first blank line is preserved. Use False if the function's old
+        `random_state`/`seed` behavior does not match that described by `_rng_desc`.
+
+    """
+    NEW_NAME = "rng"
+
+    cmn_msg = (
+        "To silence this warning and ensure consistent behavior in SciPy "
+        f"{end_version}, control the RNG using argument `{NEW_NAME}`. Arguments passed "
+        f"to keyword `{NEW_NAME}` will be validated by `np.random.default_rng`, so the "
+        "behavior corresponding with a given value may change compared to use of "
+        f"`{old_name}`. For example, "
+        "1) `None` will result in unpredictable random numbers, "
+        "2) an integer will result in a different stream of random numbers, (with the "
+        "same distribution), and "
+        "3) `np.random` or `RandomState` instances will result in an error. "
+        "See the documentation of `default_rng` for more information."
+    )
+
+    def decorator(fun):
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs):
+            # Determine how PRNG was passed
+            as_old_kwarg = old_name in kwargs
+            as_new_kwarg = NEW_NAME in kwargs
+            as_pos_arg = position_num is not None and len(args) >= position_num + 1
+            emit_warning = end_version is not None
+
+            # Can only specify PRNG one of the three ways
+            if int(as_old_kwarg) + int(as_new_kwarg) + int(as_pos_arg) > 1:
+                message = (
+                    f"{fun.__name__}() got multiple values for "
+                    f"argument now known as `{NEW_NAME}`. Specify one of "
+                    f"`{NEW_NAME}` or `{old_name}`."
+                )
+                raise TypeError(message)
+
+            # Check whether global random state has been set
+            global_seed_set = np.random.mtrand._rand._bit_generator._seed_seq is None
+
+            if as_old_kwarg:  # warn about deprecated use of old kwarg
+                kwargs[NEW_NAME] = kwargs.pop(old_name)
+                if emit_warning:
+                    message = (
+                        f"Use of keyword argument `{old_name}` is "
+                        f"deprecated and replaced by `{NEW_NAME}`.  "
+                        f"Support for `{old_name}` will be removed "
+                        f"in SciPy {end_version}. "
+                    ) + cmn_msg
+                    warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+            elif as_pos_arg:
+                # Warn about changing meaning of positional arg
+
+                # Note that this decorator does not deprecate positional use of the
+                # argument; it only warns that the behavior will change in the future.
+                # Simultaneously transitioning to keyword-only use is another option.
+
+                arg = args[position_num]
+                # If the argument is None and the global seed wasn't set, or if the
+                # argument is one of a few new classes, the user will not notice change
+                # in behavior.
+                ok_classes = (
+                    np.random.Generator,
+                    np.random.SeedSequence,
+                    np.random.BitGenerator,
+                )
+                if (arg is None and not global_seed_set) or isinstance(arg, ok_classes):
+                    pass
+                elif emit_warning:
+                    message = (
+                        f"Positional use of `{NEW_NAME}` (formerly known as "
+                        f"`{old_name}`) is still allowed, but the behavior is "
+                        "changing: the argument will be normalized using "
+                        f"`np.random.default_rng` beginning in SciPy {end_version}, "
+                        "and the resulting `Generator` will be used to generate "
+                        "random numbers."
+                    ) + cmn_msg
+                    warnings.warn(message, FutureWarning, stacklevel=2)
+
+            elif as_new_kwarg:  # no warnings; this is the preferred use
+                # After the removal of the decorator, normalization with
+                # np.random.default_rng will be done inside the decorated function
+                kwargs[NEW_NAME] = np.random.default_rng(kwargs[NEW_NAME])
+
+            elif global_seed_set and emit_warning:
+                # Emit FutureWarning if `np.random.seed` was used and no PRNG was passed
+                message = (
+                    "The NumPy global RNG was seeded by calling "
+                    f"`np.random.seed`. Beginning in {end_version}, this "
+                    "function will no longer use the global RNG."
+                ) + cmn_msg
+                warnings.warn(message, FutureWarning, stacklevel=2)
+
+            return fun(*args, **kwargs)
+
+        if replace_doc:
+            doc = FunctionDoc(wrapper)
+            parameter_names = [param.name for param in doc['Parameters']]
+            if 'rng' in parameter_names:
+                _type = "{None, int, `numpy.random.Generator`}, optional"
+                _desc = _rng_desc.replace("{old_name}", old_name)
+                old_doc = doc['Parameters'][parameter_names.index('rng')].desc
+                old_doc_keep = old_doc[old_doc.index("") + 1:] if "" in old_doc else []
+                new_doc = [_desc] + old_doc_keep
+                _rng_parameter_doc = Parameter('rng', _type, new_doc)
+                doc['Parameters'][parameter_names.index('rng')] = _rng_parameter_doc
+                doc = str(doc).split("\n", 1)[1]  # remove signature
+                wrapper.__doc__ = str(doc)
+        return wrapper
+
+    return decorator
+
+
 # copy-pasted from scikit-learn utils/validation.py
-# change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
 def check_random_state(seed):
     """Turn `seed` into a `np.random.RandomState` instance.
 
@@ -271,9 +483,9 @@ def check_random_state(seed):
     """
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
+    if isinstance(seed, numbers.Integral | np.integer):
         return np.random.RandomState(seed)
-    if isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    if isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
@@ -316,10 +528,9 @@ def _asarray_validated(a, check_finite=True,
 
     """
     if not sparse_ok:
-        import scipy.sparse
-        if scipy.sparse.issparse(a):
-            msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.sparse.linalg functions '
+        if issparse(a):
+            msg = ('Sparse arrays/matrices are not supported by this function. '
+                   'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
@@ -715,29 +926,37 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', policies=None, *,
-                  xp_omit_okay=False, xp=None):
+def _contains_nan(
+    a: Array,
+    nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
+    *,
+    xp_omit_okay: bool = False, 
+    xp: ModuleType | None = None,
+) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
     # handle non-NumPy arrays, most functions that call `_contains_nan` want
     # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
     # Some functions support `nan_policy='omit'` natively, so setting this to
     # `True` prevents the error from being raised.
+    policies = {"propagate", "raise", "omit"}
+    if nan_policy not in policies:
+        msg = f"nan_policy must be one of {policies}."
+        raise ValueError(msg)
+
+    if xp_size(a) == 0:
+        return False
+
     if xp is None:
         xp = array_namespace(a)
-    not_numpy = not is_numpy(xp)
 
-    if policies is None:
-        policies = {'propagate', 'raise', 'omit'}
-    if nan_policy not in policies:
-        raise ValueError(f"nan_policy must be one of {set(policies)}.")
-
-    inexact = (xp.isdtype(a.dtype, "real floating")
-               or xp.isdtype(a.dtype, "complex floating"))
-    if xp_size(a) == 0:
-        contains_nan = False
-    elif inexact:
-        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+    if xp.isdtype(a.dtype, "real floating"):
+        # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
+        # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
+    elif xp.isdtype(a.dtype, "complex floating"):
+        # Typically `real` and `imag` produce views; otherwise, `xp.any(xp.isnan(a))`
+        # would be more efficient.
+        contains_nan = xp.isnan(xp.max(xp.real(a))) | xp.isnan(xp.max(xp.imag(a)))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
@@ -747,16 +966,27 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *,
                 break
     else:
         # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
+        return False
 
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
+    # The implicit call to bool(contains_nan) must happen after testing
+    # nan_policy to prevent lazy and device-bound xps from raising in the
+    # default policy='propagate' case.
+    if nan_policy == 'raise':
+        if is_lazy_array(a):
+            msg = "nan_policy='raise' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "The input contains nan values"
+            raise ValueError(msg)
+    elif nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp):
+        if is_lazy_array(a):
+            msg = "nan_policy='omit' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
+            raise ValueError(msg)
 
-    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
-        message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
-        raise ValueError(message)
-
-    return contains_nan, nan_policy
+    return contains_nan
 
 
 def _rename_parameter(old_name, new_name, dep_version=None):
@@ -966,3 +1196,113 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
                              formatter={'float_kind': _float_formatter_10}):
             s = str(d)
     return s
+
+
+_batch_note = """
+The documentation is written assuming array arguments are of specified
+"core" shapes. However, array argument(s) of this function may have additional
+"batch" dimensions prepended to the core shape. In this case, the array is treated
+as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+"""
+
+
+def _apply_over_batch(*argdefs):
+    """
+    Factory for decorator that applies a function over batched arguments.
+
+    Array arguments may have any number of core dimensions (typically 0,
+    1, or 2) and any broadcastable batch shapes. There may be any
+    number of array outputs of any number of dimensions. Assumptions
+    right now - which are satisfied by all functions of interest in `linalg` -
+    are that all array inputs are consecutive keyword or positional arguments,
+    and that the wrapped function returns either a single array or a tuple of
+    arrays. It's only as general as it needs to be right now - it can be extended.
+
+    Parameters
+    ----------
+    *argdefs : tuple of (str, int)
+        Definitions of array arguments: the keyword name of the argument, and
+        the number of core dimensions.
+
+    Example:
+    --------
+    `linalg.eig` accepts two matrices as the first two arguments `a` and `b`, where
+    `b` is optional, and returns one array or a tuple of arrays, depending on the
+    values of other positional or keyword arguments. To generate a wrapper that applies
+    the function over batches of `a` and optionally `b` :
+
+    >>> _apply_over_batch(('a', 2), ('b', 2))
+    """
+    names, ndims = list(zip(*argdefs))
+    n_arrays = len(names)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            args = list(args)
+
+            # Ensure all arrays in `arrays`, other arguments in `other_args`/`kwargs`
+            arrays, other_args = args[:n_arrays], args[n_arrays:]
+            for i, name in enumerate(names):
+                if name in kwargs:
+                    if i + 1 <= len(args):
+                        raise ValueError(f'{f.__name__}() got multiple values '
+                                         f'for argument `{name}`.')
+                    else:
+                        arrays.append(kwargs.pop(name))
+
+            # Determine core and batch shapes
+            batch_shapes = []
+            core_shapes = []
+            for i, (array, ndim) in enumerate(zip(arrays, ndims)):
+                array = None if array is None else np.asarray(array)
+                shape = () if array is None else array.shape
+
+                if ndim == "1|2":  # special case for `solve`, etc.
+                    ndim = 2 if array.ndim >= 2 else 1
+
+                arrays[i] = array
+                batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
+                core_shapes.append(shape[-ndim:] if ndim > 0 else ())
+
+            # Early exit if call is not batched
+            if not any(batch_shapes):
+                return f(*arrays, *other_args, **kwargs)
+
+            # Determine broadcasted batch shape
+            batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
+
+            # Broadcast arrays to appropriate shape
+            for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
+                if array is None:
+                    continue
+                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+
+            # Main loop
+            results = []
+            for index in np.ndindex(batch_shape):
+                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
+                # Assume `result` is either a tuple or single array. This is easily
+                # generalized by allowing the contributor to pass an `unpack_result`
+                # callable to the decorator factory.
+                result = (result,) if not isinstance(result, tuple) else result
+                results.append(result)
+            results = list(zip(*results))
+
+            # Reshape results
+            for i, result in enumerate(results):
+                result = np.stack(result)
+                core_shape = result.shape[1:]
+                results[i] = np.reshape(result, batch_shape + core_shape)
+
+            # Assume `result` should be a single array if there is only one element or
+            # a `tuple` otherwise. This is easily generalized by allowing the
+            # contributor to pass an `pack_result` callable to the decorator factory.
+            return results[0] if len(results) == 1 else results
+
+        doc = FunctionDoc(wrapper)
+        doc['Extended Summary'].append(_batch_note.rstrip())
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator

@@ -123,7 +123,8 @@ py3.install_sources([
     'data/teststructnest_7.4_GLNX86.mat',
     'data/testunicode_7.1_GLNX86.mat',
     'data/testunicode_7.4_GLNX86.mat',
-    'data/testvec_4_GLNX86.mat'
+    'data/testvec_4_GLNX86.mat',
+    'data/debigged_m4.mat'
   ],
   subdir: 'scipy/io/matlab/tests/data',
   install_tag: 'tests'

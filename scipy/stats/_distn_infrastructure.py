@@ -13,7 +13,7 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 
 from scipy.special import comb, entr
 
@@ -167,9 +167,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability density function (``pdf``):
@@ -298,9 +302,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability mass function (``pmf``):
@@ -464,7 +472,7 @@ def _fit_determine_optimizer(optimizer):
         try:
             optimizer = getattr(optimize, optimizer)
         except AttributeError as e:
-            raise ValueError("%s is not a valid optimizer" % optimizer) from e
+            raise ValueError(f"{optimizer} is not a valid optimizer") from e
     return optimizer
 
 def _isintegral(x):
@@ -637,7 +645,7 @@ def argsreduce(cond, *args):
 
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
-    if not isinstance(newargs, (list, tuple)):
+    if not isinstance(newargs, (list | tuple)):
         newargs = (newargs,)
 
     if np.all(cond):
@@ -826,7 +834,10 @@ class rv_generic:
 
         if shapes_vals is None:
             shapes_vals = ()
-        vals = ', '.join('%.3g' % val for val in shapes_vals)
+        try:
+            vals = ', '.join(f'{val:.3g}' for val in shapes_vals)
+        except TypeError:
+            vals = ', '.join(f'{val}' for val in shapes_vals)
         tempdict['vals'] = vals
 
         tempdict['shapes_'] = self.shapes or ''
@@ -1605,6 +1616,8 @@ class _ShapeInfo:
                  inclusive=(True, True)):
         self.name = name
         self.integrality = integrality
+        self.endpoints = domain
+        self.inclusive = inclusive
 
         domain = list(domain)
         if np.isfinite(domain[0]) and not inclusive[0]:
@@ -1617,7 +1630,7 @@ class _ShapeInfo:
 def _get_fixed_fit_value(kwds, names):
     """
     Given names such as ``['f0', 'fa', 'fix_a']``, check that there is
-    at most one non-None value in `kwds` associaed with those names.
+    at most one non-None value in `kwds` associated with those names.
     Return that value, or None if none of the names occur in `kwds`.
     As a side effect, all occurrences of those names in `kwds` are
     removed.
@@ -1683,6 +1696,14 @@ class rv_continuous(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------
@@ -1996,7 +2017,21 @@ class rv_continuous(rv_generic):
     def _cdf(self, x, *args):
         return self._cdfvec(x, *args)
 
-    # generic _argcheck, _logcdf, _sf, _logsf, _ppf, _isf, _rvs are defined
+    def _logcdf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x < median, (x,) + args,
+                              f=lambda x, *args: np.log(self._cdf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._sf(x, *args)))
+
+    def _logsf(self, x, *args):
+        median = self._ppf(0.5, *args)
+        with np.errstate(divide='ignore'):
+            return _lazywhere(x > median, (x,) + args,
+                              f=lambda x, *args: np.log(self._sf(x, *args)),
+                              f2=lambda x, *args: np.log1p(-self._cdf(x, *args)))
+
+    # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic
 
     def pdf(self, x, *args, **kwds):
@@ -2432,7 +2467,7 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        names = [f'f{n}' for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
         for n, key in enumerate(names):
             if key in kwds:
@@ -2712,7 +2747,7 @@ class rv_continuous(rv_generic):
         optimizer = _fit_determine_optimizer(optimizer)
         # by now kwds must be empty, since everybody took what they needed
         if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
+            raise TypeError(f"Unknown arguments: {kwds}.")
 
         # In some cases, method of moments can be done with fsolve/root
         # instead of an optimizer, but sometimes no solution exists,
@@ -3041,41 +3076,54 @@ def _drv2_moment(self, n, *args):
         return np.power(x, n) * self._pmf(x, *args)
 
     _a, _b = self._get_support(*args)
-    return _expect(fun, _a, _b, self.ppf(0.5, *args), self.inc)
+    return _expect(fun, _a, _b, self._ppf(0.5, *args), self.inc)
 
 
 def _drv2_ppfsingle(self, q, *args):  # Use basic bisection algorithm
     _a, _b = self._get_support(*args)
     b = _b
     a = _a
+
+    step = 10
     if isinf(b):            # Be sure ending point is > q
-        b = int(max(100*q, 10))
+        b = float(max(100*q, 10))
         while 1:
             if b >= _b:
                 qb = 1.0
                 break
             qb = self._cdf(b, *args)
             if (qb < q):
-                b += 10
+                b += step
+                step *= 2
             else:
                 break
     else:
         qb = 1.0
+
+    step = 10
     if isinf(a):    # be sure starting point < q
-        a = int(min(-100*q, -10))
+        a = float(min(-100*q, -10))
         while 1:
             if a <= _a:
                 qb = 0.0
                 break
             qa = self._cdf(a, *args)
             if (qa > q):
-                a -= 10
+                a -= step
+                step *= 2
             else:
                 break
     else:
         qa = self._cdf(a, *args)
 
-    while 1:
+    if np.isinf(a) or np.isinf(b):
+        message = "Arguments that bracket the requested quantile could not be found."
+        raise RuntimeError(message)
+
+    # maximum number of bisections within the normal float64s
+    # maxiter = int(np.log2(finfo.max) - np.log2(finfo.smallest_normal))
+    maxiter = 2046
+    for i in range(maxiter):
         if (qa == q):
             return a
         if (qb == q):
@@ -3153,6 +3201,14 @@ class rv_discrete(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------
@@ -3369,7 +3425,8 @@ class rv_discrete(rv_generic):
         return self._cdf(k, *args) - self._cdf(k-1, *args)
 
     def _logpmf(self, k, *args):
-        return log(self._pmf(k, *args))
+        with np.errstate(divide='ignore'):
+            return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
         # continuous distributions have PDF, discrete have PMF, but sometimes
@@ -3392,7 +3449,7 @@ class rv_discrete(rv_generic):
         return np.sum(self._pmf(m, *args), axis=0)
 
     def _cdf(self, x, *args):
-        k = floor(x)
+        k = floor(x).astype(np.float64)
         return self._cdfvec(k, *args)
 
     # generic _logcdf, _sf, _logsf, _ppf, _isf, _rvs defined in rv_generic
@@ -3761,8 +3818,8 @@ class rv_discrete(rv_generic):
             return stats.entropy(self.pk)
         else:
             _a, _b = self._get_support(*args)
-            return _expect(lambda x: entr(self.pmf(x, *args)),
-                           _a, _b, self.ppf(0.5, *args), self.inc)
+            return _expect(lambda x: entr(self._pmf(x, *args)),
+                           _a, _b, self._ppf(0.5, *args), self.inc)
 
     def expect(self, func=None, args=(), loc=0, lb=None, ub=None,
                conditional=False, maxcount=1000, tolerance=1e-10, chunksize=32):
@@ -3818,6 +3875,10 @@ class rv_discrete(rv_generic):
         The function is not vectorized.
 
         """
+        # Although `args` is just the shape parameters, `poisson_binom` needs this
+        # to split the vector-valued shape into a tuple of separate shapes
+        args, _, _ = self._parse_args(*args)
+
         if func is None:
             def fun(x):
                 # loc and args from outer scope
@@ -3849,7 +3910,7 @@ class rv_discrete(rv_generic):
             return res / invfac
 
         # iterate over the support, starting from the median
-        x0 = self.ppf(0.5, *args)
+        x0 = self._ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
 
@@ -3925,12 +3986,12 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     if inc == 0:
         raise ValueError('Cannot increment by zero.')
     if chunksize <= 0:
-        raise ValueError('Chunk size must be positive; got %s.' % chunksize)
+        raise ValueError(f'Chunk size must be positive; got {chunksize}.')
 
     s = 1 if inc > 0 else -1
     stepsize = abs(chunksize * inc)
 
-    x = x0
+    x = np.copy(x0)
     while (x - x1) * inc < 0:
         delta = min(stepsize, abs(x - x1))
         step = delta * s

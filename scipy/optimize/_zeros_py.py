@@ -285,7 +285,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     """
     if tol <= 0:
-        raise ValueError("tol too small (%g <= 0)" % tol)
+        raise ValueError(f"tol too small ({tol:g} <= 0)")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
@@ -317,8 +317,9 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 msg = "Derivative was zero."
                 if disp:
                     msg += (
-                        " Failed to converge after %d iterations, value is %s."
-                        % (itr + 1, p0))
+                        f" Failed to converge after {itr + 1} iterations,"
+                        f" value is {p0}."
+                    )
                     raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 return _results_select(
@@ -362,11 +363,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         for itr in range(maxiter):
             if q1 == q0:
                 if p1 != p0:
-                    msg = "Tolerance of %s reached." % (p1 - p0)
+                    msg = f"Tolerance of {p1 - p0} reached."
                     if disp:
                         msg += (
-                            " Failed to converge after %d iterations, value is %s."
-                            % (itr + 1, p1))
+                            f" Failed to converge after {itr + 1} iterations,"
+                            f" value is {p1}."
+                        )
                         raise RuntimeError(msg)
                     warnings.warn(msg, RuntimeWarning, stacklevel=2)
                 p = (p1 + p0) / 2.0
@@ -386,8 +388,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             funcalls += 1
 
     if disp:
-        msg = ("Failed to converge after %d iterations, value is %s."
-               % (itr + 1, p))
+        msg = f"Failed to converge after {itr + 1} iterations, value is {p}."
         raise RuntimeError(msg)
 
     return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
@@ -570,7 +571,7 @@ def bisect(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -668,7 +669,7 @@ def ridder(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -744,28 +745,20 @@ def brentq(f, a, b, args=(),
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
+    See Also
+    --------
+    fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
+    leastsq : nonlinear least squares minimizer
+    fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
+    basinhopping, differential_evolution, brute : global optimizers
+    fminbound, brent, golden, bracket : local scalar minimizers
+    fsolve : N-D root-finding
+    brenth, ridder, bisect, newton : 1-D root-finding
+    fixed_point : scalar fixed-point finder
+
     Notes
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
-
-    Related functions fall into several classes:
-
-    multivariate local optimizers
-      `fmin`, `fmin_powell`, `fmin_cg`, `fmin_bfgs`, `fmin_ncg`
-    nonlinear least squares minimizer
-      `leastsq`
-    constrained multivariate optimizers
-      `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla`
-    global optimizers
-      `basinhopping`, `brute`, `differential_evolution`
-    local scalar minimizers
-      `fminbound`, `brent`, `golden`, `bracket`
-    N-D root-finding
-      `fsolve`
-    1-D root-finding
-      `brenth`, `ridder`, `bisect`, `newton`
-    scalar fixed-point finder
-      `fixed_point`
 
     References
     ----------
@@ -799,7 +792,7 @@ def brentq(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -878,7 +871,7 @@ def brenth(f, a, b, args=(),
     basinhopping, differential_evolution, brute : global optimizers
     fminbound, brent, golden, bracket : local scalar minimizers
     fsolve : N-D root-finding
-    brentq, brenth, ridder, bisect, newton : 1-D root-finding
+    brentq, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
 
     References
@@ -910,7 +903,7 @@ def brenth(f, a, b, args=(),
         args = (args,)
     maxiter = operator.index(maxiter)
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
@@ -1097,7 +1090,7 @@ class TOMS748Solver:
         self.k = max(k, self._K_MIN)
         # Noisily replace a high value of k with self._K_MAX
         if self.k > self._K_MAX:
-            msg = "toms748: Overriding k: ->%d" % self._K_MAX
+            msg = f"toms748: Overriding k: ->{self._K_MAX}"
             warnings.warn(msg, RuntimeWarning, stacklevel=3)
             self.k = self._K_MAX
 
@@ -1125,9 +1118,9 @@ class TOMS748Solver:
         self.args = args
         self.ab[:] = [a, b]
         if not np.isfinite(a) or np.imag(a) != 0:
-            raise ValueError("Invalid x value: %s " % (a))
+            raise ValueError(f"Invalid x value: {a} ")
         if not np.isfinite(b) or np.imag(b) != 0:
-            raise ValueError("Invalid x value: %s " % (b))
+            raise ValueError(f"Invalid x value: {b} ")
 
         fa = self._callf(a)
         if not np.isfinite(fa) or np.imag(fa) != 0:
@@ -1341,7 +1334,7 @@ def toms748(f, a, b, args=(), k=1,
     iteration with the same asymptotic efficiency as it finds the root.
 
     For easy statement of efficiency indices, assume that `f` has 4
-    continuouous deriviatives.
+    continuous deriviatives.
     For ``k=1``, the convergence order is at least 2.7, and with about
     asymptotically 2 function evaluations per iteration, the efficiency
     index is approximately 1.65.
@@ -1377,20 +1370,20 @@ def toms748(f, a, b, args=(), k=1,
              method: toms748
     """
     if xtol <= 0:
-        raise ValueError("xtol too small (%g <= 0)" % xtol)
+        raise ValueError(f"xtol too small ({xtol:g} <= 0)")
     if rtol < _rtol / 4:
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol/4:g})")
     maxiter = operator.index(maxiter)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
     if not np.isfinite(a):
-        raise ValueError("a is not finite %s" % a)
+        raise ValueError(f"a is not finite {a}")
     if not np.isfinite(b):
-        raise ValueError("b is not finite %s" % b)
+        raise ValueError(f"b is not finite {b}")
     if a >= b:
         raise ValueError(f"a and b are not an interval [{a}, {b}]")
     if not k >= 1:
-        raise ValueError("k too small (%s < 1)" % k)
+        raise ValueError(f"k too small ({k} < 1)")
 
     if not isinstance(args, tuple):
         args = (args,)

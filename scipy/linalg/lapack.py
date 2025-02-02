@@ -44,6 +44,11 @@ All functions
 .. autosummary::
    :toctree: generated/
 
+   sgbcon
+   dgbcon
+   cgbcon
+   zgbcon
+
    sgbsv
    dgbsv
    cgbsv
@@ -345,16 +350,32 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetri
+   zhetri
+
+   chetrs
+   zhetrs
+
    chfrk
    zhfrk
 
    slamch
    dlamch
 
+   slangb
+   dlangb
+   clangb
+   zlangb
+
    slange
    dlange
    clange
    zlange
+
+   slantr
+   dlantr
+   clantr
+   zlantr
 
    slarf
    dlarf
@@ -562,6 +583,9 @@ All functions
    sstev
    dstev
 
+   sstevd
+   dstevd
+
    ssycon
    dsycon
    csycon
@@ -660,6 +684,16 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   ssytri
+   dsytri
+   csytri
+   zsytri
+
+   ssytrs
+   dsytrs
+   csytrs
+   zsytrs
+
    stbtrs
    dtbtrs
    ctbtrs
@@ -707,6 +741,11 @@ All functions
    dtpttr
    ctpttr
    ztpttr
+
+   strcon
+   dtrcon
+   ctrcon
+   ztrcon
 
    strexc
    dtrexc
@@ -793,6 +832,11 @@ All functions
    cgttrs
    zgttrs
 
+   sgtcon
+   dgtcon
+   cgtcon
+   zgtcon
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -863,10 +907,9 @@ p2 = regex_compile(r'Default: (?P<d>.*?)\n')
 
 def backtickrepl(m):
     if m.group('s'):
-        return ('with bounds ``{}`` with ``{}`` storage\n'
-                ''.format(m.group('b'), m.group('s')))
+        return (f"with bounds ``{m.group('b')}`` with ``{m.group('s')}`` storage\n")
     else:
-        return 'with bounds ``{}``\n'.format(m.group('b'))
+        return f"with bounds ``{m.group('b')}``\n"
 
 
 for routine in [ssyevr, dsyevr, cheevr, zheevr,
@@ -1004,8 +1047,7 @@ def _compute_lwork(routine, *args, **kwargs):
     int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (ret[-1],))
+        raise ValueError(f"Internal work array size computation failed: {ret[-1]}")
 
     if len(ret) == 2:
         return _check_work_float(ret[0].real, dtype, int_dtype)

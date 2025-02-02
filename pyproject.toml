@@ -19,7 +19,7 @@ build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.12.0",     # when updating version, also update check in scipy/meson.build
+    "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.14.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
@@ -33,7 +33,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.15.0.dev0"
+version = "1.16.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -60,6 +60,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -82,22 +83,23 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0",
+    "array-api-strict>=2.0,<2.1.1",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0",
+    "sphinx>=5.0.0,<8.0.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
+    "sphinx-copybutton",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",
     "pooch",
-    "jupyterlite-sphinx>=0.13.1",
+    "jupyterlite-sphinx>=0.17.1",
     "jupyterlite-pyodide-kernel",
 ]
 dev = [
@@ -122,16 +124,17 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.meson-python.args]
+install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
-# gmpy2 and scikit-umfpack are usually added for testing. However, there are
-# currently wheels missing that make the test script fail.
+# We're only testing with essential test dependencies, not optional ones.
+# Some of those require binary wheels (often missing for some platforms),
+# or they slow down the test suite runs too much or simply aren't necessary.
 test-requires = [
     "pytest",
-    "pytest-cov",
     "pytest-xdist",
-    "mpmath",
     "threadpoolctl",
     "pooch",
     "hypothesis",

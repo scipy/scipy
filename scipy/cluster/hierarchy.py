@@ -134,8 +134,9 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, _asarray, copy, is_jax
+from scipy._lib._array_api import array_namespace, _asarray, xp_copy, is_jax
 from scipy._lib._disjoint_set import DisjointSet
+import scipy._lib.array_api_extra as xpx
 
 
 _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
@@ -157,7 +158,7 @@ class ClusterWarning(UserWarning):
 
 
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
+    warnings.warn(f'scipy.cluster: {s}', ClusterWarning, stacklevel=3)
 
 
 def int_floor(arr, xp):
@@ -1080,7 +1081,7 @@ class ClusterNode:
 
     """
 
-    def __init__(self, id, left=None, right=None, dist=0, count=1):
+    def __init__(self, id, left=None, right=None, dist=0.0, count=1):
         if id < 0:
             raise ValueError('The id must be non-negative.')
         if dist < 0:
@@ -1358,7 +1359,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = copy(last_group, xp=xp)
+        this_group = xp_copy(last_group, xp=xp)
         # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
@@ -1451,19 +1452,19 @@ def to_tree(Z, rd=False):
         fi = int_floor(row[0], xp)
         fj = int_floor(row[1], xp)
         if fi > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 0') % fi)
+            raise ValueError('Corrupt matrix Z. Index to derivative cluster '
+                              f'is used before it is formed. See row {fi}, '
+                              'column 0')
         if fj > i + n:
-            raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
-                              'is used before it is formed. See row %d, '
-                              'column 1') % fj)
+            raise ValueError('Corrupt matrix Z. Index to derivative cluster '
+                              f'is used before it is formed. See row {fj}, '
+                              'column 1')
 
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:
-            raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
-                              'incorrect.') % i)
+            raise ValueError(f'Corrupt matrix Z. The count Z[{i},3] is '
+                              'incorrect.')
         d[n + i] = nd
 
     if rd:
@@ -1822,14 +1823,14 @@ def from_mlab_linkage(Z):
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
 
     if xp.min(Z[:, 0:2]) != 1.0 and xp.max(Z[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
@@ -1925,7 +1926,7 @@ def to_mlab_linkage(Z):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return copy(Z, xp=xp)
+        return xp_copy(Z, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
@@ -2107,29 +2108,29 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     xp = array_namespace(R)
     R = _asarray(R, order='c', xp=xp)
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if R.dtype != xp.float64:
-            raise TypeError('Inconsistency matrix %smust contain doubles '
-                            '(double).' % name_str)
+            raise TypeError(f'Inconsistency matrix {name_str}must contain doubles '
+                            '(double).')
         if len(R.shape) != 2:
-            raise ValueError('Inconsistency matrix %smust have shape=2 (i.e. '
-                             'be two-dimensional).' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}must have shape=2 (i.e. '
+                             'be two-dimensional).')
         if R.shape[1] != 4:
-            raise ValueError('Inconsistency matrix %smust have 4 columns.' %
-                             name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'must have 4 columns.')
         if R.shape[0] < 1:
-            raise ValueError('Inconsistency matrix %smust have at least one '
-                             'row.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'must have at least one row.')
         if xp.any(R[:, 0] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height means.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height means.')
         if xp.any(R[:, 1] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'height standard deviations.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height standard deviations.')
         if xp.any(R[:, 2] < 0):
-            raise ValueError('Inconsistency matrix %scontains negative link '
-                             'counts.' % name_str)
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link counts.')
     except Exception as e:
         if throw:
             raise
@@ -2156,6 +2157,10 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
     I.e., a cluster cannot join another cluster unless the cluster being joined
     has been generated.
+
+    The fourth column of `Z` represents the number of original observations
+    in a cluster, so a valid ``Z[i, 3]`` value may not exceed the number of
+    original observations.
 
     Parameters
     ----------
@@ -2224,35 +2229,36 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
     valid = True
-    name_str = "%r " % name if name else ''
+    name_str = f"{name!r} " if name else ''
     try:
         if Z.dtype != xp.float64:
-            raise TypeError('Linkage matrix %smust contain doubles.' % name_str)
+            raise TypeError(f'Linkage matrix {name_str}must contain doubles.')
         if len(Z.shape) != 2:
-            raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
-                             'two-dimensional).' % name_str)
+            raise ValueError(f'Linkage matrix {name_str}must have shape=2 (i.e. be'
+                             ' two-dimensional).')
         if Z.shape[1] != 4:
-            raise ValueError('Linkage matrix %smust have 4 columns.' % name_str)
+            raise ValueError(f'Linkage matrix {name_str}must have 4 columns.')
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')
         n = Z.shape[0]
         if n > 1:
             if (xp.any(Z[:, 0] < 0) or xp.any(Z[:, 1] < 0)):
-                raise ValueError('Linkage %scontains negative indices.' %
-                                 name_str)
+                raise ValueError(f'Linkage {name_str}contains negative indices.')
             if xp.any(Z[:, 2] < 0):
-                raise ValueError('Linkage %scontains negative distances.' %
-                                 name_str)
+                raise ValueError(f'Linkage {name_str}contains negative distances.')
             if xp.any(Z[:, 3] < 0):
-                raise ValueError('Linkage %scontains negative counts.' %
-                                 name_str)
-        if _check_hierarchy_uses_cluster_before_formed(Z):
-            raise ValueError('Linkage %suses non-singleton cluster before '
-                             'it is formed.' % name_str)
-        if _check_hierarchy_uses_cluster_more_than_once(Z):
-            raise ValueError('Linkage %suses the same cluster more than once.'
-                             % name_str)
+                raise ValueError(f'Linkage {name_str}contains negative counts.')
+            if xp.any(Z[:, 3] > (Z.shape[0] + 1)):
+                raise ValueError('Linkage matrix contains excessive observations'
+                                 'in a cluster')
+        if xp.any(
+            xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)
+        ):
+            raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
+                             ' it is formed.')
+        if xpx.nunique(Z[:, :2]) < n * 2:
+            raise ValueError(f'Linkage {name_str}uses the same cluster more than once.')
     except Exception as e:
         if throw:
             raise
@@ -2261,40 +2267,6 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         valid = False
 
     return valid
-
-
-def _check_hierarchy_uses_cluster_before_formed(Z):
-    n = Z.shape[0] + 1
-    for i in range(0, n - 1):
-        if Z[i, 0] >= n + i or Z[i, 1] >= n + i:
-            return True
-    return False
-
-
-def _check_hierarchy_uses_cluster_more_than_once(Z):
-    n = Z.shape[0] + 1
-    chosen = set()
-    for i in range(0, n - 1):
-        used_more_than_once = (
-            (float(Z[i, 0]) in chosen)
-            or (float(Z[i, 1]) in chosen)
-            or Z[i, 0] == Z[i, 1]
-        )
-        if used_more_than_once:
-            return True
-        chosen.add(float(Z[i, 0]))
-        chosen.add(float(Z[i, 1]))
-    return False
-
-
-def _check_hierarchy_not_all_clusters_used(Z):
-    n = Z.shape[0] + 1
-    chosen = set()
-    for i in range(0, n - 1):
-        chosen.add(int(Z[i, 0]))
-        chosen.add(int(Z[i, 1]))
-    must_chosen = set(range(0, 2 * n - 2))
-    return len(must_chosen.difference(chosen)) > 0
 
 
 def num_obs_linkage(Z):
@@ -2575,8 +2547,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     elif criterion == 'maxclust_monocrit':
         _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
-        raise ValueError('Invalid cluster formation criterion: %s'
-                         % str(criterion))
+        raise ValueError(f'Invalid cluster formation criterion: {str(criterion)}')
     return xp.asarray(T)
 
 
@@ -2954,6 +2925,9 @@ def set_link_color_palette(palette):
     Notes
     -----
     Ability to reset the palette with ``None`` added in SciPy 0.17.0.
+
+    Thread safety: using this function in a multi-threaded fashion may
+    result in `dendrogram` producing plots with unexpected colors.
 
     Examples
     --------
@@ -3451,10 +3425,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                orientation='top', labels=None,
                                count_sort=False, distance_sort=False,
                                show_leaf_counts=False, i=-1, iv=0.0,
-                               ivl=[], n=0, icoord_list=[], dcoord_list=[],
+                               ivl=None, n=0, icoord_list=None, dcoord_list=None,
                                lvs=None, mhr=False,
-                               current_color=[], color_list=[],
-                               currently_below_threshold=[],
+                               current_color=None, color_list=None,
+                               currently_below_threshold=None,
                                leaf_label_func=None, level=0,
                                contraction_marks=None,
                                link_color_func=None,
@@ -4159,7 +4133,7 @@ def leaders(Z, T):
     if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    n_clusters = int(xp.unique_values(T).shape[0])
+    n_clusters = int(xpx.nunique(T))
     n_obs = int(Z.shape[0] + 1)
     L = np.zeros(n_clusters, dtype=np.int32)
     M = np.zeros(n_clusters, dtype=np.int32)
@@ -4167,7 +4141,7 @@ def leaders(Z, T):
     T = np.asarray(T, dtype=np.int32)
     s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
     if s >= 0:
-        raise ValueError(('T is not a valid assignment vector. Error found '
-                          'when examining linkage node %d (< 2n-1).') % s)
+        raise ValueError('T is not a valid assignment vector. Error found '
+                          f'when examining linkage node {s} (< 2n-1).')
     L, M = xp.asarray(L), xp.asarray(M)
     return (L, M)

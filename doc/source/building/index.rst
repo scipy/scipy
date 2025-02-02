@@ -230,7 +230,7 @@ Otherwise, conda is recommended.
 .. note::
 
     If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
+    Miniforge_; any conda flavor will work though.
 
 Building from source to use SciPy
 `````````````````````````````````
@@ -352,7 +352,7 @@ virtual environments:
         ::
 
           python -m venv venv
-          .\venv\Scripts\activate
+          venv\Scripts\Activate.ps1
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
@@ -419,6 +419,16 @@ interface is self-documenting, so please see ``python dev.py --help`` and
     on how things work under the hood.
 
 
+Installing static type stubs
+----------------------------
+
+If you would like to install static type stubs to aid your development of SciPy,
+you can include the ``scipy-stubs`` package in your development environment.
+It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
+
+.. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
+
+
 Customizing builds
 ------------------
 
@@ -442,5 +452,5 @@ Background information
    distutils_equivalents
 
 
-.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _Miniforge: https://github.com/conda-forge/miniforge#miniforge
 .. _meson-python: https://mesonbuild.com/meson-python/

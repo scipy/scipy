@@ -88,6 +88,7 @@ New features
 - Sparse array methods min/nanmin/argmin and max analogs now return 1D arrays.
   Results are still COO format sparse arrays for min/nanmin and
   dense ``np.ndarray`` for argmin.
+- Iterating over ``csr_array`` or ``csc_array`` yields 1D (CSC) arrays.
 - Sparse matrix and array objects improve their ``repr`` and ``str`` output.
 - A special case has been added to handle multiplying a ``dia_array`` by a
   scalar, which avoids a potentially costly conversion to CSR format.

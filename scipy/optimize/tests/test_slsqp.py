@@ -6,6 +6,7 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+import scipy
 
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
@@ -489,6 +490,9 @@ class TestSLSQP:
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
+                       == "intel-llvm",
+                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
@@ -588,6 +592,7 @@ class TestSLSQP:
         # The problem is infeasible, so it cannot succeed
         assert not res.success
 
+    @pytest.mark.thread_unsafe
     def test_parameters_stay_within_bounds(self):
         # gh11403. For some problems the SLSQP Fortran code suggests a step
         # outside one of the lower/upper bounds. When this happens

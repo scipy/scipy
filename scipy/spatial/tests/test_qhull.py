@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree
+from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
 from scipy.spatial import Voronoi
 
 import itertools
@@ -111,7 +111,7 @@ def _add_inc_data(name, chunksize):
     for j in range(nmin, len(points), chunksize):
         chunks.append(points[j:j+chunksize])
 
-    new_name = "%s-chunk-%d" % (name, chunksize)
+    new_name = f"{name}-chunk-{chunksize}"
     assert new_name not in INCREMENTAL_DATASETS
     INCREMENTAL_DATASETS[new_name] = (chunks, opts)
 
@@ -362,7 +362,7 @@ class TestUtilities:
                 list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
             ].T
 
-            err_msg = "ndim=%d" % ndim
+            err_msg = f"ndim={ndim}"
 
             # Check using regular grid
             tri = qhull.Delaunay(grid)
@@ -1188,3 +1188,22 @@ def test_gh_20623(diagram_type):
     invalid_data = rng.random((4, 10, 3))
     with pytest.raises(ValueError, match="dimensions"):
         diagram_type(invalid_data)
+
+
+def test_gh_21286():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    # verify absence of segfault reported in ticket:
+    with pytest.raises(IndexError):
+        tri.find_simplex(1)
+    with pytest.raises(IndexError):
+        # strikingly, Delaunay object has shape
+        # () just like np.asanyarray(1) above
+        tri.find_simplex(tri)
+
+
+def test_find_simplex_ndim_err():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    with pytest.raises(ValueError):
+        tri.find_simplex([2, 2, 2])

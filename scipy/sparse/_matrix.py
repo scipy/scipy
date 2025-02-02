@@ -3,6 +3,7 @@ class spmatrix:
 
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
+    _allow_nd = (2,)
 
     @property
     def _bsr_container(self):
@@ -143,3 +144,26 @@ class spmatrix:
             `numpy.matrix` object that shares the same memory.
         """
         return super().todense(order, out)
+
+    @classmethod
+    def __class_getitem__(cls, arg, /):
+        """
+        Return a parametrized wrapper around the `~scipy.sparse.spmatrix` type.
+
+        .. versionadded:: 1.16.0
+
+        Returns
+        -------
+        alias : types.GenericAlias
+            A parametrized `~scipy.sparse.spmatrix` type.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_matrix
+
+        >>> coo_matrix[np.int8]
+        scipy.sparse._coo.coo_matrix[numpy.int8]
+        """
+        from types import GenericAlias
+        return GenericAlias(cls, arg)

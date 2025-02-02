@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
 from pytest import raises as assert_raises
 
-from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
+from scipy.sparse import csr_array, csc_array, lil_array
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
@@ -22,7 +22,7 @@ def test_group_columns():
         [0, 0, 0, 0, 1, 1],
         [0, 0, 0, 0, 0, 0]
     ]
-    for transform in [np.asarray, csr_matrix, csc_matrix, lil_matrix]:
+    for transform in [np.asarray, csr_array, csc_array, lil_array]:
         A = transform(structure)
         order = np.arange(6)
         groups_true = np.array([0, 1, 2, 0, 1, 2])
@@ -184,7 +184,25 @@ class TestApproxDerivativesDense:
             x[0] ** 3 * x[1] ** -0.5
         ])
 
+    def fun_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
+        return np.array([
+            x[0] * np.sin(x[1]),
+            x[1] * np.cos(x[0]),
+            x[0] ** 3 * x[1] ** -0.5
+        ])
+
     def jac_vector_vector(self, x):
+        return np.array([
+            [np.sin(x[1]), x[0] * np.cos(x[1])],
+            [-x[1] * np.sin(x[0]), np.cos(x[0])],
+            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
+        ])
+
+    def jac_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
         return np.array([
             [np.sin(x[1]), x[0] * np.cos(x[1])],
             [-x[1] * np.sin(x[0]), np.cos(x[0])],
@@ -500,6 +518,14 @@ class TestApproxDerivativesDense:
                                     self.jac_zero_jacobian, x0)
         assert_(accuracy == 0)
 
+    def test_check_derivative_with_kwargs(self):
+        x0 = np.array([-10.0, 10])
+        accuracy = check_derivative(self.fun_vector_vector_with_arg,
+                                    self.jac_vector_vector_with_arg,
+                                    x0,
+                                    kwargs={'arg': 42})
+        assert_(accuracy < 1e-9)
+
 
 class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
@@ -555,7 +581,7 @@ class TestApproxDerivativeSparse:
                 [-np.inf, self.lb], [np.inf, self.ub]):
             J = approx_derivative(self.fun, self.x0, method=method,
                                   bounds=(l, u), sparsity=(A, groups))
-            assert_(isinstance(J, csr_matrix))
+            assert_(isinstance(J, csr_array))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
             rel_step = np.full_like(self.x0, 1e-8)
@@ -581,7 +607,7 @@ class TestApproxDerivativeSparse:
 
     def test_check_derivative(self):
         def jac(x):
-            return csr_matrix(self.jac(x))
+            return csr_array(self.jac(x))
 
         accuracy = check_derivative(self.fun, jac, self.x0,
                                     bounds=(self.lb, self.ub))

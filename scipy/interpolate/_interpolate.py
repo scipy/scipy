@@ -12,7 +12,7 @@ from scipy.special import comb
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from .interpnd import _ndim_coords_from_arrays
+from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
@@ -283,8 +283,8 @@ class interp1d(_Interpolator1D):
             kind = 'spline'
         elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
                           'next'):
-            raise NotImplementedError("%s is unsupported: Use fitpack "
-                                      "routines for other types." % kind)
+            raise NotImplementedError(f"{kind} is unsupported: Use fitpack "
+                                      "routines for other types.")
         x = array(x, copy=self.copy)
         y = array(y, copy=self.copy)
 
@@ -402,8 +402,7 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
-            raise ValueError("x and y arrays must have at "
-                             "least %d entries" % minval)
+            raise ValueError(f"x and y arrays must have at least {minval} entries")
 
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
@@ -670,6 +669,12 @@ class _PPolyBase:
             Additional breakpoints. Must be sorted in the same order as
             ``self.x`` and either to the right or to the left of the current
             breakpoints.
+
+        Notes
+        -----
+        This method is not thread safe and must not be executed concurrently
+        with other methods available in this class. Doing so may cause
+        unexpected errors or numerical output mismatches.
         """
 
         c = np.asarray(c)
@@ -696,7 +701,7 @@ class _PPolyBase:
         if self.x[-1] >= self.x[0]:
             if not x[-1] >= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] >= self.x[-1]:
                 action = 'append'
@@ -704,11 +709,11 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
         else:
             if not x[-1] <= x[0]:
                 raise ValueError("`x` is in the different order "
-                                 "than `self.x`.")
+                                "than `self.x`.")
 
             if x[0] <= self.x[-1]:
                 action = 'append'
@@ -716,13 +721,13 @@ class _PPolyBase:
                 action = 'prepend'
             else:
                 raise ValueError("`x` is neither on the left or on the right "
-                                 "from `self.x`.")
+                                "from `self.x`.")
 
         dtype = self._get_dtype(c.dtype)
 
         k2 = max(c.shape[0], self.c.shape[0])
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
-                      dtype=dtype)
+                    dtype=dtype)
 
         if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
@@ -1151,7 +1156,7 @@ class PPoly(_PPolyBase):
 
         Examples
         --------
-        Construct an interpolating spline and convert it to a `PPoly` instance 
+        Construct an interpolating spline and convert it to a `PPoly` instance
 
         >>> import numpy as np
         >>> from scipy.interpolate import splrep, PPoly
@@ -1232,8 +1237,8 @@ class PPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(bp, BPoly):
-            raise TypeError(".from_bernstein_basis only accepts BPoly instances. "
-                            "Got %s instead." % type(bp))
+            raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
+                            f"Got {type(bp)} instead.")
 
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
@@ -1541,8 +1546,8 @@ class BPoly(_PPolyBase):
             If 'periodic', periodic extrapolation is used. Default is True.
         """
         if not isinstance(pp, PPoly):
-            raise TypeError(".from_power_basis only accepts PPoly instances. "
-                            "Got %s instead." % type(pp))
+            raise TypeError(f".from_power_basis only accepts PPoly instances. "
+                            f"Got {type(pp)} instead.")
 
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
@@ -1661,10 +1666,11 @@ class BPoly(_PPolyBase):
                 n1 = min(n//2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1+n2 != n:
-                    mesg = ("Point %g has %d derivatives, point %g"
-                            " has %d derivatives, but order %d requested" % (
-                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                if n1 + n2 != n:
+                    mesg = (
+                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
+                        f"{len(y2)} derivatives, but order {orders[i]} requested"
+                    )
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):

@@ -1,5 +1,4 @@
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
@@ -154,9 +153,19 @@ class TestSolveBanded:
         assert_raises(ValueError, solve_banded, (1, 1), ab, [1.0, 2.0])
 
     def test_1x1(self):
+        # gh-8906 noted that the case of A@x = b with 1x1 A was handled
+        # incorrectly; check that this is resolved. Typical case:
+        # nupper == nlower == 0
+        # A = [[2]]
         b = array([[1., 2., 3.]])
+        ref = array([[0.5, 1.0, 1.5]])
+        x = solve_banded((0, 0), [[2]], b)
+        assert_allclose(x, ref, rtol=1e-15)
+
+        # However, the user *can* represent the same system with garbage rows
+        # in `ab`. Test the case with `nupper == 1, nlower == 1`.
         x = solve_banded((1, 1), [[0], [2], [0]], b)
-        assert_array_equal(x, [[0.5, 1.0, 1.5]])
+        assert_allclose(x, ref, rtol=1e-15)
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
 
@@ -523,10 +532,12 @@ class TestSolveHBanded:
         assert x.shape == (0, 0)
         assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
+
 class TestSolve:
     def setup_method(self):
         np.random.seed(1234)
 
+    @pytest.mark.thread_unsafe
     def test_20Feb04_bug(self):
         a = [[1, 1], [1.0, 0]]  # ok
         x0 = solve(a, [1, 0j])
@@ -722,8 +733,9 @@ class TestSolve:
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
 
-    def test_hermitian(self):
-        # An upper triangular matrix will be used for hermitian matrix a
+    @pytest.mark.parametrize("assume_a", ['her', 'sym'])
+    def test_symmetric_hermitian(self, assume_a):
+        # An upper triangular matrix will be used for symmetric/hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
                       [0, 0, -8.87, 1.58-0.90j],
@@ -732,15 +744,18 @@ class TestSolve:
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
                       [7.79+5.48j, -35.39+18.01j]])
-        res = np.array([[2.+1j, -8+6j],
-                        [3.-2j, 7-2j],
-                        [-1+2j, -1+5j],
-                        [1.-1j, 3-4j]])
-        x = solve(a, b, assume_a='her')
-        assert_array_almost_equal(x, res)
-        # Also conjugate a and test for lower triangular data
-        x = solve(a.conj().T, b, assume_a='her', lower=True)
-        assert_array_almost_equal(x, res)
+
+        a2 = a.T if assume_a == 'sym' else a.conj().T  # for testing `lower`
+        a3 = a + a2                                    # for reference solution
+        a3[np.arange(4), np.arange(4)] = np.diag(a)
+        ref = solve(a3, b, assume_a='general')
+
+        x = solve(a, b, assume_a=assume_a)
+        assert_array_almost_equal(x, ref)
+        # Also transpose(/conjugate) `a` and test for lower triangular data
+        # This also tests gh-22265 resolution; otherwise, a warning would be emitted
+        x = solve(a2, b, assume_a=assume_a, lower=True)
+        assert_array_almost_equal(x, ref)
 
     def test_pos_and_sym(self):
         A = np.arange(1, 10).reshape(3, 3)
@@ -762,16 +777,36 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
-        a = np.array([[1, 1], [1+1e-16, 1-1e-16]])
-        b = np.ones(2)
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            assert_raises(LinAlgWarning, solve, a, b)
+    @pytest.mark.thread_unsafe
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', 'banded', None))
+    def test_ill_condition_warning(self, structure):
+        rng = np.random.default_rng(234859349452)
+        n = 10
+        d = np.logspace(0, 50, n)
+        A = np.diag(d)
+        b = rng.random(size=n)
+        message = "Ill-conditioned matrix..."
+        with pytest.warns(LinAlgWarning, match=message):
+            solve(A, b, assume_a=structure)
+
+    @pytest.mark.thread_unsafe
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_exactly_singular_gh22263(self, structure):
+        n = 10
+        A = np.zeros((n, n))
+        b = np.ones(n)
+        with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
+            solve(A, b, assume_a=structure)
 
     def test_multiple_rhs(self):
         a = np.eye(2)
-        b = np.random.rand(2, 3, 4)
+        b = np.random.rand(2, 12)
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
@@ -846,6 +881,7 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt_a, dt_b):
@@ -863,6 +899,77 @@ class TestSolve:
         x = solve(a, b)
         assert_(x.size == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
+    @pytest.mark.parametrize('dtype', [np.float64, np.complex128])
+    # "pos" and "positive definite" need to be added
+    @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
+                                          'lower triangular', 'upper triangular',
+                                          'symmetric', 'hermitian', 'banded',
+                                          'general', 'sym', 'her', 'gen'])
+    @pytest.mark.parametrize('nrhs', [(), (5,)])
+    @pytest.mark.parametrize('transposed', [True, False])
+    @pytest.mark.parametrize('overwrite', [True, False])
+    @pytest.mark.parametrize('fortran', [True, False])
+    def test_structure_detection(self, dtype, assume_a, nrhs, transposed,
+                                 overwrite, fortran):
+        rng = np.random.default_rng(982345982439826)
+        n = 5 if not assume_a == 'banded' else 20
+        b = rng.random(size=(n,) + nrhs)
+        A = rng.random(size=(n, n))
+
+        if np.issubdtype(dtype, np.complexfloating):
+            b = b + rng.random(size=(n,) + nrhs) * 1j
+            A = A + rng.random(size=(n, n)) * 1j
+
+        if assume_a == 'diagonal':
+            A = np.diag(np.diag(A))
+        elif assume_a == 'lower triangular':
+            A = np.tril(A)
+        elif assume_a == 'upper triangular':
+            A = np.triu(A)
+        elif assume_a == 'tridiagonal':
+            A = (np.diag(np.diag(A))
+                 + np.diag(np.diag(A, -1), -1)
+                 + np.diag(np.diag(A, 1), 1))
+        elif assume_a == 'banded':
+            A = np.triu(np.tril(A, 2), -1)
+        elif assume_a in {'symmetric', 'sym'}:
+            A = A + A.T
+        elif assume_a in {'hermitian', 'her'}:
+            A = A + A.conj().T
+        elif assume_a in {'positive definite', 'pos'}:
+            A = A + A.T
+            A += np.diag(A.sum(axis=1))
+
+        if fortran:
+            A = np.asfortranarray(A)
+
+        A_copy = A.copy(order='A')
+        b_copy = b.copy()
+
+        if np.issubdtype(dtype, np.complexfloating) and transposed:
+            message = "scipy.linalg.solve can currently..."
+            with pytest.raises(NotImplementedError, match=message):
+                solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                      transposed=transposed)
+            return
+
+        res = solve(A, b, overwrite_a=overwrite, overwrite_b=overwrite,
+                    transposed=transposed, assume_a=assume_a)
+
+        # Check that solution this solution is *correct*
+        ref = np.linalg.solve(A_copy.T if transposed else A_copy, b_copy)
+        assert_allclose(res, ref)
+
+        # Check that `solve` correctly identifies the structure and returns
+        # *exactly* the same solution whether `assume_a` is specified or not
+        if assume_a != 'banded':  # structure detection removed for banded
+            assert_equal(solve(A_copy, b_copy, transposed=transposed), res)
+
+        # Check that overwrite was respected
+        if not overwrite:
+            assert_equal(A, A_copy)
+            assert_equal(b, b_copy)
 
 
 class TestSolveTriangular:
@@ -1010,13 +1117,13 @@ class TestDet:
         a = np.array([[[[1]]]], dtype='f')
         deta = det(a)
         assert deta.dtype.char == 'd'
-        assert np.isscalar(deta)
-        assert deta == 1.
+        assert deta.shape == (1, 1)
+        assert_equal(deta, [[1.0]])
         a = np.array([[[1 + 3.j]]], dtype=np.complex64)
         deta = det(a)
         assert deta.dtype.char == 'D'
-        assert np.isscalar(deta)
-        assert deta == 1.+3.j
+        assert deta.shape == (1,)
+        assert_equal(deta, [1.+3.j])
 
     def test_1by1_stacked_input_output(self):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
@@ -1084,7 +1191,7 @@ class TestDet:
     def test_sample_compatible_dtype_input(self, typ):
         n = 4
         a = self.rng.random([n, n]).astype(typ)  # value is not important
-        assert isinstance(det(a), (np.float64, np.complex128))
+        assert isinstance(det(a), (np.float64 | np.complex128))
 
     def test_incompatible_dtype_input(self):
         # Double backslashes needed for escaping pytest regex.
@@ -1123,7 +1230,7 @@ class TestDet:
         a = np.empty((3, 0, 0), dtype=dt)
         d = det(a)
         assert d.shape == (3,)
-        assert d.dtype == det(np.empty((3, 1, 1), dtype=dt)).dtype
+        assert d.dtype == det(np.zeros((3, 1, 1), dtype=dt)).dtype
 
     def test_overwrite_a(self):
         # If all conditions are met then input should be overwritten;
@@ -1179,11 +1286,11 @@ class TestLstsq:
                         x = out[0]
                         r = out[2]
                         assert_(r == 2,
-                                'expected efficient rank 2, got %s' % r)
+                                f'expected efficient rank 2, got {r}')
                         assert_allclose(dot(a, x), b,
                                         atol=25 * _eps_cast(a1.dtype),
                                         rtol=25 * _eps_cast(a1.dtype),
-                                        err_msg="driver: %s" % lapack_driver)
+                                        err_msg=f"driver: {lapack_driver}")
 
     def test_simple_overdet(self):
         for dtype in REAL_DTYPES:
@@ -1203,16 +1310,16 @@ class TestLstsq:
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(abs((dot(a, x) - b)**2).sum(axis=0),
                                     residuals,
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
                     assert_allclose(x, (-0.428571428571429, 0.85714285714285),
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
 
     def test_simple_overdet_complex(self):
         for dtype in COMPLEX_DTYPES:
@@ -1234,18 +1341,18 @@ class TestLstsq:
                     else:
                         residuals = out[1]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(abs((dot(a, x) - b)**2).sum(axis=0),
                                     residuals,
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
                     assert_allclose(
                                 x, (-0.4831460674157303 + 0.258426966292135j,
                                     0.921348314606741 + 0.292134831460674j),
                                 rtol=25 * _eps_cast(a1.dtype),
                                 atol=25 * _eps_cast(a1.dtype),
-                                err_msg="driver: %s" % lapack_driver)
+                                err_msg=f"driver: {lapack_driver}")
 
     def test_simple_underdet(self):
         for dtype in REAL_DTYPES:
@@ -1262,12 +1369,12 @@ class TestLstsq:
 
                     x = out[0]
                     r = out[2]
-                    assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+                    assert_(r == 2, f'expected efficient rank 2, got {r}')
                     assert_allclose(x, (-0.055555555555555, 0.111111111111111,
                                         0.277777777777777),
                                     rtol=25 * _eps_cast(a1.dtype),
                                     atol=25 * _eps_cast(a1.dtype),
-                                    err_msg="driver: %s" % lapack_driver)
+                                    err_msg=f"driver: {lapack_driver}")
 
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
     @pytest.mark.parametrize("n", (20, 200))
@@ -1297,13 +1404,13 @@ class TestLstsq:
                           dot(a, x), b,
                           rtol=500 * _eps_cast(a1.dtype),
                           atol=500 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
             else:
                 assert_allclose(
                           dot(a, x), b,
                           rtol=1000 * _eps_cast(a1.dtype),
                           atol=1000 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
 
     @pytest.mark.skipif(IS_MUSL, reason="may segfault on Alpine, see gh-17630")
     @pytest.mark.parametrize("dtype", COMPLEX_DTYPES)
@@ -1334,13 +1441,13 @@ class TestLstsq:
                           dot(a, x), b,
                           rtol=400 * _eps_cast(a1.dtype),
                           atol=400 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
             else:
                 assert_allclose(
                           dot(a, x), b,
                           rtol=1000 * _eps_cast(a1.dtype),
                           atol=1000 * _eps_cast(a1.dtype),
-                          err_msg="driver: %s" % lapack_driver)
+                          err_msg=f"driver: {lapack_driver}")
 
     def test_random_overdet(self):
         rng = np.random.RandomState(1234)
@@ -1368,7 +1475,7 @@ class TestLstsq:
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
                                           atol=25 * _eps_cast(a1.dtype),
-                                          err_msg="driver: %s" % lapack_driver)
+                                          err_msg=f"driver: {lapack_driver}")
 
     def test_random_complex_overdet(self):
         rng = np.random.RandomState(1234)
@@ -1398,7 +1505,7 @@ class TestLstsq:
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
                                       atol=25 * _eps_cast(a1.dtype),
-                                      err_msg="driver: %s" % lapack_driver)
+                                      err_msg=f"driver: {lapack_driver}")
 
     def test_check_finite(self):
         with suppress_warnings() as sup:
@@ -1426,11 +1533,11 @@ class TestLstsq:
                         overwrite_b=overwrite)
             x = out[0]
             r = out[2]
-            assert_(r == 2, 'expected efficient rank 2, got %s' % r)
+            assert_(r == 2, f'expected efficient rank 2, got {r}')
             assert_allclose(dot(a, x), b,
                             rtol=25 * _eps_cast(a.dtype),
                             atol=25 * _eps_cast(a.dtype),
-                            err_msg="driver: %s" % lapack_driver)
+                            err_msg=f"driver: {lapack_driver}")
 
     def test_empty(self):
         for a_shape, b_shape in (((0, 2), (0,)),
@@ -1456,6 +1563,7 @@ class TestLstsq:
         assert x.size == 0
         dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
         assert x.dtype == dt_nonempty
+
 
 class TestPinv:
     def setup_method(self):
@@ -1582,7 +1690,7 @@ class TestPinvSymmetric:
     def test_zero_eigenvalue(self):
         # https://github.com/scipy/scipy/issues/12515
         # the SYEVR eigh driver may give the zero eigenvalue > eps
-        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        a = np.array([[1, -1, 0], [-1, 2, -1], [0, -1, 1]])
         p = pinvh(a)
         assert_allclose(p @ a @ p, p, atol=1e-15)
         assert_allclose(a @ p @ a, a, atol=1e-15)
@@ -1801,7 +1909,7 @@ class TestSolveCirculant:
         c = np.array([1, 2, -3, -5])
         b = np.arange(24).reshape(4, 3, 2)
         x = solve_circulant(c, b)
-        y = solve(circulant(c), b)
+        y = solve(circulant(c), b.reshape(4, -1)).reshape(b.shape)
         assert_allclose(x, y)
 
     def test_complex(self):
@@ -1814,9 +1922,9 @@ class TestSolveCirculant:
 
     def test_random_b_and_c(self):
         # Random b and c
-        np.random.seed(54321)
-        c = np.random.randn(50)
-        b = np.random.randn(50)
+        rng = np.random.RandomState(54321)
+        c = rng.randn(50)
+        b = rng.randn(50)
         x = solve_circulant(c, b)
         y = solve(circulant(c), b)
         assert_allclose(x, y)
@@ -1842,8 +1950,8 @@ class TestSolveCirculant:
         x = solve_circulant(c, b, baxis=1)
         assert_equal(x.shape, (4, 2, 3))
         expected = np.empty_like(x)
-        expected[:, 0, :] = solve(circulant(c[0]), b.T)
-        expected[:, 1, :] = solve(circulant(c[1]), b.T)
+        expected[:, 0, :] = solve(circulant(c[0].ravel()), b.T)
+        expected[:, 1, :] = solve(circulant(c[1].ravel()), b.T)
         assert_allclose(x, expected)
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
@@ -1955,7 +2063,6 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert t.dtype == t_n.dtype
 
-
         b, (scale, perm) = matrix_balance(a, separate=True)
         assert b.size == 0
         assert scale.size == 0
@@ -1965,4 +2072,3 @@ class TestMatrix_Balance:
         assert b.dtype == b_n.dtype
         assert scale.dtype == scale_n.dtype
         assert perm.dtype == perm_n.dtype
-

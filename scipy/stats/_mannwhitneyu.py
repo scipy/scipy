@@ -1,3 +1,4 @@
+import threading
 import numpy as np
 from collections import namedtuple
 from scipy import special
@@ -143,7 +144,10 @@ class _MWU:
         return configurations / total
 
 
-_mwu_state = _MWU(0, 0)
+# Maintain state for faster repeat calls to `mannwhitneyu`.
+# _MWU() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside mannwhitneyu().
+_mwu_state = threading.local()
 
 
 def _get_mwu_z(U, n1, n2, t, axis=0, continuity=True):
@@ -241,28 +245,20 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
             otherwise.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
-        Let *F(u)* and *G(u)* be the cumulative distribution functions of the
+        Let *SX(u)* and *SY(u)* be the survival functions of the
         distributions underlying `x` and `y`, respectively. Then the following
         alternative hypotheses are available:
 
-        * 'two-sided': the distributions are not equal, i.e. *F(u) ≠ G(u)* for
+        * 'two-sided': the distributions are not equal, i.e. *SX(u) ≠ SY(u)* for
           at least one *u*.
         * 'less': the distribution underlying `x` is stochastically less
-          than the distribution underlying `y`, i.e. *F(u) > G(u)* for all *u*.
+          than the distribution underlying `y`, i.e. *SX(u) < SY(u)* for all *u*.
         * 'greater': the distribution underlying `x` is stochastically greater
-          than the distribution underlying `y`, i.e. *F(u) < G(u)* for all *u*.
-
-        Note that the mathematical expressions in the alternative hypotheses
-        above describe the CDFs of the underlying distributions. The directions
-        of the inequalities appear inconsistent with the natural language
-        description at first glance, but they are not. For example, suppose
-        *X* and *Y* are random variables that follow distributions with CDFs
-        *F* and *G*, respectively. If *F(u) > G(u)* for all *u*, samples drawn
-        from *X* tend to be less than those drawn from *Y*.
+          than the distribution underlying `y`, i.e. *SX(u) > SY(u)* for all *u*.
 
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
-        see [5] section 5.1.
+        see [5]_ section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
     method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
@@ -469,8 +465,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, np.any(t > 1))
 
     if method == "exact":
-        _mwu_state.set_shapes(n1, n2)
-        p = _mwu_state.sf(U.astype(int))
+        if not hasattr(_mwu_state, 's'):
+            _mwu_state.s = _MWU(0, 0)
+        _mwu_state.s.set_shapes(n1, n2)
+        p = _mwu_state.s.sf(U.astype(int))
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)

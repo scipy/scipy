@@ -43,6 +43,16 @@ def test_no_1d_support_in_init(spcreator):
         spcreator([0, 1, 2, 3])
 
 
+# Test init with nD dense input
+# sparrays which do not yet support nD
+@pytest.mark.parametrize(
+    "spcreator", [csr_array, dok_array, bsr_array, csc_array, dia_array, lil_array]
+)
+def test_no_nd_support_in_init(spcreator):
+    with pytest.raises(ValueError, match="arrays don't.*support 3D"):
+        spcreator(np.ones((3, 2, 4)))
+
+
 # Main tests class
 @pytest.mark.parametrize("spcreator", spcreators)
 class TestCommon1D:
@@ -220,6 +230,7 @@ class TestCommon1D:
         assert_allclose(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_array(self, spcreator):
         A = np.array([2, 3, 4])
@@ -229,6 +240,7 @@ class TestCommon1D:
         assert_equal(spcreator(A).toarray(), A)
         assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_list(self, spcreator):
         A = [2, 3, 4]
@@ -240,6 +252,7 @@ class TestCommon1D:
             spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
         )
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_sparse(self, spcreator):
         D = np.array([1, 0, 0])
@@ -342,6 +355,27 @@ class TestCommon1D:
             # test broadcasting
             assert_equal(dat[:1] - datsp, dat[:1] - dat)
 
+    def test_matmul_basic(self, spcreator):
+        A = np.array([[2, 0, 3.0], [0, 0, 0], [0, 1, 2]])
+        v = np.array([1, 0, 3])
+        Asp = spcreator(A)
+        vsp = spcreator(v)
+
+        # sparse result when both args are sparse and result not scalar
+        assert_equal((Asp @ vsp).toarray(), A @ v)
+        assert_equal(A @ vsp, A @ v)
+        assert_equal(Asp @ v, A @ v)
+        assert_equal((vsp @ Asp).toarray(), v @ A)
+        assert_equal(vsp @ A, v @ A)
+        assert_equal(v @ Asp, v @ A)
+
+        assert_equal(vsp @ vsp, v @ v)
+        assert_equal(v @ vsp, v @ v)
+        assert_equal(vsp @ v, v @ v)
+        assert_equal((Asp @ Asp).toarray(), A @ A)
+        assert_equal(A @ Asp, A @ A)
+        assert_equal(Asp @ A, A @ A)
+
     def test_matvec(self, spcreator):
         A = np.array([2, 0, 3.0])
         Asp = spcreator(A)
@@ -352,16 +386,15 @@ class TestCommon1D:
         assert (A @ np.array([1, 2, 3])).shape == ()
         assert Asp @ np.array([1, 2, 3]) == 11
         assert (Asp @ np.array([1, 2, 3])).shape == ()
-        assert (Asp @ np.array([[1], [2], [3]])).shape == ()
+        assert (Asp @ np.array([[1], [2], [3]])).shape == (1,)
         # check result type
         assert isinstance(Asp @ matrix([[1, 2, 3]]).T, np.ndarray)
-        assert (Asp @ np.array([[1, 2, 3]]).T).shape == ()
 
         # ensure exception is raised for improper dimensions
         bad_vecs = [np.array([1, 2]), np.array([1, 2, 3, 4]), np.array([[1], [2]])]
         for x in bad_vecs:
             with pytest.raises(ValueError, match='dimension mismatch'):
-                Asp.__matmul__(x)
+                Asp @ x
 
         # The current relationship between sparse matrix products and array
         # products is as follows:

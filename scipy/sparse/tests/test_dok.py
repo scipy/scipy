@@ -5,6 +5,9 @@ import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
 
 
+pytestmark = pytest.mark.thread_unsafe
+
+
 @pytest.fixture
 def d():
     return {(0, 1): 1, (0, 2): 2}
@@ -136,7 +139,7 @@ def test_dunder_reversed(d, Asp):
         with pytest.raises(TypeError):
             list(reversed(Asp))
     else:
-        list(reversed(Asp)) == list(reversed(d))
+        assert list(reversed(Asp)) == list(reversed(d))
 
 def test_dunder_ior(d, Asp):
     if isinstance(Asp, dok_array):

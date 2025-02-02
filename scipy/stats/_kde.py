@@ -18,6 +18,7 @@
 #-------------------------------------------------------------------------------
 
 # Standard library imports.
+import threading
 import warnings
 
 # SciPy imports.
@@ -35,6 +36,8 @@ from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
 
 __all__ = ['gaussian_kde']
+
+MVN_LOCK = threading.Lock()
 
 
 class gaussian_kde:
@@ -116,13 +119,18 @@ class gaussian_kde:
         neff**(-1./(d+4)),
 
     with ``neff`` the effective number of datapoints.
-    Silverman's Rule [2]_, implemented as `silverman_factor`, is::
+    Silverman's suggestion for *multivariate* data [2]_, implemented as
+    `silverman_factor`, is::
 
         (n * (d + 2) / 4.)**(-1. / (d + 4)).
 
     or in the case of unequally weighted points::
 
         (neff * (d + 2) / 4.)**(-1. / (d + 4)).
+
+    Note that this is not the same as "Silverman's rule of thumb" [6]_, which
+    may be more robust in the univariate case; see documentation of the
+    ``set_bandwidth`` method for implementing a custom bandwidth rule.
 
     Good general descriptions of kernel density estimation can be found in [1]_
     and [2]_, the mathematics for this multi-dimensional implementation can be
@@ -137,7 +145,7 @@ class gaussian_kde:
 
     `gaussian_kde` does not currently support data that lies in a
     lower-dimensional subspace of the space in which it is expressed. For such
-    data, consider performing principle component analysis / dimensionality
+    data, consider performing principal component analysis / dimensionality
     reduction and using `gaussian_kde` with the transformed data.
 
     References
@@ -154,6 +162,8 @@ class gaussian_kde:
            Analysis, Vol. 36, pp. 279-298, 2001.
     .. [5] Gray P. G., 1969, Journal of the Royal Statistical Society.
            Series A (General), 132, 272
+    .. [6] Kernel density estimation. *Wikipedia.*
+           https://en.wikipedia.org/wiki/Kernel_density_estimation
 
     Examples
     --------
@@ -226,7 +236,7 @@ class gaussian_kde:
                    "of the space in which it is expressed. This has resulted "
                    "in a singular data covariance matrix, which cannot be "
                    "treated using the algorithms implemented in "
-                   "`gaussian_kde`. Consider performing principle component "
+                   "`gaussian_kde`. Consider performing principal component "
                    "analysis / dimensionality reduction and using "
                    "`gaussian_kde` with the transformed data.")
             raise linalg.LinAlgError(msg) from e
@@ -301,9 +311,9 @@ class gaussian_kde:
         cov = atleast_2d(cov)
 
         if mean.shape != (self.d,):
-            raise ValueError("mean does not have dimension %s" % self.d)
+            raise ValueError(f"mean does not have dimension {self.d}")
         if cov.shape != (self.d, self.d):
-            raise ValueError("covariance does not have dimension %s" % self.d)
+            raise ValueError(f"covariance does not have dimension {self.d}")
 
         # make mean a column vector
         mean = mean[:, newaxis]
@@ -384,12 +394,12 @@ class gaussian_kde:
         else:
             extra_kwds = {}
 
-        value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
-                                            self.dataset, self.weights,
-                                            self.covariance, **extra_kwds)
+        with MVN_LOCK:
+            value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
+                                                self.dataset, self.weights,
+                                                self.covariance, **extra_kwds)
         if inform:
-            msg = ('An integral in _mvn.mvnun requires more points than %s' %
-                   (self.d * 1000))
+            msg = f'An integral in _mvn.mvnun requires more points than {self.d * 1000}'
             warnings.warn(msg, stacklevel=2)
 
         return value
