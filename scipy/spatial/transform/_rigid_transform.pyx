@@ -1573,14 +1573,19 @@ cdef class RigidTransform:
     def __pow__(RigidTransform self, float n):
         """Compose this transform with itself `n` times.
 
-        A rigid transform `p` can be raised to non-integer powers by applying
-        screw linear interpolation (ScLERP) to its underlying rotation and
-        translation. The rotation angle is scaled by `n`, and the translation is
-        proportionally adjusted along the screw axis.
+        A rigid transform `p` when raised to non-integer powers can be thought
+        of as finding a fraction of the transformation. For example, a power of
+        0.5 finds a "halfway" transform from the identity to `p`.
+
+        This is implemented by applying screw linear interpolation (ScLERP)
+        between `p` and the identity transform, where the angle of the rotation
+        component is scaled by `n`, and the translation is proportionally
+        adjusted along the screw axis.
+
         ``q = p ** n`` can also be expressed as
         ``q = RigidTransform.from_exp_coords(p.as_exp_coords() * n)``.
 
-        If ``n`` is negative, then the rotation is inverted before the power
+        If `n` is negative, then the transform is inverted before the power
         is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
 
         Parameters
@@ -1591,9 +1596,9 @@ cdef class RigidTransform:
         Returns
         -------
         `RigidTransform` instance
-            If the input Rotation ``p`` contains ``N`` multiple rotations, then
-            the output will contain ``N`` rotations where the ``i`` th rotation
-            is equal to ``p[i] ** n``
+            If the input Rotation `p` contains `N` multiple rotations, then
+            the output will contain `N` rotations where the `i` th rotation
+            is equal to ``p[i] ** n``.
 
         Notes
         -----
