@@ -654,6 +654,16 @@ def test_pow():
         r = RigidTransformation.from_rotation(Rotation.from_quat([[0, 0, 0, 1]]))
         assert (r**n).as_matrix().shape == (1, 4, 4)
 
+    # Test fractional powers
+    q = p**0.5
+    assert_allclose((q * q).as_matrix(), p.as_matrix(), atol=atol)
+    q = p**-0.5
+    assert_allclose((q * q).as_matrix(), p.inv().as_matrix(), atol=atol)
+    q = p** 1.5
+    assert_allclose((q * q).as_matrix(), (p**3).as_matrix(), atol=atol)
+    q = p** -1.5
+    assert_allclose((q * q).as_matrix(), (p**-3).as_matrix(), atol=atol)
+
     # pow function
     tf = pow(RigidTransformation.identity(), 2)
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)

@@ -1564,18 +1564,22 @@ cdef class RigidTransformation:
         return self.__class__(result, copy=False)
 
     @cython.embedsignature(True)
-    def __pow__(RigidTransformation self, int n):
+    def __pow__(RigidTransformation self, float n):
         """Compose this transformation with itself `n` times.
 
-        If `n` is negative, the inverse of the transformation is composed with
-        itself `n` times. In other words,
-        ``p ** -abs(n) == p.inv() ** abs(n)``.
+        A rigid transformation `p` can be raised to non-integer powers by
+        applying screw linear interpolation (ScLERP) to its underlying rotation
+        and translation. The rotation angle is scaled by `n`, and the
+        translation is proportionally adjusted along the screw axis.
+        ``q = p ** n`` can also be expressed as
+        ``q = RigidTransformation.from_exp_coords(p.as_exp_coords() * n)``.
 
-        Non-integer values of `n` are not currently supported.
+        If ``n`` is negative, then the rotation is inverted before the power
+        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
 
         Parameters
         ----------
-        n : int
+        n : float
             The number of times to compose the transformation with itself.
 
         Returns
@@ -1632,6 +1636,19 @@ cdef class RigidTransformation:
                [0., 1., 0., 2.],
                [0., 0., 1., 3.],
                [0., 0., 0., 1.]])
+
+        A fractional power returns a transformation with a scaled rotation and
+        translated along the screw axis. Here we take the square root of the
+        transformation, which when squared recovers the original transformation:
+
+        >>> tf_half = (tf ** 0.5)
+        >>> tf_half.translation
+        array([0.5, 1., 1.5])
+        >>> (tf_half ** 2).as_matrix()
+        array([[1., 0., 0., 1.],
+               [0., 1., 0., 2.],
+               [0., 0., 1., 3.],
+               [0., 0., 0., 1.]])
         """
         # Exact short-cuts
         if n == 0:
@@ -1644,19 +1661,7 @@ cdef class RigidTransformation:
             else:
                 return self.__class__(self._matrix, copy=True)
         else:
-            matrix = self.as_matrix()
-            if self._single:
-                matrix = matrix[None, :, :]
-            for i in range(len(matrix)):
-                matrix[i] = np.linalg.matrix_power(matrix[i], abs(n))
-            if self._single:
-                matrix = matrix[0]
-
-            Tf = self.__class__(matrix, copy=False)
-            if n < 0:
-                return Tf.inv()
-            else:
-                return Tf
+            return self.__class__.from_exp_coords(self.as_exp_coords() * n)
 
     @cython.embedsignature(True)
     def inv(self):
