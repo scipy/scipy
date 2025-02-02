@@ -301,7 +301,7 @@ class ShortTimeFFT:
     A typical STFT application is the creation of various types of time-frequency
     plots, often subsumed under the term "spectrogram". Note that this term is also
     used to explecitly refer to the absolute square of a STFT [11]_, as done in
-    `~ShortTimeFFT.spectrogram`.
+    :meth:`spectrogram`.
 
     The STFT can also be used for filtering and filter banks as discussed in [12]_.
 
@@ -432,8 +432,9 @@ class ShortTimeFFT:
             raise ValueError("Parameter win must have finite entries!")
         if not (hop >= 1 and isinstance(hop, int | np.integer)):
             raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
-        self._win, self._hop, self.fs = win, hop, fs
 
+        self._win, self._hop, self.fs = win, hop, fs
+        self.win.setflags(write=False)
         self.mfft = len(win) if mfft is None else mfft
 
         if dual_win is not None:
@@ -441,6 +442,7 @@ class ShortTimeFFT:
                 raise ValueError(f"{dual_win.shape=} must equal {win.shape=}!")
             if not all(np.isfinite(dual_win)):
                 raise ValueError("Parameter dual_win must be a finite array!")
+            dual_win.setflags(write=False)
         self._dual_win = dual_win  # needs to be set before scaling
 
         if scale_to is not None:  # needs to be set before fft_mode
@@ -658,7 +660,7 @@ class ShortTimeFFT:
         Notes
         -----
         The set of all possible windows with identical dual is defined by the set of
-        linear constraints of Eq. :math:numref:`eq_STFT_EqualWindDualCond` in the
+        linear constraints of Eq. :math:numref:`eq_STFT_AllDualWinsCond` in the
         :ref:`tutorial_stft` section of the :ref:`user_guide`. There it is also
         derived that ``ShortTimeFFT.dual_win == ShortTimeFFT.m_pts * ShortTimeFFT.win``
         needs to hold for an STFT to be a unitary mapping.
@@ -779,6 +781,7 @@ class ShortTimeFFT:
         """Window function as real- or complex-valued 1d array.
 
         This attribute is read-only, since `dual_win` depends on it.
+        To make this array immutable, its WRITEABLE flag is set to ``FALSE``.
 
         See Also
         --------
@@ -788,6 +791,7 @@ class ShortTimeFFT:
         mfft: Length of input for the FFT used - may be larger than `m_num`.
         hop: ime increment in signal samples for sliding window.
         win: Window function as real- or complex-valued 1d array.
+        numpy.ndarray.setflags: Modify array flags.
         ShortTimeFFT: Class this property belongs to.
         """
         return self._win
@@ -1012,8 +1016,10 @@ class ShortTimeFFT:
 
         s_fac = self.fac_psd if scaling == 'psd' else self.fac_magnitude
         self._win = self._win * s_fac
+        self.win.setflags(write=False)
         if self._dual_win is not None:
             self._dual_win = self._dual_win / s_fac
+            self.dual_win.setflags(write=False)
         self._fac_mag, self._fac_psd = None, None  # reset scaling factors
         self._scaling = scaling
 
@@ -1398,6 +1404,7 @@ class ShortTimeFFT:
 
         If the dual window cannot be calculated a ``ValueError`` is raised.
         This attribute is read only and calculated lazily.
+        To make this array immutable, its WRITEABLE flag is set to ``FALSE``.
 
         See Also
         --------
@@ -1405,10 +1412,12 @@ class ShortTimeFFT:
         win: Window function as real- or complex-valued 1d array.
         from_win_equals_dual: Create instance where `win` and `dual_win` are equal.
         closest_STFT_dual_window: Calculate dual window closest to a desired window.
+        numpy.ndarray.setflags: Modify array flags.
         ShortTimeFFT: Class this property belongs to.
         """
         if self._dual_win is None:
             self._dual_win = _calc_dual_canonical_window(self.win, self.hop)
+            self.dual_win.setflags(write=False)
         return self._dual_win
 
     @property
@@ -2081,7 +2090,7 @@ class ShortTimeFFT:
         n : int
             Number of samples in input signal.
         axes_seq : {'tf', 'ft'}
-            Return time extent first and then frequency extent or vice-versa.
+            Return time extent first and then frequency extent or vice versa.
         center_bins: bool
             If set (default ``False``), the values of the time slots and
             frequency bins are moved from the side the middle. This is useful,
