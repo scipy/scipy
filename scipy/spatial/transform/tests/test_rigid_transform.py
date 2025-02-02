@@ -669,6 +669,16 @@ def test_pow():
     assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
 
 
+def test_pow_equivalence_with_rotation():
+    atol = 1e-12
+    num = 10
+    rng = np.random.default_rng(100)
+    r = Rotation.random(num, rng=rng)
+    p = RigidTransform.from_rotation(r)
+    for n in [-5, -2, -1.5, -1, -0.5, 0.0, 0.5, 1, 1.5, 2, 5]:
+        assert_allclose((p**n).rotation.as_matrix(), (r**n).as_matrix(), atol=atol)
+
+
 def test_inverse():
     atol = 1e-12
 
