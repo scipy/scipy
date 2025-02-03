@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, suppress_warnings
 import scipy.special as sc
 
 class TestSphHarm:
@@ -22,13 +22,13 @@ class TestSphHarm:
 
         assert_allclose(y, p * np.exp(1j * m * phi))
 
-        assert_allclose(y_jac[0], p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_jac[1], 1j * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 0], p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 1], 1j * m * p * np.exp(1j * m * phi))
 
-        assert_allclose(y_hess[0, 0], p_hess * np.exp(1j * m * phi))
-        assert_allclose(y_hess[0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_hess[1, 0], y_hess[0, 1])
-        assert_allclose(y_hess[1, 1], -m * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 0], p_hess * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 1, 0], y_hess[..., 0, 1])
+        assert_allclose(y_hess[..., 1, 1], -m * m * p * np.exp(1j * m * phi))
 
     @pytest.mark.parametrize("n_max", [7, 10, 50])
     @pytest.mark.parametrize("m_max", [1, 4, 5, 9, 14])
@@ -53,6 +53,9 @@ def test_first_harmonics():
     # `phi` as the polar angle, and include the Condon-Shortley
     # phase.
 
+    # sph_harm is deprecated and is implemented as a shim around sph_harm_y.
+    # This test is maintained to verify the correctness of the shim.
+
     # Notation is Ymn
     def Y00(theta, phi):
         return 0.5*np.sqrt(1/np.pi)
@@ -75,7 +78,9 @@ def test_first_harmonics():
     theta, phi = np.meshgrid(theta, phi)
 
     for harm, m, n in zip(harms, m, n):
-        assert_allclose(sc.sph_harm(m, n, theta, phi),
-                        harm(theta, phi),
-                        rtol=1e-15, atol=1e-15,
-                        err_msg=f"Y^{m}_{n} incorrect")
+        with suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning)
+            assert_allclose(sc.sph_harm(m, n, theta, phi),
+                            harm(theta, phi),
+                            rtol=1e-15, atol=1e-15,
+                            err_msg=f"Y^{m}_{n} incorrect")

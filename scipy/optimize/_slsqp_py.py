@@ -24,7 +24,8 @@ from ._optimize import (OptimizeResult, _check_unknown_options,
                         _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
-from scipy._lib._array_api import xp_atleast_nd, array_namespace
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
 
 
 __docformat__ = "restructuredtext en"
@@ -250,7 +251,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Transform x0 into an array.
     xp = array_namespace(x0)
-    x0 = xp_atleast_nd(x0, ndim=1, xp=xp)
+    x0 = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
     dtype = xp.float64
     if xp.isdtype(x0.dtype, "real floating"):
         dtype = x0.dtype
@@ -276,7 +277,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         try:
             ctype = con['type'].lower()
         except KeyError as e:
-            raise KeyError('Constraint %d has no type defined.' % ic) from e
+            raise KeyError(f'Constraint {ic} has no type defined.') from e
         except TypeError as e:
             raise TypeError('Constraints must be defined using a '
                             'dictionary.') from e
@@ -288,7 +289,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         # check function
         if 'fun' not in con:
-            raise ValueError('Constraint %d has no function defined.' % ic)
+            raise ValueError(f'Constraint {ic} has no function defined.')
 
         # check Jacobian
         cjac = con.get('jac')
@@ -413,7 +414,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Print the header if iprint >= 2
     if iprint >= 2:
-        print("%5s %5s %16s %16s" % ("NIT", "FC", "OBJFUN", "GNORM"))
+        print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
@@ -445,8 +446,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
-                                                   fx, linalg.norm(g)))
+                print(f"{majiter:5d} {sf.nfev:5d} {fx:16.6E} {linalg.norm(g):16.6E}")
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:

@@ -14,7 +14,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
-from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
+from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
@@ -367,28 +367,30 @@ class TestMannWhitneyU:
 
     def test_exact_distribution(self):
         # I considered parametrize. I decided against it.
+        setattr(_mwu_state, 's', _MWU(0, 0))
+
         p_tables = {3: self.pn3, 4: self.pn4, 5: self.pm5, 6: self.pm6}
         for n, table in p_tables.items():
             for m, p in table.items():
                 # check p-value against table
                 u = np.arange(0, len(p))
-                _mwu_state.set_shapes(m, n)
-                assert_allclose(_mwu_state.cdf(k=u), p, atol=1e-3)
+                _mwu_state.s.set_shapes(m, n)
+                assert_allclose(_mwu_state.s.cdf(k=u), p, atol=1e-3)
 
                 # check identity CDF + SF - PMF = 1
                 # ( In this implementation, SF(U) includes PMF(U) )
                 u2 = np.arange(0, m*n+1)
-                assert_allclose(_mwu_state.cdf(k=u2)
-                                + _mwu_state.sf(k=u2)
-                                - _mwu_state.pmf(k=u2), 1)
+                assert_allclose(_mwu_state.s.cdf(k=u2)
+                                + _mwu_state.s.sf(k=u2)
+                                - _mwu_state.s.pmf(k=u2), 1)
 
                 # check symmetry about mean of U, i.e. pmf(U) = pmf(m*n-U)
-                pmf = _mwu_state.pmf(k=u2)
+                pmf = _mwu_state.s.pmf(k=u2)
                 assert_allclose(pmf, pmf[::-1])
 
                 # check symmetry w.r.t. interchange of m, n
-                _mwu_state.set_shapes(n, m)
-                pmf2 = _mwu_state.pmf(k=u2)
+                _mwu_state.s.set_shapes(n, m)
+                pmf2 = _mwu_state.s.pmf(k=u2)
                 assert_allclose(pmf, pmf2)
 
     def test_asymptotic_behavior(self):
@@ -628,22 +630,25 @@ class TestMannWhitneyU:
         m, n = 5, 11
         x = rng.random(size=m)
         y = rng.random(size=n)
-        _mwu_state.reset()  # reset cache
+
+        setattr(_mwu_state, 's', _MWU(0, 0))
+        _mwu_state.s.reset()  # reset cache
+
         res = stats.mannwhitneyu(x, y, method='exact')
-        shape = _mwu_state.configurations.shape
+        shape = _mwu_state.s.configurations.shape
         assert shape[-1] == min(res.statistic, m*n - res.statistic) + 1
         stats.mannwhitneyu(y, x, method='exact')
-        assert shape == _mwu_state.configurations.shape  # same when sizes are reversed
+        assert shape == _mwu_state.s.configurations.shape  # same with reversed sizes
 
-        # Also, we weren't exploiting the symmmetry of the null distribution
+        # Also, we weren't exploiting the symmetry of the null distribution
         # to its full potential. Ensure that the null distribution is not
         # evaluated explicitly for `k > m*n/2`.
-        _mwu_state.reset()  # reset cache
+        _mwu_state.s.reset()  # reset cache
         stats.mannwhitneyu(x, 0*y, method='exact', alternative='greater')
-        shape = _mwu_state.configurations.shape
+        shape = _mwu_state.s.configurations.shape
         assert shape[-1] == 1  # k is smallest possible
         stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
-        assert shape == _mwu_state.configurations.shape
+        assert shape == _mwu_state.s.configurations.shape
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative):
@@ -1732,7 +1737,7 @@ class TestPoissonMeansTest:
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=-1)
 
-        # test invalid alternatvie
+        # test invalid alternative
         message = 'Alternative must be one of ...'
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')
@@ -1817,19 +1822,19 @@ class TestBWSTest:
         x, y = rng.random(size=(2, 10))
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
         assert len(res1.null_distribution) == 10
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
         assert_allclose(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
         assert not np.allclose(res3.null_distribution, res1.null_distribution)

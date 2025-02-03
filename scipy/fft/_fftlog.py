@@ -114,7 +114,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     .. math::
 
-        \int^\infty_0 r^{\mu+1} \exp(-r^2/2) J_\mu(k, r) k dr
+        \int^\infty_0 r^{\mu+1} \exp(-r^2/2) J_\mu(kr) k dr
         = k^{\mu+1} \exp(-k^2/2) .
 
     >>> import numpy as np

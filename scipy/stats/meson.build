@@ -103,6 +103,16 @@ else
 endif
 
 
+py3.extension_module('_qmvnt_cy',
+  cython_gen_cpp.process('_qmvnt_cy.pyx'),
+  cpp_args: cython_cpp_args,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
+
 py3.install_sources([
     '__init__.py',
     '_axis_nan_policy.py',
@@ -112,11 +122,14 @@ py3.install_sources([
     '_censored_data.py',
     '_common.py',
     '_constants.py',
+    '_continued_fraction.py',
     '_continuous_distns.py',
+    '_correlation.py',
     '_covariance.py',
     '_crosstab.py',
     '_discrete_distns.py',
     '_distn_infrastructure.py',
+    '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
     '_fit.py',
@@ -130,8 +143,10 @@ py3.install_sources([
     '_mstats_extras.py',
     '_multicomp.py',
     '_multivariate.py',
+    '_new_distributions.py',
     '_odds_ratio.py',
     '_page_trend_test.py',
+    '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
     '_relative_risk.py',

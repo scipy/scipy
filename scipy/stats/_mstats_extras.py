@@ -114,8 +114,8 @@ def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
         result = _hd_1D(data, p, var)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hd_1D, axis, data, p, var)
 
     return ma.fix_invalid(result, copy=False)
@@ -203,8 +203,8 @@ def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
         result = _hdsd_1D(data, p)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hdsd_1D, axis, data, p)
 
     return ma.fix_invalid(result, copy=False).ravel()
@@ -295,8 +295,8 @@ def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
 
     data = ma.array(data, copy=False)
     if data.ndim > 2:
-        raise ValueError("Array 'data' must be at most two dimensional, "
-                         "but got data.ndim = %d" % data.ndim)
+        raise ValueError(f"Array 'data' must be at most two dimensional, "
+                         f"but got data.ndim = {data.ndim}")
 
     p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
@@ -384,8 +384,8 @@ def median_cihs(data, alpha=0.05, axis=None):
         result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_cihs_1D, axis, data, alpha)
 
     return result

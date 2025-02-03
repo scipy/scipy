@@ -22,7 +22,7 @@ class MissingModule:
 
 
 def check_version(module, min_ver):
-    if type(module) == MissingModule:
+    if type(module) is MissingModule:
         return pytest.mark.skip(reason=f"{module.name} is not installed")
     return pytest.mark.skipif(
         _pep440.parse(module.__version__) < _pep440.Version(min_ver),
@@ -294,13 +294,13 @@ class FuncData:
                 msg = [""]
                 msg.append(f"Max |adiff|: {diff[bad_j].max():g}")
                 msg.append(f"Max |rdiff|: {rdiff[bad_j].max():g}")
-                msg.append("Bad results (%d out of %d) for the following points "
-                           "(in output %d):"
-                           % (np.sum(bad_j), point_count, output_num,))
+                msg.append(f"Bad results ({np.sum(bad_j)} out of "
+                           f"{point_count}) for the following points "
+                           f"(in output {output_num}):")
                 for j in np.nonzero(bad_j)[0]:
                     j = int(j)
                     def fmt(x):
-                        return '%30s' % np.array2string(x[j], precision=18)
+                        return f'{np.array2string(x[j], precision=18):30s}'
                     a = "  ".join(map(fmt, params))
                     b = "  ".join(map(fmt, got))
                     c = "  ".join(map(fmt, wanted))
@@ -309,7 +309,7 @@ class FuncData:
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
-        """Pretty-printing, esp. for Nose output"""
+        """Pretty-printing"""
         if np.any(list(map(np.iscomplexobj, self.param_columns))):
             is_complex = " (complex)"
         else:

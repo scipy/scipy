@@ -236,15 +236,19 @@ large and hard-to-detect performance bottleneck.
 Adding tests
 ------------
 
+To run a test on multiple array backends, you should add the ``xp`` fixture to it,
+which is valued to the currently tested array namespace. 
+
 The following pytest markers are available:
 
-* ``array_api_compatible -> xp``: use a parametrisation to run a test on
-  multiple array backends.
-* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False, exceptions=None)``:
-  skip certain backends and/or devices.
-  ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
-  marker for the skipping to apply. See the fixture's docstring in ``scipy.conftest``
-  for information on how use this marker to skip tests.
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+  skip certain backends or categories of backends.
+  See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
+  to use this marker to skip tests.
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+  xfail certain backends or categories of backends.
+  See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
+  to use this marker to xfail tests.
 * ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
   are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
@@ -257,28 +261,33 @@ The following pytest markers are available:
   causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
   default and only behavior, these tests (and the decorator itself) will be
   removed.
+* ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
+  all tests that use it. This is useful e.g. to select all and only such tests::
+
+    python dev.py test -b all -m array_api_backends
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
 
+When these assertions are executed within a test that uses the ``xp`` fixture, they
+enforce that the namespaces of both the actual and desired arrays match the namespace
+which was set by the fixture. Tests without the ``xp`` fixture infer the namespace from
+the desired array. This machinery can be overridden by explicitly passing the ``xp=``
+parameter to the assertion functions.
+
 The following examples demonstrate how to use the markers::
 
-  from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+  from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close
   ...
-  @pytest.mark.skip_xp_backends(np_only=True, reasons=['skip reason'])
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
+  @pytest.mark.skip_xp_backends(np_only=True, reason='skip reason')
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
       xp_assert_close(toto(a, b), a)
   ...
-  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                reasons=['skip reason 1',
-                                         'skip reason 2',],)
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
+  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   def test_toto2(self, xp):
       ...
   ...
@@ -287,7 +296,7 @@ The following examples demonstrate how to use the markers::
   def test_toto_masked_array(self):
       ...
 
-Passing a custom reason to ``reasons`` when ``cpu_only=True`` is unsupported
+Passing a custom reason to ``reason`` when ``cpu_only=True`` is unsupported
 since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
 the reason for using ``cpu_only`` is likely just that compiled code is used
 in the function(s) being tested.
@@ -300,43 +309,52 @@ for compiled code::
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                reasons=['skip reason 1',
-                                         'skip reason 2',],
-                                cpu_only=True,
-                                exceptions=['jax.numpy'],)
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
+  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   def test_toto(self, xp):
       ...
-
-When every test function in a file has been updated for array API
-compatibility, one can reduce verbosity by telling ``pytest`` to apply the
-markers to every test function using ``pytestmark``::
-
-    from scipy.conftest import array_api_compatible
-
-    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-    skip_xp_backends = pytest.mark.skip_xp_backends
-    ...
-    @skip_xp_backends(np_only=True, reasons=['skip reason'])
-    def test_toto1(self, xp):
-        ...
 
 After applying these markers, ``dev.py test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b pytorch -s cluster
+  python dev.py test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
+backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
+
+
+Testing the JAX JIT compiler
+----------------------------
+The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
+introduces special restrictions to all code wrapped by `@jax.jit`, which are not
+present when running JAX in eager mode. Notably, boolean masks in `__getitem__`
+and `.at` aren't supported, and you can't materialize the arrays by applying
+`bool()`, `float()`, `np.asarray()` etc. to them.
+
+To properly test scipy with JAX, you need to wrap the tested scipy functions
+with `@jax.jit` before they are called by the unit tests.
+To achieve this, you should tag them as follows in your test module::
+
+  from scipy._lib._lazy_testing import lazy_xp_function
+  from scipy.mymodule import toto
+
+  lazy_xp_function(toto)
+
+  def test_toto(xp):
+      a = xp.asarray([1, 2, 3])
+      b = xp.asarray([0, 2, 5])
+      # When xp==jax.numpy, toto is wrapped with @jax.jit
+      xp_assert_close(toto(a, b), a)
+
+See full documentation in `scipy/_lib/_lazy_testing.py`.
 
 
 Additional information
@@ -350,7 +368,7 @@ helped during the development phase:
   some inspiration taken from
   `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`__.
 * `PR <https://github.com/scikit-learn/scikit-learn/issues/22352>`__ adding Array
-  API surpport to scikit-learn
+  API support to scikit-learn
 * Some other relevant scikit-learn PRs:
   `#22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`__ and
   `#25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__

@@ -1,7 +1,7 @@
 """Linear least squares with bound constraints on independent variables."""
 import numpy as np
 from numpy.linalg import norm
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import issparse, csr_array
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
 from scipy.optimize._minimize import Bounds
@@ -50,7 +50,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Parameters
     ----------
-    A : array_like, sparse matrix of LinearOperator, shape (m, n)
+    A : array_like, sparse array or LinearOperator, shape (m, n)
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
@@ -222,28 +222,27 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     Examples
     --------
-    In this example, a problem with a large sparse matrix and bounds on the
+    In this example, a problem with a large sparse arrays and bounds on the
     variables is solved.
 
     >>> import numpy as np
-    >>> from scipy.sparse import rand
+    >>> from scipy.sparse import random_array
     >>> from scipy.optimize import lsq_linear
     >>> rng = np.random.default_rng()
     ...
-    >>> m = 20000
-    >>> n = 10000
+    >>> m = 2000
+    >>> n = 1000
     ...
-    >>> A = rand(m, n, density=1e-4, random_state=rng)
+    >>> A = random_array((m, n), density=1e-4, random_state=rng)
     >>> b = rng.standard_normal(m)
     ...
     >>> lb = rng.standard_normal(n)
     >>> ub = lb + 1
     ...
     >>> res = lsq_linear(A, b, bounds=(lb, ub), lsmr_tol='auto', verbose=1)
-    # may vary
     The relative change of the cost function is less than `tol`.
-    Number of iterations 16, initial cost 1.5039e+04, final cost 1.1112e+04,
-    first-order optimality 4.66e-08.
+    Number of iterations 10, initial cost 1.0070e+03, final cost 9.6602e+02,
+    first-order optimality 2.21e-09.        # may vary
     """
     if method not in ['trf', 'bvls']:
         raise ValueError("`method` must be 'trf' or 'bvls'")
@@ -255,7 +254,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("`verbose` must be in [0, 1, 2].")
 
     if issparse(A):
-        A = csr_matrix(A)
+        A = csr_array(A)
     elif not isinstance(A, LinearOperator):
         A = np.atleast_2d(np.asarray(A))
 

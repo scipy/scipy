@@ -1,6 +1,7 @@
 python_sources = [
   '__init__.py',
   'test_basic.py',
+  'test_batch.py',
   'test_blas.py',
   'test_cython_blas.py',
   'test_cython_lapack.py',

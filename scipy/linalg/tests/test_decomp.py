@@ -404,6 +404,36 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
+    @pytest.mark.parametrize("include_B", [False, True])
+    @pytest.mark.parametrize("left", [False, True])
+    @pytest.mark.parametrize("right", [False, True])
+    @pytest.mark.parametrize("homogeneous_eigvals", [False, True])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex128])
+    def test_nd_input(self, include_B, left, right, homogeneous_eigvals, dtype):
+        batch_shape = (3, 2)
+        core_shape = (4, 4)
+        rng = np.random.default_rng(3249823598235)
+        A = rng.random(batch_shape + core_shape).astype(dtype)
+        B = rng.random(batch_shape + core_shape).astype(dtype)
+        kwargs = dict(right=right, homogeneous_eigvals=homogeneous_eigvals)
+
+        if include_B:
+            res = eig(A, b=B, left=left, **kwargs)
+        else:
+            res = eig(A, left=left, **kwargs)
+
+        for i in range(batch_shape[0]):
+            for j in range(batch_shape[1]):
+                if include_B:
+                    ref = eig(A[i, j], b=B[i, j], left=left, **kwargs)
+                else:
+                    ref = eig(A[i, j], left=left, **kwargs)
+
+                if left or right:
+                    for k in range(len(ref)):
+                        assert_allclose(res[k][i, j], ref[k])
+                else:
+                    assert_allclose(res[i, j], ref)
 
 
 class TestEigBanded:
@@ -2127,6 +2157,62 @@ class TestSchur:
         assert t.dtype == t0.dtype
         assert z.dtype == z0.dtype
 
+    @pytest.mark.parametrize('sort', ['iuc', 'ouc'])
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_str(self, sort, output, dtype):
+        # gh-13137 reported that sort values 'iuc' and 'ouc' were not
+        # correct because the callables assumed that the eigenvalues would
+        # always be expressed as a single complex number.
+        # In fact, when `output='real'` and the dtype is real, the
+        # eigenvalues are passed as separate real and imaginary components
+        # (yet no error is raised if the callable accepts only one argument).
+        #
+        # This tests these sort values by counting the number of eigenvalues
+        # `schur` reports as being inside/outside the unit circle.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        # Previously, this would fail for `output='real'` with real dtypes
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 0 if sort == 'iuc' else sdim == 2
+
+    @pytest.mark.parametrize('output', ['real', 'complex'])
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64,
+                                       np.complex64, np.complex128])
+    def test_gh_13137_sort_custom(self, output, dtype):
+        # This simply tests our understanding of how eigenvalues are
+        # passed to a sort callable. If `output='real'` and the dtype is real,
+        # real and imaginary parts are passed as separate real arguments;
+        # otherwise, they are passed a single complex argument.
+        # Also, if `output='real'` and the dtype is real, when either
+        # eigenvalue in a complex conjugate pair satisfies the sort condition,
+        # `sdim` is incremented by TWO.
+
+        # Real matrix with eigenvalues 0.1 +- 2j
+        A = np.asarray([[0.1, -2], [2, 0.1]])
+
+        all_real = output=='real' and dtype in {np.float32, np.float64}
+
+        def sort(x, y=None):
+            if all_real:
+                assert not np.iscomplexobj(x)
+                assert y is not None and np.isreal(y)
+                z = x + y*1j
+            else:
+                assert np.iscomplexobj(x)
+                assert y is None
+                z = x
+            return z.imag > 1e-15
+
+        # Only one complex eigenvalue satisfies the condition, but when
+        # `all_real` applies, both eigenvalues in the complex conjugate pair
+        # are counted.
+        sdim = schur(A.astype(dtype), sort=sort, output=output)[-1]
+        assert sdim == 2 if all_real else sdim == 1
+
 
 class TestHessenberg:
 
@@ -2829,9 +2915,9 @@ def _check_orth(n, dtype, skip_big=False):
     assert_allclose(Y, Y.mean(), atol=tol)
 
     if n > 5 and not skip_big:
-        np.random.seed(1)
-        X = np.random.rand(n, 5) @ np.random.rand(5, n)
-        X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+        rng = np.random.RandomState(1)
+        X = rng.rand(n, 5) @ rng.rand(5, n)
+        X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
         X = X.astype(dtype)
 
         Y = orth(X, rcond=1e-3)
@@ -2876,7 +2962,7 @@ def test_orth_empty(dt):
 
 class TestNullSpace:
     def test_null_space(self):
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
 
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
         sizes = [1, 2, 3, 10, 100]
@@ -2895,15 +2981,15 @@ class TestNullSpace:
             assert_equal(Y.shape, (2, 1))
             assert_allclose(X.T @ Y, 0, atol=tol)
 
-            X = np.random.randn(1 + n//2, n)
+            X = rng.randn(1 + n//2, n)
             Y = null_space(X)
             assert_equal(Y.shape, (n, n - 1 - n//2))
             assert_allclose(X @ Y, 0, atol=tol)
 
             if n > 5:
-                np.random.seed(1)
-                X = np.random.rand(n, 5) @ np.random.rand(5, n)
-                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                rng = np.random.RandomState(1)
+                X = rng.rand(n, 5) @ rng.rand(5, n)
+                X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
                 X = X.astype(dt)
 
                 Y = null_space(X, rcond=1e-3)

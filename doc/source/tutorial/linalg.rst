@@ -278,20 +278,20 @@ Examples:
 
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> A=np.array([[1,2],[3,4]])
+    >>> A=np.array([[1, 2], [3, 4]])
     >>> A
     array([[1, 2],
           [3, 4]])
     >>> linalg.norm(A)
     5.4772255750516612
-    >>> linalg.norm(A,'fro') # frobenius norm is the default
+    >>> linalg.norm(A, 'fro') # frobenius norm is the default
     5.4772255750516612
-    >>> linalg.norm(A,1) # L1 norm (max column sum)
-    6
-    >>> linalg.norm(A,-1)
-    4
-    >>> linalg.norm(A,np.inf) # L inf norm (max row sum)
-    7
+    >>> linalg.norm(A, 1) # L1 norm (max column sum)
+    6.0
+    >>> linalg.norm(A, -1)
+    4.0
+    >>> linalg.norm(A, np.inf) # L inf norm (max row sum)
+    7.0
 
 
 Solving linear least-squares problems and pseudo-inverses
@@ -956,3 +956,21 @@ Van der Monde         `numpy.vander`                     Create a Van der Monde 
 
 
 For examples of the use of these functions, see their respective docstrings.
+
+Advanced Features
+-----------------
+
+Batch Support
+^^^^^^^^^^^^^
+Some of SciPy's linear algebra functions can process batches of scalars, 1D-, or
+2D-arrays given N-d array input.
+For example, a linear algebra function that typically accepts a (2D) matrix may accept
+an array of shape ``(4, 3, 2)``, which it would interpret as a batch of four 3-by-2
+matrices. In this case, we say that the the *core shape* of the input is (3, 2) and the
+*batch shape* is ``(4,)``. Likewise, a linear algebra function that typically accepts
+a (1D) vector would treat a ``(4, 3, 2)`` array as a ``(4, 3)`` batch of vectors,
+in which case the *core shape* of the input is ``(2,)`` and the *batch shape* is
+``(4, 3)``. The length of the core shape is also referred to as the *core dimension*.
+In these cases, the final shape of the output is the batch shape of the input
+concatenated with the core shape of the output (i.e., the shape of the output when
+the batch shape of the input is ``()``). For more information, see :doc:`linalg_batch`.

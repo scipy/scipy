@@ -17,6 +17,7 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     _format = 'csr'
+    _allow_nd = (1, 2)
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
@@ -167,7 +168,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
         return self.__class__((data, indices, indptr), shape=(1, N),
@@ -183,7 +184,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
         return self.__class__((data, indices, indptr), shape=(M, 1),
@@ -264,7 +265,10 @@ class _csr_base(_cs_matrix):
         return self._major_slice(row)._minor_index_fancy(col)
 
     def _get_arrayXint(self, row, col):
-        return self._major_index_fancy(row)._get_submatrix(minor=col)
+        res = self._major_index_fancy(row)._get_submatrix(minor=col)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         if col.step not in (1, None):

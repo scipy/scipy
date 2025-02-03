@@ -12,7 +12,7 @@ from scipy.special import comb
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from .interpnd import _ndim_coords_from_arrays
+from ._interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
 
@@ -402,8 +402,7 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
-            raise ValueError("x and y arrays must have at "
-                             "least %d entries" % minval)
+            raise ValueError(f"x and y arrays must have at least {minval} entries")
 
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
@@ -1667,10 +1666,11 @@ class BPoly(_PPolyBase):
                 n1 = min(n//2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1+n2 != n:
-                    mesg = ("Point %g has %d derivatives, point %g"
-                            " has %d derivatives, but order %d requested" % (
-                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                if n1 + n2 != n:
+                    mesg = (
+                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
+                        f"{len(y2)} derivatives, but order {orders[i]} requested"
+                    )
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):

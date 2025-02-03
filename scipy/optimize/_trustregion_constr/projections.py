@@ -1,17 +1,17 @@
 """Basic linear factorizations needed by the solver."""
 
-from scipy.sparse import (bmat, csc_matrix, eye, issparse)
+from scipy.sparse import block_array, csc_array, eye_array, issparse
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
 try:
-    from sksparse.cholmod import cholesky_AAt
+    from sksparse.cholmod import cholesky_AAt, CholmodTypeConversionWarning
     sksparse_available = True
 except ImportError:
     import warnings
     sksparse_available = False
 import numpy as np
-from warnings import warn
+from warnings import warn, catch_warnings
 
 __all__ = [
     'orthogonality',
@@ -58,7 +58,11 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization
-    factor = cholesky_AAt(A)
+    # TODO: revert this once the warning bug fix in sksparse is merged/released
+    # Add suppression of spurious warning bug from sksparse with csc_array gh-22089
+    # factor = cholesky_AAt(A)
+    with catch_warnings(action='ignore', category=CholmodTypeConversionWarning):
+        factor = cholesky_AAt(A)
 
     # z = x - A.T inv(A A.T) A x
     def null_space(x):
@@ -92,7 +96,7 @@ def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
 def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A - ``AugmentedSystem``."""
     # Form augmented system
-    K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
+    K = block_array([[eye_array(n), A.T], [A, None]], format="csc")
     # LU factorization
     # TODO: Use a symmetric indefinite factorization
     #       to solve the system twice as fast (because
@@ -293,7 +297,7 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
 
     Parameters
     ----------
-    A : sparse matrix (or ndarray), shape (m, n)
+    A : sparse array (or ndarray), shape (m, n)
         Matrix ``A`` used in the projection.
     method : string, optional
         Method used for compute the given linear
@@ -367,14 +371,14 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     # The factorization of an empty matrix
     # only works for the sparse representation.
     if m*n == 0:
-        A = csc_matrix(A)
+        A = csc_array(A)
 
     # Check Argument
     if issparse(A):
         if method is None:
             method = "AugmentedSystem"
         if method not in ("NormalEquation", "AugmentedSystem"):
-            raise ValueError("Method not allowed for sparse matrix.")
+            raise ValueError("Method not allowed for sparse array.")
         if method == "NormalEquation" and not sksparse_available:
             warnings.warn("Only accepts 'NormalEquation' option when "
                           "scikit-sparse is available. Using "

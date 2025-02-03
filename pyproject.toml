@@ -19,7 +19,7 @@ build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.13.1",     # when updating version, also update check in scipy/meson.build
+    "pybind11>=2.13.2",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.14.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
@@ -33,7 +33,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.15.0.dev0"
+version = "1.16.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -60,6 +60,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -82,7 +83,7 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0",
+    "array-api-strict>=2.0,<2.1.1",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
@@ -98,7 +99,7 @@ doc = [
     "jupytext",
     "myst-nb",
     "pooch",
-    "jupyterlite-sphinx>=0.16.2",
+    "jupyterlite-sphinx>=0.17.1",
     "jupyterlite-pyodide-kernel",
 ]
 dev = [
@@ -123,6 +124,8 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.meson-python.args]
+install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"

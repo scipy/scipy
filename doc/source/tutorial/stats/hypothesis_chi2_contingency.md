@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_chi2_contingency.ipynb
+.. notebooklite:: hypothesis_chi2_contingency.md
    :new_tab: True
 ```
 
 (hypothesis_chi2_contingency)=
+
++++
+
 # Chi-square test of independence of variables in a contingency table
 
 In [^1], the use of aspirin to prevent cardiovascular events in women and men

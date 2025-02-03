@@ -11,15 +11,16 @@ numerical differentiation of black-box functions.
 .. autosummary::
    :toctree: generated/
 
-   differentiate
+   derivative
    jacobian
+   hessian
 
 """
 
 
 from ._differentiate import *
 
-__all__ = ['differentiate', 'jacobian']
+__all__ = ['derivative', 'jacobian', 'hessian']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

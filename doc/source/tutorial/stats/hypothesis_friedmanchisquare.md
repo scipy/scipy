@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_friedmanchisquare.ipynb
+.. notebooklite:: hypothesis_friedmanchisquare.md
    :new_tab: True
 ```
 
 (hypothesis_friedmanchisquare)=
+
++++
+
 # Friedman test for repeated samples
 
 In [^1], the pulse rate (per minute) of a group of seven students was measured

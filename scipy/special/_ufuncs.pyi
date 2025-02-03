@@ -28,8 +28,6 @@ __all__ = [
     'binom',
     'boxcox',
     'boxcox1p',
-    'btdtr',
-    'btdtri',
     'btdtria',
     'btdtrib',
     'cbrt',
@@ -267,6 +265,7 @@ _kolmogp: np.ufunc
 _lambertw: np.ufunc
 _lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
+_log1mexp: np.ufunc
 _log1pmx: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc
@@ -310,8 +309,6 @@ betaln: np.ufunc
 binom: np.ufunc
 boxcox1p: np.ufunc
 boxcox: np.ufunc
-btdtr: np.ufunc
-btdtri: np.ufunc
 btdtria: np.ufunc
 btdtrib: np.ufunc
 cbrt: np.ufunc

@@ -165,9 +165,9 @@ We can load this in Python:
    >>> oct_struct = mat_contents['my_struct']
    >>> oct_struct.shape
    (1, 1)
-   >>> val = oct_struct[0,0]
+   >>> val = oct_struct[0, 0]
    >>> val
-   ([[1.0]], [[2.0]])
+   np.void((array([[1.]]), array([[2.]])), dtype=[('field1', 'O'), ('field2', 'O')])
    >>> val['field1']
    array([[ 1.]])
    >>> val['field2']
@@ -179,7 +179,7 @@ In the SciPy versions from 0.12.0, MATLAB structs come back as NumPy
 structured arrays, with fields named for the struct fields. You can see
 the field names in the ``dtype`` output above. Note also:
 
-   >>> val = oct_struct[0,0]
+   >>> val = oct_struct[0, 0]
 
 and:
 
