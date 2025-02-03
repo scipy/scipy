@@ -2012,10 +2012,10 @@ parallelization through the use of a ``workers`` keyword. Each optimizer is slig
 different in how parallelization is employed, but there are common characteristics
 in what can be provided to ``workers``. These commonalities are described below.
 
-If an int is supplied then a :class:`multiprocessing.Pool` is created, with the
-object's :func:`map` method being used to evaluate solutions in parallel. With this
-approach it is mandatory that the objective function is pickleable. Lambda functions
-do not meet that requirement.
+If an int is supplied then a :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` is
+created, with the object's :func:`map` method being used to evaluate solutions in
+parallel. With this approach it is mandatory that the objective function is pickleable.
+Lambda functions do not meet that requirement.
 
 ::
 
@@ -2026,8 +2026,8 @@ do not meet that requirement.
 
 Alternatively map-like callables can be supplied as a worker. Here the map-like function
 iterates through the solution vectors, evaluating each one against the objective function.
-In the following example we use :class:`multiprocessing.Pool` again, the objective
-function still needs to be pickleable.
+In the following example we use :class:`multiprocessing.Pool <multiprocessing.pool.Pool>`
+again, the objective function still needs to be pickleable.
 
 ::
 
@@ -2035,9 +2035,9 @@ function still needs to be pickleable.
     >>> with Pool(2) as pwl:
     ...     res = differential_evolution(rosen, bnds, workers=pwl.map)
 
-It can be an advantage to use this pattern because the :obj:`~multiprocessing.Pool`
-can be re-used for further calculations - there is a significant amount of overhead in
-creating those objects. Alternatives to :class:`multiprocessing.Pool` include the
+It can be an advantage to use this pattern because the Pool can be re-used for further
+calculations - there is a significant amount of overhead in creating those objects.
+Alternatives to :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` include the
 `mpi4py <https://mpi4py.readthedocs.io/en/stable/>`_ package, which enables parallel
 processing on clusters.
 
@@ -2079,8 +2079,8 @@ There are several important points to note about this example:
   function returns a scalar. If ``fun`` is used then a :class:`RuntimeError` will
   result, because ``fun(arr_t)`` will be a 1-D array and not a scalar. We therefore use
   ``rosen`` directly.
-* ``arr.T`` is sent to the objective function. This is because `arr.shape` will be
-  `(S, N)`, where `S` is the number of solution vectors to evaluate and `N` is the
-  number of variables. For ``rosen`` vectorization occurs on `(N, S)` shaped arrays.
+* ``arr.T`` is sent to the objective function. This is because ``arr.shape == (S, N)``,
+  where ``S`` is the number of solution vectors to evaluate and ``N`` is the number of
+  variables. For ``rosen`` vectorization occurs on ``(N, S)`` shaped arrays.
 * This approach is not needed for :func:`differential_evolution` as that minimizer
   already has a keyword for vectorization.
