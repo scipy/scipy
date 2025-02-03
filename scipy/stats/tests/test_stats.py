@@ -4413,7 +4413,7 @@ class TestChisquare:
         with assert_raises(ValueError, match='For each axis slice...'):
             f_obs = xp.asarray([10., 20.])
             f_exp = xp.asarray([30., 60.])
-            stats.chisquare(f_obs=f_obs, f_exp=f_exp)
+            stats.chisquare(f_obs, f_exp=f_exp)
 
     def test_chisquare_12282b(self, xp):
         # Check that users can now disable the sum check tested in
