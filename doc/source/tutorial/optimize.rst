@@ -2033,7 +2033,7 @@ again, the objective function still needs to be pickleable.
 
     >>> from multiprocessing import Pool
     >>> with Pool(2) as pwl:
-    ...     res = differential_evolution(rosen, bnds, workers=pwl.map)
+    ...     res = differential_evolution(rosen, bnds, workers=pwl.map, updating='deferred')
 
 It can be an advantage to use this pattern because the Pool can be re-used for further
 calculations - there is a significant amount of overhead in creating those objects.
