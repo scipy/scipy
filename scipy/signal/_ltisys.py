@@ -2317,11 +2317,13 @@ def _valid_inputs(A, B, poles, method, rtol, maxiter):
     if A.shape[0] != A.shape[1]:
         raise ValueError("A must be square")
     if len(poles) > A.shape[0]:
-        raise ValueError("maximum number of poles is %d but you asked for %d" %
-                         (A.shape[0], len(poles)))
+        raise ValueError(
+            f"maximum number of poles is {A.shape[0]} but you asked for {len(poles)}"
+        )
     if len(poles) < A.shape[0]:
-        raise ValueError("number of poles is %d but you should provide %d" %
-                         (len(poles), A.shape[0]))
+        raise ValueError(
+            f"number of poles is {len(poles)} but you should provide {A.shape[0]}"
+        )
     r = np.linalg.matrix_rank(B)
     for p in poles:
         if sum(p == poles) > r:
@@ -3032,20 +3034,24 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
 
 
 def dlsim(system, u, t=None, x0=None):
-    """
-    Simulate output of a discrete-time linear system.
+    r"""Simulate output of a discrete-time linear system.
 
     Parameters
     ----------
-    system : tuple of array_like or instance of `dlti`
-        A tuple describing the system.
-        The following gives the number of elements in the tuple and
-        the interpretation:
+    system : dlti | tuple
+        An instance of the LTI class `dlti` or a tuple describing the system.
+        The number of elements in the tuple determine the interpretation. I.e.:
 
-            * 1: (instance of `dlti`)
-            * 3: (num, den, dt)
-            * 4: (zeros, poles, gain, dt)
-            * 5: (A, B, C, D, dt)
+        * ``system``: Instance of LTI class `dlti`. Note that derived instances, such
+          as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`, are
+          allowed as well.
+        * ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
+          The coefficients of the polynomials should be specified in descending
+          exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
+        * ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
+          in `ZerosPolesGain`.
+        * ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
+
 
     u : array_like
         An input array describing the input at each time `t` (interpolation is
@@ -3148,20 +3154,23 @@ def dlsim(system, u, t=None, x0=None):
 
 
 def dimpulse(system, x0=None, t=None, n=None):
-    """
-    Impulse response of discrete-time system.
+    r"""Impulse response of discrete-time system.
 
     Parameters
     ----------
-    system : tuple of array_like or instance of `dlti`
-        A tuple describing the system.
-        The following gives the number of elements in the tuple and
-        the interpretation:
+        system : dlti | tuple
+        An instance of the LTI class `dlti` or a tuple describing the system.
+        The number of elements in the tuple determine the interpretation. I.e.:
 
-            * 1: (instance of `dlti`)
-            * 3: (num, den, dt)
-            * 4: (zeros, poles, gain, dt)
-            * 5: (A, B, C, D, dt)
+        * ``system``: Instance of LTI class `dlti`. Note that derived instances, such
+          as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`, are
+          allowed as well.
+        * ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
+          The coefficients of the polynomials should be specified in descending
+          exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
+        * ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
+          in `ZerosPolesGain`.
+        * ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
 
     x0 : array_like, optional
         Initial state-vector.  Defaults to zero.
@@ -3187,14 +3196,17 @@ def dimpulse(system, x0=None, t=None, n=None):
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-
-    >>> butter = signal.dlti(*signal.butter(3, 0.5))
-    >>> t, y = signal.dimpulse(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
-    >>> plt.grid()
-    >>> plt.xlabel('n [samples]')
-    >>> plt.ylabel('Amplitude')
-
+    ...
+    >>> dt = 1  # sampling interval is one => time unit is sample number
+    >>> bb, aa = signal.butter(3, 0.25, fs=1/dt)
+    >>> t, y = signal.dimpulse((bb, aa, dt), n=25)
+    ...
+    >>> fig0, ax0 = plt.subplots()
+    >>> ax0.step(t, np.squeeze(y), '.-', where='post')
+    >>> ax0.set_title(r"Impulse Response of a $3^\text{rd}$ Order Butterworth Filter")
+    >>> ax0.set(xlabel='Sample number', ylabel='Amplitude')
+    >>> ax0.grid()
+    >>> plt.show()
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):
@@ -3235,20 +3247,23 @@ def dimpulse(system, x0=None, t=None, n=None):
 
 
 def dstep(system, x0=None, t=None, n=None):
-    """
-    Step response of discrete-time system.
+    r"""Step response of discrete-time system.
 
     Parameters
     ----------
-    system : tuple of array_like
-        A tuple describing the system.
-        The following gives the number of elements in the tuple and
-        the interpretation:
+     system : dlti | tuple
+        An instance of the LTI class `dlti` or a tuple describing the system.
+        The number of elements in the tuple determine the interpretation. I.e.:
 
-            * 1: (instance of `dlti`)
-            * 3: (num, den, dt)
-            * 4: (zeros, poles, gain, dt)
-            * 5: (A, B, C, D, dt)
+        * ``system``: Instance of LTI class `dlti`. Note that derived instances, such
+          as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`, are
+          allowed as well.
+        * ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
+          The coefficients of the polynomials should be specified in descending
+          exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
+        * ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
+          in `ZerosPolesGain`.
+        * ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
 
     x0 : array_like, optional
         Initial state-vector.  Defaults to zero.
@@ -3271,16 +3286,23 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    The following example illustrates how to create a digital Butterworth filer and
+    plot its step response:
+
     >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-
-    >>> butter = signal.dlti(*signal.butter(3, 0.5))
-    >>> t, y = signal.dstep(butter, n=25)
-    >>> plt.step(t, np.squeeze(y))
-    >>> plt.grid()
-    >>> plt.xlabel('n [samples]')
-    >>> plt.ylabel('Amplitude')
+    ...
+    >>> dt = 1  # sampling interval is one => time unit is sample number
+    >>> bb, aa = signal.butter(3, 0.25, fs=1/dt)
+    >>> t, y = signal.dstep((bb, aa, dt), n=25)
+    ...
+    >>> fig0, ax0 = plt.subplots()
+    >>> ax0.step(t, np.squeeze(y), '.-', where='post')
+    >>> ax0.set_title(r"Step Response of a $3^\text{rd}$ Order Butterworth Filter")
+    >>> ax0.set(xlabel='Sample number', ylabel='Amplitude', ylim=(0, 1.1*np.max(y)))
+    >>> ax0.grid()
+    >>> plt.show()
     """
     # Convert system to dlti-StateSpace
     if isinstance(system, dlti):
@@ -3326,14 +3348,19 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
     Parameters
     ----------
-    system : an instance of the `dlti` class or a tuple describing the system.
-        The following gives the number of elements in the tuple and
-        the interpretation:
+    system : dlti | tuple
+        An instance of the LTI class `dlti` or a tuple describing the system.
+        The number of elements in the tuple determine the interpretation. I.e.:
 
-            * 1 (instance of `dlti`)
-            * 2 (numerator, denominator, dt)
-            * 3 (zeros, poles, gain, dt)
-            * 4 (A, B, C, D, dt)
+        * ``system``: Instance of LTI class `dlti`. Note that derived instances, such
+          as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`, are
+          allowed as well.
+        * ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
+          The coefficients of the polynomials should be specified in descending
+          exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
+        * ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
+          in `ZerosPolesGain`.
+        * ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
 
     w : array_like, optional
         Array of frequencies (in radians/sample). Magnitude and phase data is
@@ -3365,24 +3392,25 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
     Examples
     --------
-    Generating the Nyquist plot of a transfer function
+    The following example generates the Nyquist plot of the transfer function
+    :math:`H(z) = \frac{1}{z^2 + 2z + 3}`  with a sampling time of 0.05 seconds:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-
-    Construct the transfer function
-    :math:`H(z) = \frac{1}{z^2 + 2z + 3}` with a sampling time of 0.05
-    seconds:
-
-    >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
-
+    >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)  # construct H(z)
     >>> w, H = signal.dfreqresp(sys)
-
-    >>> plt.figure()
-    >>> plt.plot(H.real, H.imag, "b")
-    >>> plt.plot(H.real, -H.imag, "r")
+    ...
+    >>> fig0, ax0 = plt.subplots()
+    >>> ax0.plot(H.real, H.imag, label=r"$H(z=e^{+j\omega})$")
+    >>> ax0.plot(H.real, -H.imag, label=r"$H(z=e^{-j\omega})$")
+    >>> ax0.set_title(r"Nyquist Plot of $H(z) = 1 / (z^2 + 2z + 3)$")
+    >>> ax0.set(xlabel=r"$\text{Re}\{z\}$", ylabel=r"$\text{Im}\{z\}$",
+    ...         xlim=(-0.2, 0.65), aspect='equal')
+    >>> ax0.plot(H[0].real, H[0].imag, 'k.')  # mark H(exp(1j*w[0]))
+    >>> ax0.text(0.2, 0, r"$H(e^{j0})$")
+    >>> ax0.grid(True)
+    >>> ax0.legend()
     >>> plt.show()
-
     """
     if not isinstance(system, dlti):
         if isinstance(system, lti):
@@ -3421,24 +3449,23 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
 
 def dbode(system, w=None, n=100):
-    r"""
-    Calculate Bode magnitude and phase data of a discrete-time system.
+    r"""Calculate Bode magnitude and phase data of a discrete-time system.
 
     Parameters
     ----------
-    system :
+    system : dlti | tuple
         An instance of the LTI class `dlti` or a tuple describing the system.
-        The number of elements in the tuple determine the interpretation, i.e.:
+        The number of elements in the tuple determine the interpretation. I.e.:
 
-        1. ``(sys_dlti)``:  Instance of LTI class `dlti`. Note that derived instances,
-           such as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`,
-           are allowed as well.
-        2. ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
-           The coefficients of the polynomials should be specified in descending
-           exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
-        3. ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
-           in `ZerosPolesGain`.
-        4. ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
+        * ``system``: Instance of LTI class `dlti`. Note that derived instances, such
+          as instances of `TransferFunction`, `ZerosPolesGain`, or `StateSpace`, are
+          allowed as well.
+        * ``(num, den, dt)``: Rational polynomial as described in `TransferFunction`.
+          The coefficients of the polynomials should be specified in descending
+          exponent order,  e.g., z² + 3z + 5 would be represented as ``[1, 3, 5]``.
+        * ``(zeros, poles, gain, dt)``:  Zeros, poles, gain form as described
+          in `ZerosPolesGain`.
+        * ``(A, B, C, D, dt)``: State-space form as described in `StateSpace`.
 
     w : array_like, optional
         Array of frequencies normalized to the Nyquist frequency being π, i.e.,

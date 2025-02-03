@@ -1442,13 +1442,78 @@ class TestBetaInc:
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
                                       special.betaincc, special.betainccinv])
-    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (0, 2, 0.5),
-                                      (1.5, -2.0, 0.5), (1.5, 0, 0.5),
+    @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
                 special.betainc(*args)
+
+    @pytest.mark.parametrize(
+        "args,expected",
+        [
+            ((0.0, 0.0, 0.0), np.nan),
+            ((0.0, 0.0, 0.5), np.nan),
+            ((0.0, 0.0, 1.0), np.nan),
+            ((np.inf, np.inf, 0.0), np.nan),
+            ((np.inf, np.inf, 0.5), np.nan),
+            ((np.inf, np.inf, 1.0), np.nan),
+            ((0.0, 1.0, 0.0), 0.0),
+            ((0.0, 1.0, 0.5), 1.0),
+            ((0.0, 1.0, 1.0), 1.0),
+            ((1.0, 0.0, 0.0), 0.0),
+            ((1.0, 0.0, 0.5), 0.0),
+            ((1.0, 0.0, 1.0), 1.0),
+            ((0.0, np.inf, 0.0), 0.0),
+            ((0.0, np.inf, 0.5), 1.0),
+            ((0.0, np.inf, 1.0), 1.0),
+            ((np.inf, 0.0, 0.0), 0.0),
+            ((np.inf, 0.0, 0.5), 0.0),
+            ((np.inf, 0.0, 1.0), 1.0),
+            ((1.0, np.inf, 0.0), 0.0),
+            ((1.0, np.inf, 0.5), 1.0),
+            ((1.0, np.inf, 1.0), 1.0),
+            ((np.inf, 1.0, 0.0), 0.0),
+            ((np.inf, 1.0, 0.5), 0.0),
+            ((np.inf, 1.0, 1.0), 1.0),
+        ]
+    )
+    def test_betainc_edge_cases(self, args, expected):
+        observed = special.betainc(*args)
+        assert_equal(observed, expected)
+
+    @pytest.mark.parametrize(
+        "args,expected",
+        [
+            ((0.0, 0.0, 0.0), np.nan),
+            ((0.0, 0.0, 0.5), np.nan),
+            ((0.0, 0.0, 1.0), np.nan),
+            ((np.inf, np.inf, 0.0), np.nan),
+            ((np.inf, np.inf, 0.5), np.nan),
+            ((np.inf, np.inf, 1.0), np.nan),
+            ((0.0, 1.0, 0.0), 1.0),
+            ((0.0, 1.0, 0.5), 0.0),
+            ((0.0, 1.0, 1.0), 0.0),
+            ((1.0, 0.0, 0.0), 1.0),
+            ((1.0, 0.0, 0.5), 1.0),
+            ((1.0, 0.0, 1.0), 0.0),
+            ((0.0, np.inf, 0.0), 1.0),
+            ((0.0, np.inf, 0.5), 0.0),
+            ((0.0, np.inf, 1.0), 0.0),
+            ((np.inf, 0.0, 0.0), 1.0),
+            ((np.inf, 0.0, 0.5), 1.0),
+            ((np.inf, 0.0, 1.0), 0.0),
+            ((1.0, np.inf, 0.0), 1.0),
+            ((1.0, np.inf, 0.5), 0.0),
+            ((1.0, np.inf, 1.0), 0.0),
+            ((np.inf, 1.0, 0.0), 1.0),
+            ((np.inf, 1.0, 0.5), 1.0),
+            ((np.inf, 1.0, 1.0), 0.0),
+        ]
+    )
+    def test_betaincc_edge_cases(self, args, expected):
+        observed = special.betaincc(*args)
+        assert_equal(observed, expected)
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_gh21426(self, dtype):
@@ -3268,7 +3333,7 @@ class TestHyper:
         ]
         for i, (a, b, c, x, v) in enumerate(values):
             cv = special.hyp2f1(a, b, c, x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_hyperu(self):
         val1 = special.hyperu(1,0.1,100)
@@ -3334,7 +3399,7 @@ class TestBessel:
                   ]
         for i, (v, x, y) in enumerate(values):
             yc = special.jv(v, x)
-            assert_almost_equal(yc, y, 8, err_msg='test #%d' % i)
+            assert_almost_equal(yc, y, 8, err_msg=f'test #{i}')
 
     def test_negv_jve(self):
         assert_almost_equal(special.jve(-3,2), -special.jve(3,2), 14)
@@ -3406,7 +3471,7 @@ class TestBessel:
                 elif tt == 1:
                     assert_allclose(jnp(nn, zz), 0, atol=1e-6)
                 else:
-                    raise AssertionError("Invalid t return for nt=%d" % nt)
+                    raise AssertionError(f"Invalid t return for nt={nt}")
 
     def test_jnp_zeros(self):
         jnp = special.jnp_zeros(1,5)
@@ -3826,7 +3891,7 @@ class TestBessel:
                   ]
         for i, (x, v) in enumerate(values):
             cv = special.i0(x) * exp(-x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_i0e(self):
         oize = special.i0e(.1)
@@ -3844,7 +3909,7 @@ class TestBessel:
                   ]
         for i, (x, v) in enumerate(values):
             cv = special.i1(x) * exp(-x)
-            assert_almost_equal(cv, v, 8, err_msg='test #%d' % i)
+            assert_almost_equal(cv, v, 8, err_msg=f'test #{i}')
 
     def test_i1e(self):
         oi1e = special.i1e(.1)
@@ -4249,6 +4314,26 @@ def test_chi2_smalldf():
 
 def test_ch2_inf():
     assert_equal(special.chdtr(0.7,np.inf), 1.0)
+
+
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_v_nan(x):
+    assert np.isnan(special.chdtr(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2_x_nan(v):
+    assert np.isnan(special.chdtr(v, np.nan))
+
+
+@pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_v_nan(x):
+    assert np.isnan(special.chdtrc(np.nan, x))
+
+
+@pytest.mark.parametrize("v", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+def test_chi2c_x_nan(v):
+    assert np.isnan(special.chdtrc(v, np.nan))
 
 
 def test_chi2c_smalldf():

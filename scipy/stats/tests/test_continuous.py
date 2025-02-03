@@ -426,6 +426,8 @@ def check_dist_func(dist, fname, arg, result_shape, methods):
         # can only expect about half of machine precision for optimization
         # because math
         tol_override = {'atol': 1e-6}
+    elif fname in {'logcdf'}:  # gh-22276
+        tol_override = {'rtol': 2e-7}
 
     if dist._overrides(f'_{fname}_formula'):
         methods.add('formula')
@@ -1792,12 +1794,18 @@ class TestMixture:
         with pytest.raises(ValueError, match=message):
             Mixture([Normal(), Normal()], weights=[1.5, -0.5])
 
-    def test_basic(self):
+    @pytest.mark.parametrize('shape', [(), (10,)])
+    def test_basic(self, shape):
         rng = np.random.default_rng(582348972387243524)
         X = Mixture((Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)),
                     weights=(0.4, 0.6))
         Y = MixedDist()
-        x = rng.random(10)
+        x = rng.random(shape)
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
 
         assert_allclose(X.logentropy(), Y.logentropy())
         assert_allclose(X.entropy(), Y.entropy())
@@ -1855,3 +1863,17 @@ class TestMixture:
         assert X.components[0] == components[0]
         X.weights[0] = weights[1]
         assert X.weights[0] == weights[0]
+
+    def test_inverse(self):
+        # Originally, inverse relied on the mean to start the bracket search.
+        # This didn't work for distributions with non-finite mean. Check that
+        # this is resolved.
+        rng = np.random.default_rng(24358934657854237863456)
+        Cauchy = stats.make_distribution(stats.cauchy)
+        X0 = Cauchy()
+        X = stats.Mixture([X0, X0])
+        p = rng.random(size=10)
+        np.testing.assert_allclose(X.icdf(p), X0.icdf(p))
+        np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
+        np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
+        np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))

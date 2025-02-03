@@ -11,10 +11,8 @@ from scipy._lib._array_api import (
     np_compat,
     is_array_api_strict,
 )
-from scipy.conftest import array_api_compatible
-
 from scipy.integrate import cubature
-
+from scipy.integrate._cubature import _InfiniteLimitsTransform
 from scipy.integrate._rules import (
     Rule, FixedRule,
     NestedFixedRule,
@@ -22,9 +20,6 @@ from scipy.integrate._rules import (
     GenzMalikCubature,
 )
 
-from scipy.integrate._cubature import _InfiniteLimitsTransform
-
-pytestmark = [pytest.mark.usefixtures("skip_xp_backends"),]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 # The integrands ``genz_malik_1980_*`` come from the paper:
@@ -120,13 +115,10 @@ def genz_malik_1980_f_2_exact(a, b, alphas, betas, xp):
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    # `xp` is the unwrapped namespace, so `.atan` won't work for `xp = np` and np<2.
-    xp_test = array_namespace(a)
-
     return (
         (-1)**ndim * 1/xp.prod(alphas, axis=-1)
         * xp.prod(
-            xp_test.atan((a - betas)/alphas) - xp_test.atan((b - betas)/alphas),
+            xp.atan((a - betas)/alphas) - xp.atan((b - betas)/alphas),
             axis=-1,
         )
     )
@@ -377,7 +369,6 @@ def f_with_problematic_points(x_arr, points, xp):
     return xp.ones(x_arr.shape[0])
 
 
-@array_api_compatible
 class TestCubature:
     """
     Tests related to the interface of `cubature`.
@@ -534,12 +525,13 @@ class TestCubature:
     "gk21",
     "genz-malik",
 ])
-@array_api_compatible
 class TestCubatureProblems:
     """
     Tests that `cubature` gives the correct answer.
     """
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
@@ -786,6 +778,8 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
@@ -975,7 +969,11 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
+    )
+    @skip_xp_backends(
+        "dask.array",
+        reason="transforms make use of boolean index assignment"
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1125,7 +1123,11 @@ class TestCubatureProblems:
 
     @skip_xp_backends(
         "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
+        reason="transforms make use of indexing assignment",
+    )
+    @skip_xp_backends(
+        "dask.array",
+        reason="transforms make use of boolean index assignment"
     )
     @pytest.mark.parametrize("problem", [
         (
@@ -1197,7 +1199,6 @@ class TestCubatureProblems:
         )
 
 
-@array_api_compatible
 class TestRules:
     """
     Tests related to the general Rule interface (currently private).
@@ -1238,7 +1239,6 @@ class TestRules:
                 base_class.estimate(basic_1d_integrand, a, b, args=(xp,))
 
 
-@array_api_compatible
 class TestRulesQuadrature:
     """
     Tests underlying quadrature rules (ndim == 1).
@@ -1311,7 +1311,6 @@ class TestRulesQuadrature:
             quadrature(1, xp=xp)
 
 
-@array_api_compatible
 class TestRulesCubature:
     """
     Tests underlying cubature rules (ndim >= 2).
@@ -1333,10 +1332,13 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@array_api_compatible
 @skip_xp_backends(
     "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
+    reason="transforms make use of indexing assignment",
+)
+@skip_xp_backends(
+    "dask.array",
+    reason="transforms make use of boolean index assignment"
 )
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
@@ -1355,19 +1357,18 @@ class TestTransformations:
         transformation.
         """
 
-        xp_compat = array_namespace(xp.empty(0))
         points = [xp.asarray(p, dtype=xp.float64) for p in points]
 
         f_transformed = _InfiniteLimitsTransform(
             # Bind `points` and `xp` argument in f
-            lambda x: f_with_problematic_points(x, points, xp_compat),
-            xp.asarray(a, dtype=xp_compat.float64),
-            xp.asarray(b, dtype=xp_compat.float64),
-            xp=xp_compat,
+            lambda x: f_with_problematic_points(x, points, xp),
+            xp.asarray(a, dtype=xp.float64),
+            xp.asarray(b, dtype=xp.float64),
+            xp=xp,
         )
 
         for point in points:
-            transformed_point = f_transformed.inv(xp_compat.reshape(point, (1, -1)))
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
 
             with pytest.raises(Exception, match="called with a problematic point"):
                 f_transformed(transformed_point)

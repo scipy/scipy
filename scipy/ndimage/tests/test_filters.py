@@ -15,7 +15,6 @@ from scipy._lib._array_api import (
     xp_assert_equal,
 )
 from scipy._lib._array_api import is_cupy, is_numpy, is_torch, array_namespace
-from scipy.conftest import array_api_compatible
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
@@ -23,9 +22,7 @@ from . import types, float_types, complex_types
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              pytest.mark.usefixtures("xfail_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy']),]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 def sumsq(a, b, xp=None):
@@ -41,9 +38,8 @@ def _complex_correlate(xp, array, kernel, real_dtype, convolve=False,
     """
     array = xp.asarray(array)
     kernel = xp.asarray(kernel)
-    isdtype = array_namespace(array, kernel).isdtype
-    complex_array = isdtype(array.dtype, 'complex floating')
-    complex_kernel = isdtype(kernel.dtype, 'complex floating')
+    complex_array = xp.isdtype(array.dtype, 'complex floating')
+    complex_kernel = xp.isdtype(kernel.dtype, 'complex floating')
     if array.ndim == 1:
         func = ndimage.convolve1d if convolve else ndimage.correlate1d
     else:
@@ -195,6 +191,7 @@ class TestNdimageFilters:
 
     @xfail_xp_backends('cupy', reason="Differs by a factor of two?")
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @xfail_xp_backends("dask.array", reason="wrong answer")
     def test_correlate01_overlap(self, xp):
         array = xp.reshape(xp.arange(256), (16, 16))
         weights = xp.asarray([2])
@@ -537,6 +534,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate23(self, dtype_array, dtype_output, xp):
@@ -556,6 +554,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate24(self, dtype_array, dtype_output, xp):
@@ -576,6 +575,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, tcov)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output, xp):
@@ -881,6 +881,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, output2)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     def test_gauss_memory_overlap(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -1227,6 +1228,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt02(self, dtype, xp):
         if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
@@ -1289,6 +1291,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.",)
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel02(self, dtype, xp):
         if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
@@ -1349,6 +1352,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only",)
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1379,6 +1383,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1395,6 +1400,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_generic_laplace01(self, dtype, xp):
         if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
@@ -1420,6 +1426,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp, output)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1435,12 +1442,12 @@ class TestNdimageFilters:
         output = ndimage.gaussian_gradient_magnitude(array, 1.0)
         expected = tmp1 * tmp1 + tmp2 * tmp2
 
-        astype = array_namespace(expected).astype
-        expected_float = astype(expected, xp.float64) if is_int_dtype else expected
-        expected = astype(xp.sqrt(expected_float), dtype)
+        expected_float = xp.astype(expected, xp.float64) if is_int_dtype else expected
+        expected = xp.astype(xp.sqrt(expected_float), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only")
+    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1457,10 +1464,9 @@ class TestNdimageFilters:
         ndimage.gaussian_gradient_magnitude(array, 1.0, output)
         expected = tmp1 * tmp1 + tmp2 * tmp2
 
-        astype = array_namespace(expected).astype
-        fl_expected = astype(expected, xp.float64) if is_int_dtype else expected
+        fl_expected = xp.astype(expected, xp.float64) if is_int_dtype else expected
 
-        expected = astype(xp.sqrt(fl_expected), dtype)
+        expected = xp.astype(xp.sqrt(fl_expected), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
     def test_generic_gradient_magnitude01(self, xp):
@@ -1770,8 +1776,7 @@ class TestNdimageFilters:
 
         missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
 
-        expand_dims = array_namespace(footprint).expand_dims
-        footprint_3d = expand_dims(footprint, axis=missing_axis)
+        footprint_3d = xp.expand_dims(footprint, axis=missing_axis)
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
         xp_assert_close(output, expected)
 
@@ -1833,13 +1838,13 @@ class TestNdimageFilters:
     @skip_xp_backends("jax.numpy",
         reason="assignment destination is read-only",
     )
+    @xfail_xp_backends("dask.array", reason="wrong answer")
     def test_rank06_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
                             [5, 6, 9, 3, 5]])
 
-        asarray = array_namespace(array).asarray
-        array_copy = asarray(array, copy=True)
+        array_copy = xp.asarray(array, copy=True)
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
                     [5, 5, 3, 3, 1]]
@@ -2006,6 +2011,7 @@ class TestNdimageFilters:
                                      origin=[-1, 0])
         xp_assert_equal(expected, output)
 
+    @skip_xp_backends(np_only=True, reason="test list input")
     def test_rank16(self, xp):
         # test that lists are accepted and interpreted as numpy arrays
         array = [3, 2, 5, 1, 4]
@@ -2271,7 +2277,8 @@ def test_ticket_701(xp):
     xp_assert_equal(res, res2)
 
 
-def test_gh_5430():
+@skip_xp_backends(np_only=True)
+def test_gh_5430(xp):
     # At least one of these raises an error unless gh-5430 is
     # fixed. In py2k an int is implemented using a C long, so
     # which one fails depends on your system. In py3k there is only
@@ -2568,8 +2575,6 @@ def test_gaussian_truncate(xp):
     )
     assert num_nonzeros_5 == 51**2
 
-    nnz_kw = {'as_tuple': True} if is_torch(xp) else {}
-
     # Test truncate when sigma is a sequence.
     f = ndimage.gaussian_filter(arr, [0.5, 2.5], truncate=3.5)
     fpos = f > 0
@@ -2588,14 +2593,14 @@ def test_gaussian_truncate(xp):
 
     # Test gaussian_laplace
     y = ndimage.gaussian_laplace(x, sigma=2, truncate=3.5)
-    nonzero_indices = xp.nonzero(y != 0, **nnz_kw)[0]
+    nonzero_indices = xp.nonzero(y != 0)[0]
 
     n = xp.max(nonzero_indices) - xp.min(nonzero_indices) + 1
     assert n == 15
 
     # Test gaussian_gradient_magnitude
     y = ndimage.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
-    nonzero_indices = xp.nonzero(y != 0, **nnz_kw)[0]
+    nonzero_indices = xp.nonzero(y != 0)[0]
     n = xp.max(nonzero_indices) - xp.min(nonzero_indices) + 1
     assert n == 15
 
@@ -2640,6 +2645,7 @@ def test_gaussian_radius_invalid(xp):
 
 
 @skip_xp_backends("jax.numpy", reason="output array is read-only")
+@xfail_xp_backends("dask.array", reason="wrong answer")
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread

@@ -183,7 +183,6 @@ class TestSolveBanded:
         x = solve_banded((l, u), ab, b)
         assert_array_almost_equal(dot(a, x), b)
 
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt_ab, dt_b):
@@ -734,8 +733,9 @@ class TestSolve:
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
 
-    def test_hermitian(self):
-        # An upper triangular matrix will be used for hermitian matrix a
+    @pytest.mark.parametrize("assume_a", ['her', 'sym'])
+    def test_symmetric_hermitian(self, assume_a):
+        # An upper triangular matrix will be used for symmetric/hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
                       [0, 0, -8.87, 1.58-0.90j],
@@ -744,15 +744,18 @@ class TestSolve:
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
                       [7.79+5.48j, -35.39+18.01j]])
-        res = np.array([[2.+1j, -8+6j],
-                        [3.-2j, 7-2j],
-                        [-1+2j, -1+5j],
-                        [1.-1j, 3-4j]])
-        x = solve(a, b, assume_a='her')
-        assert_array_almost_equal(x, res)
-        # Also conjugate a and test for lower triangular data
-        x = solve(a.conj().T, b, assume_a='her', lower=True)
-        assert_array_almost_equal(x, res)
+
+        a2 = a.T if assume_a == 'sym' else a.conj().T  # for testing `lower`
+        a3 = a + a2                                    # for reference solution
+        a3[np.arange(4), np.arange(4)] = np.diag(a)
+        ref = solve(a3, b, assume_a='general')
+
+        x = solve(a, b, assume_a=assume_a)
+        assert_array_almost_equal(x, ref)
+        # Also transpose(/conjugate) `a` and test for lower triangular data
+        # This also tests gh-22265 resolution; otherwise, a warning would be emitted
+        x = solve(a2, b, assume_a=assume_a, lower=True)
+        assert_array_almost_equal(x, ref)
 
     def test_pos_and_sym(self):
         A = np.arange(1, 10).reshape(3, 3)
@@ -778,7 +781,7 @@ class TestSolve:
     @pytest.mark.parametrize('structure',
                              ('diagonal', 'tridiagonal', 'lower triangular',
                               'upper triangular', 'symmetric', 'hermitian',
-                              'positive definite', 'general', None))
+                              'positive definite', 'general', 'banded', None))
     def test_ill_condition_warning(self, structure):
         rng = np.random.default_rng(234859349452)
         n = 10
@@ -789,9 +792,21 @@ class TestSolve:
         with pytest.warns(LinAlgWarning, match=message):
             solve(A, b, assume_a=structure)
 
+    @pytest.mark.thread_unsafe
+    @pytest.mark.parametrize('structure',
+                             ('diagonal', 'tridiagonal', 'lower triangular',
+                              'upper triangular', 'symmetric', 'hermitian',
+                              'positive definite', 'general', None))
+    def test_exactly_singular_gh22263(self, structure):
+        n = 10
+        A = np.zeros((n, n))
+        b = np.ones(n)
+        with (pytest.raises(LinAlgError, match="singular"), np.errstate(all='ignore')):
+            solve(A, b, assume_a=structure)
+
     def test_multiple_rhs(self):
         a = np.eye(2)
-        b = np.random.rand(2, 3, 4)
+        b = np.random.rand(2, 12)
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
@@ -889,7 +904,7 @@ class TestSolve:
     # "pos" and "positive definite" need to be added
     @pytest.mark.parametrize('assume_a', ['diagonal', 'tridiagonal', 'banded',
                                           'lower triangular', 'upper triangular',
-                                          'symmetric', 'hermitian',
+                                          'symmetric', 'hermitian', 'banded',
                                           'general', 'sym', 'her', 'gen'])
     @pytest.mark.parametrize('nrhs', [(), (5,)])
     @pytest.mark.parametrize('transposed', [True, False])
@@ -1894,7 +1909,7 @@ class TestSolveCirculant:
         c = np.array([1, 2, -3, -5])
         b = np.arange(24).reshape(4, 3, 2)
         x = solve_circulant(c, b)
-        y = solve(circulant(c), b)
+        y = solve(circulant(c), b.reshape(4, -1)).reshape(b.shape)
         assert_allclose(x, y)
 
     def test_complex(self):

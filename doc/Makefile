@@ -109,13 +109,10 @@ upload:
 # Basic Sphinx generation rules for different formats
 #------------------------------------------------------------------------------
 
-html: version-check convert-notebooks html-build
+html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
 	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
-
-convert-notebooks:
-	$(PYTHON) convert_notebooks.py
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees

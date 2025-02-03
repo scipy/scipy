@@ -405,15 +405,16 @@ class Akima1DInterpolator(CubicHermiteSpline):
         .. versionadded:: 1.13.0
 
     extrapolate : {bool, None}, optional
-        If bool, determines whether to extrapolate to out-of-bounds points 
-        based on first and last intervals, or to return NaNs. If None, 
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If None,
         ``extrapolate`` is set to False.
-        
+
     Methods
     -------
     __call__
     derivative
     antiderivative
+    integrate
     roots
 
     See Also
@@ -490,7 +491,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
@@ -508,37 +509,45 @@ class Akima1DInterpolator(CubicHermiteSpline):
         # Akima extrapolation historically False; parent class defaults to True.
         extrapolate = False if extrapolate is None else extrapolate
 
-        # determine slopes between breakpoints
-        m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-        m[2:-2] = np.diff(y, axis=0) / dx
-
-        # add two additional points on the left ...
-        m[1] = 2. * m[2] - m[3]
-        m[0] = 2. * m[1] - m[2]
-        # ... and on the right
-        m[-2] = 2. * m[-3] - m[-4]
-        m[-1] = 2. * m[-2] - m[-3]
-
-        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
-        # defined. This is the fill value:
-        t = .5 * (m[3:] + m[:-3])
-        # get the denominator of the slope t
-        dm = np.abs(np.diff(m, axis=0))
-        if method == "makima":
-            pm = np.abs(m[1:] + m[:-1])
-            f1 = dm[2:] + 0.5 * pm[2:]
-            f2 = dm[:-2] + 0.5 * pm[:-2]
+        if y.shape[0] == 2:
+            # edge case: only have two points, use linear interpolation
+            xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+            hk = xp[1:] - xp[:-1]
+            mk = (y[1:] - y[:-1]) / hk
+            t = np.zeros_like(y)
+            t[...] = mk
         else:
-            f1 = dm[2:]
-            f2 = dm[:-2]
-        f12 = f1 + f2
-        # These are the mask of where the slope at breakpoint is defined:
-        ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
-        x_ind, y_ind = ind[0], ind[1:]
-        # Set the slope at breakpoint
-        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            # determine slopes between breakpoints
+            m = np.empty((x.size + 3, ) + y.shape[1:])
+            dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
+            m[2:-2] = np.diff(y, axis=0) / dx
+
+            # add two additional points on the left ...
+            m[1] = 2. * m[2] - m[3]
+            m[0] = 2. * m[1] - m[2]
+            # ... and on the right
+            m[-2] = 2. * m[-3] - m[-4]
+            m[-1] = 2. * m[-2] - m[-3]
+
+            # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
+            # defined. This is the fill value:
+            t = .5 * (m[3:] + m[:-3])
+            # get the denominator of the slope t
+            dm = np.abs(np.diff(m, axis=0))
+            if method == "makima":
+                pm = np.abs(m[1:] + m[:-1])
+                f1 = dm[2:] + 0.5 * pm[2:]
+                f2 = dm[:-2] + 0.5 * pm[:-2]
+            else:
+                f1 = dm[2:]
+                f2 = dm[:-2]
+            f12 = f1 + f2
+            # These are the mask of where the slope at breakpoint is defined:
+            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            x_ind, y_ind = ind[0], ind[1:]
+            # Set the slope at breakpoint
+            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
+                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -775,8 +784,9 @@ class CubicSpline(CubicHermiteSpline):
                 b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
                 b[2] = 2 * slope[1]
 
-                s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                          check_finite=False)
+                m = b.shape[0]
+                s = solve(A, b.reshape(m, -1), overwrite_a=True, overwrite_b=True,
+                          check_finite=False).reshape(b.shape)
             elif n == 3 and bc[0] == 'periodic':
                 # In case when number of points is 3 we compute the derivatives
                 # manually
@@ -836,11 +846,15 @@ class CubicSpline(CubicHermiteSpline):
                     b2[-1] = -a_m2_m1
 
                     # s1 and s2 are the solutions of (n-2, n-2) system
-                    s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                    m = b1.shape[0]
+                    s1 = solve_banded((1, 1), Ac, b1.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s1 = s1.reshape(b1.shape)
 
-                    s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                    m = b2.shape[0]
+                    s2 = solve_banded((1, 1), Ac, b2.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s2 = s2.reshape(b2.shape)
 
                     # computing the s[n-2] solution:
                     s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
@@ -882,8 +896,10 @@ class CubicSpline(CubicHermiteSpline):
                         A[-1, -2] = dx[-1]
                         b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
 
-                    s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                    m = b.shape[0]
+                    s = solve_banded((1, 1), A, b.reshape(m, -1), overwrite_ab=True,
                                      overwrite_b=True, check_finite=False)
+                    s = s.reshape(b.shape)
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis

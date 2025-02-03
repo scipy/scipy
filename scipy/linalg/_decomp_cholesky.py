@@ -36,11 +36,14 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
     potrf, = get_lapack_funcs(('potrf',), (a1,))
     c, info = potrf(a1, lower=lower, overwrite_a=overwrite_a, clean=clean)
     if info > 0:
-        raise LinAlgError("%d-th leading minor of the array is not positive "
-                          "definite" % info)
+        raise LinAlgError(
+            f"{info}-th leading minor of the array is not positive definite"
+        )
     if info < 0:
-        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument'
-                         'on entry to "POTRF".')
+        raise ValueError(
+            f'LAPACK reported an illegal value in {-info}-th argument '
+            f'on entry to "POTRF".'
+        )
     return c, lower
 
 
@@ -218,7 +221,12 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     True
 
     """
-    (c, lower) = c_and_lower
+    c, lower = c_and_lower
+    return _cho_solve(c, b, lower, overwrite_b=overwrite_b, check_finite=check_finite)
+
+
+@_apply_over_batch(('c', 2), ('b', '1|2'))
+def _cho_solve(c, b, lower, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
         c = asarray_chkfinite(c)
@@ -242,8 +250,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     potrs, = get_lapack_funcs(('potrs',), (c, b1))
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
-        raise ValueError('illegal value in %dth argument of internal potrs'
-                         % -info)
+        raise ValueError(f'illegal value in {-info}th argument of internal potrs')
     return x
 
 
@@ -321,10 +328,9 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
     if info > 0:
-        raise LinAlgError("%d-th leading minor not positive definite" % info)
+        raise LinAlgError(f"{info}-th leading minor not positive definite")
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbtrf'
-                         % -info)
+        raise ValueError(f'illegal value in {info}-th argument of internal pbtrf')
     return c
 
 
@@ -375,6 +381,12 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
 
     """
     (cb, lower) = cb_and_lower
+    return _cho_solve_banded(cb, b, lower, overwrite_b=overwrite_b,
+                             check_finite=check_finite)
+
+
+@_apply_over_batch(('cb', 2), ('b', '1|2'))
+def _cho_solve_banded(cb, b, lower, overwrite_b, check_finite):
     if check_finite:
         cb = asarray_chkfinite(cb)
         b = asarray_chkfinite(b)
@@ -395,8 +407,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
     if info > 0:
-        raise LinAlgError("%dth leading minor not positive definite" % info)
+        raise LinAlgError(f"{info}th leading minor not positive definite")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal pbtrs'
-                         % -info)
+        raise ValueError(f'illegal value in {-info}th argument of internal pbtrs')
     return x

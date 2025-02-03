@@ -3,13 +3,10 @@ SciPy: A scientific computing package for Python
 ================================================
 
 Documentation is available in the docstrings and
-online at https://docs.scipy.org.
+online at https://docs.scipy.org/doc/scipy/
 
 Subpackages
 -----------
-Using any of these subpackages requires an explicit import. For example,
-``import scipy.cluster``.
-
 ::
 
  cluster                      --- Vector Quantization / Kmeans

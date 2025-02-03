@@ -321,7 +321,10 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist gmpy2 threadpoolctl pooch hypothesis matplotlib
+        # Move mpmath back into `install --pre` above once mpmath 1.4.0 with
+        # the fix is out (xref gh-22395)
+        python -m pip install mpmath
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
@@ -506,6 +509,7 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
+
   #################################################################################
   clang-17-build-only:
     # Purpose is to check for warnings in builds with latest clang.
@@ -543,3 +547,40 @@ jobs:
         run: |
           # specify which compilers to use using environment variables
           CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+
+  #################################################################################
+  test_aarch64:
+    name: aarch64, fast, py3.12/npAny, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.12'
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Install Python packages
+      run: |
+        python -m pip install -r requirements/build.txt -r requirements/test.txt
+
+    - name: Install SciPy
+      run: |
+        python -m pip install . --no-build-isolation
+
+    - name: Test SciPy
+      run: |
+        export OMP_NUM_THREADS=2
+        cd ..
+        pytest --pyargs scipy -m 'not slow'

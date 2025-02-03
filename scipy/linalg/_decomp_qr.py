@@ -20,8 +20,7 @@ def safecall(f, name, *args, **kwargs):
         kwargs['lwork'] = ret[-2][0].real.astype(np.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
-        raise ValueError("illegal value in %dth argument of internal %s"
-                         % (-ret[-1], name))
+        raise ValueError(f"illegal value in {-ret[-1]}th argument of internal {name}")
     return ret[:-2]
 
 
@@ -217,6 +216,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     return (Q,) + Rj
 
 
+@_apply_over_batch(('a', 2), ('c', '1|2'))
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
                 overwrite_a=False, overwrite_c=False):
     """

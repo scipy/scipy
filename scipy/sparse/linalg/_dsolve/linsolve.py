@@ -776,11 +776,12 @@ def is_sptriangular(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csc_array, eye_array
+    >>> from scipy.sparse.linalg import is_sptriangular
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.is_sptriangular(A)
+    >>> is_sptriangular(A)
     (True, False)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.is_sptriangular(D)
+    >>> D = eye_array(3, format='csr')
+    >>> is_sptriangular(D)
     (True, True)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
@@ -849,12 +850,13 @@ def spbandwidth(A):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.sparse.linalg import spbandwidth
     >>> from scipy.sparse import csc_array, eye_array
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.spbandwidth(A)
+    >>> spbandwidth(A)
     (2, 0)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.spbandwidth(D)
+    >>> D = eye_array(3, format='csr')
+    >>> spbandwidth(D)
     (0, 0)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):

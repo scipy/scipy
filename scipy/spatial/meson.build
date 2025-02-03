@@ -8,7 +8,7 @@ _spatial_pxd = [
 spt_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _spatial_pxd, _lib_pxd])
+  depends : [_cython_tree, _spatial_pxd, _lib_pxd, cython_lapack_pxd])
 
 qhull_src = [
   'qhull_src/src/geom2_r.c',
