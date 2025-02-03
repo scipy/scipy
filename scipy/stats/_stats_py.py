@@ -3752,8 +3752,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
         If True (default), perform a standard one-way ANOVA test that
         assumes equal population variances [2]_.
         If False, perform Welch's ANOVA test, which does not assume
-        equal population variances [4]_. Modified F-statistics and
-        dof will be calculated by each samples [5]_
+        equal population variances. Modified F-statistics and
+        dof will be calculated by each samples [4]_.
 
         .. versionadded:: 1.15.0
 
@@ -3821,10 +3821,6 @@ def f_oneway(*samples, axis=0, equal_var=True):
            An Alternative Approach,"Biometrika, vol. 38, no. 3/4,
            pp. 330-336, 1951, doi: 10.2307/2332579.
 
-    .. [5] D. C. Howell, Statistical Methods for Psychology.
-           in International student edition.
-           Wadsworth Cengage Learning, 2013.
-
     Examples
     --------
     >>> import numpy as np
@@ -3847,48 +3843,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     >>> f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
     F_onewayResult(statistic=7.121019471642447, pvalue=0.0002812242314534544)
 
-    Welch ANOVA will be performed if sample variances are not equal
-    and `equal_var` is False. The sample variances can be checked by
-    `scipy.stats.levene` or `scipy.stats.bartlett`. The following toy samples
-    reject the null hypothesis that all input samples are from populations
-    with equal variances. Therefore, Welch ANOVA is preferred.
-
-    >>> samples = [[-50.42, 40.31, -18.09, 35.58, -6.8],
-    ...            [23.44, 4.5, 15.1, 9.66, 27.71],
-    ...            [11.94, 11.1 , 9.87, 9.09, 3.33]]
-    >>> levene(*samples)
-    LeveneResult(statistic=6.029482722461123, pvalue=0.01539663399479616)
-    >>> f_oneway(*samples, equal_var=False)
-    F_onewayResult(statistic=1.22114568638392, pvalue=0.3593865924697167)
-
-    `f_oneway` accepts multidimensional input arrays.  When the inputs
-    are multidimensional and `axis` is not given, the test is performed
-    along the first axis of the input arrays.  For the following data, the
-    test is performed three times, once for each column.
-
-    >>> a = np.array([[9.87, 9.03, 6.81],
-    ...               [7.18, 8.35, 7.00],
-    ...               [8.39, 7.58, 7.68],
-    ...               [7.45, 6.33, 9.35],
-    ...               [6.41, 7.10, 9.33],
-    ...               [8.00, 8.24, 8.44]])
-    >>> b = np.array([[6.35, 7.30, 7.16],
-    ...               [6.65, 6.68, 7.63],
-    ...               [5.72, 7.73, 6.72],
-    ...               [7.01, 9.19, 7.41],
-    ...               [7.75, 7.87, 8.30],
-    ...               [6.90, 7.97, 6.97]])
-    >>> c = np.array([[3.31, 8.77, 1.01],
-    ...               [8.25, 3.24, 3.62],
-    ...               [6.32, 8.81, 5.19],
-    ...               [7.48, 8.83, 8.91],
-    ...               [8.59, 6.01, 6.07],
-    ...               [3.07, 9.72, 7.48]])
-    >>> F = f_oneway(a, b, c)
-    >>> F.statistic
-    array([1.75676344, 0.03701228, 3.76439349])
-    >>> F.pvalue
-    array([0.20630784, 0.96375203, 0.04733157])
+    Welch ANOVA will be performed if `equal_var` is False.
 
     """
     if len(samples) < 2:
@@ -3999,7 +3954,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
                             (1 - ws / np.sum(ws)) **2))
         )
 
-        prob = 1 - stats.f.cdf(f, k - 1, df)
+        prob = stats.f.sf(f, k - 1, df)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
