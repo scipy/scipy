@@ -192,6 +192,8 @@ class ScalarFunction:
         calls to `approx_derivative` will incur large overhead from setting up
         new processes.
 
+        .. versionadded:: 1.16.0
+
     Notes
     -----
     This class implements a memoization logic. There are methods `fun`,

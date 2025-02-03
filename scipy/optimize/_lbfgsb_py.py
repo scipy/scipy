@@ -350,6 +350,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         any numerical differentiation in parallel.
         This evaluation is carried out as ``workers(fun, iterable)``.
 
+        .. versionadded:: 1.16.0
+
     Notes
     -----
     The option `ftol` is exposed via the `scipy.optimize.minimize` interface,

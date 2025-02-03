@@ -2002,3 +2002,85 @@ For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
 
 - `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
 - `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_
+
+
+Parallel execution support
+---------------------------
+
+Some SciPy optimization methods, such as :func:`differential_evolution` offer
+parallelization through the use of a ``workers`` keyword. Each optimizer is slightly
+different in how parallelization is employed, but there are common characteristics
+in what can be provided to ``workers``. These commonalities are described below.
+
+If an int is supplied then a :class:`multiprocessing.Pool` is created, with the
+object's :func:`map` method being used to evaluate solutions in parallel. With this
+approach it is mandatory that the objective function is pickleable. Lambda functions
+do not meet that requirement.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy.optimize import rosen, differential_evolution, Bounds
+    >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
+    >>> res = differential_evolution(rosen, bnds, workers=2)
+
+Alternatively map-like callables can be supplied as a worker. Here the map-like function
+iterates through the solution vectors, evaluating each one against the objective function.
+In the following example we use :class:`multiprocessing.Pool` again, the objective
+function still needs to be pickleable.
+
+::
+
+    >>> from multiprocessing import Pool
+    >>> with Pool(2) as pwl:
+    ...     res = differential_evolution(rosen, bnds, workers=pwl.map)
+
+It can be an advantage to use this pattern because the :obj:`~multiprocessing.Pool`
+can be re-used for further calculations - there is a significant amount of overhead in
+creating those objects. Alternatives to :class:`multiprocessing.Pool` include the
+`mpi4py <https://mpi4py.readthedocs.io/en/stable/>`_ package, which enables parallel
+processing on clusters.
+
+In Scipy 1.16.0 the ``workers`` keyword was introduced to selected :func:`minimize`
+methods. Here parallelization is typically applied during numerical differentiation.
+Either of the two approaches outlined above can be used, although it's strongly
+advised to supply the map-like callable due to the overhead of creating new processes.
+Performance gains will only be made if the objective function is expensive to
+calculate.
+
+::
+
+    >>> x0 = np.array([2.0, 3.0, 4.0, 5.0])
+    >>> with Pool(2) as pwl:
+    ...     res = minimize(rosen, x0, method='L-BFGS-B', options={'workers':pwl.map})
+    >>> res.x
+    array([0.99999903, 0.99999808, 0.99999614, 0.99999228])  # may vary
+
+If the objective function can be vectorized, then a map-like can be used to take
+advantage of vectorization during function evaluation.
+
+::
+
+    >>> def vectorized_maplike(fun, iterable):
+    ...     arr = np.array([i for i in iter(iterable)])
+    ...     arr_t = arr.T
+    ...     r = rosen(arr_t)
+    ...     return r
+    >>>
+    >>> res = minimize(rosen, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
+
+There are several important points to note about this example:
+
+* The iterable is first converted to an iterator, before being made into an array via
+  a list comprehension. This allows the iterable to be a generator, list, array, etc.
+* The calculation is done using ``rosen`` instead of using ``fun``. The map-like is
+  actually supplied with a wrapped version of the objective function. The wrapping
+  is used to detect various types of error, including checking whether the objective
+  function returns a scalar. If ``fun`` is used then a :class:`RuntimeError` will
+  result, because ``fun(arr_t)`` will be a 1-D array and not a scalar. We therefore use
+  ``rosen`` directly.
+* ``arr.T`` is sent to the objective function. This is because `arr.shape` will be
+  `(S, N)`, where `S` is the number of solution vectors to evaluate and `N` is the
+  number of variables. For ``rosen`` vectorization occurs on `(N, S)` shaped arrays.
+* This approach is not needed for :func:`differential_evolution` as that minimizer
+  already has a keyword for vectorization.
