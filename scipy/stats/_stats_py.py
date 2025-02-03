@@ -4564,7 +4564,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     try:
-        x, y = xp.broadcast_arrays(x, y)
+        np.broadcast_shapes(x.shape, y.shape)
     except (ValueError, RuntimeError) as e:
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
@@ -4658,7 +4658,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        r = xp.sum(xm/normxm * ym/normym, axis=axis)
+        r = xp.linalg.vecdot(xm / normxm, ym / normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
