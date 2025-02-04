@@ -4556,18 +4556,26 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`axis` must be an integer.')
     axis = axis_int
 
+    try:
+        np.broadcast_shapes(x.shape, y.shape)
+        # For consistency with other `stats` functions, we need to
+        # match the dimensionalities before looking at `axis`.
+        # (Note: this is not the NEP 5 / gufunc order of operations;
+        #  see TestPearsonr::test_different_dimensionality for more information.)
+        ndim = max(x.ndim, y.ndim)
+        x = xp.reshape(x, (1,) * (ndim - x.ndim) + x.shape)
+        y = xp.reshape(y, (1,) * (ndim - y.ndim) + y.shape)
+
+    except (ValueError, RuntimeError) as e:
+        message = '`x` and `y` must be broadcastable.'
+        raise ValueError(message) from e
+
     n = x.shape[axis]
     if n != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
     if n < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
-
-    try:
-        np.broadcast_shapes(x.shape, y.shape)
-    except (ValueError, RuntimeError) as e:
-        message = '`x` and `y` must be broadcastable.'
-        raise ValueError(message) from e
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
@@ -4658,7 +4666,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        r = xp.linalg.vecdot(xm / normxm, ym / normym, axis=axis)
+        r = xp.vecdot(xm / normxm, ym / normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
