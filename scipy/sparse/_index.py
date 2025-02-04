@@ -233,8 +233,9 @@ class IndexMixin:
         ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
         if ellip_slices:
             if ellps_pos is None:
-                ellps_pos = prelim_ndim
-            index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
+                index_1st.extend(ellip_slices)
+            else:
+                index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
 
         # second pass (have processed ellipsis and preprocessed arrays)
         idx_shape = []
