@@ -2022,7 +2022,7 @@ Lambda functions do not meet that requirement.
     >>> import numpy as np
     >>> from scipy.optimize import rosen, differential_evolution, Bounds
     >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
-    >>> res = differential_evolution(rosen, bnds, workers=2)
+    >>> res = differential_evolution(rosen, bnds, workers=2, updating='deferred')
 
 Alternatively map-like callables can be supplied as a worker. Here the map-like function
 iterates through the solution vectors, evaluating each one against the objective function.
