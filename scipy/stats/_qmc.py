@@ -1125,7 +1125,7 @@ class Halton(QMCEngine):
     d : int
         Dimension of the parameter space.
     scramble : bool, optional
-        If True, use random scrambling from Owen. Otherwise no scrambling
+        If True, use random scrambling from [2]_. Otherwise no scrambling
         is done.
         Default is True.
     optimization : {None, "random-cd", "lloyd"}, optional
