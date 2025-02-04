@@ -3824,7 +3824,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import f_oneway, levene
+    >>> from scipy.stats import f_oneway
 
     Here are some data [3]_ on a shell measurement (the length of the anterior
     adductor muscle scar, standardized by dividing by length) in the mussel
@@ -3892,6 +3892,9 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
     all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
+
+    if not isinstance(equal_var, bool):
+        raise TypeError("Expected a boolean value for 'equal_var'")
 
     if equal_var:
         # Determine the mean of the data, and subtract that from all inputs to a

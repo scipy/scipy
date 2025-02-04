@@ -7932,6 +7932,10 @@ class TestFOneWay:
         samples = [[-50.42, 40.31, -18.09, 35.58, -6.8],
                    [23.44, 4.5, 15.1, 9.66, 27.71],
                    [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        with assert_raises(TypeError):
+            stats.f_oneway(*samples, equal_var="False")
+
         F, p = stats.f_oneway(*samples, equal_var=False)
 
         # R language oneway.test as the benchmark
