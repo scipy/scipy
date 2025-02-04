@@ -2899,7 +2899,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
         eps = xp.finfo(z.dtype).eps
         zero = std <= xp.abs(eps * mn)
         zero = xp.broadcast_to(zero, z.shape)
-        z[zero] = xp.nan
+        z = xpx.at(z, zero).set(xp.nan)
 
     return z
 
@@ -4672,7 +4672,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
     r = xp.asarray(xp.clip(r, -one, one))
-    r[const_xy] = xp.nan
+    r = xpx.at(r, const_xy).set(xp.nan)
 
     # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
     # in the docs.
