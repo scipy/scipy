@@ -3843,6 +3843,34 @@ def f_oneway(*samples, axis=0, equal_var=True):
     >>> f_oneway(tillamook, newport, petersburg, magadan, tvarminne)
     F_onewayResult(statistic=7.121019471642447, pvalue=0.0002812242314534544)
 
+    `f_oneway` accepts multidimensional input arrays.  When the inputs
+    are multidimensional and `axis` is not given, the test is performed
+    along the first axis of the input arrays.  For the following data, the
+    test is performed three times, once for each column.
+    >>> a = np.array([[9.87, 9.03, 6.81],
+    ...               [7.18, 8.35, 7.00],
+    ...               [8.39, 7.58, 7.68],
+    ...               [7.45, 6.33, 9.35],
+    ...               [6.41, 7.10, 9.33],
+    ...               [8.00, 8.24, 8.44]])
+    >>> b = np.array([[6.35, 7.30, 7.16],
+    ...               [6.65, 6.68, 7.63],
+    ...               [5.72, 7.73, 6.72],
+    ...               [7.01, 9.19, 7.41],
+    ...               [7.75, 7.87, 8.30],
+    ...               [6.90, 7.97, 6.97]])
+    >>> c = np.array([[3.31, 8.77, 1.01],
+    ...               [8.25, 3.24, 3.62],
+    ...               [6.32, 8.81, 5.19],
+    ...               [7.48, 8.83, 8.91],
+    ...               [8.59, 6.01, 6.07],
+    ...               [3.07, 9.72, 7.48]])
+    >>> F = f_oneway(a, b, c)
+    >>> F.statistic
+    array([1.75676344, 0.03701228, 3.76439349])
+    >>> F.pvalue
+    array([0.20630784, 0.96375203, 0.04733157])
+
     Welch ANOVA will be performed if `equal_var` is False.
 
     """
