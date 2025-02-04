@@ -835,7 +835,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         x_outer.pop(axis)
         y_outer.pop(axis)
         try:
-            outer_shape = np.broadcast(np.empty(x_outer), np.empty(y_outer)).shape
+            outer_shape = np.broadcast_shapes(x_outer, y_outer)
         except ValueError as e:
             raise ValueError('x and y cannot be broadcast together.') from e
         if x.size == 0 or y.size == 0:
