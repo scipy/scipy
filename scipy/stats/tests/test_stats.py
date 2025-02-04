@@ -45,6 +45,7 @@ from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_n
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -3749,8 +3750,8 @@ class TestSkew(SkewKurtosisTest):
             a[:, 0] = 1.01
             stats.skew(a)
 
-    @skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     def test_vectorization(self, xp, axis, bias):
@@ -3844,8 +3845,8 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
-    @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     @pytest.mark.parametrize('fisher', [False, True])
@@ -9572,8 +9573,8 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-@skip_xp_backends('dask.array', reason='boolean index assignment')
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])
