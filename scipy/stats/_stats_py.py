@@ -3847,6 +3847,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
     are multidimensional and `axis` is not given, the test is performed
     along the first axis of the input arrays.  For the following data, the
     test is performed three times, once for each column.
+
     >>> a = np.array([[9.87, 9.03, 6.81],
     ...               [7.18, 8.35, 7.00],
     ...               [8.39, 7.58, 7.68],
