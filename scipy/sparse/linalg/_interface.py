@@ -58,7 +58,7 @@ class LinearOperator:
     Many iterative methods (e.g. cg, gmres) do not need to know the
     individual entries of a matrix to solve a linear system ``A@x = b``.
     Such solvers only require the computation of matrix vector
-    products, A @ v where v is a dense vector.  This class serves as
+    products, ``A@v`` where ``v`` is a dense vector.  This class serves as
     an abstract interface between iterative solvers and matrix-like
     objects.
 
