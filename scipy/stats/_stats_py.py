@@ -3931,22 +3931,35 @@ def f_oneway(*samples, axis=0, equal_var=True):
     else:
         # calculate basic statistics for each sample
         samples_arrs = np.array(samples)
-        means = samples_arrs.mean(axis=1)
-        ns = np.apply_along_axis(np.size, 1, samples_arrs)
-        k = np.size(samples_arrs, 0)
-        vars_ = np.var(samples_arrs, axis=1, ddof=1)
 
+        # adjust the shape of the data based on the arrary dimension for the calculation
+        # along with input axis
+        if samples_arrs.ndim <= 2:
+            samples_arrs = samples_arrs.T
+        else:
+            samples_arrs = samples_arrs.transpose(
+                *range(1, samples_arrs.ndim - 1), 0, -1
+            )
+
+        means = samples_arrs.mean(axis=axis)
+        ns = np.apply_along_axis(np.size, axis=axis, arr=samples_arrs)
+        k = np.apply_along_axis(np.shape, axis=axis, arr=ns)
+
+        vars_ = np.var(samples_arrs, axis=axis, ddof=1)
         # calculate weight by number of data and varianc
         ws = ns / vars_
 
         # calculate adjusted grand mean
-        mean_prime = np.sum(ws * means) / np.sum(ws)
+        mean_prime = (np.sum(ws * means, axis=axis, keepdims=True) /
+                      np.sum(ws, axis=axis, keepdims=True))
 
-        numerator = np.sum(ws * (means - mean_prime)**2) / (k - 1)
+        numerator = (np.sum(ws * (means - mean_prime)**2, axis=axis, keepdims=True)
+                     / (k - 1))
         denominator = (
                 1 + 2 * (k - 2) / (k ** 2 - 1) *
                 np.sum((1 / (ns - 1)) *
-                       (1 - ws / np.sum(ws)) **2)
+                       (1 - ws / np.sum(ws)) **2,
+                       axis=axis, keepdims=True)
         )
         f = numerator / denominator
 
@@ -3954,10 +3967,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
         df = (
                 (k ** 2 - 1) /
                 (3 * np.sum((1 / (ns - 1)) *
-                            (1 - ws / np.sum(ws)) **2))
+                            (1 - ws / np.sum(ws, axis=axis, keepdims=True)) **2,
+                            axis=axis, keepdims=True))
         )
 
         prob = stats.f.sf(f, k - 1, df)
+
+        f = np.squeeze(f)
+        prob = np.squeeze(prob)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
