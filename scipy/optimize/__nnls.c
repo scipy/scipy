@@ -17,7 +17,7 @@
  * This is a C translation of the Fortran code.
 */
 void
-nonnegative_lsq_imp(const npy_intp m, const npy_intp n,
+nonnegative_lsq_imp(const int m, const int n,
                     double* restrict a, double* restrict b,
                     double* restrict x, double* restrict w,
                     double* restrict zz, double* restrict work,
