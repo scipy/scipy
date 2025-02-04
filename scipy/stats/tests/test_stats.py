@@ -45,6 +45,7 @@ from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_n
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -597,8 +598,14 @@ class TestPearsonr:
     @pytest.mark.skip_xp_backends(np_only=True)
     def test_input_validation(self, xp):
         x = [1, 2, 3]
-        y = [4, 5]
+        y = [4]
         message = '`x` and `y` must have the same length along `axis`.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
+
+        x = [1, 2, 3]
+        y = [4, 5]
+        message = '`x` and `y` must be broadcastable.'
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
@@ -763,6 +770,24 @@ class TestPearsonr:
         xp_assert_close(res.pvalue, ones)
         xp_assert_close(ci.low, -ones)
         xp_assert_close(ci.high, ones)
+
+    def test_different_dimensionality(self, xp):
+        # For better or for worse, there is one difference between the broadcasting
+        # behavior of most stats functions and NumPy gufuncs / NEP 5: gufuncs `axis`
+        # refers to the core dimension *before* prepending `1`s to the array shapes
+        # to match dimensionality; SciPy's prepends `1`s first. For instance, in
+        # SciPy, `vecdot` would work just like `xp.sum(x * y, axis=axis)`, but this
+        # is NOT true of NumPy. The discrepancy only arises when there are multiple
+        # arguments with different dimensionality and positive indices are used,
+        # which is probably why it hasn't been a problem. There are pros and cons of
+        # each convention, and we might want to consider changing our behavior in
+        # SciPy 2.0. For now, preserve consistency / backward compatibility.
+        rng = np.random.default_rng(45834598265019344)
+        x = rng.random((3, 10))
+        y = rng.random(10)
+        res = stats.pearsonr(x, y, axis=1)
+        ref = stats.pearsonr(x, y, axis=-1)
+        assert_equal(res.statistic, ref.statistic)
 
     @skip_xp_backends('jax.numpy',
                       reason='JAX arrays do not support item assignment')
@@ -3725,8 +3750,8 @@ class TestSkew(SkewKurtosisTest):
             a[:, 0] = 1.01
             stats.skew(a)
 
-    @skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     def test_vectorization(self, xp, axis, bias):
@@ -3820,8 +3845,8 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
-    @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     @pytest.mark.parametrize('fisher', [False, True])
@@ -9548,8 +9573,8 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-@skip_xp_backends('dask.array', reason='boolean index assignment')
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])

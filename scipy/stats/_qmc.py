@@ -1117,14 +1117,16 @@ class Halton(QMCEngine):
     Pseudo-random number generator that generalize the Van der Corput sequence
     for multiple dimensions. The Halton sequence uses the base-two Van der
     Corput sequence for the first dimension, base-three for its second and
-    base-:math:`n` for its n-dimension.
+    base-:math:`p` for its :math:`n`-dimension, with :math:`p` the
+    :math:`n`'th prime.
 
     Parameters
     ----------
     d : int
         Dimension of the parameter space.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use random scrambling from [2]_. Otherwise no scrambling
+        is done.
         Default is True.
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
