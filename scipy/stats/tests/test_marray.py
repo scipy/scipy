@@ -1,4 +1,6 @@
 import pytest
+marray = pytest.importorskip('marray')
+
 import numpy as np
 from scipy import stats
 
@@ -8,7 +10,6 @@ skip_backend = pytest.mark.skip_xp_backends
 
 
 def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=84912165484321):
-    marray = pytest.importorskip('marray')
     mxp = marray._get_namespace(xp)
     rng = np.random.default_rng(seed)
 

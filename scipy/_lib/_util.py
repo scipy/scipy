@@ -12,7 +12,7 @@ from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, xp_size)
+                                   is_numpy, is_marray, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
@@ -150,8 +150,11 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
                 dtype = (temp1 * fillvalue).dtype
         else:
            dtype = xp.result_type(temp1.dtype, fillvalue)
-        out = xp.full(cond.shape, dtype=dtype,
-                      fill_value=xp.asarray(fillvalue, dtype=dtype))
+        # whenever mdhaber/marray#89 is resolved, `data` won't need to be extracted here
+        # whenever PAAPIS 2024.12 is released, no need for fill_value to be an array
+        fill_value = xp.asarray(fillvalue, dtype=dtype)
+        fill_value = fill_value.data if is_marray(xp) else fill_value
+        out = xp.full(cond.shape, dtype=dtype, fill_value=fill_value)
     else:
         ncond = ~cond
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))

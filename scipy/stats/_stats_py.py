@@ -75,6 +75,7 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_numpy,
+    is_marray,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
@@ -1148,7 +1149,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
         rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
                           keepdims=True) / xp.abs(mean)
 
-    n = _length_nonmasked(a, axis)
+    n = _length_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
         precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
 
@@ -1222,18 +1223,18 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = _length_nonmasked(x, axis)
+        n = _length_nonmasked(x, axis, xp=xp)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
 
 
-def _length_nonmasked(x, axis, keepdims=False):
-    if hasattr(x, 'mask') and not isinstance(x, np.ndarray):
+def _length_nonmasked(x, axis, keepdims=False, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_marray(xp):
         if np.iterable(axis):
             message = '`axis` must be an integer or None for use with `MArray`.'
             raise NotImplementedError(message)
-        mxp = array_namespace(x)
-        return mxp.astype(mxp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
     return (xp_size(x) if axis is None else
             # compact way to deal with axis tuples or ints
             int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
@@ -1320,7 +1321,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = _length_nonmasked(a, axis)
+    n = _length_nonmasked(a, axis, xp=xp)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1428,7 +1429,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = _length_nonmasked(a, axis)
+    n = _length_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean, xp=xp)
@@ -1539,7 +1540,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         raise ValueError("The input must not be empty.")
 
     # use xp.astype when data-apis/array-api-compat#226 is resolved
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=xp.int64)
+    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64)
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
@@ -2638,7 +2639,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         a = xp.reshape(a, (-1,))
         axis = 0
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    n = _length_nonmasked(a, axis)
+    n = _length_nonmasked(a, axis, xp=xp)
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
@@ -10866,7 +10867,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        n = _length_nonmasked(x, axis)
+        n = _length_nonmasked(x, axis, xp=xp)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
