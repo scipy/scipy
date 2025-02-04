@@ -1,7 +1,10 @@
 from io import StringIO
 import warnings
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
+from numpy.testing import (assert_array_almost_equal,
+                           assert_array_equal,
+                           assert_allclose,
+                           assert_equal)
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix, yen,
@@ -385,6 +388,22 @@ def test_masked_input():
 
     for method in methods:
         check(method)
+
+
+@pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
+def test_masked_invalid_input(method):
+    # Reference - https://github.com/scipy/scipy/issues/12424
+    csgraph = np.array(
+        [[0, 1, 0],
+         [1, 0, 0],
+         [0, 0, 0]]
+    )
+    csgraph_masked = np.ma.masked_invalid(csgraph)
+    zeros = np.zeros((3, 3))
+
+    SP = shortest_path(csgraph_masked, method=method, directed=True,
+                       overwrite=False)
+    assert_equal(SP, zeros)
 
 
 def test_overwrite():
