@@ -1,11 +1,11 @@
 import pytest
-marray = pytest.importorskip('marray')
-
 import numpy as np
 from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy.stats._stats_py import _xp_mean, _xp_var
+
+marray = pytest.importorskip('marray')
 skip_backend = pytest.mark.skip_xp_backends
 
 
