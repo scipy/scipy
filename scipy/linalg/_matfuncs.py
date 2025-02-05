@@ -439,12 +439,13 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     This function uses the Schur decomposition method to compute the matrix
     square root following [1]_ and for real matrices [2]_. Moreover, note
     that, there exist matrices that have square roots that are not polynomials
-    in ``A``. For a classical example from [2]_, the matrix satisfies
+    in ``A``. For a classical example from [2]_, the matrix satisfies::
 
             [ a, a**2 + 1]**2     [-1,  0]
             [-1,       -a]     =  [ 0, -1]
 
-    for any scalar ``a`` but is not a polynomial in ``-I``.
+    for any scalar ``a`` but it is not a polynomial in ``-I``. Thus, they will
+    not be found by this function.
 
     References
     ----------
