@@ -134,7 +134,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
-    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS),
+    status = xp.full_like(x1, eim._EINPROGRESS,
                           dtype=xp.int32)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
     finfo = xp.finfo(dtype)
@@ -213,12 +213,13 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
     def post_termination_check(work):
         # [1] Figure 1 (third diamond and boxes / Equation 1)
         xi1 = (work.x1 - work.x2) / (work.x3 - work.x2)
-        phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
         alpha = (work.x3 - work.x1) / (work.x2 - work.x1)
         j = ((1 - xp.sqrt(1 - xi1)) < phi1) & (phi1 < xp.sqrt(xi1))
 
         f1j, f2j, f3j, alphaj = work.f1[j], work.f2[j], work.f3[j], alpha[j]
-        t = xp.full_like(alpha, xp.asarray(0.5))
+        t = xp.full_like(alpha, 0.5)
         t[j] = (f1j / (f1j - f2j) * f3j / (f3j - f2j)
                 - alphaj * f1j / (f3j - f1j) * f2j / (f2j - f3j))
 
@@ -400,8 +401,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     phi = xp.asarray(0.5 + 0.5*5**0.5, dtype=dtype)[()]  # golden ratio
-    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS),
-                          dtype=xp.int32)  # in progress
+    status = xp.full_like(x1, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
     fatol = xp.finfo(dtype).smallest_normal if fatol is None else fatol
     frtol = xp.finfo(dtype).smallest_normal if frtol is None else frtol

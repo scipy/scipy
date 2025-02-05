@@ -28,8 +28,9 @@ dependencies:
   - pytest-xdist
   - pytest-timeout
   - asv >=0.6
+  - conda-build
   - hypothesis
-  - array-api-strict
+  - array-api-strict<2.1.1
   # For type annotations
   - mypy
   - typing_extensions
@@ -46,7 +47,7 @@ dependencies:
   - sphinx-design
   - jupytext
   - myst-nb
-  - jupyterlite-sphinx>=0.16.5
+  - jupyterlite-sphinx>=0.17.1
   - jupyterlite-pyodide-kernel
   # Some optional test dependencies
   - mpmath

@@ -5,7 +5,8 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
 from scipy._lib._gcutils import assert_deallocated
-from scipy.sparse import csr_matrix
+from scipy._lib._util import MapWrapper
+from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
@@ -129,6 +130,67 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.0, 0.3])
+        ex = ExScalarFunction()
+        ex2 = ExScalarFunction()
+        with MapWrapper(2) as mapper:
+            approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '2-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            approx = ScalarFunction(ex.fun, x0, (), '3-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '3-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                          )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x1 = np.array([3.0, 4.0])
+
+            approx = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                    '3-point', None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), ex2.grad,
+                                           '3-point', None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x1), ex.grad(x1))
+            assert_allclose(approx_series.grad(x1), ex.grad(x1))
+            approx_series.hess(x1)
+            approx.hess(x1)
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx_series.ngev, ex2.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
 
     def test_fun_and_grad(self):
         ex = ExScalarFunction()
@@ -287,6 +349,7 @@ class TestScalarFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # Scalar_Function should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -628,6 +691,7 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # VectorFunction should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -691,7 +755,7 @@ def test_LinearVectorFunction():
         [0, 4, 2]
     ])
     x0 = np.zeros(3)
-    A_sparse = csr_matrix(A_dense)
+    A_sparse = csr_array(A_dense)
     x = np.array([1, -1, 0])
     v = np.array([-1, 1])
     Ax = np.array([-3, -4])
@@ -798,6 +862,6 @@ def test_LinearVectorFunctionNoReferenceCycle():
         [0, 4, 2]
     ])
     x0 = np.zeros(3)
-    A_sparse = csr_matrix(A_dense)
+    A_sparse = csr_array(A_dense)
     with assert_deallocated(lambda: LinearVectorFunction(A_sparse, x0, None)):
         pass

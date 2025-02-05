@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_skewtest.ipynb
+.. notebooklite:: hypothesis_skewtest.md
    :new_tab: True
 ```
 
 (hypothesis_skewtest)=
+
++++
+
 # Skewness test
 
 This function tests the null hypothesis that the skewness of the population that
@@ -123,7 +128,7 @@ fig, ax = plt.subplots(figsize=(8, 5))
 st_plot(ax)
 ax.hist(res.null_distribution, np.linspace(-5, 5, 50),
         density=True)
-ax.legend(['aymptotic approximation\n(many observations)',
+ax.legend(['asymptotic approximation\n(many observations)',
            'Monte Carlo approximation\n(11 observations)'])
 plt.show()
 ```

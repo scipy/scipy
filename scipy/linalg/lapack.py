@@ -44,6 +44,11 @@ All functions
 .. autosummary::
    :toctree: generated/
 
+   sgbcon
+   dgbcon
+   cgbcon
+   zgbcon
+
    sgbsv
    dgbsv
    cgbsv
@@ -345,6 +350,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetri
+   zhetri
+
    chetrs
    zhetrs
 
@@ -353,6 +361,11 @@ All functions
 
    slamch
    dlamch
+
+   slangb
+   dlangb
+   clangb
+   zlangb
 
    slange
    dlange
@@ -570,6 +583,9 @@ All functions
    sstev
    dstev
 
+   sstevd
+   dstevd
+
    ssycon
    dsycon
    csycon
@@ -667,6 +683,11 @@ All functions
    dsytrf_lwork
    csytrf_lwork
    zsytrf_lwork
+
+   ssytri
+   dsytri
+   csytri
+   zsytri
 
    ssytrs
    dsytrs
@@ -1026,8 +1047,7 @@ def _compute_lwork(routine, *args, **kwargs):
     int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (ret[-1],))
+        raise ValueError(f"Internal work array size computation failed: {ret[-1]}")
 
     if len(ret) == 2:
         return _check_work_float(ret[0].real, dtype, int_dtype)

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,9 +13,9 @@ __all__ = ["isotonic_regression"]
 
 
 def isotonic_regression(
-    y: npt.ArrayLike,
+    y: "npt.ArrayLike",
     *,
-    weights: npt.ArrayLike | None = None,
+    weights: "npt.ArrayLike | None" = None,
     increasing: bool = True,
 ) -> OptimizeResult:
     r"""Nonparametric isotonic regression.
@@ -145,7 +144,7 @@ def isotonic_regression(
     # As information: Due to the pava implementation, after the last block
     # index, there might be smaller numbers appended to r, e.g.
     # r = [0, 10, 8, 7] which in the end should be r = [0, 10].
-    r = r[:b + 1]
+    r = r[:b + 1]  # type: ignore[assignment]
     wx = wx[:b]
     if not increasing:
         x = x[::-1]

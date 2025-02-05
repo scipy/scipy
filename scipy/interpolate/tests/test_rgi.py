@@ -7,6 +7,7 @@ from numpy.testing import assert_warns
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
+from scipy.conftest import skip_xp_invalid_arg
 
 from pytest import raises as assert_raises
 
@@ -695,6 +696,7 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         points, values = self._get_sample_4d()
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
@@ -965,6 +967,7 @@ class TestInterpN:
 
         xp_assert_close(v1, v2)
 
+    @pytest.mark.thread_unsafe
     def test_complex_pchip(self):
         # Complex-valued data deprecated for pchip
         x, y, values = self._sample_2d_data()
@@ -976,6 +979,7 @@ class TestInterpN:
         with pytest.raises(ValueError, match='real'):
             interpn(points, values, sample, method='pchip')
 
+    @pytest.mark.thread_unsafe
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
         x, y, values = self._sample_2d_data()
@@ -1001,8 +1005,10 @@ class TestInterpN:
         v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
         xp_assert_close(v1, v2, check_dtype=False)
 
+    @skip_xp_invalid_arg
     @parametrize_rgi_interp_methods
     def test_matrix_input(self, method):
+        """np.matrix inputs are allowed for backwards compatibility"""
         x = np.linspace(0, 2, 6)
         y = np.linspace(0, 1, 7)
 

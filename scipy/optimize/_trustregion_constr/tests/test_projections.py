@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 from scipy.optimize._trustregion_constr.projections \
     import projections, orthogonality
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -23,7 +23,7 @@ class TestProjections(TestCase):
                             [0, 8, 7, 0, 1, 5, 9, 0],
                             [1, 0, 0, 0, 0, 1, 2, 3]])
         At_dense = A_dense.T
-        A = csc_matrix(A_dense)
+        A = csc_array(A_dense)
         test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
@@ -45,7 +45,7 @@ class TestProjections(TestCase):
         A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                             [0, 8, 7, 0, 1, 5, 9, 0],
                             [1, 0, 0, 0, 0, 1, 2, 3]])
-        A = csc_matrix(A_dense)
+        A = csc_array(A_dense)
         test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
@@ -65,7 +65,7 @@ class TestProjections(TestCase):
         A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                             [0, 8, 7, 0, 1, 5, 9, 0],
                             [1, 0, 0, 0, 0, 1, 2, 3]])
-        A = csc_matrix(A_dense)
+        A = csc_array(A_dense)
         test_points = ([1, 2, 3],
                        [1, 10, 3],
                        [1.12, 10, 0])
@@ -106,7 +106,7 @@ class TestProjections(TestCase):
     def test_compare_dense_and_sparse(self):
         D = np.diag(range(1, 101))
         A = np.hstack([D, D, D, D])
-        A_sparse = csc_matrix(A)
+        A_sparse = csc_array(A)
         np.random.seed(0)
 
         Z, LS, Y = projections(A)
@@ -123,7 +123,7 @@ class TestProjections(TestCase):
         D2 = np.diag([1, -0.6, -0.3])
         D3 = np.diag([-0.3, -1.5, 2])
         A = np.hstack([D1, D2, D3])
-        A_sparse = csc_matrix(A)
+        A_sparse = csc_array(A)
         np.random.seed(0)
 
         Z, LS, Y = projections(A)
@@ -197,7 +197,7 @@ class TestOrthogonality(TestCase):
         A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                       [0, 8, 7, 0, 1, 5, 9, 0],
                       [1, 0, 0, 0, 0, 1, 2, 3]])
-        A = csc_matrix(A)
+        A = csc_array(A)
         test_vectors = ([-1.98931144, -1.56363389,
                          -0.84115584, 2.2864762,
                          5.599141, 0.09286976,

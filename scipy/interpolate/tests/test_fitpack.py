@@ -10,6 +10,7 @@ import pytest
 from scipy._lib._testutils import check_free_memory
 
 from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import make_splrep
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
@@ -78,6 +79,15 @@ class TestSmokeTests:
                 tol = err_est(k, d)
                 err = norm2(f1(tt, d) - splev(tt, tck, d)) / norm2(f1(tt, d))
                 assert err < tol
+
+            # smoke test make_splrep
+            if not per:
+                spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe)
+                if len(spl.t) == len(tck[0]):
+                    xp_assert_close(spl.t, tck[0], atol=1e-15)
+                    xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                else:
+                    assert k == 5   # knot length differ in some k=5 cases
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi

@@ -7,11 +7,12 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)
 from scipy.optimize import minimize_scalar
-from . import _bspl
+from . import _dierckx
 from . import _fitpack_impl
 from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
+
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
@@ -236,8 +237,7 @@ class BSpline:
         if self.t.ndim != 1:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
-            raise ValueError("Need at least %d knots for degree %d" %
-                             (2*k + 2, k))
+            raise ValueError(f"Need at least {2*k + 2} knots for degree {k}")
         if (np.diff(self.t) < 0).any():
             raise ValueError("Knots must be in a non-decreasing order.")
         if len(np.unique(self.t[k:n+1])) < 2:
@@ -449,14 +449,22 @@ class BSpline:
             int_dtype = np.int32
         else:
             int_dtype = np.int64
-        # Preallocate indptr and indices
-        indices = np.empty(n * (k + 1), dtype=int_dtype)
+
+        # Get the non-zero elements of the design matrix and per-row `offsets`:
+        # In row `i`, k+1 nonzero elements are consecutive, and start from `offset[i]`
+        data, offsets, _ = _dierckx.data_matrix(x, t, k, np.ones_like(x), extrapolate)
+        data = data.ravel()
+
+        if offsets.dtype != int_dtype:
+            offsets = offsets.astype(int_dtype)
+
+        # Convert from per-row offsets to the CSR indices/indptr format
+        indices = np.repeat(offsets, k+1).reshape(-1, k+1)
+        indices = indices + np.arange(k+1, dtype=int_dtype)
+        indices = indices.ravel()
+
         indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
 
-        # indptr is not passed to Cython as it is already fully computed
-        data, indices = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices
-        )
         return csr_array(
             (data, indices, indptr),
             shape=(x.shape[0], t.shape[0] - k - 1)
@@ -494,25 +502,33 @@ class BSpline:
         # [self.t[k], self.t[n]].
         if extrapolate == 'periodic':
             n = self.t.size - self.k - 1
-            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] -
-                                                         self.t[self.k])
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[n] - self.t[self.k])
             extrapolate = False
 
-        out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
 
-        # if self.c is complex, so is `out`; cython code in _bspl.pyx expectes
-        # floats though, so make a view---this expands the last axis, and
+        # if self.c is complex: the C code in _dierckxmodule.cc expects
+        # floats, so make a view---this expands the last axis, and
         # the view is C contiguous if the original is.
         # if c.dtype is complex of shape (n,), c.view(float).shape == (2*n,)
         # if c.dtype is complex of shape (n, m), c.view(float).shape == (n, 2*m)
 
-        cc = self.c.view(float)
-        if self.c.ndim == 1 and self.c.dtype.kind == 'c':
-            cc = cc.reshape(self.c.shape[0], 2)
+        is_complex = self.c.dtype.kind == 'c'
+        if is_complex:
+            cc = self.c.view(float)
+            if self.c.ndim == 1:
+                cc = cc.reshape(self.c.shape[0], 2)
+        else:
+            cc = self.c
 
-        _bspl.evaluate_spline(self.t, cc.reshape(cc.shape[0], -1),
-                              self.k, x, nu, extrapolate, out.view(float))
+        # flatten the trailing dims
+        cc = cc.reshape(cc.shape[0], -1)
+
+        # heavy lifting: actually perform the evaluations
+        out = _dierckx.evaluate_spline(self.t, cc, self.k, x, nu, extrapolate)
+
+        if is_complex:
+            out = out.view(complex)
 
         out = out.reshape(x_shape + self.c.shape[1:])
         if self.axis != 0:
@@ -552,7 +568,7 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c
+        c = self.c.copy()
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
@@ -586,7 +602,7 @@ class BSpline:
         splder, splantider
 
         """
-        c = self.c
+        c = self.c.copy()
         # pad the c array if needed
         ct = len(self.t) - len(c)
         if ct > 0:
@@ -673,8 +689,6 @@ class BSpline:
                 integral = _fitpack_impl.splint(a, b, self.tck)
                 return np.asarray(integral * sign)
 
-        out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
-
         # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
@@ -694,8 +708,8 @@ class BSpline:
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral = out[1] - out[0]
                 integral *= n_periods
             else:
@@ -710,24 +724,24 @@ class BSpline:
             # over [a, te] and from xs to what is remained.
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float64)
-                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, out)
+                out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, False)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float64)
-            _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                  ka, x, 0, extrapolate, out)
+            out = _dierckx.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                  ka, x, 0, extrapolate)
             integral = out[1] - out[0]
 
         integral *= sign
@@ -940,7 +954,7 @@ def _insert(xval, t, c, k, periodic=False):
     # satisfy these boundary constraints, i.e.
     #      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
     #      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
-    interval = _bspl._find_interval(t, k, xval, k, False)
+    interval = _dierckx.find_interval(t, k, float(xval), k, False)
     if interval < 0:
         # extrapolated values are guarded for in BSpline.insert_knot
         raise ValueError(f"Cannot insert the knot at {xval}.")
@@ -998,13 +1012,22 @@ def _insert(xval, t, c, k, periodic=False):
 
 def _not_a_knot(x, k):
     """Given data x, construct the knot vector w/ not-a-knot BC.
-    cf de Boor, XIII(12)."""
-    x = np.asarray(x)
-    if k % 2 != 1:
-        raise ValueError(f"Odd degree for now only. Got {k}.")
+    cf de Boor, XIII(12).
 
-    m = (k - 1) // 2
-    t = x[m+1:-m-1]
+    For even k, it's a bit ad hoc: Greville sites + omit 2nd and 2nd-to-last
+    data points, a la not-a-knot.
+    This seems to match what Dierckx does, too:
+    https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/fpcurf.f#L63-L80
+    """
+    x = np.asarray(x)
+    if k % 2 == 1:
+        k2 = (k + 1) // 2
+        t = x.copy()
+    else:
+        k2 = k // 2
+        t = (x[1:] + x[:-1]) / 2
+
+    t = t[k2:-k2]
     t = np.r_[(x[0],)*(k+1), t, (x[-1],)*(k+1)]
     return t
 
@@ -1177,17 +1200,17 @@ def _make_interp_per_full_matr(x, y, t, k):
     x, y, t = map(np.asarray, (x, y, t))
 
     n = x.size
-    # LHS: the collocation matrix + derivatives at edges
+    # LHS: the colocation matrix + derivatives at edges
     matr = np.zeros((n + k - 1, n + k - 1))
 
     # derivatives at x[0] and x[-1]:
     for i in range(k - 1):
-        bb = _bspl.evaluate_all_bspl(t, k, x[0], k, nu=i + 1)
+        bb = _dierckx.evaluate_all_bspl(t, k, x[0], k, i + 1)
         matr[i, : k + 1] += bb
-        bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
+        bb = _dierckx.evaluate_all_bspl(t, k, x[-1], n + k - 1, i + 1)[:-1]
         matr[i, -k:] -= bb
 
-    # collocation matrix
+    # colocation matrix
     for i in range(n):
         xval = x[i]
         # find interval
@@ -1197,7 +1220,7 @@ def _make_interp_per_full_matr(x, y, t, k):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         matr[i + k - 1, left-k:left+1] = bb
 
     # RHS
@@ -1205,6 +1228,49 @@ def _make_interp_per_full_matr(x, y, t, k):
 
     c = solve(matr, b)
     return c
+
+
+def _handle_lhs_derivatives(t, k, xval, ab, kl, ku, deriv_ords, offset=0):
+    """ Fill in the entries of the colocation matrix corresponding to known
+    derivatives at `xval`.
+
+    The colocation matrix is in the banded storage, as prepared by _coloc.
+    No error checking.
+
+    Parameters
+    ----------
+    t : ndarray, shape (nt + k + 1,)
+        knots
+    k : integer
+        B-spline order
+    xval : float
+        The value at which to evaluate the derivatives at.
+    ab : ndarray, shape(2*kl + ku + 1, nt), Fortran order
+        B-spline colocation matrix.
+        This argument is modified *in-place*.
+    kl : integer
+        Number of lower diagonals of ab.
+    ku : integer
+        Number of upper diagonals of ab.
+    deriv_ords : 1D ndarray
+        Orders of derivatives known at xval
+    offset : integer, optional
+        Skip this many rows of the matrix ab.
+
+    """
+    # find where `xval` is in the knot vector, `t`
+    left = _dierckx.find_interval(t, k, float(xval), k, False)
+
+    # compute and fill in the derivatives @ xval
+    for row in range(deriv_ords.shape[0]):
+        nu = deriv_ords[row]
+        wrk = _dierckx.evaluate_all_bspl(t, k, xval, left, nu)
+
+        # if A were a full matrix, it would be just
+        # ``A[row + offset, left-k:left+1] = bb``.
+        for a in range(k+1):
+            clmn = left - k + a
+            ab[kl + ku + offset + row - clmn, clmn] = wrk[a]
 
 
 def _make_periodic_spline(x, y, t, k, axis):
@@ -1273,8 +1339,10 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
-    # NB: drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
-    _bspl._colloc(x[:-1], t, k, ab, offset=k)
+    # NB: 1. drop the last element of `x` because `x[0] = x[-1] + T` & `y[0] == y[-1]`
+    #     2. pass ab.T to _coloc to make it C-ordered; below it'll be fed to banded
+    #        LAPACK, which needs F-ordered arrays
+    _dierckx._coloc(x[:-1], t, k, ab.T, k)
 
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
@@ -1490,13 +1558,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         if deriv_l is None and deriv_r is None:
             if bc_type == 'periodic':
                 t = _periodic_knots(x, k)
-            elif k == 2:
-                # OK, it's a bit ad hoc: Greville sites + omit
-                # 2nd and 2nd-to-last points, a la not-a-knot
-                t = (x[1:] + x[:-1]) / 2.
-                t = np.r_[(x[0],)*(k+1),
-                          t[1:-1],
-                          (x[-1],)*(k+1)]
             else:
                 t = _not_a_knot(x, k)
         else:
@@ -1509,8 +1570,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if t.size < x.size + k + 1:
-        raise ValueError('Got %d knots, need at least %d.' %
-                         (t.size, x.size + k + 1))
+        raise ValueError(f"Got {t.size} knots, need at least {x.size + k + 1}.")
     if (x[0] < t[k]) or (x[-1] > t[-k]):
         raise ValueError(f'Out of bounds w/ x = {x}.')
 
@@ -1545,17 +1605,17 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         c = np.zeros((nt,) + y.shape[1:], dtype=float)
         return BSpline.construct_fast(t, c, k, axis=axis)
 
-    # set up the LHS: the collocation matrix + derivatives at boundaries
+    # set up the LHS: the colocation matrix + derivatives at boundaries
+    # NB: ab is in F order for banded LAPACK; _coloc needs C-ordered arrays,
+    #     this pass ab.T into _coloc
     kl = ku = k
     ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
-    _bspl._colloc(x, t, k, ab, offset=nleft)
+    _dierckx._coloc(x, t, k, ab.T, nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
-                                      deriv_l_ords.astype(np.dtype("long")))
+        _handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
-                                      deriv_r_ords.astype(np.dtype("long")),
-                                      offset=nt-nright)
+        _handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
+                                offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
     extradim = prod(y.shape[1:])
@@ -1574,15 +1634,14 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                             overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matrix is singular.")
+        raise LinAlgError("Colocation matrix is singular.")
     elif info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
-
+        raise ValueError(f'illegal value in {-info}-th argument of internal gbsv')
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
-def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
     r"""Compute the (coefficients of) an LSQ (Least SQuared) based
     fitting B-spline.
 
@@ -1620,6 +1679,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default is True.
+    method : str, optional
+        Method for solving the linear LSQ problem. Allowed values are "norm-eq"
+        (Explicitly construct and solve the normal system of equations), and
+        "qr" (Use the QR factorization of the design matrix).
+        Default is "qr".
 
     Returns
     -------
@@ -1702,20 +1766,24 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if x.ndim != 1:
+        raise ValueError("Expect x to be a 1-D sequence.")
     if x.shape[0] < k+1:
         raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1-D sorted array_like.")
+        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError(f'Out of bounds w/ x = {x}.')
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
+    if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
+    if method == "qr" and any(x[1:] - x[:-1] < 0):
+        raise ValueError("Expect x to be a 1D non-decreasing sequence.")
 
     # number of coefficients
     n = t.size - k - 1
@@ -1730,30 +1798,74 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     extradim = prod(yy.shape[1:])
     yy = yy.reshape(-1, extradim)
 
-    # construct A.T @ A and rhs with A the collocation matrix, and
-    # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
-    lower = True
-    ab = np.zeros((k+1, n), dtype=np.float64, order='F')
-    rhs = np.zeros((n, extradim), dtype=np.float64)
-    _bspl._norm_eq_lsq(x, t, k,
-                       yy,
-                       w,
-                       ab, rhs)
+    # complex y: view as float, preserve the length
+    was_complex =  y.dtype.kind == 'c'
+    yy = y.view(float)
+    if was_complex and y.ndim == 1:
+        yy = yy.reshape(y.shape[0], 2)
 
-    # undo complex -> float and flattening the trailing dims
-    if was_complex:
-        rhs = rhs.view(complex)
+    # multiple r.h.s
+    extradim = prod(yy.shape[1:])
+    yy = yy.reshape(-1, extradim)
 
-    rhs = rhs.reshape((n,) + y.shape[1:])
+    if method == "norm-eq":
+        # construct A.T @ A and rhs with A the colocation matrix, and
+        # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
+        lower = True
+        ab = np.zeros((k+1, n), dtype=np.float64, order='F')
+        rhs = np.zeros((n, extradim), dtype=np.float64)
+        _dierckx._norm_eq_lsq(x, t, k,
+                              yy,
+                              w,
+                              ab.T, rhs)
 
-    # have observation matrix & rhs, can solve the LSQ problem
-    cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
-                                 check_finite=check_finite)
-    c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
-                         check_finite=check_finite)
+        # undo complex -> float and flattening the trailing dims
+        if was_complex:
+            rhs = rhs.view(complex)
 
+        rhs = rhs.reshape((n,) + y.shape[1:])
+
+        # have observation matrix & rhs, can solve the LSQ problem
+        cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
+                                     check_finite=check_finite)
+        m = rhs.shape[0]
+        c = cho_solve_banded((cho_decomp, lower), rhs.reshape(m, -1), overwrite_b=True,
+                             check_finite=check_finite).reshape(rhs.shape)
+    elif method == "qr":
+        _, _, c = _lsq_solve_qr(x, yy, t, k, w)
+
+        if was_complex:
+            c = c.view(complex)
+
+    else:
+        raise ValueError(f"Unknown {method =}.")
+
+
+    # restore the shape of `c` for both single and multiple r.h.s.
+    c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
+
+
+######################
+# LSQ spline helpers #
+######################
+
+def _lsq_solve_qr(x, y, t, k, w):
+    """Solve for the LSQ spline coeffs given x, y and knots.
+
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+    `w` is always 1D: one weight value per `x` value.
+
+    """
+    assert y.ndim == 2
+
+    y_w = y * w[:, None]
+    A, offset, nc = _dierckx.data_matrix(x, t, k, w)
+    _dierckx.qr_reduce(A, offset, nc, y_w)         # modifies arguments in-place
+    c = _dierckx.fpback(A, nc, y_w)
+
+    return A, y_w, c
 
 
 #############################
@@ -2228,7 +2340,7 @@ def fpcheck(x, t, k):
 
     Return None if inputs are consistent, raises a ValueError otherwise.
     """
-    # This routine is a clone of the `fpchec` Fortran routine, 
+    # This routine is a clone of the `fpchec` Fortran routine,
     # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
     # which carries the following comment:
     #

@@ -404,6 +404,36 @@ class TestEig:
         assert vr.shape == (0, 0)
         assert vr.dtype == vr_n.dtype
 
+    @pytest.mark.parametrize("include_B", [False, True])
+    @pytest.mark.parametrize("left", [False, True])
+    @pytest.mark.parametrize("right", [False, True])
+    @pytest.mark.parametrize("homogeneous_eigvals", [False, True])
+    @pytest.mark.parametrize("dtype", [np.float32, np.complex128])
+    def test_nd_input(self, include_B, left, right, homogeneous_eigvals, dtype):
+        batch_shape = (3, 2)
+        core_shape = (4, 4)
+        rng = np.random.default_rng(3249823598235)
+        A = rng.random(batch_shape + core_shape).astype(dtype)
+        B = rng.random(batch_shape + core_shape).astype(dtype)
+        kwargs = dict(right=right, homogeneous_eigvals=homogeneous_eigvals)
+
+        if include_B:
+            res = eig(A, b=B, left=left, **kwargs)
+        else:
+            res = eig(A, left=left, **kwargs)
+
+        for i in range(batch_shape[0]):
+            for j in range(batch_shape[1]):
+                if include_B:
+                    ref = eig(A[i, j], b=B[i, j], left=left, **kwargs)
+                else:
+                    ref = eig(A[i, j], left=left, **kwargs)
+
+                if left or right:
+                    for k in range(len(ref)):
+                        assert_allclose(res[k][i, j], ref[k])
+                else:
+                    assert_allclose(res[i, j], ref)
 
 
 class TestEigBanded:
@@ -2885,9 +2915,9 @@ def _check_orth(n, dtype, skip_big=False):
     assert_allclose(Y, Y.mean(), atol=tol)
 
     if n > 5 and not skip_big:
-        np.random.seed(1)
-        X = np.random.rand(n, 5) @ np.random.rand(5, n)
-        X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+        rng = np.random.RandomState(1)
+        X = rng.rand(n, 5) @ rng.rand(5, n)
+        X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
         X = X.astype(dtype)
 
         Y = orth(X, rcond=1e-3)
@@ -2932,7 +2962,7 @@ def test_orth_empty(dt):
 
 class TestNullSpace:
     def test_null_space(self):
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
 
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
         sizes = [1, 2, 3, 10, 100]
@@ -2951,15 +2981,15 @@ class TestNullSpace:
             assert_equal(Y.shape, (2, 1))
             assert_allclose(X.T @ Y, 0, atol=tol)
 
-            X = np.random.randn(1 + n//2, n)
+            X = rng.randn(1 + n//2, n)
             Y = null_space(X)
             assert_equal(Y.shape, (n, n - 1 - n//2))
             assert_allclose(X @ Y, 0, atol=tol)
 
             if n > 5:
-                np.random.seed(1)
-                X = np.random.rand(n, 5) @ np.random.rand(5, n)
-                X = X + 1e-4 * np.random.rand(n, 1) @ np.random.rand(1, n)
+                rng = np.random.RandomState(1)
+                X = rng.rand(n, 5) @ rng.rand(5, n)
+                X = X + 1e-4 * rng.rand(n, 1) @ rng.rand(1, n)
                 X = X.astype(dt)
 
                 Y = null_space(X, rcond=1e-3)

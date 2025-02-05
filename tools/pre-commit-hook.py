@@ -21,9 +21,9 @@ linters = [
 linter = [f for f in linters if os.path.exists(f)][0]
 
 unicode_checks = [
-    '../../tools/unicode-check.py',
-    'tools/unicode-check.py',
-    'unicode-check.py'  # in case pre-commit hook is run from tools dir
+    '../../tools/check_unicode.py',
+    'tools/check_unicode.py',
+    'check_unicode.py'  # in case pre-commit hook is run from tools dir
 ]
 
 unicode_check = [f for f in unicode_checks if os.path.exists(f)][0]

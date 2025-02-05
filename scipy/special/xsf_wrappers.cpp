@@ -5,14 +5,18 @@
 #include "xsf/bessel.h"
 #include "xsf/beta.h"
 #include "xsf/binom.h"
+#include "xsf/cdflib.h"
 #include "xsf/digamma.h"
 #include "xsf/ellip.h"
+#include "xsf/erf.h"
+#include "xsf/exp.h"
 #include "xsf/expint.h"
 #include "xsf/fresnel.h"
 #include "xsf/gamma.h"
 #include "xsf/hyp2f1.h"
 #include "xsf/kelvin.h"
 #include "xsf/lambertw.h"
+#include "xsf/log.h"
 #include "xsf/log_exp.h"
 #include "xsf/loggamma.h"
 #include "xsf/mathieu.h"
@@ -31,8 +35,6 @@
 
 #include "xsf/cephes/cbrt.h"
 #include "xsf/cephes/erfinv.h"
-#include "xsf/cephes/exp10.h"
-#include "xsf/cephes/exp2.h"
 #include "xsf/cephes/expn.h"
 #include "xsf/cephes/fresnl.h"
 #include "xsf/cephes/hyperg.h"
@@ -313,15 +315,12 @@ int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
 int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, si, ci); }
 
 int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
-    return xsf::sici(to_complex(x),
-		     reinterpret_cast<complex<double> *>(si),
-		     reinterpret_cast<complex<double> *>(ci));
+    return xsf::sici(to_complex(x), reinterpret_cast<complex<double> *>(si), reinterpret_cast<complex<double> *>(ci));
 }
 
 int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
-    return xsf::shichi(to_complex(x),
-		       reinterpret_cast<complex<double> *>(shi),
-		       reinterpret_cast<complex<double> *>(chi));
+    return xsf::shichi(to_complex(x), reinterpret_cast<complex<double> *>(shi),
+                       reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
@@ -381,27 +380,41 @@ double cephes_igam_fac(double a, double x) { return xsf::cephes::detail::igam_fa
 
 double cephes_lanczos_sum_expg_scaled(double x) { return xsf::cephes::lanczos_sum_expg_scaled(x); }
 
-double cephes_erf(double x) { return xsf::cephes::erf(x); }
-
-double cephes_erfc(double x) { return xsf::cephes::erfc(x); }
-
 double cephes_poch(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_rgamma(double x) { return xsf::cephes::rgamma(x); }
 
 double xsf_zetac(double x) { return xsf::zetac(x); }
 
-double cephes_log1p(double x) { return xsf::cephes::log1p(x); }
-
-double cephes_log1pmx(double x) { return xsf::cephes::log1pmx(x); }
-
 double cephes_lgam1p(double x) { return xsf::cephes::lgam1p(x); }
-
-double cephes_expm1(double x) { return xsf::cephes::expm1(x); }
 
 double cephes_expn(int n, double x) { return xsf::cephes::expn(n, x); }
 
 double xsf_ellipe(double x) { return xsf::ellipe(x); }
+
+double xsf_erf(double x) { return xsf::erf(x); }
+
+npy_cdouble xsf_cerf(npy_cdouble z) { return to_ccomplex(xsf::erf(to_complex(z))); }
+
+double xsf_erfc(double x) { return xsf::erfc(x); }
+
+npy_cdouble xsf_cerfc(npy_cdouble z) { return to_ccomplex(xsf::erfc(to_complex(z))); }
+
+double xsf_erfcx(double x) { return xsf::erfcx(x); }
+
+npy_cdouble xsf_cerfcx(npy_cdouble z) { return to_ccomplex(xsf::erfcx(to_complex(z))); }
+
+double xsf_dawsn(double x) { return xsf::dawsn(x); }
+
+npy_cdouble xsf_cdawsn(npy_cdouble z) { return to_ccomplex(xsf::dawsn(to_complex(z))); }
+
+double xsf_erfi(double x) { return xsf::erfi(x); }
+
+npy_cdouble xsf_cerfi(npy_cdouble z) { return to_ccomplex(xsf::erfi(to_complex(z))); }
+
+npy_cdouble xsf_cwofz(npy_cdouble z) { return to_ccomplex(xsf::wofz(to_complex(z))); }
+
+double xsf_voigt_profile(double x, double sigma, double gamma) { return xsf::voigt_profile(x, sigma, gamma); }
 
 double cephes_ellpk(double x) { return xsf::ellipkm1(x); }
 
@@ -413,10 +426,6 @@ double cephes_poch_wrap(double x, double m) { return xsf::cephes::poch(x, m); }
 
 double cephes_erfcinv(double y) { return xsf::cephes::erfcinv(y); }
 
-double cephes_exp10(double x) { return xsf::cephes::exp10(x); }
-
-double cephes_exp2(double x) { return xsf::cephes::exp2(x); }
-
 double cephes_round(double x) { return xsf::cephes::round(x); }
 
 double cephes_spence(double x) { return xsf::cephes::spence(x); }
@@ -424,6 +433,32 @@ double cephes_spence(double x) { return xsf::cephes::spence(x); }
 double xsf_struve_h(double v, double z) { return xsf::struve_h(v, z); }
 
 double xsf_struve_l(double v, double z) { return xsf::struve_l(v, z); }
+
+// Exp
+
+double xsf_expm1(double x) { return xsf::expm1(x); }
+
+npy_cdouble xsf_cexpm1(npy_cdouble z) { return to_ccomplex(xsf::expm1(to_complex(z))); }
+
+double xsf_exp2(double x) { return xsf::exp2(x); }
+
+double xsf_exp10(double x) { return xsf::exp10(x); }
+
+// Log
+
+double xsf_log1p(double x) { return xsf::log1p(x); }
+
+npy_cdouble xsf_clog1p(npy_cdouble z) { return to_ccomplex(xsf::log1p(to_complex(z))); }
+
+double xsf_xlogy(double x, double y) { return xsf::xlogy(x, y); }
+
+npy_cdouble xsf_cxlogy(npy_cdouble x, npy_cdouble y) { return to_ccomplex(xsf::xlogy(to_complex(x), to_complex(y))); }
+
+double xsf_xlog1py(double x, double y) { return xsf::xlog1py(x, y); }
+
+npy_cdouble xsf_cxlog1py(npy_cdouble x, npy_cdouble y) {
+    return to_ccomplex(xsf::xlog1py(to_complex(x), to_complex(y)));
+}
 
 // Cylindrical Bessel
 
@@ -555,10 +590,6 @@ double xsf_bdtri(double k, int n, double y) { return xsf::bdtri(k, n, y); }
 
 double xsf_bdtrc(double k, int n, double p) { return xsf::bdtrc(k, n, p); }
 
-double xsf_btdtri(double aa, double bb, double yy0) { return xsf::btdtri(aa, bb, yy0); }
-
-double xsf_btdtr(double a, double b, double x) { return xsf::btdtr(a, b, x); }
-
 double xsf_chdtr(double df, double x) { return xsf::chdtr(df, x); }
 
 double xsf_chdtrc(double df, double x) { return xsf::chdtrc(df, x); }
@@ -574,6 +605,8 @@ double xsf_fdtri(double a, double b, double y) { return xsf::fdtri(a, b, y); }
 double xsf_gdtr(double a, double b, double x) { return xsf::gdtr(a, b, x); }
 
 double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
+
+double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
 
@@ -592,6 +625,12 @@ double xsf_nbdtrc(int k, int n, double p) { return xsf::nbdtrc(k, n, p); }
 double xsf_nbdtri(int k, int n, double p) { return xsf::nbdtri(k, n, p); }
 
 double xsf_ndtr(double x) { return xsf::ndtr(x); }
+
+npy_cdouble xsf_cndtr(npy_cdouble x) { return to_ccomplex(xsf::ndtr(to_complex(x))); }
+
+double xsf_log_ndtr(double x) { return xsf::log_ndtr(x); }
+
+npy_cdouble xsf_clog_ndtr(npy_cdouble x) { return to_ccomplex(xsf::log_ndtr(to_complex(x))); }
 
 double xsf_ndtri(double x) { return xsf::ndtri(x); }
 

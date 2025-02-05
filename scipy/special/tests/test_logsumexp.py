@@ -4,18 +4,32 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import array_namespace
-from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
+                                         xp_assert_less)
 
 from scipy.special import logsumexp, softmax
+from scipy.special._logsumexp import _wrap_radians
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('jax.numpy',
-                              reasons=["JAX arrays do not support item assignment"])
+dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
+integral_dtypes = ['int32', 'int64']
+
+
+def test_wrap_radians(xp):
+    x = xp.asarray([-math.pi-1, -math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, math.pi+1])
+    ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
+                    0, 1e-300, 1, math.pi, -math.pi+1])
+    res = _wrap_radians(x, xp)
+    xp_assert_close(res, ref, atol=0)
+
+
 class TestLogSumExp:
+    # numpy warning filters don't work for dask (dask/dask#3245)
+    # (also we should not expect the numpy warning filter to work for any Array API
+    # library)
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered in log")
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
@@ -60,8 +74,7 @@ class TestLogSumExp:
         xp_assert_close(logsumexp(a, axis=-1), ref)
 
         # Test keeping dimensions
-        xp_test = array_namespace(a) # `torch` needs `expand_dims`
-        ref = xp_test.expand_dims(ref, axis=-1)
+        ref = xp.expand_dims(ref, axis=-1)
         xp_assert_close(logsumexp(a, axis=-1, keepdims=True), ref)
 
         # Test multiple axes
@@ -96,6 +109,8 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -151,9 +166,95 @@ class TestLogSumExp:
         logsumexp(a, b=b)
 
     @pytest.mark.parametrize('arg', (1, [1, 2, 3]))
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
     def test_xp_invalid_input(self, arg, xp):
         assert logsumexp(arg) == logsumexp(np.asarray(np.atleast_1d(arg)))
+
+    @pytest.mark.skip_xp_backends(np_only=True, reason="array-like input")
+    def test_list(self, xp):
+        a = [1000, 1000]
+        desired = xp.asarray(1000.0 + math.log(2.0), dtype=np.float64)
+        xp_assert_close(logsumexp(a), desired)
+
+    @pytest.mark.parametrize('dtype', dtypes)
+    def test_dtypes_a(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([1000., 1000.], dtype=dtype)
+        desired_dtype = (xp.asarray(1.).dtype if xp.isdtype(dtype, 'integral')
+                         else dtype)  # true for all libraries tested
+        desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
+        xp_assert_close(logsumexp(a), desired)
+
+    @pytest.mark.parametrize('dtype_a', dtypes)
+    @pytest.mark.parametrize('dtype_b', dtypes)
+    def test_dtypes_ab(self, dtype_a, dtype_b, xp):
+        xp_dtype_a = getattr(xp, dtype_a)
+        xp_dtype_b = getattr(xp, dtype_b)
+        a = xp.asarray([2, 1], dtype=xp_dtype_a)
+        b = xp.asarray([1, -1], dtype=xp_dtype_b)
+        if is_array_api_strict(xp):
+            # special-case for `TypeError: array_api_strict.float32 and
+            # and array_api_strict.int64 cannot be type promoted together`
+            xp_float_dtypes = [dtype for dtype in [xp_dtype_a, xp_dtype_b]
+                               if not xp.isdtype(dtype, 'integral')]
+            if len(xp_float_dtypes) < 2:  # at least one is integral
+                xp_float_dtypes.append(xp.asarray(1.).dtype)
+            desired_dtype = xp.result_type(*xp_float_dtypes)
+        else:
+            desired_dtype = xp.result_type(xp_dtype_a, xp_dtype_b)
+            if xp.isdtype(desired_dtype, 'integral'):
+               desired_dtype = xp_default_dtype(xp)
+        desired = xp.asarray(math.log(math.exp(2) - math.exp(1)), dtype=desired_dtype)
+        xp_assert_close(logsumexp(a, b=b), desired)
+
+    def test_gh18295(self, xp):
+        # gh-18295 noted loss of precision when real part of one element is much
+        # larger than the rest. Check that this is resolved.
+        a = xp.asarray([0.0, -40.0])
+        res = logsumexp(a)
+        ref = xp.logaddexp(a[0], a[1])
+        xp_assert_close(res, ref)
+
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
+    @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
+    def test_gh21610(self, xp, dtype):
+        # gh-21610 noted that `logsumexp` could return imaginary components
+        # outside the range (-pi, pi]. Check that this is resolved.
+        # While working on this, I noticed that all other tests passed even
+        # when the imaginary component of the result was zero. This suggested
+        # the need of a stronger test with imaginary dtype.
+        rng = np.random.default_rng(324984329582349862)
+        dtype = getattr(xp, dtype)
+        shape = (10, 100)
+        x = rng.uniform(1, 40, shape) + 1.j * rng.uniform(1, 40, shape)
+        x = xp.asarray(x, dtype=dtype)
+
+        res = logsumexp(x, axis=1)
+        ref = xp.log(xp.sum(xp.exp(x), axis=1))
+        max = xp.full_like(xp.imag(res), xp.asarray(xp.pi))
+        xp_assert_less(xp.abs(xp.imag(res)), max)
+        xp_assert_close(res, ref)
+
+        out, sgn = logsumexp(x, return_sign=True, axis=1)
+        ref = xp.sum(xp.exp(x), axis=1)
+        xp_assert_less(xp.abs(xp.imag(sgn)), max)
+        xp_assert_close(out, xp.real(xp.log(ref)))
+        xp_assert_close(sgn, ref/xp.abs(ref))
+
+    def test_gh21709_small_imaginary(self, xp):
+        # Test that `logsumexp` does not lose relative precision of
+        # small imaginary components
+        x = xp.asarray([0, 0.+2.2204460492503132e-17j])
+        res = logsumexp(x)
+        # from mpmath import mp
+        # mp.dps = 100
+        # x, y = mp.mpc(0), mp.mpc('0', '2.2204460492503132e-17')
+        # ref = complex(mp.log(mp.exp(x) + mp.exp(y)))
+        ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
+        xp_assert_close(xp.real(res), xp.real(ref))
+        xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
 class TestSoftmax:

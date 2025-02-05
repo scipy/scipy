@@ -3,6 +3,8 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_cython_tree += fs.copyfile('__init__.pxd')
+
 _generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
@@ -26,6 +28,7 @@ cython_linalg = custom_target('cython_linalg',
   install_tag: 'devel'
 )
 cython_blas_pxd = cython_linalg[2]
+cython_lapack_pxd = cython_linalg[3]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -37,7 +40,7 @@ linalg_init_cython_gen = generator(cython,
 linalg_init_utils_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd, cython_lapack_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython,
@@ -49,7 +52,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'fblas_l1.pyf.src',
@@ -73,7 +76,7 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'flapack_user.pyf.src',
@@ -102,7 +105,7 @@ py3.extension_module('_flapack',
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
-  linalg_init_cython_gen.process('_decomp_interpolative.pyx'),
+  linalg_cython_gen.process('_decomp_interpolative.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -180,18 +183,12 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-# _matfuncs_expm:
-_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
-  output: '_matfuncs_expm.pyx',
-  input: '_matfuncs_expm.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_matfuncs_expm',
-  linalg_cython_gen.process(_matfuncs_expm_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
+  [
+    '_matfuncs_expm.h',
+    '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -224,6 +221,7 @@ endif
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',
