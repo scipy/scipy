@@ -496,6 +496,12 @@ class SHGO:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
+        if options is not None and options.get('jac', None) is True:
+            if minimizer_kwargs is None:
+                minimizer_kwargs = {}
+            minimizer_kwargs['jac'] = True
+            options.pop('jac')
+
         # Split obj func if given with Jac
         try:
             if ((minimizer_kwargs['jac'] is True) and
