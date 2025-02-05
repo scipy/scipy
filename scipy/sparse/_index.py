@@ -100,10 +100,23 @@ class IndexMixin:
                 else:
                     res = self._get_arrayXarray(row, col)
 
+        # handle spmatrix (must be 2d, dont let 1d new_shape start reshape)
+        if not isinstance(self, sparray):
+            if len(new_shape) == 2:
+                # need this for A[:, 1] vs A[1, :]
+                return res.reshape(new_shape)
+            elif len(new_shape) == 1:
+                if res.ndim == 2:
+                    return res
+                return res.reshape((1,) + new_shape)
+            return res
+
         # package the result and return
-        if isinstance(self, sparray) and res.shape != new_shape:
+        if res.shape != new_shape:
             # handle formats that support indexing but not 1D (lil for now)
             if self.format == "lil" and len(new_shape) != 2:
+                if res.shape == ():
+                    return self._coo_container([res], shape = new_shape)
                 return res.tocoo().reshape(new_shape)
             return res.reshape(new_shape)
         return res
