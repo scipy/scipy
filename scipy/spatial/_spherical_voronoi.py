@@ -186,7 +186,7 @@ class SphericalVoronoi:
             raise ValueError(f"Rank of input points must be at least {self._dim}")
 
         if cKDTree(self.points).query_pairs(threshold * self.radius):
-            raise ValueError("Duplicate generators present.")
+            raise ValueError("Duplicate points present.")
 
         radii = np.linalg.norm(self.points - self.center, axis=1)
         max_discrepancy = np.abs(radii - self.radius).max()
