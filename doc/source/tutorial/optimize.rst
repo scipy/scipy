@@ -2008,9 +2008,28 @@ Parallel execution support
 ---------------------------
 
 Some SciPy optimization methods, such as :func:`differential_evolution` offer
-parallelization through the use of a ``workers`` keyword. Each optimizer is slightly
-different in how parallelization is employed, but there are common characteristics
-in what can be provided to ``workers``. These commonalities are described below.
+parallelization through the use of a ``workers`` keyword.
+
+For :func:`differential_evolution` there are two loops (iteration) levels in the
+algorithm. The outer loop represents successive generations of a population. This
+loop can't be parallelized. For a given generation candidate solutions are generated
+that have to be compared against existing population members. The fitness of the
+candidate solution can be done in a loop, but it's also possible to parallelize the
+calculation.
+
+Parallelization is also possible in other optimization algorithms. For example in
+various :func:`minimize` methods numerical differentiation is used to estimate
+derivatives. For a simple gradient calculation using two-point forward differences a
+total of ``N + 1`` objective function calculations have to be done, where ``N`` is the
+number of parameters. These are just small perturbations around a given location
+(the +1). Those ``N + 1`` calculations are also parallelizable. The calculation of
+numerical derivatives are used by the minimization algorithm to generate new steps.
+
+Each optimization algorithm is quite different in how they work, but they often have
+locations where multiple objective function calculations are required before the
+algorithm does something else. Those locations are what can be parallelized.
+There are therefore common characteristics in how ``workers`` is used. These
+commonalities are described below.
 
 If an int is supplied then a :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` is
 created, with the object's :func:`map` method being used to evaluate solutions in
@@ -2024,10 +2043,12 @@ Lambda functions do not meet that requirement.
     >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
     >>> res = differential_evolution(rosen, bnds, workers=2, updating='deferred')
 
-Alternatively map-like callables can be supplied as a worker. Here the map-like function
-iterates through the solution vectors, evaluating each one against the objective function.
+It is also possible to use a map-like callable as a worker. Here the map-like function
+is provided with a series of vectors that the optimization algorithm provides.
+The map-like function needs to evaluate each vector against the objective function.
 In the following example we use :class:`multiprocessing.Pool <multiprocessing.pool.Pool>`
-again, the objective function still needs to be pickleable.
+as the map-like. As before, the objective function still needs to be pickleable.
+This example is semantically identical to the previous example.
 
 ::
 
@@ -2057,30 +2078,34 @@ calculate.
     array([0.99999903, 0.99999808, 0.99999614, 0.99999228])  # may vary
 
 If the objective function can be vectorized, then a map-like can be used to take
-advantage of vectorization during function evaluation.
+advantage of vectorization during function evaluation. Vectorization means that the
+objective function can carry out the required calculations in a single (rather than
+multiple) call, which is typically very efficient.
 
 ::
 
     >>> def vectorized_maplike(fun, iterable):
-    ...     arr = np.array([i for i in iter(iterable)])
-    ...     arr_t = arr.T
-    ...     r = rosen(arr_t)
+    ...     arr = np.array([i for i in iter(iterable)])   # arr.shape = (S, N)
+    ...     arr_t = arr.T                                 # arr_t.shape = (N, S)
+    ...     r = rosen(arr_t)                              # calculation vectorized over S
     ...     return r
     >>>
     >>> res = minimize(rosen, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
 
 There are several important points to note about this example:
 
+* The iterable represents the series of parameter vectors that the algorithm wishes
+  to be evaluated.
 * The iterable is first converted to an iterator, before being made into an array via
   a list comprehension. This allows the iterable to be a generator, list, array, etc.
 * The calculation is done using ``rosen`` instead of using ``fun``. The map-like is
   actually supplied with a wrapped version of the objective function. The wrapping
-  is used to detect various types of error, including checking whether the objective
-  function returns a scalar. If ``fun`` is used then a :class:`RuntimeError` will
-  result, because ``fun(arr_t)`` will be a 1-D array and not a scalar. We therefore use
-  ``rosen`` directly.
+  is used to detect various types of common user errors, including checking whether
+  the objective function returns a scalar. If ``fun`` is used then a
+  :class:`RuntimeError` will result, because ``fun(arr_t)`` will be a 1-D array and not
+  a scalar. We therefore use ``rosen`` directly.
 * ``arr.T`` is sent to the objective function. This is because ``arr.shape == (S, N)``,
-  where ``S`` is the number of solution vectors to evaluate and ``N`` is the number of
+  where ``S`` is the number of parameter vectors to evaluate and ``N`` is the number of
   variables. For ``rosen`` vectorization occurs on ``(N, S)`` shaped arrays.
 * This approach is not needed for :func:`differential_evolution` as that minimizer
   already has a keyword for vectorization.
