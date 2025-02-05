@@ -939,7 +939,9 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *,
     if nan_policy not in policies:
         raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
-    if xp.isdtype(a.dtype, "real floating"):
+    if xp_size(a) == 0:
+        contains_nan = False
+    elif xp.isdtype(a.dtype, "real floating"):
         # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
         # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
