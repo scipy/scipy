@@ -660,6 +660,32 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+class _ScalarFunctionWrapper:
+    """
+    Object to wrap scalar user function, allowing picklability
+    """
+    def __init__(self, f, args=None):
+        self.f = f
+        self.args = [] if args is None else args
+        self.nfev = 0
+
+    def __call__(self, x):
+        # Send a copy because the user may overwrite it.
+        # The user of this class might want `x` to remain unchanged.
+        fx = self.f(np.copy(x), *self.args)
+        self.nfev += 1
+
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
