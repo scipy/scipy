@@ -102,14 +102,14 @@ class IndexMixin:
 
         # handle spmatrix (must be 2d, dont let 1d new_shape start reshape)
         if not isinstance(self, sparray):
-            if len(new_shape) == 2:
-                # need this for A[:, 1] vs A[1, :]
-                return res.reshape(new_shape)
-            elif len(new_shape) == 1:
-                if res.ndim == 2:
-                    return res
-                return res.reshape((1,) + new_shape)
-            return res
+            if new_shape == () or (len(new_shape) == 1 and res.ndim != 0):
+                # res handles cases not inflated by None
+                return res
+            if len(new_shape) == 1:
+                # shape inflated to 1D by None in index. Make 2D
+                new_shape = (1,) + new_shape
+            # reshape if needed (when None changes shape, e.g. A[1,:,None])
+            return res if new_shape == res.shape else res.reshape(new_shape)
 
         # package the result and return
         if res.shape != new_shape:
