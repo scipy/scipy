@@ -1528,7 +1528,7 @@ class TestInterp:
     @pytest.mark.parametrize("axis", range(1, 4))
     def test_shapes_axis(self, axis):
         rng = np.random.RandomState(1234)
-        k, n = 3, 11
+        n = 11
         shp_extra = (5, 6, 7)
         x = np.arange(n)
         y = rng.random(size=(n,) + shp_extra)
