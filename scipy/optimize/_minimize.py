@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import inspect
 from warnings import warn
 
 import numpy as np
@@ -702,8 +703,19 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 x0 = x0[~i_fixed]
                 bounds = _remove_from_bounds(bounds, i_fixed)
                 fun = _Remove_From_Func(fun, i_fixed, x_fixed)
+
                 if callable(callback):
-                    callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+                    sig = inspect.signature(callback)
+                    if set(sig.parameters) == {'intermediate_result'}:
+                        # callback(intermediate_result)
+                        print(callback)
+                        callback = _Patch_Callback_Equal_Variables(
+                            callback, i_fixed, x_fixed
+                        )
+                    else:
+                        # callback(x)
+                        callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+
                 if callable(jac):
                     jac = _Remove_From_Func(jac, i_fixed, x_fixed, remove=1)
 
@@ -720,6 +732,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    # selects whether to use callback(x) or callback(intermediate_result)
     callback = _wrap_callback(callback, meth)
 
     if meth == 'nelder-mead':
@@ -998,6 +1011,22 @@ def _remove_from_bounds(bounds, i_fixed):
     lb = bounds.lb[~i_fixed]
     ub = bounds.ub[~i_fixed]
     return Bounds(lb, ub)  # don't mutate original Bounds object
+
+
+class _Patch_Callback_Equal_Variables:
+    # Patches a callback that accepts an intermediate_result
+    def __init__(self, callback, i_fixed, x_fixed):
+        self.callback = callback
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+
+    def __call__(self, intermediate_result):
+        x_in = intermediate_result.x
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        intermediate_result.x = x_out
+        return self.callback(intermediate_result)
 
 
 class _Remove_From_Func:
