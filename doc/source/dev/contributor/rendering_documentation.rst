@@ -73,8 +73,8 @@ To render the documentation on your own machine:
 
    - Changes to certain documents do not take effect when Sphinx documentation
      is rebuilt. In this case, you can build from scratch by deleting the
-     directories ``scipy/doc/build`` and ``source/reference/generated``,
-     then building again.
+     directories ``scipy/doc/build`` and ``source/reference/generated``, or by
+     running ``python dev.py doc clean`` then building the docs again.
 
    - In case the SciPy version found by the above command is different from
      that of the latest commit in the repo, you will see a message like::
@@ -85,7 +85,7 @@ To render the documentation on your own machine:
      check with ``python -c "import scipy; print(scipy.__file__)"``.
 
    - The SciPy documentation contains interactive examples rendered with the
-     help of the `jupyterlite-sphinx` extension. For more details, see
+     help of the ``jupyterlite-sphinx`` extension. For more details, see
      :ref:`interactive-docs`.
 
 .. _rendering-documentation-cloud:
@@ -126,7 +126,7 @@ For more details, please consult the
 `MyST-NB documentation <https://myst-nb.readthedocs.io/en/latest/authoring/text-notebooks.html>`__.
 You can also consult the
 `Pairing tutorial on NumPy Tutorials <https://numpy.org/numpy-tutorials/content/pairing.html>`__
-for more information on MyST-NB_, Jupytext and pairing notebooks.
+for more information on MyST-NB, Jupytext and pairing notebooks.
 
 How to convert a ``.ipynb`` file to executable ``.md`` file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -135,15 +135,16 @@ If you don't need to keep the ``.ipynb`` file, and want to work with MyST
 Markdown only, follow the steps below.
 
 1. Install the jupytext_ tool, using ``pip install jupytext`` or
-   ``conda install jupytext -c conda-forge``
-2. Clear all outputs from your ``.ipynb`` file
+   ``conda install jupytext -c conda-forge``;
+2. Clear all outputs from your ``.ipynb`` file;
 3. On your terminal, run ``jupytext notebook.ipynb --to myst``, where
    ``notebook.ipynb`` should be replaced with the file you want to convert.
 
 .. _jupytext: https://jupytext.readthedocs.io
 
 Now, the resulting ``.md`` file (in MyST Markdown format) should contain a
-preamble similar to the one below, indicating that this is an executable file:
+preamble similar to the one below, indicating that its contents will be executed
+when the SciPy documentation is built:
 
 ::
 
@@ -227,7 +228,7 @@ for an example.
 
         +++ {"tags": ["jupyterlite_sphinx_strip"]}
 
-Visit the `NotebookLite directive documentation<https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/notebooklite.html>`__
+Visit the `NotebookLite directive documentation <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/notebooklite.html>`__
 for more details and options.
 
 Opening MyST Markdown files in the Jupyter Notebook application
