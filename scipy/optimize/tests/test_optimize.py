@@ -1279,24 +1279,25 @@ class TestOptimizeSimple(CheckOptimize):
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
     @pytest.mark.parametrize(
-        'bounds', [None, [[0.0, 0.0], [-np.inf, +np.inf], [-np.inf, +np.inf]]],
+        'bounds',
+         [None,
+          Bounds([0.0, -np.inf, -np.inf], [0.0, np.inf, np.inf])
+         ],
     )
     @pytest.mark.parametrize('method', ['l-bfgs-b'])
-    def test_minimize_callback_result(self, method, bounds):
-        """Check if `OptimizeResult` is passed to the callback function.
-
-        The issue related to fixed bounds (gh-21537) is also checked.
-        """
+    def test_minimize_callback_fixed_variables(self, method, bounds):
+        # gh-21537
         def callback(intermediate_result):
             assert isinstance(intermediate_result, optimize.OptimizeResult)
+            assert len(intermediate_result.x) == 3
 
-        res = optimize.minimize(self.func, np.zeros(3), method=method,
+        def callback2(x):
+            assert len(x) == 3
+
+        optimize.minimize(self.func, np.zeros(3), method=method,
                                 bounds=bounds, callback=callback)
-
-        if bounds is not None:
-            for i in range(3):
-                assert bounds[i][0] <= res.x[i]  # check lower bounds
-                assert bounds[i][1] >= res.x[i]  # check upper bounds
+        optimize.minimize(self.func, np.zeros(3), method=method,
+                                bounds=bounds, callback=callback2)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
