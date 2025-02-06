@@ -4650,7 +4650,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # use np.linalg.norm.
     xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
     ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid='ignore', divide='ignore'):
         normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
