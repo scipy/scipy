@@ -3257,7 +3257,7 @@ def test_sparse_hessian(method, sparse_type):
 @pytest.mark.parametrize('workers', [None, 2])
 @pytest.mark.parametrize(
     'method',
-    ['l-bfgs-b', 'bfgs', 'slsqp', 'trust-constr', 'Newton-CG', 'CG'])
+    ['l-bfgs-b', 'bfgs', 'slsqp', 'trust-constr', 'Newton-CG', 'CG', 'tnc'])
 class TestWorkers:
 
     def setup_method(self):
@@ -3283,7 +3283,7 @@ class TestWorkers:
 
     def test_equal_bounds(self, workers, method):
         workers = workers or map
-        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr']:
+        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr', 'tnc']:
             pytest.skip(f"{method} cannot use bounds")
 
         bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
