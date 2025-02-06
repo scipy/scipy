@@ -291,7 +291,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
                      disp=None, maxcor=10, ftol=2.2204460492503131e-09,
                      gtol=1e-5, eps=1e-8, maxfun=15000, maxiter=15000,
                      iprint=-1, callback=None, maxls=20,
-                     finite_diff_rel_step=None, **unknown_options):
+                     finite_diff_rel_step=None, workers=None,
+                     **unknown_options):
     """
     Minimize a scalar function of one or more variables using the L-BFGS-B
     algorithm.
@@ -344,6 +345,12 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -385,7 +392,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     # _prepare_scalar_function can use bounds=None to represent no bounds
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   bounds=bounds,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     func_and_grad = sf.fun_and_grad
 

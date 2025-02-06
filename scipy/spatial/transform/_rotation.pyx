@@ -1106,6 +1106,8 @@ cdef class Rotation:
 
         .. versionadded:: 1.4.0
         """
+        cdef int ind
+
         is_single = False
         matrix = np.array(matrix, dtype=float)
 

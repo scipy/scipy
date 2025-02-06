@@ -45,6 +45,7 @@ from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_n
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -597,8 +598,14 @@ class TestPearsonr:
     @pytest.mark.skip_xp_backends(np_only=True)
     def test_input_validation(self, xp):
         x = [1, 2, 3]
-        y = [4, 5]
+        y = [4]
         message = '`x` and `y` must have the same length along `axis`.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
+
+        x = [1, 2, 3]
+        y = [4, 5]
+        message = '`x` and `y` must be broadcastable.'
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
@@ -763,6 +770,24 @@ class TestPearsonr:
         xp_assert_close(res.pvalue, ones)
         xp_assert_close(ci.low, -ones)
         xp_assert_close(ci.high, ones)
+
+    def test_different_dimensionality(self, xp):
+        # For better or for worse, there is one difference between the broadcasting
+        # behavior of most stats functions and NumPy gufuncs / NEP 5: gufuncs `axis`
+        # refers to the core dimension *before* prepending `1`s to the array shapes
+        # to match dimensionality; SciPy's prepends `1`s first. For instance, in
+        # SciPy, `vecdot` would work just like `xp.sum(x * y, axis=axis)`, but this
+        # is NOT true of NumPy. The discrepancy only arises when there are multiple
+        # arguments with different dimensionality and positive indices are used,
+        # which is probably why it hasn't been a problem. There are pros and cons of
+        # each convention, and we might want to consider changing our behavior in
+        # SciPy 2.0. For now, preserve consistency / backward compatibility.
+        rng = np.random.default_rng(45834598265019344)
+        x = rng.random((3, 10))
+        y = rng.random(10)
+        res = stats.pearsonr(x, y, axis=1)
+        ref = stats.pearsonr(x, y, axis=-1)
+        assert_equal(res.statistic, ref.statistic)
 
     @skip_xp_backends('jax.numpy',
                       reason='JAX arrays do not support item assignment')
@@ -3725,8 +3750,8 @@ class TestSkew(SkewKurtosisTest):
             a[:, 0] = 1.01
             stats.skew(a)
 
-    @skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     def test_vectorization(self, xp, axis, bias):
@@ -3820,8 +3845,8 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
-    @skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-    @skip_xp_backends('dask.array', reason='boolean index assignment')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
     @pytest.mark.parametrize('fisher', [False, True])
@@ -7293,87 +7318,88 @@ class TestPMean:
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
 
+@skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
 class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
-    array_1d = np.arange(2 * 3 * 4) + 1
+    array_1d = (np.arange(2 * 3 * 4) + 1).tolist()
     gstd_array_1d = 2.294407613602
-    array_3d = array_1d.reshape(2, 3, 4)
+    array_3d = np.reshape(array_1d, (2, 3, 4)).tolist()
 
-    def test_1d_array(self):
-        gstd_actual = stats.gstd(self.array_1d)
-        assert_allclose(gstd_actual, self.gstd_array_1d)
+    def test_1d_array(self, xp):
+        gstd_actual = stats.gstd(xp.asarray(self.array_1d))
+        xp_assert_close(gstd_actual, xp.asarray(self.gstd_array_1d))
 
-    def test_1d_numeric_array_like_input(self):
+    @skip_xp_backends(np_only=True, reason="Only NumPy supports array-like input")
+    def test_1d_numeric_array_like_input(self, xp):
         gstd_actual = stats.gstd(tuple(self.array_1d))
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
-    def test_raises_value_error_non_numeric_input(self):
+    @skip_xp_invalid_arg
+    def test_raises_value_error_non_numeric_input(self, xp):
         # this is raised by NumPy, but it's quite interpretable
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
-    def test_returns_nan_invalid_value(self, bad_value):
-        x = np.append(self.array_1d, [bad_value])
+    def test_returns_nan_invalid_value(self, bad_value, xp):
+        x = xp.asarray(self.array_1d + [bad_value])
         if np.isfinite(bad_value):
             message = "The geometric standard deviation is only defined..."
             with pytest.warns(RuntimeWarning, match=message):
                 res = stats.gstd(x)
         else:
             res = stats.gstd(x)
-        assert_equal(res, np.nan)
+        xp_assert_equal(res, xp.asarray(np.nan))
 
-    def test_propagates_nan_values(self):
-        a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
+    def test_propagates_nan_values(self, xp):
+        a = xp.asarray([[1, 1, 1, 16], [xp.nan, 1, 2, 3]])
         gstd_actual = stats.gstd(a, axis=1)
-        assert_allclose(gstd_actual, np.array([4, np.nan]))
+        xp_assert_close(gstd_actual, xp.asarray([4, np.nan]))
 
-    def test_ddof_equal_to_number_of_observations(self):
-        with pytest.warns(RuntimeWarning, match='Degrees of freedom <= 0'):
-            assert_equal(stats.gstd(self.array_1d, ddof=self.array_1d.size), np.inf)
+    def test_ddof_equal_to_number_of_observations(self, xp):
+        x = xp.asarray(self.array_1d)
+        res = stats.gstd(x, ddof=x.shape[0])
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
-    def test_3d_array(self):
-        gstd_actual = stats.gstd(self.array_3d, axis=None)
-        assert_allclose(gstd_actual, self.gstd_array_1d)
+    def test_3d_array(self, xp):
+        x = xp.asarray(self.array_3d)
+        gstd_actual = stats.gstd(x, axis=None)
+        ref = xp.asarray(self.gstd_array_1d)
+        xp_assert_close(gstd_actual, ref)
 
-    def test_3d_array_axis_type_tuple(self):
-        gstd_actual = stats.gstd(self.array_3d, axis=(1,2))
-        assert_allclose(gstd_actual, [2.12939215, 1.22120169])
+    def test_3d_array_axis_type_tuple(self, xp):
+        x = xp.asarray(self.array_3d)
+        gstd_actual = stats.gstd(x, axis=(1, 2))
+        ref = xp.asarray([2.12939215, 1.22120169])
+        xp_assert_close(gstd_actual, ref)
 
-    def test_3d_array_axis_0(self):
-        gstd_actual = stats.gstd(self.array_3d, axis=0)
-        gstd_desired = np.array([
+    def test_3d_array_axis_0(self, xp):
+        x = xp.asarray(self.array_3d)
+        gstd_actual = stats.gstd(x, axis=0)
+        gstd_desired = xp.asarray([
             [6.1330555493918, 3.958900210120, 3.1206598248344, 2.6651441426902],
             [2.3758135028411, 2.174581428192, 2.0260062829505, 1.9115518327308],
             [1.8205343606803, 1.746342404566, 1.6846557065742, 1.6325269194382]
         ])
-        assert_allclose(gstd_actual, gstd_desired)
+        xp_assert_close(gstd_actual, gstd_desired)
 
-    def test_3d_array_axis_1(self):
-        gstd_actual = stats.gstd(self.array_3d, axis=1)
-        gstd_desired = np.array([
+    def test_3d_array_axis_1(self, xp):
+        x = xp.asarray(self.array_3d)
+        gstd_actual = stats.gstd(x, axis=1)
+        gstd_desired = xp.asarray([
             [3.118993630946, 2.275985934063, 1.933995977619, 1.742896469724],
             [1.271693593916, 1.254158641801, 1.238774141609, 1.225164057869]
         ])
-        assert_allclose(gstd_actual, gstd_desired)
+        xp_assert_close(gstd_actual, gstd_desired)
 
-    def test_3d_array_axis_2(self):
-        gstd_actual = stats.gstd(self.array_3d, axis=2)
-        gstd_desired = np.array([
+    def test_3d_array_axis_2(self, xp):
+        x = xp.asarray(self.array_3d)
+        gstd_actual = stats.gstd(x, axis=2)
+        gstd_desired = xp.asarray([
             [1.8242475707664, 1.2243686572447, 1.1318311657788],
             [1.0934830582351, 1.0724479791887, 1.0591498540749]
         ])
-        assert_allclose(gstd_actual, gstd_desired)
-
-    def test_masked_3d_array(self):
-        ma = np.ma.masked_where(self.array_3d > 16, self.array_3d)
-        message = "`gstd` support for masked array input was deprecated in..."
-        with pytest.warns(DeprecationWarning, match=message):
-            gstd_actual = stats.gstd(ma, axis=2)
-        gstd_desired = stats.gstd(self.array_3d, axis=2)
-        mask = [[0, 0, 0], [0, 1, 1]]
-        assert_allclose(gstd_actual, gstd_desired)
-        assert_equal(gstd_actual.mask, mask)
+        xp_assert_close(gstd_actual, gstd_desired)
 
 
 def test_binomtest():
@@ -9547,8 +9573,8 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@skip_xp_backends('jax.numpy', reason='JAX arrays do not support item assignment')
-@skip_xp_backends('dask.array', reason='boolean index assignment')
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
     @pytest.mark.parametrize('keepdims', [False, True])

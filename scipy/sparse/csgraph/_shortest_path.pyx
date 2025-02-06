@@ -26,8 +26,10 @@ cimport cython
 
 from libc.math cimport INFINITY
 
+from libcpp.algorithm cimport lower_bound
 from libcpp.queue cimport priority_queue
 from libcpp.pair cimport pair
+from libcpp.vector cimport vector
 
 np.import_array()
 
@@ -1561,6 +1563,105 @@ def yen(
     return dist_array[:num_paths_found].reshape((num_paths_found,))
 
 
+ctypedef vector[int] yen_path_t
+
+cdef struct YenDistancePathStruct:
+    double distance
+    yen_path_t path
+    int spur_node
+
+
+cdef inline bint _yen_compare_distance(YenDistancePathStruct a, YenDistancePathStruct b):
+    return a.distance < b.distance
+
+
+cdef class _YenCandidatePaths:
+    cdef:
+        vector[YenDistancePathStruct] _distances_and_paths
+        size_t _required_paths
+
+    def __cinit__(self, K: int):
+        self._distances_and_paths = vector[YenDistancePathStruct]()
+        self._required_paths = K
+
+    @cython.boundscheck(False)
+    cdef void insert_path(
+        self,
+        const double distance,
+        const int[:] source_to_spur_path,
+        const int[:] spur_to_sink_path,
+        const int spur_node,
+        const int sink,
+    ):
+        cdef:
+            yen_path_t path_to_insert
+            int idx = sink
+            YenDistancePathStruct new_element
+            vector[YenDistancePathStruct].iterator it
+
+        if self._distances_and_paths.size() >= self._required_paths and distance >= self.max_distance():
+            # The new path is longer than the longest path in the vector - return
+            return
+
+        # Store the path in reverse order, from sink to source
+        # path_to_insert[0] = sink -> vec[1] -> ... -> path_to_insert[N-1] = source
+        while idx != spur_node:
+            path_to_insert.push_back(idx)
+            idx = spur_to_sink_path[idx]
+        while idx != NULL_IDX:
+            path_to_insert.push_back(idx)
+            idx = source_to_spur_path[idx]
+
+        new_element.distance = distance
+        new_element.path = path_to_insert
+        new_element.spur_node = spur_node
+        it = lower_bound(self._distances_and_paths.begin(), self._distances_and_paths.end(), new_element,
+                         _yen_compare_distance)
+        self._distances_and_paths.insert(it, new_element)
+
+        # Reduce the number of paths to amount required
+        while self._distances_and_paths.size() > self._required_paths:
+            self._distances_and_paths.pop_back()
+
+    cdef double min_distance(self):
+        if self.empty():
+            return INFINITY
+        return self._distances_and_paths[0].distance
+
+    cdef double max_distance(self):
+        if self.empty():
+            return -INFINITY
+        return self._distances_and_paths.back().distance
+
+    @cython.boundscheck(False)
+    cdef int pop_path_to_memory_view(
+        self,
+        int[:] target,
+    ):
+        cdef:
+            yen_path_t shortest_path
+            size_t idx
+            int spur_node
+
+        if self.empty():
+            raise RuntimeError("No paths to pop")
+
+        shortest_path = self._distances_and_paths[0].path
+        spur_node = self._distances_and_paths[0].spur_node
+        self._distances_and_paths.erase(self._distances_and_paths.begin())
+
+        # Restore the path in the correct order
+        for idx in range(shortest_path.size() - 1):
+            target[shortest_path[idx]] = shortest_path[idx + 1]
+
+        self._required_paths -= 1
+
+        return spur_node
+
+    cdef bint empty(self):
+        return self._distances_and_paths.empty()
+
+
 @cython.boundscheck(False)
 cdef void _yen(
     const int source,
@@ -1580,6 +1681,8 @@ cdef void _yen(
         int[:] predecessor_matrix = np.full((N), NULL_IDX, dtype=ITYPE)
         double[:] dist_matrix = np.full((N), np.inf, dtype=DTYPE)
         int[:] dummy_source_matrix = np.empty((0), dtype=ITYPE) # unused
+        _YenCandidatePaths candidate_paths = _YenCandidatePaths(K)
+
     dist_matrix[source] = 0
 
     # ---------------------------------------------------
@@ -1598,16 +1701,12 @@ cdef void _yen(
         return
 
     cdef:
-        # initialize candidate arrays
-        # for index 'i', candidate_distances[i] stores the distance
-        # of the path stored in candidate_predecessors[i. :]
-        double[:] candidate_distances = np.full(K, INFINITY, dtype=DTYPE)
-        int[:, :] candidate_predecessors = np.full((K, N), NULL_IDX, dtype=ITYPE)
         # Store the original graph weights for restoring the graph
         double[:] csr_weights = original_weights.copy()
         double[:] csrT_weights
 
         int k, i, spur_node, node, short_path_idx, tmp_i
+        int spur_node_k_minus_1
         double root_path_distance, total_distance, tmp_d
 
     # Avoid copying a size 0 memory view
@@ -1625,6 +1724,7 @@ cdef void _yen(
 
     # ---------------------------------------------------
     # Compute and store the K-1 shortest paths
+    spur_node_k_minus_1 = source
     for k in range(1, K):
         # Set spur node as sink
         spur_node = sink
@@ -1634,7 +1734,7 @@ cdef void _yen(
         # ---------------------------------------------------
         # For each spur_node in the previous k-shortest path
         # Search for a new short path from it to the sink
-        while spur_node != source:
+        while spur_node != spur_node_k_minus_1:
             # Decrease the root path distance by the distance of it's final edge and
             # set the source of the final edge as the new spur node
             tmp_i = shortest_paths_predecessors[k-1][spur_node] # previous node
@@ -1725,45 +1825,14 @@ cdef void _yen(
 
             # ---------------------------------------------------
             # Add the found path to arrays of candidates
-            if (
-                total_distance != INFINITY
-                and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1],
-                                               predecessor_matrix,
-                                               spur_node, sink) == 0
-            ):
-                # Find the index to insert the new path
-                short_path_idx = tmp_i = NULL_IDX
-                tmp_d = -INFINITY # maximal distance in potential distances array
-                for i in range(candidate_distances.shape[0]):
-                    if candidate_distances[i] == INFINITY:
-                        short_path_idx = i
-                        break
-                    elif candidate_distances[i] > tmp_d:
-                        tmp_d = candidate_distances[i]
-                        tmp_i = i
-                if short_path_idx ==  NULL_IDX and total_distance < tmp_d:
-                    short_path_idx = tmp_i
-
-                if short_path_idx != NULL_IDX:
-                    candidate_distances[short_path_idx] = total_distance
-                    # Reset candidate_predecessors[short_path_idx]
-                    candidate_predecessors[short_path_idx, :] = NULL_IDX
-                    # Fill original path
-                    node = spur_node
-                    while node != NULL_IDX:
-                        candidate_predecessors[short_path_idx, node] = (
-                            shortest_paths_predecessors[k-1, node]
-                        )
-                        node = shortest_paths_predecessors[k-1, node]
-
-                    # Fill spur path
-                    node = sink
-                    while node != spur_node:
-                        candidate_predecessors[short_path_idx, node] = (
-                            predecessor_matrix[node]
-                        )
-                        node = predecessor_matrix[node]
+            if total_distance != INFINITY:
+                candidate_paths.insert_path(
+                    total_distance,
+                    shortest_paths_predecessors[k-1],
+                    predecessor_matrix,
+                    spur_node,
+                    sink,
+                )
 
            # ---------------------------------------------------
             # Restore graph weights
@@ -1781,55 +1850,10 @@ cdef void _yen(
 
         # ---------------------------------------------------
         # Find shortest path in candidates and add to result arrays
-        tmp_d = INFINITY # Minimal distance in potential distances array
-        short_path_idx = NULL_IDX
-        for i in range(candidate_distances.shape[0]):
-            if candidate_distances[i] < tmp_d:
-                tmp_d = candidate_distances[i]
-                short_path_idx = i
-        if short_path_idx == NULL_IDX:
+        total_distance = candidate_paths.min_distance()
+        if total_distance == INFINITY:
             # There are no more paths
             break
         else:
-            shortest_distances[k] = candidate_distances[short_path_idx]
-            # Remove path from candidates and add to shortest_paths_predecessors
-            candidate_distances[short_path_idx] = INFINITY
-            shortest_paths_predecessors[k] = candidate_predecessors[short_path_idx]
-
-
-@cython.boundscheck(False)
-cdef bint _yen_is_path_in_candidates(
-    const int[:, :] candidate_predecessors,
-    const int[:] orig_path, const int[:] spur_path,
-    const int spur_node, const int sink
-):
-    """
-    Return 1 if the path, formed by merging orig_path and spur_path,
-    exists in candidate_predecessors. If it doesn't, return 0.
-    """
-    cdef int i
-    cdef int node
-    cdef bint break_flag = 0
-    for i in range(candidate_predecessors.shape[0]):
-        node = sink
-        break_flag = 0
-        while node != spur_node:
-            # Check path moving backwards from sink to spur node
-            if candidate_predecessors[i, node] != spur_path[node]:
-                break_flag = 1
-                break
-            node = candidate_predecessors[i, node]
-        if break_flag:
-            # No match
-            continue
-        while node != NULL_IDX:
-            # Check path from spur node to source
-            if candidate_predecessors[i, node] != orig_path[node]:
-                # No match
-                break_flag = 1
-                break
-            node = candidate_predecessors[i, node]
-        if break_flag == 0:
-            # Paths are equal
-            return 1
-    return 0
+            shortest_distances[k] = total_distance
+            spur_node_k_minus_1 = candidate_paths.pop_path_to_memory_view(shortest_paths_predecessors[k])

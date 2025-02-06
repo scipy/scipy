@@ -2904,7 +2904,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
-def gstd(a, axis=0, ddof=1):
+def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     r"""
     Calculate the geometric standard deviation of an array.
 
@@ -2919,17 +2919,27 @@ def gstd(a, axis=0, ddof=1):
     ----------
     a : array_like
         An array containing finite, strictly positive, real numbers.
-
-        .. deprecated:: 1.14.0
-            Support for masked array input was deprecated in
-            SciPy 1.14.0 and will be removed in version 1.16.0.
-
     axis : int, tuple or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     ddof : int, optional
         Degree of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
+    keepdims : boolean, optional
+        If this is set to ``True``, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
+    nan_policy : {'propagate', 'omit', 'raise'}, default: 'propagate'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -2999,19 +3009,14 @@ def gstd(a, axis=0, ddof=1):
     array([2.12939215, 1.22120169])
 
     """
-    a = np.asanyarray(a)
-    if isinstance(a, ma.MaskedArray):
-        message = ("`gstd` support for masked array input was deprecated in "
-                   "SciPy 1.14.0 and will be removed in version 1.16.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-        log = ma.log
-    else:
-        log = np.log
+    xp = array_namespace(a)
+    a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
 
+    kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = xp.exp(_xp_var(xp.log(a), **kwargs)**0.5)
 
-    if (a <= 0).any():
+    if xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
                    "are greater than or equal to zero; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -4551,18 +4556,26 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`axis` must be an integer.')
     axis = axis_int
 
+    try:
+        np.broadcast_shapes(x.shape, y.shape)
+        # For consistency with other `stats` functions, we need to
+        # match the dimensionalities before looking at `axis`.
+        # (Note: this is not the NEP 5 / gufunc order of operations;
+        #  see TestPearsonr::test_different_dimensionality for more information.)
+        ndim = max(x.ndim, y.ndim)
+        x = xp.reshape(x, (1,) * (ndim - x.ndim) + x.shape)
+        y = xp.reshape(y, (1,) * (ndim - y.ndim) + y.shape)
+
+    except (ValueError, RuntimeError) as e:
+        message = '`x` and `y` must be broadcastable.'
+        raise ValueError(message) from e
+
     n = x.shape[axis]
     if n != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
     if n < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
-
-    try:
-        x, y = xp.broadcast_arrays(x, y)
-    except (ValueError, RuntimeError) as e:
-        message = '`x` and `y` must be broadcastable.'
-        raise ValueError(message) from e
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
@@ -4637,7 +4650,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # use np.linalg.norm.
     xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
     ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid='ignore', divide='ignore'):
         normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
@@ -4653,7 +4666,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        r = xp.sum(xm/normxm * ym/normym, axis=axis)
+        r = xp.vecdot(xm / normxm, ym / normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
