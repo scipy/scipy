@@ -1994,7 +1994,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False, c1=1e-4, c2=0.9,
+                       disp=False, return_all=False, c1=1e-4, c2=0.9, workers=None,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2020,6 +2020,12 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -2037,7 +2043,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     x0 = asarray(x0).flatten()
     # TODO: add hessp (callable or FD) to ScalarFunction?
     sf = _prepare_scalar_function(
-        fun, x0, jac, args=args, epsilon=eps, hess=hess
+        fun, x0, jac, args=args, epsilon=eps, hess=hess, workers=workers
     )
     f = sf.fun
     fprime = sf.grad

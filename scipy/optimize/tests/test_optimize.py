@@ -3257,7 +3257,7 @@ def test_sparse_hessian(method, sparse_type):
 @pytest.mark.parametrize('workers', [None, 2])
 @pytest.mark.parametrize(
     'method',
-    ['l-bfgs-b', 'bfgs', 'slsqp', 'trust-constr'])
+    ['l-bfgs-b', 'bfgs', 'slsqp', 'trust-constr', 'Newton-CG'])
 class TestWorkers:
 
     def setup_method(self):
@@ -3266,19 +3266,24 @@ class TestWorkers:
     def test_smoke(self, workers, method):
         # checks parallelised optimization output is same as serial
         workers = workers or map
+
+        jac = None
+        if method in ['Newton-CG']:
+            jac = rosen_der
+
         with MapWrapper(workers) as mf:
             res = optimize.minimize(
-                rosen, self.x0, options={"workers":mf}, method=method
+                rosen, self.x0, jac=jac, options={"workers":mf}, method=method
             )
         res_default = optimize.minimize(
-            rosen, self.x0, method=method
+            rosen, self.x0, method=method, jac=jac
         )
         assert_equal(res.x, res_default.x)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
         workers = workers or map
-        if method not in ['l-bfgs-b']:
+        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr']:
             pytest.skip(f"{method} cannot use bounds")
 
         bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
@@ -3287,4 +3292,4 @@ class TestWorkers:
                 rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
             )
         assert res.success
-        assert_equal(res.x[1], 2.0)
+        assert_allclose(res.x[1], 2.0)
