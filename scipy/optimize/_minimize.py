@@ -1015,7 +1015,7 @@ def _remove_from_bounds(bounds, i_fixed):
 
 class _Patch_Callback_Equal_Variables:
     # Patches a callback that accepts an intermediate_result
-    def __init__(self, callback, i_fixed, x_fixed, ):
+    def __init__(self, callback, i_fixed, x_fixed):
         self.callback = callback
         self.i_fixed = i_fixed
         self.x_fixed = x_fixed
