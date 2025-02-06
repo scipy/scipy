@@ -7,6 +7,7 @@ Authors:
 
 """
 import itertools
+import inspect
 import platform
 import threading
 import numpy as np
@@ -1284,20 +1285,6 @@ class TestOptimizeSimple(CheckOptimize):
           Bounds([0.0, -np.inf, -np.inf], [0.0, np.inf, np.inf])
          ],
     )
-    @pytest.mark.parametrize('method', ['l-bfgs-b'])
-    def test_minimize_callback_fixed_variables(self, method, bounds):
-        # gh-21537
-        def callback(intermediate_result):
-            assert isinstance(intermediate_result, optimize.OptimizeResult)
-            assert len(intermediate_result.x) == 3
-
-        def callback2(x):
-            assert len(x) == 3
-
-        optimize.minimize(self.func, np.zeros(3), method=method,
-                                bounds=bounds, callback=callback)
-        optimize.minimize(self.func, np.zeros(3), method=method,
-                                bounds=bounds, callback=callback2)
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -2925,6 +2912,10 @@ def setup_test_equal_bounds():
     def callback(x, *args):
         check_x(x)
 
+    def callback2(intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        check_x(intermediate_result.x)
+
     def constraint1(x):
         check_x(x, check_values=False)
         return x[0:1] - 1
@@ -2975,7 +2966,7 @@ def setup_test_equal_bounds():
                    ([c1b, c2b], [c1b, c2b]))
 
     # test with and without callback function
-    callbacks = (None, callback)
+    callbacks = (None, callback, callback2)
 
     data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
             "constraints": constraints, "callbacks": callbacks,
@@ -3014,6 +3005,12 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     test_constraints, reference_constraints = constraints
     if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
+
+    if method in ['SLSQP', 'TNC'] and callable(callback):
+        sig = inspect.signature(callback)
+        if 'intermediate_result' in set(sig.parameters):
+            pytest.skip("SLSQP, TNC don't support intermediate_result")
+
     # reference constraints always have analytical jacobian
     # if test constraints are not the same, we'll need finite differences
     fd_needed = (test_constraints != reference_constraints)
