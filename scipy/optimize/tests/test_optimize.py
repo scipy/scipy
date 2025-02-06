@@ -1279,13 +1279,6 @@ class TestOptimizeSimple(CheckOptimize):
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
-    @pytest.mark.parametrize(
-        'bounds',
-         [None,
-          Bounds([0.0, -np.inf, -np.inf], [0.0, np.inf, np.inf])
-         ],
-    )
-
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
