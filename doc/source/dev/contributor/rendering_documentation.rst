@@ -136,8 +136,7 @@ Markdown only, follow the steps below.
 
 1. Install the jupytext_ tool, using ``pip install jupytext`` or
    ``conda install jupytext -c conda-forge``;
-2. Clear all outputs from your ``.ipynb`` file;
-3. On your terminal, run ``jupytext notebook.ipynb --to myst``, where
+2. On your terminal, run ``jupytext notebook.ipynb --to myst``, where
    ``notebook.ipynb`` should be replaced with the file you want to convert.
 
 .. _jupytext: https://jupytext.readthedocs.io
