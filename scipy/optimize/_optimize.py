@@ -1386,10 +1386,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate, shape (n, n). If None (default) then
         the identity matrix is used.
-    workers : map-like callable, optional
+    workers : int, map-like callable, optional
         A map-like callable, such as `multiprocessing.Pool.map` for evaluating
         any numerical differentiation in parallel.
         This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----

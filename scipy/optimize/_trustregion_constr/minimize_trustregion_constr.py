@@ -224,12 +224,13 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         * 3 : display progress during iterations (more complete report).
 
     disp : bool, optional
-    workers : map-like
         If True (default), then `verbose` will be set to 1 if it was 0.
-        workers : map-like callable, optional
+    workers : int, map-like callable, optional
         A map-like callable, such as `multiprocessing.Pool.map` for evaluating
         any numerical differentiation in parallel.
         This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Returns
     -------

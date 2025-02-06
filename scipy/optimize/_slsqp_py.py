@@ -240,10 +240,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
-    workers : map-like callable, optional
+    workers : int, map-like callable, optional
         A map-like callable, such as `multiprocessing.Pool.map` for evaluating
         any numerical differentiation in parallel.
         This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
+
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
