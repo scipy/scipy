@@ -1767,7 +1767,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
     if not y.flags.c_contiguous:
         # C routines in _dierckx currently require C contiguity
-        y = y.copy()
+        y = y.copy(order='C')
 
     if x.ndim != 1:
         raise ValueError("Expect x to be a 1-D sequence.")
