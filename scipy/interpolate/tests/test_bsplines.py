@@ -2255,6 +2255,30 @@ class TestSmoothingSpline:
                                  f' points than the original one: {orig:.4} < '
                                  f'{weighted:.4}')
 
+# TODO
+#  2. y.ndim > 1 in GCV linear algebra computations
+#  4. Can `lam` to be an array for y.ndim > 1, is it even useful?
+    @pytest.mark.parametrize("lam", [1.0, None])
+    @pytest.mark.parametrize("axis", range(1, 4))
+    def test_shapes_axis(self, axis, lam):
+        rng = np.random.RandomState(1234)
+        n = 11
+        shp_extra = (5, 6, 7)
+        x = np.arange(n)
+        y = rng.random(size=(n,) + shp_extra)
+        spl = make_smoothing_spline(x, y, lam=lam)
+
+        assert spl(3).shape == shp_extra
+        assert spl([3]).shape == (1,) + shp_extra
+        assert spl([2, 3]).shape == (2,) + shp_extra
+
+        y1 = np.moveaxis(y.copy(), 0, axis)
+        spl1 = make_smoothing_spline(x, y1, lam=lam, axis=axis)
+
+        assert spl1(3).shape == shp_extra
+        assert spl1([3]).shape == shp_extra[:axis] + (1,) + shp_extra[axis:]
+        assert spl1([2, 3]).shape == shp_extra[:axis] + (2,) + shp_extra[axis:]
+
 
 ################################
 # NdBSpline tests
