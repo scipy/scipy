@@ -60,9 +60,8 @@ Testing
 Documentation
 -------------
 - :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_ (part of the NumPy documentation)
-- :ref:`contributing-docs` contains information on how to contribute to the SciPy documentation
+- :ref:`contributing-docs` contains information on how to render and contribute to the SciPy documentation
 - :ref:`adding-notebooks` explains how to add pages in Jupyter notebook/MyST format to the SciPy documentation (interactive or not)
-- :ref:`rendering-documentation` it's important to check how changes to the documentation render before merging a PR; this document explains how you can do that
 
 .. _toc-benchmarking:
 
@@ -105,6 +104,7 @@ Compiled code
     debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
     rendering_documentation
+    adding_notebooks
     benchmarking
     cython
     compiled_code
