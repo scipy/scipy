@@ -2007,7 +2007,7 @@ For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
 Parallel execution support
 ---------------------------
 
-Some SciPy optimization methods, such as :func:`differential_evolution` offer
+Some SciPy optimization methods, such as :func:`differential_evolution`, offer
 parallelization through the use of a ``workers`` keyword.
 
 For :func:`differential_evolution` there are two loops (iteration) levels in the
@@ -2068,29 +2068,44 @@ Either of the two approaches outlined above can be used, although it's strongly
 advised to supply the map-like callable due to the overhead of creating new processes.
 Performance gains will only be made if the objective function is expensive to
 calculate.
+Let's compare how much parallelization can help compared to the serial version. To
+simulate a slow function we use the ``time`` package.
 
 ::
 
-    >>> x0 = np.array([2.0, 3.0, 4.0, 5.0])
-    >>> with Pool(2) as pwl:
-    ...     res = minimize(rosen, x0, method='L-BFGS-B', options={'workers':pwl.map})
-    >>> res.x
-    array([0.99999903, 0.99999808, 0.99999614, 0.99999228])  # may vary
+    >>> import time
+    >>> def slow_func(x):
+    ...     time.sleep(0.0002)
+    ...     return rosen(x)
+
+Examine the serial minimization first::
+
+    In [1]: rng = np.random.default_rng()
+
+    In [2]: x0 = rng.uniform(low=0.0, high=10.0, size=(20,))
+
+    In [3]: %timeit minimize(slow_func, x0, method='L-BFGS-B')  # serial approach
+    365 ms ± 6.17 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
+
+Now the parallel version::
+
+    In [4]: with Pool() as pwl:  # parallel approach
+    ...         %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':pwl.map})
+    70.5 ms ± 146 μs per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
 
 If the objective function can be vectorized, then a map-like can be used to take
 advantage of vectorization during function evaluation. Vectorization means that the
 objective function can carry out the required calculations in a single (rather than
-multiple) call, which is typically very efficient.
+multiple) call, which is typically very efficient::
 
-::
+    In [5]: def vectorized_maplike(fun, iterable):
+    ...         arr = np.array([i for i in iter(iterable)])   # arr.shape = (S, N)
+    ...         arr_t = arr.T                                 # arr_t.shape = (N, S)
+    ...         r = slow_func(arr_t)                          # calculation vectorized over S
+    ...         return r
 
-    >>> def vectorized_maplike(fun, iterable):
-    ...     arr = np.array([i for i in iter(iterable)])   # arr.shape = (S, N)
-    ...     arr_t = arr.T                                 # arr_t.shape = (N, S)
-    ...     r = rosen(arr_t)                              # calculation vectorized over S
-    ...     return r
-    >>>
-    >>> res = minimize(rosen, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
+    In [6]: %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
+    38.9 ms ± 734 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)  # may vary
 
 There are several important points to note about this example:
 
@@ -2098,14 +2113,14 @@ There are several important points to note about this example:
   to be evaluated.
 * The iterable is first converted to an iterator, before being made into an array via
   a list comprehension. This allows the iterable to be a generator, list, array, etc.
-* The calculation is done using ``rosen`` instead of using ``fun``. The map-like is
-  actually supplied with a wrapped version of the objective function. The wrapping
-  is used to detect various types of common user errors, including checking whether
-  the objective function returns a scalar. If ``fun`` is used then a
-  :class:`RuntimeError` will result, because ``fun(arr_t)`` will be a 1-D array and not
-  a scalar. We therefore use ``rosen`` directly.
+* Within the map-like the calculation is done using ``slow_func`` instead of using
+  ``fun``. The map-like is actually supplied with a wrapped version of the objective
+  function. The wrapping is used to detect various types of common user errors,
+  including checking whether the objective function returns a scalar. If ``fun`` is
+  used then a :class:`RuntimeError` will result, because ``fun(arr_t)`` will be a 1-D
+  array and not a scalar. We therefore use ``slow_func`` directly.
 * ``arr.T`` is sent to the objective function. This is because ``arr.shape == (S, N)``,
   where ``S`` is the number of parameter vectors to evaluate and ``N`` is the number of
-  variables. For ``rosen`` vectorization occurs on ``(N, S)`` shaped arrays.
+  variables. For ``slow_func`` vectorization occurs on ``(N, S)`` shaped arrays.
 * This approach is not needed for :func:`differential_evolution` as that minimizer
   already has a keyword for vectorization.
