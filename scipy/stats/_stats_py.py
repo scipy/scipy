@@ -75,6 +75,7 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_numpy,
+    is_marray,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
@@ -599,7 +600,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
 
     """
     xp = array_namespace(a) if xp is None else xp
-    mask = xp.zeros(a.shape, dtype=xp.bool)
+    mask = xp.zeros_like(a, dtype=xp.bool)
     if limits is None:
         return a, mask
     lower_limit, upper_limit = limits
@@ -967,7 +968,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         # by the axis_nan_policy decorator shortly.
         sd = _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)**0.5
 
-    n_obs = xp.sum(~xp.isnan(a), axis=axis, dtype=sd.dtype)
+    not_nan = xp.astype(~xp.isnan(a), a.dtype)
+    n_obs = xp.sum(not_nan, axis=axis, dtype=sd.dtype)
     return sd / n_obs**0.5
 
 
@@ -1146,13 +1148,12 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     with np.errstate(divide='ignore', invalid='ignore'):
         rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
                           keepdims=True) / xp.abs(mean)
-    with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(rel_diff < eps)
-    n = (xp_size(a) if axis is None
-         # compact way to deal with axis tuples or ints
-         else np.prod(np.asarray(a.shape)[np.asarray(axis)]))
 
-    if precision_loss and n > 1 and precision_warning:
+    n = _length_nonmasked(a, axis, xp=xp)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
+
+    if precision_loss and precision_warning:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
                    "are nearly identical. Results may be unreliable.")
@@ -1222,9 +1223,21 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = x.shape[axis] if axis is not None else xp_size(x)
+        n = _length_nonmasked(x, axis, xp=xp)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
+
+
+def _length_nonmasked(x, axis, keepdims=False, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_marray(xp):
+        if np.iterable(axis):
+            message = '`axis` must be an integer or None for use with `MArray`.'
+            raise NotImplementedError(message)
+        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+    return (xp_size(x) if axis is None else
+            # compact way to deal with axis tuples or ints
+            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
 
 
 @_axis_nan_policy_factory(
@@ -1308,7 +1321,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1416,7 +1429,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean, xp=xp)
@@ -1526,7 +1539,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
 
-    n = a.shape[axis]
+    # use xp.astype when data-apis/array-api-compat#226 is resolved
+    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64)
+    n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
@@ -2624,7 +2639,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         a = xp.reshape(a, (-1,))
         axis = 0
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
@@ -10820,7 +10835,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
-    norm = xp.sum(weights, axis=axis)
+    # ones_like ensures that the mask of `x` is considered
+    norm = xp.sum(xp.ones_like(x) * weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
     with np.errstate(divide='ignore', invalid='ignore'):
         res = wsum/norm
@@ -10864,12 +10880,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        if axis is None:
-            n = xp_size(x)
-        elif np.iterable(axis):  # note: using NumPy on `axis` is OK
-            n = math.prod(x.shape[i] for i in axis)
-        else:
-            n = x.shape[axis]
+        n = _length_nonmasked(x, axis, xp=xp)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
