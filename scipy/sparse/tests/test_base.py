@@ -1685,13 +1685,7 @@ class _TestCommon:
         B = self.spcreator(A)
 
         if self.is_array_test:  # sparrays use element-wise power
-            # Todo: Add 1+3j to tested exponent list when np1.24 is no longer supported
-            #    Complex exponents of 0 (our implicit fill value) change in numpy-1.25
-            #    from `(nan+nanj)` to `0`. Old value makes array element-wise result
-            #    dense and is hard to check for without any `isnan` method.
-            # So while untested here, element-wise complex exponents work with np>=1.25.
-            # for exponent in [1, 2, 2.2, 3, 1+3j]:
-            for exponent in [1, 2, 2.2, 3]:
+            for exponent in [1, 2, 2.2, 3, 1+3j]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
                 assert_array_equal(ret_sp.toarray(), ret_np)
@@ -2356,20 +2350,14 @@ class _TestInplaceArithmetic:
 
         # Matrix multiply from __rmatmul__
         y = a.copy()
-        # skip this test if numpy doesn't support __imatmul__ yet.
-        # move out of the try/except once numpy 1.24 is no longer supported.
-        try:
-            y @= b.T
-        except TypeError:
-            pass
-        else:
-            x = a.copy()
-            y = a.copy()
-            with assert_raises(ValueError, match="dimension mismatch"):
-                x @= b
-            x = x.dot(a.T)
-            y @= b.T
-            assert_array_equal(x, y)
+        y @= b.T
+        x = a.copy()
+        y = a.copy()
+        with assert_raises(ValueError, match="dimension mismatch"):
+            x @= b
+        x = x.dot(a.T)
+        y @= b.T
+        assert_array_equal(x, y)
 
         # Floor division is not supported
         with assert_raises(TypeError, match="unsupported operand"):
