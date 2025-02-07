@@ -11,6 +11,7 @@ py3.install_sources([
     '__init__.py',
     '_rotation_groups.py',
     '_rotation_spline.py',
+    '_rotation_array_api.py',
     'rotation.py'
   ],
   subdir: 'scipy/spatial/transform'

@@ -16,14 +16,17 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from ._rotation import Rotation, Slerp
+
+from ._rotation import Slerp
 from ._rotation_spline import RotationSpline
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import rotation
+from .rotation import Rotation
 
-__all__ = ['Rotation', 'Slerp', 'RotationSpline']
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester
