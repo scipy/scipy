@@ -671,6 +671,7 @@ class TestBSpline:
 
         xp_assert_close(b(xx), expected)
 
+
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
@@ -2255,15 +2256,12 @@ class TestSmoothingSpline:
                                  f' points than the original one: {orig:.4} < '
                                  f'{weighted:.4}')
 
-# TODO
-#  2. y.ndim > 1 in GCV linear algebra computations
-#  4. Can `lam` to be an array for y.ndim > 1, is it even useful?
     @pytest.mark.parametrize("lam", [1.0, None])
     @pytest.mark.parametrize("axis", range(1, 4))
     def test_shapes_axis(self, axis, lam):
         rng = np.random.RandomState(1234)
         n = 11
-        shp_extra = (5, 6, 7)
+        shp_extra = (2, 3, 4)
         x = np.arange(n)
         y = rng.random(size=(n,) + shp_extra)
         spl = make_smoothing_spline(x, y, lam=lam)

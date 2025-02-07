@@ -2018,7 +2018,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         B[0] = [0.] * n
         return B
 
-    def _gcv(lam, X, XtWX, wE, XtE):
+    def _gcv(lam, X, XtWX, wE, XtE, y):
         r"""
         Computes the generalized cross-validation criteria [1].
 
@@ -2103,14 +2103,29 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     XtWX = compute_banded_symmetric_XT_W_Y(X, w, X)
     XtE = compute_banded_symmetric_XT_W_Y(X, w, wE)
 
-    def fun(lam):
-        return _gcv(lam, X, XtWX, wE, XtE)
-
-    gcv_est = minimize_scalar(fun, bounds=(0, n), method='Bounded')
-    if gcv_est.success:
-        return gcv_est.x
-    raise ValueError(f"Unable to find minimum of the GCV "
-                     f"function: {gcv_est.message}")
+    if y.ndim == 1:
+        gcv_est = minimize_scalar(
+            _gcv, bounds=(0, n), method='Bounded', args=(X, XtWX, wE, XtE, y)
+        )
+        if gcv_est.success:
+            return gcv_est.x
+        raise ValueError(f"Unable to find minimum of the GCV "
+                         f"function: {gcv_est.message}")
+    elif y.ndim == 2:
+        gcv_est = np.empty(y.shape[1])
+        for i in range(y.shape[1]):
+            est = minimize_scalar(
+                _gcv, bounds=(0, n), method='Bounded', args=(X, XtWX, wE, XtE, y[:, i])
+            )
+            if est.success:
+               gcv_est[i] = est.x
+            else:
+                raise ValueError(f"Unable to find minimum of the GCV "
+                                 f"function: {gcv_est.message}")
+        return gcv_est 
+    else:
+        # trailing dims must have been flattened already.
+        raise RuntimeError("Internal error. Please report it to scipy developers.")
 
 
 def _coeff_of_divided_diff(x):
@@ -2335,7 +2350,16 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
         raise ValueError('Regularization parameter should be non-negative')
 
     # solve the initial problem in the basis of natural splines
-    c = solve_banded((2, 2), X + lam * wE, y)
+    if np.ndim(lam) == 0:
+        c = solve_banded((2, 2), X + lam * wE, y)
+    elif np.ndim(lam) == 1:
+        # XXX: solve_banded does not suppport batched `ab` matrices; loop manually
+        c = np.empty((n, lam.shape[0]))
+        for i in range(lam.shape[0]):
+            c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])
+    else:
+        # this should not happen, ever
+        raise RuntimeError("Internal error, please report it to SciPy developes.")
     c = c.reshape((c.shape[0], *y_shape1))
 
     # hack: these are c[0], c[1] etc, shape-compatible with np.r_ below
