@@ -3752,8 +3752,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         If True (default), perform a standard one-way ANOVA test that
         assumes equal population variances [2]_.
         If False, perform Welch's ANOVA test, which does not assume
-        equal population variances. Modified F-statistics and
-        dof will be calculated by each samples [4]_.
+        equal population variances [4]_. 
 
         .. versionadded:: 1.15.0
 
@@ -3818,7 +3817,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
            http://www.biostathandbook.com/onewayanova.html
 
     .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
-           An Alternative Approach,"Biometrika, vol. 38, no. 3/4,
+           An Alternative Approach", Biometrika, vol. 38, no. 3/4,
            pp. 330-336, 1951, doi: 10.2307/2332579.
 
     Examples
@@ -3955,24 +3954,25 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
         prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
 
-    # if population variances are not equeal, perform Welch ANOVA
-    # the related issue: https://github.com/scipy/scipy/issues/11122
     else:
         # calculate basic statistics for each sample
-        means = np.asarray([np.mean(sample, axis=axis) for sample in samples])
+        # Beginning of second paragraph [4] page 1:
+        # "As a particular case $y_t$ may be the means ... of samples
+        y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
         # "... of $n_t$ observations..."
         n_t = np.asarray([sample.shape[axis] for sample in samples])
+        # "... from $k$ different normal populations..."
         k = len(samples)
+        # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
+        s_t2= np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
 
-        vars_ = np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
-
-        # calculate weight by number of data and varianc
-        # ref.[4] p.330 ($$w = 1/{\lambda s^2}$$ where $$\lambda=1/n$$ in ref)
-        ws = ns / vars_
+        # calculate weight by number of data and variance
+        # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
+        w_t = n_t / s_t2
 
         # calculate adjusted grand mean
-        # ref.[4] p.330 (notation is $$\hat y$$ in ref)
-        mean_prime = np.sum(ws * means, axis=0) / np.sum(ws, axis=0)
+        # "... and $\hat{y} = \sum w_t y_t / \sum w_t$..."
+        y_hat = np.sum(w_t * y_t, axis=0) / np.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
@@ -3980,7 +3980,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
                 np.sum((1 / (ns - 1)) *
-                       (1 - ws / np.sum(ws, axis=0))**2,
+                       (1 - ws / S_ws)**2,
                        axis=0)
         )
         f = numerator / denominator
