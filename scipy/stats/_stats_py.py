@@ -3960,8 +3960,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
     else:
         # calculate basic statistics for each sample
         means = np.asarray([np.mean(sample, axis=axis) for sample in samples])
-        ns = np.asarray(
-            [np.apply_along_axis(len, axis=axis, arr=sample) for sample in samples])
+        # "... of $n_t$ observations..."
+        n_t = np.asarray([sample.shape[axis] for sample in samples])
         k = len(samples)
 
         vars_ = np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
