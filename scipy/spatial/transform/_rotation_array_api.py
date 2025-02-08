@@ -45,13 +45,21 @@ def _as_matrix(quat: Array) -> Array:
     yz = y * z
     xw = x * w
 
-    # TODO: Fix, this is not correct atm
-    matrix = xp.asarray(
-        [
-            [x2 - y2 - z2 + w2, 2 * (xy - zw), 2 * (xz + yw)],
-            [2 * (xy + zw), -x2 + y2 - z2 + w2, 2 * (yz - xw)],
-            [2 * (xz - yw), 2 * (yz + xw), -x2 - y2 + z2 + w2],
-        ]
-    )
-    assert False, matrix.shape
+    matrix_elements = [
+        x2 - y2 - z2 + w2,
+        2 * (xy - zw),
+        2 * (xz + yw),
+        2 * (xy + zw),
+        -x2 + y2 - z2 + w2,
+        2 * (yz - xw),
+        2 * (xz - yw),
+        2 * (yz + xw),
+        -x2 - y2 + z2 + w2,
+    ]
+    matrix = xp.stack(matrix_elements, axis=-1).reshape((*quat.shape[:-1], 3, 3))
     return matrix
+
+
+def _apply(quat: Array, points: Array) -> Array:
+    xp = array_namespace(quat)
+    return xp.einsum("...ij,...j->...i", _as_matrix(quat), points)
