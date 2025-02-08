@@ -7933,9 +7933,6 @@ class TestFOneWay:
                    [23.44, 4.5, 15.1, 9.66],
                    [11.94, 11.1 , 9.87, 9.09, 3.33]]
 
-        with assert_raises(TypeError):
-            stats.f_oneway(*samples, equal_var="False")
-
         F, p = stats.f_oneway(*samples, equal_var=False)
 
         # R language as benchmark
@@ -7957,6 +7954,15 @@ class TestFOneWay:
 
         assert_allclose(F, 0.609740409019517, rtol=1e-14)
         assert_allclose(p, 0.574838941286302, rtol=1e-14)
+
+    def test_equal_var_input_validation(self):
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        message = "Expected a boolean value for 'equal_var'"
+        with pytest.raises(TypeError, match=message):
+            stats.f_oneway(*samples, equal_var="False")
 
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be

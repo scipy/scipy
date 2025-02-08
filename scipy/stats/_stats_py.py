@@ -3960,7 +3960,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # "As a particular case $y_t$ may be the means ... of samples
         y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = np.asarray([sample.shape[axis] for sample in samples])
+        n_t = np.asarray(
+                [np.apply_along_axis(len, axis=axis, arr=sample) for sample in samples])
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
@@ -3969,33 +3970,39 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # calculate weight by number of data and variance
         # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
         w_t = n_t / s_t2
+        # sum of w_t
+        s_w_t = np.sum(w_t, axis=0)
 
         # calculate adjusted grand mean
-        # "... and $\hat{y} = \sum w_t y_t / \sum w_t$..."
+        # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
         y_hat = np.sum(w_t * y_t, axis=0) / np.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator = np.sum(ws * (means - mean_prime)**2, axis=0) / (k - 1)
+        numerator = np.sum(w_t * (y_t - y_hat)**2, axis=0) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                np.sum((1 / (ns - 1)) *
-                       (1 - ws / S_ws)**2,
+                np.sum((1 / (n_t - 1)) *
+                       (1 - w_t / s_w_t)**2,
                        axis=0)
         )
         f = numerator / denominator
 
-        # adjusted degree of freedom
+        # degree of freedom 1
         # ref.[4] p.334 eq.30
-        df = (
+        hat_f1 = k - 1
+
+        # adjusted degree of freedom 2
+        # ref.[4] p.334 eq.30
+        hat_f2 = (
                 (k**2 - 1) /
-                (3 * np.sum((1 / (ns - 1)) *
-                            (1 - ws / np.sum(ws, axis=0))**2, axis=0))
+                (3 * np.sum((1 / (n_t - 1)) *
+                            (1 - w_t / s_w_t)**2, axis=0))
         )
 
         # calculate p value
         # ref.[4] p.334 eq.28
-        prob = stats.f.sf(f, k - 1, df)
+        prob = stats.f.sf(f, hat_f1, hat_f2)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
