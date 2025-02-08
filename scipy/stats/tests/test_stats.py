@@ -7928,9 +7928,9 @@ class TestFOneWay:
         assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
 
     def test_unequal_var(self):
-        # toy samples with unequal variances
-        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8],
-                   [23.44, 4.5, 15.1, 9.66, 27.71],
+        # toy samples with unequal variances and different observations
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
                    [11.94, 11.1 , 9.87, 9.09, 3.33]]
 
         with assert_raises(TypeError):
@@ -7938,19 +7938,25 @@ class TestFOneWay:
 
         F, p = stats.f_oneway(*samples, equal_var=False)
 
-        # R language oneway.test as the benchmark
-        # df_long <- data.frame(
-        #   group = rep(1:3, each = 5),
-        #   value = c(-50.42, 40.31, -18.09, 35.58, -6.80,
-        #             23.44, 4.5, 15.1, 9.66, 27.71,
-        #             11.94, 11.1, 9.87, 9.09, 3.33)
+        # R language as benchmark
+        # group1 <- c(-50.42, 40.31, -18.09, 35.58, -6.8, 0.22)
+        # group2 <- c(23.44, 4.5, 15.1, 9.66)
+        # group3 <- c(11.94, 11.1 , 9.87, 9.09, 3.33)
+        #
+        # data <- data.frame(
+        #     value = c(group1, group2, group3),
+        #     group = factor(c(rep("G1", length(group1)),
+        #                      rep("G2", length(group2)),
+        #                      rep("G3", length(group3))))
         # )
-        # oneway.test(value ~ factor(group), data = df_long)
-        ## statistic is 1.22114568638392
-        ## p-value is 0.35938659246972
+        # welch_anova <- oneway.test(value ~ group, data = data, var.equal = FALSE)
+        # welch_anova$statistic
+        ## F: 0.609740409019517
+        # welch_anova$p.value
+        ## 0.574838941286302
 
-        assert_allclose(F, 1.22114568638392, rtol=1e-14)
-        assert_allclose(p, 0.35938659246972, rtol=1e-14)
+        assert_allclose(F, 0.609740409019517, rtol=1e-14)
+        assert_allclose(p, 0.574838941286302, rtol=1e-14)
 
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be

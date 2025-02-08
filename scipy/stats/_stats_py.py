@@ -3959,51 +3959,43 @@ def f_oneway(*samples, axis=0, equal_var=True):
     # the related issue: https://github.com/scipy/scipy/issues/11122
     else:
         # calculate basic statistics for each sample
-        samples_arrs = np.array(samples)
+        means = np.asarray([np.mean(sample, axis=axis) for sample in samples])
+        ns = np.asarray(
+            [np.apply_along_axis(len, axis=axis, arr=sample) for sample in samples])
+        k = len(samples)
 
-        # adjust the shape of the data based on the arrary dimension for the calculation
-        # along with input axis
-        if samples_arrs.ndim <= 2:
-            samples_arrs = samples_arrs.T
-        else:
-            samples_arrs = samples_arrs.transpose(
-                *range(1, samples_arrs.ndim - 1), 0, -1
-            )
+        vars_ = np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
 
-        means = samples_arrs.mean(axis=axis)
-        ns = np.apply_along_axis(np.size, axis=axis, arr=samples_arrs)
-        k = np.apply_along_axis(np.shape, axis=axis, arr=ns)
-
-        vars_ = np.var(samples_arrs, axis=axis, ddof=1)
         # calculate weight by number of data and varianc
+        # ref.[4] p.330 ($$w = 1/{\lambda s^2}$$ where $$\lambda=1/n$$ in ref)
         ws = ns / vars_
 
         # calculate adjusted grand mean
-        mean_prime = (np.sum(ws * means, axis=axis, keepdims=True) /
-                      np.sum(ws, axis=axis, keepdims=True))
+        # ref.[4] p.330 (notation is $$\hat y$$ in ref)
+        mean_prime = np.sum(ws * means, axis=0) / np.sum(ws, axis=0)
 
-        numerator = (np.sum(ws * (means - mean_prime)**2, axis=axis, keepdims=True)
-                     / (k - 1))
+        # adjust f statistic
+        # ref.[4] p.334 eq.29
+        numerator = np.sum(ws * (means - mean_prime)**2, axis=0) / (k - 1)
         denominator = (
-                1 + 2 * (k - 2) / (k ** 2 - 1) *
+                1 + 2 * (k - 2) / (k**2 - 1) *
                 np.sum((1 / (ns - 1)) *
-                       (1 - ws / np.sum(ws)) **2,
-                       axis=axis, keepdims=True)
+                       (1 - ws / np.sum(ws, axis=0))**2,
+                       axis=0)
         )
         f = numerator / denominator
 
         # adjusted degree of freedom
+        # ref.[4] p.334 eq.30
         df = (
-                (k ** 2 - 1) /
+                (k**2 - 1) /
                 (3 * np.sum((1 / (ns - 1)) *
-                            (1 - ws / np.sum(ws, axis=axis, keepdims=True)) **2,
-                            axis=axis, keepdims=True))
+                            (1 - ws / np.sum(ws))**2, axis=0))
         )
 
+        # calculate p value
+        # ref.[4] p.334 eq.28
         prob = stats.f.sf(f, k - 1, df)
-
-        f = np.squeeze(f)
-        prob = np.squeeze(prob)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
