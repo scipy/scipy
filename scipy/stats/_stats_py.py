@@ -3990,7 +3990,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         df = (
                 (k**2 - 1) /
                 (3 * np.sum((1 / (ns - 1)) *
-                            (1 - ws / np.sum(ws))**2, axis=0))
+                            (1 - ws / np.sum(ws, axis=0))**2, axis=0))
         )
 
         # calculate p value
