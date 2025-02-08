@@ -3,6 +3,7 @@ from scipy.special import betainc
 from scipy._lib._array_api import (xp_take_along_axis, xp_default_dtype,
                                    xp_ravel, array_namespace)
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
+from scipy.stats._stats_py import _length_nonmasked
 
 
 def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
@@ -68,7 +69,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     y = xp.moveaxis(y, axis, -1)
     p = xp.moveaxis(p, axis, -1)
 
-    n = xp.astype(xp.asarray(y.shape[-1]), dtype)
+    n = _length_nonmasked(y, -1, xp=xp, keepdims=True)
+    n = xp.asarray(n, dtype=dtype)
     if contains_nans:
         nans = xp.isnan(y)
 

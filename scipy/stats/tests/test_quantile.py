@@ -103,7 +103,7 @@ class TestQuantile:
 
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])
+    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
@@ -111,7 +111,7 @@ class TestQuantile:
         shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)
         p = rng.random(size=shape).astype(dtype)
-        mask = rng.random(size=shape) > 0.9
+        mask = rng.random(size=shape) > 0.8
         assert np.any(mask)
         x[mask] = np.nan
         if not keepdims:
@@ -125,6 +125,19 @@ class TestQuantile:
             p0[-2] = 1.
 
         dtype = getattr(xp, dtype)
+
+        if nan_policy == 'marray':
+            if method == 'harrell-davis':
+                pytest.skip("Needs gh-22490")
+            marray = pytest.importorskip('marray')
+            kwargs = dict(axis=axis, keepdims=keepdims, method=method)
+            mxp = marray._get_namespace(xp)
+            x_mp = mxp.asarray(x, mask=mask)
+            res = stats.quantile(x_mp, mxp.asarray(p), **kwargs)
+            ref = quantile_reference(x, p, nan_policy='omit', **kwargs)
+            xp_assert_close(res.data, xp.asarray(ref, dtype=dtype))
+            return
+
         kwargs = dict(axis=axis, keepdims=keepdims,
                       nan_policy=nan_policy, method=method)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), **kwargs)
