@@ -17,15 +17,13 @@ from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
 
-
-AxisError: type[Exception]
-ComplexWarning: type[Warning]
-VisibleDeprecationWarning: type[Warning]
-
 from numpy.exceptions import (
     AxisError, ComplexWarning, VisibleDeprecationWarning,
     DTypePromotionError
 )
+
+__all__ = ['ComplexWarning', 'VisibleDeprecationWarning']
+
 
 np_long: type
 np_ulong: type
