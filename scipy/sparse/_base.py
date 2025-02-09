@@ -559,9 +559,12 @@ class _spbase(SparseABC):
             raise NotImplementedError('adding a nonzero scalar to a '
                                       'sparse array is not supported')
         elif issparse(other):
+            if other.shape != self.shape:
+                raise ValueError("cannot be broadcast")
             return self._add_sparse(other)
 
         elif isdense(other):
+            other = np.broadcast_to(other, self.shape)
             return self._add_dense(other)
         else:
             return NotImplemented
@@ -576,9 +579,12 @@ class _spbase(SparseABC):
             raise NotImplementedError('subtracting a nonzero scalar from a '
                                       'sparse array is not supported')
         elif issparse(other):
+            if other.shape != self.shape:
+                raise ValueError("cannot be broadcast")
             return self._sub_sparse(other)
 
         elif isdense(other):
+            other = np.broadcast_to(other, self.shape)
             return self._sub_dense(other)
         else:
             return NotImplemented

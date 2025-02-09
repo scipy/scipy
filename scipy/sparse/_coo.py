@@ -565,10 +565,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
     #######################
 
     def _add_dense(self, other):
-        if self.shape != other.shape:
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self._broadcast_to(bshape)
-            other = np.broadcast_to(other, bshape)
+        if other.shape != self.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         result = np.array(other, dtype=dtype, copy=True)
         fortran = int(result.flags.f_contiguous)
@@ -589,12 +587,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._add_sparse(other)
 
-        other = self.__class__(other)
         if other.shape != self.shape:
-            # This will raise an error if the shapes are not broadcastable
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self._broadcast_to(bshape)
-            other = other._broadcast_to(bshape)
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        other = self.__class__(other)
 
         new_data = np.concatenate((self.data, other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
@@ -603,22 +598,16 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _sub_dense(self, other):
         if self.shape != other.shape:
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self._broadcast_to(bshape)
-            other = np.broadcast_to(other, bshape)
-
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         return self.todense() - other
 
     def _sub_sparse(self, other):
         if self.ndim < 3 and other.ndim < 3:
             return self.tocsr()._sub_sparse(other)
 
-        other = self.__class__(other)
         if other.shape != self.shape:
-            # This will raise an error if the shapes are not broadcastable
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            self = self._broadcast_to(bshape)
-            other = other._broadcast_to(bshape)
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+        other = self.__class__(other)
 
         new_data = np.concatenate((self.data, -other.data))
         new_coords = tuple(np.concatenate((self.coords, other.coords), axis=1))
@@ -1306,16 +1295,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                # This will raise an error if the shapes are not broadcastable
-                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-                # Broadcasting the arrays if they have different shapes
-                # that are compatible for broadcasting
-                self = self._broadcast_to(broadcast_shape)
-                if isdense(other):
-                    other = np.broadcast_to(other, broadcast_shape)
-                else:
-                    other = other._broadcast_to(broadcast_shape)
-
+                raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
             result_shape = self.shape
 
             # reshaping n-D arrays to 2-D arrays
@@ -1400,34 +1380,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
                 return result
 
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-
-            # single element
-            if math.prod(other.shape) == 1:
-                result = self._mul_scalar(other.toarray().ravel()[0])
-                return result.reshape(bshape)
-            if math.prod(self.shape) == 1:
-                result = other._mul_scalar(self.toarray().ravel()[0])
-                result = result.reshape(bshape)
-                return result
-
-            # different but broadcastable shapes
-            self = self._broadcast_to(bshape)
-            other = other._broadcast_to(bshape)
-            # reshape to 2-D
-            self = self.reshape(1, -1)
-            other = other.reshape(1, -1)
-            # route via 2-D CSR multiply
-            result = _data_matrix.multiply(self.tocsr(), other)
-            # convert to COO
-            if isinstance(result, sparray):
-                result = result.tocoo()
-
-            # reshape back to n-D
-            if isinstance(result, (np.ndarray, sparray)):
-                result = result.reshape(bshape)
-
-            return result
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
 
         else: # if other is dense
         # no broadcasting required if same shapes,
@@ -1446,35 +1399,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     result = result.reshape(result_shape)
                 return result
 
-            # This will raise an error if the shapes are not broadcastable
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-
-            # single element
-            if math.prod(other.shape) == 1:
-                result = self._mul_scalar(other.ravel()[0])
-                result = result.reshape(bshape)
-                return result
-
-            # if self is a single element and other is dense,
-            # use np.multiply and reshape
-            if math.prod(self.shape) == 1:
-                result = np.multiply(self.toarray().ravel()[0], other)
-                result = result.reshape(bshape)
-                return result
-
-            # different but broadcastable shapes
-            self = self._broadcast_to(bshape)
-            other = np.broadcast_to(other, bshape)
-            self = self.reshape(1, -1)
-            other = other.reshape(1, -1)
-            result = _data_matrix.multiply(self.tocsr(), other)
-            # convert to COO
-            if isinstance(result, sparray):
-                result = result.tocoo()
-            # reshape back to n-D
-            if isinstance(result, (np.ndarray, sparray)):
-                result = result.reshape(bshape)
-            return result
+            raise ValueError('cannot be broadcast')
 
     def _divide(self, other, true_divide=False, rdivide=False):
         """Point-wise division by another array/matrix."""
@@ -1630,8 +1555,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
             except AttributeError:
                 other = other_a
 
+        if self.shape != other.shape:
+            raise ValueError("cannot be broadcast. broadcast not supported")
+
         if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
-            return  getattr(_data_matrix, op_name)(self.tocsr(), other)
+            if op_name == "minimum":
+                return self.tocsr().minimum(other)
+            return self.tocsr().maximum(other)
 
          # Scalar other
         if isscalarlike(other):
@@ -1648,16 +1578,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                # This will raise an error if the shapes are not broadcastable
-                broadcast_shape = np.broadcast_shapes(self.shape, other.shape)
-
-                # Broadcasting the arrays if they have different shapes
-                # that are compatible for broadcasting
-                self = self._broadcast_to(broadcast_shape)
-                if isdense(other):
-                    other = np.broadcast_to(other, broadcast_shape)
-                else:
-                    other = other._broadcast_to(broadcast_shape)
+                raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
 
             result_shape = self.shape
 

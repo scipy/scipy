@@ -323,10 +323,10 @@ class TestCommon1D:
             c = b + a
             assert_equal(c, b.toarray() + a)
 
-            # test broadcasting
-            # Note: cant add nonzero scalar to sparray. Can add len 1 array
-            c = b + a[0:1]
-            assert_equal(c, b.toarray() + a[0])
+#            # test broadcasting
+#            # Note: cant add nonzero scalar to sparray. Can add len 1 array
+#            c = b + a[0:1]
+#            assert_equal(c, b.toarray() + a[0])
 
     def test_radd(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
@@ -352,8 +352,8 @@ class TestCommon1D:
             assert_equal(A.toarray() - datsp, A.toarray() - dat)
             assert_equal(datsp - A.toarray(), dat - A.toarray())
 
-            # test broadcasting
-            assert_equal(dat[:1] - datsp, dat[:1] - dat)
+#            # test broadcasting
+#            assert_equal(dat[:1] - datsp, dat[:1] - dat)
 
     def test_matmul_basic(self, spcreator):
         A = np.array([[2, 0, 3.0], [0, 0, 0], [0, 1, 2]])
