@@ -3960,8 +3960,8 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # "As a particular case $y_t$ may be the means ... of samples
         y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
         # "... of $n_t$ observations..."
-        n_t = np.asarray(
-                [np.apply_along_axis(len, axis=axis, arr=sample) for sample in samples])
+        n_t = np.asarray([sample.shape[axis] for sample in samples])
+        n_t = np.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
         # "... from $k$ different normal populations..."
         k = len(samples)
         # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
