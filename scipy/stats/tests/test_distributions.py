@@ -3347,6 +3347,8 @@ class TestInvgauss:
 
     def test_mu_inf_gh13666(self):
         # invgauss methods should return correct result when mu=inf
+        # invgauss as mu -> oo is invgamma with shape and scale 0.5;
+        # see gh-13666 and gh-22496
         dist = stats.invgauss(mu=np.inf)
         dist0 = stats.invgamma(0.5, scale=0.5)
         x, p = 1., 0.5
