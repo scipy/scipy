@@ -185,7 +185,7 @@ line_search = line_search_wolfe1
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
                        old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
-                       extra_condition=None, maxiter=10):
+                       extra_condition=None, maxiter=10, zoom_maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     Parameters
@@ -224,7 +224,11 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         new iterates. The callable is only called for iterates
         satisfying the strong Wolfe conditions.
     maxiter : int, optional
-        Maximum number of iterations to perform.
+        Maximum number of iterations to perform. Defaults to 10.
+    zoom_maxiter : int, optional
+        Maximum number of iterations to perform in the zoom step. Defaults
+        to 10.
+
 
     Returns
     -------
@@ -311,7 +315,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
             phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax,
-            extra_condition2, maxiter=maxiter)
+            extra_condition2, maxiter=maxiter, zoom_maxiter=zoom_maxiter)
 
     if derphi_star is None:
         warn('The line search algorithm did not converge',
@@ -329,7 +333,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
-                         extra_condition=None, maxiter=10):
+                         extra_condition=None, maxiter=10, *,
+                         zoom_maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
@@ -361,7 +366,10 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         The callable is only called for iterates satisfying
         the strong Wolfe conditions.
     maxiter : int, optional
-        Maximum number of iterations to perform.
+        Maximum number of iterations to perform. Defaults to 10.
+    zoom_maxiter : int, optional
+        Maximum number of iterations for the zoom step. Defaults to
+        10.
 
     Returns
     -------
@@ -380,7 +388,6 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
-
     """
     _check_c1_c2(c1, c2)
 
@@ -416,6 +423,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
         if alpha1 == 0 or (amax is not None and alpha0 > amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
+
             alpha_star = None
             phi_star = phi0
             phi0 = old_phi0
@@ -436,7 +444,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition,
+                              zoom_maxiter)
             break
 
         derphi_a1 = derphi(alpha1)
@@ -451,7 +460,8 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, 
+                              zoom_maxiter)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
@@ -530,7 +540,7 @@ def _quadmin(a, fa, fpa, b, fb):
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2, extra_condition):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition, maxiter=10):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
 
     Part of the optimization algorithm in `scalar_search_wolfe2`.
@@ -542,7 +552,6 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 
     """
 
-    maxiter = 10
     i = 0
     delta1 = 0.2  # cubic interpolant check
     delta2 = 0.1  # quadratic interpolant check
