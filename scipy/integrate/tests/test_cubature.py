@@ -21,6 +21,7 @@ from scipy.integrate._rules import (
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 # The integrands ``genz_malik_1980_*`` come from the paper:
 #   A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
@@ -530,6 +531,8 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
@@ -776,6 +779,8 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
@@ -963,10 +968,8 @@ class TestCubatureProblems:
                    f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1113,10 +1116,8 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1320,10 +1321,8 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@skip_xp_backends(
-    "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
-)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (

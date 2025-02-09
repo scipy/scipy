@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import inspect
 from warnings import warn
 
 import numpy as np
@@ -701,25 +702,37 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 x_fixed = (bounds.lb)[i_fixed]
                 x0 = x0[~i_fixed]
                 bounds = _remove_from_bounds(bounds, i_fixed)
-                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                fun = _Remove_From_Func(fun, i_fixed, x_fixed)
+
                 if callable(callback):
-                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                    sig = inspect.signature(callback)
+                    if set(sig.parameters) == {'intermediate_result'}:
+                        # callback(intermediate_result)
+                        print(callback)
+                        callback = _Patch_Callback_Equal_Variables(
+                            callback, i_fixed, x_fixed
+                        )
+                    else:
+                        # callback(x)
+                        callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+
                 if callable(jac):
-                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                    jac = _Remove_From_Func(jac, i_fixed, x_fixed, remove=1)
 
                 # make a copy of the constraints so the user's version doesn't
                 # get changed. (Shallow copy is ok)
                 constraints = [con.copy() for con in constraints]
                 for con in constraints:  # yes, guaranteed to be a list
-                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                    con['fun'] = _Remove_From_Func(con['fun'], i_fixed,
                                                    x_fixed, min_dim=1,
                                                    remove=0)
                     if callable(con.get('jac', None)):
-                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                        con['jac'] = _Remove_From_Func(con['jac'], i_fixed,
                                                        x_fixed, min_dim=2,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    # selects whether to use callback(x) or callback(intermediate_result)
     callback = _wrap_callback(callback, meth)
 
     if meth == 'nelder-mead':
@@ -1000,27 +1013,49 @@ def _remove_from_bounds(bounds, i_fixed):
     return Bounds(lb, ub)  # don't mutate original Bounds object
 
 
-def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+class _Patch_Callback_Equal_Variables:
+    # Patches a callback that accepts an intermediate_result
+    def __init__(self, callback, i_fixed, x_fixed):
+        self.callback = callback
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+
+    def __call__(self, intermediate_result):
+        x_in = intermediate_result.x
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        intermediate_result.x = x_out
+        return self.callback(intermediate_result)
+
+
+class _Remove_From_Func:
     """Wraps a function such that fixed variables need not be passed in"""
-    def fun_out(x_in, *args, **kwargs):
-        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
-        x_out[i_fixed] = x_fixed
-        x_out[~i_fixed] = x_in
-        y_out = fun_in(x_out, *args, **kwargs)
+    def __init__(self, fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+        self.fun_in = fun_in
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+        self.min_dim = min_dim
+        self.remove = remove
+
+    def __call__(self, x_in, *args, **kwargs):
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        y_out = self.fun_in(x_out, *args, **kwargs)
         y_out = np.array(y_out)
 
-        if min_dim == 1:
+        if self.min_dim == 1:
             y_out = np.atleast_1d(y_out)
-        elif min_dim == 2:
+        elif self.min_dim == 2:
             y_out = np.atleast_2d(y_out)
 
-        if remove == 1:
-            y_out = y_out[..., ~i_fixed]
-        elif remove == 2:
-            y_out = y_out[~i_fixed, ~i_fixed]
+        if self.remove == 1:
+            y_out = y_out[..., ~self.i_fixed]
+        elif self.remove == 2:
+            y_out = y_out[~self.i_fixed, ~self.i_fixed]
 
         return y_out
-    return fun_out
 
 
 def _add_to_array(x_in, i_fixed, x_fixed):

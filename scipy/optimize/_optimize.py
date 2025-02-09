@@ -202,7 +202,7 @@ def vecnorm(x, ord=2):
 
 def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
                              epsilon=None, finite_diff_rel_step=None,
-                             hess=None):
+                             hess=None, workers=None):
     """
     Creates a ScalarFunction object for use with scalar minimizers
     (BFGS/LBFGSB/SLSQP/TNC/CG/etc).
@@ -255,6 +255,21 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         Whenever the gradient is estimated via finite-differences, the Hessian
         cannot be estimated with options {'2-point', '3-point', 'cs'} and needs
         to be estimated using one of the quasi-Newton strategies.
+    workers : int or map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``, or
+        ``workers(grad, iterable)``, depending on what is being numerically
+        differentiated.
+        Alternatively, if `workers` is an int the task is subdivided into `workers`
+        sections and the function evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        It is recommended that a map-like be used instead of int, as repeated
+        calls to `approx_derivative` will incur large overhead from setting up
+        new processes.
+
+        .. versionadded:: 1.16.0
 
     Returns
     -------
@@ -286,10 +301,14 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
     if bounds is None:
         bounds = (-np.inf, np.inf)
 
+    # normalize workers
+    workers = workers or map
+
     # ScalarFunction caches. Reuse of fun(x) during grad
     # calculation reduces overall function evaluations.
     sf = ScalarFunction(fun, x0, args, grad, hess,
-                        finite_diff_rel_step, bounds, epsilon=epsilon)
+                        finite_diff_rel_step, bounds, epsilon=epsilon,
+                        workers=workers)
 
     return sf
 
@@ -939,8 +958,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         if disp:
             print(msg)
             print(f"         Current function value: {fval:f}")
-            print("         Iterations: %d" % iterations)
-            print("         Function evaluations: %d" % fcalls[0])
+            print(f"         Iterations: {iterations:d}")
+            print(f"         Function evaluations: {fcalls[0]:d}")
 
     result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
@@ -1489,9 +1508,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print(f"         Iterations: {k:d}")
+        print(f"         Function evaluations: {sf.nfev:d}")
+        print(f"         Gradient evaluations: {sf.ngev:d}")
 
     result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
@@ -1833,9 +1852,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % k)
-        print("         Function evaluations: %d" % sf.nfev)
-        print("         Gradient evaluations: %d" % sf.ngev)
+        print(f"         Iterations: {k:d}")
+        print(f"         Function evaluations: {sf.nfev:d}")
+        print(f"         Gradient evaluations: {sf.ngev:d}")
 
     result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
@@ -2036,10 +2055,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if disp:
             _print_success_message_or_warn(warnflag, msg)
             print(f"         Current function value: {old_fval:f}")
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % sf.nfev)
-            print("         Gradient evaluations: %d" % sf.ngev)
-            print("         Hessian evaluations: %d" % hcalls)
+            print(f"         Iterations: {k:d}")
+            print(f"         Function evaluations: {sf.nfev:d}")
+            print(f"         Gradient evaluations: {sf.ngev:d}")
+            print(f"         Hessian evaluations: {hcalls:d}")
         fval = old_fval
         result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
@@ -3604,8 +3623,8 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
     if disp:
         _print_success_message_or_warn(warnflag, msg, RuntimeWarning)
         print(f"         Current function value: {fval:f}")
-        print("         Iterations: %d" % iter)
-        print("         Function evaluations: %d" % fcalls[0])
+        print(f"         Iterations: {iter:d}")
+        print(f"         Function evaluations: {fcalls[0]:d}")
     result = OptimizeResult(fun=fval, direc=direc, nit=iter, nfev=fcalls[0],
                             status=warnflag, success=(warnflag == 0),
                             message=msg, x=x)

@@ -2,6 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.optimize import nnls
+import pytest
 
 
 class TestNNLS:
@@ -21,7 +22,7 @@ class TestNNLS:
         x = np.abs(self.rng.uniform(low=-2, high=2, size=[10]))
         x[::2] = 0
         b = a @ x
-        xact, rnorm = nnls(a, b, atol=500*np.linalg.norm(a, 1)*np.spacing(1.))
+        xact, rnorm = nnls(a, b)
         assert_allclose(xact, x, rtol=0., atol=1e-10)
         assert rnorm < 1e-12
 
@@ -32,7 +33,7 @@ class TestNNLS:
         x = np.abs(self.rng.uniform(low=-2, high=2, size=[120]))
         x[::2] = 0
         b = a @ x
-        xact, rnorm = nnls(a, b, atol=500*np.linalg.norm(a, 1)*np.spacing(1.))
+        xact, rnorm = nnls(a, b)
         assert_allclose(xact, x, rtol=0., atol=1e-10)
         assert rnorm < 1e-12
 
@@ -153,7 +154,7 @@ class TestNNLS:
         k[nz] = 0
         W = np.diag(w)
 
-        dact, _ = nnls(W @ A, W @ k, atol=1e-7)
+        dact, _ = nnls(W @ A, W @ k)
 
         p = np.cumsum(dact)
         assert np.all(dact >= 0)
@@ -427,3 +428,11 @@ class TestNNLS:
         assert_allclose(sol, np.array([0.0, 0.0, 76.3611306173957, 0.0, 0.0]),
                         atol=5e-14)
         assert np.abs(np.linalg.norm(A@sol - b) - res) < 5e-14
+
+    def test_atol_deprecation_warning(self):
+        """Test that using atol parameter triggers deprecation warning"""
+        a = np.array([[1, 0], [1, 0], [0, 1]])
+        b = np.array([2, 1, 1])
+        
+        with pytest.warns(DeprecationWarning, match="{'atol'}"):
+            nnls(a, b, atol=1e-8)

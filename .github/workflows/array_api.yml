@@ -27,8 +27,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  pytorch_cpu:
-    name: Linux PyTorch/JAX/xp-strict CPU
+  xp_cpu:
+    name: Linux PyTorch/JAX/Dask/xp-strict CPU
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -70,6 +70,14 @@ jobs:
       run: |
         python -m pip install "jax[cpu]"
 
+    - name: Install Dask
+      run: |
+        python -m pip install dask[array]
+
+    - name: Install MArray
+      run: |
+        python -m pip install marray
+
     - name:  Prepare compiler cache
       id:    prep-ccache
       shell: bash
@@ -101,4 +109,3 @@ jobs:
       run: |
         export SCIPY_DEFAULT_DTYPE="float32"
         python dev.py --no-build test -b torch $XP_TESTS -- --durations 3 --timeout=60
-

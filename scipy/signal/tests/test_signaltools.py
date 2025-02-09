@@ -291,7 +291,6 @@ class TestConvolve:
             convolve(a, b)
 
 
-
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestConvolve2d:
 
@@ -474,11 +473,16 @@ class TestConvolve2d:
     )
     def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
-        a = xp.arange(5)
-        b = xp.asarray([3.2, 1.4, 3])
+        a_np = np.arange(5)
+        b_np = np.asarray([3.2, 1.4, 3])
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
+
         for mode in ['full', 'valid', 'same']:
-            xp_assert_close(xp.asarray(np.convolve(a, b, mode=mode)),
-                            signal.convolve(a, b, mode=mode))
+            xp_assert_close(
+                xp.asarray(np.convolve(a_np, b_np, mode=mode)),
+                signal.convolve(a, b, mode=mode)
+            )
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
@@ -506,7 +510,6 @@ class TestConvolve2d:
         count = signal.convolve2d(a, [[1, 1]])
         fails = np.where(count > 1)
         assert fails[0].size == 0
-
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -843,9 +846,11 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_random_data(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if axes == '':
             out = fftconvolve(a, b, 'full')
@@ -858,13 +863,15 @@ class TestFFTConvolve:
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_random_data_axes(self, axes, xp):
         np.random.seed(1234)
-        a = xp.asarray(np.random.rand(1233) + 1j * np.random.rand(1233))
-        b = xp.asarray(np.random.rand(1321) + 1j * np.random.rand(1321))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
-
-        a = xp.asarray(np.tile(a, [2, 1]))
-        b = xp.asarray(np.tile(b, [2, 1]))
+        a_np = np.random.rand(1233) + 1j * np.random.rand(1233)
+        b_np = np.random.rand(1321) + 1j * np.random.rand(1321)
+        expected = np.convolve(a_np, b_np, 'full')
+        a_np = np.tile(a_np, [2, 1])
+        b_np = np.tile(b_np, [2, 1])
         expected = xp.asarray(np.tile(expected, [2, 1]))
+
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         if isinstance(axes, list):
             axes = tuple(axes)
@@ -911,9 +918,11 @@ class TestFFTConvolve:
         list(range(1000, 1500)) +
         np.random.RandomState(1234).randint(1001, 10000, 5).tolist())
     def test_many_sizes(self, n, xp):
-        a = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        b = xp.asarray(np.random.rand(n) + 1j * np.random.rand(n))
-        expected = xp.asarray(np.convolve(a, b, 'full'))
+        a_np = np.random.rand(n) + 1j * np.random.rand(n)
+        b_np = np.random.rand(n) + 1j * np.random.rand(n)
+        expected = xp.asarray(np.convolve(a_np, b_np, 'full'))
+        a = xp.asarray(a_np)
+        b = xp.asarray(b_np)
 
         out = fftconvolve(a, b, 'full')
         xp_assert_close(out, expected, atol=1e-10)
@@ -965,6 +974,7 @@ def gen_oa_shapes_eq(sizes):
 
 
 @skip_xp_backends("jax.numpy", reason="fails all around")
+@xfail_xp_backends("dask.array", reason="wrong answer")
 class TestOAConvolve:
     @pytest.mark.slow()
     @pytest.mark.parametrize('shape_a_0, shape_b_0',
@@ -1429,7 +1439,6 @@ class TestResample:
         y = signal.resample(x, ny)
         xp_assert_close(y, np.asarray([1] * ny, dtype=y.dtype))
 
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype, xp):
         # Test that a mutable window is not modified
@@ -2773,6 +2782,12 @@ class TestFiltFilt:
         xp_assert_close(y, expected)
 
 
+@skip_xp_backends(
+    "dask.array", reason=(
+        "sosfiltfilt directly sets shape attributes on arrays "
+        "which dask doesn't like"
+    )
+)
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestSOSFiltFilt(TestFiltFilt):
     filtfilt_kind = 'sos'
@@ -2825,8 +2840,9 @@ def filtfilt_gust_opt(b, a, x):
                   full_output=True, disp=False)
     opt, fopt, niter, funcalls, warnflag = result
     if warnflag > 0:
-        raise RuntimeError("minimization failed in filtfilt_gust_opt: "
-                           "warnflag=%d" % warnflag)
+        raise RuntimeError(
+            f"minimization failed in filtfilt_gust_opt: warnflag={warnflag}"
+        )
     z0f = opt[:m]
     z0b = opt[m:]
 
@@ -3820,11 +3836,10 @@ class TestPartialFractionExpansion:
         assert_almost_equal(a, [1, -1])
 
 
-@skip_xp_backends(np_only=True)
 class TestVectorstrength:
 
     def test_single_1dperiod(self, xp):
-        events = np.array([.5])
+        events = xp.asarray([.5])
         period = 5.
         targ_strength = 1.
         targ_phase = .1
@@ -3833,24 +3848,26 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
 
+        assert math.isclose(strength, targ_strength, abs_tol=1.5e-7)
+        assert math.isclose(phase, 2 * math.pi * targ_phase, abs_tol=1.5e-7)
+
+    @xfail_xp_backends('torch', reason="phase modulo 2*pi")
     def test_single_2dperiod(self, xp):
-        events = np.array([.5])
-        period = [1, 2, 5.]
-        targ_strength = [1.] * 3
-        targ_phase = np.array([.5, .25, .1])
+        events = xp.asarray([.5])
+        period = xp.asarray([1, 2, 5.])
+        targ_strength = xp.asarray([1.] * 3)
+        targ_phase = xp.asarray([.5, .25, .1])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_array_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
     def test_equal_1dperiod(self, xp):
-        events = np.array([.25, .25, .25, .25, .25, .25])
+        events = xp.asarray([.25, .25, .25, .25, .25, .25])
         period = 2
         targ_strength = 1.
         targ_phase = .125
@@ -3859,24 +3876,25 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+
+        assert math.isclose(strength, targ_strength, abs_tol=1.5e-7)
+        assert math.isclose(phase, 2 * math.pi * targ_phase, abs_tol=1.5e-7)
 
     def test_equal_2dperiod(self, xp):
-        events = np.array([.25, .25, .25, .25, .25, .25])
-        period = [1, 2, ]
-        targ_strength = [1.] * 2
-        targ_phase = np.array([.25, .125])
+        events = xp.asarray([.25, .25, .25, .25, .25, .25])
+        period = xp.asarray([1, 2, ])
+        targ_strength = xp.asarray([1.] * 2)
+        targ_phase = xp.asarray([.25, .125])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
     def test_spaced_1dperiod(self, xp):
-        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
+        events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
         period = 1
         targ_strength = 1.
         targ_phase = .1
@@ -3885,24 +3903,26 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+
+        assert math.isclose(strength, targ_strength, abs_tol=1.5e-7)
+        assert math.isclose(phase, 2 * math.pi * targ_phase, abs_tol=1.5e-6)
 
     def test_spaced_2dperiod(self, xp):
-        events = np.array([.1, 1.1, 2.1, 4.1, 10.1])
-        period = [1, .5]
-        targ_strength = [1.] * 2
-        targ_phase = np.array([.1, .2])
+        events = xp.asarray([.1, 1.1, 2.1, 4.1, 10.1])
+        period = xp.asarray([1, .5])
+        targ_strength = xp.asarray([1.] * 2)
+        targ_phase = xp.asarray([.1, .2])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        rtol_kw = {'rtol': 2e-6} if xp_default_dtype(xp) == xp.float32 else {}
+        xp_assert_close(phase, 2 * xp.pi * targ_phase, **rtol_kw)
 
     def test_partial_1dperiod(self, xp):
-        events = np.array([.25, .5, .75])
+        events = xp.asarray([.25, .5, .75])
         period = 1
         targ_strength = 1. / 3.
         targ_phase = .5
@@ -3911,24 +3931,27 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
 
+        assert math.isclose(strength, targ_strength)
+        assert math.isclose(phase, 2 * math.pi * targ_phase)
+
+
+    @xfail_xp_backends("torch", reason="phase modulo 2*pi")
     def test_partial_2dperiod(self, xp):
-        events = np.array([.25, .5, .75])
-        period = [1., 1., 1., 1.]
-        targ_strength = [1. / 3.] * 4
-        targ_phase = np.array([.5, .5, .5, .5])
+        events = xp.asarray([.25, .5, .75])
+        period = xp.asarray([1., 1., 1., 1.])
+        targ_strength = xp.asarray([1. / 3.] * 4)
+        targ_phase = xp.asarray([.5, .5, .5, .5])
 
         strength, phase = vectorstrength(events, period)
 
         assert strength.ndim == 1
         assert phase.ndim == 1
         assert_almost_equal(strength, targ_strength)
-        assert_almost_equal(phase, 2 * np.pi * targ_phase)
+        assert_almost_equal(phase, 2 * xp.pi * targ_phase)
 
     def test_opposite_1dperiod(self, xp):
-        events = np.array([0, .25, .5, .75])
+        events = xp.asarray([0, .25, .5, .75])
         period = 1.
         targ_strength = 0
 
@@ -3936,12 +3959,12 @@ class TestVectorstrength:
 
         assert strength.ndim == 0
         assert phase.ndim == 0
-        assert_almost_equal(strength, targ_strength)
+        assert math.isclose(strength, targ_strength, abs_tol=1.5e-7)
 
     def test_opposite_2dperiod(self, xp):
-        events = np.array([0, .25, .5, .75])
-        period = [1.] * 10
-        targ_strength = [0.] * 10
+        events = xp.asarray([0, .25, .5, .75])
+        period = xp.asarray([1.] * 10)
+        targ_strength = xp.asarray([0.] * 10)
 
         strength, phase = vectorstrength(events, period)
 
@@ -3950,13 +3973,13 @@ class TestVectorstrength:
         assert_almost_equal(strength, targ_strength)
 
     def test_2d_events_ValueError(self, xp):
-        events = np.array([[1, 2]])
+        events = xp.asarray([[1, 2]])
         period = 1.
         assert_raises(ValueError, vectorstrength, events, period)
 
     def test_2d_period_ValueError(self, xp):
         events = 1.
-        period = np.array([[1]])
+        period = xp.asarray([[1]])
         assert_raises(ValueError, vectorstrength, events, period)
 
     def test_zero_period_ValueError(self, xp):

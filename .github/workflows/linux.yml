@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: mypy (py3.10) & dev deps (py3.13), fast, dev.py
+    name: mypy (py3.11) & dev deps (py3.13), fast, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.13-dev'] # this run will use python dev versions when available
+        python-version: ['3.11', '3.13-dev'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
@@ -63,7 +63,7 @@ jobs:
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.11'
       run: |
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
 
@@ -95,7 +95,7 @@ jobs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.10-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # This evaluates to `Linux Tests-3.11-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
         # need to be updated to be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
@@ -128,7 +128,7 @@ jobs:
       run: ninja -C build -t missingdeps
 
     - name: Mypy
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.11'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install mypy==1.10.0 types-psutil typing_extensions
@@ -148,7 +148,7 @@ jobs:
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -202,12 +202,12 @@ jobs:
   #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
-    name: Python-debug & ATLAS & sdist+wheel, fast, py3.10/npMin, pip+pytest
+    name: Python-debug & ATLAS & sdist+wheel, fast, py3.12/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04  # provides python3.10-dbg
+    runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -232,7 +232,7 @@ jobs:
   #################################################################################
   gcc9:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
-    name: Oldest GCC & pydata/sparse, fast, py3.10/npMin, pip+pytest
+    name: Oldest GCC & pydata/sparse, fast, py3.11/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -246,7 +246,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
       - name: Setup system dependencies
         run: |
@@ -271,7 +271,7 @@ jobs:
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.23.5"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.25.2"
 
       - name: Run tests
         run: |
@@ -284,7 +284,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps & coverage report, full, py3.10/npMin & py3.11/npPre, dev.py
+    name: Prerelease deps & coverage report, full, py3.11/npMin & py3.11/npPre, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -292,9 +292,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Both use numpy 2.x-dev at build time; 3.10 job then downgrades to
+        # Both use numpy 2.x-dev at build time; 3.11 job then downgrades to
         # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.10', '3.11']
+        python-version: ['3.11', '3.12']
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -354,9 +354,9 @@ jobs:
       run: ccache -s
 
     - name: Downgrade NumPy from 2.0-dev to lowest supported
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.11'
       run: |
-        python -m pip install "numpy==1.23.5"
+        python -m pip install "numpy==1.25.2"
 
     - name: Test SciPy
       run: |
@@ -365,7 +365,7 @@ jobs:
 
   #################################################################################
   linux_32bit:
-    name: 32-bit, fast, py3.10/npMin, dev.py
+    name: 32-bit, fast, py3.11/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -385,7 +385,7 @@ jobs:
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
-        python3.10 -m venv test && \
+        python3.11 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install -r requirements/openblas.txt && \
@@ -398,7 +398,7 @@ jobs:
         runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
         symbol_prefix = scipy_
         EOL
-        python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==1.25.2 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python -c 'import numpy as np; np.show_config()' && \
         python dev.py build --with-scipy-openblas && \
         python dev.py --no-build test"
@@ -408,12 +408,12 @@ jobs:
     # Purpose is to build for a non-default Python interpreter in a Linux distro
     # For such a build config, `python`/`python3` executables may not have
     # build dependencies like Cython or NumPy installed.
-    name: non-default Python interpreter, fast, py3.10/npMin, pip+pytest
+    name: non-default Python interpreter, fast, py3.11/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -422,8 +422,10 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          # `python3-dev` yields Python 3.10 on Ubuntu 22.04
-          sudo apt install -y python3-dev python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+          sudo apt install software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt update -y
+          sudo apt install -y python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
 
       - name: Setup Python build deps
         run: |
@@ -437,7 +439,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python3.11 -m pip install pytest hypothesis
-          python3.10 -m pip install meson  # ensure compile test work with this
+          python3.12 -m pip install meson  # ensure compile test work with this
 
       - name: Run tests
         run: |
@@ -506,6 +508,7 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
+
   #################################################################################
   clang-17-build-only:
     # Purpose is to check for warnings in builds with latest clang.
@@ -543,3 +546,40 @@ jobs:
         run: |
           # specify which compilers to use using environment variables
           CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+
+  #################################################################################
+  test_aarch64:
+    name: aarch64, fast, py3.12/npAny, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.12'
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Install Python packages
+      run: |
+        python -m pip install -r requirements/build.txt -r requirements/test.txt
+
+    - name: Install SciPy
+      run: |
+        python -m pip install . --no-build-isolation
+
+    - name: Test SciPy
+      run: |
+        export OMP_NUM_THREADS=2
+        cd ..
+        pytest --pyargs scipy -m 'not slow'

@@ -38,6 +38,14 @@ class TestGammainc:
         else:
             assert result == desired
 
+    @pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+    def test_a_nan(self, x):
+        assert np.isnan(sc.gammainc(np.nan, x))
+
+    @pytest.mark.parametrize("a", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+    def test_x_nan(self, a):
+        assert np.isnan(sc.gammainc(a, np.nan))
+
     def test_infinite_limits(self):
         # Test that large arguments converge to the hard-coded limits
         # at infinity.
@@ -107,6 +115,14 @@ class TestGammaincc:
             assert np.isnan(result)
         else:
             assert result == desired
+
+    @pytest.mark.parametrize("x", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+    def test_a_nan(self, x):
+        assert np.isnan(sc.gammaincc(np.nan, x))
+
+    @pytest.mark.parametrize("a", [-np.inf, -1.0, -0.0, 0.0, np.inf, np.nan])
+    def test_x_nan(self, a):
+        assert np.isnan(sc.gammaincc(a, np.nan))
 
     def test_infinite_limits(self):
         # Test that large arguments converge to the hard-coded limits

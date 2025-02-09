@@ -630,6 +630,7 @@ def _stats(input, labels=None, index=None, centered=False):
     if labels is None:
         return single_group(input)
 
+    labels = np.asarray(labels)
     # ensure input and labels match sizes
     input, labels = np.broadcast_arrays(input, labels)
 
@@ -944,6 +945,7 @@ def _select(input, labels=None, index=None, find_min=False, find_max=False,
     if labels is None:
         return single_group(input, positions)
 
+    labels = np.asarray(labels)
     # ensure input and labels match sizes
     input, labels = np.broadcast_arrays(input, labels)
 

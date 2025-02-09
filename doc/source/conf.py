@@ -207,7 +207,7 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-
+html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
 html_theme_options = {
     "header_links_before_dropdown": 6,
     "icon_links": [
@@ -217,9 +217,10 @@ html_theme_options = {
         "icon": "fa-brands fa-github",
       },
       {
-        "name": "X",
-        "url": "https://x.com/SciPy_team",
-        "icon": "fa-brands fa-x-twitter",
+        "name": "Scientific Python Forum",
+        "url": "https://discuss.scientific-python.org/c/contributor/scipy/",
+        "icon": "fa-custom fa-SciPy_Forum", # defined in file `_static/custom-icons.js`
+        "type": "fontawesome",
       },
     ],
     "logo": {
@@ -258,7 +259,7 @@ if 'versionwarning' in tags:  # noqa: F821
     html_context = {
         'VERSIONCHECK_JS': src
     }
-    html_js_files = ['versioncheck.js']
+    html_js_files += ['versioncheck.js', ]
 
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']

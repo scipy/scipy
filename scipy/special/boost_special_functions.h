@@ -76,10 +76,43 @@ Real ibeta_wrap(Real a, Real b, Real x)
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betainc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    /* In limiting cases, SciPy treats `betainc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betainc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
+    if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
+	 */
+        return NAN;
+    }
+
+    if ((a == 0) || std::isinf(b)) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. The same is true in the limit b -> inf for fixed a.
+	 */
+	return x > 0 ? 1 : 0;
+    }
+
+    if ((b == 0) || std::isinf(a)) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 1. The same is true in the limit a -> inf for fixed b.
+	 */
+	return x < 1 ? 0 : 1;
+    }
+
     try {
         y = boost::math::ibeta(a, b, x, SpecialPolicy());
     } catch (const std::domain_error& e) {
@@ -120,10 +153,43 @@ Real ibetac_wrap(Real a, Real b, Real x)
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    /* In limiting cases, SciPy treats `betaincc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betaincc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
+    if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
+	 */
+        return NAN;
+    }
+
+    if ((a == 0) || std::isinf(b)) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. The same is true in the limit b -> inf for fixed a.
+	 */
+	return x > 0 ? 0 : 1;
+    }
+
+    if ((b == 0) || std::isinf(a)) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 1.  The same is true in the limit a -> inf for fixed b.
+	 */
+	return x < 1 ? 1 : 0;
+    }
+
     try {
         y = boost::math::ibetac(a, b, x);
     } catch (const std::domain_error& e) {

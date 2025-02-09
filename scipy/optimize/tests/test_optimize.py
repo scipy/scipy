@@ -7,6 +7,7 @@ Authors:
 
 """
 import itertools
+import inspect
 import platform
 import threading
 import numpy as np
@@ -34,6 +35,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._util import MapWrapper
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -2460,14 +2462,14 @@ class TestRosen:
                         xp.asarray(0.))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
+                      reason="JAX arrays do not support item assignment")
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 
@@ -2903,6 +2905,10 @@ def setup_test_equal_bounds():
     def callback(x, *args):
         check_x(x)
 
+    def callback2(intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        check_x(intermediate_result.x)
+
     def constraint1(x):
         check_x(x, check_values=False)
         return x[0:1] - 1
@@ -2953,7 +2959,7 @@ def setup_test_equal_bounds():
                    ([c1b, c2b], [c1b, c2b]))
 
     # test with and without callback function
-    callbacks = (None, callback)
+    callbacks = (None, callback, callback2)
 
     data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
             "constraints": constraints, "callbacks": callbacks,
@@ -2992,6 +2998,12 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     test_constraints, reference_constraints = constraints
     if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
+
+    if method in ['SLSQP', 'TNC'] and callable(callback):
+        sig = inspect.signature(callback)
+        if 'intermediate_result' in set(sig.parameters):
+            pytest.skip("SLSQP, TNC don't support intermediate_result")
+
     # reference constraints always have analytical jacobian
     # if test constraints are not the same, we'll need finite differences
     fd_needed = (test_constraints != reference_constraints)
@@ -3251,3 +3263,37 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nfev == res_sparse.nfev
     assert res_dense.njev == res_sparse.njev
     assert res_dense.nhev == res_sparse.nhev
+
+
+@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('method', ['l-bfgs-b'])
+class TestWorkers:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 2.0, 3.0])
+
+    def test_smoke(self, workers, method):
+        # checks parallelised optimization output is same as serial
+        workers = workers or map
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, options={"workers":mf}, method=method
+            )
+        res_default = optimize.minimize(
+            rosen, self.x0, method=method
+        )
+        assert_equal(res.x, res_default.x)
+        assert_equal(res.nfev, res_default.nfev)
+
+    def test_equal_bounds(self, workers, method):
+        workers = workers or map
+        if method not in ['l-bfgs-b']:
+            pytest.skip(f"{method} cannot use bounds")
+
+        bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
+            )
+        assert res.success
+        assert_equal(res.x[1], 2.0)

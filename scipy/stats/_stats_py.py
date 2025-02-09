@@ -39,11 +39,11 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
+from scipy._lib._array_api import is_lazy_array
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
 from scipy._lib.deprecation import _deprecate_positional_args
-
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -61,7 +61,7 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_arrays,
+from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
@@ -75,10 +75,12 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_numpy,
+    is_marray,
     xp_size,
     xp_moveaxis_to_end,
     xp_sign,
     xp_vector_norm,
+    xp_broadcast_promote,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
@@ -598,7 +600,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
 
     """
     xp = array_namespace(a) if xp is None else xp
-    mask = xp.zeros(a.shape, dtype=xp.bool)
+    mask = xp.zeros_like(a, dtype=xp.bool)
     if limits is None:
         return a, mask
     lower_limit, upper_limit = limits
@@ -966,7 +968,8 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         # by the axis_nan_policy decorator shortly.
         sd = _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)**0.5
 
-    n_obs = xp.sum(~xp.isnan(a), axis=axis, dtype=sd.dtype)
+    not_nan = xp.astype(~xp.isnan(a), a.dtype)
+    n_obs = xp.sum(not_nan, axis=axis, dtype=sd.dtype)
     return sd / n_obs**0.5
 
 
@@ -1145,13 +1148,12 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     with np.errstate(divide='ignore', invalid='ignore'):
         rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
                           keepdims=True) / xp.abs(mean)
-    with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(rel_diff < eps)
-    n = (xp_size(a) if axis is None
-         # compact way to deal with axis tuples or ints
-         else np.prod(np.asarray(a.shape)[np.asarray(axis)]))
 
-    if precision_loss and n > 1 and precision_warning:
+    n = _length_nonmasked(a, axis, xp=xp)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
+
+    if precision_loss and precision_warning:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
                    "are nearly identical. Results may be unreliable.")
@@ -1221,9 +1223,21 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     xp = array_namespace(x) if xp is None else xp
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
-        n = x.shape[axis] if axis is not None else xp_size(x)
+        n = _length_nonmasked(x, axis, xp=xp)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
+
+
+def _length_nonmasked(x, axis, keepdims=False, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_marray(xp):
+        if np.iterable(axis):
+            message = '`axis` must be an integer or None for use with `MArray`.'
+            raise NotImplementedError(message)
+        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+    return (xp_size(x) if axis is None else
+            # compact way to deal with axis tuples or ints
+            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
 
 
 @_axis_nan_policy_factory(
@@ -1307,7 +1321,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
@@ -1319,11 +1333,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m3 = m3[can_correct]
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
-            vals[can_correct] = nval
+            vals = xp.where(can_correct, nval, vals)
 
     return vals[()] if vals.ndim == 0 else vals
 
@@ -1417,7 +1429,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean, xp=xp)
@@ -1429,11 +1441,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     if not bias:
         can_correct = ~zero & (n > 3)
-        if xp.any(can_correct):
-            m2 = m2[can_correct]
-            m4 = m4[can_correct]
+        if is_lazy_array(can_correct) or xp.any(can_correct):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            vals[can_correct] = nval + 3.0
+            vals = xp.where(can_correct, nval + 3.0, vals)
 
     vals = vals - 3 if fisher else vals
     return vals[()] if vals.ndim == 0 else vals
@@ -1529,7 +1539,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
 
-    n = a.shape[axis]
+    # use xp.astype when data-apis/array-api-compat#226 is resolved
+    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64)
+    n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
     v = _var(a, axis=axis, ddof=ddof, xp=xp)
@@ -2627,7 +2639,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         a = xp.reshape(a, (-1,))
         axis = 0
     a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis, xp=xp)
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
@@ -2907,7 +2919,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
-def gstd(a, axis=0, ddof=1):
+def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     r"""
     Calculate the geometric standard deviation of an array.
 
@@ -2922,17 +2934,27 @@ def gstd(a, axis=0, ddof=1):
     ----------
     a : array_like
         An array containing finite, strictly positive, real numbers.
-
-        .. deprecated:: 1.14.0
-            Support for masked array input was deprecated in
-            SciPy 1.14.0 and will be removed in version 1.16.0.
-
     axis : int, tuple or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     ddof : int, optional
         Degree of freedom correction in the calculation of the
         geometric standard deviation. Default is 1.
+    keepdims : boolean, optional
+        If this is set to ``True``, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
+    nan_policy : {'propagate', 'omit', 'raise'}, default: 'propagate'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
 
     Returns
     -------
@@ -3002,19 +3024,14 @@ def gstd(a, axis=0, ddof=1):
     array([2.12939215, 1.22120169])
 
     """
-    a = np.asanyarray(a)
-    if isinstance(a, ma.MaskedArray):
-        message = ("`gstd` support for masked array input was deprecated in "
-                   "SciPy 1.14.0 and will be removed in version 1.16.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-        log = ma.log
-    else:
-        log = np.log
+    xp = array_namespace(a)
+    a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
 
+    kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
-        res = np.exp(np.std(log(a), axis=axis, ddof=ddof))
+        res = xp.exp(_xp_var(xp.log(a), **kwargs)**0.5)
 
-    if (a <= 0).any():
+    if xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
                    "are greater than or equal to zero; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
@@ -4554,18 +4571,26 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`axis` must be an integer.')
     axis = axis_int
 
+    try:
+        np.broadcast_shapes(x.shape, y.shape)
+        # For consistency with other `stats` functions, we need to
+        # match the dimensionalities before looking at `axis`.
+        # (Note: this is not the NEP 5 / gufunc order of operations;
+        #  see TestPearsonr::test_different_dimensionality for more information.)
+        ndim = max(x.ndim, y.ndim)
+        x = xp.reshape(x, (1,) * (ndim - x.ndim) + x.shape)
+        y = xp.reshape(y, (1,) * (ndim - y.ndim) + y.shape)
+
+    except (ValueError, RuntimeError) as e:
+        message = '`x` and `y` must be broadcastable.'
+        raise ValueError(message) from e
+
     n = x.shape[axis]
     if n != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
     if n < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
-
-    try:
-        x, y = xp.broadcast_arrays(x, y)
-    except (ValueError, RuntimeError) as e:
-        message = '`x` and `y` must be broadcastable.'
-        raise ValueError(message) from e
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
@@ -4640,7 +4665,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # use np.linalg.norm.
     xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
     ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
-    with np.errstate(invalid='ignore'):
+    with np.errstate(invalid='ignore', divide='ignore'):
         normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
@@ -4656,7 +4681,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        r = xp.sum(xm/normxm * ym/normym, axis=axis)
+        r = xp.vecdot(xm / normxm, ym / normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
@@ -10772,21 +10797,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    # handle non-broadcastable inputs
-    if weights is not None and x.shape != weights.shape:
-        try:
-            x, weights = _broadcast_arrays((x, weights), xp=xp)
-        except (ValueError, RuntimeError) as e:
-            message = "Array shapes are incompatible for broadcasting."
-            raise ValueError(message) from e
-
-    # convert integers to the default float of the array library
-    if not xp.isdtype(x.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        x = xp.asarray(x, dtype=dtype)
-    if weights is not None and not xp.isdtype(weights.dtype, 'real floating'):
-        dtype = xp.asarray(1.).dtype
-        weights = xp.asarray(weights, dtype=dtype)
+    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
 
     # handle the special case of zero-sized arrays
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
@@ -10824,7 +10835,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
-    norm = xp.sum(weights, axis=axis)
+    # ones_like ensures that the mask of `x` is considered
+    norm = xp.sum(xp.ones_like(x) * weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
     with np.errstate(divide='ignore', invalid='ignore'):
         res = wsum/norm
@@ -10863,15 +10875,12 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
     mean = _xp_mean(x, keepdims=True, **kwargs)
     x = _asarray(x, dtype=mean.dtype, subok=True)
     x_mean = _demean(x, mean, axis, xp=xp)
-    var = _xp_mean(x_mean**2, keepdims=keepdims, **kwargs)
+    x_mean_conj = (xp.conj(x_mean) if xp.isdtype(x_mean.dtype, 'complex floating')
+                   else x_mean)  # crossref data-apis/array-api#824
+    var = _xp_mean(x_mean * x_mean_conj, keepdims=keepdims, **kwargs)
 
     if correction != 0:
-        if axis is None:
-            n = xp_size(x)
-        elif np.iterable(axis):  # note: using NumPy on `axis` is OK
-            n = math.prod(x.shape[i] for i in axis)
-        else:
-            n = x.shape[axis]
+        n = _length_nonmasked(x, axis, xp=xp)
         # Or two lines with ternaries : )
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]

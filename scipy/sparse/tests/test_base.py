@@ -29,6 +29,8 @@ from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
         assert_allclose, suppress_warnings)
 
+from types import GenericAlias
+
 import scipy.linalg
 
 import scipy.sparse as sparse
@@ -4307,6 +4309,12 @@ class TestCSRMatrix(_MatrixMixin, TestCSR):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             return csr_matrix(*args, **kwargs)
+    
+    def test_spmatrix_subscriptable(self):
+        result = csr_matrix[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is csr_matrix
+        assert result.__args__ == (np.int8,)
 
 
 TestCSRMatrix.init_class()
@@ -4842,6 +4850,17 @@ class TestCOO(sparse_test_class(getset=False,
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+    
+    def test_sparray_subscriptable(self):
+        result = coo_array[np.int8, tuple[int]]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8, tuple[int])
+
+        result = coo_array[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8,)
 
 
 class TestCOOMatrix(_MatrixMixin, TestCOO):

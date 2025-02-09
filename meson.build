@@ -17,7 +17,7 @@ project(
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
-min_numpy_version = '1.23.5'  # keep in sync with pyproject.toml
+min_numpy_version = '1.25.2'  # keep in sync with pyproject.toml
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
 # unexpected from-source builds there because we no longer provide wheels.

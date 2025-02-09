@@ -149,20 +149,19 @@ class Test_measurements_select:
 
 
 def test_label01(xp):
-    data = xp.ones([])
+    data = xp.ones(())
     out, n = ndimage.label(data)
     assert out == 1
     assert n == 1
 
 
 def test_label02(xp):
-    data = xp.zeros([])
+    data = xp.zeros(())
     out, n = ndimage.label(data)
     assert out == 0
     assert n == 0
 
 
-@pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
 def test_label03(xp):
     data = xp.ones([1])
     out, n = ndimage.label(data)
@@ -363,7 +362,8 @@ def test_label_output_dtype(xp):
         assert output.dtype == t
 
 
-@skip_xp_backends("jax.numpy", reason="JAX does not raise")
+@xfail_xp_backends('dask.array', reason='Dask does not raise')
+@xfail_xp_backends('jax.numpy', reason='JAX does not raise')
 def test_label_output_wrong_size(xp):
     data = xp.ones([5])
     for t in types:
@@ -550,10 +550,11 @@ def test_value_indices02(xp):
 def test_value_indices03(xp):
     "Test different input array shapes, from 1-D to 4-D"
     for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
-        a = xp.asarray((12*[1]+12*[2]+12*[3]), dtype=xp.int32)
-        a = xp.reshape(a, shape)
+        a = np.asarray((12*[1]+12*[2]+12*[3]), dtype=np.int32)
+        a = np.reshape(a, shape)
 
-        trueKeys = xp.unique_values(a)
+        trueKeys = np.unique(a)
+        a = xp.asarray(a)
         vi = ndimage.value_indices(a)
         assert list(vi.keys()) == list(trueKeys)
         for k in [int(x) for x in trueKeys]:

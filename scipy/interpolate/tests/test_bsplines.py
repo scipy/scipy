@@ -1525,6 +1525,26 @@ class TestInterp:
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert b.c.shape == (n + k - 1, 5, 6, 7)
 
+    @pytest.mark.parametrize("axis", range(1, 4))
+    def test_shapes_axis(self, axis):
+        rng = np.random.RandomState(1234)
+        n = 11
+        shp_extra = (5, 6, 7)
+        x = np.arange(n)
+        y = rng.random(size=(n,) + shp_extra)
+        spl = make_interp_spline(x, y)
+
+        y1 = np.moveaxis(y.copy(), 0, axis)
+        spl1 = make_interp_spline(x, y1, axis=axis)
+
+        assert spl(3).shape == shp_extra
+        assert spl([3]).shape == (1,) + shp_extra
+        assert spl([2, 3]).shape == (2,) + shp_extra
+
+        assert spl1(3).shape == shp_extra
+        assert spl1([3]).shape == shp_extra[:axis] + (1,) + shp_extra[axis:]
+        assert spl1([2, 3]).shape == shp_extra[:axis] + (2,) + shp_extra[axis:]
+
     def test_string_aliases(self):
         yy = np.sin(self.xx)
 
@@ -1754,6 +1774,28 @@ class TestLSQ:
         b_qr = make_lsq_spline(x, y, t, k, method="qr")
         b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
         xp_assert_close(b_qr.c, b_neq.c, atol=1e-15)
+
+    @parametrize_lsq_methods
+    @pytest.mark.parametrize("axis", range(1, 4))
+    def test_shapes_axis(self, axis, method):
+        rng = np.random.RandomState(1234)
+        k, n = 3, 11
+        shp_extra = (5, 6, 7)
+        x = np.arange(n)
+        t = (x[0],) * (k+1) + (x[-1],)*(k+1)
+        y = rng.random(size=(n,) + shp_extra)
+        spl = make_lsq_spline(x, y, t=t, method=method)
+
+        y1 = np.moveaxis(y.copy(), 0, axis)
+        spl1 = make_lsq_spline(x, y1, t=t, axis=axis, method=method)
+
+        assert spl(3).shape == shp_extra
+        assert spl([3]).shape == (1,) + shp_extra
+        assert spl([2, 3]).shape == (2,) + shp_extra
+
+        assert spl1(3).shape == shp_extra
+        assert spl1([3]).shape == shp_extra[:axis] + (1,) + shp_extra[axis:]
+        assert spl1([2, 3]).shape == shp_extra[:axis] + (2,) + shp_extra[axis:]
 
     @parametrize_lsq_methods
     def test_complex(self, method):

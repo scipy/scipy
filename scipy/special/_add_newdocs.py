@@ -792,6 +792,21 @@ add_newdoc(
     function by multiplying the result of ``betainc(a, b, x)`` by
     ``beta(a, b)``.
 
+    ``betainc(a, b, x)`` is treated as a two parameter family of functions
+    of a single variable `x`, rather than as a function of three variables.
+    This impacts only the limiting cases ``a = 0``, ``b = 0``, ``a = inf``,
+    ``b = inf``.
+
+    In general
+
+    .. math::
+
+        \lim_{(a, b) \rightarrow (a_0, b_0)} \mathrm{betainc}(a, b, x)
+
+    is treated as a pointwise limit in ``x``. Thus for example,
+    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it would be
+    indeterminate when considering the simultaneous limit ``(a, x) -> (0+, 0+)``.
+
     This function wraps the ``ibeta`` routine from the
     Boost Math C++ library [2]_.
 
@@ -882,6 +897,11 @@ add_newdoc(
     Notes
     -----
     .. versionadded:: 1.11.0
+
+    Like `betainc`, ``betaincc(a, b, x)`` is treated as a two parameter
+    family of functions of a single variable `x`, rather than as a function of
+    three variables. See the `betainc` docstring for more info on how this
+    impacts limiting cases.
 
     This function wraps the ``ibetac`` routine from the
     Boost Math C++ library [2]_.

@@ -114,7 +114,9 @@ Note that:
 [^1]: Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
 normality (complete samples). Biometrika, Vol. 52, pp. 591-611.
 {doi}`10.2307/2333709`
-[^2]: https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
+[^2]: NIST/SEMATECH e-Handbook of Statistical Methods, Section 7.2.1.3,
+Anderson-Darling and Shapiro-Wilk tests,
+https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
 {doi}`10.18434/M32189`
 [^3]: Phipson B., and Smyth, G. K. (2010). Permutation P-values Should Never Be
 Zero: Calculating Exact P-values When Permutations Are Randomly Drawn.

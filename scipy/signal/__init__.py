@@ -87,6 +87,8 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
+   firwin_2d        -- Windowed FIR filter design, with frequency response for 
+                    -- 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
@@ -266,9 +268,11 @@ Spectral analysis
    ShortTimeFFT   -- Interface for calculating the \
                      :ref:`Short Time Fourier Transform <tutorial_stft>` and \
                      its inverse.
+   closest_STFT_dual_window -- Calculate the STFT dual window of a given window \
+                               closest to a desired dual window.
    stft           -- Compute the Short Time Fourier Transform (legacy).
    istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
-   check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction (legacy).
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 Chirp Z-transform and Zoom FFT

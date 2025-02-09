@@ -98,7 +98,7 @@ special_ufuncs = [
     'gammainc', 'gammaincinv', 'gammaincc', 'gammainccinv', 'fresnel', 'ellipe',
     'ellipeinc', 'ellipk', 'ellipkinc', 'ellipkm1', 'ellipj', '_riemann_zeta', 'erf',
     'erfc', 'erfcx', 'erfi', 'voigt_profile', 'wofz', 'dawsn', 'ndtr', 'log_ndtr',
-    'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx'
+    'exp2', 'exp10', 'expm1', 'log1p', 'xlogy', 'xlog1py', '_log1pmx', '_log1mexp'
 ]
 
 # -----------------------------------------------------------------------------
@@ -297,18 +297,16 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
 
     for j in range(len(ufunc_inputs)):
-        body += "    cdef char *ip%d = args[%d]\n" % (j, j)
+        body += f"    cdef char *ip{j} = args[{j}]\n"
     for j in range(len(ufunc_outputs)):
-        body += "    cdef char *op%d = args[%d]\n" % (j, j + len(ufunc_inputs))
+        body += f"    cdef char *op{j} = args[{j + len(ufunc_inputs)}]\n"
 
     ftypes = []
     fvars = []
     outtypecodes = []
     for j in range(len(func_inputs)):
         ftypes.append(CY_TYPES[func_inputs[j]])
-        fvars.append("<%s>(<%s*>ip%d)[0]" % (
-            CY_TYPES[func_inputs[j]],
-            CY_TYPES[ufunc_inputs[j]], j))
+        fvars.append(f"<{CY_TYPES[func_inputs[j]]}>(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
 
     if len(func_outputs)+1 == len(ufunc_outputs):
         func_joff = 1
@@ -318,9 +316,9 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         func_joff = 0
 
     for j, outtype in enumerate(func_outputs):
-        body += "    cdef %s ov%d\n" % (CY_TYPES[outtype], j+func_joff)
+        body += f"    cdef {CY_TYPES[outtype]} ov{j+func_joff}\n"
         ftypes.append(f"{CY_TYPES[outtype]} *")
-        fvars.append("&ov%d" % (j+func_joff))
+        fvars.append(f"&ov{j+func_joff}")
         outtypecodes.append(outtype)
 
     body += "    for i in range(n):\n"
@@ -338,9 +336,9 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     input_checks = []
     for j in range(len(func_inputs)):
         if (ufunc_inputs[j], func_inputs[j]) in DANGEROUS_DOWNCAST:
-            chk = "<%s>(<%s*>ip%d)[0] == (<%s*>ip%d)[0]" % (
-                CY_TYPES[func_inputs[j]], CY_TYPES[ufunc_inputs[j]], j,
-                CY_TYPES[ufunc_inputs[j]], j)
+            chk = (f"<{CY_TYPES[func_inputs[j]]}>"
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0] == "
+                   f"(<{CY_TYPES[ufunc_inputs[j]]}*>ip{j})[0]")
             input_checks.append(chk)
 
     if input_checks:
@@ -350,29 +348,28 @@ def generate_loop(func_inputs, func_outputs, func_retval,
         body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
                  "\"invalid input argument\")\n")
         for j, outtype in enumerate(outtypecodes):
-            body += "            ov%d = <%s>%s\n" % (
-                j, CY_TYPES[outtype], NAN_VALUE[outtype])
+            body += f"            ov{j} = <{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n"
     else:
         body += funcall
 
     # Assign and cast-check output values
     for j, (outtype, fouttype) in enumerate(zip(ufunc_outputs, outtypecodes)):
         if (fouttype, outtype) in DANGEROUS_DOWNCAST:
-            body += "        if ov%d == <%s>ov%d:\n" % (j, CY_TYPES[outtype], j)
-            body += "            (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += f"        if ov{j} == <{CY_TYPES[outtype]}>ov{j}:\n"
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
             body += "        else:\n"
             body += ("            sf_error.error(func_name, sf_error.DOMAIN, "
                      "\"invalid output\")\n")
-            body += "            (<%s *>op%d)[0] = <%s>%s\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], NAN_VALUE[outtype])
+            body += (f"            (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>{NAN_VALUE[outtype]}\n")
         else:
-            body += "        (<%s *>op%d)[0] = <%s>ov%d\n" % (
-                CY_TYPES[outtype], j, CY_TYPES[outtype], j)
+            body += (f"        (<{CY_TYPES[outtype]} *>op{j})[0] = "
+                    f"<{CY_TYPES[outtype]}>ov{j}\n")
     for j in range(len(ufunc_inputs)):
-        body += "        ip%d += steps[%d]\n" % (j, j)
+        body += f"        ip{j} += steps[{j}]\n"
     for j in range(len(ufunc_outputs)):
-        body += "        op%d += steps[%d]\n" % (j, j + len(ufunc_inputs))
+        body += f"        op{j} += steps[{j + len(ufunc_inputs)}]\n"
 
     body += "    sf_error.check_fpe(func_name)\n"
 
@@ -542,11 +539,8 @@ class Ufunc(Func):
             if "v" in outp:
                 raise ValueError(f"{self.name}: void signature {sig!r}")
             if len(inp) != inarg_num or len(outp) != outarg_num:
-                raise ValueError(
-                    "%s: signature %r does not have %d/%d input/output args" % (
-                        self.name, sig, inarg_num, outarg_num
-                    )
-                )
+                raise ValueError(f"{self.name}: signature {sig!r} does "
+                                 f"not have {inarg_num}/{outarg_num} input/output args")
 
             loop_name, loop = generate_loop(inarg, outarg, ret, inp, outp)
             all_loops[loop_name] = loop
@@ -598,7 +592,7 @@ class Ufunc(Func):
         toplevel += (
         f"cdef np.PyUFuncGenericFunction ufunc_{self.name}_loops[{len(loops)}]\n"
         )
-        toplevel += "cdef void *ufunc_%s_ptr[%d]\n" % (self.name, 2*len(funcs))
+        toplevel += f"cdef void *ufunc_{self.name}_ptr[{2 * len(funcs)}]\n"
         toplevel += f"cdef void *ufunc_{self.name}_data[{len(funcs)}]\n"
         toplevel += f"cdef char ufunc_{self.name}_types[{len(types)}]\n"
         toplevel += 'cdef char *ufunc_{}_doc = (\n    "{}")\n'.format(
@@ -608,26 +602,22 @@ class Ufunc(Func):
         )
 
         for j, function in enumerate(loops):
-            toplevel += ("ufunc_%s_loops[%d] = <np.PyUFuncGenericFunction>%s\n" %
-                         (self.name, j, function))
+            toplevel += (f"ufunc_{self.name}_loops[{j}] = "
+                        f"<np.PyUFuncGenericFunction>{function}\n")
         for j, type in enumerate(types):
-            toplevel += "ufunc_%s_types[%d] = <char>%s\n" % (self.name, j, type)
+            toplevel += f"ufunc_{self.name}_types[{j}] = <char>{type}\n"
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_ptr[2*%d] = <void*>%s\n" % (
-                self.name, j, self.cython_func_name(func, specialized=True)
-            )
-            toplevel += "ufunc_%s_ptr[2*%d+1] = <void*>(<char*>\"%s\")\n" % (
-                self.name, j, self.name
-            )
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}] = <void*>"
+                        f"{self.cython_func_name(func, specialized=True)}\n")
+            toplevel += (f"ufunc_{self.name}_ptr[2*{j}+1] = <void*>"
+                        f"(<char*>\"{self.name}\")\n")
         for j, func in enumerate(funcs):
-            toplevel += "ufunc_%s_data[%d] = &ufunc_%s_ptr[2*%d]\n" % (
-                self.name, j, self.name, j)
+            toplevel += f"ufunc_{self.name}_data[{j}] = &ufunc_{self.name}_ptr[2*{j}]\n"
 
-        toplevel += ('@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, '
-                     'ufunc_@_data, ufunc_@_types, %d, %d, %d, 0, '
-                     '"@", ufunc_@_doc, 0)\n' % (len(types)/(inarg_num+outarg_num),
-                                                 inarg_num, outarg_num)
-                     ).replace('@', self.name)
+        toplevel += (f"@ = np.PyUFunc_FromFuncAndData(ufunc_@_loops, ufunc_@_data, "
+                    f"ufunc_@_types, {int(len(types)/(inarg_num + outarg_num))}, "
+                    f"{inarg_num}, {outarg_num}, 0, '@', ufunc_@_doc, 0)"
+                    f"\n").replace('@', self.name)
 
         return toplevel
 
