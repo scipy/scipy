@@ -156,7 +156,6 @@ class OptimizeResult(_RichResult):
 
 class OptimizeWarning(UserWarning):
     """General warning for :mod:`scipy.optimize`."""
-    the optimization algorithm did not successfully converge."""
     pass
 
 def _check_positive_definite(Hk):
