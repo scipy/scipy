@@ -155,7 +155,7 @@ class OptimizeResult(_RichResult):
 
 
 class OptimizeWarning(UserWarning):
-    """General warning class for ``scipy.optimize``. It indicates that 
+    """General warning class for :mod:`scipy.optimize`. It indicates that 
     the optimization algorithm did not successfully converge."""
     pass
 
