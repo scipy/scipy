@@ -2359,7 +2359,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
             c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])
     else:
         # this should not happen, ever
-        raise RuntimeError("Internal error, please report it to SciPy developes.")
+        raise RuntimeError("Internal error, please report it to SciPy developers.")
     c = c.reshape((c.shape[0], *y_shape1))
 
     # hack: these are c[0], c[1] etc, shape-compatible with np.r_ below
