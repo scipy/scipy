@@ -25,23 +25,23 @@ linked in the Description column:
 ==================  ========================================
 Subpackage          Description and User Guide
 ==================  ========================================
-`cluster`           Clustering algorithms
-`constants`         Physical and mathematical constants
-`differentiate`     Finite difference differentiation tools
-`fft`               :doc:`./fft`
-`fftpack`           Fast Fourier Transform routines (legacy)
-`integrate`         :doc:`./integrate`
-`interpolate`       :doc:`./interpolate`
-`io`                :doc:`./io`
-`linalg`            :doc:`./linalg`
-`ndimage`           :doc:`./ndimage`
-`odr`               Orthogonal distance regression
-`optimize`          :doc:`./optimize`
-`signal`            :doc:`./signal`
-`sparse`            :doc:`./sparse`
-`spatial`           :doc:`./spatial`
-`special`           :doc:`./special`
-`stats`             :doc:`./stats`
+``cluster``           Clustering algorithms
+``constants``         Physical and mathematical constants
+``differentiate``     Finite difference differentiation tools
+``fft``               :doc:`./fft`
+``fftpack``           Fast Fourier Transform routines (legacy)
+``integrate``         :doc:`./integrate`
+``interpolate``       :doc:`./interpolate`
+``io``                :doc:`./io`
+``linalg``            :doc:`./linalg`
+``ndimage``           :doc:`./ndimage`
+``odr``               Orthogonal distance regression
+``optimize``          :doc:`./optimize`
+``signal``            :doc:`./signal`
+``sparse``            :doc:`./sparse`
+``spatial``           :doc:`./spatial`
+``special``           :doc:`./special`
+``stats``             :doc:`./stats`
 ==================  ========================================
 
 There are also additional user guides for these topics:
