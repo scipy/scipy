@@ -1527,6 +1527,10 @@ class TestBetaInc:
         assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
 
 
+    def test_btdtria_deprecation(self):
+        with pytest.warns(DeprecationWarning, match="deprecated in SciPy 1.16.0"):
+            special.btdtria(0.5, 2, 3)
+
 class TestCombinatorics:
     def test_comb(self):
         assert_allclose(special.comb([10, 10], [3, 4]), [120., 210.])

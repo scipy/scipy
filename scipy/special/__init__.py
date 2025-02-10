@@ -810,7 +810,7 @@ def _load_libsf_error_state():
 
 _load_libsf_error_state()
 
-
+import warnings
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
@@ -874,6 +874,16 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+
+def btdtria(*args, **kwargs):  # type: ignore [no-redef]
+    message = ("This function was deprecated in SciPy 1.16.0 and will be removed in "
+               "SciPy 1.18.0. Use `scipy.special.betaincinva` instead.")
+    warnings.warn(message, DeprecationWarning, stacklevel=2)
+    return _ufuncs.btdtria(*args, **kwargs)
+
+
+btdtria.__doc__ = _ufuncs.btdtria.__doc__  # type: ignore [misc]
 
 
 def _get_include():
