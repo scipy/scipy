@@ -1106,7 +1106,7 @@ nct_ppf_wrap(const Real v, const Real l, const Real x)
         y = INFINITY;
     } catch (const std::underflow_error& e) {
         sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
-        y = -INFINITY; 
+        y = 0; 
     } catch (...) {
 	/* Boost was unable to produce a result. */
         sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
