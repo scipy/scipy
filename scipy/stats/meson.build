@@ -149,6 +149,7 @@ py3.install_sources([
     '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
+    '_quantile.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
