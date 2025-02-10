@@ -8,9 +8,11 @@
 #pragma once
 
 #include "config.h"
+#include "digamma.h"
 
 #include "cephes/beta.h"
 #include "cephes/gamma.h"
+#include "cephes/unity.h"
 
 namespace xsf {
 
@@ -84,6 +86,42 @@ XSF_HOST_DEVICE inline double binom(double n, double k) {
 
 XSF_HOST_DEVICE inline float binom(float n, float k) {
     return binom(static_cast<double>(n), static_cast<double>(k));
+}
+
+XSF_HOST_DEVICE inline double binomln(double n, double k) {
+    /* Natural logarithm of absolute value of binomial coefficient */
+    double a = n - k + 1;
+    bool denominator_pole = (k <= - 1 && k == std::floor(k)) || (a <= 0 && a == std::floor(a));
+    if (n <= -1 && n == std::floor(n)) {
+	return denominator_pole ? std::numeric_limits<double>::quiet_NaN() : std::numeric_limits<double>::infinity();
+    }
+    if (denominator_pole) {
+	return -std::numeric_limits<double>::infinity();
+    }
+    if (n == k) {
+	return 0;
+    }
+    if (std::abs(k) > 1e-7) {
+	double result = n >= -1 ? -std::log1p(n) : -std::log(-n - 1);
+        result -= cephes::lbeta(1 + n - k, 1 + k);
+	return result;
+    }
+    if (std::abs(n) > 1e-7) {
+	/* Take log_binom(n, k) = -log(n + 1) - betaln(n - k + 1, k + 1)
+	 * and apply betaln(n - k + 1, k + 1) =
+	 * gammaln(n - k + 1) + gammaln(k + 1) - gammaln(n + 2).
+	 * Using gammaln(n + 2) = log(n + 1) + gammaln(n + 1) the log(n + 1)
+	 * terms cancel, yielding
+	 * log_binom(n, k) = gammaln(n + 1) - gammaln(n + 1 - k) - gammaln(1 + k)
+	 * gammaln(1 + k) can be computed accurately for small k using lgam1p.
+	 * We can then use the taylor series expansion
+	 * gammaln(n + 1 - k) = gammaln(n + 1) - k*digamma(n + 1) +
+	 * k^2 * polygamma(3, n + 1) + ... + (-k)^j * polygamma(j, n + 1) + ...
+	 */
+	return -cephes::lgam1p(k) + k*digamma(n + 1);
+    }
+    /* n and k are both small. */
+    return cephes::lgam1p(n) - cephes::lgam1p(k) - cephes::lgam1p(n - k);
 }
 
 } // namespace xsf
