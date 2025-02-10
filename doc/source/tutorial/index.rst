@@ -22,9 +22,9 @@ computing domains. These are summarized in the following table, with
 their API reference linked in the Subpackage column, and user guide (if available)
 linked in the Description column:
 
-==================  ========================================
-Subpackage          Description and User Guide
-==================  ========================================
+==================    ========================================
+Subpackage            Description and User Guide
+==================    ========================================
 ``cluster``           Clustering algorithms
 ``constants``         Physical and mathematical constants
 ``differentiate``     Finite difference differentiation tools
@@ -42,7 +42,7 @@ Subpackage          Description and User Guide
 ``spatial``           :doc:`./spatial`
 ``special``           :doc:`./special`
 ``stats``             :doc:`./stats`
-==================  ========================================
+==================    ========================================
 
 There are also additional user guides for these topics:
 
