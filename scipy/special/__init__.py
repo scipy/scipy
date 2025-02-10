@@ -423,7 +423,8 @@ Gamma and related functions
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
    betaincc     -- Complemented incomplete beta integral.
-   betaincinv   -- Inverse function to beta integral.
+   betaincinv   -- Inverse function to beta integral with respect to `x`.
+   betaincinva  -- Inverse function to beta integral with respect to `a`.
    betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
    rgamma       -- Gamma function inverted.

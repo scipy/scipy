@@ -108,6 +108,12 @@
             "ibeta_inv_double": "ddd->d"
         }
     },
+    "betaincinva": {
+        "boost_special_functions.h++": {
+            "ibeta_inva_float": "fff->f",
+            "ibeta_inva_double": "ddd->d"
+        }
+    },
     "betainccinv": {
         "boost_special_functions.h++": {
             "ibetac_inv_float": "fff->f",
