@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy._lib._array_api import xp_default_dtype
+from scipy._lib._array_api import xp_default_dtype, is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -39,6 +39,7 @@ def quantile_reference(x, p, *, axis, nan_policy, keepdims, method):
 
 @skip_xp_backends('dask.array', reason="No take_along_axis yet.")
 @skip_xp_backends('array_api_strict', reason="No take_along_axis yet.")
+@skip_xp_backends('dask.array', reason="No take_along_axis yet.")
 @skip_xp_backends('jax.numpy', reason="No mutation.")
 class TestQuantile:
 
@@ -107,7 +108,7 @@ class TestQuantile:
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
         rng = np.random.default_rng(23458924568734956)
-        shape = (3, 4)
+        shape = (5, 6)
         x = rng.random(size=shape).astype(dtype)
         p = rng.random(size=shape).astype(dtype)
         mask = rng.random(size=shape) > 0.9
@@ -115,6 +116,13 @@ class TestQuantile:
         x[mask] = np.nan
         if not keepdims:
             p = np.mean(p, axis=axis, keepdims=True)
+
+        # inject p = 0 and p = 1 to test edge cases
+        # Currently would fail with CuPy/JAX (cupy/cupy#8934, jax-ml/jax#21900)
+        if is_numpy(xp):
+            p0 = p.ravel()
+            p0[1] = 0.
+            p0[-2] = 1.
 
         dtype = getattr(xp, dtype)
         kwargs = dict(axis=axis, keepdims=keepdims,

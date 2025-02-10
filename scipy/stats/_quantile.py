@@ -89,7 +89,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
             y[nan_out] = np.nan
         elif xp.any(nans) and method == 'harrell-davis':
             y = xp.asarray(y, copy=True)  # ensure writable
-            y[nans] = 0
+            y[nans] = 0  # any non-nan will prevent NaN from propagating
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
     if xp.any(p_mask):
