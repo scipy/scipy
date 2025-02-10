@@ -33,7 +33,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
         raise ValueError(message)
     axis = int(axis)
 
-    methods = {'hazen', 'interpolated_inverted_cdf', 'linear',
+    methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+               'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
                'harrell-davis'}
     if method not in methods:
@@ -117,6 +118,9 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         The method to use for estimating the quantile.
         The available options, numbered as they appear in [1]_, are:
 
+        1. 'inverted_cdf'
+        2. 'averaged_inverted_cdf'
+        3. 'closest_observation'
         4. 'interpolated_inverted_cdf'
         5. 'hazen'
         6. 'weibull'
@@ -201,14 +205,14 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
     Note that indices ``j`` and ``j + 1`` are clipped to the range ``0`` to
     ``n - 1`` when the results of the formula would be outside the allowed
-    range of non-negative indices. The ``- 1`` in the formulas for ``j`` and
+    range of non-negative indices. The ``-1`` in the formulas for ``j`` and
     ``g`` accounts for Python's 0-based indexing.
 
     The table above includes only the estimators from H&F that are continuous
-    functions of probability `p` (estimators 4-9). NumPy also provides the
+    functions of probability `p` (estimators 4-9). SciPy also provides the
     three discontinuous estimators from H&F (estimators 1-3), where ``j`` is
-    defined as above, ``m`` is defined as follows, and ``g`` is a function
-    of the real-valued ``index = p*n + m - 1`` and ``j``.
+    defined as above, ``m`` is defined as follows, and ``g`` is ``0`` when
+    ``index = p*n + m - 1`` is less than ``0`` and otherwise is defined below.
 
     1. ``inverted_cdf``: ``m = 0`` and ``g = int(index - j > 0)``
     2. ``averaged_inverted_cdf``: ``m = 0`` and
@@ -268,7 +272,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     temp = _quantile_iv(x, p, method, axis, nan_policy, keepdims)
     y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp = temp
 
-    if method in {'hazen', 'interpolated_inverted_cdf', 'linear',
+    if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+                  'hazen', 'interpolated_inverted_cdf', 'linear',
                   'median_unbiased', 'normal_unbiased', 'weibull'}:
         res = _quantile_hf(y, p, n, method, xp)
     elif method in {'harrell-davis'}:
@@ -293,12 +298,22 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
 
 def _quantile_hf(y, p, n, method, xp):
-    methods = dict(interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
-                   median_unbiased=p / 3 + 1 / 3, normal_unbiased=p / 4 + 3 / 8)
-    m = methods[method]
-    jg = p * n + m - 1
+    ms = dict(inverted_cdf=0, averaged_inverted_cdf=0, closest_observation=-0.5,
+              interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
+              median_unbiased=p / 3 + 1 / 3, normal_unbiased=p / 4 + 3 / 8)
+    m = ms[method]
+    jg = p*n + m - 1
     j = jg // 1
     g = jg % 1
+    if method == 'inverted_cdf':
+        g = xp.astype((g > 0), jg.dtype)
+    elif method == 'averaged_inverted_cdf':
+        g = (1 + xp.astype((g > 0), jg.dtype)) / 2
+    elif method == 'closest_observation':
+        g = (1 - xp.astype((g == 0) & (j % 2 == 1), jg.dtype))
+    if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'}:
+        g = xp.asarray(g)
+        g[jg < 0] = 0
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
     j = xp.astype(j, xp.int64)

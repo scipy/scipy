@@ -84,11 +84,12 @@ class TestQuantile:
             stats.quantile(x, xp.asarray([0.5, 0.6]), keepdims=False)
 
     @pytest.mark.parametrize('method',
-                             ['hazen', 'interpolated_inverted_cdf', 'linear',
-                              'median_unbiased', 'normal_unbiased', 'weibull'])
+         ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
+          'hazen', 'interpolated_inverted_cdf', 'linear',
+          'median_unbiased', 'normal_unbiased', 'weibull'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
-                             [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
-                              ((10, 2), None, 0), ((10, 2), None, 0)])
+         [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
+          ((10, 2), None, 0), ((10, 2), None, 0)])
     def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
@@ -174,3 +175,14 @@ class TestQuantile:
             out_shape.pop(axis)
         res = stats.quantile(xp.zeros(tuple(shape)), 0.5, axis=axis, keepdims=keepdims)
         assert res.shape == tuple(out_shape)
+
+    @pytest.mark.parametrize('method',
+        ['inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'])
+    def test_transition(self, method, xp):
+        # test that values of discontinuous estimators are correct when
+        # p*n + m - 1 is integral.
+        x = np.arange(5., dtype=np.float64)
+        p = np.arange(0, 1.1, 0.1)
+        res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
+        ref = np.quantile(x, p, method=method)
+        xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
