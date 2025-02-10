@@ -332,6 +332,6 @@ def _quantile_hd(y, p, n, xp):
     # There will be edge case bugs with a == 0 or b == 0 due to gh-8411
     w = betainc(a, b, i / n)
     w = w[..., 1:] - w[..., :-1]
-    w[np.isnan(w)] = 0
+    w[xp.isnan(w)] = 0
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
