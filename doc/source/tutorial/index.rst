@@ -19,8 +19,7 @@ Subpackages and User Guides
 
 SciPy is organized into subpackages covering different scientific
 computing domains. These are summarized in the following table, with
-their API reference linked in the Subpackage column, and user guide (if available)
-linked in the Description column:
+their user guide linked in the Description and User Guide column (if available):
 
 ==================    ========================================
 Subpackage            Description and User Guide
