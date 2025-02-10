@@ -1001,9 +1001,9 @@ add_newdoc(
     r"""
     betaincinva(y, b, x, out=None)
 
-    Inverse of the regularized incomplete beta function.
+    Inverse of the regularized incomplete beta function with respect to `a`.
 
-    Computes :math:`x` such that:
+    Computes :math:`a` such that:
 
     .. math::
 
@@ -1015,10 +1015,11 @@ add_newdoc(
 
     Parameters
     ----------
-    a, b : array_like
+    y, b : array_like
         Positive, real-valued parameters
-    y : array_like
-        Real-valued input
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
     out : ndarray, optional
         Optional output array for function values
 
@@ -1030,6 +1031,8 @@ add_newdoc(
     See Also
     --------
     betainc : regularized incomplete beta function
+    betaincinv : 
+        inverse of the regularized incomplete beta function with respect to `x`
     gamma : gamma function
 
     Notes
@@ -1048,17 +1051,12 @@ add_newdoc(
     >>> import scipy.special as sc
 
     This function is the inverse of `betainc` for fixed
-    values of :math:`a` and :math:`b`.
+    values of :math:`b` and :math:`x`.
 
-    >>> a, b = 1.2, 3.1
-    >>> y = sc.betainc(a, b, 0.2)
-    >>> sc.betaincinv(a, b, y)
-    0.2
-    >>>
-    >>> a, b = 7.5, 0.4
-    >>> x = sc.betaincinv(a, b, 0.5)
-    >>> sc.betainc(a, b, x)
-    0.5
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+    >>> sc.betaincinva(y, b, x)
+    1.2
 
     """)
 
