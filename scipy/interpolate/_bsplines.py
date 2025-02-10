@@ -2018,7 +2018,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
         B[0] = [0.] * n
         return B
 
-    def _gcv(lam, X, XtWX, wE, XtE):
+    def _gcv(lam, X, XtWX, wE, XtE, y):
         r"""
         Computes the generalized cross-validation criteria [1].
 
@@ -2103,14 +2103,29 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
     XtWX = compute_banded_symmetric_XT_W_Y(X, w, X)
     XtE = compute_banded_symmetric_XT_W_Y(X, w, wE)
 
-    def fun(lam):
-        return _gcv(lam, X, XtWX, wE, XtE)
-
-    gcv_est = minimize_scalar(fun, bounds=(0, n), method='Bounded')
-    if gcv_est.success:
-        return gcv_est.x
-    raise ValueError(f"Unable to find minimum of the GCV "
-                     f"function: {gcv_est.message}")
+    if y.ndim == 1:
+        gcv_est = minimize_scalar(
+            _gcv, bounds=(0, n), method='Bounded', args=(X, XtWX, wE, XtE, y)
+        )
+        if gcv_est.success:
+            return gcv_est.x
+        raise ValueError(f"Unable to find minimum of the GCV "
+                         f"function: {gcv_est.message}")
+    elif y.ndim == 2:
+        gcv_est = np.empty(y.shape[1])
+        for i in range(y.shape[1]):
+            est = minimize_scalar(
+                _gcv, bounds=(0, n), method='Bounded', args=(X, XtWX, wE, XtE, y[:, i])
+            )
+            if est.success:
+               gcv_est[i] = est.x
+            else:
+                raise ValueError(f"Unable to find minimum of the GCV "
+                                 f"function: {gcv_est.message}")
+        return gcv_est 
+    else:
+        # trailing dims must have been flattened already.
+        raise RuntimeError("Internal error. Please report it to scipy developers.")
 
 
 def _coeff_of_divided_diff(x):
@@ -2146,7 +2161,7 @@ def _coeff_of_divided_diff(x):
     return res
 
 
-def make_smoothing_spline(x, y, w=None, lam=None):
+def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     r"""
     Compute the (coefficients of) smoothing cubic spline function using
     ``lam`` to control the tradeoff between the amount of smoothness of the
@@ -2174,13 +2189,17 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     ----------
     x : array_like, shape (n,)
         Abscissas. `n` must be at least 5.
-    y : array_like, shape (n,)
+    y : array_like, shape (n, ...)
         Ordinates. `n` must be at least 5.
     w : array_like, shape (n,), optional
         Vector of weights. Default is ``np.ones_like(x)``.
     lam : float, (:math:`\lambda \geq 0`), optional
         Regularization parameter. If ``lam`` is None, then it is found from
         the GCV criteria. Default is None.
+    axis : int, optional
+        The data axis. Default is zero.
+        The assumption is that ``y.shape[axis] == n``, and all other axes of ``y``
+        are batching axes.
 
     Returns
     -------
@@ -2262,9 +2281,8 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     if any(x[1:] - x[:-1] <= 0):
         raise ValueError('``x`` should be an ascending array')
 
-    if x.ndim != 1 or y.ndim != 1 or x.shape[0] != y.shape[0]:
-        raise ValueError('``x`` and ``y`` should be one dimensional and the'
-                         ' same size')
+    if x.ndim != 1 or x.shape[0] != y.shape[axis]:
+        raise ValueError(f'``x`` should be 1D and {x.shape = } == {y.shape = }')
 
     if w is None:
         w = np.ones(len(x))
@@ -2278,6 +2296,15 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     if n <= 4:
         raise ValueError('``x`` and ``y`` length must be at least 5')
+
+    # Internals assume that the data axis is the zero-th axis
+    axis = normalize_axis_index(axis, y.ndim)
+    y = np.moveaxis(y, axis, 0)
+
+    # flatten the trailing axes of y to simplify further manipulations
+    y_shape1 = y.shape[1:]
+    if y_shape1 != ():
+        y = y.reshape((n, -1))
 
     # It is known that the solution to the stated minimization problem exists
     # and is a natural cubic spline with vector of knots equal to the unique
@@ -2323,15 +2350,30 @@ def make_smoothing_spline(x, y, w=None, lam=None):
         raise ValueError('Regularization parameter should be non-negative')
 
     # solve the initial problem in the basis of natural splines
-    c = solve_banded((2, 2), X + lam * wE, y)
-    # move back to B-spline basis using equations (2.2.10) [4]
-    c_ = np.r_[c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
-               c[0] * (t[5] - t[3]) + c[1],
-               c[1: -1],
-               c[-1] * (t[-4] - t[-6]) + c[-2],
-               c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
+    if np.ndim(lam) == 0:
+        c = solve_banded((2, 2), X + lam * wE, y)
+    elif np.ndim(lam) == 1:
+        # XXX: solve_banded does not suppport batched `ab` matrices; loop manually
+        c = np.empty((n, lam.shape[0]))
+        for i in range(lam.shape[0]):
+            c[:, i] = solve_banded((2, 2), X + lam[i] * wE, y[:, i])
+    else:
+        # this should not happen, ever
+        raise RuntimeError("Internal error, please report it to SciPy developers.")
+    c = c.reshape((c.shape[0], *y_shape1))
 
-    return BSpline.construct_fast(t, c_, 3)
+    # hack: these are c[0], c[1] etc, shape-compatible with np.r_ below
+    c0, c1 = c[0:1, ...], c[1:2, ...]     # c[0], c[1]
+    cm0, cm1 = c[-1:-2:-1, ...], c[-2:-3:-1, ...]    # c[-1], c[-2]
+
+    # move back to B-spline basis using equations (2.2.10) [4]
+    c_ = np.r_[c0 * (t[5] + t[4] - 2 * t[3]) + c1,
+               c0 * (t[5] - t[3]) + c1,
+               c[1: -1, ...],
+               cm0 * (t[-4] - t[-6]) + cm1,
+               cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
+
+    return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 
 ########################
