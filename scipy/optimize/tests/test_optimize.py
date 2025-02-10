@@ -1871,6 +1871,59 @@ class TestOptimizeScalar:
         with pytest.raises(ValueError, match=message):
             optimize.golden(self.fun, brack=(0, -1, 1))
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    @pytest.mark.parametrize('acceleration', [None,'CYTHON_PENTA', 'NUMPY_ONLY_PENTA'])
+    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1), (10000, 1e-2), (100000, 1e-3)])
+    def test_linewalker(self, acceleration, grid_and_tol):
+
+        grid_size = grid_and_tol[0]
+        atol = grid_and_tol[1]
+
+        options = {
+        }
+        if grid_size:
+            options['grid_size'] = grid_size
+        if acceleration:
+            options['acceleration'] = acceleration
+        x = optimize.minimize_scalar(self.fun, 
+                                     bracket=(-15, 15), 
+                                     args=(1.5, ), 
+                                     options = options,
+                                     method='linewalker').x
+        assert_allclose(x, self.solution, atol=atol)
+
+        options = {
+            'alpha':0.00,
+            'mu':0.01,
+        }
+        if grid_size:
+            options['grid_size'] = grid_size
+        if acceleration:
+            options['acceleration'] = acceleration
+        x = optimize.minimize_scalar(self.fun, 
+                                     bracket=(-15, 15), 
+                                     args=(1.5, ), 
+                                     options = options,
+                                     method='linewalker').x
+        assert_allclose(x, self.solution, atol=atol)
+
+        options = {
+            'alpha':0.00,
+            'mu':0.01,
+            'max_relative_tolerance': 1e-6,
+            'min_relative_tolerance': 1e-6,
+        }
+        if grid_size:
+            options['grid_size'] = grid_size
+        if acceleration:
+            options['acceleration'] = acceleration
+        x = optimize.minimize_scalar(self.fun, 
+                                     bracket=(-15, 15), 
+                                     args=(1.5, ), 
+                                     options = options,
+                                     method='linewalker').x
+        assert_allclose(x, self.solution, atol=atol)
+
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
         assert_allclose(x, 1, atol=1e-4)
@@ -1929,6 +1982,23 @@ class TestOptimizeScalar:
         x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
                                      args=(1.5, ), method='golden').x
         assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.minimize_scalar(self.fun, 
+                                     bracket=(-15, 15), 
+                                     args=(1.5, ), 
+                                     method='linewalker').x
+        assert_allclose(x, self.solution, atol=1e-1)
+
+        x = optimize.minimize_scalar(self.fun, 
+                                     bracket=(-15, 15), 
+                                     args=(1.5, ), 
+                                     options = {
+                                         'grid_size': 10000,
+                                         'alpha':0.00,
+                                         'mu':0.01
+                                     },
+                                     method='linewalker').x
+        assert_allclose(x, self.solution, atol=1e-2)
 
         x = optimize.minimize_scalar(self.fun, bounds=(0, 1), args=(1.5,),
                                      method='Bounded').x
@@ -1993,16 +2063,21 @@ class TestOptimizeScalar:
         # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
 
-    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden', 'linewalker'])
     def test_disp(self, method):
         # test that all minimize_scalar methods accept a disp option.
         for disp in [0, 1, 2, 3]:
             optimize.minimize_scalar(self.fun, options={"disp": disp})
 
-    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden', 'linewalker'])
     def test_result_attributes(self, method):
-        kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}
-        result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
+        if method == 'linewalker':
+            # linewalker does not search for bracket, must be explicitly provided
+            kwargs = {}
+            result = optimize.minimize_scalar(self.fun, bracket=(-15, 15), method=method, **kwargs)
+        else:
+            kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}
+            result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
         assert hasattr(result, "x")
         assert hasattr(result, "success")
         assert hasattr(result, "message")
@@ -2063,7 +2138,7 @@ class TestOptimizeScalar:
         with pytest.raises(ValueError, match=msg):
             optimize.minimize_scalar(np.sin, bounds=(np.nan, 1))
 
-    @pytest.mark.parametrize("method", ['brent', 'golden'])
+    @pytest.mark.parametrize("method", ['brent', 'golden', 'linewalker'])
     def test_minimize_unbounded_method_with_bounds_gh10911(self, method):
         # Previously, `bounds` were silently ignored when `method='brent'` or
         # `method='golden'`. See gh-10911. Check that error is now raised.
@@ -2081,6 +2156,10 @@ class TestOptimizeScalar:
         # `res.fun` and `res.x` are now consistent.
         def f(x):
             return np.array(x**4).reshape(fshape)
+
+        if method == 'linewalker':
+            # linewalker is scalar only and does not result in the same tolerances w/ modifing grid_size
+            return
 
         a, b = -0.1, 0.2
         kwargs = (dict(bracket=(a, b)) if method != "bounded"
@@ -2128,6 +2207,7 @@ class TestBracket:
             optimize.brent(f, brack=(-1, 1))
         with pytest.raises(RuntimeError, match=message):
             optimize.golden(f, brack=(-1, 1))
+        # linewalker does not search for bracket, must be explicitly provided
 
         def f(x):  # gh-5899
             return -5 * x**5 + 4 * x**4 - 12 * x**3 + 11 * x**2 - 2 * x + 1
@@ -2139,6 +2219,7 @@ class TestBracket:
     @pytest.mark.parametrize('method', ('brent', 'golden'))
     def test_minimize_scalar_success_false(self, method):
         # Check that status information from `bracket` gets to minimize_scalar
+        # linewalker does not search for bracket, must be explicitly provided
         def f(x):  # gh-14858
             return x**2 if ((-1 < x) & (x < 1)) else 100.0
 
