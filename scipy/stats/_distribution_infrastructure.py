@@ -3496,7 +3496,7 @@ _distribution_names = {
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `ContinuousDistribution` from a distribution-like object
+    """Generate a `ContinuousDistribution` class from a compatible object
 
     The argument may be an instance of `rv_continuous` or an instance of
     another class that satisfies the interface described below.
@@ -3547,13 +3547,14 @@ def make_distribution(dist):
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
-        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf````.
-        All methods must accept the parameters of the distributions as keyword arguments
-        and any positional-only arguments accepted by the corresponding method of
-        `ContinuousDistribution`. Methods ``moment_raw``, ``moment_central``,
-        ``moment_standardized`` may be defined to accept the ``order`` of the moment
-        by position, acccept all distribution parameters by keyword, and return the raw,
-        central, and standardized moments of the distribution, respectively.
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf``.
+        If defined, these methods must accept the parameters of the distributions as
+        keyword arguments and also accept any positional-only arguments accepted by
+        the corresponding method of `ContinuousDistribution`. Methods ``moment_raw``,
+        ``moment_central``, ``moment_standardized`` may also be defined; if so,
+        they must accept the ``order`` of the moment by position, accept all
+        distribution parameters by keyword, and return the raw, central, and
+        standardized moments of the distribution, respectively.
 
     Returns
     -------
@@ -3791,9 +3792,8 @@ def _make_distribution_custom(dist):
 
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
-        f"This class represents `{dist.__class__.__name__}` as a subclass of "
+        f"This class represents `{repr_str}` as a subclass of "
         "`ContinuousDistribution`.",
-        f"The `repr`/`str` of class instances is `{repr_str}`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
