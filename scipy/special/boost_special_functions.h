@@ -1023,11 +1023,11 @@ nct_cdf_wrap(const Real v, const Real l, const Real x)
 	return NAN;
     }
     if (v <= 0) {
-	    sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
-	    return NAN;
+	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
     }
     if (std::isinf(x)) {
-	    return  (x > 0) ? 1.0 : 0.0;
+	return  (x > 0) ? 1.0 : 0.0;
     }
     Real y;
     try {
