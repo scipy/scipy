@@ -19,6 +19,7 @@ py3.install_sources([
     'test_fit.py',
     'test_hypotests.py',
     'test_kdeoth.py',
+    'test_marray.py',
     'test_mgc.py',
     'test_morestats.py',
     'test_mstats_basic.py',

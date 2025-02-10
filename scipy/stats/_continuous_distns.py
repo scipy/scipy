@@ -5018,10 +5018,10 @@ class invgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
         #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*(x/mu - 1)**2)
 
     def _logpdf(self, x, mu):
-        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
+        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - (x/mu - 1)**2/(2*x)
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
@@ -5029,14 +5029,14 @@ class invgauss_gen(rv_continuous):
 
     def _logcdf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        a = _norm_logcdf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(np.exp(b - a))
 
     def _logsf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        a = _norm_logsf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(-np.exp(b - a))
 
     def _sf(self, x, mu):
