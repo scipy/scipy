@@ -1198,14 +1198,27 @@ class Test_HalfspaceIntersection:
         incremental_intersector = qhull.HalfspaceIntersection(initial_square,
                                                               np.zeros(2),
                                                               incremental=True)
-        with pytest.raises(qhull.QhullError, match="feasible"):
-            if halfspaces.ndim == 2:
-                # add a few 2d half spaces
-                for h in halfspaces:
-                    incremental_intersector.add_halfspaces(h[np.newaxis])
-            else:
-                # add a 1d half space
-                incremental_intersector.add_halfspaces(halfspaces)
+        with pytest.raises(qhull.QhullError, match="feasible.*-0.706.*"):
+            incremental_intersector.add_halfspaces(halfspaces)
+
+
+    def test_gh_19865_3d(self):
+        # 3d case where closed half space is enforced for
+        # feasibility
+        halfspaces = np.array([[1, 1, 1, -1], # doesn't exclude origin
+                               [-1, -1, -1, -1], # doesn't exclude origin
+                               [1, 0, 0, 0]]) # the origin is on the line
+        initial_cube = np.array([[1, 0, 0, -1],
+                                 [-1, 0, 0, -1],
+                                 [0, 1, 0, -1],
+                                 [0, -1, 0, -1],
+                                 [0, 0, 1, -1],
+                                 [0, 0, -1, -1]])
+        incremental_intersector = qhull.HalfspaceIntersection(initial_cube,
+                                                              np.zeros(3),
+                                                              incremental=True)
+        with pytest.raises(qhull.QhullError, match="feasible.*[1 0 0 0]"):
+            incremental_intersector.add_halfspaces(halfspaces)
 
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
