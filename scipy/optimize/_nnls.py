@@ -90,7 +90,7 @@ def nnls(A, b, *, maxiter=None, atol=_NoValue):
     if not maxiter:
         maxiter = 3*n
     x, rnorm, info = _nnls(A, b, maxiter)
-    if info == 1:
+    if info == 3:
         raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm
