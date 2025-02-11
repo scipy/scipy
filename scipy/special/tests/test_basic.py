@@ -4336,6 +4336,33 @@ def test_chi2c_x_nan(v):
     assert np.isnan(special.chdtrc(v, np.nan))
 
 
+@pytest.mark.parametrize("v", [-0.01, 0, 0.01, 1, np.inf])
+@pytest.mark.parametrize("x", [-np.inf, -0.01, 0, 0.01, np.inf])
+@pytest.mark.parametrize(
+    "func", [special.chdtr, special.chdtrc, special.gammainc, special.gammaincc,
+             special.gdtr, special.gdtrc]
+)
+def test_chi2_edgecase_table(v, x, func):
+    # Tests that a variety of edgecases for chi square distribution functions
+    # correctly return NaN when and only when they are supposed to, when
+    # computed through different related ufuncs.
+    if func in [special.chdtr, special.chdtrc]:
+        result = func(v, x)
+    elif func in [special.gdtr, special.gdtrc]:
+        result = func(1, v/2, x/2)
+    else:
+        result = func(v/2, x/2)
+    if (
+            x < 0
+            or v < 0
+            or x == 0 and v == 0
+            or np.isinf(v) and np.isinf(x)
+    ):
+        assert_equal(result, np.nan)
+    else:
+        assert not np.isnan(result)
+
+
 def test_chi2c_smalldf():
     assert_almost_equal(special.chdtrc(0.6,3), 1-0.957890536704110)
 
