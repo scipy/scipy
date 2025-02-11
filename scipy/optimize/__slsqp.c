@@ -36,7 +36,7 @@ lsei(int ma, int me, int mg, int n,
      double* a, double* b, double* e, double* f, double* g, double* h,
      double* x, double* buffer, int* jw, double* xnorm, int* mode)
 {
-    int one = 1, nvars = 0, info = 0, lde = 0;
+    int one = 1, nvars = 0, info = 0, lde = 0, ldg = 0;
     double done = 1.0, dmone = -1.0, dzero = 0.0, t= 0.0;
     const double epsmach = 2.220446049250313e-16;
 
@@ -67,11 +67,12 @@ lsei(int ma, int me, int mg, int n,
     // dgeqr2 is the unblocked versions of dgeqrf without the memory allocation.
     // Use top of the yet unutilized scratch space for throw-away work.
     lde = (me > 0 ? me : 1);
+    ldg = (mg > 0 ? mg : 1);
     dgerq2_(&me, &n, e, &lde, tau, lsi_scratch, &info);
 
     // Right triangularize E and apply Q.T to A and G from the right.
     dormr2_("R", "T", &ma, &n, &me, e, &lde, tau, a, &ma, lsi_scratch, &info);
-    dormr2_("R", "T", &mg, &n, &me, e, &lde, tau, g, &mg, lsi_scratch, &info);
+    dormr2_("R", "T", &mg, &n, &me, e, &lde, tau, g, &ldg, lsi_scratch, &info);
 
     // Check the diagonal elements of E for rank deficiency.
     for (int i = 0; i < me; i++)
@@ -113,14 +114,32 @@ lsei(int ma, int me, int mg, int n,
     if (mg == 0)
     {
         // No inequality constraints, solve the least squares problem directly.
-        // TODO: Handle least squares here and return
+        // We deliberately use the unblocked algorithm to avoid allocation.
+        int lwork = ma*nvars + 3*nvars + 1;
+        // Save the RHS for residual computation
+        double* wb_orig = &lsi_scratch[lwork];
+        for (int i = 0; i < ma; i++) { wb_orig[i] = wb[i]; }
 
-        return;
+        int krank = 0;
+        t = sqrt(epsmach);
+        dgelsy_(&ma, &nvars, &one, a2, &ma, wb, &ma, jw, &t, &krank, lsi_scratch, &lwork, &info);
+
+        // Copy the solution to x
+        for (int i = 0; i < nvars; i++) { x[i] = wb[i]; }
+
+        // Compute the residual and its norm, use a since a2 is overwritten.
+        dgemv_("N", &ma, &nvars, &done, a, &ma, x, &one, &dmone, wb_orig, &one);
+        *xnorm = dnrm2_(&ma, wb_orig, &one);
+
+        *mode = 7;
+        if (krank < nvars) { return; }
+        *mode = 1;
+        goto ORIGINAL_BASIS;
     }
 
     // Modify h, and solve the inequality constrained least squares problem.
     // h -= G1*xe
-    dgemv_("N", &mg, &me, &dmone, &g[mg*nvars], &mg, &x[nvars], &one, &done, h, &one);
+    dgemv_("N", &mg, &me, &dmone, &g[mg*nvars], &ldg, &x[nvars], &one, &done, h, &one);
 
     lsi(ma, mg, nvars, a2, wb, g2, h, x, lsi_scratch, jw, xnorm, mode);
 
@@ -133,23 +152,22 @@ lsei(int ma, int me, int mg, int n,
     t = dnrm2_(&me, &x[nvars], &one);
     // Modify the norm by adding the equality solution.
     *xnorm = sqrt((*xnorm)*(*xnorm) + t*t);
-
     if (*mode != 1) { return; }
 
 ORIGINAL_BASIS:
     // Convert the solution and multipliers to the original basis.
     // b = A*x - b (residuals)
-    dgemv_("N", &ma, &n, &done, a, &ma, x, &one, &done, b, &one);
+    dgemv_("N", &ma, &n, &done, a, &ma, x, &one, &dmone, b, &one);
     // f = A1^T*b - G1^T*w
     dgemv_("T", &ma, &me, &done, &a[nvars*ma], &ma, b, &one, &dzero, f, &one);
-    dgemv_("T", &mg, &me, &dmone, &a[nvars*ma], &mg, gmults, &one, &done, f, &one);
+    dgemv_("T", &mg, &me, &dmone, &g[nvars*mg], &ldg, gmults, &one, &done, f, &one);
 
     // x = Q.T*x
-    dormr2_("L", "T", &n, &one, &me, e, &me, tau, x, &n, lsi_scratch, mode);
+    dormr2_("L", "T", &n, &one, &me, e, &lde, tau, x, &n, lsi_scratch, &info);
 
     // Solve the triangular system for the equality multipliers, emults.
     for (int i = 0; i < me; i++) { emults[i] = f[i]; }
-    dtrsv_("U", "T", "N", &me, &e[(n - me)*me], &me, emults, &one);
+    dtrsv_("U", "T", "N", &me, &e[(n - me)*me], &lde, emults, &one);
 
     return;
 }
