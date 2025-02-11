@@ -17,7 +17,7 @@
  * This is a C translation of the Fortran code.
 */
 void
-nonnegative_lsq_imp(const int m, const int n,
+__nnls(const int m, const int n,
                     double* restrict a, double* restrict b,
                     double* restrict x, double* restrict w,
                     double* restrict zz, double* restrict work,
@@ -28,7 +28,7 @@ nonnegative_lsq_imp(const int m, const int n,
     int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
     double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T;
     double pivot = 1.0, pivot2 = 0.0;
-    *info = 0;
+    *info = 1;
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
     for (i = 0; i < n; i++) { x[i] = 0.0; }
@@ -148,7 +148,7 @@ nonnegative_lsq_imp(const int m, const int n,
         while (1)
         {
             iteration++;
-            if (iteration >= maxiter) { *info = 1; goto END; }
+            if (iteration >= maxiter) { *info = 3; goto END; }
 
             // See if all new constrained coefficients are feasible,
             // if not compute alpha
