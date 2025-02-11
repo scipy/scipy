@@ -32,7 +32,7 @@ static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* 
 static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 
 static PyObject*
-nnls(PyObject* dummy, PyObject* args) {
+nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     int maxiter, info = 0;
     PyArrayObject* ap_A=NULL;
@@ -148,7 +148,7 @@ nnls(PyObject* dummy, PyObject* args) {
 
 
 static PyObject*
-ldp_wrapper(PyObject *dummy, PyObject *args)
+ldp_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     npy_intp m, n;
     int mode;
@@ -233,7 +233,7 @@ ldp_wrapper(PyObject *dummy, PyObject *args)
 
 
 static PyObject*
-lsei_wrapper(PyObject* dummy, PyObject* args)
+lsei_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     npy_intp ma, me, mg, n;
     int mode = 0;
@@ -412,7 +412,7 @@ lsei_wrapper(PyObject* dummy, PyObject* args)
 
 
 static PyObject*
-lsi_wrapper(PyObject* dummy, PyObject* args)
+lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
     npy_intp ma, mg, n;
     int mode;
