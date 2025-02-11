@@ -17,21 +17,8 @@ from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
 
+from numpy.exceptions import AxisError, DTypePromotionError
 
-AxisError: type[Exception]
-ComplexWarning: type[Warning]
-VisibleDeprecationWarning: type[Warning]
-
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError
-    )
-else:
-    from numpy import (  # type: ignore[attr-defined, no-redef]
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
-    )
-    DTypePromotionError = TypeError  # type: ignore
 
 np_long: type
 np_ulong: type
