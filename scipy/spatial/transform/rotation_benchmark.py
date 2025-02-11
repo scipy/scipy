@@ -19,10 +19,10 @@ register_pytree_node(R, lambda v: ((v._quat,), None), lambda _, c: R(c[0]))
 
 def create_random_data(n_samples: int = 10000):
     """Create random test data in numpy format."""
-    np_quat = np.random.rand(n_samples, 4)
-    np_quat = np_quat / np.linalg.norm(np_quat, axis=1, keepdims=True)
-    np_points = np.random.rand(n_samples, 3)
-    return np_quat, np_points
+    q = np.random.rand(n_samples, 4)
+    q = q / np.linalg.norm(q, axis=1, keepdims=True)
+    p = np.random.rand(n_samples, 3)
+    return q, p
 
 
 def to_torch(q: np.ndarray, p: np.ndarray, device: str):
@@ -48,8 +48,8 @@ SETUP_CODE_TEMPLATE = (
     "import jax.numpy as jp\n"
     "import jax\n"
     "from scipy.spatial.transform import Rotation as R\n"
-    "q, p = np.array({quat}), np.array({points})\n"
-    "from __main__ import to_torch, to_jax\n"
+    "from __main__ import to_torch, to_jax, create_random_data\n"
+    "q, p = create_random_data({n_samples})\n"
     "(q, p) = to_torch(q, p, '{device}') if '{xp}' == 'torch' else (q, p)\n"
     "(q, p) = to_jax(q, p, '{device}') if '{xp}' == 'jax' else (q, p)\n"
     "r = R.from_quat(q)\n"
@@ -65,9 +65,6 @@ xp_device_combinations = (
 
 
 def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
-    quat, points = create_random_data(n_samples)
-    quat = quat.tolist()
-    points = points.tolist()
     benchmarks = {}
 
     for xp, device in xp_device_combinations:
@@ -75,8 +72,7 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
         if xp == "jax":
             extra_setup += "from_quat = jax.jit(R.from_quat)\nfrom_quat(q)\n"
         setup_code = SETUP_CODE_TEMPLATE.format(
-            quat=quat,
-            points=points,
+            n_samples=n_samples,
             xp=xp,
             device=device,
             extra_setup=extra_setup,
@@ -94,9 +90,6 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
 
 def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark as_quat with different array types."""
-    quat, points = create_random_data(n_samples)
-    quat = quat.tolist()
-    points = points.tolist()
     benchmarks = {}
     extra_setup = ""
 
@@ -104,8 +97,7 @@ def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
         if xp == "jax":
             extra_setup += "as_quat = jax.jit(r.as_quat)\nas_quat()\n"
         setup_code = SETUP_CODE_TEMPLATE.format(
-            quat=quat,
-            points=points,
+            n_samples=n_samples,
             xp=xp,
             device=device,
             extra_setup=extra_setup,
@@ -119,17 +111,13 @@ def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
 
 def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark as_matrix with different array types."""
-    quat, points = create_random_data(n_samples)
-    quat = quat.tolist()
-    points = points.tolist()
     benchmarks = {}
     extra_setup = ""
     for xp, device in xp_device_combinations:
         if xp == "jax":
             extra_setup += "as_matrix = jax.jit(r.as_matrix)\nas_matrix()\n"
         setup_code = SETUP_CODE_TEMPLATE.format(
-            quat=quat,
-            points=points,
+            n_samples=n_samples,
             xp=xp,
             device=device,
             extra_setup=extra_setup,
@@ -145,9 +133,6 @@ def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
 
 def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark apply with different array types."""
-    quat, points = create_random_data(n_samples)
-    quat = quat.tolist()
-    points = points.tolist()
     benchmarks = {}
     extra_setup = ""
 
@@ -155,8 +140,7 @@ def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
         if xp == "jax":
             extra_setup += "apply = jax.jit(r.apply)\napply(p)\n"
         setup_code = SETUP_CODE_TEMPLATE.format(
-            quat=quat,
-            points=points,
+            n_samples=n_samples,
             xp=xp,
             device=device,
             extra_setup=extra_setup,
@@ -183,6 +167,7 @@ def main():
     all_results = {}
 
     for n_samples in sample_sizes:
+        print(f"Running benchmark for {n_samples} samples")
         all_results[n_samples] = benchmark_rotation_functions(n_samples)
 
     # Plot results
