@@ -13,6 +13,7 @@ static PyObject* slsqp_error;
 
 void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
 double ddot_(int* n, double* dx, int* incx, double* dy, int* incy);
+void dgelsy_(int* m, int* n, int* nrhs, double* a, int* lda, double* b, int* ldb, int* jpvt, double* rcond, int* rank, double* work, int* lwork, int* info);
 void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
 void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
 void dgeqrf_(int* m, int* n, double* a, int* lda, double* tau, double* work, double* lwork, int* info);
@@ -28,10 +29,10 @@ void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, do
 
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-
+static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 
 static PyObject*
-nnls(PyObject *dummy, PyObject *args) {
+nnls(PyObject* dummy, PyObject* args) {
 
     int maxiter, info = 0;
     PyArrayObject* ap_A=NULL;
@@ -232,7 +233,186 @@ ldp_wrapper(PyObject *dummy, PyObject *args)
 
 
 static PyObject*
-lsi_wrapper(PyObject *dummy, PyObject *args)
+lsei_wrapper(PyObject* dummy, PyObject* args)
+{
+    npy_intp ma, me, mg, n;
+    int mode = 0;
+    double xnorm =0.0;
+    PyArrayObject *ap_a=NULL, *ap_b=NULL, *ap_e=NULL, *ap_f=NULL, *ap_g=NULL, *ap_h=NULL;
+
+    if (!PyArg_ParseTuple(args, "O!O!O!O!O!O!",
+                          &PyArray_Type, (PyObject **)&ap_a,
+                          &PyArray_Type, (PyObject **)&ap_b,
+                          &PyArray_Type, (PyObject **)&ap_e,
+                          &PyArray_Type, (PyObject **)&ap_f,
+                          &PyArray_Type, (PyObject **)&ap_g,
+                          &PyArray_Type, (PyObject **)&ap_h))
+    {
+        return NULL;
+    }
+
+    if ((PyArray_TYPE(ap_a) != NPY_FLOAT64) || (PyArray_TYPE(ap_b) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_e) != NPY_FLOAT64) || (PyArray_TYPE(ap_f) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_g) != NPY_FLOAT64) || (PyArray_TYPE(ap_h) != NPY_FLOAT64))
+    {
+        PYERR(slsqp_error, "Inputs to lsei must be of type numpy.float64.");
+    }
+
+    int ndim_a = PyArray_NDIM(ap_a);
+    if (ndim_a != 2)
+    {
+        PYERR(slsqp_error, "Input array a must be 2D.");
+    }
+    npy_intp* shape_a = PyArray_SHAPE(ap_a);
+    ma = shape_a[0];
+    n = shape_a[1];
+
+    int ndim_b = PyArray_NDIM(ap_b);
+    if (ndim_b != 1)
+    {
+        PYERR(slsqp_error, "Input array b must be 1D.");
+    }
+    npy_intp* shape_b = PyArray_SHAPE(ap_b);
+    if (shape_b[0] != ma)
+    {
+        PYERR(slsqp_error, "Input array b must have the same shape as (ma,).");
+    }
+
+    int ndim_e = PyArray_NDIM(ap_e);
+    if (ndim_e != 2)
+    {
+        PYERR(slsqp_error, "Input array e must be 2D.");
+    }
+    npy_intp* shape_e = PyArray_SHAPE(ap_e);
+    me = shape_e[0];
+    if (shape_e[1] != n)
+    {
+        PYERR(slsqp_error, "Input array e must have the same number of columns as a.");
+    }
+
+    int ndim_f = PyArray_NDIM(ap_f);
+    if (ndim_f != 1)
+    {
+        PYERR(slsqp_error, "Input array f must be 1D.");
+    }
+    npy_intp* shape_f = PyArray_SHAPE(ap_f);
+    if (shape_f[0] != me)
+    {
+        PYERR(slsqp_error, "Input array f must have the same shape as (me,).");
+    }
+
+    int ndim_g = PyArray_NDIM(ap_g);
+    if (ndim_g != 2)
+    {
+        PYERR(slsqp_error, "Input array g must be 2D.");
+    }
+    npy_intp* shape_g = PyArray_SHAPE(ap_g);
+    mg = shape_g[0];
+
+    if (shape_g[1] != n)
+    {
+        PYERR(slsqp_error, "Input array g must have the same number of columns as a.");
+    }
+
+    int ndim_h = PyArray_NDIM(ap_h);
+    if (ndim_h != 1)
+    {
+        PYERR(slsqp_error, "Input array h must be 1D.");
+    }
+    npy_intp* shape_h = PyArray_SHAPE(ap_h);
+    if (shape_h[0] != mg)
+    {
+        PYERR(slsqp_error, "Input array h must have the same shape as (mg,).");
+    }
+
+    // Over allocate indices a bit for transposing problems and other uses
+    int* indices = malloc((ma+n)*sizeof(int));
+    if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
+
+    // Allocate memory for the problem data and the algorithm.
+    // A : ma*n, b : ma
+    // E : me*n, f : me
+    // G : mg*n, h : mg
+    // x : n
+    // for LSEI buffer for multipliers, residuals, and others : [mg + 2*me + ma]
+    // for subarrays A2, G2 : [(ma + mg)*(n - me)]
+    // for the later call to LSI and LDP: ((mg+2)*((n - me)+1) + 3*mg + (n - me))
+    npy_intp total_size = ((ma + mg + me)*(n + 2) + me + n + (ma + mg)*(n - me) +
+                            (mg + 2)*((n - me) + 1) + 3*mg + (n - me));
+    double* mem_ret = malloc(total_size*sizeof(double));
+    if (mem_ret == NULL)
+    {
+        free(indices);
+        PYERR(slsqp_error, "Memory allocation for buffer failed.");
+    }
+    double* restrict x = &mem_ret[0];
+    double* restrict a = &mem_ret[n];
+    double* restrict b = &mem_ret[n*ma + n];
+    double* restrict e = &mem_ret[n*ma + n + ma];
+    double* restrict f = &mem_ret[n*ma + n + ma + n*me];
+    double* restrict g = &mem_ret[n*ma + n + ma + n*me + me];
+    double* restrict h = &mem_ret[n*ma + n + ma + n*me + me + n*mg];
+    double* restrict buffer = &mem_ret[n*ma + n + ma + n*me + me + n*mg + mg];
+
+    // Copy the data from the numpy arrays
+    double* data_a = (double*)PyArray_DATA(ap_a);
+    double* data_b = (double*)PyArray_DATA(ap_b);
+    double* data_e = (double*)PyArray_DATA(ap_e);
+    double* data_f = (double*)PyArray_DATA(ap_f);
+    double* data_g = (double*)PyArray_DATA(ap_g);
+    double* data_h = (double*)PyArray_DATA(ap_h);
+    npy_intp* restrict strides_a = PyArray_STRIDES(ap_a);
+    npy_intp* restrict stride_b = PyArray_STRIDES(ap_b);
+    npy_intp* restrict strides_e = PyArray_STRIDES(ap_e);
+    npy_intp* restrict stride_f = PyArray_STRIDES(ap_f);
+    npy_intp* restrict strides_g = PyArray_STRIDES(ap_g);
+    npy_intp* restrict stride_h = PyArray_STRIDES(ap_h);
+    npy_intp row_stride = (strides_a[0]/sizeof(double));
+    npy_intp col_stride = (strides_a[1]/sizeof(double));
+
+    // Copy the data from the numpy arrays in Fortran order
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < ma; i++) {
+            a[i + j*ma] = data_a[i*row_stride + j*col_stride];
+        }
+    }
+    row_stride = (strides_e[0]/sizeof(double));
+    col_stride = (strides_e[1]/sizeof(double));
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < me; i++) {
+            e[i + j*me] = data_e[i*row_stride + j*col_stride];
+        }
+    }
+    row_stride = (strides_g[0]/sizeof(double));
+    col_stride = (strides_g[1]/sizeof(double));
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < mg; i++) {
+            g[i + j*mg] = data_g[i*row_stride + j*col_stride];
+        }
+    }
+
+    row_stride = (stride_b[0]/sizeof(double));
+    for (int i = 0; i < ma; i++) { b[i] = data_b[i*row_stride]; }
+    row_stride = (stride_f[0]/sizeof(double));
+    for (int i = 0; i < me; i++) { f[i] = data_f[i*row_stride]; }
+    row_stride = (stride_h[0]/sizeof(double));
+    for (int i = 0; i < mg; i++) { h[i] = data_h[i*row_stride]; }
+
+    lsei((int)ma, (int)me, (int)mg, (int)n, a, b, e, f, g, h, x, buffer, indices, &xnorm, &mode);
+    free(indices);
+    // Truncate it to the size of the solution vector x.
+    double* mem_x = realloc(mem_ret, n*sizeof(double));
+    if (mem_x == NULL) { free(mem_ret);PYERR(slsqp_error, "Memory reallocation failed."); }
+    npy_intp shape_x[1] = {n};
+    PyArrayObject* ap_x = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_x, NPY_FLOAT64, mem_x);
+
+    return Py_BuildValue("Ndi", PyArray_Return(ap_x), xnorm, mode);
+
+}
+
+
+static PyObject*
+lsi_wrapper(PyObject* dummy, PyObject* args)
 {
     npy_intp ma, mg, n;
     int mode;
@@ -302,7 +482,7 @@ lsi_wrapper(PyObject *dummy, PyObject *args)
     if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
 
     // Allocate memory for the problem data and the algorithm.
-    double* mem_ret = malloc(((ma*n + ma) + (mg*n + mg) + (mg+2)*(n+1) + 3*mg + n)*sizeof(double));
+    double* mem_ret = calloc(((ma*n + ma) + (mg*n + mg) + (mg+2)*(n+1) + 3*mg + n), sizeof(double));
     if (mem_ret == NULL)
     {
         free(indices);
@@ -347,8 +527,7 @@ lsi_wrapper(PyObject *dummy, PyObject *args)
     for (int i = 0; i < mg; i++) { h[i] = data_h[i*row_stride]; }
 
     lsi((int)ma, (int)mg, (int)n, a, b, g, h, x, buffer, indices, &xnorm, &mode);
-    printf("mode: %d\n", mode);
-    printf("xnorm: %f\n", xnorm);
+
     free(indices);
     // Truncate it to the size of the solution vector x.
     double* mem_x = realloc(mem_ret, n*sizeof(double));
@@ -356,12 +535,18 @@ lsi_wrapper(PyObject *dummy, PyObject *args)
     npy_intp shape_x[1] = {n};
     PyArrayObject* ap_x = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_x, NPY_FLOAT64, mem_x);
 
-    return Py_BuildValue("N", PyArray_Return(ap_x));
+    return Py_BuildValue("Ndi", PyArray_Return(ap_x), xnorm, mode);
 }
 
 
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
+
+
+static char doc_lsei_wrapper[] = ("Compute the least squares solution subject to "
+                                 "equality and inequality constraints.\n\n"
+                                 "    x = lsi_wrapper(A, b, E, f, G, h)\n\n");
+
 static char doc_lsi_wrapper[] = ("Compute the least squares solution subject to "
                                  "inequality constraints.\n\n"
                                  "    x = lsi_wrapper(A, b, G, h)\n\n");
@@ -373,6 +558,7 @@ static struct PyMethodDef slsqplib_module_methods[] = {
   {"nnls", nnls, METH_VARARGS, doc_nnls},
   {"ldp_wrapper", ldp_wrapper, METH_VARARGS, doc_ldp_wrapper},
   {"lsi_wrapper", lsi_wrapper, METH_VARARGS, doc_lsi_wrapper},
+  {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
   {NULL, NULL, 0, NULL}
 };
 
