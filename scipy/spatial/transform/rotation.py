@@ -5,9 +5,10 @@
 from __future__ import annotations
 
 from scipy._lib.deprecation import _sub_module_deprecation
+from scipy._lib.array_api_compat import device
 from ._rotation import Rotation as CythonRotation
 from ._rotation_array_api import _as_quat, _as_matrix, _apply
-from scipy._lib._array_api import array_namespace, is_numpy, is_jax, Array
+from scipy._lib._array_api import array_namespace, is_numpy, Array
 
 try:
     import jax  # Must succeed if we get passed a jax.numpy array
@@ -20,6 +21,7 @@ __all__ = [  # noqa: F822
 ]
 
 from functools import wraps
+from ._rotation import Rotation as CythonRotation
 
 
 def _maybe_cython(f):
@@ -46,10 +48,7 @@ class Rotation(CythonRotation):
                 quat, normalize=normalize, copy=copy, scalar_first=scalar_first
             )
             return
-        # TODO: Do we want this dtype check?
-        dtype = (
-            xp.float64 if not is_jax(xp) or jax.config.jax_enable_x64 else xp.float32
-        )
+        dtype = xp.float64 if quat.dtype not in (xp.float32, xp.float64) else quat.dtype
         quat = xp.asarray(quat, dtype=dtype)
         if quat.shape[-1] != 4 or quat.shape[0] == 0:
             raise ValueError(
@@ -67,7 +66,9 @@ class Rotation(CythonRotation):
         # to be strictly non-branching. If we have zero quaternions, we return nan values
         # if xp.any(quat_norm == 0):
         #     raise ValueError("Found zero norm quaternions in `quat`.")
-        quat_norm = xp.where(quat_norm == 0, xp.asarray([xp.nan]), quat_norm)
+        quat_norm = xp.where(
+            quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat_norm
+        )
         self._quat = xp.where(normalize, quat / quat_norm, quat)
 
     @classmethod

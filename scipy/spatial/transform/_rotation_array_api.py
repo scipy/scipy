@@ -1,5 +1,6 @@
 from scipy._lib._array_api import array_namespace
 from scipy._lib._array_api import Array
+from scipy._lib.array_api_compat import device
 
 
 def _as_quat(
@@ -7,8 +8,8 @@ def _as_quat(
 ) -> Array:
     xp = array_namespace(quat)
     q = xp.asarray(quat, copy=True)
-    canonical = xp.asarray(canonical, device=q.device)
-    scalar_first = xp.asarray(scalar_first, device=q.device)
+    canonical = xp.asarray(canonical, device=device(q))
+    scalar_first = xp.asarray(scalar_first, device=device(q))
     q = xp.where(canonical, _quat_canonical(q), q)
     q = xp.where(scalar_first, xp.roll(q, -1, axis=-1), q)
     return q
