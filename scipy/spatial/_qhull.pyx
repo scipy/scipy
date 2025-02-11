@@ -2938,13 +2938,17 @@ class HalfspaceIntersection(_QhullUser):
         # We check for non-feasibility of incremental additions
         # in a manner similar to `qh_sethalfspace`
         halfspaces = np.atleast_2d(halfspaces)
-        dims = halfspaces.shape[1] - 1
-        for halfspace in halfspaces:
-            dist = halfspace[-1]
-            dist += np.dot(halfspace[:dims], self.interior_point[:dims])
-            if dist > 0:
-                msg = f"feasible point is not clearly inside halfspace: {halfspace}"
-                raise QhullError(msg)
+        dists = np.dot(halfspaces[:, :self.ndim], self.interior_point) + halfspaces[:, -1]
+        # HalfspaceIntersection uses closed half spaces so
+        # the feasible point also cannot be directly on the boundary
+        viols = dists >= 0
+        if viols.sum() > 0:
+            # error out with an indication of the first violating
+            # half space discovered
+            first_viol = np.nonzero(viols)[0].min()
+            bad_hs = halfspaces[first_viol, :]
+            msg = f"feasible point is not clearly inside halfspace: {bad_hs}"
+            raise QhullError(msg)
         self._add_points(halfspaces, restart, self.interior_point)
 
     @property
