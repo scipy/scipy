@@ -2664,6 +2664,9 @@ cdef class Rotation:
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         """
+        if not isinstance(other, Rotation):
+            return NotImplemented
+
         len_self = len(self._quat)
         len_other = len(other._quat)
         if not(len_self == 1 or len_other == 1 or len_self == len_other):
