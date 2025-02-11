@@ -28,6 +28,7 @@ import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
         assert_allclose, suppress_warnings)
+from numpy.exceptions import ComplexWarning
 
 from types import GenericAlias
 
@@ -45,7 +46,6 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
-from scipy._lib._util import ComplexWarning
 
 IS_COLAB = ('google.colab' in sys.modules)
 
