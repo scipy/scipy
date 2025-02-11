@@ -155,8 +155,10 @@ def test_min_weight_full_bipartite_matching(graphs):
 
     actual = func(A_sparse[0:2, 1:3])
     desired = func(sp.csc_array(A_dense)[0:2, 1:3])
+    desired1 = func(sp.coo_array(A_dense)[0:2, 1:3])
 
     assert_equal(actual, desired)
+    assert_equal(actual, desired1)
 
 
 @check_sparse_version("0.15.4")
