@@ -3,7 +3,7 @@
 void nonnegative_lsq_imp(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, double* restrict work, int* restrict indices, const int maxiter, double* rnorm, int* info);
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-
+static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 
 
 /*
@@ -24,11 +24,11 @@ static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* 
  *  xnorm      : norm of the solution
  *  mode       : return code
  *
- *  The buffer pointers:
- *  buffer[0]              : Lagrange multipliers (me + mg)
- *  buffer[me + mg]        : wb, Modified b vector (ma)
- *  buffer[me + mg + ma]   : wh, Modified h vector (mg)
- *  buffer[me + 2*mg + ma] : The remaining buffer for modified arrays and LSI problem
+ *  The buffer pointers that will be used:
+ *  buffer[0]                : Lagrange multipliers (mg + me)
+ *  buffer[mg + me]          : wb, Modified b vector (ma)
+ *  buffer[mg + me + ma]     : tau, Pivots for the RQ decomposition of E (me)
+ *  buffer[mg + 2*me + ma]   : Scratch space
  *
  */
 void
@@ -36,62 +36,122 @@ lsei(int ma, int me, int mg, int n,
      double* a, double* b, double* e, double* f, double* g, double* h,
      double* x, double* buffer, int* jw, double* xnorm, int* mode)
 {
-    int one = 1, tmp_int = 0;
-    double done = 1.0, dmone = -1.0;
+    int one = 1, nvars = 0, info = 0, lde = 0;
+    double done = 1.0, dmone = -1.0, dzero = 0.0, t= 0.0;
     const double epsmach = 2.220446049250313e-16;
 
+    // Return if the problem is over-constrained.
+    for (int i = 0; i < n; i++) { x[i] = 0.0; }
     if (me > n) { *mode = 2; return; }
+    if (ma < n) { *mode = 5; return; }
 
-    //    [E]         [E2   R]
-    //    [A] @ Q.T = [A2  A1]
-    //    [G]         [G2  G1]
-    // me = 0 skips the equality constraint related computations
+    //    [E]         [E2 |  R]                                [x ]
+    //    [A] @ Q.T = [A2 | A1]  ,and, x is partitioned as x = [--]
+    //    [G]         [G2 | G1]                                [xe]
+
+    // me = 0 skips the equality constraint related computations even though it
+    // causes aliasing below. The aliased arrays are not referenced in that case.
+    // Use at least 1 for the leading dimension of E even when me = 0 for LAPACK
+    // calls.
+    nvars = (n - me);
+    double* restrict gmults      = &buffer[0];
+    double* restrict emults      = &buffer[mg];
+    double* restrict wb          = &buffer[me + mg];
+    double* restrict tau         = &buffer[me + mg + ma];
+    double* restrict a2          = &buffer[mg + 2*me + ma];
+    double* restrict g2          = &buffer[mg + 2*me + ma + ma*nvars];
+    double* restrict lsi_scratch = &buffer[mg + 2*me + ma + (ma + mg)*nvars];
+
     // RQ decomposition of equality constraint data E and application to A, G.
-    dgerq2_(&me, &n, e, &me, buffer, &buffer[tmp_int], mode);
+    // LAPACK RQ routine dgerq2 forms R on the right.
+    // dgeqr2 is the unblocked versions of dgeqrf without the memory allocation.
+    // Use top of the yet unutilized scratch space for throw-away work.
+    lde = (me > 0 ? me : 1);
+    dgerq2_(&me, &n, e, &lde, tau, lsi_scratch, &info);
 
     // Right triangularize E and apply Q.T to A and G from the right.
-    dormr2_("R", "T", &ma, &n, &me, e, &me, buffer, a, &ma, &buffer[tmp_int], mode);
-    dormr2_("R", "T", &ma, &n, &me, e, &me, buffer, g, &mg, &buffer[tmp_int], mode);
+    dormr2_("R", "T", &ma, &n, &me, e, &lde, tau, a, &ma, lsi_scratch, &info);
+    dormr2_("R", "T", &mg, &n, &me, e, &lde, tau, g, &mg, lsi_scratch, &info);
 
     // Check the diagonal elements of E for rank deficiency.
-    for (int i = 0; i < me; i++) {
-        if (fabs(e[i + i*me]) < epsmach) { *mode = 6;return; }
+    for (int i = 0; i < me; i++)
+    {
+        if (!(fabs(e[i + i*me]) >= epsmach)) { *mode = 6;return; }
     }
     // Solve E*x = f and modify b.
     // Note: RQ forms R at the right of E instead of [0, 0] position.
-    dtrsv_("U", "N", "N", &me, &e[(n - me)*me], &ma, x, &one);
+    for (int i = 0; i < me; i++) { x[nvars + i] = f[i]; }
+    dtrsv_("U", "N", "N", &me, &e[(nvars)*me], &lde, &x[nvars], &one);
 
-    // Zero out the lagrange multipliers for the inequality constraints.
-    for (int i = me; i < mg; i++) { buffer[i] = 0.0; }
+    *mode = 1;
+    // Zero out the inequality multiplier.
+    for (int i = 0; i < mg; i++) { gmults[i] = 0.0; }
 
-    // If the problem is fully equality constrained then we are done. No free
-    // variables left.
-    if (me == n) { *mode = 1;return; }
+    // If the problem is fully equality-constrained, revert the basis and return.
+    if (me == n) { goto ORIGINAL_BASIS; }
 
-    // After the triangularization of E, the free variables are reduced by
-    // the number of equality constraints. Hence the resulting LSI problem has
-    // n - me inequality constraints.
-    int nineq = n - me;
-
-    // Compute the temporary vector wf = f - E2*x
-    double* restrict wb = &buffer[me + mg];
+    // Compute the modified RHS wb = b - A1*x
+    // Copy b into wb
     for (int i = 0; i < ma; i++) { wb[i] = b[i]; }
-    tmp_int = (n - me);
-    dgemv_("N", &ma, &tmp_int, &dmone, a, &ma, x, &one, &done, wb, &one);
+    // Compute wb -= A1*xe
+    dgemv_("N", &ma, &me, &dmone, &a[ma*nvars], &ma, &x[nvars], &one, &done, wb, &one);
 
-    // Store the transformed A and G corresponding to the free variables
+    // Store the transformed A2 and G2 in the buffer
+    for (int j = 0; j < nvars; j++)
+    {
+        for (int i = 0; i < ma; i++)
+        {
+            a2[i + j*ma] = a[i + j*ma];
+        }
+        for (int i = 0; i < mg; i++)
+        {
+            g2[i + j*mg] = g[i + j*mg];
+        }
+    }
 
 
+    if (mg == 0)
+    {
+        // No inequality constraints, solve the least squares problem directly.
+        // TODO: Handle least squares here and return
 
+        return;
+    }
 
+    // Modify h, and solve the inequality constrained least squares problem.
+    // h -= G1*xe
+    dgemv_("N", &mg, &me, &dmone, &g[mg*nvars], &mg, &x[nvars], &one, &done, h, &one);
 
+    lsi(ma, mg, nvars, a2, wb, g2, h, x, lsi_scratch, jw, xnorm, mode);
 
+    // Copy multipliers from scratch to gmults
+    for (int i = 0; i < mg; i++) { gmults[i] = lsi_scratch[i]; }
 
+    // If no equality constraints this was an LSI problem all along.
+    if (me == 0) { return; }
 
+    t = dnrm2_(&me, &x[nvars], &one);
+    // Modify the norm by adding the equality solution.
+    *xnorm = sqrt((*xnorm)*(*xnorm) + t*t);
 
+    if (*mode != 1) { return; }
 
+ORIGINAL_BASIS:
+    // Convert the solution and multipliers to the original basis.
+    // b = A*x - b (residuals)
+    dgemv_("N", &ma, &n, &done, a, &ma, x, &one, &done, b, &one);
+    // f = A1^T*b - G1^T*w
+    dgemv_("T", &ma, &me, &done, &a[nvars*ma], &ma, b, &one, &dzero, f, &one);
+    dgemv_("T", &mg, &me, &dmone, &a[nvars*ma], &mg, gmults, &one, &done, f, &one);
 
+    // x = Q.T*x
+    dormr2_("L", "T", &n, &one, &me, e, &me, tau, x, &n, lsi_scratch, mode);
 
+    // Solve the triangular system for the equality multipliers, emults.
+    for (int i = 0; i < me; i++) { emults[i] = f[i]; }
+    dtrsv_("U", "T", "N", &me, &e[(n - me)*me], &me, emults, &one);
+
+    return;
 }
 
 
@@ -99,50 +159,73 @@ lsei(int ma, int me, int mg, int n,
  * Solve inequality constrained least squares problem
  *      min |Ax - b|  subject to Gx >= h
  *
+ * A is (ma x n), b is (ma), G is (mg x n), h is (mg)
+ * buffer is ((mg+2)*(n+1) + 3*mg)
+ * jw is (mg)
+ * xnorm is the 2-norm of the residual vector
+ * mode is the integer return code
  *
+ * The following assumptions must hold
+ *  - ma >= n
+ *  - A is rank n
+ *  - x size is (n)
  *
+ * Return codes for mode
+ *  1: successful computation
+ *  2: error return because of wrong dimensions
+ *  3: iteration count exceeded by nnls
+ *  4: inequality constraints incompatible
+ *  5: matrix e is not rank n
  *
 */
 void
 lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h,
     double* x, double* buffer, int* jw, double* xnorm, int* mode)
 {
-    int one = 1, tmp_int = 0;
+    int one = 1, tmp_int = 0, info = 0;
     double done = 1.0, dmone = -1.0, tmp_dbl = 0.0;
     const double epsmach = 2.220446049250313e-16;
+
     // QR decomposition of a and application to b.
     // We use the unblocked versions of the LAPACK routines to avoid
     // allocating extra "work" memory for the blocked versions.
     tmp_int = (ma < n ? ma : n);
-    dgeqr2_(&ma, &n, a, &ma, buffer, &buffer[tmp_int], mode);
+    dgeqr2_(&ma, &n, a, &ma, buffer, &buffer[tmp_int], &info);
+
     // Check the diagonal elements of R for rank deficiency.
     *mode = 5;
+    *xnorm = 0.0;
+    // Original code has a bug that it checks random entries and returns 5.
+    if (ma < n) { return; }
+
     for (int i = 0; i < tmp_int; i++) {
-        if (fabs(a[i + i*ma]) < epsmach) { return; }
+        if (!(fabs(a[i + i*ma]) >= epsmach)) { return; }
     }
     // Compute Q^T b
-    dorm2r_("L", "T", &ma, &one, &ma, a, &ma, buffer, b, &ma, &buffer[tmp_int], mode);
+    dorm2r_("L", "T", &ma, &one, &tmp_int, a, &ma, buffer, b, &ma, &buffer[tmp_int], &info);
+
     // Transform G and h to form the LDP problem.
     // Solve XR = G where R is the upper triangular matrix from the QR.
     // The result is stored in G.
+
+    // Note: There is an inherent assumption that ma >= n. This is a bug carried
+    // over here from the original slsqp implementation.
     dtrsm_("R", "U", "N", "N", &mg, &n, &done, a, &ma, g, &mg);
     // h = h - Xf
     dgemv_("N", &mg, &n, &dmone, g, &mg, b, &one, &done, h, &one);
 
-    // Solve the LDP problem
     ldp(mg, n, g, h, x, buffer, jw, xnorm, mode);
-    if (*mode != 0) { return; }
+    if (*mode != 1) { return; }
 
     // Solve the original problem
     for (int i = 0; i < n; i++) { x[i] += b[i]; }
     dtrsv_("U", "N", "N", &n, a, &ma, x, &one);
 
     // If any, compute the norm of the tail of b and add to xnorm
-    if (n < ma) {
-        tmp_int = ma - n;
-        tmp_dbl = dnrm2_(&tmp_int, &b[n], &one);
-        *xnorm = sqrt((*xnorm)*(*xnorm) + tmp_dbl*tmp_dbl);
-    }
+    tmp_int = ma - n;
+    tmp_dbl = dnrm2_(&tmp_int, &b[(n + 1 > ma ? ma : n + 1) - 1], &one);
+    *xnorm = sqrt((*xnorm)*(*xnorm) + tmp_dbl*tmp_dbl);
+
     return;
 }
 
@@ -151,17 +234,17 @@ lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h,
  *  min (1/2)|x|^2  subject to  Gx >= h
  *
  * G is (m x n), h is (m)
- * buffer is at least (m+2)*(n+1) + 3*m)
+ * buffer is at least (m+2)*(n+1) + 3*m
  * indices is int(n)
  * x is (n)
  * xnorm is the norm of the solution if succeded
  * mode is the return code integer
  *
  * Mode return values
- *  0  : solution found
- *  1  : iteration count exceeded by nnls
- *  2  : inequality constraints incompatible
- * -1  : bad input dimensions
+ *  1  : solution found
+ *  2  : bad input dimensions
+ *  3  : iteration count exceeded by nnls
+ *  4  : inequality constraints incompatible
  *
 */
 void
@@ -171,9 +254,9 @@ ldp(int m, int n, double* g, double* h, double* x,
     int one = 1;
     double dzero = 0.0, rnorm = 0.0;
     // Check for inputs and initialize x
-    if (n <= 0) { *mode = -1; return; }
+    if (n <= 0) { *mode = 2; return; }
     for (int i = 0; i < n; i++) { x[i] = 0.0; }
-    if (m == 0) { *mode = 0; return; }
+    if (m == 0) { *mode = 1; return; }
 
     // Define pointers for the variables on buffer
     double* restrict a    = &buffer[0];
@@ -192,10 +275,10 @@ ldp(int m, int n, double* g, double* h, double* x,
     {
         for (int i = 0; i < n; i++)
         {
-            a[i + j*m] = g[j + i*m];
+            a[i + j*(n+1)] = g[j + i*m];
         }
-        // Last row
-        a[n + j*m] = h[j];
+        // Place h in the last row.
+        a[n + j*(n+1)] = h[j];
     }
     // RHS is (n+1)
     for (int i = 0; i < n; i++) { b[i] = 0.0; }
@@ -203,13 +286,14 @@ ldp(int m, int n, double* g, double* h, double* x,
 
     // Solve the dual problem
     nonnegative_lsq_imp(n+1, m, a, b, y, w, zz, work, indices, 3*m, &rnorm, mode);
-    if (*mode == 1) { return; }
-    if (rnorm <= 0.0) { *mode = 2; return; }
+    if (*mode != 1) { return; }
+    *mode = 4;
+    if (rnorm <= 0.0) { return; }
 
     // Solve the primal problem
     double fac = 1.0 - ddot_(&m, h, &one, y, &one);
-    if ((1.0 + fac) - 1.0 == 0.0) { *mode = 2; return; }
-    *mode = 0;
+    if ((1.0 + fac) - 1.0 == 0.0) { return; }
+    *mode = 1;
     fac = 1.0 / fac;
     dgemv_("T", &m, &n, &fac, g, &m, y, &one, &dzero, x, &one);
     *xnorm = dnrm2_(&n, x, &one);
