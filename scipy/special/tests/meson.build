@@ -2,6 +2,7 @@ python_sources = [
   '__init__.py',
   'test_basic.py',
   'test_bdtr.py',
+  'test_binomln.py',
   'test_boxcox.py',
   'test_cdflib.py',
   'test_cdft_asymptotic.py',
