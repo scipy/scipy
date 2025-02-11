@@ -26,6 +26,7 @@ __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
 
 
 class MatrixRankWarning(UserWarning):
+    """Warning on exactly singular matrices."""
     pass
 
 
