@@ -9,6 +9,7 @@ from jax.tree_util import register_pytree_node
 import timeit
 import jax
 from numpy.typing import NDArray
+import matplotlib.pyplot as plt
 
 from typing import Dict
 from scipy.spatial.transform import Rotation as R
@@ -36,7 +37,8 @@ def to_jax(q: np.ndarray, p: np.ndarray, device: str):
 
 def benchmark_function(setup_code: str, test_code: str) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    return np.array(timer.repeat(repeat=5, number=100)) / 100
+    R, N = 5, 100
+    return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
 # Common setup code template for benchmarks
@@ -177,21 +179,68 @@ def benchmark_rotation_functions(n_samples: int = 10000) -> Dict[str, Dict[str, 
 
 
 def main():
-    results = benchmark_rotation_functions()
+    sample_sizes = np.logspace(0, 4, 5).astype(int)
+    all_results = {}
 
-    # Print results in a formatted way
-    print("\nBenchmark Results (seconds):")
-    print("-" * 50)
-    for fn_name, timings in results.items():
-        print(f"\n{fn_name}:")
-        for array_type, timing in timings.items():
-            # Calculate statistics for timing using numpy
-            min_time = np.min(timing)
-            mean_time = np.mean(timing)
-            max_time = np.max(timing)
-            print(
-                f"  {array_type:<10}: min={min_time:.6f}, mean={mean_time:.6f}, max={max_time:.6f}"
+    for n_samples in sample_sizes:
+        all_results[n_samples] = benchmark_rotation_functions(n_samples)
+
+    # Plot results
+
+    # Define colors for each XP type and device combination
+    colors = {
+        "numpy:None": "#1f77b4",  # blue
+        "torch:cpu": "#ff7f0e",  # orange
+        "torch:gpu": "#d62728",  # red
+        "jax:cpu": "#2ca02c",  # green
+        "jax:gpu": "#9467bd",  # purple
+    }
+
+    fig, axes = plt.subplots(2, 2, figsize=(15, 12))
+    fig.suptitle("Rotation Benchmark Results")
+    axes = axes.ravel()
+
+    # Plot one graph per function
+    for func_idx, func_name in enumerate(
+        ["from_quat", "as_quat", "as_matrix", "apply"]
+    ):
+        ax = axes[func_idx]
+
+        # For each XP type and device combination
+        for xp_device in xp_device_combinations:
+            xp_device_key = f"{xp_device[0]}:{xp_device[1]}"
+
+            # Collect means and std devs across sample sizes
+            means = []
+            std_devs = []
+            for n_samples in sample_sizes:
+                timings = all_results[n_samples][func_name][xp_device_key]
+                means.append(np.mean(timings))
+                std_devs.append(np.std(timings))
+
+            # Plot with error bars
+            ax.errorbar(
+                sample_sizes,
+                means,
+                yerr=std_devs,
+                label=xp_device_key,
+                color=colors[xp_device_key],
+                marker="o",
+                capsize=5,
             )
+
+        ax.set_title(func_name)
+        ax.set_xlabel("Number of samples")
+        ax.set_ylabel("Time (seconds)")
+        ax.grid(True)
+        ax.legend()
+
+        # Set both axes to logarithmic scale
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
