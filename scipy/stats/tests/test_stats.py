@@ -7928,6 +7928,43 @@ class TestFOneWay:
         assert_equal(F, 2.0)
         assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
 
+    def test_unequal_var(self):
+        # toy samples with unequal variances and different observations
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        F, p = stats.f_oneway(*samples, equal_var=False)
+
+        # R language as benchmark
+        # group1 <- c(-50.42, 40.31, -18.09, 35.58, -6.8, 0.22)
+        # group2 <- c(23.44, 4.5, 15.1, 9.66)
+        # group3 <- c(11.94, 11.1 , 9.87, 9.09, 3.33)
+        #
+        # data <- data.frame(
+        #     value = c(group1, group2, group3),
+        #     group = factor(c(rep("G1", length(group1)),
+        #                      rep("G2", length(group2)),
+        #                      rep("G3", length(group3))))
+        # )
+        # welch_anova <- oneway.test(value ~ group, data = data, var.equal = FALSE)
+        # welch_anova$statistic
+        ## F: 0.609740409019517
+        # welch_anova$p.value
+        ## 0.574838941286302
+
+        assert_allclose(F, 0.609740409019517, rtol=1e-14)
+        assert_allclose(p, 0.574838941286302, rtol=1e-14)
+
+    def test_equal_var_input_validation(self):
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        message = "Expected a boolean value for 'equal_var'"
+        with pytest.raises(TypeError, match=message):
+            stats.f_oneway(*samples, equal_var="False")
+
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be
         # calculated.
