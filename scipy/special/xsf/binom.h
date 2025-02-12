@@ -111,7 +111,7 @@ XSF_HOST_DEVICE inline double binomln(double n, double k) {
 	 * gammaln(1 + k) can be computed accurately for small k using lgam1p.
 	 * We can then use the Taylor series expansion
 	 * gammaln(n + 1 - k) = gammaln(n + 1) - k*digamma(n + 1) +
-	 * k^2 * polygamma(3, n + 1) / 2 + ... + (-k)^j * polygamma(j, n + 1) / j! + ...
+	 * k^2 * polygamma(1, n + 1) / 2 + ... + (-k)^j * polygamma(j-1, n + 1) / j! + ...
 	 */
 	return -cephes::lgam1p(k) + k*digamma(n + 1);
     }
