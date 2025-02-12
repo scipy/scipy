@@ -1,4 +1,5 @@
 from itertools import product
+from multiprocessing import Pool
 
 import numpy as np
 from numpy.linalg import norm
@@ -387,6 +388,17 @@ class BaseMixin:
                                 ftol=ftol, gtol=gtol, xtol=xtol,
                                 method=self.method)
             assert_allclose(res.x, x_opt)
+
+    def test_workers(self):
+        reses = []
+        for workers in [None, 2]:
+            res = least_squares(fun_trivial, 2.0, method=self.method, workers=workers)
+            reses.append(res)
+        with Pool() as workers:
+            res = least_squares(fun_trivial, 2.0, method=self.method, workers=workers.map)
+            reses.append(res)
+        for res in reses:
+            assert res.success
 
 
 class BoundsMixin:
