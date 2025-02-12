@@ -8,6 +8,7 @@
 #pragma once
 
 #include "config.h"
+#include "error.h"
 #include "digamma.h"
 
 #include "cephes/beta.h"
@@ -90,22 +91,16 @@ XSF_HOST_DEVICE inline float binom(float n, float k) {
 
 XSF_HOST_DEVICE inline double binomln(double n, double k) {
     /* Natural logarithm of absolute value of binomial coefficient */
-    double a = n - k + 1;
-    bool denominator_pole = (k <= - 1 && k == std::floor(k)) || (a <= 0 && a == std::floor(a));
-    if (n <= -1 && n == std::floor(n)) {
-	return denominator_pole ? std::numeric_limits<double>::quiet_NaN() : std::numeric_limits<double>::infinity();
-    }
-    if (denominator_pole) {
-	return -std::numeric_limits<double>::infinity();
-    }
-    if (n == k) {
-	return 0;
-    }
     if (std::abs(k) > 1e-7) {
 	double result = n >= -1 ? -std::log1p(n) : -std::log(-n - 1);
         result -= cephes::lbeta(1 + n - k, 1 + k);
 	if (!std::isfinite(result)) {
 	    result = (cephes::lgam(n + 1) - cephes::lgam(n - k + 1)) - cephes::lgam(k + 1);
+	    if (std::isfinite(result)) {
+		/* If the first formula didn't work at all, this second formula
+		 * probably isn't that accurate. */
+		set_error("_binomln", SF_ERROR_LOSS, NULL);
+	    }
 	}
 	return result;
     }
