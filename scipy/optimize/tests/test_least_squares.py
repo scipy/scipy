@@ -390,6 +390,8 @@ class BaseMixin:
             assert_allclose(res.x, x_opt)
 
     def test_workers(self):
+        serial = least_squares(fun_trivial, 2.0, method=self.method)
+
         reses = []
         for workers in [None, 2]:
             res = least_squares(fun_trivial, 2.0, method=self.method, workers=workers)
@@ -399,6 +401,9 @@ class BaseMixin:
             reses.append(res)
         for res in reses:
             assert res.success
+            assert_equal(res.x, serial.x)
+            assert_equal(res.nfev, serial.nfev)
+            assert_equal(res.njev, serial.njev)
 
 
 class BoundsMixin:
