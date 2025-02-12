@@ -721,12 +721,32 @@ template<typename Real>
 Real
 ncx2_cdf_wrap(const Real x, const Real k, const Real l)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1 - std::signbit(x);
+    if (k <= 0 || x < 0 || l <= 0) {
+	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("chndtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float

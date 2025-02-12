@@ -7807,10 +7807,7 @@ class ncx2_gen(rv_continuous):
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
-        cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
-                              f2=lambda x, df, _: chi2._cdf(x, df))
+        return sc.chndtr(x, df, nc)
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
