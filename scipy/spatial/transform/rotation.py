@@ -8,7 +8,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 from scipy._lib.array_api_compat import device
 from ._rotation import Rotation as CythonRotation
 from ._rotation_array_api import _as_quat, _as_matrix, _apply
-from scipy._lib._array_api import array_namespace, is_numpy, Array
+from scipy._lib._array_api import array_namespace, is_numpy, Array, is_jax
 
 try:
     import jax  # Must succeed if we get passed a jax.numpy array
@@ -54,10 +54,21 @@ class Rotation(CythonRotation):
             raise ValueError(
                 f"Expected `quat` to have shape (..., 4), got {quat.shape}."
             )
-        scalar_first = xp.asarray(scalar_first)
-        normalize = xp.asarray(normalize)
-        copy = xp.asarray(copy)
+        dev = device(quat)
+        scalar_first = xp.asarray(scalar_first, device=dev)
+        normalize = xp.asarray(normalize, device=dev)
+        copy = xp.asarray(copy, device=dev)
         # All operations are done non-branching to enable JIT-compilation
+
+        # TODO: Remove this once it is clear why roll() is offloading to the GPU
+        if is_jax(xp):
+            jax.debug.print("quat device: {}", device(quat))
+            print(device(quat))
+            print(xp.roll(quat, -1, axis=-1).device)
+            print(jax.numpy.roll(quat, -1, axis=-1).device)
+            jax.debug.print("roll device: {}", device(xp.roll(quat, -1, axis=-1)))
+            assert False
+
         quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
         quat = xp.where(normalize | copy, xp.asarray(quat, copy=True), quat)
         quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)

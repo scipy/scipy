@@ -5,16 +5,16 @@ os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
 
 import torch
 import numpy as np
-import jax.numpy as jp
 from jax.tree_util import register_pytree_node
+from typing import Callable
 import timeit
-from functools import partial
 import jax
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from typing import Dict
 from scipy.spatial.transform import Rotation as R
+
 
 register_pytree_node(R, lambda v: ((v._quat,), None), lambda _, c: R(c[0]))
 
@@ -35,32 +35,20 @@ def create_random_data(
     raise ValueError(f"Invalid xp_str: {xp_str}")
 
 
-@partial(jax.jit, static_argnums=[0, 1])
+# @partial(jax.jit, static_argnums=[0, 1])
 def jax_qp(n_samples: int = 10000, device: str = "cpu"):
-    device = jax.devices(device)[0]
-    q = jax.random.normal(jax.random.PRNGKey(0), (n_samples, 4))
-    p = jax.random.uniform(jax.random.PRNGKey(0), (n_samples, 3))
-    return jax.device_put(q, device), jax.device_put(p, device)
+    with jax.default_device(jax.devices(device)[0]):
+        q = jax.random.normal(jax.random.PRNGKey(0), (n_samples, 4))
+        p = jax.random.uniform(jax.random.PRNGKey(0), (n_samples, 3))
+    return q, p
 
 
-def benchmark_function(setup_code: str, test_code: str) -> NDArray:
+def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 5, 100
+    R, N = 1, 1
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
-# Common setup code template for benchmarks
-SETUP_CODE_TEMPLATE = (
-    "import numpy as np\n"
-    "import torch\n"
-    "import jax.numpy as jp\n"
-    "import jax\n"
-    "from scipy.spatial.transform import Rotation as R\n"
-    "from __main__ import create_random_data\n"
-    "q, p = create_random_data({n_samples}, '{xp}', '{device}')\n"
-    "r = R.from_quat(q)\n"
-    "{extra_setup}"
-)
 xp_device_combinations = (
     ("numpy", "cpu"),
     ("torch", "cpu"),
@@ -75,19 +63,32 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
 
     for xp, device in xp_device_combinations:
         print(f"Benchmarking from_quat with {xp} and {device}")
-        extra_setup = ""
-        if xp == "jax":
-            extra_setup += "from_quat = jax.jit(R.from_quat)\nfrom_quat(q)\n"
-        setup_code = SETUP_CODE_TEMPLATE.format(
-            n_samples=n_samples,
-            xp=xp,
-            device=device,
-            extra_setup=extra_setup,
-        )
-        test_code = (
-            "R.from_quat(q)" if xp != "jax" else "jax.block_until_ready(from_quat(q))"
-        )
-        timing = benchmark_function(setup_code, test_code)
+        q, p, r, from_quat = None, None, None, None
+
+        # Common setup code template for benchmarks
+        def setup() -> str:
+            nonlocal q, p, r, from_quat
+            q, p = create_random_data(n_samples, xp, device)
+            dev = "gpu" if "cuda" in str(q.device) else "cpu"
+            assert dev == device, f"setup device mismatch: {dev} != {device}"
+            if xp == "jax":
+                # from_quat = jax.jit(R.from_quat)
+                from_quat = R.from_quat
+                from_quat(q)
+            r = R.from_quat(q)
+
+        def test():
+            nonlocal q
+            return R.from_quat(q)
+
+        def jax_test():
+            nonlocal q, from_quat
+            r = jax.block_until_ready(from_quat(q))
+            # TODO: Remove checks once gpu/cpu device transfer is fixed
+            rdev = "cpu" if "cpu" in str(r._quat.device) else "gpu"
+            assert rdev == device, f"from_quat device mismatch: {rdev} != {device}"
+
+        timing = benchmark_function(setup, test)
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
@@ -131,7 +132,9 @@ def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
             extra_setup=extra_setup,
         )
         test_code = (
-            "r.as_matrix()" if xp != "jax" else "as_matrix(r).block_until_ready()"
+            "r.as_matrix()"
+            if xp != "jax"
+            else f"m = as_matrix(r).block_until_ready(); assert m.device == jax.devices('{device}'), f'device mismatch: {{m.device}} != {device}'"
         )
         timing = benchmark_function(setup_code, test_code)
         benchmarks[f"{xp}:{device}"] = timing
