@@ -145,6 +145,7 @@ axis_nan_policy_cases = [
     (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
+    (stats.f_oneway, tuple(), {'equal_var': False}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),

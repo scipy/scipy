@@ -86,11 +86,10 @@ class Deb01(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-
-        self.change_dimensionality = True
 
         self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
@@ -126,11 +125,10 @@ class Deb03(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-
-        self.change_dimensionality = True
 
         # lower limit changed to zero because of fractional power
         self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
@@ -229,6 +227,7 @@ class Deceptive(Benchmark):
     is based on his code.  His code and the website don't match, the equations
     are wrong.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -239,7 +238,6 @@ class Deceptive(Benchmark):
 
         self.global_optimum = [alpha]
         self.fglob = -1.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -335,6 +333,7 @@ class DeflectedCorrugatedSpring(Benchmark):
     below is different to the equation above.  Also, the global minimum is
     wrong.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -344,7 +343,6 @@ class DeflectedCorrugatedSpring(Benchmark):
 
         self.global_optimum = [[alpha for _ in range(self.N)]]
         self.fglob = -1.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -471,6 +469,7 @@ class DixonPrice(Benchmark):
 
     TODO: Gavana code not correct.  i array should start from 2.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -481,7 +480,6 @@ class DixonPrice(Benchmark):
         self.global_optimum = [[2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
                                for i in range(1, self.N + 1)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

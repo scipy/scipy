@@ -3,6 +3,7 @@ import operator
 import itertools
 import math
 import threading
+import copy
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -670,6 +671,7 @@ class TestBSpline:
         b.c = c_mm
 
         xp_assert_close(b(xx), expected)
+
 
 class TestInsert:
 
@@ -1525,26 +1527,6 @@ class TestInterp:
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert b.c.shape == (n + k - 1, 5, 6, 7)
 
-    @pytest.mark.parametrize("axis", range(1, 4))
-    def test_shapes_axis(self, axis):
-        rng = np.random.RandomState(1234)
-        n = 11
-        shp_extra = (5, 6, 7)
-        x = np.arange(n)
-        y = rng.random(size=(n,) + shp_extra)
-        spl = make_interp_spline(x, y)
-
-        y1 = np.moveaxis(y.copy(), 0, axis)
-        spl1 = make_interp_spline(x, y1, axis=axis)
-
-        assert spl(3).shape == shp_extra
-        assert spl([3]).shape == (1,) + shp_extra
-        assert spl([2, 3]).shape == (2,) + shp_extra
-
-        assert spl1(3).shape == shp_extra
-        assert spl1([3]).shape == shp_extra[:axis] + (1,) + shp_extra[axis:]
-        assert spl1([2, 3]).shape == shp_extra[:axis] + (2,) + shp_extra[axis:]
-
     def test_string_aliases(self):
         yy = np.sin(self.xx)
 
@@ -1774,28 +1756,6 @@ class TestLSQ:
         b_qr = make_lsq_spline(x, y, t, k, method="qr")
         b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
         xp_assert_close(b_qr.c, b_neq.c, atol=1e-15)
-
-    @parametrize_lsq_methods
-    @pytest.mark.parametrize("axis", range(1, 4))
-    def test_shapes_axis(self, axis, method):
-        rng = np.random.RandomState(1234)
-        k, n = 3, 11
-        shp_extra = (5, 6, 7)
-        x = np.arange(n)
-        t = (x[0],) * (k+1) + (x[-1],)*(k+1)
-        y = rng.random(size=(n,) + shp_extra)
-        spl = make_lsq_spline(x, y, t=t, method=method)
-
-        y1 = np.moveaxis(y.copy(), 0, axis)
-        spl1 = make_lsq_spline(x, y1, t=t, axis=axis, method=method)
-
-        assert spl(3).shape == shp_extra
-        assert spl([3]).shape == (1,) + shp_extra
-        assert spl([2, 3]).shape == (2,) + shp_extra
-
-        assert spl1(3).shape == shp_extra
-        assert spl1([3]).shape == shp_extra[:axis] + (1,) + shp_extra[axis:]
-        assert spl1([2, 3]).shape == shp_extra[:axis] + (2,) + shp_extra[axis:]
 
     @parametrize_lsq_methods
     def test_complex(self, method):
@@ -3698,3 +3658,69 @@ class TestMakeSplprep:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+
+class BatchSpline:
+    # BSpline-line class with reference batch behavior
+    def __init__(self, x, y, axis, *, spline, **kwargs):
+        y = np.moveaxis(y, axis, -1)
+        self._batch_shape = y.shape[:-1]
+        self._splines = [spline(x, yi, **kwargs) for yi in y.reshape(-1, y.shape[-1])]
+        self._axis = axis
+
+    def __call__(self, x):
+        y = [spline(x) for spline in self._splines]
+        y = np.reshape(y, self._batch_shape + x.shape)
+        return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+    def integrate(self, a, b, extrapolate=None):
+        y = [spline.integrate(a, b, extrapolate) for spline in self._splines]
+        return np.reshape(y, self._batch_shape)
+
+    def derivative(self, nu):
+        res = copy.deepcopy(self)
+        res._splines = [spline.derivative(nu) for spline in res._splines]
+        return res
+
+    def antiderivative(self, nu):
+        res = copy.deepcopy(self)
+        res._splines = [spline.antiderivative(nu) for spline in res._splines]
+        return res
+
+
+class TestBatch:
+    @pytest.mark.parametrize('make_spline, kwargs',
+        [(make_interp_spline, {}),
+         (make_smoothing_spline, {}),
+         (make_smoothing_spline, {'lam': 1.0}),
+         (make_lsq_spline, {'method': "norm-eq"}),
+         (make_lsq_spline, {'method': "qr"}),
+         ])
+    @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    def test_batch(self, make_spline, kwargs, axis, eval_shape):
+        rng = np.random.default_rng(4329872134985134)
+        n = 10
+        shape = (2, 3, 4, n)
+        domain = (0, 10)
+
+        x = np.linspace(*domain, n)
+        y = np.moveaxis(rng.random(shape), -1, axis)
+
+        if make_spline == make_lsq_spline:
+            k = 3  # spline degree, if needed
+            t = (x[0],) * (k + 1) + (x[-1],) * (k + 1)  # valid knots, if needed
+            kwargs = kwargs | dict(t=t, k=k)
+
+        res = make_spline(x, y, axis=axis, **kwargs)
+        ref = BatchSpline(x, y, axis=axis, spline=make_spline, **kwargs)
+
+        x = rng.uniform(*domain, size=eval_shape)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        res, ref = res.antiderivative(1), ref.antiderivative(1)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        res, ref = res.derivative(2), ref.derivative(2)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        np.testing.assert_allclose(res.integrate(*domain), ref.integrate(*domain))
