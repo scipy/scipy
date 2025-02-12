@@ -104,6 +104,9 @@ XSF_HOST_DEVICE inline double binomln(double n, double k) {
     if (std::abs(k) > 1e-7) {
 	double result = n >= -1 ? -std::log1p(n) : -std::log(-n - 1);
         result -= cephes::lbeta(1 + n - k, 1 + k);
+	if (!std::isfinite(result)) {
+	    result = (cephes::lgam(n + 1) - cephes::lgam(n - k + 1)) - cephes::lgam(k + 1);
+	}
 	return result;
     }
     if (std::abs(n) > 1e-7) {
