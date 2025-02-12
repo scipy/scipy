@@ -38,49 +38,17 @@ def _maybe_cython(f):
 
 class Rotation(CythonRotation):
     def __init__(self, quat, normalize=True, copy=True, scalar_first=False):
-        xp = array_namespace(quat)
         # Fast path for numpy arrays: If quat is a numpy object, we call the Cython version of the
         # class and forward all calls to the function's methods to super()
-        self._use_cython = is_numpy(xp)
-        self._xp = xp
+        self._use_cython = is_numpy(array_namespace(quat))
         if self._use_cython:
             super().__init__(
                 quat, normalize=normalize, copy=copy, scalar_first=scalar_first
             )
             return
-        dtype = xp.float64 if quat.dtype not in (xp.float32, xp.float64) else quat.dtype
-        quat = xp.asarray(quat, dtype=dtype)
-        if quat.shape[-1] != 4 or quat.shape[0] == 0:
-            raise ValueError(
-                f"Expected `quat` to have shape (..., 4), got {quat.shape}."
-            )
-        dev = device(quat)
-        scalar_first = xp.asarray(scalar_first, device=dev)
-        normalize = xp.asarray(normalize, device=dev)
-        copy = xp.asarray(copy, device=dev)
-        # All operations are done non-branching to enable JIT-compilation
-
-        # TODO: Remove this once it is clear why roll() is offloading to the GPU
-        if is_jax(xp):
-            jax.debug.print("quat device: {}", device(quat))
-            print(device(quat))
-            print(xp.roll(quat, -1, axis=-1).device)
-            print(jax.numpy.roll(quat, -1, axis=-1).device)
-            jax.debug.print("roll device: {}", device(xp.roll(quat, -1, axis=-1)))
-            assert False
-
-        quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
-        quat = xp.where(normalize | copy, xp.asarray(quat, copy=True), quat)
-        quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)
-
-        # TODO: This is a deviation from the behavior of the cython version because JIT code needs
-        # to be strictly non-branching. If we have zero quaternions, we return nan values
-        # if xp.any(quat_norm == 0):
-        #     raise ValueError("Found zero norm quaternions in `quat`.")
-        quat_norm = xp.where(
-            quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat_norm
+        self._quat = _as_quat(
+            quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
-        self._quat = xp.where(normalize, quat / quat_norm, quat)
 
     @classmethod
     def from_quat(cls, quat: Array, *, scalar_first=False) -> Rotation:

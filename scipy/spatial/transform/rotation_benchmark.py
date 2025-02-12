@@ -9,6 +9,8 @@ from jax.tree_util import register_pytree_node
 from typing import Callable
 import timeit
 import jax
+from functools import partial
+import jax.numpy as jp
 from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
@@ -35,17 +37,17 @@ def create_random_data(
     raise ValueError(f"Invalid xp_str: {xp_str}")
 
 
-# @partial(jax.jit, static_argnums=[0, 1])
+@partial(jax.jit, static_argnums=[0, 1])
 def jax_qp(n_samples: int = 10000, device: str = "cpu"):
-    with jax.default_device(jax.devices(device)[0]):
-        q = jax.random.normal(jax.random.PRNGKey(0), (n_samples, 4))
-        p = jax.random.uniform(jax.random.PRNGKey(0), (n_samples, 3))
+    dev = jax.devices(device)[0]
+    q = jp.array(jax.random.normal(jax.random.PRNGKey(0), (n_samples, 4)), device=dev)
+    p = jp.array(jax.random.uniform(jax.random.PRNGKey(0), (n_samples, 3)), device=dev)
     return q, p
 
 
 def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 1, 1
+    R, N = 5, 100
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
@@ -65,15 +67,13 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
         print(f"Benchmarking from_quat with {xp} and {device}")
         q, p, r, from_quat = None, None, None, None
 
-        # Common setup code template for benchmarks
         def setup() -> str:
             nonlocal q, p, r, from_quat
             q, p = create_random_data(n_samples, xp, device)
             dev = "gpu" if "cuda" in str(q.device) else "cpu"
             assert dev == device, f"setup device mismatch: {dev} != {device}"
             if xp == "jax":
-                # from_quat = jax.jit(R.from_quat)
-                from_quat = R.from_quat
+                from_quat = jax.jit(R.from_quat)
                 from_quat(q)
             r = R.from_quat(q)
 
@@ -83,12 +83,9 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
 
         def jax_test():
             nonlocal q, from_quat
-            r = jax.block_until_ready(from_quat(q))
-            # TODO: Remove checks once gpu/cpu device transfer is fixed
-            rdev = "cpu" if "cpu" in str(r._quat.device) else "gpu"
-            assert rdev == device, f"from_quat device mismatch: {rdev} != {device}"
+            jax.block_until_ready(from_quat(q))
 
-        timing = benchmark_function(setup, test)
+        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
@@ -97,21 +94,30 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
 def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark as_quat with different array types."""
     benchmarks = {}
-    extra_setup = ""
 
     for xp, device in xp_device_combinations:
         print(f"Benchmarking as_quat with {xp} and {device}")
-        if xp == "jax":
-            extra_setup += "as_quat = jax.jit(R.as_quat)\nas_quat(r)\n"
+        q, p, r, as_quat = None, None, None, None
 
-        setup_code = SETUP_CODE_TEMPLATE.format(
-            n_samples=n_samples,
-            xp=xp,
-            device=device,
-            extra_setup=extra_setup,
-        )
-        test_code = "r.as_quat()" if xp != "jax" else "as_quat(r).block_until_ready()"
-        timing = benchmark_function(setup_code, test_code)
+        def setup() -> str:
+            nonlocal q, p, r, as_quat
+            q, p = create_random_data(n_samples, xp, device)
+            dev = "gpu" if "cuda" in str(q.device) else "cpu"
+            assert dev == device, f"setup device mismatch: {dev} != {device}"
+            r = R.from_quat(q)
+            if xp == "jax":
+                as_quat = jax.jit(R.as_quat)
+                as_quat(r)
+
+        def test():
+            nonlocal r
+            return r.as_quat()
+
+        def jax_test():
+            nonlocal r, as_quat
+            jax.block_until_ready(as_quat(r))
+
+        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
@@ -120,23 +126,30 @@ def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
 def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark as_matrix with different array types."""
     benchmarks = {}
-    extra_setup = ""
+
     for xp, device in xp_device_combinations:
         print(f"Benchmarking as_matrix with {xp} and {device}")
-        if xp == "jax":
-            extra_setup += "as_matrix = jax.jit(R.as_matrix)\nas_matrix(r)\n"
-        setup_code = SETUP_CODE_TEMPLATE.format(
-            n_samples=n_samples,
-            xp=xp,
-            device=device,
-            extra_setup=extra_setup,
-        )
-        test_code = (
-            "r.as_matrix()"
-            if xp != "jax"
-            else f"m = as_matrix(r).block_until_ready(); assert m.device == jax.devices('{device}'), f'device mismatch: {{m.device}} != {device}'"
-        )
-        timing = benchmark_function(setup_code, test_code)
+        q, p, r, as_matrix = None, None, None, None
+
+        def setup() -> str:
+            nonlocal q, p, r, as_matrix
+            q, p = create_random_data(n_samples, xp, device)
+            dev = "gpu" if "cuda" in str(q.device) else "cpu"
+            assert dev == device, f"setup device mismatch: {dev} != {device}"
+            r = R.from_quat(q)
+            if xp == "jax":
+                as_matrix = jax.jit(R.as_matrix)
+                as_matrix(r)
+
+        def test():
+            nonlocal r
+            return r.as_matrix()
+
+        def jax_test():
+            nonlocal r, as_matrix
+            jax.block_until_ready(as_matrix(r))
+
+        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
@@ -145,20 +158,30 @@ def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
 def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
     """Benchmark apply with different array types."""
     benchmarks = {}
-    extra_setup = ""
 
     for xp, device in xp_device_combinations:
         print(f"Benchmarking apply with {xp} and {device}")
-        if xp == "jax":
-            extra_setup += "apply = jax.jit(R.apply)\napply(r, p)\n"
-        setup_code = SETUP_CODE_TEMPLATE.format(
-            n_samples=n_samples,
-            xp=xp,
-            device=device,
-            extra_setup=extra_setup,
-        )
-        test_code = "r.apply(p)" if xp != "jax" else "apply(r, p).block_until_ready()"
-        timing = benchmark_function(setup_code, test_code)
+        q, p, r, apply = None, None, None, None
+
+        def setup() -> str:
+            nonlocal q, p, r, apply
+            q, p = create_random_data(n_samples, xp, device)
+            dev = "gpu" if "cuda" in str(q.device) else "cpu"
+            assert dev == device, f"setup device mismatch: {dev} != {device}"
+            r = R.from_quat(q)
+            if xp == "jax":
+                apply = jax.jit(R.apply)
+                apply(r, p)
+
+        def test():
+            nonlocal r, p
+            return r.apply(p)
+
+        def jax_test():
+            nonlocal r, p, apply
+            jax.block_until_ready(apply(r, p))
+
+        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
