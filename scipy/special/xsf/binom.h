@@ -114,6 +114,7 @@ XSF_HOST_DEVICE inline double binomln(double n, double k) {
 	return -cephes::lgam1p(k) + k*digamma(n + 1);
     }
     /* n and k are both small. */
+    set_error("_binomln", SF_ERROR_LOSS, NULL);
     return cephes::lgam1p(n) - cephes::lgam1p(k) - cephes::lgam1p(n - k);
 }
 
