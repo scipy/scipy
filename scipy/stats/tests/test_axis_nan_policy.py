@@ -171,6 +171,8 @@ axis_nan_policy_cases = [
     (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
     (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
+    (stats.chisquare, tuple(), dict(), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -217,10 +219,10 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 override_propagate_funcs = {stats.mode, weightedtau_weighted, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
-empty_special_case_funcs = {stats.entropy}
+empty_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 # Some functions don't follow the usual "too small" warning rules
-too_small_special_case_funcs = {stats.entropy}
+too_small_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -867,15 +869,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
                     expected = np.mean(concat, axis=axis) * np.nan
+                    mask = np.isnan(expected)
+                    expected = [np.asarray(expected.copy()) for i in range(n_outputs)]
 
                 if hypotest in empty_special_case_funcs:
                     empty_val = hypotest(*([[]]*len(samples)), *args, **kwds)
-                    expected = np.asarray(expected)
-                    mask = np.isnan(expected)
-                    expected[mask] = empty_val
-                    expected = expected[()]
+                    empty_val = list(unpacker(empty_val))
+                    for i in range(n_outputs):
+                        expected[i][mask] = empty_val[i]
 
-                if expected.size and hypotest not in too_small_special_case_funcs:
+                if expected[0].size and hypotest not in too_small_special_case_funcs:
                     message = (too_small_1d_not_omit if max_axis == 1
                                else too_small_nd_not_omit)
                     with pytest.warns(SmallSampleWarning, match=message):
@@ -888,7 +891,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 res = unpacker(res)
 
                 for i in range(n_outputs):
-                    assert_equal(res[i], expected)
+                    assert_equal(res[i], expected[i])
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable
