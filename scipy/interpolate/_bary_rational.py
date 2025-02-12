@@ -688,7 +688,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> xx = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(xx, f(xx), label="f(x)"
+    >>> ax.plot(xx, f(xx), label="f(x)")
     >>> ax.plot(xx, r(xx), "--", label="Floater-Hormann")
     >>> ax.plot(xx, p(xx), "--", label="Polynomial")
     >>> ax.legend()
