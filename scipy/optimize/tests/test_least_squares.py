@@ -394,10 +394,14 @@ class BaseMixin:
 
         reses = []
         for workers in [None, 2]:
-            res = least_squares(fun_trivial, 2.0, method=self.method, workers=workers)
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers
+            )
             reses.append(res)
         with Pool() as workers:
-            res = least_squares(fun_trivial, 2.0, method=self.method, workers=workers.map)
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers.map
+            )
             reses.append(res)
         for res in reses:
             assert res.success
