@@ -253,6 +253,7 @@ class errstate:
         traceback: Any,  # Unused
     ) -> None: ...
 
+_binomln: np.ufunc
 _cosine_cdf: np.ufunc
 _cosine_invcdf: np.ufunc
 _cospi: np.ufunc
