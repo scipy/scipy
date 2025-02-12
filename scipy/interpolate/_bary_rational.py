@@ -640,7 +640,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
         {\sum_{i=0}^{n-d} \lambda_i(x)},
 
     where :math:`p_i(x)` is an interpolating polynomials of at most degree `d` through
-    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d}), and :math:`\lambda_i(z)` are
+    the points :math:`(x_i,y_i),\dots,(x_{i+d},y_{i+d})`, and :math:`\lambda_i(z)` are
     blending functions defined by
 
     .. math::
@@ -688,7 +688,7 @@ class FloaterHormannInterpolator(_BarycentricRational):
     >>> zz = np.linspace(-5, 5, num=1000)
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(zz, r(zz), label="Floater=Hormann")
+    >>> ax.plot(zz, r(zz), label="Floater-Hormann")
     >>> ax.plot(zz, p(zz), label="Polynomial")
     >>> ax.legend()
     >>> plt.show()
