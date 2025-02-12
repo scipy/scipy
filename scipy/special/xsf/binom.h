@@ -107,11 +107,11 @@ XSF_HOST_DEVICE inline double binomln(double n, double k) {
 	return result;
     }
     if (std::abs(n) > 1e-7) {
-	 * log_binom(n, k) = gammaln(n + 1) - gammaln(n + 1 - k) - gammaln(1 + k)
+	/* binomln(n, k) = gammaln(n + 1) - gammaln(n + 1 - k) - gammaln(1 + k)
 	 * gammaln(1 + k) can be computed accurately for small k using lgam1p.
 	 * We can then use the Taylor series expansion
 	 * gammaln(n + 1 - k) = gammaln(n + 1) - k*digamma(n + 1) +
-	 * k^2 * polygamma(3, n + 1) + ... + (-k)^j * polygamma(j, n + 1) + ...
+	 * k^2 * polygamma(3, n + 1) / 2 + ... + (-k)^j * polygamma(j, n + 1) / j! + ...
 	 */
 	return -cephes::lgam1p(k) + k*digamma(n + 1);
     }
