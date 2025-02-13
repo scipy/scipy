@@ -529,7 +529,7 @@ def xp_take_along_axis(arr: Array,
 def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
-    args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
+    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
@@ -553,7 +553,12 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
-    shape = np.broadcast_shapes(*shapes) if len(shapes) != 1 else args_not_none[0].shape
+    try:
+        shape = (np.broadcast_shapes(*shapes) if len(shapes) != 1
+                 else args_not_none[0].shape)
+    except ValueError as e:
+        message = "Array shapes are incompatible for broadcasting."
+        raise ValueError(message) from e
 
     out = []
     for arg in args:
@@ -565,7 +570,8 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
         # Even if two arguments need broadcasting, this is faster than
         # `broadcast_arrays`, especially since we've already determined `shape`
         if arg.shape != shape:
-            arg = xp.broadcast_to(arg, shape)
+            kwargs = {'subok': True} if is_numpy(xp) else {}
+            arg = xp.broadcast_to(arg, shape, **kwargs)
 
         # convert dtype/copy only if needed
         if (arg.dtype != dtype) or ensure_writeable:

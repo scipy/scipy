@@ -2771,6 +2771,42 @@ class _TestSlicing:
             check_2(a, -2)
             check_2(-2, a)
 
+    def test_None_slicing(self):
+        B = self.asdense(arange(50).reshape(5,10))
+        A = self.spcreator(B)
+
+        assert A[1, 2].ndim == 0
+        assert A[None, 1, 2:4].shape == (1, 2)
+        assert A[None, 1, 2, None].shape == (1, 1)
+
+        # see gh-22458
+        assert A[None, 1].shape == (1, 10)
+        assert A[1, None].shape == (1, 10)
+        assert A[None, 1, :].shape == (1, 10)
+        assert A[1, None, :].shape == (1, 10)
+        assert A[1, :, None].shape == (10, 1)
+
+        assert A[None, 1:3, 2].shape == B[None, 1:3, 2].shape == (1, 2)
+        assert A[1:3, None, 2].shape == B[1:3, None, 2].shape == (2, 1)
+        assert A[1:3, 2, None].shape == B[1:3, 2, None].shape == (2, 1)
+        assert A[None, 1, 2:4].shape == B[None, 1, 2:4].shape == (1, 2)
+        assert A[1, None, 2:4].shape == B[1, None, 2:4].shape == (1, 2)
+        assert A[1, 2:4, None].shape == B[1, 2:4, None].shape == (2, 1)
+
+        # different for spmatrix
+        if self.is_array_test:
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2,)
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (2,)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1,)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1,)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1,)
+        else:
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (1, 2)
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2, 1)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1, 1)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1, 1)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1, 1)
+
     def test_ellipsis_slicing(self):
         b = self.asdense(arange(50).reshape(5,10))
         a = self.spcreator(b)

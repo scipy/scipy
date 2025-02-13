@@ -150,13 +150,13 @@ def norm(x, ord=None, axis=None):
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
-            return abs(x).sum(axis=row_axis).max().item()
+            return abs(x).sum(axis=row_axis).max()
         elif ord == np.inf:
-            return abs(x).sum(axis=col_axis).max().item()
+            return abs(x).sum(axis=col_axis).max()
         elif ord == -1:
-            return abs(x).sum(axis=row_axis).min().item()
+            return abs(x).sum(axis=row_axis).min()
         elif ord == -np.inf:
-            return abs(x).sum(axis=col_axis).min().item()
+            return abs(x).sum(axis=col_axis).min()
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)

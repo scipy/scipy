@@ -46,8 +46,7 @@ _highslib = static_library(
     # private symbols don't get re-exported.
     gnu_symbol_visibility: 'inlineshidden',
     pic: true,
-    install: true,
-    install_dir: py3.get_install_dir() / 'scipy/optimize/_highspy',
+    install: false,
 )
 
 _highs_dep = declare_dependency(

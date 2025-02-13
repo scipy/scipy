@@ -685,7 +685,8 @@ class _spbase:
 
             return result
 
-        return NotImplemented
+        else:
+            raise ValueError('could not interpret dimensions')
 
     def __mul__(self, other):
         return self.multiply(other)

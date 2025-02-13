@@ -1212,6 +1212,25 @@ def _logexpxmexpy(x, y):
     return res
 
 
+def _guess_bracket(xmin, xmax):
+    a = np.full_like(xmin, -1.0)
+    b = np.ones_like(xmax)
+
+    i = np.isfinite(xmin) & np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmax[i]
+
+    i = np.isfinite(xmin) & ~np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmin[i] + 1
+
+    i = np.isfinite(xmax) & ~np.isfinite(xmin)
+    a[i] = xmax[i] - 1
+    b[i] = xmax[i]
+
+    return a, b
+
+
 def _log_real_standardize(x):
     """Standardizes the (complex) logarithm of a real number.
 
@@ -2011,27 +2030,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
         shape = xmin.shape
         xmin, xmax = np.atleast_1d(xmin, xmax)
 
-        a = -np.ones_like(xmin)
-        b = np.ones_like(xmax)
-
-        i = np.isfinite(xmin) & np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmax[i]
-
-        i = np.isfinite(xmin) & ~np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmin[i] + 1
-
-        i = np.isfinite(xmax) & ~np.isfinite(xmin)
-        a[i] = xmax[i] - 1
-        b[i] = xmax[i]
-
+        xl0, xr0 = _guess_bracket(xmin, xmax)
         xmin = xmin.reshape(shape)
         xmax = xmax.reshape(shape)
-        a = a.reshape(shape)
-        b = b.reshape(shape)
+        xl0 = xl0.reshape(shape)
+        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
         xrtol = None if _isnull(self.tol) else self.tol
@@ -4506,13 +4511,13 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0, *args)
         for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
-        return out
+        return out[()]
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
         for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
-        return out
+        return out[()]
 
     def support(self):
         a = self._full(np.inf)
@@ -4588,7 +4593,7 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0)
         for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
-        return out
+        return out[()]
 
     def _moment_central(self, order):
         order = int(order)
@@ -4599,7 +4604,7 @@ class Mixture(_ProbabilityDistribution):
             a, b = var.mean(), self.mean()
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
-        return out
+        return out[()]
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
@@ -4636,7 +4641,8 @@ class Mixture(_ProbabilityDistribution):
         xmin, xmax = self.support()
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
-        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        xl0, xr0 = _guess_bracket(xmin, xmax)
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):
