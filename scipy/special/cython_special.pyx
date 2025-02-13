@@ -108,6 +108,11 @@ Available functions
         float betaincinv(float, float, float)
         double betaincinv(double, double, double)
 
+- :py:func:`~scipy.special.betaincinva`::
+
+        float betaincinva(float, float, float)
+        double betaincinva(double, double, double)
+
 - :py:func:`~scipy.special.betainccinv`::
 
         float betainccinv(float, float, float)
