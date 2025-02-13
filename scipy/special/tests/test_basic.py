@@ -1450,7 +1450,7 @@ class TestBetaInc:
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
-                special.betainc(*args)
+                func(*args)
 
     @pytest.mark.parametrize(
         "args,expected",
