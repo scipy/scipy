@@ -42,6 +42,13 @@ class TestGetSet1D:
         assert A[None, 1, 2].shape == (1,)
         assert A[None, 1, 2, None].shape == (1, 1)
 
+        # see gh-22458
+        assert A[None, 1].shape == (1, 4)
+        assert A[1, None].shape == (1, 4)
+        assert A[None, 1, :].shape == (1, 4)
+        assert A[1, None, :].shape == (1, 4)
+        assert A[1, :, None].shape == (4, 1)
+
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
             A[None, 2, 1, None, None]
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):

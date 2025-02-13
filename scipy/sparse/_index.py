@@ -100,10 +100,23 @@ class IndexMixin:
                 else:
                     res = self._get_arrayXarray(row, col)
 
+        # handle spmatrix (must be 2d, dont let 1d new_shape start reshape)
+        if not isinstance(self, sparray):
+            if new_shape == () or (len(new_shape) == 1 and res.ndim != 0):
+                # res handles cases not inflated by None
+                return res
+            if len(new_shape) == 1:
+                # shape inflated to 1D by None in index. Make 2D
+                new_shape = (1,) + new_shape
+            # reshape if needed (when None changes shape, e.g. A[1,:,None])
+            return res if new_shape == res.shape else res.reshape(new_shape)
+
         # package the result and return
-        if isinstance(self, sparray) and res.shape != new_shape:
+        if res.shape != new_shape:
             # handle formats that support indexing but not 1D (lil for now)
             if self.format == "lil" and len(new_shape) != 2:
+                if res.shape == ():
+                    return self._coo_container([res], shape = new_shape)
                 return res.tocoo().reshape(new_shape)
             return res.reshape(new_shape)
         return res
@@ -233,8 +246,9 @@ class IndexMixin:
         ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
         if ellip_slices:
             if ellps_pos is None:
-                ellps_pos = prelim_ndim
-            index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
+                index_1st.extend(ellip_slices)
+            else:
+                index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
 
         # second pass (have processed ellipsis and preprocessed arrays)
         idx_shape = []
