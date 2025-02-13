@@ -130,12 +130,13 @@ Utility classes:
 import warnings
 import bisect
 from collections import deque
+from functools import wraps
 
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import (_asarray, array_namespace, is_jax, is_lazy_array,
-                                   xp_copy, xp_device)
+from scipy._lib._array_api import (_asarray, array_namespace, is_dask, is_jax,
+                                   is_lazy_array, xp_copy, xp_device)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -1006,6 +1007,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     xp = array_namespace(y)
     y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
+    lazy = is_lazy_array(y)
 
     if method not in _LINKAGE_METHODS:
         raise ValueError(f"Invalid method: {method}")
@@ -1017,28 +1019,31 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
     elif y.ndim == 2:
-        if y.shape[0] == y.shape[1]:
-            # FIXME '0' fails on torch and array-api-strict.
-            # Change once Array API 2024.12 has been fully implemented.
-            zero = xp.zeros((), dtype=y.dtype, device=xp_device(y))
-            cond = (xp.all(xpx.isclose(xp.linalg.diagonal(y), zero))
-                    & xp.all(y >= 0) 
-                    & xp.all(xpx.isclose(y, y.T)))
-            msg = ('The symmetric non-negative hollow observation matrix looks '
-                   'suspiciously like an uncondensed distance matrix')
-            y = xpx.lazy_warn(y, cond, msg, ClusterWarning, stacklevel=2)
+        # FIXME Python scalar 0 requires Array API 2024.12 support
+        zero = xp.zeros((), dtype=y.dtype, device=xp_device(y))
+        if (not lazy and y.shape[0] == y.shape[1]
+            and xp.all(xpx.isclose(xp.linalg.diagonal(y), zero))
+            and xp.all(y >= 0) and xp.all(xpx.isclose(y, y.T))):
+            warnings.warn('The symmetric non-negative hollow observation '
+                          'matrix looks suspiciously like an uncondensed '
+                          'distance matrix',
+                          ClusterWarning, stacklevel=2)
         y = distance.pdist(y, metric)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
-    y = xpx.lazy_raise(y, ~xp.all(xp.isfinite(y)),
-                       ValueError("The condensed distance matrix must contain only "
-                                  "finite values."))
+    if not lazy and not xp.all(xp.isfinite(y)):
+        raise ValueError("The condensed distance matrix must contain only "
+                         "finite values.")
 
     n = distance.num_obs_y(y)
     method_code = _LINKAGE_METHODS[method]
 
     def cy_linkage(y):
+        if lazy and not np.all(np.isfinite(y)):
+            raise ValueError("The condensed distance matrix must contain only "
+                            "finite values.")            
+
         if method == 'single':
             return _hierarchy.mst_single_linkage(y, n)
         elif method in ('complete', 'average', 'weighted', 'ward'):
@@ -1519,29 +1524,39 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     """
     xp = array_namespace(Z, y)
     Z = _asarray(Z, order='C', xp=xp)
-    Z = xpx.lazy_wait_on(Z, is_valid_linkage(Z, throw=True, name='Z'))
     y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
+    lazy = is_lazy_array(Z)
+    if not lazy:
+        is_valid_linkage(Z, throw=True, name='Z')
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
     elif y.ndim == 2:
-        if (y.shape[0] == y.shape[1]):
-            cond = (xp.all(xpx.isclose(xp.linalg.diagonal(y), 0))
-                    & xp.all(y >= 0)
-                    & xp.all(xpx.isclose(y, y.T)))
-            msg = ('The symmetric non-negative hollow observation matrix looks '
-                   'suspiciously like an uncondensed distance matrix')
-            y = xpx.lazy_warn(y, cond, msg, ClusterWarning, stacklevel=2)
+        if (not lazy and y.shape[0] == y.shape[1]
+            and xp.all(xpx.isclose(xp.linalg.diagonal(y), 0))
+            and xp.all(y >= 0) and xp.all(xpx.isclose(y, y.T))):
+            warnings.warn('The symmetric non-negative hollow observation '
+                          'matrix looks suspiciously like an uncondensed '
+                          'distance matrix',
+                          ClusterWarning, stacklevel=2)
         y = distance.pdist(y, metric)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
+    if not lazy and not xp.all(xp.isfinite(y)):
+        raise ValueError("The condensed distance matrix must contain only "
+                         "finite values.")
 
-    y = xpx.lazy_raise(y, ~xp.all(xp.isfinite(y)),
-                       ValueError("The condensed distance matrix must contain only "
-                                  "finite values."))
+    @wraps(_optimal_leaf_ordering.optimal_leaf_ordering)
+    def func(Z, y):
+        if lazy:
+            is_valid_linkage(Z, throw=True, name='Z')
+            if not np.all(np.isfinite(y)):
+                raise ValueError("The condensed distance matrix must contain only "
+                                 "finite values.")
+        return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
-    return xpx.lazy_apply(_optimal_leaf_ordering.optimal_leaf_ordering,
-                          Z, y, shape=Z.shape, dtype=Z.dtype, as_numpy=True)
+    return xpx.lazy_apply(func, Z, y,
+                          shape=Z.shape, dtype=Z.dtype, as_numpy=True)
 
 
 def cophenet(Z, Y=None):
@@ -1929,8 +1944,9 @@ def to_mlab_linkage(Z):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     if Z.ndim == 0 or (Z.ndim == 1 and Z.shape[0] == 0):
         return xp_copy(Z, xp=xp)
+    if not is_lazy_array(Z):
+        is_valid_linkage(Z, throw=True, name='Z')
 
-    Z = xpx.lazy_wait_on(Z, is_valid_linkage(Z, throw=True, name='Z'))
     return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
 
 
@@ -2014,7 +2030,8 @@ def is_monotonic(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
-    Z = xpx.lazy_wait_on(Z, is_valid_linkage(Z, throw=True, name='Z'))
+    if not is_lazy_array(Z):
+        is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
     return xp.all(Z[1:, 2] >= Z[:-1, 2])
@@ -2044,13 +2061,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     Returns
     -------
     b : bool
-        True if the inconsistency matrix is valid; False otherwise.
-
-        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
-        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
-        or throw=True, you would normally discard the return value; you should instead
-        wait on it with `array_api_extra.lazy_wait_on` to make sure that the warning or
-        exception is not elided away by the graph optimizer.
+        True if the inconsistency matrix is valid.
 
     See Also
     --------
@@ -2129,23 +2140,25 @@ def is_valid_im(R, warning=False, throw=False, name=None):
         if R.shape[0] < 1:
             raise ValueError(f'Inconsistency matrix {name_str}'
                              'must have at least one row.')
-    except (TypeError, ValueError) as e:
+        if is_dask(xp):
+            R = R.persist()
+        if xp.any(R[:, 0] < 0):
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height means.')
+        if xp.any(R[:, 1] < 0):
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link height standard deviations.')
+        if xp.any(R[:, 2] < 0):
+            raise ValueError(f'Inconsistency matrix {name_str}'
+                             'contains negative link counts.')
+    except Exception as e:
         if throw:
             raise
         if warning:
             _warning(str(e))
         return False
 
-    return _lazy_valid_checks(
-        (xp.any(R[:, 0] < 0),
-         f'Inconsistency matrix {name_str} contains negative link height means.'),
-        (xp.any(R[:, 1] < 0),
-         f'Inconsistency matrix {name_str} contains negative link height standard '
-         'deviations.'),
-        (xp.any(R[:, 2] < 0),
-         f'Inconsistency matrix {name_str} contains negative link counts.'),
-        throw=throw, warning=warning, xp=xp
-    )
+    return True
 
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
@@ -2186,13 +2199,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     Returns
     -------
     b : bool
-        True if the inconsistency matrix is valid; False otherwise.
-
-        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
-        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
-        or throw=True, you would normally discard the return value; you should instead
-        wait on it with `array_api_extra.lazy_wait_on` to make sure that the warning or
-        exception is not elided away by the graph optimizer.
+        True if the inconsistency matrix is valid.
 
     See Also
     --------
@@ -2253,74 +2260,34 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')
-    except (TypeError, ValueError) as e:
+        n = Z.shape[0]
+        if is_dask(xp):
+            Z = Z.persist()
+        if n > 1:
+            if xp.any(Z[:, :2] < 0):
+                raise ValueError(f'Linkage {name_str}contains negative indices.')
+            if xp.any(Z[:, 2] < 0):
+                raise ValueError(f'Linkage {name_str}contains negative distances.')
+            if xp.any(Z[:, 3] < 0):
+                raise ValueError(f'Linkage {name_str}contains negative counts.')
+            if xp.any(Z[:, 3] > (Z.shape[0] + 1)):
+                raise ValueError('Linkage matrix contains excessive observations'
+                                 'in a cluster')
+        if xp.any(
+            xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)
+        ):
+            raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
+                             ' it is formed.')
+        if xpx.nunique(Z[:, :2]) < n * 2:
+            raise ValueError(f'Linkage {name_str}uses the same cluster more than once.')
+    except Exception as e:
         if throw:
             raise
         if warning:
             _warning(str(e))
         return False
 
-    n = Z.shape[0]
-    if n < 2:
-        return True
-
-    return _lazy_valid_checks(
-        (xp.any(Z[:, 0] < 0) | xp.any(Z[:, 1] < 0),
-         f'Linkage {name_str}contains negative indices.'),
-        (xp.any(Z[:, 2] < 0),
-         f'Linkage {name_str}contains negative distances.'),
-        (xp.any(Z[:, 3] < 0),
-         f'Linkage {name_str}contains negative counts.'),
-        (xp.any(Z[:, 3] > n + 1),
-         f'Linkage {name_str}contains excessive observations in a cluster'),
-        (xp.any(xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)),
-         f'Linkage {name_str}uses non-singleton cluster before it is formed.'),
-        (xpx.nunique(Z[:, :2]) < n * 2,
-         f'Linkage {name_str}uses the same cluster more than once.'),
-        throw=throw, warning=warning, xp=xp
-    )
-
-
-def _lazy_valid_checks(*args, throw=False, warning=False, xp):
-    """Validate a set of conditions on the contents of possibly lazy arrays.
-
-    Parameters
-    ----------
-    args : tuple of (bool | Array, str)
-        The first element of each tuple must be a bool or a 0-dimensional Array
-        that evaluates to bool, The second element must be the message of the issue
-        if the  first element evaluates to True.
-    throw: bool
-        Set to True to `raise ValueError(args[i][1])` if `args[i][0]` is True.
-    warning: bool
-        Set to True to issue a warning with message `args[i][1]` if `args[i][0]`
-        is True.
-    xp: module
-        Array API namespace
-
-    Returns
-    -------
-    If xp is an eager backend (e.g. numpy) and all conditions are False, return True.
-    If throw is True, raise. Otherwise, return False.
-
-    If xp is a lazy backend (e.g. Dask or JAX), return a 0-dimensional bool Array.
-    If the array is materialized, e.g. with `bool()` or `array_api_extra.lazy_wait_on`,
-    it will trigger the same behaviour as the eager case. If the return value is
-    disregarded, this function tests nothing as the graph optimizer prunes it away.
-
-    See Also
-    --------
-    array_api_extra.lazy_wait_on
-    """
-    conds = []
-    for cond, msg in args:
-        if throw:
-            cond = xpx.lazy_raise(cond, cond, ValueError(msg))
-        elif warning:
-            cond = xpx.lazy_warn(cond, cond, msg, ClusterWarning, stacklevel=3)
-        conds.append(xp.reshape(cond, (1, )))
-    out = ~xp.any(xp.concat(conds))
-    return out if is_lazy_array(out) else bool(out)
+    return True
 
 
 def num_obs_linkage(Z):
@@ -2358,10 +2325,9 @@ def num_obs_linkage(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
-    # If Z is a lazy array (Dask/JAX), `is_valid_linkage` returns a future.
-    # By not waiting on it, we're skipping contents validation.
-    is_valid_linkage(Z, throw=True, name='Z')
-    return (Z.shape[0] + 1)
+    if not is_lazy_array(Z):
+        is_valid_linkage(Z, throw=True, name='Z')
+    return Z.shape[0] + 1
 
 
 def correspond(Z, Y):
@@ -2413,9 +2379,8 @@ def correspond(Z, Y):
     True
 
     """
-    # If Z is a lazy array (Dask/JAX), `is_valid_linkage` returns a future.
-    # By not waiting on it, we're skipping contents validation.
-    is_valid_linkage(Z, throw=True)
+    if not is_lazy_array(Z):
+        is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
     xp = array_namespace(Z, Y)
     Z = _asarray(Z, order='c', xp=xp)
