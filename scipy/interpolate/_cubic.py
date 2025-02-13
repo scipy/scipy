@@ -109,6 +109,15 @@ class CubicHermiteSpline(PPoly):
         Interpolation axis. The same axis which was passed to the
         constructor.
 
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    solve
+    roots
+
     See Also
     --------
     Akima1DInterpolator : Akima 1D interpolator.
@@ -171,6 +180,16 @@ class PchipInterpolator(CubicHermiteSpline):
     extrapolate : bool, optional
         Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    solve
+    roots
+
 
     See Also
     --------
@@ -392,6 +411,15 @@ class Akima1DInterpolator(CubicHermiteSpline):
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If None,
         ``extrapolate`` is set to False.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    solve
+    roots
 
     See Also
     --------
@@ -615,6 +643,15 @@ class CubicSpline(CubicHermiteSpline):
     axis : int
         Interpolation axis. The same axis which was passed to the
         constructor.
+
+    Methods
+    -------
+    __call__
+    derivative
+    antiderivative
+    integrate
+    solve
+    roots
 
     See Also
     --------
