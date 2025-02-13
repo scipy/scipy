@@ -1,10 +1,215 @@
 #include "__slsqp.h"
 
-void nonnegative_lsq_imp(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, double* restrict work, int* restrict indices, const int maxiter, double* rnorm, int* info);
+void __nnls(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, double* restrict work, int* restrict indices, const int maxiter, double* rnorm, int* info);
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
+static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
 
+
+void slsqp()
+{
+    // Nonlinear programming by solving sequentially quadratic programming
+
+    // TODO: Implement the function
+}
+
+void slsqpb()
+{
+    // Nonlinear programming by solving sequentially quadratic programming
+
+    // TODO: Implement the function
+}
+
+/*
+ *          min     |A*x - b|
+ *        E*x = f
+ *        G*x >= h
+ *      xl <= x <= xu
+ *
+ * Problem data is kept in S, t, C, d, xl, xu arrays in a rather tedious format.
+ * C(m, n) is the constraint matrix, d(n) is the constraint bounds.
+ * xl(n) and xu(n) are the lower and upper bounds on x.
+ * NaN entries signify unbounded constraints and not included in the constraints.
+ * The C matrix, for a problem with all x bounds are given and finite,
+ * broken into E and G as follows:
+ *
+ *                      ┌────┐    ┌────┐  ┌┐
+ *                  meq │    │    │ E  │  ││ f
+ *                      │   ─┼────┼>   │  ││
+ *                      ┼────┼    └────┘  └┘
+ *                      │    │    ┌────┐  ┌┐
+ *                      │    │    │    │  ││
+ *      mineq = m - meq │   ─┼────┼>   │  ││
+ *                      │    │    │    │  ││
+ *                      │    │    │    │  ││
+ *                      └────┘    │    │  ││
+ *                        C       ┼────┼  ┼┼
+ *                              n │  I │  ││  xl
+ *                                ┼────┼  ┼┼
+ *                              n │ -I │  ││ -xu
+ *                                └────┘  └┘
+ *                                   G     h
+ *
+ * A and b are stored in S[] in LAPACK packed format where S holds a unit, lower
+ * triangular matrix with diagonal entries are overwritten by the entries of d[]
+ * and vector and t[].
+ *
+ *  S[] = [d[0], s[1], s[2], . , d[1], s[n + 2], d[2], ...]
+ *
+ *        [d[ 0 ],                          ]
+ *        [s[ 1 ], d[ 1 ], .  ,             ]
+ *  S[] = [s[ 2 ], s[n+2], .  ,             ]
+ *        [ .    ,   .   , .  , d[n-1]      ]
+ *        [s[ n ], s[2*n], .  ,   .   , d[n]]
+ *
+ * Then, the following relations recover the A and b
+ *
+ *          A = sqrt(d[]) * S[]^T
+ *          b = - inv( S[] * sqrt(d[]) ) * t[]
+ *
+ * The solution is returned in x() and the Lagrange multipliers are returned in y().
+ *
+ *
+*/
+void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d,
+         double* xl, double* xu, double* x, double* y, double* buffer, int* jw,
+         int* mode)
+{
+    int one = 1;
+    int mineq = m - meq;
+    int aug = 0;
+    double xnorm = 0.0;
+
+    for (int i = 0; i < (n+2)*n; i++) { buffer[i] = 0.0; }
+    double* restrict wA = buffer;
+    double* restrict wb = &buffer[n*(n+1)];
+
+    // Determine whether to solve problem with inconsistent linearization
+    // See Kraft, "A software package for Sequential Quadratic Programming"
+    // Section 2.2.3
+
+    // Inconsistent linearization augments an extra column to A and extra row to
+    // A and b. Then sends n value increased by 1 to lsq. For that we save the
+    // size in ld and decrement n if aug is set to keep the problem size consistent.
+
+    if ((n*(n+1)/2 + 1) != nl) { aug = 1; }
+
+    // Recover A and b from S and t
+    int cursor = 0;
+    int ld = n;
+    if (aug) { n--; }
+
+    // Depending on aug, wA is either full (n)x(n) or top-left block of size (n-1)x(n-1).
+    for (int j = 0; j < n; j++)
+    {
+        double diag = sqrt(S[cursor++]);      // Extract the diagonal value from S.
+        wA[j + j * ld] = diag;                // Place the sqrt diagonal.
+        for (int i = j + 1; i < n; i++)
+        {
+            wA[j + i * ld] = S[cursor++] * diag;
+        }
+    }
+
+    // Compute b = - 1/sqrt(d) * inv(S) * t(). S is already in packed format.
+    for (int i = 0; i < n; i++) { wb[i] = t[i]; }
+    dtpsv_("L", "N", "U", &n, wA, wb, &one);
+    cursor = 0;
+    for (int i = 0; i < n; i++)
+    {
+        wb[i] /= -sqrt(S[cursor]);
+        cursor += n - i;
+    }
+
+    // Fill in the augmented system extra entries.
+    if (aug) { wA[ld*ld - 1] = S[ld*(ld+1)/2 + 1]; }
+
+    // Get the equality constraints if given.
+    double* restrict wE = &buffer[n*(n+1) + n];
+    double* restrict wf = &buffer[n*(n+1) + n + n*meq];
+    if (meq > 0)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            for (int i = 0; i < meq; i++)
+            {
+                wE[i + j*meq] = C[i + j*m];
+            }
+        }
+        for (int i = 0; i < meq; i++) { wf[i] = d[i]; }
+    }
+
+    // Get the inequality constraints if given.
+    // Also note that there is still one more variable that can come from the
+    // inconsistent linearization hence in the full case we have m + 2n
+    // constraints rendering G allocated size (mineq + 2n) x (ld).
+    double* restrict wG = &buffer[n*(n+1) + n + n*meq + meq];
+    double* restrict wh = &buffer[n*(n+1) + n + n*meq + meq + (mineq + 2*n)*ld];
+    if (m > meq)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            for (int i = 0; i < mineq; i++)
+            {
+                wG[i + j*mineq] = C[meq + i + j*m];
+            }
+        }
+        for (int i = 0; i < mineq; i++) { wh[i] = d[meq + i]; }
+    }
+
+    // Also the bottom block of G for state bounds is zeroed out.
+    for (int i = 0; i < (2*n)*ld; i++) { wG[mineq*ld + i] = 0.0; }
+
+    // Convert the bounds on x to +I and -I blocks in G.
+    // Augment h by xl and -xu.
+    // Unbounded constraints are signified by NaN values and they do not appear
+    // in G and h. Hence there is a nancount tab to keep track of them.
+
+    int nancount = 0;
+    // Two counters to keep track of the current state and bound entry.
+    int nstate = 0;
+    int nrow = mineq*ld;
+    for (int i = 0; i < n; i++)
+    {
+        if (isnan(xl[i]))
+        {
+            nancount++;
+        } else {
+            wG[nstate + nrow*ld] = 1.0;
+            wh[mineq + nstate] = xl[i];
+            nstate++;
+            nrow++;
+        }
+    }
+    for (int i = 0; i < n; i++)
+    {
+        if (isnan(xl[i]))
+        {
+            nancount++;
+        } else {
+            wG[nstate + nrow*ld] = -1.0;
+            wh[mineq + nstate] = -xu[i];
+            nstate++;
+            nrow++;
+        }
+    }
+
+    // Solve the problem
+    lsei(m, meq, mineq + 2*n - nancount, n, wA, wb, wE, wf, wG, wh, x, buffer, jw, &xnorm, mode);
+
+    // Restore the Lagrange multipliers
+    for (int i = 0; i < m; i++) { y[i] = wh[i]; }
+
+    // Set the user-defined bounds on x to NaN
+    for (int i = 0; i < 2*n; i++) { y[m + i] = NAN; }
+
+    // Clamp the solution, if given, to the finite bound interval
+    for (int i = 0; i < n; i++)
+    {
+        if ((!isnan(xl[i])) && (x[i] < xl[i])) { x[i] = xl[i]; }
+        if ((!isnan(xu[i])) && (x[i] > xu[i])) { x[i] = xu[i]; }
+    }
+}
 
 /*
  * Solve equality and inequality constrained least squares problem (LSEI)
@@ -303,7 +508,7 @@ ldp(int m, int n, double* g, double* h, double* x,
     b[n] = 1.0;
 
     // Solve the dual problem
-    nonnegative_lsq_imp(n+1, m, a, b, y, w, zz, work, indices, 3*m, &rnorm, mode);
+    __nnls(n+1, m, a, b, y, w, zz, work, indices, 3*m, &rnorm, mode);
     if (*mode != 1) { return; }
     *mode = 4;
     if (rnorm <= 0.0) { return; }
