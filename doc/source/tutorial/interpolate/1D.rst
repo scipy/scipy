@@ -182,6 +182,60 @@ linear extrapolation since ``make_interp_spline`` extrapolates by default. Consi
 See :ref:`the extrapolation section <tutorial-extrapolation>` for more details
 and discussion.
 
+.. _tutorial-interpolate_batching:
+
+Batches of `y`
+==============
+
+Univariate interpolators accept not only one-dimensional ``y`` arrays, but also
+``y.ndim > 1``. The interpretation is that the first dimension of ``y`` is the
+interpolation axis, and the trailing dimensions represent a *batch* of 1D data arrays.
+One way of thinking about it is to imagine a collection (a *batch*) of functions,
+:math:`f(x), g(x), h(x), \dots`, sampled at the points :math:`x_j`, such that the ``y``
+array represents a collection of :math:`f(x_j), g(x_j), h(x_j),\dots`, stacked along
+the the first dimension.
+
+To illustrate:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import make_interp_spline
+    >>> n = 11
+    >>> x = 2 * np.pi * np.arange(n) / n
+    >>> x.shape
+    (11,)
+    >>> y = np.stack((np.sin(x)**2, np.cos(x)), axis=1)
+    >>> y.shape
+    (11, 2)
+    >>> spl = make_interp_spline(x, y)
+    >>> xv = np.linspace(0, 2*np.pi, 51)
+    >>> plt.plot(x, y, 'o')
+    >>> plt.plot(xv, spl(xv), '-')
+    >>> plt.show()
+
+Several notes are in order. First and foremost, the behavior here looks similar to
+NumPy's broadcasting, but differs in two respects:
+
+1. The ``x`` array is expected to be 1D even if the ``y`` array is not: ``x.ndim == 1``
+   while ``y.ndim >= 1``. There is no broadcasting of ``x`` vs ``y``.
+
+2. The batching is along the *trailing* dimensions, in contrast to the NumPy functions
+   where the broadcasting works across the *leading* dimensions.
+; 
+Second, the interpolation axis can be controlled by an optional ``axis`` argument. The
+example above uses the default value of ``axis=0``. For a non-default values, the
+following is true:
+
+- ``y.shape[axis] == x.shape[0]`` (otherwise en error is raised)
+- the shape of ``spl(xv)`` is ``y.shape[axis:] + xv.shape + y.shape[:axis]``
+
+
+While we demonstrated the batching behavior with `make_interp_spline`, in fact the
+majority of univariate interpolators support this functionality: `PchipInterpolator` and
+`Akima1DInterpolator`, `CubicSpline`; low-level polynomial representation classes,
+`PPoly`, `BPoly` and `BSpline`; as well as :ref:`least-squares fit and spline smoothing
+functions<tutorial-interpolate_fitpack>`, `make_lsq_spline` and `make_smoothing_spline`.
+
 
 .. _tutorial-interpolate_parametric:
 
@@ -198,9 +252,10 @@ this construction readily generalizes to higher dimensions where
 :math:`\mathbf{p}_j` are points in an N-dimensional space.
 
 Spline curves can be easily constructed using the fact that interpolation
-functions handle multidimensional data arrays. The values of the parameter
-``u``, corresponding to the data points, need to be separately supplied
-by the user.
+functions handle multidimensional data arrays, as discussed in
+:ref:`the previous section <tutorial-interpolate_batching>`.
+The values of the parameter, ``u``, corresponding to the data points, need to be
+separately supplied by the user.
 
 The choice of parametrization is problem-dependent and different parametrizations
 may produce vastly different curves. As an example, we consider three
