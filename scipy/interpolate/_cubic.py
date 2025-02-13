@@ -115,6 +115,7 @@ class CubicHermiteSpline(PPoly):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -186,7 +187,9 @@ class PchipInterpolator(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
+
 
     See Also
     --------
@@ -415,6 +418,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -646,6 +650,7 @@ class CubicSpline(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also

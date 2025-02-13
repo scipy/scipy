@@ -560,7 +560,7 @@ class BSpline:
 
         Returns
         -------
-        b : BSpline object
+        b : `BSpline` object
             A new instance representing the derivative.
 
         See Also
@@ -587,7 +587,7 @@ class BSpline:
 
         Returns
         -------
-        b : BSpline object
+        b : `BSpline` object
             A new instance representing the antiderivative.
 
         Notes
@@ -768,7 +768,7 @@ class BSpline:
 
         Returns
         -------
-        b : BSpline object
+        b : `BSpline` object
             A new instance representing the initial polynomial
             in the B-spline basis.
 
@@ -870,8 +870,8 @@ class BSpline:
 
         Returns
         -------
-        spl : BSpline object
-            A new BSpline object with the new knot inserted.
+        spl : `BSpline` object
+            A new `BSpline` object with the new knot inserted.
 
         Notes
         -----
@@ -1292,7 +1292,8 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     Returns
     -------
-    b : a BSpline object of the degree ``k`` and with knots ``t``.
+    b : `BSpline` object
+        A `BSpline` object of the degree ``k`` and with knots ``t``.
 
     Notes
     -----
@@ -1412,7 +1413,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Returns
     -------
-    b : a BSpline object of the degree ``k`` and with knots ``t``.
+    b : `BSpline` object
+        A `BSpline` object of the degree ``k`` and with knots ``t``.
 
     See Also
     --------
@@ -1687,7 +1689,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
 
     Returns
     -------
-    b : a BSpline object of the degree ``k`` with knots ``t``.
+    b : `BSpline` object
+        A `BSpline` object of the degree ``k`` with knots ``t``.
 
     See Also
     --------
@@ -2203,8 +2206,8 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     Returns
     -------
-    func : a BSpline object.
-        A callable representing a spline in the B-spline basis
+    func : `BSpline` object
+        An object representing a spline in the B-spline basis
         as a solution of the problem of smoothing splines using
         the GCV criteria [1] in case ``lam`` is None, otherwise using the
         given parameter ``lam``.
