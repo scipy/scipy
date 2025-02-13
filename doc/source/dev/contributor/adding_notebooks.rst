@@ -143,6 +143,16 @@ To convert a reStructuredText (``.rst``) file to MyST Markdown (``.md``), you
 can follow the formatting instructions above. You can also use tools such as
 `RST-to-MyST <https://rst-to-myst.readthedocs.io>`__ to automate the conversion,
 but please note some review may be necessary to ensure the conversion is
-correct.
+correct. In particular, some reStructuredText directives may need to be wrapped
+in the ``{eval-rst}`` MyST directive, as follows::
+
+   Some Markdown here
+
+   ```{eval-rst}
+   .. some_rest_directive_here::
+     :some_option: some_value
+   ```
+
+   Some more Markdown here
 
 .. _MyST-NB: https://myst-nb.readthedocs.io/
