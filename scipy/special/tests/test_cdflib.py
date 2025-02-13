@@ -695,3 +695,20 @@ class TestNoncentralTFunctions:
     ])
     def test_nctdtrit(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
+
+
+class TestNoncentralChiSquaredFunctions:
+
+    @pytest.mark.parametrize(
+        "x, df, nc, expected_cdf",
+        [(0.1, 200, 50, 1.1311224867205481e-299),
+         (1e-12, 20, 50, 3.737446313006551e-141),
+         (1, 200, 50, 8.09760974833666e-200)]
+    )
+    def test_chndtr(self, x, df, nc, expected_cdf):
+        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=1e-13)
+    
+    def test_domain_error(self):
+        # Test that the function raises a domain error when x < 0
+        with pytest.raises(ValueError):
+            sp.chndtr(-1, 1, 1)
