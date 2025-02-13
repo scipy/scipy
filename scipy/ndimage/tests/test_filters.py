@@ -5,7 +5,7 @@ import re
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings, assert_allclose
+from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2814,7 +2814,6 @@ def test_byte_order_median(xp):
     assert_array_almost_equal(ref, t)
 
 
-
 @pytest.mark.parametrize("filter_size, exp", [
     # expected results from SciPy 1.14.1
     (20, 0.25754605),
@@ -2851,3 +2850,10 @@ def test_gh_22250(filter_size, exp):
     noisy_image = image + 0.4 * rng.random(image.shape)
     result = ndimage.median_filter(noisy_image, size=filter_size, mode='wrap')
     assert_allclose(result, exp)
+
+
+def test_gh_22333():
+    x = np.array([272, 58, 67, 163, 463, 608, 87, 108, 1378])
+    expected = [58, 67, 87, 108, 163, 108, 108, 108, 87]
+    actual = ndimage.median_filter(x, size=9, mode='constant')
+    assert_array_equal(actual, expected)
