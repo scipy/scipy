@@ -1032,7 +1032,7 @@ class TestAttributes:
 
 class TestMakeDistribution:
     @pytest.mark.parametrize('i, distdata', enumerate(distcont))
-    def test_make_distribution(self, i, distdata):
+    def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
@@ -1104,6 +1104,49 @@ class TestMakeDistribution:
             assert_allclose(X.sample(shape=10, rng=seed),
                             Y.rvs(size=10, random_state=np.random.default_rng(seed)),
                             rtol=rtol)
+
+    def test_custom(self):
+        rng = np.random.default_rng(7548723590230982)
+
+        class MyLogUniform:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'a': {'endpoints': (0, np.inf), 'inclusive': (False, False)},
+                        'b': {'endpoints': ('a', np.inf), 'inclusive': (False, False)}}
+
+            @property
+            def support(self):
+                return 'a', 'b'
+
+            def pdf(self, x, a, b):
+                return 1 / (x * (np.log(b) - np.log(a)))
+
+        LogUniform = stats.make_distribution(MyLogUniform())
+
+        X = LogUniform(a=np.exp(1), b=np.exp(3))
+        Y = stats.exp(Uniform(a=1., b=3.))
+        x = X.sample(shape=10, rng=rng)
+        p = X.cdf(x)
+
+        assert_allclose(X.support(), Y.support())
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.icdf(p), Y.icdf(p))
+        assert_allclose(X.iccdf(p), Y.iccdf(p))
+        for kind in ['raw', 'central', 'standardized']:
+            for order in range(5):
+                assert_allclose(X.moment(order, kind=kind),
+                                Y.moment(order, kind=kind))
 
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
@@ -1863,3 +1906,17 @@ class TestMixture:
         assert X.components[0] == components[0]
         X.weights[0] = weights[1]
         assert X.weights[0] == weights[0]
+
+    def test_inverse(self):
+        # Originally, inverse relied on the mean to start the bracket search.
+        # This didn't work for distributions with non-finite mean. Check that
+        # this is resolved.
+        rng = np.random.default_rng(24358934657854237863456)
+        Cauchy = stats.make_distribution(stats.cauchy)
+        X0 = Cauchy()
+        X = stats.Mixture([X0, X0])
+        p = rng.random(size=10)
+        np.testing.assert_allclose(X.icdf(p), X0.icdf(p))
+        np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
+        np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
+        np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))

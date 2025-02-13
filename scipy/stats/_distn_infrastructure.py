@@ -2467,7 +2467,7 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        names = [f'f{n}' for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
         for n, key in enumerate(names):
             if key in kwds:

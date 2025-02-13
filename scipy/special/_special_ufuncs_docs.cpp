@@ -1316,6 +1316,10 @@ const char *xlog1py_doc = R"(
     True
     )";
 
+const char *_log1mexp_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *_log1pmx_doc = R"(
     Internal function, do not use.
     )";

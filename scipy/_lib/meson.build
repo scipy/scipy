@@ -122,8 +122,8 @@ python_sources = [
   '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
-  '_lazy_testing.py',
   '_pep440.py',
+  '_sparse.py',
   '_testutils.py',
   '_threadsafety.py',
   '_tmpdirs.py',
@@ -166,8 +166,8 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/cupy/__init__.py',
     'array_api_compat/array_api_compat/cupy/_aliases.py',
-    'array_api_compat/array_api_compat/cupy/_typing.py',
     'array_api_compat/array_api_compat/cupy/_info.py',
+    'array_api_compat/array_api_compat/cupy/_typing.py',
     'array_api_compat/array_api_compat/cupy/fft.py',
     'array_api_compat/array_api_compat/cupy/linalg.py',
   ],
@@ -196,8 +196,8 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/numpy/__init__.py',
     'array_api_compat/array_api_compat/numpy/_aliases.py',
-    'array_api_compat/array_api_compat/numpy/_typing.py',
     'array_api_compat/array_api_compat/numpy/_info.py',
+    'array_api_compat/array_api_compat/numpy/_typing.py',
     'array_api_compat/array_api_compat/numpy/fft.py',
     'array_api_compat/array_api_compat/numpy/linalg.py',
   ],
@@ -233,8 +233,9 @@ py3.install_sources(
 py3.install_sources(
   [
     'array_api_extra/src/array_api_extra/_lib/__init__.py',
+    'array_api_extra/src/array_api_extra/_lib/_at.py',
     'array_api_extra/src/array_api_extra/_lib/_backends.py',
-    'array_api_extra/src/array_api_extra/_lib/_funcs.py',    
+    'array_api_extra/src/array_api_extra/_lib/_funcs.py',
     'array_api_extra/src/array_api_extra/_lib/_testing.py',
   ],
   subdir: 'scipy/_lib/array_api_extra/_lib',
@@ -244,6 +245,7 @@ py3.install_sources(
   [
     'array_api_extra/src/array_api_extra/__init__.py',
     'array_api_extra/src/array_api_extra/_delegation.py',
+    'array_api_extra/src/array_api_extra/testing.py',
   ],
   subdir: 'scipy/_lib/array_api_extra',
 )

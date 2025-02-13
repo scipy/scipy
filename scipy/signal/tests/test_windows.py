@@ -256,6 +256,7 @@ cheb_even_true = [0.203894, 0.107279, 0.133904,
 
 
 @skip_xp_backends('jax.numpy', reason='item assignment')
+@skip_xp_backends('dask.array', reason='data-dependent output shapes')
 class TestChebWin:
 
     def test_basic(self, xp):
@@ -778,6 +779,7 @@ class TestGetWindow:
         xp_assert_equal(w, xp.ones_like(w))
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_odd(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
@@ -787,6 +789,7 @@ class TestGetWindow:
         )
 
     @skip_xp_backends('jax.numpy', reason='item assignment')
+    @skip_xp_backends('dask.array', reason='data-dependent output shapes')
     def test_cheb_even(self, xp):
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
@@ -849,6 +852,7 @@ class TestGetWindow:
                         get_window('sinc', 6, xp=xp))
 
 
+@skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")
 def test_windowfunc_basics(xp):
     for window_name, params in window_funcs:
         window = getattr(windows, window_name)

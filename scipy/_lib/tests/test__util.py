@@ -14,12 +14,12 @@ from scipy.conftest import skip_xp_invalid_arg
 
 from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
                                    is_array_api_strict)
-from scipy._lib._lazy_testing import lazy_xp_function
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
@@ -349,6 +349,9 @@ class TestContainsNaN:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)
 
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="lazy backends tested separately"
+    )
     @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
@@ -382,11 +385,10 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(False))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(False))
         # Lazy arrays don't support "omit" and "raise" policies
-        # TODO test that we're emitting a user-friendly error message.
-        #      Blocked by https://github.com/data-apis/array-api-compat/pull/228
-        with pytest.raises(TypeError):
+        match = "not supported for lazy arrays"
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
         x = xpx.at(x)[1, 2, 1].set(np.nan)
@@ -394,9 +396,9 @@ class TestContainsNaN:
         xp_assert_equal(_contains_nan(x), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "propagate"), xp.asarray(True))
         xp_assert_equal(_contains_nan(x, "omit", xp_omit_okay=True), xp.asarray(True))
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "omit")
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match=match):
             _contains_nan(x, "raise")
 
 
@@ -624,6 +626,9 @@ class TestLazywhere:
 
     @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
+    @pytest.mark.skip_xp_backends(
+        "dask.array", reason="lazywhere doesn't work with dask"
+    )
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
     @pytest.mark.thread_unsafe
     def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):

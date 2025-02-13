@@ -350,10 +350,8 @@ class _TestIRFFTBase:
             y2 = rfft(irfft(x))
             assert_equal(y1.dtype, self.rdt)
             assert_equal(y2.dtype, self.rdt)
-            assert_array_almost_equal(y1, x, decimal=self.ndec,
-                                       err_msg="size=%d" % size)
-            assert_array_almost_equal(y2, x, decimal=self.ndec,
-                                       err_msg="size=%d" % size)
+            assert_array_almost_equal(y1, x, decimal=self.ndec, err_msg=f"size={size}")
+            assert_array_almost_equal(y2, x, decimal=self.ndec, err_msg=f"size={size}")
 
     def test_size_accuracy(self):
         # Sanity check for the accuracy for prime and non-prime sized inputs

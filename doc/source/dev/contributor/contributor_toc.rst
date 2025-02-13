@@ -51,6 +51,7 @@ Testing
 -------
 - :doc:`numpy:reference/testing` is the definitive guide to writing unit tests
   of NumPy or SciPy code (part of the NumPy documentation)
+- :ref:`writing-test-tips` contains tips for writing units tests
 - :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and
   run tests locally
 - :ref:`debugging-linalg-issues` 
@@ -100,6 +101,7 @@ Compiled code
     ../core-dev/index
     ../missing-bits
     NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
+    writing_test_tips
     devpy_test
     debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>

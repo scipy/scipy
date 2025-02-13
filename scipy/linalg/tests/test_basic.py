@@ -183,7 +183,6 @@ class TestSolveBanded:
         x = solve_banded((l, u), ab, b)
         assert_array_almost_equal(dot(a, x), b)
 
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt_ab, dt_b):

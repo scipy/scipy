@@ -6,9 +6,10 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere, _rng_spawn
+from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
+from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -1152,47 +1153,6 @@ def _kwargs2args(f, args=None, kwargs=None):
     return wrapped, args
 
 
-def _log1mexp(x):
-    r"""Compute the log of the complement of the exponential.
-
-    This function is equivalent to::
-
-        log1mexp(x) = np.log(1-np.exp(x))
-
-    but avoids loss of precision when ``np.exp(x)`` is nearly 0 or 1.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-
-    Returns
-    -------
-    y : ndarray
-        An array of the same shape as `x`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.stats._distribution_infrastructure import _log1mexp
-    >>> x = 1e-300  # log of a number very close to 1
-    >>> _log1mexp(x)  # log of the complement of a number very close to 1
-    -690.7755278982137
-    >>> # np.log1p(-np.exp(x))  # -inf; emits warning
-
-    """
-    def f1(x):
-        # good for exp(x) close to 0
-        return np.log1p(-np.exp(x))
-
-    def f2(x):
-        # good for exp(x) close to 1
-        with np.errstate(divide='ignore'):
-            return np.real(np.log(-special.expm1(x + 0j)))
-
-    return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -1210,6 +1170,25 @@ def _logexpxmexpy(x, y):
     i = (x == y)
     res[i] = -np.inf
     return res
+
+
+def _guess_bracket(xmin, xmax):
+    a = np.full_like(xmin, -1.0)
+    b = np.ones_like(xmax)
+
+    i = np.isfinite(xmin) & np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmax[i]
+
+    i = np.isfinite(xmin) & ~np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmin[i] + 1
+
+    i = np.isfinite(xmax) & ~np.isfinite(xmin)
+    a[i] = xmax[i] - 1
+    b[i] = xmax[i]
+
+    return a, b
 
 
 def _log_real_standardize(x):
@@ -2011,27 +1990,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
         shape = xmin.shape
         xmin, xmax = np.atleast_1d(xmin, xmax)
 
-        a = -np.ones_like(xmin)
-        b = np.ones_like(xmax)
-
-        i = np.isfinite(xmin) & np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmax[i]
-
-        i = np.isfinite(xmin) & ~np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmin[i] + 1
-
-        i = np.isfinite(xmax) & ~np.isfinite(xmin)
-        a[i] = xmax[i] - 1
-        b[i] = xmax[i]
-
+        xl0, xr0 = _guess_bracket(xmin, xmax)
         xmin = xmin.reshape(shape)
         xmax = xmax.reshape(shape)
-        a = a.reshape(shape)
-        b = b.reshape(shape)
+        xl0 = xl0.reshape(shape)
+        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
         xrtol = None if _isnull(self.tol) else self.tol
@@ -3496,7 +3461,10 @@ _distribution_names = {
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+    """Generate a `ContinuousDistribution` class from a compatible object
+
+    The argument may be an instance of `rv_continuous` or an instance of
+    another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass. Like any subclass
     of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
@@ -3514,7 +3482,44 @@ def make_distribution(dist):
     Parameters
     ----------
     dist : `rv_continuous`
-        Instance of `rv_continuous`.
+        Instance of `rv_continuous` OR an instance of any class with the following
+        attributes:
+
+        __make_distribution_version__ : str
+            A string containing the version number of SciPy in which this interface
+            is defined. The preferred interface may change in future SciPy versions,
+            in which case support for an old interface version may be deprecated
+            and eventually removed.
+        parameters : dict
+            A dictionary describing the parameters of the distribution.
+            Each key is the name of a parameter,
+            and the corresponding value is itself a dictionary with the following items.
+
+            endpoints : tuple
+                A tuple defining the lower and upper endpoints of the domain of the
+                parameter. Allowable values are floats or the name (string) of another
+                parameter.
+
+            inclusive : tuple of bool
+                A tuple specifying whether the endpoints are included within the domain
+                of the parameter.
+
+        support : tuple
+            A tuple defining the lower and upper endpoints of the support of the
+            distribution. Allowable values are floats or the name (string) of a
+            parameter.
+
+        The class **must** also define a ``pdf`` method and **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf``.
+        If defined, these methods must accept the parameters of the distributions as
+        keyword arguments and also accept any positional-only arguments accepted by
+        the corresponding method of `ContinuousDistribution`. Methods ``moment_raw``,
+        ``moment_central``, ``moment_standardized`` may also be defined; if so,
+        they must accept the ``order`` of the moment by position, accept all
+        distribution parameters by keyword, and return the raw, central, and
+        standardized moments of the distribution, respectively.
 
     Returns
     -------
@@ -3536,8 +3541,11 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> LogU = stats.make_distribution(stats.loguniform)
-    >>> X = LogU(a=1.0, b=3.0)
+
+    Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
+
+    >>> LogUniform = stats.make_distribution(stats.loguniform)
+    >>> X = LogUniform(a=1.0, b=3.0)
     >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
     np.True_
     >>> X.plot()
@@ -3546,14 +3554,47 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
+    Create a custom distribution.
+
+    >>> class MyLogUniform:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'a': {'endpoints': (0, np.inf),
+    ...                       'inclusive': (False, False)},
+    ...                 'b': {'endpoints': ('a', np.inf),
+    ...                       'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return 'a', 'b'
+    ...
+    ...     def pdf(self, x, a, b):
+    ...         return 1 / (x * (np.log(b)- np.log(a)))
+    >>>
+    >>> MyLogUniform = stats.make_distribution(MyLogUniform())
+    >>> Y = MyLogUniform(a=1.0, b=3.0)
+    >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
     """
     if dist in {stats.levy_stable, stats.vonmises}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if not isinstance(dist, stats.rv_continuous):
-        message = "The argument must be an instance of `rv_continuous`."
+    if isinstance(dist, stats.rv_continuous):
+        return _make_distribution_rv_generic(dist)
+    elif getattr(dist, "__make_distribution_version__", "0.0.0") >= "1.16.0":
+        return _make_distribution_custom(dist)
+    else:
+        message = ("The argument must be an instance of `rv_continuous` or an instance "
+                   "of a class with attribute `__make_distribution_version__ >= 1.16`.")
         raise ValueError(message)
 
+
+def _make_distribution_rv_generic(dist):
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3667,6 +3708,57 @@ def make_distribution(dist):
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
         "`ContinuousDistribution`.",
         f"The `repr`/`str` of class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
+
+    return CustomDistribution
+
+
+def _make_distribution_custom(dist):
+    parameters = []
+    support = getattr(dist, 'support')
+
+    for name, info in dist.parameters.items():
+        domain = _RealDomain(endpoints=info['endpoints'],
+                             inclusive=info['inclusive'])
+        param = _RealParameter(name, domain=domain)
+        parameters.append(param)
+
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support)
+    repr_str = dist.__class__.__name__
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+        def __str__(self):
+            s = super().__str__()
+            return s.replace('CustomDistribution', repr_str)
+
+    methods = {'sample', 'logentropy', 'entropy',
+               'median', 'mode', 'logpdf', 'pdf',
+               'logcdf2', 'logcdf', 'cdf2', 'cdf',
+               'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
+               'moment_raw', 'moment_central', 'moment_standardized'}
+
+    for method in methods:
+        if hasattr(dist, method):
+            # Make it an attribute of the new object with the new name
+            new_method = f"_{method}_formula"
+            setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `{repr_str}` as a subclass of "
+        "`ContinuousDistribution`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
@@ -4636,7 +4728,8 @@ class Mixture(_ProbabilityDistribution):
         xmin, xmax = self.support()
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
-        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        xl0, xr0 = _guess_bracket(xmin, xmax)
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):

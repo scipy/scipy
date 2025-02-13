@@ -89,15 +89,14 @@ class _BenchOptimizers(Benchmark):
         print("")
         print("=========================================================")
         print(f"Optimizer benchmark: {self.function_name}")
-        print("dimensions: %d, extra kwargs: %s" %
-              (results[0].ndim, str(self.minimizer_kwargs)))
-        print("averaged over %d starting configurations" % (results[0].ntrials))
+        print(f"dimensions: {results[0].ndim}, "
+              f"extra kwargs: {str(self.minimizer_kwargs)}")
+        print(f"averaged over {results[0].ntrials} starting configurations")
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
-            print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev,
-                   res.mean_njev, res.mean_nhev, res.mean_time))
+            print(f"{res.name:11s}  | {res.nfail:4d}  | {res.mean_nfev:4d}  | "
+                  f"{res.mean_njev:4d}  | {res.mean_nhev:4d}  | {res.mean_time:.6g}")
 
     def average_results(self):
         """group the results by minimizer and average over the runs"""
@@ -429,9 +428,10 @@ class BenchSmoothUnbounded(Benchmark):
         # scipy.optimize.check_grad(s.get_energy, s.get_gradient,
         #                           np.random.uniform(-2,2,3*4))
         natoms = 4
-        b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                             fun=s.fun, der=s.der, hess=None)
-        for i in range(10):
+        b = _BenchOptimizers(
+            f"{natoms} atom Lennard Jones potential", fun=s.fun, der=s.der, hess=None
+        )
+        for _ in range(10):
             b.bench_run(np.random.uniform(-2, 2, natoms*3), methods=methods)
         return b
 

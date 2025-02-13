@@ -11,6 +11,7 @@ from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
+@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
 class TestEntropy:
     def test_entropy_positive(self, xp):
         # See ticket #497
@@ -116,6 +117,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
+@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.

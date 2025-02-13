@@ -8,7 +8,7 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
@@ -20,6 +20,7 @@ import numpy.typing as npt
 from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
+    is_lazy_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -27,12 +28,14 @@ from scipy._lib.array_api_compat import (
     is_cupy_namespace as is_cupy,
     is_torch_namespace as is_torch,
     is_jax_namespace as is_jax,
+    is_dask_namespace as is_dask,
     is_array_api_strict_namespace as is_array_api_strict
 )
+from scipy._lib._sparse import issparse
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp',
+    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
@@ -57,8 +60,9 @@ Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
 ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays):
-    """Raise exceptions on known-bad subclasses.
+def _compliance_scipy(arrays: Iterable[ArrayLike]) -> Iterator[Array]:
+    """Raise exceptions on known-bad subclasses. Discard 0-dimensional ArrayLikes
+    and convert 1+-dimensional ArrayLikes to numpy.
 
     The following subclasses are not supported and raise and error:
     - `numpy.ma.MaskedArray`
@@ -67,10 +71,10 @@ def _compliance_scipy(arrays):
     - Any array-like which is neither array API compatible nor coercible by NumPy
     - Any array-like which is coerced by NumPy to an unsupported dtype
     """
-    for i in range(len(arrays)):
-        array = arrays[i]
+    for array in arrays:
+        if array is None:
+            continue
 
-        from scipy.sparse import issparse
         # this comes from `_util._asarray_validated`
         if issparse(array):
             msg = ('Sparse arrays/matrices are not supported by this function. '
@@ -80,14 +84,19 @@ def _compliance_scipy(arrays):
 
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
-        elif isinstance(array, np.matrix):
+
+        if isinstance(array, np.matrix):
             raise TypeError("Inputs of type `numpy.matrix` are not supported.")
+
         if isinstance(array, np.ndarray | np.generic):
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
                 raise TypeError(f"An argument has dtype `{dtype!r}`; "
                                 f"only boolean and numerical dtypes are supported.")
-        elif not is_array_api_obj(array):
+
+        if is_array_api_obj(array):
+            yield array
+        else:
             try:
                 array = np.asanyarray(array)
             except TypeError:
@@ -100,8 +109,11 @@ def _compliance_scipy(arrays):
                     f"only boolean and numerical dtypes are supported."
                 )
                 raise TypeError(message)
-            arrays[i] = array
-    return arrays
+            # Ignore 0-dimensional arrays, coherently with array-api-compat.
+            # Raise if there are 1+-dimensional array-likes mixed with non-numpy
+            # Array API objects.
+            if array.ndim:
+                yield array
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -141,11 +153,13 @@ def array_namespace(*arrays: Array) -> ModuleType:
         # here we could wrap the namespace if needed
         return np_compat
 
-    _arrays = [array for array in arrays if array is not None]
-
-    _arrays = _compliance_scipy(_arrays)
-
-    return array_api_compat.array_namespace(*_arrays)
+    api_arrays = list(_compliance_scipy(arrays))
+    # In case of a mix of array API compliant arrays and scalars, return
+    # the array API namespace. If there are only ArrayLikes (e.g. lists),
+    # return NumPy (wrapped by array-api-compat).
+    if api_arrays:
+        return array_api_compat.array_namespace(*api_arrays)
+    return np_compat
 
 
 def _asarray(
@@ -272,6 +286,9 @@ def _strict_check(actual, desired, xp, *,
         assert actual.dtype == desired.dtype, _msg
 
     if check_shape:
+        if is_dask(xp):
+            actual.compute_chunk_sizes()
+            desired.compute_chunk_sizes()
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
 
@@ -555,7 +572,7 @@ def xp_take_along_axis(arr: Array,
 def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
-    args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
+    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
@@ -579,7 +596,12 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
-    shape = np.broadcast_shapes(*shapes) if len(shapes) != 1 else args_not_none[0].shape
+    try:
+        shape = (np.broadcast_shapes(*shapes) if len(shapes) != 1
+                 else args_not_none[0].shape)
+    except ValueError as e:
+        message = "Array shapes are incompatible for broadcasting."
+        raise ValueError(message) from e
 
     out = []
     for arg in args:
@@ -591,7 +613,8 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
         # Even if two arguments need broadcasting, this is faster than
         # `broadcast_arrays`, especially since we've already determined `shape`
         if arg.shape != shape:
-            arg = xp.broadcast_to(arg, shape)
+            kwargs = {'subok': True} if is_numpy(xp) else {}
+            arg = xp.broadcast_to(arg, shape, **kwargs)
 
         # convert dtype/copy only if needed
         if (arg.dtype != dtype) or ensure_writeable:
@@ -624,3 +647,8 @@ def xp_default_dtype(xp):
     else:
         # we default to float64
         return xp.float64
+
+
+def is_marray(xp):
+    """Returns True if `xp` is an MArray namespace; False otherwise."""
+    return "marray" in xp.__name__

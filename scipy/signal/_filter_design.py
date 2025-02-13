@@ -727,6 +727,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
 def _validate_sos(sos):
     """Helper to validate a SOS input"""
+    sos = np.asarray(sos)
     sos = np.atleast_2d(sos)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')
@@ -1774,6 +1775,7 @@ def normalize(b, a):
     """
     num, den = b, a
 
+    den = np.asarray(den)
     den = np.atleast_1d(den)
     num = np.atleast_2d(_align_nums(num))
 
