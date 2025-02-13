@@ -49,7 +49,6 @@ Multivariate interpolation
    CloughTocher2DInterpolator
    griddata - a convenience wrapper for the above three interpolators
    RBFInterpolator
-   interp2d
 
 **For data on a grid:**
 
@@ -57,7 +56,6 @@ Multivariate interpolation
    :toctree: generated/
 
    RegularGridInterpolator
-   interpn - a convenience wrapper for `RegularGridInterpolator`
 
 .. seealso::
 
@@ -95,7 +93,6 @@ Rational Approximation
    :toctree: generated/
 
    AAA
-   pade
 
 
 Interfaces to FITPACK routines for 1D and 2D spline fitting
@@ -177,12 +174,15 @@ Additional tools
 
    lagrange
    approximate_taylor_polynomial
+   pade
 
+   interpn - a convenience wrapper for `RegularGridInterpolator`
    barycentric_interpolate - A convenience wrapper for `BarycentricInterpolator`
    krogh_interpolate - A convenience wrapper for `KroghInterpolator`
    pchip_interpolate - A convenience wrapper for `PchipInterpolator`
-   interp1d - A legacy interface to 1D interpolation (not recommended for new code)
    Rbf - a legacy RBF interpolator class (prefer ``RBFInterpolator`` in new code)
+   interp1d - A legacy interface to 1D interpolation (not recommended for new code)
+   interp2d - Removed in version 1.14. See the :ref:`replacement guide <interp-transition-guide>`
 
 
 .. seealso::
@@ -190,7 +190,7 @@ Additional tools
    `scipy.ndimage.map_coordinates`,
    `scipy.ndimage.spline_filter`,
 
-"""
+"""  # noqa: E501
 from ._interpolate import *
 from ._fitpack_py import *
 
