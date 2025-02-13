@@ -107,7 +107,9 @@ lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=999,
                  static_argnames=('i',))
-lazy_xp_function(leaders, jax_jit=False, allow_dask_compute=999)
+
+# Returns data-dependent shape
+lazy_xp_function(leaders, jax_jit=False)
 
 
 @use_linkage

@@ -4146,7 +4146,9 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     T = _asarray(T, order='C', xp=xp)
-    is_valid_linkage(Z, throw=True, name='Z')
+    lazy = is_lazy_array(Z)
+    if not lazy:
+        is_valid_linkage(Z, throw=True, name='Z')
 
     if T.dtype != xp.int32:
         raise TypeError('T must be a 1-D array of dtype int32.')
@@ -4154,15 +4156,22 @@ def leaders(Z, T):
     if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    n_clusters = int(xpx.nunique(T))
-    n_obs = int(Z.shape[0] + 1)
-    L = np.zeros(n_clusters, dtype=np.int32)
-    M = np.zeros(n_clusters, dtype=np.int32)
-    Z = np.asarray(Z)
-    T = np.asarray(T, dtype=np.int32)
-    s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
-    if s >= 0:
-        raise ValueError('T is not a valid assignment vector. Error found '
-                          f'when examining linkage node {s} (< 2n-1).')
-    L, M = xp.asarray(L), xp.asarray(M)
-    return (L, M)
+    n_obs = Z.shape[0] + 1
+
+    @wraps(_hierarchy.leaders)
+    def func(Z, T):
+        if lazy:
+            is_valid_linkage(Z, throw=True, name='Z')
+        n_clusters = int(xpx.nunique(T))
+        L = np.zeros(n_clusters, dtype=np.int32)
+        M = np.zeros(n_clusters, dtype=np.int32)
+        s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
+        if s >= 0:
+            raise ValueError('T is not a valid assignment vector. Error found '
+                             f'when examining linkage node {s} (< 2n-1).')
+        return L, M
+
+    return xpx.lazy_apply(func, Z, T,
+                          shape=((None,), (None, )),
+                          dtype=(xp.int32, xp.int32),
+                          as_numpy=True)
