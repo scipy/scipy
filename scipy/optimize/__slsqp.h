@@ -24,6 +24,7 @@ void dlartgp_(double* f, double* g, double* cs, double* sn, double* r);
 double dnrm2_(int* n, double* x, int* incx);
 void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
 void dormr2_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
+void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
 void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
 void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, double* x, int* incx);
 
@@ -129,7 +130,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // Call nnls
-    nonnegative_lsq_imp((int)m, (int)n, a, b, x, w, zz, work, indices, maxiter, &rnorm, &info);
+    __nnls((int)m, (int)n, a, b, x, w, zz, work, indices, maxiter, &rnorm, &info);
     // x is the first n elements of buffer, shrink buffer to n elements
     free(indices);
     double* mem_ret = realloc(buffer, n*sizeof(double));
@@ -539,10 +540,11 @@ lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 }
 
 
+// The commented wrappers are for debugging purposes and they will be optimized out
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
 
-
+/*
 static char doc_lsei_wrapper[] = ("Compute the least squares solution subject to "
                                  "equality and inequality constraints.\n\n"
                                  "    x = lsi_wrapper(A, b, E, f, G, h)\n\n");
@@ -553,12 +555,13 @@ static char doc_lsi_wrapper[] = ("Compute the least squares solution subject to 
 
 static char doc_ldp_wrapper[] = ("Compute the least distance solution.\n\n"
                                  "    x = ldp_wrapper(G, h)\n\n");
+*/
 
 static struct PyMethodDef slsqplib_module_methods[] = {
   {"nnls", nnls, METH_VARARGS, doc_nnls},
-  {"ldp_wrapper", ldp_wrapper, METH_VARARGS, doc_ldp_wrapper},
-  {"lsi_wrapper", lsi_wrapper, METH_VARARGS, doc_lsi_wrapper},
-  {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
+  // {"ldp_wrapper", ldp_wrapper, METH_VARARGS, doc_ldp_wrapper},
+  // {"lsi_wrapper", lsi_wrapper, METH_VARARGS, doc_lsi_wrapper},
+  // {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
   {NULL, NULL, 0, NULL}
 };
 
