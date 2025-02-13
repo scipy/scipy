@@ -408,6 +408,7 @@ myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
     "substitution",
+    "linkify",
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
