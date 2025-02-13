@@ -1039,8 +1039,8 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     n = distance.num_obs_y(y)
     method_code = _LINKAGE_METHODS[method]
 
-    def cy_linkage(y):
-        if lazy and not np.all(np.isfinite(y)):
+    def cy_linkage(y, validate):
+        if validate and not np.all(np.isfinite(y)):
             raise ValueError("The condensed distance matrix must contain only "
                             "finite values.")            
 
@@ -1051,8 +1051,8 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         else:
             return _hierarchy.fast_linkage(y, n, method_code)
 
-    result = xpx.lazy_apply(cy_linkage, y, shape=(n - 1, 4), dtype=xp.float64,
-                            as_numpy=True)
+    result = xpx.lazy_apply(cy_linkage, y, validate=lazy,
+                            shape=(n - 1, 4), dtype=xp.float64, as_numpy=True)
 
     if optimal_ordering:
         return optimal_leaf_ordering(result, y)
@@ -1526,8 +1526,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Z = _asarray(Z, order='C', xp=xp)
     y = _asarray(y, order='C', dtype=xp.float64, xp=xp)
     lazy = is_lazy_array(Z)
-    if not lazy:
-        is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z')
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1547,15 +1546,15 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
                          "finite values.")
 
     @wraps(_optimal_leaf_ordering.optimal_leaf_ordering)
-    def func(Z, y):
-        if lazy:
+    def func(Z, y, validate):
+        if validate:
             is_valid_linkage(Z, throw=True, name='Z')
             if not np.all(np.isfinite(y)):
                 raise ValueError("The condensed distance matrix must contain only "
                                  "finite values.")
         return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
-    return xpx.lazy_apply(func, Z, y,
+    return xpx.lazy_apply(func, Z, y, validate=lazy,
                           shape=Z.shape, dtype=Z.dtype, as_numpy=True)
 
 
@@ -1944,8 +1943,7 @@ def to_mlab_linkage(Z):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     if Z.ndim == 0 or (Z.ndim == 1 and Z.shape[0] == 0):
         return xp_copy(Z, xp=xp)
-    if not is_lazy_array(Z):
-        is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z')
 
     return xp.concat((Z[:, :2] + 1.0, Z[:, 2:3]), axis=1)
 
@@ -2030,8 +2028,7 @@ def is_monotonic(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
-    if not is_lazy_array(Z):
-        is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
     return xp.all(Z[1:, 2] >= Z[:-1, 2])
@@ -2061,7 +2058,11 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     Returns
     -------
     b : bool
-        True if the inconsistency matrix is valid.
+        True if the inconsistency matrix is valid; False otherwise.
+
+        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
+        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
+        or throw=True, calling this function materializes the array.
 
     See Also
     --------
@@ -2124,6 +2125,14 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     False
 
     """
+    return _is_valid_im(R, warning=warning, throw=throw, name=name, materialize=True)
+
+
+def _is_valid_im(R, warning=False, throw=False, name=None, materialize=False):
+    """Variant of `is_valid_im` to be called internally by other scipy functions,
+    which by default does not materialize lazy input arrays (Dask, JAX, etc.) when
+    warning=True or throw=True.
+    """
     xp = array_namespace(R)
     R = _asarray(R, xp=xp)
     name_str = f"{name!r} " if name else ''
@@ -2140,25 +2149,23 @@ def is_valid_im(R, warning=False, throw=False, name=None):
         if R.shape[0] < 1:
             raise ValueError(f'Inconsistency matrix {name_str}'
                              'must have at least one row.')
-        if is_dask(xp):
-            R = R.persist()
-        if xp.any(R[:, 0] < 0):
-            raise ValueError(f'Inconsistency matrix {name_str}'
-                             'contains negative link height means.')
-        if xp.any(R[:, 1] < 0):
-            raise ValueError(f'Inconsistency matrix {name_str}'
-                             'contains negative link height standard deviations.')
-        if xp.any(R[:, 2] < 0):
-            raise ValueError(f'Inconsistency matrix {name_str}'
-                             'contains negative link counts.')
-    except Exception as e:
+    except (TypeError, ValueError) as e:
         if throw:
             raise
         if warning:
             _warning(str(e))
         return False
 
-    return True
+    return _lazy_valid_checks(
+        (xp.any(R[:, 0] < 0),
+         f'Inconsistency matrix {name_str} contains negative link height means.'),
+        (xp.any(R[:, 1] < 0),
+         f'Inconsistency matrix {name_str} contains negative link height standard '
+         'deviations.'),
+        (xp.any(R[:, 2] < 0),
+         f'Inconsistency matrix {name_str} contains negative link counts.'),
+        throw=throw, warning=warning, materialize=materialize, xp=xp
+    )
 
 
 def is_valid_linkage(Z, warning=False, throw=False, name=None):
@@ -2199,7 +2206,11 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     Returns
     -------
     b : bool
-        True if the inconsistency matrix is valid.
+        True if the inconsistency matrix is valid; False otherwise.
+
+        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
+        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
+        or throw=True, calling this function materializes the array.
 
     See Also
     --------
@@ -2246,6 +2257,15 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     False
 
     """
+    return _is_valid_linkage(Z, warning=warning, throw=throw,
+                             name=name, materialize=True)
+
+
+def _is_valid_linkage(Z, warning=False, throw=False, name=None, materialize=False):
+    """Variant of `is_valid_linkage` to be called internally by other scipy functions,
+    which by default does not materialize lazy input arrays (Dask, JAX, etc.) when
+    warning=True or throw=True.
+    """
     xp = array_namespace(Z)
     Z = _asarray(Z, xp=xp)
     name_str = f"{name!r} " if name else ''
@@ -2260,34 +2280,90 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         if Z.shape[0] == 0:
             raise ValueError('Linkage must be computed on at least two '
                              'observations.')
-        n = Z.shape[0]
-        if is_dask(xp):
-            Z = Z.persist()
-        if n > 1:
-            if xp.any(Z[:, :2] < 0):
-                raise ValueError(f'Linkage {name_str}contains negative indices.')
-            if xp.any(Z[:, 2] < 0):
-                raise ValueError(f'Linkage {name_str}contains negative distances.')
-            if xp.any(Z[:, 3] < 0):
-                raise ValueError(f'Linkage {name_str}contains negative counts.')
-            if xp.any(Z[:, 3] > (Z.shape[0] + 1)):
-                raise ValueError('Linkage matrix contains excessive observations'
-                                 'in a cluster')
-        if xp.any(
-            xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)
-        ):
-            raise ValueError(f'Linkage {name_str}uses non-singleton cluster before'
-                             ' it is formed.')
-        if xpx.nunique(Z[:, :2]) < n * 2:
-            raise ValueError(f'Linkage {name_str}uses the same cluster more than once.')
-    except Exception as e:
+    except (TypeError, ValueError) as e:
         if throw:
             raise
         if warning:
             _warning(str(e))
         return False
 
-    return True
+    n = Z.shape[0]
+    if n < 2:
+        return True
+
+    return _lazy_valid_checks(
+        (xp.any(Z[:, :2] < 0),
+         f'Linkage {name_str}contains negative indices.'),
+        (xp.any(Z[:, 2] < 0),
+         f'Linkage {name_str}contains negative distances.'),
+        (xp.any(Z[:, 3] < 0),
+         f'Linkage {name_str}contains negative counts.'),
+        (xp.any(Z[:, 3] > n + 1),
+         f'Linkage {name_str}contains excessive observations in a cluster'),
+        (xp.any(xp.max(Z[:, :2], axis=1) >= xp.arange(n + 1, 2 * n + 1, dtype=Z.dtype)),
+         f'Linkage {name_str}uses non-singleton cluster before it is formed.'),
+        (xpx.nunique(Z[:, :2]) < n * 2,
+         f'Linkage {name_str}uses the same cluster more than once.'),
+        throw=throw, warning=warning, materialize=materialize, xp=xp
+    )
+
+
+def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp):
+    """Validate a set of conditions on the contents of possibly lazy arrays.
+
+    Parameters
+    ----------
+    args : tuple of (bool | Array, str)
+        The first element of each tuple must be a bool or a 0-dimensional Array
+        that evaluates to bool, The second element must be the message of the issue
+        if the  first element evaluates to True.
+    throw: bool
+        Set to True to `raise ValueError(args[i][1])` if `args[i][0]` is True.
+    warning: bool
+        Set to True to issue a warning with message `args[i][1]` if `args[i][0]`
+        is True.
+    materialize: bool
+        Set to True to force materialization of lazy arrays when throw=True or
+        warning=True. If the inputs are lazy and materialize=False, ignore the
+        `throw` and `warning` flags.
+    xp: module
+        Array API namespace
+
+    Returns
+    -------
+    If xp is an eager backend (e.g. numpy) and all conditions are False, return True.
+    If throw is True, raise. Otherwise, return False.
+
+    If xp is a lazy backend (e.g. Dask or JAX), return a 0-dimensional bool Array.
+    If the array is materialized, e.g. with `bool()` or `array_api_extra.lazy_wait_on`,
+    it will trigger the same behaviour as the eager case. If the return value is
+    disregarded, this function tests nothing as the graph optimizer prunes it away.
+
+    See Also
+    --------
+    array_api_extra.lazy_wait_on
+    """
+    conds = xp.concat([xp.reshape(cond, (1, )) for cond, _ in args])
+    if (not throw and not warning) or not materialize:
+        out = ~xp.any(conds)
+        return out if is_lazy_array(out) else bool(out)
+
+    if is_dask(xp):
+        # Only compute the graph once
+        conds = conds.compute()
+
+    # Note: don't call np.asarray(conds), as it will trigger the device
+    # transfer guard on CuPY and PyTorch and the densification guard on Sparse,
+    # whereas bool() will not.
+    conds = [bool(cond) for cond in conds]
+
+    for cond, (_, msg) in zip(conds, args):
+        if throw and cond:
+            raise ValueError(msg)
+        elif warning and cond:
+            warnings.warn(msg, ClusterWarning, stacklevel=3)
+
+    return not any(conds)
 
 
 def num_obs_linkage(Z):
@@ -2325,8 +2401,7 @@ def num_obs_linkage(Z):
     """
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
-    if not is_lazy_array(Z):
-        is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z')
     return Z.shape[0] + 1
 
 
@@ -2379,8 +2454,7 @@ def correspond(Z, Y):
     True
 
     """
-    if not is_lazy_array(Z):
-        is_valid_linkage(Z, throw=True)
+    _is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
     xp = array_namespace(Z, Y)
     Z = _asarray(Z, order='c', xp=xp)
@@ -4146,9 +4220,7 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     T = _asarray(T, order='C', xp=xp)
-    lazy = is_lazy_array(Z)
-    if not lazy:
-        is_valid_linkage(Z, throw=True, name='Z')
+    _is_valid_linkage(Z, throw=True, name='Z')
 
     if T.dtype != xp.int32:
         raise TypeError('T must be a 1-D array of dtype int32.')
@@ -4159,8 +4231,8 @@ def leaders(Z, T):
     n_obs = Z.shape[0] + 1
 
     @wraps(_hierarchy.leaders)
-    def func(Z, T):
-        if lazy:
+    def func(Z, T, validate):
+        if validate:
             is_valid_linkage(Z, throw=True, name='Z')
         n_clusters = int(xpx.nunique(T))
         L = np.zeros(n_clusters, dtype=np.int32)
@@ -4172,6 +4244,7 @@ def leaders(Z, T):
         return L, M
 
     return xpx.lazy_apply(func, Z, T,
+                          validate=is_lazy_array(Z),
                           shape=((None,), (None, )),
                           dtype=(xp.int32, xp.int32),
                           as_numpy=True)

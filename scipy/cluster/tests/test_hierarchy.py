@@ -37,6 +37,7 @@ from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, as
 import pytest
 from pytest import raises as assert_raises
 
+import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
@@ -87,12 +88,9 @@ lazy_xp_function(from_mlab_linkage, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(to_mlab_linkage, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(is_monotonic)
 
-# Validation functions call bool() multiple times, so they can run in JAX but not inside
-# jax.jit. In Dask, they call persist() so a high number of computes is acceptable.
-lazy_xp_function(is_valid_im,  jax_jit=False, allow_dask_compute=4,
-                 static_argnames=("warning", "throw", "name")) 
-lazy_xp_function(is_valid_linkage,  jax_jit=False, allow_dask_compute=7,
-                 static_argnames=("warning", "throw", "name"))
+# These functions materialize lazy arrays iff warning=True or throw=True
+lazy_xp_function(is_valid_im, static_argnames=("warning", "throw", "name")) 
+lazy_xp_function(is_valid_linkage, static_argnames=("warning", "throw", "name"))
 
 lazy_xp_function(num_obs_linkage)
 lazy_xp_function(correspond)
@@ -470,7 +468,7 @@ class TestIsValidLinkage:
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         Z = Z[:nrow, :ncol]
-        assert_(is_valid_linkage(Z) == valid)
+        xp_assert_equal(is_valid_linkage(Z), valid, check_namespace=False)
         if not valid:
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -478,13 +476,13 @@ class TestIsValidLinkage:
         # Tests is_valid_linkage(Z) with integer type.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        assert_(not is_valid_linkage(Z))
+        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self, xp):
         # Tests is_valid_linkage(Z) with empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
-        assert_(not is_valid_linkage(Z))
+        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
         assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
     @use_linkage
@@ -495,7 +493,7 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            assert_(is_valid_linkage(Z))
+            xp_assert_equal(is_valid_linkage(Z), True, check_namespace=False)
 
     @use_linkage
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
@@ -506,8 +504,10 @@ class TestIsValidLinkage:
             y = xp.asarray(y)
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 0].set(-2)
-            assert_(not is_valid_linkage(Z))
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
     @use_linkage
     def test_is_valid_linkage_4_and_up_neg_index_right(self, xp):
@@ -518,8 +518,11 @@ class TestIsValidLinkage:
             y = xp.asarray(y)
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 1].set(-2)
-            assert_(not is_valid_linkage(Z))
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
+
 
     @use_linkage
     def test_is_valid_linkage_4_and_up_neg_dist(self, xp):
@@ -530,8 +533,10 @@ class TestIsValidLinkage:
             y = xp.asarray(y)
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 2].set(-0.5)
-            assert_(not is_valid_linkage(Z))
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
     @use_linkage
     def test_is_valid_linkage_4_and_up_neg_counts(self, xp):
@@ -542,8 +547,10 @@ class TestIsValidLinkage:
             y = xp.asarray(y)
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 3].set(-2)
-            assert_(not is_valid_linkage(Z))
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
 
 class TestIsValidInconsistent:
@@ -552,7 +559,7 @@ class TestIsValidInconsistent:
         # Tests is_valid_im(R) with integer type.
         R = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        assert_(not is_valid_im(R))
+        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_various_size(self, xp):
@@ -565,14 +572,14 @@ class TestIsValidInconsistent:
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         R = R[:nrow, :ncol]
-        assert_(is_valid_im(R) == valid)
+        xp_assert_equal(is_valid_im(R), valid, check_namespace=False)
         if not valid:
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_empty(self, xp):
         # Tests is_valid_im(R) with empty inconsistency matrix.
         R = xp.zeros((0, 4), dtype=xp.float64)
-        assert_(not is_valid_im(R))
+        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
         assert_raises(ValueError, is_valid_im, R, throw=True)
 
     @use_linkage
@@ -584,7 +591,7 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            assert_(is_valid_im(R))
+            xp_assert_equal(is_valid_im(R), True, check_namespace=False)
 
     @use_linkage
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
@@ -596,8 +603,10 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 0].set(-2.0)
-            assert_(not is_valid_im(R))
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
     @use_linkage
     def test_is_valid_im_4_and_up_neg_index_right(self, xp):
@@ -609,8 +618,10 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 1].set(-2.0)
-            assert_(not is_valid_im(R))
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
     @use_linkage
     def test_is_valid_im_4_and_up_neg_dist(self, xp):
@@ -622,14 +633,14 @@ class TestIsValidInconsistent:
             Z = linkage(y)
             R = inconsistent(Z)
             R = xpx.at(R)[i//2, 2].set(-0.5)
-            assert_(not is_valid_im(R))
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            # This materializes lazy arrays. Bypass lazy_xp_function().
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
 
 class TestNumObsLinkage:
 
-    @skip_xp_backends("dask.array", reason="lazy backends skip validation")
-    @skip_xp_backends("jax.numpy", reason="lazy backends skip validation")
     def test_num_obs_linkage_empty(self, xp):
         # Tests num_obs_linkage(Z) with empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
@@ -760,8 +771,6 @@ class TestCorrespond:
 
 class TestIsMonotonic:
 
-    @skip_xp_backends("dask.array", reason="lazy backends skip validation")
-    @skip_xp_backends("jax.numpy", reason="lazy backends skip validation")
     def test_is_monotonic_empty(self, xp):
         # Tests is_monotonic(Z) on an empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
