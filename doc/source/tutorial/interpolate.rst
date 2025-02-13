@@ -1,3 +1,5 @@
+.. _tutorial-interpolate:
+
 ========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
