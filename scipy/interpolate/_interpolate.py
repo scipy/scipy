@@ -110,6 +110,8 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
+    Class for 2D interpolation (deprecated and removed)
+
     .. versionremoved:: 1.14.0
 
         `interp2d` has been removed in SciPy 1.14.0.
@@ -153,7 +155,7 @@ def _do_extrapolate(fill_value):
 
 class interp1d(_Interpolator1D):
     """
-    Interpolate a 1-D function.
+    Interpolate a 1-D function (legacy).
 
     .. legacy:: class
 
@@ -795,8 +797,7 @@ class _PPolyBase:
 
 
 class PPoly(_PPolyBase):
-    """
-    Piecewise polynomial in terms of coefficients and breakpoints
+    """Piecewise interpolating polynomial in the power basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     local power basis::
@@ -1259,7 +1260,7 @@ class PPoly(_PPolyBase):
 
 
 class BPoly(_PPolyBase):
-    """Piecewise polynomial in terms of coefficients and breakpoints.
+    """Piecewise interpolating polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     Bernstein polynomial basis::

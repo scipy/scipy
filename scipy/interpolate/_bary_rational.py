@@ -597,8 +597,7 @@ class AAA(_BarycentricRational):
 
 
 class FloaterHormannInterpolator(_BarycentricRational):
-    r"""
-    Floater-Hormann barycentric rational interpolation.
+    r"""Floater-Hormann barycentric rational interpolator (C∞ smooth).
 
     As described in [1]_, the method of Floater and Hormann computes weights for a
     Barycentric rational interpolant with no poles on the real axis.

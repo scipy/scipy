@@ -1368,7 +1368,7 @@ def _make_periodic_spline(x, y, t, k, axis):
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
-    """Compute the (coefficients of) interpolating B-spline.
+    """Create an interpolating B-spline with specified degree and boundary conditions
 
     Parameters
     ----------
@@ -1644,8 +1644,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
-    r"""Compute the (coefficients of) an LSQ (Least SQuared) based
-    fitting B-spline.
+    r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion
 
     The result is a linear combination
 
@@ -2166,6 +2165,8 @@ def _coeff_of_divided_diff(x):
 
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     r"""
+    Create a smoothing B-spline satisfying Generalized Cross Validation (GCV) criterion
+
     Compute the (coefficients of) smoothing cubic spline function using
     ``lam`` to control the tradeoff between the amount of smoothness of the
     curve and its proximity to the data. In case ``lam`` is None, using the
