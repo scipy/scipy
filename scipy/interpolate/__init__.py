@@ -47,7 +47,6 @@ Multivariate interpolation
    LinearNDInterpolator
    NearestNDInterpolator
    CloughTocher2DInterpolator
-   griddata - a convenience wrapper for the above three interpolators
    RBFInterpolator
 
 **For data on a grid:**
@@ -81,10 +80,9 @@ Multivariate interpolation
 
    make_lsq_spline
    make_smoothing_spline
-   generate_knots
    make_splrep
    make_splprep
-
+   generate_knots
 
 Rational Approximation
 ======================
@@ -176,14 +174,14 @@ Additional tools
    approximate_taylor_polynomial
    pade
 
-   interpn - a convenience wrapper for `RegularGridInterpolator`
-   barycentric_interpolate - A convenience wrapper for `BarycentricInterpolator`
-   krogh_interpolate - A convenience wrapper for `KroghInterpolator`
-   pchip_interpolate - A convenience wrapper for `PchipInterpolator`
-   Rbf - a legacy RBF interpolator class (prefer ``RBFInterpolator`` in new code)
-   interp1d - A legacy interface to 1D interpolation (not recommended for new code)
-   interp2d - Removed in version 1.14. See the :ref:`replacement guide <interp-transition-guide>`
-
+   interpn
+   griddata
+   barycentric_interpolate
+   krogh_interpolate
+   pchip_interpolate
+   Rbf
+   interp1d
+   interp2d
 
 .. seealso::
 
