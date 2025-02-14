@@ -1545,6 +1545,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
         raise ValueError("The condensed distance matrix must contain only "
                          "finite values.")
 
+    # @wraps causes the Dask key to have prefix "optimal_leaf_ordering-*"
     @wraps(_optimal_leaf_ordering.optimal_leaf_ordering)
     def func(Z, y, validate):
         if validate:
@@ -2313,9 +2314,9 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
 
     Parameters
     ----------
-    args : tuple of (bool | Array, str)
-        The first element of each tuple must be a bool or a 0-dimensional Array
-        that evaluates to bool, The second element must be the message of the issue
+    args : tuples of (Array, str)
+        The first element of each tuple must be a 0-dimensional Array
+        that evaluates to bool; the second element must be the message to convey
         if the  first element evaluates to True.
     throw: bool
         Set to True to `raise ValueError(args[i][1])` if `args[i][0]` is True.
@@ -2335,13 +2336,6 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
     If throw is True, raise. Otherwise, return False.
 
     If xp is a lazy backend (e.g. Dask or JAX), return a 0-dimensional bool Array.
-    If the array is materialized, e.g. with `bool()` or `array_api_extra.lazy_wait_on`,
-    it will trigger the same behaviour as the eager case. If the return value is
-    disregarded, this function tests nothing as the graph optimizer prunes it away.
-
-    See Also
-    --------
-    array_api_extra.lazy_wait_on
     """
     conds = xp.concat([xp.reshape(cond, (1, )) for cond, _ in args])
     if (not throw and not warning) or not materialize:
@@ -2349,12 +2343,12 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
         return out if is_lazy_array(out) else bool(out)
 
     if is_dask(xp):
-        # Only compute the graph once
+        # Only materialize the graph once, instead of once per check
         conds = conds.compute()
 
-    # Note: don't call np.asarray(conds), as it will trigger the device
-    # transfer guard on CuPY and PyTorch and the densification guard on Sparse,
-    # whereas bool() will not.
+    # Don't call np.asarray(conds), as it would be blocked by the device transfer
+    # guard on CuPY and PyTorch and the densification guard on Sparse, whereas
+    # bool() will not.
     conds = [bool(cond) for cond in conds]
 
     for cond, (_, msg) in zip(conds, args):
@@ -4216,6 +4210,11 @@ def leaders(Z, T):
     >>> M
     array([1, 2, 3, 4], dtype=int32)
 
+    Notes
+    -----
+    *Array API support (experimental) note:* This function returns arrays
+    with data-dependent shape. In JAX, at the moment of writing this makes it
+    impossible to execute it inside `@jax.jit`.
     """
     xp = array_namespace(Z, T)
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
@@ -4230,6 +4229,7 @@ def leaders(Z, T):
 
     n_obs = Z.shape[0] + 1
 
+    # @wraps causes the Dask key to have prefix "leaders-*"
     @wraps(_hierarchy.leaders)
     def func(Z, T, validate):
         if validate:

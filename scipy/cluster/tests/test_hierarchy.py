@@ -458,12 +458,9 @@ class TestIsIsomorphic:
 
 class TestIsValidLinkage:
 
-    def test_is_valid_linkage_various_size(self, xp):
-        for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
-                                  (1, 4, True), (2, 4, True)]:
-            self.check_is_valid_linkage_various_size(nrow, ncol, valid, xp)
-
-    def check_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
+    @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
+                                                  (1, 4, True), (2, 4, True)])
+    def test_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
         # Tests is_valid_linkage(Z) with linkage matrices of various sizes
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
@@ -562,12 +559,9 @@ class TestIsValidInconsistent:
         xp_assert_equal(is_valid_im(R), False, check_namespace=False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
-    def test_is_valid_im_various_size(self, xp):
-        for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
-                                  (1, 4, True), (2, 4, True)]:
-            self.check_is_valid_im_various_size(nrow, ncol, valid, xp)
-
-    def check_is_valid_im_various_size(self, nrow, ncol, valid, xp):
+    @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
+                                                  (1, 4, True), (2, 4, True)])
+    def test_is_valid_im_various_size(self, nrow, ncol, valid, xp):
         # Tests is_valid_im(R) with linkage matrices of various sizes
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
@@ -649,13 +643,13 @@ class TestNumObsLinkage:
     def test_num_obs_linkage_1x4(self, xp):
         # Tests num_obs_linkage(Z) on linkage over 2 observations.
         Z = xp.asarray([[0, 1, 3.0, 2]], dtype=xp.float64)
-        xp_assert_equal(num_obs_linkage(Z), 2, check_namespace=False)
+        assert num_obs_linkage(Z) == 2
 
     def test_num_obs_linkage_2x4(self, xp):
         # Tests num_obs_linkage(Z) on linkage over 3 observations.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.float64)
-        xp_assert_equal(num_obs_linkage(Z), 3, check_namespace=False)
+        assert num_obs_linkage(Z) == 3
 
     @use_linkage
     def test_num_obs_linkage_4_and_up(self, xp):
@@ -665,7 +659,7 @@ class TestNumObsLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            xp_assert_equal(num_obs_linkage(Z), i, check_namespace=False)
+            assert num_obs_linkage(Z) == i
 
     @use_linkage
     def test_num_obs_linkage_multi_matrix(self, xp):
@@ -674,7 +668,7 @@ class TestNumObsLinkage:
             X = xp.asarray(np.random.rand(n, 4))
             Y = pdist(X)
             Z = linkage(Y)
-            xp_assert_equal(num_obs_linkage(Z), n, check_namespace=False)
+            assert num_obs_linkage(Z) == n
 
 
 @skip_xp_backends(cpu_only=True)
