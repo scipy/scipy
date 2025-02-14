@@ -184,16 +184,16 @@ and discussion.
 
 .. _tutorial-interpolate_batching:
 
-Batches of `y`
-==============
+Batches of ``y``
+================
 
 Univariate interpolators accept not only one-dimensional ``y`` arrays, but also
-``y.ndim > 1``. The interpretation is that the first dimension of ``y`` is the
-interpolation axis, and the trailing dimensions represent a *batch* of 1D data arrays.
-One way of thinking about it is to imagine a collection (a *batch*) of functions,
-:math:`f(x), g(x), h(x), \dots`, sampled at the points :math:`x_j`, such that the ``y``
-array represents a collection of :math:`f(x_j), g(x_j), h(x_j),\dots`, stacked along
-the the first dimension.
+``y.ndim > 1``. The interpretation is that ``y`` is a *batch* of 1D data arrays: by
+default, the zeroth dimension of ``y`` is the interpolation axis, and the trailing 
+dimensions are batch dimensions.
+Consider a collection (a *batch*) of functions :math:`f_j` sampled at the points
+:math:`x_i`. We can instantiate a single interpolator for all of these functions by 
+providing a two-dimensional array ``y`` such that ``y[i, j]`` records :math:`f_j(x_i)`.
 
 To illustrate:
 
@@ -219,14 +219,14 @@ NumPy's broadcasting, but differs in two respects:
 1. The ``x`` array is expected to be 1D even if the ``y`` array is not: ``x.ndim == 1``
    while ``y.ndim >= 1``. There is no broadcasting of ``x`` vs ``y``.
 
-2. The batching is along the *trailing* dimensions, in contrast to the NumPy functions
-   where the broadcasting works across the *leading* dimensions.
+2. By default, the *trailing* dimensions are used as batch dimensions, in contrast 
+   to the NumPy convention of using the *leading* dimensions as batch dimensions.
 
 Second, the interpolation axis can be controlled by an optional ``axis`` argument. The
 example above uses the default value of ``axis=0``. For a non-default values, the
 following is true:
 
-- ``y.shape[axis] == x.shape[0]`` (otherwise en error is raised)
+- ``y.shape[axis] == x.size`` (otherwise en error is raised)
 - the shape of ``spl(xv)`` is ``y.shape[axis:] + xv.shape + y.shape[:axis]``
 
 
@@ -333,7 +333,7 @@ Neither of these two approaches is directly supported in `scipy.interpolate`.
 Individual routines may offer partial support, and/or workarounds, but in
 general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
 means *not-a-number*, i.e. a result of an illegal mathematical operation
-(think a division by zero), not *missing*.
+(e.g., division by zero), not *missing*.
 
 
 .. _tutorial-interpolate_interp1d:

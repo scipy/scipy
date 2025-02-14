@@ -112,11 +112,11 @@ result, ``lam=None``, is close to the underlying sine curve.
 
 .. _tutorial-interpolate_GCV_batching:
 
-Batching of `y` arrays
-``````````````````````
+Batching of ``y`` arrays
+````````````````````````
 
 `make_smoothing_spline` constructor accepts multidimensional ``y`` arrays and an
-optional `axis=0` parameter and interprets them exactly the same way the
+optional ``axis`` parameter and interprets them exactly the same way the
 interpolating spline constructor, `make_interp_spline` does. See the
 :ref:`interpolation section <tutorial-interpolate_batching>` for a discussion and
 examples.
@@ -384,16 +384,16 @@ a folium of Descartes *plus* some noise.
    >>> plt.show()
 
 
-Batching of `y` arrays
-----------------------
+Batching of ``y`` arrays
+------------------------
 
 Unlike :ref:`interpolating splines <tutorial-interpolate_batching>` and
 :ref:`GCV smoothers <tutorial-interpolate_GCV_batching>`, `make_splrep` and `make_splprep`
 do **not** allow multidimensional ``y`` arrays and require that ``x.ndim == y.ndim == 1``.
 
-The technical reason for this limitation is that the knot vector depends on the ``y``
-values, thus for a batched ``y``, the ``t`` batch could be a ragged array, which `BSpline`
-is not equipped to handle.
+The technical reason for this limitation is that the length of the knot vector ``t``
+depends on the ``y`` values, thus for a batched ``y``, the batched ``t`` could be a
+ragged array, which `BSpline` is not equipped to handle.
 
 Therefore if you need to handle batched inputs, you will need to loop over the
 batch manually and construct a `BSpline` object per slice of the batch.
@@ -403,7 +403,7 @@ along the lines of
 .. code-block:: python
 
     class BatchSpline:
-        """BSpline-line class with reference batch behavior."""
+        """BSpline-like class with batch behavior."""
         def __init__(self, x, y, axis, *, spline, **kwargs):
             y = np.moveaxis(y, axis, -1)
             self._batch_shape = y.shape[:-1]
