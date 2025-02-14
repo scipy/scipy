@@ -78,7 +78,7 @@ def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
-    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
+    Solves the linear equation set ``a @ x = b`` for the unknown ``x``
     for square `a` matrix.
 
     If the data matrix is known to be a particular type then supplying the
@@ -420,7 +420,7 @@ def _ensure_dtype_cdsz(*arrays):
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
-    Solve the equation ``a x = b`` for `x`, assuming a is a triangular matrix.
+    Solve the equation ``a @ x = b`` for ``x``, assuming a is a triangular matrix.
 
     Parameters
     ----------
@@ -532,7 +532,7 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                  check_finite=True):
     """
-    Solve the equation a x = b for x, assuming a is banded matrix.
+    Solve the equation ``a @ x = b`` for ``x``, assuming ``a`` is banded matrix.
 
     The matrix a is stored in `ab` using the matrix diagonal ordered form::
 
@@ -658,7 +658,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve equation a x = b. a is Hermitian positive-definite banded matrix.
+    Solve equation ``a @ x = b``, ``a`` is Hermitian positive-definite banded matrix.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
     factorization, but should only be used for Hermitian positive-definite
@@ -910,7 +910,7 @@ def _get_axis_len(aname, a, axis):
 
 def solve_circulant(c, b, singular='raise', tol=None,
                     caxis=-1, baxis=0, outaxis=0):
-    """Solve C x = b for x, where C is a circulant matrix.
+    """Solve ``C x = b`` for x, where ``C`` is a circulant matrix.
 
     `C` is the circulant matrix associated with the vector `c`.
 
@@ -1322,7 +1322,7 @@ def det(a, overwrite_a=False, check_finite=True):
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
-    Compute least-squares solution to equation Ax = b.
+    Compute least-squares solution to equation ``a @ x = b``.
 
     Compute a vector x such that the 2-norm ``|b - A x|`` is minimized.
 
