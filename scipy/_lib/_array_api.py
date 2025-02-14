@@ -565,7 +565,7 @@ def xp_take_along_axis(arr: Array,
     elif is_array_api_strict(xp):
         raise NotImplementedError("Array API standard does not define take_along_axis")
     else:
-        return xp.take_along_axis(arr, indices, axis)
+        return xp.take_along_axis(arr, indices, axis=axis)
 
 
 # utility to broadcast arrays and promote to common dtype
