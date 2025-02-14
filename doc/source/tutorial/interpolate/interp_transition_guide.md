@@ -1,5 +1,5 @@
 (interp-transition-guide)=
-# Interpolate transition guide
+# `interp2d` transition guide
 
 This page contains three sets of demonstrations:
 
