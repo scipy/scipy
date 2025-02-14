@@ -54,8 +54,7 @@ def _check_dimensionality(points, values):
 
 
 class RegularGridInterpolator:
-    """
-    Interpolator on a regular or rectilinear grid in arbitrary dimensions.
+    """Interpolator of specified order on a rectilinear grid in N ≥ 1 dimensions.
 
     The data must be defined on a rectilinear grid; that is, a rectangular
     grid with even or uneven spacing. Linear, nearest-neighbor, spline

@@ -139,7 +139,8 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric):
 
 
 def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-    """Generate knot vector of a spline to satisfy the LSQ criterion.
+    """
+    Generate the knot vector of a spline satisfying the Least SQuares (LSQ) criterion.
 
     Parameters
     ----------
@@ -712,7 +713,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
-    r"""Create a smoothing B-spline that minimizes derivative jumps w/ LSQ constraint
+    r"""Create a smoothing B-spline that minimizes derivative jumps s.t. LSQ constraint.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
@@ -846,7 +847,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=None):
     r"""
-    Create a smoothing parametric B-spline that minimizes derivative jumps w/ LSQ constraint
+    Create a smoothing parametric B-spline that minimizes derivative jumps s.t. LSQ constraint.
 
     Given a list of N 1D arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating

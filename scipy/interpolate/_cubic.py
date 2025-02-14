@@ -158,7 +158,7 @@ class CubicHermiteSpline(PPoly):
 
 
 class PchipInterpolator(CubicHermiteSpline):
-    r"""PCHIP shape-preserving interpolator (C1 smooth)
+    r"""PCHIP shape-preserving interpolator (C1 smooth).
 
     ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
@@ -382,7 +382,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    r"""Akima "visually pleasing" interpolator (C1 smooth)
+    r"""Akima "visually pleasing" interpolator (C1 smooth).
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
     method by Akima uses a continuously differentiable sub-spline built from

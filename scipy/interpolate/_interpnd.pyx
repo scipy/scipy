@@ -822,9 +822,10 @@ cdef double_or_complex _clough_tocher_2d_single(const qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """CloughTocher2DInterpolator(points, values, tol=1e-6).
+    """
+    CloughTocher2DInterpolator(points, values, tol=1e-6).
 
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
 
     .. versionadded:: 0.9
 

@@ -1368,7 +1368,7 @@ def _make_periodic_spline(x, y, t, k, axis):
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
-    """Create an interpolating B-spline with specified degree and boundary conditions
+    """Create an interpolating B-spline with specified degree and boundary conditions.
 
     Parameters
     ----------
@@ -1644,7 +1644,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
-    r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion
+    r"""Create a smoothing B-spline satisfying the Least SQuares (LSQ) criterion.
 
     The result is a linear combination
 
@@ -2165,7 +2165,7 @@ def _coeff_of_divided_diff(x):
 
 def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     r"""
-    Create a smoothing B-spline satisfying Generalized Cross Validation (GCV) criterion
+    Create a smoothing B-spline satisfying the Generalized Cross Validation (GCV) criterion.
 
     Compute the (coefficients of) smoothing cubic spline function using
     ``lam`` to control the tradeoff between the amount of smoothness of the
@@ -2277,7 +2277,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.legend(loc='best')
     >>> plt.show()
 
-    """
+    """  # noqa:E501
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
