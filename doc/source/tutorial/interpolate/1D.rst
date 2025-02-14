@@ -221,7 +221,7 @@ NumPy's broadcasting, but differs in two respects:
 
 2. The batching is along the *trailing* dimensions, in contrast to the NumPy functions
    where the broadcasting works across the *leading* dimensions.
-; 
+
 Second, the interpolation axis can be controlled by an optional ``axis`` argument. The
 example above uses the default value of ``axis=0``. For a non-default values, the
 following is true:
@@ -320,6 +320,20 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
     ...    ax[j].set_title(parametrizations[j])
     >>> plt.show()
 
+
+
+Missing data
+============
+
+We note that `scipy.interpolate` does *not* support interpolation with missing
+data. Two popular ways of representing missing data are using masked arrays of
+the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``.
+
+Neither of these two approaches is directly supported in `scipy.interpolate`.
+Individual routines may offer partial support, and/or workarounds, but in
+general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+means *not-a-number*, i.e. a result of an illegal mathematical operation
+(think a division by zero), not *missing*.
 
 
 .. _tutorial-interpolate_interp1d:
@@ -441,18 +455,3 @@ based on `numpy.searchsorted`. For example, the ``"nearest"`` mode is nothing bu
 
 Other variants are similar, see the ``interp1d`` `source code <https://github.com/scipy/scipy/blob/v1.14.1/scipy/interpolate/_interpolate.py#L486>`_
 for details.
-
-
-Missing data
-============
-
-We note that `scipy.interpolate` does *not* support interpolation with missing
-data. Two popular ways of representing missing data are using masked arrays of
-the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``. 
-
-Neither of these two approaches is directly supported in `scipy.interpolate`.
-Individual routines may offer partial support, and/or workarounds, but in
-general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
-means *not-a-number*, i.e. a result of an illegal mathematical operation
-(think a division by zero), not *missing*.
-
