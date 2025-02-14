@@ -3431,29 +3431,46 @@ class genextreme_gen(rv_continuous):
         g3 = g(3)
         g4 = g(4)
         g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = np.where(abs(c) < 1e-7, np.pi**2.0/6.0,
-                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0)
+        gam2k = np.empty_like(c)
+        mask = abs(c) < 1e-7
+        gam2k[mask] = np.pi**2.0/6.0
+        gam2k[~mask] = (
+            sc.expm1(
+                sc.gammaln(2.0 * c[~mask] + 1.0) - 2 * sc.gammaln(c[~mask] + 1.0)
+            ) / c[~mask] ** 2.0
+        )
         eps = 1e-14
-        gamk = np.where(abs(c) < eps, -_EULER, sc.expm1(sc.gammaln(c + 1))/c)
+        gamk = np.empty_like(c)
+        mask = abs(c) < eps
+        gamk[mask] = -_EULER
+        gamk[~mask] = sc.expm1(sc.gammaln(c[~mask] + 1)) / c[~mask]
 
+        # mean
         m = np.where(c < -1.0, np.nan, -gamk)
+        
+        # variance
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = _lazywhere(c >= -1./3,
-                         (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2mg12:
-                             np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
-                         fillvalue=np.nan)
+        mask = (c >= -1./3) & (g2mg12 != 0)
+        sk1 = np.full_like(c, np.nan)
+        sk1[mask] = np.divide(
+            np.sign(c[mask]) * (-g3[mask] + (g2[mask] + 2 * g2mg12[mask]) * g1[mask]),
+            g2mg12[mask]**1.5,
+            out=sk1[mask],
+            where=g2mg12[mask] != 0
+        )
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
 
         # kurtosis
-        ku1 = _lazywhere(c >= -1./4,
-                         (g1, g2, g3, g4, g2mg12),
-                         lambda g1, g2, g3, g4, g2mg12:
-                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
-                         fillvalue=np.nan)
-        ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
+        ku1 = np.full_like(c, np.nan)
+        mask = (c >= -1.0 / 4) & (g2mg12 != 0)
+        ku1[mask] = (
+            g4[mask]
+            + (-4 * g3[mask] + 3 * (g2[mask] + g2mg12[mask]) * g1[mask])
+            * g1[mask]
+        ) / g2mg12[mask] ** 2
+        ku = np.where(abs(c) <= (eps) ** 0.23, 12.0 / 5.0, ku1 - 3.0)
         return m, v, sk, ku
 
     def _fitstart(self, data):
