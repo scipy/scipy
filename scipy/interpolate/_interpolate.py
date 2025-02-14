@@ -797,7 +797,7 @@ class _PPolyBase:
 
 
 class PPoly(_PPolyBase):
-    """Piecewise interpolating polynomial in the power basis.
+    """Piecewise polynomial in the power basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     local power basis::
@@ -1260,7 +1260,7 @@ class PPoly(_PPolyBase):
 
 
 class BPoly(_PPolyBase):
-    """Piecewise interpolating polynomial in the Bernstein basis.
+    """Piecewise polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     Bernstein polynomial basis::
