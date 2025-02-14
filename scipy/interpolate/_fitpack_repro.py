@@ -139,8 +139,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric):
 
 
 def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-    """
-    Generate the knot vector of a spline satisfying the Least SQuares (LSQ) criterion.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
 
     Parameters
     ----------
@@ -713,7 +712,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
-    r"""Create a smoothing B-spline that minimizes derivative jumps s.t. LSQ constraint.
+    r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
@@ -830,7 +829,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """
+    """  # noqa:E501
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
@@ -847,7 +846,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=None):
     r"""
-    Create a smoothing parametric B-spline that minimizes derivative jumps s.t. LSQ constraint.
+    Create a smoothing parametric B-spline curve with bounded error, minimizing derivative jumps.
 
     Given a list of N 1D arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
