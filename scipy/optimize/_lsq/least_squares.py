@@ -9,6 +9,7 @@ from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
 from scipy.optimize._minimize import Bounds
 from scipy._lib._sparse import issparse
+from scipy._lib._util import _workers_wrapper
 
 from .trf import trf
 from .dogbox import dogbox
@@ -241,12 +242,13 @@ def construct_loss_function(m, loss, f_scale):
     return loss_function
 
 
+@_workers_wrapper
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
         ftol=1e-8, xtol=1e-8, gtol=1e-8, x_scale=1.0, loss='linear',
         f_scale=1.0, diff_step=None, tr_solver=None, tr_options=None,
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs=None,
-        callback=None
+        callback=None, workers=None
 ):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
@@ -467,6 +469,12 @@ def least_squares(
 
         If the `callback` function raises `StopIteration` the optimization algorithm
         will stop and return with status code -2.
+
+        .. versionadded:: 1.16.0
+    workers : map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
 
         .. versionadded:: 1.16.0
 
@@ -929,7 +937,8 @@ def least_squares(
             def jac_wrapped(x, f):
                 J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
                                       f0=f, bounds=bounds, args=args,
-                                      kwargs=kwargs, sparsity=jac_sparsity)
+                                      kwargs=kwargs, sparsity=jac_sparsity,
+                                      workers=workers)
                 if J.ndim != 2:  # J is guaranteed not sparse.
                     J = np.atleast_2d(J)
 
