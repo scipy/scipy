@@ -1332,7 +1332,7 @@ def _process_axes(ndim_a, ndim_b, axes):
             raise ValueError("axes integer is out of bounds for input arrays")
         axes_a = list(range(ndim_a - axes, ndim_a))
         axes_b = list(range(axes))
-    elif isinstance(axes, (tuple, list)):
+    elif isinstance(axes, tuple | list):
         if len(axes) != 2:
             raise ValueError("axes must be a tuple/list of length 2")
         axes_a, axes_b = axes
