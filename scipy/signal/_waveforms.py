@@ -55,7 +55,7 @@ def sawtooth(t, width=1):
     t, w = asarray(t), asarray(width)
     w = asarray(w + (t - t))
     t = asarray(t + (w - w))
-    if t.dtype.char in ['fFdD']:
+    if t.dtype.char in 'fFdD':
         ytype = t.dtype.char
     else:
         ytype = 'd'
@@ -73,7 +73,8 @@ def sawtooth(t, width=1):
     mask2 = (1 - mask1) & (tmod < w * 2 * pi)
     tsub = extract(mask2, tmod)
     wsub = extract(mask2, w)
-    place(y, mask2, tsub / (pi * wsub) - 1)
+    values = tsub / (pi * wsub) - 1
+    place(y, mask2, values.astype(y.dtype))
 
     # on the interval width*2*pi to 2*pi function is
     #  (pi*(w+1)-tmod) / (pi*(1-w))
@@ -81,7 +82,8 @@ def sawtooth(t, width=1):
     mask3 = (1 - mask1) & (1 - mask2)
     tsub = extract(mask3, tmod)
     wsub = extract(mask3, w)
-    place(y, mask3, (pi * (wsub + 1) - tsub) / (pi * (1 - wsub)))
+    values = (pi * (wsub + 1) - tsub) / (pi * (1 - wsub))
+    place(y, mask3, values.astype(y.dtype))
     return y
 
 
@@ -137,7 +139,7 @@ def square(t, duty=0.5):
     t, w = asarray(t), asarray(duty)
     w = asarray(w + (t - t))
     t = asarray(t + (w - w))
-    if t.dtype.char in ['fFdD']:
+    if t.dtype.char in 'fFdD':
         ytype = t.dtype.char
     else:
         ytype = 'd'
