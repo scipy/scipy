@@ -378,3 +378,23 @@ class TestUnitImpulse:
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
         assert np.issubdtype(imp.dtype, np.complexfloating)
+
+
+class TestSawtoothWaveform:
+    def test_dtype(self):
+        waveform = waveforms.sawtooth(
+            np.array(1, dtype=np.float32), width=np.float32(1)
+        )
+        assert waveform.dtype == np.float64
+
+        waveform = waveforms.sawtooth(1)
+        assert waveform.dtype == np.float64
+
+
+class TestSquareWaveform:
+    def test_dtype(self):
+        waveform = waveforms.square(np.array(1, dtype=np.float32), duty=np.float32(0.5))
+        assert waveform.dtype == np.float64
+
+        waveform = waveforms.square(1)
+        assert waveform.dtype == np.float64
