@@ -802,6 +802,60 @@ class TestLM(BaseMixin):
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')
+    
+    # Static method to compute Gaussian function values.
+    @staticmethod
+    def gaussian(x, mean, amplitude, sigma):
+        """Gaussian function used for testing. 
+        Parameters:
+        x (array): Input values.
+        mean (float): Mean of the Gaussian.
+        amplitude (float): Amplitude of the Gaussian.
+        sigma (float): Standard deviation of the Gaussian.
+        Returns:
+        array: Gaussian function values.
+        """
+        return amplitude * np.exp(-((x - mean) ** 2) / (2 * sigma ** 2))
+
+    # Static method to compute the residuals between model and data.
+    @staticmethod
+    def calc_residual(params, x, y):
+        """Calculate residuals between Gaussian model and observed data.
+        Parameters:
+        params (array): Parameters for the Gaussian model (mean, amplitude, sigma).
+        x (array): Input values.
+        y (array): Observed data.
+        Returns:
+        array: Residuals.
+        """
+        return y - TestLM.gaussian(x, *params)
+
+    # Setup function to prepare test data.
+    def setup_data(self):
+        """Setup test data for the Gaussian fitting problem."""
+        np.random.seed(0)
+        x_data = np.linspace(-10, 10, 100)
+        y_data = TestLM.gaussian(x_data, 0, 1e6, 1)  # Large amplitude
+        y_data += np.random.normal(0, 1e5, size=y_data.shape)
+        initial_guess = [2, 2e6, 2]
+        return x_data, y_data, initial_guess
+
+
+
+    # Compare the performance of LM algorithm with and without scaling.
+    def test_comparison(self):
+        """Compare performance of least_squares with LM method with default and no scaling."""
+        x_data, y_data, initial_guess = self.setup_data()
+        result_default = least_squares(TestLM.calc_residual, initial_guess, args=(x_data, y_data), method='lm')
+        result_no_scale = least_squares(TestLM.calc_residual, initial_guess, args=(x_data, y_data), method='lm', x_scale=1.0)
+
+        cost_default = result_default.cost
+        cost_no_scale = result_no_scale.cost
+
+        # Assert that the cost with default scaling is less than or equal to the cost without scaling.
+        assert cost_default <= cost_no_scale
+        
+        
 
 
 def test_basic():
