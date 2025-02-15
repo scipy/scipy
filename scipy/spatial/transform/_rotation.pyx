@@ -464,6 +464,10 @@ cdef inline double[:, :] _compose_quat(
 
     return product
 
+def compose_quat(p, q):
+    """Composition of quaternions."""
+    return _compose_quat(p, q)
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline double[:, :] _make_elementary_quat(
