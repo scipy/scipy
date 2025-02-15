@@ -44,6 +44,7 @@ cpdef double beta(double x0, double x1) noexcept nogil
 cpdef df_number_t betainc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t betaincc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
+cpdef df_number_t betaincinva(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double betaln(double x0, double x1) noexcept nogil
 cpdef double binom(double x0, double x1) noexcept nogil
