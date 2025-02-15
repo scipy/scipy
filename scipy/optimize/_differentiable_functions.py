@@ -12,7 +12,7 @@ from scipy._lib._util import _ScalarFunctionWrapper
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class _GradWrapper:
+class _ScalarGradWrapper:
     """
     Wrapper class for gradient calculation
     """
@@ -49,7 +49,7 @@ class _GradWrapper:
         return g
 
 
-class _HessWrapper:
+class _ScalarHessWrapper:
     """
     Wrapper class for hess calculation via finite differences
     """
@@ -273,7 +273,7 @@ class ScalarFunction:
         self._update_fun()
 
         # Initial gradient evaluation
-        self._wrapped_grad = _GradWrapper(
+        self._wrapped_grad = _ScalarGradWrapper(
             grad,
             fun=self._wrapped_fun,
             args=args,
@@ -292,7 +292,7 @@ class ScalarFunction:
             self._wrapped_hess = _FakeCounter(ngev=0, nhev=0)
         else:
             if callable(hess):
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
@@ -301,7 +301,7 @@ class ScalarFunction:
                 self.H = self._wrapped_hess.H
                 self.H_updated = True
             elif hess in FD_METHODS:
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
