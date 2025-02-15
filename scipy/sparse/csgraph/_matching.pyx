@@ -6,7 +6,7 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import issparse, csr_array
+from scipy.sparse import issparse, csr_array, coo_array
 from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy,
                                    safely_cast_index_arrays)
 
@@ -482,11 +482,15 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
 
     a = np.arange(np.min(biadjacency.shape))
 
-    indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
-    if indices is not biadjacency.indices:
-        # create a new object without copying data
-        biadjacency = csr_array((biadjacency.data, indices, indptr),
-                                shape=biadjacency.shape, dtype=biadjacency.dtype)
+    if biadjacency.format != "coo":
+        indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
+        if indices is not biadjacency.indices:
+            # create a new object without copying data
+            biadjacency = csr_array((biadjacency.data, indices, indptr),
+                                    shape=biadjacency.shape, dtype=biadjacency.dtype)
+    else:
+        row, col = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
+        biadjacency = coo_array((biadjacency.data, (row, col)), shape=biadjacency.shape)
 
     # The algorithm expects more columns than rows in the graph, so
     # we use the transpose if that is not already the case. We also
