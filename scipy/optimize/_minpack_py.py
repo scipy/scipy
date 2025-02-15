@@ -936,7 +936,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         ydata = np.asarray(ydata, float)
 
-    if isinstance(xdata, (list, tuple, np.ndarray)):
+    if isinstance(xdata, list | tuple | np.ndarray):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:

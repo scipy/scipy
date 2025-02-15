@@ -563,7 +563,7 @@ class netcdf_file:
             types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
 
             # bytes index into scalars in py3k. Check for "string" types
-            if isinstance(values, (str, bytes)):
+            if isinstance(values, str | bytes):
                 sample = values
             else:
                 try:

@@ -2316,7 +2316,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
-        elif isinstance(pole_values, (float, np.float32, np.float64)):
+        elif isinstance(pole_values, float | np.float32 | np.float64):
             pole_values = (pole_values, pole_values)
         if isinstance(pole_continuity, bool):
             pole_continuity = (pole_continuity, pole_continuity)
