@@ -109,11 +109,15 @@ import math
 import warnings
 import numpy as np
 import dataclasses
+import functools
+import inspect
+import textwrap
 
 from collections.abc import Callable
 from functools import partial
-from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib._util import _asarray_validated, _transition_to_rng, _lazywhere
 from scipy._lib.deprecation import _deprecated
+from scipy._lib import _docscrape
 
 from . import _distance_wrap
 from . import _hausdorff
@@ -307,6 +311,76 @@ def _validate_weights(w, dtype=np.float64):
     return w
 
 
+def _add_periodic_bounds(fun):
+    _name = 'periodic_bounds'
+    _type = "tuple of ndarray, default: None"
+    _desc = textwrap.dedent(
+        """
+        Tuple containing the lower and upper bounds of periodic boundary conditions,
+        e.g. ``(lb, ub)``.  ``lb`` and ``ub`` must be one-dimensional arrays with the
+        same shape as arguments `u` and `v`, and all of ``ub - lb`` must be positive.
+        Elements of ``ub - lb`` that are non-finite will not be treated as periodic.
+        """
+        ).split('\n')[1:]
+    _periodic_bounds_doc = _docscrape.Parameter(_name, _type, _desc)
+    _periodic_bounds_param = inspect.Parameter(
+        _name, inspect.Parameter.KEYWORD_ONLY, default=None)
+
+    def wrap_to_bounds(x, lb, period):
+        return _lazywhere(np.isfinite(period),
+                          (x, lb, period),
+                          f=lambda x, lb, period: (x - lb) % period + lb,
+                          f2=lambda x, lb, period: x)
+
+    @functools.wraps(fun)
+    def wrapped(*args, periodic_bounds=None, **kwargs):
+        if periodic_bounds is None:
+            return fun(*args, **kwargs)
+        if not isinstance(periodic_bounds, tuple):
+            message = '`periodic_bounds` must be a tuple.'
+            raise ValueError(message)
+        if not len(periodic_bounds) == 2:
+            message = '`periodic_bounds` must contain lower and upper bounds.'
+            raise ValueError(message)
+
+        lb, ub = np.asarray(periodic_bounds[0]), np.asarray(periodic_bounds[1])
+        u = _validate_vector(args[0])
+        v = _validate_vector(args[1])
+
+        if not (ub.shape == lb.shape == u.shape == v.shape):
+            message = 'Lower and upper bounds must have the same shape as `u` and `v`.'
+            raise ValueError(message)
+
+        with np.errstate(invalid='ignore'):
+            period = ub - lb
+
+        if np.any(period <= 0):
+            message = 'Each upper bound must exceed the corresponding lower bound.'
+            raise ValueError(message)
+
+        u = wrap_to_bounds(u, lb, period)
+        v = wrap_to_bounds(v, lb, period)
+        period[~np.isfinite(period)] = 0  # ignore non-finite period
+        uv = u - v
+        uv_sign = np.sign(uv) * period
+        v = u + np.minimum(np.abs(u - v), np.abs(u - v - uv_sign))
+        args = (u, v) + args[2:]
+        return fun(*args, **kwargs)
+
+    doc = _docscrape.FunctionDoc(wrapped)
+    doc['Parameters'].append(_periodic_bounds_doc)
+    doc = str(doc).split("\n", 1)[1]  # remove signature
+    wrapped.__doc__ = str(doc)
+
+    sig = inspect.signature(wrapped)
+    parameters = sig.parameters
+    parameter_list = list(parameters.values())
+    parameter_list.append(_periodic_bounds_param)
+    sig = sig.replace(parameters=parameter_list)
+    wrapped.__signature__ = sig
+    return wrapped
+
+
 @_transition_to_rng('seed', position_num=2, replace_doc=False)
 def directed_hausdorff(u, v, rng=0):
     """
@@ -435,6 +509,7 @@ def directed_hausdorff(u, v, rng=0):
     return result
 
 
+@_add_periodic_bounds
 def minkowski(u, v, p=2, w=None):
     """
     Compute the Minkowski distance between two 1-D arrays.
@@ -506,6 +581,7 @@ def minkowski(u, v, p=2, w=None):
     return dist
 
 
+@_add_periodic_bounds
 def euclidean(u, v, w=None):
     """
     Computes the Euclidean distance between two 1-D arrays.
@@ -545,6 +621,7 @@ def euclidean(u, v, w=None):
     return minkowski(u, v, p=2, w=w)
 
 
+@_add_periodic_bounds
 def sqeuclidean(u, v, w=None):
     """
     Compute the squared Euclidean distance between two 1-D arrays.
@@ -996,6 +1073,7 @@ def kulczynski1(u, v, *, w=None):
     return ntt / (ntf + nft)
 
 
+@_add_periodic_bounds
 def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
@@ -1044,6 +1122,7 @@ def seuclidean(u, v, V):
     return euclidean(u, v, w=1/V)
 
 
+@_add_periodic_bounds
 def cityblock(u, v, w=None):
     """
     Compute the City Block (Manhattan) distance.
@@ -1137,6 +1216,7 @@ def mahalanobis(u, v, VI):
     return np.sqrt(m)
 
 
+@_add_periodic_bounds
 def chebyshev(u, v, w=None):
     r"""
     Compute the Chebyshev distance.
