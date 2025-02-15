@@ -699,16 +699,43 @@ class TestNoncentralTFunctions:
 
 class TestNoncentralChiSquaredFunctions:
 
+    # CDF Reference values computed with mpmath with the following script
+    # 
+    # from mpmath import mp
+    #
+    # mp.dps = 400
+    # 
+    # def _noncentral_chi_pdf(t, df, nc):
+    #     res = mp.besseli(df/2 - 1, mp.sqrt(nc*t))
+    #     res *= mp.exp(-(t + nc)/2)*(t/nc)**(df/4 - 1/2)/2
+    #     return res
+    #
+    # def _noncentral_chi_cdf(x, df, nc, dps=None):
+    #     x, df, nc = mp.mpf(x), mp.mpf(df), mp.mpf(nc)
+    #     res = mp.quad(lambda t: _noncentral_chi_pdf(t, df, nc), [mp.zero, x])
+    #     return float(res)
+
     @pytest.mark.parametrize(
-        "x, df, nc, expected_cdf",
-        [(0.1, 200, 50, 1.1311224867205481e-299),
-         (1e-12, 20, 50, 3.737446313006551e-141),
-         (1, 200, 50, 8.09760974833666e-200)]
+        "x, df, nc, expected_cdf, rtol",
+        [(0.1, 200, 50, 1.1311224867205481e-299, 1e-13),
+         (1e-12, 20, 50, 3.737446313006551e-141, 1e-13),
+         (1, 200, 50, 8.09760974833666e-200, 1e-13),
+         (1500, 2, 1000, 0.9999999999993429, 1e-13),
+         (1000, 10, 1000, 0.44341121351491913, 1e-13),
+         (1e7, 10, 1e7, 0.49943229536468403, 1e-13),
+         (9e4, 1e5, 1e3, 1.6895533704217566e-141, 5e-12),
+         (30, 50, 1, 0.008921653447107736, 1e-13),
+         (3, 5, 10, 0.01064922878345895, 1e-13)]
     )
-    def test_chndtr(self, x, df, nc, expected_cdf):
-        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=1e-13)
-    
-    def test_domain_error(self):
-        # Test that the function raises a domain error when x < 0
-        with pytest.raises(ValueError):
-            sp.chndtr(-1, 1, 1)
+    def test_chndtr(self, x, df, nc, expected_cdf, rtol):
+        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol)
+
+    @pytest.mark.parametrize("args",
+        [(1, -1, 1),
+         (1, 1, -1),
+         (-1, 1, 1)]
+    )    
+    def test_domain_error(self, args):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                sp.chndtr(*args)
