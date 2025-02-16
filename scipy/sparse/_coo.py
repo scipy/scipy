@@ -721,7 +721,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     f"{err_prefix} (n,..,k={N}),(k={other.shape[-2]},..,m)->(n,..,m)"
                 )
 
-
         if isscalarlike(other):
             # scalar value
             return self._mul_scalar(other)
@@ -1289,13 +1288,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
             result = getattr(_data_matrix, op_name)(self.tocsr(), other)
             if isinstance(result, sparray):
                 result = result.tocoo()
-            if isinstance(result, (np.ndarray, sparray)):
+            if isinstance(result, np.ndarray | sparray):
                 result = result.reshape(result_shape)
             return result
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+                raise ValueError(f'Incompatible shapes {self.shape} and {other.shape}')
             result_shape = self.shape
 
             # reshaping n-D arrays to 2-D arrays
@@ -1309,7 +1308,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = result.tocoo()
 
             # reshaping back to n-D if output is 2-D boolean array
-            if isinstance(result, (np.ndarray, sparray)):
+            if isinstance(result, np.ndarray | sparray):
                 result = result.reshape(result_shape)
 
             return result
@@ -1375,7 +1374,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     result = result.tocoo()
 
                 # reshape back to n-D
-                if isinstance(result, (np.ndarray, sparray)):
+                if isinstance(result, np.ndarray | sparray):
                     result = result.reshape(result_shape)
 
                 return result
@@ -1395,7 +1394,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if isinstance(result, sparray):
                     result = result.tocoo()
                 # reshape back to n-D
-                if isinstance(result, (np.ndarray, sparray)):
+                if isinstance(result, np.ndarray | sparray):
                     result = result.reshape(result_shape)
                 return result
 
@@ -1569,13 +1568,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
             if isinstance(result, sparray):
                 result = result.tocoo()
             # reshape back to n-D
-            if isinstance(result, (np.ndarray, sparray)):
+            if isinstance(result, np.ndarray | sparray):
                 result = result.reshape(result_shape)
             return result
 
         elif isdense(other) or issparse(other):
             if self.shape != other.shape:
-                raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
+                raise ValueError(f'Incompatible shapes {self.shape} and {other.shape}')
 
             result_shape = self.shape
 
@@ -1590,7 +1589,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = result.tocoo()
 
             # reshaping back to n-D if output is 2-D boolean array
-            if isinstance(result, (np.ndarray, sparray)):
+            if isinstance(result, np.ndarray | sparray):
                 result = result.reshape(result_shape)
 
             return result
@@ -1604,7 +1603,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if axis is None:
             return _max_or_min((*self.data, zero))
 
-        if not isinstance(axis, (int, tuple)):
+        if not isinstance(axis, int | tuple):
             raise ValueError("'axis' should be int/tuple of ints")
 
         if axis == ():
@@ -1713,7 +1712,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         """Element-wise maximum between this and another array/matrix."""
         return self._maximum_minimum_coo(other, 'maximum')
 
-
     def minimum(self, other):
         """Element-wise minimum between this and another array/matrix."""
         return self._maximum_minimum_coo(other, 'minimum')
@@ -1812,7 +1810,7 @@ def _ravel_non_reduced_axes(coords, shape, axes):
 
 def _validateaxes(axis, ndim, shape):
     if axis is not None:
-        if not isinstance(axis, (int, tuple)):
+        if not isinstance(axis, int | tuple):
             raise ValueError("'axis' should be int/tuple of ints")
 
         if type(axis) is int:
