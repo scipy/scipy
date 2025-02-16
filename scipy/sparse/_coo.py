@@ -1555,15 +1555,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
             except AttributeError:
                 other = other_a
 
-        if self.shape != other.shape:
-            raise ValueError("inconsistent shapes")
-
         if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
             if op_name == "minimum":
                 return self.tocsr().minimum(other)
             return self.tocsr().maximum(other)
 
-         # Scalar other
+        # Scalar other
         if isscalarlike(other):
             result_shape = self.shape
             self = self.reshape(1, -1)
@@ -1645,7 +1642,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
         unraveled_coords = np.concatenate(np.unravel_index(res.coords, result_shape))
 
         return (coo_array((res.data, unraveled_coords), result_shape))
-
 
     def max(self, axis=None, out=None, *, explicit=False):
         if self.ndim<3:

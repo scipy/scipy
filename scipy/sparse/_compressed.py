@@ -263,7 +263,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif issparse(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
-            # TODO sparse broadcasting
             if self.shape != other.shape:
                 return False
             elif self.format != other.format:
@@ -299,7 +298,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return NotImplemented
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
             if self.shape != other.shape:
                 return True
             elif self.format != other.format:
@@ -326,7 +324,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return op(self.todense(), other)
         # Sparse other.
         elif issparse(other):
-            # TODO sparse broadcasting
             if self.shape != other.shape:
                 raise ValueError("inconsistent shapes")
             elif self.format != other.format:
