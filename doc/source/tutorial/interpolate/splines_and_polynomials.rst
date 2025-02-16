@@ -289,3 +289,48 @@ contains basis elements evaluated at ``xnew[j]``:
  [0.    0.111 0.556 0.333 0.    0.    0.   ]
  [0.    0.    0.125 0.75  0.125 0.    0.   ]]
 
+
+Bernstein polynomials, ``BPoly``
+================================
+
+For :math:`t \in [0, 1]`, Bernstein basis polynomials of degree :math:`k` are defined via
+
+.. math::
+
+    b(t; k, a) = C_k^a t^k (1-t)^{k - a}
+
+where :math:`C_k^a` is the binomial coefficient, and :math:`a=0, 1, \dots, k`, so that
+there are :math:`k+1` basis polynomials of degree :math:`k`.
+
+A ``BPoly`` object represents a *piecewise* Bernstein polynomial in terms of
+breakpoints, ``x``, and and coefficients, ``c``: `c[a, j]` gives the coefficient for
+:math:`b(t; k, a)` for ``t`` on the interval between ``x[j]`` and ``x[j+1]``.
+
+The user interface of `BPoly` objects is very similar to that of `PPoly` objects:
+both can be evaluated, differentiated and integrated.
+
+One additional feature of `BPoly` objects is the alternative constructor,
+`BPoly.from_derivatives`, which constructs a `BPoly` object from data values and derivatives.
+Specifically, ``b = BPoly.from_derivatives(x, y)`` returns a callable which takes
+the provided values, ``b(x[i]) == y[i])``, and has the provided derivatives,
+``b(x[i], nu=j) == y[i][j]``.
+
+This operation is similar to, and is more flexible than `CubicHermiteSpline`, in that
+it can handle varying numbers of derivatives at different data points (IOW, the `y`
+argument can be a list of arrays of different lengths). See `BPoly.from_derivatives`
+for further discussion and examples.
+
+
+Conversion between bases
+========================
+
+In principle, all three bases for piecewise polynomials, the power basis, the Bernstein
+basis and b-splines, are equivalent and a polynomial in one basis can be converted
+into a different basis. In floating-point arithmetics though, conversions always incur
+some precision loss which may or may not be significant (this is very problem-dependent).
+It is therefore recommended to avoid explicit conversion between bases.
+
+One reason for converting between bases is that not all bases implement all operations.
+For instance, root-finding is only implemented for `PPoly`, and therefore to find
+roots of a `BSpline` object, you need convert to `PPoly` first: the incantation is
+``PPoly.from_spline(spl).roots()``.
