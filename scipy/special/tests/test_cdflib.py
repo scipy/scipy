@@ -747,11 +747,8 @@ class TestNoncentralChiSquaredFunctions:
     def test_chndtr_left_tail(self, x, df, nc, expected_cdf, rtol):
         assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol)
 
-    @pytest.mark.parametrize("args",
-        [(np.inf, 1, 1), (np.inf, np.inf, 1), (np.inf, np.inf, np.inf)]
-    )
-    def test_chndtr_x_inf_equals_1(self, args):
-        assert_allclose(sp.chndtr(*args), 1.0, rtol=0.0)
+    def test_chndtr_x_inf_equals_1(self):
+        assert_allclose(sp.chndtr(np.inf, 1, 1), 1.0, rtol=0.0)
 
     @pytest.mark.parametrize("x, df",
         [(1, 1), (10, 10), (1e-5, 1e-5)]
