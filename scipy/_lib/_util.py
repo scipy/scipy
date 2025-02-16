@@ -939,13 +939,16 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *,
     if nan_policy not in policies:
         raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
-    inexact = (xp.isdtype(a.dtype, "real floating")
-               or xp.isdtype(a.dtype, "complex floating"))
     if xp_size(a) == 0:
         contains_nan = False
-    elif inexact:
-        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+    elif xp.isdtype(a.dtype, "real floating"):
+        # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
+        # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
+    elif xp.isdtype(a.dtype, "complex floating"):
+        # Typically `real` and `imag` produce views; otherwise, `xp.any(xp.isnan(a))`
+        # would be more efficient.
+        contains_nan = xp.isnan(xp.max(xp.real(a))) | xp.isnan(xp.max(xp.imag(a)))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():

@@ -663,7 +663,7 @@ class TestCumulativeSimpson:
             y, x=np.arange(y.shape[-1])
         )
         np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
         )
 
     @pytest.mark.thread_unsafe

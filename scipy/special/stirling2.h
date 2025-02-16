@@ -11,9 +11,12 @@ using std::isinf;
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <memory>
+#include <limits>
 
 #include "xsf/binom.h"
 #include "xsf/lambertw.h"
+#include "sf_error.h"
 
 
 /*     Stirling numbers of the second kind
@@ -32,41 +35,44 @@ using std::isinf;
 
 // Dynamic programming
 
-double _stirling2_dp(double n, double k){
+double _stirling2_dp(double n, double k) {
     if ((n == 0 && k == 0) || (n==1 && k==1)) {
         return 1.;
     }
-    if (k <= 0 || k > n || n < 0){
+    if (k <= 0 || k > n || n < 0) {
         return 0.;
     }
     int arraySize = k <= n - k + 1 ? k : n - k + 1;
-    double *curr = (double *) malloc(arraySize * sizeof(double));
-    for (int i = 0; i < arraySize; i++){
+    auto curr = std::unique_ptr<double[]>{new (std::nothrow) double[arraySize]};
+    if (curr == nullptr) {
+        sf_error("stirling2", SF_ERROR_MEMORY, NULL);
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    for (int i = 0; i < arraySize; i++) {
         curr[i] = 1.;
     }
     if (k <= n - k + 1) {
-        for (int i = 1; i < n - k + 1; i++){
-            for (int j = 1; j < k; j++){
+        for (int i = 1; i < n - k + 1; i++) {
+            for (int j = 1; j < k; j++) {
                 curr[j] = (j + 1) * curr[j] + curr[j - 1];
-                if (isinf(curr[j])){
-                    free(curr);
+                if (isinf(curr[j])) {
+                    sf_error("stirling2", SF_ERROR_OVERFLOW, NULL);
                     return INFINITY; // numeric overflow
                 }
             }
         }
     } else {
-        for (int i = 1; i < k; i++){
-            for (int j = 1; j < n - k + 1; j++){
+        for (int i = 1; i < k; i++) {
+            for (int j = 1; j < n - k + 1; j++) {
                 curr[j] = (i + 1) * curr[j - 1] + curr[j];
-                if (isinf(curr[j])){
-                    free(curr);
+                if (isinf(curr[j])) {
+                    sf_error("stirling2", SF_ERROR_OVERFLOW, NULL);
                     return INFINITY; // numeric overflow
                 }
             }
         }
     }
     double output = curr[arraySize - 1];
-    free(curr);
     return output;
 }
 
@@ -74,11 +80,11 @@ double _stirling2_dp(double n, double k){
 
 // second order Temme approximation
 
-double _stirling2_temme(double n, double k){
-  if ((n == k && n >= 0) || (n > 0 && k==1)){
+double _stirling2_temme(double n, double k) {
+  if ((n == k && n >= 0) || (n > 0 && k==1)) {
       return 1.;
   }
-  if (k <= 0 || k > n || n < 0){
+  if (k <= 0 || k > n || n < 0) {
       return 0.;
   }
   double mu = (double)k / (double)n;

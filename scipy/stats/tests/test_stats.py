@@ -3167,6 +3167,12 @@ class TestZmapZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
+    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
+    def test_complex_gh22404(self, xp):
+        res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
+        ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
+        xp_assert_close(res, ref)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):
@@ -9681,6 +9687,13 @@ class TestXP_Mean:
         xp_assert_equal(_xp_mean(x), _xp_mean(y))
         xp_assert_equal(_xp_mean(y, weights=x), _xp_mean(y, weights=y))
 
+    def test_complex_gh22404(self, xp):
+        rng = np.random.default_rng(90359458245906)
+        x, y, wx, wy = rng.random((4, 20))
+        res = _xp_mean(xp.asarray(x + y*1j), weights=xp.asarray(wx + wy*1j))
+        ref = np.average(x + y*1j, weights=wx + wy*1j)
+        xp_assert_close(res, xp.asarray(ref))
+
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
@@ -9785,6 +9798,14 @@ class TestXP_Var:
         x = xp.arange(10)
         y = xp.arange(10.)
         xp_assert_equal(_xp_var(x), _xp_var(y))
+
+    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
+    def test_complex_gh22404(self, xp):
+        rng = np.random.default_rng(90359458245906)
+        x, y = rng.random((2, 20))
+        res = _xp_var(xp.asarray(x + y*1j))
+        ref = np.var(x + y*1j)
+        xp_assert_close(res, xp.asarray(ref), check_dtype=False)
 
 
 @array_api_compatible

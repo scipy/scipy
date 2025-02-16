@@ -1356,5 +1356,16 @@ def test_large_m4():
     with pytest.raises(ValueError, match=match):
         loadmat(truncated_mat)
 
+
 def test_gh_19223():
     from scipy.io.matlab import varmats_from_mat  # noqa: F401
+
+def test_corrupt_files():
+    # Test we can detect truncated or corrupt (all zero) files.
+    for n in (2, 4, 10, 19):
+        with pytest.raises(MatReadError,
+                           match="Mat file appears to be truncated"):
+            loadmat(BytesIO(b'\x00' * n))
+    with pytest.raises(MatReadError,
+                       match="Mat file appears to be corrupt"):
+        loadmat(BytesIO(b'\x00' * 20))

@@ -71,9 +71,11 @@ jobs:
       if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3" meson
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
-        python -m pip install git+https://github.com/mesonbuild/meson.git
+        # NOTE: meson master branch install temporarily disabled because of
+        # https://github.com/scipy/scipy/issues/22534#issuecomment-2661222775
+        # python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -506,6 +508,7 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
+
   #################################################################################
   clang-17-build-only:
     # Purpose is to check for warnings in builds with latest clang.
@@ -543,3 +546,40 @@ jobs:
         run: |
           # specify which compilers to use using environment variables
           CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
+
+  #################################################################################
+  test_aarch64:
+    name: aarch64, fast, py3.12/npAny, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      with:
+        python-version: '3.12'
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Install Python packages
+      run: |
+        python -m pip install -r requirements/build.txt -r requirements/test.txt
+
+    - name: Install SciPy
+      run: |
+        python -m pip install . --no-build-isolation
+
+    - name: Test SciPy
+      run: |
+        export OMP_NUM_THREADS=2
+        cd ..
+        pytest --pyargs scipy -m 'not slow'
