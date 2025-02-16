@@ -724,12 +724,12 @@ ncx2_cdf_wrap(const Real x, const Real k, const Real l)
     if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
 	return NAN;
     }
-    if (k <= 0 || x < 0 || l <= 0) {
+    if (k <= 0 || x < 0 || l < 0) {
 	sf_error("chndtr", SF_ERROR_DOMAIN, NULL);
 	return NAN;
     }
     if (std::isinf(x)) {
-	return  (x > 0) ? 1.0 : 0.0;
+	return  1.0;
     }
     Real y;
     try {
