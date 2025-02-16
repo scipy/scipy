@@ -144,7 +144,7 @@ py3.extension_module('_bspl',
 py3.extension_module('_dierckx',
     ['src/_dierckxmodule.cc'],
     include_directories: 'src/',
-    dependencies: [py3_dep, np_dep, __fitpack_dep],
+    dependencies: [np_dep, __fitpack_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/interpolate'

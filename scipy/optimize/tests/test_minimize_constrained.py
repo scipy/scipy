@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scipy.linalg import block_diag
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_less, assert_,
                            suppress_warnings)
@@ -430,7 +430,7 @@ class Elec:
                 Jx = 2 * np.diag(x_coord)
                 Jy = 2 * np.diag(y_coord)
                 Jz = 2 * np.diag(z_coord)
-                return csc_matrix(np.hstack((Jx, Jy, Jz)))
+                return csc_array(np.hstack((Jx, Jy, Jz)))
         else:
             jac = self.constr_jac
 

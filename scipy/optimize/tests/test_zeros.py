@@ -428,7 +428,7 @@ class TestNewton(TestScalarRootFinders):
             if derivs == 1:
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
-                msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+                msg = f'Failed to converge after {iters} iterations, value is .*'
                 with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 

@@ -112,14 +112,14 @@ def _remove_redundancy_pivot_dense(A, rhs, true_rank=None):
 
     Parameters
     ----------
-    A : 2-D sparse matrix
+    A : 2-D array
         An matrix representing the left-hand side of a system of equations
     rhs : 1-D array
         An array representing the right-hand side of a system of equations
 
     Returns
     -------
-    A : 2-D sparse matrix
+    A : 2-D array
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array
         An array representing the right-hand side of a system of equations
@@ -239,14 +239,14 @@ def _remove_redundancy_pivot_sparse(A, rhs):
 
     Parameters
     ----------
-    A : 2-D sparse matrix
+    A : 2-D sparse array
         An matrix representing the left-hand side of a system of equations
     rhs : 1-D array
         An array representing the right-hand side of a system of equations
 
     Returns
     -------
-    A : 2-D sparse matrix
+    A : 2-D sparse array
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array
         An array representing the right-hand side of a system of equations
@@ -289,7 +289,7 @@ def _remove_redundancy_pivot_sparse(A, rhs):
     d = []                  # Indices of dependent rows
 
     A_orig = A
-    A = scipy.sparse.hstack((scipy.sparse.eye(m), A)).tocsc()
+    A = scipy.sparse.hstack((scipy.sparse.eye_array(m), A)).tocsc()
     e = np.zeros(m)
 
     # Implements basic algorithm from [2]

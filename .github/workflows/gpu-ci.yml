@@ -1,0 +1,115 @@
+name: GPU jobs
+
+# Updating the Pixi lock file:
+#
+# 1. Please try to avoid this unless it's actually necessary. Updating the lock
+#    file generates a large diff, and triggers a lot of large package downloads
+#    (also for local testing by maintainers).
+# 2. Consider committing the `pixi.toml` change in one commit, and the
+#    `pixi.lock` change in a second commit. This allows the reviewer to redo
+#    the lock file changes locally, or discard them in case of conflicts while
+#    still keeping the `pixi.toml` changes.
+#
+#
+# In order to run a CI job step locally on a Linux machine with an NVIDIA GPU:
+#
+#     $ cd .github/workflows
+#     $ pixi run build
+#     $ pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"
+#
+# Or run different test commands in the same environments, e.g.:
+#
+#     $ pixi run test-torch-cuda -s special
+#     $ pixi run test-torch -s special
+#
+# To see available tasks per environment:
+#
+#     $ pixi task ls -s
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  PIXI_CACHE_DIR: "${{ github.workspace }}/.cache/rattler"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  pytorch_gpu:
+    name: PyTorch, JAX, CuPy GPU
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ghcr.io/cirruslabs/ubuntu-runner-amd64-gpu:22.04
+    steps:
+      - name: Checkout scipy repo
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Cache pixi
+        uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        with:
+          path: ${{ env.PIXI_CACHE_DIR }}
+          # Cache hit if lock file did not change. If it did, still restore the cache,
+          # since most packages will still be the same - the cache save will
+          # then happen at the end (in case the lock file didn't change,
+          # nothing is saved at the end of a job).
+          key: ${{ runner.os }}-gpu-pixi-${{ hashFiles('.github/workflows/pixi.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-pixi
+
+      - name: Setup compiler cache
+        uses: cirruslabs/cache@v4  #caa3ad0624c6c2acd8ba50ad452d1f44bba078bb # v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          # Make primary key unique by using `run_id`, this ensures the cache
+          # is always saved at the end.
+          key: ${{ runner.os }}-gpu-ccache-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gpu-ccache
+
+      - name: run nvidia-smi
+        run: nvidia-smi
+
+      - name: run nvidia-smi --query
+        run: nvidia-smi --query
+
+      - uses: prefix-dev/setup-pixi@ba3bb36eb2066252b2363392b7739741bb777659 # v0.8.1
+        with:
+          pixi-version: v0.39.2
+          manifest-path: .github/workflows/pixi.toml
+          cache: false
+
+      - name: Build SciPy
+        working-directory: .github/workflows
+        run: pixi run build
+
+      - name: Run PyTorch GPU tests
+        working-directory: .github/workflows
+        run: pixi run -e torch-cuda test-torch-cuda -v -m "array_api_backends and not slow"
+
+      - name: Run JAX GPU tests
+        working-directory: .github/workflows
+        run: pixi run -e jax-cuda test-jax-cuda -v -m "array_api_backends and not slow"
+
+      - name: Run CuPy tests
+        working-directory: .github/workflows
+        run: pixi run -e cupy test-cupy -v -m "array_api_backends and not slow"

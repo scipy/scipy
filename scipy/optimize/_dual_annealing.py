@@ -599,7 +599,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     References
     ----------
     .. [1] Tsallis C. Possible generalization of Boltzmann-Gibbs
-        statistics. Journal of Statistical Physics, 52, 479-487 (1998).
+        statistics. Journal of Statistical Physics, 52, 479-487 (1988).
     .. [2] Tsallis C, Stariolo DA. Generalized Simulated Annealing.
         Physica A, 233, 395-406 (1996).
     .. [3] Xiang Y, Sun DY, Fan W, Gong XG. Generalized Simulated

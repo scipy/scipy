@@ -997,7 +997,26 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
-    r"""Check whether the Constant OverLap Add (COLA) constraint is met.
+    r"""Check whether the Constant OverLap Add (COLA) constraint is met
+    (legacy function).
+
+    .. legacy:: function
+
+        The COLA constraint is equivalent of having a constant dual window, i.e.,
+        ``all(ShortTimeFFT.dual_win == ShortTimeFFT.dual_win[0])``. Hence,
+        `closest_STFT_dual_window` generalizes this function, as the following
+        example shows:
+
+        >>> import numpy as np
+        >>> from scipy.signal import check_COLA, closest_STFT_dual_window, windows
+        ...
+        >>> w, w_rect, hop = windows.hann(12, sym=False), np.ones(12), 6
+        >>> dual_win, alpha = closest_STFT_dual_window(w, hop, w_rect, scaled=True)
+        >>> np.allclose(dual_win/alpha, w_rect, atol=1e-10, rtol=0)
+        True
+        >>> check_COLA(w, len(w), len(w) - hop)  # equivalent legacy function call
+        True
+
 
     Parameters
     ----------
@@ -1023,17 +1042,22 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     See Also
     --------
+    closest_STFT_dual_window: Allows determining the closest window meeting the
+                              COLA constraint for a given window
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
-    stft: Short Time Fourier Transform
-    istft: Inverse Short Time Fourier Transform
+    ShortTimeFFT: Provide short-time Fourier transform and its inverse
+    stft: Short-time Fourier transform (legacy)
+    istft: Inverse Short-time Fourier transform (legacy)
 
     Notes
     -----
-    In order to enable inversion of an STFT via the inverse STFT in
-    `istft`, it is sufficient that the signal windowing obeys the constraint of
+    In order to invert a short-time Fourier transfrom (STFT) with the so-called
+    "overlap-add method", the signal windowing must obey the constraint of
     "Constant OverLap Add" (COLA). This ensures that every point in the input
     data is equally weighted, thereby avoiding aliasing and allowing full
-    reconstruction.
+    reconstruction. Note that the algorithms implemented in `ShortTimeFFT.istft`
+    and in `istft` (legacy) only require that the weaker "nonzero overlap-add"
+    condition (as in `check_NOLA`) is met.
 
     Some examples of windows that satisfy COLA:
         - Rectangular window at overlap of 0, 1/2, 2/3, 3/4, ...

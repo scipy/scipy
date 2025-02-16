@@ -17,7 +17,7 @@ T cem_cva(T m, T q) {
     int int_m, kd = 1;
 
     if ((m < 0) || (m != floor(m))) {
-        set_error("cem_cva", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_a", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<T>::quiet_NaN();
     }
     int_m = (int) m;
@@ -41,7 +41,7 @@ T sem_cva(T m, T q) {
     int int_m, kd = 4;
 
     if ((m <= 0) || (m != floor(m))) {
-        set_error("cem_cva", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_b", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<T>::quiet_NaN();
     }
     int_m = (int) m;
@@ -67,7 +67,7 @@ void cem(T m, T q, T x, T &csf, T &csd) {
     if ((m < 0) || (m != floor(m))) {
         csf = std::numeric_limits<T>::quiet_NaN();
         csd = std::numeric_limits<T>::quiet_NaN();
-        set_error("cem", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_cem", SF_ERROR_DOMAIN, NULL);
     } else {
         int_m = (int) m;
         if (q < 0) {
@@ -85,7 +85,15 @@ void cem(T m, T q, T x, T &csf, T &csd) {
                 csd = -sgn * d;
             }
         } else {
-            specfun::mtu0(kf, int_m, q, x, &csf, &csd);
+            using specfun::Status;
+            Status status = specfun::mtu0(kf, int_m, q, x, &csf, &csd);
+            if (status != Status::OK) {
+                csf = std::numeric_limits<T>::quiet_NaN();
+                csd = std::numeric_limits<T>::quiet_NaN();
+                sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                                 : SF_ERROR_OTHER;
+                set_error("mathieu_cem", sf_error, NULL);
+            }
         }
     }
 }
@@ -97,7 +105,7 @@ void sem(T m, T q, T x, T &csf, T &csd) {
     if ((m < 0) || (m != floor(m))) {
         csf = std::numeric_limits<T>::quiet_NaN();
         csd = std::numeric_limits<T>::quiet_NaN();
-        set_error("sem", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_sem", SF_ERROR_DOMAIN, NULL);
     } else {
         int_m = (int) m;
         if (int_m == 0) {
@@ -117,7 +125,15 @@ void sem(T m, T q, T x, T &csf, T &csd) {
                 csd = -sgn * d;
             }
         } else {
-            specfun::mtu0(kf, int_m, q, x, &csf, &csd);
+            using specfun::Status;
+            Status status = specfun::mtu0(kf, int_m, q, x, &csf, &csd);
+            if (status != Status::OK) {
+                csf = std::numeric_limits<T>::quiet_NaN();
+                csd = std::numeric_limits<T>::quiet_NaN();
+                sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                                 : SF_ERROR_OTHER;
+                set_error("mathieu_sem", sf_error, NULL);
+            }
         }
     }
 }
@@ -130,10 +146,18 @@ void mcm1(T m, T q, T x, T &f1r, T &d1r) {
     if ((m < 0) || (m != floor(m)) || (q < 0)) {
         f1r = std::numeric_limits<T>::quiet_NaN();
         d1r = std::numeric_limits<T>::quiet_NaN();
-        set_error("mcm1", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_modcem1", SF_ERROR_DOMAIN, NULL);
     } else {
+        using specfun::Status;
         int_m = (int) m;
-        specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        Status status = specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        if (status != Status::OK) {
+            f1r = std::numeric_limits<T>::quiet_NaN();
+            d1r = std::numeric_limits<T>::quiet_NaN();
+            sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                             : SF_ERROR_OTHER;
+            set_error("mathieu_modcem1", sf_error, NULL);
+        }
     }
 }
 
@@ -145,10 +169,18 @@ void msm1(T m, T q, T x, T &f1r, T &d1r) {
     if ((m < 1) || (m != floor(m)) || (q < 0)) {
         f1r = std::numeric_limits<T>::quiet_NaN();
         d1r = std::numeric_limits<T>::quiet_NaN();
-        set_error("msm1", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_modsem1", SF_ERROR_DOMAIN, NULL);
     } else {
+        using specfun::Status;
         int_m = (int) m;
-        specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        Status status = specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        if (status != Status::OK) {
+            f1r = std::numeric_limits<T>::quiet_NaN();
+            d1r = std::numeric_limits<T>::quiet_NaN();
+            sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                             : SF_ERROR_OTHER;
+            set_error("mathieu_modsem1", sf_error, NULL);
+        }
     }
 }
 
@@ -160,10 +192,18 @@ void mcm2(T m, T q, T x, T &f2r, T &d2r) {
     if ((m < 0) || (m != floor(m)) || (q < 0)) {
         f2r = std::numeric_limits<T>::quiet_NaN();
         d2r = std::numeric_limits<T>::quiet_NaN();
-        set_error("mcm2", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_modcem2", SF_ERROR_DOMAIN, NULL);
     } else {
+        using specfun::Status;
         int_m = (int) m;
-        specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        Status status = specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        if (status != Status::OK) {
+            f2r = std::numeric_limits<T>::quiet_NaN();
+            d2r = std::numeric_limits<T>::quiet_NaN();
+            sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                             : SF_ERROR_OTHER;
+            set_error("mathieu_modcem2", sf_error, NULL);
+        }
     }
 }
 
@@ -175,10 +215,18 @@ void msm2(T m, T q, T x, T &f2r, T &d2r) {
     if ((m < 1) || (m != floor(m)) || (q < 0)) {
         f2r = std::numeric_limits<T>::quiet_NaN();
         d2r = std::numeric_limits<T>::quiet_NaN();
-        set_error("msm2", SF_ERROR_DOMAIN, NULL);
+        set_error("mathieu_modsem2", SF_ERROR_DOMAIN, NULL);
     } else {
+        using specfun::Status;
         int_m = (int) m;
-        specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        Status status = specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, &f2r, &d2r);
+        if (status != Status::OK) {
+            f2r = std::numeric_limits<T>::quiet_NaN();
+            d2r = std::numeric_limits<T>::quiet_NaN();
+            sf_error_t sf_error = status == Status::NoMemory ? SF_ERROR_MEMORY
+                                                             : SF_ERROR_OTHER;
+            set_error("mathieu_modsem2", sf_error, NULL);
+        }
     }
 }
 

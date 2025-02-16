@@ -307,7 +307,7 @@ def lobpcg(
     ``A x = lambda x`` without constraints or preconditioning.
 
     >>> import numpy as np
-    >>> from scipy.sparse import spdiags
+    >>> from scipy.sparse import diags_array
     >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
     >>> from scipy.sparse.linalg import lobpcg
 
@@ -323,7 +323,7 @@ def lobpcg(
     the sparse diagonal matrix `A`
     of the eigenvalue problem ``A x = lambda x`` to solve.
 
-    >>> A = spdiags(vals, 0, n, n)
+    >>> A = diags_array(vals, offsets=0, shape=(n, n))
     >>> A = A.astype(np.int16)
     >>> A.toarray()
     array([[  1,   0,   0, ...,   0,   0,   0],
@@ -507,15 +507,15 @@ def lobpcg(
         if M is None:
             aux += "out"
         aux += " preconditioning\n\n"
-        aux += "matrix size %d\n" % n
-        aux += "block size %d\n\n" % sizeX
+        aux += f"matrix size {n}\n"
+        aux += f"block size {sizeX}\n\n"
         if blockVectorY is None:
             aux += "No constraints\n\n"
         else:
             if sizeY > 1:
-                aux += "%d constraints\n\n" % sizeY
+                aux += f"{sizeY} constraints\n\n"
             else:
-                aux += "%d constraint\n\n" % sizeY
+                aux += f"{sizeY} constraint\n\n"
         print(aux)
 
     if (n - sizeY) < (5 * sizeX):

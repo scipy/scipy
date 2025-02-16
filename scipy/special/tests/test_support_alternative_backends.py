@@ -2,10 +2,9 @@ import pytest
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api import is_jax, is_torch, SCIPY_DEVICE, is_dask
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -17,13 +16,13 @@ except ImportError:
 
 @pytest.mark.skipif(not HAVE_ARRAY_API_STRICT,
                     reason="`array_api_strict` not installed")
-def test_dispatch_to_unrecognize_library():
+def test_dispatch_to_unrecognized_library():
     xp = array_api_strict
     f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
-    xp_assert_close(res, ref, xp=xp)
+    xp_assert_close(res, ref)
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
@@ -34,36 +33,40 @@ def test_rel_entr_generic(dtype):
     f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
-    x, y = [-1, 0, 0, 1], [1, 0, 2, 3]
+    x = [-1, 0, 0, 1]
+    y = [1, 0, 2, 3]
 
-    x_xp, y_xp = xp.asarray(x, dtype=dtype_xp), xp.asarray(y, dtype=dtype_xp)
+    x_xp = xp.asarray(x, dtype=dtype_xp)
+    y_xp = xp.asarray(y, dtype=dtype_xp)
     res = f(x_xp, y_xp)
 
-    x_np, y_np = np.asarray(x, dtype=dtype_np), np.asarray(y, dtype=dtype_np)
+    x_np = np.asarray(x, dtype=dtype_np)
+    y_np = np.asarray(y, dtype=dtype_np)
     ref = special.rel_entr(x_np[-1], y_np[-1])
     ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
+    ref = xp.asarray(ref)
 
-    xp_assert_close(res, xp.asarray(ref), xp=xp)
+    xp_assert_close(res, ref)
 
 
 @pytest.mark.fail_slow(5)
-@array_api_compatible
-# @pytest.mark.skip_xp_backends('numpy', reason='skip while debugging')
-# @pytest.mark.usefixtures("skip_xp_backends")
 # `reversed` is for developer convenience: test new function first = less waiting
-@pytest.mark.parametrize('f_name_n_args', reversed(array_special_func_map.items()))
+@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.parametrize('dtype', ['float32', 'float64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
-    f_name, n_args = f_name_n_args
-
+def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
-        and f_name in {'stdtr', 'betaincc', 'betainc'}
+        and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
-                    f"and cannot delegate to PyTorch.")
+                    "and cannot delegate to PyTorch.")
+    if is_dask(xp) and f_name == 'rel_entr':
+        pytest.skip("boolean index assignment")
+    if is_jax(xp) and f_name == "stdtrit":
+        pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
@@ -101,7 +104,6 @@ def test_support_alternative_backends(xp, f_name_n_args, dtype, shapes):
     xp_assert_close(res, ref, atol=10*eps)
 
 
-@array_api_compatible
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
     # be sure to test at least these cases

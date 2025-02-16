@@ -3,13 +3,16 @@ from warnings import warn
 import numpy as np
 from numpy import (atleast_2d, arange, zeros_like, imag, diag,
                    iscomplexobj, tril, triu, argsort, empty_like)
-from scipy._lib._util import ComplexWarning
+from numpy.exceptions import ComplexWarning
+
+from scipy._lib._util import _apply_over_batch
 from ._decomp import _asarray_validated
 from .lapack import get_lapack_funcs, _compute_lwork
 
 __all__ = ['ldl']
 
 
+@_apply_over_batch(('A', 2))
 def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     """ Computes the LDLt or Bunch-Kaufman factorization of a symmetric/
     hermitian matrix.

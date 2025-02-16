@@ -16,6 +16,13 @@ cdef extern from "xsf/par_cyl.h" nogil:
     void specfun_pbdv 'xsf::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'xsf::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
+cdef extern from "xsf/specfun/specfun.h" namespace "xsf::specfun":
+
+    cpdef enum class Status:
+        OK = 0
+        NoMemory
+        Other
+
 cdef extern from "xsf/specfun/specfun.h" nogil:
     void specfun_bernob 'xsf::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'xsf::specfun::cerzo'(int nt, ccomplex[double] *zo)
@@ -23,15 +30,15 @@ cdef extern from "xsf/specfun/specfun.h" nogil:
     void specfun_cyzo 'xsf::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
     void specfun_eulerb 'xsf::specfun::eulerb'(int n, double *en)
     void specfun_fcoef 'xsf::specfun::fcoef'(int kd, int m, double q, double a, double *fc)
-    void specfun_jdzo 'xsf::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
+    Status specfun_jdzo 'xsf::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
     void specfun_jyzo 'xsf::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
     void specfun_lamn 'xsf::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
     void specfun_lamv 'xsf::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
     void specfun_lqnb 'xsf::specfun::lqnb'(int n, double x, double* qn, double* qd)
     void specfun_pbdv 'xsf::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'xsf::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
-    void specfun_sdmn 'xsf::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
-    void specfun_segv 'xsf::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
+    Status specfun_sdmn 'xsf::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
+    Status specfun_segv 'xsf::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
 
 
 def airyzo(int nt, int kf):
@@ -224,7 +231,8 @@ def jdzo(int nt):
     mm = <int*>cnp.PyArray_DATA(m)
     pp = <int*>cnp.PyArray_DATA(p)
 
-    specfun_jdzo(nt, zzo, nn, mm, pp)
+    if (specfun_jdzo(nt, zzo, nn, mm, pp) == Status.NoMemory):
+        raise MemoryError('jnjnp_zeros: failed to allocate working memory in jdzo.')
 
     return n, m, p, zo
 
@@ -353,7 +361,8 @@ def sdmn(int m, int n, double c, double cv, int kd):
 
     df = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
     ddf = <cnp.float64_t *>cnp.PyArray_DATA(df)
-    specfun_sdmn(m, n, c, cv, kd, ddf)
+    if specfun_sdmn(m, n, c, cv, kd, ddf) == Status.NoMemory:
+        raise MemoryError('sdmn: failed to allocate working memory.')
     return df
 
 
@@ -369,5 +378,11 @@ def segv(int m, int n, double c, int kd):
 
     eg = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
     eeg = <cnp.float64_t *>cnp.PyArray_DATA(eg)
-    specfun_segv(m, n, c, kd, &cv, eeg)
+    if specfun_segv(m, n, c, kd, &cv, eeg) == Status.NoMemory:
+        # Note: segv is a private function that is called by either pro_cv_seq
+        # or obl_cv_seq.  We make the error message useful by including the
+        # approriate name in it.
+        caller = 'pro_cv_seq' if kd == 1 else 'obl_cv_seq'
+        msg = f'{caller}: failed to allocate working memory in segv.'
+        raise MemoryError(msg)
     return cv, eg

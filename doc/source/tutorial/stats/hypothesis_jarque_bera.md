@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_jarque_bera.ipynb
+.. notebooklite:: hypothesis_jarque_bera.md
    :new_tab: True
 ```
 
 (hypothesis_jarque_bera)=
+
++++
+
 # Jarque-Bera goodness of fit test
 
 Suppose we wish to infer from measurements whether the weights of adult human

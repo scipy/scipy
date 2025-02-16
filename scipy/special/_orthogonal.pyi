@@ -1,10 +1,10 @@
 from typing import (
     Any,
-    Callable,
     Literal,
     Optional,
     overload,
 )
+from collections.abc import Callable
 
 import numpy as np
 

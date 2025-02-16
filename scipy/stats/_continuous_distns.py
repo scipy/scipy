@@ -27,7 +27,6 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
-from scipy.stats._distribution_infrastructure import _log1mexp
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
@@ -1945,7 +1944,7 @@ class dpareto_lognorm_gen(rv_continuous):
         return out[()]
 
     def _logsf(self, x, u, s, a, b):
-        return _log1mexp(self._logcdf(x, u, s, a, b))
+        return scu._log1mexp(self._logcdf(x, u, s, a, b))
 
     # Infrastructure doesn't seem to do this, so...
 
@@ -5019,10 +5018,10 @@ class invgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
         #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*(x/mu - 1)**2)
 
     def _logpdf(self, x, mu):
-        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
+        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - (x/mu - 1)**2/(2*x)
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
@@ -5030,14 +5029,14 @@ class invgauss_gen(rv_continuous):
 
     def _logcdf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        a = _norm_logcdf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(np.exp(b - a))
 
     def _logsf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        a = _norm_logsf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(-np.exp(b - a))
 
     def _sf(self, x, mu):
@@ -8124,8 +8123,7 @@ class nct_gen(rv_continuous):
         return sc.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_ppf(q, df, nc)
+        return sc.nctdtrit(df, nc, q)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
@@ -9986,51 +9984,7 @@ class trapezoid_gen(rv_continuous):
         return 0.5 * (1.0-d+c) / (1.0+d-c) + np.log(0.5 * (1.0+d-c))
 
 
-# deprecation of trapz, see #20486
-deprmsg = ("`trapz` is deprecated in favour of `trapezoid` "
-           "and will be removed in SciPy 1.16.0.")
-
-
-class trapz_gen(trapezoid_gen):
-    # override __call__ protocol from rv_generic to also
-    # deprecate instantiation of frozen distributions
-    """
-
-    .. deprecated:: 1.14.0
-        `trapz` is deprecated and will be removed in SciPy 1.16.
-        Plese use `trapezoid` instead!
-    """
-    def __call__(self, *args, **kwds):
-        warnings.warn(deprmsg, DeprecationWarning, stacklevel=2)
-        return self.freeze(*args, **kwds)
-
-
 trapezoid = trapezoid_gen(a=0.0, b=1.0, name="trapezoid")
-trapz = trapz_gen(a=0.0, b=1.0, name="trapz")
-
-# since the deprecated class gets intantiated upon import (and we only want to
-# warn upon use), add the deprecation to each class method
-_method_names = [
-    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
-    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
-    "std", "var"
-]
-
-
-class _DeprecationWrapper:
-    def __init__(self, method):
-        self.msg = (f"`trapz.{method}` is deprecated in favour of trapezoid.{method}. "
-                     "Please replace all uses of the distribution class "
-                     "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
-        self.method = getattr(trapezoid, method)
-
-    def __call__(self, *args, **kwargs):
-        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
-        return self.method(*args, **kwargs)
-
-
-for m in _method_names:
-    setattr(trapz, m, _DeprecationWrapper(m))
 
 
 class triang_gen(rv_continuous):

@@ -5,6 +5,8 @@ Compressed Sparse Graph Routines (`scipy.sparse.csgraph`)
 
 .. currentmodule:: scipy.sparse.csgraph
 
+.. _word-ladders-example:
+
 
 Example: Word Ladders
 ---------------------

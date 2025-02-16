@@ -563,7 +563,7 @@ class netcdf_file:
             types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
 
             # bytes index into scalars in py3k. Check for "string" types
-            if isinstance(values, (str, bytes)):
+            if isinstance(values, str | bytes):
                 sample = values
             else:
                 try:
@@ -682,8 +682,8 @@ class netcdf_file:
                     actual_size = reduce(mul, (1,) + shape[1:]) * size
                     padding = -actual_size % 4
                     if padding:
-                        dtypes['names'].append('_padding_%d' % var)
-                        dtypes['formats'].append('(%d,)>b' % padding)
+                        dtypes['names'].append(f'_padding_{var}')
+                        dtypes['formats'].append(f'({padding},)>b')
 
                 # Data will be set later.
                 data = None

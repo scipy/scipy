@@ -38,10 +38,12 @@ def download_all(path=None):
                           "conda to install 'pooch'.")
     if path is None:
         path = pooch.os_cache('scipy-data')
+    # https://github.com/scipy/scipy/issues/21879
+    downloader = pooch.HTTPDownloader(headers={"User-Agent": "SciPy"})
     for dataset_name, dataset_hash in _registry.registry.items():
         pooch.retrieve(url=_registry.registry_urls[dataset_name],
                        known_hash=dataset_hash,
-                       fname=dataset_name, path=path)
+                       fname=dataset_name, path=path, downloader=downloader)
 
 
 def main():

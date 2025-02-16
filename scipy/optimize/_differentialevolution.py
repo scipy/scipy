@@ -5,14 +5,15 @@ Added by Andrew Nelson 2014
 import warnings
 
 import numpy as np
+
 from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
+                                         NonlinearConstraint, LinearConstraint)
 from scipy.optimize._optimize import _status_message, _wrap_callback
 from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
                               rng_integers, _transition_to_rng)
+from scipy._lib._sparse import issparse
 
-from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
-                                         NonlinearConstraint, LinearConstraint)
-from scipy.sparse import issparse
 
 __all__ = ['differential_evolution']
 

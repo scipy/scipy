@@ -136,18 +136,12 @@ add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_c',
     """
     Permutation Pc represented as an array of indices.
 
-    The column permutation matrix can be reconstructed via:
-
-    >>> Pc = np.zeros((n, n))
-    >>> Pc[np.arange(n), perm_c] = 1
+    See the `SuperLU` docstring for details.
     """))
 
 add_newdoc('scipy.sparse.linalg._dsolve._superlu', 'SuperLU', ('perm_r',
     """
     Permutation Pr represented as an array of indices.
 
-    The row permutation matrix can be reconstructed via:
-
-    >>> Pr = np.zeros((n, n))
-    >>> Pr[perm_r, np.arange(n)] = 1
+    See the `SuperLU` docstring for details.
     """))

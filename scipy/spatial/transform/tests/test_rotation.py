@@ -308,6 +308,11 @@ def test_matrix_calculation_pipeline():
 def test_from_matrix_ortho_output():
     rnd = np.random.RandomState(0)
     mat = rnd.random_sample((100, 3, 3))
+    dets = np.linalg.det(mat)
+    for i in range(len(dets)):
+        # Make sure we have a right-handed rotation matrix
+        if dets[i] < 0:
+            mat[i] = -mat[i]
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
     mult_result = np.einsum('...ij,...jk->...ik', ortho_mat,
@@ -318,6 +323,37 @@ def test_from_matrix_ortho_output():
         eye3d[:, i, i] = 1.0
 
     assert_array_almost_equal(mult_result, eye3d)
+
+
+def test_from_matrix_normalize():
+    mat = np.array([
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 0, 1]])
+    expected = np.array([[ 0.894427, 0.447214, 0.0],
+                         [-0.447214, 0.894427, 0.0],
+                         [ 0.0,      0.0,      1.0]])
+    assert_allclose(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+    mat = np.array([
+        [0,  -0.5, 0  ],
+        [0.5, 0  , 0  ],
+        [0,   0  , 0.5]])
+    expected = np.array([[ 0, -1, 0],
+                         [ 1,  0, 0],
+                         [ 0,  0, 1]])
+    assert_allclose(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
+
+
+def test_from_matrix_non_positive_determinant():
+    mat = np.eye(3)
+    mat[0, 0] = 0
+    with pytest.raises(ValueError, match='Non-positive determinant'):
+        Rotation.from_matrix(mat)
+
+    mat[0, 0] = -1
+    with pytest.raises(ValueError, match='Non-positive determinant'):
+        Rotation.from_matrix(mat)
 
 
 def test_from_1d_single_rotvec():
@@ -1522,6 +1558,30 @@ def test_align_vectors_primary_only():
         R, rssd = Rotation.align_vectors(a, b)
         assert_allclose(R.apply(b), a, atol=atol)
         assert np.isclose(rssd, 0, atol=atol)
+
+
+def test_repr_single_rotation():
+    q = np.array([0, 0, 0, 1])
+    actual = repr(Rotation.from_quat(q))
+    expected = """\
+Rotation.from_matrix(array([[1., 0., 0.],
+                            [0., 1., 0.],
+                            [0., 0., 1.]]))"""
+    assert actual == expected
+
+
+def test_repr_rotation_sequence():
+    q = np.array([[0, 1, 0, 1], [0, 0, 1, 1]]) / np.sqrt(2)
+    actual = f"{Rotation.from_quat(q)!r}"
+    expected = """\
+Rotation.from_matrix(array([[[ 0.,  0.,  1.],
+                             [ 0.,  1.,  0.],
+                             [-1.,  0.,  0.]],
+                     
+                            [[ 0., -1.,  0.],
+                             [ 1.,  0.,  0.],
+                             [ 0.,  0.,  1.]]]))"""
+    assert actual == expected
 
 
 def test_slerp():

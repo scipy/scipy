@@ -28,6 +28,7 @@ cython_linalg = custom_target('cython_linalg',
   install_tag: 'devel'
 )
 cython_blas_pxd = cython_linalg[2]
+cython_lapack_pxd = cython_linalg[3]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -39,7 +40,7 @@ linalg_init_cython_gen = generator(cython,
 linalg_init_utils_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd, cython_lapack_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython,
@@ -104,7 +105,7 @@ py3.extension_module('_flapack',
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
-  linalg_init_cython_gen.process('_decomp_interpolative.pyx'),
+  linalg_cython_gen.process('_decomp_interpolative.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,

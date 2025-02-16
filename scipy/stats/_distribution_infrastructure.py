@@ -6,9 +6,10 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere, _rng_spawn
+from scipy._lib._util import _rng_spawn
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
+from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -27,7 +28,8 @@ _null = object()
 def _isnull(x):
     return type(x) is object or x is None
 
-__all__ = ['ContinuousDistribution']
+__all__ = ['make_distribution', 'Mixture', 'order_statistic',
+           'truncate', 'abs', 'exp', 'log']
 
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much
@@ -266,11 +268,10 @@ class _SimpleDomain(_Domain):
 
     """
     def __init__(self, endpoints=(-inf, inf), inclusive=(False, False)):
+        self.symbols = super().symbols.copy()
         a, b = endpoints
         self.endpoints = np.asarray(a)[()], np.asarray(b)[()]
         self.inclusive = inclusive
-        # self.all_inclusive = (endpoints == (-inf, inf)
-        #                       and inclusive == (True, True))
 
     def define_parameters(self, *parameters):
         r""" Records any parameters used to define the endpoints of the domain.
@@ -1152,47 +1153,6 @@ def _kwargs2args(f, args=None, kwargs=None):
     return wrapped, args
 
 
-def _log1mexp(x):
-    r"""Compute the log of the complement of the exponential.
-
-    This function is equivalent to::
-
-        log1mexp(x) = np.log(1-np.exp(x))
-
-    but avoids loss of precision when ``np.exp(x)`` is nearly 0 or 1.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-
-    Returns
-    -------
-    y : ndarray
-        An array of the same shape as `x`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import log1m
-    >>> x = 1e-300  # log of a number very close to 1
-    >>> _log1mexp(x)  # log of the complement of a number very close to 1
-    -690.7755278982137
-    >>> # p.log(1 - np.exp(x))  # -inf; emits warning
-
-    """
-    def f1(x):
-        # good for exp(x) close to 0
-        return np.log1p(-np.exp(x))
-
-    def f2(x):
-        # good for exp(x) close to 1
-        with np.errstate(divide='ignore'):
-            return np.real(np.log(-special.expm1(x + 0j)))
-
-    return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -1210,6 +1170,25 @@ def _logexpxmexpy(x, y):
     i = (x == y)
     res[i] = -np.inf
     return res
+
+
+def _guess_bracket(xmin, xmax):
+    a = np.full_like(xmin, -1.0)
+    b = np.ones_like(xmax)
+
+    i = np.isfinite(xmin) & np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmax[i]
+
+    i = np.isfinite(xmin) & ~np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmin[i] + 1
+
+    i = np.isfinite(xmax) & ~np.isfinite(xmin)
+    a[i] = xmax[i] - 1
+    b[i] = xmax[i]
+
+    return a, b
 
 
 def _log_real_standardize(x):
@@ -1463,6 +1442,10 @@ class ContinuousDistribution(_ProbabilityDistribution):
     entropy
     logentropy
 
+    See Also
+    --------
+    :ref:`rv_infrastructure` : Tutorial
+
     Notes
     -----
     The following abbreviations are used throughout the documentation.
@@ -1482,6 +1465,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
     text.
 
     """
+    __array_priority__ = 1
     _parameterizations = []  # type: ignore[var-annotated]
 
     ### Initialization
@@ -1501,7 +1485,8 @@ class ContinuousDistribution(_ProbabilityDistribution):
         # IDEs can suggest parameter names. If there are multiple parameterizations,
         # we'll need the default values of parameters to be None; this will
         # filter out the parameters that were not actually specified by the user.
-        parameters = {key: val for key, val in parameters.items() if val is not None}
+        parameters = {key: val for key, val in
+                      sorted(parameters.items()) if val is not None}
         self._update_parameters(**parameters)
 
     def _update_parameters(self, *, validation_policy=None, **params):
@@ -1701,9 +1686,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
-        parameter_names_list = list(parameters.keys())
-        parameter_names_list.sort()
-        return f"{{{', '.join(parameter_names_list)}}}"
+        return f"{{{', '.join(parameters.keys())}}}"
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
@@ -1786,25 +1769,27 @@ class ContinuousDistribution(_ProbabilityDistribution):
         r""" Returns a string representation of the distribution.
 
         Includes the name of the distribution family, the names of the
-        parameters, and the broadcasted shape and result dtype of the
-        parameters.
+        parameters and the `repr` of each of their values.
+
 
         """
         class_name = self.__class__.__name__
         parameters = list(self._original_parameters.items())
         info = []
-        if parameters:
-            parameters.sort()
-            if self._size <= 3:
-                str_parameters = [f"{symbol}={value}" for symbol, value in parameters]
-                str_parameters = f"{', '.join(str_parameters)}"
-            else:
-                str_parameters = f"{', '.join([symbol for symbol, _ in parameters])}"
-            info.append(str_parameters)
-        if self._shape:
-            info.append(f"shape={self._shape}")
-        if self._dtype != np.float64:
-            info.append(f"dtype={self._dtype}")
+        with np.printoptions(threshold=10):
+            str_parameters = [f"{symbol}={repr(value)}" for symbol, value in parameters]
+        str_parameters = f"{', '.join(str_parameters)}"
+        info.append(str_parameters)
+        return f"{class_name}({', '.join(info)})"
+
+    def __str__(self):
+        class_name = self.__class__.__name__
+        parameters = list(self._original_parameters.items())
+        info = []
+        with np.printoptions(threshold=10):
+            str_parameters = [f"{symbol}={str(value)}" for symbol, value in parameters]
+        str_parameters = f"{', '.join(str_parameters)}"
+        info.append(str_parameters)
         return f"{class_name}({', '.join(info)})"
 
     def __add__(self, loc):
@@ -1825,15 +1810,19 @@ class ContinuousDistribution(_ProbabilityDistribution):
                        "implemented when the argument is a positive integer.")
             raise NotImplementedError(message)
 
-        X = abs(self) if (other % 2 == 0) else self
+        # Fill in repr_pattern with the repr of self before taking abs.
+        # Avoids having unnecessary abs in the repr.
+        with np.printoptions(threshold=10):
+            repr_pattern = f"({repr(self)})**{repr(other)}"
+            str_pattern = f"({str(self)})**{str(other)}"
+        X = abs(self) if other % 2 == 0 else self
 
-        # This notation for g_name is nonstandard
-        funcs = dict(g=lambda u: u**other, g_name=f'pow_{other}',
+        funcs = dict(g=lambda u: u**other, repr_pattern=repr_pattern,
+                     str_pattern=str_pattern,
                      h=lambda u: np.sign(u) * np.abs(u)**(1 / other),
                      dh=lambda u: 1/other * np.abs(u)**(1/other - 1))
 
         return MonotonicTransformedDistribution(X, **funcs, increasing=True)
-
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -1846,8 +1835,11 @@ class ContinuousDistribution(_ProbabilityDistribution):
 
     def __rtruediv__(self, other):
         a, b = self.support()
-        funcs = dict(g=lambda u: 1 / u, g_name='inv',
-                     h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: 1 / u,
+                         repr_pattern=f"{repr(other)}/({repr(self)})",
+                         str_pattern=f"{str(other)}/({str(self)})",
+                         h=lambda u: 1 / u, dh=lambda u: 1 / u ** 2)
         if np.all(a >= 0) or np.all(b <= 0):
             out = MonotonicTransformedDistribution(self, **funcs, increasing=False)
         else:
@@ -1860,9 +1852,12 @@ class ContinuousDistribution(_ProbabilityDistribution):
             return out * other
 
     def __rpow__(self, other):
-        funcs = dict(g=lambda u: other**u, g_name=f'{other}**',
-                     h=lambda u: np.log(u) / np.log(other),
-                     dh=lambda u: 1 / np.abs(u * np.log(other)))
+        with np.printoptions(threshold=10):
+            funcs = dict(g=lambda u: other**u,
+                         h=lambda u: np.log(u) / np.log(other),
+                         dh=lambda u: 1 / np.abs(u * np.log(other)),
+                         repr_pattern=f"{repr(other)}**({repr(self)})",
+                         str_pattern=f"{str(other)}**({str(self)})",)
 
         if not np.isscalar(other) or other <= 0 or other == 1:
             message = ("Raising an argument to the power of a random variable is only "
@@ -1995,27 +1990,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
         shape = xmin.shape
         xmin, xmax = np.atleast_1d(xmin, xmax)
 
-        a = -np.ones_like(xmin)
-        b = np.ones_like(xmax)
-
-        i = np.isfinite(xmin) & np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmax[i]
-
-        i = np.isfinite(xmin) & ~np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmin[i] + 1
-
-        i = np.isfinite(xmax) & ~np.isfinite(xmin)
-        a[i] = xmax[i] - 1
-        b[i] = xmax[i]
-
+        xl0, xr0 = _guess_bracket(xmin, xmax)
         xmin = xmin.reshape(shape)
         xmax = xmax.reshape(shape)
-        a = a.reshape(shape)
-        b = b.reshape(shape)
+        xl0 = xl0.reshape(shape)
+        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
         xrtol = None if _isnull(self.tol) else self.tol
@@ -3195,7 +3176,16 @@ class ContinuousDistribution(_ProbabilityDistribution):
     def _logmoment_quad(self, order, logcenter, **params):
         def logintegrand(x, order, logcenter, **params):
             logpdf = self._logpdf_dispatch(x, **params)
-            return logpdf + order*_logexpxmexpy(np.log(x+0j), logcenter)
+            return logpdf + order * _logexpxmexpy(np.log(x + 0j), logcenter)
+            ## if logx == logcenter, `_logexpxmexpy` returns (-inf + 0j)
+            ## multiplying by order produces (-inf + nan j) - bad
+            ## We're skipping logmoment tests, so we might don't need to fix
+            ## now, but if we ever do use run them, this might help:
+            # logx = np.log(x+0j)
+            # out = np.asarray(logpdf + order*_logexpxmexpy(logx, logcenter))
+            # i = (logx == logcenter)
+            # out[i] = logpdf[i]
+            # return out
         return self._quadrature(logintegrand, args=(order, logcenter),
                                 params=params, log=True)
 
@@ -3391,85 +3381,6 @@ class ContinuousDistribution(_ProbabilityDistribution):
     # quantities should make us question that choice. It can still accomodate
     # these methods reasonably efficiently.
 
-    def llf(self, sample, /, *, axis=-1):
-        r"""Log-likelihood function
-
-        Given a sample :math:`x`, the log-likelihood function (LLF) is the logarithm
-        of the joint probability density of the observed data. It is typically
-        viewed as a function of the parameters :math:`\theta` of a statistical
-        distribution:
-
-        .. math::
-
-            \mathcal{L}(\theta | x) = \log \left( \prod_i f_\theta(x_i) \right) = \sum_{i} \log(f_\theta(x_i))
-
-        where :math:`f_\theta` is the probability density function with
-        parameters :math:`\theta`.
-
-        As a method of `ContinuousDistribution`, the parameter values are specified
-        during instantiation; `llf` accepts only the sample :math:`x` as `sample`.
-
-        Parameters
-        ----------
-        sample : array_like
-            The given sample for which to calculate the LLF.
-        axis : int or tuple of ints
-            The axis over which the reducing operation (sum of logarithms) is performed.
-
-        Notes
-        -----
-        The LLF is often viewed as a function of the parameters with the sample fixed;
-        see the Notes for an example of a function with this signature.
-
-        References
-        ----------
-        .. [1] Likelihood function, *Wikipedia*,
-               https://en.wikipedia.org/wiki/Likelihood_function
-
-        Examples
-        --------
-        Instantiate a distribution with the desired parameters:
-
-        >>> import numpy as np
-        >>> import matplotlib.pyplot as plt
-        >>> from scipy import stats
-        >>> X = stats.Normal(mu=0., sigma=1.)
-
-        Evaluate the LLF with the given sample:
-
-        >>> sample = [1., 2., 3.]
-        >>> X.llf(sample)
-        -9.756815599614018
-        >>> np.allclose(X.llf(sample), np.sum(X.logpdf(sample)))
-        True
-
-        To generate a function that accepts only the parameters and
-        holds the data fixed:
-
-        >>> def llf(mu, sigma):
-        ...     return stats.Normal(mu=mu, sigma=sigma).llf(sample)
-        >>> llf(0., 1.)
-        -9.756815599614018
-
-        """ # noqa: E501
-        return np.sum(self.logpdf(sample), axis=axis)
-
-    # def dllf(self, parameters=None, *, sample, var):
-    #     """Partial derivative of the log likelihood function."""
-    #     parameters = parameters or {}
-    #     self._update_parameters(**parameters)
-    #
-    #     def f(x):
-    #         update = {}
-    #         update[var] = x
-    #         self._update_parameters(**update)
-    #         res = self.llf(sample=sample[:, np.newaxis], axis=0)
-    #         return np.reshape(res, x.shape)
-    #
-    #     return _differentiate(f, self._parameters[var]).df
-    #
-    # fit method removed for initial PR
-
 
 # Special case the names of some new-style distributions in `make_distribution`
 _distribution_names = {
@@ -3550,7 +3461,10 @@ _distribution_names = {
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `ContinuousDistribution` from an instance of `rv_continuous`
+    """Generate a `ContinuousDistribution` class from a compatible object
+
+    The argument may be an instance of `rv_continuous` or an instance of
+    another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass. Like any subclass
     of `ContinuousDistribution`, it must be instantiated (i.e. by passing all shape
@@ -3568,7 +3482,44 @@ def make_distribution(dist):
     Parameters
     ----------
     dist : `rv_continuous`
-        Instance of `rv_continuous`.
+        Instance of `rv_continuous` OR an instance of any class with the following
+        attributes:
+
+        __make_distribution_version__ : str
+            A string containing the version number of SciPy in which this interface
+            is defined. The preferred interface may change in future SciPy versions,
+            in which case support for an old interface version may be deprecated
+            and eventually removed.
+        parameters : dict
+            A dictionary describing the parameters of the distribution.
+            Each key is the name of a parameter,
+            and the corresponding value is itself a dictionary with the following items.
+
+            endpoints : tuple
+                A tuple defining the lower and upper endpoints of the domain of the
+                parameter. Allowable values are floats or the name (string) of another
+                parameter.
+
+            inclusive : tuple of bool
+                A tuple specifying whether the endpoints are included within the domain
+                of the parameter.
+
+        support : tuple
+            A tuple defining the lower and upper endpoints of the support of the
+            distribution. Allowable values are floats or the name (string) of a
+            parameter.
+
+        The class **must** also define a ``pdf`` method and **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf``.
+        If defined, these methods must accept the parameters of the distributions as
+        keyword arguments and also accept any positional-only arguments accepted by
+        the corresponding method of `ContinuousDistribution`. Methods ``moment_raw``,
+        ``moment_central``, ``moment_standardized`` may also be defined; if so,
+        they must accept the ``order`` of the moment by position, accept all
+        distribution parameters by keyword, and return the raw, central, and
+        standardized moments of the distribution, respectively.
 
     Returns
     -------
@@ -3590,8 +3541,11 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> LogU = stats.make_distribution(stats.loguniform)
-    >>> X = LogU(a=1.0, b=3.0)
+
+    Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
+
+    >>> LogUniform = stats.make_distribution(stats.loguniform)
+    >>> X = LogUniform(a=1.0, b=3.0)
     >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
     np.True_
     >>> X.plot()
@@ -3600,14 +3554,47 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
+    Create a custom distribution.
+
+    >>> class MyLogUniform:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'a': {'endpoints': (0, np.inf),
+    ...                       'inclusive': (False, False)},
+    ...                 'b': {'endpoints': ('a', np.inf),
+    ...                       'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return 'a', 'b'
+    ...
+    ...     def pdf(self, x, a, b):
+    ...         return 1 / (x * (np.log(b)- np.log(a)))
+    >>>
+    >>> MyLogUniform = stats.make_distribution(MyLogUniform())
+    >>> Y = MyLogUniform(a=1.0, b=3.0)
+    >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
     """
     if dist in {stats.levy_stable, stats.vonmises}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if not isinstance(dist, stats.rv_continuous):
-        message = "The argument must be an instance of `rv_continuous`."
+    if isinstance(dist, stats.rv_continuous):
+        return _make_distribution_rv_generic(dist)
+    elif getattr(dist, "__make_distribution_version__", "0.0.0") >= "1.16.0":
+        return _make_distribution_custom(dist)
+    else:
+        message = ("The argument must be an instance of `rv_continuous` or an instance "
+                   "of a class with attribute `__make_distribution_version__ >= 1.16`.")
         raise ValueError(message)
 
+
+def _make_distribution_rv_generic(dist):
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3630,6 +3617,10 @@ def make_distribution(dist):
 
         def __repr__(self):
             s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+        def __str__(self):
+            s = super().__str__()
             return s.replace('CustomDistribution', repr_str)
 
     # override the domain's `get_numerical_endpoints` rather than the
@@ -3717,6 +3708,57 @@ def make_distribution(dist):
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
         "`ContinuousDistribution`.",
         f"The `repr`/`str` of class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
+
+    return CustomDistribution
+
+
+def _make_distribution_custom(dist):
+    parameters = []
+    support = getattr(dist, 'support')
+
+    for name, info in dist.parameters.items():
+        domain = _RealDomain(endpoints=info['endpoints'],
+                             inclusive=info['inclusive'])
+        param = _RealParameter(name, domain=domain)
+        parameters.append(param)
+
+    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    _x_param = _RealParameter('x', domain=_x_support)
+    repr_str = dist.__class__.__name__
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+        def __str__(self):
+            s = super().__str__()
+            return s.replace('CustomDistribution', repr_str)
+
+    methods = {'sample', 'logentropy', 'entropy',
+               'median', 'mode', 'logpdf', 'pdf',
+               'logcdf2', 'logcdf', 'cdf2', 'cdf',
+               'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
+               'moment_raw', 'moment_central', 'moment_standardized'}
+
+    for method in methods:
+        if hasattr(dist, method):
+            # Make it an attribute of the new object with the new name
+            new_method = f"_{method}_formula"
+            setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `{repr_str}` as a subclass of "
+        "`ContinuousDistribution`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
@@ -3837,9 +3879,10 @@ class TransformedDistribution(ContinuousDistribution):
         return self._dist._process_parameters(**params)
 
     def __repr__(self):
-        s = super().__repr__()
-        return s.replace("Distribution",
-                         self._dist.__class__.__name__)
+        raise NotImplementedError()
+
+    def __str__(self):
+        raise NotImplementedError()
 
 
 class TruncatedDistribution(TransformedDistribution):
@@ -3916,6 +3959,16 @@ class TruncatedDistribution(TransformedDistribution):
         cFb = self._dist._ccdf_dispatch(_b, *args, **params)
         p_adjusted = cFb + p*np.exp(logmass)
         return self._dist._iccdf_dispatch(p_adjusted, *args, **params)
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return (f"truncate({repr(self._dist)}, "
+                    f"lb={repr(self.lb)}, ub={repr(self.ub)})")
+
+    def __str__(self):
+        with np.printoptions(threshold=10):
+            return (f"truncate({str(self._dist)}, "
+                    f"lb={str(self.lb)}, ub={str(self.ub)})")
 
 
 def truncate(X, lb=-np.inf, ub=np.inf):
@@ -4016,6 +4069,30 @@ class ShiftedScaledDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         a, b = self._itransform(a, loc, scale), self._itransform(b, loc, scale)
         return np.where(sign, a, b)[()], np.where(sign, b, a)[()]
+
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            result =  f"{repr(self.scale)}*{repr(self._dist)}"
+            if not self.loc.ndim and self.loc < 0:
+                result += f" - {repr(-self.loc)}"
+            elif (np.any(self.loc != 0)
+                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):
+                # We don't want to hide a zero array loc if it can cause
+                # a type promotion.
+                result += f" + {repr(self.loc)}"
+        return result
+
+    def __str__(self):
+        with np.printoptions(threshold=10):
+            result =  f"{str(self.scale)}*{str(self._dist)}"
+            if not self.loc.ndim and self.loc < 0:
+                result += f" - {str(-self.loc)}"
+            elif (np.any(self.loc != 0)
+                  or not np.can_cast(self.loc.dtype, self.scale.dtype)):
+                # We don't want to hide a zero array loc if it can cause
+                # a type promotion.
+                result += f" + {str(self.loc)}"
+        return result
 
     # Here, we override all the `_dispatch` methods rather than the public
     # methods or _function methods. Why not the public methods?
@@ -4175,6 +4252,7 @@ class OrderStatisticDistribution(TransformedDistribution):
     r : array_like
         The (integer) rank of the order statistic :math:`r`
 
+
     Notes
     -----
     If we make :math:`n` observations of a continuous random variable
@@ -4208,11 +4286,12 @@ class OrderStatisticDistribution(TransformedDistribution):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> from scipy.stats._distribution_infrastructure import OrderStatisticDistribution
     >>>
     >>> X = stats.Normal()
     >>> data = X.sample(shape=(10000, 5))
     >>> ranks = np.sort(data, axis=1)
-    >>> Y = stats.OrderStatisticDistribution(X, r=4, n=5)
+    >>> Y = OrderStatisticDistribution(X, r=4, n=5)
     >>>
     >>> ax = plt.gca()
     >>> Y.plot(ax=ax)
@@ -4235,6 +4314,14 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     def __init__(self, dist, /, *args, r, n, **kwargs):
         super().__init__(dist, *args, r=r, n=n, **kwargs)
+
+    def _support(self, *args, r, n, **kwargs):
+        return self._dist._support(*args, **kwargs)
+
+    def _process_parameters(self, r=None, n=None, **params):
+        parameters = self._dist._process_parameters(**params)
+        parameters.update(dict(r=r, n=n))
+        return parameters
 
     def _overrides(self, method_name):
         return method_name in {'_logpdf_formula', '_pdf_formula',
@@ -4279,6 +4366,16 @@ class OrderStatisticDistribution(TransformedDistribution):
         p_ = special.betainccinv(r, n-r+1, p)
         return self._dist._icdf_dispatch(p_, **kwargs)
 
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return (f"order_statistic({repr(self._dist)}, r={repr(self.r)}, "
+                    f"n={repr(self.n)})")
+
+    def __str__(self):
+        with np.printoptions(threshold=10):
+            return (f"order_statistic({str(self._dist)}, r={str(self.r)}, "
+                    f"n={str(self.n)})")
+
 
 def order_statistic(X, /, *, r, n):
     r"""Probability distribution of an order statistic
@@ -4295,6 +4392,12 @@ def order_statistic(X, /, *, r, n):
         The (positive integer) rank of the order statistic :math:`r`
     n : array_like
         The (positive integer) sample size :math:`n`
+
+    Returns
+    -------
+    Y : `ContinuousDistribution`
+        A random variable that follows the distribution of the prescribed
+        order statistic.
 
     Notes
     -----
@@ -4495,13 +4598,13 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0, *args)
         for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
-        return out
+        return out[()]
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
         for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
-        return out
+        return out[()]
 
     def support(self):
         a = self._full(np.inf)
@@ -4577,7 +4680,7 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0)
         for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
-        return out
+        return out[()]
 
     def _moment_central(self, order):
         order = int(order)
@@ -4588,7 +4691,7 @@ class Mixture(_ProbabilityDistribution):
             a, b = var.mean(), self.mean()
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
-        return out
+        return out[()]
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
@@ -4625,7 +4728,8 @@ class Mixture(_ProbabilityDistribution):
         xmin, xmax = self.support()
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
-        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        xl0, xr0 = _guess_bracket(xmin, xmax)
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):
@@ -4653,6 +4757,28 @@ class Mixture(_ProbabilityDistribution):
         x = np.reshape(rng.permuted(np.concatenate(x)), shape)
         return x[()]
 
+    def __repr__(self):
+        result = "Mixture(\n"
+        result += "    [\n"
+        with np.printoptions(threshold=10):
+            for component in self.components:
+                result += f"        {repr(component)},\n"
+            result += "    ],\n"
+            result += f"    weights={repr(self.weights)},\n"
+        result += ")"
+        return result
+
+    def __str__(self):
+        result = "Mixture(\n"
+        result += "    [\n"
+        with np.printoptions(threshold=10):
+            for component in self.components:
+                result += f"        {str(component)},\n"
+            result += "    ],\n"
+            result += f"    weights={str(self.weights)},\n"
+        result += ")"
+        return result
+
 
 class MonotonicTransformedDistribution(TransformedDistribution):
     r"""Distribution underlying a strictly monotonic function of a random variable
@@ -4676,14 +4802,25 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     increasing : bool, optional
         Whether the function is strictly increasing (True, default)
         or strictly decreasing (False).
-    g_name : str, optional
-        The name of the mathematical function represented by `g`,
-        used in `__repr__` and `__str__`. The default is ``g.__name__``.
-
+    repr_pattern : str, optional
+        A string pattern for determining the __repr__. The __repr__
+        for X will be substituted into the position where `***` appears.
+        For example:
+            ``"exp(***)"`` for the repr of an exponentially transformed
+            distribution
+        The default is ``f"{g.__name__}(***)"``.
+    str_pattern : str, optional
+        A string pattern for determining `__str__`. The `__str__`
+        for X will be substituted into the position where `***` appears.
+        For example:
+            ``"exp(***)"`` for the repr of an exponentially transformed
+            distribution
+        The default is the value `repr_pattern` takes.
     """
 
     def __init__(self, X, /, *args, g, h, dh, logdh=None,
-                 increasing=True, g_name=None, **kwargs):
+                 increasing=True, repr_pattern=None,
+                 str_pattern=None, **kwargs):
         super().__init__(X, *args, **kwargs)
         self._g = g
         self._h = h
@@ -4709,13 +4846,16 @@ class MonotonicTransformedDistribution(TransformedDistribution):
             self._ilogxdf = self._dist._ilogccdf_dispatch
             self._ilogcxdf = self._dist._ilogcdf_dispatch
         self._increasing = increasing
-        self._g_name = g.__name__ if g_name is None else g_name
+        self._repr_pattern = repr_pattern or f"{g.__name__}(***)"
+        self._str_pattern = str_pattern or self._repr_pattern
 
     def __repr__(self):
-        return f"{self._g_name}({repr(self._dist)})"
+        with np.printoptions(threshold=10):
+            return self._repr_pattern.replace("***", repr(self._dist))
 
     def __str__(self):
-        return f"{self._g_name}({str(self._dist)})"
+        with np.printoptions(threshold=10):
+            return self._str_pattern.replace("***", str(self._dist))
 
     def _overrides(self, method_name):
         # Do not use the generic overrides of TransformedDistribution
@@ -4867,6 +5007,14 @@ class FoldedDistribution(TransformedDistribution):
             sample_shape, full_shape, method=method, rng=rng, **params)
         return np.abs(rvs)
 
+    def __repr__(self):
+        with np.printoptions(threshold=10):
+            return f"abs({repr(self._dist)})"
+
+    def __str__(self):
+        with np.printoptions(threshold=10):
+            return f"abs({str(self._dist)})"
+
 
 def abs(X, /):
     r"""Absolute value of a random variable
@@ -4917,6 +5065,7 @@ def exp(X, /):
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X`.
+
     Returns
     -------
     Y : `ContinuousDistribution`
@@ -4962,6 +5111,7 @@ def log(X, /):
     ----------
     X : `ContinuousDistribution`
         The random variable :math:`X` with positive support.
+
     Returns
     -------
     Y : `ContinuousDistribution`

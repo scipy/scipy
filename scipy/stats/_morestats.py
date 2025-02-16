@@ -1,5 +1,6 @@
 import math
 import warnings
+import threading
 from collections import namedtuple
 
 import numpy as np
@@ -22,7 +23,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2)
+                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -308,7 +309,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -374,7 +375,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -962,7 +963,7 @@ def boxcox_llf(lmb, data):
     if xp.isdtype(dt, 'integral'):
         data = xp.asarray(data, dtype=xp.float64)
         dt = xp.float64
-    
+
     logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
@@ -2628,7 +2629,9 @@ class _ABW:
 
 
 # Maintain state for faster repeat calls to ansari w/ method='exact'
-_abw_state = _ABW()
+# _ABW() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside ansari().
+_abw_state = threading.local()
 
 
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
@@ -2739,6 +2742,10 @@ def ansari(x, y, alternative='two-sided'):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+
+    if not hasattr(_abw_state, 'a'):
+        _abw_state.a = _ABW()
+
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2759,14 +2766,14 @@ def ansari(x, y, alternative='two-sided'):
         warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
-                                    _abw_state.sf(AB, n, m))
+            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
+                                    _abw_state.a.sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.cdf(AB, n, m)
+            pval = _abw_state.a.cdf(AB, n, m)
         else:
-            pval = _abw_state.sf(AB, n, m)
+            pval = _abw_state.a.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -3863,16 +3870,15 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(f"Sample {k + 1} is empty. All samples must "
+                             f"contain at least one value.")
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
+                             f"All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
-    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'propagate':
+    contains_nan = _contains_nan(cdata, nan_policy)
+    if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
@@ -3913,10 +3919,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
-            raise ValueError(msg)
+            raise ValueError(
+                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                f"median ({grand_median!r}), so they are ignored, resulting in an "
+                f"empty sample."
+            )
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
@@ -4359,7 +4366,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     """
     xp = array_namespace(samples)
     samples = xp.asarray(samples)
-    
+
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")

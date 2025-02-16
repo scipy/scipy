@@ -28,7 +28,7 @@ from ._highspy._core.simplex_constants import (
     SimplexStrategy,
     SimplexEdgeWeightStrategy,
 )
-from scipy.sparse import csc_matrix, vstack, issparse
+from scipy.sparse import csc_array, vstack, issparse
 
 
 def _highs_to_scipy_status_message(highs_status, highs_message):
@@ -318,7 +318,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         A = vstack((A_ub, A_eq))
     else:
         A = np.vstack((A_ub, A_eq))
-    A = csc_matrix(A)
+    A = csc_array(A)
 
     options = {
         'presolve': presolve,

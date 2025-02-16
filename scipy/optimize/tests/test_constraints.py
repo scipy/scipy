@@ -97,7 +97,7 @@ def test_prepare_constraint_infeasible_x0():
         return A
 
     def hess(x, v):
-        return sps.csr_matrix((4, 4))
+        return sps.csr_array((4, 4))
 
     nonlinear = NonlinearConstraint(fun, -np.inf, 0, jac, hess,
                                     enforce_feasibility)

@@ -3,16 +3,17 @@ import math
 import pytest
 import numpy as np
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import array_namespace
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_less, xp_assert_equal
 from scipy.stats._continued_fraction import _continued_fraction
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
 @pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing assignment')
 @pytest.mark.skip_xp_backends('jax.numpy', reason="Don't support mutation")
+# dask doesn't like lines like this
+# n = int(xp.real(xp_ravel(n))[0])
+# (at some point in here the shape becomes nan)
+@pytest.mark.skip_xp_backends('dask.array', reason="dask has issues with the shapes")
 class TestContinuedFraction:
     rng = np.random.default_rng(5895448232066142650)
     p = rng.uniform(1, 10, size=10)
@@ -106,7 +107,7 @@ class TestContinuedFraction:
         ref = xp.tan(x)
         xp_assert_close(res.f, ref)
 
-    @pytest.mark.skip_xp_backends('torch', reasons=['pytorch/pytorch#136063'])
+    @pytest.mark.skip_xp_backends('torch', reason='pytorch/pytorch#136063')
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_log(self, shape, dtype, xp):

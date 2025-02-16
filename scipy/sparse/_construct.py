@@ -349,7 +349,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
 
     Parameters
     ----------
-    m : int or tuple of ints
+    m : int
         Number of rows requested.
     n : int, optional
         Number of columns. Default: `m`.
@@ -1157,6 +1157,13 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
+
+    Providing a sampler for uint values:
+
+    >>> def random_uint32_to_100(size=None):
+    ...     return rng.integers(100, size=size, dtype=np.uint32)
+    >>> S = sp.sparse.random_array((3, 4), density=0.25, rng=rng,
+    ...                            data_sampler=random_uint32_to_100)
 
     Building a custom distribution.
     This example builds a squared normal from np.random:

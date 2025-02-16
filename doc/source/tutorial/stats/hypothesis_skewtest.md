@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_skewtest.ipynb
+.. notebooklite:: hypothesis_skewtest.md
    :new_tab: True
 ```
 
 (hypothesis_skewtest)=
+
++++
+
 # Skewness test
 
 This function tests the null hypothesis that the skewness of the population that

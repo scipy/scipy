@@ -103,6 +103,16 @@ else
 endif
 
 
+py3.extension_module('_qmvnt_cy',
+  cython_gen_cpp.process('_qmvnt_cy.pyx'),
+  cpp_args: cython_cpp_args,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
+
 py3.install_sources([
     '__init__.py',
     '_axis_nan_policy.py',
@@ -134,12 +144,12 @@ py3.install_sources([
     '_multicomp.py',
     '_multivariate.py',
     '_new_distributions.py',
-    '_new_distribution_docs.json',
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
+    '_quantile.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',

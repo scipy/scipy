@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_fisher_exact.ipynb
+.. notebooklite:: hypothesis_fisher_exact.md
    :new_tab: True
 ```
 
 (hypothesis_fisher_exact)=
+
++++
+
 # Fisher's exact test
 
 In [^1], the effective dose of acetazolamide for the prophylaxis of acute

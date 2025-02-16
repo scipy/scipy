@@ -15,7 +15,7 @@
 static int
 check_array(PyObject *obj, npy_intp ndim, int typenum) {
 
-    int cond = (PyArray_CheckExact(obj) &&
+    int cond = (PyArray_Check(obj) &&
                (PyArray_TYPE((PyArrayObject*)obj) == typenum) &&
                (PyArray_NDIM((PyArrayObject*)obj) == ndim) &&
                 PyArray_CHKFLAGS((PyArrayObject*)obj, NPY_ARRAY_ALIGNED | NPY_ARRAY_C_CONTIGUOUS)
@@ -480,38 +480,37 @@ static char doc_evaluate_spline[] =
    "     Order of derivative to evaluate. \n"
    " extrapolate : int, optional \n"
    "     Whether to extrapolate to ouf-of-bounds points, or to return NaNs. \n"
+   "\n"
+   "Returns\n"
+   "-------"
    " out : ndarray, shape (s, m) \n"
-   "     Computed values of the spline at each of the input points. \n"
-   "     This argument is modified in-place. \n";
+   "     Computed values of the spline at each of the input points. \n";
 /*
  * def evaluate_spline(const double[::1] t,
  *            const double[:, ::1] c,
  *            int k,
  *            const double[::1] xp,
  *            int nu,
- *            bint extrapolate,
- *            double[:, ::1] out):
+ *            bint extrapolate):
  */
 static PyObject*
 py_evaluate_spline(PyObject *self, PyObject *args)
 {
-    PyObject *py_t = NULL, *py_c = NULL, *py_xp = NULL, *py_out = NULL;
+    PyObject *py_t = NULL, *py_c = NULL, *py_xp = NULL;
     int k, nu, i_extrap;
 
-    if(!PyArg_ParseTuple(args, "OOiOipO", &py_t, &py_c, &k, &py_xp, &nu, &i_extrap, &py_out)) {
+    if(!PyArg_ParseTuple(args, "OOiOip", &py_t, &py_c, &k, &py_xp, &nu, &i_extrap)) {
         return NULL;
     }
 
     if (!(check_array(py_t, 1, NPY_DOUBLE) &&
           check_array(py_c, 2, NPY_DOUBLE) &&
-          check_array(py_xp, 1, NPY_DOUBLE) &&
-          check_array(py_out, 2, NPY_DOUBLE))) {
+          check_array(py_xp, 1, NPY_DOUBLE))) {
         return NULL;
     }
     PyArrayObject *a_t = (PyArrayObject *)py_t;
     PyArrayObject *a_c = (PyArrayObject *)py_c;
     PyArrayObject *a_xp = (PyArrayObject *)py_xp;
-    PyArrayObject *a_out = (PyArrayObject *)py_out;
 
     // check derivative order
     if (nu < 0) {
@@ -520,18 +519,16 @@ py_evaluate_spline(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // sanity check sizes
-    if (PyArray_DIM(a_out, 0) != PyArray_DIM(a_xp, 0)) {
-        PyErr_SetString(PyExc_ValueError, "out and xp have incompatible shapes");
-        return NULL;
-    }
-    if (PyArray_DIM(a_out, 1) != PyArray_DIM(a_c, 1)) {
-        PyErr_SetString(PyExc_ValueError, "out and c have incompatible shapes");
-        return NULL;
-    }
-
     // allocate temp storage
     std::vector<double> wrk(2*k + 2);
+
+    // allocate the output array, shape (x.shape[0], c.shape[-1])
+    npy_intp dims[2] = {PyArray_DIM(a_xp, 0), PyArray_DIM(a_c, 1)};
+    PyArrayObject *a_out = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (a_out == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     // heavy lifting happens here
     try {
@@ -546,7 +543,7 @@ py_evaluate_spline(PyObject *self, PyObject *args)
             wrk.data()
         );
 
-        Py_RETURN_NONE;
+        return (PyObject *)(a_out);
     }
     catch (std::exception& e) {
         PyErr_SetString(PyExc_RuntimeError, e.what());
@@ -754,7 +751,18 @@ static struct PyModuleDef dierckxmodule = {
 PyMODINIT_FUNC
 PyInit__dierckx(void)
 {
+    PyObject *module;
+
     import_array();
 
-    return PyModule_Create(&dierckxmodule);
+    module = PyModule_Create(&dierckxmodule);
+    if (module == NULL) {
+        return NULL;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

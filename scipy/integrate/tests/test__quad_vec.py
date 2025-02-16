@@ -209,9 +209,3 @@ def test_points(a, b):
     for p in interval_sets:
         j = np.searchsorted(sorted(points), tuple(p))
         assert np.all(j == j[0])
-
-
-@pytest.mark.thread_unsafe
-def test_trapz_deprecation():
-    with pytest.deprecated_call(match="`quadrature='trapz'`"):
-        quad_vec(lambda x: x, 0, 1, quadrature="trapz")

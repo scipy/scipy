@@ -415,7 +415,7 @@ class _ProbabilityDistribution(ABC):
         Compute the median:
 
         >>> X.median()
-        5
+        np.float64(5.0)
         >>> X.median() == X.icdf(0.5) == X.iccdf(0.5)
         True
 

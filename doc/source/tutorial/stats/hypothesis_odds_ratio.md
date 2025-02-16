@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_odds_ratio.ipynb
+.. notebooklite:: hypothesis_odds_ratio.md
    :new_tab: True
 ```
 
 (hypothesis_odds_ratio)=
+
++++
+
 # Odds ratio for a contingency table
 
 In [^1], the use of aspirin to prevent cardiovascular events in women and men

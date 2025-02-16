@@ -105,6 +105,7 @@ class LennardJones(Benchmark):
 
 
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=6):
         # dimensions is in [6:60]
@@ -126,7 +127,6 @@ class LennardJones(Benchmark):
 
         k = int(dimensions / 3)
         self.fglob = self.minima[k - 2]
-        self.change_dimensionality = True
 
     def change_dimensions(self, ndim):
         if ndim not in range(6, 61):

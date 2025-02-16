@@ -1,11 +1,13 @@
-import sys
 import functools
 from scipy._lib._array_api import (
-    array_namespace, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+    is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
 )
-from ._signaltools import (convolve, fftconvolve, convolve2d, oaconvolve,
-                           correlate, correlate2d, order_filter, medfilt, medfilt2d,
-                           wiener, detrend, hilbert, hilbert2)
+
+from ._signal_api import *   # noqa: F403
+from . import _signal_api
+from . import _delegators
+__all__ = _signal_api.__all__
+
 
 MODULE_NAME = 'signal'
 
@@ -16,6 +18,9 @@ JAX_SIGNAL_FUNCS = [
     'fftconvolve', 'convolve', 'convolve2d', 'correlate', 'correlate2d',
     'csd', 'detrend', 'istft', 'welch'
 ]
+
+# some cupyx.scipy.signal functions are incompatible with their scipy counterparts
+CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi']
 
 def delegate_xp(delegator, module_name):
     def inner(func):
@@ -29,7 +34,7 @@ def delegate_xp(delegator, module_name):
                 xp = np
 
             # try delegating to a cupyx/jax namesake
-            if is_cupy(xp):
+            if is_cupy(xp) and func.__name__ not in CUPY_BLACKLIST:
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
@@ -48,76 +53,15 @@ def delegate_xp(delegator, module_name):
 
 
 
-# X_signature signature must match the signature of X
-
-def convolve_signature(in1, in2, *args, **kwds):
-    xp = array_namespace(in1, in2)
-    return xp
-
-fftconvolve_signature = convolve_signature
-oaconvolve_signature = convolve_signature
-correlate_signature = convolve_signature
-correlate_signature = convolve_signature
-convolve2d_signature = convolve_signature
-correlate2d_signature = convolve_signature
-
-
-def medfilt_signature(volume, kernel_size=None):
-    xp = array_namespace(volume)
-    return xp
-
-
-def medfilt2d_signature(input, kernel_size=3):
-    xp = array_namespace(input)
-    return xp
-
-
-def order_filter_signature(a, domain, rank):
-    xp = array_namespace(a, domain)
-    return xp
-
-
-def wiener_signature(im, mysize=None, noise=None):
-    xp = array_namespace(im)
-    return xp
-
-
-def detrend_signature(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    xp = array_namespace(data, None if isinstance(bp, int) else bp)
-    return xp
-
-
-def hilbert_signature(x, *args, **kwds):
-    xp = array_namespace(x)
-    return xp
-
-hilbert2_signature = hilbert_signature
-
-
-# functions we patch for dispatch
-_FUNC_MAP = {
-    convolve: convolve_signature,
-    fftconvolve: fftconvolve_signature,
-    oaconvolve: oaconvolve_signature,
-    correlate: correlate_signature,
-    convolve2d: convolve2d_signature,
-    correlate2d: correlate2d_signature,
-    medfilt: medfilt_signature,
-    medfilt2d: medfilt2d_signature,
-    order_filter: order_filter_signature,
-    wiener: wiener_signature,
-    detrend: detrend_signature,
-    hilbert: hilbert_signature,
-    hilbert2: hilbert2_signature,
-}
-
-
 # ### decorate ###
-for func in _FUNC_MAP:
-    f = (delegate_xp(_FUNC_MAP[func], MODULE_NAME)(func)
-         if SCIPY_ARRAY_API
-         else func)
-    sys.modules[__name__].__dict__[func.__name__] = f
+for obj_name in _signal_api.__all__:
+    bare_obj = getattr(_signal_api, obj_name)
+    delegator = getattr(_delegators, obj_name + "_signature", None)
 
+    if SCIPY_ARRAY_API and delegator is not None:
+        f = delegate_xp(delegator, MODULE_NAME)(bare_obj)
+    else:
+        f = bare_obj
 
-__all__ = [f.__name__ for f in _FUNC_MAP]
+    # add the decorated function to the namespace, to be imported in __init__.py
+    vars()[obj_name] = f

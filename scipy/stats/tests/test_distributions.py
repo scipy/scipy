@@ -66,7 +66,7 @@ def test_distributions_submodule():
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
     other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
-             'entropy', 'trapz']
+             'entropy']
     expected = continuous + discrete + other
 
     # need to remove, e.g.,
@@ -3344,6 +3344,22 @@ class TestInvgauss:
                                          (1e100, 3.32448280139689)])
     def test_entropy(self, mu, ref):
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
+
+    def test_mu_inf_gh13666(self):
+        # invgauss methods should return correct result when mu=inf
+        # invgauss as mu -> oo is invgamma with shape and scale 0.5;
+        # see gh-13666 and gh-22496
+        dist = stats.invgauss(mu=np.inf)
+        dist0 = stats.invgamma(0.5, scale=0.5)
+        x, p = 1., 0.5
+        assert_allclose(dist.logpdf(x), dist0.logpdf(x))
+        assert_allclose(dist.pdf(x), dist0.pdf(x))
+        assert_allclose(dist.logcdf(x), dist0.logcdf(x))
+        assert_allclose(dist.cdf(x), dist0.cdf(x))
+        assert_allclose(dist.logsf(x), dist0.logsf(x))
+        assert_allclose(dist.sf(x), dist0.sf(x))
+        assert_allclose(dist.ppf(p), dist0.ppf(p))
+        assert_allclose(dist.isf(p), dist0.isf(p))
 
 
 class TestLandau:
@@ -7920,24 +7936,6 @@ class TestTrapezoid:
             res[i] = stats.trapezoid.stats(c1, d1, moments="mvsk")
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
-
-    def test_trapz(self):
-        # Basic test for alias
-        x = np.linspace(0, 1, 10)
-        with pytest.deprecated_call(match="`trapz.pdf` is deprecated"):
-            result = stats.trapz.pdf(x, 0, 1)
-        assert_almost_equal(result, stats.uniform.pdf(x))
-
-    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                        'sf', 'logsf', 'ppf', 'isf'])
-    def test_trapz_deprecation(self, method):
-        c, d = 0.2, 0.8
-        expected = getattr(stats.trapezoid, method)(1, c, d)
-        with pytest.deprecated_call(
-            match=f"`trapz.{method}` is deprecated",
-        ):
-            result = getattr(stats.trapz, method)(1, c, d)
-        assert result == expected
 
 
 class TestTriang:

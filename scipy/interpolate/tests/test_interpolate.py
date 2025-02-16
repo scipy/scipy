@@ -906,6 +906,50 @@ class TestAkima1DInterpolator:
         yi[:, 1, 1] = 4. * yi_
         xp_assert_close(ak(xi), yi)
 
+    def test_linear_interpolant_edge_case_1d(self):
+        x = np.array([0.0, 1.0], dtype=float)
+        y = np.array([0.5, 1.0])
+        akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
+        xp_assert_close(akima(0.45), np.array(0.725))
+
+    def test_linear_interpolant_edge_case_2d(self):
+        x = np.array([0., 1.])
+        y = np.column_stack((x, 2. * x, 3. * x, 4. * x))
+
+        ak = Akima1DInterpolator(x, y)
+        xi = np.array([0.5, 1.])
+        yi = np.array([[0.5, 1., 1.5, 2. ],
+                       [1., 2., 3., 4.]])
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.T, axis=1)
+        xp_assert_close(ak(xi), yi.T)
+
+    def test_linear_interpolant_edge_case_3d(self):
+        x = np.arange(0., 2.)
+        y_ = np.array([0., 1.])
+        y = np.empty((2, 2, 2))
+        y[:, 0, 0] = y_
+        y[:, 1, 0] = 2. * y_
+        y[:, 0, 1] = 3. * y_
+        y[:, 1, 1] = 4. * y_
+        ak = Akima1DInterpolator(x, y)
+        yi_ = np.array([0.5, 1.])
+        yi = np.empty((2, 2, 2))
+        yi[:, 0, 0] = yi_
+        yi[:, 1, 0] = 2. * yi_
+        yi[:, 0, 1] = 3. * yi_
+        yi[:, 1, 1] = 4. * yi_
+        xi = yi_
+        xp_assert_close(ak(xi), yi)
+
+        ak = Akima1DInterpolator(x, y.transpose(1, 0, 2), axis=1)
+        xp_assert_close(ak(xi), yi.transpose(1, 0, 2))
+
+        ak = Akima1DInterpolator(x, y.transpose(2, 1, 0), axis=2)
+        xp_assert_close(ak(xi), yi.transpose(2, 1, 0))
+
+
     def test_degenerate_case_multidimensional(self):
         # This test is for issue #5683.
         x = np.array([0, 1, 2])
@@ -1354,8 +1398,7 @@ class TestPPoly:
 
         xi = np.linspace(0, 1, 200)
         for dx in range(0, 10):
-            xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi),
-                            err_msg="dx=%d" % (dx,))
+            xp_assert_close(pp(xi, dx), pp.derivative(dx)(xi), err_msg=f"dx={dx}")
 
     def test_antiderivative_of_constant(self):
         # https://github.com/scipy/scipy/issues/4216
@@ -1418,8 +1461,9 @@ class TestPPoly:
                 r = 1e-13
                 endpoint = r*pp2.x[:-1] + (1 - r)*pp2.x[1:]
 
-                xp_assert_close(pp2(pp2.x[1:]), pp2(endpoint),
-                                rtol=1e-7, err_msg="dx=%d k=%d" % (dx, k))
+                xp_assert_close(
+                    pp2(pp2.x[1:]), pp2(endpoint), rtol=1e-7, err_msg=f"dx={dx} k={k}"
+                )
 
     def test_antiderivative_vs_spline(self):
         rng = np.random.RandomState(1234)

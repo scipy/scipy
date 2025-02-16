@@ -267,7 +267,10 @@ def savemat(file_name, mdict,
         True``).
         Can also pass open file_like object.
     mdict : dict
-        Dictionary from which to save matfile variables.
+        Dictionary from which to save matfile variables. Note that if this dict
+        has a key starting with ``_`` or a sub-dict has a key starting with ``_``
+        or a digit, these key's items will not be saved in the mat file and
+        `MatWriteWarning` will be issued.
     appendmat : bool, optional
         True (the default) to append the .mat extension to the end of the
         given filename, if not already present.

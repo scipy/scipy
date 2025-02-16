@@ -243,8 +243,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
 
 class KroghInterpolator(_Interpolator1DWithDerivatives):
-    """
-    Interpolating polynomial for a set of points.
+    """Krogh interpolator (C∞ smooth).
 
     The polynomial passes through all the pairs ``(xi, yi)``. One may
     additionally specify a number of derivatives at each point `xi`;
@@ -391,8 +390,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
 
 def krogh_interpolate(xi, yi, x, der=0, axis=0):
-    """
-    Convenience function for polynomial interpolation.
+    """Convenience function for Krogh interpolation.
 
     See `KroghInterpolator` for more details.
 
@@ -533,7 +531,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
 
 
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
-    r"""Interpolating polynomial for a set of points.
+    r"""Barycentric (Lagrange with improved stability) interpolator (C∞ smooth).
 
     Constructs a polynomial that passes through a given set of points.
     Allows evaluation of the polynomial and all its derivatives,
@@ -881,8 +879,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
 
 def barycentric_interpolate(xi, yi, x, axis=0, *, der=0, rng=None):
-    """
-    Convenience function for polynomial interpolation.
+    """Convenience function for barycentric interpolation.
 
     Constructs a polynomial that passes through a given set of points,
     then evaluates the polynomial. For reasons of numerical stability,

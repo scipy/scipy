@@ -89,7 +89,7 @@ class FunctionMaker:
                           'kwonlydefaults'):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
-                    setattr(self, 'arg%d' % i, arg)
+                    setattr(self, f'arg{i}', arg)
                 allargs = list(self.args)
                 allshortargs = list(self.args)
                 if self.varargs:
@@ -160,7 +160,7 @@ class FunctionMaker:
         # Ensure each generated function has a unique filename for profilers
         # (such as cProfile) that depend on the tuple of (<filename>,
         # <definition line>, <function name>) being unique.
-        filename = '<decorator-gen-%d>' % (next(self._compile_count),)
+        filename = f'<decorator-gen-{next(self._compile_count)}>'
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)

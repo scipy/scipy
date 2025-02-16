@@ -280,6 +280,7 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
+   quantile
    percentileofscore
    scoreatpercentile
    relfreq
@@ -470,6 +471,7 @@ Random Variables
 
    make_distribution
    Normal
+   Uniform
    Mixture
    order_statistic
    truncate
@@ -648,9 +650,10 @@ from ._survival import *
 from ._distribution_infrastructure import (
     make_distribution, Mixture, order_statistic, truncate, exp, log, abs
 )
-from ._new_distributions import Normal
+from ._new_distributions import Normal, Uniform
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
+from ._quantile import quantile
 
 
 # Deprecated namespaces, to be removed in v2.0.0

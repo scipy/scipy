@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_spearmanr.ipynb
+.. notebooklite:: hypothesis_spearmanr.md
    :new_tab: True
 ```
 
 (hypothesis_spearmanr)=
+
++++
+
 # Spearman correlation coefficient
 
 The Spearman rank-order correlation coefficient is a nonparametric measure of

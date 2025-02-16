@@ -184,7 +184,7 @@ class TestRankData:
             r = rankdata(data)
             expected_rank = 0.5 * (n + 1)
             assert_array_equal(r, expected_rank * data,
-                               "test failed with n=%d" % n)
+                               err_msg=f"test failed with n={n}")
 
     def test_axis(self):
         data = [[0, 2, 1],

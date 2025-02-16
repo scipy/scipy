@@ -110,6 +110,8 @@ class interp2d:
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
 
+    Class for 2D interpolation (deprecated and removed)
+
     .. versionremoved:: 1.14.0
 
         `interp2d` has been removed in SciPy 1.14.0.
@@ -153,7 +155,7 @@ def _do_extrapolate(fill_value):
 
 class interp1d(_Interpolator1D):
     """
-    Interpolate a 1-D function.
+    Interpolate a 1-D function (legacy).
 
     .. legacy:: class
 
@@ -402,8 +404,7 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
-            raise ValueError("x and y arrays must have at "
-                             "least %d entries" % minval)
+            raise ValueError(f"x and y arrays must have at least {minval} entries")
 
         self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
@@ -796,8 +797,7 @@ class _PPolyBase:
 
 
 class PPoly(_PPolyBase):
-    """
-    Piecewise polynomial in terms of coefficients and breakpoints
+    """Piecewise polynomial in the power basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     local power basis::
@@ -1260,7 +1260,7 @@ class PPoly(_PPolyBase):
 
 
 class BPoly(_PPolyBase):
-    """Piecewise polynomial in terms of coefficients and breakpoints.
+    """Piecewise polynomial in the Bernstein basis.
 
     The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
     Bernstein polynomial basis::
@@ -1650,7 +1650,7 @@ class BPoly(_PPolyBase):
         if orders is None:
             orders = [None] * m
         else:
-            if isinstance(orders, (int, np.integer)):
+            if isinstance(orders, int | np.integer):
                 orders = [orders] * m
             k = max(k, max(orders))
 
@@ -1667,10 +1667,11 @@ class BPoly(_PPolyBase):
                 n1 = min(n//2, len(y1))
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
-                if n1+n2 != n:
-                    mesg = ("Point %g has %d derivatives, point %g"
-                            " has %d derivatives, but order %d requested" % (
-                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                if n1 + n2 != n:
+                    mesg = (
+                        f"Point {xi[i]} has {len(y1)} derivatives, point {xi[i+1]} has "
+                        f"{len(y2)} derivatives, but order {orders[i]} requested"
+                    )
                     raise ValueError(mesg)
 
                 if not (n1 <= len(y1) and n2 <= len(y2)):

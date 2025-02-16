@@ -26,7 +26,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if not isinstance(g, (tuple, list)):
+        if not isinstance(g, tuple | list):
             g = (g,)
         else:
             pass
@@ -852,6 +852,14 @@ class TestShgoArguments:
                    minimizer_kwargs={'method': 'SLSQP', 'jac': True})
         ref = minimize(func, x0=[1, 1, 1, 1, 1], bounds=bounds,
                        jac=True)
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, atol=1e-15)
+
+        # Testing the passing of jac via options dict
+        res = shgo(func, bounds=bounds, sampling_method="sobol",
+                   minimizer_kwargs={'method': 'SLSQP'},
+                   options={'jac': True})
         assert res.success
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)

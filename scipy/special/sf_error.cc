@@ -20,6 +20,7 @@ const char *sf_error_messages[] = {
     "domain error",
     "invalid input argument",
     "other error",
+    "memory allocation failed",
     NULL
 };
 
@@ -35,7 +36,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     static PyObject *py_SpecialFunctionWarning = NULL;
     sf_action_t action;
 
-    if ((int) code < 0 || (int) code >= 10) {
+    if ((int) code < 0 || (int) code >= SF_ERROR__LAST) {
         code = SF_ERROR_OTHER;
     }
     action = scipy_sf_error_get_action(code);

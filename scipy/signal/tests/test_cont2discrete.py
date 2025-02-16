@@ -13,7 +13,6 @@ from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
 
 
 class TestC2D:
-    @pytest.mark.thread_unsafe  # due to Cython fused types, see cython#6506
     def test_zoh(self):
         ac = np.eye(2, dtype=np.float64)
         bc = np.full((2, 1), 0.5, dtype=np.float64)

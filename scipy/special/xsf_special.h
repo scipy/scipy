@@ -13,6 +13,14 @@ namespace {
 
 template <typename T>
 std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "`scipy.special.sph_harm` is deprecated as of SciPy 1.15.0 and will be "
+        "removed in SciPy 1.17.0. Please use `scipy.special.sph_harm_y` instead.",
+        1
+    );
+    PyGILState_Release(gstate);
     if (n < 0) {
         xsf::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
         return std::numeric_limits<T>::quiet_NaN();

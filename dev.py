@@ -310,7 +310,7 @@ class Dirs:
             self.installed = self.build.parent / (self.build.stem + "-install")
 
         # relative path for site-package with py version
-        # i.e. 'lib/python3.10/site-packages'
+        # i.e. 'lib/python3.11/site-packages'
         self.site = self.get_site_packages()
 
     def add_sys_path(self):
@@ -710,7 +710,8 @@ class Test(Task):
         multiple=True,
         help=(
             "Array API backend "
-            "('all', 'numpy', 'torch', 'cupy', 'array_api_strict', 'jax.numpy')."
+            "('all', 'numpy', 'torch', 'cupy', 'array_api_strict',"
+            " 'jax.numpy', 'dask.array')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
@@ -1448,7 +1449,7 @@ class ShowDirs(Python):
 
     PYTHONPATH sets the default search path for module files for the
     interpreter. Here, it includes the path to the local SciPy build
-    (typically `.../build-install/lib/python3.10/site-packages`).
+    (typically `.../build-install/lib/python3.11/site-packages`).
 
     Use the global option `-n` to skip the building step, e.g.:
     `python dev.py -n show_PYTHONPATH`
@@ -1543,8 +1544,7 @@ def cpu_count(only_physical_cores=False):
     or the LOKY_MAX_CPU_COUNT environment variable. If the number of physical
     cores is not found, return the number of logical cores.
 
-    Note that on Windows, the returned number of CPUs cannot exceed 61 (or 60 for
-    Python < 3.10), see:
+    Note that on Windows, the returned number of CPUs cannot exceed 61, see:
     https://bugs.python.org/issue26903.
 
     It is also always larger or equal to 1.
