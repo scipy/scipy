@@ -1399,7 +1399,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     result = result.reshape(result_shape)
                 return result
 
-            raise ValueError('cannot be broadcast')
+            raise ValueError('inconsistent shapes')
 
     def _divide(self, other, true_divide=False, rdivide=False):
         """Point-wise division by another array/matrix."""
@@ -1556,7 +1556,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 other = other_a
 
         if self.shape != other.shape:
-            raise ValueError("cannot be broadcast. broadcast not supported")
+            raise ValueError("inconsistent shapes")
 
         if self.ndim < 3 and (isscalarlike(other) or other.ndim < 3):
             if op_name == "minimum":

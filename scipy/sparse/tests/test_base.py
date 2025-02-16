@@ -1484,9 +1484,9 @@ class _TestCommon:
             assert_array_equal(c.toarray(),
                                b.toarray() + b.toarray())
 
-#            # test broadcasting
-#            c = b + a[0]
-#            assert_array_equal(c, b.toarray() + a[0])
+            # test broadcasting
+            c = b + a[0]
+            assert_array_equal(c, b.toarray() + a[0])
 
         for dtype in self.math_dtypes:
             check(dtype)
@@ -1519,8 +1519,8 @@ class _TestCommon:
             assert_array_equal((datsp - A).toarray(), dat - A.toarray())
             assert_array_equal((A - datsp).toarray(), A.toarray() - dat)
 
-#            # test broadcasting
-#            assert_array_equal(datsp - dat[0], dat - dat[0])
+            # test broadcasting
+            assert_array_equal(datsp - dat[0], dat - dat[0])
 
         for dtype in self.math_dtypes:
             if dtype == np.dtype('bool'):
@@ -1544,8 +1544,8 @@ class _TestCommon:
             assert_array_equal(A.toarray() - datsp, A.toarray() - dat)
             assert_array_equal(datsp - A.toarray(), dat - A.toarray())
 
-#            # test broadcasting
-#            assert_array_equal(dat[0] - datsp, dat[0] - dat)
+            # test broadcasting
+            assert_array_equal(dat[0] - datsp, dat[0] - dat)
 
         for dtype in self.math_dtypes:
             if dtype == np.dtype('bool'):
@@ -1626,11 +1626,7 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                # remove try/except after broadcasting is supported
-                try:
-                    sp_mult = i.multiply(j)
-                except ValueError:
-                    continue
+                sp_mult = i.multiply(j)
                 assert_almost_equal(sp_mult.toarray(), dense_mult)
 
         # sparse/dense
@@ -2080,7 +2076,6 @@ class _TestCommon:
 
         for dtype in self.math_dtypes:
             for dtype2 in [np.int8, np.float64, np.complex128]:
-                #for btype in ['scalar', 'scalar2', 'dense', 'sparse']:
                 for btype in ['dense', 'sparse']:
                     check(np.dtype(dtype), np.dtype(dtype2), btype)
 
@@ -2147,7 +2142,7 @@ class _TestCommon:
         assert_raises(ValueError, dsp.dot, e)
         assert_raises(ValueError, asp.dot, d)
 
-        # element-wise multiplication
+        # elemente-wise multiplication
         assert_array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
         assert_array_equal(bsp.multiply(bsp).toarray(), np.multiply(b, b))
         assert_array_equal(dsp.multiply(dsp).toarray(), np.multiply(d, d))
@@ -2170,13 +2165,8 @@ class _TestCommon:
         assert_array_equal(dsp.__add__(dsp).toarray(), d.__add__(d))
 
         # bad addition
-        if asp.format in ["dok", "coo", "csr", "csc", "bsr", "dia", "lil"]:
-            # TODO support DOK handling of broadcasting in __add__
-            assert_raises(ValueError, asp.__add__, dsp)
-            assert_raises(ValueError, bsp.__add__, asp)
-        else:
-            assert_array_equal(asp.__add__(dsp).toarray(), a.__add__(d))
-            assert_array_equal(bsp.__add__(asp).toarray(), b.__add__(a))
+        assert_raises(ValueError, asp.__add__, dsp)
+        assert_raises(ValueError, bsp.__add__, asp)
 
     def test_size_zero_conversions(self):
         mat = array([])
@@ -2347,7 +2337,7 @@ class _TestInplaceArithmetic:
             # Elementwise multiply from sparray.__rmul__
             x = a.copy()
             y = a.copy()
-            with assert_raises(ValueError, match="cannot be broadcast"):
+            with assert_raises(ValueError, match="inconsistent shapes"):
                 x *= b.T
             x = x * a
             y *= b
@@ -5676,7 +5666,6 @@ class Test64BitMatrix(RunAll64Bit):
     @pytest.mark.parametrize('cls,method_name', cases_64bit("spmatrix"))
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
-
 
 def test_broadcast_to():
     a = np.array([[1, 0, 2]])
