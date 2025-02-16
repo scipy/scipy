@@ -2076,7 +2076,7 @@ class _TestCommon:
 
         for dtype in self.math_dtypes:
             for dtype2 in [np.int8, np.float64, np.complex128]:
-                for btype in ['dense', 'sparse']:
+                for btype in ['scalar', 'scalar2', 'dense', 'sparse']:
                     check(np.dtype(dtype), np.dtype(dtype2), btype)
 
     def test_copy(self):
