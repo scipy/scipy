@@ -5,7 +5,7 @@ import re
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings
+from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2859,3 +2859,48 @@ def test_byte_order_median(xp):
     b = xp.arange(9, dtype='>f4').reshape(3, 3)
     t = ndimage.median_filter(b, (3, 3))
     assert_array_almost_equal(ref, t)
+
+
+@pytest.mark.parametrize("filter_size, exp", [
+    # expected results from SciPy 1.14.1
+    (20, 0.25754605),
+    (10,
+     np.array([0.25266576, 0.27894721, 0.30445588, 0.30958242, 0.30445588, 0.30445588,
+               0.27894721, 0.30445588, 0.27894721, 0.30445588, 0.30445588, 0.25754605,
+               0.22183391, 0.18015438, 0.22183391, 0.25266576, 0.25754605, 0.25266576,
+               0.25266576, 0.25266576]),
+     ),
+     # a median filter size of 1 is just an identity operation
+     (1,
+      np.array([0.30958242, 0.17555138, 0.34343917, 0.27894721, 0.03767094, 0.39024894,
+                0.30445588, 0.31442572, 0.05124545, 0.18015438, 0.14831921, 0.370706,
+                0.25754605, 0.32910465, 0.17736568, 0.09089549, 0.22183391, 0.0255269,
+                0.33105247, 0.25266576]),
+     ),
+     # testing odd-sized filters >1 makes sense too
+     (3,
+      np.array([0.25266576, 0.30958242, 0.27894721, 0.27894721, 0.27894721, 0.30445588,
+                0.31442572, 0.30445588, 0.18015438, 0.14831921, 0.18015438, 0.25754605,
+                0.32910465, 0.25754605, 0.17736568, 0.17736568, 0.09089549, 0.22183391,
+                0.25266576, 0.30958242]),
+     ),
+     (15,
+      np.array([0.27894721, 0.25266576, 0.25266576, 0.25266576, 0.27894721, 0.27894721,
+                0.27894721, 0.27894721, 0.25754605, 0.25754605, 0.22183391, 0.22183391,
+                0.25266576, 0.25266576, 0.22183391, 0.22183391, 0.25266576, 0.25266576,
+                0.25754605, 0.25754605]),
+     ),
+])
+def test_gh_22250(filter_size, exp):
+    rng = np.random.default_rng(42)
+    image = np.zeros((20,))
+    noisy_image = image + 0.4 * rng.random(image.shape)
+    result = ndimage.median_filter(noisy_image, size=filter_size, mode='wrap')
+    assert_allclose(result, exp)
+
+
+def test_gh_22333():
+    x = np.array([272, 58, 67, 163, 463, 608, 87, 108, 1378])
+    expected = [58, 67, 87, 108, 163, 108, 108, 108, 87]
+    actual = ndimage.median_filter(x, size=9, mode='constant')
+    assert_array_equal(actual, expected)
