@@ -1503,8 +1503,8 @@ add_newdoc("chndtr",
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 40, 1000)
-    >>> plt.plot(x, sc.chndtr(x, 1, 5), label=r"$df=1\, nc=5$")
-    >>> plt.plot(x, sc.chndtr(x, 5, 10), label=r"$df=5\, nc=10$")
+    >>> plt.plot(x, sc.chndtr(x, 1, 5), label=r"$df=1,\ nc=5$")
+    >>> plt.plot(x, sc.chndtr(x, 5, 10), label=r"$df=5,\ nc=10$")
     >>> plt.legend()
     >>> plt.show()
 
