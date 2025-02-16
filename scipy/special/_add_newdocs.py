@@ -1478,7 +1478,7 @@ add_newdoc("chndtr",
     Notes
     -----
     The noncentral chi squared distribution is also available in
-    `scipy.stats.ncx2`. `scipy.stats.ncx2.cdf` is equivalent to `chndtr`.
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.cdf`` is equivalent to `chndtr`.
 
     This function wraps routines from the Boost Math C++ library [1]_.
 
