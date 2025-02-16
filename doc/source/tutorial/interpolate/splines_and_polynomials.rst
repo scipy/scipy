@@ -199,14 +199,17 @@ of :math:`1, x, \cdots, x^k`.
 B-spline basis elements
 -----------------------
 
+The b-spline basis is used in a variety of applications which include interpolation,
+regression and curve representation.
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The b-spline basis is generally more computationally stable than the power basis
-and is useful for a variety of applications which include interpolation, regression
-and curve representation. The main feature is that these basis elements are
-*localized* and equal to zero outside of an interval defined by the *knot array*.
+The properties of b-splines are well described in the literature (see, for examples,
+references listed in the `BSpline` docstring). For our purposes it is enough to know
+that a b-spline function is uniquely defined by an array of coefficients and
+and array of the so-called *knots* --- for the interpolation problem, knots may or
+may not coincide with the data points, `x`.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
 is defined by :math:`k+2` knots and is zero outside of these knots.
