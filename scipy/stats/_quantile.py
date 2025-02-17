@@ -232,7 +232,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     :math:`i` are the indices :math:`1, 2, ..., n-1, n` of the sorted elements,
     :math:`a = p (n + 1)`, :math:`b = (1 - p)(n + 1)`,
     :math:`p` is the probability of the quantile, and
-    :math:`I` is the regularized, lower incomplete beta function (`special.betainc`).
+    :math:`I` is the regularized, lower incomplete beta function
+    (`scipy.special.betainc`).
 
     Examples
     --------
