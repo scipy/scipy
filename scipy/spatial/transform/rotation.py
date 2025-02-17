@@ -4,49 +4,31 @@
 
 from __future__ import annotations
 
+
+import numpy as np
+
 from scipy._lib.deprecation import _sub_module_deprecation
-from scipy._lib.array_api_compat import device
-from ._rotation import Rotation as CythonRotation
-from ._rotation_array_api import _as_quat, _as_matrix, _apply
-from scipy._lib._array_api import array_namespace, is_numpy, Array, is_jax
+import scipy.spatial.transform._rotation as cython_backend
+import scipy.spatial.transform._rotation_array_api as array_api_backend
+from scipy._lib._array_api import array_namespace, Array
 
 try:
     import jax  # Must succeed if we get passed a jax.numpy array
 except ImportError:
     jax = None
 
-__all__ = [  # noqa: F822
-    "Rotation",
-    "Slerp",
-]
+__all__ = ["Rotation", "Slerp"]  # noqa: F822
 
-from functools import wraps
-from ._rotation import Rotation as CythonRotation
+# Fast path for numpy arrays: If quat is a numpy object, we call the Cython backend
+backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-def _maybe_cython(f):
-    cython_fn = getattr(CythonRotation, f.__name__)
-
-    @wraps(f)
-    def wrapper(self, *args, **kwargs):
-        if self._use_cython:
-            return cython_fn(self, *args, **kwargs)
-        return f(self, *args, **kwargs)
-
-    return wrapper
-
-
-class Rotation(CythonRotation):
+class Rotation:
     def __init__(self, quat, normalize=True, copy=True, scalar_first=False):
-        # Fast path for numpy arrays: If quat is a numpy object, we call the Cython version of the
-        # class and forward all calls to the function's methods to super()
-        self._use_cython = is_numpy(array_namespace(quat))
-        if self._use_cython:
-            super().__init__(
-                quat, normalize=normalize, copy=copy, scalar_first=scalar_first
-            )
-            return
-        self._quat = _as_quat(
+        self._backend = backend_registry.get(array_namespace(quat), array_api_backend)
+        # Legacy behavior for cython backend: Differentiate between single quat and batched quats
+        self._single = quat.ndim == 1
+        self._quat: Array = self._backend.as_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
 
@@ -54,30 +36,57 @@ class Rotation(CythonRotation):
     def from_quat(cls, quat: Array, *, scalar_first=False) -> Rotation:
         return cls(quat, normalize=True, scalar_first=scalar_first)
 
-    @_maybe_cython
     def as_quat(self, canonical=False, *, scalar_first=False):
-        return _as_quat(self._quat, canonical=canonical, scalar_first=scalar_first)
+        return self._backend.as_quat(
+            self._quat, canonical=canonical, scalar_first=scalar_first
+        )
 
-    @_maybe_cython
     def as_matrix(self) -> Array:
-        return _as_matrix(self._quat)
+        return self._backend.as_matrix(self._quat)
 
-    @_maybe_cython
-    def apply(self, points: Array) -> Array:
-        return _apply(self._quat, points)
+    def apply(self, points: Array, inverse=False) -> Array:
+        return self._backend.apply(self._quat, points, inverse=inverse)
 
-    @_maybe_cython
     def __getstate__(self):
-        return self._xp.asarray(self._quat, dtype=float), None
+        return self._xp.asarray(self._quat, dtype=float)
 
     def __setstate__(self, state):
-        quat, single = state
-        if single is not None:  # Cython version
-            self._use_cython = True
-            self._xp = array_namespace(quat)
-            return super().__setstate__(state)
-        self._xp = array_namespace(quat)
-        self._quat = self._xp.asarray(quat, copy=True)
+        xp = array_namespace(state)
+        self._backend = backend_registry.get(xp, array_api_backend)
+        self._quat = xp.asarray(state, copy=True)
+
+    @property
+    def single(self):
+        """Whether this instance represents a single rotation."""
+        # TODO: Remove this once we properly support broadcasting with arbitrary
+        # number of rotations
+        return self._single
+
+    def __bool__(self):
+        """Comply with Python convention for objects to be True.
+
+        Required because `Rotation.__len__()` is defined and not always truthy.
+        """
+        return True
+
+    def __len__(self):
+        """Number of rotations contained in this object.
+
+        Multiple rotations can be stored in a single instance.
+
+        Returns
+        -------
+        length : int
+            Number of rotations stored in object.
+
+        Raises
+        ------
+        TypeError if the instance was created as a single rotation.
+        """
+        if self._single:
+            raise TypeError("Single rotation has no len().")
+
+        return self._quat.shape[:-1].prod()
 
 
 def __dir__():

@@ -543,286 +543,238 @@ def _format_angles(angles, degrees, num_axes):
 
     return angles, is_single
 
-cdef class Rotation:
-    """Rotation in 3 dimensions.
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_quat(quat, normalize=True, copy=True, canonical: bool = False, scalar_first=False):
+    quat = np.asarray(quat, dtype=float)
 
-    This class provides an interface to initialize from and represent rotations
-    with:
+    if (quat.ndim not in [1, 2]
+        or quat.shape[len(quat.shape) - 1] != 4
+        or quat.shape[0] == 0):
+        raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
+                            f"got {quat.shape}.")
 
-    - Quaternions
-    - Rotation Matrices
-    - Rotation Vectors
-    - Modified Rodrigues Parameters
-    - Euler Angles
-    - Davenport Angles (Generalized Euler Angles)
+    # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
+    # set self._single to True so that we can return appropriate objects
+    # in the `to_...` methods
+    if quat.shape == (4,):
+        quat = quat[None, :]
 
-    The following operations on rotations are supported:
+    cdef Py_ssize_t num_rotations = quat.shape[0]
 
-    - Application on vectors
-    - Rotation Composition
-    - Rotation Inversion
-    - Rotation Indexing
+    if scalar_first:
+        quat = np.roll(quat, -1, axis=1)
+    elif normalize or copy:
+        quat = quat.copy()
 
-    Indexing within a rotation is supported since multiple rotation transforms
-    can be stored within a single `Rotation` instance.
+    if normalize:
+        for ind in range(num_rotations):
+            if isnan(_normalize4(quat[ind, :])):
+                raise ValueError("Found zero norm quaternions in `quat`.")
 
-    To create `Rotation` objects use ``from_...`` methods (see examples below).
-    ``Rotation(...)`` is not supposed to be instantiated directly.
+    if canonical:
+        quat = _quat_canonical(quat)
 
-    Attributes
+    return quat
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_matrix(quat):
+
+    # cdef double[:, :] quat = self._quat
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+    cdef double[:, :, :] matrix = _empty3(num_rotations, 3, 3)
+
+    cdef double x, y, z, w, x2, y2, z2, w2
+    cdef double xy, zw, xz, yw, yz, xw
+
+    for ind in range(num_rotations):
+        x = quat[ind, 0]
+        y = quat[ind, 1]
+        z = quat[ind, 2]
+        w = quat[ind, 3]
+
+        x2 = x * x
+        y2 = y * y
+        z2 = z * z
+        w2 = w * w
+
+        xy = x * y
+        zw = z * w
+        xz = x * z
+        yw = y * w
+        yz = y * z
+        xw = x * w
+
+        matrix[ind, 0, 0] = x2 - y2 - z2 + w2
+        matrix[ind, 1, 0] = 2 * (xy + zw)
+        matrix[ind, 2, 0] = 2 * (xz - yw)
+
+        matrix[ind, 0, 1] = 2 * (xy - zw)
+        matrix[ind, 1, 1] = - x2 + y2 - z2 + w2
+        matrix[ind, 2, 1] = 2 * (yz + xw)
+
+        matrix[ind, 0, 2] = 2 * (xz + yw)
+        matrix[ind, 1, 2] = 2 * (yz - xw)
+        matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
+
+    return np.asarray(matrix)
+
+
+@cython.embedsignature(True)
+def apply(quat, vectors, inverse=False):
+    """Apply this rotation to a set of vectors.
+
+    If the original frame rotates to the final frame by this rotation, then
+    its application to a vector can be seen in two ways:
+
+        - As a projection of vector components expressed in the final frame
+            to the original frame.
+        - As the physical rotation of a vector being glued to the original
+            frame as it rotates. In this case the vector components are
+            expressed in the original frame before and after the rotation.
+
+    In terms of rotation matrices, this application is the same as
+    ``self.as_matrix() @ vectors``.
+
+    Parameters
     ----------
-    single
+    vectors : array_like, shape (3,) or (N, 3)
+        Each `vectors[i]` represents a vector in 3D space. A single vector
+        can either be specified with shape `(3, )` or `(1, 3)`. The number
+        of rotations and number of vectors given must follow standard numpy
+        broadcasting rules: either one of them equals unity or they both
+        equal each other.
+    inverse : boolean, optional
+        If True then the inverse of the rotation(s) is applied to the input
+        vectors. Default is False.
 
-    Methods
+    Returns
     -------
-    __len__
-    from_quat
-    from_matrix
-    from_rotvec
-    from_mrp
-    from_euler
-    from_davenport
-    as_quat
-    as_matrix
-    as_rotvec
-    as_mrp
-    as_euler
-    as_davenport
-    concatenate
-    apply
-    __mul__
-    __pow__
-    inv
-    magnitude
-    approx_equal
-    mean
-    reduce
-    create_group
-    __getitem__
-    identity
-    random
-    align_vectors
+    rotated_vectors : ndarray, shape (3,) or (N, 3)
+        Result of applying rotation on input vectors.
+        Shape depends on the following cases:
 
-    See Also
-    --------
-    Slerp
-
-    Notes
-    -----
-    .. versionadded:: 1.2.0
+            - If object contains a single rotation (as opposed to a stack
+                with a single rotation) and a single vector is specified with
+                shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
+            - In all other cases, `rotated_vectors` has shape ``(N, 3)``,
+                where ``N`` is either the number of rotations or vectors.
 
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation as R
     >>> import numpy as np
 
-    A `Rotation` instance can be initialized in any of the above formats and
-    converted to any of the others. The underlying object is independent of the
-    representation used for initialization.
+    Single rotation applied on a single vector:
 
-    Consider a counter-clockwise rotation of 90 degrees about the z-axis. This
-    corresponds to the following quaternion (in scalar-last format):
-
-    >>> r = R.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
-
-    The rotation can be expressed in any of the other formats:
-
+    >>> vector = np.array([1, 0, 0])
+    >>> r = R.from_rotvec([0, 0, np.pi/2])
     >>> r.as_matrix()
     array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-    [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-    [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    >>> r.as_rotvec()
-    array([0.        , 0.        , 1.57079633])
-    >>> r.as_euler('zyx', degrees=True)
-    array([90.,  0.,  0.])
-
-    The same rotation can be initialized using a rotation matrix:
-
-    >>> r = R.from_matrix([[0, -1, 0],
-    ...                    [1, 0, 0],
-    ...                    [0, 0, 1]])
-
-    Representation in other formats:
-
-    >>> r.as_quat()
-    array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_rotvec()
-    array([0.        , 0.        , 1.57079633])
-    >>> r.as_euler('zyx', degrees=True)
-    array([90.,  0.,  0.])
-
-    The rotation vector corresponding to this rotation is given by:
-
-    >>> r = R.from_rotvec(np.pi/2 * np.array([0, 0, 1]))
-
-    Representation in other formats:
-
-    >>> r.as_quat()
-    array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_matrix()
-    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    >>> r.as_euler('zyx', degrees=True)
-    array([90.,  0.,  0.])
-
-    The ``from_euler`` method is quite flexible in the range of input formats
-    it supports. Here we initialize a single rotation about a single axis:
-
-    >>> r = R.from_euler('z', 90, degrees=True)
-
-    Again, the object is representation independent and can be converted to any
-    other format:
-
-    >>> r.as_quat()
-    array([0.        , 0.        , 0.70710678, 0.70710678])
-    >>> r.as_matrix()
-    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    >>> r.as_rotvec()
-    array([0.        , 0.        , 1.57079633])
-
-    It is also possible to initialize multiple rotations in a single instance
-    using any of the ``from_...`` functions. Here we initialize a stack of 3
-    rotations using the ``from_euler`` method:
-
-    >>> r = R.from_euler('zyx', [
-    ... [90, 0, 0],
-    ... [0, 45, 0],
-    ... [45, 60, 30]], degrees=True)
-
-    The other representations also now return a stack of 3 rotations. For
-    example:
-
-    >>> r.as_quat()
-    array([[0.        , 0.        , 0.70710678, 0.70710678],
-           [0.        , 0.38268343, 0.        , 0.92387953],
-           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
-
-    Applying the above rotations onto a vector:
-
-    >>> v = [1, 2, 3]
-    >>> r.apply(v)
-    array([[-2.        ,  1.        ,  3.        ],
-           [ 2.82842712,  2.        ,  1.41421356],
-           [ 2.24452282,  0.78093109,  2.89002836]])
-
-    A `Rotation` instance can be indexed and sliced as if it were a single
-    1D array or list:
-
-    >>> r.as_quat()
-    array([[0.        , 0.        , 0.70710678, 0.70710678],
-           [0.        , 0.38268343, 0.        , 0.92387953],
-           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
-    >>> p = r[0]
-    >>> p.as_matrix()
-    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    >>> q = r[1:3]
-    >>> q.as_quat()
-    array([[0.        , 0.38268343, 0.        , 0.92387953],
-           [0.39190384, 0.36042341, 0.43967974, 0.72331741]])
-
-    In fact it can be converted to numpy.array:
-
-    >>> r_array = np.asarray(r)
-    >>> r_array.shape
+            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
+            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    >>> r.apply(vector)
+    array([2.22044605e-16, 1.00000000e+00, 0.00000000e+00])
+    >>> r.apply(vector).shape
     (3,)
-    >>> r_array[0].as_matrix()
-    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-           [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-           [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
-    Multiple rotations can be composed using the ``*`` operator:
+    Single rotation applied on multiple vectors:
 
-    >>> r1 = R.from_euler('z', 90, degrees=True)
-    >>> r2 = R.from_rotvec([np.pi/4, 0, 0])
-    >>> v = [1, 2, 3]
-    >>> r2.apply(r1.apply(v))
-    array([-2.        , -1.41421356,  2.82842712])
-    >>> r3 = r2 * r1 # Note the order
-    >>> r3.apply(v)
-    array([-2.        , -1.41421356,  2.82842712])
+    >>> vectors = np.array([
+    ... [1, 0, 0],
+    ... [1, 2, 3]])
+    >>> r = R.from_rotvec([0, 0, np.pi/4])
+    >>> r.as_matrix()
+    array([[ 0.70710678, -0.70710678,  0.        ],
+            [ 0.70710678,  0.70710678,  0.        ],
+            [ 0.        ,  0.        ,  1.        ]])
+    >>> r.apply(vectors)
+    array([[ 0.70710678,  0.70710678,  0.        ],
+            [-0.70710678,  2.12132034,  3.        ]])
+    >>> r.apply(vectors).shape
+    (2, 3)
 
-    A rotation can be composed with itself using the ``**`` operator:
+    Multiple rotations on a single vector:
 
-    >>> p = R.from_rotvec([1, 0, 0])
-    >>> q = p ** 2
-    >>> q.as_rotvec()
-    array([2., 0., 0.])
+    >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
+    >>> vector = np.array([1,2,3])
+    >>> r.as_matrix()
+    array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
+            [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
+            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
+            [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
+            [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
+            [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]]])
+    >>> r.apply(vector)
+    array([[-0.70710678,  2.12132034,  3.        ],
+            [ 1.        , -3.        ,  2.        ]])
+    >>> r.apply(vector).shape
+    (2, 3)
 
-    Finally, it is also possible to invert rotations:
+    Multiple rotations on multiple vectors. Each rotation is applied on the
+    corresponding vector:
 
-    >>> r1 = R.from_euler('z', [90, 45], degrees=True)
-    >>> r2 = r1.inv()
-    >>> r2.as_euler('zyx', degrees=True)
-    array([[-90.,   0.,   0.],
-           [-45.,   0.,   0.]])
+    >>> r = R.from_euler('zxy', [
+    ... [0, 0, 90],
+    ... [45, 30, 60]], degrees=True)
+    >>> vectors = [
+    ... [1, 2, 3],
+    ... [1, 0, -1]]
+    >>> r.apply(vectors)
+    array([[ 3.        ,  2.        , -1.        ],
+            [-0.09026039,  1.11237244, -0.86860844]])
+    >>> r.apply(vectors).shape
+    (2, 3)
 
-    The following function can be used to plot rotations with Matplotlib by
-    showing how they transform the standard x, y, z coordinate axes:
+    It is also possible to apply the inverse rotation:
 
-    >>> import matplotlib.pyplot as plt
-
-    >>> def plot_rotated_axes(ax, r, name=None, offset=(0, 0, 0), scale=1):
-    ...     colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
-    ...     loc = np.array([offset, offset])
-    ...     for i, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
-    ...                                       colors)):
-    ...         axlabel = axis.axis_name
-    ...         axis.set_label_text(axlabel)
-    ...         axis.label.set_color(c)
-    ...         axis.line.set_color(c)
-    ...         axis.set_tick_params(colors=c)
-    ...         line = np.zeros((2, 3))
-    ...         line[1, i] = scale
-    ...         line_rot = r.apply(line)
-    ...         line_plot = line_rot + loc
-    ...         ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c)
-    ...         text_loc = line[1]*1.2
-    ...         text_loc_rot = r.apply(text_loc)
-    ...         text_plot = text_loc_rot + loc[0]
-    ...         ax.text(*text_plot, axlabel.upper(), color=c,
-    ...                 va="center", ha="center")
-    ...     ax.text(*offset, name, color="k", va="center", ha="center",
-    ...             bbox={"fc": "w", "alpha": 0.8, "boxstyle": "circle"})
-
-    Create three rotations - the identity and two Euler rotations using
-    intrinsic and extrinsic conventions:
-
-    >>> r0 = R.identity()
-    >>> r1 = R.from_euler("ZYX", [90, -30, 0], degrees=True)  # intrinsic
-    >>> r2 = R.from_euler("zyx", [90, -30, 0], degrees=True)  # extrinsic
-
-    Add all three rotations to a single plot:
-
-    >>> ax = plt.figure().add_subplot(projection="3d", proj_type="ortho")
-    >>> plot_rotated_axes(ax, r0, name="r0", offset=(0, 0, 0))
-    >>> plot_rotated_axes(ax, r1, name="r1", offset=(3, 0, 0))
-    >>> plot_rotated_axes(ax, r2, name="r2", offset=(6, 0, 0))
-    >>> _ = ax.annotate(
-    ...     "r0: Identity Rotation\\n"
-    ...     "r1: Intrinsic Euler Rotation (ZYX)\\n"
-    ...     "r2: Extrinsic Euler Rotation (zyx)",
-    ...     xy=(0.6, 0.7), xycoords="axes fraction", ha="left"
-    ... )
-    >>> ax.set(xlim=(-1.25, 7.25), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
-    >>> ax.set(xticks=range(-1, 8), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
-    >>> ax.set_aspect("equal", adjustable="box")
-    >>> ax.figure.set_size_inches(6, 5)
-    >>> plt.tight_layout()
-
-    Show the plot:
-
-    >>> plt.show()
-
-    These examples serve as an overview into the `Rotation` class and highlight
-    major functionalities. For more thorough examples of the range of input and
-    output formats supported, consult the individual method's examples.
+    >>> r = R.from_euler('zxy', [
+    ... [0, 0, 90],
+    ... [45, 30, 60]], degrees=True)
+    >>> vectors = [
+    ... [1, 2, 3],
+    ... [1, 0, -1]]
+    >>> r.apply(vectors, inverse=True)
+    array([[-3.        ,  2.        ,  1.        ],
+            [ 1.09533535, -0.8365163 ,  0.3169873 ]])
 
     """
+    vectors = np.asarray(vectors)
+    if vectors.ndim > 2 or vectors.shape[-1] != 3:
+        raise ValueError("Expected input of shape (3,) or (P, 3), "
+                            "got {}.".format(vectors.shape))
+
+    single_vector = False
+    if vectors.shape == (3,):
+        single_vector = True
+        vectors = vectors[None, :]
+
+    matrix = as_matrix(quat)
+    if quat.shape == (4,):
+        matrix = matrix[None, :, :]
+
+    n_vectors = vectors.shape[0]
+    n_rotations = quat.shape[0]
+
+    if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
+        raise ValueError("Expected equal numbers of rotations and vectors "
+                            ", or a single rotation, or a single vector, got "
+                            "{} rotations and {} vectors.".format(
+                            n_rotations, n_vectors))
+
+    if inverse:
+        result = np.einsum('ikj,ik->ij', matrix, vectors)
+    else:
+        result = np.einsum('ijk,ik->ij', matrix, vectors)
+
+    if quat.shape == (4,) and single_vector:
+        return result[0]
+    else:
+        return result
+
+
+cdef class Rotation:
     cdef double[:, :] _quat
     cdef bint _single
 
@@ -859,145 +811,6 @@ cdef class Rotation:
 
         self._quat = quat
 
-    def __getstate__(self):
-        return np.asarray(self._quat, dtype=float), self._single
-
-    def __setstate__(self, state):
-        quat, single = state
-        self._quat = quat.copy()
-        self._single = single
-
-    @property
-    def single(self):
-        """Whether this instance represents a single rotation."""
-        return self._single
-
-    def __bool__(self):
-        """Comply with Python convention for objects to be True.
-
-        Required because `Rotation.__len__()` is defined and not always truthy.
-        """
-        return True
-
-    @cython.embedsignature(True)
-    def __len__(self):
-        """Number of rotations contained in this object.
-
-        Multiple rotations can be stored in a single instance.
-
-        Returns
-        -------
-        length : int
-            Number of rotations stored in object.
-
-        Raises
-        ------
-        TypeError if the instance was created as a single rotation.
-        """
-        if self._single:
-            raise TypeError("Single rotation has no len().")
-
-        return self._quat.shape[0]
-
-    @cython.embedsignature(True)
-    @classmethod
-    def from_quat(cls, quat, *, scalar_first=False):
-        """Initialize from quaternions.
-
-        Rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_.
-
-        The 4 components of a quaternion are divided into a scalar part ``w``
-        and a vector part ``(x, y, z)`` and can be expressed from the angle
-        ``theta`` and the axis ``n`` of a rotation as follows::
-
-            w = cos(theta / 2)
-            x = sin(theta / 2) * n_x
-            y = sin(theta / 2) * n_y
-            z = sin(theta / 2) * n_z
-
-        There are 2 conventions to order the components in a quaternion:
-
-        - scalar-first order -- ``(w, x, y, z)``
-        - scalar-last order -- ``(x, y, z, w)``
-
-        The choice is controlled by `scalar_first` argument.
-        By default, it is False and the scalar-last order is assumed.
-
-        Advanced users may be interested in the "double cover" of 3D space by
-        the quaternion representation [2]_. As of version 1.11.0, the
-        following subset (and only this subset) of operations on a `Rotation`
-        ``r`` corresponding to a quaternion ``q`` are guaranteed to preserve
-        the double cover property: ``r = Rotation.from_quat(q)``,
-        ``r.as_quat(canonical=False)``, ``r.inv()``, and composition using the
-        ``*`` operator such as ``r*r``.
-
-        Parameters
-        ----------
-        quat : array_like, shape (N, 4) or (4,)
-            Each row is a (possibly non-unit norm) quaternion representing an
-            active rotation. Each quaternion will be normalized to unit norm.
-        scalar_first : bool, optional
-            Whether the scalar component goes first or last.
-            Default is False, i.e. the scalar-last order is assumed.
-
-        Returns
-        -------
-        rotation : `Rotation` instance
-            Object containing the rotations represented by input quaternions.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-        .. [2] Hanson, Andrew J. "Visualizing quaternions."
-            Morgan Kaufmann Publishers Inc., San Francisco, CA. 2006.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-
-        A rotation can be initialzied from a quaternion with the scalar-last
-        (default) or scalar-first component order as shown below:
-
-        >>> r = R.from_quat([0, 0, 0, 1])
-        >>> r.as_matrix()
-        array([[1., 0., 0.],
-               [0., 1., 0.],
-               [0., 0., 1.]])
-        >>> r = R.from_quat([1, 0, 0, 0], scalar_first=True)
-        >>> r.as_matrix()
-        array([[1., 0., 0.],
-               [0., 1., 0.],
-               [0., 0., 1.]])
-
-        It is possible to initialize multiple rotations in a single object by
-        passing a 2-dimensional array:
-
-        >>> r = R.from_quat([
-        ... [1, 0, 0, 0],
-        ... [0, 0, 0, 1]
-        ... ])
-        >>> r.as_quat()
-        array([[1., 0., 0., 0.],
-               [0., 0., 0., 1.]])
-        >>> r.as_quat().shape
-        (2, 4)
-
-        It is also possible to have a stack of a single rotation:
-
-        >>> r = R.from_quat([[0, 0, 0, 1]])
-        >>> r.as_quat()
-        array([[0., 0., 0., 1.]])
-        >>> r.as_quat().shape
-        (1, 4)
-
-        Quaternions are normalized before initialization.
-
-        >>> r = R.from_quat([0, 0, 1, 1])
-        >>> r.as_quat()
-        array([0.        , 0.        , 0.70710678, 0.70710678])
-        """
-        return cls(quat, normalize=True, scalar_first=scalar_first)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1773,110 +1586,6 @@ cdef class Rotation:
 
         return q
 
-    @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def as_matrix(self):
-        """Represent as rotation matrix.
-
-        3D rotations can be represented using rotation matrices, which
-        are 3 x 3 real orthogonal matrices with determinant equal to +1 [1]_.
-
-        Returns
-        -------
-        matrix : ndarray, shape (3, 3) or (N, 3, 3)
-            Shape depends on shape of inputs used for initialization.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Represent a single rotation:
-
-        >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_matrix()
-        array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-               [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-               [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-        >>> r.as_matrix().shape
-        (3, 3)
-
-        Represent a stack with a single rotation:
-
-        >>> r = R.from_quat([[1, 1, 0, 0]])
-        >>> r.as_matrix()
-        array([[[ 0.,  1.,  0.],
-                [ 1.,  0.,  0.],
-                [ 0.,  0., -1.]]])
-        >>> r.as_matrix().shape
-        (1, 3, 3)
-
-        Represent multiple rotations:
-
-        >>> r = R.from_rotvec([[np.pi/2, 0, 0], [0, 0, np.pi/2]])
-        >>> r.as_matrix()
-        array([[[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
-                [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
-                [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]],
-               [[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-                [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]]])
-        >>> r.as_matrix().shape
-        (2, 3, 3)
-
-        Notes
-        -----
-        This function was called as_dcm before.
-
-        .. versionadded:: 1.4.0
-        """
-        cdef double[:, :] quat = self._quat
-        cdef Py_ssize_t num_rotations = quat.shape[0]
-        cdef double[:, :, :] matrix = _empty3(num_rotations, 3, 3)
-
-        cdef double x, y, z, w, x2, y2, z2, w2
-        cdef double xy, zw, xz, yw, yz, xw
-
-        for ind in range(num_rotations):
-            x = quat[ind, 0]
-            y = quat[ind, 1]
-            z = quat[ind, 2]
-            w = quat[ind, 3]
-
-            x2 = x * x
-            y2 = y * y
-            z2 = z * z
-            w2 = w * w
-
-            xy = x * y
-            zw = z * w
-            xz = x * z
-            yw = y * w
-            yz = y * z
-            xw = x * w
-
-            matrix[ind, 0, 0] = x2 - y2 - z2 + w2
-            matrix[ind, 1, 0] = 2 * (xy + zw)
-            matrix[ind, 2, 0] = 2 * (xz - yw)
-
-            matrix[ind, 0, 1] = 2 * (xy - zw)
-            matrix[ind, 1, 1] = - x2 + y2 - z2 + w2
-            matrix[ind, 2, 1] = 2 * (yz + xw)
-
-            matrix[ind, 0, 2] = 2 * (xz + yw)
-            matrix[ind, 1, 2] = 2 * (yz - xw)
-            matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
-
-        ret = np.asarray(matrix)
-        if self._single:
-            return ret[0]
-        else:
-            return ret
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)
@@ -2442,157 +2151,6 @@ cdef class Rotation:
         quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
         return cls(quats, normalize=False)
 
-    @cython.embedsignature(True)
-    def apply(self, vectors, inverse=False):
-        """Apply this rotation to a set of vectors.
-
-        If the original frame rotates to the final frame by this rotation, then
-        its application to a vector can be seen in two ways:
-
-            - As a projection of vector components expressed in the final frame
-              to the original frame.
-            - As the physical rotation of a vector being glued to the original
-              frame as it rotates. In this case the vector components are
-              expressed in the original frame before and after the rotation.
-
-        In terms of rotation matrices, this application is the same as
-        ``self.as_matrix() @ vectors``.
-
-        Parameters
-        ----------
-        vectors : array_like, shape (3,) or (N, 3)
-            Each `vectors[i]` represents a vector in 3D space. A single vector
-            can either be specified with shape `(3, )` or `(1, 3)`. The number
-            of rotations and number of vectors given must follow standard numpy
-            broadcasting rules: either one of them equals unity or they both
-            equal each other.
-        inverse : boolean, optional
-            If True then the inverse of the rotation(s) is applied to the input
-            vectors. Default is False.
-
-        Returns
-        -------
-        rotated_vectors : ndarray, shape (3,) or (N, 3)
-            Result of applying rotation on input vectors.
-            Shape depends on the following cases:
-
-                - If object contains a single rotation (as opposed to a stack
-                  with a single rotation) and a single vector is specified with
-                  shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
-                - In all other cases, `rotated_vectors` has shape ``(N, 3)``,
-                  where ``N`` is either the number of rotations or vectors.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Single rotation applied on a single vector:
-
-        >>> vector = np.array([1, 0, 0])
-        >>> r = R.from_rotvec([0, 0, np.pi/2])
-        >>> r.as_matrix()
-        array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-               [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-               [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-        >>> r.apply(vector)
-        array([2.22044605e-16, 1.00000000e+00, 0.00000000e+00])
-        >>> r.apply(vector).shape
-        (3,)
-
-        Single rotation applied on multiple vectors:
-
-        >>> vectors = np.array([
-        ... [1, 0, 0],
-        ... [1, 2, 3]])
-        >>> r = R.from_rotvec([0, 0, np.pi/4])
-        >>> r.as_matrix()
-        array([[ 0.70710678, -0.70710678,  0.        ],
-               [ 0.70710678,  0.70710678,  0.        ],
-               [ 0.        ,  0.        ,  1.        ]])
-        >>> r.apply(vectors)
-        array([[ 0.70710678,  0.70710678,  0.        ],
-               [-0.70710678,  2.12132034,  3.        ]])
-        >>> r.apply(vectors).shape
-        (2, 3)
-
-        Multiple rotations on a single vector:
-
-        >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
-        >>> vector = np.array([1,2,3])
-        >>> r.as_matrix()
-        array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
-                [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
-                [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
-               [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
-                [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
-                [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]]])
-        >>> r.apply(vector)
-        array([[-0.70710678,  2.12132034,  3.        ],
-               [ 1.        , -3.        ,  2.        ]])
-        >>> r.apply(vector).shape
-        (2, 3)
-
-        Multiple rotations on multiple vectors. Each rotation is applied on the
-        corresponding vector:
-
-        >>> r = R.from_euler('zxy', [
-        ... [0, 0, 90],
-        ... [45, 30, 60]], degrees=True)
-        >>> vectors = [
-        ... [1, 2, 3],
-        ... [1, 0, -1]]
-        >>> r.apply(vectors)
-        array([[ 3.        ,  2.        , -1.        ],
-               [-0.09026039,  1.11237244, -0.86860844]])
-        >>> r.apply(vectors).shape
-        (2, 3)
-
-        It is also possible to apply the inverse rotation:
-
-        >>> r = R.from_euler('zxy', [
-        ... [0, 0, 90],
-        ... [45, 30, 60]], degrees=True)
-        >>> vectors = [
-        ... [1, 2, 3],
-        ... [1, 0, -1]]
-        >>> r.apply(vectors, inverse=True)
-        array([[-3.        ,  2.        ,  1.        ],
-               [ 1.09533535, -0.8365163 ,  0.3169873 ]])
-
-        """
-        vectors = np.asarray(vectors)
-        if vectors.ndim > 2 or vectors.shape[-1] != 3:
-            raise ValueError("Expected input of shape (3,) or (P, 3), "
-                             "got {}.".format(vectors.shape))
-
-        single_vector = False
-        if vectors.shape == (3,):
-            single_vector = True
-            vectors = vectors[None, :]
-
-        matrix = self.as_matrix()
-        if self._single:
-            matrix = matrix[None, :, :]
-
-        n_vectors = vectors.shape[0]
-        n_rotations = len(self._quat)
-
-        if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
-            raise ValueError("Expected equal numbers of rotations and vectors "
-                             ", or a single rotation, or a single vector, got "
-                             "{} rotations and {} vectors.".format(
-                                n_rotations, n_vectors))
-
-        if inverse:
-            result = np.einsum('ikj,ik->ij', matrix, vectors)
-        else:
-            result = np.einsum('ijk,ik->ij', matrix, vectors)
-
-        if self._single and single_vector:
-            return result[0]
-        else:
-            return result
 
     @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):

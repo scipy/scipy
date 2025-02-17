@@ -3,7 +3,7 @@ from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
 
 
-def _as_quat(
+def as_quat(
     quat: Array,
     *,
     normalize: bool = True,
@@ -51,7 +51,7 @@ def _quat_canonical(quat: Array) -> Array:
     return xp.where(mask[..., None], -quat, quat)
 
 
-def _as_matrix(quat: Array) -> Array:
+def as_matrix(quat: Array) -> Array:
     xp = array_namespace(quat)
     x = quat[..., 0]
     y = quat[..., 1]
@@ -85,6 +85,7 @@ def _as_matrix(quat: Array) -> Array:
     return matrix
 
 
-def _apply(quat: Array, points: Array) -> Array:
+def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
-    return xp.einsum("...ij,...j->...i", _as_matrix(quat), points)
+    subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
+    return xp.einsum(subscripts, as_matrix(quat), points)
