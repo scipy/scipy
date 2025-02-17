@@ -2,6 +2,7 @@ import numpy as np
 from scipy.special import betainc
 from scipy._lib._array_api import (xp_take_along_axis, xp_default_dtype,
                                    xp_ravel, array_namespace)
+import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 from scipy.stats._stats_py import _length_nonmasked
 
@@ -85,19 +86,19 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
             n = xp.astype(n_int, dtype)
             # NaNs are produced only if slice is empty after removing NaNs
             nan_out = xp.any(n == 0, axis=-1)
-            n[nan_out] = y.shape[-1]  # avoids pytorch/pytorch#146211
+            n = xpx.at(n, nan_out).set(y.shape[-1])  # avoids pytorch/pytorch#146211
 
         if xp.any(nan_out):
             y = xp.asarray(y, copy=True)  # ensure writable
-            y[nan_out] = np.nan
+            y = xpx.at(y, nan_out).set(xp.nan)
         elif xp.any(nans) and method == 'harrell-davis':
             y = xp.asarray(y, copy=True)  # ensure writable
-            y[nans] = 0  # any non-nan will prevent NaN from propagating
+            y = xpx.at(y, nans).set(0)  # any non-nan will prevent NaN from propagating
 
     p_mask = (p > 1) | (p < 0) | xp.isnan(p)
     if xp.any(p_mask):
         p = xp.asarray(p, copy=True)
-        p[p_mask] = 0.5
+        p = xpx.at(p, p_mask).set(0.5)  # these get NaN-ed out at the end
 
     return y, p, method, axis, nan_policy, keepdims, n, axis_none, ndim, p_mask, xp
 
@@ -208,9 +209,9 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     range of non-negative indices. The ``-1`` in the formulas for ``j`` and
     ``g`` accounts for Python's 0-based indexing.
 
-    The table above includes only the estimators from H&F that are continuous
+    The table above includes only the estimators from [1]_ that are continuous
     functions of probability `p` (estimators 4-9). SciPy also provides the
-    three discontinuous estimators from H&F (estimators 1-3), where ``j`` is
+    three discontinuous estimators from [1]_ (estimators 1-3), where ``j`` is
     defined as above, ``m`` is defined as follows, and ``g`` is ``0`` when
     ``index = p*n + m - 1`` is less than ``0`` and otherwise is defined below.
 
@@ -231,7 +232,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     :math:`i` are the indices :math:`1, 2, ..., n-1, n` of the sorted elements,
     :math:`a = p (n + 1)`, :math:`b = (1 - p)(n + 1)`,
     :math:`p` is the probability of the quantile, and
-    :math:`I` is the regularized, lower incomplete beta function.
+    :math:`I` is the regularized, lower incomplete beta function (`special.betainc`).
 
     Examples
     --------
@@ -279,9 +280,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
 
-    # Algorithm
-
-    res[p_mask] = xp.nan
+    res = xpx.at(res, p_mask).set(xp.nan)
 
     # Reshape per axis/keepdims
     if axis_none and keepdims:
@@ -300,7 +299,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 def _quantile_hf(y, p, n, method, xp):
     ms = dict(inverted_cdf=0, averaged_inverted_cdf=0, closest_observation=-0.5,
               interpolated_inverted_cdf=0, hazen=0.5, weibull=p, linear=1 - p,
-              median_unbiased=p / 3 + 1 / 3, normal_unbiased=p / 4 + 3 / 8)
+              median_unbiased=p/3 + 1/3, normal_unbiased=p/4 + 3/8)
     m = ms[method]
     jg = p*n + m - 1
     j = jg // 1
@@ -313,25 +312,26 @@ def _quantile_hf(y, p, n, method, xp):
         g = (1 - xp.astype((g == 0) & (j % 2 == 1), jg.dtype))
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'}:
         g = xp.asarray(g)
-        g[jg < 0] = 0
+        g = xpx.at(g, jg < 0).set(0)
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
-    j = xp.astype(j, xp.int64)
-    jp1 = xp.astype(jp1, xp.int64)
 
-    return ((1 - g) * xp_take_along_axis(y, j, axis=-1)
-            + g * xp_take_along_axis(y, jp1, axis=-1))
+    return ((1 - g) * xp_take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
+            + g * xp_take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
 
 
 def _quantile_hd(y, p, n, xp):
-    p = xp.moveaxis(p, -1, 0)[..., np.newaxis]
+    # RE axis handling: We need to perform a reducing operation over rows of `y` for
+    # each element in the corresponding row of `p` (a la Cartesian product). Strategy:
+    # move rows of `p` to an axis at the front that is orthogonal to all the rest,
+    # perform the reducing operating over the last axis, then move the front axis back
+    # to the end.
+    p = xp.moveaxis(p, -1, 0)[..., xp.newaxis]
     a = p * (n + 1)
     b = (1 - p) * (n + 1)
-    i = xp.arange(y.shape[-1] + 1)
-    i = xp.astype(i, y.dtype)
-    # There will be edge case bugs with a == 0 or b == 0 due to gh-8411
+    i = xp.arange(y.shape[-1] + 1, dtype=y.dtype)
     w = betainc(a, b, i / n)
     w = w[..., 1:] - w[..., :-1]
-    w[xp.isnan(w)] = 0
+    w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)

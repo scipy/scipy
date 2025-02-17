@@ -118,7 +118,8 @@ class TestQuantile:
             p = np.mean(p, axis=axis, keepdims=True)
 
         # inject p = 0 and p = 1 to test edge cases
-        # Currently would fail with CuPy/JAX (cupy/cupy#8934, jax-ml/jax#21900)
+        # Currently would fail with CuPy/JAX (cupy/cupy#8934, jax-ml/jax#21900);
+        # remove the `if` when those are resolved.
         if is_numpy(xp):
             p0 = p.ravel()
             p0[1] = 0.
@@ -183,8 +184,8 @@ class TestQuantile:
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
-        x = np.arange(5., dtype=np.float64)
-        p = np.arange(0, 1.1, 0.1)
+        x = np.arange(8., dtype=np.float64)
+        p = np.arange(0, 1.125, 0.125)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
