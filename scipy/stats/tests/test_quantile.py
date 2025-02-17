@@ -101,6 +101,7 @@ class TestQuantile:
 
         xp_assert_close(res, xp.asarray(ref, dtype=dtype))
 
+    @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
     @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
@@ -185,7 +186,7 @@ class TestQuantile:
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
         x = np.arange(8., dtype=np.float64)
-        p = np.arange(0, 1.125, 0.125)
+        p = np.arange(0, 1.0625, 0.0625)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
