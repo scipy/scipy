@@ -185,6 +185,8 @@ class TestQuantile:
     def test_transition(self, method, xp):
         # test that values of discontinuous estimators are correct when
         # p*n + m - 1 is integral.
+        if method == 'closest_observation' and np.__version__ < '2.0.1':
+            pytest.skip('Bug in np.quantile (numpy/numpy#26656) fixed in 2.0.1')
         x = np.arange(8., dtype=np.float64)
         p = np.arange(0, 1.0625, 0.0625)
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
