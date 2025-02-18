@@ -7,19 +7,279 @@ static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e,
 static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
 
 
-void slsqp()
+void slsqp_body(
+    struct SLSQP_static_vars S, double* A, double* C, double* d, double* x,
+    double* xl, double* xu, double* u, double* v, double* funx, double* bfgs,
+    double* gradx, double* sol, double* r, double* mu, double* x0, double* buffer,
+    int* indices)
 {
-    // Nonlinear programming by solving sequentially quadratic programming
 
-    // TODO: Implement the function
+    int one = 1, lda = (S.m > 0 ? S.m : 1);
+    int j;
+    double done = 1.0, dzero = 0.0, dmone = -1.0;
+    double alfmin, alpha, f0, gs, t0, t, tol;
+
+    // The badlin flag keeps track whether the SQP problem on the current
+    // iteration was inconsistent or not.
+    int badlin = 0;
+
+    // Fortran code uses reverse communication for the iterations hence it
+    // needs to jump back to where it left off. Thus the goto statements are
+    // kept as is. Fortunately, they do not overlap and have a clean separation.
+    if (S.mode ==  0) { goto MODE0; }
+    if (S.mode == -1) { goto MODEM1; }
+    if (S.mode == 2) { goto MODE1; }
+
+MODE0:
+
+    // We always use inexact line-search since exact search is broken in the
+    // original Fortran code.
+    S.exact = 0; // (S.acc < 0.0 ? 1 : 0);
+    S.acc = fabs(S.acc);
+    S.tol = 10*S.acc;
+    S.iter = 0;
+    S.ireset = 0;
+    int n1 = S.n + 1;
+    int n2 = n1*S.n/2;
+    int n3 = n2 + 1;
+    for (int i = 0; i < S.n; i++) { sol[i] = 0.0; }
+    for (int i = 0; i < S.m; i++) { mu[i] = 0.0; }
+
+RESET_BFGS:
+    // Reset the BFGS matrix stored in packed format
+    S.ireset++;
+    if (S.ireset > 5) { goto LABEL255;}
+    for (int i = 0; i < n2; i++) { bfgs[i] = 0.0; }
+    j = 0;
+    for (int i = 0; i < S.n; i++)
+    {
+        bfgs[j] = 1.0;
+        j += S.n - i;
+    }
+    // 120
+
+    // Main iteration: Search direction, steplength, LDL'-update
+
+ITER_START:
+    // 130
+    S.iter++;
+    S.mode = 9;
+    if (S.iter > S.itermax) { return; }
+
+    // Search direction as solution of the QP-problem
+    for (int i = 0; i < S.n; i++)
+    {
+        u[i] = xl[i] - x[i];
+        v[i] = xu[i] - x[i];
+    }
+
+    S.h4 = 1.0;
+    lsq(S.m, S.meq, S.n, n3, bfgs, gradx, C, d, u, v, sol, r, buffer, indices, &S.mode);
+
+    // Augmented problem for inconsistent linearization
+
+    // If it turns out that the original SQP problem is inconsistent,
+    // disallow termination with convergence on this iteration,
+    // even if the augmented problem was solved.
+    badlin = 0;
+
+    if ((S.mode == 6) && (S.n == S.meq)) { S.mode = 4;}
+    if (S.mode == 4)
+    {
+        badlin = 1;
+        for (int j = 0; j < S.m; j++)
+        {
+            if (j <= S.meq)
+            {
+                C[j + n1*S.n] = -d[j];
+            } else {
+                C[j + n1*S.n] = fmax(-d[j], 0.0);
+            }
+        }
+        for (int i = 0; i < S.n; i++) { sol[i] = 0.0; }
+        S.h3 = 0.0;
+        gradx[S.n] = 0.0;
+        bfgs[n2] = 100.0;
+        sol[S.n] = 1.0;
+        u[S.n] = 0.0;
+        v[S.n] = 1.0;
+        S.inconsistent = 0;
+        while (1)
+        {
+            lsq(S.m, S.meq, n1, n3, bfgs, gradx, C, d, u, v, sol, r, buffer, indices, &S.mode);
+            S.h4 = 1.0 - sol[S.n];
+            if (S.mode == 4)
+            {
+                bfgs[n2] *= 10.0;
+                S.inconsistent++;
+                if (S.inconsistent > 5) { return; }
+                continue;
+            } else if (S.mode != 1) {
+                return;
+            }
+            break;
+        }
+    } else if (S.mode != 1) {
+        return;
+    }
+
+    // Update multipliers for L1-test
+    for (int i = 0; i < S.n; i++) { v[i] = gradx[i]; }
+    dgemv_("T", &S.m, &S.n, &dmone, A, &lda, r, &one, &done, v, &one);
+    f0 = *funx;
+    for (int i = 0; i < S.n; i++) { x0[i] = x[i]; }
+    gs = ddot_(&S.n, gradx, &one, sol, &one);
+    S.h1 = fabs(gs);
+    S.h2 = 0.0;
+    for (int j = 0; j < S.m; j++)
+    {
+        if (j <= S.meq)
+        {
+            S.h3 = d[j];
+        } else {
+            S.h3 = 0.0;
+        }
+        S.h1 += mu[j]*fmax(-d[j], S.h3);
+    }
+
+    t0 = *funx + S.h1;
+    S.h3 = gs - S.h1*S.h4;
+    S.mode = 8;
+    if (S.h3 > 0.0) { goto RESET_BFGS; }
+
+    // Line search with an L1 test function
+    S.line = 0;
+    alpha = 1.0;
+
+    // We use inexact line search unconditionally see the definition of S.inexact
+    // at the beginning of the function.
+    // if (S.inexact == 1)
+    // {
+    S.line++;
+    S.h3 *= alpha;
+    for (int i = 0; i < S.n; i++) {
+        sol[i] *= alpha;
+        x[i] = x0[i] + sol[i];
+    }
+    S.mode = 1;
+    return;
+
+MODE1:
+    t = *funx;
+    for (int j = 0; j < S.m; j++)
+    {
+        if (j <= S.meq)
+        {
+            S.h1 = d[j];
+        } else {
+            S.h1 = 0.0;
+        }
+        t += mu[j]*fmax(-d[j], S.h1);
+    }
+    S.h1 = t - t0;
+
+    if (!((S.h1 <= S.h3 / 10.0) || (S.line > 10)))
+    {
+        alpha = fmax(S.h3/(2.0*(S.h3 - S.h1)), alfmin);
+        goto MODE1;
+    }
+
+    // Check convergence
+    S.h3 = 0.0;
+    for (int j = 0; j < S.m; j++)
+    {
+        if (j <= S.meq)
+        {
+            S.h1 = d[j];
+        } else {
+            S.h1 = 0.0;
+        }
+        S.h3 += fmax(-d[j], S.h1);
+    }
+    if (
+        ((fabs(*funx - f0) < S.acc) || (dnrm2_(S.n, sol, &one) < S.acc)) &&
+        (S.h3 < S.acc) &&
+        (!badlin) &&
+        (*funx == *funx))
+    {
+        S.mode = 0;
+        return;
+    } else {
+        S.mode = -1;
+    }
+    return;
+
+LABEL255:
+    // Checked relaxed convergence in case of positive directional derivative
+    S.h3 = 0.0;
+    for (int j = 0; j < S.m; j++)
+    {
+        if (j <= S.meq)
+        {
+            S.h1 = d[j];
+        } else {
+            S.h1 = 0.0;
+        }
+        S.h3 += fmax(-d[j], S.h1);
+    }
+    if (((fabs(*funx - f0) < S.tol) || (dnrm2_(S.n, sol, &one) < S.tol)) &&
+        (S.h3 < S.tol) &&
+        (!badlin) &&
+        (*funx == *funx))
+    {
+        S.mode = 0;
+        return;
+    } else {
+        S.mode = 8;
+    }
+    return;
+
+MODEM1:
+
+    // Call Jacobian at current x
+
+    // Update Cholesky factors of Hessian matrix modified by BFGS formula
+    dgemv_("T", &S.m, &S.n, &dmone, A, &lda, r, &one, &dzero, u, &one);
+    for (int i = 0; i < S.n; i++)
+    {
+        u[i] = gradx[i] - v[i];
+    }
+
+    // L'*S
+    for (int i = 0; i < S.n; i++) { v[i] = sol[i]; }
+    dtpmv_("L", "T", "N", &S.n, bfgs, v, &one);
+    // D*L'*S
+    j = 0;
+    for (int i = 0; i < S.n; i++) {
+        v[i] = l[j]*v[i];
+        j += S.n - i;
+    }
+    // L*D*L'*S
+    dtpmv_("L", "N", "N", &S.n, bfgs, v, &one);
+
+    S.h1 = ddot_(&S.n, sol, &one, u, &one);
+    S.h2 = ddot_(&S.n, sol, &one, v, &one);
+    S.h3 = 0.2*S.h2;
+    if (S.h1 < S.h3)
+    {
+        S.h4 = (S.h2 - S.h3) / (S.h2 - S.h1);
+        S.h1 = S.h3;
+        for (int i = 0; i < S.n; i++) { u[i] *= S.h4; }
+        double tmp_dbl = 1.0 - S.h4;
+        daxpy_(&S.n, &tmp_dbl, v, &one, u, &one);
+    }
+    // Test for singular update, and reset hessian if so
+    if ((S.h1 == 0.0) || (S.h2 = 0.0)) { goto RESET_BFGS; }
+
+    ldl_update(S.n, bfgs, u, 1.0 / S.h1, v);
+    ldl_update(S.n, bfgs, u, -1.0 / S.h2, u);
+
+    // End of main iteration
+    goto ITER_START;
+
+    return;
 }
 
-void slsqpb()
-{
-    // Nonlinear programming by solving sequentially quadratic programming
-
-    // TODO: Implement the function
-}
 
 /*
  *          min     |A*x - b|
@@ -27,8 +287,8 @@ void slsqpb()
  *        G*x >= h
  *      xl <= x <= xu
  *
- * Problem data is kept in S, t, C, d, xl, xu arrays in a rather tedious format.
- * C(m, n) is the constraint matrix, d(n) is the constraint bounds.
+ * Problem data is kept in Lf, gradx, C, d, xl, xu arrays in a rather tedious
+ * format. C(m, n) is the constraint matrix, d(n) is the constraint bounds.
  * xl(n) and xu(n) are the lower and upper bounds on x.
  * NaN entries signify unbounded constraints and not included in the constraints.
  * The C matrix, for a problem with all x bounds are given and finite,
@@ -51,30 +311,30 @@ void slsqpb()
  *                                └────┘  └┘
  *                                   G     h
  *
- * A and b are stored in S[] in LAPACK packed format where S holds a unit, lower
+ * A and b are stored in Lf[] in LAPACK packed format where Lf holds a unit, lower
  * triangular matrix with diagonal entries are overwritten by the entries of d[]
- * and vector and t[].
+ * and vector and gradx[].
  *
- *  S[] = [d[0], s[1], s[2], . , d[1], s[n + 2], d[2], ...]
+ *  Lf[] = [d[0], s[1], s[2], . , d[1], s[n + 2], d[2], ...]
  *
- *        [d[ 0 ],                          ]
- *        [s[ 1 ], d[ 1 ], .  ,             ]
- *  S[] = [s[ 2 ], s[n+2], .  ,             ]
- *        [ .    ,   .   , .  , d[n-1]      ]
- *        [s[ n ], s[2*n], .  ,   .   , d[n]]
+ *         [d[ 0 ],                          ]
+ *         [s[ 1 ], d[ 1 ], .  ,             ]
+ *  Lf[] = [s[ 2 ], s[n+2], .  ,             ]
+ *         [ .    ,   .   , .  , d[n-1]      ]
+ *         [s[ n ], s[2*n], .  ,   .   , d[n]]
  *
  * Then, the following relations recover the A and b
  *
- *          A = sqrt(d[]) * S[]^T
- *          b = - inv( S[] * sqrt(d[]) ) * t[]
+ *          A = sqrt(d[]) * Lf[]^T
+ *          b = - inv( Lf[] * sqrt(d[]) ) * gradx[]
  *
  * The solution is returned in x() and the Lagrange multipliers are returned in y().
  *
  *
 */
-void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d,
-         double* xl, double* xu, double* x, double* y, double* buffer, int* jw,
-         int* mode)
+void lsq(int m, int meq, int n, int nl, double* Lf, double* gradx, double* C,
+         double* d, double* xl, double* xu, double* x, double* y, double* buffer,
+         int* jw, int* mode)
 {
     int one = 1;
     int mineq = m - meq;
@@ -92,10 +352,9 @@ void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double*
     // Inconsistent linearization augments an extra column to A and extra row to
     // A and b. Then sends n value increased by 1 to lsq. For that we save the
     // size in ld and decrement n if aug is set to keep the problem size consistent.
-
     if ((n*(n+1)/2 + 1) != nl) { aug = 1; }
 
-    // Recover A and b from S and t
+    // Recover A and b from Lf and gradx
     int cursor = 0;
     int ld = n;
     if (aug) { n--; }
@@ -103,26 +362,26 @@ void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double*
     // Depending on aug, wA is either full (n)x(n) or top-left block of size (n-1)x(n-1).
     for (int j = 0; j < n; j++)
     {
-        double diag = sqrt(S[cursor++]);      // Extract the diagonal value from S.
+        double diag = sqrt(Lf[cursor++]);      // Extract the diagonal value from Lf.
         wA[j + j * ld] = diag;                // Place the sqrt diagonal.
         for (int i = j + 1; i < n; i++)
         {
-            wA[j + i * ld] = S[cursor++] * diag;
+            wA[j + i * ld] = Lf[cursor++] * diag;
         }
     }
 
-    // Compute b = - 1/sqrt(d) * inv(S) * t(). S is already in packed format.
-    for (int i = 0; i < n; i++) { wb[i] = t[i]; }
+    // Compute b = - 1/sqrt(d[]) * inv(Lf[]) * gradx[]. Lf is already in packed format.
+    for (int i = 0; i < n; i++) { wb[i] = gradx[i]; }
     dtpsv_("L", "N", "U", &n, wA, wb, &one);
     cursor = 0;
     for (int i = 0; i < n; i++)
     {
-        wb[i] /= -sqrt(S[cursor]);
+        wb[i] /= -sqrt(Lf[cursor]);
         cursor += n - i;
     }
 
     // Fill in the augmented system extra entries.
-    if (aug) { wA[ld*ld - 1] = S[ld*(ld+1)/2 + 1]; }
+    if (aug) { wA[ld*ld - 1] = Lf[ld*(ld+1)/2 + 1]; }
 
     // Get the equality constraints if given.
     double* restrict wE = &buffer[n*(n+1) + n];
@@ -523,5 +782,77 @@ ldp(int m, int n, double* g, double* h, double* x,
 
     // Compute the lagrange multipliers for the primal problem
     for (int i = 0; i < m; i++) { buffer[i] = fac*y[i]; }
+    return;
+}
+
+
+static void
+ldl_update(int n, double* a, double* z, double sigma, double* w)
+{
+    int j, ij = 0;
+    const double epsmach = 2.220446049250313e-16;
+    if (sigma == 0.0) { return; }
+    double alpha, beta, delta, gamma, u, v, tp, t = 1.0 / sigma;
+
+    if (sigma <= 0.0)
+    {
+        // Negative update
+        for (int i = 0; i < n; i++) { w[i] = z[i]; }
+        for (int i = 0; i < n; i++)
+        {
+            v = w[i];
+            t = t + v*v/a[ij];
+            for (int j = i + 1; j < n; j++)
+            {
+                ij++;
+                w[j] -= v*a[ij];
+            }
+            ij++;
+        }
+        if (t >= 0.0) { t = epsmach / sigma; }
+
+        for (int i = 0; i < n; i++)
+        {
+            j = n - i - 1;
+            ij -= i + 1;
+            u = w[j];
+            w[j] = t;
+            t -= u*u / a[ij];
+        }
+    }
+
+    // Positive update
+    for (int i = 0; i < n; i++)
+    {
+        v = z[i];
+        delta = v / a[ij];
+        // sigma == 0.0 is handled at the beginning.
+        tp = (sigma < 0.0 ? w[i] : t + delta*v);
+        alpha = tp / t;
+        a[ij] *= alpha;
+        if (i == n - 1) { return; }
+        beta = delta / tp;
+        if (alpha <= 4.0)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                ij++;
+                z[j] -= v * a[ij];
+                a[ij] += beta * z[j];
+            }
+        } else {
+            gamma = t / tp;
+            for (int j = i + 1; j < n; j++)
+            {
+                ij++;
+                u = a[ij];
+                a[ij] = gamma * u + beta * z[j];
+                z[j] -= v * u;
+            }
+        }
+        ij++;
+        t = tp;
+    }
+
     return;
 }
