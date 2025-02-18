@@ -481,8 +481,6 @@ class VectorFunction:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
-            finite_diff_options["workers"] = workers
-            finite_diff_options["full_output"] = True
 
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
@@ -603,10 +601,10 @@ class VectorFunction:
 
             def update_hess():
                 self._update_jac()
-                self.H, dct = approx_derivative(jac_dot_v, self.x,
-                                                f0=self.J.T.dot(self.v),
-                                                args=(self.v,),
-                                                **finite_diff_options)
+                self.H = approx_derivative(jac_dot_v, self.x,
+                                          f0=self.J.T.dot(self.v),
+                                          args=(self.v,),
+                                          **finite_diff_options)
 
             update_hess()
             self.H_updated = True
