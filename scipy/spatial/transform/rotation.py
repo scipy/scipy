@@ -12,11 +12,6 @@ import scipy.spatial.transform._rotation as cython_backend
 import scipy.spatial.transform._rotation_array_api as array_api_backend
 from scipy._lib._array_api import array_namespace, Array
 
-try:
-    import jax  # Must succeed if we get passed a jax.numpy array
-except ImportError:
-    jax = None
-
 __all__ = ["Rotation", "Slerp"]  # noqa: F822
 
 # Fast path for numpy arrays: If quat is a numpy object, we call the Cython backend
@@ -38,7 +33,7 @@ class Rotation:
 
     def as_quat(self, canonical=False, *, scalar_first=False):
         return self._backend.as_quat(
-            self._quat, canonical=canonical, scalar_first=scalar_first
+            self._quat, normalize=False, canonical=canonical, scalar_first=scalar_first
         )
 
     def as_matrix(self) -> Array:

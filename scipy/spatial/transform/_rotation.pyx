@@ -545,20 +545,16 @@ def _format_angles(angles, degrees, num_axes):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_quat(quat, normalize=True, copy=True, canonical: bool = False, scalar_first=False):
-    quat = np.asarray(quat, dtype=float)
+def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
 
-    if (quat.ndim not in [1, 2]
-        or quat.shape[len(quat.shape) - 1] != 4
-        or quat.shape[0] == 0):
-        raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
-                            f"got {quat.shape}.")
+    if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
+        raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
     # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `to_...` methods
-    if quat.shape == (4,):
-        quat = quat[None, :]
+    # TODO: We always assume quat is a 2D array with shape (N, 4). Instead, we should broadcast over
+    # all dimensions.
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
@@ -573,15 +569,14 @@ def as_quat(quat, normalize=True, copy=True, canonical: bool = False, scalar_fir
                 raise ValueError("Found zero norm quaternions in `quat`.")
 
     if canonical:
-        quat = _quat_canonical(quat)
+        _quat_canonical(quat)
 
     return quat
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_matrix(quat):
+def as_matrix(quat: cython.double[:, :]):
 
-    # cdef double[:, :] quat = self._quat
     cdef Py_ssize_t num_rotations = quat.shape[0]
     cdef double[:, :, :] matrix = _empty3(num_rotations, 3, 3)
 
@@ -622,7 +617,7 @@ def as_matrix(quat):
 
 
 @cython.embedsignature(True)
-def apply(quat, vectors, inverse=False):
+def apply(quat: cython.double[:, :], vectors, inverse=False):
     """Apply this rotation to a set of vectors.
 
     If the original frame rotates to the final frame by this rotation, then

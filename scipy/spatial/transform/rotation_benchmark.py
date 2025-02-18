@@ -47,7 +47,7 @@ def jax_qp(n_samples: int = 10000, device: str = "cpu"):
 
 def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 2, 2
+    R, N = 5, 100
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
@@ -201,11 +201,9 @@ def _benchmark(fn: str, n_samples: int = 10000) -> Dict[str, Dict[str, float]]:
 
 
 def main():
-    # sample_sizes = np.logspace(0, 7, 8).astype(int)
-    sample_sizes = np.logspace(0, 2, 3).astype(int)
+    sample_sizes = np.logspace(0, 7, 8).astype(int)
     all_results = {}
     fns = ["from_quat", "as_quat", "as_matrix", "apply"]
-    fns = ["as_quat"]
 
     for fn in fns:
         all_results[fn] = {}
