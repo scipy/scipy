@@ -609,6 +609,9 @@ def construct_dist_matrix(graph,
                            copy_if_dense=not directed)
     predecessors = np.asarray(predecessors)
 
+    if predecessors.dtype != ITYPE:
+        raise TypeError("Type of predecessors array should be np.int32")
+
     if predecessors.shape != graph.shape:
         raise ValueError("graph and predecessors must have the same shape")
 
