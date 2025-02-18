@@ -568,7 +568,6 @@ class TestVectorialFunction(TestCase):
         x0 = np.array([2.5, 3.0])
         ex = ExVectorialFunction()
         ex2 = ExVectorialFunction()
-        ana = ExVectorialFunction()
         v = np.array([1.0, 2.0])
 
         with MapWrapper(2) as mapper:
