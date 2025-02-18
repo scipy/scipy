@@ -481,7 +481,10 @@ class VectorFunction:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
-
+            # workers is not useful for evaluation of the LinearOperator
+            # produced by approx_derivative. Only two/three function
+            # evaluations are used, and the LinearOperator may persist
+            # outside the scope that workers is valid in.
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "
@@ -602,9 +605,9 @@ class VectorFunction:
             def update_hess():
                 self._update_jac()
                 self.H = approx_derivative(jac_dot_v, self.x,
-                                          f0=self.J.T.dot(self.v),
-                                          args=(self.v,),
-                                          **finite_diff_options)
+                                           f0=self.J.T.dot(self.v),
+                                           args=(self.v,),
+                                           **finite_diff_options)
 
             update_hess()
             self.H_updated = True
