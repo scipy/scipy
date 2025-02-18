@@ -24,6 +24,7 @@ void dlartgp_(double* f, double* g, double* cs, double* sn, double* r);
 double dnrm2_(int* n, double* x, int* incx);
 void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
 void dormr2_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
+void dtpmv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
 void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
 void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
 void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, double* x, int* incx);
@@ -31,6 +32,35 @@ void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, do
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
+static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
+
+struct SLSQP_static_vars {
+    double acc;
+    double alpha;
+    double f0;
+    double gs;
+    double h1;
+    double h2;
+    double h3;
+    double h4;
+    double t;
+    double t0;
+    double tol;
+    int exact;
+    int inconsistent;
+    int ireset;
+    int iter;
+    int itermax;
+    int line;
+    int mode;
+    int m;
+    int meq;
+    int n;
+    int n1;
+    int n2;
+    int n3;
+};
+
 
 static PyObject*
 nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
@@ -540,6 +570,50 @@ lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 }
 
 
+static PyObject*
+lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
+    npy_intp m, meq, n, nl;
+    int mode = 0;
+    PyArrayObject *ap_S=NULL, *ap_t=NULL, *ap_C=NULL, *ap_d=NULL, *ap_xl=NULL, *ap_xu=NULL;
+
+    if (!PyArg_ParseTuple(args, "nnnnO!O!O!O!O!O!",
+                          &m, &meq, &n, &nl,
+                          &PyArray_Type, (PyObject **)&ap_S,
+                          &PyArray_Type, (PyObject **)&ap_t,
+                          &PyArray_Type, (PyObject **)&ap_C,
+                          &PyArray_Type, (PyObject **)&ap_d,
+                          &PyArray_Type, (PyObject **)&ap_xl,
+                          &PyArray_Type, (PyObject **)&ap_xu))
+    {
+        return NULL;
+    }
+
+    if ((PyArray_TYPE(ap_S) != NPY_FLOAT64) || (PyArray_TYPE(ap_t) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_C) != NPY_FLOAT64) || (PyArray_TYPE(ap_d) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_xl) != NPY_FLOAT64) || (PyArray_TYPE(ap_xu) != NPY_FLOAT64))
+    {
+        PYERR(slsqp_error, "Inputs to lsq must be of type numpy.float64.");
+    }
+
+    int ndim_S = PyArray_NDIM(ap_S);
+    if (ndim_S != 1)
+    {
+        PYERR(slsqp_error, "Input array S must be 1D.");
+    }
+    npy_intp* shape_S = PyArray_SHAPE(ap_S);
+    int ndim_t = PyArray_NDIM(ap_t);
+    if (ndim_t != 1)
+    {
+        PYERR(slsqp_error, "Input array t must be 1D.");
+    }
+    npy_intp* shape_t = PyArray_SHAPE(ap_t);
+
+
+}
+
+
+
 // The commented wrappers are for debugging purposes and they will be optimized out
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
@@ -547,15 +621,18 @@ static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
 /*
 static char doc_lsei_wrapper[] = ("Compute the least squares solution subject to "
                                  "equality and inequality constraints.\n\n"
-                                 "    x = lsi_wrapper(A, b, E, f, G, h)\n\n");
+                                 "    x, xnorm, mode = lsei_wrapper(A, b, E, f, G, h)\n\n");
 
 static char doc_lsi_wrapper[] = ("Compute the least squares solution subject to "
                                  "inequality constraints.\n\n"
-                                 "    x = lsi_wrapper(A, b, G, h)\n\n");
+                                 "    x, xnorm, mode = lsi_wrapper(A, b, G, h)\n\n");
 
 static char doc_ldp_wrapper[] = ("Compute the least distance solution.\n\n"
                                  "    x = ldp_wrapper(G, h)\n\n");
 */
+
+static char doc_lsq_wrapper[] = ("Convert the given compact representation of the"
+                                " linearized problem to an LSEI problem\n\n");
 
 static struct PyMethodDef slsqplib_module_methods[] = {
   {"nnls", nnls, METH_VARARGS, doc_nnls},
