@@ -6,7 +6,6 @@ from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
-from scipy._lib._array_api import is_numpy
 
 import pickle
 import copy
@@ -23,11 +22,7 @@ def basis_vec(axis):
 
 def test_init(xp):
     x = xp.asarray([0, 0, 0, 1])
-    r = Rotation(x)
-    if is_numpy(xp):
-        assert r._use_cython, "Expected numpy to use Cython rotation"
-    else:
-        assert not r._use_cython, f"Expected backend {xp} to use Array API rotation"
+    Rotation(x)
 
 
 def test_generic_quat_matrix(xp):

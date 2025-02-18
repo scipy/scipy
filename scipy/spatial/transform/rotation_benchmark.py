@@ -1,5 +1,7 @@
 import os
 
+os.environ["SCIPY_ARRAY_API"] = "1"
+
 import torch
 import numpy as np
 from jax.tree_util import register_pytree_node
@@ -13,11 +15,11 @@ import matplotlib.pyplot as plt
 
 from typing import Dict
 
-os.environ["SCIPY_ARRAY_API"] = "1"
 
 from scipy.spatial.transform import Rotation as R
 
 
+# TODO: JIT-compile the rotation constructor to avoid slow pytree unflattening
 register_pytree_node(R, lambda v: ((v._quat,), None), lambda _, c: R(c[0]))
 
 
@@ -47,7 +49,7 @@ def jax_qp(n_samples: int = 10000, device: str = "cpu"):
 
 def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 5, 100
+    R, N = 2, 2
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
@@ -73,8 +75,8 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
             dev = "gpu" if "cuda" in str(q.device) else "cpu"
             assert dev == device, f"setup device mismatch: {dev} != {device}"
             if xp == "jax":
-                from_quat = jax.jit(R.from_quat)
-                from_quat(q)
+                from_quat = jax.jit(partial(R.from_quat, scalar_first=False))
+                jax.block_until_ready(from_quat(q))
             r = R.from_quat(q)
 
         def test():
@@ -107,7 +109,7 @@ def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
             r = R.from_quat(q)
             if xp == "jax":
                 as_quat = jax.jit(R.as_quat)
-                as_quat(r)
+                jax.block_until_ready(as_quat(r))
 
         def test():
             nonlocal r
@@ -139,7 +141,7 @@ def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
             r = R.from_quat(q)
             if xp == "jax":
                 as_matrix = jax.jit(R.as_matrix)
-                as_matrix(r)
+                jax.block_until_ready(as_matrix(r))
 
         def test():
             nonlocal r
@@ -171,7 +173,7 @@ def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
             r = R.from_quat(q)
             if xp == "jax":
                 apply = jax.jit(R.apply)
-                apply(r, p)
+                jax.block_until_ready(apply(r, p))
 
         def test():
             nonlocal r, p
@@ -201,7 +203,7 @@ def _benchmark(fn: str, n_samples: int = 10000) -> Dict[str, Dict[str, float]]:
 
 
 def main():
-    sample_sizes = np.logspace(0, 7, 8).astype(int)
+    sample_sizes = np.logspace(0, 3, 4).astype(int)
     all_results = {}
     fns = ["from_quat", "as_quat", "as_matrix", "apply"]
 
