@@ -607,6 +607,9 @@ class TestVectorialFunction(TestCase):
             assert_equal(approx.nhev, approx_series.nhev)
             assert_equal(approx_series.nhev, ex2.nhev)
 
+            # The following tests are somewhat redundant because the LinearOperator
+            # produced by VectorFunction.hess does not use any parallelisation.
+            # The tests are left for completeness, in case that situation changes.
             ex.nfev = ex.njev = ex.nhev = 0
             ex2.nfev = ex2.njev = ex2.nhev = 0
             approx = VectorFunction(ex.fun, x0, ex.jac,
