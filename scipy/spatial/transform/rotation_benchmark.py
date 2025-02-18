@@ -1,8 +1,5 @@
 import os
 
-os.environ["SCIPY_ARRAY_API"] = "1"
-os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-
 import torch
 import numpy as np
 from jax.tree_util import register_pytree_node
@@ -15,6 +12,9 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from typing import Dict
+
+os.environ["SCIPY_ARRAY_API"] = "1"
+
 from scipy.spatial.transform import Rotation as R
 
 
@@ -47,7 +47,7 @@ def jax_qp(n_samples: int = 10000, device: str = "cpu"):
 
 def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 5, 100
+    R, N = 2, 2
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
@@ -187,23 +187,31 @@ def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
     return benchmarks
 
 
-def benchmark_rotation_functions(n_samples: int = 10000) -> Dict[str, Dict[str, float]]:
+def _benchmark(fn: str, n_samples: int = 10000) -> Dict[str, Dict[str, float]]:
     """Run all rotation benchmarks."""
-    return {
-        "from_quat": benchmark_from_quat(n_samples),
-        "as_quat": benchmark_as_quat(n_samples),
-        "as_matrix": benchmark_as_matrix(n_samples),
-        "apply": benchmark_apply(n_samples),
-    }
+    if fn == "from_quat":
+        return benchmark_from_quat(n_samples)
+    elif fn == "as_quat":
+        return benchmark_as_quat(n_samples)
+    elif fn == "as_matrix":
+        return benchmark_as_matrix(n_samples)
+    elif fn == "apply":
+        return benchmark_apply(n_samples)
+    raise ValueError(f"Invalid function: {fn}")
 
 
 def main():
-    sample_sizes = np.logspace(0, 7, 8).astype(int)
+    # sample_sizes = np.logspace(0, 7, 8).astype(int)
+    sample_sizes = np.logspace(0, 2, 3).astype(int)
     all_results = {}
+    fns = ["from_quat", "as_quat", "as_matrix", "apply"]
+    fns = ["as_quat"]
 
-    for n_samples in sample_sizes:
-        print(f"Running benchmark for {n_samples} samples")
-        all_results[n_samples] = benchmark_rotation_functions(n_samples)
+    for fn in fns:
+        all_results[fn] = {}
+        for n_samples in sample_sizes:
+            print(f"Running {fn} benchmark for {n_samples} samples")
+            all_results[fn][n_samples] = _benchmark(fn, n_samples)
 
     # Plot results
 
@@ -221,9 +229,7 @@ def main():
     axes = axes.ravel()
 
     # Plot one graph per function
-    for func_idx, func_name in enumerate(
-        ["from_quat", "as_quat", "as_matrix", "apply"]
-    ):
+    for func_idx, func_name in enumerate(fns):
         ax = axes[func_idx]
 
         # For each XP type and device combination
@@ -234,7 +240,7 @@ def main():
             means = []
             std_devs = []
             for n_samples in sample_sizes:
-                timings = all_results[n_samples][func_name][xp_device_key]
+                timings = all_results[func_name][n_samples][xp_device_key]
                 means.append(np.mean(timings))
                 std_devs.append(np.std(timings))
 
