@@ -26,11 +26,11 @@ References
    York. 2000.
 
 """
-import warnings
-import math
-from math import gcd
 from collections import namedtuple
 from collections.abc import Sequence
+import math
+import operator
+import warnings
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -39,11 +39,11 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._array_api import is_lazy_array
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              AxisError, _lazywhere)
-from scipy._lib.deprecation import _deprecate_positional_args
+                              normalize_axis_index, AxisError)
+import scipy._lib.array_api_extra as xpx
+from scipy._lib.deprecation import _deprecate_positional_args, _deprecated
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -70,10 +70,10 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
-from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (
     _asarray,
     array_namespace,
+    is_lazy_array,
     is_numpy,
     is_marray,
     xp_size,
@@ -82,8 +82,6 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_broadcast_promote,
 )
-from scipy._lib import array_api_extra as xpx
-from scipy._lib.deprecation import _deprecated
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -670,7 +668,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     # explicit dtype specification required due to data-apis/array-api-compat#152
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis, dtype=a.dtype)
-    mean = _lazywhere(n != 0, (sum, n), xp.divide, xp.nan)
+    mean = xpx.apply_where(n != 0, operator.truediv, (sum, n), fill_value=xp.nan)
     return mean[()] if mean.ndim == 0 else mean
 
 
@@ -8159,7 +8157,7 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
         d = maxS
         d_location = loc_maxS
         d_sign = 1
-    g = gcd(n1, n2)
+    g = math.gcd(n1, n2)
     n1g = n1 // g
     n2g = n2 // g
     prob = -np.inf
@@ -10967,7 +10965,8 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
             n = n - xp.sum(nan_mask, axis=axis, keepdims=keepdims)
 
         # Produce NaNs silently when n - correction <= 0
-        factor = _lazywhere(n-correction > 0, (n, n-correction), xp.divide, xp.nan)
+        nc = n - correction
+        factor = xpx.apply_where(nc > 0, operator.truediv, (n, nc), fill_value=xp.nan)
         var *= factor
 
     return var[()] if var.ndim == 0 else var
