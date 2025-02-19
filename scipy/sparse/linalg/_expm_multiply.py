@@ -702,7 +702,12 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
-    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    action_t0 = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    if scipy.sparse.issparse(action_t0):
+        action_t0 = action_t0.toarray()
+    elif is_pydata_spmatrix(action_t0):
+        action_t0 = action_t0.todense()
+    X[0] = action_t0
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
