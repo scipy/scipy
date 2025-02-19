@@ -2012,6 +2012,21 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
+    @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
+                             ids=str)
+    def test_lfiltic(self, a, xp):
+        # Test for #22470: lfiltic does not handle `a[0] != 1`
+        # and, more in general, test that lfiltic behaves consistently with lfilter
+        x = self.generate(6, xp)  # arbitrary input
+        b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
+        a = self.convert_dtype(a, xp)
+        # compute reference initial conditions as final conditions of lfilter
+        y1, zi_1 = lfilter(b, a, x, zi=self.convert_dtype([0, 0], xp))
+        # copute initial conditions from lfiltic
+        zi_2 = lfiltic(b, a, y1[::-1], x[::-1])
+        # compare lfiltic's output with reference
+        self.assert_array_almost_equal(zi_1, zi_2)
+
     @skip_xp_backends(
         'array_api_strict', reason='int64 and float64 cannot be promoted together'
     )
