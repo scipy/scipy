@@ -32,6 +32,9 @@ SciPy 2-D sparse array package for numeric data.
    - Sparse arrays use array style *slicing* operations, returning scalars,
      1D, or 2D sparse arrays. If you need 2D results, use an appropriate index.
      E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
+   - All index arrays for a given sparse array should be of same type.
+     For example, for CSR format, ``indices`` and ``indptr`` should have
+     the same dtype. For COO, each array in `coords` should have same dtype.
 
    The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
    have appropriate replacements (see :ref:`sparse-construction-functions`).
