@@ -206,10 +206,10 @@ B-splines are piecewise polynomials, represented as linear combinations of
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
 The properties of b-splines are well described in the literature (see, for examples,
-references listed in the `BSpline` docstring). For our purposes it is enough to know
+references listed in the `BSpline` docstring). For our purposes, it is enough to know
 that a b-spline function is uniquely defined by an array of coefficients and
-and array of the so-called *knots* --- for the interpolation problem, knots may or
-may not coincide with the data points, `x`.
+and array of the so-called *knots*, which may or may not coincide with the data points,
+``x``.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
 is defined by :math:`k+2` knots and is zero outside of these knots.
@@ -303,7 +303,7 @@ where :math:`C_k^a` is the binomial coefficient, and :math:`a=0, 1, \dots, k`, s
 there are :math:`k+1` basis polynomials of degree :math:`k`.
 
 A ``BPoly`` object represents a *piecewise* Bernstein polynomial in terms of
-breakpoints, ``x``, and and coefficients, ``c``: `c[a, j]` gives the coefficient for
+breakpoints, ``x``, and coefficients, ``c``: ``c[a, j]`` gives the coefficient for
 :math:`b(t; k, a)` for ``t`` on the interval between ``x[j]`` and ``x[j+1]``.
 
 The user interface of `BPoly` objects is very similar to that of `PPoly` objects:
@@ -311,26 +311,27 @@ both can be evaluated, differentiated and integrated.
 
 One additional feature of `BPoly` objects is the alternative constructor,
 `BPoly.from_derivatives`, which constructs a `BPoly` object from data values and derivatives.
-Specifically, ``b = BPoly.from_derivatives(x, y)`` returns a callable which takes
+Specifically, ``b = BPoly.from_derivatives(x, y)`` returns a callable that interpolates
 the provided values, ``b(x[i]) == y[i])``, and has the provided derivatives,
 ``b(x[i], nu=j) == y[i][j]``.
 
-This operation is similar to, and is more flexible than `CubicHermiteSpline`, in that
-it can handle varying numbers of derivatives at different data points (IOW, the `y`
-argument can be a list of arrays of different lengths). See `BPoly.from_derivatives`
+This operation is similar to `CubicHermiteSpline`, but it is more flexible in that
+it can handle varying numbers of derivatives at different data points; i.e., the ``y``
+argument can be a list of arrays of different lengths. See `BPoly.from_derivatives`
 for further discussion and examples.
 
 
 Conversion between bases
 ========================
 
-In principle, all three bases for piecewise polynomials, the power basis, the Bernstein
-basis and b-splines, are equivalent and a polynomial in one basis can be converted
-into a different basis. In floating-point arithmetics though, conversions always incur
-some precision loss which may or may not be significant (this is very problem-dependent).
-It is therefore recommended to avoid explicit conversion between bases.
+In principle, all three bases for piecewise polynomials (the power basis, the Bernstein
+basis, and b-splines) are equivalent, and a polynomial in one basis can be converted
+into a different basis. One reason for converting between bases is that not all bases
+implement all operations. For instance, root-finding is only implemented for `PPoly`,
+and therefore to find roots of a `BSpline` object, you need convert to `PPoly` first.
+See methods `PPoly.from_bernstein_basis`, `PPoly.from_spline`,
+`BPoly.from_power_basis`, and `BSpline.from_power_basis` for details about conversion.
 
-One reason for converting between bases is that not all bases implement all operations.
-For instance, root-finding is only implemented for `PPoly`, and therefore to find
-roots of a `BSpline` object, you need convert to `PPoly` first: the incantation is
-``PPoly.from_spline(spl).roots()``.
+In floating-point arithmetic, though, conversions always incur some precision loss.
+Whether this is significant is problem-dependent, so it is therefore recommended to
+exercise caution when converting between bases.
