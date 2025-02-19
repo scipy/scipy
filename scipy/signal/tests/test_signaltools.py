@@ -2012,6 +2012,7 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
+    @skip_xp_backends('cupy', reason="Cupy's lfilter/lfiltic use zi differently")
     @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
                              ids=str)
     def test_lfiltic(self, a, xp):
@@ -2023,7 +2024,7 @@ class _TestLinearFilter:
         # compute reference initial conditions as final conditions of lfilter
         y1, zi_1 = lfilter(b, a, x, zi=self.convert_dtype([0, 0], xp))
         # copute initial conditions from lfiltic
-        zi_2 = lfiltic(b, a, y1[::-1], x[::-1])
+        zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
         self.assert_array_almost_equal(zi_1, zi_2)
 

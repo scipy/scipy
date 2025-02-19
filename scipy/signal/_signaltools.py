@@ -2386,11 +2386,9 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.astype(x, result_type)
 
-        concat = array_namespace(a).concat
-
         L = xp_size(x)
         if L < M:
-            x = concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L)))
 
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
