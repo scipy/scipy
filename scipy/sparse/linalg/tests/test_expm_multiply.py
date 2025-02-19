@@ -279,7 +279,10 @@ class TestExpmActionInterval:
         Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
         BI = np.identity(5, dtype=complex)*1j
-        assert_allclose(np.diag(expm_multiply(A,scipy.sparse.csr_array(BI),0,1)[-1]), Aexpm.dot(B))
+        assert_allclose(
+            np.diag(expm_multiply(A,scipy.sparse.csr_array(BI),0,1)[-1]),
+            Aexpm.dot(B)
+        )
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
