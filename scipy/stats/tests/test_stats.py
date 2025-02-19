@@ -383,6 +383,7 @@ class TestPearsonrWilkinson:
 
 
 @skip_xp_backends(cpu_only=True)
+@skip_xp_backends("jax.numpy", reason="data-apis/array-api-extra#134")
 class TestPearsonr:
     @skip_xp_backends(np_only=True)
     def test_pearsonr_result_attributes(self, xp):
