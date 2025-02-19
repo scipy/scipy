@@ -443,7 +443,7 @@ class LazyOperatorNormInfo:
 
     def d(self, p):
         """
-        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` 
+        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)`
         where :math:`||.||` is the 1-norm.
         """
         if p not in self._d:
