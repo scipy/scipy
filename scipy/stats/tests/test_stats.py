@@ -4253,13 +4253,13 @@ class TestPowerDivergence:
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "Mean of empty slice")
             stat, p = stats.power_divergence(
-                                f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                f_obs, f_exp=f_exp, ddof=ddof,
                                 axis=axis, lambda_=lambda_)
             xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
             if lambda_ == 1 or lambda_ == "pearson":
                 # Also test stats.chisquare.
-                stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                stat, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof,
                                           axis=axis)
                 xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
@@ -4364,7 +4364,7 @@ class TestPowerDivergence:
         f_obs = xp.asarray(f_obs, dtype=dtype)
         # f_exp is None
 
-        res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+        res = stats.power_divergence(f_obs, f_exp=f_exp, ddof=ddof,
                                      axis=axis, lambda_="pearson")
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
@@ -4375,10 +4375,10 @@ class TestPowerDivergence:
         f_exp = xp.asarray([[5., 15.], [35., 25.]])
         message = 'For each axis slice...'
         with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs=f_obs, f_exp=xp.asarray([30., 60.]))
+            stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
         with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs=f_obs, f_exp=f_exp, axis=1)
-        stat, pval = stats.power_divergence(f_obs=f_obs, f_exp=f_exp)
+            stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
+        stat, pval = stats.power_divergence(f_obs, f_exp=f_exp)
         xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
         xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
 
@@ -4438,7 +4438,7 @@ class TestChisquare:
         with assert_raises(ValueError, match='For each axis slice...'):
             f_obs = xp.asarray([10., 20.])
             f_exp = xp.asarray([30., 60.])
-            stats.chisquare(f_obs=f_obs, f_exp=f_exp)
+            stats.chisquare(f_obs, f_exp=f_exp)
 
     def test_chisquare_12282b(self, xp):
         # Check that users can now disable the sum check tested in
@@ -4450,7 +4450,7 @@ class TestChisquare:
         x = rng.poisson(lam)
         lam = xp.asarray(lam)
         x = xp.asarray(x, dtype=lam.dtype)
-        res = stats.chisquare(f_obs=x, f_exp=lam, ddof=-1, sum_check=False)
+        res = stats.chisquare(x, f_exp=lam, ddof=-1, sum_check=False)
         # Poisson is approximately normal with mean and variance lam
         z = (x - lam) / xp.sqrt(lam)
         statistic = xp.sum(z**2)
