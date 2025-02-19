@@ -4,7 +4,6 @@ os.environ["SCIPY_ARRAY_API"] = "1"
 
 import torch
 import numpy as np
-from jax.tree_util import register_pytree_node
 from typing import Callable
 import timeit
 import jax
@@ -17,10 +16,6 @@ from typing import Dict
 
 
 from scipy.spatial.transform import Rotation as R
-
-
-# TODO: JIT-compile the rotation constructor to avoid slow pytree unflattening
-register_pytree_node(R, lambda v: ((v._quat,), None), lambda _, c: R(c[0]))
 
 
 def create_random_data(

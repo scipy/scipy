@@ -96,3 +96,24 @@ def __getattr__(name):
         all=__all__,
         attribute=name,
     )
+
+
+# Register as pytree node for JAX if available to make Rotation compatible as input argument and
+# return type for jit-compiled functions
+try:
+    from jax.tree_util import register_pytree_node
+
+    def rot_unflatten(_, c):
+        # Optimization: We do not want to call __init__ here because it would perform normalizations
+        # twice. More importantly, it would call the non-jitted Array API backend and therefore
+        # incur a significant performance hit
+        r = Rotation.__new__(Rotation)
+        r._backend = array_api_backend
+        r._quat = c[0]
+        # TODO: Remove this once we properly support broadcasting
+        r._single = r._quat.ndim == 1
+        return r
+
+    register_pytree_node(Rotation, lambda v: ((v._quat,), None), rot_unflatten)
+except ImportError:
+    pass
