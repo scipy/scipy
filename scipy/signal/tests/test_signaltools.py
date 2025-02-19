@@ -2027,6 +2027,13 @@ class _TestLinearFilter:
         # compare lfiltic's output with reference
         self.assert_array_almost_equal(zi_1, zi_2)
 
+    def test_lfiltic_bad_coeffs(xp):
+        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
+        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
+
     @skip_xp_backends(
         'array_api_strict', reason='int64 and float64 cannot be promoted together'
     )

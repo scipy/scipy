@@ -2359,11 +2359,14 @@ def lfiltic(b, a, y, x=None):
         if x is not None:
             _reject_objects(x, 'lfiltic')
 
-    a = xp.asarray(a)
-    b = xp.asarray(b)
-
-    N = xp_size(a) - 1
-    M = xp_size(b) - 1
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
+    if a.ndim > 1:
+        raise ValueError('Filter coefficients `a` must be 1-D.')
+    if b.ndim > 1:
+        raise ValueError('Filter coefficients `b` must be 1-D.')
+    N = a.shape[0] - 1
+    M = b.shape[0] - 1
     K = max(M, N)
     y = xp.asarray(y)
 
@@ -2402,11 +2405,10 @@ def lfiltic(b, a, y, x=None):
     for m in range(N):
         zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
 
-    a0 = a[0] if N > 0 else a
-    if a0 != 1.:
-        if a0 == 0.:
+    if a[0] != 1.:
+        if a[0] == 0.:
             raise ValueError("First `a` filter coefficient must be non-zero.")
-        zi /= a0
+        zi /= a[0]
 
     return zi
 
