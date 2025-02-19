@@ -289,7 +289,9 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         # not there.
         j = j[j < work.active.shape[0]]
         # Check whether they are still there.
-        j = j[also_stop == work.active[j]]
+        if j.size:
+            # If j is empty, there's nothing to check.
+            j = j[also_stop == work.active[j]]
         # Now convert these to boolean indices to use with `work.status`.
         i = xp.zeros_like(stop)
         i[j] = True  # boolean indices of elements that can also stop
