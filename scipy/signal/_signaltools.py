@@ -2367,6 +2367,9 @@ def lfiltic(b, a, y, x=None):
     K = max(M, N)
     y = xp.asarray(y)
 
+    if N < 0:
+        raise ValueError("There must be at least one `a` coefficient.")
+
     if x is None:
         result_type = xp.result_type(b, a, y)
         if xp.isdtype(result_type, ('bool', 'integral')):  #'bui':
@@ -2391,13 +2394,19 @@ def lfiltic(b, a, y, x=None):
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, np.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
         zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+
+    a0 = a[0] if N > 0 else a
+    if a0 != 1.:
+        if a0 == 0.:
+            raise ValueError("First `a` filter coefficient must be non-zero.")
+        zi /= a0
 
     return zi
 
