@@ -110,6 +110,18 @@ of ``lam`` flatten out the resulting curve towards a straight line; and the GCV
 result, ``lam=None``, is close to the underlying sine curve.
 
 
+.. _tutorial-interpolate_GCV_batching:
+
+Batching of ``y`` arrays
+````````````````````````
+
+`make_smoothing_spline` constructor accepts multidimensional ``y`` arrays and an
+optional ``axis`` parameter and interprets them exactly the same way the
+interpolating spline constructor, `make_interp_spline` does. See the
+:ref:`interpolation section <tutorial-interpolate_batching>` for a discussion and
+examples.
+
+
 .. _tutorial_make_splrep:
 
 Smoothing splines with automatic knot selection
@@ -372,6 +384,40 @@ a folium of Descartes *plus* some noise.
    >>> plt.show()
 
 
+Batching of ``y`` arrays
+------------------------
+
+Unlike :ref:`interpolating splines <tutorial-interpolate_batching>` and
+:ref:`GCV smoothers <tutorial-interpolate_GCV_batching>`, `make_splrep` and `make_splprep`
+do **not** allow multidimensional ``y`` arrays and require that ``x.ndim == y.ndim == 1``.
+
+The technical reason for this limitation is that the length of the knot vector ``t``
+depends on the ``y`` values, thus for a batched ``y``, the batched ``t`` could be a
+ragged array, which `BSpline` is not equipped to handle.
+
+Therefore if you need to handle batched inputs, you will need to loop over the
+batch manually and construct a `BSpline` object per slice of the batch.
+Having done that, you can mimic `BSpline` behavior for evaluations with a workaround
+along the lines of
+
+.. code-block:: python
+
+    class BatchSpline:
+        """BSpline-like class with batch behavior."""
+        def __init__(self, x, y, axis, *, spline, **kwargs):
+            y = np.moveaxis(y, axis, -1)
+            self._batch_shape = y.shape[:-1]
+            self._splines = [
+                spline(x, yi, **kwargs) for yi in y.reshape(-1, y.shape[-1])
+            ]
+            self._axis = axis
+
+        def __call__(self, x):
+            y = [spline(x) for spline in self._splines]
+            y = np.reshape(y, self._batch_shape + x.shape)
+            return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+
 .. _tutorial-fitpack-legacy:
 
 Legacy routines for spline smoothing in 1-D
@@ -396,7 +442,7 @@ functional interface.
 .. _tutorial-interpolate_splXXX:
 
 Procedural (`splrep`)
-"""""""""""""""""""""
+`````````````````````
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -493,7 +539,7 @@ providing the value of ``s`` explicitly.
 
 
 Manipulating spline objects: procedural (``splXXX``)
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+````````````````````````````````````````````````````
 
 Once the spline representation of the data has been determined,
 functions are available for evaluating the spline

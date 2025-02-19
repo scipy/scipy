@@ -41,6 +41,7 @@ class Benchmark:
     custom_bounds : sequence
         a list of tuples that contain lower/upper bounds for use in plotting.
     """
+    change_dimensionality = False
 
     def __init__(self, dimensions):
         """
@@ -57,7 +58,6 @@ class Benchmark:
         self.nfev = 0
         self.fglob = np.nan
         self.global_optimum = None
-        self.change_dimensionality = False
         self.custom_bounds = None
 
     def __str__(self):

@@ -23,8 +23,8 @@ def combine_dict(*dicts, **kw):
         for key, value in d.items():
             if new_dict.get(key, None) is not None:
                 old_value = new_dict[key]
-                if isinstance(value, (list, tuple)):
-                    if isinstance(old_value, (list, tuple)):
+                if isinstance(value, list | tuple):
+                    if isinstance(old_value, list | tuple):
                         new_dict[key] = list(old_value) + list(value)
                         continue
                 elif value == old_value:

@@ -1,3 +1,5 @@
+.. _tutorial-interpolate:
+
 ========================================
 Interpolation (:mod:`scipy.interpolate`)
 ========================================
@@ -57,7 +59,7 @@ Smoothing and approximation of data
 
 +-------------------------------+-------------------------+-------------------------------+
 |                               | `make_smoothing_spline` |  classic smoothing splines,   |
-|                               |                         |  GVC penalty                  |
+|                               |                         |  GCV penalty                  |
 | 1D spline functions           +-------------------------+-------------------------------+
 |                               | `make_splrep`           | automated/semi-automated knot |
 |                               |                         | selection                     |

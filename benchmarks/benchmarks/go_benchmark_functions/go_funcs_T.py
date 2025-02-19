@@ -238,6 +238,7 @@ class Trid(Benchmark):
 
     TODO Jamil#150, starting index of second summation term should be 2.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
@@ -246,7 +247,6 @@ class Trid(Benchmark):
 
         self.global_optimum = [[6, 10, 12, 12, 10, 6]]
         self.fglob = -50.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -282,6 +282,7 @@ class Trigonometric01(Benchmark):
     TODO: equaiton uncertain here.  Is it just supposed to be the cos term
     in the inner sum, or the whole of the second line in Jamil #153.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -290,7 +291,6 @@ class Trigonometric01(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -324,6 +324,7 @@ class Trigonometric02(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -334,7 +335,6 @@ class Trigonometric02(Benchmark):
 
         self.global_optimum = [[0.9 for _ in range(self.N)]]
         self.fglob = 1.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

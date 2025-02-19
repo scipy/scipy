@@ -1055,7 +1055,7 @@ def minimum(input, labels=None, index=None):
 
     Returns
     -------
-    minimum : float or list of floats
+    output : a scalar or list of integers or floats based on input type.
         List of minima of `input` over the regions determined by `labels` and
         whose index is in `index`. If `index` or `labels` are not specified, a
         float is returned: the minimal value of `input` if `labels` is None,
@@ -1118,7 +1118,7 @@ def maximum(input, labels=None, index=None):
 
     Returns
     -------
-    output : float or list of floats
+    output : a scalar or list of integers or floats based on input type.
         List of maxima of `input` over the regions determined by `labels` and
         whose index is in `index`. If `index` or `labels` are not specified, a
         float is returned: the maximal value of `input` if `labels` is None,

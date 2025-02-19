@@ -21,6 +21,8 @@ c  ..local scalars
 c  ..function references..
       real*8 abs,fprati
       integer max0,min0
+      logical onlyxknots
+      onlyxknots = .false.
 c  ..subroutine references..
 c    fpgrre,fpknot
 c  ..
@@ -88,7 +90,7 @@ c  test whether the required storage space exceeds the available one.
       if(ny.gt.nyest .or. nx.gt.nxest) go to 420
 c  find the position of the interior knots in case of interpolation.
 c  the knots in the x-direction.
-      mk1 = mx-kx1
+  10  mk1 = mx-kx1
       if(mk1.eq.0) go to 60
       k3 = kx/2
       i = kx1+1
@@ -105,6 +107,10 @@ c  the knots in the x-direction.
         i = i+1
         j = j+1
   50  continue
+      if(onlyxknots) then
+        onlyxknots = .false.
+        goto 120
+      end if
 c  the knots in the y-direction.
   60  mk1 = my-ky1
       if(mk1.eq.0) go to 120
@@ -267,6 +273,10 @@ c  add a new knot in the x-direction
           call fpknot(x,mx,tx,nx,fpintx,nrdatx,nrintx,nxest,1)
 c  test whether we cannot further increase the number of knots in the
 c  x-direction.
+          if(nx.eq.nmaxx) then
+            onlyxknots = .true.
+            go to 10
+          end if
           if(nx.eq.nxe) go to 250
  220    continue
         go to 250
@@ -280,6 +290,7 @@ c  add a new knot in the y-direction.
           call fpknot(y,my,ty,ny,fpinty,nrdaty,nrinty,nyest,1)
 c  test whether we cannot further increase the number of knots in the
 c  y-direction.
+          if(ny.eq.nmaxy) go to 60
           if(ny.eq.nye) go to 250
  240    continue
 c  restart the computations with the new set of knots.
@@ -365,4 +376,3 @@ c  error codes and messages.
       fp = 0.
  440  return
       end
-

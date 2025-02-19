@@ -1084,22 +1084,47 @@ nct_pdf_double(double x, double v, double l)
 
 template<typename Real>
 Real
-nct_ppf_wrap(const Real x, const Real v, const Real l)
+nct_ppf_wrap(const Real v, const Real l, const Real x)
 {
-    return boost::math::quantile(
-        boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
+        return NAN;
+    }
+    if (v <= 0 || x < 0 || x > 1) {
+        sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+	y = boost::math::quantile(
+        boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("nctdtrit", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nct_ppf_float(float x, float v, float l)
+nct_ppf_float(float v, float l, float x)
 {
-    return nct_ppf_wrap(x, v, l);
+    return nct_ppf_wrap(v, l, x);
 }
 
 double
-nct_ppf_double(double x, double v, double l)
+nct_ppf_double(double v, double l, double x)
 {
-    return nct_ppf_wrap(x, v, l);
+    return nct_ppf_wrap(v, l, x);
 }
 
 template<typename Real>

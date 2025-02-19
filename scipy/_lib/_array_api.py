@@ -35,7 +35,7 @@ from scipy._lib._sparse import issparse
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp', 'is_lazy_array',
+    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
@@ -565,7 +565,7 @@ def xp_take_along_axis(arr: Array,
     elif is_array_api_strict(xp):
         raise NotImplementedError("Array API standard does not define take_along_axis")
     else:
-        return xp.take_along_axis(arr, indices, axis)
+        return xp.take_along_axis(arr, indices, axis=axis)
 
 
 # utility to broadcast arrays and promote to common dtype
@@ -647,3 +647,8 @@ def xp_default_dtype(xp):
     else:
         # we default to float64
         return xp.float64
+
+
+def is_marray(xp):
+    """Returns True if `xp` is an MArray namespace; False otherwise."""
+    return "marray" in xp.__name__
