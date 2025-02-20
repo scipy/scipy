@@ -9248,6 +9248,22 @@ def test_genextreme_give_no_warnings():
         number_of_warnings_thrown = len(w)
         assert_equal(number_of_warnings_thrown, 0)
 
+def test_moments_zero_shape():
+    # Regression test for gh-22532
+    
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        mean = np.euler_gamma
+        var = np.pi**2 / 6
+        skew = 12 * np.sqrt(6) * special.zeta(3) / np.pi**3
+        kurt = 12 / 5
+        assert_equal(
+            stats.genextreme.stats(0.0, moments='mvsk'),
+            (mean, var, skew, kurt)
+        )
+        number_of_warnings_thrown = len(w)
+        assert_equal(number_of_warnings_thrown, 0)
 
 def test_genextreme_entropy():
     # regression test for gh-5181
