@@ -42,9 +42,10 @@ def jax_qp(n_samples: int = 10000, device: str = "cpu"):
     return q, p
 
 
-def benchmark_function(setup_code: Callable, test_code: Callable) -> NDArray:
+def benchmark_function(
+    setup_code: Callable, test_code: Callable, R: int, N: int
+) -> NDArray:
     timer = timeit.Timer(stmt=test_code, setup=setup_code)
-    R, N = 2, 2
     return np.array(timer.repeat(repeat=R, number=N)) / N
 
 
@@ -57,7 +58,9 @@ xp_device_combinations = (
 )
 
 
-def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
+def benchmark_from_quat(
+    n_samples: int = 10000, repeat: int = 5, number: int = 100
+) -> Dict[str, float]:
     benchmarks = {}
 
     for xp, device in xp_device_combinations:
@@ -82,13 +85,17 @@ def benchmark_from_quat(n_samples: int = 10000) -> Dict[str, float]:
             nonlocal q, from_quat
             jax.block_until_ready(from_quat(q))
 
-        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
+        timing = benchmark_function(
+            setup, test if xp != "jax" else jax_test, repeat, number
+        )
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
 
 
-def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
+def benchmark_as_quat(
+    n_samples: int = 10000, repeat: int = 5, number: int = 100
+) -> Dict[str, float]:
     """Benchmark as_quat with different array types."""
     benchmarks = {}
 
@@ -114,13 +121,17 @@ def benchmark_as_quat(n_samples: int = 10000) -> Dict[str, float]:
             nonlocal r, as_quat
             jax.block_until_ready(as_quat(r))
 
-        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
+        timing = benchmark_function(
+            setup, test if xp != "jax" else jax_test, repeat, number
+        )
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
 
 
-def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
+def benchmark_as_matrix(
+    n_samples: int = 10000, repeat: int = 5, number: int = 100
+) -> Dict[str, float]:
     """Benchmark as_matrix with different array types."""
     benchmarks = {}
 
@@ -146,13 +157,17 @@ def benchmark_as_matrix(n_samples: int = 10000) -> Dict[str, float]:
             nonlocal r, as_matrix
             jax.block_until_ready(as_matrix(r))
 
-        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
+        timing = benchmark_function(
+            setup, test if xp != "jax" else jax_test, repeat, number
+        )
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
 
 
-def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
+def benchmark_apply(
+    n_samples: int = 10000, repeat: int = 5, number: int = 100
+) -> Dict[str, float]:
     """Benchmark apply with different array types."""
     benchmarks = {}
 
@@ -178,27 +193,32 @@ def benchmark_apply(n_samples: int = 10000) -> Dict[str, float]:
             nonlocal r, p, apply
             jax.block_until_ready(apply(r, p))
 
-        timing = benchmark_function(setup, test if xp != "jax" else jax_test)
+        timing = benchmark_function(
+            setup, test if xp != "jax" else jax_test, repeat, number
+        )
         benchmarks[f"{xp}:{device}"] = timing
 
     return benchmarks
 
 
-def _benchmark(fn: str, n_samples: int = 10000) -> Dict[str, Dict[str, float]]:
+def _benchmark(
+    fn: str, n_samples: int = 10000, repeat: int = 5, number: int = 100
+) -> Dict[str, Dict[str, float]]:
     """Run all rotation benchmarks."""
     if fn == "from_quat":
-        return benchmark_from_quat(n_samples)
+        return benchmark_from_quat(n_samples, repeat, number)
     elif fn == "as_quat":
-        return benchmark_as_quat(n_samples)
+        return benchmark_as_quat(n_samples, repeat, number)
     elif fn == "as_matrix":
-        return benchmark_as_matrix(n_samples)
+        return benchmark_as_matrix(n_samples, repeat, number)
     elif fn == "apply":
-        return benchmark_apply(n_samples)
+        return benchmark_apply(n_samples, repeat, number)
     raise ValueError(f"Invalid function: {fn}")
 
 
 def main():
-    sample_sizes = np.logspace(0, 3, 4).astype(int)
+    repeat, number = 5, 100
+    sample_sizes = np.logspace(0, 7, 8).astype(int)
     all_results = {}
     fns = ["from_quat", "as_quat", "as_matrix", "apply"]
 
@@ -206,7 +226,7 @@ def main():
         all_results[fn] = {}
         for n_samples in sample_sizes:
             print(f"Running {fn} benchmark for {n_samples} samples")
-            all_results[fn][n_samples] = _benchmark(fn, n_samples)
+            all_results[fn][n_samples] = _benchmark(fn, n_samples, repeat, number)
 
     # Plot results
 

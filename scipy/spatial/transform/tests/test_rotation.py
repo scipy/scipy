@@ -44,10 +44,10 @@ def test_from_single_1d_quaternion(xp):
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
-def test_from_single_2d_quaternion():
-    x = np.array([[3, 4, 0, 0]])
+def test_from_single_2d_quaternion(xp):
+    x = xp.asarray([[3, 4, 0, 0]])
     r = Rotation.from_quat(x)
-    expected_quat = x / 5
+    expected_quat = xp.astype(x, r._quat.dtype) / 5.0
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
