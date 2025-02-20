@@ -281,18 +281,23 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         # `work.status`.
         # Get the integer indices of the elements that can also stop
         also_stop = (work.active[i] + work.n) % (2*work.n)
-        # Check whether they are still active.
-        # To start, we need to find out where in `work.active` they would
-        # appear if they are indeed there.
+        # Check whether they are still active. We want to find the indices
+        # in work.active where the associated values in work.active are
+        # contained in also_stop. xp.searchsorted let's us take advantage
+        # of work.active being sorted, but requires some hackery because
+        # searchsorted solves the separate but related problem of finding
+        # the indices where the values in also_stop should be added to
+        # maintain sorted order.
         j = xp.searchsorted(work.active, also_stop)
         # If the location exceeds the length of the `work.active`, they are
-        # not there.
-        j = j[j < work.active.shape[0]]
-        # Check whether they are still there.
-        if j.size:
-            # If j is empty, there's nothing to check and following line could
-            # result in an error.
-            j = j[also_stop == work.active[j]]
+        # not there. This happens when a value in also_stop is larger than
+        # the greatest value in work.active. This case needs special handling
+        # because we cannot simply check that also_stop == work.active[j].
+        mask = j < work.active.shape[0]
+        # Note that we also have to use the mask to filter also_stop to ensure
+        # that also_stop and j will still have the same shape.
+        j, also_stop = j[mask], also_stop[mask]
+        j = j[also_stop == work.active[j]]
         # Now convert these to boolean indices to use with `work.status`.
         i = xp.zeros_like(stop)
         i[j] = True  # boolean indices of elements that can also stop
