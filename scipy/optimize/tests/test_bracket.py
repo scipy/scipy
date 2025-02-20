@@ -345,6 +345,18 @@ class TestBracketRoot:
                                 xmin=1)
         assert not res.success
 
+        # 5. Edge case. Multiple searches in same direction terminate
+        # simultaneously in some iteration after the corresponding searches
+        # in the other direction terminated without finding a root.
+
+        # Example based on that in
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962853839
+        def f(x, p):
+            return np.exp(x) - p
+
+        p = np.asarray([0.29, 0.35])
+        res = _bracket_root(f, xl0=-1, xmin=-np.inf, xmax=0, args=(p, ))
+
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
