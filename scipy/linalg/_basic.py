@@ -659,7 +659,8 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve equation ``a @ x = b``, ``a`` is Hermitian positive-definite banded matrix.
+    Solve equation ``a @ x = b``,  where ``a`` is the Hermitian positive-definite banded matrix
+    defined by `ab`.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
     factorization, but should only be used for Hermitian positive-definite
