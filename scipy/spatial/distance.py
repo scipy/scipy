@@ -2302,6 +2302,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
                           as_numpy=True, metric=metric, out=out, **kwargs)
 
+
 def _np_pdist(X, metric='euclidean', out=None, **kwargs):
 
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
@@ -2655,25 +2656,17 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 
     """
     y = _asarray(y)
+    name_str = f"'{name}' " if name else ""
     try:
         if len(y.shape) != 1:
-            if name:
-                raise ValueError(f"Condensed distance matrix '{name}' must "
-                                 "have shape=1 (i.e. be one-dimensional).")
-            else:
-                raise ValueError('Condensed distance matrix must have shape=1 '
-                                 '(i.e. be one-dimensional).')
+            raise ValueError(f"Condensed distance matrix {name_str}must "
+                             "have shape=1 (i.e. be one-dimensional).")
         n = y.shape[0]
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
-            if name:
-                raise ValueError(f"Length n of condensed distance matrix '{name}' "
-                                 "must be a binomial coefficient, i.e."
-                                 "there must be a k such that (k \\choose 2)=n)!")
-            else:
-                raise ValueError('Length n of condensed distance matrix must '
-                                 'be a binomial coefficient, i.e. there must '
-                                 'be a k such that (k \\choose 2)=n)!')
+            raise ValueError(f"Length n of condensed distance matrix {name_str}"
+                             "must be a binomial coefficient, i.e."
+                             "there must be a k such that (k \\choose 2)=n)!")
     except Exception as e:
         if throw:
             raise

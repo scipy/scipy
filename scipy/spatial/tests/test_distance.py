@@ -63,6 +63,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import np_long, np_ulong
+from scipy.conftest import skip_xp_invalid_arg
 
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
@@ -1370,6 +1371,7 @@ class TestPdist:
         right_y = 0.01492537
         assert_allclose(pdist_y, right_y, atol=eps, verbose=verbose > 2)
 
+    @skip_xp_invalid_arg
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
         class myclass:
