@@ -29,7 +29,7 @@ def _clear_cache(datasets, cache_dir=None, method_map=None):
         print(f"Cleaning the cache directory {cache_dir}!")
         shutil.rmtree(cache_dir)
     else:
-        if not isinstance(datasets, (list, tuple)):
+        if not isinstance(datasets, list | tuple):
             # single dataset method passed should be converted to list
             datasets = [datasets, ]
         for dataset in datasets:

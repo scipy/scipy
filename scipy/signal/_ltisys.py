@@ -1354,8 +1354,8 @@ class StateSpace(LinearTimeInvariant):
         )
 
     def _check_binop_other(self, other):
-        return isinstance(other, (StateSpace, np.ndarray, float, complex,
-                                  np.number, int))
+        return isinstance(other, StateSpace | np.ndarray | float | complex |
+                                  np.number | int)
 
     def __mul__(self, other):
         """
@@ -1895,7 +1895,7 @@ def lsim(system, U, T, X0=None, interp=True):
         raise ValueError("Initial time must be nonnegative")
 
     no_input = (U is None or
-                (isinstance(U, (int, float)) and U == 0.) or
+                (isinstance(U, int | float) and U == 0.) or
                 not np.any(U))
 
     if n_steps == 1:
@@ -2260,7 +2260,7 @@ def freqresp(system, w=None, n=10000):
     >>> plt.show()
     """
     if isinstance(system, lti):
-        if isinstance(system, (TransferFunction, ZerosPolesGain)):
+        if isinstance(system, TransferFunction | ZerosPolesGain):
             sys = system
         else:
             sys = system._as_zpk()
@@ -3423,7 +3423,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         # No SS->ZPK code exists right now, just SS->TF->ZPK
         system = system._as_tf()
 
-    if not isinstance(system, (TransferFunction, ZerosPolesGain)):
+    if not isinstance(system, TransferFunction | ZerosPolesGain):
         raise ValueError('Unknown system type')
 
     if system.inputs != 1 or system.outputs != 1:
