@@ -3029,7 +3029,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     with np.errstate(invalid='ignore', divide='ignore'):
         res = xp.exp(_xp_var(xp.log(a), **kwargs)**0.5)
 
-    if xp.any(a <= 0):
+    if not is_lazy_array(a) and xp.any(a <= 0):
         message = ("The geometric standard deviation is only defined if all elements "
                    "are greater than or equal to zero; otherwise, the result is NaN.")
         warnings.warn(message, RuntimeWarning, stacklevel=2)
