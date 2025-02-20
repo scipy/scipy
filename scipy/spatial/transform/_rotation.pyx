@@ -445,6 +445,14 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+def compose_quat(
+    const double[:, :] p, const double[:, :] q
+) -> double[:, :]:
+    return _compose_quat(p, q)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
@@ -574,11 +582,38 @@ def from_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cy
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
+def from_euler(seq, angles, degrees=False):
+    num_axes = len(seq)
+    if num_axes < 1 or num_axes > 3:
+        raise ValueError("Expected axis specification to be a non-empty "
+                            "string of upto 3 characters, got {}".format(seq))
 
+    intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
+    extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+    if not (intrinsic or extrinsic):
+        raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
+                            "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
+
+    if any(seq[i] == seq[i+1] for i in range(num_axes - 1)):
+        raise ValueError("Expected consecutive axes to be different, "
+                            "got {}".format(seq))
+
+    seq = seq.lower()
+
+    angles, is_single = _format_angles(angles, degrees, num_axes)
+
+    quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
+
+    if is_single:
+        return quat[0]
+    return quat
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
     if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
-
     # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
     # set self._single to True so that we can return appropriate objects
     # in the `to_...` methods
@@ -587,8 +622,11 @@ def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cyth
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
 
+    if canonical:
+        _quat_canonical(quat)
+
     if scalar_first:
-        quat = np.roll(quat, -1, axis=1)
+        quat = np.roll(quat, 1, axis=1)
     elif normalize or copy:
         quat = quat.copy()
 
@@ -596,9 +634,6 @@ def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cyth
         for ind in range(num_rotations):
             if isnan(_normalize4(quat[ind, :])):
                 raise ValueError("Found zero norm quaternions in `quat`.")
-
-    if canonical:
-        _quat_canonical(quat)
 
     return np.asarray(quat, dtype=float)
 
@@ -643,6 +678,46 @@ def as_matrix(quat: cython.double[:, :]):
         matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
 
     return np.asarray(matrix)
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+def inv(quat: double[:, :]) -> double[:, :]:
+    """Invert this rotation.
+
+    Composition of a rotation with its inverse results in an identity
+    transformation.
+
+    Returns
+    -------
+    inverse : `Rotation` instance
+        Object containing inverse of the rotations in the current instance.
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+    >>> import numpy as np
+
+    Inverting a single rotation:
+
+    >>> p = R.from_euler('z', 45, degrees=True)
+    >>> q = p.inv()
+    >>> q.as_euler('zyx', degrees=True)
+    array([-45.,   0.,   0.])
+
+    Inverting multiple rotations:
+
+    >>> p = R.from_rotvec([[0, 0, np.pi/3], [-np.pi/4, 0, 0]])
+    >>> q = p.inv()
+    >>> q.as_rotvec()
+    array([[-0.        , -0.        , -1.04719755],
+            [ 0.78539816, -0.        , -0.        ]])
+
+    """
+    cdef np.ndarray q_inv = np.array(quat, copy=True)
+    q_inv[:, 0] *= -1
+    q_inv[:, 1] *= -1
+    q_inv[:, 2] *= -1
+    return q_inv
 
 
 @cython.embedsignature(True)

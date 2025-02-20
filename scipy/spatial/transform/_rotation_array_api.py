@@ -1,17 +1,9 @@
-from scipy._lib._array_api import array_namespace, Array
+import re
+
+import numpy as np
+from scipy._lib._array_api import array_namespace, Array, ArrayLike
 from scipy._lib.array_api_compat import device
-
-
-def as_quat(
-    quat: Array, canonical: bool = False, *, scalar_first: bool = False
-) -> Array:
-    xp = array_namespace(quat)
-    _device = device(quat)
-    scalar_first = xp.asarray(scalar_first, device=_device)
-    canonical = xp.asarray(canonical, device=_device)
-    quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
-    quat = xp.where(canonical, _quat_canonical(quat), quat)
-    return quat
+import scipy._lib.array_api_extra as xpx
 
 
 def from_quat(
@@ -34,16 +26,47 @@ def from_quat(
     return quat
 
 
-def _quat_canonical(quat: Array) -> Array:
+def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
+    xp = array_namespace(angles)
+    num_axes = len(seq)
+    if num_axes < 1 or num_axes > 3:
+        raise ValueError(
+            "Expected axis specification to be a non-empty "
+            "string of upto 3 characters, got {}".format(seq)
+        )
+
+    intrinsic = re.match(r"^[XYZ]{1,3}$", seq) is not None
+    extrinsic = re.match(r"^[xyz]{1,3}$", seq) is not None
+    if not (intrinsic or extrinsic):
+        raise ValueError(
+            "Expected axes from `seq` to be from ['x', 'y', "
+            "'z'] or ['X', 'Y', 'Z'], got {}".format(seq)
+        )
+
+    if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
+        raise ValueError(
+            "Expected consecutive axes to be different, got {}".format(seq)
+        )
+
+    dtype = xp.float32
+    if angles.dtype != xp.float32:
+        dtype = xp.result_type(xp.float32, xp.float64)
+    angles = xp.asarray(angles, dtype=dtype)
+    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()])
+    return _elementary_quat_compose(angles, axes, intrinsic, degrees)
+
+
+def as_quat(
+    quat: Array, canonical: bool = False, *, scalar_first: bool = False
+) -> Array:
     xp = array_namespace(quat)
-    mask = quat[..., 3] < 0
-    zero_w = quat[..., 3] == 0
-    mask = xp.logical_or(mask, zero_w & (quat[..., 0] < 0))
-    zero_wx = xp.logical_or(zero_w, quat[..., 0] == 0)
-    mask = xp.logical_or(mask, zero_wx & (quat[..., 1] < 0))
-    zero_wxy = xp.logical_or(zero_wx, quat[..., 1] == 0)
-    mask = xp.logical_or(mask, zero_wxy & (quat[..., 2] < 0))
-    return xp.where(mask[..., None], -quat, quat)
+    _device = device(quat)
+    scalar_first = xp.asarray(scalar_first, device=_device)
+    canonical = xp.asarray(canonical, device=_device)
+    quat = xp.where(canonical, _quat_canonical(quat), quat)
+    quat = xp.where(scalar_first, xp.roll(quat, 1, axis=-1), quat)
+    return quat
 
 
 def as_matrix(quat: Array) -> Array:
@@ -76,7 +99,7 @@ def as_matrix(quat: Array) -> Array:
         2 * (yz + xw),
         -x2 - y2 + z2 + w2,
     ]
-    matrix = xp.stack(matrix_elements, axis=-1).reshape((*quat.shape[:-1], 3, 3))
+    matrix = xp.reshape(xp.stack(matrix_elements, axis=-1), (*quat.shape[:-1], 3, 3))
     return matrix
 
 
@@ -84,3 +107,82 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
     subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
     return xp.einsum(subscripts, as_matrix(quat), points)
+
+
+def inv(quat: Array) -> Array:
+    xp = array_namespace(quat)
+    quat = xpx.at(quat)[..., :3].multiply(-1, copy=True, xp=xp)
+    return quat
+
+
+def _quat_canonical(quat: Array) -> Array:
+    xp = array_namespace(quat)
+    mask = quat[..., 3] < 0
+    zero_w = quat[..., 3] == 0
+    mask = xp.logical_or(mask, zero_w & (quat[..., 0] < 0))
+    zero_wx = xp.logical_or(zero_w, quat[..., 0] == 0)
+    mask = xp.logical_or(mask, zero_wx & (quat[..., 1] < 0))
+    zero_wxy = xp.logical_or(zero_wx, quat[..., 1] == 0)
+    mask = xp.logical_or(mask, zero_wxy & (quat[..., 2] < 0))
+    return xp.where(mask[..., None], -quat, quat)
+
+
+def _elementary_basis_index(axis: str) -> int:
+    if axis == "x":
+        return 0
+    elif axis == "y":
+        return 1
+    elif axis == "z":
+        return 2
+    raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
+
+
+def _elementary_quat_compose(
+    angles: Array, axes: Array, intrinsic: bool, degrees: bool
+) -> Array:
+    xp = array_namespace(angles)
+    degrees = xp.asarray(degrees, device=device(angles))
+    intrinsic = xp.asarray(intrinsic, device=device(angles))
+    angles = xp.where(degrees, _deg2rad(angles), angles)
+    quat0 = _make_elementary_quat(axes[0], angles[..., 0])
+    quat1 = _make_elementary_quat(axes[1], angles[..., 1])
+    quat2 = _make_elementary_quat(axes[2], angles[..., 2])
+    quat = xp.where(intrinsic, compose_quat(quat0, quat1), compose_quat(quat1, quat0))
+    quat = xp.where(intrinsic, compose_quat(quat, quat2), compose_quat(quat2, quat))
+    return quat
+
+
+def _make_elementary_quat(axis: int, angle: Array) -> Array:
+    xp = array_namespace(angle)
+    quat = xp.zeros((*angle.shape[1:], 4), dtype=atleast_f32(angle))
+    quat = xpx.at(quat)[..., 3].set(xp.cos(angle / 2.0))
+    quat = xpx.at(quat)[..., axis].set(xp.sin(angle / 2.0))
+    return quat
+
+
+def compose_quat(p: Array, q: Array) -> Array:
+    xp = array_namespace(p)
+    cross = xp.linalg.cross(p[..., :3], q[..., :3])
+    return xp.asarray(
+        [
+            p[..., 3] * q[..., 0] + q[..., 3] * p[..., 0] + cross[..., 0],
+            p[..., 3] * q[..., 1] + q[..., 3] * p[..., 1] + cross[..., 1],
+            p[..., 3] * q[..., 2] + q[..., 3] * p[..., 2] + cross[..., 2],
+            p[..., 3] * q[..., 3]
+            - p[..., 0] * q[..., 0]
+            - p[..., 1] * q[..., 1]
+            - p[..., 2] * q[..., 2],
+        ]
+    )
+
+
+def _deg2rad(angles: Array) -> Array:
+    return angles * np.pi / 180.0
+
+
+def atleast_f32(x: ArrayLike) -> type:
+    xp = array_namespace(x)
+    # In case it's an Array and it's float32, we do not promote
+    if getattr(x, "dtype", None) == xp.float32:
+        return xp.float32
+    return xp.result_type(xp.float32, xp.float64)

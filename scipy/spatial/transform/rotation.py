@@ -45,6 +45,14 @@ class Rotation:
     def from_quat(cls, quat: ArrayLike, *, scalar_first: bool = False) -> Rotation:
         return cls(quat, normalize=True, scalar_first=scalar_first)
 
+    @classmethod
+    def from_euler(
+        cls, seq: str, angles: ArrayLike, *, degrees: bool = False
+    ) -> Rotation:
+        backend = backend_registry.get(array_namespace(angles), array_api_backend)
+        quat = backend.from_euler(seq, angles, degrees=degrees)
+        return cls(quat, normalize=False, copy=False)
+
     def as_quat(self, canonical=False, *, scalar_first=False):
         quat = self._backend.as_quat(
             self._quat, canonical=canonical, scalar_first=scalar_first
@@ -77,6 +85,12 @@ class Rotation:
         # number of rotations
         return self._single
 
+    def inv(self):
+        q_inv = self._backend.inv(self._quat)
+        if self._single:
+            q_inv = q_inv[0]
+        return Rotation(q_inv, normalize=False, copy=False)
+
     def __bool__(self):
         """Comply with Python convention for objects to be True.
 
@@ -98,10 +112,23 @@ class Rotation:
         ------
         TypeError if the instance was created as a single rotation.
         """
+        # TODO: Should we replace this with a shape instead?
         if self._single:
             raise TypeError("Single rotation has no len().")
 
         return self._quat.shape[:-1].prod()
+
+    def __mul__(self, other):
+        if not _broadcastable(self._quat.shape, other._quat.shape):
+            raise ValueError(
+                "Expected equal number of rotations in both or a single "
+                f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
+                f"first and {other._quat.shape[:-1]} rotations in second object."
+            )
+        q_composed = self._backend.compose_quat(self._quat, other._quat)
+        if self._single:
+            q_composed = q_composed[0]
+        return Rotation(q_composed, normalize=True, copy=False)
 
     def _to_array(self, quat: ArrayLike) -> Array:
         """Convert the quaternion to an array.
@@ -117,6 +144,10 @@ class Rotation:
         """
         xp = array_namespace(quat)
         quat = xp.asarray(quat)
+        # TODO: Remove this once we properly support broadcasting
+        if quat.ndim not in (1, 2) or quat.shape[-1] != 4 or quat.shape[0] == 0:
+            raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
+
         if quat.dtype == xp.float32 and not is_numpy(xp):
             dtype = xp.float32
         else:
@@ -135,6 +166,13 @@ def __getattr__(name):
         private_modules=["_rotation"],
         all=__all__,
         attribute=name,
+    )
+
+
+def _broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
     )
 
 

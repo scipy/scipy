@@ -6,6 +6,7 @@ from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
+from scipy._lib._array_api import xp_assert_equal, is_numpy
 
 import pickle
 import copy
@@ -51,68 +52,72 @@ def test_from_single_2d_quaternion(xp):
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
-def test_from_quat_scalar_first():
+def test_from_quat_scalar_first(xp):
     rng = np.random.RandomState(0)
 
     r = Rotation.from_quat([1, 0, 0, 0], scalar_first=True)
-    assert_allclose(r.as_matrix(), np.eye(3), rtol=1e-15, atol=1e-16)
+    assert_allclose(r.as_matrix(), xp.eye(3), rtol=1e-15, atol=1e-16)
 
-    r = Rotation.from_quat(np.tile([1, 0, 0, 0], (10, 1)), scalar_first=True)
+    r = Rotation.from_quat(
+        xp.tile(xp.asarray([1, 0, 0, 0]), (10, 1)), scalar_first=True
+    )
     assert_allclose(
-        r.as_matrix(), np.tile(np.eye(3), (10, 1, 1)), rtol=1e-15, atol=1e-16
+        r.as_matrix(), xp.tile(xp.eye(3), (10, 1, 1)), rtol=1e-15, atol=1e-16
     )
 
-    q = rng.randn(100, 4)
-    q /= np.linalg.norm(q, axis=1)[:, None]
-    for qi in q:
+    q = xp.asarray(rng.randn(100, 4))
+    q /= xp.linalg.vector_norm(q, axis=1)[:, None]
+    for i in range(q.shape[0]):  # Array API conforming loop
+        qi = q[i, ...]
         r = Rotation.from_quat(qi, scalar_first=True)
-        assert_allclose(np.roll(r.as_quat(), 1), qi, rtol=1e-15)
+        assert_allclose(xp.roll(r.as_quat(), 1), qi, rtol=1e-15)
 
     r = Rotation.from_quat(q, scalar_first=True)
-    assert_allclose(np.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
+    assert_allclose(xp.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
 
 
-def test_as_quat_scalar_first():
+def test_as_quat_scalar_first(xp):
     rng = np.random.RandomState(0)
 
-    r = Rotation.from_euler("xyz", np.zeros(3))
+    r = Rotation.from_euler("xyz", xp.zeros(3))
     assert_allclose(r.as_quat(scalar_first=True), [1, 0, 0, 0], rtol=1e-15, atol=1e-16)
 
     r = Rotation.from_euler("xyz", np.zeros((10, 3)))
     assert_allclose(
         r.as_quat(scalar_first=True),
-        np.tile([1, 0, 0, 0], (10, 1)),
+        xp.tile(xp.asarray([1, 0, 0, 0]), (10, 1)),
         rtol=1e-15,
         atol=1e-16,
     )
 
-    q = rng.randn(100, 4)
-    q /= np.linalg.norm(q, axis=1)[:, None]
-    for qi in q:
+    q = xp.asarray(rng.randn(100, 4))
+    q /= xp.linalg.vector_norm(q, axis=1)[:, None]
+    for i in range(q.shape[0]):  # Array API conforming loop
+        qi = q[i, ...]
         r = Rotation.from_quat(qi)
-        assert_allclose(r.as_quat(scalar_first=True), np.roll(qi, 1), rtol=1e-15)
+        assert_allclose(r.as_quat(scalar_first=True), xp.roll(qi, 1), rtol=1e-15)
 
         assert_allclose(
             r.as_quat(canonical=True, scalar_first=True),
-            np.roll(r.as_quat(canonical=True), 1),
+            xp.roll(r.as_quat(canonical=True), 1),
             rtol=1e-15,
         )
 
     r = Rotation.from_quat(q)
-    assert_allclose(r.as_quat(scalar_first=True), np.roll(q, 1, axis=1), rtol=1e-15)
+    assert_allclose(r.as_quat(scalar_first=True), xp.roll(q, 1, axis=1), rtol=1e-15)
 
     assert_allclose(
         r.as_quat(canonical=True, scalar_first=True),
-        np.roll(r.as_quat(canonical=True), 1, axis=1),
+        xp.roll(r.as_quat(canonical=True), 1, axis=1),
         rtol=1e-15,
     )
 
 
-def test_from_square_quat_matrix():
+def test_from_square_quat_matrix(xp):
     # Ensure proper norm array broadcasting
-    x = np.array(
+    x = xp.asarray(
         [
-            [3, 0, 0, 4],
+            [3.0, 0, 0, 4],
             [5, 0, 12, 0],
             [0, 0, 0, 1],
             [-1, -1, -1, 1],
@@ -121,29 +126,29 @@ def test_from_square_quat_matrix():
         ]
     )
     r = Rotation.from_quat(x)
-    expected_quat = x / np.array([[5], [13], [1], [2], [1], [2]])
+    expected_quat = x / xp.asarray([[5.0], [13], [1], [2], [1], [2]])
     assert_array_almost_equal(r.as_quat(), expected_quat)
 
 
-def test_quat_double_to_canonical_single_cover():
-    x = np.array(
-        [[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [-1, -1, -1, -1]]
+def test_quat_double_to_canonical_single_cover(xp):
+    x = xp.asarray(
+        [[-1.0, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [-1, -1, -1, -1]]
     )
     r = Rotation.from_quat(x)
-    expected_quat = np.abs(x) / np.linalg.norm(x, axis=1)[:, None]
+    expected_quat = xp.abs(x) / xp.linalg.vector_norm(x, axis=1)[:, None]
     assert_allclose(r.as_quat(canonical=True), expected_quat)
 
 
-def test_quat_double_cover():
+def test_quat_double_cover(xp):
     # See the Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.
     # Check from_quat and as_quat(canonical=False)
-    q = np.array([0, 0, 0, -1])
+    q = xp.asarray([0.0, 0, 0, -1])
     r = Rotation.from_quat(q)
-    assert_equal(q, r.as_quat(canonical=False))
+    xp_assert_equal(q, r.as_quat(canonical=False))
 
     # Check composition and inverse
-    q = np.array([1, 0, 0, 1]) / np.sqrt(2)  # 90 deg rotation about x
+    q = xp.asarray([1.0, 0, 0, 1]) / np.sqrt(2)  # 90 deg rotation about x
     r = Rotation.from_quat(q)
     r3 = r * r * r
     assert_allclose(r.as_quat(canonical=False) * np.sqrt(2), [1, 0, 0, 1])
@@ -160,73 +165,76 @@ def test_quat_double_cover():
     )
 
 
-def test_from_quat_wrong_shape():
+def test_from_quat_wrong_shape(xp):
     # Wrong shape 1d array
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
-        Rotation.from_quat(np.array([1, 2, 3]))
+        Rotation.from_quat(xp.asarray([1, 2, 3]))
 
     # Wrong shape 2d array
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
-        Rotation.from_quat(np.array([[1, 2, 3, 4, 5], [4, 5, 6, 7, 8]]))
+        Rotation.from_quat(xp.asarray([[1, 2, 3, 4, 5], [4, 5, 6, 7, 8]]))
 
     # 3d array
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
-        Rotation.from_quat(np.array([[[1, 2, 3, 4]], [[4, 5, 6, 7]]]))
+        Rotation.from_quat(xp.asarray([[[1, 2, 3, 4]], [[4, 5, 6, 7]]]))
 
     # 0-length 2d array
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
-        Rotation.from_quat(np.array([]).reshape((0, 4)))
+        Rotation.from_quat(xp.empty((0, 4)))
 
 
-def test_zero_norms_from_quat():
-    x = np.array([[3, 4, 0, 0], [0, 0, 0, 0], [5, 0, 12, 0]])
-    with pytest.raises(ValueError):
-        Rotation.from_quat(x)
+def test_zero_norms_from_quat(xp):
+    x = xp.asarray([[3, 4, 0, 0], [0, 0, 0, 0], [5, 0, 12, 0]])
+    if is_numpy(xp):
+        with pytest.raises(ValueError):
+            Rotation.from_quat(x)
+    else:
+        assert xp.all(xp.isnan(Rotation.from_quat(x).as_quat()[1, ...]))
 
 
-def test_as_matrix_single_1d_quaternion():
-    quat = [0, 0, 0, 1]
+def test_as_matrix_single_1d_quaternion(xp):
+    quat = xp.asarray([0, 0, 0, 1])
     mat = Rotation.from_quat(quat).as_matrix()
     # mat.shape == (3,3) due to 1d input
-    assert_array_almost_equal(mat, np.eye(3))
+    assert_array_almost_equal(mat, xp.eye(3))
 
 
-def test_as_matrix_single_2d_quaternion():
-    quat = [[0, 0, 1, 1]]
+def test_as_matrix_single_2d_quaternion(xp):
+    quat = xp.asarray([[0, 0, 1, 1]])
     mat = Rotation.from_quat(quat).as_matrix()
     assert_equal(mat.shape, (1, 3, 3))
-    expected_mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    assert_array_almost_equal(mat[0], expected_mat)
+    expected_mat = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    assert_array_almost_equal(mat[0, ...], expected_mat)
 
 
-def test_as_matrix_from_square_input():
-    quats = [[0, 0, 1, 1], [0, 1, 0, 1], [0, 0, 0, 1], [0, 0, 0, -1]]
+def test_as_matrix_from_square_input(xp):
+    quats = xp.asarray([[0, 0, 1, 1], [0, 1, 0, 1], [0, 0, 0, 1], [0, 0, 0, -1]])
     mat = Rotation.from_quat(quats).as_matrix()
     assert_equal(mat.shape, (4, 3, 3))
 
-    expected0 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    assert_array_almost_equal(mat[0], expected0)
+    expected0 = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    assert_array_almost_equal(mat[0, ...], expected0)
 
-    expected1 = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-    assert_array_almost_equal(mat[1], expected1)
+    expected1 = xp.asarray([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
+    assert_array_almost_equal(mat[1, ...], expected1)
 
-    assert_array_almost_equal(mat[2], np.eye(3))
-    assert_array_almost_equal(mat[3], np.eye(3))
+    assert_array_almost_equal(mat[2, ...], xp.eye(3))
+    assert_array_almost_equal(mat[3, ...], xp.eye(3))
 
 
-def test_as_matrix_from_generic_input():
-    quats = [[0, 0, 1, 1], [0, 1, 0, 1], [1, 2, 3, 4]]
+def test_as_matrix_from_generic_input(xp):
+    quats = xp.asarray([[0, 0, 1, 1], [0, 1, 0, 1], [1, 2, 3, 4]])
     mat = Rotation.from_quat(quats).as_matrix()
     assert_equal(mat.shape, (3, 3, 3))
 
-    expected0 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    assert_array_almost_equal(mat[0], expected0)
+    expected0 = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    assert_array_almost_equal(mat[0, ...], expected0)
 
-    expected1 = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-    assert_array_almost_equal(mat[1], expected1)
+    expected1 = xp.asarray([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
+    assert_array_almost_equal(mat[1, ...], expected1)
 
-    expected2 = np.array([[0.4, -2, 2.2], [2.8, 1, 0.4], [-1, 2, 2]]) / 3
-    assert_array_almost_equal(mat[2], expected2)
+    expected2 = xp.asarray([[0.4, -2, 2.2], [2.8, 1, 0.4], [-1, 2, 2]]) / 3
+    assert_array_almost_equal(mat[2, ...], expected2)
 
 
 def test_from_single_2d_matrix():
