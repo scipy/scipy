@@ -390,10 +390,10 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     if derphi0 is None:
         derphi0 = derphi(0.)
     if derphi0 == 0.0:
-       alpha_star = 0.0
-       phi_star = phi0
-       derphi_star = derphi0
-       return alpha_star, phi_star, phi0, derphi_star
+        alpha_star = 0.0
+        phi_star = phi0
+        derphi_star = derphi0
+        return alpha_star, phi_star, phi0, derphi_star
 
     alpha0 = 0
     if old_phi0 is not None and derphi0 != 0:
