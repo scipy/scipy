@@ -34,7 +34,7 @@ __all__ = ["AAA", "FloaterHormannInterpolator"]
 
 
 class _BarycentricRational:
-    """Base class for Barycentric representation of a rational function."""
+    """Base class for barycentric representation of a rational function."""
     def __init__(self, x, y, **kwargs):
         # input validation
         z = np.asarray(x)
@@ -597,11 +597,10 @@ class AAA(_BarycentricRational):
 
 
 class FloaterHormannInterpolator(_BarycentricRational):
-    r"""
-    Floater-Hormann barycentric rational interpolation.
+    r"""Floater-Hormann barycentric rational interpolator (C∞ smooth on real axis).
 
     As described in [1]_, the method of Floater and Hormann computes weights for a
-    Barycentric rational interpolant with no poles on the real axis.
+    barycentric rational interpolant with no poles on the real axis.
 
     Parameters
     ----------
