@@ -345,7 +345,7 @@ class TestBracketRoot:
                                 xmin=1)
         assert not res.success
 
-        # 5. Edge case. Multiple searches in same direction terminate
+        # 5. Multiple searches in same direction terminate
         # simultaneously in some iteration after the corresponding searches
         # in the other direction terminated without finding a root.
 
@@ -357,7 +357,7 @@ class TestBracketRoot:
         p = np.asarray([0.29, 0.35])
         res = _bracket_root(f, xl0=-1, xmin=-np.inf, xmax=0, args=(p, ))
 
-        # 6. Edge case: https://github.com/scipy/scipy/pull/22560/files#r1962952517
+        # 6. https://github.com/scipy/scipy/pull/22560/files#r1962952517
         def f(x, p, c):
             return np.exp(x*c) - p
 
