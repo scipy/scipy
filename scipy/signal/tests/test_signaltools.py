@@ -2012,17 +2012,22 @@ class _TestLinearFilter:
                             else self.dtype)
         assert xp_size(zf) == 0
 
-    @skip_xp_backends('cupy', reason="Cupy's lfilter/lfiltic use zi differently")
+    @skip_xp_backends('jax.numpy', reason='jax does not support inplace ops')
     @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
                              ids=str)
     def test_lfiltic(self, a, xp):
         # Test for #22470: lfiltic does not handle `a[0] != 1`
         # and, more in general, test that lfiltic behaves consistently with lfilter
+        if is_cupy(xp) and isinstance(a, (int, float)):
+            pytest.skip('cupy does not supoprt scalar filter coefficients')
         x = self.generate(6, xp)  # arbitrary input
         b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
         a = self.convert_dtype(a, xp)
+        N = xp_size(a) - 1
+        M = xp_size(b) - 1
+        K = M + N if is_cupy(xp) else max(N, M)
         # compute reference initial conditions as final conditions of lfilter
-        y1, zi_1 = lfilter(b, a, x, zi=self.convert_dtype([0, 0], xp))
+        y1, zi_1 = lfilter(b, a, x, zi=self.generate(K, xp))
         # copute initial conditions from lfiltic
         zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
         # compare lfiltic's output with reference
