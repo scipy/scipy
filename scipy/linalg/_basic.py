@@ -532,7 +532,8 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                  check_finite=True):
     """
-    Solve the equation ``a @ x = b`` for ``x``, assuming ``a`` is banded matrix.
+    Solve the equation ``a @ x = b`` for ``x``, where ``a`` is the banded matrix
+    defined by `ab`.
 
     The matrix a is stored in `ab` using the matrix diagonal ordered form::
 
