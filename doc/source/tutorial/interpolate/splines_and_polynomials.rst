@@ -205,10 +205,10 @@ B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The properties of b-splines are well described in the literature (see, for examples,
+The properties of b-splines are well described in the literature (see, for example,
 references listed in the `BSpline` docstring). For our purposes, it is enough to know
 that a b-spline function is uniquely defined by an array of coefficients and
-and array of the so-called *knots*, which may or may not coincide with the data points,
+an array of the so-called *knots*, which may or may not coincide with the data points,
 ``x``.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
@@ -297,7 +297,7 @@ For :math:`t \in [0, 1]`, Bernstein basis polynomials of degree :math:`k` are de
 
 .. math::
 
-    b(t; k, a) = C_k^a t^k (1-t)^{k - a}
+    b(t; k, a) = C_k^a t^a (1-t)^{k - a}
 
 where :math:`C_k^a` is the binomial coefficient, and :math:`a=0, 1, \dots, k`, so that
 there are :math:`k+1` basis polynomials of degree :math:`k`.
@@ -328,7 +328,7 @@ In principle, all three bases for piecewise polynomials (the power basis, the Be
 basis, and b-splines) are equivalent, and a polynomial in one basis can be converted
 into a different basis. One reason for converting between bases is that not all bases
 implement all operations. For instance, root-finding is only implemented for `PPoly`,
-and therefore to find roots of a `BSpline` object, you need convert to `PPoly` first.
+and therefore to find roots of a `BSpline` object, you need to convert to `PPoly` first.
 See methods `PPoly.from_bernstein_basis`, `PPoly.from_spline`,
 `BPoly.from_power_basis`, and `BSpline.from_power_basis` for details about conversion.
 
