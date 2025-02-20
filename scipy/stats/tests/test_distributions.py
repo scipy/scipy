@@ -3345,6 +3345,22 @@ class TestInvgauss:
     def test_entropy(self, mu, ref):
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
+    def test_mu_inf_gh13666(self):
+        # invgauss methods should return correct result when mu=inf
+        # invgauss as mu -> oo is invgamma with shape and scale 0.5;
+        # see gh-13666 and gh-22496
+        dist = stats.invgauss(mu=np.inf)
+        dist0 = stats.invgamma(0.5, scale=0.5)
+        x, p = 1., 0.5
+        assert_allclose(dist.logpdf(x), dist0.logpdf(x))
+        assert_allclose(dist.pdf(x), dist0.pdf(x))
+        assert_allclose(dist.logcdf(x), dist0.logcdf(x))
+        assert_allclose(dist.cdf(x), dist0.cdf(x))
+        assert_allclose(dist.logsf(x), dist0.logsf(x))
+        assert_allclose(dist.sf(x), dist0.sf(x))
+        assert_allclose(dist.ppf(p), dist0.ppf(p))
+        assert_allclose(dist.isf(p), dist0.isf(p))
+
 
 class TestLandau:
     @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])

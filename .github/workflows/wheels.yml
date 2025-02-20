@@ -83,7 +83,7 @@ jobs:
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
         - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
         - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-13, macosx, x86_64, openblas, "10.13"]
+        - [macos-13, macosx, x86_64, openblas, "10.14"]
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]

@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 
 from numpy.testing import assert_warns
+from numpy.exceptions import ComplexWarning
+
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
@@ -16,7 +18,6 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
                                NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
-from scipy._lib._util import ComplexWarning
 from scipy._lib._testutils import _run_concurrent_barrier
 
 

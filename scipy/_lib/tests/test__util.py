@@ -2,6 +2,7 @@ from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import re
 import math
+import functools
 from fractions import Fraction
 
 import numpy as np
@@ -17,7 +18,8 @@ from scipy._lib._array_api import (xp_assert_equal, xp_assert_close, is_numpy,
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite, _lazywhere)
+                              _contains_nan, _rng_html_rewrite, _lazywhere,
+                              _workers_wrapper)
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
@@ -150,6 +152,36 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
+
+
+@_workers_wrapper
+def user_of_workers(x, b=1, workers=None):
+    assert workers is not None
+    assert isinstance(workers, MapWrapper)
+    return np.array(list(workers(np.sin, x * b)))
+
+
+def test__workers_wrapper():
+    arr = np.linspace(0, np.pi)
+    req = np.sin(arr * 2.0)
+
+    with Pool(2) as p:
+        v = user_of_workers(arr, workers=p.map, b=2)
+        assert_equal(v, req)
+
+    v = user_of_workers(arr, workers=None, b=2)
+    assert_equal(v, req)
+
+    v = user_of_workers(arr, workers=2, b=2)
+    assert_equal(v, req)
+
+    # assess if decorator works with partial functions
+    part_f = functools.partial(user_of_workers, b=2)
+    assert_equal(part_f(arr), req)
+
+    with Pool(2) as p:
+        part_f = functools.partial(user_of_workers, b=2, workers=p.map)
+        assert_equal(part_f(arr), req)
 
 
 def test_rng_integers():

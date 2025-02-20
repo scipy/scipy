@@ -23,7 +23,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2)
+                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -309,7 +309,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -375,7 +375,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
