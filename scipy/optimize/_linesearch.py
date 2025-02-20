@@ -450,7 +450,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 derphi_star = derphi_a1
                 break
 
-        if (derphi_a1 >= 0):
+        if derphi_a1 > 0:
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
