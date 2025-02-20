@@ -336,8 +336,6 @@ class TestLeaders:
                   reason='`is_isomorphic` only supports NumPy backend')
 class TestIsIsomorphic:
 
-    @skip_xp_backends(np_only=True,
-                      reason='array-likes only supported for NumPy backend')
     def test_array_like(self, xp):
         assert is_isomorphic([1, 1, 1], [2, 2, 2])
         assert is_isomorphic([], [])
@@ -417,8 +415,6 @@ class TestIsIsomorphic:
                 Q = np.random.permutation(nobs)
                 b[Q[0:nerrors]] += 1
                 b[Q[0:nerrors]] %= nclusters
-            a = xp.asarray(a)
-            b = xp.asarray(b)
             assert is_isomorphic(a, b) == (not noniso)
             assert is_isomorphic(b, a) == (not noniso)
 
