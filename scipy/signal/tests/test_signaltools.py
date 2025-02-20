@@ -2018,7 +2018,7 @@ class _TestLinearFilter:
     def test_lfiltic(self, a, xp):
         # Test for #22470: lfiltic does not handle `a[0] != 1`
         # and, more in general, test that lfiltic behaves consistently with lfilter
-        if is_cupy(xp) and isinstance(a, (int, float)):
+        if is_cupy(xp) and isinstance(a, int | float):
             pytest.skip('cupy does not supoprt scalar filter coefficients')
         x = self.generate(6, xp)  # arbitrary input
         b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
