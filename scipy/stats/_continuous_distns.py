@@ -1252,7 +1252,6 @@ class burr_gen(rv_continuous):
         def __munp(n, c, d):
             nc = 1. * n / c
             return d * sc.beta(1.0 - nc, d + nc)
-
         n, c, d = np.asarray(n), np.asarray(c), np.asarray(d)
         return xpx.apply_where((c > n) & (n == n) & (d == d),
                                __munp, (n, c, d), fill_value=np.nan)
@@ -1594,7 +1593,7 @@ class chi_gen(rv_continuous):
             return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
                     - 4/45*(df**-3) + (df**-4)/15)
 
-        return xpx.apply_where(df < 3e2, regular_formula, asymptotic_formula, df)
+        return xpx.apply_where(df < 300, regular_formula, asymptotic_formula, df)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -3223,7 +3222,7 @@ class genpareto_gen(rv_continuous):
                                 c, fill_value=np.inf)
 
         if 'v' in moments:
-            v = xpx.apply_where(c < 0.5,
+            v = xpx.apply_where(c < 1/2,
                                 lambda xi: 1 / (1 - xi)**2 / (1 - 2 * xi),
                                 c, fill_value=np.nan)
 
@@ -3235,7 +3234,7 @@ class genpareto_gen(rv_continuous):
 
         if 'k' in moments:
             k = xpx.apply_where(
-                c < 0.25,
+                c < 1/4,
                 lambda xi: 3 * (1 - 2*xi) * (2*xi**2 + xi + 3) 
                            / (1 - 3*xi) / (1 - 4*xi) - 3,
                 c, fill_value=np.nan)
@@ -3391,7 +3390,7 @@ class genextreme_gen(rv_continuous):
 
     def _logpdf(self, x, c):
         # Suppress warnings 0 * inf
-        cx = xpx.apply_where(~np.isnan(x) & (c != 0),
+        cx = xpx.apply_where((x == x) & (c != 0),
                              operator.mul, (c, x), fill_value=0.0)
         logex2 = sc.log1p(-cx)
         logpex2 = self._loglogcdf(x, c)
@@ -3399,7 +3398,7 @@ class genextreme_gen(rv_continuous):
         # Handle special cases
         np.putmask(logpex2, (c == 0) & (x == -np.inf), 0.0)
         logpdf = xpx.apply_where(
-            (cx != 1) & (cx != -np.inf),
+            ~((cx == 1) | (cx == -np.inf)),
             lambda pex2, lpex2, lex2: -pex2 + lpex2 - lex2,
             (pex2, logpex2, logex2), fill_value=-np.inf)
         np.putmask(logpdf, (c == 1) & (x == 1), 0.0)
@@ -3417,14 +3416,14 @@ class genextreme_gen(rv_continuous):
     def _ppf(self, q, c):
         x = -np.log(-np.log(q))
         return xpx.apply_where(
-            ~np.isnan(x) & (c != 0),
+            (x == x) & (c != 0),
             lambda x, c: -sc.expm1(-c * x) / c, 
             (x, c), fill_value=x)
 
     def _isf(self, q, c):
         x = -np.log(-sc.log1p(-q))
         return xpx.apply_where(
-            ~np.isnan(x) & (c != 0),
+            (x == x) & (c != 0),
             lambda x, c: -sc.expm1(-c * x) / c, 
             (x, c), fill_value=x)
 
@@ -3454,7 +3453,7 @@ class genextreme_gen(rv_continuous):
 
         # kurtosis
         ku1 = xpx.apply_where(
-            c >= -0.25,
+            c >= -1/4,
             lambda g1, g2, g3, g4, g2mg12:
                 (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
             (g1, g2, g3, g4, g2mg12), fill_value=np.nan)
@@ -3901,7 +3900,7 @@ class gengamma_gen(rv_continuous):
                     - np.log(np.abs(c)) + (a**-1.)/6 - (a**-3.)/90
                     + (np.log(a) - (a**-1.)/2 - (a**-2.)/12 + (a**-4.)/120)/c)
 
-        return xpx.apply_where(a < 200, regular, asymptotic, (a, c))
+        return xpx.apply_where(a >= 200, asymptotic, regular, (a, c))
 
 
 gengamma = gengamma_gen(a=0.0, name='gengamma')
@@ -4963,7 +4962,7 @@ class invgamma_gen(rv_continuous):
                  + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
-        h = xpx.apply_where(a < 200, regular, asymptotic, a)
+        h = xpx.apply_where(a >= 200, asymptotic, regular, a)
         return h
 
 
@@ -6680,7 +6679,7 @@ class loggamma_gen(rv_continuous):
             h = norm._entropy() + term
             return h
 
-        return xpx.apply_where(c < 45, regular, asymptotic, c)
+        return xpx.apply_where(c >= 45, asymptotic, regular, c)
 
 
 loggamma = loggamma_gen(name='loggamma')
@@ -8085,7 +8084,7 @@ class t_gen(rv_continuous):
                  - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
             return h
 
-        return xpx.apply_where(df < 100, regular, asymptotic, df)
+        return xpx.apply_where(df >= 100, asymptotic, regular, df)
 
 
 t = t_gen(name='t')

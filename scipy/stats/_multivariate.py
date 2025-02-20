@@ -4626,7 +4626,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
-        return xpx.apply_where(df < threshold, regular, asymptotic, (dim, df))
+        return xpx.apply_where(df >= threshold, asymptotic, regular, (dim, df))
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
