@@ -545,6 +545,35 @@ def _format_angles(angles, degrees, num_axes):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+def from_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, scalar_first: cython.bint = False):
+    if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
+        raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
+
+    # TODO: We always assume quat is a 2D array with shape (N, 4). Instead, we should broadcast over
+    # all dimensions.
+
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+
+    if scalar_first:
+        quat = np.roll(quat, -1, axis=1)
+    elif normalize or copy:
+        quat = quat.copy()
+
+    if normalize:
+        for ind in range(num_rotations):
+            if isnan(_normalize4(quat[ind, :])):
+                raise ValueError("Found zero norm quaternions in `quat`.")
+        # TODO: A broadcasted version of this would be faster for rotations > 100 and work for any
+        # number of leading dimensions.
+        # quat_norm = np.linalg.norm(quat, axis=-1, keepdims=True)
+        # if np.any(quat_norm == 0):
+        #     raise ValueError("Found zero norm quaternions in `quat`.")
+        # quat /= quat_norm
+
+    return np.asarray(quat, dtype=float)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
 
     if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
@@ -571,7 +600,7 @@ def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cyth
     if canonical:
         _quat_canonical(quat)
 
-    return quat
+    return np.asarray(quat, dtype=float)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

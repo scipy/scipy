@@ -1,6 +1,5 @@
-from scipy._lib._array_api import array_namespace, Array, is_numpy, is_jax
+from scipy._lib._array_api import array_namespace, Array
 from scipy._lib.array_api_compat import device
-import scipy._lib.array_api_extra as xpx
 
 
 def as_quat(
@@ -36,6 +35,39 @@ def as_quat(
     )
     quat = xp.where(normalize, quat / quat_norm, quat)
     quat = xp.where(canonical, _quat_canonical(quat), quat)
+    return quat
+
+
+def from_quat(
+    quat: Array,
+    *,
+    normalize: bool = True,
+    copy: bool = False,
+    scalar_first: bool = False,
+) -> Array:
+    # All operations are done non-branching to enable JIT-compilation
+    if quat.shape[-1] != 4 or quat.shape[0] == 0:
+        raise ValueError(f"Expected `quat` to have shape (..., 4), got {quat.shape}.")
+    xp = array_namespace(quat)
+    dtype = xp.float64 if quat.dtype == xp.float64 else xp.float32
+    quat = xp.asarray(quat, dtype=dtype)
+    _device = device(quat)
+    scalar_first = xp.asarray(scalar_first, device=_device)
+    normalize = xp.asarray(normalize, device=_device)
+    copy = xp.asarray(copy, device=_device)
+
+    quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
+    quat = xp.where(normalize | copy, xp.asarray(quat, copy=True), quat)
+    quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)
+
+    # TODO: This is a deviation from the behavior of the cython version because JIT code needs
+    # to be strictly non-branching. If we have zero quaternions, we return NaNs
+    # if xp.any(quat_norm == 0):
+    #     raise ValueError("Found zero norm quaternions in `quat`.")
+    quat_norm = xp.where(
+        quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat_norm
+    )
+    quat = xp.where(normalize, quat / quat_norm, quat)
     return quat
 
 

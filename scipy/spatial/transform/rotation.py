@@ -10,7 +10,7 @@ import numpy as np
 from scipy._lib.deprecation import _sub_module_deprecation
 import scipy.spatial.transform._rotation as cython_backend
 import scipy.spatial.transform._rotation_array_api as array_api_backend
-from scipy._lib._array_api import array_namespace, Array
+from scipy._lib._array_api import array_namespace, Array, is_numpy
 
 __all__ = ["Rotation", "Slerp"]  # noqa: F822
 
@@ -20,10 +20,13 @@ backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 class Rotation:
     def __init__(self, quat, normalize=True, copy=True, scalar_first=False):
-        self._backend = backend_registry.get(array_namespace(quat), array_api_backend)
+        quat = self._sanitize_array(quat)
         # Legacy behavior for cython backend: Differentiate between single quat and batched quats
+        xp = array_namespace(quat)
         self._single = quat.ndim == 1
-        self._quat: Array = self._backend.as_quat(
+        quat = xp.atleast_2d(quat)
+        self._backend = backend_registry.get(xp, array_api_backend)
+        self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
 
@@ -82,6 +85,17 @@ class Rotation:
             raise TypeError("Single rotation has no len().")
 
         return self._quat.shape[:-1].prod()
+
+    def _sanitize_array(self, quat: Array) -> Array:
+        xp = array_namespace(quat)
+        quat = xp.asarray(quat)
+        # Use float64 if available, else float32 (e.g. for jax)
+        if quat.dtype == xp.float32 and not is_numpy(xp):
+            dtype = xp.float32
+        else:
+            dtype = xp.result_type(xp.float32, xp.float64)
+        # Always promote to float64 to make it compatible with the cython backend signatures
+        return xp.asarray(quat, dtype=dtype)
 
 
 def __dir__():

@@ -20,6 +20,11 @@ def basis_vec(axis):
         return [0, 0, 1]
 
 
+def test_init_non_array():
+    Rotation((0, 0, 0, 1))
+    Rotation([0, 0, 0, 1])
+
+
 def test_init(xp):
     x = xp.asarray([0, 0, 0, 1])
     Rotation(x)
