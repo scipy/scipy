@@ -20,7 +20,14 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
         or xp.isdtype(xl0.dtype, "complex floating")):
         raise ValueError('`xl0` must be numeric and real.')
 
-    xr0 = xl0 + 1 if xr0 is None else xr0
+    # If xr0 is not supplied, fill with a dummy value for the sake of
+    # broadcasting. We need to wait until xmax has been validated to
+    # compute the default value.
+    xr0_not_supplied = False
+    if xr0 is None:
+        xr0 = xp.nan
+        xr0_not_supplied = True
+
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
@@ -44,6 +51,11 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
         raise ValueError('`factor` must be numeric and real.')
     if not xp.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
+
+    # Calculate the default value of xr0 if a value has not been supplied.
+    # Be careful to ensure xr0 is not larger than xmax.
+    if xr0_not_supplied:
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.asarray(1.0))
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
