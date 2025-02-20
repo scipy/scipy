@@ -374,6 +374,11 @@ class TestBracketRoot:
 
         res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p, c))
 
+        # 7. Default xl0 + 1 for xr0 exceeds xmax.
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962947434
+        res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
+        assert res.success
+
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
