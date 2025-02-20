@@ -420,7 +420,7 @@ def _ensure_dtype_cdsz(*arrays):
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
-    Solve the equation ``a @ x = b`` for ``x``, assuming a is a triangular matrix.
+    Solve the equation ``a @ x = b`` for ``x``, where `a` is a triangular matrix.
 
     Parameters
     ----------
