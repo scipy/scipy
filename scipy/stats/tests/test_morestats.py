@@ -1419,6 +1419,7 @@ class TestProbplot:
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         fig = plt.figure()
