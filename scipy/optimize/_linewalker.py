@@ -1039,12 +1039,28 @@ def _linewalker(func, brack, **kwargs):
     surrogate.find_local_extrema()
 
     # Collect results in a dictionary
-    results = {
+    return {
+        'fun': lw_progress.f_min_evaluated,
+        'x': surrogate.x_coord[surrogate.ix_arg_min_evaluated],
+        'nit': lw_progress.num_major_iterations,
+        'nfev': surrogate.ix.size,
+        'success': True,
+        'message': 'success',
         'f_min_evaluated': lw_progress.f_min_evaluated,
-        'f_min_predicted': surrogate.fit[surrogate.ix_arg_min_fit],
-        'ix_arg_min_evaluated': lw_progress.ix_arg_min_evaluated,
         'minimizer_evaluated': surrogate.x_coord[surrogate.ix_arg_min_evaluated],
         'num_major_iterations': lw_progress.num_major_iterations,
         'num_function_evaluations': surrogate.ix.size,
+        'f_min_predicted': surrogate.fit[surrogate.ix_arg_min_fit],
+        'ix_arg_min_evaluated': lw_progress.ix_arg_min_evaluated,
+        'grid_size': surrogate.grid_size,
+        'fit': surrogate.fit,
+        'max_fit': surrogate.max_fit,
+        'min_fit': surrogate.min_fit,
+        'range_fit': surrogate.range_fit,
+        'ix_arg_max_fit': surrogate.ix_arg_max_fit,
+        'ix_arg_min_fit': surrogate.ix_arg_min_fit,
+        'ix': surrogate.ix,
+        'ix_sorted': surrogate.ix_sorted,
+        'x_coord': surrogate.x_coord,
+        'sp': surrogate.sp
     }
-    return results
