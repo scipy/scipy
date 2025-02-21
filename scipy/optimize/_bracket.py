@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel
+from scipy._lib._array_api import array_namespace, xp_ravel, xp_default_dtype
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -19,6 +19,8 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if (not xp.isdtype(xl0.dtype, "numeric")
         or xp.isdtype(xl0.dtype, "complex floating")):
         raise ValueError('`xl0` must be numeric and real.')
+    if not xp.isdtype(xl0.dtype, "real floating"):
+        xl0 = xp.asarray(xl0, dtype=xp_default_dtype(xp))
 
     # If xr0 is not supplied, fill with a dummy value for the sake of
     # broadcasting. We need to wait until xmax has been validated to
@@ -428,6 +430,8 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if (not xp.isdtype(xm0.dtype, "numeric")
         or xp.isdtype(xm0.dtype, "complex floating")):
         raise ValueError('`xm0` must be numeric and real.')
+    if not xp.isdtype(xm0.dtype, "real floating"):
+        xm0 = xp.asarray(xm0, dtype=xp_default_dtype(xp))
 
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
