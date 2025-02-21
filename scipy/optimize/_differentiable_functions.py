@@ -207,8 +207,8 @@ class ScalarFunction:
            will be set. However, a subsequent call with a different argument
            of *any* of the methods may overwrite the attribute.
     """
-    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None, workers=None):
+    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step=None,
+                 finite_diff_bounds=(-np.inf, np.inf), epsilon=None, workers=None):
 
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
@@ -428,8 +428,8 @@ class VectorFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, jac, hess,
-                 finite_diff_rel_step, finite_diff_jac_sparsity,
-                 finite_diff_bounds, sparse_jacobian, workers=None):
+                 finite_diff_rel_step=None, finite_diff_jac_sparsity=None,
+                 finite_diff_bounds=None, sparse_jacobian=None, workers=None):
         if not callable(jac) and jac not in FD_METHODS:
             raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
