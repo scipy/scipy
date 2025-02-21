@@ -1148,6 +1148,9 @@ class TestMakeDistribution:
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
 
+    # pdf and cdf formulas below can warn on boundary of support in some cases.
+    # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     @pytest.mark.parametrize("c", [-1, 0, 1])
     def test_custom_variable_support(self, c):
         rng = np.random.default_rng(7548723590230982)
