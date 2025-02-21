@@ -3431,18 +3431,13 @@ class genextreme_gen(rv_continuous):
         g3 = g(3)
         g4 = g(4)
         g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = _lazywhere(
-            abs(c) < 1e-7, (c,), 
-            f=lambda x: np.full_like(x, np.pi**2.0/6.0), 
-            f2=lambda x: sc.expm1(sc.gammaln(2.0*x+1.0)-2*sc.gammaln(x + 1.0))/x**2.0
-        )
+        def gam2k_f(c):
+            return sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0
+        gam2k = _lazywhere(abs(c) >= 1e-7, (c,), f=gam2k_f, fillvalue=np.pi**2.0/6.0)
         eps = 1e-14
-        gamk = _lazywhere(
-            abs(c) >= eps, 
-            (c,), 
-            f=lambda x: sc.expm1(sc.gammaln(x + 1))/x, 
-            fillvalue=-_EULER
-        )
+        def gamk_f(c):
+            return sc.expm1(sc.gammaln(c + 1))/c
+        gamk = _lazywhere(abs(c) >= eps, (c,), f=gamk_f, fillvalue=-_EULER)
 
         # mean
         m = np.where(c < -1.0, np.nan, -gamk)
@@ -3451,37 +3446,24 @@ class genextreme_gen(rv_continuous):
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        def sk1_eval(x):
-            return _lazywhere(
-                x < -1./3, (x,), 
-                f=lambda y: np.full_like(y, np.nan), 
-                f2=lambda y: np.sign(y)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
-            )
-        
-        sk = _lazywhere(
-            abs(c) > eps**0.29, 
-            (c,),
-            f=sk1_eval, 
-            fillvalue=12*np.sqrt(6)*_ZETA3/np.pi**3
-        )
+        def sk1_eval(c, *args):
+            def sk1_eval_f(c, g1, g2, g3, g2mg12):
+                return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
+            return _lazywhere(c >= -1./3, (c,)+args, f=sk1_eval_f, fillvalue=np.nan)
+
+        sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
+        args = (g1, g2, g3, g2mg12)
+        sk = _lazywhere(abs(c) > eps**0.29, (c,)+args, f=sk1_eval, fillvalue=sk_fill)
 
         # kurtosis
-        def ku1_eval(x):
-            return _lazywhere(
-            x >= -1./4, 
-            (g1, g2, g3, g4, g2mg12), 
-            f=lambda g1, g2, g3, g4, g2mg12: (
-                g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1
-            ) / g2mg12**2,
-            fillvalue=np.nan
-            )
-        
-        ku = _lazywhere(
-            abs(c) > (eps)**0.23, 
-            (c,),
-            f=lambda x: ku1_eval(x)-3.0, 
-            fillvalue=12.0/5.0
-        )
+        def ku1_eval(c, *args):
+            def ku1_eval_f(g1, g2, g3, g4, g2mg12):
+                return (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2 - 3
+            return _lazywhere(c >= -1./4, args, ku1_eval_f, fillvalue=np.nan)
+
+        args = (g1, g2, g3, g4, g2mg12)
+        ku = _lazywhere(abs(c) > eps**0.23, (c,)+args, f=ku1_eval, fillvalue=12.0/5.0)
+
         return m, v, sk, ku
 
     def _fitstart(self, data):
