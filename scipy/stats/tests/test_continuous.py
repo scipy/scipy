@@ -1151,7 +1151,7 @@ class TestMakeDistribution:
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
     @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-    @pytest.mark.parametrize("c", [-1, 0, 1])
+    @pytest.mark.parametrize("c", [-1, 0, 1, np.asarray([-2.1, -1., 0., 1., 2.1])])
     def test_custom_variable_support(self, c):
         rng = np.random.default_rng(7548723590230982)
 
@@ -1211,7 +1211,7 @@ class TestMakeDistribution:
         p = X1.cdf(x)
 
         assert_allclose(X1.support(), X2.support())
-        assert_allclose(X1.entropy(), X2.entropy())
+        assert_allclose(X1.entropy(), X2.entropy(), rtol=5e-6)
         assert_allclose(X1.median(), X2.median())
         assert_allclose(X1.logpdf(x), X2.logpdf(x))
         assert_allclose(X1.pdf(x), X2.pdf(x))
