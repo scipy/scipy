@@ -1162,9 +1162,11 @@ class TestMakeDistribution:
 
             @property
             def parameters(self):
-                return {'c': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
-                        'mu': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
-                        'sigma': {'endpoints': (0, np.inf), 'inclusive': (False, False)}}
+                return {
+                    'c': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'mu': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'sigma': {'endpoints': (0, np.inf), 'inclusive': (False, False)}
+                }
 
             @property
             def support(self):
@@ -1189,7 +1191,9 @@ class TestMakeDistribution:
                 t = np.empty_like(x)
                 mask = (c == 0)
                 t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
-                t[~mask] = (1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask])**(1/c[~mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
                 result = 1/sigma * t**(1 - c)*np.exp(-t)
                 return result[()]
 
@@ -1198,7 +1202,9 @@ class TestMakeDistribution:
                 t = np.empty_like(x)
                 mask = (c == 0)
                 t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
-                t[~mask] = (1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask])**(1/c[~mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
                 return np.exp(-t)[()]
 
         GenExtreme1 = stats.make_distribution(MyGenExtreme())
