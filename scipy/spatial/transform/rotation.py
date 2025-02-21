@@ -8,8 +8,8 @@ from __future__ import annotations
 import numpy as np
 
 from scipy._lib.deprecation import _sub_module_deprecation
-import scipy.spatial.transform._rotation as cython_backend
-import scipy.spatial.transform._rotation_array_api as array_api_backend
+import scipy.spatial.transform._cython_backend as cython_backend
+import scipy.spatial.transform._array_api_backend as array_api_backend
 from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike
 import scipy._lib.array_api_extra as xpx
 
@@ -53,18 +53,24 @@ class Rotation:
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return cls(quat, normalize=False, copy=False)
 
+    @classmethod
+    def from_matrix(cls, matrix: ArrayLike) -> Rotation:
+        backend = backend_registry.get(array_namespace(matrix), array_api_backend)
+        quat = backend.from_matrix(matrix)
+        return cls(quat, normalize=False, copy=False)
+
     def as_quat(self, canonical=False, *, scalar_first=False):
         quat = self._backend.as_quat(
             self._quat, canonical=canonical, scalar_first=scalar_first
         )
         if self._single:
-            return quat[0]
+            return quat[0, ...]
         return quat
 
     def as_matrix(self) -> Array:
         matrix = self._backend.as_matrix(self._quat)
         if self._single:
-            return matrix[0]
+            return matrix[0, ...]
         return matrix
 
     def apply(self, points: Array, inverse: bool = False) -> Array:

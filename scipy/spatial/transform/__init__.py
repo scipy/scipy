@@ -17,7 +17,7 @@ Rotations in 3 dimensions
    RotationSpline
 """
 
-from ._rotation import Slerp
+from ._cython_backend import Slerp
 from ._rotation_spline import RotationSpline
 
 

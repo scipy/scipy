@@ -7,6 +7,7 @@ from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
 from scipy._lib._array_api import xp_assert_equal, is_numpy
+import scipy._lib.array_api_extra as xpx
 
 import pickle
 import copy
@@ -237,21 +238,21 @@ def test_as_matrix_from_generic_input(xp):
     assert_array_almost_equal(mat[2, ...], expected2)
 
 
-def test_from_single_2d_matrix():
-    mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
-    expected_quat = [0.5, 0.5, 0.5, 0.5]
+def test_from_single_2d_matrix(xp):
+    mat = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+    expected_quat = xp.asarray([0.5, 0.5, 0.5, 0.5])
     assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-def test_from_single_3d_matrix():
-    mat = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]]).reshape((1, 3, 3))
-    expected_quat = np.array([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
+def test_from_single_3d_matrix(xp):
+    mat = xp.reshape(xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]]), (1, 3, 3))
+    expected_quat = xp.reshape(xp.asarray([0.5, 0.5, 0.5, 0.5]), (1, 4))
     assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-def test_from_matrix_calculation():
-    expected_quat = np.array([1, 1, 6, 1]) / np.sqrt(39)
-    mat = np.array(
+def test_from_matrix_calculation(xp):
+    expected_quat = xp.asarray([1.0, 1, 6, 1]) / np.sqrt(39)
+    mat = xp.asarray(
         [
             [-0.8974359, -0.2564103, 0.3589744],
             [0.3589744, -0.8974359, 0.2564103],
@@ -260,51 +261,47 @@ def test_from_matrix_calculation():
     )
     assert_array_almost_equal(Rotation.from_matrix(mat).as_quat(), expected_quat)
     assert_array_almost_equal(
-        Rotation.from_matrix(mat.reshape((1, 3, 3))).as_quat(),
-        expected_quat.reshape((1, 4)),
+        Rotation.from_matrix(xp.reshape(mat, (1, 3, 3))).as_quat(),
+        xp.reshape(expected_quat, (1, 4)),
     )
 
 
-def test_matrix_calculation_pipeline():
-    mat = special_ortho_group.rvs(3, size=10, random_state=0)
+def test_matrix_calculation_pipeline(xp):
+    mat = xp.asarray(special_ortho_group.rvs(3, size=10, random_state=0))
     assert_array_almost_equal(Rotation.from_matrix(mat).as_matrix(), mat)
 
 
-def test_from_matrix_ortho_output():
+def test_from_matrix_ortho_output(xp):
     rnd = np.random.RandomState(0)
-    mat = rnd.random_sample((100, 3, 3))
-    dets = np.linalg.det(mat)
-    for i in range(len(dets)):
+    mat = xp.asarray(rnd.random_sample((100, 3, 3)))
+    dets = xp.linalg.det(mat)
+    for i in range(dets.shape[0]):
         # Make sure we have a right-handed rotation matrix
         if dets[i] < 0:
-            mat[i] = -mat[i]
+            mat = xpx.at(mat)[i, ...].set(-mat[i, ...])
     ortho_mat = Rotation.from_matrix(mat).as_matrix()
 
-    mult_result = np.einsum(
-        "...ij,...jk->...ik", ortho_mat, ortho_mat.transpose((0, 2, 1))
-    )
+    mult_result = xp.matmul(ortho_mat, xp.matrix_transpose(ortho_mat))
 
-    eye3d = np.zeros((100, 3, 3))
-    for i in range(3):
-        eye3d[:, i, i] = 1.0
+    eye3d = xp.zeros((100, 3, 3)) + xp.eye(3)
 
     assert_array_almost_equal(mult_result, eye3d)
 
 
-def test_from_matrix_normalize():
-    mat = np.array([[1, 1, 0], [0, 1, 0], [0, 0, 1]])
-    expected = np.array(
+def test_from_matrix_normalize(xp):
+    mat = xp.asarray([[1, 1, 0], [0, 1, 0], [0, 0, 1]])
+    expected = xp.asarray(
         [[0.894427, 0.447214, 0.0], [-0.447214, 0.894427, 0.0], [0.0, 0.0, 1.0]]
     )
     assert_allclose(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
 
-    mat = np.array([[0, -0.5, 0], [0.5, 0, 0], [0, 0, 0.5]])
-    expected = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+    mat = xp.asarray([[0, -0.5, 0], [0.5, 0, 0], [0, 0, 0.5]])
+    expected = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     assert_allclose(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
 
 
-def test_from_matrix_non_positive_determinant():
-    mat = np.eye(3)
+def test_from_matrix_non_positive_determinant(xp):
+    mat = xp.eye(3)
     mat[0, 0] = 0
     with pytest.raises(ValueError, match="Non-positive determinant"):
         Rotation.from_matrix(mat)

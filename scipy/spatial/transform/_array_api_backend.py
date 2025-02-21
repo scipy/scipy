@@ -20,9 +20,7 @@ def from_quat(
     scalar_first = xp.asarray(scalar_first, device=_device)
     quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
     quat = xp.where(normalize | copy, xp.asarray(quat, copy=True), quat)
-    quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)
-    quat = xp.where(quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat)
-    quat = xp.where(normalize, quat / quat_norm, quat)
+    quat = xp.where(normalize, _normalize_quaternion(quat), quat)
     return quat
 
 
@@ -55,6 +53,73 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
     axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()])
     return _elementary_quat_compose(angles, axes, intrinsic, degrees)
+
+
+def from_matrix(matrix: Array) -> Array:
+    xp = array_namespace(matrix)
+    matrix = xp.asarray(matrix, dtype=atleast_f32(matrix))
+    matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
+    decision = xp.stack(
+        [matrix[..., 0, 0], matrix[..., 1, 1], matrix[..., 2, 2], matrix_trace],
+        axis=-1,
+    )
+    choice = xp.argmax(decision, axis=-1, keepdims=True)
+    quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype)
+    # TODO: The Array API does not yet support advanced indexing with arrays of indices, so we
+    # compute each case and assemble the final result with `xp.where`. Advanced indexing is
+    # currently under development, see https://github.com/data-apis/array-api/issues/669.
+    # As soon as this makes it into the spec, we can optimize this function.
+    # https://github.com/data-apis/array-api/milestone/4
+
+    # Case 0
+    quat_0 = xp.stack(
+        [
+            1 - matrix_trace[...] + 2 * matrix[..., 0, 0],
+            matrix[..., 1, 0] + matrix[..., 0, 1],
+            matrix[..., 2, 0] + matrix[..., 0, 2],
+            matrix[..., 2, 1] - matrix[..., 1, 2],
+        ],
+        axis=-1,
+    )
+    quat = xp.where((choice == 0), quat_0, quat)
+
+    # Case 1
+    quat_1 = xp.stack(
+        [
+            matrix[..., 1, 0] + matrix[..., 0, 1],
+            1 - matrix_trace[...] + 2 * matrix[..., 1, 1],
+            matrix[..., 2, 1] + matrix[..., 1, 2],
+            matrix[..., 0, 2] - matrix[..., 2, 0],
+        ],
+        axis=-1,
+    )
+    quat = xp.where((choice == 1), quat_1, quat)
+
+    # Case 2
+    quat_2 = xp.stack(
+        [
+            matrix[..., 2, 0] + matrix[..., 0, 2],
+            matrix[..., 2, 1] + matrix[..., 1, 2],
+            1 - matrix_trace[...] + 2 * matrix[..., 2, 2],
+            matrix[..., 1, 0] - matrix[..., 0, 1],
+        ],
+        axis=-1,
+    )
+    quat = xp.where((choice == 2), quat_2, quat)
+
+    # Case 3
+    quat_3 = xp.stack(
+        [
+            matrix[..., 2, 1] - matrix[..., 1, 2],
+            matrix[..., 0, 2] - matrix[..., 2, 0],
+            matrix[..., 1, 0] - matrix[..., 0, 1],
+            1 + matrix_trace[...],
+        ],
+        axis=-1,
+    )
+    quat = xp.where((choice == 3), quat_3, quat)
+
+    return _normalize_quaternion(quat)
 
 
 def as_quat(
@@ -113,6 +178,13 @@ def inv(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat = xpx.at(quat)[..., :3].multiply(-1, copy=True, xp=xp)
     return quat
+
+
+def _normalize_quaternion(quat: Array) -> Array:
+    xp = array_namespace(quat)
+    quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)
+    quat = xp.where(quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat)
+    return quat / quat_norm
 
 
 def _quat_canonical(quat: Array) -> Array:

@@ -608,6 +608,91 @@ def from_euler(seq, angles, degrees=False):
         return quat[0]
     return quat
 
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def from_matrix(matrix) -> double[:, :]:
+    is_single = False
+    matrix = np.array(matrix, dtype=float)
+
+    if (matrix.ndim not in [2, 3] or
+        matrix.shape[len(matrix.shape)-2:] != (3, 3)):
+        raise ValueError("Expected `matrix` to have shape (3, 3) or "
+                            "(N, 3, 3), got {}".format(matrix.shape))
+
+    # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
+    # set is_single to True so that we can return appropriate objects in
+    # the `to_...` methods
+    if matrix.shape == (3, 3):
+        matrix = matrix[np.newaxis, :, :]
+        is_single = True
+
+    # Calculate the determinant of the rotation matrix
+    # (should be positive for right-handed rotations)
+    dets = np.linalg.det(matrix)
+    if np.any(dets <= 0):
+        ind = np.where(dets <= 0)[0][0]
+        raise ValueError("Non-positive determinant (left-handed or null "
+                            f"coordinate frame) in rotation matrix {ind}: "
+                            f"{matrix[ind]}.")
+
+    # Gramian orthogonality check
+    # (should be the identity matrix for orthogonal matrices)
+    # Note that we have already ruled out left-handed cases above
+    gramians = matrix @ np.transpose(matrix, (0, 2, 1))
+    is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                            axis=(1, 2))
+    indices_to_orthogonalize = np.where(~is_orthogonal)[0]
+
+    # Orthogonalize the rotation matrices where necessary
+    if len(indices_to_orthogonalize) > 0:
+        # Exact solution to the orthogonal Procrustes problem using singular
+        # value decomposition
+        U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
+        matrix[indices_to_orthogonalize, :, :] = U @ Vt
+
+    # Convert the orthogonal rotation matrices to quaternions using the
+    # algorithm described in [3]_. This will also apply another
+    # orthogonalization step to correct for any small errors in the matrices
+    # that skipped the SVD step above.
+    cdef double[:, :, :] cmatrix
+    cmatrix = matrix
+    cdef Py_ssize_t num_rotations = cmatrix.shape[0]
+    cdef Py_ssize_t i, j, k
+    cdef double[:] decision = _empty1(4)
+    cdef int choice
+
+    cdef double[:, :] quat = _empty2(num_rotations, 4)
+
+    for ind in range(num_rotations):
+        decision[0] = cmatrix[ind, 0, 0]
+        decision[1] = cmatrix[ind, 1, 1]
+        decision[2] = cmatrix[ind, 2, 2]
+        decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] \
+                    + cmatrix[ind, 2, 2]
+        choice = _argmax4(decision)
+
+        if choice != 3:
+            i = choice
+            j = (i + 1) % 3
+            k = (j + 1) % 3
+
+            quat[ind, i] = 1 - decision[3] + 2 * cmatrix[ind, i, i]
+            quat[ind, j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
+            quat[ind, k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
+            quat[ind, 3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
+        else:
+            quat[ind, 0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
+            quat[ind, 1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
+            quat[ind, 2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
+            quat[ind, 3] = 1 + decision[3]
+
+        # normalize
+        _normalize4(quat[ind])
+
+    if is_single:
+        return quat[0]
+    return quat
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
