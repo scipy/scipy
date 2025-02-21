@@ -55,7 +55,8 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # Calculate the default value of xr0 if a value has not been supplied.
     # Be careful to ensure xr0 is not larger than xmax.
     if xr0_not_supplied:
-        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.asarray(1.0, dtype=xl0.dtype))
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.asarray(1.0))
+        xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
@@ -476,9 +477,11 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # by the user. We need to be careful to ensure xl0 and xr0 are not outside
     # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5, dtype=xm0.dtype))
+        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5))
+        xl0 = xp.astype(xl0, xm0.dtype, copy=False)
     if xr0_not_supplied:
-        xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5, dtype=xm0.dtype))
+        xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5))
+        xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
