@@ -249,13 +249,12 @@ class _SimpleDomain(_Domain):
     ----------
     symbols : dict
         Inherited. A map from special values to symbols for use in `__str__`.
-    endpoints : 2-tuple of float(s) and/or str(s) or a callable.
+    endpoints : 2-tuple of float(s) and/or str(s) and/or callable(s).
         A tuple with two values. Each may be either a float (the numerical
-        value of the endpoints of the domain) or a string (the name of the
-        parameters that will define the endpoint). If ``endpoints`` is a
-        callable, it should take parameters used to define the endpoints of
-        the domain as keyword arguments and return a 2-tuple of floats giving
-        the numerical values of the endpoints of the domain.
+        value of the endpoints of the domain), a string (the name of the
+        parameters that will define the endpoint), or a callable taking the
+        parameters used to define the endpoints of the domain as keyword only
+        arguments and returning a numerical value for the endpoint.
     inclusive : 2-tuple of bools
         A tuple with two boolean values; each indicates whether the
         corresponding endpoint is included within the domain or not.
@@ -273,11 +272,8 @@ class _SimpleDomain(_Domain):
     """
     def __init__(self, endpoints=(-inf, inf), inclusive=(False, False)):
         self.symbols = super().symbols.copy()
-        if callable(endpoints):
-            self.endpoints = endpoints
-        else:
-            a, b = endpoints
-            self.endpoints = np.asarray(a)[()], np.asarray(b)[()]
+        a, b = endpoints
+        self.endpoints = np.asarray(a)[()], np.asarray(b)[()]
         self.inclusive = inclusive
 
     def define_parameters(self, *parameters):
@@ -323,18 +319,20 @@ class _SimpleDomain(_Domain):
 
         """
         # TODO: ensure outputs are floats
-        if callable(self.endpoints):
-            a, b = self.endpoints(**parameter_values)
-            return a, b
-        else:
-            a, b = self.endpoints
-        # If `a` (`b`) is a string - the name of the parameter that defines
-        # the endpoint of the domain - then corresponding numerical values
-        # will be found in the `parameter_values` dictionary. Otherwise, it is
-        # itself the array of numerical values of the endpoint.
+        a, b = self.endpoints
         try:
-            a = np.asarray(parameter_values.get(a, a))
-            b = np.asarray(parameter_values.get(b, b))
+            if callable(a):
+                a = a(**parameter_values)
+            else:
+                # If `a` (`b`) is a string - the name of the parameter that defines
+                # the endpoint of the domain - then corresponding numerical values
+                # will be found in the `parameter_values` dictionary.  Otherwise, it is
+                # itself the array of numerical values of the endpoint.
+                a = np.asarray(parameter_values.get(a, a))
+            if callable(b):
+                b = b(**parameter_values)
+            else:
+                b = np.asarray(parameter_values.get(b, b))
         except TypeError as e:
             message = ("The endpoints of the distribution are defined by "
                        "parameters, but their values were not provided. When "
@@ -404,21 +402,20 @@ class _RealDomain(_SimpleDomain):
         and having value NaN are specified by `proportions`.
 
     """
+    def _get_endpoint_str(self, endpoint, funcname):
+        if callable(endpoint):
+            if endpoint.__doc__ is not None:
+                return endpoint.__doc__
+            params = inspect.signature(endpoint).parameters.values()
+            params = [
+                p.name for p in params if p.kind == inspect.Parameter.KEYWORD_ONLY
+            ]
+            return f"{funcname}({','.join(params)})"
+        return self.symbols.get(endpoint, f"{endpoint}")
 
     def __str__(self):
-        if callable(self.endpoints):
-            if self.endpoints.__doc__ is not None:
-                return self.endpoints.__doc__
-            # If endpoints callable has no docstring, fall back to a generic
-            # str which only expresses that the endpoints equal some function
-            # of the parameters.
-            params = inspect.getfullargspec(self.endpoints).kwonlyargs
-            a, b = f"f({','.join(params)})", f"g({','.join(params)})"
-        else:
-            a, b = self.endpoints
-            a = self.symbols.get(a, f"{a}")
-            b = self.symbols.get(b, f"{b}")
-
+        a, b = self.endpoints
+        a, b = self._get_endpoint_str(a, "f1"), self._get_endpoint_str(b, "f2")
         left_inclusive, right_inclusive = self.inclusive
         left = "[" if left_inclusive else "("
         right = "]" if right_inclusive else ")"
@@ -3517,21 +3514,19 @@ def make_distribution(dist):
 
             endpoints : tuple
                 A tuple defining the lower and upper endpoints of the domain of the
-                parameter; allowable values are floats or the name (string) of another
-                parameter.
+                parameter; allowable values are floats, the name (string) of another
+                parameter, or a callable taking parameter names as keyword only
+                arguments and returning the numerical value of an endpoint for
+                given parameter values.
 
             inclusive : tuple of bool
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-        support : tuple or method.
-            A tuple defining the lower and upper endpoints of the support of the
-            distribution or a callable which calculates such a tuple based on the
-            parameter values. If a tuple, values can be floats or the name (string)
-            of a parameter. If ``support`` is defined as a method, it must take the
-            parameter names as keyword arguments and return a 2-tuple giving the
-            numerical lower and upper endpoints of the support for fixed values of
-            the parameters.
+        support : dict
+            A dictionary describing the support of the distribution. It has items
+            "endpoints" and "inclusive" with the same structure as the matching
+            items in the values of the parameters dict described above.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3594,7 +3589,7 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def support(self):
-    ...         return 'a', 'b'
+    ...         return {'endpoints': ('a', 'b'), 'inclusive': (True, True)}
     ...
     ...     def pdf(self, x, a, b):
     ...         return 1 / (x * (np.log(b)- np.log(a)))
@@ -3634,11 +3629,15 @@ def _make_distribution_rv_generic(dist):
                 is not getattr(stats.rv_continuous, method_name, None))
 
     if _overrides("_get_support"):
-        def endpoints(**parameter_values):
-            a, b = dist._get_support(**parameter_values)
-            return np.asarray(a)[()], np.asarray(b)[()]
+        def left(**parameter_values):
+            a, _ = dist._get_support(**parameter_values)
+            return np.asarray(a)[()]
 
-        endpoints.__doc__ = f"[f({names}), g({names})]"
+        def right(**parameter_values):
+            _, b = dist._get_support(**parameter_values)
+            return np.asarray(b)[()]
+
+        endpoints = (left, right)
     else:
         endpoints = support
 
@@ -3746,19 +3745,10 @@ def _make_distribution_custom(dist):
         param = _RealParameter(name, domain=domain)
         parameters.append(param)
 
-    if callable(dist.support):
-        def support(**parameter_values):
-            a, b = dist.support(**parameter_values)
-            return np.asarray(a)[()], np.asarray(b)[()]
-    else:
-        support = dist.support
+    endpoints = dist.support["endpoints"]
+    inclusive = dist.support.get("inclusive", (True, True))
 
-    if hasattr(dist, "support_inclusive"):
-        inclusive = dist.support_inclusive
-    else:
-        inclusive = (True, True)
-
-    _x_support = _RealDomain(endpoints=support, inclusive=inclusive)
+    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
