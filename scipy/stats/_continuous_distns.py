@@ -3447,11 +3447,13 @@ class genextreme_gen(rv_continuous):
         def sk1_eval(c, *args):
             def sk1_eval_f(c, g1, g2, g3, g2mg12):
                 return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
-            return xpx.apply_where(c >= -1./3, (c, *args), sk1_eval_f, fill_value=np.nan)
+            return xpx.apply_where(c >= -1./3, (c, *args), 
+                                   sk1_eval_f, fill_value=np.nan)
 
         sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
         args = (g1, g2, g3, g2mg12)
-        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args), sk1_eval, fill_value=sk_fill)
+        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args), 
+                             sk1_eval, fill_value=sk_fill)
 
         # kurtosis
         def ku1_eval(c, *args):
@@ -3460,7 +3462,8 @@ class genextreme_gen(rv_continuous):
             return xpx.apply_where(c >= -1./4, args, ku1_eval_f, fill_value=np.nan)
 
         args = (g1, g2, g3, g4, g2mg12)
-        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args), ku1_eval, fill_value=12.0/5.0)
+        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args), 
+                             ku1_eval, fill_value=12.0/5.0)
 
         return m, v, sk, ku
 
