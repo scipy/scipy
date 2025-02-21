@@ -1607,6 +1607,7 @@ class TestNdimageFilters:
                                               [5, 3, 3, 1, 1]]), output)
 
     @skip_xp_backends("jax.numpy", reason="assignment destination is read-only")
+    @skip_xp_backends("dask.array", reason="assignment destination is read-only")
     def test_minimum_filter05_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],

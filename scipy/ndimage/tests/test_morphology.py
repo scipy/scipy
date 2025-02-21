@@ -2332,6 +2332,7 @@ class TestNdimageMorphology:
                                               [5, 5, 3, 3, 1]]))
 
     @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("dask.array", reason="output array is read-only.")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8398")
     def test_grey_erosion01_overlap(self, xp):
 
