@@ -6,7 +6,12 @@ from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
 from itertools import permutations
-from scipy._lib._array_api import xp_assert_equal, is_numpy
+from scipy._lib._array_api import (
+    xp_assert_equal,
+    is_numpy,
+    is_array_api_strict,
+    is_torch,
+)
 import scipy._lib.array_api_extra as xpx
 
 import pickle
@@ -302,13 +307,32 @@ def test_from_matrix_normalize(xp):
 
 def test_from_matrix_non_positive_determinant(xp):
     mat = xp.eye(3)
-    mat[0, 0] = 0
-    with pytest.raises(ValueError, match="Non-positive determinant"):
-        Rotation.from_matrix(mat)
+    mat = xpx.at(mat)[0, 0].set(0)
+    # TODO: Unify the error response for all backends
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Non-positive determinant"):
+            Rotation.from_matrix(mat)
+    elif is_array_api_strict(xp):
+        with pytest.raises(ValueError, match="SVD did not converge"):
+            Rotation.from_matrix(mat)
+    elif is_torch(xp):
+        with pytest.raises(Exception, match="linalg.svd: "):
+            Rotation.from_matrix(mat)
+    else:
+        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
 
-    mat[0, 0] = -1
-    with pytest.raises(ValueError, match="Non-positive determinant"):
-        Rotation.from_matrix(mat)
+    mat = xpx.at(mat)[0, 0].set(-1)
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Non-positive determinant"):
+            Rotation.from_matrix(mat)
+    elif is_array_api_strict(xp):
+        with pytest.raises(ValueError, match="SVD did not converge"):
+            Rotation.from_matrix(mat)
+    elif is_torch(xp):
+        with pytest.raises(Exception, match="linalg.svd: "):
+            Rotation.from_matrix(mat)
+    else:
+        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
 
 
 def test_from_1d_single_rotvec():

@@ -57,7 +57,31 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
 
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
-    matrix = xp.asarray(matrix, dtype=atleast_f32(matrix))
+    matrix = xp.asarray(matrix, copy=True, dtype=atleast_f32(matrix))
+    # DECISION: Left-handed case results in NaNs instead of raising an error. This is a deviation
+    # from the cython implementation, which raises an error.
+    # TODO: Masking is only necessary because the Array API does not yet support advanced indexing
+    # with arrays of indices. See comment further below.
+    mask = xp.linalg.det(matrix) <= 0
+    mask_shape = (1,) * (len(matrix.shape) - 2) + (3, 3)
+    mask = xp.tile(mask[..., None, None], mask_shape)
+    matrix = xpx.at(matrix)[mask].set(xp.nan)
+
+    gramians = matrix @ xp.matrix_transpose(matrix)
+    # TODO: Masking is only necessary because the Array API does not yet support advanced indexing
+    # with arrays of indices. See comment further below.
+    is_orthogonal = xpx.isclose(gramians, xp.eye(3), atol=1e-12, xp=xp)
+    mask = ~xp.all(is_orthogonal, axis=(-2, -1))
+    mask = xp.tile(mask[..., None, None], mask_shape)
+    non_orthogonal_matrix = xp.reshape(matrix[mask], (-1, 3, 3))
+    U, _, Vt = xp.linalg.svd(non_orthogonal_matrix)
+    orthogonal_matrix = U @ Vt
+    matrix_flat = xp.reshape(matrix, (-1,))
+    mask_flat = xp.reshape(mask, (-1,))
+    orthogonal_matrix_flat = xp.reshape(orthogonal_matrix, (-1,))
+    matrix_flat = xpx.at(matrix_flat)[mask_flat].set(orthogonal_matrix_flat)
+    matrix = xp.reshape(matrix_flat, matrix.shape)
+
     matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
     decision = xp.stack(
         [matrix[..., 0, 0], matrix[..., 1, 1], matrix[..., 2, 2], matrix_trace],
