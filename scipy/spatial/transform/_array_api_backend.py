@@ -68,19 +68,13 @@ def from_matrix(matrix: Array) -> Array:
     matrix = xpx.at(matrix)[mask].set(xp.nan)
 
     gramians = matrix @ xp.matrix_transpose(matrix)
-    # TODO: Masking is only necessary because the Array API does not yet support advanced indexing
-    # with arrays of indices. See comment further below.
-    is_orthogonal = xpx.isclose(gramians, xp.eye(3), atol=1e-12, xp=xp)
-    mask = ~xp.all(is_orthogonal, axis=(-2, -1))
-    mask = xp.tile(mask[..., None, None], mask_shape)
-    non_orthogonal_matrix = xp.reshape(matrix[mask], (-1, 3, 3))
-    U, _, Vt = xp.linalg.svd(non_orthogonal_matrix)
+    # TODO: We need to orthogonalize only the non-orthogonal matrices, but jax does not support
+    # non-concrete boolean indexing or advanced indexing with arrays of indices.
+    # See comment further below.
+    is_orthogonal = xp.all(xpx.isclose(gramians, xp.eye(3), atol=1e-12, xp=xp))
+    U, _, Vt = xp.linalg.svd(matrix)
     orthogonal_matrix = U @ Vt
-    matrix_flat = xp.reshape(matrix, (-1,))
-    mask_flat = xp.reshape(mask, (-1,))
-    orthogonal_matrix_flat = xp.reshape(orthogonal_matrix, (-1,))
-    matrix_flat = xpx.at(matrix_flat)[mask_flat].set(orthogonal_matrix_flat)
-    matrix = xp.reshape(matrix_flat, matrix.shape)
+    matrix = xp.where(is_orthogonal, matrix, orthogonal_matrix)
 
     matrix_trace = matrix[..., 0, 0] + matrix[..., 1, 1] + matrix[..., 2, 2]
     decision = xp.stack(

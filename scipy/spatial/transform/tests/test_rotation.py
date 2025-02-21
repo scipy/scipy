@@ -37,6 +37,45 @@ def test_init(xp):
     Rotation(x)
 
 
+def test_jax_compilation():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+    from jax.errors import JaxRuntimeError, JAXIndexError, JAXTypeError
+    # TODO: Implement the jit test for all methods. Split into separate tests.
+
+    JaxError = JaxRuntimeError | JAXIndexError | JAXTypeError
+
+    q = jp.array([0.0, 0.0, 0.0, 1.0])
+    try:
+        jax.block_until_ready(jax.jit(Rotation.from_quat)(q))
+    except JaxError as e:
+        raise RuntimeError("Failed to jax.jit compile Rotation.from_quat") from e
+
+    e = jp.array([0.0, 0.0, 0.0])
+    try:
+        jax.block_until_ready(jax.jit(Rotation.from_euler, static_argnums=0)("xyz", e))
+    except JaxError as e:
+        raise RuntimeError("Failed to jax.jit compile Rotation.from_quat") from e
+
+    m = jp.eye(3)
+    try:
+        jax.block_until_ready(jax.jit(Rotation.from_matrix)(m))
+    except JaxError as e:
+        raise RuntimeError("Failed to jax.jit compile Rotation.from_matrix") from e
+
+    r = Rotation.from_matrix(jp.eye(3))
+    try:
+        jax.block_until_ready(jax.jit(Rotation.as_quat)(r))
+    except JaxError as e:
+        raise RuntimeError("Failed to jax.jit compile as_quat") from e
+
+    try:
+        jax.block_until_ready(jax.jit(r.as_matrix)())
+    except (JaxRuntimeError, JAXIndexError, JAXTypeError) as e:
+        raise RuntimeError("Failed to jax.jit compile as_matrix") from e
+
+
 def test_generic_quat_matrix(xp):
     x = xp.asarray([[3, 4, 0, 0], [5, 12, 0, 0]], dtype=xp.float64)
     r = Rotation.from_quat(x)
