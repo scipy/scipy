@@ -4749,11 +4749,9 @@ class Mixture(_ProbabilityDistribution):
 
     def _invert(self, fun, p):
         xmin, xmax = self.support()
-        print(xmin, xmax)
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
         xl0, xr0 = _guess_bracket(xmin, xmax)
-        print(xl0, xr0)
         res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
