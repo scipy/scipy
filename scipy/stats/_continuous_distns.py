@@ -3429,31 +3429,39 @@ class genextreme_gen(rv_continuous):
         g3 = g(3)
         g4 = g(4)
         g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = np.where(abs(c) < 1e-7, np.pi**2.0/6.0,
-                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0)
+        def gam2k_f(c):
+            return sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0
+        gam2k = xpx.apply_where(abs(c) >= 1e-7, c, gam2k_f, fill_value=np.pi**2.0/6.0)
         eps = 1e-14
-        gamk = np.where(abs(c) < eps, -_EULER, sc.expm1(sc.gammaln(c + 1))/c)
+        def gamk_f(c):
+            return sc.expm1(sc.gammaln(c + 1))/c
+        gamk = xpx.apply_where(abs(c) >= eps, c, gamk_f, fill_value=-_EULER)
 
+        # mean
         m = np.where(c < -1.0, np.nan, -gamk)
+        
+        # variance
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = xpx.apply_where(
-            c >= -1/3,
-            (c, g1, g2, g3, g2mg12),
-            lambda c, g1, g2, g3, g2mg12:
-                np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
-            fill_value=np.nan)
-        sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
+        def sk1_eval(c, *args):
+            def sk1_eval_f(c, g1, g2, g3, g2mg12):
+                return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
+            return xpx.apply_where(c >= -1./3, (c, *args), sk1_eval_f, fill_value=np.nan)
+
+        sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
+        args = (g1, g2, g3, g2mg12)
+        sk = xpx.apply_where(abs(c) > eps**0.29, (c, *args), sk1_eval, fill_value=sk_fill)
 
         # kurtosis
-        ku1 = xpx.apply_where(
-            c >= -1/4,
-            (g1, g2, g3, g4, g2mg12),
-            lambda g1, g2, g3, g4, g2mg12:
-                (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
-            fill_value=np.nan)
-        ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
+        def ku1_eval(c, *args):
+            def ku1_eval_f(g1, g2, g3, g4, g2mg12):
+                return (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2 - 3
+            return xpx.apply_where(c >= -1./4, args, ku1_eval_f, fill_value=np.nan)
+
+        args = (g1, g2, g3, g4, g2mg12)
+        ku = xpx.apply_where(abs(c) > eps**0.23, (c, *args), ku1_eval, fill_value=12.0/5.0)
+
         return m, v, sk, ku
 
     def _fitstart(self, data):
