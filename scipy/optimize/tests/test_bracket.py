@@ -345,11 +345,12 @@ class TestBracketRoot:
                                 xmin=1)
         assert not res.success
 
-        # 5. Multiple searches in same direction terminate
-        # simultaneously in some iteration after the corresponding searches
-        # in the other direction terminated without finding a root.
+    def test_bug_fixes(self):
+        # 1. Bug in double sided bracket search.
+        # Happened in some cases where there are terminations on one side
+        # after corresponding searches on other side failed due to reaching the
+        # boundary.
 
-        # Example based on that in
         # https://github.com/scipy/scipy/pull/22560#discussion_r1962853839
         def f(x, p):
             return np.exp(x) - p
@@ -357,7 +358,7 @@ class TestBracketRoot:
         p = np.asarray([0.29, 0.35])
         res = _bracket_root(f, xl0=-1, xmin=-np.inf, xmax=0, args=(p, ))
 
-        # 6. https://github.com/scipy/scipy/pull/22560/files#r1962952517
+        # https://github.com/scipy/scipy/pull/22560/files#r1962952517
         def f(x, p, c):
             return np.exp(x*c) - p
 
@@ -374,7 +375,7 @@ class TestBracketRoot:
 
         res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p, c))
 
-        # 7. Default xl0 + 1 for xr0 exceeds xmax.
+        # 2. Default xl0 + 1 for xr0 exceeds xmax.
         # https://github.com/scipy/scipy/pull/22560#discussion_r1962947434
         res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
         assert res.success
