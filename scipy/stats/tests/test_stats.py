@@ -710,30 +710,29 @@ class TestPearsonr:
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0 = rng.random((3, 5))
-        y0 = xp.asarray(rng.random((3, 5)))
+        x0, y0 = rng.random((4, 5)), rng.random((4, 5))
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x0[0, ...] = 1
-            x = xp.asarray(x0)
-            res = stats.pearsonr(x, y0, axis=1)
+            x0[0, ...], y0[1, ...] = 1, 2
+            x, y = xp.asarray(x0), xp.asarray(y0)
+            res = stats.pearsonr(x, y, axis=1)
             ci = res.confidence_interval()
-            nan = xp.asarray(xp.nan, dtype=xp.float64)
-            xp_assert_equal(res.statistic[0], nan)
-            xp_assert_equal(res.pvalue[0], nan)
-            xp_assert_equal(ci.low[0], nan)
-            xp_assert_equal(ci.high[0], nan)
-            assert not xp.any(xp.isnan(res.statistic[1:]))
-            assert not xp.any(xp.isnan(res.pvalue[1:]))
-            assert not xp.any(xp.isnan(ci.low[1:]))
-            assert not xp.any(xp.isnan(ci.high[1:]))
+            nans = xp.asarray([xp.nan, xp.nan], dtype=xp.float64)
+            xp_assert_equal(res.statistic[0:2], nans)
+            xp_assert_equal(res.pvalue[0:2], nans)
+            xp_assert_equal(ci.low[0:2], nans)
+            xp_assert_equal(ci.high[0:2], nans)
+            assert xp.all(xp.isfinite(res.statistic[2:]))
+            assert xp.all(xp.isfinite(res.pvalue[2:]))
+            assert xp.all(xp.isfinite(ci.low[2:]))
+            assert xp.all(xp.isfinite(ci.high[2:]))
 
         message = 'An input array is nearly constant'
         with pytest.warns(stats.NearConstantInputWarning, match=message):
-            x0[0, 0] = 1 + 1e-15
-            x = xp.asarray(x0)
-            stats.pearsonr(x, y0, axis=1)
+            x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
+            x, y = xp.asarray(x0), xp.asarray(y0)
+            stats.pearsonr(x, y, axis=1)
 
         # length 2 along axis
         x = xp.asarray([[1, 2], [1, 2], [2, 1], [2, 1.]])
