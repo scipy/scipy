@@ -7149,6 +7149,12 @@ Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
 
 
+def _pd_nsamples(kwargs):
+    return 2 if kwargs.get('f_exp', None) is not None else 1
+
+
+@_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
+                          too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     """Cressie-Read power divergence statistic and goodness of fit test.
 
@@ -7356,9 +7362,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
                 raise ValueError(msg)
 
     else:
-        # Ignore 'invalid' errors so the edge case of a data set with length 0
-        # is handled without spurious warnings.
-        with np.errstate(invalid='ignore'):
+        # Avoid warnings with the edge case of a data set with length 0
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             f_exp = xp.mean(f_obs, axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
@@ -7393,6 +7399,8 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     return Power_divergenceResult(stat, pvalue)
 
 
+@_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
+                          too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     """Perform Pearson's chi-squared test.
 
