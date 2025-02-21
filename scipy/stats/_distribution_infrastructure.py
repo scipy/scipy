@@ -320,14 +320,16 @@ class _SimpleDomain(_Domain):
         """
         # TODO: ensure outputs are floats
         a, b = self.endpoints
+        # If `a` (`b`) is a string - the name of the parameter that defines
+        # the endpoint of the domain - then corresponding numerical values
+        # will be found in the `parameter_values` dictionary. 
+        # If a callable, it will be executed with `parameter_values` passed as
+        # keyword arguments, and it will return the numerical values.
+        # Otherwise, it is itself the array of numerical values of the endpoint.
         try:
             if callable(a):
                 a = a(**parameter_values)
             else:
-                # If `a` (`b`) is a string - the name of the parameter that defines
-                # the endpoint of the domain - then corresponding numerical values
-                # will be found in the `parameter_values` dictionary.  Otherwise, it is
-                # itself the array of numerical values of the endpoint.
                 a = np.asarray(parameter_values.get(a, a))
             if callable(b):
                 b = b(**parameter_values)
@@ -3515,7 +3517,7 @@ def make_distribution(dist):
             endpoints : tuple
                 A tuple defining the lower and upper endpoints of the domain of the
                 parameter; allowable values are floats, the name (string) of another
-                parameter, or a callable taking parameter names as keyword only
+                parameter, or a callable taking parameters as keyword only
                 arguments and returning the numerical value of an endpoint for
                 given parameter values.
 
