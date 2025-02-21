@@ -28,10 +28,9 @@ def use_reflection(sign_n_even=None, reflection_fun=None):
                 return fun(n, z, derivative)  # complex dtype just works
 
             f2 = standard_reflection if reflection_fun is None else reflection_fun
-            return xpx.apply_where(z.real >= 0,
+            return xpx.apply_where(z.real >= 0, (n, z),
                                    lambda n, z: fun(n, z, derivative),
-                                   lambda n, z: f2(n, z, derivative),
-                                   (n, z))[()]
+                                   lambda n, z: f2(n, z, derivative))[()]
         return wrapper
     return decorator
 

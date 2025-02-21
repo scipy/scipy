@@ -457,8 +457,8 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
 
     def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
         return xpx.apply_where(
-            beta == 0, beta0func, otherwise,
-            (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W))
+            beta == 0, (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+            beta0func, otherwise)
 
     alpha = np.broadcast_to(alpha, size)
     beta = np.broadcast_to(beta, size)
@@ -471,8 +471,8 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
     cosTH = np.cos(TH)
     tanTH = np.tan(TH)
     return xpx.apply_where(
-        alpha == 1, alpha1func, alphanot1func,
-        (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W))
+        alpha == 1, (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+        alpha1func, alphanot1func)
 
 
 def _fitstart_S0(data):

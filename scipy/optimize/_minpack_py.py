@@ -1120,10 +1120,10 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if use_accel:
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            p = xpx.apply_where(d != 0, _del2, (p0, p1, d), fill_value=p2)
+            p = xpx.apply_where(d != 0, (p0, p1, d), _del2, fill_value=p2)
         else:
             p = p1
-        relerr = xpx.apply_where(p0 != 0, _relerr, (p, p0), fill_value=p)
+        relerr = xpx.apply_where(p0 != 0, (p, p0), _relerr, fill_value=p)
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p

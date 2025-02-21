@@ -42,18 +42,16 @@ class WilcoxonDistribution:
     def cdf(self, k):
         k, mn, out = self._prep(k)
         return xpx.apply_where(
-            k <= mn,
+            k <= mn, (k, self.n),
             self._cdf,
-            lambda k, n: 1 - self._sf(k+1, n),
-            (k, self.n))[()]
+            lambda k, n: 1 - self._sf(k+1, n))[()]
 
     def sf(self, k):
         k, mn, out = self._prep(k)
         return xpx.apply_where(
-            k <= mn, 
+            k <= mn, (k, self.n),
             self._sf,
-            lambda k, n: 1 - self._cdf(k-1, n),
-            (k, self.n))[()]
+            lambda k, n: 1 - self._cdf(k-1, n))[()]
 
 
 def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):

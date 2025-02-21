@@ -2022,19 +2022,17 @@ class rv_continuous(rv_generic):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
             return xpx.apply_where(
-                x < median,
+                x < median, (x,) + args,
                 lambda x, *args: np.log(self._cdf(x, *args)),
-                lambda x, *args: np.log1p(-self._sf(x, *args)),
-                (x,) + args)
+                lambda x, *args: np.log1p(-self._sf(x, *args)))
 
     def _logsf(self, x, *args):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
             return xpx.apply_where(
-                x > median,
+                x > median, (x,) + args,
                 lambda x, *args: np.log(self._sf(x, *args)),
-                lambda x, *args: np.log1p(-self._cdf(x, *args)),
-                (x,) + args)
+                lambda x, *args: np.log1p(-self._cdf(x, *args)))
 
     # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic

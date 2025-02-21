@@ -668,7 +668,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     # explicit dtype specification required due to data-apis/array-api-compat#152
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis, dtype=a.dtype)
-    mean = xpx.apply_where(n != 0, operator.truediv, (sum, n), fill_value=xp.nan)
+    mean = xpx.apply_where(n != 0, (sum, n), operator.truediv, fill_value=xp.nan)
     return mean[()] if mean.ndim == 0 else mean
 
 
@@ -10966,7 +10966,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
 
         # Produce NaNs silently when n - correction <= 0
         nc = n - correction
-        factor = xpx.apply_where(nc > 0, operator.truediv, (n, nc), fill_value=xp.nan)
+        factor = xpx.apply_where(nc > 0, (n, nc), operator.truediv, fill_value=xp.nan)
         var *= factor
 
     return var[()] if var.ndim == 0 else var
