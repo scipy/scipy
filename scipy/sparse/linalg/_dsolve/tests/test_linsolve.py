@@ -3,6 +3,7 @@ import threading
 
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot
+from numpy.exceptions import ComplexWarning
 import numpy.random as random
 from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
@@ -22,7 +23,6 @@ from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
-from scipy._lib._util import ComplexWarning
 
 
 sup_sparse_efficiency = suppress_warnings()

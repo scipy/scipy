@@ -4253,13 +4253,13 @@ class TestPowerDivergence:
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "Mean of empty slice")
             stat, p = stats.power_divergence(
-                                f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                f_obs, f_exp=f_exp, ddof=ddof,
                                 axis=axis, lambda_=lambda_)
             xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
             if lambda_ == 1 or lambda_ == "pearson":
                 # Also test stats.chisquare.
-                stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                stat, p = stats.chisquare(f_obs, f_exp=f_exp, ddof=ddof,
                                           axis=axis)
                 xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
@@ -4364,7 +4364,7 @@ class TestPowerDivergence:
         f_obs = xp.asarray(f_obs, dtype=dtype)
         # f_exp is None
 
-        res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+        res = stats.power_divergence(f_obs, f_exp=f_exp, ddof=ddof,
                                      axis=axis, lambda_="pearson")
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
@@ -4375,10 +4375,10 @@ class TestPowerDivergence:
         f_exp = xp.asarray([[5., 15.], [35., 25.]])
         message = 'For each axis slice...'
         with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs=f_obs, f_exp=xp.asarray([30., 60.]))
+            stats.power_divergence(f_obs, f_exp=xp.asarray([30., 60.]))
         with pytest.raises(ValueError, match=message):
-            stats.power_divergence(f_obs=f_obs, f_exp=f_exp, axis=1)
-        stat, pval = stats.power_divergence(f_obs=f_obs, f_exp=f_exp)
+            stats.power_divergence(f_obs, f_exp=f_exp, axis=1)
+        stat, pval = stats.power_divergence(f_obs, f_exp=f_exp)
         xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
         xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
 
@@ -4438,7 +4438,7 @@ class TestChisquare:
         with assert_raises(ValueError, match='For each axis slice...'):
             f_obs = xp.asarray([10., 20.])
             f_exp = xp.asarray([30., 60.])
-            stats.chisquare(f_obs=f_obs, f_exp=f_exp)
+            stats.chisquare(f_obs, f_exp=f_exp)
 
     def test_chisquare_12282b(self, xp):
         # Check that users can now disable the sum check tested in
@@ -4450,7 +4450,7 @@ class TestChisquare:
         x = rng.poisson(lam)
         lam = xp.asarray(lam)
         x = xp.asarray(x, dtype=lam.dtype)
-        res = stats.chisquare(f_obs=x, f_exp=lam, ddof=-1, sum_check=False)
+        res = stats.chisquare(x, f_exp=lam, ddof=-1, sum_check=False)
         # Poisson is approximately normal with mean and variance lam
         z = (x - lam) / xp.sqrt(lam)
         statistic = xp.sum(z**2)
@@ -7927,6 +7927,43 @@ class TestFOneWay:
         F, p = stats.f_oneway([0, 2], [2, 4])
         assert_equal(F, 2.0)
         assert_allclose(p, 1 - np.sqrt(0.5), rtol=1e-14)
+
+    def test_unequal_var(self):
+        # toy samples with unequal variances and different observations
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        F, p = stats.f_oneway(*samples, equal_var=False)
+
+        # R language as benchmark
+        # group1 <- c(-50.42, 40.31, -18.09, 35.58, -6.8, 0.22)
+        # group2 <- c(23.44, 4.5, 15.1, 9.66)
+        # group3 <- c(11.94, 11.1 , 9.87, 9.09, 3.33)
+        #
+        # data <- data.frame(
+        #     value = c(group1, group2, group3),
+        #     group = factor(c(rep("G1", length(group1)),
+        #                      rep("G2", length(group2)),
+        #                      rep("G3", length(group3))))
+        # )
+        # welch_anova <- oneway.test(value ~ group, data = data, var.equal = FALSE)
+        # welch_anova$statistic
+        ## F: 0.609740409019517
+        # welch_anova$p.value
+        ## 0.574838941286302
+
+        assert_allclose(F, 0.609740409019517, rtol=1e-14)
+        assert_allclose(p, 0.574838941286302, rtol=1e-14)
+
+    def test_equal_var_input_validation(self):
+        samples = [[-50.42, 40.31, -18.09, 35.58, -6.8, 0.22],
+                   [23.44, 4.5, 15.1, 9.66],
+                   [11.94, 11.1 , 9.87, 9.09, 3.33]]
+
+        message = "Expected a boolean value for 'equal_var'"
+        with pytest.raises(TypeError, match=message):
+            stats.f_oneway(*samples, equal_var="False")
 
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be

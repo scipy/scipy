@@ -457,7 +457,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    if not isinstance(p, (int, float)):
+    if not isinstance(p, int | float):
         raise ValueError("Power mean only defined for exponent of type int or "
                          "float.")
     if p == 0:
@@ -3747,7 +3747,7 @@ def _f_oneway_is_too_small(samples, kwargs=None, axis=-1):
 
 @_axis_nan_policy_factory(
     F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
-def f_oneway(*samples, axis=0):
+def f_oneway(*samples, axis=0, equal_var=True):
     """Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
@@ -3763,6 +3763,13 @@ def f_oneway(*samples, axis=0):
     axis : int, optional
         Axis of the input arrays along which the test is applied.
         Default is 0.
+    equal_var: bool, optional
+        If True (default), perform a standard one-way ANOVA test that
+        assumes equal population variances [2]_.
+        If False, perform Welch's ANOVA test, which does not assume
+        equal population variances [4]_. 
+
+        .. versionadded:: 1.15.0
 
     Returns
     -------
@@ -3824,6 +3831,10 @@ def f_oneway(*samples, axis=0):
     .. [3] G.H. McDonald, "Handbook of Biological Statistics", One-way ANOVA.
            http://www.biostathandbook.com/onewayanova.html
 
+    .. [4] B. L. Welch, "On the Comparison of Several Mean Values:
+           An Alternative Approach", Biometrika, vol. 38, no. 3/4,
+           pp. 330-336, 1951, doi: 10.2307/2332579.
+
     Examples
     --------
     >>> import numpy as np
@@ -3875,6 +3886,8 @@ def f_oneway(*samples, axis=0):
     >>> F.pvalue
     array([0.20630784, 0.96375203, 0.04733157])
 
+    Welch ANOVA will be performed if `equal_var` is False.
+
     """
     if len(samples) < 2:
         raise TypeError('at least two inputs are required;'
@@ -3923,34 +3936,88 @@ def f_oneway(*samples, axis=0):
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
     all_same_const = (_first(alldata, axis) == alldata).all(axis=axis)
 
-    # Determine the mean of the data, and subtract that from all inputs to a
-    # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
-    # to a shift in location, and centering all data around zero vastly
-    # improves numerical stability.
-    offset = alldata.mean(axis=axis, keepdims=True)
-    alldata = alldata - offset
+    if not isinstance(equal_var, bool):
+        raise TypeError("Expected a boolean value for 'equal_var'")
 
-    normalized_ss = _square_of_sums(alldata, axis=axis) / bign
+    if equal_var:
+        # Determine the mean of the data, and subtract that from all inputs to a
+        # variance (via sum_of_sq / sq_of_sum) calculation.  Variance is invariant
+        # to a shift in location, and centering all data around zero vastly
+        # improves numerical stability.
+        offset = alldata.mean(axis=axis, keepdims=True)
+        alldata = alldata - offset
 
-    sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
+        normalized_ss = _square_of_sums(alldata, axis=axis) / bign
 
-    ssbn = 0
-    for sample in samples:
-        smo_ss = _square_of_sums(sample - offset, axis=axis)
-        ssbn = ssbn + smo_ss / sample.shape[axis]
+        sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
 
-    # Naming: variables ending in bn/b are for "between treatments", wn/w are
-    # for "within treatments"
-    ssbn = ssbn - normalized_ss
-    sswn = sstot - ssbn
-    dfbn = num_groups - 1
-    dfwn = bign - num_groups
-    msb = ssbn / dfbn
-    msw = sswn / dfwn
-    with np.errstate(divide='ignore', invalid='ignore'):
-        f = msb / msw
+        ssbn = 0
+        for sample in samples:
+            smo_ss = _square_of_sums(sample - offset, axis=axis)
+            ssbn = ssbn + smo_ss / sample.shape[axis]
 
-    prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+        # Naming: variables ending in bn/b are for "between treatments", wn/w are
+        # for "within treatments"
+        ssbn = ssbn - normalized_ss
+        sswn = sstot - ssbn
+        dfbn = num_groups - 1
+        dfwn = bign - num_groups
+        msb = ssbn / dfbn
+        msw = sswn / dfwn
+        with np.errstate(divide='ignore', invalid='ignore'):
+            f = msb / msw
+
+        prob = special.fdtrc(dfbn, dfwn, f)   # equivalent to stats.f.sf
+
+    else:
+        # calculate basic statistics for each sample
+        # Beginning of second paragraph [4] page 1:
+        # "As a particular case $y_t$ may be the means ... of samples
+        y_t = np.asarray([np.mean(sample, axis=axis) for sample in samples])
+        # "... of $n_t$ observations..."
+        n_t = np.asarray([sample.shape[axis] for sample in samples])
+        n_t = np.reshape(n_t, (-1,) + (1,) * (y_t.ndim - 1))
+        # "... from $k$ different normal populations..."
+        k = len(samples)
+        # "The separate samples provide estimates $s_t^2$ of the $\sigma_t^2$."
+        s_t2= np.asarray([np.var(sample, axis=axis, ddof=1) for sample in samples])
+
+        # calculate weight by number of data and variance
+        # "we have $\lambda_t = 1 / n_t$ ... where w_t = 1 / {\lambda_t s_t^2}$"
+        w_t = n_t / s_t2
+        # sum of w_t
+        s_w_t = np.sum(w_t, axis=0)
+
+        # calculate adjusted grand mean
+        # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
+        y_hat = np.sum(w_t * y_t, axis=0) / np.sum(w_t, axis=0)
+
+        # adjust f statistic
+        # ref.[4] p.334 eq.29
+        numerator = np.sum(w_t * (y_t - y_hat)**2, axis=0) / (k - 1)
+        denominator = (
+                1 + 2 * (k - 2) / (k**2 - 1) *
+                np.sum((1 / (n_t - 1)) *
+                       (1 - w_t / s_w_t)**2,
+                       axis=0)
+        )
+        f = numerator / denominator
+
+        # degree of freedom 1
+        # ref.[4] p.334 eq.30
+        hat_f1 = k - 1
+
+        # adjusted degree of freedom 2
+        # ref.[4] p.334 eq.30
+        hat_f2 = (
+                (k**2 - 1) /
+                (3 * np.sum((1 / (n_t - 1)) *
+                            (1 - w_t / s_w_t)**2, axis=0))
+        )
+
+        # calculate p value
+        # ref.[4] p.334 eq.28
+        prob = stats.f.sf(f, hat_f1, hat_f2)
 
     # Fix any f values that should be inf or nan because the corresponding
     # inputs were constant.
@@ -7082,6 +7149,12 @@ Power_divergenceResult = namedtuple('Power_divergenceResult',
                                     ('statistic', 'pvalue'))
 
 
+def _pd_nsamples(kwargs):
+    return 2 if kwargs.get('f_exp', None) is not None else 1
+
+
+@_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
+                          too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     """Cressie-Read power divergence statistic and goodness of fit test.
 
@@ -7289,9 +7362,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
                 raise ValueError(msg)
 
     else:
-        # Ignore 'invalid' errors so the edge case of a data set with length 0
-        # is handled without spurious warnings.
-        with np.errstate(invalid='ignore'):
+        # Avoid warnings with the edge case of a data set with length 0
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
             f_exp = xp.mean(f_obs, axis=axis, keepdims=True)
 
     # `terms` is the array of terms that are summed along `axis` to create
@@ -7326,6 +7399,8 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     return Power_divergenceResult(stat, pvalue)
 
 
+@_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
+                          too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
     """Perform Pearson's chi-squared test.
 

@@ -27,6 +27,7 @@ class Salomon(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -36,7 +37,6 @@ class Salomon(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -69,6 +69,7 @@ class Sargan(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -78,7 +79,6 @@ class Sargan(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -314,6 +314,7 @@ class Schwefel01(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -323,7 +324,6 @@ class Schwefel01(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -356,6 +356,7 @@ class Schwefel02(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -365,7 +366,6 @@ class Schwefel02(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -399,6 +399,7 @@ class Schwefel04(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -407,7 +408,6 @@ class Schwefel04(Benchmark):
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -478,6 +478,7 @@ class Schwefel20(Benchmark):
 
     TODO: Jamil #122 is incorrect.  There shouldn't be a leading minus sign.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -486,7 +487,6 @@ class Schwefel20(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -518,6 +518,7 @@ class Schwefel21(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -526,7 +527,6 @@ class Schwefel21(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -558,6 +558,7 @@ class Schwefel22(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -567,7 +568,6 @@ class Schwefel22(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -596,6 +596,7 @@ class Schwefel26(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -604,7 +605,6 @@ class Schwefel26(Benchmark):
 
         self.global_optimum = [[420.968746 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -887,6 +887,7 @@ class Shubert01(Benchmark):
 
     TODO: Jamil#133 is missing a prefactor of j before the cos function.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -895,8 +896,6 @@ class Shubert01(Benchmark):
         self.global_optimum = [[-7.0835, 4.8580]]
 
         self.fglob = -186.7309
-
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -930,6 +929,7 @@ class Shubert03(Benchmark):
     TODO: Jamil#134 has wrong global minimum value, and is missing a minus sign
     before the whole thing.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -938,8 +938,6 @@ class Shubert03(Benchmark):
 
         self.global_optimum = [[5.791794, 5.791794]]
         self.fglob = -24.062499
-
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -973,6 +971,7 @@ class Shubert04(Benchmark):
     TODO: Jamil#135 has wrong global minimum value, and is missing a minus sign
     before the whole thing.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -981,8 +980,6 @@ class Shubert04(Benchmark):
 
         self.global_optimum = [[-0.80032121, -7.08350592]]
         self.fglob = -29.016015
-
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1017,6 +1014,7 @@ class SineEnvelope(Benchmark):
 
     TODO: Jamil #136
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1027,7 +1025,6 @@ class SineEnvelope(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1099,6 +1096,7 @@ class Sodp(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1107,7 +1105,6 @@ class Sodp(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1140,6 +1137,7 @@ class Sphere(Benchmark):
 
     TODO Jamil has stupid limits
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1147,7 +1145,6 @@ class Sphere(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1178,6 +1175,7 @@ class Step(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1187,7 +1185,6 @@ class Step(Benchmark):
 
         self.global_optimum = [[0. for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1216,6 +1213,7 @@ class Step2(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1225,7 +1223,6 @@ class Step2(Benchmark):
 
         self.global_optimum = [[0.5 for _ in range(self.N)]]
         self.fglob = 0.5
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1257,6 +1254,7 @@ class Stochastic(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1265,7 +1263,6 @@ class Stochastic(Benchmark):
 
         self.global_optimum = [[1.0 / _ for _ in range(1, self.N + 1)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1309,6 +1306,7 @@ class StretchedV(Benchmark):
     brackets, in others it is outside. In Jamil#142 it's not even 1. Here
     we go with the Adorio option.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1317,7 +1315,6 @@ class StretchedV(Benchmark):
 
         self.global_optimum = [[0, 0]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -1349,6 +1346,7 @@ class StyblinskiTang(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -1357,7 +1355,6 @@ class StyblinskiTang(Benchmark):
 
         self.global_optimum = [[-2.903534018185960 for _ in range(self.N)]]
         self.fglob = -39.16616570377142 * self.N
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
