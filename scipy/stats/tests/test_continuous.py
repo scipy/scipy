@@ -1120,7 +1120,7 @@ class TestMakeDistribution:
 
             @property
             def support(self):
-                return 'a', 'b'
+                return {'endpoints': ('a', 'b'), 'inclusive': (True, True)}
 
             def pdf(self, x, a, b):
                 return 1 / (x * (np.log(b) - np.log(a)))
@@ -1163,22 +1163,23 @@ class TestMakeDistribution:
                         'mu': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
                         'sigma': {'endpoints': (0, np.inf), 'inclusive': (False, False)}}
 
-            def support(self, *, c, mu, sigma):
-                c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
-
-                left = np.empty_like(c)
-                left[c >= 0] = -np.inf
-                left[c < 0] = mu[c < 0] + sigma[c < 0] / c[c < 0]
-
-                right = np.empty_like(c)
-                right[c <= 0] = np.inf
-                right[c > 0] = mu[c > 0] + sigma[c > 0] / c[c > 0]
-
-                return left[()], right[()]
-
             @property
-            def support_inclusive(self):
-                return (False, False)
+            def support(self):
+                def left(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c >= 0] = -np.inf
+                    result[c < 0] = mu[c < 0] + sigma[c < 0] / c[c < 0]
+                    return result[()]
+
+                def right(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c <= 0] = np.inf
+                    result[c > 0] = mu[c > 0] + sigma[c > 0] / c[c > 0]
+                    return result[()]
+
+                return {"endpoints": (left, right), "inclusive": (False, False)}
 
             def pdf(self, x, *, c, mu, sigma):
                 x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
