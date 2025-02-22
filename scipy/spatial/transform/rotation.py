@@ -58,9 +58,13 @@ class Rotation:
         return cls(quat, normalize=False, copy=False)
 
     @classmethod
-    def from_euler(
-        cls, seq: str, angles: ArrayLike, *, degrees: bool = False
-    ) -> Rotation:
+    def from_mrp(cls, mrp: ArrayLike) -> Rotation:
+        backend = backend_registry.get(array_namespace(mrp), array_api_backend)
+        quat = backend.from_mrp(mrp)
+        return cls(quat, normalize=False, copy=False)
+
+    @classmethod
+    def from_euler(cls, seq: str, angles: ArrayLike, degrees: bool = False) -> Rotation:
         backend = backend_registry.get(array_namespace(angles), array_api_backend)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return cls(quat, normalize=False, copy=False)
@@ -85,6 +89,20 @@ class Rotation:
         if self._single:
             return rotvec[0, ...]
         return rotvec
+
+    def as_mrp(self) -> Array:
+        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
+        mrp = backend.as_mrp(self._quat)
+        if self._single:
+            return mrp[0, ...]
+        return mrp
+
+    def as_euler(self, seq: str, degrees: bool = False) -> Array:
+        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
+        euler = backend.as_euler(self._quat, seq, degrees=degrees)
+        if self._single:
+            return euler[0, ...]
+        return euler
 
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)
@@ -144,10 +162,10 @@ class Rotation:
                 f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
                 f"first and {other._quat.shape[:-1]} rotations in second object."
             )
-        q_composed = self._backend.compose_quat(self._quat, other._quat)
+        quat = self._backend.compose_quat(self._quat, other._quat)
         if self._single:
-            q_composed = q_composed[0]
-        return Rotation(q_composed, normalize=True, copy=False)
+            quat = quat[0]
+        return Rotation(quat, normalize=True, copy=False)
 
     def _to_array(self, quat: ArrayLike) -> Array:
         """Convert the quaternion to an array.
