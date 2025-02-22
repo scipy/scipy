@@ -46,17 +46,23 @@ class Rotation:
         return cls(quat, normalize=True, scalar_first=scalar_first)
 
     @classmethod
+    def from_matrix(cls, matrix: ArrayLike) -> Rotation:
+        backend = backend_registry.get(array_namespace(matrix), array_api_backend)
+        quat = backend.from_matrix(matrix)
+        return cls(quat, normalize=False, copy=False)
+
+    @classmethod
+    def from_rotvec(cls, rotvec: ArrayLike, degrees: bool = False) -> Rotation:
+        backend = backend_registry.get(array_namespace(rotvec), array_api_backend)
+        quat = backend.from_rotvec(rotvec, degrees=degrees)
+        return cls(quat, normalize=False, copy=False)
+
+    @classmethod
     def from_euler(
         cls, seq: str, angles: ArrayLike, *, degrees: bool = False
     ) -> Rotation:
         backend = backend_registry.get(array_namespace(angles), array_api_backend)
         quat = backend.from_euler(seq, angles, degrees=degrees)
-        return cls(quat, normalize=False, copy=False)
-
-    @classmethod
-    def from_matrix(cls, matrix: ArrayLike) -> Rotation:
-        backend = backend_registry.get(array_namespace(matrix), array_api_backend)
-        quat = backend.from_matrix(matrix)
         return cls(quat, normalize=False, copy=False)
 
     def as_quat(self, canonical=False, *, scalar_first=False):
@@ -72,6 +78,13 @@ class Rotation:
         if self._single:
             return matrix[0, ...]
         return matrix
+
+    def as_rotvec(self, degrees: bool = False) -> Array:
+        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
+        rotvec = backend.as_rotvec(self._quat, degrees=degrees)
+        if self._single:
+            return rotvec[0, ...]
+        return rotvec
 
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)

@@ -37,45 +37,6 @@ def test_init(xp):
     Rotation(x)
 
 
-def test_jax_compilation():
-    pytest.importorskip("jax")
-    import jax
-    import jax.numpy as jp
-    from jax.errors import JaxRuntimeError, JAXIndexError, JAXTypeError
-    # TODO: Implement the jit test for all methods. Split into separate tests.
-
-    JaxError = JaxRuntimeError | JAXIndexError | JAXTypeError
-
-    q = jp.array([0.0, 0.0, 0.0, 1.0])
-    try:
-        jax.block_until_ready(jax.jit(Rotation.from_quat)(q))
-    except JaxError as e:
-        raise RuntimeError("Failed to jax.jit compile Rotation.from_quat") from e
-
-    e = jp.array([0.0, 0.0, 0.0])
-    try:
-        jax.block_until_ready(jax.jit(Rotation.from_euler, static_argnums=0)("xyz", e))
-    except JaxError as e:
-        raise RuntimeError("Failed to jax.jit compile Rotation.from_quat") from e
-
-    m = jp.eye(3)
-    try:
-        jax.block_until_ready(jax.jit(Rotation.from_matrix)(m))
-    except JaxError as e:
-        raise RuntimeError("Failed to jax.jit compile Rotation.from_matrix") from e
-
-    r = Rotation.from_matrix(jp.eye(3))
-    try:
-        jax.block_until_ready(jax.jit(Rotation.as_quat)(r))
-    except JaxError as e:
-        raise RuntimeError("Failed to jax.jit compile as_quat") from e
-
-    try:
-        jax.block_until_ready(jax.jit(r.as_matrix)())
-    except (JaxRuntimeError, JAXIndexError, JAXTypeError) as e:
-        raise RuntimeError("Failed to jax.jit compile as_matrix") from e
-
-
 def test_generic_quat_matrix(xp):
     x = xp.asarray([[3, 4, 0, 0], [5, 12, 0, 0]], dtype=xp.float64)
     r = Rotation.from_quat(x)
@@ -119,6 +80,14 @@ def test_from_quat_scalar_first(xp):
 
     r = Rotation.from_quat(q, scalar_first=True)
     assert_allclose(xp.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
+
+
+def test_from_quat_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    q = jax.numpy.array([0.0, 0.0, 0.0, 1.0])
+    jax.block_until_ready(jax.jit(Rotation.from_quat)(q))
 
 
 def test_as_quat_scalar_first(xp):
@@ -210,6 +179,14 @@ def test_quat_double_cover(xp):
     )
 
 
+def test_as_quat_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.from_quat(jax.numpy.array([1, 0, 0, 0]))
+    jax.block_until_ready(jax.jit(Rotation.as_quat)(r))
+
+
 def test_from_quat_wrong_shape(xp):
     # Wrong shape 1d array
     with pytest.raises(ValueError, match="Expected `quat` to have shape"):
@@ -280,6 +257,14 @@ def test_as_matrix_from_generic_input(xp):
 
     expected2 = xp.asarray([[0.4, -2, 2.2], [2.8, 1, 0.4], [-1, 2, 2]]) / 3
     assert_array_almost_equal(mat[2, ...], expected2)
+
+
+def test_as_matrix_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(jax.jit(Rotation.as_matrix)(r))
 
 
 def test_from_single_2d_matrix(xp):
@@ -374,23 +359,31 @@ def test_from_matrix_non_positive_determinant(xp):
         assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
 
 
-def test_from_1d_single_rotvec():
-    rotvec = [1, 0, 0]
-    expected_quat = np.array([0.4794255, 0, 0, 0.8775826])
+def test_from_matrix_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    m = jax.numpy.eye(3)
+    jax.block_until_ready(jax.jit(Rotation.from_matrix)(m))
+
+
+def test_from_1d_single_rotvec(xp):
+    rotvec = xp.asarray([1, 0, 0])
+    expected_quat = xp.asarray([0.4794255, 0, 0, 0.8775826])
     result = Rotation.from_rotvec(rotvec)
     assert_array_almost_equal(result.as_quat(), expected_quat)
 
 
-def test_from_2d_single_rotvec():
-    rotvec = [[1, 0, 0]]
-    expected_quat = np.array([[0.4794255, 0, 0, 0.8775826]])
+def test_from_2d_single_rotvec(xp):
+    rotvec = xp.asarray([[1, 0, 0]])
+    expected_quat = xp.asarray([[0.4794255, 0, 0, 0.8775826]])
     result = Rotation.from_rotvec(rotvec)
     assert_array_almost_equal(result.as_quat(), expected_quat)
 
 
-def test_from_generic_rotvec():
-    rotvec = [[1, 2, 2], [1, -1, 0.5], [0, 0, 0]]
-    expected_quat = np.array(
+def test_from_generic_rotvec(xp):
+    rotvec = xp.asarray([[1, 2, 2], [1, -1, 0.5], [0, 0, 0]])
+    expected_quat = xp.asarray(
         [
             [0.3324983, 0.6649967, 0.6649967, 0.0707372],
             [0.4544258, -0.4544258, 0.2272129, 0.7316889],
@@ -400,8 +393,8 @@ def test_from_generic_rotvec():
     assert_array_almost_equal(Rotation.from_rotvec(rotvec).as_quat(), expected_quat)
 
 
-def test_from_rotvec_small_angle():
-    rotvec = np.array(
+def test_from_rotvec_small_angle(xp):
+    rotvec = xp.asarray(
         [
             [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
             [0.2, 0.3, 0.4],
@@ -413,53 +406,62 @@ def test_from_rotvec_small_angle():
     # cos(theta/2) ~~ 1 for small theta
     assert_allclose(quat[0, 3], 1)
     # sin(theta/2) / theta ~~ 0.5 for small theta
-    assert_allclose(quat[0, :3], rotvec[0] * 0.5)
+    assert_allclose(quat[0, :3], rotvec[0, ...] * 0.5)
 
     assert_allclose(quat[1, 3], 0.9639685)
     assert_allclose(
         quat[1, :3],
-        np.array([0.09879603932153465, 0.14819405898230198, 0.19759207864306931]),
+        xp.asarray([0.09879603932153465, 0.14819405898230198, 0.19759207864306931]),
     )
 
-    assert_equal(quat[2], np.array([0, 0, 0, 1]))
+    xp_assert_equal(quat[2, ...], xp.asarray([0.0, 0, 0, 1]))
 
 
-def test_degrees_from_rotvec():
-    rotvec1 = [1.0 / np.cbrt(3), 1.0 / np.cbrt(3), 1.0 / np.cbrt(3)]
+def test_degrees_from_rotvec(xp):
+    rotvec1 = xp.asarray([1.0 / np.cbrt(3), 1.0 / np.cbrt(3), 1.0 / np.cbrt(3)])
     rot1 = Rotation.from_rotvec(rotvec1, degrees=True)
     quat1 = rot1.as_quat()
 
-    rotvec2 = np.deg2rad(rotvec1)
+    # deg2rad is not implemented in Array API -> / 180 * np.pi
+    rotvec2 = xp.asarray(rotvec1 / 180 * np.pi)
     rot2 = Rotation.from_rotvec(rotvec2)
     quat2 = rot2.as_quat()
 
     assert_allclose(quat1, quat2)
 
 
-def test_malformed_1d_from_rotvec():
+def test_malformed_1d_from_rotvec(xp):
     with pytest.raises(ValueError, match="Expected `rot_vec` to have shape"):
-        Rotation.from_rotvec([1, 2])
+        Rotation.from_rotvec(xp.asarray([1, 2]))
 
 
-def test_malformed_2d_from_rotvec():
+def test_malformed_2d_from_rotvec(xp):
     with pytest.raises(ValueError, match="Expected `rot_vec` to have shape"):
-        Rotation.from_rotvec([[1, 2, 3, 4], [5, 6, 7, 8]])
+        Rotation.from_rotvec(xp.asarray([[1, 2, 3, 4], [5, 6, 7, 8]]))
 
 
-def test_as_generic_rotvec():
-    quat = np.array([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
-    quat /= np.linalg.norm(quat, axis=1)[:, None]
+def test_from_rotvec_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    rot_vec = jax.numpy.array([1, 2, 3])
+    jax.block_until_ready(jax.jit(Rotation.from_rotvec)(rot_vec))
+
+
+def test_as_generic_rotvec(xp):
+    quat = xp.asarray([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
+    quat /= xp.linalg.vector_norm(quat, axis=1, keepdims=True)
 
     rotvec = Rotation.from_quat(quat).as_rotvec()
-    angle = np.linalg.norm(rotvec, axis=1)
+    angle = xp.linalg.vector_norm(rotvec, axis=1)
 
-    assert_allclose(quat[:, 3], np.cos(angle / 2))
-    assert_allclose(np.cross(rotvec, quat[:, :3]), np.zeros((3, 3)))
+    assert_allclose(quat[:, 3], xp.cos(angle / 2))
+    assert_allclose(xp.cross(rotvec, quat[:, :3]), xp.zeros((3, 3)))
 
 
-def test_as_rotvec_single_1d_input():
-    quat = np.array([1, 2, -3, 2])
-    expected_rotvec = np.array([0.5772381, 1.1544763, -1.7317144])
+def test_as_rotvec_single_1d_input(xp):
+    quat = xp.asarray([1, 2, -3, 2])
+    expected_rotvec = xp.asarray([0.5772381, 1.1544763, -1.7317144])
 
     actual_rotvec = Rotation.from_quat(quat).as_rotvec()
 
@@ -467,9 +469,9 @@ def test_as_rotvec_single_1d_input():
     assert_allclose(actual_rotvec, expected_rotvec)
 
 
-def test_as_rotvec_single_2d_input():
-    quat = np.array([[1, 2, -3, 2]])
-    expected_rotvec = np.array([[0.5772381, 1.1544763, -1.7317144]])
+def test_as_rotvec_single_2d_input(xp):
+    quat = xp.asarray([[1, 2, -3, 2]])
+    expected_rotvec = xp.asarray([[0.5772381, 1.1544763, -1.7317144]])
 
     actual_rotvec = Rotation.from_quat(quat).as_rotvec()
 
@@ -477,24 +479,32 @@ def test_as_rotvec_single_2d_input():
     assert_allclose(actual_rotvec, expected_rotvec)
 
 
-def test_as_rotvec_degrees():
+def test_as_rotvec_degrees(xp):
     # x->y, y->z, z->x
-    mat = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+    mat = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
     rot = Rotation.from_matrix(mat)
     rotvec = rot.as_rotvec(degrees=True)
-    angle = np.linalg.norm(rotvec)
+    angle = xp.linalg.norm(rotvec)
     assert_allclose(angle, 120.0)
     assert_allclose(rotvec[0], rotvec[1])
     assert_allclose(rotvec[1], rotvec[2])
 
 
-def test_rotvec_calc_pipeline():
+def test_rotvec_calc_pipeline(xp):
     # Include small angles
-    rotvec = np.array([[0, 0, 0], [1, -1, 2], [-3e-4, 3.5e-4, 7.5e-5]])
+    rotvec = xp.asarray([[0, 0, 0], [1, -1, 2], [-3e-4, 3.5e-4, 7.5e-5]])
     assert_allclose(Rotation.from_rotvec(rotvec).as_rotvec(), rotvec)
     assert_allclose(
         Rotation.from_rotvec(rotvec, degrees=True).as_rotvec(degrees=True), rotvec
     )
+
+
+def test_as_rotvec_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(jax.jit(Rotation.as_rotvec)(r))
 
 
 def test_from_1d_single_mrp():

@@ -694,6 +694,52 @@ def from_matrix(matrix) -> double[:, :]:
         return quat[0]
     return quat
 
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def from_rotvec(rotvec, degrees: cython.bint = False) -> double[:, :]:
+    is_single = False
+    rotvec = np.asarray(rotvec, dtype=float)
+    if degrees:
+        rotvec = np.deg2rad(rotvec)
+
+    if rotvec.ndim not in [1, 2] or rotvec.shape[len(rotvec.shape)-1] != 3:
+        raise ValueError("Expected `rot_vec` to have shape (3,) "
+                            "or (N, 3), got {}".format(rotvec.shape))
+
+    # If a single vector is given, convert it to a 2D 1 x 3 matrix but
+    # set self._single to True so that we can return appropriate objects
+    # in the `as_...` methods
+    cdef double[:, :] crotvec
+    if rotvec.shape == (3,):
+        crotvec = rotvec[None, :]
+        is_single = True
+    else:
+        crotvec = rotvec
+
+    cdef Py_ssize_t num_rotations = crotvec.shape[0]
+    cdef double angle, scale, angle2
+    cdef double[:, :] quat = _empty2(num_rotations, 4)
+
+    for ind in range(num_rotations):
+        angle = _norm3(crotvec[ind, :])
+
+        if angle <= 1e-3:  # small angle Taylor series expansion
+            angle2 = angle * angle
+            scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
+        else:  # large angle
+            scale = sin(angle / 2) / angle
+
+        quat[ind, 0] = scale * crotvec[ind, 0]
+        quat[ind, 1] = scale * crotvec[ind, 1]
+        quat[ind, 2] = scale * crotvec[ind, 2]
+        quat[ind, 3] = cos(angle / 2)
+
+    if is_single:
+        return quat[0]
+    return quat
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
@@ -763,6 +809,38 @@ def as_matrix(quat: cython.double[:, :]):
         matrix[ind, 2, 2] = - x2 - y2 + z2 + w2
 
     return np.asarray(matrix)
+
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_rotvec(quat: cython.double[:, :], degrees: cython.bint = False) -> double[:, :]:
+    cdef Py_ssize_t num_rotations = len(quat)
+    cdef double angle, scale, angle2
+    cdef double[:, :] rotvec = _empty2(num_rotations, 3)
+    cdef double[:] quat_single
+
+    for ind in range(num_rotations):
+        quat_single = quat[ind, :].copy()
+        _quat_canonical_single(quat_single)  # w > 0 ensures that 0 <= angle <= pi
+
+        angle = 2 * atan2(_norm3(quat_single), quat_single[3])
+
+        if angle <= 1e-3:  # small angle Taylor series expansion
+            angle2 = angle * angle
+            scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
+        else:  # large angle
+            scale = angle / sin(angle / 2)
+
+        rotvec[ind, 0] = scale * quat_single[0]
+        rotvec[ind, 1] = scale * quat_single[1]
+        rotvec[ind, 2] = scale * quat_single[2]
+
+    if degrees:
+        rotvec = np.rad2deg(rotvec)
+
+    return np.asarray(rotvec)
+
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
@@ -996,195 +1074,6 @@ cdef class Rotation:
         self._quat = quat
 
 
-    @cython.embedsignature(True)
-    @classmethod
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def from_matrix(cls, matrix):
-        """Initialize from rotation matrix.
-
-        Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
-        matrices [1]_. If the input is not orthogonal, an approximation is
-        created by orthogonalizing the input matrix using the method described
-        in [2]_, and then converting the orthogonal rotation matrices to
-        quaternions using the algorithm described in [3]_. Matrices must be
-        right-handed.
-
-        Parameters
-        ----------
-        matrix : array_like, shape (N, 3, 3) or (3, 3)
-            A single matrix or a stack of matrices, where ``matrix[i]`` is
-            the i-th matrix.
-
-        Returns
-        -------
-        rotation : `Rotation` instance
-            Object containing the rotations represented by the rotation
-            matrices.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-        .. [2] https://en.wikipedia.org/wiki/Orthogonal_Procrustes_problem
-        .. [3] F. Landis Markley, "Unit Quaternion from Rotation Matrix",
-               Journal of guidance, control, and dynamics vol. 31.2, pp.
-               440-442, 2008.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Initialize a single rotation:
-
-        >>> r = R.from_matrix([
-        ... [0, -1, 0],
-        ... [1, 0, 0],
-        ... [0, 0, 1]])
-        >>> r.single
-        True
-        >>> r.as_matrix().shape
-        (3, 3)
-
-        Initialize multiple rotations in a single object:
-
-        >>> r = R.from_matrix([
-        ... [
-        ...     [0, -1, 0],
-        ...     [1, 0, 0],
-        ...     [0, 0, 1],
-        ... ],
-        ... [
-        ...     [1, 0, 0],
-        ...     [0, 0, -1],
-        ...     [0, 1, 0],
-        ... ]])
-        >>> r.as_matrix().shape
-        (2, 3, 3)
-        >>> r.single
-        False
-        >>> len(r)
-        2
-
-        If input matrices are not special orthogonal (orthogonal with
-        determinant equal to +1), then a special orthogonal estimate is stored:
-
-        >>> a = np.array([
-        ... [0, -0.5, 0],
-        ... [0.5, 0, 0],
-        ... [0, 0, 0.5]])
-        >>> np.linalg.det(a)
-        0.125
-        >>> r = R.from_matrix(a)
-        >>> matrix = r.as_matrix()
-        >>> matrix
-        array([[ 0., -1.,  0.],
-               [ 1.,  0.,  0.],
-               [ 0.,  0.,  1.]])
-        >>> np.linalg.det(matrix)
-        1.0
-
-        It is also possible to have a stack containing a single rotation:
-
-        >>> r = R.from_matrix([[
-        ... [0, -1, 0],
-        ... [1, 0, 0],
-        ... [0, 0, 1]]])
-        >>> r.as_matrix()
-        array([[[ 0., -1.,  0.],
-                [ 1.,  0.,  0.],
-                [ 0.,  0.,  1.]]])
-        >>> r.as_matrix().shape
-        (1, 3, 3)
-
-        Notes
-        -----
-        This function was called from_dcm before.
-
-        .. versionadded:: 1.4.0
-        """
-        is_single = False
-        matrix = np.array(matrix, dtype=float)
-
-        if (matrix.ndim not in [2, 3] or
-            matrix.shape[len(matrix.shape)-2:] != (3, 3)):
-            raise ValueError("Expected `matrix` to have shape (3, 3) or "
-                             "(N, 3, 3), got {}".format(matrix.shape))
-
-        # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
-        # set self._single to True so that we can return appropriate objects in
-        # the `to_...` methods
-        if matrix.shape == (3, 3):
-            matrix = matrix[np.newaxis, :, :]
-            is_single = True
-
-        # Calculate the determinant of the rotation matrix
-        # (should be positive for right-handed rotations)
-        dets = np.linalg.det(matrix)
-        if np.any(dets <= 0):
-            ind = np.where(dets <= 0)[0][0]
-            raise ValueError("Non-positive determinant (left-handed or null "
-                             f"coordinate frame) in rotation matrix {ind}: "
-                             f"{matrix[ind]}.")
-
-        # Gramian orthogonality check
-        # (should be the identity matrix for orthogonal matrices)
-        # Note that we have already ruled out left-handed cases above
-        gramians = matrix @ np.transpose(matrix, (0, 2, 1))
-        is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
-                                axis=(1, 2))
-        indices_to_orthogonalize = np.where(~is_orthogonal)[0]
-
-        # Orthogonalize the rotation matrices where necessary
-        if len(indices_to_orthogonalize) > 0:
-            # Exact solution to the orthogonal Procrustes problem using singular
-            # value decomposition
-            U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
-            matrix[indices_to_orthogonalize, :, :] = U @ Vt
-
-        # Convert the orthogonal rotation matrices to quaternions using the
-        # algorithm described in [3]_. This will also apply another
-        # orthogonalization step to correct for any small errors in the matrices
-        # that skipped the SVD step above.
-        cdef double[:, :, :] cmatrix
-        cmatrix = matrix
-        cdef Py_ssize_t num_rotations = cmatrix.shape[0]
-        cdef Py_ssize_t i, j, k
-        cdef double[:] decision = _empty1(4)
-        cdef int choice
-
-        cdef double[:, :] quat = _empty2(num_rotations, 4)
-
-        for ind in range(num_rotations):
-            decision[0] = cmatrix[ind, 0, 0]
-            decision[1] = cmatrix[ind, 1, 1]
-            decision[2] = cmatrix[ind, 2, 2]
-            decision[3] = cmatrix[ind, 0, 0] + cmatrix[ind, 1, 1] \
-                        + cmatrix[ind, 2, 2]
-            choice = _argmax4(decision)
-
-            if choice != 3:
-                i = choice
-                j = (i + 1) % 3
-                k = (j + 1) % 3
-
-                quat[ind, i] = 1 - decision[3] + 2 * cmatrix[ind, i, i]
-                quat[ind, j] = cmatrix[ind, j, i] + cmatrix[ind, i, j]
-                quat[ind, k] = cmatrix[ind, k, i] + cmatrix[ind, i, k]
-                quat[ind, 3] = cmatrix[ind, k, j] - cmatrix[ind, j, k]
-            else:
-                quat[ind, 0] = cmatrix[ind, 2, 1] - cmatrix[ind, 1, 2]
-                quat[ind, 1] = cmatrix[ind, 0, 2] - cmatrix[ind, 2, 0]
-                quat[ind, 2] = cmatrix[ind, 1, 0] - cmatrix[ind, 0, 1]
-                quat[ind, 3] = 1 + decision[3]
-
-            # normalize
-            _normalize4(quat[ind])
-
-        if is_single:
-            return cls(quat[0], normalize=False, copy=False)
-        else:
-            return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1296,126 +1185,6 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
-    @cython.embedsignature(True)
-    @classmethod
-    def from_euler(cls, seq, angles, degrees=False):
-        """Initialize from Euler angles.
-
-        Rotations in 3-D can be represented by a sequence of 3
-        rotations around a sequence of axes. In theory, any three axes spanning
-        the 3-D Euclidean space are enough. In practice, the axes of rotation are
-        chosen to be the basis vectors.
-
-        The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of reference (intrinsic), which
-        is attached to, and moves with, the object under rotation [1]_.
-
-        Parameters
-        ----------
-        seq : string
-            Specifies sequence of axes for rotations. Up to 3 characters
-            belonging to the set {'X', 'Y', 'Z'} for intrinsic rotations, or
-            {'x', 'y', 'z'} for extrinsic rotations. Extrinsic and intrinsic
-            rotations cannot be mixed in one function call.
-        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
-            Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True).
-            For a single character `seq`, `angles` can be:
-
-            - a single value
-            - array_like with shape (N,), where each `angle[i]`
-              corresponds to a single rotation
-            - array_like with shape (N, 1), where each `angle[i, 0]`
-              corresponds to a single rotation
-
-            For 2- and 3-character wide `seq`, `angles` can be:
-
-            - array_like with shape (W,) where `W` is the width of
-              `seq`, which corresponds to a single rotation with `W` axes
-            - array_like with shape (N, W) where each `angle[i]`
-              corresponds to a sequence of Euler angles describing a single
-              rotation
-
-        degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees.
-            Default is False.
-
-        Returns
-        -------
-        rotation : `Rotation` instance
-            Object containing the rotation represented by the sequence of
-            rotations around given axes with given angles.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-
-        Initialize a single rotation along a single axis:
-
-        >>> r = R.from_euler('x', 90, degrees=True)
-        >>> r.as_quat().shape
-        (4,)
-
-        Initialize a single rotation with a given axis sequence:
-
-        >>> r = R.from_euler('zyx', [90, 45, 30], degrees=True)
-        >>> r.as_quat().shape
-        (4,)
-
-        Initialize a stack with a single rotation around a single axis:
-
-        >>> r = R.from_euler('x', [90], degrees=True)
-        >>> r.as_quat().shape
-        (1, 4)
-
-        Initialize a stack with a single rotation with an axis sequence:
-
-        >>> r = R.from_euler('zyx', [[90, 45, 30]], degrees=True)
-        >>> r.as_quat().shape
-        (1, 4)
-
-        Initialize multiple elementary rotations in one object:
-
-        >>> r = R.from_euler('x', [90, 45, 30], degrees=True)
-        >>> r.as_quat().shape
-        (3, 4)
-
-        Initialize multiple rotations in one object:
-
-        >>> r = R.from_euler('zyx', [[90, 45, 30], [35, 45, 90]], degrees=True)
-        >>> r.as_quat().shape
-        (2, 4)
-
-        """
-        num_axes = len(seq)
-        if num_axes < 1 or num_axes > 3:
-            raise ValueError("Expected axis specification to be a non-empty "
-                             "string of upto 3 characters, got {}".format(seq))
-
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
-        if not (intrinsic or extrinsic):
-            raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
-                             "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
-
-        if any(seq[i] == seq[i+1] for i in range(num_axes - 1)):
-            raise ValueError("Expected consecutive axes to be different, "
-                             "got {}".format(seq))
-
-        seq = seq.lower()
-
-        angles, is_single = _format_angles(angles, degrees, num_axes)
-
-        quat = _elementary_quat_compose(seq.encode(), angles, intrinsic)
-
-        if is_single:
-            return cls(quat[0], normalize=False, copy=False)
-        else:
-            return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1674,198 +1443,6 @@ cdef class Rotation:
             return cls(quat[0], normalize=False, copy=False)
         else:
             return cls(quat, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
-    def as_quat(self, canonical=False, *, scalar_first=False):
-        """Represent as quaternions.
-
-        Rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_.
-
-        The 4 components of a quaternion are divided into a scalar part ``w``
-        and a vector part ``(x, y, z)`` and can be expressed from the angle
-        ``theta`` and the axis ``n`` of a rotation as follows::
-
-            w = cos(theta / 2)
-            x = sin(theta / 2) * n_x
-            y = sin(theta / 2) * n_y
-            z = sin(theta / 2) * n_z
-
-        There are 2 conventions to order the components in a quaternion:
-
-        - scalar-first order -- ``(w, x, y, z)``
-        - scalar-last order -- ``(x, y, z, w)``
-
-        The choice is controlled by `scalar_first` argument.
-        By default, it is False and the scalar-last order is used.
-
-        The mapping from quaternions to rotations is
-        two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
-        reverses the sign of each component, represent the same spatial
-        rotation.
-
-        Parameters
-        ----------
-        canonical : `bool`, default False
-            Whether to map the redundant double cover of rotation space to a
-            unique "canonical" single cover. If True, then the quaternion is
-            chosen from {q, -q} such that the w term is positive. If the w term
-            is 0, then the quaternion is chosen such that the first nonzero
-            term of the x, y, and z terms is positive.
-        scalar_first : bool, optional
-            Whether the scalar component goes first or last.
-            Default is False, i.e. the scalar-last order is used.
-
-        Returns
-        -------
-        quat : `numpy.ndarray`, shape (4,) or (N, 4)
-            Shape depends on shape of inputs used for initialization.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        A rotation can be represented as a quaternion with either scalar-last
-        (default) or scalar-first component order.
-        This is shown for a single rotation:
-
-        >>> r = R.from_matrix(np.eye(3))
-        >>> r.as_quat()
-        array([0., 0., 0., 1.])
-        >>> r.as_quat(scalar_first=True)
-        array([1., 0., 0., 0.])
-
-        When multiple rotations are stored in a single Rotation object, the
-        result will be a 2-dimensional array:
-
-        >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
-        >>> r.as_quat().shape
-        (2, 4)
-
-        Quaternions can be mapped from a redundant double cover of the
-        rotation space to a canonical representation with a positive w term.
-
-        >>> r = R.from_quat([0, 0, 0, -1])
-        >>> r.as_quat()
-        array([0. , 0. , 0. , -1.])
-        >>> r.as_quat(canonical=True)
-        array([0. , 0. , 0. , 1.])
-        """
-        if self._single:
-            q = np.array(self._quat[0], copy=True)
-            if canonical:
-                _quat_canonical_single(q)
-        else:
-            q = np.array(self._quat, copy=True)
-            if canonical:
-                _quat_canonical(q)
-
-        if scalar_first:
-            q = np.roll(q, 1, axis=None if self._single else 1)
-
-        return q
-
-
-    @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def as_rotvec(self, degrees=False):
-        """Represent as rotation vectors.
-
-        A rotation vector is a 3 dimensional vector which is co-directional to
-        the axis of rotation and whose norm gives the angle of rotation [1]_.
-
-        Parameters
-        ----------
-        degrees : boolean, optional
-            Returned magnitudes are in degrees if this flag is True, else they are
-            in radians. Default is False.
-
-            .. versionadded:: 1.7.0
-
-        Returns
-        -------
-        rotvec : ndarray, shape (3,) or (N, 3)
-            Shape depends on shape of inputs used for initialization.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation#Rotation_vector
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Represent a single rotation:
-
-        >>> r = R.from_euler('z', 90, degrees=True)
-        >>> r.as_rotvec()
-        array([0.        , 0.        , 1.57079633])
-        >>> r.as_rotvec().shape
-        (3,)
-
-        Represent a rotation in degrees:
-
-        >>> r = R.from_euler('YX', (-90, -90), degrees=True)
-        >>> s = r.as_rotvec(degrees=True)
-        >>> s
-        array([-69.2820323, -69.2820323, -69.2820323])
-        >>> np.linalg.norm(s)
-        120.00000000000001
-
-        Represent a stack with a single rotation:
-
-        >>> r = R.from_quat([[0, 0, 1, 1]])
-        >>> r.as_rotvec()
-        array([[0.        , 0.        , 1.57079633]])
-        >>> r.as_rotvec().shape
-        (1, 3)
-
-        Represent multiple rotations in a single object:
-
-        >>> r = R.from_quat([[0, 0, 1, 1], [1, 1, 0, 1]])
-        >>> r.as_rotvec()
-        array([[0.        , 0.        , 1.57079633],
-               [1.35102172, 1.35102172, 0.        ]])
-        >>> r.as_rotvec().shape
-        (2, 3)
-
-        """
-
-        cdef Py_ssize_t num_rotations = len(self._quat)
-        cdef double angle, scale, angle2
-        cdef double[:, :] rotvec = _empty2(num_rotations, 3)
-        cdef double[:] quat
-
-        for ind in range(num_rotations):
-            quat = self._quat[ind, :].copy()
-            _quat_canonical_single(quat)  # w > 0 ensures that 0 <= angle <= pi
-
-            angle = 2 * atan2(_norm3(quat), quat[3])
-
-            if angle <= 1e-3:  # small angle Taylor series expansion
-                angle2 = angle * angle
-                scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
-            else:  # large angle
-                scale = angle / sin(angle / 2)
-
-            rotvec[ind, 0] = scale * quat[0]
-            rotvec[ind, 1] = scale * quat[1]
-            rotvec[ind, 2] = scale * quat[2]
-
-        if degrees:
-            rotvec = np.rad2deg(rotvec)
-
-        if self._single:
-            return np.asarray(rotvec[0])
-        else:
-            return np.asarray(rotvec)
 
     @cython.embedsignature(True)
     def _compute_euler(self, seq, degrees, algorithm):
