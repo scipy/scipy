@@ -1,6 +1,7 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+import inspect
 import math
 
 import numpy as np
@@ -208,7 +209,7 @@ class _Domain(ABC):
         or not (False). Used for input validation.
     get_numerical_endpoints()
         Gets the numerical values of the domain endpoints, which may have been
-        defined symbolically.
+        defined symbolically or through a callable.
     __str__()
         Returns a text representation of the domain (e.g. ``[0, b)``).
         Used for generating documentation.
@@ -248,10 +249,12 @@ class _SimpleDomain(_Domain):
     ----------
     symbols : dict
         Inherited. A map from special values to symbols for use in `__str__`.
-    endpoints : 2-tuple of float(s) and/or str(s)
+    endpoints : 2-tuple of float(s) and/or str(s) and/or callable(s).
         A tuple with two values. Each may be either a float (the numerical
-        value of the endpoints of the domain) or a string (the name of the
-        parameters that will define the endpoint).
+        value of the endpoints of the domain), a string (the name of the
+        parameters that will define the endpoint), or a callable taking the
+        parameters used to define the endpoints of the domain as keyword only
+        arguments and returning a numerical value for the endpoint.
     inclusive : 2-tuple of bools
         A tuple with two boolean values; each indicates whether the
         corresponding endpoint is included within the domain or not.
@@ -262,7 +265,7 @@ class _SimpleDomain(_Domain):
         Records any parameters used to define the endpoints of the domain
     get_numerical_endpoints(parameter_values)
         Gets the numerical values of the domain endpoints, which may have been
-        defined symbolically.
+        defined symbolically or through a callable.
     contains(item, parameter_values)
         Determines whether the argument is contained within the domain
 
@@ -299,8 +302,9 @@ class _SimpleDomain(_Domain):
     def get_numerical_endpoints(self, parameter_values):
         r""" Get the numerical values of the domain endpoints.
 
-        Domain endpoints may be defined symbolically. This returns numerical
-        values of the endpoints given numerical values for any variables.
+        Domain endpoints may be defined symbolically or through a callable.
+        This returns numerical values of the endpoints given numerical values for
+        any variables.
 
         Parameters
         ----------
@@ -318,11 +322,19 @@ class _SimpleDomain(_Domain):
         a, b = self.endpoints
         # If `a` (`b`) is a string - the name of the parameter that defines
         # the endpoint of the domain - then corresponding numerical values
-        # will be found in the `parameter_values` dictionary. Otherwise, it is
-        # itself the array of numerical values of the endpoint.
+        # will be found in the `parameter_values` dictionary. 
+        # If a callable, it will be executed with `parameter_values` passed as
+        # keyword arguments, and it will return the numerical values.
+        # Otherwise, it is itself the array of numerical values of the endpoint.
         try:
-            a = np.asarray(parameter_values.get(a, a))
-            b = np.asarray(parameter_values.get(b, b))
+            if callable(a):
+                a = a(**parameter_values)
+            else:
+                a = np.asarray(parameter_values.get(a, a))
+            if callable(b):
+                b = b(**parameter_values)
+            else:
+                b = np.asarray(parameter_values.get(b, b))
         except TypeError as e:
             message = ("The endpoints of the distribution are defined by "
                        "parameters, but their values were not provided. When "
@@ -330,7 +342,6 @@ class _SimpleDomain(_Domain):
                        "all required distribution parameters as keyword "
                        "arguments.")
             raise TypeError(message) from e
-
         return a, b
 
     def contains(self, item, parameter_values=None):
@@ -381,7 +392,7 @@ class _RealDomain(_SimpleDomain):
         domain.
     get_numerical_endpoints(parameter_values)
         (Inherited) Gets the numerical values of the domain endpoints, which
-        may have been defined symbolically.
+        may have been defined symbolically, or through a callable.
     contains(item, parameter_values)
         (Inherited) Determines whether the argument is contained within the
         domain
@@ -393,15 +404,23 @@ class _RealDomain(_SimpleDomain):
         and having value NaN are specified by `proportions`.
 
     """
+    def _get_endpoint_str(self, endpoint, funcname):
+        if callable(endpoint):
+            if endpoint.__doc__ is not None:
+                return endpoint.__doc__
+            params = inspect.signature(endpoint).parameters.values()
+            params = [
+                p.name for p in params if p.kind == inspect.Parameter.KEYWORD_ONLY
+            ]
+            return f"{funcname}({','.join(params)})"
+        return self.symbols.get(endpoint, f"{endpoint}")
 
     def __str__(self):
         a, b = self.endpoints
+        a, b = self._get_endpoint_str(a, "f1"), self._get_endpoint_str(b, "f2")
         left_inclusive, right_inclusive = self.inclusive
-
         left = "[" if left_inclusive else "("
-        a = self.symbols.get(a, f"{a}")
         right = "]" if right_inclusive else ")"
-        b = self.symbols.get(b, f"{b}")
 
         return f"{left}{a}, {b}{right}"
 
@@ -3497,17 +3516,19 @@ def make_distribution(dist):
 
             endpoints : tuple
                 A tuple defining the lower and upper endpoints of the domain of the
-                parameter. Allowable values are floats or the name (string) of another
-                parameter.
+                parameter; allowable values are floats, the name (string) of another
+                parameter, or a callable taking parameters as keyword only
+                arguments and returning the numerical value of an endpoint for
+                given parameter values.
 
             inclusive : tuple of bool
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-        support : tuple
-            A tuple defining the lower and upper endpoints of the support of the
-            distribution. Allowable values are floats or the name (string) of a
-            parameter.
+        support : dict
+            A dictionary describing the support of the distribution. It has items
+            "endpoints" and "inclusive" with the same structure as the matching
+            items in the values of the parameters dict described above.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3570,7 +3591,7 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def support(self):
-    ...         return 'a', 'b'
+    ...         return {'endpoints': ('a', 'b'), 'inclusive': (True, True)}
     ...
     ...     def pdf(self, x, a, b):
     ...         return 1 / (x * (np.log(b)- np.log(a)))
@@ -3605,7 +3626,24 @@ def _make_distribution_rv_generic(dist):
         parameters.append(param)
         names.append(shape_info.name)
 
-    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    def _overrides(method_name):
+        return (getattr(dist.__class__, method_name, None)
+                is not getattr(stats.rv_continuous, method_name, None))
+
+    if _overrides("_get_support"):
+        def left(**parameter_values):
+            a, _ = dist._get_support(**parameter_values)
+            return np.asarray(a)[()]
+
+        def right(**parameter_values):
+            _, b = dist._get_support(**parameter_values)
+            return np.asarray(b)[()]
+
+        endpoints = (left, right)
+    else:
+        endpoints = support
+
+    _x_support = _RealDomain(endpoints=endpoints, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
@@ -3622,13 +3660,6 @@ def _make_distribution_rv_generic(dist):
         def __str__(self):
             s = super().__str__()
             return s.replace('CustomDistribution', repr_str)
-
-    # override the domain's `get_numerical_endpoints` rather than the
-    # distribution's `_support` to ensure that `_support` takes care
-    # of any required broadcasting, etc.
-    def get_numerical_endpoints(parameter_values):
-        a, b = dist._get_support(**parameter_values)
-        return np.asarray(a)[()], np.asarray(b)[()]
 
     def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
@@ -3683,14 +3714,6 @@ def _make_distribution_rv_generic(dist):
             # Make it an attribute of the new object with the new name
             setattr(CustomDistribution, new_method, getattr(dist, old_method))
 
-    def _overrides(method_name):
-        return (getattr(dist.__class__, method_name, None)
-                is not getattr(stats.rv_continuous, method_name, None))
-
-    if _overrides('_get_support'):
-        domain = CustomDistribution._variable.domain
-        domain.get_numerical_endpoints = get_numerical_endpoints
-
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
 
@@ -3717,7 +3740,6 @@ def _make_distribution_rv_generic(dist):
 
 def _make_distribution_custom(dist):
     parameters = []
-    support = getattr(dist, 'support')
 
     for name, info in dist.parameters.items():
         domain = _RealDomain(endpoints=info['endpoints'],
@@ -3725,7 +3747,10 @@ def _make_distribution_custom(dist):
         param = _RealParameter(name, domain=domain)
         parameters.append(param)
 
-    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    endpoints = dist.support["endpoints"]
+    inclusive = dist.support.get("inclusive", (True, True))
+
+    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
