@@ -1120,7 +1120,7 @@ class TestMakeDistribution:
 
             @property
             def support(self):
-                return {'endpoints': ('a', 'b'), 'inclusive': (True, True)}
+                return {'endpoints': ('a', 'b')}
 
             def pdf(self, x, a, b):
                 return 1 / (x * (np.log(b) - np.log(a)))
