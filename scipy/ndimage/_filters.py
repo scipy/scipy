@@ -47,7 +47,94 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter']
+           'generic_filter1d', 'generic_filter', 'generic_filter2']
+
+
+def _generic_filter2_iv(input, function, size, footprint, output,
+                        mode, cval, origin, axes):
+    # generic_filter2 *i*nput *v*alidation and standardization
+
+    input = np.asarray(input)
+
+    if size is None and footprint is None:
+        raise RuntimeError("Either `size` or `footprint` must be provided.")
+
+    if size is not None and footprint is not None:
+        # Currently a warning:
+        # warnings.warn("Ignoring `size` because `footprint` is provided.", stacklevel=3)
+        raise RuntimeError("Either `size` or `footprint` may be provided, not both.")
+
+
+    if footprint is not None:
+        footprint = np.asarray(footprint, dtype=bool)
+        size = footprint.shape
+
+        def function(input, *args, axis=-1, function=function, footprint=footprint, **kwargs):
+            return function(input[..., footprint], *args, axis=-1, **kwargs)
+    else:
+        if np.isscalar(size):
+            size = (size,) * input.ndim
+        else:
+            size = tuple(size)
+
+    return (input, function, size, footprint, output, mode, cval, origin, axes)
+
+
+def _fill_borders(base, borders, mode):
+    for i, border_i in enumerate(borders):
+        a, b = border_i
+        base = np.swapaxes(base, i, 0)
+
+        if mode == 'wrap':
+            base[:a] = base[-a+b : b]
+            base[b:] = base[a : -b+a]
+        elif mode == 'reflect':
+            base[:a] = base[a : 2*a][::-1]
+            base[b:] = base[2*b : b][::-1]
+        elif mode == 'mirror':
+            base[:a] = base[a+1: 2*a+1][::-1]
+            base[b:] = base[2*b-1 : b-1][::-1]
+        elif mode == 'nearest':
+            base[:a] = base[a]
+            base[b:] = base[b-1]
+
+        base = np.swapaxes(base, 0, i)
+    return base
+
+
+def generic_filter2(input, function, size=None, footprint=None, output=None,
+                    mode='reflect', cval=0.0, origin=0, extra_arguments=(),
+                    extra_keywords=None, *, axes=None):
+    # todo:
+    #  ✓ implement size=None
+    #  ✓ implement size=scalar
+    #  ✓ implement footprint (assuming function does not depend on the the shape of the input)
+    #  ✓ implement output
+    #  ✓ implement mode='wrap'
+    #  ✓ implement mode = 'reflect'
+    #  ✓ implement mode = 'mirror'
+    #  ✓ implement mode = 'nearest'
+    #    implement origin
+    #    implement axes
+    #    fix any edge case bugs with small size 0, 1, 2, 3
+
+    args = (input, function, size, footprint, output, mode, cval, origin, axes)
+    args = _generic_filter2_iv(*args)
+    (input, function, size, footprint, output, mode, cval, origin, axes) = args
+
+    base_size = tuple(input.shape[i] + size[i] - 1 for i in range(len(size)))
+    base = np.full(base_size, cval, dtype=input.dtype)
+    borders = tuple((size[i] // 2, -size[i] // 2 + 1) for i in range(len(size)))
+    middle_slice = tuple(slice(a, b) for a, b in borders)
+    base[middle_slice] = input
+    base = _fill_borders(base, borders, mode)
+    view = np.lib.stride_tricks.sliding_window_view(base, size)
+    axis = tuple(-i for i in range(1, len(size) + 1))
+    extra_keywords = {} if extra_keywords is None else extra_keywords
+    res = function(view, *extra_arguments, axis=axis, **extra_keywords)
+    if output is not None:
+        output[...] = res[...]
+    return res
 
 
 def _invalid_origin(origin, lenw):
