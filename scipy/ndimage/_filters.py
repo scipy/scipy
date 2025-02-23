@@ -47,12 +47,12 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter']
+           'generic_filter1d', 'generic_filter', 'vectorized_filter']
 
 
-def _generic_filter_iv(input, function, size, footprint, output,
-                        mode, cval, origin, axes):
-    # _generic_filter input validation and standardization
+def _vectorized_filter_iv(input, function, size, footprint, output,
+                          mode, cval, origin, axes):
+    # vectorized_filter input validation and standardization
     # a lot more is needed
 
     input = np.asarray(input)
@@ -119,16 +119,18 @@ def _fill_borders(bordered_image, borders, mode):
     return bordered_image
 
 
-def _generic_filter(input, function, size=None, footprint=None, output=None,
-                    mode='reflect', cval=0.0, origin=None, extra_arguments=(),
-                    extra_keywords=None, *, axes=None):
+def vectorized_filter(input, function, size=None, footprint=None, output=None,
+                      mode='reflect', cval=0.0, origin=None, extra_arguments=(),
+                      extra_keywords=None, *, axes=None):
     # todo:
+    #  add batch support
     #  add input validation
-    #  add tests
-    #  properly fix edge case bugs with small size (remove padding)?
+    #  make tests exhaustive
+    #  add documentation
+    #  properly deal with small `size` edge case (remove padding)?
 
     (input, function, size, footprint, output,
-     mode, cval, origin, axes, n_axes, n_batch) = _generic_filter_iv(
+     mode, cval, origin, axes, n_axes, n_batch) = _vectorized_filter_iv(
         input, function, size, footprint, output, mode, cval, origin, axes)
 
     # Add padding around the outsides in addition to the required borders, which are
@@ -144,7 +146,7 @@ def _generic_filter(input, function, size=None, footprint=None, output=None,
     batch_shape = input.shape[:n_batch]
     core_shape = tuple(input.shape[i] + size[i] - 1 + 2*padding for i in axis)
     bordered_image = np.full(batch_shape + core_shape, cval, dtype=input.dtype)
-    borders = (tuple((size[i] // 2 + j + padding, -size[i] // 2 + 1 + j - padding)
+    borders = (tuple((size[i]//2 + j + padding, -size[i]//2 + 1 + j - padding)
                      for i, j in zip(range(n_axes), origin)))
     input_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
     bordered_image[input_slice] = input

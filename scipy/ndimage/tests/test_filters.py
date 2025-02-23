@@ -2858,3 +2858,24 @@ def test_gh_22333():
     expected = [58, 67, 87, 108, 163, 108, 108, 108, 87]
     actual = ndimage.median_filter(x, size=9, mode='constant')
     assert_array_equal(actual, expected)
+
+
+class TestVectorizedFilter():
+    @pytest.mark.parametrize("axes, size",
+                             [(None, (3, 4, 5)), ((0, 2), (3, 4)), ((-1,), (5,))])
+    @pytest.mark.parametrize("origin", [0, 1])
+    @pytest.mark.parametrize("mode", ['reflect', 'nearest', 'mirror', 'wrap', 'constant'])
+    @skip_xp_backends(cpu_only=True, reason="used NumPy")
+    def test_against_generic_filter(self, axes, size, origin, mode):
+        rng = np.random.default_rng(435982456983456987356)
+        input = rng.random(size=(11, 12, 13))
+        kwargs = dict(axes=axes, size=size, origin=origin, mode=mode)
+        ref = ndimage.generic_filter(input, np.mean, **kwargs)
+        res = ndimage.vectorized_filter(input, np.mean, **kwargs)
+        np.testing.assert_allclose(res, ref, atol=1e-15)
+
+        kwargs.pop('size')
+        kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
+        ref = ndimage.generic_filter(input, np.mean, **kwargs)
+        res = ndimage.vectorized_filter(input, np.mean, **kwargs)
+        np.testing.assert_allclose(res, ref, atol=1e-15)
