@@ -930,11 +930,22 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_inv():
+def test_as_euler_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    angle = jax.numpy.array([0, 0, 0])
+    from_euler = jax.jit(Rotation.from_euler, static_argnums=0)
+    jax.block_until_ready(from_euler("zxz", angle, degrees=True))
+
+
+def test_inv(xp):
     rnd = np.random.RandomState(0)
     n = 10
     # preserve use of old random_state during SPEC 7 transition
     p = Rotation.random(num=n, random_state=rnd)
+    # Transform to xp Rotation. Random is only available for NumPy
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -949,40 +960,55 @@ def test_inv():
     assert_array_almost_equal(result2, eye3d)
 
 
-def test_inv_single_rotation():
+def test_inv_single_rotation(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = Rotation.random(rng=rng)
+    # Transform to xp Rotation. Random is only available for NumPy
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
     q = p.inv()
 
     p_mat = p.as_matrix()
     q_mat = q.as_matrix()
-    res1 = np.dot(p_mat, q_mat)
-    res2 = np.dot(q_mat, p_mat)
+    res1 = xp.linalg.matmul(p_mat, q_mat)
+    res2 = xp.linalg.matmul(q_mat, p_mat)
 
-    eye = np.eye(3)
+    eye = xp.eye(3)
 
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
     x = Rotation.random(num=1, rng=rng)
+    # Transform to xp Rotation. Random is only available for NumPy
+    x = Rotation.from_quat(xp.asarray(x.as_quat()))
     y = x.inv()
 
     x_matrix = x.as_matrix()
     y_matrix = y.as_matrix()
-    result1 = np.einsum("...ij,...jk->...ik", x_matrix, y_matrix)
-    result2 = np.einsum("...ij,...jk->...ik", y_matrix, x_matrix)
+    result1 = xp.linalg.matmul(x_matrix, y_matrix)
+    result2 = xp.linalg.matmul(y_matrix, x_matrix)
 
-    eye3d = np.empty((1, 3, 3))
-    eye3d[:] = np.eye(3)
+    eye3d = xp.empty((1, 3, 3))
+    eye3d = xpx.at(eye3d)[..., :3, :3].set(xp.eye(3))
 
     assert_array_almost_equal(result1, eye3d)
     assert_array_almost_equal(result2, eye3d)
 
 
-def test_identity_magnitude():
+def test_inv_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.identity()
+    inv = jax.jit(Rotation.inv)
+    jax.block_until_ready(inv(r))
+
+
+def test_identity_magnitude(xp):
     n = 10
-    assert_allclose(Rotation.identity(n).magnitude(), 0)
-    assert_allclose(Rotation.identity(n).inv().magnitude(), 0)
+    r = Rotation.identity(n)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    assert_allclose(r.magnitude(), 0)
+    assert_allclose(r.inv().magnitude(), 0)
 
 
 def test_single_identity_magnitude():

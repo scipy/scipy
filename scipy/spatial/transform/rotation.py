@@ -12,6 +12,7 @@ import scipy.spatial.transform._cython_backend as cython_backend
 import scipy.spatial.transform._array_api_backend as array_api_backend
 from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike
 import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import _transition_to_rng
 
 
 __all__ = ["Rotation", "Slerp"]  # noqa: F822
@@ -84,25 +85,39 @@ class Rotation:
         return matrix
 
     def as_rotvec(self, degrees: bool = False) -> Array:
-        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
-        rotvec = backend.as_rotvec(self._quat, degrees=degrees)
+        rotvec = self._backend.as_rotvec(self._quat, degrees=degrees)
         if self._single:
             return rotvec[0, ...]
         return rotvec
 
     def as_mrp(self) -> Array:
-        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
-        mrp = backend.as_mrp(self._quat)
+        mrp = self._backend.as_mrp(self._quat)
         if self._single:
             return mrp[0, ...]
         return mrp
 
     def as_euler(self, seq: str, degrees: bool = False) -> Array:
-        backend = backend_registry.get(array_namespace(self._quat), array_api_backend)
-        euler = backend.as_euler(self._quat, seq, degrees=degrees)
+        euler = self._backend.as_euler(self._quat, seq, degrees=degrees)
         if self._single:
             return euler[0, ...]
         return euler
+
+    @classmethod
+    @_transition_to_rng("random_state", position_num=2)
+    def random(cls, num: int | None = None, rng: np.random.Generator | None = None):
+        # DECISION: How do we handle random numbers in other frameworks?
+        # TODO: The array API does not have a unified random interface. This method only creates
+        # numpy arrays. If we do want to support other frameworks, we need a way to handle other rng
+        # implementations.
+        backend = backend_registry[array_namespace(np.empty(0))]
+        sample = backend.random(num, rng)
+        return cls(sample, normalize=True, copy=False)
+
+    def inv(self):
+        q_inv = self._backend.inv(self._quat)
+        if self._single:
+            q_inv = q_inv[0, ...]
+        return Rotation(q_inv, normalize=False, copy=False)
 
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)
@@ -121,12 +136,6 @@ class Rotation:
         # TODO: Remove this once we properly support broadcasting with arbitrary
         # number of rotations
         return self._single
-
-    def inv(self):
-        q_inv = self._backend.inv(self._quat)
-        if self._single:
-            q_inv = q_inv[0]
-        return Rotation(q_inv, normalize=False, copy=False)
 
     def __bool__(self):
         """Comply with Python convention for objects to be True.

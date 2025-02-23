@@ -283,11 +283,11 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     axes = xp.where(extrinsic, axes, xp.flip(axes))
     i, j, k = axes
     symmetric = xp.asarray(i == k, device=_device)
+    k = xp.where(symmetric, 3 - i - j, k)
     sign = xp.asarray(
         (i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=_device
     )
     # Permute quaternion elements
-    k = xp.where(symmetric, 3 - i - j, k)
     a = xp.where(symmetric, quat[..., 3], quat[..., 3] - quat[..., j])
     b = xp.where(symmetric, quat[..., i], quat[..., i] + quat[..., k] * sign)
     c = xp.where(symmetric, quat[..., j], quat[..., j] + quat[..., 3])
@@ -297,7 +297,7 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     half_sum = xp.atan2(b, a)
     half_diff = xp.atan2(d, c)
 
-    angles = xp.empty((*quat.shape[:-1], 3), dtype=quat.dtype)
+    angles = xp.zeros((*quat.shape[:-1], 3), dtype=quat.dtype)
     angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
 
     # Check if the second angle is close to 0 or pi, causing a singularity.

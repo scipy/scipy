@@ -818,6 +818,19 @@ def inv(quat: double[:, :]) -> double[:, :]:
 
 
 @cython.embedsignature(True)
+@_transition_to_rng('random_state', position_num=1)
+def random(num=None, rng=None):
+    rng = check_random_state(rng)
+
+    if num is None:
+        sample = rng.normal(size=4)
+    else:
+        sample = rng.normal(size=(num, 4))
+
+    return sample
+
+
+@cython.embedsignature(True)
 def apply(quat: cython.double[:, :], vectors, inverse=False):
     """Apply this rotation to a set of vectors.
 
@@ -1995,67 +2008,6 @@ cdef class Rotation:
             q = np.zeros((num, 4))
             q[:, 3] = 1
         return cls(q, normalize=False)
-
-    @cython.embedsignature(True)
-    @classmethod
-    @_transition_to_rng('random_state', position_num=2)
-    def random(cls, num=None, rng=None):
-        """Generate uniformly distributed rotations.
-
-        Parameters
-        ----------
-        num : int or None, optional
-            Number of random rotations to generate. If None (default), then a
-            single rotation is generated.
-        rng : `numpy.random.Generator`, optional
-            Pseudorandom number generator state. When `rng` is None, a new
-            `numpy.random.Generator` is created using entropy from the
-            operating system. Types other than `numpy.random.Generator` are
-            passed to `numpy.random.default_rng` to instantiate a `Generator`.
-
-        Returns
-        -------
-        random_rotation : `Rotation` instance
-            Contains a single rotation if `num` is None. Otherwise contains a
-            stack of `num` rotations.
-
-        Notes
-        -----
-        This function is optimized for efficiently sampling random rotation
-        matrices in three dimensions. For generating random rotation matrices
-        in higher dimensions, see `scipy.stats.special_ortho_group`.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-
-        Sample a single rotation:
-
-        >>> R.random().as_euler('zxy', degrees=True)
-        array([-110.5976185 ,   55.32758512,   76.3289269 ])  # random
-
-        Sample a stack of rotations:
-
-        >>> R.random(5).as_euler('zxy', degrees=True)
-        array([[-110.5976185 ,   55.32758512,   76.3289269 ],  # random
-               [ -91.59132005,  -14.3629884 ,  -93.91933182],
-               [  25.23835501,   45.02035145, -121.67867086],
-               [ -51.51414184,  -15.29022692, -172.46870023],
-               [ -81.63376847,  -27.39521579,    2.60408416]])
-
-        See Also
-        --------
-        scipy.stats.special_ortho_group
-
-       """
-        rng = check_random_state(rng)
-
-        if num is None:
-            sample = rng.normal(size=4)
-        else:
-            sample = rng.normal(size=(num, 4))
-
-        return cls(sample)
 
     @cython.embedsignature(True)
     @classmethod
