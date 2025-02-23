@@ -781,6 +781,10 @@ const char *binom_doc = R"(
     (0.037399983365134115, 0.0)
     )";
 
+const char *_binomln_doc = R"(
+    Internal function, do not use.
+    )";
+
 const char *cotdg_doc = R"(
     cotdg(x, out=None)
 
