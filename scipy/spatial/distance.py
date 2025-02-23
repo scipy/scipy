@@ -2772,6 +2772,19 @@ def _pdist_callable(X, *, out, metric, **kwargs):
 
 
 def _cdist_callable(XA, XB, *, out, metric, **kwargs):
+    if getattr(metric, "__name__", "Unknown") == "minkowski"  and "p" in kwargs and "w" not in kwargs:
+        p = kwargs["p"]
+        # Convert p to float safely if possible
+        try:
+            p_numeric = float(p)
+        except (TypeError, ValueError):
+            p_numeric = None  # If conversion fails, treat as non-matching
+
+        # If p is equivalent to 0, 1, 2, or inf, skip the lp_norm shortcut
+        if p_numeric in (0.0, 1.0, 2.0, np.inf):
+            pass  # Continue with the rest of the function
+        else:
+            return lp_norm_v2_pList(XA, XB, p)  # Shortcut return if p is valid
     mA = XA.shape[0]
     mB = XB.shape[0]
     dm = _prepare_out_argument(out, np.float64, (mA, mB))
@@ -2779,6 +2792,46 @@ def _cdist_callable(XA, XB, *, out, metric, **kwargs):
         for j in range(mB):
             dm[i, j] = metric(XA[i], XB[j], **kwargs)
     return dm
+
+def arrayPrepper(a, b):
+    # np.abs(a[:, None, :] - b[None, :, :])
+    return _distance_pybind.compute_abs_difference(a, b)
+
+def lp_norm_v2_pList(a: np.ndarray, b: np.ndarray, p: int | float = 2) -> np.ndarray:
+    """
+    This takes in two arrays and returns the Lp norm of the difference between the two arrays.
+    :param a: ndarray.
+        Input array 1
+    :param b: ndarray.
+        Input array 2
+    :param p: float.
+        The power of the norm.
+    :param debug: bool.
+        If True, print debug information and use custom slower methods.
+    :return: ndarray.
+        Lp norm of the difference between the two arrays.
+    """
+    if np.array_equal(a, b):
+        return np.zeros(a.shape[:-1])
+    if p < 0:
+        raise ValueError("p must be greater than 0")
+    if not isinstance(p, int) and not isinstance(p, float):
+        raise ValueError("p must be a float or an integer")
+    pfloat = float(p)
+    inv_p = float(float(1) / pfloat) if p != 0 else np.inf
+    med_array = arrayPrepper(a, b)
+    if isinstance(p, int) or p.is_integer():
+        p = int(p)
+        ein_string = "...i," + ",".join(["...i" for _ in range(p - 1)]) + "->..."
+        diff_copies = [med_array for _ in range(p)]
+        return np.float_power(np.einsum(ein_string, *diff_copies), inv_p)
+    pIntRat = pfloat.as_integer_ratio()
+    if pIntRat[0] == 1 and pIntRat[1] > 1:
+        p_denom = pIntRat[1]
+        post_med_array = np.float_power(med_array, pfloat)
+        sumArray = np.einsum("...i->...", post_med_array)
+        return np.power(sumArray, p_denom)
+    return np.float_power(np.einsum("...i->...", np.float_power(med_array, pfloat)), inv_p)
 
 
 def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
