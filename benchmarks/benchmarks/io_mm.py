@@ -54,6 +54,9 @@ class MemUsage(Benchmark):
         size = {
             '1M': int(1e6),
             '10M': int(10e6),
+            '25M': int(25e6),
+            '50M': int(50e6),
+            '75M': int(75e6),
             '100M': int(100e6),
             '300M': int(300e6),
             # '500M': int(500e6),
@@ -106,6 +109,7 @@ class MemUsage(Benchmark):
         mmread('{self.filename}')
         """
         time, peak_mem = run_monitored(code)
+        print(peak_mem)
         return peak_mem / size
 
     def track_mmwrite(self, size, implementation, matrix_type):
