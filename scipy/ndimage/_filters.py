@@ -77,11 +77,18 @@ def _generic_filter2_iv(input, function, size, footprint, output,
         else:
             size = tuple(size)
 
-    return (input, function, size, footprint, output, mode, cval, origin, axes)
+    if axes is not None:
+        input = np.moveaxis(input, axes, tuple(range(-len(axes), 0)))
+
+    n_axes = len(size)  # validate against length of axes
+    n_batch = input.ndim - n_axes
+
+    return (input, function, size, footprint, output, mode, cval, origin, axes, n_axes, n_batch)
 
 
 def _fill_borders(base, borders, mode):
     for i, border_i in enumerate(borders):
+        i = i + (base.ndim - len(borders))
         a, b = border_i
         base = np.swapaxes(base, i, 0)
 
@@ -114,26 +121,33 @@ def generic_filter2(input, function, size=None, footprint=None, output=None,
     #  ✓ implement mode = 'reflect'
     #  ✓ implement mode = 'mirror'
     #  ✓ implement mode = 'nearest'
+    #  ✓ implement axes
     #    implement origin
-    #    implement axes
     #    fix any edge case bugs with small size 0, 1, 2, 3
 
     args = (input, function, size, footprint, output, mode, cval, origin, axes)
     args = _generic_filter2_iv(*args)
-    (input, function, size, footprint, output, mode, cval, origin, axes) = args
+    (input, function, size, footprint, output, mode, cval, origin, axes, n_axes, n_batch) = args
 
-    base_size = tuple(input.shape[i] + size[i] - 1 for i in range(len(size)))
+    # `axes` have been moved to end; that is, the indices given by `axis` below.
+    # Everything acts along the last axes; the ones in front are along for the ride.
+    axis = tuple(range(-n_axes, 0))
+    base_size = input.shape[:n_batch] + tuple(input.shape[i] + size[i] - 1 for i in axis)
     base = np.full(base_size, cval, dtype=input.dtype)
-    borders = tuple((size[i] // 2, -size[i] // 2 + 1) for i in range(len(size)))
-    middle_slice = tuple(slice(a, b) for a, b in borders)
+    borders = tuple((size[i] // 2, -size[i] // 2 + 1) for i in range(n_axes))
+    middle_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
     base[middle_slice] = input
     base = _fill_borders(base, borders, mode)
-    view = np.lib.stride_tricks.sliding_window_view(base, size)
-    axis = tuple(-i for i in range(1, len(size) + 1))
+    view = np.lib.stride_tricks.sliding_window_view(base, size, axis=axis)
     extra_keywords = {} if extra_keywords is None else extra_keywords
     res = function(view, *extra_arguments, axis=axis, **extra_keywords)
+
+    if axes is not None:
+        res = np.moveaxis(res, tuple(range(-len(axes), 0)), axes)
+
     if output is not None:
         output[...] = res[...]
+
     return res
 
 
