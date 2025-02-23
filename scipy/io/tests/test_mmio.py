@@ -744,9 +744,10 @@ class TestMMIOCoordinate:
                 result = mmread(fname, spmatrix=False).toarray()
                 assert_array_almost_equal(result, expected)
 
-    def test_precision(self):
+    @pytest.mark.parametrize("precision_type", [int, np.int32, np.int64, np.array])
+    def test_precision(self, precision_type):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
-        test_precisions = range(1, 10)
+        test_precisions = range(1, 15)
         for value in test_values:
             for precision in test_precisions:
                 # construct sparse matrix with test value at last main diagonal
@@ -754,12 +755,25 @@ class TestMMIOCoordinate:
                 A = scipy.sparse.dok_array((n, n))
                 A[n-1, n-1] = value
                 # write matrix with test precision and read again
-                mmwrite(self.fn, A, precision=precision)
+                mmwrite(self.fn, A, precision=precision_type(precision))
                 A = scipy.io.mmread(self.fn, spmatrix=False)
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
                 assert_allclose(A.data, [float(f'{value:.{precision}g}')])
+
+    @pytest.mark.parametrize("precision", [-1, 0, 16])
+    def test_invalid_precision_range(self, precision):
+        A = scipy.sparse.dok_array((2, 2))
+        with pytest.warns(FutureWarning,
+                          match='From SciPy 1.18.0, an exception will be thrown'):
+            mmwrite(self.fn, A, precision=precision)
+
+    @pytest.mark.parametrize("precision", [1.0, "1", [], np.array([1])])
+    def test_invalid_precision_type(self, precision):
+        A = scipy.sparse.dok_array((2, 2))
+        with pytest.raises(TypeError, match='integer'):
+            mmwrite(self.fn, A, precision=precision)
 
     def test_bad_number_of_coordinate_header_fields(self):
         s = """\
