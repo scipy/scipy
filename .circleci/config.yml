@@ -76,7 +76,7 @@ jobs:
           command: |
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
-            pip install mpmath gmpy2 asv click rich-click doit pydevtool pooch threadpoolctl
+            pip install mpmath gmpy2 asv click rich-click doit pydevtool pooch threadpoolctl "psutil<7.0"
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
