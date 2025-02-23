@@ -2860,11 +2860,12 @@ def test_gh_22333():
     assert_array_equal(actual, expected)
 
 
-class TestVectorizedFilter():
+class TestVectorizedFilter:
     @pytest.mark.parametrize("axes, size",
                              [(None, (3, 4, 5)), ((0, 2), (3, 4)), ((-1,), (5,))])
     @pytest.mark.parametrize("origin", [0, 1])
-    @pytest.mark.parametrize("mode", ['reflect', 'nearest', 'mirror', 'wrap', 'constant'])
+    @pytest.mark.parametrize("mode",
+                             ['reflect', 'nearest', 'mirror', 'wrap', 'constant'])
     @skip_xp_backends(cpu_only=True, reason="used NumPy")
     def test_against_generic_filter(self, axes, size, origin, mode):
         rng = np.random.default_rng(435982456983456987356)

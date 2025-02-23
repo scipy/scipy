@@ -33,6 +33,7 @@ import numbers
 import warnings
 import numpy as np
 import operator
+import math
 
 from scipy._lib._util import normalize_axis_index
 from . import _ni_support
@@ -50,8 +51,8 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'generic_filter1d', 'generic_filter', 'vectorized_filter']
 
 
-def _vectorized_filter_iv(input, function, size, footprint, output,
-                          mode, cval, origin, axes):
+def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
+                          extra_arguments, extra_keywords, axes, batch_memory):
     # vectorized_filter input validation and standardization
     # a lot more is needed
 
@@ -71,8 +72,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output,
         footprint = np.asarray(footprint, dtype=bool)
         size = footprint.shape
 
-        def function(input, *args, axis=-1, function=function,
-                     footprint=footprint, **kwargs):
+        def function(input, *args, axis=-1, function=function, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
     else:
         if np.isscalar(size):
@@ -91,8 +91,25 @@ def _vectorized_filter_iv(input, function, size, footprint, output,
     elif np.isscalar(origin):
         origin = (origin,) * n_axes
 
-    return (input, function, size, footprint, output,
-            mode, cval, origin, axes, n_axes, n_batch)
+    extra_keywords = {} if extra_keywords is None else extra_keywords
+
+    # Wrap the function to limit maximum memory usage
+    def function(view, axis, function=function):
+        # can't currently use user-provided `output` because we need a little padding
+        temp = np.empty(view.shape[:-len(axis)], dtype=view.dtype)
+        # for now, assume we only have to iterate over zeroth axis
+        chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
+        slices_per_batch = min(temp.shape[0], batch_memory // chunk_size)
+        if slices_per_batch == 0:
+            raise ValueError("`batch_memory` is insufficient for chunk size.")
+        for i in range(0, temp.shape[0], slices_per_batch):
+            print(i)
+            i2 = min(i + slices_per_batch, temp.shape[0])
+            temp[i:i2] = function(view[i:i2], *extra_arguments,
+                                  axis=axis, **extra_keywords)
+        return temp
+
+    return (input, function, size, output, mode, cval, origin, axes, n_axes, n_batch)
 
 
 def _fill_borders(bordered_image, borders, mode):
@@ -119,9 +136,9 @@ def _fill_borders(bordered_image, borders, mode):
     return bordered_image
 
 
-def vectorized_filter(input, function, size=None, footprint=None, output=None,
+def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
                       mode='reflect', cval=0.0, origin=None, extra_arguments=(),
-                      extra_keywords=None, *, axes=None):
+                      extra_keywords=None, axes=None, batch_memory=2**30):
     # todo:
     #  add batch support
     #  add input validation
@@ -129,9 +146,9 @@ def vectorized_filter(input, function, size=None, footprint=None, output=None,
     #  add documentation
     #  properly deal with small `size` edge case (remove padding)?
 
-    (input, function, size, footprint, output,
-     mode, cval, origin, axes, n_axes, n_batch) = _vectorized_filter_iv(
-        input, function, size, footprint, output, mode, cval, origin, axes)
+    (input, function, size, output, mode, cval, origin, axes, n_axes, n_batch
+     ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
+        origin, extra_arguments, extra_keywords, axes, batch_memory)
 
     # Add padding around the outsides in addition to the required borders, which are
     # needed to implement `mode`. At the end, we extract the desired image from the
@@ -152,8 +169,7 @@ def vectorized_filter(input, function, size=None, footprint=None, output=None,
     bordered_image[input_slice] = input
     bordered_image = _fill_borders(bordered_image, borders, mode)
     view = np.lib.stride_tricks.sliding_window_view(bordered_image, size, axis=axis)
-    extra_keywords = {} if extra_keywords is None else extra_keywords
-    res = function(view, *extra_arguments, axis=axis, **extra_keywords)
+    res = function(view, axis=axis)
 
     output_slice = (slice(None),)*n_batch + (slice(padding, -padding),)*n_axes
     res = res[output_slice]
