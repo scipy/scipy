@@ -1,7 +1,17 @@
-option('blas', type: 'string', value: 'openblas',
-        description: 'option for BLAS library switching')
-option('lapack', type: 'string', value: 'openblas',
-        description: 'option for LAPACK library switching')
+option('blas', type: 'string', value: 'auto',
+        description: 'Option for BLAS library selection. By default, try to find any in the order given by `blas-order`')
+option('lapack', type: 'string', value: 'auto',
+        description: 'Option for LAPACK library selection. By default, try to find any in the order given by `lapack-order`')
+option('blas-order', type: 'array', value: ['auto'],
+       description: 'Order of BLAS libraries to search for. E.g.: mkl,openblas,blis,blas')
+option('lapack-order', type: 'array', value: ['auto'],
+       description: 'Order of LAPACK libraries to search for. E.g.: mkl,openblas,lapack')
+option('use-ilp64', type: 'boolean', value: false,
+       description: 'Use ILP64 (64-bit integer) BLAS and LAPACK interfaces')
+option('blas-symbol-suffix', type: 'string', value: 'auto',
+        description: 'BLAS and LAPACK symbol suffix to use, if any')
+option('mkl-threading', type: 'string', value: 'auto',
+        description: 'MKL threading method, one of: `seq`, `iomp`, `gomp`, `tbb`')
 option('use-g77-abi', type: 'boolean', value: false,
         description: 'If set to true, forces using g77 compatibility wrappers ' +
                      'for LAPACK functions. The default is to use gfortran ' +
