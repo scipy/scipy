@@ -189,3 +189,22 @@ def _datacopied(arr, original):
     if not isinstance(original, np.ndarray) and hasattr(original, '__array__'):
         return False
     return arr.base is None
+
+
+# copy-pasted from numpy/linalg/_linalg.py
+def _assert_stacked_2d(*arrays):
+    for a in arrays:
+        if a.ndim < 2:
+            raise LinAlgError('%d-dimensional array given. Array must be '
+                    'at least two-dimensional' % a.ndim)
+
+
+def _assert_stacked_square(*arrays):
+    for a in arrays:
+        m, n = a.shape[-2:]
+        if m != n:
+            raise LinAlgError('Last 2 dimensions of the array must be square')
+
+
+def _raise_linalgerror_singular(err, flag):
+    raise LinAlgError("Singular matrix")
