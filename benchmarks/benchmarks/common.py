@@ -192,9 +192,11 @@ def set_mem_rlimit(max_mem=None):
     Set address space rlimit
     """
     import resource
+    print('max_mem_in: ', max_mem)
     if max_mem is None:
         mem_info = get_mem_info()
         max_mem = int(mem_info['memtotal'] * 0.7)
+        print('max_mem_calc: ', max_mem)
     cur_limit = resource.getrlimit(resource.RLIMIT_AS)
     print('cur_limit', cur_limit)
     if cur_limit[0] > 0:
