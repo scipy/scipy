@@ -175,24 +175,25 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
-    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')``
+    This way, if ``x`` and ``y`` are 1-D arrays and ``z = correlate(x, y, 'full')``
     then
 
     .. math::
 
-          z[k] = (x * y)(k - N + 1)
-               = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
+          z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
+    for :math:`k = -(M-1), \dots, (N-1)`,
 
-    where :math:`||x||` is the length of ``x``, :math:`N = \max(||x||,||y||)`,
-    and :math:`y_m` is 0 when m is outside the range of y.
-
+    where :math:`N` is the length of ``x``, :math:`M` is the length of ``y``,  
+    and :math:`y_m = 0` when :math:`m` is outside the range of ``y``. The size of 
+    :math:`z` is :math:`N + M - 1` and :math:`y^*` denotes the complex conjugate 
+    of :math:`y`.
+    
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
-    When using "same" mode with even-length inputs, the outputs of `correlate`
+    When using ``mode='same'`` with even-length inputs, the outputs of `correlate`
     and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
