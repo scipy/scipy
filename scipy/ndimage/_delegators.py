@@ -150,13 +150,6 @@ def generic_filter_signature(
     return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
-def generic_filter2_signature(
-    input, function, size=None, footprint=None, output=None, *args, **kwds
-):
-    # XXX: function LowLevelCallable w/backends
-    return array_namespace(input, footprint, _skip_if_dtype(output))
-
-
 def generic_filter1d_signature(
     input, function, filter_size, axis=-1, output=None, *args, **kwds
 ):

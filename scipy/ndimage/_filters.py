@@ -47,12 +47,13 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter', 'generic_filter2']
+           'generic_filter1d', 'generic_filter']
 
 
-def _generic_filter2_iv(input, function, size, footprint, output,
+def _generic_filter_iv(input, function, size, footprint, output,
                         mode, cval, origin, axes):
-    # generic_filter2 *i*nput *v*alidation and standardization
+    # _generic_filter input validation and standardization
+    # a lot more is needed
 
     input = np.asarray(input)
 
@@ -60,16 +61,18 @@ def _generic_filter2_iv(input, function, size, footprint, output,
         raise RuntimeError("Either `size` or `footprint` must be provided.")
 
     if size is not None and footprint is not None:
-        # Currently a warning:
-        # warnings.warn("Ignoring `size` because `footprint` is provided.", stacklevel=3)
+        # Currently a warning, but I'd suggest making it an error.
         raise RuntimeError("Either `size` or `footprint` may be provided, not both.")
 
+    if axes is not None and np.isscalar(size):
+        size = (size,) * len(axes)
 
     if footprint is not None:
         footprint = np.asarray(footprint, dtype=bool)
         size = footprint.shape
 
-        def function(input, *args, axis=-1, function=function, footprint=footprint, **kwargs):
+        def function(input, *args, axis=-1, function=function,
+                     footprint=footprint, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
     else:
         if np.isscalar(size):
@@ -85,67 +88,73 @@ def _generic_filter2_iv(input, function, size, footprint, output,
 
     if origin is None:
         origin = (0,) * n_axes
+    elif np.isscalar(origin):
+        origin = (origin,) * n_axes
 
-    return (input, function, size, footprint, output, mode, cval, origin, axes, n_axes, n_batch)
+    return (input, function, size, footprint, output,
+            mode, cval, origin, axes, n_axes, n_batch)
 
 
-def _fill_borders(base, borders, mode):
+def _fill_borders(bordered_image, borders, mode):
+    # Fill borders around the input image as needed to implement mode
     for i, border_i in enumerate(borders):
-        i = i + (base.ndim - len(borders))
+        i = i + (bordered_image.ndim - len(borders))
         a, b = border_i
-        base = np.swapaxes(base, i, 0)
+        bordered_image = np.swapaxes(bordered_image, i, 0)
 
         if mode == 'wrap':
-            base[:a] = base[-a+b : b]
-            base[b:] = base[a : -b+a]
+            bordered_image[:a] = bordered_image[-a+b : b]
+            bordered_image[b:] = bordered_image[a : -b+a]
         elif mode == 'reflect':
-            base[:a] = base[a : 2*a][::-1]
-            base[b:] = base[2*b : b][::-1]
+            bordered_image[:a] = bordered_image[a : 2*a][::-1]
+            bordered_image[b:] = bordered_image[2*b : b][::-1]
         elif mode == 'mirror':
-            base[:a] = base[a+1: 2*a+1][::-1]
-            base[b:] = base[2*b-1 : b-1][::-1]
+            bordered_image[:a] = bordered_image[a+1: 2*a+1][::-1]
+            bordered_image[b:] = bordered_image[2*b-1 : b-1][::-1]
         elif mode == 'nearest':
-            base[:a] = base[a]
-            base[b:] = base[b-1]
+            bordered_image[:a] = bordered_image[a]
+            bordered_image[b:] = bordered_image[b-1]
 
-        base = np.swapaxes(base, 0, i)
-    return base
+        bordered_image = np.swapaxes(bordered_image, 0, i)
+    return bordered_image
 
 
-def generic_filter2(input, function, size=None, footprint=None, output=None,
+def _generic_filter(input, function, size=None, footprint=None, output=None,
                     mode='reflect', cval=0.0, origin=None, extra_arguments=(),
                     extra_keywords=None, *, axes=None):
     # todo:
-    #  ✓ implement size=None
-    #  ✓ implement size=scalar
-    #  ✓ implement footprint (assuming function does not depend on the the shape of the input)
-    #  ✓ implement output
-    #  ✓ implement mode='wrap'
-    #  ✓ implement mode = 'reflect'
-    #  ✓ implement mode = 'mirror'
-    #  ✓ implement mode = 'nearest'
-    #  ✓ implement axes
-    #  ✓ implement origin
-    #    fix any edge case bugs with small size 0, 1, 2, 3
-    #    add input validation
-    #    add tests
+    #  add input validation
+    #  add tests
+    #  properly fix edge case bugs with small size (remove padding)?
 
-    args = (input, function, size, footprint, output, mode, cval, origin, axes)
-    args = _generic_filter2_iv(*args)
-    (input, function, size, footprint, output, mode, cval, origin, axes, n_axes, n_batch) = args
+    (input, function, size, footprint, output,
+     mode, cval, origin, axes, n_axes, n_batch) = _generic_filter_iv(
+        input, function, size, footprint, output, mode, cval, origin, axes)
 
-    # `axes` have been moved to end; that is, the indices given by `axis` below.
+    # Add padding around the outsides in addition to the required borders, which are
+    # needed to implement `mode`. At the end, we extract the desired image from the
+    # padded result. This is a simple hack to ensure that axes stay strictly negative,
+    # rather than doing the more complex but more correct thing, which is to work with
+    # positive indices.
+    padding = np.max(origin) + 1
+
+    # `axes` have been moved to end; they are now at the indices given by `axis` below.
     # Everything acts along the last axes; the ones in front are along for the ride.
-    axis = tuple(range(-n_axes, 0))
-    base_size = input.shape[:n_batch] + tuple(input.shape[i] + size[i] - 1 for i in axis)
-    base = np.full(base_size, cval, dtype=input.dtype)
-    borders = tuple((size[i] // 2 + j, -size[i] // 2 + 1 + j) for i, j in zip(range(n_axes), origin))
-    middle_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
-    base[middle_slice] = input
-    base = _fill_borders(base, borders, mode)
-    view = np.lib.stride_tricks.sliding_window_view(base, size, axis=axis)
+    axis = tuple(range(-n_axes, 0))  # a better name might be `working_axes`
+    batch_shape = input.shape[:n_batch]
+    core_shape = tuple(input.shape[i] + size[i] - 1 + 2*padding for i in axis)
+    bordered_image = np.full(batch_shape + core_shape, cval, dtype=input.dtype)
+    borders = (tuple((size[i] // 2 + j + padding, -size[i] // 2 + 1 + j - padding)
+                     for i, j in zip(range(n_axes), origin)))
+    input_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
+    bordered_image[input_slice] = input
+    bordered_image = _fill_borders(bordered_image, borders, mode)
+    view = np.lib.stride_tricks.sliding_window_view(bordered_image, size, axis=axis)
     extra_keywords = {} if extra_keywords is None else extra_keywords
     res = function(view, *extra_arguments, axis=axis, **extra_keywords)
+
+    output_slice = (slice(None),)*n_batch + (slice(padding, -padding),)*n_axes
+    res = res[output_slice]
 
     if axes is not None:
         res = np.moveaxis(res, tuple(range(-len(axes), 0)), axes)
