@@ -179,10 +179,12 @@ def get_mem_info():
     """Get information about available memory"""
     import psutil
     vm = psutil.virtual_memory()
-    return {
+    res = {
         "memtotal": vm.total,
         "memavailable": vm.available,
     }
+    print(res)
+    return res
 
 
 def set_mem_rlimit(max_mem=None):
@@ -194,11 +196,14 @@ def set_mem_rlimit(max_mem=None):
         mem_info = get_mem_info()
         max_mem = int(mem_info['memtotal'] * 0.7)
     cur_limit = resource.getrlimit(resource.RLIMIT_AS)
+    print('cur_limit', cur_limit)
     if cur_limit[0] > 0:
         max_mem = min(max_mem, cur_limit[0])
+        print('max_mem', max_mem)
 
     try:
         resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+        print('succeeded setting rlimit')
     except ValueError:
         # on macOS may raise: current limit exceeds maximum limit
         pass
