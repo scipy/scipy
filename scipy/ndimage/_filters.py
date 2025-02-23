@@ -83,6 +83,9 @@ def _generic_filter2_iv(input, function, size, footprint, output,
     n_axes = len(size)  # validate against length of axes
     n_batch = input.ndim - n_axes
 
+    if origin is None:
+        origin = (0,) * n_axes
+
     return (input, function, size, footprint, output, mode, cval, origin, axes, n_axes, n_batch)
 
 
@@ -110,7 +113,7 @@ def _fill_borders(base, borders, mode):
 
 
 def generic_filter2(input, function, size=None, footprint=None, output=None,
-                    mode='reflect', cval=0.0, origin=0, extra_arguments=(),
+                    mode='reflect', cval=0.0, origin=None, extra_arguments=(),
                     extra_keywords=None, *, axes=None):
     # todo:
     #  ✓ implement size=None
@@ -122,8 +125,10 @@ def generic_filter2(input, function, size=None, footprint=None, output=None,
     #  ✓ implement mode = 'mirror'
     #  ✓ implement mode = 'nearest'
     #  ✓ implement axes
-    #    implement origin
+    #  ✓ implement origin
     #    fix any edge case bugs with small size 0, 1, 2, 3
+    #    add input validation
+    #    add tests
 
     args = (input, function, size, footprint, output, mode, cval, origin, axes)
     args = _generic_filter2_iv(*args)
@@ -134,7 +139,7 @@ def generic_filter2(input, function, size=None, footprint=None, output=None,
     axis = tuple(range(-n_axes, 0))
     base_size = input.shape[:n_batch] + tuple(input.shape[i] + size[i] - 1 for i in axis)
     base = np.full(base_size, cval, dtype=input.dtype)
-    borders = tuple((size[i] // 2, -size[i] // 2 + 1) for i in range(n_axes))
+    borders = tuple((size[i] // 2 + j, -size[i] // 2 + 1 + j) for i, j in zip(range(n_axes), origin))
     middle_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
     base[middle_slice] = input
     base = _fill_borders(base, borders, mode)
