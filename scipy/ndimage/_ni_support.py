@@ -137,7 +137,3 @@ def _skip_if_dtype(arg):
         return None if issubclass(arg, np.generic) else arg
     else:
         return None if isinstance(arg, np.dtype) else arg
-
-
-def _skip_if_int(arg):
-    return None if (arg is None or isinstance(arg, int)) else arg
