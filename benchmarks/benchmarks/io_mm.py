@@ -46,7 +46,7 @@ class MemUsage(Benchmark):
     def params(self):
         return [
             list(self._get_size().keys()),
-            ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],
+            ['scipy.io'],
             ['dense', 'coo']  # + ['csr']
         ]
 
