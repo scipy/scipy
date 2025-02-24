@@ -2863,20 +2863,28 @@ def test_gh_22333():
 class TestVectorizedFilter:
     @pytest.mark.parametrize("axes, size",
                              [(None, (3, 4, 5)), ((0, 2), (3, 4)), ((-1,), (5,))])
-    @pytest.mark.parametrize("origin", [0, 1])
+    @pytest.mark.parametrize("origin", [-1, 0, 1])
     @pytest.mark.parametrize("mode",
                              ['reflect', 'nearest', 'mirror', 'wrap', 'constant'])
+    @pytest.mark.parametrize("use_output", [False, True])
     @skip_xp_backends(cpu_only=True, reason="used NumPy")
-    def test_against_generic_filter(self, axes, size, origin, mode):
+    def test_against_generic_filter(self, axes, size, origin, mode, use_output):
         rng = np.random.default_rng(435982456983456987356)
+
         input = rng.random(size=(11, 12, 13))
-        kwargs = dict(axes=axes, size=size, origin=origin, mode=mode)
+        output = np.zeros_like(input) if use_output else None
+
+        kwargs = dict(axes=axes, size=size, origin=origin, mode=mode, output=output)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
         np.testing.assert_allclose(res, ref, atol=1e-15)
+        if use_output:
+            np.testing.assert_equal(output, res)
 
         kwargs.pop('size')
         kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
         np.testing.assert_allclose(res, ref, atol=1e-15)
+        if use_output:
+            np.testing.assert_equal(output, res)

@@ -80,9 +80,6 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         else:
             size = tuple(size)
 
-    if axes is not None:
-        input = np.moveaxis(input, axes, tuple(range(-len(axes), 0)))
-
     n_axes = len(size)  # validate against length of axes
     n_batch = input.ndim - n_axes
 
@@ -93,93 +90,59 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     extra_keywords = {} if extra_keywords is None else extra_keywords
 
+    # For simplicity, work with `axes` at the end.
+    working_axes = tuple(range(-n_axes, 0))
+    if axes is not None:
+        input = np.moveaxis(input, axes, working_axes)
+        output = np.moveaxis(output, axes, working_axes) if output is not None else output
+
     # Wrap the function to limit maximum memory usage
-    def function(view, axis, function=function):
-        # can't currently use user-provided `output` because we need a little padding
-        temp = np.empty(view.shape[:-len(axis)], dtype=view.dtype)
+    def function(view, output=output, function=function):
+        # use `output` if provided
+        output = (np.empty(view.shape[:-n_axes], dtype=view.dtype)
+                  if output is None else output)
+
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
-        slices_per_batch = min(temp.shape[0], batch_memory // chunk_size)
+        slices_per_batch = min(output.shape[0], batch_memory // chunk_size)
         if slices_per_batch == 0:
             raise ValueError("`batch_memory` is insufficient for chunk size.")
-        for i in range(0, temp.shape[0], slices_per_batch):
-            i2 = min(i + slices_per_batch, temp.shape[0])
-            temp[i:i2] = function(view[i:i2], *extra_arguments,
-                                  axis=axis, **extra_keywords)
-        return temp
+        for i in range(0, output.shape[0], slices_per_batch):
+            i2 = min(i + slices_per_batch, output.shape[0])
+            output[i:i2] = function(view[i:i2], *extra_arguments,
+                                  axis=working_axes, **extra_keywords)
+        return output
 
-    return (input, function, size, output, mode, cval, origin, axes, n_axes, n_batch)
-
-
-def _fill_borders(bordered_image, borders, mode):
-    # Fill borders around the input image as needed to implement mode
-    for i, border_i in enumerate(borders):
-        i = i + (bordered_image.ndim - len(borders))
-        a, b = border_i
-        bordered_image = np.swapaxes(bordered_image, i, 0)
-
-        if mode == 'wrap':
-            bordered_image[:a] = bordered_image[-a+b : b]
-            bordered_image[b:] = bordered_image[a : -b+a]
-        elif mode == 'reflect':
-            bordered_image[:a] = bordered_image[a : 2*a][::-1]
-            bordered_image[b:] = bordered_image[2*b : b][::-1]
-        elif mode == 'mirror':
-            bordered_image[:a] = bordered_image[a+1: 2*a+1][::-1]
-            bordered_image[b:] = bordered_image[2*b-1 : b-1][::-1]
-        elif mode == 'nearest':
-            bordered_image[:a] = bordered_image[a]
-            bordered_image[b:] = bordered_image[b-1]
-
-        bordered_image = np.swapaxes(bordered_image, 0, i)
-    return bordered_image
+    return input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
 
 
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
                       mode='reflect', cval=0.0, origin=None, extra_arguments=(),
                       extra_keywords=None, axes=None, batch_memory=2**30):
     # todo:
-    #  add batch support
     #  add input validation
     #  make tests exhaustive
     #  add documentation
-    #  properly deal with small `size` edge case (remove padding)?
 
-    (input, function, size, output, mode, cval, origin, axes, n_axes, n_batch
+    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, extra_arguments, extra_keywords, axes, batch_memory)
 
-    # Add padding around the outsides in addition to the required borders, which are
-    # needed to implement `mode`. At the end, we extract the desired image from the
-    # padded result. This is a simple hack to ensure that axes stay strictly negative,
-    # rather than doing the more complex but more correct thing, which is to work with
-    # positive indices.
-    padding = np.max(origin) + 1
+    # Border the image according to `mode` and `offset`. `np.pad` does the work,
+    # but it uses different names; adjust `mode` accordingly.
+    mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect'}
+    kwargs = {'constant_values': cval} if mode == 'constant' else {}
+    mode = mode_map.get(mode, mode)
+    borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
+    bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
 
-    # `axes` have been moved to end; they are now at the indices given by `axis` below.
-    # Everything acts along the last axes; the ones in front are along for the ride.
-    axis = tuple(range(-n_axes, 0))  # a better name might be `working_axes`
-    batch_shape = input.shape[:n_batch]
-    core_shape = tuple(input.shape[i] + size[i] - 1 + 2*padding for i in axis)
-    bordered_image = np.full(batch_shape + core_shape, cval, dtype=input.dtype)
-    borders = (tuple((size[i]//2 + j + padding, -size[i]//2 + 1 + j - padding)
-                     for i, j in zip(range(n_axes), origin)))
-    input_slice = (slice(None),)*n_batch + tuple(slice(a, b) for a, b in borders)
-    bordered_image[input_slice] = input
-    bordered_image = _fill_borders(bordered_image, borders, mode)
-    view = np.lib.stride_tricks.sliding_window_view(bordered_image, size, axis=axis)
-    res = function(view, axis=axis)
+    # Evaluate function with sliding window view. Function is already wrapped to
+    # manage memory, deal with `footprint`, populate `output`, etc.
+    view = np.lib.stride_tricks.sliding_window_view(bordered_input, size, working_axes)
+    res = function(view)
 
-    output_slice = (slice(None),)*n_batch + (slice(padding, -padding),)*n_axes
-    res = res[output_slice]
-
-    if axes is not None:
-        res = np.moveaxis(res, tuple(range(-len(axes), 0)), axes)
-
-    if output is not None:
-        output[...] = res[...]
-
-    return res
+    # move working_axes back to original positions
+    return np.moveaxis(res, working_axes, axes) if axes is not None else res
 
 
 def _invalid_origin(origin, lenw):
