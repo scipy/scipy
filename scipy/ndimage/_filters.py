@@ -1249,6 +1249,8 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
 
+    %(nan)s
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
@@ -1763,6 +1765,14 @@ def median_filter(input, size=None, footprint=None, output=None,
     For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes
     the specialised function `scipy.signal.medfilt2d` may be faster. It is
     however limited to constant mode with ``cval=0``.
+
+    The filter always returns the argument that would appear at index ``n // 2`` in
+    a sorted array, where ``n`` is the number of elements in the footprint of the
+    filter. Note that this differs from the conventional definition of the median
+    when ``n`` is even. For greater control over the definition of the filter,
+    consider using `vectorized_filter`.
+
+    %(nan)s
 
     Examples
     --------
