@@ -1769,10 +1769,11 @@ def median_filter(input, size=None, footprint=None, output=None,
     The filter always returns the argument that would appear at index ``n // 2`` in
     a sorted array, where ``n`` is the number of elements in the footprint of the
     filter. Note that this differs from the conventional definition of the median
-    when ``n`` is even. For greater control over the definition of the filter,
-    consider using `vectorized_filter`.
-
-    %(nan)s
+    when ``n`` is even. Also, this function does not support the ``float16`` dtype,
+    behavior in the presence of NaNs is undefined, and memory consumption scales with
+    ``n**4``. For ``float16`` support, greater control over the definition of the
+    filter, and to limit memory usage, consider using `vectorized_filter` with
+    NumPy functions `np.median` or `np.nanmedian`.
 
     Examples
     --------
