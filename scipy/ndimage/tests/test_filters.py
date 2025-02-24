@@ -2888,3 +2888,21 @@ class TestVectorizedFilter:
         np.testing.assert_allclose(res, ref, atol=1e-15)
         if use_output:
             np.testing.assert_equal(output, res)
+
+    @pytest.mark.parametrize("dtype",
+                             [np.uint8, np.uint16, np.uint32, np.uint64,
+                              np.int8, np.int16, np.int32, np.int64,
+                              np.float32, np.float64, np.complex64, np.complex128])
+    def test_dtype(self, dtype):
+        rng = np.random.default_rng(435982456983456987356)
+        n, w = 10, 3
+        input = rng.integers(0, 42, size=(n,))
+        input = input + input*1j if np.isdtype(dtype, "complex floating") else input
+        input = input.astype(dtype)
+        res = ndimage.vectorized_filter(input, np.sum, size=w)
+
+        input2 = np.pad(input, [(1, 1)], mode='symmetric')
+        ref = [np.sum(input2[i: i + w]) for i in range(n)]
+
+        assert_allclose(res, ref)
+        assert res.dtype == dtype

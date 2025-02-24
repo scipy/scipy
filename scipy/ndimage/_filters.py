@@ -94,9 +94,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     working_axes = tuple(range(-n_axes, 0))
     if axes is not None:
         input = np.moveaxis(input, axes, working_axes)
-        output = np.moveaxis(output, axes, working_axes) if output is not None else output
+        output = (np.moveaxis(output, axes, working_axes)
+                  if output is not None else output)
 
-    # Wrap the function to limit maximum memory usage
+    # Wrap the function to limit maximum memory usage, deal with `footprint`,
+    # and populate `output`.
     def function(view, output=output, function=function):
         # use `output` if provided
         output = (np.empty(view.shape[:-n_axes], dtype=view.dtype)
