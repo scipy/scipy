@@ -5,14 +5,16 @@ from scipy.linalg import solve, toeplitz
 # TODO:
 # 1) Add parameter `order` for the order of the difference penalty
 # 2) C code for _solve_WH_order2_fast
-# 3) Sparse arrays for _solve_WH_order_direct
+# 3) Use sparse/banded arrays for _solve_WH_order_direct
+# 4) GCV for lamb
+# 5) Case weights
 
 def whittaker_handerson(signal, lamb = 0.0):
     """
     Whittaker-Handerson (WH) smoothing/graduation of a discrete signal.
 
-    This implements WH of order 2. WH can be seen as a P-Spline (penalized B-Spline) of
-    degree zero for equidistant knots.
+    This implements WH of order 2, see [1] and [2]. WH can be seen as a P-Spline
+    (penalized B-Spline) of degree zero for equidistant knots.
 
     In econometrics, the WH graduation of order 2 is referred to as the Hodrick and
     Prescott filter (https://doi.org/10.2307/2953682).
@@ -47,7 +49,10 @@ def whittaker_handerson(signal, lamb = 0.0):
 
     References
     ----------
-    .. [1] Weinert, Howard L. (2007).
+    .. [1] Eilers, P.H.C. (2003).
+           "A perfect smoother". Analytical Chem. 75, 3631-3636.
+           :doi:`10.1021/AC034173T`
+    .. [2] Weinert, Howard L. (2007).
            "Efficient computation for Whittaker-Henderson smoothing".
            Computational Statistics and Data Analysis 52:959-74.
            :doi:`10.1016/j.csda.2006.11.038`
@@ -64,7 +69,7 @@ def whittaker_handerson(signal, lamb = 0.0):
         raise ValueError(msg)
 
     if lamb == 0.0:
-        x = np.asarray(signal, copy=True)
+        x = np.asarray(signal).copy()
     else:
         if n < 5:
             x = _solve_WH_order_direct(signal, lamb=lamb)
