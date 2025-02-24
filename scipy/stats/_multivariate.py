@@ -3282,7 +3282,8 @@ class multinomial_gen(multi_rv_generic):
         """
         p = np.array(p, dtype=np.float64, copy=True)
         p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        i_adjusted = np.abs(p_adjusted) > eps
+        # only make adjustment when it's significant
+        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
         p[i_adjusted, -1] = p_adjusted[i_adjusted]
 
         # true for bad p
