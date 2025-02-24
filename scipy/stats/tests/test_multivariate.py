@@ -2056,6 +2056,16 @@ class TestMultinomial:
         logpmf = multinomial.logpmf(x, n, p)
         assert np.isfinite(logpmf)
 
+    def test_gh_22565(self):
+        # Same issue as gh-11860 above, essentially, but the original
+        # fix didn't completely solve the problem.
+        n = 19
+        p = [0.2, 0.2, 0.2, 0.2, 0.2]
+        res1 = multinomial.pmf(x=[1, 2, 5, 7, 4], n=n, p=p)
+        res2 = multinomial.pmf(x=[1, 2, 4, 5, 7], n=n, p=p)
+        np.testing.assert_allclose(res1, res2, rtol=1e-15)
+
+
 class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
