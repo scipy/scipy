@@ -103,7 +103,6 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         if slices_per_batch == 0:
             raise ValueError("`batch_memory` is insufficient for chunk size.")
         for i in range(0, temp.shape[0], slices_per_batch):
-            print(i)
             i2 = min(i + slices_per_batch, temp.shape[0])
             temp[i:i2] = function(view[i:i2], *extra_arguments,
                                   axis=axis, **extra_keywords)
