@@ -14,7 +14,7 @@ from scipy._lib._array_api import (
     xp_assert_close,
     xp_assert_equal,
 )
-from scipy._lib._array_api import is_cupy, is_numpy, is_torch, array_namespace
+from scipy._lib._array_api import is_cupy, is_torch, array_namespace
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
@@ -23,6 +23,17 @@ from . import types, float_types, complex_types
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
+
+uses_output_dtype = skip_xp_backends(
+    np_only=True, exceptions=["cupy"],
+    reason="output=dtype is numpy-specific"
+)
+
+
+def uses_output_array(f):
+    return skip_xp_backends("dask.array", reason="output=array requires buffer view")(
+        skip_xp_backends("jax.numpy", reason="output=array requires buffer view")(f))
+
 
 
 def sumsq(a, b, xp=None):
@@ -190,8 +201,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     @xfail_xp_backends('cupy', reason="Differs by a factor of two?")
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @xfail_xp_backends("dask.array", reason="wrong answer")
+    @uses_output_array
     def test_correlate01_overlap(self, xp):
         array = xp.reshape(xp.arange(256), (16, 16))
         weights = xp.asarray([2])
@@ -342,8 +352,7 @@ class TestNdimageFilters:
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
     def test_correlate13(self, dtype_array, dtype_kernel, xp):
@@ -363,8 +372,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == dtype_kernel
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate14(self, dtype_array, dtype_output, xp):
@@ -378,14 +386,13 @@ class TestNdimageFilters:
         output = xp.zeros(array.shape, dtype=dtype_output)
         ndimage.correlate(array, kernel, output=output)
         assert_array_almost_equal(xp.asarray([[2, 3, 5], [5, 6, 8]]), output)
-        assert output.dtype.type == dtype_output
+        assert output.dtype == dtype_output
 
         ndimage.convolve(array, kernel, output=output)
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
-        assert output.dtype.type == dtype_output
+        assert output.dtype == dtype_output
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate15(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
@@ -402,8 +409,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[6, 8, 9], [9, 11, 12]]), output)
         assert output.dtype.type == xp.float32
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate16(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
@@ -433,8 +439,7 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, kernel, origin=-1)
         assert_array_almost_equal(tcov, output)
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate18(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
@@ -463,8 +468,7 @@ class TestNdimageFilters:
         with assert_raises(RuntimeError):
             ndimage.convolve(array, kernel, mode=['nearest', 'reflect'])
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate19(self, dtype_array, xp):
         dtype_array = getattr(xp, dtype_array)
@@ -485,8 +489,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[3, 5, 6], [6, 8, 9]]), output)
         assert output.dtype.type == xp.float32
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate20(self, dtype_array, dtype_output, xp):
@@ -513,8 +516,7 @@ class TestNdimageFilters:
         output = ndimage.convolve1d(array, weights, axis=0)
         assert_array_almost_equal(output, expected)
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate22(self, dtype_array, dtype_output, xp):
@@ -533,8 +535,7 @@ class TestNdimageFilters:
                            mode='wrap', output=output)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate23(self, dtype_array, dtype_output, xp):
@@ -553,8 +554,7 @@ class TestNdimageFilters:
                            mode='nearest', output=output)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate24(self, dtype_array, dtype_output, xp):
@@ -574,8 +574,7 @@ class TestNdimageFilters:
                            mode='nearest', output=output, origin=-1)
         assert_array_almost_equal(output, tcov)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output, xp):
@@ -603,8 +602,7 @@ class TestNdimageFilters:
         y = ndimage.correlate1d(xp.ones(1), xp.ones(5), mode='mirror')
         xp_assert_equal(y, xp.asarray([5.]))
 
-    @xfail_xp_backends(np_only=True, exceptions=["cupy"],
-                       reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -621,8 +619,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -667,7 +664,7 @@ class TestNdimageFilters:
                 func(array, kernel, mode='constant', cval=5.0 + 1.0j,
                      output=xp.complex64)
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -682,7 +679,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -699,7 +696,7 @@ class TestNdimageFilters:
                                cval=5.0,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -716,7 +713,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -731,8 +728,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason='output=dtype is numpy-specific')
+    @uses_output_dtype
     @xfail_xp_backends("cupy", reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype_kernel', types)
     @pytest.mark.parametrize('dtype_input', complex_types)
@@ -750,7 +746,8 @@ class TestNdimageFilters:
                                cval=5 - 3j,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @uses_output_dtype
+    @xfail_xp_backends("cupy", reason="unhashable type: 'ndarray'")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output, xp,
@@ -765,8 +762,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @xfail_xp_backends("cupy", reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -784,7 +780,8 @@ class TestNdimageFilters:
                                cval=5.0 + 2.0j,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, reason="output=dtype is numpy-specific")
+    @uses_output_dtype
+    @xfail_xp_backends("cupy", reason="unhashable type: 'ndarray'")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     @pytest.mark.thread_unsafe
@@ -798,8 +795,7 @@ class TestNdimageFilters:
         self._validate_complex(xp, array, kernel, dtype_output,
                                check_warnings=num_parallel_threads == 1)
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     @xfail_xp_backends("cupy", reason="cupy/cupy#8405")
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
@@ -846,8 +842,7 @@ class TestNdimageFilters:
         assert_almost_equal(o_sum, i_sum, decimal=0)
         assert sumsq(input, output) > 1.0
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     def test_gauss04(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -857,8 +852,7 @@ class TestNdimageFilters:
         assert input.shape == output.shape
         assert sumsq(input, output) > 1.0
 
-    @skip_xp_backends(np_only=True, exceptions=["cupy"],
-                      reason="output=dtype is numpy-specific")
+    @uses_output_dtype
     def test_gauss05(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -869,10 +863,8 @@ class TestNdimageFilters:
         assert input.shape == output.shape
         assert sumsq(input, output) > 1.0
 
+    @uses_output_dtype
     def test_gauss06(self, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
         otype = xp.float64
@@ -880,8 +872,7 @@ class TestNdimageFilters:
         output2 = ndimage.gaussian_filter(input, 1.0, output=otype)
         assert_array_almost_equal(output1, output2)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     def test_gauss_memory_overlap(self, xp):
         input = xp.arange(100 * 100, dtype=xp.float32)
         input = xp.reshape(input, (100, 100))
@@ -923,8 +914,7 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reason="these filters do not yet have axes support",
-    )
+                      reason="these filters do not yet have axes support")
     @pytest.mark.parametrize(('filter_func', 'kwargs'),
                              [(ndimage.laplace, {}),
                               (ndimage.gaussian_gradient_magnitude,
@@ -965,8 +955,7 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reason="generic_filter does not yet have axes support",
-    )
+                      reason="generic_filter does not yet have axes support")
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -988,8 +977,7 @@ class TestNdimageFilters:
         xp_assert_close(output, expected)
 
     @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8339",
-    )
+                      reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize('func', [ndimage.correlate, ndimage.convolve])
     @pytest.mark.parametrize(
         'dtype', [np.float32, np.float64, np.complex64, np.complex128]
@@ -1030,8 +1018,7 @@ class TestNdimageFilters:
     kwargs_rank = dict(origin=(-1, 0, 1))
 
     @skip_xp_backends("array_api_strict",
-         reason="fancy indexing is only available in 2024 version",
-    )
+         reason="fancy indexing is only available in 2024 version")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize("filter_func, size0, size, kwargs",
                              [(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
@@ -1215,9 +1202,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1227,13 +1211,9 @@ class TestNdimageFilters:
         output = ndimage.prewitt(array, 0)
         assert_array_almost_equal(t, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt02(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1246,14 +1226,9 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt03(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         if is_cupy(xp) and dtype in [xp.uint32, xp.uint64]:
             pytest.xfail("uint UB? XXX")
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
 
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1265,9 +1240,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt04(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1278,9 +1250,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel01(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1290,13 +1259,9 @@ class TestNdimageFilters:
         output = ndimage.sobel(array, 0)
         assert_array_almost_equal(t, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.",)
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel02(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1311,8 +1276,6 @@ class TestNdimageFilters:
     def test_sobel03(self, dtype, xp):
         if is_cupy(xp) and dtype in ["uint32", "uint64"]:
             pytest.xfail("uint UB? XXX")
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
 
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
@@ -1326,9 +1289,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel04(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1351,8 +1311,7 @@ class TestNdimageFilters:
         output = ndimage.laplace(array)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only",)
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1382,8 +1341,7 @@ class TestNdimageFilters:
         output = ndimage.gaussian_laplace(array, 1.0)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1399,13 +1357,9 @@ class TestNdimageFilters:
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_generic_laplace01(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         def derivative2(input, axis, output, mode, cval, a, b):
             sigma = np.asarray([a, b / 2.0])
             order = [0] * input.ndim
@@ -1425,8 +1379,6 @@ class TestNdimageFilters:
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp, output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1446,8 +1398,7 @@ class TestNdimageFilters:
         expected = xp.astype(xp.sqrt(expected_float), dtype)
         xp_assert_close(output, expected, rtol=1e-6, atol=1e-6)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @uses_output_array
     @pytest.mark.parametrize('dtype',
                              ["int32", "float32", "float64",
                               "complex64", "complex128"])
@@ -1486,18 +1437,12 @@ class TestNdimageFilters:
             extra_keywords={'b': 2.0})
         assert_array_almost_equal(tmp1, tmp2)
 
-    @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8430",
-    )
     def test_uniform01(self, xp):
         array = xp.asarray([2, 4, 6])
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
         assert_array_almost_equal(xp.asarray([3, 5, 6]), output)
 
-    @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8430",
-    )
     def test_uniform01_complex(self, xp):
         array = xp.asarray([2 + 1j, 4 + 2j, 6 + 3j], dtype=xp.complex128)
         size = 2
@@ -1517,9 +1462,6 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(array, output)
 
-    @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8430",
-    )
     def test_uniform04(self, xp):
         array = xp.asarray([2, 4, 6])
         filter_shape = [2]
@@ -1532,15 +1474,10 @@ class TestNdimageFilters:
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(xp.asarray([]), output)
 
-    @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8430",
-    )
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_uniform06(self, dtype_array, dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
 
@@ -1552,15 +1489,10 @@ class TestNdimageFilters:
         assert_array_almost_equal(xp.asarray([[4, 6, 10], [10, 12, 16]]), output)
         assert output.dtype.type == dtype_output
 
-    @skip_xp_backends("cupy",
-                      reason="https://github.com/cupy/cupy/pull/8430",
-    )
+    @uses_output_dtype
     @pytest.mark.parametrize('dtype_array', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_uniform06_complex(self, dtype_array, dtype_output, xp):
-        if not (is_numpy(xp) or is_cupy(xp)):
-            pytest.xfail("output=dtype is numpy-specific")
-
         dtype_array = getattr(xp, dtype_array)
         dtype_output = getattr(xp, dtype_output)
 
@@ -1606,7 +1538,7 @@ class TestNdimageFilters:
                                               [2, 2, 1, 1, 1],
                                               [5, 3, 3, 1, 1]]), output)
 
-    @skip_xp_backends("jax.numpy", reason="assignment destination is read-only")
+    @uses_output_array
     def test_minimum_filter05_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -1835,10 +1767,7 @@ class TestNdimageFilters:
         xp_assert_equal(expected, output)
 
     @xfail_xp_backends("cupy", reason="cupy/cupy#8406")
-    @skip_xp_backends("jax.numpy",
-        reason="assignment destination is read-only",
-    )
-    @xfail_xp_backends("dask.array", reason="wrong answer")
+    @uses_output_array
     def test_rank06_overlap(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [5, 8, 3, 7, 1],
@@ -1937,9 +1866,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank12(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         expected = [[3, 3, 2, 4, 4],
                     [3, 5, 2, 5, 1],
@@ -1959,9 +1885,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank13(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         expected = [[5, 2, 5, 1, 1],
                     [5, 8, 3, 5, 5],
@@ -1977,9 +1900,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank14(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         expected = [[3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5],
@@ -1995,9 +1915,6 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_rank15(self, dtype, xp):
-        if is_torch(xp) and dtype in ("uint16", "uint32", "uint64"):
-            pytest.xfail("https://github.com/pytorch/pytorch/issues/58734")
-
         dtype = getattr(xp, dtype)
         expected = [[2, 3, 1, 4, 1],
                     [5, 3, 7, 1, 1],
@@ -2383,9 +2300,7 @@ def test_bad_convolve_and_correlate_origins(xp):
     assert_raises(ValueError, ndimage.convolve,
                   xp.ones((3, 5)), xp.ones((2, 2)), origin=[0, -2])
 
-@skip_xp_backends("cupy",
-                  reason="https://github.com/cupy/cupy/pull/8430",
-)
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8430")
 def test_multiple_modes(xp):
     # Test that the filters with multiple mode capabilities for different
     # dimensions give the same result as applying a single mode.
@@ -2417,14 +2332,13 @@ def test_multiple_modes(xp):
 
 
 @skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8430")
-@skip_xp_backends("jax.numpy", reason="output array is read-only.")
 def test_multiple_modes_sequentially(xp):
     # Test that the filters with multiple mode capabilities for different
     # dimensions give the same result as applying the filters with
     # different modes sequentially
     arr = xp.asarray([[1., 0., 0.],
-                    [1., 1., 0.],
-                    [0., 0., 0.]])
+                      [1., 1., 0.],
+                      [0., 0., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -2532,9 +2446,7 @@ def test_multiple_modes_gaussian_gradient_magnitude(xp):
 
     assert_almost_equal(expected, calculated)
 
-@skip_xp_backends("cupy",
-                  reason="https://github.com/cupy/cupy/pull/8430",
-)
+@skip_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8430")
 def test_multiple_modes_uniform(xp):
     # Test uniform filter for multiple extrapolation modes
     arr = xp.asarray([[1., 0., 0.],
@@ -2644,8 +2556,7 @@ def test_gaussian_radius_invalid(xp):
         ndimage.gaussian_filter1d(xp.zeros(8), sigma=1, radius=1.1)
 
 
-@skip_xp_backends("jax.numpy", reason="output array is read-only")
-@xfail_xp_backends("dask.array", reason="wrong answer")
+@uses_output_array
 class TestThreading:
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
@@ -2769,11 +2680,9 @@ def test_footprint_all_zeros(xp):
 
 
 @xfail_xp_backends("cupy", reason="does not raise")
-def test_gaussian_filter(xp):
-    if not hasattr(xp, "float16"):
-        pytest.xfail(f"{xp} does not have float16")
-
-    # Test gaussian filter with xp.float16
+@skip_xp_backends("array_api_strict", reason="no float16")
+@skip_xp_backends("dask.array", reason="no float16")
+def test_gaussian_filter_float16(xp):
     # gh-8207
     data = xp.asarray([1], dtype=xp.float16)
     sigma = 1.0
