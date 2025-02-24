@@ -446,7 +446,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                     n_outputs=n_outputs,
                                     nan_policy=nan_policy,
                                     paired=paired, _no_deco=True, **kwds)
-        except (ValueError, RuntimeWarning, ZeroDivisionError) as ea:
+        except (ValueError, RuntimeWarning, ZeroDivisionError, UserWarning) as ea:
             ea_str = str(ea)
             if any([str(ea_str).startswith(msg) for msg in too_small_messages]):
                 res_1da = np.full(n_outputs, np.nan)
@@ -557,7 +557,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
                                    n_outputs=n_outputs, nan_policy=nan_policy,
                                    paired=paired, _no_deco=True, **kwds)
-        except (RuntimeWarning, ValueError, ZeroDivisionError) as ea:
+        except (RuntimeWarning, ValueError, ZeroDivisionError, UserWarning) as ea:
             res1da = None
             ea_str = str(ea)
 

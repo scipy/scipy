@@ -39,9 +39,16 @@ def get_array_special_func(f_name, xp, n_array_args):
     def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
-        array_args = [np.asarray(arg) for arg in array_args]
-        out = _f(*array_args, *other_args, **kwargs)
-        return _xp.asarray(out)
+        if hasattr(array_args[0], 'mask') and not isinstance(array_args[0], np.ndarray):
+            data_args = [np.asarray(arg.data) for arg in array_args]
+            out = _f(*data_args, *other_args, **kwargs)
+            mask = functools.reduce(lambda x, y: x | y,
+                                    (arg.mask for arg in array_args))
+            return _xp.asarray(out, mask=mask)
+        else:
+            array_args = [np.asarray(arg) for arg in array_args]
+            out = _f(*array_args, *other_args, **kwargs)
+            return _xp.asarray(out)
 
     return __f
 
