@@ -1948,13 +1948,20 @@ def generic_filter(input, function, size=None, footprint=None,
 
     Returns
     -------
-    generic_filter : ndarray
+    output : ndarray
         Filtered array. Has the same shape as `input`.
+
+    See Also
+    --------
+    vectorized_filter : similar functionality, but optimized for vectorized callables
 
     Notes
     -----
-    This function also accepts low-level callback functions with one of
-    the following signatures and wrapped in `scipy.LowLevelCallable`:
+    This function is ideal for use with instances of `scipy.LowLevelCallable`;
+    for vectorized, pure-Python callables, consider `vectorized_filter` for improved
+    performance.
+
+    Low-level callback functions must have one of the following signatures:
 
     .. code:: c
 
