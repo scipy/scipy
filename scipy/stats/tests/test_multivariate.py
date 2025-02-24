@@ -1929,10 +1929,17 @@ class TestMultinomial:
     @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-        rndm = np.random.RandomState(123)
-        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-        assert_equal(sc_rvs, np_rvs)
+        message = "Some rows of `p` do not sum to 1.0 within..."
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
+            assert_equal(sc_rvs, np_rvs)
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*5, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*5, size=7)
+            assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -2007,7 +2014,7 @@ class TestMultinomial:
         assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
-        ent0 = multinomial.entropy([2, 3], [.2, .3])
+        ent0 = multinomial.entropy([2, 3], [.2, .8])
         assert_allclose(ent0, [binom.entropy(2, .2), binom.entropy(3, .2)],
                         rtol=1e-8)
 
