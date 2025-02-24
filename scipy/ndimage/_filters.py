@@ -33,6 +33,7 @@ import numbers
 import warnings
 import numpy as np
 import operator
+import math
 
 from scipy._lib._util import normalize_axis_index
 from . import _ni_support
@@ -47,7 +48,101 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'uniform_filter1d', 'uniform_filter', 'minimum_filter1d',
            'maximum_filter1d', 'minimum_filter', 'maximum_filter',
            'rank_filter', 'median_filter', 'percentile_filter',
-           'generic_filter1d', 'generic_filter']
+           'generic_filter1d', 'generic_filter', 'vectorized_filter']
+
+
+def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
+                          extra_arguments, extra_keywords, axes, batch_memory):
+    # vectorized_filter input validation and standardization
+    # a lot more is needed
+
+    input = np.asarray(input)
+
+    if size is None and footprint is None:
+        raise RuntimeError("Either `size` or `footprint` must be provided.")
+
+    if size is not None and footprint is not None:
+        # Currently a warning, but I'd suggest making it an error.
+        raise RuntimeError("Either `size` or `footprint` may be provided, not both.")
+
+    if axes is not None and np.isscalar(size):
+        size = (size,) * len(axes)
+
+    if footprint is not None:
+        footprint = np.asarray(footprint, dtype=bool)
+        size = footprint.shape
+
+        def function(input, *args, axis=-1, function=function, **kwargs):
+            return function(input[..., footprint], *args, axis=-1, **kwargs)
+    else:
+        if np.isscalar(size):
+            size = (size,) * input.ndim
+        else:
+            size = tuple(size)
+
+    n_axes = len(size)  # validate against length of axes
+    n_batch = input.ndim - n_axes
+
+    if origin is None:
+        origin = (0,) * n_axes
+    elif np.isscalar(origin):
+        origin = (origin,) * n_axes
+
+    extra_keywords = {} if extra_keywords is None else extra_keywords
+
+    # For simplicity, work with `axes` at the end.
+    working_axes = tuple(range(-n_axes, 0))
+    if axes is not None:
+        input = np.moveaxis(input, axes, working_axes)
+        output = np.moveaxis(output, axes, working_axes) if output is not None else output
+
+    # Wrap the function to limit maximum memory usage
+    def function(view, output=output, function=function):
+        # use `output` if provided
+        output = (np.empty(view.shape[:-n_axes], dtype=view.dtype)
+                  if output is None else output)
+
+        # for now, assume we only have to iterate over zeroth axis
+        chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
+        slices_per_batch = min(output.shape[0], batch_memory // chunk_size)
+        if slices_per_batch == 0:
+            raise ValueError("`batch_memory` is insufficient for chunk size.")
+        for i in range(0, output.shape[0], slices_per_batch):
+            i2 = min(i + slices_per_batch, output.shape[0])
+            output[i:i2] = function(view[i:i2], *extra_arguments,
+                                  axis=working_axes, **extra_keywords)
+        return output
+
+    return input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
+
+
+def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
+                      mode='reflect', cval=0.0, origin=None, extra_arguments=(),
+                      extra_keywords=None, axes=None, batch_memory=2**30):
+    # todo:
+    #  add input validation
+    #  make tests exhaustive
+    #  add documentation
+
+    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
+     ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
+        origin, extra_arguments, extra_keywords, axes, batch_memory)
+
+    # Border the image according to `mode` and `offset`. `np.pad` does the work,
+    # but it uses different names; adjust `mode` accordingly.
+    mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect'}
+    kwargs = {'constant_values': cval} if mode == 'constant' else {}
+    mode = mode_map.get(mode, mode)
+    borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
+    bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
+
+    # Evaluate function with sliding window view. Function is already wrapped to
+    # manage memory, deal with `footprint`, populate `output`, etc.
+    view = np.lib.stride_tricks.sliding_window_view(bordered_input, size, working_axes)
+    res = function(view)
+
+    # move working_axes back to original positions
+    return np.moveaxis(res, working_axes, axes) if axes is not None else res
 
 
 def _invalid_origin(origin, lenw):
