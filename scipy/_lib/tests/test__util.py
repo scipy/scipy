@@ -381,10 +381,8 @@ class TestContainsNaN:
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)
 
-    @pytest.mark.skip_xp_backends(
-        "dask.array", reason="lazy backends tested separately"
-    )
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backends tested separately")
+    @pytest.mark.skip_xp_backends(eager_only=True,
+                                  reason="lazy backends tested separately")
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
