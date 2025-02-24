@@ -26,7 +26,8 @@ pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 uses_output_dtype = skip_xp_backends(
     np_only=True, exceptions=["cupy"],
-    reason="output=dtype is numpy-specific")
+    reason="output=dtype is numpy-specific"
+)
 
 
 def uses_output_array(f):
