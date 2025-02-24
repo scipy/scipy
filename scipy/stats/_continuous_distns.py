@@ -10373,7 +10373,7 @@ class truncnorm_gen(rv_continuous):
             ab = np.asarray([a, b])
             pA, pB = self._pdf(ab, a, b)
             probs = np.asarray([pA, -pB])
-            cond = probs.astype(bool)
+            cond = probs != 0
             moments = [0, 1]
             for k in range(1, n+1):
                 # a or b might be infinite, and the corresponding pdf value
@@ -10400,7 +10400,7 @@ class truncnorm_gen(rv_continuous):
             mu = m1
             # use xpx.apply_where to avoid nan (See detailed comment in _munp)
             probs = np.asarray([pA, -pB])
-            cond = probs.astype(bool)
+            cond = probs != 0
             vals = xpx.apply_where(cond, (probs, ab), lambda x, y: x*y,
                                    fill_value=0)
             m2 = 1 + np.sum(vals)
