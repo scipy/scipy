@@ -10401,10 +10401,10 @@ class truncnorm_gen(rv_continuous):
             # use xpx.apply_where to avoid nan (See detailed comment in _munp)
             probs = np.asarray([pA, -pB])
             cond = probs.astype(bool)
-            vals = xpx.apply_where(cond,(probs, ab), lambda x, y: x*y,
+            vals = xpx.apply_where(cond, (probs, ab), lambda x, y: x*y,
                                    fill_value=0)
             m2 = 1 + np.sum(vals)
-            vals = xpx.apply_where(cond,(probs, ab - mu), lambda x, y: x*y,
+            vals = xpx.apply_where(cond, (probs, ab - mu), lambda x, y: x*y,
                                    fill_value=0)
             # mu2 = m2 - mu**2, but not as numerically stable as:
             # mu2 = (a-mu)*pA - (b-mu)*pB + 1
