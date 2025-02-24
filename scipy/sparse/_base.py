@@ -14,6 +14,7 @@ __all__ = ['isspmatrix', 'issparse', 'sparray',
 
 
 class SparseWarning(Warning):
+    """General warning for :mod:`scipy.sparse`."""
     pass
 
 
@@ -22,6 +23,9 @@ class SparseFormatWarning(SparseWarning):
 
 
 class SparseEfficiencyWarning(SparseWarning):
+    """The warning emitted when the operation is
+    inefficient for sparse matrices.
+    """
     pass
 
 
