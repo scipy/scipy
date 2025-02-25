@@ -70,9 +70,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
         size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
-        integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in size]
-        if not all(integral):
-            raise ValueError("All elements of `size` must be integers.")
+        valid = [np.issubdtype(np.asarray(i).dtype, np.integer) and i > 0 for i in size]
+        if not all(valid):
+            raise ValueError("All elements of `size` must be positive integers.")
     else:
         # If provided, `footprint` must be array-like
         footprint = np.asarray(footprint, dtype=bool)
@@ -156,10 +156,13 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     def function(view, output=output, function=function):
         kwargs = {'axis': working_axes} | extra_keywords
 
+        if working_axes == ():
+            return function(view, *extra_arguments, **kwargs)
+
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
         slices_per_batch = min(view.shape[0], batch_memory // chunk_size)
-        if slices_per_batch < 1:  # move this out of function
+        if slices_per_batch < 1:
             raise ValueError("`batch_memory` is insufficient for minimum chunk size.")
 
         elif slices_per_batch == view.shape[0]:
@@ -283,7 +286,6 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """
     # Todo:
-    #  test special cases (0d input, small windows, windows larger than input)
     #  test or preferably eliminate extra_arguments, extra_keywords
     #  test (or eliminate) modes with names from scipy.signal?
     #  add mode='valid'
@@ -294,6 +296,17 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, extra_arguments, extra_keywords, axes, batch_memory)
+
+    # `np.pad` raises with these sorts of cases, but the best result is probably
+    # to return the original array. It could be argued that we should call the
+    # function on the empty array with `axis=None` just to determine the output
+    # dtype, but I can also see rationale against that.
+    if input.size == 0:
+        return input
+
+    # This seems to be defined.
+    if input.ndim == 0 and size == ():
+        return function(input) if footprint is None else function(input[footprint])
 
     # Border the image according to `mode` and `offset`. `np.pad` does the work,
     # but it uses different names; adjust `mode` accordingly.

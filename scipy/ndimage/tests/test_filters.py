@@ -6,7 +6,8 @@ import contextlib
 
 import numpy as np
 import pytest
-from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
+from numpy.testing import (suppress_warnings, assert_allclose, assert_array_equal,
+                           assert_equal)
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2878,17 +2879,17 @@ class TestVectorizedFilter:
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode, output=output)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
-        np.testing.assert_allclose(res, ref, atol=1e-15)
+        assert_allclose(res, ref, atol=1e-15)
         if use_output:
-            np.testing.assert_equal(output, res)
+            assert_equal(output, res)
 
         kwargs.pop('size')
         kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
-        np.testing.assert_allclose(res, ref, atol=1e-15)
+        assert_allclose(res, ref, atol=1e-15)
         if use_output:
-            np.testing.assert_equal(output, res)
+            assert_equal(output, res)
 
     @pytest.mark.parametrize("dtype",
                              [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -2944,9 +2945,11 @@ class TestVectorizedFilter:
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, footprint=footprint)
 
-        message = "All elements of `size` must be integers."
+        message = "All elements of `size` must be positive integers."
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=(1, None))
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=0)
 
         message = "The dimensionality of the window"
         with pytest.raises(ValueError, match=message):
@@ -2990,3 +2993,34 @@ class TestVectorizedFilter:
         message = "`extra_keywords` must be a dict."
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, extra_keywords=[1])
+
+    @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
+    def test_zero_size(self, shape):
+        input = np.empty(shape)
+        res = ndimage.vectorized_filter(input, np.mean, size=1)
+        assert_equal(res, input)
+
+    def test_edge_cases(self):
+        rng = np.random.default_rng(4835982345234982)
+        input = rng.random((5, 5))
+        function = np.mean
+
+        # 0-D input
+        res = ndimage.vectorized_filter(1, function, size=())
+        assert_equal(res, function(np.asarray(1), axis=()))
+
+        res = ndimage.vectorized_filter(1, function, footprint=True)
+        assert_equal(res, function(np.asarray(1)[True], axis=()))
+
+        with pytest.warns(RuntimeWarning, match="Mean of empty slice."):
+            res = ndimage.vectorized_filter(1, function, footprint=False)
+            assert_equal(res, function(np.asarray(1)[False], axis=()))
+
+        # 1x1 window
+        res = ndimage.vectorized_filter(input, function, size=1)
+        assert_equal(res, input)
+
+        # window is bigger than input shouldn't be a problem
+        res = ndimage.vectorized_filter(input, function, size=21)
+        ref = ndimage.vectorized_filter(input, function, size=21)
+        assert_allclose(res, ref)
