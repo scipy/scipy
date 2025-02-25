@@ -2943,3 +2943,50 @@ class TestVectorizedFilter:
         message = "Either `size` or `footprint` may be provided, not both."
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, footprint=footprint)
+
+        message = "All elements of `size` must be integers."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=(1, None))
+
+        message = "The dimensionality of the window"
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=(1, 2, 3))
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, footprint=np.ones((2, 2, 2)))
+
+        message = "`axes` must be provided if the dimensionality..."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=(1,))
+
+        message = "All elements of `origin` must be integers"
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, origin=(1, None))
+
+        message = "`origin` must be an integer or tuple of integers with length..."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, origin=(1, 2, 3))
+
+        message = "`mode` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, mode='coconut')
+
+        message = "`cval` must include only numbers."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, cval='a duck')
+
+        message = "`batch_memory` must be positive number."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, batch_memory=0)
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, batch_memory=(1, 2))
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size,
+                                      batch_memory="shrubbery")
+
+        message = "`extra_arguments` must be a tuple."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, extra_arguments=[1])
+
+        message = "`extra_keywords` must be a dict."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, extra_keywords=[1])

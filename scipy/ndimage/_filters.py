@@ -77,7 +77,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         # If provided, `footprint` must be array-like
         footprint = np.asarray(footprint, dtype=bool)
         size = footprint.shape
+        def function(input, *args, axis=-1, function=function, **kwargs):
+            return function(input[..., footprint], *args, axis=-1, **kwargs)
+
     n_axes = len(size)
+    n_batch = input.ndim - n_axes
 
     # ...which can't exceed the dimensionality of `input`.
     if n_axes > input.ndim:
@@ -99,7 +103,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # If `origin` is provided, then it must be "broadcastable" to a tuple with length
     # equal to the core dimensionality.
-    if origin is not None:
+    if origin is None:
+        origin = (0,) * n_axes
+    else:
         origin = (origin,)*n_axes if np.isscalar(origin) else tuple(origin)
         integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in origin]
         if not all(integral):
@@ -136,29 +142,6 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("`extra_arguments` must be a tuple.")
     if not isinstance(extra_keywords, dict):
         raise ValueError("`extra_keywords` must be a dict.")
-
-    ###
-    if axes is not None and np.isscalar(size):
-        size = (size,) * len(axes)
-
-    if footprint is not None:
-        footprint = np.asarray(footprint, dtype=bool)
-        size = footprint.shape
-
-        def function(input, *args, axis=-1, function=function, **kwargs):
-            return function(input[..., footprint], *args, axis=-1, **kwargs)
-    else:
-        if np.isscalar(size):
-            size = (size,) * input.ndim
-        else:
-            size = tuple(size)
-
-    n_batch = input.ndim - n_axes
-
-    if origin is None:
-        origin = (0,) * n_axes
-    elif np.isscalar(origin):
-        origin = (origin,) * n_axes
 
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
@@ -299,9 +282,14 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     >>> fig.tight_layout()
 
     """
-    # todo:
-    #  add input validation
-    #  make tests exhaustive
+    # Todo:
+    #  test special cases (0d input, small windows, windows larger than input)
+    #  test or preferably eliminate extra_arguments, extra_keywords
+    #  test (or eliminate) modes with names from scipy.signal?
+    #  add mode='valid'
+    #  add example of fast median
+    #  add example of mode filter?
+    #  add higher-dimensional output?
 
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
