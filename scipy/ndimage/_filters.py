@@ -121,10 +121,72 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
                       mode='reflect', cval=0.0, origin=None, extra_arguments=(),
                       extra_keywords=None, axes=None, batch_memory=2**30):
+    """Filter an array with a vectorized Python callable as the kernel
+
+    Parameters
+    ----------
+    %(input)s
+    function : callable
+        Kernel to apply over a window centered at each element of `input`.
+        Callable must have signature::
+
+            function(chunk: ndarray, *, axis: int tuple) -> scalar
+
+        where ``axis`` specifies the axes of ``chunk`` along which
+        the filter function is evaluated. Although the `axes` argument influences
+        the values passed as the ``axis`` argument, these values may be different
+        because ``chunk`` may be an arbitrary view of a padded copy of `input`.
+    %(size_foot)s
+    %(output)s
+    %(mode_reflect)s
+    %(cval)s
+    %(origin_multiple)s
+    %(extra_arguments)s
+    %(extra_keywords)s
+    axes : tuple of int, optional
+        If None, `input` is filtered along all axes. Otherwise, `input` is filtered
+        along the specified axes. When `axes` is specified, the dimensionality of
+        `footprint` and the length of any tuples used for `size` or `origin` must
+        match the length of `axes`. The ith axis of `footprint` and the ith element
+        in these tuples corresponds to the ith element of `axes`.
+    batch_memory : int, default: 2**30
+        The maximum number of bytes occupied by data in the ``chunk``
+        array passed to ``function``.
+
+    Returns
+    -------
+    output : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    See Also
+    --------
+    scipy.signal.generic_filter
+
+    Notes
+    -----
+    This function works by padding `input` according to `mode`, then calling the
+    provided `function` on chunks of a sliding window view over the padded array.
+    This approach is very simple and flexible, and so the function has many features
+    not offered by some other filter functions (e.g. memory control, ``float16``
+    and complex dtype support, and any NaN-handling features provided by `function`).
+
+    However, this brute-force approach may perform considerable redundant work.
+    Use a specialized filter (e.g. `minimum_filter` instead of this function with
+    `numpy.min` as the callable; `uniform_filter` instead of this function with
+    `numpy.mean` as the callable) when possible, as it may use a more efficient
+    algorithm.
+
+    When a specialized filter is not available, this function is ideal when `function`
+    is a vectorized, pure-Python callable. Even better performance may be possible
+    by using a `scipy.LowLevelCallable` with `generic_filter`. `generic_filter` may
+    also be preferred for expensive callables with large filter footprints and
+    callables that are not vectorized (i.e. those without ``axis`` support).
+
+    """
     # todo:
+    #  add examples
     #  add input validation
     #  make tests exhaustive
-    #  add documentation
 
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
