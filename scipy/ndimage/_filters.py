@@ -63,25 +63,81 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("Either `size` or `footprint` must be provided.")
 
     if size is not None and footprint is not None:
-        # Currently a warning, but I'd suggest making it an error.
         raise ValueError("Either `size` or `footprint` may be provided, not both.")
 
     # Either footprint or size must be provided, and these determine the core
-    # dimensionality, which can't exceed the dimensionality of `input`.
-    # If provided, size must be an integer or tuple of integers.
-    # If provided, `footprint` must be an array-like of
+    # dimensionality...
+    if size is not None:
+        # If provided, size must be an integer or tuple of integers.
+        size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
+        integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in size]
+        if not all(integral):
+            raise ValueError("All elements of `size` must be integers.")
+    else:
+        # If provided, `footprint` must be array-like
+        footprint = np.asarray(footprint, dtype=bool)
+        size = footprint.shape
+    n_axes = len(size)
+
+    # ...which can't exceed the dimensionality of `input`.
+    if n_axes > input.ndim:
+        message = ("The dimensionality of the window (`len(size)` or `footprint.ndim`) "
+                   "may not exceed the number of axes of `input` (`input.ndim`).")
+        raise ValueError(message)
+
     # If this is not *equal* to the dimensionality of `input`, then `axes`
     # must be a provided tuple, and its length must equal the core dimensionality.
+    elif n_axes < input.ndim:
+        if axes is None:
+            message = ("`axes` must be provided if the dimensionality of the window "
+                       "(`len(size)` or `footprint.ndim`) does not equal the number "
+                       "of axes of `input` (`input.ndim`).")
+            raise ValueError(message)
+        axes = (axes,) if np.isscalar(axes) else axes
+    else:
+        axes = tuple(range(-n_axes, 0))
+
     # If `origin` is provided, then it must be "broadcastable" to a tuple with length
     # equal to the core dimensionality.
+    if origin is not None:
+        origin = (origin,)*n_axes if np.isscalar(origin) else tuple(origin)
+        integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in origin]
+        if not all(integral):
+            raise ValueError("All elements of `origin` must be integers.")
+        if not len(origin) == n_axes:
+            message = ("`origin` must be an integer or tuple of integers with length "
+                       "equal to the number of axes.")
+            raise ValueError(message)
+
     # mode must be one of the allowed strings, and we should convert it to the
     # value required by `np.pad` here.
-    # `cval` must be a scalar or "broadcastable" to a tuple with the same dimensionality
-    # of `input`.
-    # `batch_memory` must be a positive integer at least as big as the minimum chunk.
-    # extra arguments must be a tuple, and kwargs must be a dict.
-    # Much of this remains to be implemented.
+    valid_modes = {'reflect', 'constant', 'nearest', 'mirror', 'wrap',
+                   'grid-mirror', 'grid-constant', 'grid-wrap'}
+    if mode not in valid_modes:
+        raise ValueError(f"`mode` must be one of {valid_modes}.")
+    mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect',
+                'grid-mirror': 'reflect', 'grid-constant': 'constant',
+                'grid-wrap': 'wrap'}
+    mode = mode_map.get(mode, mode)
 
+    # `cval` must be a scalar or "broadcastable" to a tuple with the same
+    # dimensionality of `input`. (Full input validation done by `np.pad`.)
+    if not np.issubdtype(np.asarray(cval).dtype, np.number):
+        raise ValueError("`cval` must include only numbers.")
+
+    # `batch_memory` must be a positive number.
+    temp = np.asarray(batch_memory)
+    if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
+        raise ValueError("`batch_memory` must be positive number.")
+
+    # `extra_arguments` must be a tuple, and `extra_keywords` must be a dict.
+    extra_keywords = {} if extra_keywords is None else extra_keywords
+    if not isinstance(extra_arguments, tuple):
+        raise ValueError("`extra_arguments` must be a tuple.")
+    if not isinstance(extra_keywords, dict):
+        raise ValueError("`extra_keywords` must be a dict.")
+
+    ###
     if axes is not None and np.isscalar(size):
         size = (size,) * len(axes)
 
@@ -97,15 +153,12 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         else:
             size = tuple(size)
 
-    n_axes = len(size)  # validate against length of axes
     n_batch = input.ndim - n_axes
 
     if origin is None:
         origin = (0,) * n_axes
     elif np.isscalar(origin):
         origin = (origin,) * n_axes
-
-    extra_keywords = {} if extra_keywords is None else extra_keywords
 
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
@@ -257,9 +310,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     # Border the image according to `mode` and `offset`. `np.pad` does the work,
     # but it uses different names; adjust `mode` accordingly.
     # Move this to input validation.
-    mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect'}
     kwargs = {'constant_values': cval} if mode == 'constant' else {}
-    mode = mode_map.get(mode, mode)
     borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
     bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
 

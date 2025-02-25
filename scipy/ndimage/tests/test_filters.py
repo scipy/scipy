@@ -2894,7 +2894,7 @@ class TestVectorizedFilter:
                              [np.uint8, np.uint16, np.uint32, np.uint64,
                               np.int8, np.int16, np.int32, np.int64,
                               np.float32, np.float64, np.complex64, np.complex128])
-    @pytest.mark.parametrize("batch_memory", [0, 16*3, np.inf])
+    @pytest.mark.parametrize("batch_memory", [1, 16*3, np.inf])
     def test_dtype_batch_memory(self, dtype, batch_memory):
         rng = np.random.default_rng(435982456983456987356)
         w = 3
@@ -2915,7 +2915,7 @@ class TestVectorizedFilter:
 
         message = "`batch_memory` is insufficient for minimum chunk size."
         context = (pytest.raises(ValueError, match=message)
-                   if batch_memory == 0 else contextlib.nullcontext())
+                   if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, np.sum, **kwargs)
             assert_allclose(res, ref)
