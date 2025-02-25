@@ -98,26 +98,40 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                   if output is not None else output)
 
     # Wrap the function to limit maximum memory usage, deal with `footprint`,
-    # and populate `output`.
+    # and populate `output`. The latter requires some verbosity because we
+    # don't know the output dtype.
     def function(view, output=output, function=function):
-        # use `output` if provided
-        output = (np.empty(view.shape[:-n_axes], dtype=view.dtype)
-                  if output is None else output)
+        kwargs = {'axis': working_axes} | extra_keywords
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
-        slices_per_batch = min(output.shape[0], batch_memory // chunk_size)
-        if slices_per_batch == 0:
-            raise ValueError("`batch_memory` is insufficient for chunk size.")
-        for i in range(0, output.shape[0], slices_per_batch):
-            i2 = min(i + slices_per_batch, output.shape[0])
-            output[i:i2] = function(view[i:i2], *extra_arguments,
-                                  axis=working_axes, **extra_keywords)
+        slices_per_batch = min(view.shape[0], batch_memory // chunk_size)
+        if slices_per_batch < 1:
+            raise ValueError("`batch_memory` is insufficient for minimum chunk size.")
+
+        elif slices_per_batch == view.shape[0]:
+            if output is None:
+                return function(view, *extra_arguments, **kwargs)
+            else:
+                output[...] = function(view, *extra_arguments, **kwargs)
+                return output
+
+        for i in range(0, view.shape[0], slices_per_batch):
+            i2 = min(i + slices_per_batch, view.shape[0])
+            if output is None:
+                # Look at the dtype before allocating the array. (In a follow-up, we
+                # can also look at the shape to support non-scalar elements.)
+                temp = function(view[i:i2], *extra_arguments, **kwargs)
+                output = np.empty(view.shape[:-n_axes], dtype=temp.dtype)
+                output[i:i2] = temp
+            else:
+                output[i:i2] = function(view[i:i2], *extra_arguments, **kwargs)
         return output
 
     return input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
 
 
+@_ni_docstrings.docfiller
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
                       mode='reflect', cval=0.0, origin=None, extra_arguments=(),
                       extra_keywords=None, axes=None, batch_memory=2**30):
@@ -160,7 +174,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     See Also
     --------
-    scipy.signal.generic_filter
+    scipy.ndimage.generic_filter
 
     Notes
     -----

@@ -2,6 +2,7 @@
 import functools
 import itertools
 import re
+import contextlib
 
 import numpy as np
 import pytest
@@ -2893,16 +2894,34 @@ class TestVectorizedFilter:
                              [np.uint8, np.uint16, np.uint32, np.uint64,
                               np.int8, np.int16, np.int32, np.int64,
                               np.float32, np.float64, np.complex64, np.complex128])
-    def test_dtype(self, dtype):
+    @pytest.mark.parametrize("batch_memory", [0, 16*3, np.inf])
+    def test_dtype_batch_memory(self, dtype, batch_memory):
         rng = np.random.default_rng(435982456983456987356)
-        n, w = 10, 3
+        w = 3
+        kwargs = dict(size=w, batch_memory=batch_memory)
+
+        # The intent here is to exercise all the code paths involved in `batch_memory`
+        # and `output` handling. To test the limited-memory case, `batch_memory=16*3`
+        # is chosen to be just large enough for a *single* window of `complex128` to
+        # fit, and `n` is large enough that a whole sliding window view of `uint8`s
+        # *won't* fit.
+        n = 16*3 + 1
         input = rng.integers(0, 42, size=(n,))
         input = input + input*1j if np.isdtype(dtype, "complex floating") else input
         input = input.astype(dtype)
-        res = ndimage.vectorized_filter(input, np.sum, size=w)
 
         input2 = np.pad(input, [(1, 1)], mode='symmetric')
         ref = [np.sum(input2[i: i + w]) for i in range(n)]
 
-        assert_allclose(res, ref)
-        assert res.dtype == dtype
+        message = "`batch_memory` is insufficient for minimum chunk size."
+        context = (pytest.raises(ValueError, match=message)
+                   if batch_memory == 0 else contextlib.nullcontext())
+        with context:
+            res = ndimage.vectorized_filter(input, np.sum, **kwargs)
+            assert_allclose(res, ref)
+            assert res.dtype == np.sum(input2).dtype
+
+            output = np.empty_like(input)
+            res = ndimage.vectorized_filter(input, np.sum, output=output, **kwargs)
+            assert_allclose(res, ref)
+            assert res.dtype == dtype
