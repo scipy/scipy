@@ -196,6 +196,35 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     also be preferred for expensive callables with large filter footprints and
     callables that are not vectorized (i.e. those without ``axis`` support).
 
+    Examples
+    --------
+    Suppose we wish to perform a median filter with even window size on an image with
+    ``float16`` dtype and NaNs that we wish to remove. `median_filter` does not support
+    ``float16``, its behavior when NaNs are present is not defined, and for even window
+    sizes, it does not return the usual sample median - the average of the two middle
+    elements. This would be an excellent use case for `vectorized_filter` with
+    ``function=np.nanmedian``.
+
+    >>> import numpy as np
+    >>> from scipy import datasets, ndimage
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = ndimage.zoom(datasets.ascent(), 0.5).astype(np.float16)
+    >>> ascent[::16, ::16] = np.nan
+    >>> result = ndimage.vectorized_filter(ascent, function=np.nanmedian, size=4)
+
+    Plot the original and filtered images.
+
+    >>> fig, axes = plt.subplots(2, 1, figsize=(3, 9))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(ascent)
+    >>> top.set_title("Original image")
+    >>> bottom.imshow(result)
+    >>> bottom.set_title("Custom filter, Kernel: 4x4")
+    >>> fig.tight_layout()
+
     """
     # todo:
     #  add examples
