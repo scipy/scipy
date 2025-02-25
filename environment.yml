@@ -48,7 +48,7 @@ dependencies:
   - jupytext
   - myst-nb>=1.2.0
   - linkify-it-py
-  - jupyterlite-sphinx>=0.17.1
+  - jupyterlite-sphinx>=0.19.1
   - jupyterlite-pyodide-kernel
   # Some optional test dependencies
   - mpmath
