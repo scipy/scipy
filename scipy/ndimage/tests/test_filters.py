@@ -2907,7 +2907,7 @@ class TestVectorizedFilter:
         # *won't* fit.
         n = 16*3 + 1
         input = rng.integers(0, 42, size=(n,))
-        input = input + input*1j if np.isdtype(dtype, "complex floating") else input
+        input = input + input*1j if np.issubdtype(dtype, np.complexfloating) else input
         input = input.astype(dtype)
 
         input2 = np.pad(input, [(1, 1)], mode='symmetric')
@@ -2925,3 +2925,21 @@ class TestVectorizedFilter:
             res = ndimage.vectorized_filter(input, np.sum, output=output, **kwargs)
             assert_allclose(res, ref)
             assert res.dtype == dtype
+
+    def test_input_validation(self):
+        input = np.ones((10, 10))
+        function = np.mean
+        size = 2
+        footprint = np.ones((2, 2))
+
+        message = "`function` must be a callable."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, "eggplant", size=size)
+
+        message = "Either `size` or `footprint` must be provided."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function)
+
+        message = "Either `size` or `footprint` may be provided, not both."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, footprint=footprint)

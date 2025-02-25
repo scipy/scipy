@@ -54,16 +54,33 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
                           extra_arguments, extra_keywords, axes, batch_memory):
     # vectorized_filter input validation and standardization
-    # a lot more is needed
-
     input = np.asarray(input)
 
+    if not callable(function):
+        raise ValueError("`function` must be a callable.")
+
     if size is None and footprint is None:
-        raise RuntimeError("Either `size` or `footprint` must be provided.")
+        raise ValueError("Either `size` or `footprint` must be provided.")
 
     if size is not None and footprint is not None:
         # Currently a warning, but I'd suggest making it an error.
-        raise RuntimeError("Either `size` or `footprint` may be provided, not both.")
+        raise ValueError("Either `size` or `footprint` may be provided, not both.")
+
+    # Either footprint or size must be provided, and these determine the core
+    # dimensionality, which can't exceed the dimensionality of `input`.
+    # If provided, size must be an integer or tuple of integers.
+    # If provided, `footprint` must be an array-like of
+    # If this is not *equal* to the dimensionality of `input`, then `axes`
+    # must be a provided tuple, and its length must equal the core dimensionality.
+    # If `origin` is provided, then it must be "broadcastable" to a tuple with length
+    # equal to the core dimensionality.
+    # mode must be one of the allowed strings, and we should convert it to the
+    # value required by `np.pad` here.
+    # `cval` must be a scalar or "broadcastable" to a tuple with the same dimensionality
+    # of `input`.
+    # `batch_memory` must be a positive integer at least as big as the minimum chunk.
+    # extra arguments must be a tuple, and kwargs must be a dict.
+    # Much of this remains to be implemented.
 
     if axes is not None and np.isscalar(size):
         size = (size,) * len(axes)
@@ -106,7 +123,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
         slices_per_batch = min(view.shape[0], batch_memory // chunk_size)
-        if slices_per_batch < 1:
+        if slices_per_batch < 1:  # move this out of function
             raise ValueError("`batch_memory` is insufficient for minimum chunk size.")
 
         elif slices_per_batch == view.shape[0]:
@@ -192,18 +209,21 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     When a specialized filter is not available, this function is ideal when `function`
     is a vectorized, pure-Python callable. Even better performance may be possible
-    by using a `scipy.LowLevelCallable` with `generic_filter`. `generic_filter` may
+    by passing a `scipy.LowLevelCallable` to `generic_filter`. `generic_filter` may
     also be preferred for expensive callables with large filter footprints and
     callables that are not vectorized (i.e. those without ``axis`` support).
 
     Examples
     --------
-    Suppose we wish to perform a median filter with even window size on an image with
-    ``float16`` dtype and NaNs that we wish to remove. `median_filter` does not support
-    ``float16``, its behavior when NaNs are present is not defined, and for even window
-    sizes, it does not return the usual sample median - the average of the two middle
-    elements. This would be an excellent use case for `vectorized_filter` with
-    ``function=np.nanmedian``.
+    Suppose we wish to perform a median filter with even window size on a ``float16``
+    image. Furthermore, the image has NaNs that we wish to be ignored (and effectively
+    removed by the filter). `median_filter` does not support ``float16`` data, its
+    behavior when NaNs are present is not defined, and for even window sizes, it doesn
+    ot return the usual sample median - the average of the two middle elements. This
+    would be an excellent use case for `vectorized_filter` with
+    ``function=np.nanmedian``, which supports the required interface: it accepts a
+    data array of any shape as the first positional argument, and tuple of axes as
+    keyword argument ``axis``.
 
     >>> import numpy as np
     >>> from scipy import datasets, ndimage
@@ -214,7 +234,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     Plot the original and filtered images.
 
-    >>> fig, axes = plt.subplots(2, 1, figsize=(3, 9))
+    >>> fig, axes = plt.subplots(1, 2, figsize=(3, 9))
     >>> plt.gray()  # show the filtered result in grayscale
     >>> top, bottom = axes
     >>> for ax in axes:
@@ -227,7 +247,6 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """
     # todo:
-    #  add examples
     #  add input validation
     #  make tests exhaustive
 
@@ -237,6 +256,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     # Border the image according to `mode` and `offset`. `np.pad` does the work,
     # but it uses different names; adjust `mode` accordingly.
+    # Move this to input validation.
     mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect'}
     kwargs = {'constant_values': cval} if mode == 'constant' else {}
     mode = mode_map.get(mode, mode)
