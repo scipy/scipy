@@ -1125,6 +1125,10 @@ class TestMakeDistribution:
             def pdf(self, x, a, b):
                 return 1 / (x * (np.log(b) - np.log(a)))
 
+            def sample(self, shape, *, a, b, rng=None):
+                p = rng.uniform(size=shape)
+                return np.exp(np.log(a) + p * (np.log(b) - np.log(a)))
+
         LogUniform = stats.make_distribution(MyLogUniform())
 
         X = LogUniform(a=np.exp(1), b=np.exp(3))
@@ -1147,6 +1151,11 @@ class TestMakeDistribution:
             for order in range(5):
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
+
+        sample_formula = X.sample(shape=10, rng=0, method='formula')
+        sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
+        assert_allclose(sample_formula, sample_inverse)
+        assert not np.all(sample_formula == sample_inverse)
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
