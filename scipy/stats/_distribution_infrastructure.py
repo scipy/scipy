@@ -3534,17 +3534,18 @@ def make_distribution(dist):
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
-        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``, and ``sample``.
-        If defined, these methods must accept the parameters of the distributions as
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
+        ``moment``, and ``sample``.
+        If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`. Contrary to the public
-        method of the same name, the first positional argument passed to ``sample``
-        will be the *full* shape of the output array - the shape passed to the public
-        method concatenated with the broadcasted shape of random variable parameters.
-        ``moment_raw``, ``moment_central``, ``moment_standardized`` may also be defined;
-        if so, they must accept the ``order`` of the moment by position, accept all
-        distribution parameters by keyword, and return the raw, central, and
-        standardized moments of the distribution, respectively.
+        the corresponding method of `ContinuousDistribution`. The ``moment`` method
+        must accept the ``order`` and ``kind`` arguments by position or keyword, but
+        may return ``None`` if a formula is not available for the arguments; in this
+        case, the infrastructure will fall back to a default implementation. The
+        ``sample`` method must accept ``shape`` by position or keyword, but contrary
+        to the public method of the same name, the argument it receives will be the
+        *full* shape of the output array - that is, the shape passed to the public
+        method prepended to the broadcasted shape of random variable parameters.
 
     Returns
     -------
@@ -3775,14 +3776,27 @@ def _make_distribution_custom(dist):
                'median', 'mode', 'logpdf', 'pdf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
-               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
-               'moment_raw', 'moment_central', 'moment_standardized'}
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
 
     for method in methods:
         if hasattr(dist, method):
             # Make it an attribute of the new object with the new name
             new_method = f"_{method}_formula"
             setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    if hasattr(dist, 'moment'):
+        def _moment_raw_formula(self, order, **kwargs):
+            return dist.moment(order, kind='raw', **kwargs)
+
+        def _moment_central_formula(self, order, **kwargs):
+            return dist.moment(order, kind='central', **kwargs)
+
+        def _moment_standardized_formula(self, order, **kwargs):
+            return dist.moment(order, kind='standardized', **kwargs)
+
+        CustomDistribution._moment_raw_formula = _moment_raw_formula
+        CustomDistribution._moment_central_formula = _moment_central_formula
+        CustomDistribution._moment_standardized_formula = _moment_standardized_formula
 
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
