@@ -52,7 +52,7 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 
 
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
-                          extra_arguments, extra_keywords, axes, batch_memory):
+                          axes, batch_memory):
     # vectorized_filter input validation and standardization
     input = np.asarray(input)
 
@@ -136,13 +136,6 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")
 
-    # `extra_arguments` must be a tuple, and `extra_keywords` must be a dict.
-    extra_keywords = {} if extra_keywords is None else extra_keywords
-    if not isinstance(extra_arguments, tuple):
-        raise ValueError("`extra_arguments` must be a tuple.")
-    if not isinstance(extra_keywords, dict):
-        raise ValueError("`extra_keywords` must be a dict.")
-
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
     if axes is not None:
@@ -154,10 +147,10 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     # and populate `output`. The latter requires some verbosity because we
     # don't know the output dtype.
     def function(view, output=output, function=function):
-        kwargs = {'axis': working_axes} | extra_keywords
+        kwargs = {'axis': working_axes}
 
         if working_axes == ():
-            return function(view, *extra_arguments, **kwargs)
+            return function(view, **kwargs)
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
@@ -167,9 +160,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
         elif slices_per_batch == view.shape[0]:
             if output is None:
-                return function(view, *extra_arguments, **kwargs)
+                return function(view, **kwargs)
             else:
-                output[...] = function(view, *extra_arguments, **kwargs)
+                output[...] = function(view, **kwargs)
                 return output
 
         for i in range(0, view.shape[0], slices_per_batch):
@@ -177,11 +170,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             if output is None:
                 # Look at the dtype before allocating the array. (In a follow-up, we
                 # can also look at the shape to support non-scalar elements.)
-                temp = function(view[i:i2], *extra_arguments, **kwargs)
+                temp = function(view[i:i2], **kwargs)
                 output = np.empty(view.shape[:-n_axes], dtype=temp.dtype)
                 output[i:i2] = temp
             else:
-                output[i:i2] = function(view[i:i2], *extra_arguments, **kwargs)
+                output[i:i2] = function(view[i:i2], **kwargs)
         return output
 
     return input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
@@ -189,8 +182,8 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
 @_ni_docstrings.docfiller
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
-                      mode='reflect', cval=0.0, origin=None, extra_arguments=(),
-                      extra_keywords=None, axes=None, batch_memory=2**30):
+                      mode='reflect', cval=0.0, origin=None, axes=None,
+                      batch_memory=2**30):
     """Filter an array with a vectorized Python callable as the kernel
 
     Parameters
@@ -211,8 +204,6 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
-    %(extra_arguments)s
-    %(extra_keywords)s
     axes : tuple of int, optional
         If None, `input` is filtered along all axes. Otherwise, `input` is filtered
         along the specified axes. When `axes` is specified, the dimensionality of
@@ -252,6 +243,17 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     also be preferred for expensive callables with large filter footprints and
     callables that are not vectorized (i.e. those without ``axis`` support).
 
+    This function does not provide the ``extra_arguments`` or ``extra_keywords``
+    arguments provided by some `ndimage` functions. There are two reasons:
+
+    - The passthrough functionality can be achieved by the user: simply wrap the
+      original callable in another function that provides the required arguments;
+      e.g., ``function=lambda input, axis: function(input, *extra_arguments, axis=axis, **extra_keywords)``.
+    - There are use cases for `function` to be passed additional *sliding-window data*
+      to `function` besides `input`. This is not yet implemented, but we reserve
+      these argument names for such a feature, which would add capability rather than
+      providing a duplicate interface to existing capability.
+
     Examples
     --------
     Suppose we wish to perform a median filter with even window size on a ``float16``
@@ -286,7 +288,6 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """
     # Todo:
-    #  test or preferably eliminate extra_arguments, extra_keywords
     #  test (or eliminate) modes with names from scipy.signal?
     #  add mode='valid'
     #  add example of fast median
@@ -295,7 +296,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
-        origin, extra_arguments, extra_keywords, axes, batch_memory)
+        origin, axes, batch_memory)
 
     # `np.pad` raises with these sorts of cases, but the best result is probably
     # to return the original array. It could be argued that we should call the

@@ -2986,14 +2986,6 @@ class TestVectorizedFilter:
             ndimage.vectorized_filter(input, function, size=size,
                                       batch_memory="shrubbery")
 
-        message = "`extra_arguments` must be a tuple."
-        with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, size=size, extra_arguments=[1])
-
-        message = "`extra_keywords` must be a dict."
-        with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, size=size, extra_keywords=[1])
-
     @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
     def test_zero_size(self, shape):
         input = np.empty(shape)
