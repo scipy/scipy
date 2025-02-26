@@ -322,10 +322,42 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     >>> bottom.set_title("Custom filter, Kernel: 4x4")
     >>> fig.tight_layout()
 
+    Suppose we wish to implment a "mode" filter: the filter selects the most
+    frequently occuring value within the window. A simple (but rather slow)
+    approach is to use `generic_filter` with `scipy.stats.mode`.
+
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(3195824598724609246)
+    >>> input = rng.integers(255, size=(50, 50)).astype(np.uint8)
+    >>> def simple_mode(input):
+    ...     return stats.mode(input, axis=None).mode
+    >>> ref = ndimage.generic_filter(input, simple_mode, size=5)
+
+    If speed is important, `vectorized_filter` can take advantage of the performance
+    benefit of a vectorized callable.
+
+    >>> def vectorized_mode(x, axis=(-1,)):
+    ...     n_axes = 1 if np.isscalar(axis) else len(axis)
+    ...     x = np.moveaxis(x, axis, tuple(range(-n_axes, 0)))
+    ...     x = np.reshape(x, x.shape[:-n_axes] + (-1,))
+    ...     y = np.sort(x, axis=-1)
+    ...     i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=bool),
+    ...                         y[..., :-1] != y[..., 1:]], axis=-1)
+    ...     indices = np.arange(y.size)[i.ravel()]
+    ...     counts = np.diff(indices, append=y.size)
+    ...     counts = np.reshape(np.repeat(counts, counts), y.shape)
+    ...     k = np.argmax(counts, axis=-1, keepdims=True)
+    ...     return np.take_along_axis(y, k, axis=-1)[..., 0]
+    >>> res = ndimage.vectorized_filter(input, vectorized_mode, size=5)
+    >>> np.all(res == ref)
+    True
+
+    Depending on the machine, the `vectorized_filter` version may be as much as
+    100x faster.
+
     """
     # Todo:
     #  add example of fast median
-    #  add example of mode filter?
     #  add higher-dimensional output?
 
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
