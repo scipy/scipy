@@ -304,25 +304,47 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     >>> import numpy as np
     >>> from scipy import datasets, ndimage
+    >>> from scipy.ndimage import vectorized_filter
     >>> import matplotlib.pyplot as plt
     >>> ascent = ndimage.zoom(datasets.ascent(), 0.5).astype(np.float16)
     >>> ascent[::16, ::16] = np.nan
-    >>> result = ndimage.vectorized_filter(ascent, function=np.nanmedian, size=4)
+    >>> result = vectorized_filter(ascent, function=np.nanmedian, size=4)
 
     Plot the original and filtered images.
 
-    >>> fig, axes = plt.subplots(1, 2, figsize=(3, 9))
+    >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> top, bottom = axes
-    >>> for ax in axes:
-    ...     ax.set_axis_off()  # remove coordinate system
-    >>> top.imshow(ascent)
-    >>> top.set_title("Original image")
-    >>> bottom.imshow(result)
-    >>> bottom.set_title("Custom filter, Kernel: 4x4")
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
     >>> fig.tight_layout()
+    >>> plt.show()
 
-    Suppose we wish to implment a "mode" filter: the filter selects the most
+    Another need satisfied by `vectorized_filter` is to perform multi-output
+    filters. For instance, suppose we wish to filter an image according to the 25th
+    and 75th percentiles in addition to the median. We could perform the three
+    filters separately.
+
+    >>> ascent = ndimage.zoom(datasets.ascent(), 0.5)
+    >>> def get_quantile_fun(p):
+    ...     return lambda x, axis: np.quantile(x, p, axis=axis)
+    >>> ref1 = vectorized_filter(ascent, get_quantile_fun(0.25), size=4)
+    >>> ref2 = vectorized_filter(ascent, get_quantile_fun(0.50), size=4)
+    >>> ref3 = vectorized_filter(ascent, get_quantile_fun(0.75), size=4)
+    >>> ref = np.stack([ref1, ref2, ref3])
+
+    However, `vectorized_filter` also supports filters that return multiple outputs
+    as long as `output` is unspecified and `batch_memory` is sufficiently high to
+    perform the calculation in a single chunk.
+
+    >>> def quartiles(x, axis):
+    ...     return np.quantile(x, [0.25, 0.50, 0.75], axis=axis)
+    >>> res = vectorized_filter(ascent, quartiles, size=4, batch_memory=np.inf)
+    >>> np.all(np.isclose(res, ref))
+    np.True_
+
+    Suppose we wish to implment a "mode" filter - a filter that selects the most
     frequently occuring value within the window. A simple (but rather slow)
     approach is to use `generic_filter` with `scipy.stats.mode`.
 
@@ -348,17 +370,14 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     ...     counts = np.reshape(np.repeat(counts, counts), y.shape)
     ...     k = np.argmax(counts, axis=-1, keepdims=True)
     ...     return np.take_along_axis(y, k, axis=-1)[..., 0]
-    >>> res = ndimage.vectorized_filter(input, vectorized_mode, size=5)
+    >>> res = vectorized_filter(input, vectorized_mode, size=5)
     >>> np.all(res == ref)
-    True
+    np.True_
 
     Depending on the machine, the `vectorized_filter` version may be as much as
     100x faster.
 
-    """
-    # Todo:
-    #  add example of fast median
-    #  add higher-dimensional output?
+    """  # noqa: E501
 
     (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
