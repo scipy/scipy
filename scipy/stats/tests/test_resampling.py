@@ -745,13 +745,11 @@ def test_gh_20850():
     stats.bootstrap((x.T, y.T), statistic, axis=1)
     # But even when the shapes *are* the same along axis, the lengths
     # along other dimensions have to be the same (or `bootstrap` warns).
-    message = "Ignoring the dimension specified by `axis`..."
-    with pytest.warns(FutureWarning, match=message):
+    message = "Array shapes are incompatible for broadcasting."
+    with pytest.raises(ValueError, match=message):
         stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
+    stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
+    stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
