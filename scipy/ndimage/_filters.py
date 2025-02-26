@@ -118,13 +118,21 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     # mode must be one of the allowed strings, and we should convert it to the
     # value required by `np.pad` here.
     valid_modes = {'reflect', 'constant', 'nearest', 'mirror', 'wrap',
-                   'grid-mirror', 'grid-constant', 'grid-wrap'}
+                   'grid-mirror', 'grid-constant', 'grid-wrap', 'valid'}
     if mode not in valid_modes:
         raise ValueError(f"`mode` must be one of {valid_modes}.")
     mode_map = {'nearest': 'edge', 'reflect': 'symmetric', 'mirror': 'reflect',
                 'grid-mirror': 'reflect', 'grid-constant': 'constant',
                 'grid-wrap': 'wrap'}
     mode = mode_map.get(mode, mode)
+
+    if mode == 'valid' and any(origin):
+        raise ValueError("`mode='valid'` is incompatible with use of `origin`.")
+
+    if cval is None:
+        cval = 0.0
+    elif mode != 'constant':
+        raise ValueError("Use of `cval` is compatible only with `mode='constant'`.")
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
     # dimensionality of `input`. (Full input validation done by `np.pad`.)
@@ -182,7 +190,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
 @_ni_docstrings.docfiller
 def vectorized_filter(input, function, *, size=None, footprint=None, output=None,
-                      mode='reflect', cval=0.0, origin=None, axes=None,
+                      mode='reflect', cval=None, origin=None, axes=None,
                       batch_memory=2**30):
     """Filter an array with a vectorized Python callable as the kernel
 
@@ -201,7 +209,35 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
         because ``chunk`` may be an arbitrary view of a padded copy of `input`.
     %(size_foot)s
     %(output)s
-    %(mode_reflect)s
+    mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
+        The `mode` parameter determines how the input array is extended
+        beyond its boundaries. Default is 'reflect'. Behavior for each valid
+        value is as follows:
+
+        'reflect' (`d c b a | a b c d | d c b a`)
+            The input is extended by reflecting about the edge of the last
+            pixel. This mode is also sometimes referred to as half-sample
+            symmetric.
+
+        'constant' (`k k k k | a b c d | k k k k`)
+            The input is extended by filling all values beyond the edge with
+            the same constant value, defined by the `cval` parameter.
+
+        'nearest' (`a a a a | a b c d | d d d d`)
+            The input is extended by replicating the last pixel.
+
+        'mirror' (`d c b | a b c d | c b a`)
+            The input is extended by reflecting about the center of the last
+            pixel. This mode is also sometimes referred to as whole-sample
+            symmetric.
+
+        'wrap' (`a b c d | a b c d | a b c d`)
+            The input is extended by wrapping around to the opposite edge.
+
+        'valid' (`| a b c d |`)
+            The input is not extended; rather, the output shape is reduced according
+            to the size of the filter window.
+
     %(cval)s
     %(origin_multiple)s
     axes : tuple of int, optional
@@ -288,8 +324,6 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """
     # Todo:
-    #  test (or eliminate) modes with names from scipy.signal?
-    #  add mode='valid'
     #  add example of fast median
     #  add example of mode filter?
     #  add higher-dimensional output?
@@ -312,9 +346,12 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     # Border the image according to `mode` and `offset`. `np.pad` does the work,
     # but it uses different names; adjust `mode` accordingly.
     # Move this to input validation.
-    kwargs = {'constant_values': cval} if mode == 'constant' else {}
-    borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
-    bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
+    if mode != 'valid':
+        kwargs = {'constant_values': cval} if mode == 'constant' else {}
+        borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
+        bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
+    else:
+        bordered_input = input
 
     # Evaluate function with sliding window view. Function is already wrapped to
     # manage memory, deal with `footprint`, populate `output`, etc.

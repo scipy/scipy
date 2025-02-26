@@ -2927,6 +2927,17 @@ class TestVectorizedFilter:
             assert_allclose(res, ref)
             assert res.dtype == dtype
 
+    def test_mode_valid(self):
+        rng = np.random.default_rng(435982456983456987356)
+        input = rng.random(size=(10, 11))
+        size = (3, 5)
+        function = np.mean
+        res = ndimage.vectorized_filter(input, function, size=size, mode='valid')
+        view = np.lib.stride_tricks.sliding_window_view(input, size)
+        ref = function(view, axis=(-2, -1))
+        assert_allclose(res, ref)
+        assert_equal(res.shape, input.shape - np.asarray(size) + 1)
+
     def test_input_validation(self):
         input = np.ones((10, 10))
         function = np.mean
@@ -2973,9 +2984,19 @@ class TestVectorizedFilter:
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, mode='coconut')
 
+        message = "`mode='valid'` is incompatible with use of `origin`."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size,
+                                      mode='valid', origin=1)
+
+        message = "Use of `cval` is compatible only with `mode='constant'`."
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=size, mode='valid', cval=1)
+
         message = "`cval` must include only numbers."
         with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, size=size, cval='a duck')
+            ndimage.vectorized_filter(input, function, size=size,
+                                      mode='constant', cval='a duck')
 
         message = "`batch_memory` must be positive number."
         with pytest.raises(ValueError, match=message):
