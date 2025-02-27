@@ -17,16 +17,13 @@
  * This is a C translation of the Fortran code.
 */
 void
-__nnls(const int m, const int n,
-                    double* restrict a, double* restrict b,
-                    double* restrict x, double* restrict w,
-                    double* restrict zz, double* restrict work,
-                    int* restrict indices, const int maxiter,
-                    double* rnorm, int* info)
+__nnls(const int m, const int n, double* restrict a, double* restrict b,
+       double* restrict x, double* restrict w, double* restrict zz,
+       int* restrict indices, const int maxiter, double* rnorm, int* info)
 {
     int i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
-    double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T;
+    double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T, tmp_work;
     double pivot = 1.0, pivot2 = 0.0;
     *info = 1;
     // Initialize the indices and the solution vector x.
@@ -87,7 +84,7 @@ __nnls(const int m, const int n,
                 tmpint = m - indz;
                 pivot2 = a[indz + j*m];
                 a[indz + j*m] = 1.0;
-                dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, work);
+                dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
                 // See if ztest is positive.
                 ztest = zz[indz] / pivot;
                 if (ztest > 0.0)
@@ -119,7 +116,7 @@ __nnls(const int m, const int n,
             for (k = indz; k < n; k++)
             {
                 jj = indices[k];
-                dlarf_("L", &tmpint, &one, &a[indz - 1 + j*m], &one, &tau, &a[indz - 1 + jj*m], &tmpint, work);
+                dlarf_("L", &tmpint, &one, &a[indz - 1 + j*m], &one, &tau, &a[indz - 1 + jj*m], &tmpint, &tmp_work);
             }
         }
         // Restore the pivot element into a, zero the subdiagonal elements in col j
