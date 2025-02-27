@@ -9,8 +9,8 @@ double dnrm2_(int* n, double* x, int* incx);
 
 void
 __nnls(const int m, const int n, double* restrict a, double* restrict b,
-                    double* restrict x, double* restrict w, double* restrict zz, double* restrict work,
-                    int* restrict indices, const int maxiter, double* rnorm, int* info);
+       double* restrict x, double* restrict w, double* restrict zz,
+       int* restrict indices, const int maxiter, double* rnorm, int* info);
 
 
 #endif
