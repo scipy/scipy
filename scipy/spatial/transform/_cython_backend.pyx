@@ -839,6 +839,29 @@ def approx_equal(quat: double[:, :], other: double[:, :], atol=None, degrees: cy
 
 
 @cython.embedsignature(True)
+def mean(quat: double[:, :], weights=None):
+    if weights is None:
+        weights = np.ones(quat.shape[0])
+    else:
+        weights = np.asarray(weights)
+        if weights.ndim != 1:
+            raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                "shape {}.".format(weights.shape))
+        if weights.shape[0] != quat.shape[0]:
+            raise ValueError("Expected `weights` to have number of values "
+                                "equal to number of rotations, got "
+                                "{} values and {} rotations.".format(
+                                weights.shape[0], quat.shape[0]))
+        if np.any(weights < 0):
+            raise ValueError("`weights` must be non-negative.")
+
+    quat = np.asarray(quat)
+    K = np.dot(weights * quat.T, quat)
+    _, v = np.linalg.eigh(K)
+    return v[:, -1]
+
+
+@cython.embedsignature(True)
 def apply(quat: cython.double[:, :], vectors, inverse=False):
     vectors = np.asarray(vectors)
     if vectors.ndim > 2 or vectors.shape[-1] != 3:
@@ -1475,71 +1498,6 @@ cdef class Rotation:
         if self._single:
             quat = quat[0]
         return self.__class__(quat, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
-    def mean(self, weights=None):
-        """Get the mean of the rotations.
-
-        The mean used is the chordal L2 mean (also called the projected or
-        induced arithmetic mean) [1]_. If ``A`` is a set of rotation matrices,
-        then the mean ``M`` is the rotation matrix that minimizes the
-        following loss function:
-
-        .. math::
-
-            L(M) = \\sum_{i = 1}^{n} w_i \\lVert \\mathbf{A}_i -
-            \\mathbf{M} \\rVert^2 ,
-
-        where :math:`w_i`'s are the `weights` corresponding to each matrix.
-
-        Parameters
-        ----------
-        weights : array_like shape (N,), optional
-            Weights describing the relative importance of the rotations. If
-            None (default), then all values in `weights` are assumed to be
-            equal.
-
-        Returns
-        -------
-        mean : `Rotation` instance
-            Object containing the mean of the rotations in the current
-            instance.
-
-        References
-        ----------
-        .. [1] Hartley, Richard, et al.,
-                "Rotation Averaging", International Journal of Computer Vision
-                103, 2013, pp. 267-305.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> r = R.from_euler('zyx', [[0, 0, 0],
-        ...                          [1, 0, 0],
-        ...                          [0, 1, 0],
-        ...                          [0, 0, 1]], degrees=True)
-        >>> r.mean().as_euler('zyx', degrees=True)
-        array([0.24945696, 0.25054542, 0.24945696])
-        """
-        if weights is None:
-            weights = np.ones(len(self))
-        else:
-            weights = np.asarray(weights)
-            if weights.ndim != 1:
-                raise ValueError("Expected `weights` to be 1 dimensional, got "
-                                 "shape {}.".format(weights.shape))
-            if weights.shape[0] != len(self):
-                raise ValueError("Expected `weights` to have number of values "
-                                 "equal to number of rotations, got "
-                                 "{} values and {} rotations.".format(
-                                    weights.shape[0], len(self)))
-            if np.any(weights < 0):
-                raise ValueError("`weights` must be non-negative.")
-
-        quat = np.asarray(self._quat)
-        K = np.dot(weights * quat.T, quat)
-        _, v = np.linalg.eigh(K)
-        return self.__class__(v[:, -1], normalize=False)
 
     @cython.embedsignature(True)
     def reduce(self, left=None, right=None, return_indices=False):

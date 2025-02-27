@@ -1112,20 +1112,29 @@ def test_approx_equal_single_rotation(xp):
             assert p.approx_equal(q[3], degrees=True)
 
 
-def test_mean():
-    axes = np.concatenate((-np.eye(3), np.eye(3)))
-    thetas = np.linspace(0, np.pi / 2, 100)
+def test_approx_equal_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    approx_equal = jax.jit(Rotation.approx_equal)
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(approx_equal(r, r))
+
+
+def test_mean(xp):
+    axes = xp.concat((-xp.eye(3), xp.eye(3)))
+    thetas = xp.linspace(0, np.pi / 2, 100)
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
         assert_allclose(r.mean().magnitude(), 0, atol=1e-10)
 
 
-def test_weighted_mean():
+def test_weighted_mean(xp):
     # test that doubling a weight is equivalent to including a rotation twice.
-    axes = np.array([[0, 0, 0], [1, 0, 0], [1, 0, 0]])
-    thetas = np.linspace(0, np.pi / 2, 100)
+    axes = xp.asarray([[0.0, 0, 0], [1, 0, 0], [1, 0, 0]])
+    thetas = xp.linspace(0, np.pi / 2, 100)
     for t in thetas:
-        rw = Rotation.from_rotvec(t * axes[:2])
+        rw = Rotation.from_rotvec(t * axes[:2, ...])
         mw = rw.mean(weights=[1, 2])
 
         r = Rotation.from_rotvec(t * axes)
@@ -1133,10 +1142,32 @@ def test_weighted_mean():
         assert_allclose((m * mw.inv()).magnitude(), 0, atol=1e-10)
 
 
-def test_mean_invalid_weights():
-    with pytest.raises(ValueError, match="non-negative"):
-        r = Rotation.from_quat(np.eye(4))
-        r.mean(weights=-np.ones(4))
+def test_mean_invalid_weights(xp):
+    # TOOD: Unify error messages and behavior
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="non-negative"):
+            r = Rotation.from_quat(xp.eye(4))
+            r.mean(weights=-xp.ones(4))
+    else:
+        r = Rotation.from_quat(xp.eye(4))
+        if is_array_api_strict(xp):
+            with pytest.raises(ValueError, match="Eigenvalues did not converge"):
+                m = r.mean(weights=-xp.ones(4))
+        elif is_torch(xp):
+            with pytest.raises(RuntimeError, match="The algorithm failed to converge"):
+                m = r.mean(weights=-xp.ones(4))
+        else:
+            m = r.mean(weights=-xp.ones(4))
+            assert all(xp.isnan(m._quat))
+
+
+def test_mean_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    mean = jax.jit(Rotation.mean)
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(mean(r))
 
 
 def test_reduction_no_indices():

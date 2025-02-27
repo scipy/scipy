@@ -135,6 +135,11 @@ class Rotation:
             self._quat, other._quat, atol=atol, degrees=degrees
         )
 
+    def mean(self, weights: ArrayLike | None = None) -> Rotation:
+        return Rotation(
+            self._backend.mean(self._quat, weights=weights), normalize=False
+        )
+
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)
 

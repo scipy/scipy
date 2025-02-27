@@ -360,6 +360,40 @@ def approx_equal(
     return angles < atol
 
 
+def mean(quat: Array, weights: Array | None = None) -> Array:
+    xp = array_namespace(quat)
+    # Branching code is okay for checks that include meta info such as shapes and types
+    if weights is None:
+        weights = xp.ones(quat.shape[:-1], dtype=atleast_f32(quat))
+        weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
+    else:
+        weights = xp.asarray(weights, device=device(quat), dtype=atleast_f32(quat))
+    # TODO: Missing full broadcasting support. We should relax this and only check if broadcasting
+    # is possible.
+    if weights.ndim != 1:
+        raise ValueError(
+            "Expected `weights` to be 1 dimensional, got shape {}.".format(
+                weights.shape
+            )
+        )
+    n_rot = quat.shape[0] if quat.ndim > 1 else 1
+    if weights.shape[0] != n_rot:
+        raise ValueError(
+            "Expected `weights` to have number of values "
+            "equal to number of rotations, got "
+            "{} values and {} rotations.".format(weights.shape[0], n_rot)
+        )
+    # DECISION: We cannot check for negative weights because jit code needs to be non-branching. We
+    # return NaN instead
+    weights = xp.where(weights < 0, xp.asarray(xp.nan, device=device(quat)), weights)
+
+    # Make sure we can transpose quat
+    quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+    K = (weights * quat.T) @ quat
+    _, v = xp.linalg.eigh(K)
+    return v[..., -1]
+
+
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
     subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
