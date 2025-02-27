@@ -798,7 +798,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
 def solve_toeplitz(c_or_cr, b, check_finite=True):
     r"""Solve the equation ``T @ x = b`` for ``x``, where ``T`` is a Toeplitz
-    matrix defined `c_or_cr`.
+    matrix defined by `c_or_cr`.
 
     The Toeplitz matrix has constant diagonals, with ``c`` as its first column
     and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
