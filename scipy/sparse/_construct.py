@@ -255,8 +255,8 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Returns
     -------
     new_matrix : dia_matrix
-        dia_matrix holding the values in `diagonals` offset from the main diagonal
-        as indicated in `offsets`.
+        dia_matrix holding the values in ``diagonals`` offset from the main diagonal
+        as indicated in ``offsets``.
 
     See Also
     --------
@@ -267,14 +267,14 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     -----
     Repeated diagonal offsets are disallowed.
 
-    The result from `diags` is the sparse equivalent of::
+    The result from ``diags`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
     ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
-    Specifically, `dia_matrix` assumes the data input includes padding
+    Specifically, ``dia_matrix`` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
     offset, while ``diags`` assumes the input data has no padding.
     Each value in the input ``diagonals`` is used.
@@ -319,7 +319,7 @@ def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
 
     Returns an identity matrix with shape ``(n, n)`` using a given
-    sparse format and dtype. This differs from `eye_array` in
+    sparse format and dtype. This differs from ``eye_array`` in
     that it has a square shape with ones only on the main diagonal.
     It is thus the multiplicative identity. ``eye_array`` allows
     rectangular shapes and the diagonal can be offset from the main one.
@@ -327,7 +327,7 @@ def identity(n, dtype='d', format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use `eye_array` to take advantage
+        You are encouraged to use ``eye_array`` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -342,12 +342,12 @@ def identity(n, dtype='d', format=None):
     Returns
     -------
     new_matrix : sparse matrix
-        A square sparse matrix with ones on (and zeros off) the main diagonal.
+        A square sparse matrix with ones on the main diagonal and zeros elsewhere.
 
     See Also
     --------
-    eye_array : Sparse array with ones on (and zeros off) the specified diagonal
-    eye : Sparse matrix with ones on (and zeros off) the specified diagonal
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
+    eye : Sparse matrix of chosen shape with ones on a specified diagonal.
 
     Examples
     --------
@@ -368,7 +368,7 @@ def identity(n, dtype='d', format=None):
 
 
 def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-    """Sparse array with ones on (and zeros off) the specified diagonal
+    """Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Return a sparse array with ones on diagonal.
     Specifically a sparse array (m x n) where the kth diagonal
@@ -390,7 +390,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     Returns
     -------
     new_array : sparse array
-        A sparse array with ones on (and zeros off) the kth diagonal.
+        Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Examples
     --------
@@ -447,7 +447,7 @@ def _eye(m, n, k, dtype, format, as_sparray=True):
 
 
 def eye(m, n=None, k=0, dtype=float, format=None):
-    """Sparse matrix with ones on (and zeros off) the specified diagonal
+    """Sparse matrix of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Returns a sparse matrix (m x n) where the kth diagonal
     is all ones and everything else is zeros.
@@ -474,7 +474,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     Returns
     -------
     new_matrix : sparse matrix
-        A sparse matrix with ones on (and zeros off) the kth diagonal.
+        Sparse matrix of chosen shape with ones on the kth diagonaland zeros elsewhere.
 
     Examples
     --------
