@@ -797,10 +797,11 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
 
 def solve_toeplitz(c_or_cr, b, check_finite=True):
-    r"""Solve a Toeplitz system using Levinson Recursion
+    r"""Solve the equation ``T @ x = b`` for ``x``, where ``T`` is a Toeplitz
+    matrix defined `c_or_cr`.
 
-    The Toeplitz matrix has constant diagonals, with c as its first column
-    and r as its first row. If r is not given, ``r == conjugate(c)`` is
+    The Toeplitz matrix has constant diagonals, with ``c`` as its first column
+    and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
 
     .. warning::
@@ -826,7 +827,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     Returns
     -------
     x : (M,) or (M, K) ndarray
-        The solution to the system ``T x = b``. Shape of return matches shape
+        The solution to the system ``T @ x = b``. Shape of return matches shape
         of `b`.
 
     See Also
@@ -840,7 +841,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
     Examples
     --------
-    Solve the Toeplitz system T x = b, where::
+    Solve the Toeplitz system ``T @ x = b``, where::
 
             [ 1 -1 -2 -3]       [1]
         T = [ 3  1 -1 -2]   b = [2]
@@ -861,7 +862,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     array([ 1.66666667, -1.        , -2.66666667,  2.33333333])
 
     Check the result by creating the full Toeplitz matrix and
-    multiplying it by `x`.  We should get `b`.
+    multiplying it by ``x``.  We should get `b`.
 
     >>> T = toeplitz(c, r)
     >>> T.dot(x)
