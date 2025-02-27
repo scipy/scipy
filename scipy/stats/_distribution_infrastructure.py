@@ -2884,7 +2884,7 @@ class ContinuousDistribution(_ProbabilityDistribution):
         # Generate QMC uniform sample(s) on unit interval with specified shape;
         # if `sample_shape != ()`, then each slice along axis 0 is independent.
 
-        sample_shape = full_shape[:-len(self._shape)]
+        sample_shape = full_shape[:len(full_shape)-len(self._shape)]
         # Determine the number of independent sequences and the length of each.
         n_low_discrepancy = sample_shape[0] if sample_shape else 1
         n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
