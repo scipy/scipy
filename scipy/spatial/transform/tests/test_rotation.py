@@ -998,7 +998,7 @@ def test_inv_jax_compile():
     pytest.importorskip("jax")
     import jax
 
-    r = Rotation.identity()
+    r = Rotation.from_matrix(jax.numpy.eye(3))
     inv = jax.jit(Rotation.inv)
     jax.block_until_ready(inv(r))
 
@@ -1011,45 +1011,58 @@ def test_identity_magnitude(xp):
     assert_allclose(r.inv().magnitude(), 0)
 
 
-def test_single_identity_magnitude():
-    assert Rotation.identity().magnitude() == 0
-    assert Rotation.identity().inv().magnitude() == 0
+def test_single_identity_magnitude(xp):
+    r = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    assert r.magnitude() == 0
+    assert r.inv().magnitude() == 0
 
 
-def test_identity_invariance():
+def test_identity_invariance(xp):
     n = 10
     p = Rotation.random(n, rng=0)
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
 
-    result = p * Rotation.identity(n)
+    q = Rotation.from_quat(xp.asarray(Rotation.identity(n).as_quat()))
+    result = p * q
     assert_array_almost_equal(p.as_quat(), result.as_quat())
 
     result = result * p.inv()
-    assert_array_almost_equal(result.magnitude(), np.zeros(n))
+    assert_array_almost_equal(result.magnitude(), xp.zeros(n))
 
 
-def test_single_identity_invariance():
+def test_single_identity_invariance(xp):
     n = 10
     p = Rotation.random(n, rng=0)
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
 
-    result = p * Rotation.identity()
+    q = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    result = p * q
     assert_array_almost_equal(p.as_quat(), result.as_quat())
 
     result = result * p.inv()
-    assert_array_almost_equal(result.magnitude(), np.zeros(n))
+    assert_array_almost_equal(result.magnitude(), xp.zeros(n))
 
 
-def test_magnitude():
-    r = Rotation.from_quat(np.eye(4))
+def test_identity_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    identity = jax.jit(Rotation.identity)
+    jax.block_until_ready(identity())
+
+
+def test_magnitude(xp):
+    r = Rotation.from_quat(xp.eye(4))
     result = r.magnitude()
     assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
 
-    r = Rotation.from_quat(-np.eye(4))
+    r = Rotation.from_quat(-xp.eye(4))
     result = r.magnitude()
     assert_array_almost_equal(result, [np.pi, np.pi, np.pi, 0])
 
 
-def test_magnitude_single_rotation():
-    r = Rotation.from_quat(np.eye(4))
+def test_magnitude_single_rotation(xp):
+    r = Rotation.from_quat(xp.eye(4))
     result1 = r[0].magnitude()
     assert_allclose(result1, np.pi)
 
@@ -1057,29 +1070,46 @@ def test_magnitude_single_rotation():
     assert_allclose(result2, 0)
 
 
-def test_approx_equal():
+def test_magnitude_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    magnitude = jax.jit(Rotation.magnitude)
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(magnitude(r))
+
+
+def test_approx_equal(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = Rotation.random(10, rng=rng)
     q = Rotation.random(10, rng=rng)
+    # Convert random Rotation from numpy to xp
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+    q = Rotation.from_quat(xp.asarray(q.as_quat()))
     r = p * q.inv()
     r_mag = r.magnitude()
-    atol = np.median(r_mag)  # ensure we get mix of Trues and Falses
-    assert_equal(p.approx_equal(q, atol), (r_mag < atol))
+    atol = xp.asarray(np.median(r_mag))  # ensure we get mix of Trues and Falses
+    xp_assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
 @pytest.mark.thread_unsafe
-def test_approx_equal_single_rotation():
+def test_approx_equal_single_rotation(xp):
     # also tests passing single argument to approx_equal
-    p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
-    q = Rotation.from_quat(np.eye(4))
+
+    p = Rotation.from_rotvec(xp.asarray([0, 0, 1e-9]))  # less than default atol of 1e-8
+    q = Rotation.from_quat(xp.eye(4))
+    print(q[3])
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
 
     # test passing atol and using degrees
     assert not p.approx_equal(q[3], atol=1e-10)
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
-    with pytest.warns(UserWarning, match="atol must be set"):
-        assert p.approx_equal(q[3], degrees=True)
+
+    # DECISION: Remove warning for degrees=True and atol=None
+    if is_numpy(xp):
+        with pytest.warns(UserWarning, match="atol must be set"):
+            assert p.approx_equal(q[3], degrees=True)
 
 
 def test_mean():

@@ -109,9 +109,12 @@ class Rotation:
         # TODO: The array API does not have a unified random interface. This method only creates
         # numpy arrays. If we do want to support other frameworks, we need a way to handle other rng
         # implementations.
-        backend = backend_registry[array_namespace(np.empty(0))]
-        sample = backend.random(num, rng)
+        sample = cython_backend.random(num, rng)
         return cls(sample, normalize=True, copy=False)
+
+    @classmethod
+    def identity(cls, num: int | None = None) -> Rotation:
+        return cls(cython_backend.identity(num), normalize=False, copy=False)
 
     def inv(self):
         q_inv = self._backend.inv(self._quat)
@@ -119,8 +122,26 @@ class Rotation:
             q_inv = q_inv[0, ...]
         return Rotation(q_inv, normalize=False, copy=False)
 
+    def magnitude(self):
+        magnitude = self._backend.magnitude(self._quat)
+        if self._single:
+            return magnitude[0, ...]
+        return magnitude
+
+    def approx_equal(
+        self, other: Rotation, atol: float | None = None, degrees: bool = False
+    ):
+        return self._backend.approx_equal(
+            self._quat, other._quat, atol=atol, degrees=degrees
+        )
+
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)
+
+    def __getitem__(self, indexer):
+        if self._single:
+            raise TypeError("Single rotation is not subscriptable.")
+        return Rotation(self._quat[indexer, ...], normalize=False)
 
     def __getstate__(self):
         return self._xp.asarray(self._quat, dtype=float)
@@ -232,10 +253,13 @@ try:
         # twice. More importantly, it would call the non-jitted Array API backend and therefore
         # incur a significant performance hit
         r = Rotation.__new__(Rotation)
-        r._backend = array_api_backend
+        # Someone could have registered a different backend for jax, so we attempt to fetch the
+        # updated backend here. If not, we fall back to the Array API backend.
+        r._backend = backend_registry.get(array_namespace(c[0]), array_api_backend)
         r._quat = c[0]
-        # TODO: Remove this once we properly support broadcasting
-        r._single = r._quat.ndim == 1
+        # We set _single to False for jax because the Array API backend supports broadcasting by
+        # default and hence returns the correct shape without the _single workaround
+        r._single = False
         return r
 
     register_pytree_node(Rotation, lambda v: ((v._quat,), None), rot_unflatten)

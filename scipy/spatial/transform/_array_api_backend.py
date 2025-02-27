@@ -329,16 +329,41 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     return angles
 
 
-def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
-    xp = array_namespace(quat)
-    subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
-    return xp.einsum(subscripts, as_matrix(quat), points)
-
-
 def inv(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat = xpx.at(quat)[..., :3].multiply(-1, copy=True, xp=xp)
     return quat
+
+
+def magnitude(quat: Array) -> Array:
+    xp = array_namespace(quat)
+    sin_q = xp.linalg.vector_norm(quat[..., :3], axis=-1)
+    cos_q = xp.abs(quat[..., 3])
+    angles = 2 * xp.atan2(sin_q, cos_q)
+    return angles
+
+
+def approx_equal(
+    quat: Array, other: Array, atol: float | None = None, degrees: bool = False
+) -> Array:
+    xp = array_namespace(quat)
+    # DECISION: We cannot warn conditioned on the value of `degrees`. However, we should not need
+    # to warn in the first place. If the user has set the degree flag and atol is None, the function
+    # is still working as expected.
+    atol = 1e-8 if atol is None else atol  # Value in radians
+    atol = xp.asarray(atol, device=device(quat))
+    degrees = xp.asarray(degrees, device=device(quat))
+    atol = xp.where(degrees, _deg2rad(atol), atol)
+
+    quat_result = compose_quat(other, inv(quat))
+    angles = magnitude(quat_result)
+    return angles < atol
+
+
+def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
+    xp = array_namespace(quat)
+    subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
+    return xp.einsum(subscripts, as_matrix(quat), points)
 
 
 def _normalize_quaternion(quat: Array) -> Array:

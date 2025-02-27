@@ -779,37 +779,6 @@ def as_euler(quat: cython.double[:, :], seq: str, degrees: cython.bint = False):
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 def inv(quat: double[:, :]) -> double[:, :]:
-    """Invert this rotation.
-
-    Composition of a rotation with its inverse results in an identity
-    transformation.
-
-    Returns
-    -------
-    inverse : `Rotation` instance
-        Object containing inverse of the rotations in the current instance.
-
-    Examples
-    --------
-    >>> from scipy.spatial.transform import Rotation as R
-    >>> import numpy as np
-
-    Inverting a single rotation:
-
-    >>> p = R.from_euler('z', 45, degrees=True)
-    >>> q = p.inv()
-    >>> q.as_euler('zyx', degrees=True)
-    array([-45.,   0.,   0.])
-
-    Inverting multiple rotations:
-
-    >>> p = R.from_rotvec([[0, 0, np.pi/3], [-np.pi/4, 0, 0]])
-    >>> q = p.inv()
-    >>> q.as_rotvec()
-    array([[-0.        , -0.        , -1.04719755],
-            [ 0.78539816, -0.        , -0.        ]])
-
-    """
     cdef np.ndarray q_inv = np.array(quat, copy=True)
     q_inv[:, 0] *= -1
     q_inv[:, 1] *= -1
@@ -831,124 +800,46 @@ def random(num=None, rng=None):
 
 
 @cython.embedsignature(True)
+def identity(num = None) -> double[:, :]:
+    if num is None:
+        return np.array([0, 0, 0, 1])
+    q = np.zeros((num, 4))
+    q[:, 3] = 1
+    return q
+
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def magnitude(quat: cython.double[:, :]) -> double[:, :]:
+    cdef Py_ssize_t num_rotations = quat.shape[0]
+    cdef double[:] angles = _empty1(num_rotations)
+
+    for ind in range(num_rotations):
+        angles[ind] = 2 * atan2(_norm3(quat[ind, :3]), abs(quat[ind, 3]))
+
+    return np.asarray(angles)
+
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def approx_equal(quat: double[:, :], other: double[:, :], atol=None, degrees: cython.bint=False):
+    if atol is None:
+        if degrees:
+            warnings.warn("atol must be set to use the degrees flag, "
+                            "defaulting to 1e-8 radians.")
+        atol = 1e-8  # radians
+    elif degrees:
+        atol = np.deg2rad(atol)
+
+    q_result = _compose_quat(other, inv(quat))
+    angles = magnitude(q_result)
+    return angles < atol
+
+
+@cython.embedsignature(True)
 def apply(quat: cython.double[:, :], vectors, inverse=False):
-    """Apply this rotation to a set of vectors.
-
-    If the original frame rotates to the final frame by this rotation, then
-    its application to a vector can be seen in two ways:
-
-        - As a projection of vector components expressed in the final frame
-            to the original frame.
-        - As the physical rotation of a vector being glued to the original
-            frame as it rotates. In this case the vector components are
-            expressed in the original frame before and after the rotation.
-
-    In terms of rotation matrices, this application is the same as
-    ``self.as_matrix() @ vectors``.
-
-    Parameters
-    ----------
-    vectors : array_like, shape (3,) or (N, 3)
-        Each `vectors[i]` represents a vector in 3D space. A single vector
-        can either be specified with shape `(3, )` or `(1, 3)`. The number
-        of rotations and number of vectors given must follow standard numpy
-        broadcasting rules: either one of them equals unity or they both
-        equal each other.
-    inverse : boolean, optional
-        If True then the inverse of the rotation(s) is applied to the input
-        vectors. Default is False.
-
-    Returns
-    -------
-    rotated_vectors : ndarray, shape (3,) or (N, 3)
-        Result of applying rotation on input vectors.
-        Shape depends on the following cases:
-
-            - If object contains a single rotation (as opposed to a stack
-                with a single rotation) and a single vector is specified with
-                shape ``(3,)``, then `rotated_vectors` has shape ``(3,)``.
-            - In all other cases, `rotated_vectors` has shape ``(N, 3)``,
-                where ``N`` is either the number of rotations or vectors.
-
-    Examples
-    --------
-    >>> from scipy.spatial.transform import Rotation as R
-    >>> import numpy as np
-
-    Single rotation applied on a single vector:
-
-    >>> vector = np.array([1, 0, 0])
-    >>> r = R.from_rotvec([0, 0, np.pi/2])
-    >>> r.as_matrix()
-    array([[ 2.22044605e-16, -1.00000000e+00,  0.00000000e+00],
-            [ 1.00000000e+00,  2.22044605e-16,  0.00000000e+00],
-            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
-    >>> r.apply(vector)
-    array([2.22044605e-16, 1.00000000e+00, 0.00000000e+00])
-    >>> r.apply(vector).shape
-    (3,)
-
-    Single rotation applied on multiple vectors:
-
-    >>> vectors = np.array([
-    ... [1, 0, 0],
-    ... [1, 2, 3]])
-    >>> r = R.from_rotvec([0, 0, np.pi/4])
-    >>> r.as_matrix()
-    array([[ 0.70710678, -0.70710678,  0.        ],
-            [ 0.70710678,  0.70710678,  0.        ],
-            [ 0.        ,  0.        ,  1.        ]])
-    >>> r.apply(vectors)
-    array([[ 0.70710678,  0.70710678,  0.        ],
-            [-0.70710678,  2.12132034,  3.        ]])
-    >>> r.apply(vectors).shape
-    (2, 3)
-
-    Multiple rotations on a single vector:
-
-    >>> r = R.from_rotvec([[0, 0, np.pi/4], [np.pi/2, 0, 0]])
-    >>> vector = np.array([1,2,3])
-    >>> r.as_matrix()
-    array([[[ 7.07106781e-01, -7.07106781e-01,  0.00000000e+00],
-            [ 7.07106781e-01,  7.07106781e-01,  0.00000000e+00],
-            [ 0.00000000e+00,  0.00000000e+00,  1.00000000e+00]],
-            [[ 1.00000000e+00,  0.00000000e+00,  0.00000000e+00],
-            [ 0.00000000e+00,  2.22044605e-16, -1.00000000e+00],
-            [ 0.00000000e+00,  1.00000000e+00,  2.22044605e-16]]])
-    >>> r.apply(vector)
-    array([[-0.70710678,  2.12132034,  3.        ],
-            [ 1.        , -3.        ,  2.        ]])
-    >>> r.apply(vector).shape
-    (2, 3)
-
-    Multiple rotations on multiple vectors. Each rotation is applied on the
-    corresponding vector:
-
-    >>> r = R.from_euler('zxy', [
-    ... [0, 0, 90],
-    ... [45, 30, 60]], degrees=True)
-    >>> vectors = [
-    ... [1, 2, 3],
-    ... [1, 0, -1]]
-    >>> r.apply(vectors)
-    array([[ 3.        ,  2.        , -1.        ],
-            [-0.09026039,  1.11237244, -0.86860844]])
-    >>> r.apply(vectors).shape
-    (2, 3)
-
-    It is also possible to apply the inverse rotation:
-
-    >>> r = R.from_euler('zxy', [
-    ... [0, 0, 90],
-    ... [45, 30, 60]], degrees=True)
-    >>> vectors = [
-    ... [1, 2, 3],
-    ... [1, 0, -1]]
-    >>> r.apply(vectors, inverse=True)
-    array([[-3.        ,  2.        ,  1.        ],
-            [ 1.09533535, -0.8365163 ,  0.3169873 ]])
-
-    """
     vectors = np.asarray(vectors)
     if vectors.ndim > 2 or vectors.shape[-1] != 3:
         raise ValueError("Expected input of shape (3,) or (P, 3), "
@@ -1586,103 +1477,6 @@ cdef class Rotation:
         return self.__class__(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def magnitude(self):
-        """Get the magnitude(s) of the rotation(s).
-
-        Returns
-        -------
-        magnitude : ndarray or float
-            Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations. The magnitude
-            will always be in the range [0, pi].
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-        >>> r = R.from_quat(np.eye(4))
-        >>> r.as_quat()
-        array([[ 1., 0., 0., 0.],
-               [ 0., 1., 0., 0.],
-               [ 0., 0., 1., 0.],
-               [ 0., 0., 0., 1.]])
-        >>> r.magnitude()
-        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
-
-        Magnitude of a single rotation:
-
-        >>> r[0].magnitude()
-        3.141592653589793
-        """
-        cdef double[:, :] quat = self._quat
-        cdef Py_ssize_t num_rotations = quat.shape[0]
-        cdef double[:] angles = _empty1(num_rotations)
-
-        for ind in range(num_rotations):
-            angles[ind] = 2 * atan2(_norm3(quat[ind, :3]), abs(quat[ind, 3]))
-
-        if self._single:
-            return angles[0]
-        else:
-            return np.asarray(angles)
-
-
-    @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def approx_equal(Rotation self, Rotation other, atol=None, degrees=False):
-        """Determine if another rotation is approximately equal to this one.
-
-        Equality is measured by calculating the smallest angle between the
-        rotations, and checking to see if it is smaller than `atol`.
-
-        Parameters
-        ----------
-        other : `Rotation` instance
-            Object containing the rotations to measure against this one.
-        atol : float, optional
-            The absolute angular tolerance, below which the rotations are
-            considered equal. If not given, then set to 1e-8 radians by
-            default.
-        degrees : bool, optional
-            If True and `atol` is given, then `atol` is measured in degrees. If
-            False (default), then atol is measured in radians.
-
-        Returns
-        -------
-        approx_equal : ndarray or bool
-            Whether the rotations are approximately equal, bool if object
-            contains a single rotation and ndarray if object contains multiple
-            rotations.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-        >>> p = R.from_quat([0, 0, 0, 1])
-        >>> q = R.from_quat(np.eye(4))
-        >>> p.approx_equal(q)
-        array([False, False, False, True])
-
-        Approximate equality for a single rotation:
-
-        >>> p.approx_equal(q[0])
-        False
-        """
-        if atol is None:
-            if degrees:
-                warnings.warn("atol must be set to use the degrees flag, "
-                              "defaulting to 1e-8 radians.")
-            atol = 1e-8  # radians
-        elif degrees:
-            atol = np.deg2rad(atol)
-
-        angles = (other * self.inv()).magnitude()
-        return angles < atol
-
-    @cython.embedsignature(True)
     def mean(self, weights=None):
         """Get the mean of the rotations.
 
@@ -1983,31 +1777,6 @@ cdef class Rotation:
         quat = np.asarray(self._quat)
         quat[indexer] = value.as_quat()
         self._quat = quat
-
-    @cython.embedsignature(True)
-    @classmethod
-    def identity(cls, num=None):
-        """Get identity rotation(s).
-
-        Composition with the identity rotation has no effect.
-
-        Parameters
-        ----------
-        num : int or None, optional
-            Number of identity rotations to generate. If None (default), then a
-            single rotation is generated.
-
-        Returns
-        -------
-        identity : Rotation object
-            The identity rotation.
-        """
-        if num is None:
-            q = [0, 0, 0, 1]
-        else:
-            q = np.zeros((num, 4))
-            q[:, 3] = 1
-        return cls(q, normalize=False)
 
     @cython.embedsignature(True)
     @classmethod
