@@ -1,3 +1,35 @@
+/*
+ *  ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
+ *  TRANSACTIONS ON MATHEMATICAL SOFTWARE,
+ *  VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
+ *  https://doi.org/10.1145/192115.192124
+ *
+ *
+ *  https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
+ *  ------
+ *  From: Deborah Cotton <cotton@hq.acm.org>
+ *  Date: Fri, 14 Sep 2007 12:35:55 -0500
+ *  Subject: RE: Algorithm License requested
+ *  To: Alan Isaac
+ *
+ *  Prof. Issac,
+ *
+ *  In that case, then because the author consents to [the ACM] releasing
+ *  the code currently archived at http://www.netlib.org/toms/733 under the
+ *  BSD license, the ACM hereby releases this code under the BSD license.
+ *
+ *  Regards,
+ *
+ *  Deborah Cotton, Copyright & Permissions
+ *  ACM Publications
+ *  2 Penn Plaza, Suite 701**
+ *  New York, NY 10121-0701
+ *  permissions@acm.org
+ *  212.869.7440 ext. 652
+ *  Fax. 212.869.0481
+ *  ------
+*/
+
 #ifndef __SLSQPLIB_H
 #define __SLSQPLIB_H
 
@@ -119,8 +151,8 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // Allocate memory for the algorithm,
-    // A is m x n, b is m, x is n, w is n, zz is m, work is n
-    // total m*(n+2) + 3*n
+    // A is m x n, b is m, x is n, w is n, zz is m
+    // total m*(n+2) + 2*n
     //indices is n
     buffer = malloc((m*(n+2) + 3*n)*sizeof(double));
     if (buffer == NULL)
@@ -139,7 +171,6 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     double* b = &buffer[n*m + n];           // Vector b (m)
     double* w = &buffer[(n+1)*m + n];       // Vector w (n)
     double* zz = &buffer[(n+1)*m + 2*n];    // Vector zz (m)
-    double* work = &buffer[(n+2)*m + 2*n];  // Work vector (n)
 
     npy_intp* restrict strides = PyArray_STRIDES(ap_A);
     double* restrict data_A = (double *)PyArray_DATA(ap_A);
@@ -160,7 +191,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
     }
 
     // Call nnls
-    __nnls((int)m, (int)n, a, b, x, w, zz, work, indices, maxiter, &rnorm, &info);
+    __nnls((int)m, (int)n, a, b, x, w, zz, indices, maxiter, &rnorm, &info);
     // x is the first n elements of buffer, shrink buffer to n elements
     free(indices);
     double* mem_ret = realloc(buffer, n*sizeof(double));
@@ -223,7 +254,7 @@ ldp_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
     if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
 
     // Allocate memory for the problem data and the algorithm.
-    double* mem_ret = malloc(((m*n + m) + (m+2)*(n+1) + 3*m + n)*sizeof(double));
+    double* mem_ret = malloc(((m*n + m) + (m+2)*(n+1) + 2*m + n)*sizeof(double));
     if (mem_ret == NULL)
     {
         free(indices);
@@ -261,6 +292,135 @@ ldp_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     return Py_BuildValue("N", PyArray_Return(ap_x));
 }
+
+
+static PyObject*
+lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
+    npy_intp ma, mg, n;
+    int mode;
+    double xnorm;
+    PyArrayObject *ap_a=NULL, *ap_b=NULL, *ap_g=NULL, *ap_h=NULL;
+
+    if (!PyArg_ParseTuple(args, "O!O!O!O!",
+                          &PyArray_Type, (PyObject **)&ap_a,
+                          &PyArray_Type, (PyObject **)&ap_b,
+                          &PyArray_Type, (PyObject **)&ap_g,
+                          &PyArray_Type, (PyObject **)&ap_h))
+    {
+        return NULL;
+    }
+
+    if ((PyArray_TYPE(ap_a) != NPY_FLOAT64) || (PyArray_TYPE(ap_b) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_g) != NPY_FLOAT64) || (PyArray_TYPE(ap_h) != NPY_FLOAT64))
+    {
+        PYERR(slsqp_error, "Inputs to lsi must be of type numpy.float64.");
+    }
+
+    int ndim_a = PyArray_NDIM(ap_a);
+    if (ndim_a != 2)
+    {
+        PYERR(slsqp_error, "Input array a must be 2D.");
+    }
+    npy_intp* shape_a = PyArray_SHAPE(ap_a);
+    ma = shape_a[0];
+    n = shape_a[1];
+
+    int ndim_b = PyArray_NDIM(ap_b);
+    if (ndim_b != 1)
+    {
+        PYERR(slsqp_error, "Input array b must be 1D.");
+    }
+    npy_intp* shape_b = PyArray_SHAPE(ap_b);
+    if (shape_b[0] != ma)
+    {
+        PYERR(slsqp_error, "Input array b must have the same shape as (ma,).");
+    }
+
+    int ndim_g = PyArray_NDIM(ap_g);
+    if (ndim_g != 2)
+    {
+        PYERR(slsqp_error, "Input array g must be 2D.");
+    }
+    npy_intp* shape_g = PyArray_SHAPE(ap_g);
+    mg = shape_g[0];
+    if (shape_g[1] != n)
+    {
+        PYERR(slsqp_error, "Input array g must have the same number of columns as a.");
+    }
+
+    int ndim_h = PyArray_NDIM(ap_h);
+    if (ndim_h != 1)
+    {
+        PYERR(slsqp_error, "Input array h must be 1D.");
+    }
+    npy_intp* shape_h = PyArray_SHAPE(ap_h);
+    if (shape_h[0] != mg)
+    {
+        PYERR(slsqp_error, "Input array h must have the same shape as (mg,).");
+    }
+
+    // Over allocate indices a bit for transposing problems and other uses
+    int* indices = malloc((ma+n)*sizeof(int));
+    if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
+
+    // Allocate memory for the problem data and the algorithm.
+    double* mem_ret = calloc(((ma*n + ma) + (mg*n + mg) + (mg+2)*(n+1) + 2*mg + n), sizeof(double));
+    if (mem_ret == NULL)
+    {
+        free(indices);
+        PYERR(slsqp_error, "Memory allocation for buffer failed.");
+    }
+    double* restrict x = &mem_ret[0];
+    double* restrict a = &mem_ret[n];
+    double* restrict b = &mem_ret[n + ma*n];
+    double* restrict g = &mem_ret[n + ma*n + ma];
+    double* restrict h = &mem_ret[n + ma*n + ma + mg*n];
+    double* restrict buffer = &mem_ret[n + ma*n + ma + mg*n + mg];
+
+    // Copy the data from the numpy arrays
+    double* data_a = (double*)PyArray_DATA(ap_a);
+    double* data_b = (double*)PyArray_DATA(ap_b);
+    double* data_g = (double*)PyArray_DATA(ap_g);
+    double* data_h = (double*)PyArray_DATA(ap_h);
+    npy_intp* restrict strides_a = PyArray_STRIDES(ap_a);
+    npy_intp* restrict stride_b = PyArray_STRIDES(ap_b);
+    npy_intp* restrict strides_g = PyArray_STRIDES(ap_g);
+    npy_intp* restrict stride_h = PyArray_STRIDES(ap_h);
+    npy_intp row_stride = (strides_a[0]/sizeof(double));
+    npy_intp col_stride = (strides_a[1]/sizeof(double));
+
+    // Copy the data from the numpy arrays in Fortran order
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < ma; i++) {
+            a[i + j*ma] = data_a[i*row_stride + j*col_stride];
+        }
+    }
+    row_stride = (stride_b[0]/sizeof(double));
+    for (int i = 0; i < ma; i++) { b[i] = data_b[i*row_stride]; }
+
+    row_stride = (strides_g[0]/sizeof(double));
+    col_stride = (strides_g[1]/sizeof(double));
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < mg; i++) {
+            g[i + j*mg] = data_g[i*row_stride + j*col_stride];
+        }
+    }
+    row_stride = (stride_h[0]/sizeof(double));
+    for (int i = 0; i < mg; i++) { h[i] = data_h[i*row_stride]; }
+
+    lsi((int)ma, (int)mg, (int)n, a, b, g, h, x, buffer, indices, &xnorm, &mode);
+
+    free(indices);
+    // Truncate it to the size of the solution vector x.
+    double* mem_x = realloc(mem_ret, n*sizeof(double));
+    if (mem_x == NULL) { PYERR(slsqp_error, "Memory reallocation failed."); }
+    npy_intp shape_x[1] = {n};
+    PyArrayObject* ap_x = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_x, NPY_FLOAT64, mem_x);
+
+    return Py_BuildValue("Ndi", PyArray_Return(ap_x), xnorm, mode);
+}
+
 
 
 static PyObject*
@@ -367,9 +527,9 @@ lsei_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
     // x : n
     // for LSEI buffer for multipliers, residuals, and others : [mg + 2*me + ma]
     // for subarrays A2, G2 : [(ma + mg)*(n - me)]
-    // for the later call to LSI and LDP: ((mg+2)*((n - me)+1) + 3*mg + (n - me))
+    // for the later call to LSI and LDP: ((mg+2)*((n - me)+1) + 2*mg + (n - me))
     npy_intp total_size = ((ma + mg + me)*(n + 2) + me + n + (ma + mg)*(n - me) +
-                            (mg + 2)*((n - me) + 1) + 3*mg + (n - me));
+                            (mg + 2)*((n - me) + 1) + 2*mg + (n - me));
     double* mem_ret = malloc(total_size*sizeof(double));
     if (mem_ret == NULL)
     {
@@ -443,144 +603,16 @@ lsei_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 
 
 static PyObject*
-lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
-{
-    npy_intp ma, mg, n;
-    int mode;
-    double xnorm;
-    PyArrayObject *ap_a=NULL, *ap_b=NULL, *ap_g=NULL, *ap_h=NULL;
-
-    if (!PyArg_ParseTuple(args, "O!O!O!O!",
-                          &PyArray_Type, (PyObject **)&ap_a,
-                          &PyArray_Type, (PyObject **)&ap_b,
-                          &PyArray_Type, (PyObject **)&ap_g,
-                          &PyArray_Type, (PyObject **)&ap_h))
-    {
-        return NULL;
-    }
-
-    if ((PyArray_TYPE(ap_a) != NPY_FLOAT64) || (PyArray_TYPE(ap_b) != NPY_FLOAT64) ||
-        (PyArray_TYPE(ap_g) != NPY_FLOAT64) || (PyArray_TYPE(ap_h) != NPY_FLOAT64))
-    {
-        PYERR(slsqp_error, "Inputs to lsi must be of type numpy.float64.");
-    }
-
-    int ndim_a = PyArray_NDIM(ap_a);
-    if (ndim_a != 2)
-    {
-        PYERR(slsqp_error, "Input array a must be 2D.");
-    }
-    npy_intp* shape_a = PyArray_SHAPE(ap_a);
-    ma = shape_a[0];
-    n = shape_a[1];
-
-    int ndim_b = PyArray_NDIM(ap_b);
-    if (ndim_b != 1)
-    {
-        PYERR(slsqp_error, "Input array b must be 1D.");
-    }
-    npy_intp* shape_b = PyArray_SHAPE(ap_b);
-    if (shape_b[0] != ma)
-    {
-        PYERR(slsqp_error, "Input array b must have the same shape as (ma,).");
-    }
-
-    int ndim_g = PyArray_NDIM(ap_g);
-    if (ndim_g != 2)
-    {
-        PYERR(slsqp_error, "Input array g must be 2D.");
-    }
-    npy_intp* shape_g = PyArray_SHAPE(ap_g);
-    mg = shape_g[0];
-    if (shape_g[1] != n)
-    {
-        PYERR(slsqp_error, "Input array g must have the same number of columns as a.");
-    }
-
-    int ndim_h = PyArray_NDIM(ap_h);
-    if (ndim_h != 1)
-    {
-        PYERR(slsqp_error, "Input array h must be 1D.");
-    }
-    npy_intp* shape_h = PyArray_SHAPE(ap_h);
-    if (shape_h[0] != mg)
-    {
-        PYERR(slsqp_error, "Input array h must have the same shape as (mg,).");
-    }
-
-    // Over allocate indices a bit for transposing problems and other uses
-    int* indices = malloc((ma+n)*sizeof(int));
-    if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
-
-    // Allocate memory for the problem data and the algorithm.
-    double* mem_ret = calloc(((ma*n + ma) + (mg*n + mg) + (mg+2)*(n+1) + 3*mg + n), sizeof(double));
-    if (mem_ret == NULL)
-    {
-        free(indices);
-        PYERR(slsqp_error, "Memory allocation for buffer failed.");
-    }
-    double* restrict x = &mem_ret[0];
-    double* restrict a = &mem_ret[n];
-    double* restrict b = &mem_ret[n + ma*n];
-    double* restrict g = &mem_ret[n + ma*n + ma];
-    double* restrict h = &mem_ret[n + ma*n + ma + mg*n];
-    double* restrict buffer = &mem_ret[n + ma*n + ma + mg*n + mg];
-
-    // Copy the data from the numpy arrays
-    double* data_a = (double*)PyArray_DATA(ap_a);
-    double* data_b = (double*)PyArray_DATA(ap_b);
-    double* data_g = (double*)PyArray_DATA(ap_g);
-    double* data_h = (double*)PyArray_DATA(ap_h);
-    npy_intp* restrict strides_a = PyArray_STRIDES(ap_a);
-    npy_intp* restrict stride_b = PyArray_STRIDES(ap_b);
-    npy_intp* restrict strides_g = PyArray_STRIDES(ap_g);
-    npy_intp* restrict stride_h = PyArray_STRIDES(ap_h);
-    npy_intp row_stride = (strides_a[0]/sizeof(double));
-    npy_intp col_stride = (strides_a[1]/sizeof(double));
-
-    // Copy the data from the numpy arrays in Fortran order
-    for (int j = 0; j < n; j++) {
-        for (int i = 0; i < ma; i++) {
-            a[i + j*ma] = data_a[i*row_stride + j*col_stride];
-        }
-    }
-    row_stride = (stride_b[0]/sizeof(double));
-    for (int i = 0; i < ma; i++) { b[i] = data_b[i*row_stride]; }
-
-    row_stride = (strides_g[0]/sizeof(double));
-    col_stride = (strides_g[1]/sizeof(double));
-    for (int j = 0; j < n; j++) {
-        for (int i = 0; i < mg; i++) {
-            g[i + j*mg] = data_g[i*row_stride + j*col_stride];
-        }
-    }
-    row_stride = (stride_h[0]/sizeof(double));
-    for (int i = 0; i < mg; i++) { h[i] = data_h[i*row_stride]; }
-
-    lsi((int)ma, (int)mg, (int)n, a, b, g, h, x, buffer, indices, &xnorm, &mode);
-
-    free(indices);
-    // Truncate it to the size of the solution vector x.
-    double* mem_x = realloc(mem_ret, n*sizeof(double));
-    if (mem_x == NULL) { PYERR(slsqp_error, "Memory reallocation failed."); }
-    npy_intp shape_x[1] = {n};
-    PyArrayObject* ap_x = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_x, NPY_FLOAT64, mem_x);
-
-    return Py_BuildValue("Ndi", PyArray_Return(ap_x), xnorm, mode);
-}
-
-
-static PyObject*
 lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    npy_intp m, meq, n, nl;
+    npy_intp m, meq, n, augmented;
     int mode = 0;
-    PyArrayObject *ap_S=NULL, *ap_t=NULL, *ap_C=NULL, *ap_d=NULL, *ap_xl=NULL, *ap_xu=NULL;
+    PyArrayObject *ap_Lf=NULL, *ap_gradx=NULL, *ap_C=NULL, *ap_d=NULL, *ap_xl=NULL, *ap_xu=NULL;
 
     if (!PyArg_ParseTuple(args, "nnnnO!O!O!O!O!O!",
-                          &m, &meq, &n, &nl,
-                          &PyArray_Type, (PyObject **)&ap_S,
-                          &PyArray_Type, (PyObject **)&ap_t,
+                          &m, &meq, &n, &augmented,
+                          &PyArray_Type, (PyObject **)&ap_Lf,
+                          &PyArray_Type, (PyObject **)&ap_gradx,
                           &PyArray_Type, (PyObject **)&ap_C,
                           &PyArray_Type, (PyObject **)&ap_d,
                           &PyArray_Type, (PyObject **)&ap_xl,
@@ -589,27 +621,109 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    if ((PyArray_TYPE(ap_S) != NPY_FLOAT64) || (PyArray_TYPE(ap_t) != NPY_FLOAT64) ||
+    if ((PyArray_TYPE(ap_Lf) != NPY_FLOAT64) || (PyArray_TYPE(ap_gradx) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_C) != NPY_FLOAT64) || (PyArray_TYPE(ap_d) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_xl) != NPY_FLOAT64) || (PyArray_TYPE(ap_xu) != NPY_FLOAT64))
     {
         PYERR(slsqp_error, "Inputs to lsq must be of type numpy.float64.");
     }
 
-    int ndim_S = PyArray_NDIM(ap_S);
-    if (ndim_S != 1)
+    int ndim_Lf = PyArray_NDIM(ap_Lf);
+    if (ndim_Lf != 1) { PYERR(slsqp_error, "Input array S must be 1D."); }
+    npy_intp* shape_Lf = PyArray_SHAPE(ap_Lf);
+    int ndim_gradx = PyArray_NDIM(ap_gradx);
+    if (ndim_gradx != 1) { PYERR(slsqp_error, "Input array t must be 1D."); }
+    npy_intp* shape_gradx = PyArray_SHAPE(ap_gradx);
+
+    if (shape_Lf[0] != (n*(n+1)/2)) { PYERR(slsqp_error, "Input array S must have the same number of elements as n*(n+1)/2."); }
+    if (shape_gradx[0] != n) { PYERR(slsqp_error, "Input array gradx must have the same number of elements as n."); }
+
+    // Over allocate indices a bit for transposing problems and other uses
+    int* indices = malloc((m+2*n)*sizeof(int));
+    if (indices == NULL) { PYERR(slsqp_error, "Memory allocation for indices failed."); }
+
+    // Allocate memory for the problem data and the algorithm.
+    size_t lsei_size = ((n+1) + (m-meq) + meq)*(n+3) + ((n+2) + (m-meq))*(n-meq)
+                       + ((m-meq) + 2)*((n+1-meq)+1) + 2*(m-meq) + (n+1-meq)
+                       + meq + n;
+    size_t lsq_size = (n+1)*(n+2) + (n+2)*meq + meq + (m - meq + 2*n)*(n+1) + (m - meq) + 2*(n+1);
+    size_t total_size = lsei_size + lsq_size;
+
+    double* mem_ret = calloc(total_size, sizeof(double));
+    if (mem_ret == NULL)
     {
-        PYERR(slsqp_error, "Input array S must be 1D.");
+        free(indices);
+        PYERR(slsqp_error, "Memory allocation for buffer failed.");
     }
-    npy_intp* shape_S = PyArray_SHAPE(ap_S);
-    int ndim_t = PyArray_NDIM(ap_t);
-    if (ndim_t != 1)
-    {
-        PYERR(slsqp_error, "Input array t must be 1D.");
-    }
-    npy_intp* shape_t = PyArray_SHAPE(ap_t);
 
 
+    double* restrict Lf =     &mem_ret[0];
+    double* restrict gradx =  &mem_ret[n*(n+1)/2];
+    double* restrict C =      &mem_ret[n*(n+1)/2 + n];
+    double* restrict d =      &mem_ret[n*(n+1)/2 + n + n*m];
+    double* restrict xl =     &mem_ret[n*(n+1)/2 + n + n*m + m];
+    double* restrict xu =     &mem_ret[n*(n+1)/2 + n + n*m + m + n];
+    double* restrict x =      &mem_ret[n*(n+1)/2 + n + n*m + m + n + n];
+    double* restrict y =      &mem_ret[n*(n+1)/2 + n + n*m + m + n + n + n];
+    double* restrict buffer = &mem_ret[n*(n+1)/2 + n + n*m + m + n + n + n + m + n + n];
+
+    // Copy the data from the numpy arrays
+    double* data_Lf = (double*)PyArray_DATA(ap_Lf);
+    double* data_gradx = (double*)PyArray_DATA(ap_gradx);
+    double* data_C = (double*)PyArray_DATA(ap_C);
+    double* data_d = (double*)PyArray_DATA(ap_d);
+    double* data_xl = (double*)PyArray_DATA(ap_xl);
+    double* data_xu = (double*)PyArray_DATA(ap_xu);
+    npy_intp* restrict strides_Lf = PyArray_STRIDES(ap_Lf);
+    npy_intp* restrict strides_gradx = PyArray_STRIDES(ap_gradx);
+    npy_intp* restrict strides_C = PyArray_STRIDES(ap_C);
+    npy_intp* restrict strides_d = PyArray_STRIDES(ap_d);
+    npy_intp* restrict strides_xl = PyArray_STRIDES(ap_xl);
+    npy_intp* restrict strides_xu = PyArray_STRIDES(ap_xu);
+    npy_intp row_stride = (strides_Lf[0]/sizeof(double));
+    npy_intp row_stride_gradx = (strides_gradx[0]/sizeof(double));
+    npy_intp row_stride_C = (strides_C[0]/sizeof(double));
+    npy_intp col_stride_C = (strides_C[1]/sizeof(double));
+    npy_intp row_stride_d = (strides_d[0]/sizeof(double));
+    npy_intp row_stride_xl = (strides_xl[0]/sizeof(double));
+    npy_intp row_stride_xu = (strides_xu[0]/sizeof(double));
+
+    // Copy the data from the numpy arrays in Fortran order
+    for (int i = 0; i <= n*(n+1)/2; i++) { Lf[i] = data_Lf[i*row_stride]; }
+
+    // Only C matrix is 2D use both strides to store in Fortran order
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+            C[i + j*m] = data_C[i*row_stride_C + j*col_stride_C];
+        }
+    }
+
+    for (int i = 0; i < m; i++) { d[i] = data_d[i*row_stride_d]; }
+
+    for (int i = 0; i < n; i++) {
+        gradx[i] = data_gradx[i*row_stride_gradx];
+        xl[i] = data_xl[i*row_stride_xl];
+        xu[i] = data_xu[i*row_stride_xu];
+    }
+
+    // Call lsq
+    lsq((int)m, (int)meq, (int)n, (int)augmented, Lf, gradx, C, d, xl, xu, x, y, buffer, indices, &mode);
+    free(indices);
+    // Carry the solution and multipliers to the top of the buffer.
+    for (int i = 0; i < m + 3*n; i++) { mem_ret[i] = mem_ret[n*(n+1)/2 + n + n*m + m + n + n + i];}
+    npy_intp newshape_y[1] = {m + 2*n};
+    PyArrayObject* ap_y = (PyArrayObject*)PyArray_SimpleNew(1, newshape_y, NPY_FLOAT64);
+    double* data_y = (double*)PyArray_DATA(ap_y);
+    for (int i = n; i < m + 3*n; i++) { data_y[i-n] = mem_ret[i]; }
+
+    // We are only interested in the solution vector x and mode
+    // Truncate it to the size of the solution vector x.
+    double* mem_x = realloc(mem_ret, n*sizeof(double));
+    if (mem_x == NULL) { free(mem_ret);PYERR(slsqp_error, "Memory reallocation failed."); }
+    npy_intp shape_x[1] = {n};
+    PyArrayObject* ap_x = (PyArrayObject*)PyArray_SimpleNewFromData(1, shape_x, NPY_FLOAT64, mem_x);
+
+    return Py_BuildValue("NNi", PyArray_Return(ap_x), PyArray_Return(ap_y), mode);
 }
 
 
@@ -618,11 +732,14 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
 
-/*
+
+static char doc_lsq_wrapper[] = ("Convert the given compact representation of the"
+                                 " linearized problem to an LSEI problem\n\n");
+
 static char doc_lsei_wrapper[] = ("Compute the least squares solution subject to "
                                  "equality and inequality constraints.\n\n"
                                  "    x, xnorm, mode = lsei_wrapper(A, b, E, f, G, h)\n\n");
-
+/*
 static char doc_lsi_wrapper[] = ("Compute the least squares solution subject to "
                                  "inequality constraints.\n\n"
                                  "    x, xnorm, mode = lsi_wrapper(A, b, G, h)\n\n");
@@ -631,14 +748,13 @@ static char doc_ldp_wrapper[] = ("Compute the least distance solution.\n\n"
                                  "    x = ldp_wrapper(G, h)\n\n");
 */
 
-static char doc_lsq_wrapper[] = ("Convert the given compact representation of the"
-                                " linearized problem to an LSEI problem\n\n");
-
+// Sentinel terminated method list.
 static struct PyMethodDef slsqplib_module_methods[] = {
   {"nnls", nnls, METH_VARARGS, doc_nnls},
   // {"ldp_wrapper", ldp_wrapper, METH_VARARGS, doc_ldp_wrapper},
   // {"lsi_wrapper", lsi_wrapper, METH_VARARGS, doc_lsi_wrapper},
-  // {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
+  {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
+  {"lsq_wrapper", lsq_wrapper, METH_VARARGS, doc_lsq_wrapper},
   {NULL, NULL, 0, NULL}
 };
 
