@@ -78,7 +78,7 @@ def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
-    Solves the linear equation set ``a @ x = b`` for  ``x``,
+    Solve the equation ``a @ x = b`` for  ``x``,
     where `a` is a square matrix.
 
     If the data matrix is known to be a particular type then supplying the
@@ -659,7 +659,7 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
     Hermitian positive-definite banded matrix defined by `ab`.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
@@ -912,7 +912,8 @@ def _get_axis_len(aname, a, axis):
 
 def solve_circulant(c, b, singular='raise', tol=None,
                     caxis=-1, baxis=0, outaxis=0):
-    """Solve ``C @ x = b`` for ``x``, where ``C`` is a circulant matrix defined by `c`.
+    """Solve the equation ``C @ x = b`` for ``x``, where ``C`` is a
+       circulant matrix defined by `c`.
 
     `C` is the circulant matrix associated with the vector `c`.
 
@@ -1324,7 +1325,7 @@ def det(a, overwrite_a=False, check_finite=True):
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
-    Compute least-squares solution to equation ``a @ x = b``.
+    Compute least-squares solution to the equation ``a @ x = b``.
 
     Compute a vector x such that the 2-norm ``|b - A x|`` is minimized.
 
