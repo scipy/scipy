@@ -913,7 +913,7 @@ def _get_axis_len(aname, a, axis):
 def solve_circulant(c, b, singular='raise', tol=None,
                     caxis=-1, baxis=0, outaxis=0):
     """Solve the equation ``C @ x = b`` for ``x``, where ``C`` is a
-   circulant matrix defined by `c`.
+    circulant matrix defined by `c`.
 
     `C` is the circulant matrix associated with the vector `c`.
 
