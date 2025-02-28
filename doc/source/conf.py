@@ -131,6 +131,7 @@ nitpick_ignore = [
     ("py:class", "None.  Remove all items from D."),
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "None.  Update D from mapping/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
 ]
 
