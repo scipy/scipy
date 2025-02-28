@@ -7,9 +7,8 @@ from scipy.optimize.elementwise import bracket_root, bracket_minimum
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
-                                         xp_assert_less, array_namespace)
+                                         xp_assert_less)
 from scipy._lib._array_api import xp_ravel
-from scipy.conftest import array_api_compatible
 
 
 # These tests were originally written for the private `optimize._bracket`
@@ -42,12 +41,11 @@ def _bracket_minimum(*args, **kwargs):
 
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
-jax_skip_reason = 'JAX arrays do not support item assignment.'
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestBracketRoot:
     @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
     @pytest.mark.parametrize("use_xmin", (False, True))
@@ -179,10 +177,9 @@ class TestBracketRoot:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
-        xp_test = array_namespace(xp.asarray(1.))
-        assert res.success.dtype == xp_test.bool
+        assert res.success.dtype == xp.bool
         if shape:
             assert xp.all(res.success[1:-1])
         assert res.status.dtype == xp.int32
@@ -229,13 +226,11 @@ class TestBracketRoot:
     def test_dtype(self, root, xmin, xmax, dtype, xp):
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
-        xp_test = array_namespace(xp.asarray(1.))
-
         xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
         xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
         root = xp.asarray(root, dtype=dtype)
         def f(x, root):
-            return xp_test.astype((x - root) ** 3, dtype)
+            return xp.astype((x - root) ** 3, dtype)
 
         bracket = xp.asarray([-0.01, 0.01], dtype=dtype)
         res = _bracket_root(f, *bracket, xmin=xmin, xmax=xmax, args=(root,))
@@ -284,12 +279,10 @@ class TestBracketRoot:
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
-        xp_test = array_namespace(xp.asarray(1.))
-
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert xp_test.isdtype(x.dtype, "real floating")
+            assert xp.isdtype(x.dtype, "real floating")
             return x ** 99 - 1
 
         res = _bracket_root(f, xp.asarray(-7.), xp.asarray(5.))
@@ -352,11 +345,45 @@ class TestBracketRoot:
                                 xmin=1)
         assert not res.success
 
+    def test_bug_fixes(self):
+        # 1. Bug in double sided bracket search.
+        # Happened in some cases where there are terminations on one side
+        # after corresponding searches on other side failed due to reaching the
+        # boundary.
+
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962853839
+        def f(x, p):
+            return np.exp(x) - p
+
+        p = np.asarray([0.29, 0.35])
+        res = _bracket_root(f, xl0=-1, xmin=-np.inf, xmax=0, args=(p, ))
+
+        # https://github.com/scipy/scipy/pull/22560/files#r1962952517
+        def f(x, p, c):
+            return np.exp(x*c) - p
+
+        p = [0.32061201, 0.39175242, 0.40047535, 0.50527218, 0.55654373,
+             0.11911647, 0.37507896, 0.66554191]
+        c = [1., -1., 1., 1., -1., 1., 1., 1.]
+        xl0 = [-7.63108551,  3.27840947, -8.36968526, -1.78124372,
+               0.92201295, -2.48930123, -0.66733533, -0.44606749]
+        xr0 = [-6.63108551,  4.27840947, -7.36968526, -0.78124372,
+               1.92201295, -1.48930123, 0., 0.]
+        xmin = [-np.inf, 0., -np.inf, -np.inf, 0., -np.inf, -np.inf,
+                -np.inf]
+        xmax = [0., np.inf, 0., 0., np.inf, 0., 0., 0.]
+
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p, c))
+
+        # 2. Default xl0 + 1 for xr0 exceeds xmax.
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962947434
+        res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
+        assert res.success
+
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestBracketMinimum:
     def init_f(self):
         def f(x, a, b):
@@ -496,13 +523,12 @@ class TestBracketMinimum:
     @pytest.mark.parametrize("xmax", [5, None])
     def test_dtypes(self, minimum, xmin, xmax, dtype, xp):
         dtype = getattr(xp, dtype)
-        xp_test = array_namespace(xp.asarray(1.))
         xmin = xmin if xmin is None else xp.asarray(xmin, dtype=dtype)
         xmax = xmax if xmax is None else xp.asarray(xmax, dtype=dtype)
         minimum = xp.asarray(minimum, dtype=dtype)
 
         def f(x, minimum):
-            return xp_test.astype((x - minimum)**2, dtype)
+            return xp.astype((x - minimum)**2, dtype)
 
         xl0, xm0, xr0 = [-0.01, 0.0, 0.01]
         result = _bracket_minimum(
@@ -784,10 +810,9 @@ class TestBracketMinimum:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
             xp_assert_close(xp_ravel(res_attr, xp=xp), xp.stack(ref_attr))
-            xp_assert_equal(res_attr.shape, shape)
+            assert res_attr.shape == shape
 
-        xp_test = array_namespace(xp.asarray(1.))
-        assert res.success.dtype == xp_test.bool
+        assert res.success.dtype == xp.bool
         if shape:
             assert xp.all(res.success[1:-1])
         assert res.status.dtype == xp.int32
@@ -801,12 +826,11 @@ class TestBracketMinimum:
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases.
-        xp_test = array_namespace(xp.asarray(1.))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            assert xp_test.isdtype(x.dtype, "numeric")
+            assert xp.isdtype(x.dtype, "numeric")
             return x ** 98 - 1
 
         result = _bracket_minimum(f, xp.asarray(-7., dtype=xp.float64), xr0=5)
@@ -855,7 +879,7 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(0.5535723499480897), xmin=xmin,
                                   xmax=xmax)
-        assert xmin == result.xl
+        xp_assert_close(result.xl, xmin)
 
     def test_gh_20562_right(self, xp):
         # Regression test for https://github.com/scipy/scipy/issues/20562
@@ -868,4 +892,4 @@ class TestBracketMinimum:
 
         result = _bracket_minimum(f, xp.asarray(-0.5535723499480897),
                                   xmin=xmin, xmax=xmax)
-        assert xmax == result.xr
+        xp_assert_close(result.xr, xmax)

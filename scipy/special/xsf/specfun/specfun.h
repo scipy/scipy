@@ -70,10 +70,22 @@
 
 #pragma once
 
+#include <memory>
 #include "../config.h"
 
 namespace xsf {
 namespace specfun {
+
+// The Status enum is the return type of a few private, low-level functions
+// defined here.  Currently the only use is by functions that allocate
+// memory internally.  If the allocation fails, the function returns
+// Status::NoMemory.
+
+enum class Status {
+    OK = 0,
+    NoMemory,
+    Other
+};
 
 void airyb(double, double*, double*, double*, double*);
 void bjndd(double, int, double *, double *, double *);
@@ -114,7 +126,7 @@ template <typename T>
 void sckb(int, int, T, T *, T *);
 
 template <typename T>
-void sdmn(int, int, T, T, int, T *);
+Status sdmn(int, int, T, T, int, T *);
 
 template <typename T>
 void sphj(T, int, int *, T *, T *);
@@ -123,7 +135,7 @@ template <typename T>
 void sphy(T, int, int *, T *, T *);
 
 template <typename T>
-void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
+Status aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
 
     // ===========================================================
     // Purpose: Compute the prolate and oblate spheroidal angular
@@ -138,22 +150,34 @@ void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     // Output:  S1F --- Angular function of the first kind
     //          S1D --- Derivative of the angular function of
     //                  the first kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routine called:
+    //          SDMN for computing expansion coefficients df
     //          SCKB for computing expansion coefficients ck
     // ===========================================================
 
     int ip, k, nm, nm2;
     T a0, d0, d1, r, su1, su2, x0, x1;
-    T *ck = (T *) calloc(200, sizeof(T));
-    T *df = (T *) calloc(200, sizeof(T));
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    if (ck == nullptr || df == nullptr) {
+        return Status::NoMemory;
+    }
     const T eps = 1e-14;
     x0 = x;
     x = fabs(x);
     ip = ((n-m) % 2 == 0 ? 0 : 1);
     nm = 40 + (int)((n-m)/2 + c);
     nm2 = nm/2 - 2;
-    sdmn(m, n, c, cv, kd, df);
-    sckb(m, n, c, df, ck);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
+    sckb(m, n, c, df.get(), ck.get());
     x1 = 1.0 - x*x;
     if ((m == 0) && (x1 == 0.0)) {
         a0 = 1.0;
@@ -191,8 +215,7 @@ void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
     if ((x0 < 0.0) && (ip == 0)) { *s1d = -*s1d; }
     if ((x0 < 0.0) && (ip == 1)) { *s1f = -*s1f; }
     x = x0;
-    free(ck); free(df);
-    return;
+    return Status::OK;
 }
 
 
@@ -267,7 +290,16 @@ inline void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 
 
 template <typename T>
-void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
+Status cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
+
+    // ==========================================================
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    // ==========================================================
+
     const T eps = 1.0e-14;
 
     int i, i1, ip, j, k, n2, nm;
@@ -275,9 +307,13 @@ void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
 
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
-    T *u = (T *) calloc(200, sizeof(T));
-    T *v = (T *) calloc(200, sizeof(T));
-    T *w = (T *) calloc(200, sizeof(T));
+
+    auto u = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto v = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto w = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    if (u.get() == nullptr || v.get() == nullptr || w.get() == nullptr) {
+        return Status::NoMemory;
+    }
 
     u[0] = 0.0;
     n2 = nm - 2;
@@ -345,8 +381,7 @@ void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
     for (k = n2 - 1; k >= 1; k--) {
         bk[k - 1] -= w[k - 1] * bk[k];
     }
-    free(u); free(v); free(w);
-    return;
+    return Status::OK;
 }
 
 
@@ -852,7 +887,7 @@ inline double chgu(double x, double a, double b, int *md, int *isfer) {
     // =======================================================
 
     int il1, il2, il3, bl1, bl2, bl3, bn, id1 = 0, id;
-    double aa, hu = 0.0, hu1;
+    double aa, hu = 0.0, hu1, b00;
 
     aa = a - b + 1.0;
     *isfer = 0;
@@ -892,10 +927,11 @@ inline double chgu(double x, double a, double b, int *md, int *isfer) {
         }
     } else {
         if (b <= a) {
+            b00 = b;
             a -= b - 1.0;
             b = 2.0 - b;
             hu = chguit(x, a, b, &id);
-            hu *= pow(x, 1.0 - b);
+            hu *= pow(x, 1.0 - b00);
             *md = 4;
         } else if (bn && (~il1)) {
             hu = chgubi(x, a, b, &id);
@@ -2023,10 +2059,6 @@ inline void cyzo(int nt, int kf, int kc, std::complex<double> *zo, std::complex<
 }
 
 
-
-
-
-
 template <typename T>
 T e1xb(T x) {
 
@@ -2959,7 +2991,7 @@ inline std::complex<double> hygfz(double a, double b, double c, std::complex<dou
     return zhf;
 }
 
-inline void jdzo(int nt, double *zo, int *n, int *m, int *p) {
+inline Status jdzo(int nt, double *zo, int *n, int *m, int *p) {
 
     // ===========================================================
     // Purpose: Compute the zeros of Bessel functions Jn(x) and
@@ -2979,6 +3011,12 @@ inline void jdzo(int nt, double *zo, int *n, int *m, int *p) {
     //                    In the waveguide applications, the zeros
     //                    of Jn(x) correspond to TM modes and
     //                    those of Jn'(x) correspond to TE modes
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routine called:    BJNDD for computing Jn(x), Jn'(x) and
     //                    Jn''(x)
     // =============================================================
@@ -2986,7 +3024,8 @@ inline void jdzo(int nt, double *zo, int *n, int *m, int *p) {
     int i, j, k, L, L0, L1, L2, mm, nm;
     double x, x0, x1, x2, xm;
 
-    int* p1 = (int *) calloc(70, sizeof(int));
+    auto p1 = std::unique_ptr<int[]>{new (std::nothrow) int[70]()};
+
     // Compared to specfun.f we use a single array instead of separate
     // three arrays and use pointer arithmetic to access. Their usage
     // is pretty much one-shot hence does not complicate the code.
@@ -2994,10 +3033,14 @@ inline void jdzo(int nt, double *zo, int *n, int *m, int *p) {
     // Note: ZO and ZOC arrays are 0-indexed in specfun.f
 
     // m1, n1, zoc -> 70 + 70 + 71
-    double* mnzoc = (double *) calloc(211, sizeof(double));
+    auto mnzoc = std::unique_ptr<double[]>{new (std::nothrow) double[211]()};
 
     // bj, dj, fj -> 101 + 101 + 101
-    double* bdfj = (double *) calloc(303, sizeof(double));
+    auto bdfj = std::unique_ptr<double[]>{new (std::nothrow) double[303]()};
+
+    if (p1.get() == nullptr || mnzoc.get() == nullptr || bdfj.get() == nullptr) {
+        return Status::NoMemory;
+    }
 
     x = 0;
 
@@ -3093,10 +3136,7 @@ L30:
         /* 45 */
         L0 = L2;
     }
-    free(bdfj);
-    free(mnzoc);
-    free(p1);
-    return;
+    return Status::OK;
 }
 
 
@@ -3468,23 +3508,33 @@ L25:
 
 
 template <typename T>
-inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
+inline Status kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
 
     // ===================================================
     // Purpose: Compute the expansion coefficients of the
     //          prolate and oblate spheroidal functions
     //          and joining factors
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // ===================================================
 
     int nm, nn, ip, k, i, l, j;
     T cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    T *u =  (T *) malloc((nn + 4) * sizeof(T));
-    T *v =  (T *) malloc((nn + 4) * sizeof(T));
-    T *w =  (T *) malloc((nn + 4) * sizeof(T));
-    T *tp = (T *) malloc((nn + 4) * sizeof(T));
-    T *rk = (T *) malloc((nn + 4) * sizeof(T));
+    auto u = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto v = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto w = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto tp = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    auto rk = std::unique_ptr<T[]>{new (std::nothrow) T[nn + 4]};
+    if (u.get() == nullptr || v.get() == nullptr || w.get() == nullptr
+            || tp.get() == nullptr || rk.get() == nullptr) {
+        return Status::NoMemory;
+    }
 
     const T eps = 1.0e-14;
 
@@ -3569,8 +3619,7 @@ inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
         *ck1 = sa0 * su0;
 
         if (kd == -1) {
-            free(u); free(v); free(w); free(tp); free(rk);
-            return;
+            return Status::OK;
         }
     }
 
@@ -3590,8 +3639,7 @@ inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
     sb0 = (ip + 1.0) * pow(c, ip + 1) / (2.0 * ip * (m - 2.0) + 1.0) / (2.0 * m - 1.0);
     *ck2 = pow(-1, ip) * sb0 * r4 * r5 * g0 / r1 * su0;
 
-    free(u); free(v); free(w); free(tp); free(rk);
-    return;
+    return Status::OK;
 }
 
 
@@ -4323,7 +4371,7 @@ inline int msta2(double x, int n, int mp) {
 
 
 template <typename T>
-void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
+Status mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
 
     // ===============================================================
     // Purpose: Compute Mathieu functions cem(x,q) and sem(x,q)
@@ -4336,6 +4384,18 @@ void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
     //          x   --- Argument of Mathieu functions (in degrees)
     // Output:  CSF --- cem(x,q) or sem(x,q)
     //          CSD --- cem'x,q) or sem'x,q)
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed. The output
+    //              values will be set to nan.
+    //          Status::Other
+    //              An internal check failed. For mtu0, this occurs
+    //              when km (see the code) is too big.  km is a
+    //              function of q and m.  The output values will be
+    //              set to nan.
+    //
     // Routines called:
     //      (1) CVA2 for computing the characteristic values
     //      (2) FCOEF for computing the expansion coefficients
@@ -4364,11 +4424,16 @@ void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
     if (km > 251) {
         *csf = NAN;
         *csd = NAN;
-        return;
+        return Status::Other;
     }
 
-    T *fg = (T *) calloc(251, sizeof(T));
-    fcoef(kd, m, q, a, fg);
+    auto fg = std::unique_ptr<T[]>{new (std::nothrow) T[251]()};
+    if (fg.get() == nullptr) {
+        *csf = NAN;
+        *csd = NAN;
+        return Status::NoMemory;
+    }
+    fcoef(kd, m, q, a, fg.get());
 
     ic = (int)(m / 2) + 1;
     xr = x * rd;
@@ -4403,13 +4468,12 @@ void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
             break;
         }
     }
-    free(fg);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
+Status mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
 
     // ==============================================================
     // Purpose: Compute modified Mathieu functions of the first and
@@ -4431,6 +4495,17 @@ void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
     //          D1R --- Derivative of Mcm(1)(x,q) or Msm(1)(x,q)
     //          F2R --- Mcm(2)(x,q) or Msm(2)(x,q)
     //          D2R --- Derivative of Mcm(2)(x,q) or Msm(2)(x,q)
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed. The output
+    //              values will be set to nan.
+    //          Status::Other
+    //              An internal check failed. For mtu12, this occurs
+    //              when km (see the code) is too big.  km is a
+    //              function of q and m.  The output values will be
+    //              set to nan.
     // Routines called:
     //      (1) CVA2 for computing the characteristic values
     //      (2) FCOEF for computing expansion coefficients
@@ -4461,21 +4536,32 @@ void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
         *d1r = NAN;
         *f2r = NAN;
         *d2r = NAN;
-        return;
+        return Status::Other;
     }
 
     // allocate memory after a possible NAN return
-    T *fg = (T *) calloc(251, sizeof(T));
-    T *bj1 = (T *) calloc(252, sizeof(T));
-    T *dj1 = (T *) calloc(252, sizeof(T));
-    T *bj2 = (T *) calloc(252, sizeof(T));
-    T *dj2 = (T *) calloc(252, sizeof(T));
-    T *by1 = (T *) calloc(252, sizeof(T));
-    T *dy1 = (T *) calloc(252, sizeof(T));
-    T *by2 = (T *) calloc(252, sizeof(T));
-    T *dy2 = (T *) calloc(252, sizeof(T));
+    auto fg = std::unique_ptr<T[]>{new (std::nothrow) T[251]()};
+    auto bj1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dj1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto bj2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dj2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto by1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy1 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto by2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy2 = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
 
-    fcoef(kd, m, q, a, fg);
+    if (fg.get() == nullptr || bj1.get() == nullptr || dj1.get() == nullptr
+                            || bj2.get() == nullptr || dj2.get() == nullptr
+                            || by1.get() == nullptr || dy1.get() == nullptr
+                            || by2.get() == nullptr || dy2.get() == nullptr) {
+        *f1r = NAN;
+        *d1r = NAN;
+        *f2r = NAN;
+        *d2r = NAN;
+        return Status::NoMemory;
+    }
+
+    fcoef(kd, m, q, a, fg.get());
     ic = (int)(m / 2) + 1;
     if (kd == 4) { ic = m / 2; }
 
@@ -4483,8 +4569,8 @@ void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
     c2 = exp(x);
     u1 = sqrt(q) * c1;
     u2 = sqrt(q) * c2;
-    jynb(km+1, u1, &nm, bj1, dj1, by1, dy1);
-    jynb(km+1, u2, &nm, bj2, dj2, by2, dy2);
+    jynb(km+1, u1, &nm, bj1.get(), dj1.get(), by1.get(), dy1.get());
+    jynb(km+1, u2, &nm, bj2.get(), dj2.get(), by2.get(), dy2.get());
     w1 = 0.0;
     w2 = 0.0;
 
@@ -4522,10 +4608,7 @@ void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
         }
         *d1r *= sqrt(q) / fg[0];
         if (kc == 1) {
-            free(fg);
-            free(bj1);free(dj1);free(bj2);free(dj2);
-            free(by1);free(dy1);free(by2);free(dy2);
-            return;
+            return Status::OK;
         }
     }
 
@@ -4560,11 +4643,7 @@ void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
         w2 = *d2r;
     }
     *d2r = *d2r * sqrt(q) / fg[0];
-
-    free(fg);
-    free(bj1);free(dj1);free(bj2);free(dj2);
-    free(by1);free(dy1);free(by2);free(dy2);
-    return;
+    return Status::OK;
 }
 
 
@@ -4626,10 +4705,23 @@ inline double psi_spec(double x) {
 
 
 template <typename T>
-void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
+Status qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
+
+    // ==========================================================
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    // ==========================================================
+
     int ip, i, l, k;
     T r, s, sk, qs0;
-    T *ap = (T *) malloc(200*sizeof(T));
+
+    auto ap = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (ap.get() == nullptr) {
+        return Status::NoMemory;
+    }
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
     r = 1.0 / pow(ck[0], 2);
     ap[0] = r;
@@ -4655,8 +4747,7 @@ void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     }
     *qs = pow(-1, ip) * (ck1) * (ck1 * qs0) / c;
     *qt = -2.0 / (ck1) * (*qs);
-    free(ap);
-    return;
+    return Status::OK;
 }
 
 
@@ -4697,12 +4788,19 @@ inline double refine(int kd, int m, double q, double a) {
 
 
 template <typename T>
-inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
+inline Status rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
 
     // =======================================================
     // Purpose: Compute prolate and oblate spheroidal radial
     //          functions of the first kind for given m, n,
     //          c and x
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SCKB for computing expansion coefficients c2k
     //      (2) SPHJ for computing the spherical Bessel
@@ -4712,9 +4810,12 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
     T a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
     int ip, j, k, l, lg, nm, nm1, nm2, np;
 
-    T *ck = (T *) calloc(200, sizeof(T));
-    T *dj = (T *) calloc(252, sizeof(T));
-    T *sj = (T *) calloc(252, sizeof(T));
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto dj = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto sj = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    if (ck.get() == nullptr || dj.get() == nullptr || sj.get() == nullptr) {
+        return Status::NoMemory;
+    }
     const T eps = 1.0e-14;
 
     nm1 = (int)((n - m) / 2);
@@ -4738,7 +4839,7 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
     }
 
     if (x == 0.0) {
-        sckb(m, n, c, df, ck);
+        sckb(m, n, c, df, ck.get());
 
         sum = 0.0;
         sw1 = 0.0;
@@ -4771,13 +4872,12 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
             *r1f = 0.0;
             *r1d = sum / (sa0 * suc) * df[0] * reg;
         }
-        free(ck);free(dj);free(sj);
-        return;
+        return Status::OK;
     }
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(cx, nm2, &nm2, sj, dj);
+    sphj(cx, nm2, &nm2, sj.get(), dj.get());
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -4824,18 +4924,27 @@ inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
         sw = sud;
     }
     *r1d = b0 + a0 * c * sud;
-    free(ck);free(dj);free(sj);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id) {
+inline Status rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id) {
 
     // ========================================================
     // Purpose: Compute prolate and oblate spheroidal radial
     //          functions of the second kind for given m, n,
     //          c and a large cx
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //          Status::Other
+    //              An internal convergence check failed.  When
+    //              this happens, *Id is set to 10 on return.
+    //
     // Routine called:
     //          SPHY for computing the spherical Bessel
     //          functions of the second kind
@@ -4845,8 +4954,12 @@ inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id
     int ip, nm1, nm, nm2, np, j, k, l, lg, id1, id2;
     T a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
     const T eps = 1.0e-14;
-    T *sy = (T *) calloc(252, sizeof(T));
-    T *dy = (T *) calloc(252, sizeof(T));
+
+    auto sy = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    auto dy = std::unique_ptr<T[]>{new (std::nothrow) T[252]()};
+    if (sy.get() == nullptr || dy.get() == nullptr) {
+        return Status::NoMemory;
+    }
 
     ip = 1;
     nm1 = (int)((n - m) / 2);
@@ -4860,7 +4973,7 @@ inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id
     }
     nm2 = 2 * nm + m;
     cx = c * x;
-    sphy(cx, nm2, &nm2, sy, dy);
+    sphy(cx, nm2, &nm2, sy.get(), dy.get());
     r0 = reg;
 
     for (j = 1; j <= 2 * m + ip; ++j) {
@@ -4904,10 +5017,15 @@ inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id
     *R2f *= a0;
 
     if (np >= nm2) {
+        // On page 584 of "Computation of Special functions" by Shanjie Zhang
+        // and Jian-Ming Jin, there is a comment next to this code that says
+        // this condition indicates that convergence is not achieved, so we
+        // return Status::Other in addition to setting *Id = 10.  But the
+        // functions that call rmn2l (namely rswfp and rswfo) will actually
+        // look at the value of Id to check for convergence; the returned
+        // Status value is only checked for the occurrence of Status::NoMemory.
         *Id = 10;
-        free(sy);
-        free(dy);
-        return;
+        return Status::Other;
     }
 
     b0 = Kd * m / pow(x, 3) / (1.0 - Kd / (x * x)) * (*R2f);
@@ -4934,18 +5052,23 @@ inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id
     *R2d = b0 + a0 * c * sud;
     id2 = (int)log10(eps2 / fabs(sud) + eps);
     *Id = (id1 > id2) ? id1 : id2;
-    free(sy);
-    free(dy);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-inline void rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
+inline Status rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // =============================================================
     // Purpose: Compute oblate radial functions of the second kind
     //          with a small argument, Rmn(-ic,ix) & Rmn'(-ic,ix)
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SCKB for computing the expansion coefficients c2k
     //      (2) KMN for computing the joining factors
@@ -4965,18 +5088,28 @@ inline void rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) 
     if (fabs(df[0]) <= 1.0e-280) {
         *r2f = 1.0e+300;
         *r2d = 1.0e+300;
-        return;
+        return Status::OK;
     }
-    T *bk = (T *) calloc(200, sizeof(double));
-    T *ck = (T *) calloc(200, sizeof(double));
-    T *dn = (T *) calloc(200, sizeof(double));
+
+    auto bk = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto ck = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    auto dn = std::unique_ptr<T[]>{new (std::nothrow) T[200]()};
+    if (bk.get() == nullptr || ck.get() == nullptr || dn.get() == nullptr) {
+        return Status::NoMemory;
+    }
 
     nm = 25 + (int)((n - m) / 2 + c);
     ip = (n - m) % 2;
-    sckb(m, n, c, df, ck);
-    kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
-    qstar(m, n, c, ck1, ck, &qs, &qt);
-    cbk(m, n, c, cv, qt, ck, bk);
+    sckb(m, n, c, df, ck.get());
+    if (kmn(m, n, c, cv, kd, df, dn.get(), &ck1, &ck2) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
+    if (qstar(m, n, c, ck1, ck.get(), &qs, &qt) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
+    if (cbk(m, n, c, cv, qt, ck.get(), bk.get()) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
 
     if (x == 0.0) {
         sum = 0.0;
@@ -4998,23 +5131,31 @@ inline void rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) 
             *r2d = -0.5 * pi * qs * r1d;
         }
     } else {
-        gmn(m, n, c, x, bk, &gf, &gd);
-        rmn1(m, n, c, x, kd, df, &r1f, &r1d);
+        gmn(m, n, c, x, bk.get(), &gf, &gd);
+        if (rmn1(m, n, c, x, kd, df, &r1f, &r1d) == Status::NoMemory) {
+            return Status::NoMemory;
+        }
         h0 = atan(x) - 0.5 * pi;
         *r2f = qs * r1f * h0 + gf;
         *r2d = qs * (r1d * h0 + r1f / (1.0 + x * x)) + gd;
     }
-    free(bk); free(ck); free(dn);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
+Status rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // ======================================================
     // Purpose: Compute prolate spheroidal radial function
     //          of the second kind with a small argument
+    //
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) LPMNS for computing the associated Legendre
     //          functions of the first kind
@@ -5025,16 +5166,22 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     // ======================================================
 
     int k, j, j1, j2, l1, ki, nm3;
-    T ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
+    T ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2, sum, sdm;
 
     // fortran index start from 0
-    T *pm = (T *) malloc(252*sizeof(T));
-    T *pd = (T *) malloc(252*sizeof(T));
-    T *qm = (T *) malloc(252*sizeof(T));
-    T *qd = (T *) malloc(252*sizeof(T));
+    auto pm = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto pd = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto qm = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
+    auto qd = std::unique_ptr<T[]>{new (std::nothrow) T[252]};
     // fortran index start from 1
-    T *dn = (T *) malloc(201*sizeof(T));
+    auto dn = std::unique_ptr<T[]>{new (std::nothrow) T[201]};
+
+    if (pm.get() == nullptr || pd.get() == nullptr || qm.get() == nullptr
+           || qd.get() == nullptr || dn.get() == nullptr) {
+        return Status::NoMemory;
+    }
+
     const T eps = 1.0e-14;
 
     nm1 = (n - m) / 2;
@@ -5042,9 +5189,11 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     nm2 = 2 * nm + m;
     ip = (n - m) % 2;
 
-    kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
-    lpmns(m, nm2, x, pm, pd);
-    lqmns(m, nm2, x, qm, qd);
+    if (kmn(m, n, c, cv, kd, df, dn.get(), &ck1, &ck2) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
+    lpmns(m, nm2, x, pm.get(), pd.get());
+    lqmns(m, nm2, x, qm.get(), qd.get());
 
     su0 = 0.0;
     sw = 0.0;
@@ -5134,13 +5283,12 @@ void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
     sdm = sd0 + sd1 + sd2;
     *r2f = sum / ck2;
     *r2d = sdm / ck2;
-    free(pm); free(pd); free(qm); free(qd); free(dn);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-inline void rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
+inline Status rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==============================================================
     // Purpose: Compute prolate spheriodal radial functions of the
@@ -5160,6 +5308,12 @@ inline void rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, 
     //          R2F --- Radial function of the second kind
     //          R2D --- Derivative of the radial function of
     //                  the second kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SDMN for computing expansion coefficients dk
     //      (2) RMN1 for computing prolate and oblate radial
@@ -5170,27 +5324,37 @@ inline void rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, 
     //          of the second kind for a small argument
     // ==============================================================
 
-    T *df = (T *) malloc(200*sizeof(double));
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (df.get() == nullptr) {
+        return Status::NoMemory;
+    }
     int id, kd = 1;
 
-    sdmn(m, n, c, cv, kd, df);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
 
     if (kf != 2) {
-        rmn1(m, n, c, x, kd, df, r1f, r1d);
-    }
-    if (kf > 1) {
-        rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
-        if (id > -8) {
-            rmn2sp(m, n, c, x, cv, kd, df, r2f, r2d);
+        if (rmn1(m, n, c, x, kd, df.get(), r1f, r1d) == Status::NoMemory) {
+            return Status::NoMemory;
         }
     }
-    free(df);
-    return;
+    if (kf > 1) {
+        if (rmn2l(m, n, c, x, kd, df.get(), r2f, r2d, &id) == Status::NoMemory) {
+            return Status::NoMemory;
+        }
+        if (id > -8) {
+            if (rmn2sp(m, n, c, x, cv, kd, df.get(), r2f, r2d) == Status::NoMemory) {
+                return Status::NoMemory;
+            }
+        }
+    }
+    return Status::OK;
 }
 
 
 template <typename T>
-void rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
+Status rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==========================================================
     // Purpose: Compute oblate radial functions of the first
@@ -5210,6 +5374,12 @@ void rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d)
     //          R2F --- Radial function of the second kind
     //          R2D --- Derivative of the radial function of
     //                  the second kind
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
+    //
     // Routines called:
     //      (1) SDMN for computing expansion coefficients dk
     //      (2) RMN1 for computing prolate or oblate radial
@@ -5220,25 +5390,35 @@ void rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d)
     //          the second kind for a small argument
     // ==========================================================
 
-    T *df = (T *) malloc(200*sizeof(T));
+    auto df = std::unique_ptr<T[]>{new (std::nothrow) T[200]};
+    if (df.get() == nullptr) {
+        return Status::NoMemory;
+    }
     int id, kd = -1;
 
-    sdmn(m, n, c, cv, kd, df);
+    if (sdmn(m, n, c, cv, kd, df.get()) == Status::NoMemory) {
+        return Status::NoMemory;
+    }
 
     if (kf != 2) {
-        rmn1(m, n, c, x, kd, df, r1f, r1d);
+        if (rmn1(m, n, c, x, kd, df.get(), r1f, r1d) == Status::NoMemory) {
+            return Status::NoMemory;
+        }
     }
     if (kf > 1) {
         id = 10;
         if (x > 1e-8) {
-            rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
+            if (rmn2l(m, n, c, x, kd, df.get(), r2f, r2d, &id) == Status::NoMemory) {
+                return Status::NoMemory;
+            }
         }
         if (id > -1) {
-            rmn2so(m, n, c, x, cv, kd, df, r2f, r2d);
+            if (rmn2so(m, n, c, x, cv, kd, df.get(), r2f, r2d) == Status::NoMemory) {
+                return Status::NoMemory;
+            }
         }
     }
-    free(df);
-    return;
+    return Status::OK;
 }
 
 
@@ -5299,7 +5479,7 @@ void sckb(int m, int n, T c, T *df, T *ck) {
 
 
 template <typename T>
-void sdmn(int m, int n, T c, T cv, int kd, T *df) {
+Status sdmn(int m, int n, T c, T cv, int kd, T *df) {
 
     // =====================================================
     // Purpose: Compute the expansion coefficients of the
@@ -5314,6 +5494,11 @@ void sdmn(int m, int n, T c, T cv, int kd, T *df) {
     //                    DF(1), DF(2), ... correspond to
     //                    d0, d2, ... for even n-m and d1,
     //                    d3, ... for odd n-m
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // =====================================================
 
     int nm, ip, k, kb;
@@ -5327,12 +5512,15 @@ void sdmn(int m, int n, T c, T cv, int kd, T *df) {
             df[i-1] = 0.0;
         }
         df[(n - m) / 2] = 1.0;
-        return;
+        return Status::OK;
     }
 
-    T *a = (T *) calloc(nm + 2, sizeof(double));
-    T *d = (T *) calloc(nm + 2, sizeof(double));
-    T *g = (T *) calloc(nm + 2, sizeof(double));
+    auto a = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    auto d = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    auto g = std::unique_ptr<T[]>{new (std::nothrow) T[nm + 2]()};
+    if (a.get() == nullptr || d.get() == nullptr || g.get() == nullptr) {
+        return Status::NoMemory;
+    }
     cs = c*c*kd;
     ip = (n - m) % 2;
 
@@ -5449,13 +5637,12 @@ void sdmn(int m, int n, T c, T cv, int kd, T *df) {
     for (int k = kb + 1; k <= nm; ++k) {
         df[k - 1] *= s0;
     }
-    free(a);free(d);free(g);
-    return;
+    return Status::OK;
 }
 
 
 template <typename T>
-void segv(int m, int n, T c, int kd, T *cv, T *eg) {
+Status segv(int m, int n, T c, int kd, T *cv, T *eg) {
 
     // =========================================================
     // Purpose: Compute the characteristic values of spheroidal
@@ -5468,6 +5655,11 @@ void segv(int m, int n, T c, int kd, T *cv, T *eg) {
     // Output:  CV --- Characteristic value for given m, n and c
     //          EG(L) --- Characteristic value for mode m and n'
     //                    ( L = n' - m + 1 )
+    // Return value:
+    //          Status::OK
+    //              Normal return.
+    //          Status::NoMemory
+    //              An internal memory allocation failed.
     // =========================================================
 
 
@@ -5480,18 +5672,24 @@ void segv(int m, int n, T c, int kd, T *cv, T *eg) {
             eg[i-1] = (i+m) * (i + m -1);
         }
         *cv = eg[n-m];
-        return;
+        return Status::OK;
     }
 
     // TODO: Following array sizes should be decided dynamically
-    T *a = (T *) calloc(300, sizeof(T));
-    T *b = (T *) calloc(100, sizeof(T));
-    T *cv0 = (T *) calloc(100, sizeof(T));
-    T *d = (T *) calloc(300, sizeof(T));
-    T *e = (T *) calloc(300, sizeof(T));
-    T *f = (T *) calloc(300, sizeof(T));
-    T *g = (T *) calloc(300, sizeof(T));
-    T *h = (T *) calloc(100, sizeof(T));
+    auto a = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto b = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
+    auto cv0 = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
+    auto d = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto e = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto f = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto g = std::unique_ptr<T[]>{new (std::nothrow) T[300]()};
+    auto h = std::unique_ptr<T[]>{new (std::nothrow) T[100]()};
+
+    if (a.get() == nullptr || b.get() == nullptr || cv0.get() == nullptr
+             || d.get() == nullptr || e.get() == nullptr || f.get() == nullptr
+             || g.get() == nullptr || h.get() == nullptr) {
+        return Status::NoMemory;
+    }
     icm = (n-m+2)/2;
     nm = 10 + (int)(0.5*(n-m)+c);
     cs = c*c*kd;
@@ -5567,8 +5765,7 @@ void segv(int m, int n, T c, int kd, T *cv, T *eg) {
         }
     }
     *cv = eg[n-m];
-    free(a);free(b);free(cv0);free(d);free(e);free(f);free(g);free(h);
-    return;
+    return Status::OK;
 }
 
 

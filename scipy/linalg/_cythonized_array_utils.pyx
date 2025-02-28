@@ -90,6 +90,7 @@ cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noe
 # ============================================================================
 
 
+@_apply_over_batch(('a', 2))
 @cython.embedsignature(True)
 def bandwidth(a):
     """Return the lower and upper bandwidth of a 2D numeric array.

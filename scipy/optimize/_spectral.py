@@ -107,7 +107,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
         F_k_norm = fnorm(F_k)
 
         if disp:
-            print("iter %d: ||F|| = %g, sigma = %g" % (k, F_k_norm, sigma_k))
+            print(f"iter {k}: ||F|| = {F_k_norm:g}, sigma = {sigma_k:g}")
 
         if callback is not None:
             callback(x_k, F_k)

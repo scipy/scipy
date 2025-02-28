@@ -12,10 +12,8 @@ import pytest
 
 from scipy import ndimage
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 @skip_xp_backends('jax.numpy', reason="jax-ml/jax#23827")

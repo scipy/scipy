@@ -129,6 +129,22 @@ def test_non_subscriptability():
                        match="'coo_array' object is not subscriptable"):
         coo_2d[0, :]
 
+def test_reshape_overflow():
+    # see gh-22353 : new idx_dtype can need to be int64 instead of int32
+    M, N = (1045507, 523266)
+    coords = (np.array([M - 1], dtype='int32'), np.array([N - 1], dtype='int32'))
+    A = coo_array(([3.3], coords), shape=(M, N))
+
+    # need new idx_dtype to not overflow
+    B = A.reshape((M * N, 1))
+    assert B.coords[0].dtype == np.dtype('int64')
+    assert B.coords[0][0] == (M * N) - 1
+
+    # need idx_dtype to stay int32 if before and after can be int32
+    C = A.reshape(N, M)
+    assert C.coords[0].dtype == np.dtype('int32')
+    assert C.coords[0][0] == N - 1
+
 def test_reshape():
     arr1d = coo_array([1, 0, 3])
     assert arr1d.shape == (3,)
@@ -418,7 +434,7 @@ def test_tuple_constructor_for_dim_size_zero():
 
     empty_arr = coo_array(([], ([], [], [], [])), shape=(4,0,2,3))
     assert_equal(empty_arr.toarray(), np.empty((4,0,2,3)))
-    
+
 
 @pytest.mark.parametrize(('shape', 'new_shape'), [((4,9,6,5), (3,6,15,4)),
                                                   ((4,9,6,5), (36,30)),
@@ -626,8 +642,8 @@ def test_nd_matmul_vector(mat_shape, vec_shape):
 
 
 mat_mat_shapes = [
-    ((2, 3, 4, 5), (2, 3, 5, 7)), 
-    ((0, 0), (0,)), 
+    ((2, 3, 4, 5), (2, 3, 5, 7)),
+    ((0, 0), (0,)),
     ((4, 4, 2, 0), (0,)),
     ((7, 8, 3), (3,)),
     ((7, 8, 3), (3, 1)),
@@ -670,7 +686,7 @@ def test_nd_matmul_sparse_with_inconsistent_arrays():
         sp_x @ sp_y
     with pytest.raises(ValueError, match="matmul: dimension mismatch with signature"):
         sp_x @ (sp_y.toarray())
-    
+
     sp_z = random_array((1,5,3,2), density=0.6, random_state=rng, dtype=int)
     with pytest.raises(ValueError, match="Batch dimensions are not broadcastable"):
         sp_x @ sp_z
@@ -688,7 +704,7 @@ def test_dot_1d_1d(): # 1-D inner product
     assert_equal(res, exp)
 
 
-def test_dot_sparse_scalar():    
+def test_dot_sparse_scalar():
     a = coo_array([[1, 2], [3, 4], [5, 6]])
     b = 3
     res = a.dot(b)
@@ -696,11 +712,23 @@ def test_dot_sparse_scalar():
     assert_equal(res.toarray(), exp)
 
 
-def test_dot_with_inconsistent_shapes(): 
+def test_dot_with_inconsistent_shapes():
     arr_a = coo_array([[[1, 2]], [[3, 4]]])
     arr_b = coo_array([4, 5, 6])
     with pytest.raises(ValueError, match="not aligned for n-D dot"):
         arr_a.dot(arr_b)
+
+
+def test_matmul_dot_not_implemented():
+    arr_a = coo_array([[1, 2], [3, 4]])
+    with pytest.raises(TypeError, match="argument not supported type"):
+        arr_a.dot(None)
+    with pytest.raises(TypeError, match="arg not supported type"):
+        arr_a.tensordot(None)
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        arr_a @ None
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        None @ arr_a
 
 
 dot_shapes = [
@@ -708,12 +736,12 @@ dot_shapes = [
     ((3,2,4,7), (7,)), ((5,), (6,3,5,2)), # dot of n-D and 1-D arrays
     ((3,2,4,7), (7,1)), ((1,5,), (6,3,5,2)),
     ((4,6), (3,2,6,4)), ((2,8,7), (4,5,7,7,2)), # dot of n-D and m-D arrays
-    ((4,5,7,6), (3,2,6,4)), 
+    ((4,5,7,6), (3,2,6,4)),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape'), dot_shapes)
-def test_dot_nd(a_shape, b_shape): 
+def test_dot_nd(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
@@ -739,9 +767,9 @@ tensordot_shapes_and_axes = [
     ((2,3,4), (2,3,4), ([0, 1, 2], [0, 1, 2])),
 ]
 @pytest.mark.parametrize(('a_shape', 'b_shape', 'axes'), tensordot_shapes_and_axes)
-def test_tensordot(a_shape, b_shape, axes): 
+def test_tensordot(a_shape, b_shape, axes):
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
     arr_b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
 
@@ -759,11 +787,11 @@ def test_tensordot(a_shape, b_shape, axes):
         assert_equal(res.toarray(), exp)
     else:
         assert_equal(res, exp)
-        
 
-def test_tensordot_with_invalid_args(): 
+
+def test_tensordot_with_invalid_args():
     rng = np.random.default_rng(23409823)
-    
+
     arr_a = random_array((3,4,5), density=0.6, random_state=rng, dtype=int)
     arr_b = random_array((3,4,6), density=0.6, random_state=rng, dtype=int)
 
@@ -787,7 +815,7 @@ def test_tensordot_with_invalid_args():
                           ((1,1,1), (4,5,6)), ((1,3,1,5,4), (8,2,3,9,5,4)),])
 def test_broadcast_to(actual_shape, broadcast_shape):
     rng = np.random.default_rng(23409823)
-    
+
     arr = random_array(actual_shape, density=0.6, random_state=rng, dtype=int)
     res = arr._broadcast_to(broadcast_shape)
     exp = np.broadcast_to(arr.toarray(), broadcast_shape)

@@ -27,6 +27,7 @@ class Zacharov(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -36,7 +37,6 @@ class Zacharov(Benchmark):
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -69,6 +69,7 @@ class ZeroSum(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -77,7 +78,6 @@ class ZeroSum(Benchmark):
 
         self.global_optimum = [[]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

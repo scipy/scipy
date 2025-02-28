@@ -82,111 +82,6 @@ add_newdoc("_ellip_norm",
     Internal function, use `ellip_norm` instead.
     """)
 
-add_newdoc("voigt_profile",
-    r"""
-    voigt_profile(x, sigma, gamma, out=None)
-
-    Voigt profile.
-
-    The Voigt profile is a convolution of a 1-D Normal distribution with
-    standard deviation ``sigma`` and a 1-D Cauchy distribution with half-width at
-    half-maximum ``gamma``.
-
-    If ``sigma = 0``, PDF of Cauchy distribution is returned.
-    Conversely, if ``gamma = 0``, PDF of Normal distribution is returned.
-    If ``sigma = gamma = 0``, the return value is ``Inf`` for ``x = 0``,
-    and ``0`` for all other ``x``.
-
-    Parameters
-    ----------
-    x : array_like
-        Real argument
-    sigma : array_like
-        The standard deviation of the Normal distribution part
-    gamma : array_like
-        The half-width at half-maximum of the Cauchy distribution part
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        The Voigt profile at the given arguments
-
-    See Also
-    --------
-    wofz : Faddeeva function
-
-    Notes
-    -----
-    It can be expressed in terms of Faddeeva function
-
-    .. math:: V(x; \sigma, \gamma) = \frac{Re[w(z)]}{\sigma\sqrt{2\pi}},
-    .. math:: z = \frac{x + i\gamma}{\sqrt{2}\sigma}
-
-    where :math:`w(z)` is the Faddeeva function.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Voigt_profile
-
-    Examples
-    --------
-    Calculate the function at point 2 for ``sigma=1`` and ``gamma=1``.
-
-    >>> from scipy.special import voigt_profile
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> voigt_profile(2, 1., 1.)
-    0.09071519942627544
-
-    Calculate the function at several points by providing a NumPy array
-    for `x`.
-
-    >>> values = np.array([-2., 0., 5])
-    >>> voigt_profile(values, 1., 1.)
-    array([0.0907152 , 0.20870928, 0.01388492])
-
-    Plot the function for different parameter sets.
-
-    >>> fig, ax = plt.subplots(figsize=(8, 8))
-    >>> x = np.linspace(-10, 10, 500)
-    >>> parameters_list = [(1.5, 0., "solid"), (1.3, 0.5, "dashed"),
-    ...                    (0., 1.8, "dotted"), (1., 1., "dashdot")]
-    >>> for params in parameters_list:
-    ...     sigma, gamma, linestyle = params
-    ...     voigt = voigt_profile(x, sigma, gamma)
-    ...     ax.plot(x, voigt, label=rf"$\sigma={sigma},\, \gamma={gamma}$",
-    ...             ls=linestyle)
-    >>> ax.legend()
-    >>> plt.show()
-
-    Verify visually that the Voigt profile indeed arises as the convolution
-    of a normal and a Cauchy distribution.
-
-    >>> from scipy.signal import convolve
-    >>> x, dx = np.linspace(-10, 10, 500, retstep=True)
-    >>> def gaussian(x, sigma):
-    ...     return np.exp(-0.5 * x**2/sigma**2)/(sigma * np.sqrt(2*np.pi))
-    >>> def cauchy(x, gamma):
-    ...     return gamma/(np.pi * (np.square(x)+gamma**2))
-    >>> sigma = 2
-    >>> gamma = 1
-    >>> gauss_profile = gaussian(x, sigma)
-    >>> cauchy_profile = cauchy(x, gamma)
-    >>> convolved = dx * convolve(cauchy_profile, gauss_profile, mode="same")
-    >>> voigt = voigt_profile(x, sigma, gamma)
-    >>> fig, ax = plt.subplots(figsize=(8, 8))
-    >>> ax.plot(x, gauss_profile, label="Gauss: $G$", c='b')
-    >>> ax.plot(x, cauchy_profile, label="Cauchy: $C$", c='y', ls="dashed")
-    >>> xx = 0.5*(x[1:] + x[:-1])  # midpoints
-    >>> ax.plot(xx, convolved[1:], label="Convolution: $G * C$", ls='dashdot',
-    ...         c='k')
-    >>> ax.plot(x, voigt, label="Voigt", ls='dotted', c='r')
-    >>> ax.legend()
-    >>> plt.show()
-    """)
-
 add_newdoc("wrightomega",
     r"""
     wrightomega(z, out=None)
@@ -897,6 +792,21 @@ add_newdoc(
     function by multiplying the result of ``betainc(a, b, x)`` by
     ``beta(a, b)``.
 
+    ``betainc(a, b, x)`` is treated as a two parameter family of functions
+    of a single variable `x`, rather than as a function of three variables.
+    This impacts only the limiting cases ``a = 0``, ``b = 0``, ``a = inf``,
+    ``b = inf``.
+
+    In general
+
+    .. math::
+
+        \lim_{(a, b) \rightarrow (a_0, b_0)} \mathrm{betainc}(a, b, x)
+
+    is treated as a pointwise limit in ``x``. Thus for example,
+    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it would be
+    indeterminate when considering the simultaneous limit ``(a, x) -> (0+, 0+)``.
+
     This function wraps the ``ibeta`` routine from the
     Boost Math C++ library [2]_.
 
@@ -987,6 +897,11 @@ add_newdoc(
     Notes
     -----
     .. versionadded:: 1.11.0
+
+    Like `betainc`, ``betaincc(a, b, x)`` is treated as a two parameter
+    family of functions of a single variable `x`, rather than as a function of
+    three variables. See the `betainc` docstring for more info on how this
+    impacts limiting cases.
 
     This function wraps the ``ibetac`` routine from the
     Boost Math C++ library [2]_.
@@ -1654,50 +1569,6 @@ add_newdoc("chndtrinc",
 
     """)
 
-add_newdoc("dawsn",
-    """
-    dawsn(x, out=None)
-
-    Dawson's integral.
-
-    Computes::
-
-        exp(-x**2) * integral(exp(t**2), t=0..x).
-
-    Parameters
-    ----------
-    x : array_like
-        Function parameter.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    y : scalar or ndarray
-        Value of the integral.
-
-    See Also
-    --------
-    wofz, erf, erfc, erfcx, erfi
-
-    References
-    ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-15, 15, num=1000)
-    >>> plt.plot(x, special.dawsn(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$dawsn(x)$')
-    >>> plt.show()
-
-    """)
-
 add_newdoc(
     "elliprc",
     r"""
@@ -2290,189 +2161,6 @@ add_newdoc("entr",
     .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
            Cambridge University Press, 2004.
            :doi:`https://doi.org/10.1017/CBO9780511804441`
-
-    """)
-
-add_newdoc("erf",
-    """
-    erf(z, out=None)
-
-    Returns the error function of complex argument.
-
-    It is defined as ``2/sqrt(pi)*integral(exp(-t**2), t=0..z)``.
-
-    Parameters
-    ----------
-    x : ndarray
-        Input array.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    res : scalar or ndarray
-        The values of the error function at the given points `x`.
-
-    See Also
-    --------
-    erfc, erfinv, erfcinv, wofz, erfcx, erfi
-
-    Notes
-    -----
-    The cumulative of the unit normal distribution is given by
-    ``Phi(z) = 1/2[1 + erf(z/sqrt(2))]``.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Error_function
-    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
-        Handbook of Mathematical Functions with Formulas,
-        Graphs, and Mathematical Tables. New York: Dover,
-        1972. http://www.math.sfu.ca/~cbm/aands/page_297.htm
-    .. [3] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erf(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erf(x)$')
-    >>> plt.show()
-
-    """)
-
-add_newdoc("erfc",
-    """
-    erfc(x, out=None)
-
-    Complementary error function, ``1 - erf(x)``.
-
-    Parameters
-    ----------
-    x : array_like
-        Real or complex valued argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the complementary error function
-
-    See Also
-    --------
-    erf, erfi, erfcx, dawsn, wofz
-
-    References
-    ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erfc(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erfc(x)$')
-    >>> plt.show()
-
-    """)
-
-add_newdoc("erfi",
-    """
-    erfi(z, out=None)
-
-    Imaginary error function, ``-i erf(i z)``.
-
-    Parameters
-    ----------
-    z : array_like
-        Real or complex valued argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the imaginary error function
-
-    See Also
-    --------
-    erf, erfc, erfcx, dawsn, wofz
-
-    Notes
-    -----
-
-    .. versionadded:: 0.12.0
-
-    References
-    ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erfi(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erfi(x)$')
-    >>> plt.show()
-
-    """)
-
-add_newdoc("erfcx",
-    """
-    erfcx(x, out=None)
-
-    Scaled complementary error function, ``exp(x**2) * erfc(x)``.
-
-    Parameters
-    ----------
-    x : array_like
-        Real or complex valued argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the scaled complementary error function
-
-
-    See Also
-    --------
-    erf, erfc, erfi, dawsn, wofz
-
-    Notes
-    -----
-
-    .. versionadded:: 0.12.0
-
-    References
-    ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.erfcx(x))
-    >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$erfcx(x)$')
-    >>> plt.show()
 
     """)
 
@@ -3396,120 +3084,6 @@ add_newdoc("eval_hermitenorm",
     .. [AS] Milton Abramowitz and Irene A. Stegun, eds.
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
-
-    """)
-
-
-add_newdoc("exp10",
-    """
-    exp10(x, out=None)
-
-    Compute ``10**x`` element-wise.
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        ``10**x``, computed element-wise.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import exp10
-
-    >>> exp10(3)
-    1000.0
-    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
-    >>> exp10(x)
-    array([[  0.1       ,   0.31622777,   1.        ],
-           [  3.16227766,  10.        ,  31.6227766 ]])
-
-    """)
-
-add_newdoc("exp2",
-    """
-    exp2(x, out=None)
-
-    Compute ``2**x`` element-wise.
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        ``2**x``, computed element-wise.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import exp2
-
-    >>> exp2(3)
-    8.0
-    >>> x = np.array([[-1, -0.5, 0], [0.5, 1, 1.5]])
-    >>> exp2(x)
-    array([[ 0.5       ,  0.70710678,  1.        ],
-           [ 1.41421356,  2.        ,  2.82842712]])
-    """)
-
-add_newdoc("expm1",
-    """
-    expm1(x, out=None)
-
-    Compute ``exp(x) - 1``.
-
-    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
-    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
-    ``expm1(x)`` is implemented to avoid the loss of precision that occurs when
-    `x` is near zero.
-
-    Parameters
-    ----------
-    x : array_like
-        `x` must contain real numbers.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        ``exp(x) - 1`` computed element-wise.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import expm1
-
-    >>> expm1(1.0)
-    1.7182818284590451
-    >>> expm1([-0.2, -0.1, 0, 0.1, 0.2])
-    array([-0.18126925, -0.09516258,  0.        ,  0.10517092,  0.22140276])
-
-    The exact value of ``exp(7.5e-13) - 1`` is::
-
-        7.5000000000028125000000007031250000001318...*10**-13.
-
-    Here is what ``expm1(7.5e-13)`` gives:
-
-    >>> expm1(7.5e-13)
-    7.5000000000028135e-13
-
-    Compare that to ``exp(7.5e-13) - 1``, where the subtraction results in
-    a "catastrophic" loss of precision:
-
-    >>> np.exp(7.5e-13) - 1
-    7.5006667543675576e-13
 
     """)
 
@@ -6094,49 +5668,6 @@ add_newdoc("_lgam1p",
     Internal function, do not use.
     """)
 
-add_newdoc("log1p",
-    """
-    log1p(x, out=None)
-
-    Calculates log(1 + x) for use when `x` is near zero.
-
-    Parameters
-    ----------
-    x : array_like
-        Real or complex valued input.
-    out : ndarray, optional
-        Optional output array for the function results.
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of ``log(1 + x)``.
-
-    See Also
-    --------
-    expm1, cosm1
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import scipy.special as sc
-
-    It is more accurate than using ``log(1 + x)`` directly for ``x``
-    near 0. Note that in the below example ``1 + 1e-17 == 1`` to
-    double precision.
-
-    >>> sc.log1p(1e-17)
-    1e-17
-    >>> np.log(1 + 1e-17)
-    0.0
-
-    """)
-
-add_newdoc("_log1pmx",
-    """
-    Internal function, do not use.
-    """)
-
 add_newdoc("lpmv",
     r"""
     lpmv(m, v, x, out=None)
@@ -7240,7 +6771,7 @@ add_newdoc("nctdtrit",
     df : array_like
         Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter. Should be in range (-1e6, 1e6).
+        Noncentrality parameter.
     p : array_like
         CDF values, in range (0, 1].
     out : ndarray, optional
@@ -7256,6 +6787,19 @@ add_newdoc("nctdtrit",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the quantile of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtrit` is different from that of the
+    similar ``ppf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtrit` but the first parameter of ``scipy.stats.nct.ppf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------
@@ -7274,65 +6818,6 @@ add_newdoc("nctdtrit",
     array([0.5, 1. , 1.5])
 
     """)
-
-add_newdoc("ndtr",
-    r"""
-    ndtr(x, out=None)
-
-    Cumulative distribution of the standard normal distribution.
-
-    Returns the area under the standard Gaussian probability
-    density function, integrated from minus infinity to `x`
-
-    .. math::
-
-       \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x \exp(-t^2/2) dt
-
-    Parameters
-    ----------
-    x : array_like, real or complex
-        Argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        The value of the normal CDF evaluated at `x`
-
-    See Also
-    --------
-    log_ndtr : Logarithm of ndtr
-    ndtri : Inverse of ndtr, standard normal percentile function
-    erf : Error function
-    erfc : 1 - erf
-    scipy.stats.norm : Normal distribution
-
-    Examples
-    --------
-    Evaluate `ndtr` at one point.
-
-    >>> import numpy as np
-    >>> from scipy.special import ndtr
-    >>> ndtr(0.5)
-    0.6914624612740131
-
-    Evaluate the function at several points by providing a NumPy array
-    or list for `x`.
-
-    >>> ndtr([0, 0.5, 2])
-    array([0.5       , 0.69146246, 0.97724987])
-
-    Plot the function.
-
-    >>> import matplotlib.pyplot as plt
-    >>> x = np.linspace(-5, 5, 100)
-    >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, ndtr(x))
-    >>> ax.set_title(r"Standard normal cumulative distribution function $\Phi$")
-    >>> plt.show()
-    """)
-
 
 add_newdoc("nrdtrimn",
     """
@@ -7439,59 +6924,6 @@ add_newdoc("nrdtrisd",
     >>> nrdtrisd(mean, p, x)
     2.0000000000000004
 
-    """)
-
-add_newdoc("log_ndtr",
-    """
-    log_ndtr(x, out=None)
-
-    Logarithm of Gaussian cumulative distribution function.
-
-    Returns the log of the area under the standard Gaussian probability
-    density function, integrated from minus infinity to `x`::
-
-        log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
-
-    Parameters
-    ----------
-    x : array_like, real or complex
-        Argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        The value of the log of the normal CDF evaluated at `x`
-
-    See Also
-    --------
-    erf
-    erfc
-    scipy.stats.norm
-    ndtr
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import log_ndtr, ndtr
-
-    The benefit of ``log_ndtr(x)`` over the naive implementation
-    ``np.log(ndtr(x))`` is most evident with moderate to large positive
-    values of ``x``:
-
-    >>> x = np.array([6, 7, 9, 12, 15, 25])
-    >>> log_ndtr(x)
-    array([-9.86587646e-010, -1.27981254e-012, -1.12858841e-019,
-           -1.77648211e-033, -3.67096620e-051, -3.05669671e-138])
-
-    The results of the naive calculation for the moderate ``x`` values
-    have only 5 or 6 correct significant digits. For values of ``x``
-    greater than approximately 8.3, the naive expression returns 0:
-
-    >>> np.log(ndtr(x))
-    array([-9.86587701e-10, -1.27986510e-12,  0.00000000e+00,
-            0.00000000e+00,  0.00000000e+00,  0.00000000e+00])
     """)
 
 add_newdoc("ndtri",
@@ -8970,176 +8402,6 @@ add_newdoc(
     working with the Tukey lambda distribution, ``tukeylambda`` is more
     generally useful.  The primary advantage of ``tklmbda`` is that it is
     significantly faster than ``tukeylambda.cdf``.
-    """)
-
-add_newdoc("wofz",
-    """
-    wofz(z, out=None)
-
-    Faddeeva function
-
-    Returns the value of the Faddeeva function for complex argument::
-
-        exp(-z**2) * erfc(-i*z)
-
-    Parameters
-    ----------
-    z : array_like
-        complex argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Value of the Faddeeva function
-
-    See Also
-    --------
-    dawsn, erf, erfc, erfcx, erfi
-
-    References
-    ----------
-    .. [1] Steven G. Johnson, Faddeeva W function implementation.
-       http://ab-initio.mit.edu/Faddeeva
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy import special
-    >>> import matplotlib.pyplot as plt
-
-    >>> x = np.linspace(-3, 3)
-    >>> z = special.wofz(x)
-
-    >>> plt.plot(x, z.real, label='wofz(x).real')
-    >>> plt.plot(x, z.imag, label='wofz(x).imag')
-    >>> plt.xlabel('$x$')
-    >>> plt.legend(framealpha=1, shadow=True)
-    >>> plt.grid(alpha=0.25)
-    >>> plt.show()
-
-    """)
-
-add_newdoc("xlogy",
-    """
-    xlogy(x, y, out=None)
-
-    Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
-
-    Parameters
-    ----------
-    x : array_like
-        Multiplier
-    y : array_like
-        Argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    z : scalar or ndarray
-        Computed x*log(y)
-
-    Notes
-    -----
-    The log function used in the computation is the natural log.
-
-    .. versionadded:: 0.13.0
-
-    Examples
-    --------
-    We can use this function to calculate the binary logistic loss also
-    known as the binary cross entropy. This loss function is used for
-    binary classification problems and is defined as:
-
-    .. math::
-        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
-
-    We can define the parameters `x` and `y` as y and y_pred respectively.
-    y is the array of the actual labels which over here can be either 0 or 1.
-    y_pred is the array of the predicted probabilities with respect to
-    the positive class (1).
-
-    >>> import numpy as np
-    >>> from scipy.special import xlogy
-    >>> y = np.array([0, 1, 0, 1, 1, 0])
-    >>> y_pred = np.array([0.3, 0.8, 0.4, 0.7, 0.9, 0.2])
-    >>> n = len(y)
-    >>> loss = -(xlogy(y, y_pred) + xlogy(1 - y, 1 - y_pred)).sum()
-    >>> loss /= n
-    >>> loss
-    0.29597052165495025
-
-    A lower loss is usually better as it indicates that the predictions are
-    similar to the actual labels. In this example since our predicted
-    probabilities are close to the actual labels, we get an overall loss
-    that is reasonably low and appropriate.
-
-    """)
-
-add_newdoc("xlog1py",
-    """
-    xlog1py(x, y, out=None)
-
-    Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
-
-    Parameters
-    ----------
-    x : array_like
-        Multiplier
-    y : array_like
-        Argument
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    z : scalar or ndarray
-        Computed x*log1p(y)
-
-    Notes
-    -----
-
-    .. versionadded:: 0.13.0
-
-    Examples
-    --------
-    This example shows how the function can be used to calculate the log of
-    the probability mass function for a geometric discrete random variable.
-    The probability mass function of the geometric distribution is defined
-    as follows:
-
-    .. math:: f(k) = (1-p)^{k-1} p
-
-    where :math:`p` is the probability of a single success
-    and :math:`1-p` is the probability of a single failure
-    and :math:`k` is the number of trials to get the first success.
-
-    >>> import numpy as np
-    >>> from scipy.special import xlog1py
-    >>> p = 0.5
-    >>> k = 100
-    >>> _pmf = np.power(1 - p, k - 1) * p
-    >>> _pmf
-    7.888609052210118e-31
-
-    If we take k as a relatively large number the value of the probability
-    mass function can become very low. In such cases taking the log of the
-    pmf would be more suitable as the log function can change the values
-    to a scale that is more appropriate to work with.
-
-    >>> _log_pmf = xlog1py(k - 1, -p) + np.log(p)
-    >>> _log_pmf
-    -69.31471805599453
-
-    We can confirm that we get a value close to the original pmf value by
-    taking the exponential of the log pmf.
-
-    >>> _orig_pmf = np.exp(_log_pmf)
-    >>> np.isclose(_pmf, _orig_pmf)
-    True
-
     """)
 
 add_newdoc("yn",

@@ -241,8 +241,7 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
 
         # Print status
         if verbose:
-            sys.stdout.write("%d:  |F(x)| = %g; step %g\n" % (
-                n, tol_norm(Fx), s))
+            sys.stdout.write(f"{n}:  |F(x)| = {tol_norm(Fx):g}; step {s:g}\n")
             sys.stdout.flush()
     else:
         if raise_exception:

@@ -56,9 +56,21 @@ def xp_var(*args, **kwargs):
     return stats._stats_py._xp_var(*args, **kwargs)
 
 
+def gstd(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats.gstd(*args, **kwargs)
+
+
 def combine_pvalues_weighted(*args, **kwargs):
     return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
                                  method='stouffer', **kwargs)
+
+
+def weightedtau_weighted(x, y, rank, **kwargs):
+    axis = kwargs.get('axis', 0)
+    nan_policy = kwargs.get('nan_policy', 'propagate')
+    rank = stats.rankdata(rank, axis=axis, nan_policy=nan_policy)
+    return stats.weightedtau(x, y, rank, **kwargs)
 
 
 axis_nan_policy_cases = [
@@ -133,6 +145,7 @@ axis_nan_policy_cases = [
     (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
+    (stats.f_oneway, tuple(), {'equal_var': False}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
@@ -143,6 +156,23 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.weightedtau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (weightedtau_weighted, tuple(), dict(), 3, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.linregress, tuple(), dict(), 2, 6, True,
+     lambda res: tuple(res) + (res.intercept_stderr,)),
+    (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
+    (stats.chisquare, tuple(), dict(), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -175,6 +205,9 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "One or more sample arguments is too small",
                       "invalid value encountered",
                       "divide by zero encountered",
+                      "`x` and `y` must have length at least 2.",
+                      "Inputs must not be empty.",
+                      "All `x` coordinates are identical.",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
@@ -183,13 +216,13 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode}
+override_propagate_funcs = {stats.mode, weightedtau_weighted, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
-empty_special_case_funcs = {stats.entropy}
+empty_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 # Some functions don't follow the usual "too small" warning rules
-too_small_special_case_funcs = {stats.entropy}
+too_small_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -594,6 +627,8 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                            stats.differential_entropy}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
+    if hypotest in {weightedtau_weighted}:
+        pytest.skip("`rankdata` used in testing doesn't support axis tuple.")
     # test if keepdims parameter works correctly
     if not unpacker:
         def unpacker(res):
@@ -834,15 +869,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
                     expected = np.mean(concat, axis=axis) * np.nan
+                    mask = np.isnan(expected)
+                    expected = [np.asarray(expected.copy()) for i in range(n_outputs)]
 
                 if hypotest in empty_special_case_funcs:
                     empty_val = hypotest(*([[]]*len(samples)), *args, **kwds)
-                    expected = np.asarray(expected)
-                    mask = np.isnan(expected)
-                    expected[mask] = empty_val
-                    expected = expected[()]
+                    empty_val = list(unpacker(empty_val))
+                    for i in range(n_outputs):
+                        expected[i][mask] = empty_val[i]
 
-                if expected.size and hypotest not in too_small_special_case_funcs:
+                if expected[0].size and hypotest not in too_small_special_case_funcs:
                     message = (too_small_1d_not_omit if max_axis == 1
                                else too_small_nd_not_omit)
                     with pytest.warns(SmallSampleWarning, match=message):
@@ -855,7 +891,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 res = unpacker(res)
 
                 for i in range(n_outputs):
-                    assert_equal(res[i], expected)
+                    assert_equal(res[i], expected[i])
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable

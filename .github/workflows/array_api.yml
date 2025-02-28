@@ -15,24 +15,8 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
-  XP_TESTS: >-
-    -t scipy.cluster
-    -t scipy.constants
-    -t scipy.fft
-    -t scipy.special.tests.test_logsumexp
-    -t scipy.special.tests.test_support_alternative_backends
-    -t scipy._lib.tests.test_array_api
-    -t scipy._lib.tests.test__util
-    -t scipy.differentiate.tests.test_differentiate
-    -t scipy.integrate.tests.test_tanhsinh
-    -t scipy.integrate.tests.test_cubature
-    -t scipy.optimize.tests.test_bracket
-    -t scipy.optimize.tests.test_chandrupatla
-    -t scipy.optimize.tests.test_optimize
-    -t scipy.stats
-    -t scipy.ndimage
-    -t scipy.integrate.tests.test_quadrature
-    -t scipy.signal.tests.test_signaltools
+  # Only run tests that use the `xp` fixture
+  XP_TESTS: -m array_api_backends
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -43,8 +27,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  pytorch_cpu:
-    name: Linux PyTorch/JAX/xp-strict CPU
+  xp_cpu:
+    name: Linux PyTorch/JAX/Dask/xp-strict CPU
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -86,6 +70,14 @@ jobs:
       run: |
         python -m pip install "jax[cpu]"
 
+    - name: Install Dask
+      run: |
+        python -m pip install dask[array]
+
+    - name: Install MArray
+      run: |
+        python -m pip install marray
+
     - name:  Prepare compiler cache
       id:    prep-ccache
       shell: bash
@@ -96,7 +88,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+      uses:  actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -111,6 +103,9 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        # expand as more modules are supported by adding to `XP_TESTS` above
         python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
 
+    - name: Test SciPy with torch/float32
+      run: |
+        export SCIPY_DEFAULT_DTYPE="float32"
+        python dev.py --no-build test -b torch $XP_TESTS -- --durations 3 --timeout=60

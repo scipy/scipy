@@ -3,9 +3,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
@@ -746,13 +745,11 @@ def test_gh_20850():
     stats.bootstrap((x.T, y.T), statistic, axis=1)
     # But even when the shapes *are* the same along axis, the lengths
     # along other dimensions have to be the same (or `bootstrap` warns).
-    message = "Ignoring the dimension specified by `axis`..."
-    with pytest.warns(FutureWarning, match=message):
+    message = "Array shapes are incompatible for broadcasting."
+    with pytest.raises(ValueError, match=message):
         stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
+    stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
+    stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
@@ -773,7 +770,6 @@ class TestMonteCarloHypothesisTest:
             # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
         return statistic
 
-    @array_api_compatible
     def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
 
@@ -840,7 +836,6 @@ class TestMonteCarloHypothesisTest:
         except ValueError as e:
             assert str(e).startswith(message)
 
-    @array_api_compatible
     def test_input_validation_xp(self, xp):
         def non_vectorized_statistic(x):
             return xp.mean(x)
@@ -857,19 +852,17 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test(sample, stats.norm.rvs, xp.mean, vectorized=False)
 
     @pytest.mark.xslow
-    @array_api_compatible
     def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
         rng = np.random.default_rng(23492340193)
         x = xp.asarray(rng.standard_normal(size=10))
 
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return self.get_statistic(xp_test)(x, axis=axis)
+            return self.get_statistic(xp)(x, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
@@ -896,7 +889,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_equal(res1.pvalue, res3.pvalue)
         xp_assert_equal(res2.pvalue, res3.pvalue)
 
-    @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
     def test_axis_dtype(self, axis, xp):
         # test that Nd-array samples are handled correctly for valid values
@@ -919,8 +911,7 @@ class TestMonteCarloHypothesisTest:
         expected = stats.ttest_1samp(x, popmean=0., axis=axis)
 
         x = xp.asarray(x, dtype=dtype)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, dtype=dtype, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, vectorized=True,
@@ -931,7 +922,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_close(res.statistic, ref_statistic)
         xp_assert_close(res.pvalue, ref_pvalue, atol=self.atol)
 
-    @array_api_compatible
     @pytest.mark.parametrize('alternative', ("two-sided", "less", "greater"))
     def test_alternative(self, alternative, xp):
         # test that `alternative` is working as expected
@@ -941,8 +931,7 @@ class TestMonteCarloHypothesisTest:
         ref = stats.ttest_1samp(x, 0., alternative=alternative)
 
         x = xp.asarray(x)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, alternative=alternative)

@@ -7,12 +7,12 @@ from scipy._lib._array_api import (
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.fft import fft
+from scipy.fft import fft, fft2
 from scipy.special import sinc
-from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
-    firwin, firwin2, freqz, remez, firls, minimum_phase
-)
-
+from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
+    firwin, firwin2, freqz, remez, firls, minimum_phase, \
+    convolve2d
+from scipy.signal._fir_filter_design import firwin_2d
 
 def test_kaiser_beta():
     b = kaiser_beta(58.7)
@@ -652,3 +652,108 @@ class TestMinimumPhase:
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
+
+
+class Testfirwin_2d:
+    def test_invalid_args(self):
+        with pytest.raises(ValueError, 
+                           match="hsize must be a 2-element tuple or list"):
+            firwin_2d((50,), window=(("kaiser", 5.0), "boxcar"), fc=0.4)
+        
+        with pytest.raises(ValueError, 
+                           match="window must be a 2-element tuple or list"):
+            firwin_2d((51, 51), window=("hamming",), fc=0.5)
+        
+        with pytest.raises(ValueError, 
+                           match="window must be a 2-element tuple or list"):
+            firwin_2d((51, 51), window="invalid_window", fc=0.5)
+
+    def test_filter_design(self):
+        hsize = (51, 51)
+        window = (("kaiser", 8.0), ("kaiser", 8.0))
+        fc = 0.4
+        taps_kaiser = firwin_2d(hsize, window, fc=fc)
+        assert taps_kaiser.shape == (51, 51)
+
+        window = ("hamming", "hamming")
+        taps_hamming = firwin_2d(hsize, window, fc=fc)
+        assert taps_hamming.shape == (51, 51)
+
+    def test_impulse_response(self):
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = firwin_2d(hsize, window, fc=fc)
+
+        impulse = np.zeros((63, 63))
+        impulse[31, 31] = 1
+
+        response = convolve2d(impulse, taps, mode='same')
+
+        expected_response = taps
+        xp_assert_close(response[16:47, 16:47], expected_response, rtol=1e-5)
+
+    def test_frequency_response(self):
+        """Compare 1d and 2d frequency response. """
+        hsize = (31, 31)
+        windows = ("hamming", "hamming")
+        fc = 0.4
+        taps_1d = firwin(numtaps=hsize[0], cutoff=fc, window=windows[0])
+        taps_2d = firwin_2d(hsize, windows, fc=fc)
+
+        f_resp_1d = fft(taps_1d)
+        f_resp_2d = fft2(taps_2d)
+
+        xp_assert_close(f_resp_2d[0, :], f_resp_1d,
+                        err_msg='DC Gain at (0, f1) is not unity!')
+        xp_assert_close(f_resp_2d[:, 0], f_resp_1d,
+                        err_msg='DC Gain at (f0, 0) is not unity!')
+        xp_assert_close(f_resp_2d, np.outer(f_resp_1d, f_resp_1d),
+                        atol=np.finfo(f_resp_2d.dtype).resolution,
+                        err_msg='2d frequency response is not product of 1d responses')
+
+    def test_symmetry(self):
+        hsize = (51, 51)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = firwin_2d(hsize, window, fc=fc)
+        xp_assert_close(taps, np.flip(taps), rtol=1e-5)
+
+    def test_circular_symmetry(self):
+        hsize = (51, 51)
+        window = "hamming"
+        taps = firwin_2d(hsize, window, circular=True, fc=0.5)
+        center = hsize[0] // 2
+        for i in range(hsize[0]):
+            for j in range(hsize[1]):
+                xp_assert_close(taps[i, j], 
+                                taps[center - (i - center), center - (j - center)], 
+                                rtol=1e-5)
+
+    def test_edge_case_circular(self):
+        hsize = (3, 3)
+        window = "hamming"
+        taps_small = firwin_2d(hsize, window, circular=True, fc=0.5)
+        assert taps_small.shape == (3, 3)
+
+        hsize = (101, 101)
+        taps_large = firwin_2d(hsize, window, circular=True, fc=0.5)
+        assert taps_large.shape == (101, 101)
+
+    def test_known_result(self):
+        hsize = (5, 5)
+        window = ('kaiser', 8.0)
+        fc = 0.1
+        fs = 2
+
+        row_filter = firwin(hsize[0], cutoff=fc, window=window, fs=fs)
+        col_filter = firwin(hsize[1], cutoff=fc, window=window, fs=fs)
+        known_result = np.outer(row_filter, col_filter)
+
+        taps = firwin_2d(hsize, (window, window), fc=fc)
+        assert taps.shape == known_result.shape, (
+            f"Shape mismatch: {taps.shape} vs {known_result.shape}"
+        )
+        assert np.allclose(taps, known_result, rtol=1e-1), (
+            f"Filter shape mismatch: {taps} vs {known_result}"
+        )

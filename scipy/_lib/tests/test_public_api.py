@@ -357,6 +357,7 @@ def test_api_importable():
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
                           ('scipy.integrate.vode', None),
+                          ('scipy.interpolate.dfitpack', None),
                           ('scipy.interpolate.fitpack', None),
                           ('scipy.interpolate.fitpack2', None),
                           ('scipy.interpolate.interpolate', None),

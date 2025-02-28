@@ -13,7 +13,7 @@ from scipy.integrate import (romb, newton_cotes,
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 
 from scipy import stats, special, integrate
-from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api_no_0d import xp_assert_close
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -269,7 +269,6 @@ class TestCumulative_trapezoid:
             cumulative_trapezoid(y=[])
 
 
-@array_api_compatible
 class TestTrapezoid:
     def test_simple(self, xp):
         x = xp.arange(-10, 10, .1)
@@ -278,8 +277,7 @@ class TestTrapezoid:
         xp_assert_close(r, xp.asarray(1.0))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
+                      reason="JAX arrays do not support item assignment")
     def test_ndim(self, xp):
         x = xp.linspace(0, 1, 3)
         y = xp.linspace(0, 2, 8)
@@ -318,8 +316,7 @@ class TestTrapezoid:
         xp_assert_close(r, qz)
 
     @skip_xp_backends('jax.numpy',
-                      reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")
+                      reason="JAX arrays do not support item assignment")
     def test_gh21908(self, xp):
         # extended testing for n-dim arrays
         x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
@@ -362,8 +359,7 @@ class TestTrapezoid:
         assert_allclose(trapezoid(y, xm), r)
 
     @skip_xp_backends(np_only=True,
-                      reasons=['array-likes only supported for NumPy backend'])
-    @pytest.mark.usefixtures("skip_xp_backends")
+                      reason='array-likes only supported for NumPy backend')
     def test_array_like(self, xp):
         x = list(range(5))
         y = [t * t for t in x]
@@ -663,7 +659,7 @@ class TestCumulativeSimpson:
             y, x=np.arange(y.shape[-1])
         )
         np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
         )
 
     @pytest.mark.thread_unsafe

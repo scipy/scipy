@@ -134,7 +134,7 @@ def getdtype(dtype, a=None, default=None):
 
     if newdtype not in supported_dtypes:
         supported_dtypes_fmt = ", ".join(t.__name__ for t in supported_dtypes)
-        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype}. "
                          f"The only supported types are: {supported_dtypes_fmt}.")
     return newdtype
 
@@ -509,7 +509,7 @@ def broadcast_shapes(*shapes):
     """
     if not shapes:
         return ()
-    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    shapes = [shp if isinstance(shp, tuple | list) else (shp,) for shp in shapes]
     big_shp = max(shapes, key=len)
     out = list(big_shp)
     for shp in shapes:

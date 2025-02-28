@@ -4,7 +4,6 @@ from os.path import relpath, dirname
 import re
 import sys
 import warnings
-from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
@@ -71,7 +70,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = f'2008-{date.today().year}, The SciPy community'
+copyright = '2008, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -208,12 +207,22 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-
+html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
 html_theme_options = {
-    "github_url": "https://github.com/scipy/scipy",
-    "twitter_url": "https://twitter.com/SciPy_team",
     "header_links_before_dropdown": 6,
-    "icon_links": [],
+    "icon_links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/scipy/scipy",
+        "icon": "fa-brands fa-github",
+      },
+      {
+        "name": "Scientific Python Forum",
+        "url": "https://discuss.scientific-python.org/c/contributor/scipy/",
+        "icon": "fa-custom fa-SciPy_Forum", # defined in file `_static/custom-icons.js`
+        "type": "fontawesome",
+      },
+    ],
     "logo": {
         "text": "SciPy",
     },
@@ -250,7 +259,7 @@ if 'versionwarning' in tags:  # noqa: F821
     html_context = {
         'VERSIONCHECK_JS': src
     }
-    html_js_files = ['versioncheck.js']
+    html_js_files += ['versioncheck.js', ]
 
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
@@ -399,6 +408,7 @@ myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
     "substitution",
+    "linkify",
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
@@ -410,6 +420,9 @@ myst_update_mathjax = False
 # Strip out cells tagged with "jupyterlite_sphinx_strip" from the
 # interactive renditions of the notebooks
 strip_tagged_cells = True
+
+# Enable overrides for JupyterLite settings at runtime
+jupyterlite_overrides = "overrides.json"
 
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx
@@ -469,7 +482,7 @@ def linkcode_resolve(domain, info):
         obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
-    if isinstance(obj, (rv_generic, multi_rv_generic)):
+    if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
