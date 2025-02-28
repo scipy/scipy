@@ -182,10 +182,10 @@ def correlate(in1, in2, mode='full', method='auto'):
 
           z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, :math:`M` is the length of ``y``,  
-    and :math:`y_m = 0` when :math:`m` is outside the range of ``y``. The size of 
-    :math:`z` is :math:`N + M - 1` and :math:`y^*` denotes the complex conjugate 
-    of :math:`y`.
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    :math:`y^*` denotes the complex conjugate of :math:`y`.
     
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
