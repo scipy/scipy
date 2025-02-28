@@ -10,7 +10,7 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 
 from scipy.special import logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
-
+from scipy.stats.tests.test_stats import skip_xp_backends
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
@@ -255,6 +255,23 @@ class TestLogSumExp:
         ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
+
+    @skip_xp_backends("torch",
+        reason="`torch` has different ideas about ops involving complex infinity")
+    def test_gh22601_infinite_elements(self, xp):
+        # Test that `logsumexp` does a reasonable things in the presence of
+        # complex infinities.
+        res = logsumexp(xp.asarray([-xp.inf + 0j, -xp.inf + 0.7533j]))
+        xp_assert_equal(xp.real(res), xp.asarray(-xp.inf))
+
+        res = logsumexp(xp.asarray([xp.inf + 1j, -0.9116 + 0.7533j]))
+        xp_assert_close(res, xp.asarray(xp.inf + 1j))
+
+        # Ideally, we would have logic to determine the correct magnitude
+        # (inf or NaN) and phase (finite or NaN) for complex infinities.
+        # In the meantime, ensure that the result is NaN.
+        res = logsumexp(xp.asarray([xp.inf + 1.0000j, xp.inf + 0.7533j]))
+        xp_assert_close(res, xp.asarray(xp.nan + xp.nan*1j))
 
 
 class TestSoftmax:

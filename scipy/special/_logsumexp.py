@@ -206,9 +206,22 @@ def _logsumexp(a, b, axis, return_sign, xp):
     m = (xp.sum(i_max_dt, axis=axis, keepdims=True, dtype=a.dtype) if b is None
          else xp.sum(b * i_max_dt, axis=axis, keepdims=True, dtype=a.dtype))
 
-    # Arithmetic between infinities will introduce NaNs.
-    # `+ a_max` at the end naturally corrects for removing them here.
-    shift = xp.where(xp.isfinite(a_max), a_max, xp.asarray(0, dtype=a_max.dtype))
+    # `a - shift` will introduce NaNs if both `a` and `shift` are infinities of the
+    # same sign.
+    # For positive infinite `shift`, `a - shift` does the right thing if all of `a` are
+    # finite. If some of `a` are `+inf`, it is not a huge problem for NaNs to appear.
+    # The *best* `logsumexp` result in this case could have either `inf` or `nan` real
+    # part and finite or `nan` imaginary part, depending on the specifics. The logic for
+    # this is not implemented, and previous implementations of `logsumexp` have returned
+    # garbage phase for multiple complex infinities, so returning `nan + nan*j` is an
+    # improvement over a result with incorrect phase.
+    # For negative infinities, this can only occur if *all* elements have negative
+    # infinite real part, so the result is the logarithm of `0`, and the phase is
+    # meaningless. The value returned by `logsumexp` will have the same phase as
+    # `a_max`, which should be fine, since this function has never had a principled
+    # phase convention for this case.
+    shift = xp.where(xp.logical_or(xp.isfinite(a_max), xp_real(a_max) > 0),
+                     a_max, xp.asarray(0, dtype=a_max.dtype))
 
     # Shift, exponentiate, scale, and sum
     exp = b * xp.exp(a - shift) if b is not None else xp.exp(a - shift)
