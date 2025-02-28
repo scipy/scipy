@@ -255,8 +255,8 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Returns
     -------
     new_matrix : dia_matrix
-        dia_matrix holding the values in ``diagonals`` offset from the main diagonal
-        as indicated in ``offsets``.
+        dia_matrix holding the values in `diagonals` offset from the main diagonal
+        as indicated in `offsets`.
 
     See Also
     --------
