@@ -182,9 +182,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
           z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = -(M-1), \dots, (N-1)`,
-
-    where :math:`N` is the length of ``x``, :math:`M` is the length of ``y``,  
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, :math:`M` is the length of ``y``,  
     and :math:`y_m = 0` when :math:`m` is outside the range of ``y``. The size of 
     :math:`z` is :math:`N + M - 1` and :math:`y^*` denotes the complex conjugate 
     of :math:`y`.
