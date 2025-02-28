@@ -121,24 +121,22 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 
             # 'intervals': indices for a point in xi into the knot arrays t
             npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
+            npy_intp i_d
 
             # container for non-zero b-splines at each point in xi
             double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
 
-            const double[::1] xv     # an ndim-dimensional input point
-            double xd               # d-th component of x
+            # d-th component of a j-th ndim-dimensional input point, x[j, d]
+            double xd
 
-            const double[::1] td    # knots in dimension d
-
-            npy_intp kd             # d-th component of k
+            npy_intp kd       # d-th component of k
+            npy_intp volume   # the number of non-zero terms ( == prod(k))
 
             npy_intp i_c      # index to loop over range(num_c_tr)
             npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
-            npy_intp volume   # the number of non-zero terms
-            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
 
             int out_of_bounds
-            npy_intp idx_cflat_base, idx
+            npy_intp idx_cflat_base, idx, idx_d
             double factor
             double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
 
@@ -163,29 +161,27 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 
             ### Iterate over the data points
             for j in range(xi.shape[0]):
-                xv = xi[j, :]
-
                 # For each point, iterate over the dimensions
                 out_of_bounds = 0
                 for d in range(ndim):
-                    td = t[d, :len_t[d]]
-                    xd = xv[d]
+                    xd = xi[j, d]
                     kd = k[d]
 
                     # get the location of x[d] in t[d]
-                    i[d] = _find_interval(&td[0], td.shape[0], kd, xd, kd, extrapolate)
+                    i_d = _find_interval(&t[d, 0], len_t[d], kd, xd, kd, extrapolate)
 
-                    if i[d] < 0:
+                    if i_d < 0:
                         out_of_bounds = 1
                         break
 
                     # compute non-zero b-splines at this value of xd in dimension d
-                    _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+                    _deBoor_D(&t[d, 0], xd, kd, i_d, nu[d], &wrk[0])
                     b[d, :kd+1] = wrk[:kd+1]
+                    i[d] = i_d
 
                 if out_of_bounds:
                     # xd was nan or extrapolate=False: Fill the output array
-                    # *for this xv value*, and continue to the next xv in xi.
+                    # *for this xv(==xk[j, :] value*, and continue to the next xv in xi.
                     for i_c in range(num_c_tr):
                         out[j, i_c] = NAN
                     continue
@@ -195,9 +191,10 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 
                 # iterate over the direct products of non-zero b-splines
                 for iflat in range(volume):
-                    idx_b = indices_k1d[iflat, :]
-                    # The line above is equivalent to
+                    # `idx_b = indiced_k1d[iflat, :]` assignment is equivalent to
                     # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+                    # i.e. `idx_b` would be an ndim-dimensional index corresponding to
+                    # `iflat`.
 
                     # From the indices in ``idx_b``, we prepare to index into
                     # c1.ravel() : for each dimension d, need to shift the index
@@ -214,8 +211,9 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     idx_cflat_base = 0
                     factor = 1.0
                     for d in range(ndim):
-                        factor *= b[d, idx_b[d]]
-                        idx = idx_b[d] + i[d] - k[d]
+                        idx_d = indices_k1d[iflat, d]
+                        factor *= b[d, idx_d]
+                        idx = idx_d + i[d] - k[d]
                         idx_cflat_base += idx * strides_c1[d]
 
                     ### collect linear combinations of coef * factor
@@ -287,19 +285,14 @@ def _colloc_nd(const double[:, ::1] xvals,
         double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
 
         double xd               # d-th component of x
-        const double[::1] td    # knots in the dimension d
         npy_intp kd             # d-th component of k
 
         npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
         npy_intp volume   # the number of non-zero terms
 
-        # shifted indices into the data array
-        npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
-        npy_intp idx_cflat
-
-        npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
-
+        npy_intp idx_cflat, i_d, idx, idx_d
         int out_of_bounds
+        int j, d
         double factor
         double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
 
@@ -307,14 +300,12 @@ def _colloc_nd(const double[:, ::1] xvals,
         double[::1] csr_data
         npy_int64[::1] csr_indices
 
-        int j, d
-
     # the number of non-zero b-splines for each data point.
     volume = 1
     for d in range(ndim):
         volume *= k[d] + 1
 
-    # Allocate the collocation matrix in the CSR format.
+    # Allocate the colocation matrix in the CSR format.
     # If dense, this would have been
     # >>> matr = np.zeros((size, max_row_index), dtype=float)
     csr_indices = np.empty(shape=(size*volume,), dtype=np.int64)
@@ -323,47 +314,45 @@ def _colloc_nd(const double[:, ::1] xvals,
 
     # ### Iterate over the data points ###
     for j in range(size):
-        xv = xvals[j, :]
-
         # For each point, iterate over the dimensions
         out_of_bounds = 0
         for d in range(ndim):
-            td = _t[d, :len_t[d]]
-            xd = xv[d]
+            xd = xvals[j, d]
             kd = k[d]
 
             # get the location of x[d] in t[d]
-            i[d] = _find_interval(&td[0], td.shape[0], kd, xd, kd, True)
+            i_d = _find_interval(&_t[d, 0], len_t[d], kd, xd, kd, True)
 
-            if i[d] < 0:
+            if i_d < 0:
                 out_of_bounds = 1
                 break
 
             # compute non-zero b-splines at this value of xd in dimension d
-            _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+            _deBoor_D(&_t[d, 0], xd, kd, i_d, 0, &wrk[0])
             b[d, :kd+1] = wrk[:kd+1]
+            i[d] = i_d
 
         if out_of_bounds:
+            xv = np.asarray(xvals[j, :])
             raise ValueError(f"Out of bounds in {d = }, with {xv = }")
 
         # Iterate over the products of non-zero b-splines and place them
         # into the current row of the design matrix
         for iflat in range(volume):
-            # the line below is an unrolled version of
-            # idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))
-            idx_b = _indices_k1d[iflat, :]
-
+            # The `idx_cflat` computation is an unrolled version of
+            # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
+            #
+            # `_indiced_k1d` array is pre-tabulated such that `idx_d` is a d-th component
+            # of `idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))`
             factor = 1.0
             idx_cflat = 0
             for d in range(ndim):
-                factor *= b[d, idx_b[d]]
-                idx_c[d] = idx_b[d] + i[d] - k[d]
-                idx_cflat += idx_c[d] * _cstrides[d]
+                idx_d = _indices_k1d[iflat, d]
+                factor *= b[d, idx_d]
+                idx = idx_d + i[d] - k[d]
+                idx_cflat += idx * _cstrides[d]
 
-            # The `idx_cflat` computation above is an unrolled version of
-            # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
-
-            # Fill the row of the collocation matrix in the CSR format.
+            # Fill the row of the colocation matrix in the CSR format.
             # If it were dense, it would have been just
             # >>> matr[j, idx_cflat] = factor
 
