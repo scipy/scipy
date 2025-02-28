@@ -1094,7 +1094,6 @@ def _get_nan(*data, xp=None):
         dtype = xp.float64
     res = xp.asarray(xp.nan, dtype=dtype)[()]
     # whenever mdhaber/marray#89 is resolved, could just return `res`
-    # whenever PAAPIS 2024.12 is released, no need to return an array
     return res.data if hasattr(res, 'mask') else res
 
 

@@ -29,6 +29,7 @@ References
 import warnings
 import math
 import functools
+import operator
 from math import gcd
 from collections import namedtuple
 from collections.abc import Sequence
@@ -1243,7 +1244,7 @@ def _length_nonmasked(x, axis, keepdims=False, xp=None):
 
 def _share_masks(*args, xp):
     if hasattr(args[0], 'mask') and not isinstance(args[0], np.ndarray):
-        mask = functools.reduce(lambda x, y: x | y, (arg.mask for arg in args))
+        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
         args = [xp.asarray(arg.data, mask=mask) for arg in args]
     return args[0] if len(args) == 1 else args
 
