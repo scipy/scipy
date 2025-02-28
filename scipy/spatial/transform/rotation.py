@@ -140,6 +140,24 @@ class Rotation:
             self._backend.mean(self._quat, weights=weights), normalize=False
         )
 
+    def reduce(
+        self,
+        left: Rotation | None = None,
+        right: Rotation | None = None,
+        return_indices: bool = False,
+    ) -> Rotation:
+        left = left.as_quat() if left is not None else None
+        right = right.as_quat() if right is not None else None
+        reduced, left_idx, right_idx = self._backend.reduce(
+            self._quat, left=left, right=right
+        )
+        rot = Rotation(reduced, normalize=False, copy=False)
+        if return_indices:
+            left_idx = left_idx if left is not None else None
+            right_idx = right_idx if right is not None else None
+            return rot, left_idx, right_idx
+        return rot
+
     def apply(self, points: Array, inverse: bool = False) -> Array:
         return self._backend.apply(self._quat, points, inverse=inverse)
 
@@ -187,8 +205,8 @@ class Rotation:
         # TODO: Should we replace this with a shape instead?
         if self._single:
             raise TypeError("Single rotation has no len().")
-
-        return self._quat.shape[:-1].prod()
+        xp = array_namespace(self._quat)
+        return xp.prod(self._quat.shape[:-1], dtype=int)
 
     def __mul__(self, other):
         if not _broadcastable(self._quat.shape, other._quat.shape):

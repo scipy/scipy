@@ -1170,22 +1170,24 @@ def test_mean_jax_compile():
     jax.block_until_ready(mean(r))
 
 
-def test_reduction_no_indices():
-    result = Rotation.identity().reduce(return_indices=False)
+def test_reduction_no_indices(xp):
+    r = Rotation.from_quat(xp.asarray([0.0, 0.0, 0.0, 1.0]))
+    result = r.reduce(return_indices=False)
     assert isinstance(result, Rotation)
 
 
-def test_reduction_none_indices():
-    result = Rotation.identity().reduce(return_indices=True)
+def test_reduction_none_indices(xp):
+    r = Rotation.from_quat(xp.asarray([0.0, 0.0, 0.0, 1.0]))
+    result = r.reduce(return_indices=True)
     assert type(result) is tuple
     assert len(result) == 3
 
-    reduced, left_best, right_best = result
+    _, left_best, right_best = result
     assert left_best is None
     assert right_best is None
 
 
-def test_reduction_scalar_calculation():
+def test_reduction_scalar_calculation(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     l = Rotation.random(5, rng=rng)
     r = Rotation.random(10, rng=rng)
@@ -1209,6 +1211,15 @@ def test_reduction_scalar_calculation():
     reduced_check = l[left_best_check] * p * r[right_best_check]
     mag = (reduced.inv() * reduced_check).magnitude()
     assert_array_almost_equal(mag, np.zeros(len(p)))
+
+
+def test_reduce_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    reduce = jax.jit(Rotation.reduce, static_argnums=(3,))
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(reduce(r, return_indices=True))
 
 
 def test_apply_single_rotation_single_point():

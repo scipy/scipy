@@ -394,6 +394,85 @@ def mean(quat: Array, weights: Array | None = None) -> Array:
     return v[..., -1]
 
 
+def reduce(
+    quat: Array,
+    left: Array | None = None,
+    right: Array | None = None,
+) -> tuple[Array, Array | None, Array | None]:
+    # DECISION: We cannot have variable number of return arguments for jit compiled functions. We
+    # therefore always return the indices, and filter out later.
+    # TOOD: Properly support broadcasting.
+    xp = array_namespace(quat)
+    quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+    if left is None:
+        left = xp.ones_like(quat)
+    if right is None:
+        right = xp.ones_like(quat)
+
+    if left is None and right is None:
+        reduced = quat
+        return reduced, None, None
+    elif right is None:
+        right = xp.asarray([[0.0, 0.0, 0.0, 1.0]])
+    elif left is None:
+        left = xp.asarray([[0.0, 0.0, 0.0, 1.0]])
+
+    # Levi-Civita tensor for triple product computations
+    e = xp.zeros((3, 3, 3), dtype=atleast_f32(quat))
+    e = xpx.at(e)[0, 1, 2].set(1)
+    e = xpx.at(e)[1, 2, 0].set(1)
+    e = xpx.at(e)[2, 0, 1].set(1)
+    e = xpx.at(e)[0, 2, 1].set(-1)
+    e = xpx.at(e)[2, 1, 0].set(-1)
+    e = xpx.at(e)[1, 0, 2].set(-1)
+
+    # We want to calculate the real components of q = l * p * r. It can
+    # be shown that:
+    #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
+    #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
+    # where ls and lv denote the scalar and vector components of l.
+
+    def split_rotation(q):
+        q = xpx.atleast_nd(q, ndim=2, xp=xp)
+        return q[..., -1], q[..., :-1]
+
+    p = quat
+    ps, pv = split_rotation(p)
+    ls, lv = split_rotation(left)
+    rs, rv = split_rotation(right)
+
+    # Compute each term without einsum (not accessible in the Array API)
+    # First term: ls * ps * rs
+    term1 = ls * ps * rs
+    # Second term: ls * dot(pv, rv)
+    term2 = ls * xp.sum(pv * rv, axis=-1)
+    # Third term: ps * dot(lv, rv)
+    term3 = ps * xp.sum(lv * rv, axis=-1)
+    # Fourth term: rs * dot(lv, pv)
+    term4 = rs * xp.sum(lv * pv, axis=-1)
+    # Fifth term: dot(cross(lv, pv), rv)
+    lv_cross_pv = xp.linalg.cross(lv, pv)
+    term5 = xp.sum(lv_cross_pv * rv, axis=-1)
+
+    qs = xp.abs(term1 - term2 - term3 - term4 - term5)
+
+    # Find best indices from scalar components
+    max_ind = xp.argmax(xp.reshape(qs, (qs.shape[0], -1)), axis=1)
+    left_best = max_ind // rv.shape[0]
+    right_best = max_ind % rv.shape[0]
+    left = left[left_best[0], ...]
+    right = right[right_best[0], ...]
+
+    # Reduce the rotation using the best indices
+    reduced = compose_quat(left, compose_quat(p, right))
+
+    if left is None:
+        left_best = None
+    if right is None:
+        right_best = None
+    return reduced, left_best, right_best
+
+
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
     subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"

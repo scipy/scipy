@@ -862,6 +862,56 @@ def mean(quat: double[:, :], weights=None):
 
 
 @cython.embedsignature(True)
+def reduce(quat: double[: :], left=None, right=None) -> tuple[double[:, :], int[:] | None, int[:] | None]:
+    if left is None and right is None:
+        reduced = quat
+        return reduced, None, None
+    elif right is None:
+        right = identity(1)
+    elif left is None:
+        left = identity(1)
+
+    # Levi-Civita tensor for triple product computations
+    e = np.zeros((3, 3, 3))
+    e[0, 1, 2] = e[1, 2, 0] = e[2, 0, 1] = 1
+    e[0, 2, 1] = e[2, 1, 0] = e[1, 0, 2] = -1
+
+    # We want to calculate the real components of q = l * p * r. It can
+    # be shown that:
+    #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
+    #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
+    # where ls and lv denote the scalar and vector components of l.
+
+    def split_rotation(q):
+        q = np.atleast_2d(q)
+        return q[:, -1], q[:, :-1]
+
+    p = quat
+    ps, pv = split_rotation(p)
+    ls, lv = split_rotation(left)
+    rs, rv = split_rotation(right)
+
+    qs = np.abs(np.einsum('i,j,k', ls, ps, rs) -
+                np.einsum('i,jx,kx', ls, pv, rv) -
+                np.einsum('ix,j,kx', lv, ps, rv) -
+                np.einsum('ix,jx,k', lv, pv, rs) -
+                np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
+    qs = np.reshape(np.moveaxis(qs, 1, 0), (qs.shape[1], -1))
+
+    # Find best indices from scalar components
+    max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
+    left_best = max_ind // len(rv)
+    right_best = max_ind % len(rv)
+
+    # Reduce the rotation using the best indices
+    left = left[left_best]
+    right = right[right_best]
+    reduced = _compose_quat(left, _compose_quat(p, right))
+
+    return reduced, left_best, right_best
+
+
+@cython.embedsignature(True)
 def apply(quat: cython.double[:, :], vectors, inverse=False):
     vectors = np.asarray(vectors)
     if vectors.ndim > 2 or vectors.shape[-1] != 3:
@@ -1498,103 +1548,6 @@ cdef class Rotation:
         if self._single:
             quat = quat[0]
         return self.__class__(quat, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
-    def reduce(self, left=None, right=None, return_indices=False):
-        """Reduce this rotation with the provided rotation groups.
-
-        Reduction of a rotation ``p`` is a transformation of the form
-        ``q = l * p * r``, where ``l`` and ``r`` are chosen from `left` and
-        `right` respectively, such that rotation ``q`` has the smallest
-        magnitude.
-
-        If `left` and `right` are rotation groups representing symmetries of
-        two objects rotated by ``p``, then ``q`` is the rotation of the
-        smallest magnitude to align these objects considering their symmetries.
-
-        Parameters
-        ----------
-        left : `Rotation` instance, optional
-            Object containing the left rotation(s). Default value (None)
-            corresponds to the identity rotation.
-        right : `Rotation` instance, optional
-            Object containing the right rotation(s). Default value (None)
-            corresponds to the identity rotation.
-        return_indices : bool, optional
-            Whether to return the indices of the rotations from `left` and
-            `right` used for reduction.
-
-        Returns
-        -------
-        reduced : `Rotation` instance
-            Object containing reduced rotations.
-        left_best, right_best: integer ndarray
-            Indices of elements from `left` and `right` used for reduction.
-        """
-        if left is None and right is None:
-            reduced = self.__class__(self._quat, normalize=False, copy=True)
-            if return_indices:
-                return reduced, None, None
-            else:
-                return reduced
-        elif right is None:
-            right = Rotation.identity()
-        elif left is None:
-            left = Rotation.identity()
-
-        # Levi-Civita tensor for triple product computations
-        e = np.zeros((3, 3, 3))
-        e[0, 1, 2] = e[1, 2, 0] = e[2, 0, 1] = 1
-        e[0, 2, 1] = e[2, 1, 0] = e[1, 0, 2] = -1
-
-        # We want to calculate the real components of q = l * p * r. It can
-        # be shown that:
-        #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
-        #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
-        # where ls and lv denote the scalar and vector components of l.
-
-        def split_rotation(R):
-            q = np.atleast_2d(R.as_quat())
-            return q[:, -1], q[:, :-1]
-
-        p = self
-        ps, pv = split_rotation(p)
-        ls, lv = split_rotation(left)
-        rs, rv = split_rotation(right)
-
-        qs = np.abs(np.einsum('i,j,k', ls, ps, rs) -
-                    np.einsum('i,jx,kx', ls, pv, rv) -
-                    np.einsum('ix,j,kx', lv, ps, rv) -
-                    np.einsum('ix,jx,k', lv, pv, rs) -
-                    np.einsum('xyz,ix,jy,kz', e, lv, pv, rv))
-        qs = np.reshape(np.moveaxis(qs, 1, 0), (qs.shape[1], -1))
-
-        # Find best indices from scalar components
-        max_ind = np.argmax(np.reshape(qs, (len(qs), -1)), axis=1)
-        left_best = max_ind // len(rv)
-        right_best = max_ind % len(rv)
-
-        if not left.single:
-            left = left[left_best]
-        if not right.single:
-            right = right[right_best]
-
-        # Reduce the rotation using the best indices
-        reduced = left * p * right
-        if self._single:
-            # Reduce the rotation using the best indices
-            reduced = self.__class__(reduced.as_quat()[0], normalize=False)
-            left_best = left_best[0]
-            right_best = right_best[0]
-
-        if return_indices:
-            if left is None:
-                left_best = None
-            if right is None:
-                right_best = None
-            return reduced, left_best, right_best
-        else:
-            return reduced
 
     @cython.embedsignature(True)
     @classmethod
