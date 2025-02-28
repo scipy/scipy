@@ -2982,3 +2982,40 @@ class TestVectorizedFilter:
         res = ndimage.vectorized_filter(input, function, size=21)
         ref = ndimage.vectorized_filter(input, function, size=21)
         xp_assert_close(res, ref)
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize('length', range(1, 1000, 50))
+@pytest.mark.parametrize('size', range(1, 25))
+@pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest', 'mirror', 'wrap'])
+def test_gh_22586_median_filter_no_segfault_and_1d_matches_nd(
+    length: int,
+    size: int,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    size = min(size, length)
+    arr = np.random.random(length)
+    mf = functools.partial(
+        ndimage.median_filter,
+        size=size,
+        mode=mode,
+    )
+    actual = mf(arr)
+
+    # Monkeypatch _rank_filter_1d.rank_filter() to actually call
+    # _nd_image.rank_filter() so that 1D results from the optimized
+    # implementation can be compared to the general ND implementation
+
+    def _1d_to_nd_rank_filter(i, r, s, *args):
+        from scipy.ndimage import _nd_image
+        return _nd_image.rank_filter(i, r, np.ones(s, dtype=bool), *args)
+
+    with monkeypatch.context():
+        monkeypatch.setattr(
+            'scipy.ndimage._rank_filter_1d.rank_filter',
+            _1d_to_nd_rank_filter,
+        )
+        desired = mf(arr)
+
+    np.testing.assert_array_almost_equal(actual, desired)
