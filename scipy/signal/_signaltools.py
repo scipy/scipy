@@ -3913,25 +3913,9 @@ def _angle(z, xp):
     """np.angle replacement
     """
     # XXX: https://github.com/data-apis/array-api/issues/595
-    if xp.isdtype(z.dtype, 'complex floating'):
-        zreal, zimag = xp.real(z), xp.imag(z)
-    else:
-        zreal, zimag = z, 0
-
-    a = xp.atan2(zimag, zreal)
+    zimag = xp.imag(z) if xp.isdtype(z.dtype, 'complex floating') else 0.
+    a = xp.atan2(zimag, xp.real(z))
     return a
-
-
-def _mean(x, *args, xp, **kwds):
-    # https://github.com/data-apis/array-api/pull/850
-    if xp.isdtype(x.dtype, 'complex floating'):
-        I = xp.asarray(1j, dtype=xp.complex64
-                                 if x.dtype == xp.float32
-                                 else xp.complex128)
-        return (xp.mean(xp.real(x), *args, **kwds) +
-                I * xp.mean(xp.imag(x), *args, **kwds))
-    else:
-        return xp.mean(x, *args, **kwds)
 
 
 def vectorstrength(events, period):
@@ -4002,15 +3986,12 @@ def vectorstrength(events, period):
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    I2pi = xp.asarray(2j*xp.pi, dtype=xp.complex64
-                        if period.dtype == xp.float32
-                        else xp.complex128)
-    events_ = xp.astype(events, I2pi.dtype) if is_torch(xp) else events
-    vectors = xp.exp(I2pi/period.T @ events_)
+    events_ = xp.astype(events, period.dtype)
+    vectors = xp.exp(2j * (xp.pi / period.T @ events_))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = _mean(vectors, axis=1, xp=xp)
+    vectormean = xp.mean(vectors, axis=1)
     strength = xp.abs(vectormean)
     phase = _angle(vectormean, xp)
 

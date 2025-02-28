@@ -2856,13 +2856,13 @@ class ContinuousDistribution(_ProbabilityDistribution):
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
         rng = np.random.default_rng(rng) if not isinstance(rng, qmc.QMCEngine) else rng
-        res = self._sample_dispatch(sample_shape, full_shape, method=method,
-                                    rng=rng, **self._parameters)
+        res = self._sample_dispatch(full_shape, method=method, rng=rng,
+                                    **self._parameters)
 
         return res.astype(self._dtype, copy=False)
 
     @_dispatch
-    def _sample_dispatch(self, sample_shape, full_shape, *, method, rng, **params):
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
         # make sure that tests catch if sample is 0d array
         if self._overrides('_sample_formula') and not isinstance(rng, qmc.QMCEngine):
             method = self._sample_formula
@@ -2870,20 +2870,21 @@ class ContinuousDistribution(_ProbabilityDistribution):
             method = self._sample_inverse_transform
         return method
 
-    def _sample_formula(self, sample_shape, full_shape, *, rng, **params):
+    def _sample_formula(self, full_shape, *, rng, **params):
         raise NotImplementedError(self._not_implemented)
 
-    def _sample_inverse_transform(self, sample_shape, full_shape, *, rng, **params):
+    def _sample_inverse_transform(self, full_shape, *, rng, **params):
         if isinstance(rng, qmc.QMCEngine):
-            uniform = self._qmc_uniform(sample_shape, full_shape, qrng=rng, **params)
+            uniform = self._qmc_uniform(full_shape, qrng=rng, **params)
         else:
             uniform = rng.random(size=full_shape, dtype=self._dtype)
         return self._icdf_dispatch(uniform, **params)
 
-    def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+    def _qmc_uniform(self, full_shape, *, qrng, **params):
         # Generate QMC uniform sample(s) on unit interval with specified shape;
         # if `sample_shape != ()`, then each slice along axis 0 is independent.
 
+        sample_shape = full_shape[:len(full_shape)-len(self._shape)]
         # Determine the number of independent sequences and the length of each.
         n_low_discrepancy = sample_shape[0] if sample_shape else 1
         n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
@@ -3533,14 +3534,18 @@ def make_distribution(dist):
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
         ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
-        ``ilogcdf``, ``icdf``, ``ilogccdf``, and ``iccdf``.
-        If defined, these methods must accept the parameters of the distributions as
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
+        ``moment``, and ``sample``.
+        If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`. Methods ``moment_raw``,
-        ``moment_central``, ``moment_standardized`` may also be defined; if so,
-        they must accept the ``order`` of the moment by position, accept all
-        distribution parameters by keyword, and return the raw, central, and
-        standardized moments of the distribution, respectively.
+        the corresponding method of `ContinuousDistribution`. The ``moment`` method
+        must accept the ``order`` and ``kind`` arguments by position or keyword, but
+        may return ``None`` if a formula is not available for the arguments; in this
+        case, the infrastructure will fall back to a default implementation. The
+        ``sample`` method must accept ``shape`` by position or keyword, but contrary
+        to the public method of the same name, the argument it receives will be the
+        *full* shape of the output array - that is, the shape passed to the public
+        method prepended to the broadcasted shape of random variable parameters.
 
     Returns
     -------
@@ -3661,7 +3666,7 @@ def _make_distribution_rv_generic(dist):
             s = super().__str__()
             return s.replace('CustomDistribution', repr_str)
 
-    def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
+    def _sample_formula(self, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
     def _moment_raw_formula(self, order, **kwargs):
@@ -3771,14 +3776,27 @@ def _make_distribution_custom(dist):
                'median', 'mode', 'logpdf', 'pdf',
                'logcdf2', 'logcdf', 'cdf2', 'cdf',
                'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
-               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf',
-               'moment_raw', 'moment_central', 'moment_standardized'}
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
 
     for method in methods:
         if hasattr(dist, method):
             # Make it an attribute of the new object with the new name
             new_method = f"_{method}_formula"
             setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    if hasattr(dist, 'moment'):
+        def _moment_raw_formula(self, order, **kwargs):
+            return dist.moment(order, kind='raw', **kwargs)
+
+        def _moment_central_formula(self, order, **kwargs):
+            return dist.moment(order, kind='central', **kwargs)
+
+        def _moment_standardized_formula(self, order, **kwargs):
+            return dist.moment(order, kind='standardized', **kwargs)
+
+        CustomDistribution._moment_raw_formula = _moment_raw_formula
+        CustomDistribution._moment_central_formula = _moment_central_formula
+        CustomDistribution._moment_standardized_formula = _moment_standardized_formula
 
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [
@@ -4236,10 +4254,9 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return self._moment_transform_center(
             order, raw_moments, loc, self._zero)
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
+    def _sample_dispatch(self, full_shape, *,
                          rng, loc, scale, sign, method, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
@@ -4926,10 +4943,8 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     def _iccdf_dispatch(self, p, *args, **params):
         return self._g(self._icxdf(p, *args, **params))
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return self._g(rvs)
 
 
@@ -5026,10 +5041,8 @@ class FoldedDistribution(TransformedDistribution):
         xr = np.minimum(x, b)
         return self._dist._ccdf2_dispatch(xl, xr, *args, method=method, **params)
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return np.abs(rvs)
 
     def __repr__(self):
