@@ -4459,6 +4459,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     --------
     spearmanr : Spearman rank-order correlation coefficient.
     kendalltau : Kendall's tau, a correlation measure for ordinal data.
+    :ref:`hypothesis_pearsonr` : Extended example
 
     Notes
     -----
@@ -4619,6 +4620,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
+
+    For a more detailed example, see :ref:`hypothesis_pearsonr`.
 
     """
     xp = array_namespace(x, y)
