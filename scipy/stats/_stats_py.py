@@ -39,7 +39,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._array_api import is_lazy_array
+from scipy._lib._array_api import is_lazy_array, xp_capabilities
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
@@ -4363,6 +4363,7 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
+@xp_capabilities(cpu_only=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.

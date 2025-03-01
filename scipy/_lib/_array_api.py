@@ -7,6 +7,9 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
+import dataclasses
+import functools
+import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
@@ -32,6 +35,7 @@ from scipy._lib.array_api_compat import (
     is_array_api_strict_namespace as is_array_api_strict
 )
 from scipy._lib._sparse import issparse
+from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -42,6 +46,7 @@ __all__ = [
     'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
     'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_capabilities'
 ]
 
 
@@ -652,3 +657,91 @@ def xp_default_dtype(xp):
 def is_marray(xp):
     """Returns True if `xp` is an MArray namespace; False otherwise."""
     return "marray" in xp.__name__
+
+
+
+def _make_capabilities(skip_list=None, cpu_only=False):
+    skip_list = [] if skip_list is None else skip_list
+
+    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu', 'mask'])
+
+    numpy = capabilities(cpu=True, gpu=False, mask=True)
+    strict = capabilities(cpu=True, gpu=False, mask=False)
+    cupy = capabilities(cpu=False, gpu=True, mask=False)
+    torch = capabilities(cpu=True, gpu=True, mask=False)
+    jax = capabilities(cpu=True, gpu=True, mask=False)
+    dask = capabilities(cpu=True, gpu=True, mask=False)
+
+    capabilities = dict(numpy=numpy, strict=strict, cupy=cupy,
+                        torch=torch, jax=jax, dask=dask)
+
+    for backend in skip_list:
+        setattr(capabilities[backend], 'cpu', False)
+        setattr(capabilities[backend], 'gpu', False)
+        setattr(capabilities[backend], 'mask', False)
+
+    if cpu_only:
+        cupy.gpu = False
+        torch.gpu = False
+        jax.gpu = False
+        dask.gpu = False
+
+    return capabilities
+
+
+def _make_capabilities_table(capabilities):
+    numpy = capabilities['numpy']
+    cupy = capabilities['cupy']
+    torch = capabilities['torch']
+    jax = capabilities['jax']
+    dask = capabilities['dask']
+
+    for backend in [numpy, cupy, torch, jax, dask]:
+        for attr in ['cpu', 'gpu', 'mask']:
+            val = "✓" if getattr(backend, attr) else " "
+            val += " " * (len('{numpy.}') + len(attr) - 1)
+            setattr(backend, attr, val)
+
+    table = f"""                
+    +---------+-------------+-------------+--------------+
+    | Library | CPU         | GPU         | ``marray``   |
+    +=========+=============+=============+==============+
+    | NumPy   | {numpy.cpu} | {numpy.gpu} | {numpy.mask} |
+    | CuPy    | {cupy.cpu } | {cupy.gpu } | {cupy.mask } |
+    | PyTorch | {torch.cpu} | {torch.gpu} | {torch.mask} |
+    | JAX     | {jax.cpu  } | {jax.gpu  } | {jax.mask  } |
+    | Dask    | {dask.cpu } | {dask.gpu } | {dask.mask } |
+    +---------+-------------+-------------+--------------+
+    """
+    return table
+
+
+def _make_capabilities_note(fun_name, capabilities):
+    table = _make_capabilities_table(capabilities)
+    note = f"""
+    `{fun_name}` has experimental support for Python Array API Standard compatible
+    backends in addition to NumPy. Please consider testing these features
+    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+    combinations of backend and device (or other capability) are supported.
+    {table}
+     See :ref:`dev-arrayapi` for more information.
+    """
+    return textwrap.dedent(note)
+
+
+def xp_capabilities(skip_list=None, cpu_only=False):
+    capabilities = _make_capabilities(skip_list=skip_list, cpu_only=cpu_only)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        note = _make_capabilities_note(f.__name__, capabilities)
+        doc = FunctionDoc(wrapper)
+        doc['Notes'].append(note)
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator
