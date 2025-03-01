@@ -586,18 +586,17 @@ class LbfgsInvHessProduct(LinearOperator):
         """
         s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
         Q = np.array(X, dtype=self.dtype, copy=True)
-        assert Q.ndim == 2
 
         alpha = np.empty((n_corrs, Q.shape[1]))
 
         for i in range(n_corrs-1, -1, -1):
             alpha[i] = rho[i] * np.dot(s[i], Q)
-            Q = Q - alpha[i]*y[i][:, np.newaxis]
+            Q -= alpha[i]*y[i][:, np.newaxis]
 
         R = Q
         for i in range(n_corrs):
             beta = rho[i] * np.dot(y[i], R)
-            R = R + s[i][:, np.newaxis] * (alpha[i] - beta)
+            R += s[i][:, np.newaxis] * (alpha[i] - beta)
 
         return R
 
