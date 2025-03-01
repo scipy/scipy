@@ -6,7 +6,8 @@ from pytest import raises as assert_raises
 from numpy.testing import assert_equal, assert_
 
 from scipy.sparse import (sparray, csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
-                          coo_matrix, dok_matrix, csr_array, save_npz, load_npz)
+                          coo_matrix, dok_matrix, csr_array, save_npz, load_npz,
+                          from_binsparse)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -107,3 +108,18 @@ def test_implemented_error():
     x[0,1] = 1
 
     assert_raises(NotImplementedError, save_npz, 'x.npz', x)
+
+def test_round_trip_binsparse() -> None:
+    N = 10
+    np.random.seed(0)
+    dense_matrix = np.random.random((N, N))
+    dense_matrix[dense_matrix > 0.7] = 0
+
+    for matrix_class in [csr_array, csc_matrix]:
+        sp_mat = matrix_class(dense_matrix)
+        sp_mat_rt = from_binsparse(sp_mat)
+        assert_(sp_mat.dtype == sp_mat_rt.dtype)
+        assert_(sp_mat.shape == sp_mat_rt.shape)
+        assert_equal(sp_mat.data, sp_mat_rt.data, strict=True)
+        assert_equal(sp_mat.indices, sp_mat_rt.indices, strict=True)
+        assert_equal(sp_mat.indptr, sp_mat_rt.indptr, strict=True)
