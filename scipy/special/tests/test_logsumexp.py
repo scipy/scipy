@@ -4,7 +4,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api import (is_array_api_strict, xp_default_dtype, xp_real,
+                                   is_numpy)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -258,20 +259,23 @@ class TestLogSumExp:
 
     @skip_xp_backends("torch",
         reason="`torch` has different ideas about ops involving complex infinity")
-    def test_gh22601_infinite_elements(self, xp):
-        # Test that `logsumexp` does a reasonable things in the presence of
-        # complex infinities.
-        res = logsumexp(xp.asarray([-xp.inf + 0j, -xp.inf + 0.7533j]))
-        xp_assert_equal(xp.real(res), xp.asarray(-xp.inf))
-
-        res = logsumexp(xp.asarray([xp.inf + 1j, -0.9116 + 0.7533j]))
-        xp_assert_close(res, xp.asarray(xp.inf + 1j))
-
-        # Ideally, we would have logic to determine the correct magnitude
-        # (inf or NaN) and phase (finite or NaN) for complex infinities.
-        # In the meantime, ensure that the result is NaN.
-        res = logsumexp(xp.asarray([xp.inf + 1.0000j, xp.inf + 0.7533j]))
-        xp_assert_close(res, xp.asarray(xp.nan + xp.nan*1j))
+    @pytest.mark.parametrize('x, ref', [
+        ([-np.inf, -np.inf], -np.inf),
+        ([np.inf, np.inf], np.inf),
+        ([-np.inf + 0j, -np.inf + 0.7533j], -np.inf),
+        ([np.inf + 1j, -0.9116 + 0.7533j], np.inf + 1j),
+        ([np.inf + 1.0000j, np.inf + 0.7533j], np.nan + np.nan*1j),
+    ])
+    def test_gh22601_infinite_elements(self, x, ref, xp):
+        # Test that `logsumexp` does reasonable things in the presence of
+        # real and complex infinities.
+        if is_numpy(xp) and xp.__version__ < "2.0":
+            pytest.skip("NumPy pre 2.0 warns during assertion.")
+        res = logsumexp(xp.asarray(x))
+        if np.isneginf(np.real(ref)):
+            xp_assert_equal(xp_real(res), xp.asarray(ref))
+        else:
+            xp_assert_equal(res, xp.asarray(ref))
 
 
 class TestSoftmax:
