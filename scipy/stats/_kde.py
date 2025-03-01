@@ -17,10 +17,6 @@
 #
 #-------------------------------------------------------------------------------
 
-# Standard library imports.
-import threading
-import warnings
-
 # SciPy imports.
 from scipy import linalg, special
 from scipy._lib._util import check_random_state
@@ -31,13 +27,10 @@ from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, exp, pi,
 import numpy as np
 
 # Local imports.
-from . import _mvn
 from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
-
+from ._multivariate import multivariate_normal
 
 __all__ = ['gaussian_kde']
-
-MVN_LOCK = threading.Lock()
 
 
 class gaussian_kde:
@@ -371,7 +364,7 @@ class gaussian_kde:
                         special.ndtr(normalized_low)))
         return value
 
-    def integrate_box(self, low_bounds, high_bounds, maxpts=None):
+    def integrate_box(self, low_bounds, high_bounds, maxpts=None, **kwds):
         """Computes the integral of a pdf over a rectangular interval.
 
         Parameters
@@ -390,19 +383,13 @@ class gaussian_kde:
 
         """
         if maxpts is not None:
-            extra_kwds = {'maxpts': maxpts}
-        else:
-            extra_kwds = {}
+            kwds.update({'maxpts': maxpts})
 
-        with MVN_LOCK:
-            value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
-                                                self.dataset, self.weights,
-                                                self.covariance, **extra_kwds)
-        if inform:
-            msg = f'An integral in _mvn.mvnun requires more points than {self.d * 1000}'
-            warnings.warn(msg, stacklevel=2)
-
-        return value
+        low, high = low_bounds - self.dataset.T, high_bounds - self.dataset.T
+        values = multivariate_normal.cdf(
+            high, lower_limit=low, cov=self.covariance, **kwds
+        )
+        return (values * self.weights).sum(axis=-1)
 
     def integrate_kde(self, other):
         """
