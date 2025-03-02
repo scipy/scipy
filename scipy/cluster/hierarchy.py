@@ -2966,6 +2966,127 @@ def set_link_color_palette(palette):
     global _link_line_colors
     _link_line_colors = palette
 
+def _is_permutation(l, n):
+    # if list l is a permutation of numbers from 0 to n-1
+    l = np.asarray(l, dtype='int64')
+    if l.shape[0] != n:
+        return False
+    used = [False for i in range(n)]
+    for i in l:
+        if i < 0 or i >= n:
+            return False
+        used[i] = True
+    if False in used:
+        return False
+    return True
+
+
+def _reorder_leaves(Z, leaves_order, xp):
+    """"
+    Given a tree T, encoded az Z, builds a tree F
+    and its encoding new_Z s.t. leaves(F) == leaves_order
+
+    Parameters
+    ----------
+    Z : ndarray
+        The linkage matrix encoding the hierarchical clustering to
+        render as a dendrogram. See the ``linkage`` function for more
+        information on the format of ``Z``.
+    leaves_order : iterable
+        Iterable of length ``Z.shape[0] + 1``, which specifies the desired
+        order of leaves in a new dendrogram (encoded by Z)
+
+    Returns
+    -------
+    new_Z : the linkage matrix Z, reordered in a way that leaves of the
+            dendrogram, encoded by ``new_Z`` correspond to ``leaves_order``
+
+    Raises
+    ------
+    ValueError
+        If it is not possible to reorder linkage matrix in a desired way
+    """
+
+    # Do simple parameter corectness check first
+    if not _is_permutation(leaves_order, Z.shape[0] + 1):
+        raise ValueError("provided leaves order should be a permutation "
+                         "of indices of the original leaves of the dendrogram")
+
+    #  Variables:
+    #  ch[i] = children of node (n+i) in T
+    #  p - array of parents in tree T
+    #  height[i] is a value of Z[i][3] e.g. cost of creating node (n+i)
+    #  num_leaves[i] = number of leaves of a subtree rooted in a node i in T
+
+    n = Z.shape[0] + 1
+    ch = xp.zeros((n - 1, 2), dtype=xp.int32)
+    p = xp.zeros(2 * n - 1, dtype=xp.int32)
+    new_Z = xp.zeros((n - 1, 4), dtype=xp.float64)
+    height = xp.zeros(n - 1, dtype=xp.float64)
+    num_leaves = xp.ones(2 * n - 1)
+    for i in range(n - 1):
+        ch[i] = xp.asarray([int(Z[i][0]), int(Z[i][1])])
+        p[int(Z[i, 0])] = i + n
+        p[int(Z[i, 1])] = i + n
+        height[i] = Z[i][2]
+        num_leaves[n+i] = num_leaves[int(Z[i][0])] + num_leaves[int(Z[i][1])]
+
+    stack = []
+    cnt = 0
+    new_node_number = n
+    l_pointer = 0          # goes through leaves_order
+    v = leaves_order[0]    # v is a vertex which goes through T
+    color = xp.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
+    # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
+    _left = -1
+    _right = -1
+    while l_pointer <= n:
+        if v < n:  # v is a leaf
+            color[v] = 1   # tiny trick
+        if color[v] == 0:  # left subtree of v in F must've been already processed by now  # noqa: E501
+            if not(color[_left] == 2 and color[_right] == 0):
+                raise ValueError("Provided permutation results in a crossing!")
+            color[v] = 1
+            l_pointer += 1
+            v = leaves_order[l_pointer]
+            continue
+        # otherwise color[v] == 1
+        if v >= n and not(color[_left] == 2 and color[_right] == 2):
+            raise ValueError("Provided permutation results in a crossing!")
+        color[v] = 2
+        if v == 2*n-2:
+            break
+        #  both subtrees should be OK
+        if color[p[v]] == 0:  # v is the left son in F
+            new_node = v
+            if v >= n:
+                new_node = new_node_number
+                new_node_number += 1
+            stack.append(new_node)
+            _left = v
+            v = p[v]
+            _temp = list(ch[v-n])
+            _temp.remove(_left)
+            _right = _temp[0]
+            continue
+        else:  # v is the right son in F
+            left_pair = stack.pop()
+            if v >= n:
+                new_Z[cnt] = [
+                    left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]
+                ]
+                new_node_number += 1
+            else:
+                new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
+            cnt += 1
+            _right = v
+            v = p[v]
+            _temp = list(ch[v-n])
+            _temp.remove(_right)
+            _left = _temp[0]
+            continue
+    return new_Z
+
 
 def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                get_leaves=True, orientation='top', labels=None,
@@ -2973,7 +3094,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
                no_plot=False, no_labels=False, leaf_font_size=None,
                leaf_rotation=None, leaf_label_func=None,
                show_contracted=False, link_color_func=None, ax=None,
-               above_threshold_color='C0'):
+               above_threshold_color='C0', leaves_order=None):
     """
     Plot the hierarchical clustering as a dendrogram.
 
@@ -3165,6 +3286,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     above_threshold_color : str, optional
         This matplotlib color string sets the color of the links above the
         color_threshold. The default is ``'C0'``.
+    leaves_order : iterable, optional
+        Plots the leaves in the order specified by a vector of
+        original observation indices. Indices should start from 0. 
+        If the vector contains duplicates or results in a crossing, an exception
+        will be thrown. Passing None orders leaf nodes based on the order they
+        appear in the pre-order traversal.
 
     Returns
     -------
@@ -3232,18 +3359,21 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     >>> hierarchy.set_link_color_palette(None)  # reset to default after use
     >>> plt.show()
 
+    An example with custom leaves ordering:
+
+    >>> from scipy.cluster import hierarchy
+    >>> X = [[0,0], [0,1], [0,4], [2,4], [6,3],[7,3], [8,3]]
+    >>> Z = hierarchy.linkage(X, method = 'single')
+
+    >>> fig, axes = plt.subplots(1, 2, figsize = (8, 3))
+    >>> dn1 = hierarchy.dendrogram(Z, ax = axes[0])
+    >>> dn2 = hierarchy.dendrogram(Z, ax = axes[1], leaves_order = [3,2,1,0,6,4,5])
+    >>> plt.show()
     """
-    # This feature was thought about but never implemented (still useful?):
-    #
-    #         ... = dendrogram(..., leaves_order=None)
-    #
-    #         Plots the leaves in the order specified by a vector of
-    #         original observation indices. If the vector contains duplicates
-    #         or results in a crossing, an exception will be thrown. Passing
-    #         None orders leaf nodes based on the order they appear in the
-    #         pre-order traversal.
     xp = array_namespace(Z)
     Z = _asarray(Z, order='c', xp=xp)
+    if leaves_order is not None:
+        Z = _reorder_leaves(Z, leaves_order, xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
