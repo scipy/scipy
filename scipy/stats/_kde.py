@@ -364,7 +364,7 @@ class gaussian_kde:
                         special.ndtr(normalized_low)))
         return value
 
-    def integrate_box(self, low_bounds, high_bounds, maxpts=None, **kwds):
+    def integrate_box(self, low_bounds, high_bounds, maxpts=None):
         """Computes the integral of a pdf over a rectangular interval.
 
         Parameters
@@ -382,13 +382,11 @@ class gaussian_kde:
             The result of the integral.
 
         """
-        if maxpts is not None:
-            kwds.update({'maxpts': maxpts})
-
         low, high = low_bounds - self.dataset.T, high_bounds - self.dataset.T
         values = multivariate_normal.cdf(
-            high, lower_limit=low, cov=self.covariance, **kwds
+            high, lower_limit=low, cov=self.covariance, maxpts=maxpts
         )
+        # XXX: xp.linalg.vecdot is much faster than (a*b).sum(axis=-1)
         return (values * self.weights).sum(axis=-1)
 
     def integrate_kde(self, other):

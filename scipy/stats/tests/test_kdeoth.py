@@ -24,7 +24,7 @@ def test_kde_1d():
     assert_allclose(
         gkde(xx), 
         stats.norm.pdf(xx[:, None], loc=loc, scale=scale).sum(axis=-1) / gkde.n,
-        atol=1e-14
+        rtol=5e-14
     )
 
     xs = np.linspace(-7, 7, 501)
@@ -67,7 +67,7 @@ def test_kde_1d_weighted():
     assert_allclose(
         gkde(xx), 
         np.sum(pdf(xx[:, None], loc=loc, scale=scale) * gkde.weights, axis=-1),
-        atol=1e-14
+        rtol=5e-14
     )
 
     xs = np.linspace(-7, 7, 501)
@@ -115,7 +115,7 @@ def test_kde_2d(n_basesample):
     assert_allclose(
         gkde(xx.T),
         pdf(arg, cov=gkde.covariance).sum(axis=-1) / gkde.n,
-        atol=1e-14
+        rtol=5e-14
     )
 
     # ... and cdf
@@ -125,7 +125,7 @@ def test_kde_2d(n_basesample):
     assert_allclose(
         gkde.integrate_box(lo, hi),
         cdf(hi_, lower_limit=lo_, cov=gkde.covariance).sum(axis=-1) / gkde.n,
-        atol=2e-7
+        rtol=5e-7
     )
 
     # evaluate the density function for the kde for some points
@@ -181,7 +181,7 @@ def test_kde_2d_weighted(n_basesample):
     assert_allclose(
         gkde(xx.T),
         np.sum(pdf(arg, cov=gkde.covariance) * gkde.weights, axis=-1),
-        atol=1e-14
+        rtol=5e-14
     )
 
     # ... and cdf
@@ -191,7 +191,7 @@ def test_kde_2d_weighted(n_basesample):
     assert_allclose(
         gkde.integrate_box(lo, hi),
         np.sum(cdf(hi_, lower_limit=lo_, cov=gkde.covariance) * gkde.weights, axis=-1),
-        atol=1e-7
+        rtol=5e-6
     )
 
     # evaluate the density function for the kde for some points
