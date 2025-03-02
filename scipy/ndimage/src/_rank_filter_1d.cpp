@@ -160,7 +160,10 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
   int lim2 = arr_len - lim;
   int offset;
   Mediator *m = MediatorNew(win_len, rank);
-  T *data = new T[win_len];
+  T *data = new (std::nothrow) T[win_len];
+  if (!data) {
+    PyErr_SetString(PyExc_MemoryError, "memory allocation error");
+  }
   for (int i = 0; i < win_len; ++i) {
     data[i] = 0;
   }
