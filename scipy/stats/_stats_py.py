@@ -4369,7 +4369,7 @@ class PearsonRResult(PearsonRResultBase):
 xp_capabilities_table['pearsonr'] = dict(cpu_only=True)
 
 
-@xp_capabilities(**xp_capabilities_table['pearsonr'])
+@xp_capabilities(xp_capabilities_table)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.

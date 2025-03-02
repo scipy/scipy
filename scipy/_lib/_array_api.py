@@ -660,8 +660,8 @@ def is_marray(xp):
 
 
 
-def _make_capabilities(skip_list=None, cpu_only=False):
-    skip_list = [] if skip_list is None else skip_list
+def _make_capabilities(skip_backends=None, cpu_only=False):
+    skip_backends = [] if skip_backends is None else skip_backends
 
     capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu', 'mask'])
 
@@ -672,10 +672,10 @@ def _make_capabilities(skip_list=None, cpu_only=False):
     jax = capabilities(cpu=True, gpu=True, mask=False)
     dask = capabilities(cpu=True, gpu=True, mask=False)
 
-    capabilities = dict(numpy=numpy, strict=strict, cupy=cupy,
+    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
                         torch=torch, jax=jax, dask=dask)
 
-    for backend in skip_list:
+    for backend, _ in skip_backends:  # ignoring the reason
         setattr(capabilities[backend], 'cpu', False)
         setattr(capabilities[backend], 'gpu', False)
         setattr(capabilities[backend], 'mask', False)
@@ -707,9 +707,13 @@ def _make_capabilities_table(capabilities):
     | Library | CPU         | GPU         | ``marray``   |
     +=========+=============+=============+==============+
     | NumPy   | {numpy.cpu} | {numpy.gpu} | {numpy.mask} |
+    +---------+-------------+-------------+--------------+
     | CuPy    | {cupy.cpu } | {cupy.gpu } | {cupy.mask } |
+    +---------+-------------+-------------+--------------+
     | PyTorch | {torch.cpu} | {torch.gpu} | {torch.mask} |
+    +---------+-------------+-------------+--------------+
     | JAX     | {jax.cpu  } | {jax.gpu  } | {jax.mask  } |
+    +---------+-------------+-------------+--------------+
     | Dask    | {dask.cpu } | {dask.gpu } | {dask.mask } |
     +---------+-------------+-------------+--------------+
     """
@@ -730,18 +734,38 @@ def _make_capabilities_note(fun_name, capabilities):
     return textwrap.dedent(note)
 
 
-def xp_capabilities(skip_list=None, cpu_only=False):
-    capabilities = _make_capabilities(skip_list=skip_list, cpu_only=cpu_only)
-
+def xp_capabilities(capabilities_table):
     def decorator(f):
+        fun_name = f.__name__
+        skip_backends = capabilities_table[fun_name].get('skip_backends', None)
+        cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+        capabilities = _make_capabilities(skip_backends=skip_backends,
+                                          cpu_only=cpu_only)
+
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        note = _make_capabilities_note(f.__name__, capabilities)
+        note = _make_capabilities_note(fun_name, capabilities)
         doc = FunctionDoc(wrapper)
         doc['Notes'].append(note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
 
         return wrapper
     return decorator
+
+
+def make_skip_xp_backends(fun_name, capabilities_table):
+    import pytest
+
+    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
+    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+
+    decorators = []
+    if cpu_only:
+        decorators.append(pytest.mark.skip_xp_backends(cpu_only=True))
+
+    for backend, reason in skip_backends:
+        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
+
+    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
