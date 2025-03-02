@@ -33,19 +33,19 @@ namespace xsf {
 namespace numpy {
 
     void set_error_check_fpe(const char *func_name) {
-	int status = wrap_PyUFunc_getfperr();
-	if (status & NPY_FPE_DIVIDEBYZERO) {
-	    xsf::set_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
-	}
-	if (status & NPY_FPE_OVERFLOW) {
-	    xsf::set_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
-	}
-	if (status & NPY_FPE_UNDERFLOW) {
-	    xsf::set_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
-	}
-	if (status & NPY_FPE_INVALID) {
-	    xsf::set_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
-	}
+        int status = wrap_PyUFunc_getfperr();
+        if (status & NPY_FPE_DIVIDEBYZERO) {
+            xsf::set_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
+        }
+        if (status & NPY_FPE_OVERFLOW) {
+            xsf::set_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+        }
+        if (status & NPY_FPE_UNDERFLOW) {
+            xsf::set_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+        }
+        if (status & NPY_FPE_INVALID) {
+            xsf::set_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
+        }
     }
 
     namespace detail {
@@ -202,8 +202,8 @@ namespace numpy {
     using ld_d = double (*)(long int, double);
     using lF_F = cfloat (*)(long int, cfloat);
     using lD_D = cdouble (*)(long int, cdouble);
-    using Dd_D = cdouble (*) (cdouble, double);
-    using Ff_F = cfloat (*) (cfloat, float);
+    using Dd_D = cdouble (*)(cdouble, double);
+    using Ff_F = cfloat (*)(cfloat, float);
 
     // autodiff, 2 inputs, 1 output
     using autodiff0_if_f = autodiff0_float (*)(int, autodiff0_float);
@@ -804,7 +804,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-	    set_error_check_fpe(name);
+            set_error_check_fpe(name);
         }
     };
 
@@ -837,7 +837,7 @@ namespace numpy {
             }
 
             const char *name = static_cast<ufunc_data<Func> *>(data)->name;
-	    set_error_check_fpe(name);
+            set_error_check_fpe(name);
         }
     };
 
@@ -879,7 +879,7 @@ namespace numpy {
         template <typename Func>
         ufunc_wraps(Func func)
             : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
-              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
+              func(ufunc_traits<Func>::loop), data(new(std::nothrow) ufunc_data<Func>{{nullptr}, func}),
               data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
               types(ufunc_traits<Func>::types) {}
     };
@@ -902,12 +902,18 @@ namespace numpy {
         template <typename Func0, typename... Funcs>
         ufunc_overloads(Func0 func0, Funcs... funcs)
             : m_ntypes(sizeof...(Funcs) + 1), m_has_return(has_return_v<Func0>),
-              m_nin_and_nout(arity_of_v<Func0> + m_has_return), m_func(new PyUFuncGenericFunction[m_ntypes]),
-              m_data(new data_handle_type[m_ntypes]), m_data_deleters(new data_deleter_type[m_ntypes]),
-              m_types(new char[m_ntypes * m_nin_and_nout]) {
+              m_nin_and_nout(arity_of_v<Func0> + m_has_return),
+              m_func(new(std::nothrow) PyUFuncGenericFunction[m_ntypes]),
+              m_data(new(std::nothrow) data_handle_type[m_ntypes]),
+              m_data_deleters(new(std::nothrow) data_deleter_type[m_ntypes]),
+              m_types(new(std::nothrow) char[m_ntypes * m_nin_and_nout]) {
             ufunc_wraps func[sizeof...(Funcs) + 1] = {func0, funcs...};
             for (auto it = std::begin(func); it != std::end(func); ++it) {
+                if (!it->func || !it->data || !it->data_deleter) {
+                    set_error("ufunc_overloads", SF_ERROR_MEMORY, "memory allocation error");
+                }
                 if (it->nin_and_nout != m_nin_and_nout) {
+
                     PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
                 }
                 if (it->has_return != m_has_return) {
@@ -918,6 +924,9 @@ namespace numpy {
                 m_func[i] = it->func;
                 m_data[i] = it->data;
                 m_data_deleters[i] = it->data_deleter;
+                if (!m_types) {
+                    set_error("ufunc_overloads", SF_ERROR_MEMORY, "memory allocation error");
+                }
                 std::memcpy(m_types.get() + i * m_nin_and_nout, it->types, m_nin_and_nout);
             }
         }
