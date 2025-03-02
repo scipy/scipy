@@ -475,8 +475,21 @@ def reduce(
 
 def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     xp = array_namespace(quat)
-    subscripts = "...ji,...j->...i" if inverse else "...ij,...j->...i"
-    return xp.einsum(subscripts, as_matrix(quat), points)
+    mat = as_matrix(quat)
+    inverse = xp.asarray(inverse, device=device(quat))
+    # We do not have access to einsum. To avoid broadcasting issues, we add a singleton dimension
+    # to the points array and remove it after the operation.
+    # TODO: We currently evaluate both branches of the where statement. For eager execution models,
+    # this may significantly slow down the function. We should check that compilers can optimize
+    # the where statement (e.g. in jax) and check if we can have an eager version that only
+    # evaluates the branch that is needed.
+    points = xp.asarray(points, device=device(quat), dtype=atleast_f32(quat))[..., None]
+    return xp.where(inverse, mat.mT @ points, mat @ points)[..., 0]
+
+
+def setitem(quat: Array, value: Array, indexer) -> Array:
+    quat = xpx.at(quat)[indexer, ...].set(value)
+    return quat
 
 
 def _normalize_quaternion(quat: Array) -> Array:

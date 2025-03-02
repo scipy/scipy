@@ -159,12 +159,24 @@ class Rotation:
         return rot
 
     def apply(self, points: Array, inverse: bool = False) -> Array:
-        return self._backend.apply(self._quat, points, inverse=inverse)
+        result = self._backend.apply(self._quat, points, inverse=inverse)
+        if self._single and points.ndim == 1:
+            return result[0, ...]
+        return result
 
-    def __getitem__(self, indexer):
-        if self._single:
+    def __getitem__(self, indexer) -> Rotation:
+        if self._single or self._quat.ndim == 1:
             raise TypeError("Single rotation is not subscriptable.")
         return Rotation(self._quat[indexer, ...], normalize=False)
+
+    def __setitem__(self, indexer, value: Rotation):
+        if self._single or self._quat.ndim == 1:
+            raise TypeError("Single rotation is not subscriptable.")
+
+        if not isinstance(value, Rotation):
+            raise TypeError("value must be a Rotation object")
+
+        self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
     def __getstate__(self):
         return self._xp.asarray(self._quat, dtype=float)
@@ -203,10 +215,9 @@ class Rotation:
         TypeError if the instance was created as a single rotation.
         """
         # TODO: Should we replace this with a shape instead?
-        if self._single:
+        if self._single or self._quat.ndim == 1:
             raise TypeError("Single rotation has no len().")
-        xp = array_namespace(self._quat)
-        return xp.prod(self._quat.shape[:-1], dtype=int)
+        return self._quat.shape[0]
 
     def __mul__(self, other):
         if not _broadcastable(self._quat.shape, other._quat.shape):

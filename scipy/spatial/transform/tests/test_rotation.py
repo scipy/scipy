@@ -1222,23 +1222,23 @@ def test_reduce_jax_compile():
     jax.block_until_ready(reduce(r, return_indices=True))
 
 
-def test_apply_single_rotation_single_point():
-    mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+def test_apply_single_rotation_single_point(xp):
+    mat = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r_1d = Rotation.from_matrix(mat)
-    r_2d = Rotation.from_matrix(np.expand_dims(mat, axis=0))
+    r_2d = Rotation.from_matrix(xp.expand_dims(mat, axis=0))
 
-    v_1d = np.array([1, 2, 3])
-    v_2d = np.expand_dims(v_1d, axis=0)
-    v1d_rotated = np.array([-2, 1, 3])
-    v2d_rotated = np.expand_dims(v1d_rotated, axis=0)
+    v_1d = xp.asarray([1, 2, 3])
+    v_2d = xp.expand_dims(v_1d, axis=0)
+    v1d_rotated = xp.asarray([-2, 1, 3])
+    v2d_rotated = xp.expand_dims(v1d_rotated, axis=0)
 
     assert_allclose(r_1d.apply(v_1d), v1d_rotated)
     assert_allclose(r_1d.apply(v_2d), v2d_rotated)
     assert_allclose(r_2d.apply(v_1d), v2d_rotated)
     assert_allclose(r_2d.apply(v_2d), v2d_rotated)
 
-    v1d_inverse = np.array([2, -1, 3])
-    v2d_inverse = np.expand_dims(v1d_inverse, axis=0)
+    v1d_inverse = xp.asarray([2, -1, 3])
+    v2d_inverse = xp.expand_dims(v1d_inverse, axis=0)
 
     assert_allclose(r_1d.apply(v_1d, inverse=True), v1d_inverse)
     assert_allclose(r_1d.apply(v_2d, inverse=True), v2d_inverse)
@@ -1246,13 +1246,13 @@ def test_apply_single_rotation_single_point():
     assert_allclose(r_2d.apply(v_2d, inverse=True), v2d_inverse)
 
 
-def test_apply_single_rotation_multiple_points():
-    mat = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+def test_apply_single_rotation_multiple_points(xp):
+    mat = xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     r1 = Rotation.from_matrix(mat)
-    r2 = Rotation.from_matrix(np.expand_dims(mat, axis=0))
+    r2 = Rotation.from_matrix(xp.expand_dims(mat, axis=0))
 
-    v = np.array([[1, 2, 3], [4, 5, 6]])
-    v_rotated = np.array([[-2, 1, 3], [-5, 4, 6]])
+    v = xp.asarray([[1, 2, 3], [4, 5, 6]])
+    v_rotated = xp.asarray([[-2, 1, 3], [-5, 4, 6]])
 
     assert_allclose(r1.apply(v), v_rotated)
     assert_allclose(r2.apply(v), v_rotated)
@@ -1263,95 +1263,133 @@ def test_apply_single_rotation_multiple_points():
     assert_allclose(r2.apply(v, inverse=True), v_inverse)
 
 
-def test_apply_multiple_rotations_single_point():
-    mat = np.empty((2, 3, 3))
-    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+def test_apply_multiple_rotations_single_point(xp):
+    mat = xp.empty((2, 3, 3))
+    mat = xpx.at(mat)[0, ...].set(xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]]))
+    mat = xpx.at(mat)[1, ...].set(xp.asarray([[1, 0, 0], [0, 0, -1], [0, 1, 0]]))
     r = Rotation.from_matrix(mat)
 
-    v1 = np.array([1, 2, 3])
-    v2 = np.expand_dims(v1, axis=0)
+    v1 = xp.asarray([1, 2, 3])
+    v2 = xp.expand_dims(v1, axis=0)
 
-    v_rotated = np.array([[-2, 1, 3], [1, -3, 2]])
+    v_rotated = xp.asarray([[-2, 1, 3], [1, -3, 2]])
 
     assert_allclose(r.apply(v1), v_rotated)
     assert_allclose(r.apply(v2), v_rotated)
 
-    v_inverse = np.array([[2, -1, 3], [1, 3, -2]])
+    v_inverse = xp.asarray([[2, -1, 3], [1, 3, -2]])
 
     assert_allclose(r.apply(v1, inverse=True), v_inverse)
     assert_allclose(r.apply(v2, inverse=True), v_inverse)
 
 
-def test_apply_multiple_rotations_multiple_points():
-    mat = np.empty((2, 3, 3))
-    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+def test_apply_multiple_rotations_multiple_points(xp):
+    mat = xp.empty((2, 3, 3))
+    mat = xpx.at(mat)[0, ...].set(xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]]))
+    mat = xpx.at(mat)[1, ...].set(xp.asarray([[1, 0, 0], [0, 0, -1], [0, 1, 0]]))
     r = Rotation.from_matrix(mat)
 
-    v = np.array([[1, 2, 3], [4, 5, 6]])
-    v_rotated = np.array([[-2, 1, 3], [4, -6, 5]])
+    v = xp.asarray([[1, 2, 3], [4, 5, 6]])
+    v_rotated = xp.asarray([[-2, 1, 3], [4, -6, 5]])
     assert_allclose(r.apply(v), v_rotated)
 
-    v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
+    v_inverse = xp.asarray([[2, -1, 3], [4, 6, -5]])
     assert_allclose(r.apply(v, inverse=True), v_inverse)
 
 
-def test_getitem():
-    mat = np.empty((2, 3, 3))
-    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+def test_apply_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    apply = jax.jit(Rotation.apply, static_argnums=(2,))
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    jax.block_until_ready(apply(r, jax.numpy.eye(3), inverse=False))
+
+
+def test_getitem(xp):
+    mat = xp.empty((2, 3, 3))
+    mat = xpx.at(mat)[0, ...].set(xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]]))
+    mat = xpx.at(mat)[1, ...].set(xp.asarray([[1, 0, 0], [0, 0, -1], [0, 1, 0]]))
     r = Rotation.from_matrix(mat)
 
-    assert_allclose(r[0].as_matrix(), mat[0], atol=1e-15)
-    assert_allclose(r[1].as_matrix(), mat[1], atol=1e-15)
-    assert_allclose(r[:-1].as_matrix(), np.expand_dims(mat[0], axis=0), atol=1e-15)
+    assert_allclose(r[0].as_matrix(), mat[0, ...], atol=1e-15)
+    assert_allclose(r[1].as_matrix(), mat[1, ...], atol=1e-15)
+    assert_allclose(r[:-1].as_matrix(), xp.expand_dims(mat[0, ...], axis=0), atol=1e-15)
 
 
-def test_getitem_single():
+def test_getitem_single(xp):
+    r = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
     with pytest.raises(TypeError, match="not subscriptable"):
-        Rotation.identity()[0]
+        r[0]
 
 
-def test_setitem_single():
-    r = Rotation.identity()
+def test_getitem_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    getitem = jax.jit(Rotation.__getitem__, static_argnums=(1,))
+    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
+    jax.block_until_ready(getitem(r, 0))
+
+
+def test_setitem_single(xp):
+    r = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
     with pytest.raises(TypeError, match="not subscriptable"):
-        r[0] = Rotation.identity()
+        r[0] = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
 
 
-def test_setitem_slice():
+def test_setitem_slice(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
-    r1 = Rotation.random(10, rng=rng)
-    r2 = Rotation.random(5, rng=rng)
+    r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
+    r2 = Rotation.from_quat(xp.asarray(Rotation.random(5, rng=rng).as_quat()))
     r1[1:6] = r2
-    assert_equal(r1[1:6].as_quat(), r2.as_quat())
+    xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
 
 
-def test_setitem_integer():
+def test_setitem_integer(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
-    r1 = Rotation.random(10, rng=rng)
-    r2 = Rotation.random(rng=rng)
+    r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
+    r2 = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
     r1[1] = r2
-    assert_equal(r1[1].as_quat(), r2.as_quat())
+    xp_assert_equal(r1[1].as_quat(), r2.as_quat())
 
 
-def test_setitem_wrong_type():
-    r = Rotation.random(10, rng=0)
+def test_setitem_wrong_type(xp):
+    rng = np.random.default_rng(0)
+    r = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
     with pytest.raises(TypeError, match="Rotation object"):
         r[0] = 1
 
 
-def test_n_rotations():
-    mat = np.empty((2, 3, 3))
-    mat[0] = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-    mat[1] = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
+def test_setitem_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    setitem = jax.jit(Rotation.__setitem__, static_argnums=(1,))
+    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
+    jax.block_until_ready(setitem(r, 0, r[0]))
+
+
+def test_n_rotations(xp):
+    mat = xp.empty((2, 3, 3))
+    mat = xpx.at(mat)[0, ...].set(xp.asarray([[0, -1, 0], [1, 0, 0], [0, 0, 1]]))
+    mat = xpx.at(mat)[1, ...].set(xp.asarray([[1, 0, 0], [0, 0, -1], [0, 1, 0]]))
     r = Rotation.from_matrix(mat)
 
     assert_equal(len(r), 2)
     assert_equal(len(r[:-1]), 1)
 
 
+def test_len_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
+    jax.block_until_ready(jax.jit(lambda rot: len(rot))(r))
+
+
 def test_random_rotation_shape():
+    # No xp testing since random rotations are always using NumPy
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     assert_equal(Rotation.random(rng=rng).as_quat().shape, (4,))
     assert_equal(Rotation.random(None, rng=rng).as_quat().shape, (4,))

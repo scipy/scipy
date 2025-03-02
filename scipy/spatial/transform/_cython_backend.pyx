@@ -918,14 +918,10 @@ def apply(quat: cython.double[:, :], vectors, inverse=False):
         raise ValueError("Expected input of shape (3,) or (P, 3), "
                             "got {}.".format(vectors.shape))
 
-    single_vector = False
     if vectors.shape == (3,):
-        single_vector = True
         vectors = vectors[None, :]
 
     matrix = as_matrix(quat)
-    if quat.shape == (4,):
-        matrix = matrix[None, :, :]
 
     n_vectors = vectors.shape[0]
     n_rotations = quat.shape[0]
@@ -941,10 +937,15 @@ def apply(quat: cython.double[:, :], vectors, inverse=False):
     else:
         result = np.einsum('ijk,ik->ij', matrix, vectors)
 
-    if quat.shape == (4,) and single_vector:
-        return result[0]
-    else:
-        return result
+    return result
+
+
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def setitem(quat: double[:, :], value: double[:, :], indexer):
+    quat[indexer] = value
+    return quat
 
 
 cdef class Rotation:
@@ -1587,107 +1588,6 @@ cdef class Rotation:
            on Wikipedia.
         """
         return create_group(cls, group, axis=axis)
-
-    @cython.embedsignature(True)
-    def __getitem__(self, indexer):
-        """Extract rotation(s) at given index(es) from object.
-
-        Create a new `Rotation` instance containing a subset of rotations
-        stored in this object.
-
-        Parameters
-        ----------
-        indexer : index, slice, or index array
-            Specifies which rotation(s) to extract. A single indexer must be
-            specified, i.e. as if indexing a 1 dimensional array or list.
-
-        Returns
-        -------
-        rotation : `Rotation` instance
-            Contains
-                - a single rotation, if `indexer` is a single index
-                - a stack of rotation(s), if `indexer` is a slice, or and index
-                  array.
-
-        Raises
-        ------
-        TypeError if the instance was created as a single rotation.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> rs = R.from_quat([
-        ... [1, 1, 0, 0],
-        ... [0, 1, 0, 1],
-        ... [1, 1, -1, 0]])  # These quats are normalized
-        >>> rs.as_quat()
-        array([[ 0.70710678,  0.70710678,  0.        ,  0.        ],
-               [ 0.        ,  0.70710678,  0.        ,  0.70710678],
-               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
-
-        Indexing using a single index:
-
-        >>> a = rs[0]
-        >>> a.as_quat()
-        array([0.70710678, 0.70710678, 0.        , 0.        ])
-
-        Array slicing:
-
-        >>> b = rs[1:3]
-        >>> b.as_quat()
-        array([[ 0.        ,  0.70710678,  0.        ,  0.70710678],
-               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
-
-        List comprehension to split each rotation into its own object:
-
-        >>> c = [r for r in rs]
-        >>> print([r.as_quat() for r in c])
-        [array([ 0.70710678,  0.70710678,  0.        ,  0.        ]),
-         array([ 0.        ,  0.70710678,  0.        ,  0.70710678]),
-         array([ 0.57735027,  0.57735027, -0.57735027,  0.        ])]
-
-        Concatenation of split rotations will recover the original object:
-
-        >>> R.concatenate([a, b]).as_quat()
-        array([[ 0.70710678,  0.70710678,  0.        ,  0.        ],
-               [ 0.        ,  0.70710678,  0.        ,  0.70710678],
-               [ 0.57735027,  0.57735027, -0.57735027,  0.        ]])
-        """
-        if self._single:
-            raise TypeError("Single rotation is not subscriptable.")
-
-        return self.__class__(np.asarray(self._quat)[indexer], normalize=False)
-
-    def __setitem__(self, indexer, value):
-        """Set rotation(s) at given index(es) from object.
-
-        Parameters
-        ----------
-        indexer : index, slice, or index array
-            Specifies which rotation(s) to replace. A single indexer must be
-            specified, i.e. as if indexing a 1 dimensional array or list.
-
-        value : `Rotation` instance
-            The rotations to set.
-
-        Raises
-        ------
-        TypeError if the instance was created as a single rotation.
-
-        Notes
-        -----
-
-        .. versionadded:: 1.8.0
-        """
-        if self._single:
-            raise TypeError("Single rotation is not subscriptable.")
-
-        if not isinstance(value, Rotation):
-            raise TypeError("value must be a Rotation object")
-
-        quat = np.asarray(self._quat)
-        quat[indexer] = value.as_quat()
-        self._quat = quat
 
     @cython.embedsignature(True)
     @classmethod
