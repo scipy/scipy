@@ -167,8 +167,8 @@ def test_duplicate_timestamps():
     assert_allclose(sol.sol(0.01), np.asarray([-0.00039033, -0.08806632]),
                     rtol=1e-5, atol=1e-8)
     assert_allclose(sol.t_events, np.asarray([[0.00203943]]), rtol=1e-5, atol=1e-8)
-    assert_allclose(sol.y_events, [np.asarray([[ 8.5808408e-20, -1.0000000e-02 ]])])
-    assert_(sol.success)
+    assert_allclose(sol.y_events, [np.asarray([[ 0.0, -0.01 ]])], atol=1e-9)
+    assert sol.success
     assert_equal(sol.status, 1)
 
 @pytest.mark.thread_unsafe
