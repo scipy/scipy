@@ -72,11 +72,11 @@ class gaussian_kde:
         .. versionadded:: 1.2.0
     factor : float
         The bandwidth factor, obtained from `kde.covariance_factor`. The square
-        of `kde.factor` multiplies the covariance matrix of the data in the kde
-        estimation.
+        of `kde.factor` multiplies the data covariance matrix to obtain the 
+        kernel covariance matrix.
     covariance : ndarray
         The covariance matrix of `dataset`, scaled by the calculated bandwidth
-        (`kde.factor`).
+        (`kde.factor`). It corresponds to the kernel covariance matrix.
     inv_cov : ndarray
         The inverse of `covariance`.
 
@@ -194,6 +194,28 @@ class gaussian_kde:
     >>> ax.set_xlim([xmin, xmax])
     >>> ax.set_ylim([ymin, ymax])
     >>> plt.show()
+    
+    Check scipy and manual KDEs are the same in the 1d case:
+    
+    >>> n = 1000
+    >>> sample_1d = np.random.normal(0.0, 3.0, n)
+    >>> kernel_1d = stats.gaussian_kde(sample_1d)
+    >>> bw = kernel_1d.factor
+    >>> std = np.std(sample_1d, ddof=1)
+ 
+    >>> # Compute the KDE manually
+    >>> x = np.linspace(-10, 10, n)
+    >>> kde = np.exp(-((x[None, :] - sample_1d[:, None]) ** 2) / (2 * (bw * std) ** 2))
+    >>> kde = np.sum(kde, axis=0) / (n * bw * std * np.sqrt(2 * np.pi))
+ 
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(sample_1d, bins=30, density=True)
+    >>> ax.plot(x, kernel_1d(x), "r-", label="scipy")
+    >>> ax.plot(x, kde, "g--", label="manual")
+    >>> ax.legend()
+    >>> plt.show()
+
+    >>> assert np.allclose(kde, kernel_1d(x))
 
     """
     def __init__(self, dataset, bw_method=None, weights=None):
@@ -496,10 +518,10 @@ class gaussian_kde:
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
-    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`) that
-        multiplies the data covariance matrix to obtain the kernel covariance
-        matrix. The default is `scotts_factor`.  A subclass can overwrite this
-        method to provide a different method, or set it through a call to
+    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`). The
+        square of `kde.factor` multiplies the data covariance matrix to obtain the 
+        kernel covariance matrix. The default is `scotts_factor`.  A subclass can 
+        overwrite this method to provide a different method, or set it through a call to
         `kde.set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
