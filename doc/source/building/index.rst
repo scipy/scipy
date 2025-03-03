@@ -227,8 +227,8 @@ your system.
     support Fortran, and gfortran and MSVC can't be used together. You will
     need the following set of compilers:
 
-    1. MSVC + Flang-new (``cl``, ``flang-new``)
-    2. LLVM + Flang-new (``clang-cl``, ``flang-new``)
+    1. MSVC + flang (``cl``, ``flang``)
+    2. LLVM + flang (``clang-cl``, ``flang``)
 
     Compared to macOS and Linux, building SciPy on Windows is a little more
     difficult, due to the need to set up these compilers. It is not possible to
@@ -236,12 +236,12 @@ your system.
     platforms.
 
     First, install Microsoft Visual Studio - the 2022 Community Edition or any
-    newer version will work (see the
-    `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__).
-    In order to ensure you have the Windows Universal C Runtime (the other components
-    of Visual Studio can be deselected if desired, to save disk space).
+    newer version will work (see the `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__).
+    Ensure that you have installed necessary Visual Studio components for building SciPy 
+    on WoA from `here <https://gist.github.com/Mugundanmcw/331804a640764f727cd0406c23257433>`__.
 
-    To use flang-new fortran compiler for Windows on ARM64, install Latest LLVM
+    
+    To use flang compiler for Windows on ARM64, install Latest LLVM
     toolchain for WoA from `here <https://github.com/llvm/llvm-project/releases>`__.
 
     .. tab-set::
@@ -274,7 +274,7 @@ your system.
         will be found automatically if and only if there are no other compilers
         on the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or
         Git Bash) to invoke a build. To check that this is the case, try
-        invoking a Fortran compiler in the shell you use (e.g., ``flang-new
+        invoking a Fortran compiler in the shell you use (e.g., ``flang
         --version``).
 
     .. warning::
@@ -431,7 +431,7 @@ virtual environments:
           Building SciPy with BLAS and LAPACK functions requires OpenBLAS
           library at Runtime. In Windows on ARM64, this can be done by setting
           up pkg-config for OpenBLAS dependency. The build steps for OpenBLAS
-          for Windows on ARM64 can be found `here <https://github.com/OpenMathLib/OpenBLAS/blob/develop/docs/install.md#windows-on-arm>`__.
+          for Windows on ARM64 can be found `here <http://www.openmathlib.org/OpenBLAS/docs/install/#windows-on-arm>`__.
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
