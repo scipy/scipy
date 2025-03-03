@@ -1243,7 +1243,7 @@ def _length_nonmasked(x, axis, keepdims=False, xp=None):
 
 
 def _share_masks(*args, xp):
-    if hasattr(args[0], 'mask') and not isinstance(args[0], np.ndarray):
+    if is_marray(xp):
         mask = functools.reduce(operator.or_, (arg.mask for arg in args))
         args = [xp.asarray(arg.data, mask=mask) for arg in args]
     return args[0] if len(args) == 1 else args

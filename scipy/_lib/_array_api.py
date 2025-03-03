@@ -532,8 +532,7 @@ def xp_vector_norm(x: Array, /, *,
                 )
             # return (x @ x)**0.5
             # or to get the right behavior with nd, complex arrays
-            x_conj = xp.conj(x) if xp.isdtype(x.dtype, 'complex floating') else x
-            return xp.sum(x_conj * x, axis=axis, keepdims=keepdims)**0.5
+            return xp.sum(xp.conj(x) * x, axis=axis, keepdims=keepdims)**0.5
     else:
         # to maintain backwards compatibility
         return np.linalg.norm(x, ord=ord, axis=axis, keepdims=keepdims)

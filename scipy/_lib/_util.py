@@ -1104,7 +1104,7 @@ def _get_nan(*data, xp=None):
         dtype = xp.float64
     res = xp.asarray(xp.nan, dtype=dtype)[()]
     # whenever mdhaber/marray#89 is resolved, could just return `res`
-    return res.data if hasattr(res, 'mask') else res
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
