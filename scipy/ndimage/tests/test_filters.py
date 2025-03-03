@@ -6,8 +6,7 @@ import contextlib
 
 import numpy as np
 import pytest
-from numpy.testing import (suppress_warnings, assert_allclose, assert_array_equal,
-                           assert_equal)
+from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2777,7 +2776,6 @@ class TestVectorizedFilter:
     @pytest.mark.parametrize("mode",
                              ['reflect', 'nearest', 'mirror', 'wrap', 'constant'])
     @pytest.mark.parametrize("use_output", [False, True])
-    @skip_xp_backends(cpu_only=True, reason="used NumPy")
     def test_against_generic_filter(self, axes, size, origin, mode, use_output):
         rng = np.random.default_rng(435982456983456987356)
 
@@ -2787,17 +2785,17 @@ class TestVectorizedFilter:
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode, output=output)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
-        assert_allclose(res, ref, atol=1e-15)
+        xp_assert_close(res, ref, atol=1e-15)
         if use_output:
-            assert_equal(output, res)
+            xp_assert_equal(output, res)
 
         kwargs.pop('size')
         kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         res = ndimage.vectorized_filter(input, np.mean, **kwargs)
-        assert_allclose(res, ref, atol=1e-15)
+        xp_assert_close(res, ref, atol=1e-15)
         if use_output:
-            assert_equal(output, res)
+            xp_assert_equal(output, res)
 
     @pytest.mark.parametrize("dtype",
                              [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -2827,12 +2825,12 @@ class TestVectorizedFilter:
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, np.sum, **kwargs)
-            assert_allclose(res, ref)
+            xp_assert_close(res, ref)
             assert res.dtype == np.sum(input2).dtype
 
             output = np.empty_like(input)
             res = ndimage.vectorized_filter(input, np.sum, output=output, **kwargs)
-            assert_allclose(res, ref)
+            xp_assert_close(res, np.asarray(ref, dtype=dtype))
             assert res.dtype == dtype
 
     def test_mode_valid(self):
@@ -2843,8 +2841,8 @@ class TestVectorizedFilter:
         res = ndimage.vectorized_filter(input, function, size=size, mode='valid')
         view = np.lib.stride_tricks.sliding_window_view(input, size)
         ref = function(view, axis=(-2, -1))
-        assert_allclose(res, ref)
-        assert_equal(res.shape, input.shape - np.asarray(size) + 1)
+        xp_assert_close(res, ref)
+        xp_assert_equal(res.shape, input.shape - np.asarray(size) + 1)
 
     def test_input_validation(self):
         input = np.ones((10, 10))
@@ -2919,29 +2917,30 @@ class TestVectorizedFilter:
     def test_zero_size(self, shape):
         input = np.empty(shape)
         res = ndimage.vectorized_filter(input, np.mean, size=1)
-        assert_equal(res, input)
+        xp_assert_equal(res, input)
 
     def test_edge_cases(self):
         rng = np.random.default_rng(4835982345234982)
-        input = rng.random((5, 5))
         function = np.mean
 
         # 0-D input
+        input = np.asarray(1)
         res = ndimage.vectorized_filter(1, function, size=())
-        assert_equal(res, function(np.asarray(1), axis=()))
+        xp_assert_equal(res, np.asarray(function(input, axis=())))
 
         res = ndimage.vectorized_filter(1, function, footprint=True)
-        assert_equal(res, function(np.asarray(1)[True], axis=()))
+        xp_assert_equal(res, np.asarray(function(input[True], axis=())))
 
         with pytest.warns(RuntimeWarning, match="Mean of empty slice."):
             res = ndimage.vectorized_filter(1, function, footprint=False)
-            assert_equal(res, function(np.asarray(1)[False], axis=()))
+            xp_assert_equal(res, np.asarray(function(input[False], axis=())))
 
         # 1x1 window
+        input = rng.random((5, 5))
         res = ndimage.vectorized_filter(input, function, size=1)
-        assert_equal(res, input)
+        xp_assert_equal(res, input)
 
         # window is bigger than input shouldn't be a problem
         res = ndimage.vectorized_filter(input, function, size=21)
         ref = ndimage.vectorized_filter(input, function, size=21)
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)

@@ -196,17 +196,18 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     Parameters
     ----------
-    %(input)s
+    output : ndarray
+        Filtered array. Has the same shape as `input` unless `mode=='valid'`,
+        in which case the shape is reduced according to the shape of the filter
+        window.
     function : callable
         Kernel to apply over a window centered at each element of `input`.
         Callable must have signature::
 
-            function(chunk: ndarray, *, axis: int tuple) -> scalar
+            function(window: ndarray, *, axis: int | tuple) -> scalar
 
-        where ``axis`` specifies the axes of ``chunk`` along which
-        the filter function is evaluated. Although the `axes` argument influences
-        the values passed as the ``axis`` argument, these values may be different
-        because ``chunk`` may be an arbitrary view of a padded copy of `input`.
+        where ``axis`` specifies the axis (or axes) of ``window`` along which
+        the filter function is evaluated.
     %(size_foot)s
     %(output)s
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
@@ -265,7 +266,8 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     provided `function` on chunks of a sliding window view over the padded array.
     This approach is very simple and flexible, and so the function has many features
     not offered by some other filter functions (e.g. memory control, ``float16``
-    and complex dtype support, and any NaN-handling features provided by `function`).
+    and complex dtype support, and any NaN-handling features provided by the
+    `function` argument).
 
     However, this brute-force approach may perform considerable redundant work.
     Use a specialized filter (e.g. `minimum_filter` instead of this function with
@@ -295,8 +297,8 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     Suppose we wish to perform a median filter with even window size on a ``float16``
     image. Furthermore, the image has NaNs that we wish to be ignored (and effectively
     removed by the filter). `median_filter` does not support ``float16`` data, its
-    behavior when NaNs are present is not defined, and for even window sizes, it doesn
-    ot return the usual sample median - the average of the two middle elements. This
+    behavior when NaNs are present is not defined, and for even window sizes, it does
+    not return the usual sample median - the average of the two middle elements. This
     would be an excellent use case for `vectorized_filter` with
     ``function=np.nanmedian``, which supports the required interface: it accepts a
     data array of any shape as the first positional argument, and tuple of axes as
