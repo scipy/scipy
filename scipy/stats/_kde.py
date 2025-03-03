@@ -364,7 +364,7 @@ class gaussian_kde:
                         special.ndtr(normalized_low)))
         return value
 
-    def integrate_box(self, low_bounds, high_bounds, maxpts=None):
+    def integrate_box(self, low_bounds, high_bounds, maxpts=None, *, rng=None):
         """Computes the integral of a pdf over a rectangular interval.
 
         Parameters
@@ -375,6 +375,11 @@ class gaussian_kde:
             A 1-D array containing the upper bounds of integration.
         maxpts : int, optional
             The maximum number of points to use for integration.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            generator is created using entropy from the operating system. Types
+            other than `numpy.random.Generator` are passed to
+            `numpy.random.default_rng` to instantiate a ``Generator``.
 
         Returns
         -------
@@ -384,7 +389,8 @@ class gaussian_kde:
         """
         low, high = low_bounds - self.dataset.T, high_bounds - self.dataset.T
         values = multivariate_normal.cdf(
-            high, lower_limit=low, cov=self.covariance, maxpts=maxpts
+            high, lower_limit=low, cov=self.covariance, maxpts=maxpts,
+            rng=rng
         )
         # XXX: xp.linalg.vecdot is much faster than (a*b).sum(axis=-1)
         return (values * self.weights).sum(axis=-1)

@@ -97,13 +97,13 @@ def test_kde_1d_weighted():
 )
 def test_kde_2d(n_basesample):
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    rng = np.random.default_rng(8765678)
 
     mean = np.array([1.0, 3.0])
     covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
 
     # Need transpose (shape (2, 500)) for kde
-    xn = np.random.multivariate_normal(mean, covariance, size=n_basesample).T
+    xn = rng.multivariate_normal(mean, covariance, size=n_basesample).T
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn)
@@ -123,8 +123,8 @@ def test_kde_2d(n_basesample):
     lo, hi = [-1, -2], [0, 0]
     lo_, hi_ = lo - gkde.dataset.T, hi - gkde.dataset.T
     assert_allclose(
-        gkde.integrate_box(lo, hi),
-        cdf(hi_, lower_limit=lo_, cov=gkde.covariance).sum(axis=-1) / gkde.n,
+        gkde.integrate_box(lo, hi, rng=rng),
+        cdf(hi_, lower_limit=lo_, cov=gkde.covariance, rng=rng).sum(axis=-1) / gkde.n,
         rtol=5e-7
     )
 
@@ -142,8 +142,8 @@ def test_kde_2d(n_basesample):
 
     small = -1e100
     large = 1e100
-    prob1 = gkde.integrate_box([small, mean[1]], [large, large])
-    prob2 = gkde.integrate_box([small, small], [large, mean[1]])
+    prob1 = gkde.integrate_box([small, mean[1]], [large, large], rng=rng)
+    prob2 = gkde.integrate_box([small, small], [large, mean[1]], rng=rng)
 
     assert_almost_equal(prob1, 0.5, decimal=1)
     assert_almost_equal(prob2, 0.5, decimal=1)
@@ -161,14 +161,14 @@ def test_kde_2d(n_basesample):
 )
 def test_kde_2d_weighted(n_basesample):
     #some basic tests comparing to normal distribution
-    np.random.seed(8765678)
+    rng = np.random.RandomState(8765678)
 
     mean = np.array([1.0, 3.0])
     covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
 
     # Need transpose (shape (2, 500)) for kde
-    xn = np.random.multivariate_normal(mean, covariance, size=n_basesample).T
-    wn = np.random.rand(n_basesample)
+    xn = rng.multivariate_normal(mean, covariance, size=n_basesample).T
+    wn = rng.rand(n_basesample)
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn, weights=wn)
@@ -189,8 +189,9 @@ def test_kde_2d_weighted(n_basesample):
     lo, hi = [-1, -2], [0, 0]
     lo_, hi_ = lo - gkde.dataset.T, hi - gkde.dataset.T
     assert_allclose(
-        gkde.integrate_box(lo, hi),
-        np.sum(cdf(hi_, lower_limit=lo_, cov=gkde.covariance) * gkde.weights, axis=-1),
+        gkde.integrate_box(lo, hi, rng=rng),
+        np.sum(cdf(hi_, lower_limit=lo_, cov=gkde.covariance, rng=rng) *
+               gkde.weights, axis=-1),
         rtol=5e-6
     )
 
@@ -208,8 +209,8 @@ def test_kde_2d_weighted(n_basesample):
 
     small = -1e100
     large = 1e100
-    prob1 = gkde.integrate_box([small, mean[1]], [large, large])
-    prob2 = gkde.integrate_box([small, small], [large, mean[1]])
+    prob1 = gkde.integrate_box([small, mean[1]], [large, large], rng=rng)
+    prob2 = gkde.integrate_box([small, small], [large, mean[1]], rng=rng)
 
     assert_almost_equal(prob1, 0.5, decimal=1)
     assert_almost_equal(prob2, 0.5, decimal=1)
