@@ -492,6 +492,196 @@ def setitem(quat: Array, value: Array, indexer) -> Array:
     return quat
 
 
+def align_vectors(
+    a: Array, b: Array, weights: Array | None = None, return_sensitivity: bool = False
+) -> tuple[Array, Array, Array]:
+    xp = array_namespace(a)
+    # Check input vectors
+    a_original = xp.asarray(a, dtype=atleast_f32(a))
+    b_original = xp.asarray(b, dtype=atleast_f32(b))
+    a = xpx.atleast_2d(a_original)
+    b = xp.atleast_2d(b_original)
+    if a.shape[-1] != 3:
+        raise ValueError(
+            "Expected input `a` to have shape (3,) or (N, 3), got {}".format(
+                a_original.shape
+            )
+        )
+    if b.shape[-1] != 3:
+        raise ValueError(
+            "Expected input `b` to have shape (3,) or (N, 3), got {}".format(
+                b_original.shape
+            )
+        )
+    if a.shape != b.shape:
+        raise ValueError(
+            "Expected inputs `a` and `b` to have same shapes"
+            ", got {} and {} respectively.".format(a_original.shape, b_original.shape)
+        )
+    N = len(a)
+
+    # Check weights
+    if weights is None:
+        weights = np.ones(N)
+    else:
+        weights = np.array(weights, dtype=float)
+        if weights.ndim != 1:
+            raise ValueError(
+                "Expected `weights` to be 1 dimensional, got shape {}.".format(
+                    weights.shape
+                )
+            )
+        if N > 1 and (weights.shape[0] != N):
+            raise ValueError(
+                "Expected `weights` to have number of values "
+                "equal to number of input vectors, got "
+                "{} values and {} vectors.".format(weights.shape[0], N)
+            )
+        if (weights < 0).any():
+            raise ValueError("`weights` may not contain negative values")
+
+    # For the special case of a single vector pair, we use the infinite
+    # weight code path
+    if N == 1:
+        weight_is_inf = np.array([True])
+    else:
+        weight_is_inf = np.isposinf(weights)
+    n_inf = np.sum(weight_is_inf)
+
+    # Check for an infinite weight, which indicates that the corresponding
+    # vector pair is the primary unmoving reference to which we align the
+    # other secondary vectors
+    if n_inf > 1:
+        raise ValueError("Only one infinite weight is allowed")
+
+    elif n_inf == 1:
+        if return_sensitivity:
+            raise ValueError(
+                "Cannot return sensitivity matrix with an "
+                "infinite weight or one vector pair"
+            )
+        a_pri = a[weight_is_inf]
+        b_pri = b[weight_is_inf]
+        a_pri_norm = _norm3(a_pri[0])
+        b_pri_norm = _norm3(b_pri[0])
+        if a_pri_norm == 0 or b_pri_norm == 0:
+            raise ValueError("Cannot align zero length primary vectors")
+        a_pri /= a_pri_norm
+        b_pri /= b_pri_norm
+
+        # We first find the minimum angle rotation between the primary
+        # vectors.
+        cross = np.cross(b_pri[0], a_pri[0])
+        cross_norm = _norm3(cross)
+        theta = atan2(cross_norm, _dot3(a_pri[0], b_pri[0]))
+        tolerance = 1e-3  # tolerance for small angle approximation (rad)
+        q_flip = np.array([0.0, 0.0, 0.0, 1.0])
+        if (np.pi - theta) < tolerance:
+            # Near pi radians, the Taylor series approximation of x/sin(x)
+            # diverges, so for numerical stability we flip pi and then
+            # rotate back by the small angle pi - theta
+            if cross_norm == 0:
+                # For antiparallel vectors, cross = [0, 0, 0] so we need to
+                # manually set an arbitrary orthogonal axis of rotation
+                i = np.argmin(np.abs(a_pri[0]))
+                r = np.zeros(3)
+                r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
+            else:
+                r = cross  # Shortest angle orthogonal axis of rotation
+            q_flip = from_rotvec(r / np.linalg.norm(r) * np.pi)
+            theta = np.pi - theta
+            cross = -cross
+        if abs(theta) < tolerance:
+            # Small angle Taylor series approximation for numerical stability
+            theta2 = theta * theta
+            r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
+        else:
+            r = cross * theta / np.sin(theta)
+        q_pri = _compose_quat(from_rotvec(r), q_flip)
+
+        if N == 1:
+            # No secondary vectors, so we are done
+            q_opt = q_pri
+        else:
+            a_sec = a[~weight_is_inf]
+            b_sec = b[~weight_is_inf]
+            weights_sec = weights[~weight_is_inf]
+
+            # We apply the first rotation to the b vectors to align the
+            # primary vectors, resulting in vectors c. The secondary
+            # vectors must now be rotated about that primary vector to best
+            # align c to a.
+            c_sec = apply(q_pri, b_sec)
+
+            # Calculate vector components for the angle calculation. The
+            # angle phi to rotate a single 2D vector C to align to 2D
+            # vector A in the xy plane can be found with the equation
+            # phi = atan2(cross(C, A), dot(C, A))
+            #     = atan2(|C|*|A|*sin(phi), |C|*|A|*cos(phi))
+            # The below equations perform the same operation, but with the
+            # 3D rotation restricted to the 2D plane normal to a_pri, where
+            # the secondary vectors are projected into that plane. We then
+            # find the composite angle from the weighted sum of the
+            # axial components in that plane, minimizing the 2D alignment
+            # problem.
+            # Note that einsum('ij,ij->i', X, Y) is the row-wise dot
+            # product of X and Y.
+            sin_term = np.einsum("ij,ij->i", np.cross(c_sec, a_sec), a_pri)
+            cos_term = np.einsum("ij,ij->i", c_sec, a_sec) - (
+                np.einsum("ij,ij->i", c_sec, a_pri)
+                * np.einsum("ij,ij->i", a_sec, a_pri)
+            )
+            phi = atan2(np.sum(weights_sec * sin_term), np.sum(weights_sec * cos_term))
+            q_sec = from_rotvec(phi * a_pri[0])
+
+            # Compose these to get the optimal rotation
+            q_opt = _compose_quat(q_sec, q_pri)
+
+        # Calculated the root sum squared distance. We force the error to
+        # be zero for the infinite weight vectors since they will align
+        # exactly.
+        weights_inf_zero = weights.copy()
+        if N > 1 or np.isposinf(weights[0]):
+            # Skip non-infinite weight single vectors pairs, we used the
+            # infinite weight code path but don't want to zero that weight
+            weights_inf_zero[weight_is_inf] = 0
+        a_est = apply(q_opt, b)
+        rssd = np.sqrt(np.sum(weights_inf_zero @ (a - a_est) ** 2))
+
+        return q_opt, rssd, None
+
+    # If no infinite weights and multiple vectors, proceed with normal
+    # algorithm
+    # Note that einsum('ji,jk->ik', X, Y) is equivalent to np.dot(X.T, Y)
+    B = np.einsum("ji,jk->ik", weights[:, None] * a, b)
+    u, s, vh = np.linalg.svd(B)
+
+    # Correct improper rotation if necessary (as in Kabsch algorithm)
+    if np.linalg.det(u @ vh) < 0:
+        s[-1] = -s[-1]
+        u[:, -1] = -u[:, -1]
+
+    C = np.dot(u, vh)
+
+    if s[1] + s[2] < 1e-16 * s[0]:
+        warnings.warn(
+            "Optimal rotation is not uniquely or poorly defined "
+            "for the given sets of vectors."
+        )
+
+    rssd = np.sqrt(
+        max(np.sum(weights * np.sum(b**2 + a**2, axis=1)) - 2 * np.sum(s), 0)
+    )
+
+    if return_sensitivity:
+        zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
+        kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sensitivity = np.mean(weights) / zeta * (kappa * np.eye(3) + np.dot(B, B.T))
+        return from_matrix(C), rssd, sensitivity
+    return from_matrix(C), rssd, None
+
+
 def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)

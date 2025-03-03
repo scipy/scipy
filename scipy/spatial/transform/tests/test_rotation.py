@@ -1398,9 +1398,9 @@ def test_random_rotation_shape():
     assert_equal(Rotation.random(5, rng=rng).as_quat().shape, (5, 4))
 
 
-def test_align_vectors_no_rotation():
-    x = np.array([[1, 2, 3], [4, 5, 6]])
-    y = x.copy()
+def test_align_vectors_no_rotation(xp):
+    x = xp.asarray([[1, 2, 3], [4, 5, 6]])
+    y = xp.asarray(x, copy=True)
 
     r, rssd = Rotation.align_vectors(x, y)
     assert_array_almost_equal(r.as_matrix(), np.eye(3))

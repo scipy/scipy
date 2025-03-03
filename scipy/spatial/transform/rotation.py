@@ -164,6 +164,20 @@ class Rotation:
             return result[0, ...]
         return result
 
+    @classmethod
+    def align_vectors(
+        cls,
+        a: Array,
+        b: Array,
+        weights: Array | None = None,
+        return_sensitivity: bool = False,
+    ) -> tuple[Rotation, float] | tuple[Rotation, float, Array]:
+        backend = backend_registry.get(array_namespace(a), array_api_backend)
+        q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
+        if return_sensitivity:
+            return cls(q, normalize=False, copy=False), rssd, sensitivity
+        return cls(q, normalize=False, copy=False), rssd
+
     def __getitem__(self, indexer) -> Rotation:
         if self._single or self._quat.ndim == 1:
             raise TypeError("Single rotation is not subscriptable.")
