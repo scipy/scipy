@@ -7393,9 +7393,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = _length_nonmasked(terms, axis)
+    num_obs = xp.asarray(_length_nonmasked(terms, axis))
 
-    df = xp.asarray(num_obs - 1 - ddof)
+    df = num_obs - 1 - ddof
     chi2 = _SimpleChi2(df)
     pvalue = _get_pvalue(stat, chi2 , alternative='greater', symmetric=False, xp=xp)
 
