@@ -706,9 +706,9 @@ def _make_capabilities_table(capabilities):
     +---------+-------------+-------------+--------------+
     | Library | CPU         | GPU         | ``marray``   |
     +=========+=============+=============+==============+
-    | NumPy   | {numpy.cpu} | {numpy.gpu} | {numpy.mask} |
+    | NumPy   | {numpy.cpu} | ✗           | {numpy.mask} |
     +---------+-------------+-------------+--------------+
-    | CuPy    | {cupy.cpu } | {cupy.gpu } | {cupy.mask } |
+    | CuPy    | ✗           | {cupy.gpu } | {cupy.mask } |
     +---------+-------------+-------------+--------------+
     | PyTorch | {torch.cpu} | {torch.gpu} | {torch.mask} |
     +---------+-------------+-------------+--------------+
@@ -729,7 +729,7 @@ def _make_capabilities_note(fun_name, capabilities):
     CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
     combinations of backend and device (or other capability) are supported.
     {table}
-     See :ref:`dev-arrayapi` for more information.
+    See :ref:`dev-arrayapi` for more information.
     """
     return textwrap.dedent(note)
 

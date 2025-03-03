@@ -121,6 +121,32 @@ Support is provided in `scipy.stats` for the following functions:
 `scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
 and `scipy.stats.monte_carlo_test`.
 
+Some features provide a capability table in the documentation like this:
+
++---------+-------------+-------------+--------------+
+| Library | CPU         | GPU         | ``marray``   |
++=========+=============+=============+==============+
+| NumPy   | ✓           | ✗           | ✓            |
++---------+-------------+-------------+--------------+
+| CuPy    | ✗           | ✓           |              |
++---------+-------------+-------------+--------------+
+| PyTorch | ✓           |             |              |
++---------+-------------+-------------+--------------+
+| JAX     | ✓           | ✓           |              |
++---------+-------------+-------------+--------------+
+| Dask    |             |             |              |
++---------+-------------+-------------+--------------+
+
+In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
+arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
+support multiple devices (CPU and GPU), but SciPy support for such arrays may be
+limited; for instance, this SciPy feature is only expected to work with PyTorch arrays
+located on the CPU. Likewise, although `marray <https://github.com/mdhaber/marray>`_
+adds mask awareness to arrays of any Array API compatible backend, this function only
+supports ``marray`` objects that use the NumPy backend. While the elements of the table
+marked with ✗ are inherently out of scope, we are continually working on filling in the
+remaining blanks.
+
 Please see `the tracker issue`_ for updates.
 
 
