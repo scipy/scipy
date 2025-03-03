@@ -245,7 +245,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
         match the length of `axes`. The ith axis of `footprint` and the ith element
         in these tuples corresponds to the ith element of `axes`.
     batch_memory : int, default: 2**30
-        The maximum number of bytes occupied by data in the ``chunk``
+        The maximum number of bytes occupied by data in the ``window``
         array passed to ``function``.
 
     Returns
