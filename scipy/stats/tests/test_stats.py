@@ -3165,7 +3165,6 @@ class TestZmapZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
-    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
         ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
@@ -6990,11 +6989,7 @@ class TestHMean:
     @pytest.mark.filterwarnings(
         "ignore:divide by zero encountered:RuntimeWarning"
     ) # for dask
-    @skip_xp_backends('array_api_strict',
-                      reason=("`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python scalars. See data-apis/array-api#807."))
     def test_1d_with_negative_value(self, xp):
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
         a = np.array([1, 0, -1])
         message = "The harmonic mean is only defined..."
         with pytest.warns(RuntimeWarning, match=message):
@@ -7230,9 +7225,6 @@ class TestPMean:
         desired = 0.0
         check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
 
-    @skip_xp_backends('array_api_strict',
-                      reason=("`array_api_strict.where` `fillvalue` doesn't "
-                              "accept Python scalars. See data-apis/array-api#807."))
     def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
         message = "The power mean is only defined..."
@@ -9712,7 +9704,6 @@ class TestXP_Var:
         y = xp.arange(10.)
         xp_assert_equal(_xp_var(x), _xp_var(y))
 
-    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         rng = np.random.default_rng(90359458245906)
         x, y = rng.random((2, 20))

@@ -486,8 +486,10 @@ class TestConvolve2d:
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
-                    axis=None),
-                signal.convolve(a, b, mode=mode))
+                    axis=0
+                ),
+                signal.convolve(a, b, mode=mode)
+            )
 
     def test_invalid_dims(self, xp):
         assert_raises(ValueError, convolve2d, 3, 4)
