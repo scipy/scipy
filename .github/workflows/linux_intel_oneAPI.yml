@@ -48,6 +48,29 @@ jobs:
         with:
           submodules: recursive
 
+      - name: cache install
+        id: cache-install
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: |
+              /opt/intel/oneapi/
+          key: install-${{ env.LINUX_CPPKIT_URL }}-${{ env.LINUX_FORTRANKIT_URL }}-${{ env.LINUX_HPCKIT_URL }}-compiler
+      - name: Install oneAPI CPP kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_CPPKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL
+      - name: Install oneAPI Fortran kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_FORTRANKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL
+      - name: Install oneAPI HPC kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_HPCKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
+
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d # v3.1.0
         with:
@@ -65,24 +88,6 @@ jobs:
         run: |
           conda activate scipy-dev
           conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich-click click doit pydevtool hypothesis
-
-      - name: cache install
-        id: cache-install
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
-        with:
-          path: |
-              /opt/intel/oneapi/
-          key: install-${{ env.LINUX_BASEKIT_URL }}-${{ env.LINUX_HPCKIT_URL }}-compiler
-      - name: Install oneAPI Base kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        run: |
-          printenv LINUX_BASEKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_BASEKIT_URL
-      - name: Install oneAPI HPC kit
-        if: steps.cache-install.outputs.cache-hit != 'true'
-        run: |
-          printenv LINUX_HPCKIT_URL
-          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
 
       - name: Initialise Intel oneAPI and Build SciPy
         shell: bash -l {0}
