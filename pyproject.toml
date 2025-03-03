@@ -88,7 +88,7 @@ test = [
     'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0,<8.0.0",
+    "sphinx>=5.0.0,<8.2.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -96,10 +96,11 @@ doc = [
     "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
-    "myst-nb",
+    "myst-nb>=1.2.0",
     "pooch",
-    "jupyterlite-sphinx>=0.17.1",
+    "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
+    "linkify-it-py"
 ]
 dev = [
     "mypy==1.10.0",

@@ -155,6 +155,7 @@ class OptimizeResult(_RichResult):
 
 
 class OptimizeWarning(UserWarning):
+    """General warning for :mod:`scipy.optimize`."""
     pass
 
 def _check_positive_definite(Hk):
@@ -1348,7 +1349,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, c1=1e-4, c2=0.9,
-                   hess_inv0=None, **unknown_options):
+                   hess_inv0=None, workers=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1386,6 +1387,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate, shape (n, n). If None (default) then
         the identity matrix is used.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -1410,7 +1417,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         maxiter = len(x0) * 200
 
     sf = _prepare_scalar_function(fun, x0, jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     f = sf.fun
     myfprime = sf.grad
@@ -1714,7 +1722,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
-                 c1=1e-4, c2=0.4, **unknown_options):
+                 c1=1e-4, c2=0.4, workers=None,
+                 **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1747,6 +1756,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.4
         Parameter for curvature condition rule.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -1761,7 +1776,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         maxiter = len(x0) * 200
 
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
-                                  finite_diff_rel_step=finite_diff_rel_step)
+                                  finite_diff_rel_step=finite_diff_rel_step,
+                                  workers=workers)
 
     f = sf.fun
     myfprime = sf.grad
@@ -1987,7 +2003,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False, c1=1e-4, c2=0.9,
+                       disp=False, return_all=False, c1=1e-4, c2=0.9, workers=None,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2013,6 +2029,12 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
 
     Notes
     -----
@@ -2030,7 +2052,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     x0 = asarray(x0).flatten()
     # TODO: add hessp (callable or FD) to ScalarFunction?
     sf = _prepare_scalar_function(
-        fun, x0, jac, args=args, epsilon=eps, hess=hess
+        fun, x0, jac, args=args, epsilon=eps, hess=hess, workers=workers
     )
     f = sf.fun
     fprime = sf.grad

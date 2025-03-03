@@ -3345,6 +3345,22 @@ class TestInvgauss:
     def test_entropy(self, mu, ref):
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
+    def test_mu_inf_gh13666(self):
+        # invgauss methods should return correct result when mu=inf
+        # invgauss as mu -> oo is invgamma with shape and scale 0.5;
+        # see gh-13666 and gh-22496
+        dist = stats.invgauss(mu=np.inf)
+        dist0 = stats.invgamma(0.5, scale=0.5)
+        x, p = 1., 0.5
+        assert_allclose(dist.logpdf(x), dist0.logpdf(x))
+        assert_allclose(dist.pdf(x), dist0.pdf(x))
+        assert_allclose(dist.logcdf(x), dist0.logcdf(x))
+        assert_allclose(dist.cdf(x), dist0.cdf(x))
+        assert_allclose(dist.logsf(x), dist0.logsf(x))
+        assert_allclose(dist.sf(x), dist0.sf(x))
+        assert_allclose(dist.ppf(p), dist0.ppf(p))
+        assert_allclose(dist.isf(p), dist0.isf(p))
+
 
 class TestLandau:
     @pytest.mark.parametrize('name', ['pdf', 'cdf', 'sf', 'ppf', 'isf'])
@@ -9231,6 +9247,28 @@ def test_genextreme_give_no_warnings():
         stats.genextreme.logpdf(-np.inf, 0.0)
         number_of_warnings_thrown = len(w)
         assert_equal(number_of_warnings_thrown, 0)
+
+
+def test_moments_gh22400():
+    # Regression test for gh-22400
+    # Check for correct results at c=0 with no warnings. While we're at it,
+    # check that NaN and sufficiently negative input produce NaNs, and output
+    # with `c=1` also agrees with reference values.
+    res = np.asarray(stats.genextreme.stats([0.0, np.nan, 1, -1.5], moments='mvsk'))
+
+    # Reference values for c=0 (Wikipedia)
+    mean = np.euler_gamma
+    var = np.pi**2 / 6
+    skew = 12 * np.sqrt(6) * special.zeta(3) / np.pi**3
+    kurt = 12 / 5
+    ref_0 = [mean, var, skew, kurt]
+    ref_1 = ref_3 = [np.nan]*4
+    ref_2 = [0, 1, -2, 6]  # Wolfram Alpha, MaxStableDistribution[0, 1, -1]
+
+    assert_allclose(res[:, 0], ref_0, rtol=1e-14)
+    assert_equal(res[:, 1], ref_1)
+    assert_allclose(res[:, 2], ref_2, rtol=1e-14)
+    assert_equal(res[:, 3], ref_3)
 
 
 def test_genextreme_entropy():

@@ -1731,10 +1731,6 @@ from ._cdflib_wrappers cimport nctdtrinc as _func_nctdtrinc
 ctypedef double _proto_nctdtrinc_t(double, double, double) noexcept nogil
 cdef _proto_nctdtrinc_t *_proto_nctdtrinc_t_var = &_func_nctdtrinc
 
-from ._cdflib_wrappers cimport nctdtrit as _func_nctdtrit
-ctypedef double _proto_nctdtrit_t(double, double, double) noexcept nogil
-cdef _proto_nctdtrit_t *_proto_nctdtrit_t_var = &_func_nctdtrit
-
 from ._cdflib_wrappers cimport nrdtrimn as _func_nrdtrimn
 ctypedef double _proto_nrdtrimn_t(double, double, double) noexcept nogil
 cdef _proto_nrdtrimn_t *_proto_nrdtrimn_t_var = &_func_nrdtrimn
@@ -3179,9 +3175,14 @@ cpdef double nctdtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrinc"""
     return _func_nctdtrinc(x0, x1, x2)
 
-cpdef double nctdtrit(double x0, double x1, double x2) noexcept nogil:
+cpdef df_number_t nctdtrit(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.nctdtrit"""
-    return _func_nctdtrit(x0, x1, x2)
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_nct_ppf_double)(x0, x1, x2)
+    else:
+        return NAN
 
 cpdef Dd_number_t ndtr(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.ndtr"""

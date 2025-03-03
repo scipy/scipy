@@ -12,6 +12,7 @@ from numpy.testing import (
     assert_allclose,    # until object arrays are gone
     suppress_warnings)
 import numpy as np
+from numpy.exceptions import ComplexWarning
 
 from scipy import fft as sp_fft
 from scipy.ndimage import correlate1d
@@ -29,7 +30,6 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
-from scipy._lib._util import ComplexWarning
 
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
@@ -486,8 +486,10 @@ class TestConvolve2d:
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
-                    axis=None),
-                signal.convolve(a, b, mode=mode))
+                    axis=0
+                ),
+                signal.convolve(a, b, mode=mode)
+            )
 
     def test_invalid_dims(self, xp):
         assert_raises(ValueError, convolve2d, 3, 4)
