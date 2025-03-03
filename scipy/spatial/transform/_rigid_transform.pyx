@@ -64,10 +64,7 @@ cdef _compute_se3_log_translation_transform(rot_vec):
 
 cdef _quaternion_conjugate(quat):
     conjugate = np.copy(quat)
-    # we exploit the double cover property of unit rotation quaternions with
-    conjugate[:, 3] = -conjugate[:, 3]
-    # instead of using the mathematically correct conjugate implementation
-    # conjugate[:, :3] = -conjugate[:, :3]
+    conjugate[:, :3] = -conjugate[:, :3]
     return conjugate
 
 
@@ -78,8 +75,18 @@ cdef _compose_dual_quaternion(real_part1, dual_part1, real_part2, dual_part2):
     return prod_real, prod_dual
 
 
+def normalize_dual_quaternion(dual_quat):
+    """Normalize dual quaternion."""
+    real, dual = _normalize_dual_quaternion(
+        dual_quat[..., :4], dual_quat[..., 4:])
+    return np.concatenate((real, dual), axis=-1)
+
+
 cdef _normalize_dual_quaternion(real_part, dual_part):
     """Ensure that the norm is 1 and that real and dual part are orthogonal."""
+    # the normalization procedure is based on
+    # https://stackoverflow.com/a/76313524/915743
+
     real_part = np.copy(real_part)
     dual_part = np.copy(dual_part)
 
@@ -90,22 +97,26 @@ cdef _normalize_dual_quaternion(real_part, dual_part):
     prod_real, prod_dual = _compose_dual_quaternion(
         real_part, dual_part, real_conjugate, dual_conjugate)
 
+    # the squared norm of a dual quaternion is a dual number s + t * epsilon
+    s = prod_real[:, 3]
+    t = prod_dual[:, 3]
+
+    prod_real_norm = np.sqrt(s)
     # special case: invalid real quaternion
-    prod_real_norm = np.linalg.norm(prod_real, axis=1)
     invalid_real_mask = prod_real_norm == 0.0
     real_part[invalid_real_mask, :4] = [0., 0., 0., 1.]
     prod_real_norm[invalid_real_mask] = 1.0
 
-    # compute normalization factor
-    real_inv_sqrt = 1.0 / prod_real_norm
-    dual_inv_sqrt = -0.5 * prod_dual * real_inv_sqrt[:, np.newaxis] ** 3
+    # compute normalization factor: the inverse square root of s + t * epsilon
+    # is a dual number u + v * epsilon
+    u = 1.0 / prod_real_norm[:, np.newaxis]
+    v = -0.5 * t[:, np.newaxis] * u ** 3
 
     # normalize dual quaternion
-    real_part = real_inv_sqrt[:, np.newaxis] * real_part
-    dual_part = real_inv_sqrt[:, np.newaxis] * dual_part + np.asarray(
-        compose_quat(dual_inv_sqrt, real_part))
+    new_real_part = u * real_part
+    dual_part = u * dual_part + v * real_part
 
-    return real_part, dual_part
+    return new_real_part, dual_part
 
 
 def _create_transformation_matrix(translations, rotation_matrices, single):
