@@ -196,10 +196,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     Parameters
     ----------
-    output : ndarray
-        Filtered array. Has the same shape as `input` unless `mode=='valid'`,
-        in which case the shape is reduced according to the shape of the filter
-        window.
+    %(input)s
     function : callable
         Kernel to apply over a window centered at each element of `input`.
         Callable must have signature::
@@ -254,7 +251,9 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     Returns
     -------
     output : ndarray
-        Filtered array. Has the same shape as `input`.
+        Filtered array. Has the same shape as `input` unless ``mode=='valid'``,
+        in which case the shape is reduced according to the shape of the filter
+        window.
 
     See Also
     --------
