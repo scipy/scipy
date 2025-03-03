@@ -3018,4 +3018,4 @@ def test_gh_22586_median_filter_no_segfault_and_1d_matches_nd(
         )
         desired = mf(arr)
 
-    np.testing.assert_array_almost_equal(actual, desired)
+    np.testing.assert_allclose(actual, desired)
