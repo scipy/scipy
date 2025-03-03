@@ -2660,6 +2660,13 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
+xp_capabilities_table['zmap_zscore'] = dict(skip_backends=[
+    ("dask", "lazywhere doesn't work for dask.array"),
+    ("jax", "JAX can't do item assignment"),
+])
+
+
+@xp_capabilities('zmap_zscore')
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2839,6 +2846,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
+@xp_capabilities('zmap_zscore')
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -4363,7 +4371,7 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-xp_capabilities_table['pearsonr'] = dict(np_only=True)
+xp_capabilities_table['pearsonr'] = dict(cpu_only=True, exceptions=['cupy'])
 
 
 @xp_capabilities()

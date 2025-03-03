@@ -42,7 +42,7 @@ from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_numpy,
                                    is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API,
-                                   make_skip_xp_backends, xp_capabilities_table)
+                                   make_skip_xp_backends)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -2881,8 +2881,7 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
-@skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
-@skip_xp_backends('jax.numpy', reason="JAX can't do item assignment")
+@make_skip_xp_backends("zmap_zscore")
 class TestZmapZscore:
 
     @pytest.mark.parametrize(
