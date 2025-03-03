@@ -39,7 +39,7 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._array_api import is_lazy_array, xp_capabilities
+from scipy._lib._array_api import is_lazy_array, xp_capabilities, xp_capabilities_table
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               AxisError, _lazywhere)
@@ -108,9 +108,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'wasserstein_distance', 'wasserstein_distance_nd', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
            'expectile', 'lmoment']
-
-
-xp_capabilities_table = {}
 
 
 def _chk_asarray(a, axis, *, xp=None):
@@ -4366,10 +4363,10 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-xp_capabilities_table['pearsonr'] = dict(cpu_only=True)
+xp_capabilities_table['pearsonr'] = dict(skip_backends=[('array_api_strict', 'i said so')], cpu_only=True)
 
 
-@xp_capabilities(xp_capabilities_table)
+@xp_capabilities()
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.

@@ -37,13 +37,12 @@ from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWar
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
-                                   LinregressResult, _xp_mean, _xp_var, _SimpleChi2,
-                                   xp_capabilities_table)
+                                   LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_numpy,
                                    is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API,
-                                   make_skip_xp_backends)
+                                   make_skip_xp_backends, xp_capabilities_table)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -381,7 +380,7 @@ class TestPearsonrWilkinson:
         assert_approx_equal(r,1.0)
 
 
-@make_skip_xp_backends('pearsonr', xp_capabilities_table)
+@make_skip_xp_backends('pearsonr')
 class TestPearsonr:
     @skip_xp_backends(np_only=True)
     def test_pearsonr_result_attributes(self, xp):

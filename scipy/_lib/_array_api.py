@@ -734,7 +734,10 @@ def _make_capabilities_note(fun_name, capabilities):
     return textwrap.dedent(note)
 
 
-def xp_capabilities(capabilities_table):
+def xp_capabilities(capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
     def decorator(f):
         fun_name = f.__name__
         skip_backends = capabilities_table[fun_name].get('skip_backends', None)
@@ -755,7 +758,10 @@ def xp_capabilities(capabilities_table):
     return decorator
 
 
-def make_skip_xp_backends(fun_name, capabilities_table):
+def make_skip_xp_backends(fun_name, capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
     import pytest
 
     skip_backends = capabilities_table[fun_name].get('skip_backends', [])
@@ -766,6 +772,12 @@ def make_skip_xp_backends(fun_name, capabilities_table):
         decorators.append(pytest.mark.skip_xp_backends(cpu_only=True))
 
     for backend, reason in skip_backends:
+        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
+        backend = backends.get(backend, backend)
         decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
 
     return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
+
+
+# Is it OK to have a dictionary that is mutated (once upon import) in many places?
+xp_capabilities_table = {}
