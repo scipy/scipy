@@ -4363,7 +4363,7 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-xp_capabilities_table['pearsonr'] = dict(skip_backends=[('array_api_strict', 'i said so')], cpu_only=True)
+xp_capabilities_table['pearsonr'] = dict(np_only=True)
 
 
 @xp_capabilities()

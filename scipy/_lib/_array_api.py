@@ -660,7 +660,7 @@ def is_marray(xp):
 
 
 
-def _make_capabilities(skip_backends=None, cpu_only=False):
+def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False):
     skip_backends = [] if skip_backends is None else skip_backends
 
     capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu', 'mask'])
@@ -680,11 +680,17 @@ def _make_capabilities(skip_backends=None, cpu_only=False):
         setattr(capabilities[backend], 'gpu', False)
         setattr(capabilities[backend], 'mask', False)
 
-    if cpu_only:
+    if cpu_only or np_only:
         cupy.gpu = False
         torch.gpu = False
         jax.gpu = False
         dask.gpu = False
+
+    if np_only:
+        numpy.mask = False
+        torch.cpu = False
+        jax.cpu = False
+        dask.cpu = False
 
     return capabilities
 
@@ -742,8 +748,9 @@ def xp_capabilities(capabilities_table=None):
         fun_name = f.__name__
         skip_backends = capabilities_table[fun_name].get('skip_backends', None)
         cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+        np_only = capabilities_table[fun_name].get('np_only', None)
         capabilities = _make_capabilities(skip_backends=skip_backends,
-                                          cpu_only=cpu_only)
+                                          cpu_only=cpu_only, np_only=np_only)
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -766,10 +773,14 @@ def make_skip_xp_backends(fun_name, capabilities_table=None):
 
     skip_backends = capabilities_table[fun_name].get('skip_backends', [])
     cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+    np_only = capabilities_table[fun_name].get('np_only', None)
 
     decorators = []
     if cpu_only:
         decorators.append(pytest.mark.skip_xp_backends(cpu_only=True))
+
+    if np_only:
+        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
 
     for backend, reason in skip_backends:
         backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
