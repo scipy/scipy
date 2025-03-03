@@ -6,6 +6,10 @@ import re
 import numpy as np
 import pytest
 from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
+from numpy.typing import NDArray
+from hypothesis import strategies as st
+from hypothesis import given
+import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2769,17 +2773,21 @@ def test_gh_22333():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('length', range(1, 1000, 50))
-@pytest.mark.parametrize('size', range(1, 25))
-@pytest.mark.parametrize('mode', ['reflect', 'constant', 'nearest', 'mirror', 'wrap'])
+@given(
+    arr=npst.arrays(
+        dtype=np.float64,
+        shape=st.integers(min_value=1, max_value=20).map(lambda x: x * 50),
+    ),
+    size=st.integers(min_value=1, max_value=25),
+    mode=st.sampled_from(['reflect', 'constant', 'nearest', 'mirror', 'wrap']),
+)
 def test_gh_22586_median_filter_no_segfault_and_1d_matches_nd(
-    length: int,
+    arr: NDArray[np.float64],
     size: int,
     mode: str,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    size = min(size, length)
-    arr = np.random.random(length)
+    size = min(size, len(arr))
     mf = functools.partial(
         ndimage.median_filter,
         size=size,
