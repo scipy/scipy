@@ -36,7 +36,16 @@ x = np.array([7.1, 7.1, 7.2, 8.3, 9.4, 10.5, 11.4])
 y = np.array([2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0])
 ```
 
-These data were analyzed in [^2] using Spearman’s correlation coefficient, a statistic sensitive to monotonic correlation between the samples. Here, we will analyze the data using Pearson's correlation coefficient, which is sensitive to linear corrlation.
+```{code-cell} ipython3
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, y, '.')
+ax.set_xlabel("total collagen (mg/g)")
+ax.set_ylabel("free proline (μ mole/g)")
+plt.show()
+```
+
+These data were analyzed in [^2] using Spearman’s correlation coefficient, a statistic sensitive to monotonic correlation between the samples. Here, we will analyze the data using Pearson's correlation coefficient, which is sensitive to linear correlation.
 
 ```{code-cell} ipython3
 from scipy import stats
@@ -46,12 +55,11 @@ res.statistic
 
 The value of this statistic tends to be high (close to 1) for samples with a strongly positive linear correlation, low (close to -1) for samples with a strongly negative linear correlation, and small in magnitude (close to zero) for samples with weak linear correlation.
 
-The test is performed by comparing the observed value of the statistic against the null distribution: the distribution of statistic values derived under the null hypothesis that total collagen and free proline measurements are drawn from independent normal distributions, so the population correlation coefficient is zero.
+The test is performed by comparing the observed value of the statistic against the null distribution: the distribution of statistic values derived under the null hypothesis that total collagen and free proline measurements are drawn from independent normal distributions.
 
-Under the null hypothesis, the probability density function of the sample correlation coefficent $r$ is that of the beta distribution with equal shape parameters $a = b = \frac{n}{2}-1$ on the interval $(-1, 1)$, where $n$ is the number of observations in each sample.
+Under the null hypothesis, the population correlation coefficient is zero, and the sample correlation coefficent follows the beta distribution on the interval $(-1, 1)$ with shape parameters $a = b = \frac{n}{2}-1$, where $n$ is the number of observations in each sample.
 
 ```{code-cell} ipython3
-import matplotlib.pyplot as plt
 n = len(x)  # len(x) == len(y)
 a = b = n/2 - 1  # shape parameter
 loc, scale = -1, 2  # support is (-1, 1)
@@ -68,7 +76,7 @@ plot(ax)
 plt.show()
 ```
 
-The comparison is quantified by the p-value: the proportion of values in the null distribution as extreme or more extreme than the observed value of the statistic. In a two-sided test in which the statistic is positive, elements of the null distribution greater than the transformed statistic and elements of the null distribution less than the negative of the observed statistic are both considered “more extreme”.
+The comparison is quantified by the p-value: the proportion of values in the null distribution as extreme or more extreme than the observed value of the statistic. In a two-sided test in which the statistic is positive, elements of the null distribution greater than the transformed statistic and elements of the null distribution less than the negative of the observed statistic are both considered "more extreme".
 
 ```{code-cell} ipython3
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -119,9 +127,11 @@ plt.show()
 res.pvalue  # one-sided p-value; half of the two-sided p-value
 ```
 
-Note that the beta distribution is the exact null distribution for samples of any size under the null hypothesis that the samples were drawn from a normal distribution. We can convince ourselves of this by computing a Monte Carlo null distribution: explicitly drawing samples from independent normal distributions and computing Pearson's statistic for each pair.
+Note that the beta distribution is the exact null distribution for samples of any size under this null hypothesis. We can check this by computing a Monte Carlo null distribution: explicitly drawing samples from independent normal distributions and computing Pearson's statistic for each pair.
 
 ```{code-cell} ipython3
+rng = np.random.default_rng(332520619051409741187796892627751113442)
+
 def statistic(x, y, axis):
     return stats.pearsonr(x, y, axis=axis).statistic  # ignore pvalue
     
@@ -136,7 +146,7 @@ ax.legend(['exact null distribution (independent, normally-distributed observati
 plt.show()
 ```
 
-This is often an reasonable null hypothesis to test, but in other cases, it may be more conservative to perform a permutation test: Under the null hypothesis that total collagen and free proline are independent (but not necessarily normally distributed), each of the free proline measurements were equally likely to have been observed with any of the total collagen measurements. Therefore, we can form an exact null distribution by calculating the statistic under each possible pairing of elements between `x` and `y`. This is the null distribution used when we provide `pearsonr` with `method=stats.PermutationMethod()`.
+This is often a reasonable null hypothesis to test, but in other cases, it may be more appropriate to perform a permutation test: Under the null hypothesis that total collagen and free proline are independent (but not necessarily normally distributed), each of the free proline measurements are equally likely to be observed with any of the total collagen measurements. Therefore, we can form an exact null distribution by calculating the statistic under each possible pairing of elements between `x` and `y`. This is the null distribution used when we provide `pearsonr` with `method=stats.PermutationMethod()`.
 
 ```{code-cell} ipython3
 res = stats.pearsonr(x, y, alternative='greater', method=stats.PermutationMethod())

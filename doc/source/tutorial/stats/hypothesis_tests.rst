@@ -24,6 +24,7 @@ more detailed examples, see the following sections.
     hypothesis_levene.md
     hypothesis_normaltest.md
     hypothesis_odds_ratio.md
+    hypothesis_pearsonr.md
     hypothesis_shapiro.md
     hypothesis_skewtest.md
     hypothesis_spearmanr.md
