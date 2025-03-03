@@ -6525,20 +6525,6 @@ class TestDescribe:
 
 
 class NormalityTests:
-    def test_too_small(self, xp):
-        # 1D sample has too few observations -> warning/error
-        test_fun = getattr(stats, self.test_name)
-        x = xp.asarray(4.)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = test_fun(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "...requires at least..."
-            with pytest.raises(ValueError, match=message):
-                test_fun(x)
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
@@ -6584,6 +6570,7 @@ class NormalityTests:
             xp_assert_equal(res.statistic, NaN)
             xp_assert_equal(res.pvalue, NaN)
 
+
 class TestSkewTest(NormalityTests):
     test_name = 'skewtest'
     case_ref = (1.98078826090875881, 0.04761502382843208)  # statistic, pvalue
@@ -6597,20 +6584,18 @@ class TestSkewTest(NormalityTests):
 
     def test_skewtest_too_few_observations(self, xp):
         # Regression test for ticket #1492.
-        # skewtest requires at least 8 observations; 7 should raise a ValueError.
+        # skewtest requires at least 8 observations; 7 should warn and return NaN.
         stats.skewtest(xp.arange(8.0))
 
         x = xp.arange(7.0)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.skewtest(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "`skewtest` requires at least 8 observations"
-            with pytest.raises(ValueError, match=message):
-                stats.skewtest(x)
+
+        message = (too_small_1d_not_omit if is_numpy(xp)
+                   else "`skewtest` requires at least 8 valid observations")
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.skewtest(x)
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestKurtosisTest(NormalityTests):
@@ -6636,33 +6621,33 @@ class TestKurtosisTest(NormalityTests):
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_kurtosistest_too_few_observations(self, xp):
-        # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
-        # At least 20 are needed to avoid warning
+        # kurtosistest requires at least 5 observations; 4 should warn and return NaN.
         # Regression test for ticket #1425.
-        stats.kurtosistest(xp.arange(20.0))
+        stats.kurtosistest(xp.arange(5.0))
 
-        message = "`kurtosistest` p-value may be inaccurate..."
-        with pytest.warns(UserWarning, match=message):
-            stats.kurtosistest(xp.arange(5.0))
-        with pytest.warns(UserWarning, match=message):
-            stats.kurtosistest(xp.arange(19.0))
-
-        x = xp.arange(4.0)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.skewtest(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "`kurtosistest` requires at least 5 observations"
-            with pytest.raises(ValueError, match=message):
-                stats.kurtosistest(x)
+        message = (too_small_1d_not_omit if is_numpy(xp)
+                   else "`kurtosistest` requires at least 5 valid")
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.kurtosistest(xp.arange(4.))
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestNormalTest(NormalityTests):
     test_name = 'normaltest'
     case_ref = (3.92371918158185551, 0.14059672529747502)  # statistic, pvalue
+
+    def test_too_few_observations(self, xp):
+        stats.normaltest(xp.arange(8.))
+
+        # 1D sample has too few observations -> warning / NaN output
+        # specific warning messages tested for `skewtest`/`kurtosistest`
+        with pytest.warns(SmallSampleWarning):
+            res = stats.normaltest(xp.arange(7.))
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestRankSums:
@@ -6715,18 +6700,15 @@ class TestJarqueBera:
         assert JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic  # noqa: E501
         assert p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue
 
-    def test_jarque_bera_size(self, xp):
+    @skip_xp_backends('array_api_strict', reason='Noisy; see TestSkew')
+    def test_jarque_bera_too_few_observations(self, xp):
         x = xp.asarray([])
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.jarque_bera(x)
+
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.jarque_bera(x)
             NaN = xp.asarray(xp.nan)
             xp_assert_equal(res.statistic, NaN)
             xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "At least one observation is required."
-            with pytest.raises(ValueError, match=message):
-                res = stats.jarque_bera(x)
 
     def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)

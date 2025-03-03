@@ -1102,7 +1102,9 @@ def _get_nan(*data, xp=None):
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    res = xp.asarray(xp.nan, dtype=dtype)[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
