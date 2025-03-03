@@ -128,7 +128,7 @@ def test_cont_basic(distname, arg, sn, num_parallel_threads):
         distfn = distname
         distname = 'rv_histogram_instance'
 
-    rng = np.random.RandomState(7654566)
+    rng = np.random.default_rng(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     m, v = distfn.stats(*arg)
 
