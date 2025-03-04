@@ -78,8 +78,8 @@ def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """
-    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
-    for square `a` matrix.
+    Solve the equation ``a @ x = b`` for  ``x``,
+    where `a` is a square matrix.
 
     If the data matrix is known to be a particular type then supplying the
     corresponding string to ``assume_a`` key chooses the dedicated solver.
@@ -420,7 +420,7 @@ def _ensure_dtype_cdsz(*arrays):
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, check_finite=True):
     """
-    Solve the equation ``a x = b`` for `x`, assuming a is a triangular matrix.
+    Solve the equation ``a @ x = b`` for ``x``, where `a` is a triangular matrix.
 
     Parameters
     ----------
@@ -532,7 +532,8 @@ def _solve_triangular(a1, b1, trans=0, lower=False, unit_diagonal=False,
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                  check_finite=True):
     """
-    Solve the equation a x = b for x, assuming a is banded matrix.
+    Solve the equation ``a @ x = b`` for ``x``, where ``a`` is the banded matrix
+    defined by `ab`.
 
     The matrix a is stored in `ab` using the matrix diagonal ordered form::
 
@@ -658,7 +659,8 @@ def _solve_banded(nlower, nupper, ab, b, overwrite_ab, overwrite_b, check_finite
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
                   check_finite=True):
     """
-    Solve equation a x = b. a is Hermitian positive-definite banded matrix.
+    Solve the equation ``a @ x = b`` for ``x``,  where ``a`` is the 
+    Hermitian positive-definite banded matrix defined by `ab`.
 
     Uses Thomas' Algorithm, which is more efficient than standard LU
     factorization, but should only be used for Hermitian positive-definite
@@ -795,10 +797,11 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
 
 def solve_toeplitz(c_or_cr, b, check_finite=True):
-    r"""Solve a Toeplitz system using Levinson Recursion
+    r"""Solve the equation ``T @ x = b`` for ``x``, where ``T`` is a Toeplitz
+    matrix defined by `c_or_cr`.
 
-    The Toeplitz matrix has constant diagonals, with c as its first column
-    and r as its first row. If r is not given, ``r == conjugate(c)`` is
+    The Toeplitz matrix has constant diagonals, with ``c`` as its first column
+    and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
 
     .. warning::
@@ -824,7 +827,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     Returns
     -------
     x : (M,) or (M, K) ndarray
-        The solution to the system ``T x = b``. Shape of return matches shape
+        The solution to the system ``T @ x = b``. Shape of return matches shape
         of `b`.
 
     See Also
@@ -838,7 +841,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
     Examples
     --------
-    Solve the Toeplitz system T x = b, where::
+    Solve the Toeplitz system ``T @ x = b``, where::
 
             [ 1 -1 -2 -3]       [1]
         T = [ 3  1 -1 -2]   b = [2]
@@ -859,7 +862,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     array([ 1.66666667, -1.        , -2.66666667,  2.33333333])
 
     Check the result by creating the full Toeplitz matrix and
-    multiplying it by `x`.  We should get `b`.
+    multiplying it by ``x``.  We should get `b`.
 
     >>> T = toeplitz(c, r)
     >>> T.dot(x)
@@ -910,7 +913,8 @@ def _get_axis_len(aname, a, axis):
 
 def solve_circulant(c, b, singular='raise', tol=None,
                     caxis=-1, baxis=0, outaxis=0):
-    """Solve C x = b for x, where C is a circulant matrix.
+    """Solve the equation ``C @ x = b`` for ``x``, where ``C`` is a
+    circulant matrix defined by `c`.
 
     `C` is the circulant matrix associated with the vector `c`.
 
@@ -1322,7 +1326,7 @@ def det(a, overwrite_a=False, check_finite=True):
 def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
           check_finite=True, lapack_driver=None):
     """
-    Compute least-squares solution to equation Ax = b.
+    Compute least-squares solution to the equation ``a @ x = b``.
 
     Compute a vector x such that the 2-norm ``|b - A x|`` is minimized.
 
