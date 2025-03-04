@@ -26,11 +26,12 @@ References
    York. 2000.
 
 """
-from collections import namedtuple
-from collections.abc import Sequence
+import functools
 import math
 import operator
 import warnings
+from collections import namedtuple
+from collections.abc import Sequence
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -41,7 +42,7 @@ from scipy.spatial import distance_matrix
 from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              normalize_axis_index, AxisError)
+                              normalize_axis_index, np_vecdot, AxisError)
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.deprecation import _deprecate_positional_args, _deprecated
 
@@ -78,6 +79,7 @@ from scipy._lib._array_api import (
     is_marray,
     xp_size,
     xp_moveaxis_to_end,
+    xp_ravel,
     xp_sign,
     xp_vector_norm,
     xp_broadcast_promote,
@@ -1238,6 +1240,13 @@ def _length_nonmasked(x, axis, keepdims=False, xp=None):
             int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
 
 
+def _share_masks(*args, xp):
+    if is_marray(xp):
+        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+        args = [xp.asarray(arg.data, mask=mask) for arg in args]
+    return args[0] if len(args) == 1 else args
+
+
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
@@ -1328,7 +1337,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
-        vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
+        vals = xp.where(zero, xp.asarray(xp.nan, dtype=m2.dtype), m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if is_lazy_array(can_correct) or xp.any(can_correct):
@@ -1657,22 +1666,24 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     a, axis = _chk_asarray(a, axis, xp=xp)
 
     b2 = skew(a, axis, _no_deco=True)
-    n = a.shape[axis]
-    if n < 8:
-        message = ("`skewtest` requires at least 8 observations; "
-                   f"only {n=} observations were given.")
-        raise ValueError(message)
 
-    y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
-    beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
-             ((n-2.0) * (n+5) * (n+7) * (n+9)))
-    W2 = -1 + math.sqrt(2 * (beta2 - 1))
-    delta = 1 / math.sqrt(0.5 * math.log(W2))
-    alpha = math.sqrt(2.0 / (W2 - 1))
-    y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
-    Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
+    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype)
+    n = xpx.at(n, n < 8).set(xp.nan)
+    if xp.any(xp.isnan(n)):
+        message = ("`skewtest` requires at least 8 valid observations;"
+                   "slices with fewer observations will produce NaNs.")
+        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
-    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        y = b2 * xp.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
+        beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
+                 ((n-2.0) * (n+5) * (n+7) * (n+9)))
+        W2 = -1 + xp.sqrt(2 * (beta2 - 1))
+        delta = 1 / xp.sqrt(0.5 * xp.log(W2))
+        alpha = xp.sqrt(2.0 / (W2 - 1))
+        y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
+        Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
+        pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
 
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -1758,17 +1769,14 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = a.shape[axis]
-
-    if n < 5:
-        message = ("`kurtosistest` requires at least 5 observations; "
-                   f"only {n=} observations were given.")
-        raise ValueError(message)
-    if n < 20:
-        message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
-                   f"observations; only {n=} observations were given.")
-        warnings.warn(message, stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
+
+    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype)
+    n = xpx.at(n, n < 5).set(xp.nan)
+    if xp.any(xp.isnan(n)):
+        message = ("`kurtosistest` requires at least 5 valid observations; "
+                   "slices with fewer observations will produce NaNs.")
+        warnings.warn(message, SmallSampleWarning, stacklevel=2)
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
@@ -1789,7 +1797,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
-
     pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
 
     Z = Z[()] if Z.ndim == 0 else Z
@@ -1868,7 +1875,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     k, _ = kurtosistest(a, axis, _no_deco=True)
     statistic = s*s + k*k
 
-    chi2 = _SimpleChi2(xp.asarray(2.))
+    chi2 = _SimpleChi2(xp.asarray(2., dtype=statistic.dtype))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
     statistic = statistic[()] if statistic.ndim == 0 else statistic
@@ -1936,22 +1943,17 @@ def jarque_bera(x, *, axis=None):
     For a more detailed example, see :ref:`hypothesis_jarque_bera`.
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    if axis is None:
-        x = xp.reshape(x, (-1,))
-        axis = 0
+    x, axis = _chk_asarray(x, axis, xp=xp)
 
-    n = x.shape[axis]
-    if n == 0:
-        raise ValueError('At least one observation is required.')
-
-    mu = xp.mean(x, axis=axis, keepdims=True)
+    mu = _xp_mean(x, axis=axis, keepdims=True)
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
+
+    n = xp.asarray(_length_nonmasked(x, axis), dtype=mu.dtype)
     statistic = n / 6 * (s**2 + k**2 / 4)
 
-    chi2 = _SimpleChi2(xp.asarray(2.))
+    chi2 = _SimpleChi2(xp.asarray(2., dtype=mu.dtype))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
     statistic = statistic[()] if statistic.ndim == 0 else statistic
@@ -3988,16 +3990,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
-        y_hat = np.sum(w_t * y_t, axis=0) / np.sum(w_t, axis=0)
+        y_hat = np_vecdot(w_t, y_t, axis=0) / np.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator = np.sum(w_t * (y_t - y_hat)**2, axis=0) / (k - 1)
+        numerator =  np_vecdot(w_t, (y_t - y_hat)**2, axis=0) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                np.sum((1 / (n_t - 1)) *
-                       (1 - w_t / s_w_t)**2,
-                       axis=0)
+                np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0)
         )
         f = numerator / denominator
 
@@ -4009,8 +4009,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # ref.[4] p.334 eq.30
         hat_f2 = (
                 (k**2 - 1) /
-                (3 * np.sum((1 / (n_t - 1)) *
-                            (1 - w_t / s_w_t)**2, axis=0))
+                (3 * np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0))
         )
 
         # calculate p value
@@ -4162,6 +4161,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     weights = inv_sq_se / np.sum(inv_sq_se, axis=0, keepdims=True)
 
     # (3) determine variance-weighted estimate of the common mean
+    # Consider replacing with vecdot when data-apis/array-api#910 is resolved
     var_w = np.sum(weights * means, axis=0, keepdims=True)
 
     # (4) determine one-sample t statistic for each group
@@ -4181,7 +4181,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
           (b**2*10 + 8*b*c**4 + 1000*b)))
 
     # (9) calculate statistic
-    A = np.sum(z**2, axis=0)
+    A = np_vecdot(z, z, axis=0)
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
@@ -6167,10 +6167,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    n = a.shape[axis]
+    n = _length_nonmasked(a, axis)
     df = n - 1
 
-    if n == 0:
+    if a.shape[axis] == 0:
         # This is really only needed for *testing* _axis_nan_policy decorator
         # It won't happen when the decorator is used.
         NaN = _get_nan(a)
@@ -6226,7 +6226,7 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         low, high = xp.broadcast_arrays(special.stdtrit(df, p), inf)
     elif alternative == 0:  # 'two-sided'
         tail_probability = (1 - confidence_level)/2
-        p = xp.asarray([tail_probability, 1-tail_probability])
+        p = xp.stack((tail_probability, 1-tail_probability))
         # axis of p must be the zeroth and orthogonal to all the rest
         p = xp.reshape(p, tuple([2] + [1]*xp.asarray(df).ndim))
         ci = special.stdtrit(df, p)
@@ -6288,6 +6288,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = xp.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    df = xp.asarray(df, dtype=denom.dtype)
     return df, denom
 
 
@@ -6723,6 +6724,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     if xp.isdtype(b.dtype, 'integral'):
         b = xp.astype(b, default_float)
 
+    if axis is None:
+        a, b, axis = xp_ravel(a), xp_ravel(b), 0
+
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
@@ -6765,8 +6769,8 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                            standard_error=denom, estimate=estimate)
 
-    n1 = xp.asarray(a.shape[axis], dtype=a.dtype)
-    n2 = xp.asarray(b.shape[axis], dtype=b.dtype)
+    n1 = _length_nonmasked(a, axis)
+    n2 = _length_nonmasked(b, axis)
 
     if trim == 0:
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -7128,7 +7132,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    return ttest_1samp(a - b, popmean=0, axis=axis, alternative=alternative,
+    return ttest_1samp(a - b, popmean=0., axis=axis, alternative=alternative,
                        _no_deco=True)
 
 
@@ -7341,6 +7345,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = xp.broadcast_to(f_obs_float, bshape)
         f_exp = xp.broadcast_to(f_exp, bshape)
+        f_obs_float, f_exp = _share_masks(f_obs_float, f_exp, xp=xp)
 
         if sum_check:
             dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
@@ -7384,10 +7389,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = xp_size(terms) if axis is None else terms.shape[axis]
-    ddof = xp.asarray(ddof)
+    num_obs = xp.asarray(_length_nonmasked(terms, axis))
 
-    df = xp.asarray(num_obs - 1 - ddof)
+    df = num_obs - 1 - ddof
     chi2 = _SimpleChi2(df)
     pvalue = _get_pvalue(stat, chi2 , alternative='greater', symmetric=False, xp=xp)
 
@@ -8850,9 +8854,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     rankx_mean = np.mean(rankx)
     ranky_mean = np.mean(ranky)
 
-    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    temp_x = rankcx - rankx - rankcx_mean + rankx_mean
+    Sx = np_vecdot(temp_x, temp_x)
     Sx /= nx - 1
-    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    temp_y = rankcy - ranky - rankcy_mean + ranky_mean
+    Sy = np_vecdot(temp_y, temp_y)
     Sy /= ny - 1
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
@@ -9004,51 +9010,49 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
-    xp = array_namespace(pvalues)
-    pvalues = xp.asarray(pvalues)
+    xp = array_namespace(pvalues, weights)
+    pvalues, weights = xp_broadcast_promote(pvalues, weights,
+                                            force_floating=True, xp=xp)
+
     if xp_size(pvalues) == 0:
         # This is really only needed for *testing* _axis_nan_policy decorator
         # It won't happen when the decorator is used.
         NaN = _get_nan(pvalues)
         return SignificanceResult(NaN, NaN)
 
-    n = pvalues.shape[axis]
-    # used to convert Python scalar to the right dtype
-    one = xp.asarray(1, dtype=pvalues.dtype)
+    n = _length_nonmasked(pvalues, axis)
+    n = xp.asarray(n, dtype=pvalues.dtype)
 
     if method == 'fisher':
         statistic = -2 * xp.sum(xp.log(pvalues), axis=axis)
-        chi2 = _SimpleChi2(2*n*one)
+        chi2 = _SimpleChi2(2*n)
         pval = _get_pvalue(statistic, chi2, alternative='greater',
                            symmetric=False, xp=xp)
     elif method == 'pearson':
         statistic = 2 * xp.sum(xp.log1p(-pvalues), axis=axis)
-        chi2 = _SimpleChi2(2*n*one)
+        chi2 = _SimpleChi2(2*n)
         pval = _get_pvalue(-statistic, chi2, alternative='less', symmetric=False, xp=xp)
     elif method == 'mudholkar_george':
-        normalizing_factor = math.sqrt(3/n)/xp.pi
+        normalizing_factor = xp.sqrt(3/n)/xp.pi
         statistic = (-xp.sum(xp.log(pvalues), axis=axis)
                      + xp.sum(xp.log1p(-pvalues), axis=axis))
-        nu = 5*n  + 4
-        approx_factor = math.sqrt(nu / (nu - 2))
-        t = _SimpleStudentT(nu*one)
+        nu = 5*n + 4
+        approx_factor = xp.sqrt(nu / (nu - 2))
+        t = _SimpleStudentT(nu)
         pval = _get_pvalue(statistic * normalizing_factor * approx_factor, t,
                            alternative="greater", xp=xp)
     elif method == 'tippett':
         statistic = xp.min(pvalues, axis=axis)
-        beta = _SimpleBeta(one, n*one)
+        beta = _SimpleBeta(xp.ones_like(n), n)
         pval = _get_pvalue(statistic, beta, alternative='less', symmetric=False, xp=xp)
     elif method == 'stouffer':
         if weights is None:
             weights = xp.ones_like(pvalues, dtype=pvalues.dtype)
-        elif weights.shape[axis] != n:
-            raise ValueError("pvalues and weights must be of the same "
-                             "length along `axis`.")
+        pvalues, weights = _share_masks(pvalues, weights, xp=xp)
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        # could use `einsum` or clever `matmul` for performance,
-        # but this is the most readable
+        # Consider `vecdot` when data-apis/array-api#910 is resolved
         statistic = (xp.sum(weights * Zi, axis=axis)
                      / xp_vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
@@ -9471,8 +9475,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    T1 = (X <= x_star).sum()
-    T2 = (X < x_star).sum()
+    T1 = np.count_nonzero(X <= x_star)
+    T2 = np.count_nonzero(X < x_star)
 
     # "The null distribution of the test statistics T1 and T2 is "
     # "the binomial distribution, with parameters n = sample size, and "
@@ -9990,11 +9994,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     # If p = 1 or p = 2, we avoid using np.power, which introduces an overhead
     # of about 15%.
     if p == 1:
-        return np.sum(np.multiply(np.abs(u_cdf - v_cdf), deltas))
+        return np_vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
-        return np.sqrt(np.sum(np.multiply(np.square(u_cdf - v_cdf), deltas)))
-    return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
-                                       deltas)), 1/p)
+        return np.sqrt(np_vecdot(np.square(u_cdf - v_cdf), deltas))
+    return np.power(np_vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
 
 def _validate_distribution(values, weights):
@@ -10113,7 +10116,7 @@ def _sum_of_squares(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return np.sum(a*a, axis)
+    return np_vecdot(a, a, axis=axis)
 
 
 def _square_of_sums(a, axis=0):
@@ -10496,7 +10499,7 @@ def _br(x, *, r=0):
     x = np.triu(x)
     j = np.arange(n, dtype=x.dtype)
     n = np.asarray(n, dtype=x.dtype)[()]
-    return (np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1)
+    return (np_vecdot(special.binom(j, r[:, np.newaxis]), x, axis=-1)
             / special.binom(n-1, r) / n)
 
 
@@ -10586,7 +10589,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     n = sample.shape[-1]
     bk[..., n:] = 0  # remove NaNs due to n_moments > n
 
-    lmoms = np.sum(prk * bk, axis=-1)
+    lmoms = np_vecdot(prk, bk, axis=-1)
     if standardize and n_moments > 2:
         lmoms[2:] /= lmoms[1]
 
@@ -10871,6 +10874,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
     x, weights = xp_broadcast_promote(x, weights, force_floating=True)
+    if weights is not None:
+        x, weights = _share_masks(x, weights, xp=xp)
 
     # handle the special case of zero-sized arrays
     message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
@@ -10908,8 +10913,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
-    # ones_like ensures that the mask of `x` is considered
-    norm = xp.sum(xp.ones_like(x) * weights, axis=axis)
+    # consider using `vecdot` if `axis` tuple support is added (data-apis/array-api#910)
+    norm = xp.sum(weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
     with np.errstate(divide='ignore', invalid='ignore'):
         res = wsum/norm

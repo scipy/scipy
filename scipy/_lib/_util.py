@@ -12,7 +12,7 @@ from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, xp_size)
+                                   is_marray, is_numpy, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -1019,7 +1019,9 @@ def _get_nan(*data, xp=None):
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    res = xp.asarray(xp.nan, dtype=dtype)[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
@@ -1262,3 +1264,15 @@ def _apply_over_batch(*argdefs):
 
         return wrapper
     return decorator
+
+
+def np_vecdot(x1, x2, /, *, axis=-1):
+    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
+    # available. As functions are translated to Array API, `np_vecdot` can be
+    # replaced with `xp.vecdot`.
+    if np.__version__ > "2.0":
+        return np.vecdot(x1, x2, axis=axis)
+    else:
+        # of course there are other fancy ways of doing this (e.g. `einsum`)
+        # but let's keep it simple since it's temporary
+        return np.sum(x1 * x2, axis=axis)

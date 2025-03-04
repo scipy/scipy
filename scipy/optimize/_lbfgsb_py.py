@@ -563,6 +563,43 @@ class LbfgsInvHessProduct(LinearOperator):
 
         return r
 
+    def _matmat(self, X):
+        """Efficient matrix-matrix multiply with the BFGS matrices.
+
+        This calculation is described in Section (4) of [1].
+
+        Parameters
+        ----------
+        X : ndarray
+            An array with shape (n,m)
+
+        Returns
+        -------
+        Y : ndarray
+            The matrix-matrix product
+
+        Notes
+        -----
+        This implementation is written starting from _matvec and broadcasting
+        all expressions along the second axis of X.
+
+        """
+        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
+        Q = np.array(X, dtype=self.dtype, copy=True)
+
+        alpha = np.empty((n_corrs, Q.shape[1]))
+
+        for i in range(n_corrs-1, -1, -1):
+            alpha[i] = rho[i] * np.dot(s[i], Q)
+            Q -= alpha[i]*y[i][:, np.newaxis]
+
+        R = Q
+        for i in range(n_corrs):
+            beta = rho[i] * np.dot(y[i], R)
+            R += s[i][:, np.newaxis] * (alpha[i] - beta)
+
+        return R
+
     def todense(self):
         """Return a dense array representation of this operator.
 
@@ -573,14 +610,5 @@ class LbfgsInvHessProduct(LinearOperator):
             the same data represented by this `LinearOperator`.
 
         """
-        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
         I_arr = np.eye(*self.shape, dtype=self.dtype)
-        Hk = I_arr
-
-        for i in range(n_corrs):
-            A1 = I_arr - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
-            A2 = I_arr - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
-
-            Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
-                                                        s[i][np.newaxis, :])
-        return Hk
+        return self._matmat(I_arr)
