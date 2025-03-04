@@ -1220,8 +1220,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
 
 @pytest.mark.thread_unsafe
 @use_linkage
-@skip_xp_backends("dask.array", reason="lazy backends skip validation")
-@skip_xp_backends("jax.numpy", reason="lazy backends skip validation")
+@skip_xp_backends(eager_only=True)
 def test_unsupported_uncondensed_distance_matrix_linkage_warning(xp):
     assert_warns(ClusterWarning, linkage, xp.asarray([[0, 1], [1, 0]]))
 
