@@ -1929,8 +1929,8 @@ class TestNdimageFilters:
                                      origin=[-1, 0])
         xp_assert_equal(expected, output)
 
-    @skip_xp_backends(np_only=True, reason="test list input")
-    def test_rank16(self, xp):
+    # NumPy-only because test is for list input
+    def test_rank16(self):
         # test that lists are accepted and interpreted as numpy arrays
         array = [3, 2, 5, 1, 4]
         # expected values are: median(3, 2, 5) = 3, median(2, 5, 1) = 2, etc
@@ -2195,8 +2195,7 @@ def test_ticket_701(xp):
     xp_assert_equal(res, res2)
 
 
-@skip_xp_backends(np_only=True)
-def test_gh_5430(xp):
+def test_gh_5430():
     # At least one of these raises an error unless gh-5430 is
     # fixed. In py2k an int is implemented using a C long, so
     # which one fails depends on your system. In py3k there is only
@@ -2714,12 +2713,12 @@ def test_size_footprint_both_set(xp):
         )
 
 
-@skip_xp_backends(np_only=True, reason='byteorder is numpy-specific')
-def test_byte_order_median(xp):
+# NumPy-only because 'byteorder is numpy-specific'
+def test_byte_order_median():
     """Regression test for #413: median_filter does not handle bytes orders."""
-    a = xp.arange(9, dtype='<f4').reshape(3, 3)
+    a = np.arange(9, dtype='<f4').reshape(3, 3)
     ref = ndimage.median_filter(a, (3, 3))
-    b = xp.arange(9, dtype='>f4').reshape(3, 3)
+    b = np.arange(9, dtype='>f4').reshape(3, 3)
     t = ndimage.median_filter(b, (3, 3))
     assert_array_almost_equal(ref, t)
 
@@ -2780,6 +2779,7 @@ class TestVectorizedFilter:
         rng = np.random.default_rng(435982456983456987356)
 
         input = rng.random(size=(11, 12, 13))
+        input_copy = input.copy()  # check that it is not modified
         output = np.zeros_like(input) if use_output else None
 
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode, output=output)
@@ -2796,6 +2796,8 @@ class TestVectorizedFilter:
         xp_assert_close(res, ref, atol=1e-15)
         if use_output:
             xp_assert_equal(output, res)
+
+        xp_assert_equal(input, input_copy)
 
     @pytest.mark.parametrize("dtype",
                              [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -2836,6 +2838,7 @@ class TestVectorizedFilter:
     def test_mode_valid(self):
         rng = np.random.default_rng(435982456983456987356)
         input = rng.random(size=(10, 11))
+        input_copy = input.copy()  # check that it is not modified
         size = (3, 5)
         function = np.mean
         res = ndimage.vectorized_filter(input, function, size=size, mode='valid')
@@ -2843,6 +2846,7 @@ class TestVectorizedFilter:
         ref = function(view, axis=(-2, -1))
         xp_assert_close(res, ref)
         xp_assert_equal(res.shape, input.shape - np.asarray(size) + 1)
+        xp_assert_equal(input, input_copy)
 
     def test_input_validation(self):
         input = np.ones((10, 10))

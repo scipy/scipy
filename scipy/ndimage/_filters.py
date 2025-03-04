@@ -233,8 +233,12 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
             The input is extended by wrapping around to the opposite edge.
 
         'valid' (`| a b c d |`)
-            The input is not extended; rather, the output shape is reduced according
-            to the size of the filter window.
+            The input is not extended; rather, the output shape is reduced depending
+            on the window size according to the following calculation::
+
+                window_size = np.asarray(size if size is not None else footprint.shape)
+                output_shape = np.asarray(input.shape)
+                output_shape[np.asarray(axes)] -= (window_size - 1)
 
     %(cval)s
     %(origin_multiple)s
@@ -251,9 +255,12 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     Returns
     -------
     output : ndarray
-        Filtered array. Has the same shape as `input` unless ``mode=='valid'``,
-        in which case the shape is reduced according to the shape of the filter
-        window.
+        Filtered array. The dtype is the output dtype of `function`. If `function` is
+        scalar-valued when applied to a single window, the shape of the output is that
+        of `input` (unless ``mode=='valid'``; see `mode` documentation). If `function`
+        is multi-valued when applied to a single window, the placement of the
+        corresponding dimensions within the output shape depends entirely on the
+        behavior of `function`; see Examples.
 
     See Also
     --------
@@ -344,6 +351,22 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     >>> res = vectorized_filter(ascent, quartiles, size=4, batch_memory=np.inf)
     >>> np.all(np.isclose(res, ref))
     np.True_
+
+    The placement of the additional dimension(s) corresponding with multiple outputs
+    is at the discretion of `function`. `quartiles` happens to prepend one dimension
+    corresponding with the three outputs simply because that is the behavior of
+    `np.quantile`:
+
+    >>> res.shape == (3,) + ascent.shape
+    True
+
+    If we wished for this dimension to be appended:
+
+    >>> def quartiles(x, axis):
+    ...     return np.moveaxis(np.quantile(x, [0.25, 0.50, 0.75], axis=axis), 0, -1)
+    >>> res = vectorized_filter(ascent, quartiles, size=4, batch_memory=np.inf)
+    >>> res.shape == ascent.shape + (3,)
+    True
 
     Suppose we wish to implment a "mode" filter - a filter that selects the most
     frequently occuring value within the window. A simple (but rather slow)
