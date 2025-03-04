@@ -2963,7 +2963,7 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
-    @skip_xp_backends("dask.array", reason="lazy backend")
+    @skip_xp_backends(eager_only=True)
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
@@ -3039,7 +3039,7 @@ class TestZmapZscore:
         expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
-    @skip_xp_backends("dask.array", reason="lazy backend")
+    @skip_xp_backends(eager_only=True)
     def test_zscore_nan_raise(self, xp):
         x = xp.asarray([1, 2, xp.nan, 4, 5])
         with pytest.raises(ValueError, match="The input contains nan..."):
@@ -7322,8 +7322,7 @@ class TestGSTD:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
-    @pytest.mark.skip_xp_backends("dask.array", reason="lazy backend")
-    @pytest.mark.skip_xp_backends("jax.numpy", reason="lazy backend")
+    @skip_xp_backends(eager_only=True)
     @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value, xp):
         x = xp.asarray(self.array_1d + [bad_value])
