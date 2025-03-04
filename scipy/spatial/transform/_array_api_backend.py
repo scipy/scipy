@@ -499,8 +499,9 @@ def align_vectors(
     # Check input vectors
     a_original = xp.asarray(a, dtype=atleast_f32(a))
     b_original = xp.asarray(b, dtype=atleast_f32(b))
-    a = xpx.atleast_2d(a_original)
-    b = xp.atleast_2d(b_original)
+    # TODO: This function does not support broadcasting yet.
+    a = xpx.atleast_nd(a_original, ndim=2, xp=xp)
+    b = xpx.atleast_nd(b_original, ndim=2, xp=xp)
     if a.shape[-1] != 3:
         raise ValueError(
             "Expected input `a` to have shape (3,) or (N, 3), got {}".format(
@@ -518,13 +519,13 @@ def align_vectors(
             "Expected inputs `a` and `b` to have same shapes"
             ", got {} and {} respectively.".format(a_original.shape, b_original.shape)
         )
-    N = len(a)
+    N = a.shape[0]
 
     # Check weights
     if weights is None:
-        weights = np.ones(N)
+        weights = xp.ones(N, device=device(a), dtype=atleast_f32(a))
     else:
-        weights = np.array(weights, dtype=float)
+        weights = xp.asarray(weights, device=device(a), dtype=atleast_f32(a))
         if weights.ndim != 1:
             raise ValueError(
                 "Expected `weights` to be 1 dimensional, got shape {}.".format(
@@ -537,16 +538,14 @@ def align_vectors(
                 "equal to number of input vectors, got "
                 "{} values and {} vectors.".format(weights.shape[0], N)
             )
-        if (weights < 0).any():
-            raise ValueError("`weights` may not contain negative values")
+        # DECISION: We cannot check for negative weights because jit code needs to be non-branching.
+        # We return NaN instead
+        weights = xp.where(weights < 0, xp.asarray(xp.nan, device=device(a)), weights)
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
-    if N == 1:
-        weight_is_inf = np.array([True])
-    else:
-        weight_is_inf = np.isposinf(weights)
-    n_inf = np.sum(weight_is_inf)
+    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    n_inf = xp.sum(xp.astype(weight_is_inf, atleast_f32(a)))
 
     # Check for an infinite weight, which indicates that the corresponding
     # vector pair is the primary unmoving reference to which we align the
@@ -652,34 +651,28 @@ def align_vectors(
 
     # If no infinite weights and multiple vectors, proceed with normal
     # algorithm
-    # Note that einsum('ji,jk->ik', X, Y) is equivalent to np.dot(X.T, Y)
-    B = np.einsum("ji,jk->ik", weights[:, None] * a, b)
-    u, s, vh = np.linalg.svd(B)
+    B = (weights[:, None] * a).mT @ b
+    u, s, vh = xp.linalg.svd(B)
 
     # Correct improper rotation if necessary (as in Kabsch algorithm)
-    if np.linalg.det(u @ vh) < 0:
-        s[-1] = -s[-1]
-        u[:, -1] = -u[:, -1]
+    neg_det = xp.linalg.det(u @ vh) < 0
+    s = xpx.at(s)[..., -1].set(xp.where(neg_det, -s[..., -1], s[..., -1]))
+    u = xpx.at(u)[..., :, -1].set(xp.where(neg_det, -u[..., :, -1], u[..., :, -1]))
 
-    C = np.dot(u, vh)
+    C = u @ vh
 
-    if s[1] + s[2] < 1e-16 * s[0]:
-        warnings.warn(
-            "Optimal rotation is not uniquely or poorly defined "
-            "for the given sets of vectors."
-        )
+    # DECISION: We cannot branch on the condition because jit code needs to be non-branching. Hence,
+    # we omit the check for uniqueness (s[1] + s[2] < 1e-16 * s[0])
+    ssd = xp.sum(weights * xp.sum(b**2 + a**2, axis=1)) - 2 * xp.sum(s)
+    rssd = xp.sqrt(xp.maximum(ssd, xp.zeros(1)))
 
-    rssd = np.sqrt(
-        max(np.sum(weights * np.sum(b**2 + a**2, axis=1)) - 2 * np.sum(s), 0)
-    )
-
-    if return_sensitivity:
-        zeta = (s[0] + s[1]) * (s[1] + s[2]) * (s[2] + s[0])
-        kappa = s[0] * s[1] + s[1] * s[2] + s[2] * s[0]
-        with np.errstate(divide="ignore", invalid="ignore"):
-            sensitivity = np.mean(weights) / zeta * (kappa * np.eye(3) + np.dot(B, B.T))
-        return from_matrix(C), rssd, sensitivity
-    return from_matrix(C), rssd, None
+    # TODO: We currently need to always compute the sensitivity matrix because jit code needs to be
+    # non-branching. We should check if compilers can optimize the where statement (e.g. in jax)
+    # and check if we can have an eager version that only evaluates the branch that is needed.
+    zeta = (s[..., 0] + s[..., 1]) * (s[..., 1] + s[..., 2]) * (s[..., 2] + s[..., 0])
+    kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
+    sensitivity = xp.mean(weights) / zeta * (kappa * xp.eye(3) + B @ B.mT)
+    return from_matrix(C), rssd, sensitivity
 
 
 def _normalize_quaternion(quat: Array) -> Array:
