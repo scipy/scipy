@@ -223,11 +223,6 @@ def test_bootstrap_against_R(method, expected):
     assert_allclose(res.confidence_interval, expected, rtol=0.005)
 
 
-tests_against_itself_1samp = {"basic": 1780,
-                              "percentile": 1784,
-                              "BCa": 1784}
-
-
 def test_multisample_BCa_against_R():
     # Because bootstrap is stochastic, it's tricky to test against reference
     # behavior. Here, we show that SciPy's BCa CI matches R wboot's BCa CI
@@ -311,6 +306,11 @@ def test_BCa_acceleration_against_reference():
     assert_allclose(a_hat, 0.011008228344026734)
 
 
+tests_against_itself_1samp = {"basic": 1789,
+                              "percentile": 1790,
+                              "BCa": 1789}
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
@@ -319,7 +319,7 @@ def test_bootstrap_against_itself_1samp(method, expected):
     # to check for unintended changes in behavior. The test also makes sure
     # that bootstrap works with multi-sample statistics and that the
     # `axis` argument works as expected / function is vectorized.
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(9123847)
 
     n = 100  # size of sample
     n_resamples = 999  # number of bootstrap resamples used to form each CI
