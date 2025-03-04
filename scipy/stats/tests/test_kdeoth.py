@@ -19,7 +19,15 @@ def test_kde_1d():
     gkde = stats.gaussian_kde(xn)
 
     # evaluate the density function for the kde for some points
-    xs = np.linspace(-7,7,501)
+    xx = np.asarray([0.1, 0.5, 0.9])
+    loc, scale = gkde.dataset, np.sqrt(gkde.covariance)
+    assert_allclose(
+        gkde(xx), 
+        stats.norm.pdf(xx[:, None], loc=loc, scale=scale).sum(axis=-1) / gkde.n,
+        rtol=5e-14
+    )
+
+    xs = np.linspace(-7, 7, 501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
     intervall = xs[1] - xs[0]
@@ -51,7 +59,18 @@ def test_kde_1d_weighted():
     gkde = stats.gaussian_kde(xn, weights=wn)
 
     # evaluate the density function for the kde for some points
-    xs = np.linspace(-7,7,501)
+    # evaluate the density function for the kde for some points
+    xx = np.asarray([0.1, 0.5, 0.9])
+    loc, scale = gkde.dataset, np.sqrt(gkde.covariance)
+
+    pdf = stats.norm.pdf
+    assert_allclose(
+        gkde(xx), 
+        np.sum(pdf(xx[:, None], loc=loc, scale=scale) * gkde.weights, axis=-1),
+        rtol=5e-14
+    )
+
+    xs = np.linspace(-7, 7, 501)
     kdepdf = gkde.evaluate(xs)
     normpdf = stats.norm.pdf(xs, loc=xnmean, scale=xnstd)
     intervall = xs[1] - xs[0]
@@ -70,11 +89,15 @@ def test_kde_1d_weighted():
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
 
-@pytest.mark.xslow
-def test_kde_2d():
+@pytest.mark.parametrize("n_basesample",
+                         [
+                            20,
+                            pytest.param(500, marks=[pytest.mark.xslow])
+                         ]
+)
+def test_kde_2d(n_basesample):
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
-    n_basesample = 500
 
     mean = np.array([1.0, 3.0])
     covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
@@ -84,6 +107,26 @@ def test_kde_2d():
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn)
+
+    # evaluate vs multivariate normal, using the KDE definition
+    xx = np.asarray([[1, 2], [3, 4], [5, 6]])
+    arg = xx[:, None, :] - gkde.dataset.T
+    pdf = stats.multivariate_normal.pdf
+    assert_allclose(
+        gkde(xx.T),
+        pdf(arg, cov=gkde.covariance).sum(axis=-1) / gkde.n,
+        rtol=5e-14
+    )
+
+    # ... and cdf
+    cdf = stats.multivariate_normal.cdf
+    lo, hi = [-1, -2], [0, 0]
+    lo_, hi_ = lo - gkde.dataset.T, hi - gkde.dataset.T
+    assert_allclose(
+        gkde.integrate_box(lo, hi),
+        cdf(hi_, lower_limit=lo_, cov=gkde.covariance).sum(axis=-1) / gkde.n,
+        rtol=5e-7
+    )
 
     # evaluate the density function for the kde for some points
     x, y = np.mgrid[-7:7:500j, -7:7:500j]
@@ -110,11 +153,15 @@ def test_kde_2d():
                         (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
 
 
-@pytest.mark.xslow
-def test_kde_2d_weighted():
+@pytest.mark.parametrize("n_basesample",
+                         [
+                            20,
+                            pytest.param(500, marks=[pytest.mark.xslow])
+                         ]
+)
+def test_kde_2d_weighted(n_basesample):
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
-    n_basesample = 500
 
     mean = np.array([1.0, 3.0])
     covariance = np.array([[1.0, 2.0], [2.0, 6.0]])
@@ -125,6 +172,27 @@ def test_kde_2d_weighted():
 
     # get kde for original sample
     gkde = stats.gaussian_kde(xn, weights=wn)
+
+
+    # evaluate vs multivariate normal, using the kde definition
+    xx = np.asarray([[1, 2], [3, 4], [5, 6]])
+    arg = xx[:, None, :] - gkde.dataset.T
+    pdf = stats.multivariate_normal.pdf
+    assert_allclose(
+        gkde(xx.T),
+        np.sum(pdf(arg, cov=gkde.covariance) * gkde.weights, axis=-1),
+        rtol=5e-14
+    )
+
+    # ... and cdf
+    cdf = stats.multivariate_normal.cdf
+    lo, hi = [-1, -2], [0, 0]
+    lo_, hi_ = lo - gkde.dataset.T, hi - gkde.dataset.T
+    assert_allclose(
+        gkde.integrate_box(lo, hi),
+        np.sum(cdf(hi_, lower_limit=lo_, cov=gkde.covariance) * gkde.weights, axis=-1),
+        rtol=5e-6
+    )
 
     # evaluate the density function for the kde for some points
     x, y = np.mgrid[-7:7:500j, -7:7:500j]
