@@ -1351,8 +1351,8 @@ def _apply_over_batch(*argdefs):
 
 def np_vecdot(x1, x2, /, *, axis=-1):
     # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
-    # available. As functions are translated to Array API, this can be replaced
-    # with `array-api-strict` NumPy's vecdot.
+    # available. As functions are translated to Array API, `np_vecdot` can be
+    # replaced with `xp.vecdot`.
     if np.__version__ > "2.0":
         return np.vecdot(x1, x2, axis=axis)
     else:
