@@ -12,7 +12,7 @@ from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_marray, is_numpy, xp_size)
+                                   is_numpy, is_marray, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
