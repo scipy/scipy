@@ -1,4 +1,6 @@
 from collections import namedtuple
+from functools import partial
+
 import numpy as np
 import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
@@ -12,7 +14,7 @@ from scipy._lib._util import _ScalarFunctionWrapper
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class _GradWrapper:
+class _ScalarGradWrapper:
     """
     Wrapper class for gradient calculation
     """
@@ -49,7 +51,7 @@ class _GradWrapper:
         return g
 
 
-class _HessWrapper:
+class _ScalarHessWrapper:
     """
     Wrapper class for hess calculation via finite differences
     """
@@ -205,8 +207,8 @@ class ScalarFunction:
            will be set. However, a subsequent call with a different argument
            of *any* of the methods may overwrite the attribute.
     """
-    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None, workers=None):
+    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step=None,
+                 finite_diff_bounds=(-np.inf, np.inf), epsilon=None, workers=None):
 
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
@@ -273,7 +275,7 @@ class ScalarFunction:
         self._update_fun()
 
         # Initial gradient evaluation
-        self._wrapped_grad = _GradWrapper(
+        self._wrapped_grad = _ScalarGradWrapper(
             grad,
             fun=self._wrapped_fun,
             args=args,
@@ -292,7 +294,7 @@ class ScalarFunction:
             self._wrapped_hess = _FakeCounter(ngev=0, nhev=0)
         else:
             if callable(hess):
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
@@ -301,7 +303,7 @@ class ScalarFunction:
                 self.H = self._wrapped_hess.H
                 self.H_updated = True
             elif hess in FD_METHODS:
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
@@ -404,6 +406,10 @@ class ScalarFunction:
         return self.f, self.g
 
 
+def _VectorFunWrapper(fun, x):
+    return np.atleast_1d(fun(x))
+
+
 class VectorFunction:
     """Vector function and its derivatives.
 
@@ -422,8 +428,8 @@ class VectorFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, jac, hess,
-                 finite_diff_rel_step, finite_diff_jac_sparsity,
-                 finite_diff_bounds, sparse_jacobian):
+                 finite_diff_rel_step=None, finite_diff_jac_sparsity=None,
+                 finite_diff_bounds=None, sparse_jacobian=None, workers=None):
         if not callable(jac) and jac not in FD_METHODS:
             raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
@@ -456,6 +462,9 @@ class VectorFunction:
         self.J_updated = False
         self.H_updated = False
 
+        # normalize workers
+        workers = workers or map
+
         finite_diff_options = {}
         if jac in FD_METHODS:
             finite_diff_options["method"] = jac
@@ -465,11 +474,17 @@ class VectorFunction:
                 finite_diff_options["sparsity"] = (finite_diff_jac_sparsity,
                                                    sparsity_groups)
             finite_diff_options["bounds"] = finite_diff_bounds
+            finite_diff_options["workers"] = workers
+            finite_diff_options["full_output"] = True
             self.x_diff = np.copy(self.x)
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
+            # workers is not useful for evaluation of the LinearOperator
+            # produced by approx_derivative. Only two/three function
+            # evaluations are used, and the LinearOperator may persist
+            # outside the scope that workers is valid in.
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "
@@ -477,12 +492,10 @@ class VectorFunction:
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
 
-        # Function evaluation
-        def fun_wrapped(x):
-            self.nfev += 1
-            return np.atleast_1d(fun(x))
+        fun_wrapped = partial(_VectorFunWrapper, fun)
 
         def update_fun():
+            self.nfev += 1
             self.f = fun_wrapped(self.x)
 
         self._update_fun_impl = update_fun
@@ -523,34 +536,38 @@ class VectorFunction:
                 self.J = jac_wrapped(self.x)
 
         elif jac in FD_METHODS:
-            self.J = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                       **finite_diff_options)
+            self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                            **finite_diff_options)
             self.J_updated = True
+            self.nfev += dct['nfev']
 
             if (sparse_jacobian or
                     sparse_jacobian is None and sps.issparse(self.J)):
                 def update_jac():
                     self._update_fun()
-                    self.J = sps.csr_array(
+                    self.J, dct = sps.csr_array(
                         approx_derivative(fun_wrapped, self.x, f0=self.f,
                                           **finite_diff_options))
+                    self.nfev += dct['nfev']
                 self.J = sps.csr_array(self.J)
                 self.sparse_jacobian = True
 
             elif sps.issparse(self.J):
                 def update_jac():
                     self._update_fun()
-                    self.J = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                               **finite_diff_options).toarray()
+                    self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                                    **finite_diff_options).toarray()
+                    self.nfev += dct['nfev']
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False
 
             else:
                 def update_jac():
                     self._update_fun()
-                    self.J = np.atleast_2d(
-                        approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                          **finite_diff_options))
+                    J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                               **finite_diff_options)
+                    self.J = np.atleast_2d(J)
+                    self.nfev += dct['nfev']
                 self.J = np.atleast_2d(self.J)
                 self.sparse_jacobian = False
 
@@ -591,6 +608,7 @@ class VectorFunction:
                                            f0=self.J.T.dot(self.v),
                                            args=(self.v,),
                                            **finite_diff_options)
+
             update_hess()
             self.H_updated = True
         elif isinstance(hess, HessianUpdateStrategy):
