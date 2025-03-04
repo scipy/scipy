@@ -900,6 +900,10 @@ def test_copy_flag():
 
 
 def test_normalize_dual_quaternion():
+    dual_quat = normalize_dual_quaternion(np.zeros((1, 8)))
+    assert_allclose(np.linalg.norm(dual_quat[0, :4]), 1.0, atol=1e-12)
+    assert_allclose(dual_quat[0, :4] @ dual_quat[0, 4:], 0.0, atol=1e-12)
+
     rng = np.random.default_rng(103213650)
     dual_quat = rng.normal(size=(1000, 8))
     dual_quat = normalize_dual_quaternion(dual_quat)
