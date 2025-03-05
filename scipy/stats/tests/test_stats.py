@@ -3588,10 +3588,11 @@ class TestMoments:
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
-        a = np.reshape(np.arange(8.), (2, -1))
-        a[1, 0] = np.nan
+        a = xp.reshape(xp.arange(8.), (2, -1))
+        a = xpx.at(a)[1, 0].set(xp.nan)
+
         mm = stats.moment(xp.asarray(a), 2, axis=1)
-        xp_assert_close(mm, xp.asarray([1.25, np.nan]), atol=1e-15)
+        xp_assert_close(mm, xp.asarray([1.25, xp.nan]), atol=1e-15)
 
     def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
@@ -3683,9 +3684,9 @@ class TestSkew(SkewKurtosisTest):
     def test_skew_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
-        a = np.arange(8.)
-        a = np.reshape(a, (2, -1))
-        a[1, 0] = np.nan
+        a = xp.arange(8.)
+        a = xp.reshape(a, (2, -1))
+        a = xpx.at(a)[1, 0].set(xp.nan)
         with np.errstate(invalid='ignore'):
             s = stats.skew(xp.asarray(a), axis=1)
         xp_assert_equal(s, xp.asarray([0, xp.nan]))
