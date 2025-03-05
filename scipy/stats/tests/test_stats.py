@@ -76,10 +76,6 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
 # TODO: re-check whether this works after lazywhere moved to array-api-extra
 @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
-@skip_xp_backends('array_api_strict',
-                  reason=("`array_api_strict.where` `fillvalue` doesn't "
-                           "accept Python floats. See data-apis/array-api#807.")
-)
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -175,6 +171,8 @@ class TestTrimmedStats:
         y = stats.tstd(x, limits=None)
         xp_assert_close(y, xp.std(x, correction=1))
 
+    @pytest.mark.xfail_xp_backends("array_api_strict",
+                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmin(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmin(x), xp.asarray(0))
@@ -214,6 +212,8 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foobar')
 
+    @pytest.mark.xfail_xp_backends("array_api_strict",
+                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmax(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmax(x), xp.asarray(9))
@@ -240,7 +240,7 @@ class TestTrimmedStats:
 
     @skip_xp_backends(np_only=True,
                       reason="Only NumPy arrays support scalar input/`nan_policy`.")
-    def test_tax_scalar_and_nanpolicy(self, xp):
+    def test_tmax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
         x = np.arange(10.)
@@ -262,6 +262,12 @@ class TestTrimmedStats:
         y_ref = xp.asarray([4., 5., 6., 7., 8.])
         xp_assert_close(y, xp.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
         xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
+
+    def test_gh_22626(self, xp):
+        # Test that `tmin`/`tmax` returns exact result with outrageously large integers
+        x = xp.arange(2**62, 2**62+10)
+        xp_assert_equal(stats.tmin(x[None, :]), x)
+        xp_assert_equal(stats.tmax(x[None, :]), x)
 
 
 class TestPearsonrWilkinson:
@@ -3165,7 +3171,6 @@ class TestZmapZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
-    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
         ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
@@ -6526,20 +6531,6 @@ class TestDescribe:
 
 
 class NormalityTests:
-    def test_too_small(self, xp):
-        # 1D sample has too few observations -> warning/error
-        test_fun = getattr(stats, self.test_name)
-        x = xp.asarray(4.)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = test_fun(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "...requires at least..."
-            with pytest.raises(ValueError, match=message):
-                test_fun(x)
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
@@ -6585,6 +6576,7 @@ class NormalityTests:
             xp_assert_equal(res.statistic, NaN)
             xp_assert_equal(res.pvalue, NaN)
 
+
 class TestSkewTest(NormalityTests):
     test_name = 'skewtest'
     case_ref = (1.98078826090875881, 0.04761502382843208)  # statistic, pvalue
@@ -6598,20 +6590,18 @@ class TestSkewTest(NormalityTests):
 
     def test_skewtest_too_few_observations(self, xp):
         # Regression test for ticket #1492.
-        # skewtest requires at least 8 observations; 7 should raise a ValueError.
+        # skewtest requires at least 8 observations; 7 should warn and return NaN.
         stats.skewtest(xp.arange(8.0))
 
         x = xp.arange(7.0)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.skewtest(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "`skewtest` requires at least 8 observations"
-            with pytest.raises(ValueError, match=message):
-                stats.skewtest(x)
+
+        message = (too_small_1d_not_omit if is_numpy(xp)
+                   else "`skewtest` requires at least 8 valid observations")
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.skewtest(x)
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestKurtosisTest(NormalityTests):
@@ -6637,33 +6627,33 @@ class TestKurtosisTest(NormalityTests):
 
     @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_kurtosistest_too_few_observations(self, xp):
-        # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
-        # At least 20 are needed to avoid warning
+        # kurtosistest requires at least 5 observations; 4 should warn and return NaN.
         # Regression test for ticket #1425.
-        stats.kurtosistest(xp.arange(20.0))
+        stats.kurtosistest(xp.arange(5.0))
 
-        message = "`kurtosistest` p-value may be inaccurate..."
-        with pytest.warns(UserWarning, match=message):
-            stats.kurtosistest(xp.arange(5.0))
-        with pytest.warns(UserWarning, match=message):
-            stats.kurtosistest(xp.arange(19.0))
-
-        x = xp.arange(4.0)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.skewtest(x)
-                NaN = xp.asarray(xp.nan)
-                xp_assert_equal(res.statistic, NaN)
-                xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "`kurtosistest` requires at least 5 observations"
-            with pytest.raises(ValueError, match=message):
-                stats.kurtosistest(x)
+        message = (too_small_1d_not_omit if is_numpy(xp)
+                   else "`kurtosistest` requires at least 5 valid")
+        with pytest.warns(SmallSampleWarning, match=message):
+            res = stats.kurtosistest(xp.arange(4.))
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestNormalTest(NormalityTests):
     test_name = 'normaltest'
     case_ref = (3.92371918158185551, 0.14059672529747502)  # statistic, pvalue
+
+    def test_too_few_observations(self, xp):
+        stats.normaltest(xp.arange(8.))
+
+        # 1D sample has too few observations -> warning / NaN output
+        # specific warning messages tested for `skewtest`/`kurtosistest`
+        with pytest.warns(SmallSampleWarning):
+            res = stats.normaltest(xp.arange(7.))
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestRankSums:
@@ -6716,18 +6706,15 @@ class TestJarqueBera:
         assert JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic  # noqa: E501
         assert p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue
 
-    def test_jarque_bera_size(self, xp):
+    @skip_xp_backends('array_api_strict', reason='Noisy; see TestSkew')
+    def test_jarque_bera_too_few_observations(self, xp):
         x = xp.asarray([])
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.jarque_bera(x)
+
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.jarque_bera(x)
             NaN = xp.asarray(xp.nan)
             xp_assert_equal(res.statistic, NaN)
             xp_assert_equal(res.pvalue, NaN)
-        else:
-            message = "At least one observation is required."
-            with pytest.raises(ValueError, match=message):
-                res = stats.jarque_bera(x)
 
     def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)
@@ -6990,11 +6977,7 @@ class TestHMean:
     @pytest.mark.filterwarnings(
         "ignore:divide by zero encountered:RuntimeWarning"
     ) # for dask
-    @skip_xp_backends('array_api_strict',
-                      reason=("`array_api_strict.where` `fillvalue` doesn't "
-                               "accept Python scalars. See data-apis/array-api#807."))
     def test_1d_with_negative_value(self, xp):
-        # Won't work for array_api_strict for now, but see data-apis/array-api#807
         a = np.array([1, 0, -1])
         message = "The harmonic mean is only defined..."
         with pytest.warns(RuntimeWarning, match=message):
@@ -7230,9 +7213,6 @@ class TestPMean:
         desired = 0.0
         check_equal_pmean(a, p, desired, rtol=0.0, xp=xp)
 
-    @skip_xp_backends('array_api_strict',
-                      reason=("`array_api_strict.where` `fillvalue` doesn't "
-                              "accept Python scalars. See data-apis/array-api#807."))
     def test_1d_with_negative_value(self, xp):
         a, p = np.array([1, 0, -1]), 1.23
         message = "The power mean is only defined..."
@@ -7967,13 +7947,10 @@ class TestFOneWay:
 
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be
-        # calculated.
+        # calculated on most platforms
         F, p = stats.f_oneway([2], [2], [2, 3, 4])
-        # The use of assert_equal might be too optimistic, but the calculation
-        # in this case is trivial enough that it is likely to go through with
-        # no loss of precision.
-        assert_equal(F, 3/5)
-        assert_equal(p, 5/8)
+        assert_allclose(F, 3/5, rtol=1e-15)  # assert_equal fails on some CI platforms
+        assert_allclose(p, 5/8, rtol=1e-15)
 
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)
@@ -9712,7 +9689,6 @@ class TestXP_Var:
         y = xp.arange(10.)
         xp_assert_equal(_xp_var(x), _xp_var(y))
 
-    @pytest.mark.skip_xp_backends('array_api_strict', reason='needs array-api#850')
     def test_complex_gh22404(self, xp):
         rng = np.random.default_rng(90359458245906)
         x, y = rng.random((2, 20))
