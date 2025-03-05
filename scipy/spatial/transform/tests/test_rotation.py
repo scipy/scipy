@@ -1407,10 +1407,11 @@ def test_align_vectors_no_rotation(xp):
     assert_allclose(rssd, 0, atol=1e-6)
 
 
-def test_align_vectors_no_noise():
+def test_align_vectors_no_noise(xp):
     rng = np.random.default_rng(14697284569885399755764481408308808739)
     c = Rotation.random(rng=rng)
-    b = rng.normal(size=(5, 3))
+    c = c.from_quat(xp.asarray(c.as_quat()))
+    b = xp.asarray(rng.normal(size=(5, 3)))
     a = c.apply(b)
 
     est, rssd = Rotation.align_vectors(a, b)
@@ -1418,12 +1419,12 @@ def test_align_vectors_no_noise():
     assert_allclose(rssd, 0, atol=1e-7)
 
 
-def test_align_vectors_improper_rotation():
+def test_align_vectors_improper_rotation(xp):
     # Tests correct logic for issue #10444
-    x = np.array(
+    x = xp.asarray(
         [[0.89299824, -0.44372674, 0.0752378], [0.60221789, -0.47564102, -0.6411702]]
     )
-    y = np.array(
+    y = xp.asarray(
         [[0.02386536, -0.82176463, 0.5693271], [-0.27654929, -0.95191427, -0.1318321]]
     )
 
@@ -1432,42 +1433,44 @@ def test_align_vectors_improper_rotation():
     assert_allclose(rssd, 0, atol=1e-7)
 
 
-def test_align_vectors_rssd_sensitivity():
+def test_align_vectors_rssd_sensitivity(xp):
     rssd_expected = 0.141421356237308
-    sens_expected = np.array([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
+    sens_expected = xp.asarray([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     atol = 1e-6
-    a = [[0, 1, 0], [0, 1, 1], [0, 1, 1]]
-    b = [[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]]
+    a = xp.asarray([[0, 1, 0], [0, 1, 1], [0, 1, 1]])
+    b = xp.asarray([[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]])
     rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
     assert np.isclose(rssd, rssd_expected, atol=atol)
     assert np.allclose(sens, sens_expected, atol=atol)
 
 
-def test_align_vectors_scaled_weights():
+def test_align_vectors_scaled_weights(xp):
     n = 10
-    a = Rotation.random(n, rng=0).apply([1, 0, 0])
-    b = Rotation.random(n, rng=1).apply([1, 0, 0])
+    a = xp.asarray(Rotation.random(n, rng=0).apply([1, 0, 0]))
+    b = xp.asarray(Rotation.random(n, rng=1).apply([1, 0, 0]))
     scale = 2
 
-    est1, rssd1, cov1 = Rotation.align_vectors(a, b, np.ones(n), True)
-    est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * np.ones(n), True)
+    est1, rssd1, cov1 = Rotation.align_vectors(a, b, xp.ones(n), True)
+    est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * xp.ones(n), True)
 
     assert_allclose(est1.as_matrix(), est2.as_matrix())
     assert_allclose(np.sqrt(scale) * rssd1, rssd2, atol=1e-6)
     assert_allclose(cov1, cov2)
 
 
-def test_align_vectors_noise():
+def test_align_vectors_noise(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     n_vectors = 100
-    rot = Rotation.random(rng=rng)
-    vectors = rng.normal(size=(n_vectors, 3))
+    rot = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
+    vectors = xp.asarray(rng.normal(size=(n_vectors, 3)))
     result = rot.apply(vectors)
 
     # The paper adds noise as independently distributed angular errors
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
-    noise = Rotation.from_rotvec(rng.normal(size=(n_vectors, 3), scale=sigma))
+    noise = Rotation.from_rotvec(
+        xp.asarray(rng.normal(size=(n_vectors, 3), scale=sigma))
+    )
 
     # Attitude errors must preserve norm. Hence apply individual random
     # rotations to each vector.
@@ -1489,83 +1492,96 @@ def test_align_vectors_noise():
     assert_allclose(cov[1, 1], 0, atol=tolerance)
     assert_allclose(cov[2, 2], 0, atol=tolerance)
 
-    assert_allclose(rssd, np.sum((noisy_result - est.apply(vectors)) ** 2) ** 0.5)
+    assert_allclose(rssd, xp.sum((noisy_result - est.apply(vectors)) ** 2) ** 0.5)
 
 
-def test_align_vectors_invalid_input():
+def test_align_vectors_invalid_input(xp):
     with pytest.raises(ValueError, match="Expected input `a` to have shape"):
-        Rotation.align_vectors([1, 2, 3, 4], [1, 2, 3])
+        a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
+        Rotation.align_vectors(a, b)
 
     with pytest.raises(ValueError, match="Expected input `b` to have shape"):
-        Rotation.align_vectors([1, 2, 3], [1, 2, 3, 4])
+        a, b = xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3, 4])
+        Rotation.align_vectors(a, b)
 
     with pytest.raises(
         ValueError, match="Expected inputs `a` and `b` to have same shapes"
     ):
-        Rotation.align_vectors([[1, 2, 3], [4, 5, 6]], [[1, 2, 3]])
+        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3]])
+        Rotation.align_vectors(a, b)
 
     with pytest.raises(ValueError, match="Expected `weights` to be 1 dimensional"):
-        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[[1]])
+        a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
+        weights = xp.asarray([[1]])
+        Rotation.align_vectors(a, b, weights)
 
     with pytest.raises(ValueError, match="Expected `weights` to have number of values"):
-        Rotation.align_vectors(
-            [[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]], weights=[1, 2, 3]
-        )
+        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
+        weights = xp.asarray([1, 2, 3])
+        Rotation.align_vectors(a, b, weights)
 
-    with pytest.raises(ValueError, match="`weights` may not contain negative values"):
-        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
+    a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
+    weights = xp.asarray([-1])
+    # DECISION: We cannot do value-based checking in non-branching code. Instead, we return NaNs.
+    if is_numpy(xp):
+        with pytest.raises(
+            ValueError, match="`weights` may not contain negative values"
+        ):
+            Rotation.align_vectors(a, b, weights)
+    else:
+        r, rssd = Rotation.align_vectors(a, b, weights)
+        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
+        assert xp.isnan(rssd), "RSSD should be nan"
 
     with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
-        Rotation.align_vectors(
-            [[1, 2, 3], [4, 5, 6]], [[1, 2, 3], [4, 5, 6]], weights=[np.inf, np.inf]
-        )
+        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
+        weights = xp.asarray([np.inf, np.inf])
+        Rotation.align_vectors(a, b, weights)
 
     with pytest.raises(ValueError, match="Cannot align zero length primary vectors"):
-        Rotation.align_vectors([[0, 0, 0]], [[1, 2, 3]])
+        Rotation.align_vectors(xp.asarray([[0, 0, 0]]), xp.asarray([[1, 2, 3]]))
 
     with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-        Rotation.align_vectors(
-            [[1, 2, 3], [4, 5, 6]],
-            [[1, 2, 3], [4, 5, 6]],
-            return_sensitivity=True,
-            weights=[np.inf, 1],
-        )
+        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
+        weights = xp.asarray([np.inf, 1])
+        Rotation.align_vectors(a, b, weights, return_sensitivity=True)
 
     with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], return_sensitivity=True)
+        a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
+        Rotation.align_vectors(a, b, return_sensitivity=True)
 
 
-def test_align_vectors_align_constrain():
+def test_align_vectors_align_constrain(xp):
     # Align the primary +X B axis with the primary +Y A axis, and rotate about
     # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
     # is aligned with the +Z A axis (residual of the [0, 1, 1] secondary a
     # vector)
     atol = 1e-12
-    b = [[1, 0, 0], [1, 1, 0]]
-    a = [[0, 1, 0], [0, 1, 1]]
-    m_expected = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    b = xp.asarray([[1, 0, 0], [1, 1, 0]])
+    a = xp.asarray([[0, 1, 0], [0, 1, 1]])
+    m_expected = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
     assert_allclose(R.apply(b), a, atol=atol)  # Pri and sec align exactly
-    assert np.isclose(rssd, 0, atol=atol)
+    assert xp.isclose(rssd, 0, atol=atol)
 
     # Do the same but with an inexact secondary rotation
-    b = [[1, 0, 0], [1, 2, 0]]
+    b = xp.asarray([[1, 0, 0], [1, 2, 0]])
     rssd_expected = 1.0
-    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
     assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
-    assert np.isclose(rssd, rssd_expected, atol=atol)
-    a_expected = [[0, 1, 0], [0, 1, 2]]
+    assert xp.isclose(rssd, rssd_expected, atol=atol)
+    a_expected = xp.asarray([[0, 1, 0], [0, 1, 2]])
     assert_allclose(R.apply(b), a_expected, atol=atol)
 
     # Check random vectors
-    b = [[1, 2, 3], [-2, 3, -1]]
-    a = [[-1, 3, 2], [1, -1, 2]]
+    b = xp.asarray([[1, 2, 3], [-2, 3, -1]])
+    a = xp.asarray([[-1, 3, 2], [1, -1, 2]])
     rssd_expected = 1.3101595297515016
-    R, rssd = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
     assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
-    assert np.isclose(rssd, rssd_expected, atol=atol)
+    assert xp.isclose(rssd, rssd_expected, atol=atol)
 
 
 def test_align_vectors_near_inf():

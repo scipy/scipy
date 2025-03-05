@@ -561,8 +561,8 @@ def align_vectors(
             )
         a_pri = a[weight_is_inf]
         b_pri = b[weight_is_inf]
-        a_pri_norm = _norm3(a_pri[0])
-        b_pri_norm = _norm3(b_pri[0])
+        a_pri_norm = xp.linalg.vector_norm(a_pri[..., 0, :], axis=-1)
+        b_pri_norm = xp.linalg.vector_norm(b_pri[..., 0, :], axis=-1)
         if a_pri_norm == 0 or b_pri_norm == 0:
             raise ValueError("Cannot align zero length primary vectors")
         a_pri /= a_pri_norm
@@ -570,11 +570,13 @@ def align_vectors(
 
         # We first find the minimum angle rotation between the primary
         # vectors.
-        cross = np.cross(b_pri[0], a_pri[0])
-        cross_norm = _norm3(cross)
-        theta = atan2(cross_norm, _dot3(a_pri[0], b_pri[0]))
+        cross = xp.linalg.cross(b_pri[..., 0, :], a_pri[..., 0, :])
+        cross_norm = xp.linalg.vector_norm(cross, axis=-1)
+        theta = xp.atan2(
+            cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1)
+        )
         tolerance = 1e-3  # tolerance for small angle approximation (rad)
-        q_flip = np.array([0.0, 0.0, 0.0, 1.0])
+        q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0])
         if (np.pi - theta) < tolerance:
             # Near pi radians, the Taylor series approximation of x/sin(x)
             # diverges, so for numerical stability we flip pi and then
@@ -582,8 +584,8 @@ def align_vectors(
             if cross_norm == 0:
                 # For antiparallel vectors, cross = [0, 0, 0] so we need to
                 # manually set an arbitrary orthogonal axis of rotation
-                i = np.argmin(np.abs(a_pri[0]))
-                r = np.zeros(3)
+                i = xp.argmin(xp.abs(a_pri[..., 0, :]))
+                r = xp.zeros(3)
                 r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
             else:
                 r = cross  # Shortest angle orthogonal axis of rotation
@@ -596,7 +598,7 @@ def align_vectors(
             r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
         else:
             r = cross * theta / np.sin(theta)
-        q_pri = _compose_quat(from_rotvec(r), q_flip)
+        q_pri = compose_quat(from_rotvec(r), q_flip)
 
         if N == 1:
             # No secondary vectors, so we are done
@@ -639,14 +641,17 @@ def align_vectors(
         # Calculated the root sum squared distance. We force the error to
         # be zero for the infinite weight vectors since they will align
         # exactly.
-        weights_inf_zero = weights.copy()
-        if N > 1 or np.isposinf(weights[0]):
+        weights_inf_zero = xp.asarray(weights, copy=True)
+        if N > 1 or weights[0] == xp.inf:
             # Skip non-infinite weight single vectors pairs, we used the
             # infinite weight code path but don't want to zero that weight
             weights_inf_zero[weight_is_inf] = 0
         a_est = apply(q_opt, b)
-        rssd = np.sqrt(np.sum(weights_inf_zero @ (a - a_est) ** 2))
+        rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
 
+        q_opt = xp.where(
+            xp.isnan(weights), xp.asarray(xp.nan, device=device(q_opt)), q_opt
+        )
         return q_opt, rssd, None
 
     # If no infinite weights and multiple vectors, proceed with normal
