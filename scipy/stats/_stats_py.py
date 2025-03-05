@@ -783,10 +783,10 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
                                  val=max_, xp=xp)
 
     min_ = xp.min(a, axis=axis)
-    mask = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
+    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
     # Output dtype is data-dependent
     # Possible loss of precision for int types
-    res = min_ if xp.all(mask) else xp.where(mask, min_, xp.nan)
+    res = min_ if xp.all(valid) else xp.where(valid, min_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
@@ -841,10 +841,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
                                  val=min_, xp=xp)
 
     max_ = xp.max(a, axis=axis)
-    mask = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
+    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
     # Output dtype is data-dependent
     # Possible loss of precision for int types
-    res = max_ if xp.all(mask) else xp.where(mask, max_, xp.nan)
+    res = max_ if xp.all(valid) else xp.where(valid, max_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
