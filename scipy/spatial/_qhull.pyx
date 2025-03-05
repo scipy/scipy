@@ -219,6 +219,10 @@ qhull_misc_lib_check()
 
 
 class QhullError(RuntimeError):
+    """
+    Raised when Qhull encounters an error condition, such as 
+    geometrical degeneracy when options to resolve are not enabled.
+    """
     pass
 
 

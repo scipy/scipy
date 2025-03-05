@@ -1,6 +1,6 @@
 # Created by Pearu Peterson, June 2003
 import itertools
-from threading import Lock
+import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 import pytest
@@ -1131,6 +1131,44 @@ class TestRectBivariateSpline:
         with assert_raises(ValueError) as exc_info:
             Interpolator(GridPosLats, nonGridPosLons)
         assert "y must be strictly increasing" in str(exc_info.value)
+
+    def _sample_large_2d_data(self, nx, ny):
+        rng = np.random.default_rng(1)
+        x = np.arange(nx)
+        y = np.arange(ny)
+        z = rng.integers(0, 100, (nx, ny))
+
+        return x, y, z.astype(np.float64)
+
+    @pytest.mark.slow()
+    @pytest.mark.parametrize('shape', [(350, 850), (2000, 170)])
+    @pytest.mark.parametrize('s_tols', [(0, 1e-12, 1e-7),
+                                        (1, 7e-3, 1e-4),
+                                        (3, 2e-2, 1e-4)])
+    def test_spline_large_2d(self, shape, s_tols):
+        # Reference - https://github.com/scipy/scipy/issues/17787
+        nx, ny = shape
+        s, atol, rtol = s_tols
+        x, y, z = self._sample_large_2d_data(nx, ny)
+
+        spl = RectBivariateSpline(x, y, z, s=s)
+        z_spl = spl(x, y)
+        assert(not np.isnan(z_spl).any())
+        xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
+
+    @pytest.mark.slow()
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system "
+                                                     "due to large input data")
+    def test_spline_large_2d_maxit(self):
+        # Reference - for https://github.com/scipy/scipy/issues/17787
+        nx, ny = 1000, 1700
+        s, atol, rtol = 2, 2e-2, 1e-12
+        x, y, z = self._sample_large_2d_data(nx, ny)
+
+        spl = RectBivariateSpline(x, y, z, s=s, maxit=25)
+        z_spl = spl(x, y)
+        assert(not np.isnan(z_spl).any())
+        xp_assert_close(z_spl, z, atol=atol, rtol=rtol)
 
 
 class TestRectSphereBivariateSpline:

@@ -46,7 +46,6 @@ from scipy.sparse._sputils import (
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
-
 from . import _arpack
 arpack_int = _arpack.timing.nbx.dtype
 
@@ -277,9 +276,13 @@ class ArpackError(RuntimeError):
     ARPACK error
     """
 
-    def __init__(self, info, infodict=_NAUPD_ERRORS):
+    def __init__(self, info, infodict=None):
+        if infodict is None:
+            infodict = _NAUPD_ERRORS
+
         msg = infodict.get(info, "Unknown error")
-        RuntimeError.__init__(self, "ARPACK error %d: %s" % (info, msg))
+        super().__init__(f"ARPACK error {info}: {msg}")
+
 
 
 class ArpackNoConvergence(ArpackError):
@@ -313,12 +316,12 @@ class _ArpackParams:
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
-            raise ValueError("k must be positive, k=%d" % k)
+            raise ValueError(f"k must be positive, k={k}")
 
         if maxiter is None:
             maxiter = n * 10
         if maxiter <= 0:
-            raise ValueError("maxiter must be positive, maxiter=%d" % maxiter)
+            raise ValueError(f"maxiter must be positive, maxiter={maxiter}")
 
         if tp not in 'fdFD':
             # Use `float64` libraries from integer dtypes.
@@ -508,12 +511,12 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.B = M_matvec
                 self.bmat = 'G'
         else:
-            raise ValueError("mode=%i not implemented" % mode)
+            raise ValueError(f"mode={mode} not implemented")
 
         if which not in _SEUPD_WHICH:
             raise ValueError(f"which must be one of {' '.join(_SEUPD_WHICH)}")
         if k >= n:
-            raise ValueError("k must be less than ndim(A), k=%d" % k)
+            raise ValueError(f"k must be less than ndim(A), k={k}")
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -690,12 +693,12 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 self.bmat = 'G'
                 self.OP = lambda x: self.OPa(M_matvec(x))
         else:
-            raise ValueError("mode=%i not implemented" % mode)
+            raise ValueError(f"mode={mode} not implemented")
 
         if which not in _NEUPD_WHICH:
             raise ValueError(f"Parameter which must be one of {' '.join(_NEUPD_WHICH)}")
         if k >= n - 1:
-            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
+            raise ValueError(f"k must be less than ndim(A)-1, k={k}")
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
@@ -977,9 +980,10 @@ class IterInv(LinearOperator):
     def _matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
-            raise ValueError("Error in inverting M: function "
-                             "%s did not converge (info = %i)."
-                             % (self.ifunc.__name__, info))
+            raise ValueError(
+                f"Error in inverting M: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
+            )
         return b
 
 
@@ -1024,9 +1028,10 @@ class IterOpInv(LinearOperator):
     def _matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
-            raise ValueError("Error in inverting [A-sigma*M]: function "
-                             "%s did not converge (info = %i)."
-                             % (self.ifunc.__name__, info))
+            raise ValueError(
+                f"Error in inverting [A-sigma*M]: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
+            )
         return b
 
     @property
@@ -1266,7 +1271,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0:
-        raise ValueError("k=%d must be greater than 0." % k)
+        raise ValueError(f"k={k} must be greater than 0.")
 
     if k >= n - 1:
         warnings.warn("k >= N - 1 for N * N square matrix. "

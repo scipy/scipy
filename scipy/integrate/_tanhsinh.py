@@ -4,8 +4,7 @@ import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
-                                   xp_real, xp_take_along_axis)
+from scipy._lib._array_api import array_namespace, xp_copy, xp_ravel, xp_real
 
 
 __all__ = ['nsum']
@@ -127,7 +126,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `_differentiate` (but containing the
+        similar to that returned by `tanhsinh` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
         `tanhsinh` will return a result object. `callback` must not mutate
@@ -648,9 +647,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     ir = xp.argmax(xp_real(xr), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
     ### Not Array API Compatible... yet ###
-    xr_max = xp_take_along_axis(xr, ir, axis=0)[0]
-    fr_max = xp_take_along_axis(fr, ir, axis=0)[0]
-    wr_max = xp_take_along_axis(wr, ir, axis=0)[0]
+    xr_max = xp.take_along_axis(xr, ir, axis=0)[0]
+    fr_max = xp.take_along_axis(fr, ir, axis=0)[0]
+    wr_max = xp.take_along_axis(wr, ir, axis=0)[0]
     # boolean indices at which maximum abscissa at this level exceeds
     # the incumbent maximum abscissa (from all previous levels)
     # note: abscissa may have complex dtype, but will have zero imaginary part
@@ -664,9 +663,9 @@ def _euler_maclaurin_sum(fj, work, xp):
     xl[invalid_l] = xp.inf
     il = xp.argmin(xp_real(xl), axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xl_min = xp_take_along_axis(xl, il, axis=0)[0]
-    fl_min = xp_take_along_axis(fl, il, axis=0)[0]
-    wl_min = xp_take_along_axis(wl, il, axis=0)[0]
+    xl_min = xp.take_along_axis(xl, il, axis=0)[0]
+    fl_min = xp.take_along_axis(fl, il, axis=0)[0]
+    wl_min = xp.take_along_axis(wl, il, axis=0)[0]
     # boolean indices at which minimum abscissa at this level is less than
     # the incumbent minimum abscissa (from all previous levels)
     # note: abscissa may have complex dtype, but will have zero imaginary part

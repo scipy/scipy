@@ -47,6 +47,7 @@
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
+extern const char *_log1mexp_doc;
 extern const char *_log1pmx_doc;
 extern const char *airy_doc;
 extern const char *airye_doc;
@@ -641,6 +642,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                            static_cast<xsf::numpy::D_D>(xsf::log1p), static_cast<xsf::numpy::F_F>(xsf::log1p)},
                           "log1p", log1p_doc);
     PyModule_AddObjectRef(_special_ufuncs, "log1p", log1p);
+
+    PyObject *_log1mexp =
+        xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1mexp), static_cast<xsf::numpy::f_f>(xsf::log1mexp)},
+                          "_log1mexp", _log1mexp_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_log1mexp", _log1mexp);
 
     PyObject *_log1pmx =
         xsf::numpy::ufunc({static_cast<xsf::numpy::d_d>(xsf::log1pmx), static_cast<xsf::numpy::f_f>(xsf::log1pmx)},

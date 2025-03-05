@@ -28,6 +28,9 @@ import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
         assert_allclose, suppress_warnings)
+from numpy.exceptions import ComplexWarning
+
+from types import GenericAlias
 
 import scipy.linalg
 
@@ -43,7 +46,6 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
-from scipy._lib._util import ComplexWarning
 
 IS_COLAB = ('google.colab' in sys.modules)
 
@@ -1683,13 +1685,7 @@ class _TestCommon:
         B = self.spcreator(A)
 
         if self.is_array_test:  # sparrays use element-wise power
-            # Todo: Add 1+3j to tested exponent list when np1.24 is no longer supported
-            #    Complex exponents of 0 (our implicit fill value) change in numpy-1.25
-            #    from `(nan+nanj)` to `0`. Old value makes array element-wise result
-            #    dense and is hard to check for without any `isnan` method.
-            # So while untested here, element-wise complex exponents work with np>=1.25.
-            # for exponent in [1, 2, 2.2, 3, 1+3j]:
-            for exponent in [1, 2, 2.2, 3]:
+            for exponent in [1, 2, 2.2, 3, 1+3j]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
                 assert_array_equal(ret_sp.toarray(), ret_np)
@@ -2354,20 +2350,14 @@ class _TestInplaceArithmetic:
 
         # Matrix multiply from __rmatmul__
         y = a.copy()
-        # skip this test if numpy doesn't support __imatmul__ yet.
-        # move out of the try/except once numpy 1.24 is no longer supported.
-        try:
-            y @= b.T
-        except TypeError:
-            pass
-        else:
-            x = a.copy()
-            y = a.copy()
-            with assert_raises(ValueError, match="dimension mismatch"):
-                x @= b
-            x = x.dot(a.T)
-            y @= b.T
-            assert_array_equal(x, y)
+        y @= b.T
+        x = a.copy()
+        y = a.copy()
+        with assert_raises(ValueError, match="dimension mismatch"):
+            x @= b
+        x = x.dot(a.T)
+        y @= b.T
+        assert_array_equal(x, y)
 
         # Floor division is not supported
         with assert_raises(TypeError, match="unsupported operand"):
@@ -2770,6 +2760,42 @@ class _TestSlicing:
             check_2(a, a)
             check_2(a, -2)
             check_2(-2, a)
+
+    def test_None_slicing(self):
+        B = self.asdense(arange(50).reshape(5,10))
+        A = self.spcreator(B)
+
+        assert A[1, 2].ndim == 0
+        assert A[None, 1, 2:4].shape == (1, 2)
+        assert A[None, 1, 2, None].shape == (1, 1)
+
+        # see gh-22458
+        assert A[None, 1].shape == (1, 10)
+        assert A[1, None].shape == (1, 10)
+        assert A[None, 1, :].shape == (1, 10)
+        assert A[1, None, :].shape == (1, 10)
+        assert A[1, :, None].shape == (10, 1)
+
+        assert A[None, 1:3, 2].shape == B[None, 1:3, 2].shape == (1, 2)
+        assert A[1:3, None, 2].shape == B[1:3, None, 2].shape == (2, 1)
+        assert A[1:3, 2, None].shape == B[1:3, 2, None].shape == (2, 1)
+        assert A[None, 1, 2:4].shape == B[None, 1, 2:4].shape == (1, 2)
+        assert A[1, None, 2:4].shape == B[1, None, 2:4].shape == (1, 2)
+        assert A[1, 2:4, None].shape == B[1, 2:4, None].shape == (2, 1)
+
+        # different for spmatrix
+        if self.is_array_test:
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2,)
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (2,)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1,)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1,)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1,)
+        else:
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (1, 2)
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2, 1)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1, 1)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1, 1)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1, 1)
 
     def test_ellipsis_slicing(self):
         b = self.asdense(arange(50).reshape(5,10))
@@ -4307,6 +4333,12 @@ class TestCSRMatrix(_MatrixMixin, TestCSR):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             return csr_matrix(*args, **kwargs)
+    
+    def test_spmatrix_subscriptable(self):
+        result = csr_matrix[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is csr_matrix
+        assert result.__args__ == (np.int8,)
 
 
 TestCSRMatrix.init_class()
@@ -4842,6 +4874,17 @@ class TestCOO(sparse_test_class(getset=False,
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+    
+    def test_sparray_subscriptable(self):
+        result = coo_array[np.int8, tuple[int]]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8, tuple[int])
+
+        result = coo_array[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8,)
 
 
 class TestCOOMatrix(_MatrixMixin, TestCOO):

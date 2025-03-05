@@ -175,24 +175,23 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
-    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')``
+    This way, if ``x`` and ``y`` are 1-D arrays and ``z = correlate(x, y, 'full')``
     then
 
     .. math::
 
-          z[k] = (x * y)(k - N + 1)
-               = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
+          z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
-
-    where :math:`||x||` is the length of ``x``, :math:`N = \max(||x||,||y||)`,
-    and :math:`y_m` is 0 when m is outside the range of y.
-
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    :math:`y^*` denotes the complex conjugate of :math:`y`.
+    
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
-    When using "same" mode with even-length inputs, the outputs of `correlate`
+    When using ``mode='same'`` with even-length inputs, the outputs of `correlate`
     and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
@@ -3910,6 +3909,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     return y_keep
 
 
+def _angle(z, xp):
+    """np.angle replacement
+    """
+    # XXX: https://github.com/data-apis/array-api/issues/595
+    zimag = xp.imag(z) if xp.isdtype(z.dtype, 'complex floating') else 0.
+    a = xp.atan2(zimag, xp.real(z))
+    return a
+
+
 def vectorstrength(events, period):
     '''
     Determine the vector strength of the events corresponding to the given
@@ -3957,8 +3965,13 @@ def vectorstrength(events, period):
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
     '''
-    events = np.asarray(events)
-    period = np.asarray(period)
+    xp = array_namespace(events, period)
+
+    events = xp.asarray(events)
+    period = xp.asarray(period)
+    if xp.isdtype(period.dtype, 'integral'):
+        period = xp.astype(period, xp.float64)
+
     if events.ndim > 1:
         raise ValueError('events cannot have dimensions more than 1')
     if period.ndim > 1:
@@ -3967,19 +3980,20 @@ def vectorstrength(events, period):
     # we need to know later if period was originally a scalar
     scalarperiod = not period.ndim
 
-    events = np.atleast_2d(events)
-    period = np.atleast_2d(period)
-    if (period <= 0).any():
+    events = xpx.atleast_nd(events, ndim=2, xp=xp)
+    period = xpx.atleast_nd(period, ndim=2, xp=xp)
+    if xp.any(period <= 0):
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    vectors = np.exp(np.dot(2j*np.pi/period.T, events))
+    events_ = xp.astype(events, period.dtype)
+    vectors = xp.exp(2j * (xp.pi / period.T @ events_))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = np.mean(vectors, axis=1)
-    strength = abs(vectormean)
-    phase = np.angle(vectormean)
+    vectormean = xp.mean(vectors, axis=1)
+    strength = xp.abs(vectormean)
+    phase = _angle(vectormean, xp)
 
     # if the original period was a scalar, return scalars
     if scalarperiod:
@@ -4087,6 +4101,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     else:
         dshape = data.shape
         N = dshape[axis]
+        bp = np.asarray(bp)
         bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
@@ -4739,8 +4754,10 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater "
-                         "than padlen, which is %d." % edge)
+        raise ValueError(
+            f"The length of the input vector x must be greater than padlen, "
+            f"which is {edge}."
+        )
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each
@@ -4864,10 +4881,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
         #     2. make sure the copied zi remains a numpy array
         zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
-            raise ValueError('Invalid zi shape. With axis=%r, an input with '
-                             'shape %r, and an sos array with %d sections, zi '
-                             'must have shape %r, got %r.' %
-                             (axis, x.shape, n_sections, x_zi_shape, zi.shape))
+            raise ValueError(
+                f"Invalid zi shape. With axis={axis!r}, "
+                f"an input with shape {x.shape!r}, "
+                f"and an sos array with {n_sections} sections, zi must have "
+                f"shape {x_zi_shape!r}, got {zi.shape!r}."
+            )
         return_zi = True
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)
