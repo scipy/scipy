@@ -13,7 +13,7 @@ from scipy.special import (
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
-    bdtrik, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
+    bdtrik, betaincinva, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
@@ -157,8 +157,8 @@ def eval_genlaguerre_ddd(n, a, x):
 def bdtrik_comp(y, n, p):
     return bdtrik(1-y, n, p)
 
-def btdtria_comp(p, b, x):
-    return btdtria(1-p, b, x)
+def betaincinva_comp(p, b, x):
+    return betaincinva(1-p, b, x)
 
 def btdtrib_comp(a, p, x):
     return btdtrib(a, 1-p, x)
@@ -267,9 +267,9 @@ BOOST_TESTS = [
         data(betaincinv, 'ibeta_inv_data_ipp-ibeta_inv_data',
              (0,1,2), 3, rtol=1e-5),
 
-        data(btdtria, 'ibeta_inva_data_ipp-ibeta_inva_data',
+        data(betaincinva, 'ibeta_inva_data_ipp-ibeta_inva_data',
              (2,0,1), 3, rtol=5e-9),
-        data(btdtria_comp, 'ibeta_inva_data_ipp-ibeta_inva_data',
+        data(betaincinva_comp, 'ibeta_inva_data_ipp-ibeta_inva_data',
              (2,0,1), 4, rtol=5e-9),
 
         data(btdtrib, 'ibeta_inva_data_ipp-ibeta_inva_data',

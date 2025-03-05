@@ -108,6 +108,11 @@ Available functions
         float betaincinv(float, float, float)
         double betaincinv(double, double, double)
 
+- :py:func:`~scipy.special.betaincinva`::
+
+        float betaincinva(float, float, float)
+        double betaincinva(double, double, double)
+
 - :py:func:`~scipy.special.betainccinv`::
 
         float betainccinv(float, float, float)
@@ -1957,6 +1962,18 @@ cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noe
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inv_double)(x0, x1, x2)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
+
+cpdef df_number_t betaincinva(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.betaincinva"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_double)(x0, x1, x2)
     else:
         if df_number_t is double:
             return NAN
