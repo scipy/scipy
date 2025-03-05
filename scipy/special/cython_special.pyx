@@ -1417,9 +1417,14 @@ from ._cdflib_wrappers cimport chdtriv as _func_chdtriv
 ctypedef double _proto_chdtriv_t(double, double) noexcept nogil
 cdef _proto_chdtriv_t *_proto_chdtriv_t_var = &_func_chdtriv
 
-from ._cdflib_wrappers cimport chndtr as _func_chndtr
-ctypedef double _proto_chndtr_t(double, double, double) noexcept nogil
-cdef _proto_chndtr_t *_proto_chndtr_t_var = &_func_chndtr
+cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtr"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_cdf_double)(x0, x1, x2)
+    else:
+        return NAN
 
 from ._cdflib_wrappers cimport chndtridf as _func_chndtridf
 ctypedef double _proto_chndtridf_t(double, double, double) noexcept nogil
@@ -2018,10 +2023,6 @@ cpdef double chdtri(double x0, double x1) noexcept nogil:
 cpdef double chdtriv(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtriv"""
     return _func_chdtriv(x0, x1)
-
-cpdef double chndtr(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtr"""
-    return _func_chndtr(x0, x1, x2)
 
 cpdef double chndtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.chndtridf"""

@@ -695,3 +695,80 @@ class TestNoncentralTFunctions:
     ])
     def test_nctdtrit(self, df, nc, x, expected_cdf):
         assert_allclose(sp.nctdtrit(df, nc, expected_cdf), x, rtol=1e-10)
+
+
+class TestNoncentralChiSquaredFunctions:
+
+    def test_chndtr_against_wolfram_alpha(self):
+        # Each row holds (x, nu, lam, expected_value)
+        # These values were computed using Wolfram Alpha with
+        #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
+        values = np.array([
+            [25.00, 20.0, 400, 4.1210655112396197139e-57],
+            [25.00, 8.00, 250, 2.3988026526832425878e-29],
+            [0.001, 8.00, 40., 5.3761806201366039084e-24],
+            [0.010, 8.00, 40., 5.45396231055999457039e-20],
+            [20.00, 2.00, 107, 1.39390743555819597802e-9],
+            [22.50, 2.00, 107, 7.11803307138105870671e-9],
+            [25.00, 2.00, 107, 3.11041244829864897313e-8],
+            [3.000, 2.00, 1.0, 0.62064365321954362734],
+            [350.0, 300., 10., 0.93880128006276407710],
+            [100.0, 13.5, 10., 0.99999999650104210949],
+            [700.0, 20.0, 400, 0.99999999925680650105],
+            [150.0, 13.5, 10., 0.99999999999999983046],
+            [160.0, 13.5, 10., 0.99999999999999999518],  # 1.0
+        ])
+        cdf = sp.chndtr(values[:, 0], values[:, 1], values[:, 2])
+        assert_allclose(cdf, values[:, 3], rtol=1e-13)
+
+    # CDF Reference values computed with mpmath with the following script
+    # 
+    # from mpmath import mp
+    #
+    # mp.dps = 400
+    # 
+    # def _noncentral_chi_pdf(t, df, nc):
+    #     res = mp.besseli(df/2 - 1, mp.sqrt(nc*t))
+    #     res *= mp.exp(-(t + nc)/2)*(t/nc)**(df/4 - 1/2)/2
+    #     return res
+    #
+    # def _noncentral_chi_cdf(x, df, nc, dps=None):
+    #     x, df, nc = mp.mpf(x), mp.mpf(df), mp.mpf(nc)
+    #     res = mp.quad(lambda t: _noncentral_chi_pdf(t, df, nc), [mp.zero, x])
+    #     return float(res)
+
+    @pytest.mark.parametrize(
+        "x, df, nc, expected_cdf, rtol",
+        [(0.1, 200, 50, 1.1311224867205481e-299, 1e-13),
+         (1e-12, 20, 50, 3.737446313006551e-141, 1e-13),
+         (1, 200, 50, 8.09760974833666e-200, 1e-13),
+         (9e4, 1e5, 1e3, 1.6895533704217566e-141, 5e-12)]
+    )
+    def test_chndtr_left_tail(self, x, df, nc, expected_cdf, rtol):
+        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol)
+
+    def test_chndtr_x_inf_equals_1(self):
+        assert_allclose(sp.chndtr(np.inf, 1, 1), 1.0, rtol=0.0)
+
+    @pytest.mark.parametrize("x, df",
+        [(1, 1), (10, 10), (1e-5, 1e-5)]
+    )
+    def test_chndtr_with_nc_zero_equals_chdtr(self, x, df):
+        assert_allclose(sp.chndtr(x, df, 0), sp.chdtr(x, df), rtol=1e-13)
+
+    @pytest.mark.parametrize("args",
+        [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
+         (-1, 1, -1), (1, -1, -1), (-1, -1, -1)]
+    )  
+    def test_domain_error(self, args):
+        with sp.errstate(domain="raise"):
+            with pytest.raises(sp.SpecialFunctionError, match="domain"):
+                sp.chndtr(*args)
+
+    @pytest.mark.parametrize("args",
+        [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
+         (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
+         (np.nan, np.nan, np.nan)]
+    )
+    def test_nan_propagation(self, args):
+        assert np.isnan(sp.chndtr(*args))
