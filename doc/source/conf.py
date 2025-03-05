@@ -11,7 +11,9 @@ from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
-from sphinx.util import inspect
+from sphinx.util import inspect as sphinx_inspect
+from sphinx.ext.autosummary import Autosummary
+from sphinx.ext.autosummary.generate import generate_autosummary_docs
 
 import scipy
 from scipy._lib._util import _rng_html_rewrite
@@ -21,9 +23,14 @@ import scipy._lib.uarray as ua
 from scipy.stats._distn_infrastructure import rv_generic
 from scipy.stats._multivariate import multi_rv_generic
 
+# We will patch the generate_autosummary_docs function to ensure that stats
+# inherited methods are not included in the autosummary stubs, but link to
+# the parent class instead.
+# See gh-XXXXX
+original_generate_autosummary_docs = generate_autosummary_docs
 
-old_isdesc = inspect.isdescriptor
-inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+old_isdesc = sphinx_inspect.isdescriptor
+sphinx_inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
@@ -581,5 +588,84 @@ class LegacyDirective(Directive):
         return [admonition_node]
 
 
+class InheritanceAwareAutosummary(Autosummary):
+    """Custom autosummary that links inherited methods to parent class
+    documentation.
+
+    Used in `scipy.stats`.
+    """
+    def get_table(self, items):
+        """Override to modify the autosummary table."""
+
+        new_items = []
+        for name, signature, summary, real_name in items:
+            if "scipy.stats.Normal" in real_name or "scipy.stats.Uniform" in real_name:
+                try:
+                    # Extract the class and method name
+                    module_name, class_name, method_name = self._parse_name(real_name)
+                    if module_name and class_name and method_name:
+                        module = __import__(module_name, fromlist=[class_name])
+                        cls = getattr(module, class_name)
+                        # Find where the method is actually defined
+                        # Skip the first class (self)
+                        for parent in inspect.getmro(cls)[1:]:
+                            if method_name in parent.__dict__:
+                                # Found in parent, change target to parent's method
+                                real_name = (f"{parent.__module__}."
+                                             f"{parent.__name__}.{method_name}")
+                                break
+                except (ImportError, AttributeError, ValueError):
+                    # If anything goes wrong, keep the original target
+                    pass
+
+            new_items.append((name, signature, summary, real_name))
+
+        return super().get_table(new_items)
+
+
+    def _parse_name(self, name):
+        """Helper to parse a fully qualified method name."""
+        parts = name.split(".")
+        if len(parts) >= 3:
+            module_name = ".".join(parts[:-2])
+            class_name = parts[-2]
+            method_name = parts[-1]
+            return module_name, class_name, method_name
+        return None, None, None
+
+
+def custom_generate_autosummary_docs(*args, **kwargs):
+    """Filter out inherited methods before generating links to stub pages."""
+    names = args[0]
+    filtered_names = []
+
+    for name in names:
+        try:
+            if "scipy.stats.Normal" in name or "scipy.stats.Uniform" in name:
+                module_name, class_name, method_name = name.rsplit(".", 2)
+                module = __import__(module_name, fromlist=[class_name])
+                cls = getattr(module, class_name)
+
+                print(f"{cls=}, {method_name=}")
+                # Only keep methods that are inherited
+                if method_name in cls.__dict__:
+                    filtered_names.append(name)
+            else:
+                filtered_names.append(name)
+        except (ImportError, AttributeError):
+            filtered_names.append(name)
+
+    return original_generate_autosummary_docs(filtered_names, *args[1:], **kwargs)
+
+
 def setup(app):
     app.add_directive("legacy", LegacyDirective)
+    app.add_directive("autosummary", InheritanceAwareAutosummary, override=True)
+
+    # Patch the generate_autosummary_docs function to ensure inherited methods
+    # are not included in the autosummary stubs (link to parent class instead)
+    import sphinx.ext.autosummary.generate
+
+    sphinx.ext.autosummary.generate.generate_autosummary_docs = (
+        custom_generate_autosummary_docs
+    )
