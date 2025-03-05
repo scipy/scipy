@@ -555,8 +555,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the reuse of the weights `wi` if several interpolants
-        are being calculated using the same nodes `xi`, without re-computation or
-        computing the weights explicitly some choices of `xi` (see notes).
+        are being calculated using the same nodes `xi`, without re-computation. This
+        also allows for computing the weights explicitly some choices of `xi` (see notes).
     rng : {None, int, `numpy.random.Generator`}, optional
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
@@ -633,6 +633,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
                   (-1)^i/2 & i = 0,n \\
                   (-1)^i   & \text{otherwise}
               \end{cases}.
+
     Note that for large :math:`n` computing the weights explicitly (see examples) will
     be faster than the generic formula.
 
