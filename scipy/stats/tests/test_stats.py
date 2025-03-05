@@ -74,8 +74,6 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
 @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
-# TODO: re-check whether this works after lazywhere moved to array-api-extra
-@skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -2886,7 +2884,6 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
-@skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
 @skip_xp_backends('jax.numpy', reason="JAX can't do item assignment")
 class TestZmapZscore:
 
@@ -2973,6 +2970,7 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
+    @skip_xp_backends(eager_only=True)
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
@@ -3022,6 +3020,7 @@ class TestZmapZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_nan_propagate(self, xp):
         x = xp.asarray([1, 2, np.nan, 4, 5])
@@ -3047,6 +3046,7 @@ class TestZmapZscore:
         expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
+    @skip_xp_backends(eager_only=True)
     def test_zscore_nan_raise(self, xp):
         x = xp.asarray([1, 2, xp.nan, 4, 5])
         with pytest.raises(ValueError, match="The input contains nan..."):
@@ -3059,6 +3059,10 @@ class TestZmapZscore:
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
@@ -3080,6 +3084,7 @@ class TestZmapZscore:
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, xp.nan],
@@ -3099,6 +3104,7 @@ class TestZmapZscore:
                                         [-s, 0, s, xp.nan],
                                         [-s2/2, s2, xp.nan, -s2/2]]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_2d_all_nan_row(self, xp):
         # A row is all nan, and we use axis=1.
         x = xp.asarray([[np.nan, np.nan, np.nan, np.nan],
@@ -3107,6 +3113,7 @@ class TestZmapZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
@@ -3163,6 +3170,8 @@ class TestZmapZscore:
             res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_degenerate_input(self, xp):
         scores = xp.arange(3)
         compare = xp.ones(3)
@@ -3171,6 +3180,7 @@ class TestZmapZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_complex_gh22404(self, xp):
         res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
         ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
@@ -7298,7 +7308,6 @@ class TestPMean:
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
 
-@skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
 class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
     array_1d = (np.arange(2 * 3 * 4) + 1).tolist()
@@ -7320,6 +7329,7 @@ class TestGSTD:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
+    @skip_xp_backends(eager_only=True)
     @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value, xp):
         x = xp.asarray(self.array_1d + [bad_value])
