@@ -118,9 +118,7 @@ class TestTrimmedStats:
         y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
         xp_assert_close(y, xp.asarray(y_true))
 
-        x_2d_with_nan = np.reshape(np.arange(63.), (9, 7))
-        x_2d_with_nan[-1, -3:] = np.nan
-        x_2d_with_nan = xp.asarray(x_2d_with_nan, dtype=default_dtype)
+        x_2d_with_nan = xpx.at(x_2d)[-1, -3:].set(xp.nan, copy=True)
         y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
         y_true = [7, 4.5, 5.5, 6.5, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
@@ -188,9 +186,7 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0, 2, 4, 6, 8]))
         xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0))
 
-        x = np.arange(10.)
-        x[9] = np.nan
-        x = xp.asarray(x, dtype=xp_default_dtype(xp))
+        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -228,9 +224,7 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmax(x, axis=1), xp.asarray([1, 3, 5, 7, 9]))
         xp_assert_equal(stats.tmax(x, axis=None), xp.asarray(9))
 
-        x = np.arange(10.)
-        x[9] = np.nan
-        x = xp.asarray(x, dtype=xp_default_dtype(xp))
+        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmax(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -2938,7 +2932,7 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
-    @skip_xp_backends('jax.numpy', reason="No `nan_policy='raise'` for lazy arrays.")
+    @skip_xp_backends(eager_only=True, reason="No `nan_policy='raise'` for lazy arrays.")
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
@@ -3013,7 +3007,7 @@ class TestZmapZscore:
         expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
-    @skip_xp_backends('jax.numpy', reason="No `nan_policy='raise'` for lazy arrays.")
+    @skip_xp_backends(eager_only=True, reason="No `nan_policy='raise'` for lazy arrays.")
     def test_zscore_nan_raise(self, xp):
         x = xp.asarray([1, 2, xp.nan, 4, 5])
         with pytest.raises(ValueError, match="The input contains nan..."):
