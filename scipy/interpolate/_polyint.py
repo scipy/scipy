@@ -614,7 +614,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     .. math::
 
-        w_i = (-1)^i n\choose i,
+        w_i = (-1)^i {n \choose i},
 
     where :math:`n` is the number of x-coordinates. As noted in [2]_, this means that
     for large :math:`n` the weights vary by exponentially large factors, leading to the
@@ -693,8 +693,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> xx = np.linspace(-1, 1, 1000)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(xx, f(xx), label="Original Function")
-    >>> ax.plot(xx, p_cheb(xx), label="Chebshev Points")
-    >>> ax.plot(xx, p_equi(xx), label="Equally Spaced Points")
+    >>> ax.plot(xx, p_cheb(xx), "--", label="Chebshev Points")
+    >>> ax.plot(xx, p_equi(xx), "--", label="Equally Spaced Points")
     >>> ax.set(xlabel="$x$", ylabel="$f(x)$", xlim=[-1, 1])
     >>> ax.legend()
     >>> plt.show()
