@@ -1,9 +1,10 @@
 import sys
 import functools
+import operator
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, SCIPY_ARRAY_API
+    array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -39,9 +40,15 @@ def get_array_special_func(f_name, xp, n_array_args):
     def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
-        array_args = [np.asarray(arg) for arg in array_args]
-        out = _f(*array_args, *other_args, **kwargs)
-        return _xp.asarray(out)
+        if is_marray(_xp):
+            data_args = [np.asarray(arg.data) for arg in array_args]
+            out = _f(*data_args, *other_args, **kwargs)
+            mask = functools.reduce(operator.or_, (arg.mask for arg in array_args))
+            return _xp.asarray(out, mask=mask)
+        else:
+            array_args = [np.asarray(arg) for arg in array_args]
+            out = _f(*array_args, *other_args, **kwargs)
+            return _xp.asarray(out)
 
     return __f
 

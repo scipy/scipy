@@ -1929,10 +1929,17 @@ class TestMultinomial:
     @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-        rndm = np.random.RandomState(123)
-        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-        assert_equal(sc_rvs, np_rvs)
+        message = "Some rows of `p` do not sum to 1.0 within..."
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
+            assert_equal(sc_rvs, np_rvs)
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*5, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*5, size=7)
+            assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -2007,7 +2014,7 @@ class TestMultinomial:
         assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
-        ent0 = multinomial.entropy([2, 3], [.2, .3])
+        ent0 = multinomial.entropy([2, 3], [.2, .8])
         assert_allclose(ent0, [binom.entropy(2, .2), binom.entropy(3, .2)],
                         rtol=1e-8)
 
@@ -2055,6 +2062,17 @@ class TestMultinomial:
         x = np.ones(n)
         logpmf = multinomial.logpmf(x, n, p)
         assert np.isfinite(logpmf)
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_gh_22565(self, dtype):
+        # Same issue as gh-11860 above, essentially, but the original
+        # fix didn't completely solve the problem.
+        n = 19
+        p = np.asarray([0.2, 0.2, 0.2, 0.2, 0.2], dtype=dtype)
+        res1 = multinomial.pmf(x=[1, 2, 5, 7, 4], n=n, p=p)
+        res2 = multinomial.pmf(x=[1, 2, 4, 5, 7], n=n, p=p)
+        np.testing.assert_allclose(res1, res2, rtol=1e-15)
+
 
 class TestInvwishart:
     def test_frozen(self):

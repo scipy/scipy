@@ -62,48 +62,36 @@ cdef _compute_se3_log_translation_transform(rot_vec):
     return np.identity(3) - 0.5 * s + k[:, None, None] * s @ s
 
 
-cdef _quaternion_conjugate(quat):
-    conjugate = np.copy(quat)
-    # we exploit the double cover property of unit rotation quaternions with
-    conjugate[:, 3] = -conjugate[:, 3]
-    # instead of using the mathematically correct conjugate implementation
-    # conjugate[:, :3] = -conjugate[:, :3]
-    return conjugate
-
-
-cdef _compose_dual_quaternion(real_part1, dual_part1, real_part2, dual_part2):
-    prod_real = compose_quat(real_part1, real_part2)
-    prod_dual = (np.asarray(compose_quat(real_part1, dual_part2))
-                 + np.asarray(compose_quat(dual_part1, real_part2)))
-    return prod_real, prod_dual
+def normalize_dual_quaternion(dual_quat):
+    """Normalize dual quaternion."""
+    real, dual = _normalize_dual_quaternion(
+        dual_quat[..., :4], dual_quat[..., 4:])
+    return np.concatenate((real, dual), axis=-1)
 
 
 cdef _normalize_dual_quaternion(real_part, dual_part):
-    """Ensure that the norm is 1 and that real and dual part are orthogonal."""
+    """Ensure that unit norm of the dual quaternion.
+
+    The norm is a dual number and must be 1 + 0 * epsilon, which means that
+    the real quaternion must have unit norm and the dual quaternion must be
+    orthogonal to the real quaternion.
+    """
     real_part = np.copy(real_part)
     dual_part = np.copy(dual_part)
 
-    # compute the dual quaternion product of the input and its
-    # component-wise quaternion conjugate
-    real_conjugate = _quaternion_conjugate(real_part)
-    dual_conjugate = _quaternion_conjugate(dual_part)
-    prod_real, prod_dual = _compose_dual_quaternion(
-        real_part, dual_part, real_conjugate, dual_conjugate)
+    real_norm = np.linalg.norm(real_part, axis=1)
 
-    # special case: invalid real quaternion
-    prod_real_norm = np.linalg.norm(prod_real, axis=1)
-    invalid_real_mask = prod_real_norm == 0.0
-    real_part[invalid_real_mask, :4] = [0., 0., 0., 1.]
-    prod_real_norm[invalid_real_mask] = 1.0
+    # special case: real quaternion is 0, we set it to identity
+    zero_real_mask = real_norm == 0.0
+    real_part[zero_real_mask, :4] = [0., 0., 0., 1.]
+    real_norm[zero_real_mask] = 1.0
 
-    # compute normalization factor
-    real_inv_sqrt = 1.0 / prod_real_norm
-    dual_inv_sqrt = -0.5 * prod_dual * real_inv_sqrt[:, np.newaxis] ** 3
+    # 1. ensure unit real quaternion
+    real_part /= real_norm[:, np.newaxis]
+    dual_part /= real_norm[:, np.newaxis]
 
-    # normalize dual quaternion
-    real_part = real_inv_sqrt[:, np.newaxis] * real_part
-    dual_part = real_inv_sqrt[:, np.newaxis] * dual_part + np.asarray(
-        compose_quat(dual_inv_sqrt, real_part))
+    # 2. ensure orthogonality of real and dual quaternion
+    dual_part -= np.sum(real_part * dual_part, axis=1)[:, np.newaxis] * real_part
 
     return real_part, dual_part
 
