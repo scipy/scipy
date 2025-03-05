@@ -556,7 +556,8 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     [(-1.0, 0.1, 0.1, 0.5),
      (1, -1.0, 0.1, 0.5),
      (1, 1, -1.0, 0.5),
-     (1, 1, 1, 100)]
+     (1, 1, 1, 100),
+     (1, 1, 1, -1)]
 )
 def test_ncfdtri_domain_error(args):
     with sp.errstate(domain="raise"):
