@@ -536,7 +536,10 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     Constructs a polynomial that passes through a given set of points.
     Allows evaluation of the polynomial and all its derivatives,
     efficient changing of the y-values to be interpolated,
-    and updating by adding more x- and y-values.
+    and updating by adding more x- and y-values. For numerical stability, a barycentric
+    representation is used rather than computing the coefficients of the polynomial
+    directly.
+
 
     Parameters
     ----------
@@ -556,7 +559,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation. This
-        also allows for computing the weights explicitly some choices of `xi` (see notes).
+        also allows for computing the weights explicitly for some choices of
+        `xi` (see notes).
     rng : {None, int, `numpy.random.Generator`}, optional
         If `rng` is passed by keyword, types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
@@ -590,10 +594,9 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     .. math::
 
         p(x) =
-        \frac{\sum_{i=1}^m\ w_i y_i / (x - x_i)}{\sum_{j=1}^m w_i / (x - x_i)},
+        \frac{\sum_{i=1}^m\ w_i y_i / (x - x_i)}{\sum_{i=1}^m w_i / (x - x_i)},
 
-    where :math:`w_i` are the barycentric weights computed with to the general
-    formula
+    where :math:`w_i` are the barycentric weights computed with the general formula
 
     .. math::
 
@@ -606,18 +609,18 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     The barycentric representation avoids many of the problems associated with
     polynomial interpolation caused by floating-point arithmetic. However, it does not
     avoid issues that are intrinsic to polynomial interpolation. Namely, if the
-    x-coordinates `xi` are equally spaced then the weights `wi` can be computed
-    explicitly as
+    x-coordinates are equally spaced, then the weights can be computed explicitly using
+    the formula from [2]_
 
     .. math::
 
-        w_i = (-1)^i C^n_i,
+        w_i = (-1)^i n\choose i,
 
     where :math:`n` is the number of x-coordinates. As noted in [2]_, this means that
     for large :math:`n` the weights vary by exponentially large factors, leading to the
     Runge phenomenon.
 
-    To avoid this ill-conditioning the x-coordinates should be clustered at the
+    To avoid this ill-conditioning, the x-coordinates should be clustered at the
     endpoints of the interval. An excellent choice of points on the interval
     :math:`[a,b]` are Chebyshev points of the second kind
 
@@ -634,8 +637,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
                   (-1)^i   & \text{otherwise}
               \end{cases}.
 
-    Note that for large :math:`n` computing the weights explicitly (see examples) will
-    be faster than the generic formula.
+    See [2]_ for more infomation. Note that for large :math:`n`, computing the weights
+    explicitly (see examples) will be faster than the generic formula.
 
     References
     ----------
@@ -676,7 +679,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
 
     Next, we show how using Chebyshev points of the second kind avoids the avoids the
-    Runge phenomenon. In this example we also compute the weights explicitly.
+    Runge phenomenon. In this example, we also compute the weights explicitly.
 
     >>> n = 20
     >>> def f(x): return np.abs(x) + 0.5*x - x**2
@@ -692,7 +695,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> ax.plot(xx, f(xx), label="Original Function")
     >>> ax.plot(xx, p_cheb(xx), label="Chebshev Points")
     >>> ax.plot(xx, p_equi(xx), label="Equally Spaced Points")
-    >>> ax.set(xlabel="x", ylabel="f(x)", xlim=[-1, 1])
+    >>> ax.set(xlabel="$x$", ylabel="$f(x)$", xlim=[-1, 1])
     >>> ax.legend()
     >>> plt.show()
 
