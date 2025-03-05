@@ -777,14 +777,15 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    max = xp.iinfo(a.dtype).max if xp.isdtype(a.dtype, 'integral') else xp.inf
+    max_ = xp.iinfo(a.dtype).max if xp.isdtype(a.dtype, 'integral') else xp.inf
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
-                                 val=max, xp=xp)
+                                 val=max_, xp=xp)
 
-    min = xp.min(a, axis=axis)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, min, xp.nan) if xp.any(n == 0) else min
-
+    min_ = xp.min(a, axis=axis)
+    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
+    # Output dtype is data-dependent
+    # Possible loss of precision for int types
+    res = min_ if xp.all(valid) else xp.where(valid, min_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
@@ -834,14 +835,15 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    min = xp.iinfo(a.dtype).min if xp.isdtype(a.dtype, 'integral') else -xp.inf
+    min_ = xp.iinfo(a.dtype).min if xp.isdtype(a.dtype, 'integral') else -xp.inf
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
-                                 val=min, xp=xp)
+                                 val=min_, xp=xp)
 
-    max = xp.max(a, axis=axis)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, max, xp.nan) if xp.any(n == 0) else max
-
+    max_ = xp.max(a, axis=axis)
+    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
+    # Output dtype is data-dependent
+    # Possible loss of precision for int types
+    res = max_ if xp.all(valid) else xp.where(valid, max_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
@@ -4445,6 +4447,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     --------
     spearmanr : Spearman rank-order correlation coefficient.
     kendalltau : Kendall's tau, a correlation measure for ordinal data.
+    :ref:`hypothesis_pearsonr` : Extended example
 
     Notes
     -----
@@ -4605,6 +4608,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
+
+    For a more detailed example, see :ref:`hypothesis_pearsonr`.
 
     """
     xp = array_namespace(x, y)
