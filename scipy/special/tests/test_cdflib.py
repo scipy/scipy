@@ -551,6 +551,18 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)
 
 
+@pytest.mark.parametrize(
+    "args",
+    [(-1.0, 0.1, 0.1, 0.5),
+     (1, -1.0, 0.1, 0.5),
+     (1, 1, -1.0, 0.5),
+     (1, 1, 1, 100)]
+)
+def test_ncfdtri_domain_error(args):
+    with sp.errstate(domain="raise"):
+        with pytest.raises(sp.SpecialFunctionError, match="domain"):
+            sp.ncfdtri(*args)
+
 class TestNoncentralTFunctions:
 
     # Reference values computed with mpmath with the following script
