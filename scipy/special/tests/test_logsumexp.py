@@ -259,6 +259,7 @@ class TestLogSumExp:
 
     @skip_xp_backends("torch",
         reason="`torch` has different ideas about ops involving complex infinity")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.parametrize('x, ref', [
         ([-np.inf, -np.inf], -np.inf),
         ([np.inf, np.inf], np.inf),
