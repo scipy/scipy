@@ -28,6 +28,12 @@ def spdiags(data, diags, m=None, n=None, format=None):
     """
     Return a sparse matrix from diagonals.
 
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``dia_array`` to take advantage
+        of the sparse array functionality.
+
     Parameters
     ----------
     data : array_like
@@ -50,12 +56,6 @@ def spdiags(data, diags, m=None, n=None, format=None):
     -------
     new_matrix : sparse matrix
         dia_matrix format with values in ``data`` on diagonals from ``diags``.
-
-    .. warning::
-
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``dia_array`` to take advantage
-        of the sparse array functionality.
 
     Notes
     -----
@@ -137,6 +137,10 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 1.11
+
+    See Also
+    --------
+    dia_array : constructor for the sparse DIAgonal format.
 
     Examples
     --------
@@ -258,11 +262,6 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         dia_matrix holding the values in `diagonals` offset from the main diagonal
         as indicated in `offsets`.
 
-    See Also
-    --------
-    spdiags : construct matrix from diagonals
-    diags_array : construct sparse array instead of sparse matrix
-
     Notes
     -----
     Repeated diagonal offsets are disallowed.
@@ -280,6 +279,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Each value in the input ``diagonals`` is used.
 
     .. versionadded:: 0.11
+
+    See Also
+    --------
+    spdiags : construct matrix from diagonals
+    diags_array : construct sparse array instead of sparse matrix
 
     Examples
     --------
@@ -452,6 +456,12 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     Returns a sparse matrix (m x n) where the kth diagonal
     is all ones and everything else is zeros.
 
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``eye_array`` to take advantage
+        of the sparse array functionality.
+
     Parameters
     ----------
     m : int
@@ -465,16 +475,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
 
-    .. warning::
-
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
-        of the sparse array functionality.
-
     Returns
     -------
     new_matrix : sparse matrix
         Sparse matrix of chosen shape with ones on the kth diagonaland zeros elsewhere.
+
+    See Also
+    --------
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
 
     Examples
     --------
