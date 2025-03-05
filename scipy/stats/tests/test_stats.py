@@ -40,10 +40,9 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
+from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_numpy,
                                    is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
-import scipy._lib.array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
@@ -74,6 +73,7 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
+@skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
 # TODO: re-check whether this works after lazywhere moved to array-api-extra
 @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
 class TestTrimmedStats:
@@ -114,7 +114,8 @@ class TestTrimmedStats:
         y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
         xp_assert_close(y, xp.asarray(y_true))
 
-        x_2d_with_nan = xpx.at(x_2d)[-1, -3:].set(xp.nan, copy=True)
+        x_2d_with_nan = xp_copy(x_2d)
+        x_2d_with_nan[-1, -3:] = xp.nan
         y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
         y_true = [7, 4.5, 5.5, 6.5, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
@@ -184,7 +185,8 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0, 2, 4, 6, 8]))
         xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0))
 
-        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
+        x = xp.arange(10.)
+        x[9] = xp.nan
         xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -224,7 +226,8 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmax(x, axis=1), xp.asarray([1, 3, 5, 7, 9]))
         xp_assert_equal(stats.tmax(x, axis=None), xp.asarray(9))
 
-        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
+        x = xp.arange(10.)
+        x[9] = xp.nan
         xp_assert_equal(stats.tmax(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -744,7 +747,8 @@ class TestPearsonr:
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = xpx.at(x0)[0, ...].set(1, copy=True)
+            x = xp_copy(x0)
+            x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
             nan = xp.asarray(xp.nan, dtype=xp.float64)
