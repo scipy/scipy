@@ -2826,14 +2826,15 @@ class TestVectorizedFilter:
 
         input2 = np.pad(input, [(1, 1)], mode='symmetric')
         ref = [np.sum(input2[i: i + w][footprint]) for i in range(n)]
+        sum_dtype = np.sum(input2).dtype
 
         message = "`batch_memory` is insufficient for minimum chunk size."
         context = (pytest.raises(ValueError, match=message)
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, np.sum, **kwargs)
-            xp_assert_close(res, np.asarray(ref, dtype=dtype))
-            assert res.dtype == np.sum(input2).dtype
+            xp_assert_close(res, np.asarray(ref, dtype=sum_dtype))
+            assert res.dtype == sum_dtype
 
             output = np.empty_like(input)
             res = ndimage.vectorized_filter(input, np.sum, output=output, **kwargs)
