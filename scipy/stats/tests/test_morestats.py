@@ -758,9 +758,6 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
-        "jax.numpy",
-        reason='`var` incorrect when `correction > n` (google/jax#21330)')
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
@@ -1994,7 +1991,6 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
-@skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
