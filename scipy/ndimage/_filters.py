@@ -67,6 +67,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # Either footprint or size must be provided, and these determine the core
     # dimensionality...
+    footprinted_function = function
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
         size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
@@ -77,7 +78,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         # If provided, `footprint` must be array-like
         footprint = np.asarray(footprint, dtype=bool)
         size = footprint.shape
-        def function(input, *args, axis=-1, function=function, **kwargs):
+        def footprinted_function(input, *args, axis=-1, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
 
     n_axes = len(size)
@@ -154,11 +155,11 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     # Wrap the function to limit maximum memory usage, deal with `footprint`,
     # and populate `output`. The latter requires some verbosity because we
     # don't know the output dtype.
-    def function(view, output=output, function=function):
+    def wrapped_function(view, output=output):
         kwargs = {'axis': working_axes}
 
         if working_axes == ():
-            return function(view, **kwargs)
+            return footprinted_function(view, **kwargs)
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
@@ -168,9 +169,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
         elif slices_per_batch == view.shape[0]:
             if output is None:
-                return function(view, **kwargs)
+                return footprinted_function(view, **kwargs)
             else:
-                output[...] = function(view, **kwargs)
+                output[...] = footprinted_function(view, **kwargs)
                 return output
 
         for i in range(0, view.shape[0], slices_per_batch):
@@ -178,14 +179,15 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             if output is None:
                 # Look at the dtype before allocating the array. (In a follow-up, we
                 # can also look at the shape to support non-scalar elements.)
-                temp = function(view[i:i2], **kwargs)
+                temp = footprinted_function(view[i:i2], **kwargs)
                 output = np.empty(view.shape[:-n_axes], dtype=temp.dtype)
                 output[i:i2] = temp
             else:
-                output[i:i2] = function(view[i:i2], **kwargs)
+                output[i:i2] = footprinted_function(view[i:i2], **kwargs)
         return output
 
-    return input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
+    return (input, wrapped_function, size, mode, cval,
+            origin, working_axes, n_axes, n_batch)
 
 
 @_ni_docstrings.docfiller
@@ -416,7 +418,8 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     # This seems to be defined.
     if input.ndim == 0 and size == ():
-        return function(input) if footprint is None else function(input[footprint])
+        return np.asarray(function(input) if footprint is None
+                          else function(input[footprint]))
 
     # Border the image according to `mode` and `offset`. `np.pad` does the work,
     # but it uses different names; adjust `mode` accordingly.

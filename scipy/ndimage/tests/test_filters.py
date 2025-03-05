@@ -2804,10 +2804,17 @@ class TestVectorizedFilter:
                               np.int8, np.int16, np.int32, np.int64,
                               np.float32, np.float64, np.complex64, np.complex128])
     @pytest.mark.parametrize("batch_memory", [1, 16*3, np.inf])
-    def test_dtype_batch_memory(self, dtype, batch_memory):
+    @pytest.mark.parametrize("use_footprint", [False, True])
+    def test_dtype_batch_memory(self, dtype, batch_memory, use_footprint):
         rng = np.random.default_rng(435982456983456987356)
         w = 3
-        kwargs = dict(size=w, batch_memory=batch_memory)
+
+        if use_footprint:
+            footprint = np.asarray([True, False, True])
+            kwargs = dict(footprint=footprint, batch_memory=batch_memory)
+        else:
+            footprint = np.asarray([True, True, True])
+            kwargs = dict(size=w, batch_memory=batch_memory)
 
         # The intent here is to exercise all the code paths involved in `batch_memory`
         # and `output` handling. To test the limited-memory case, `batch_memory=16*3`
@@ -2820,14 +2827,14 @@ class TestVectorizedFilter:
         input = input.astype(dtype)
 
         input2 = np.pad(input, [(1, 1)], mode='symmetric')
-        ref = [np.sum(input2[i: i + w]) for i in range(n)]
+        ref = [np.sum(input2[i: i + w][footprint]) for i in range(n)]
 
         message = "`batch_memory` is insufficient for minimum chunk size."
         context = (pytest.raises(ValueError, match=message)
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, np.sum, **kwargs)
-            xp_assert_close(res, ref)
+            xp_assert_close(res, np.asarray(ref, dtype=dtype))
             assert res.dtype == np.sum(input2).dtype
 
             output = np.empty_like(input)
