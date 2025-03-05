@@ -11,6 +11,8 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
+import warnings
+import operator
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
@@ -20,6 +22,24 @@ from scipy.sparse import coo_array, issparse, coo_matrix
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
+"""
+Maximum number of digits for `mmwrite` function.
+This can be calculated by below python codes:
+eps = np.finfo(np.float64).eps
+max_precision = np.floor(-np.log10(eps)).astype(int)
+"""
+MAX_PRECISION = 15
+
+
+def _validate_precision(precision):
+    if precision is not None:
+        # check the input can be converted to an integer
+        precision = operator.index(precision)
+        if not (1 <= precision <= MAX_PRECISION):
+            msg = (f"From SciPy 1.18.0, an exception will be thrown if the "
+                   f"precision input is outside the range of 1 "
+                   f"to {MAX_PRECISION}")
+            warnings.warn(msg, FutureWarning, stacklevel=3)
 
 # -----------------------------------------------------------------------------
 def asstr(s):
@@ -149,6 +169,10 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
+    .. deprecated:: 1.16.0
+        From SciPy 1.18.0, an exception will be thrown if the precision
+        input is outside the range of 1 to 15, because these values are
+        invalid.
     symmetry : None or str, optional
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
@@ -241,6 +265,7 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
     2.5e+00 0.0e+00
 
     """
+    _validate_precision(precision)
     MMFile().write(target, a, comment, field, precision, symmetry)
 
 
