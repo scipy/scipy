@@ -75,13 +75,7 @@ def docformat(docstring: str, docdict: Mapping[str, str] | None = None) -> str:
     indented = {}
     for name, dstr in docdict.items():
         lines = dstr.expandtabs().splitlines()
-        try:
-            newlines = [lines[0]]
-            for line in lines[1:]:
-                newlines.append(indent + line)
-            indented[name] = "\n".join(newlines)
-        except IndexError:
-            indented[name] = dstr
+        indented[name] = ("\n" + indent).join(lines)
     return docstring % indented
 
 
