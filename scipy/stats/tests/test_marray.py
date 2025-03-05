@@ -4,6 +4,8 @@ from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy.stats._stats_py import _xp_mean, _xp_var
+from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
+
 
 marray = pytest.importorskip('marray')
 skip_backend = pytest.mark.skip_xp_backends
@@ -125,3 +127,148 @@ def test_zscore(fun, axis, xp):
     ref = xp.asarray(fun(*narrays, nan_policy='omit', axis=axis))
     xp_assert_close(res.data[~res.mask], ref[~xp.isnan(ref)])
     xp_assert_equal(res.mask, marrays[0].mask)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('f_name', ['ttest_1samp', 'ttest_rel', 'ttest_ind'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_ttest(f_name, axis, xp):
+    f = getattr(stats, f_name)
+    mxp, marrays, narrays = get_arrays(2, xp=xp)
+    if f_name == 'ttest_1samp':
+        marrays[1] = mxp.mean(marrays[1], axis=axis, keepdims=axis is not None)
+        narrays[1] = np.nanmean(narrays[1], axis=axis, keepdims=axis is not None)
+    res = f(*marrays, axis=axis)
+    ref = f(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+    res_ci = res.confidence_interval()
+    ref_ci = ref.confidence_interval()
+    xp_assert_close(res_ci.low.data, xp.asarray(ref_ci.low))
+    xp_assert_close(res_ci.high.data, xp.asarray(ref_ci.high))
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.filterwarnings("ignore::scipy.stats._axis_nan_policy.SmallSampleWarning")
+@pytest.mark.parametrize('f_name', ['skewtest', 'kurtosistest',
+                                    'normaltest', 'jarque_bera'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_normality_tests(f_name, axis, xp):
+    f = getattr(stats, f_name)
+    mxp, marrays, narrays = get_arrays(1, xp=xp, shape=(10, 11))
+
+    res = f(*marrays, axis=axis)
+    ref = f(*narrays, nan_policy='omit', axis=axis)
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+def pd_nsamples(kwargs):
+    return 2 if kwargs.get('f_exp', None) is not None else 1
+
+
+@_axis_nan_policy_factory(lambda *args: tuple(args), paired=True, n_samples=pd_nsamples)
+def power_divergence_ref(f_obs, f_exp=None, *,  ddof, lambda_, axis=0):
+    return stats.power_divergence(f_obs, f_exp, axis=axis, ddof=ddof, lambda_=lambda_)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('lambda_', ['pearson', 'log-likelihood', 'freeman-tukey',
+                                     'mod-log-likelihood', 'neyman', 'cressie-read',
+                                     'chisquare'])
+@pytest.mark.parametrize('ddof', [0, 1])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_power_divergence_chisquare(lambda_, ddof, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp, shape=(5, 6))
+
+    kwargs = dict(axis=axis, ddof=ddof)
+    if lambda_ == 'chisquare':
+        lambda_ = "pearson"
+        def f(*args, **kwargs):
+            return stats.chisquare(*args, **kwargs)
+    else:
+        def f(*args, **kwargs):
+            return stats.power_divergence(*args, lambda_=lambda_, **kwargs)
+
+    # test 1-arg
+    res = f(marrays[0], **kwargs)
+    ref = power_divergence_ref(narrays[0], nan_policy='omit', lambda_=lambda_, **kwargs)
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref[0]))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref[1]))
+
+    # test 2-arg
+    common_mask = np.isnan(narrays[0]) | np.isnan(narrays[1])
+    normalize = (np.nansum(narrays[1] * ~common_mask, axis=axis, keepdims=True)
+                 / np.nansum(narrays[0] * ~common_mask, axis=axis, keepdims=True))
+    marrays[0] *= xp.asarray(normalize)
+    narrays[0] *= normalize
+
+    res = f(*marrays, **kwargs)
+    ref = power_divergence_ref(*narrays, nan_policy='omit', lambda_=lambda_, **kwargs)
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref[0]))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref[1]))
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('method', ['fisher', 'pearson', 'mudholkar_george',
+                                    'tippett', 'stouffer'])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_combine_pvalues(method, axis, xp):
+    mxp, marrays, narrays = get_arrays(2, xp=xp, shape=(10, 11))
+
+    kwargs = dict(method=method, axis=axis)
+    res = stats.combine_pvalues(marrays[0], **kwargs)
+    ref = stats.combine_pvalues(narrays[0], nan_policy='omit', **kwargs)
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+    if method != 'stouffer':
+        return
+
+    res = stats.combine_pvalues(marrays[0], weights=marrays[1], **kwargs)
+    ref = stats.combine_pvalues(narrays[0], weights=narrays[1],
+                                nan_policy='omit', **kwargs)
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+def test_ttest_ind_from_stats(xp):
+    shape = (10, 11)
+    mxp, marrays, narrays = get_arrays(6, xp=xp, shape=shape)
+    mask = np.astype(np.sum(np.stack([np.isnan(arg) for arg in narrays]), axis=0), bool)
+    narrays = [arg[~mask] for arg in narrays]
+    marrays[2], marrays[5] = marrays[2] * 100, marrays[5] * 100
+    narrays[2], narrays[5] = narrays[2] * 100, narrays[5] * 100
+
+    res = stats.ttest_ind_from_stats(*marrays)
+    ref = stats.ttest_ind_from_stats(*narrays)
+
+    mask = xp.asarray(mask)
+    assert xp.any(mask) and xp.any(~mask)
+    xp_assert_close(res.statistic.data[~mask], xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data[~mask], xp.asarray(ref.pvalue))
+    xp_assert_close(res.statistic.mask, mask)
+    xp_assert_close(res.pvalue.mask, mask)
+    assert res.statistic.shape == shape
+    assert res.pvalue.shape == shape
