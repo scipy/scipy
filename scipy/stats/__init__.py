@@ -601,6 +601,14 @@ Deprecated Functionality
 
    stats.mstats
 
+Base class for Continuous Distributions
+---------------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   stats._infrastructure
+
 """  # noqa: E501
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
