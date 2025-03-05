@@ -747,14 +747,11 @@ class TestNoncentralChiSquaredFunctions:
     def test_chndtr_left_tail(self, x, df, nc, expected_cdf, rtol):
         assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol)
 
-    def test_chndtr_x_inf_equals_1(self):
-        assert_allclose(sp.chndtr(np.inf, 1, 1), 1.0, rtol=0.0)
-
     @pytest.mark.parametrize("x, df",
-        [(1, 1), (10, 10), (1e-5, 1e-5)]
+        [(1, 3), (1, 0), (1, np.inf), (np.inf, 1)]
     )
     def test_chndtr_with_nc_zero_equals_chdtr(self, x, df):
-        assert_allclose(sp.chndtr(x, df, 0), sp.chdtr(x, df), rtol=1e-13)
+        assert_allclose(sp.chndtr(x, df, 0), sp.chdtr(df, x), rtol=1e-15)
 
     @pytest.mark.parametrize("args",
         [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
@@ -772,3 +769,18 @@ class TestNoncentralChiSquaredFunctions:
     )
     def test_nan_propagation(self, args):
         assert np.isnan(sp.chndtr(*args))
+
+    @pytest.mark.parametrize(
+        "x, df, nc, expected",
+        [(1, 0, 1, np.nan),
+         (1, 0, np.inf, np.nan),
+         (1, np.inf, 1, np.nan),
+         (1, np.inf, np.inf, 0),
+         (1, 1, np.inf, 0),
+         (np.inf, 0, 1, np.nan),
+         (np.inf, 1, np.inf, np.nan),
+         (np.inf, 1, 1, 1),
+         (np.inf, np.inf, np.inf, np.nan)]
+    )
+    def test_chndtr_edge_cases(self, x, df, nc, expected):
+        assert_allclose(sp.chndtr(x, df, nc), expected, rtol=1e-15)
