@@ -240,7 +240,7 @@ class TestTrimmedStats:
 
     @skip_xp_backends(np_only=True,
                       reason="Only NumPy arrays support scalar input/`nan_policy`.")
-    def test_tax_scalar_and_nanpolicy(self, xp):
+    def test_tmax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
         x = np.arange(10.)
