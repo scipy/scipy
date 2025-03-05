@@ -711,17 +711,17 @@ class TestMultivariateNormal:
         assert_allclose(psd.log_pdet, large_total_log)
 
     def test_broadcasting(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 4
 
         # Construct a random covariance matrix.
-        data = np.random.randn(n, n)
+        data = rng.randn(n, n)
         cov = np.dot(data, data.T)
-        mean = np.random.randn(n)
+        mean = rng.randn(n)
 
         # Construct an ndarray which can be interpreted as
         # a 2x3 array whose elements are random data vectors.
-        X = np.random.randn(2, 3, n)
+        X = rng.randn(2, 3, n)
 
         # Check that multiple data points can be evaluated at once.
         desired_pdf = multivariate_normal.pdf(X, mean, cov)
@@ -952,25 +952,25 @@ class TestMultivariateNormal:
         # Generate large sample and compare sample mean and sample covariance
         # with mean and covariance matrix.
 
-        np.random.seed(2846)
+        rng = np.random.RandomState(2846)
 
         n = 3
-        mean = np.random.randn(n)
-        M = np.random.randn(n, n)
+        mean = rng.randn(n)
+        M = rng.randn(n, n)
         cov = np.dot(M, M.T)
         size = 5000
 
-        sample = multivariate_normal.rvs(mean, cov, size)
+        sample = multivariate_normal.rvs(mean, cov, size, random_state=rng)
 
         assert_allclose(np.cov(sample.T), cov, rtol=1e-1)
         assert_allclose(sample.mean(0), mean, rtol=1e-1)
 
     def test_entropy(self):
-        np.random.seed(2846)
+        rng = np.random.RandomState(2846)
 
         n = 3
-        mean = np.random.randn(n)
-        M = np.random.randn(n, n)
+        mean = rng.randn(n)
+        M = rng.randn(n, n)
         cov = np.dot(M, M.T)
 
         rv = multivariate_normal(mean, cov)
@@ -1787,22 +1787,22 @@ class TestWishart:
         w = wishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(248042)
-        w_rvs = wishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_w_rvs = w.rvs()
+        rng = np.random.RandomState(248042)
+        w_rvs = wishart.rvs(df, scale, random_state=rng)
+        rng = np.random.RandomState(248042)
+        frozen_w_rvs = w.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the Bartlett (1933)
         # decomposition of a Wishart into D A A' D', where D is the Cholesky
         # factorization of the scale matrix and A is the lower triangular matrix
         # with the square root of chi^2 variates on the diagonal and N(0,1)
         # variates in the lower triangle.
-        np.random.seed(248042)
-        covariances = np.random.normal(size=3)
+        rng = np.random.RandomState(248042)
+        covariances = rng.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df),
-            np.random.chisquare(df-1),
-            np.random.chisquare(df-2),
+            rng.chisquare(df),
+            rng.chisquare(df-1),
+            rng.chisquare(df-2),
         ]**0.5
 
         # Construct the lower-triangular A matrix
@@ -1823,7 +1823,7 @@ class TestWishart:
         # chi-squared distribution.
         # Test variance, mean, entropy, pdf
         # Kolgomorov-Smirnov test for rvs
-        np.random.seed(482974)
+        rng = np.random.default_rng(482974)
 
         sn = 500
         dim = 1
@@ -1844,7 +1844,7 @@ class TestWishart:
             assert_allclose(w.pdf(X), c.pdf(X))
 
             # rvs
-            rvs = w.rvs(size=sn)
+            rvs = w.rvs(size=sn, random_state=rng)
             args = (df,)
             alpha = 0.01
             check_distribution_rvs('chi2', args, alpha, rvs)
@@ -1854,7 +1854,7 @@ class TestWishart:
         # transformed to a scaled chi-squared distribution.
         # For :math:`S \sim W_p(V,n)` and :math:`\lambda \in \mathbb{R}^p` we have
         # :math:`\lambda' S \lambda \sim \lambda' V \lambda \times \chi^2(n)`
-        np.random.seed(482974)
+        rng = np.random.default_rng(482974)
 
         sn = 500
         df = 10
@@ -1879,7 +1879,7 @@ class TestWishart:
         assert_allclose(w.pdf(X), c.pdf(X))
 
         # rvs
-        rvs = w.rvs(size=sn)
+        rvs = w.rvs(size=sn, random_state=rng)
         args = (df,0,sigma_lamda)
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
@@ -2112,7 +2112,7 @@ class TestInvwishart:
         # just an inverse gamma distribution.
         # Test variance, mean, pdf, entropy
         # Kolgomorov-Smirnov test for rvs
-        np.random.seed(482974)
+        rng = np.random.RandomState(482974)
 
         sn = 500
         dim = 1
@@ -2132,7 +2132,7 @@ class TestInvwishart:
             assert_allclose(iw.pdf(X), ig.pdf(X))
 
             # rvs
-            rvs = iw.rvs(size=sn)
+            rvs = iw.rvs(size=sn, random_state=rng)
             args = (df/2, 0, 1./2)
             alpha = 0.01
             check_distribution_rvs('invgamma', args, alpha, rvs)
@@ -2153,10 +2153,10 @@ class TestInvwishart:
         iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(608072)
-        iw_rvs = invwishart.rvs(df, scale)
-        np.random.seed(608072)
-        frozen_iw_rvs = iw.rvs()
+        rng = np.random.RandomState(608072)
+        iw_rvs = invwishart.rvs(df, scale, random_state=rng)
+        rng = np.random.RandomState(608072)
+        frozen_iw_rvs = iw.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the decomposition in
         # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
@@ -2165,12 +2165,12 @@ class TestInvwishart:
         # variates on the diagonal and N(0,1) variates in the lower triangle.
         # the diagonal chi^2 variates in this A are reversed compared to those
         # in the Bartlett decomposition A for Wishart rvs.
-        np.random.seed(608072)
-        covariances = np.random.normal(size=3)
+        rng = np.random.RandomState(608072)
+        covariances = rng.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df-2),
-            np.random.chisquare(df-1),
-            np.random.chisquare(df),
+            rng.chisquare(df-2),
+            rng.chisquare(df-1),
+            rng.chisquare(df),
         ]**0.5
 
         # Construct the lower-triangular A matrix
@@ -2315,8 +2315,8 @@ class TestSpecialOrthoGroup:
 class TestOrthoGroup:
     def test_reproducibility(self):
         seed = 514
-        np.random.seed(seed)
-        x = ortho_group.rvs(3)
+        rng = np.random.RandomState(seed)
+        x = ortho_group.rvs(3, random_state=rng)
         x2 = ortho_group.rvs(3, random_state=seed)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
         assert_almost_equal(np.linalg.det(x), -1)
@@ -2381,8 +2381,8 @@ class TestOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(518)  # Note that the test is sensitive to seed too
-        xs = ortho_group.rvs(dim, size=samples)
+        rng = np.random.RandomState(518)  # Note that the test is sensitive to seed too
+        xs = ortho_group.rvs(dim, size=samples, random_state=rng)
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -2416,16 +2416,17 @@ class TestOrthoGroup:
     @pytest.mark.slow
     def test_pairwise_distances(self):
         # Test that the distribution of pairwise distances is close to correct.
-        np.random.seed(514)
+        rng = np.random.RandomState(514)
 
-        def random_ortho(dim):
-            u, _s, v = np.linalg.svd(np.random.normal(size=(dim, dim)))
+        def random_ortho(dim, random_state=None):
+            u, _s, v = np.linalg.svd(rng.normal(size=(dim, dim)))
             return np.dot(u, v)
 
         for dim in range(2, 6):
             def generate_test_statistics(rvs, N=1000, eps=1e-10):
                 stats = np.array([
-                    np.sum((rvs(dim=dim) - rvs(dim=dim))**2)
+                    np.sum((rvs(dim=dim, random_state=rng) -
+                            rvs(dim=dim, random_state=rng))**2)
                     for _ in range(N)
                 ])
                 # Add a bit of noise to account for numeric accuracy.
@@ -2442,9 +2443,9 @@ class TestOrthoGroup:
 
 class TestRandomCorrelation:
     def test_reproducibility(self):
-        np.random.seed(514)
+        rng = np.random.RandomState(514)
         eigs = (.5, .8, 1.2, 1.5)
-        x = random_correlation.rvs(eigs)
+        x = random_correlation.rvs(eigs, random_state=rng)
         x2 = random_correlation.rvs(eigs, random_state=514)
         expected = np.array([[1., -0.184851, 0.109017, -0.227494],
                              [-0.184851, 1., 0.231236, 0.326669],
@@ -2485,13 +2486,13 @@ class TestRandomCorrelation:
         def norm(i, e):
             return i*e/sum(e)
 
-        np.random.seed(123)
+        rng = np.random.RandomState(123)
 
-        eigs = [norm(i, np.random.uniform(size=i)) for i in range(2, 6)]
+        eigs = [norm(i, rng.uniform(size=i)) for i in range(2, 6)]
         eigs.append([4,0,0,0])
 
         ones = [[1.]*len(e) for e in eigs]
-        xs = [random_correlation.rvs(e) for e in eigs]
+        xs = [random_correlation.rvs(e, random_state=rng) for e in eigs]
 
         # Test that determinants are products of eigenvalues
         #   These are positive by construction
@@ -2602,8 +2603,8 @@ class TestUniformDirection:
 
 class TestUnitaryGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = unitary_group.rvs(3)
+        rng = np.random.RandomState(514)
+        x = unitary_group.rvs(3, random_state=rng)
         x2 = unitary_group.rvs(3, random_state=514)
 
         expected = np.array(
@@ -2776,6 +2777,7 @@ class TestMultivariateT:
         _, p = normaltest(samples)
         assert ((p > P_VAL_MIN).all())
 
+    @pytest.mark.thread_unsafe
     @patch('scipy.stats.multivariate_normal._logpdf')
     def test_mvt_with_inf_df_calls_normal(self, mock):
         dist = multivariate_t(0, 1, df=np.inf, seed=7)
@@ -3726,7 +3728,8 @@ def check_pickling(distfn, args):
     distfn.random_state = rndm
 
 
-def test_random_state_property():
+@pytest.mark.thread_unsafe
+def test_random_state_property(num_parallel_threads):
     scale = np.eye(3)
     scale[0, 1] = 0.5
     scale[1, 0] = 0.5
