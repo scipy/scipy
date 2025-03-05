@@ -31,8 +31,8 @@ def spdiags(data, diags, m=None, n=None, format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``dia_array`` to take advantage
-        of the sparse array functionality.
+        You are encouraged to use `dia_array` to take advantage
+        of the sparse array functionality. (See Notes below.)
 
     Parameters
     ----------
@@ -59,7 +59,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
 
     Notes
     -----
-    This function can be replaced by an equivalent call to ``dia_matrix``
+    This function can be replaced by an equivalent call to `dia_matrix`
     as::
 
         dia_matrix((data, diags), shape=(m, n)).asformat(format)
@@ -134,7 +134,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     Specifically, `dia_array` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
     offset, while ``diags_array`` assumes the input data has no padding.
-    Each value in the input ``diagonals`` is used.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 1.11
 
@@ -233,7 +233,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use `diags_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -272,11 +272,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
-    Specifically, ``dia_matrix`` assumes the data input includes padding
+    ``diags`` differs from `dia_matrix` in the way it handles off-diagonals.
+    Specifically, `dia_matrix` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
     offset, while ``diags`` assumes the input data has no padding.
-    Each value in the input ``diagonals`` is used.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 0.11
 
@@ -325,13 +325,13 @@ def identity(n, dtype='d', format=None):
     Returns an identity matrix with shape ``(n, n)`` using a given
     sparse format and dtype. This differs from `eye_array` in
     that it has a square shape with ones only on the main diagonal.
-    It is thus the multiplicative identity. ``eye_array`` allows
+    It is thus the multiplicative identity. `eye_array` allows
     rectangular shapes and the diagonal can be offset from the main one.
 
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
+        You are encouraged to use `eye_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -459,7 +459,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
+        You are encouraged to use `eye_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -825,7 +825,7 @@ def vstack(blocks, format=None, dtype=None):
 
         If you want a sparse array built from blocks that are not sparse
         arrays, use ``block(vstack(blocks))`` or convert one block
-        e.g. `blocks[0] = csr_array(blocks[0])`.
+        e.g. ``blocks[0] = csr_array(blocks[0])``.
 
     See Also
     --------
@@ -853,14 +853,14 @@ def bmat(blocks, format=None, dtype=None):
     """
     Build a sparse array or matrix from sparse sub-blocks
 
-    Note: `block_array` is preferred over `bmat`. They are the same function
-    except that `bmat` can return a deprecated sparse matrix.
-    `bmat` returns a coo_matrix if none of the inputs are a sparse array.
+    Note: `block_array` is preferred over ``bmat``. They are the same function
+    except that ``bmat`` returns a deprecated sparse matrix when none of the
+    inputs are sparse arrays.
 
     .. warning::
 
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``block_array`` to take advantage
+        This function returns a sparse matrix when no inputs are sparse arrays.
+        You are encouraged to use `block_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -1300,7 +1300,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage of the
+        You are encouraged to use `random_array` to take advantage of the
         sparse array functionality.
 
     Parameters
@@ -1405,7 +1405,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage
+        You are encouraged to use `random_array` to take advantage
         of the sparse array functionality.
 
     Parameters
