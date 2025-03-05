@@ -3925,7 +3925,7 @@ def make_distribution(dist):
         message = ("The argument must be an instance of `rv_continuous`, "
                    "`rv_discrete`, or an instance of a class with attribute "
                    "`__make_distribution_version__ >= 1.16`.")
-
+        raise ValueError(message)
 
 def _make_distribution_rv_generic(dist):
     parameters = []
@@ -3937,6 +3937,16 @@ def _make_distribution_rv_generic(dist):
         param = _RealParameter(shape_info.name, domain=domain)
         parameters.append(param)
         names.append(shape_info.name)
+
+    repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
+    if isinstance(dist, stats.rv_continuous):
+        old_class, new_class = stats.rv_continuous, ContinuousDistribution
+    else:
+        old_class, new_class = stats.rv_discrete, DiscreteDistribution
+
+    def _overrides(method_name):
+        return (getattr(dist.__class__, method_name, None)
+                is not getattr(old_class, method_name, None))
 
     if _overrides("_get_support"):
         def left(**parameter_values):
@@ -3953,12 +3963,6 @@ def _make_distribution_rv_generic(dist):
 
     _x_support = _RealDomain(endpoints=endpoints, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
-
-    repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
-    if isinstance(dist, stats.rv_continuous):
-        old_class, new_class = stats.rv_continuous, ContinuousDistribution
-    else:
-        old_class, new_class = stats.rv_discrete, DiscreteDistribution
 
     class CustomDistribution(new_class):
         _parameterizations = ([_Parameterization(*parameters)] if parameters
@@ -4027,10 +4031,6 @@ def _make_distribution_rv_generic(dist):
         if method is not super_method:
             # Make it an attribute of the new object with the new name
             setattr(CustomDistribution, new_method, getattr(dist, old_method))
-
-    def _overrides(method_name):
-        return (getattr(dist.__class__, method_name, None)
-                is not getattr(old_class, method_name, None))
 
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula

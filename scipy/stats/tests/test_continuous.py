@@ -1049,6 +1049,7 @@ class TestMakeDistribution:
             'hypergeom',              # distribution functions need interpolation
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
+            'skellam',                # during `entropy`, Fatal Python error: Aborted!
         }:
             return
 
@@ -1272,7 +1273,7 @@ class TestMakeDistribution:
         with pytest.raises(NotImplementedError, match=message):
             stats.make_distribution(stats.vonmises)
 
-        message = "Argument must be an instance of `rv_continuous` or `rv_discrete`."
+        message = "The argument must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.make_distribution(object())
 
