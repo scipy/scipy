@@ -645,19 +645,19 @@ def is_marray(xp):
 
 
 def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
-                       exceptions=None):
+                       exceptions=None, reason=None):
     skip_backends = [] if skip_backends is None else skip_backends
     exceptions = [] if exceptions is None else exceptions
 
-    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu', 'mask'])
+    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
 
     # Default capabilities
-    numpy = capabilities(cpu=True, gpu=False, mask=True)
-    strict = capabilities(cpu=True, gpu=False, mask=False)
-    cupy = capabilities(cpu=False, gpu=True, mask=False)
-    torch = capabilities(cpu=True, gpu=True, mask=False)
-    jax = capabilities(cpu=True, gpu=True, mask=False)
-    dask = capabilities(cpu=True, gpu=True, mask=False)
+    numpy = capabilities(cpu=True, gpu=False)
+    strict = capabilities(cpu=True, gpu=False)
+    cupy = capabilities(cpu=False, gpu=True)
+    torch = capabilities(cpu=True, gpu=True)
+    jax = capabilities(cpu=True, gpu=True)
+    dask = capabilities(cpu=True, gpu=True)
 
     capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
                         torch=torch, jax=jax, dask=dask)
@@ -665,7 +665,6 @@ def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
     for backend, _ in skip_backends:  # ignoring the reason
         setattr(capabilities[backend], 'cpu', False)
         setattr(capabilities[backend], 'gpu', False)
-        setattr(capabilities[backend], 'mask', False)
 
     other_backends = {'cupy', 'torch', 'jax', 'dask'}
 
@@ -674,7 +673,6 @@ def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
             setattr(capabilities[backend], 'gpu', False)
 
     if np_only:
-        numpy.mask = False
         for backend in other_backends:
             setattr(capabilities[backend], 'cpu', False)
             setattr(capabilities[backend], 'gpu', False)
@@ -690,25 +688,25 @@ def _make_capabilities_table(capabilities):
     dask = capabilities['dask']
 
     for backend in [numpy, cupy, torch, jax, dask]:
-        for attr in ['cpu', 'gpu', 'mask']:
-            val = "✓" if getattr(backend, attr) else " "
+        for attr in ['cpu', 'gpu']:
+            val = "✓" if getattr(backend, attr) else "✗"
             val += " " * (len('{numpy.}') + len(attr) - 1)
             setattr(backend, attr, val)
 
     table = f"""                
-    +---------+-------------+-------------+--------------+
-    | Library | CPU         | GPU         | ``marray``   |
-    +=========+=============+=============+==============+
-    | NumPy   | {numpy.cpu} | ✗           | {numpy.mask} |
-    +---------+-------------+-------------+--------------+
-    | CuPy    | ✗           | {cupy.gpu } | {cupy.mask } |
-    +---------+-------------+-------------+--------------+
-    | PyTorch | {torch.cpu} | {torch.gpu} | {torch.mask} |
-    +---------+-------------+-------------+--------------+
-    | JAX     | {jax.cpu  } | {jax.gpu  } | {jax.mask  } |
-    +---------+-------------+-------------+--------------+
-    | Dask    | {dask.cpu } | {dask.gpu } | {dask.mask } |
-    +---------+-------------+-------------+--------------+
+    +---------+-------------+-------------+
+    | Library | CPU         | GPU         |
+    +=========+=============+=============+
+    | NumPy   | {numpy.cpu} | n/a         |
+    +---------+-------------+-------------+
+    | CuPy    | n/a         | {cupy.gpu } |
+    +---------+-------------+-------------+
+    | PyTorch | {torch.cpu} | {torch.gpu} |
+    +---------+-------------+-------------+
+    | JAX     | {jax.cpu  } | {jax.gpu  } |
+    +---------+-------------+-------------+
+    | Dask    | {dask.cpu } | {dask.gpu } |
+    +---------+-------------+-------------+
     """
     return table
 
@@ -727,13 +725,16 @@ def _make_capabilities_note(fun_name, capabilities):
     return textwrap.dedent(note)
 
 
-def xp_capabilities(name=None, capabilities_table=None):
+def xp_capabilities(name=None, capabilities_table=None, **kwargs):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
     def decorator(f):
         fun_name = f.__name__
-        capabilities = _make_capabilities(**capabilities_table[name or fun_name])
+        table_entry = name or fun_name
+        if table_entry not in capabilities_table:
+            capabilities_table[table_entry] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[table_entry])
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -758,11 +759,12 @@ def make_skip_xp_backends(fun_name, capabilities_table=None):
     cpu_only = capabilities_table[fun_name].get('cpu_only', None)
     np_only = capabilities_table[fun_name].get('np_only', None)
     exceptions = capabilities_table[fun_name].get('exceptions', None)
+    reason = capabilities_table[fun_name].get('reason', None)
 
     decorators = []
     if cpu_only:
-        decorators.append(pytest.mark.skip_xp_backends(cpu_only=True,
-                                                       exceptions=exceptions))
+        decorators.append(pytest.mark.skip_xp_backends(
+            cpu_only=True, exceptions=exceptions, reason=reason))
 
     if np_only:
         decorators.append(pytest.mark.skip_xp_backends(np_only=True))
@@ -776,4 +778,4 @@ def make_skip_xp_backends(fun_name, capabilities_table=None):
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?
-xp_capabilities_table = {}
+xp_capabilities_table = {}  # type: ignore[var-annotated]
