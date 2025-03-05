@@ -2002,3 +2002,125 @@ For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
 
 - `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
 - `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_
+
+
+Parallel execution support
+---------------------------
+
+Some SciPy optimization methods, such as :func:`differential_evolution`, offer
+parallelization through the use of a ``workers`` keyword.
+
+For :func:`differential_evolution` there are two loops (iteration) levels in the
+algorithm. The outer loop represents successive generations of a population. This
+loop can't be parallelized. For a given generation candidate solutions are generated
+that have to be compared against existing population members. The fitness of the
+candidate solution can be done in a loop, but it's also possible to parallelize the
+calculation.
+
+Parallelization is also possible in other optimization algorithms. For example in
+various :func:`minimize` methods numerical differentiation is used to estimate
+derivatives. For a simple gradient calculation using two-point forward differences a
+total of ``N + 1`` objective function calculations have to be done, where ``N`` is the
+number of parameters. These are just small perturbations around a given location
+(the +1). Those ``N + 1`` calculations are also parallelizable. The calculation of
+numerical derivatives are used by the minimization algorithm to generate new steps.
+
+Each optimization algorithm is quite different in how they work, but they often have
+locations where multiple objective function calculations are required before the
+algorithm does something else. Those locations are what can be parallelized.
+There are therefore common characteristics in how ``workers`` is used. These
+commonalities are described below.
+
+If an int is supplied then a :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` is
+created, with the object's :func:`map` method being used to evaluate solutions in
+parallel. With this approach it is mandatory that the objective function is pickleable.
+Lambda functions do not meet that requirement.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy.optimize import rosen, differential_evolution, Bounds
+    >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
+    >>> res = differential_evolution(rosen, bnds, workers=2, updating='deferred')
+
+It is also possible to use a map-like callable as a worker. Here the map-like function
+is provided with a series of vectors that the optimization algorithm provides.
+The map-like function needs to evaluate each vector against the objective function.
+In the following example we use :class:`multiprocessing.Pool <multiprocessing.pool.Pool>`
+as the map-like. As before, the objective function still needs to be pickleable.
+This example is semantically identical to the previous example.
+
+::
+
+    >>> from multiprocessing import Pool
+    >>> with Pool(2) as pwl:
+    ...     res = differential_evolution(rosen, bnds, workers=pwl.map, updating='deferred')
+
+It can be an advantage to use this pattern because the Pool can be re-used for further
+calculations - there is a significant amount of overhead in creating those objects.
+Alternatives to :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` include the
+`mpi4py <https://mpi4py.readthedocs.io/en/stable/>`_ package, which enables parallel
+processing on clusters.
+
+In Scipy 1.16.0 the ``workers`` keyword was introduced to selected :func:`minimize`
+methods. Here parallelization is typically applied during numerical differentiation.
+Either of the two approaches outlined above can be used, although it's strongly
+advised to supply the map-like callable due to the overhead of creating new processes.
+Performance gains will only be made if the objective function is expensive to
+calculate.
+Let's compare how much parallelization can help compared to the serial version. To
+simulate a slow function we use the ``time`` package.
+
+::
+
+    >>> import time
+    >>> def slow_func(x):
+    ...     time.sleep(0.0002)
+    ...     return rosen(x)
+
+Examine the serial minimization first::
+
+    In [1]: rng = np.random.default_rng()
+
+    In [2]: x0 = rng.uniform(low=0.0, high=10.0, size=(20,))
+
+    In [3]: %timeit minimize(slow_func, x0, method='L-BFGS-B')  # serial approach
+    365 ms ± 6.17 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
+
+Now the parallel version::
+
+    In [4]: with Pool() as pwl:  # parallel approach
+    ...         %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':pwl.map})
+    70.5 ms ± 146 μs per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
+
+If the objective function can be vectorized, then a map-like can be used to take
+advantage of vectorization during function evaluation. Vectorization means that the
+objective function can carry out the required calculations in a single (rather than
+multiple) call, which is typically very efficient::
+
+    In [5]: def vectorized_maplike(fun, iterable):
+    ...         arr = np.array([i for i in iter(iterable)])   # arr.shape = (S, N)
+    ...         arr_t = arr.T                                 # arr_t.shape = (N, S)
+    ...         r = slow_func(arr_t)                          # calculation vectorized over S
+    ...         return r
+
+    In [6]: %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
+    38.9 ms ± 734 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)  # may vary
+
+There are several important points to note about this example:
+
+* The iterable represents the series of parameter vectors that the algorithm wishes
+  to be evaluated.
+* The iterable is first converted to an iterator, before being made into an array via
+  a list comprehension. This allows the iterable to be a generator, list, array, etc.
+* Within the map-like the calculation is done using ``slow_func`` instead of using
+  ``fun``. The map-like is actually supplied with a wrapped version of the objective
+  function. The wrapping is used to detect various types of common user errors,
+  including checking whether the objective function returns a scalar. If ``fun`` is
+  used then a :class:`RuntimeError` will result, because ``fun(arr_t)`` will be a 1-D
+  array and not a scalar. We therefore use ``slow_func`` directly.
+* ``arr.T`` is sent to the objective function. This is because ``arr.shape == (S, N)``,
+  where ``S`` is the number of parameter vectors to evaluate and ``N`` is the number of
+  variables. For ``slow_func`` vectorization occurs on ``(N, S)`` shaped arrays.
+* This approach is not needed for :func:`differential_evolution` as that minimizer
+  already has a keyword for vectorization.

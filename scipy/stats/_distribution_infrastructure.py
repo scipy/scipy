@@ -1,14 +1,16 @@
 import functools
 from abc import ABC, abstractmethod
 from functools import cached_property
+import inspect
 import math
 
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _lazywhere, _rng_spawn, _RichResult
+from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
+from scipy.special._ufuncs import _log1mexp
 from scipy.integrate import tanhsinh as _tanhsinh, nsum
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
 from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
@@ -207,7 +209,7 @@ class _Domain(ABC):
         or not (False). Used for input validation.
     get_numerical_endpoints()
         Gets the numerical values of the domain endpoints, which may have been
-        defined symbolically.
+        defined symbolically or through a callable.
     __str__()
         Returns a text representation of the domain (e.g. ``[0, b)``).
         Used for generating documentation.
@@ -247,10 +249,12 @@ class _SimpleDomain(_Domain):
     ----------
     symbols : dict
         Inherited. A map from special values to symbols for use in `__str__`.
-    endpoints : 2-tuple of float(s) and/or str(s)
+    endpoints : 2-tuple of float(s) and/or str(s) and/or callable(s).
         A tuple with two values. Each may be either a float (the numerical
-        value of the endpoints of the domain) or a string (the name of the
-        parameters that will define the endpoint).
+        value of the endpoints of the domain), a string (the name of the
+        parameters that will define the endpoint), or a callable taking the
+        parameters used to define the endpoints of the domain as keyword only
+        arguments and returning a numerical value for the endpoint.
     inclusive : 2-tuple of bools
         A tuple with two boolean values; each indicates whether the
         corresponding endpoint is included within the domain or not.
@@ -261,7 +265,7 @@ class _SimpleDomain(_Domain):
         Records any parameters used to define the endpoints of the domain
     get_numerical_endpoints(parameter_values)
         Gets the numerical values of the domain endpoints, which may have been
-        defined symbolically.
+        defined symbolically or through a callable.
     contains(item, parameter_values)
         Determines whether the argument is contained within the domain
     draw(size, rng, proportions, parameter_values)
@@ -300,8 +304,9 @@ class _SimpleDomain(_Domain):
     def get_numerical_endpoints(self, parameter_values):
         r""" Get the numerical values of the domain endpoints.
 
-        Domain endpoints may be defined symbolically. This returns numerical
-        values of the endpoints given numerical values for any variables.
+        Domain endpoints may be defined symbolically or through a callable.
+        This returns numerical values of the endpoints given numerical values for
+        any variables.
 
         Parameters
         ----------
@@ -319,11 +324,19 @@ class _SimpleDomain(_Domain):
         a, b = self.endpoints
         # If `a` (`b`) is a string - the name of the parameter that defines
         # the endpoint of the domain - then corresponding numerical values
-        # will be found in the `parameter_values` dictionary. Otherwise, it is
-        # itself the array of numerical values of the endpoint.
+        # will be found in the `parameter_values` dictionary. 
+        # If a callable, it will be executed with `parameter_values` passed as
+        # keyword arguments, and it will return the numerical values.
+        # Otherwise, it is itself the array of numerical values of the endpoint.
         try:
-            a = np.asarray(parameter_values.get(a, a))
-            b = np.asarray(parameter_values.get(b, b))
+            if callable(a):
+                a = a(**parameter_values)
+            else:
+                a = np.asarray(parameter_values.get(a, a))
+            if callable(b):
+                b = b(**parameter_values)
+            else:
+                b = np.asarray(parameter_values.get(b, b))
         except TypeError as e:
             message = ("The endpoints of the distribution are defined by "
                        "parameters, but their values were not provided. When "
@@ -331,7 +344,6 @@ class _SimpleDomain(_Domain):
                        "all required distribution parameters as keyword "
                        "arguments.")
             raise TypeError(message) from e
-
         return a, b
 
     def contains(self, item, parameter_values=None):
@@ -448,14 +460,23 @@ class _RealDomain(_SimpleDomain):
 
     def __str__(self):
         a, b = self.endpoints
+        a, b = self._get_endpoint_str(a, "f1"), self._get_endpoint_str(b, "f2")
         left_inclusive, right_inclusive = self.inclusive
-
         left = "[" if left_inclusive else "("
-        a = self.symbols.get(a, f"{a}")
         right = "]" if right_inclusive else ")"
-        b = self.symbols.get(b, f"{b}")
 
         return f"{left}{a}, {b}{right}"
+
+    def _get_endpoint_str(self, endpoint, funcname):
+        if callable(endpoint):
+            if endpoint.__doc__ is not None:
+                return endpoint.__doc__
+            params = inspect.signature(endpoint).parameters.values()
+            params = [
+                p.name for p in params if p.kind == inspect.Parameter.KEYWORD_ONLY
+            ]
+            return f"{funcname}({','.join(params)})"
+        return self.symbols.get(endpoint, f"{endpoint}")
 
 
 class _IntegerDomain(_SimpleDomain):
@@ -1199,47 +1220,6 @@ def _kwargs2args(f, args=None, kwargs=None):
     return wrapped, args
 
 
-def _log1mexp(x):
-    r"""Compute the log of the complement of the exponential.
-
-    This function is equivalent to::
-
-        log1mexp(x) = np.log(1-np.exp(x))
-
-    but avoids loss of precision when ``np.exp(x)`` is nearly 0 or 1.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-
-    Returns
-    -------
-    y : ndarray
-        An array of the same shape as `x`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.stats._distribution_infrastructure import _log1mexp
-    >>> x = 1e-300  # log of a number very close to 1
-    >>> _log1mexp(x)  # log of the complement of a number very close to 1
-    -690.7755278982137
-    >>> # np.log1p(-np.exp(x))  # -inf; emits warning
-
-    """
-    def f1(x):
-        # good for exp(x) close to 0
-        return np.log1p(-np.exp(x))
-
-    def f2(x):
-        # good for exp(x) close to 1
-        with np.errstate(divide='ignore'):
-            return np.real(np.log(-special.expm1(x + 0j)))
-
-    return _lazywhere(x < -1, (x,), f=f1, f2=f2)[()]
-
-
 def _logexpxmexpy(x, y):
     """ Compute the log of the difference of the exponentials of two arguments.
 
@@ -1257,6 +1237,25 @@ def _logexpxmexpy(x, y):
     i = (x == y)
     res[i] = -np.inf
     return res
+
+
+def _guess_bracket(xmin, xmax):
+    a = np.full_like(xmin, -1.0)
+    b = np.ones_like(xmax)
+
+    i = np.isfinite(xmin) & np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmax[i]
+
+    i = np.isfinite(xmin) & ~np.isfinite(xmax)
+    a[i] = xmin[i]
+    b[i] = xmin[i] + 1
+
+    i = np.isfinite(xmax) & ~np.isfinite(xmin)
+    a[i] = xmax[i] - 1
+    b[i] = xmax[i]
+
+    return a, b
 
 
 def _log_real_standardize(x):
@@ -2090,27 +2089,13 @@ class UnivariateDistribution(_ProbabilityDistribution):
         shape = xmin.shape
         xmin, xmax = np.atleast_1d(xmin, xmax)
 
-        a = -np.ones_like(xmin)
-        b = np.ones_like(xmax)
-
-        i = np.isfinite(xmin) & np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmax[i]
-
-        i = np.isfinite(xmin) & ~np.isfinite(xmax)
-        a[i] = xmin[i]
-        b[i] = xmin[i] + 1
-
-        i = np.isfinite(xmax) & ~np.isfinite(xmin)
-        a[i] = xmax[i] - 1
-        b[i] = xmax[i]
-
+        xl0, xr0 = _guess_bracket(xmin, xmax)
         xmin = xmin.reshape(shape)
         xmax = xmax.reshape(shape)
-        a = a.reshape(shape)
-        b = b.reshape(shape)
+        xl0 = xl0.reshape(shape)
+        xr0 = xr0.reshape(shape)
 
-        res = _bracket_root(f3, xl0=a, xr0=b, xmin=xmin, xmax=xmax, args=args)
+        res = _bracket_root(f3, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         # For now, we ignore the status, but I want to use the bracket width
         # as an error estimate - see question 5 at the top.
 
@@ -2995,13 +2980,13 @@ class UnivariateDistribution(_ProbabilityDistribution):
         sample_shape = (shape,) if not np.iterable(shape) else tuple(shape)
         full_shape = sample_shape + self._shape
         rng = np.random.default_rng(rng) if not isinstance(rng, qmc.QMCEngine) else rng
-        res = self._sample_dispatch(sample_shape, full_shape, method=method,
-                                    rng=rng, **self._parameters)
+        res = self._sample_dispatch(full_shape, method=method, rng=rng,
+                                    **self._parameters)
 
         return res.astype(self._dtype, copy=False)
 
     @_dispatch
-    def _sample_dispatch(self, sample_shape, full_shape, *, method, rng, **params):
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
         # make sure that tests catch if sample is 0d array
         if self._overrides('_sample_formula') and not isinstance(rng, qmc.QMCEngine):
             method = self._sample_formula
@@ -3009,20 +2994,21 @@ class UnivariateDistribution(_ProbabilityDistribution):
             method = self._sample_inverse_transform
         return method
 
-    def _sample_formula(self, sample_shape, full_shape, *, rng, **params):
+    def _sample_formula(self, full_shape, *, rng, **params):
         raise NotImplementedError(self._not_implemented)
 
-    def _sample_inverse_transform(self, sample_shape, full_shape, *, rng, **params):
+    def _sample_inverse_transform(self, full_shape, *, rng, **params):
         if isinstance(rng, qmc.QMCEngine):
-            uniform = self._qmc_uniform(sample_shape, full_shape, qrng=rng, **params)
+            uniform = self._qmc_uniform(full_shape, qrng=rng, **params)
         else:
             uniform = rng.random(size=full_shape, dtype=self._dtype)
         return self._icdf_dispatch(uniform, **params)
 
-    def _qmc_uniform(self, sample_shape, full_shape, *, qrng, **params):
+    def _qmc_uniform(self, full_shape, *, qrng, **params):
         # Generate QMC uniform sample(s) on unit interval with specified shape;
         # if `sample_shape != ()`, then each slice along axis 0 is independent.
 
+        sample_shape = full_shape[:len(full_shape)-len(self._shape)]
         # Determine the number of independent sequences and the length of each.
         n_low_discrepancy = sample_shape[0] if sample_shape else 1
         n_independent = math.prod(full_shape[1:] if sample_shape else full_shape)
@@ -3797,7 +3783,10 @@ _distribution_names = {
 
 # beta, genextreme, gengamma, t, tukeylambda need work for 1D arrays
 def make_distribution(dist):
-    """Generate a `UnivariateDistribution` from an instance of `rv_generic`
+    """Generate a `UnivariateDistribution` class from a compatible object
+
+    The argument may be an instance of `rv_continuous` or an instance of
+    another class that satisfies the interface described below.
 
     The returned value is a `ContinuousDistribution` subclass if the input is an
     instance of `rv_continuous` or a `DiscreteDistribution` subclass if the input
@@ -3817,8 +3806,51 @@ def make_distribution(dist):
 
     Parameters
     ----------
-    dist : `rv_continuous` or `rv_discrete`
-        Instance of `rv_continuous` or `rv_discrete`
+    dist : `rv_continuous`
+        Instance of `rv_continuous`, `rv_discrete`, or an instance of any class with
+        the following attributes:
+
+        __make_distribution_version__ : str
+            A string containing the version number of SciPy in which this interface
+            is defined. The preferred interface may change in future SciPy versions,
+            in which case support for an old interface version may be deprecated
+            and eventually removed.
+        parameters : dict
+            A dictionary describing the parameters of the distribution.
+            Each key is the name of a parameter,
+            and the corresponding value is itself a dictionary with the following items.
+
+            endpoints : tuple
+                A tuple defining the lower and upper endpoints of the domain of the
+                parameter; allowable values are floats, the name (string) of another
+                parameter, or a callable taking parameters as keyword only
+                arguments and returning the numerical value of an endpoint for
+                given parameter values.
+
+            inclusive : tuple of bool
+                A tuple specifying whether the endpoints are included within the domain
+                of the parameter.
+
+        support : dict
+            A dictionary describing the support of the distribution. It has items
+            "endpoints" and "inclusive" with the same structure as the matching
+            items in the values of the parameters dict described above.
+
+        The class **must** also define a ``pdf`` method and **may** define methods
+        ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
+        ``logcdf``, ``cdf``, ``logccdf``, ``ccdf``,
+        ``ilogcdf``, ``icdf``, ``ilogccdf``, ``iccdf``,
+        ``moment``, and ``sample``.
+        If defined, these methods must accept the parameters of the distribution as
+        keyword arguments and also accept any positional-only arguments accepted by
+        the corresponding method of `ContinuousDistribution`. The ``moment`` method
+        must accept the ``order`` and ``kind`` arguments by position or keyword, but
+        may return ``None`` if a formula is not available for the arguments; in this
+        case, the infrastructure will fall back to a default implementation. The
+        ``sample`` method must accept ``shape`` by position or keyword, but contrary
+        to the public method of the same name, the argument it receives will be the
+        *full* shape of the output array - that is, the shape passed to the public
+        method prepended to the broadcasted shape of random variable parameters.
 
     Returns
     -------
@@ -3840,8 +3872,11 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
-    >>> LogU = stats.make_distribution(stats.loguniform)
-    >>> X = LogU(a=1.0, b=3.0)
+
+    Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
+
+    >>> LogUniform = stats.make_distribution(stats.loguniform)
+    >>> X = LogUniform(a=1.0, b=3.0)
     >>> np.isclose((X + 0.25).median(), stats.loguniform.ppf(0.5, 1, 3, loc=0.25))
     np.True_
     >>> X.plot()
@@ -3850,16 +3885,49 @@ def make_distribution(dist):
     >>> plt.legend(('pdf', 'histogram'))
     >>> plt.show()
 
+    Create a custom distribution.
+
+    >>> class MyLogUniform:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {'a': {'endpoints': (0, np.inf),
+    ...                       'inclusive': (False, False)},
+    ...                 'b': {'endpoints': ('a', np.inf),
+    ...                       'inclusive': (False, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': ('a', 'b'), 'inclusive': (True, True)}
+    ...
+    ...     def pdf(self, x, a, b):
+    ...         return 1 / (x * (np.log(b)- np.log(a)))
+    >>>
+    >>> MyLogUniform = stats.make_distribution(MyLogUniform())
+    >>> Y = MyLogUniform(a=1.0, b=3.0)
+    >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
     """
     if dist in {stats.levy_stable, stats.vonmises, stats.hypergeom,
                 stats.nchypergeom_fisher, stats.nchypergeom_wallenius,
                 stats.poisson_binom}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if not isinstance(dist, (stats.rv_continuous, stats.rv_discrete)):
-        message = "Argument must be an instance of `rv_continuous` or `rv_discrete`."
-        raise ValueError(message)
+    if isinstance(dist, (stats.rv_continuous, stats.rv_discrete)):
+        return _make_distribution_rv_generic(dist)
+    elif getattr(dist, "__make_distribution_version__", "0.0.0") >= "1.16.0":
+        return _make_distribution_custom(dist)
+    else:
+        message = ("The argument must be an instance of `rv_continuous`, "
+                   "`rv_discrete`, or an instance of a class with attribute "
+                   "`__make_distribution_version__ >= 1.16`.")
 
+
+def _make_distribution_rv_generic(dist):
     parameters = []
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
@@ -3870,7 +3938,20 @@ def make_distribution(dist):
         parameters.append(param)
         names.append(shape_info.name)
 
-    _x_support = _RealDomain(endpoints=support, inclusive=(True, True))
+    if _overrides("_get_support"):
+        def left(**parameter_values):
+            a, _ = dist._get_support(**parameter_values)
+            return np.asarray(a)[()]
+
+        def right(**parameter_values):
+            _, b = dist._get_support(**parameter_values)
+            return np.asarray(b)[()]
+
+        endpoints = (left, right)
+    else:
+        endpoints = support
+
+    _x_support = _RealDomain(endpoints=endpoints, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     repr_str = _distribution_names.get(dist.name, dist.name.capitalize())
@@ -3892,14 +3973,7 @@ def make_distribution(dist):
             s = super().__str__()
             return s.replace('CustomDistribution', repr_str)
 
-    # override the domain's `get_numerical_endpoints` rather than the
-    # distribution's `_support` to ensure that `_support` takes care
-    # of any required broadcasting, etc.
-    def get_numerical_endpoints(parameter_values):
-        a, b = dist._get_support(**parameter_values)
-        return np.asarray(a)[()], np.asarray(b)[()]
-
-    def _sample_formula(self, _, full_shape=(), *, rng=None, **kwargs):
+    def _sample_formula(self, full_shape=(), *, rng=None, **kwargs):
         return dist._rvs(size=full_shape, random_state=rng, **kwargs)
 
     def _moment_raw_formula(self, order, **kwargs):
@@ -3958,10 +4032,6 @@ def make_distribution(dist):
         return (getattr(dist.__class__, method_name, None)
                 is not getattr(old_class, method_name, None))
 
-    if _overrides('_get_support'):
-        domain = CustomDistribution._variable.domain
-        domain.get_numerical_endpoints = get_numerical_endpoints
-
     if _overrides('_munp'):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
 
@@ -3979,6 +4049,72 @@ def make_distribution(dist):
         f"This class represents `scipy.stats.{dist.name}` as a subclass of "
         f"`{new_class}`.",
         f"The `repr`/`str` of class instances is `{repr_str}`.",
+        f"The PDF of the distribution is defined {support_etc}"
+    ]
+    CustomDistribution.__doc__ = ("\n".join(docs))
+
+    return CustomDistribution
+
+
+def _make_distribution_custom(dist):
+    parameters = []
+
+    for name, info in dist.parameters.items():
+        domain = _RealDomain(endpoints=info['endpoints'],
+                             inclusive=info['inclusive'])
+        param = _RealParameter(name, domain=domain)
+        parameters.append(param)
+
+    endpoints = dist.support["endpoints"]
+    inclusive = dist.support.get("inclusive", (True, True))
+
+    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+    _x_param = _RealParameter('x', domain=_x_support)
+    repr_str = dist.__class__.__name__
+
+    class CustomDistribution(ContinuousDistribution):
+        _parameterizations = ([_Parameterization(*parameters)] if parameters
+                              else [])
+        _variable = _x_param
+
+        def __repr__(self):
+            s = super().__repr__()
+            return s.replace('CustomDistribution', repr_str)
+
+        def __str__(self):
+            s = super().__str__()
+            return s.replace('CustomDistribution', repr_str)
+
+    methods = {'sample', 'logentropy', 'entropy',
+               'median', 'mode', 'logpdf', 'pdf',
+               'logcdf2', 'logcdf', 'cdf2', 'cdf',
+               'logccdf2', 'logccdf', 'ccdf2', 'ccdf',
+               'ilogcdf', 'icdf', 'ilogccdf', 'iccdf'}
+
+    for method in methods:
+        if hasattr(dist, method):
+            # Make it an attribute of the new object with the new name
+            new_method = f"_{method}_formula"
+            setattr(CustomDistribution, new_method, getattr(dist, method))
+
+    if hasattr(dist, 'moment'):
+        def _moment_raw_formula(self, order, **kwargs):
+            return dist.moment(order, kind='raw', **kwargs)
+
+        def _moment_central_formula(self, order, **kwargs):
+            return dist.moment(order, kind='central', **kwargs)
+
+        def _moment_standardized_formula(self, order, **kwargs):
+            return dist.moment(order, kind='standardized', **kwargs)
+
+        CustomDistribution._moment_raw_formula = _moment_raw_formula
+        CustomDistribution._moment_central_formula = _moment_central_formula
+        CustomDistribution._moment_standardized_formula = _moment_standardized_formula
+
+    support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
+    docs = [
+        f"This class represents `{repr_str}` as a subclass of "
+        "`ContinuousDistribution`.",
         f"The PDF of the distribution is defined {support_etc}"
     ]
     CustomDistribution.__doc__ = ("\n".join(docs))
@@ -4454,10 +4590,9 @@ class ShiftedScaledDistribution(TransformedDistribution):
         return self._moment_transform_center(
             order, raw_moments, loc, self._zero)
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
+    def _sample_dispatch(self, full_shape, *,
                          rng, loc, scale, sign, method, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return self._itransform(rvs, loc=loc, scale=scale, sign=sign, **params)
 
     def __add__(self, loc):
@@ -4841,13 +4976,13 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0, *args)
         for var, weight in zip(self._components, self._weights):
             out += getattr(var, fun)(*args) * weight
-        return out
+        return out[()]
 
     def _logsum(self, fun, *args):
         out = self._full(-np.inf, *args)
         for var, log_weight in zip(self._components, np.log(self._weights)):
             np.logaddexp(out, getattr(var, fun)(*args) + log_weight, out=out)
-        return out
+        return out[()]
 
     def support(self):
         a = self._full(np.inf)
@@ -4923,7 +5058,7 @@ class Mixture(_ProbabilityDistribution):
         out = self._full(0)
         for var, weight in zip(self._components, self._weights):
             out += var.moment(order, kind='raw') * weight
-        return out
+        return out[()]
 
     def _moment_central(self, order):
         order = int(order)
@@ -4934,7 +5069,7 @@ class Mixture(_ProbabilityDistribution):
             a, b = var.mean(), self.mean()
             moment = var._moment_transform_center(order, moment_as, a, b)
             out += moment * weight
-        return out
+        return out[()]
 
     def _moment_standardized(self, order):
         return self._moment_central(order) / self.standard_deviation()**order
@@ -4979,7 +5114,8 @@ class Mixture(_ProbabilityDistribution):
         xmin, xmax = self.support()
         fun = getattr(self, fun)
         f = lambda x, p: fun(x) - p  # noqa: E731 is silly
-        res = _bracket_root(f, xl0=self.mean(), xmin=xmin, xmax=xmax, args=(p,))
+        xl0, xr0 = _guess_bracket(xmin, xmax)
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p,))
         return _chandrupatla(f, a=res.xl, b=res.xr, args=(p,)).x
 
     def icdf(self, p, /, *, method=None):
@@ -5151,10 +5287,8 @@ class MonotonicTransformedDistribution(TransformedDistribution):
     def _iccdf_dispatch(self, p, *args, **params):
         return self._g(self._icxdf(p, *args, **params))
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return self._g(rvs)
 
 
@@ -5251,10 +5385,8 @@ class FoldedDistribution(TransformedDistribution):
         xr = np.minimum(x, b)
         return self._dist._ccdf2_dispatch(xl, xr, *args, method=method, **params)
 
-    def _sample_dispatch(self, sample_shape, full_shape, *,
-                         method, rng, **params):
-        rvs = self._dist._sample_dispatch(
-            sample_shape, full_shape, method=method, rng=rng, **params)
+    def _sample_dispatch(self, full_shape, *, method, rng, **params):
+        rvs = self._dist._sample_dispatch(full_shape, method=method, rng=rng, **params)
         return np.abs(rvs)
 
     def __repr__(self):

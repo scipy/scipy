@@ -15,9 +15,9 @@ MODULE_NAME = 'ndimage'
 
 def _maybe_convert_arg(arg, xp):
     """Convert arrays/scalars hiding in the sequence `arg`."""
-    if isinstance(arg, (np.ndarray, np.generic)):
+    if isinstance(arg, np.ndarray | np.generic):
         return xp.asarray(arg)
-    elif isinstance(arg, (list, tuple)):
+    elif isinstance(arg, list | tuple):
         return type(arg)(_maybe_convert_arg(x, xp) for x in arg)
     else:
         return arg
@@ -46,7 +46,7 @@ def delegate_xp(delegator, module_name):
                 # XXX: output arrays
                 result = func(*args, **kwds)
 
-                if isinstance(result, (np.ndarray, np.generic)):
+                if isinstance(result, np.ndarray | np.generic):
                     # XXX: np.int32->np.array_0D
                     return xp.asarray(result)
                 elif isinstance(result, int):

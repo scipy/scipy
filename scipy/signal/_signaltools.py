@@ -175,24 +175,23 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
-    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')``
+    This way, if ``x`` and ``y`` are 1-D arrays and ``z = correlate(x, y, 'full')``
     then
 
     .. math::
 
-          z[k] = (x * y)(k - N + 1)
-               = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
+          z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
-
-    where :math:`||x||` is the length of ``x``, :math:`N = \max(||x||,||y||)`,
-    and :math:`y_m` is 0 when m is outside the range of y.
-
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    :math:`y^*` denotes the complex conjugate of :math:`y`.
+    
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
-    When using "same" mode with even-length inputs, the outputs of `correlate`
+    When using ``mode='same'`` with even-length inputs, the outputs of `correlate`
     and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
@@ -843,6 +842,35 @@ def _calc_oa_lens(s1, s2):
     return block_size, overlap, in1_step, in2_step
 
 
+def _swapaxes(x, ax1, ax2, xp):
+    """np.swapaxes"""
+    shp = list(range(x.ndim))
+    shp[ax1], shp[ax2] = shp[ax2], shp[ax1]
+    return xp.permute_dims(x, shp)
+
+
+# may want to look at moving _swapaxes and this to array-api-extra,
+# cross-ref https://github.com/data-apis/array-api-extra/issues/97
+def _split(x, indices_or_sections, axis, xp):
+    """A simplified version of np.split, with `indices` being an list.
+    """
+    # https://github.com/numpy/numpy/blob/v2.2.0/numpy/lib/_shape_base_impl.py#L743
+    Ntotal = x.shape[axis]
+
+    # handle array case.
+    Nsections = len(indices_or_sections) + 1
+    div_points = [0] + list(indices_or_sections) + [Ntotal]    
+
+    sub_arys = []
+    sary = _swapaxes(x, axis, 0, xp=xp)
+    for i in range(Nsections):
+        st = div_points[i]
+        end = div_points[i + 1]
+        sub_arys.append(_swapaxes(sary[st:end, ...], axis, 0, xp=xp))
+
+    return sub_arys
+
+
 def oaconvolve(in1, in2, mode="full", axes=None):
     """Convolve two N-dimensional arrays using the overlap-add method.
 
@@ -1003,14 +1031,10 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     # Pad the array to a size that can be reshaped to the desired shape
     # if necessary.
     if not all(curpad == (0, 0) for curpad in pad_size1):
-        # XXX: xp.pad is available on numpy, cupy and jax.numpy; on torch, can reuse
-        # http://github.com/pytorch/pytorch/blob/main/torch/_numpy/_funcs_impl.py#L2045
-        in1 = np.pad(in1, pad_size1, mode='constant', constant_values=0)
-        in1 = xp.asarray(in1)
+        in1 = xpx.pad(in1, pad_size1, mode='constant', constant_values=0, xp=xp)
 
     if not all(curpad == (0, 0) for curpad in pad_size2):
-        in2 = np.pad(in2, pad_size2, mode='constant', constant_values=0)
-        in2 = xp.asarray(in2)
+         in2 = xpx.pad(in2, pad_size2, mode='constant', constant_values=0, xp=xp)
 
     # Reshape the overlap-add parts to input block sizes.
     split_axes = [iax+i for i, iax in enumerate(axes)]
@@ -1037,18 +1061,18 @@ def oaconvolve(in1, in2, mode="full", axes=None):
         if overlap is None:
             continue
 
-        ret, overpart = np.split(ret, [-overlap], ax_fft)
-        overpart = np.split(overpart, [-1], ax_split)[0]
+        ret, overpart = _split(ret, [-overlap], ax_fft, xp=xp)
+        overpart = _split(overpart, [-1], ax_split, xp=xp)[0]
 
-        ret_overpart = np.split(ret, [overlap], ax_fft)[0]
-        ret_overpart = np.split(ret_overpart, [1], ax_split)[1]
+        ret_overpart = _split(ret, [overlap], ax_fft, xp=xp)[0]
+        ret_overpart = _split(ret_overpart, [1], ax_split, xp)[1]
         ret_overpart += overpart
 
     # Reshape back to the correct dimensionality.
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = ret.reshape(*shape_ret)
+    ret = xp.reshape(ret, shape_ret)
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -2364,11 +2388,9 @@ def lfiltic(b, a, y, x=None):
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
 
-    concat = array_namespace(xp.ones(3)).concat
-
     L = xp_size(y)
     if L < N:
-        y = concat((y, np.zeros(N - L)))
+        y = xp.concat((y, np.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
@@ -3887,6 +3909,15 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     return y_keep
 
 
+def _angle(z, xp):
+    """np.angle replacement
+    """
+    # XXX: https://github.com/data-apis/array-api/issues/595
+    zimag = xp.imag(z) if xp.isdtype(z.dtype, 'complex floating') else 0.
+    a = xp.atan2(zimag, xp.real(z))
+    return a
+
+
 def vectorstrength(events, period):
     '''
     Determine the vector strength of the events corresponding to the given
@@ -3934,8 +3965,13 @@ def vectorstrength(events, period):
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
         :doi:`10.1007/s00422-013-0560-8`.
     '''
-    events = np.asarray(events)
-    period = np.asarray(period)
+    xp = array_namespace(events, period)
+
+    events = xp.asarray(events)
+    period = xp.asarray(period)
+    if xp.isdtype(period.dtype, 'integral'):
+        period = xp.astype(period, xp.float64)
+
     if events.ndim > 1:
         raise ValueError('events cannot have dimensions more than 1')
     if period.ndim > 1:
@@ -3944,19 +3980,20 @@ def vectorstrength(events, period):
     # we need to know later if period was originally a scalar
     scalarperiod = not period.ndim
 
-    events = np.atleast_2d(events)
-    period = np.atleast_2d(period)
-    if (period <= 0).any():
+    events = xpx.atleast_nd(events, ndim=2, xp=xp)
+    period = xpx.atleast_nd(period, ndim=2, xp=xp)
+    if xp.any(period <= 0):
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    vectors = np.exp(np.dot(2j*np.pi/period.T, events))
+    events_ = xp.astype(events, period.dtype)
+    vectors = xp.exp(2j * (xp.pi / period.T @ events_))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = np.mean(vectors, axis=1)
-    strength = abs(vectormean)
-    phase = np.angle(vectormean)
+    vectormean = xp.mean(vectors, axis=1)
+    strength = xp.abs(vectormean)
+    phase = _angle(vectormean, xp)
 
     # if the original period was a scalar, return scalars
     if scalarperiod:
@@ -4064,6 +4101,7 @@ def detrend(data: np.ndarray, axis: int = -1,
     else:
         dshape = data.shape
         N = dshape[axis]
+        bp = np.asarray(bp)
         bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
@@ -4716,8 +4754,10 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
     # x's 'axis' dimension must be bigger than edge.
     if x.shape[axis] <= edge:
-        raise ValueError("The length of the input vector x must be greater "
-                         "than padlen, which is %d." % edge)
+        raise ValueError(
+            f"The length of the input vector x must be greater than padlen, "
+            f"which is {edge}."
+        )
 
     if padtype is not None and edge > 0:
         # Make an extension of length `edge` at each
@@ -4841,10 +4881,12 @@ def sosfilt(sos, x, axis=-1, zi=None):
         #     2. make sure the copied zi remains a numpy array
         zi = xp_copy(zi, xp=array_namespace(zi))
         if zi.shape != x_zi_shape:
-            raise ValueError('Invalid zi shape. With axis=%r, an input with '
-                             'shape %r, and an sos array with %d sections, zi '
-                             'must have shape %r, got %r.' %
-                             (axis, x.shape, n_sections, x_zi_shape, zi.shape))
+            raise ValueError(
+                f"Invalid zi shape. With axis={axis!r}, "
+                f"an input with shape {x.shape!r}, "
+                f"and an sos array with {n_sections} sections, zi must have "
+                f"shape {x_zi_shape!r}, got {zi.shape!r}."
+            )
         return_zi = True
     else:
         zi = np.zeros(x_zi_shape, dtype=dtype)

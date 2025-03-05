@@ -280,6 +280,7 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
+   quantile
    percentileofscore
    scoreatpercentile
    relfreq
@@ -653,6 +654,7 @@ from ._distribution_infrastructure import (
 from ._new_distributions import Normal, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
+from ._quantile import quantile
 
 
 # Deprecated namespaces, to be removed in v2.0.0

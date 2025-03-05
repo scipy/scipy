@@ -5,9 +5,12 @@
 
 namespace xsf {
 
+//
+// Return sf_error equivalents for AMOS ierr values.
+// 'ierr' refers to the last parameter of the AMOS functions
+// airy(), besh(), besi(), besj(), besk(), besy(), and biry().
+//
 inline sf_error_t ierr_to_sferr(int nz, int ierr) {
-    /* Return sf_error equivalents for amos ierr values */
-
     if (nz != 0) {
         return SF_ERROR_UNDERFLOW;
     }
@@ -23,6 +26,8 @@ inline sf_error_t ierr_to_sferr(int nz, int ierr) {
         return SF_ERROR_NO_RESULT;
     case 5: /* Algorithm termination condition not met */
         return SF_ERROR_NO_RESULT;
+    case 6: /* Memory allocation failed */
+        return SF_ERROR_MEMORY;
     }
 
     return SF_ERROR_OK;

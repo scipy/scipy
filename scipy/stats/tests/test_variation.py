@@ -112,6 +112,7 @@ class TestVariation:
         with pytest.raises((AxisError, IndexError)):
             variation(x, axis=10)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_mean_zero(self, xp):
         # Check that `variation` returns inf for a sequence that is not
         # identically zero but whose mean is zero.
@@ -123,6 +124,7 @@ class TestVariation:
         y2 = variation(x2, axis=1)
         xp_assert_equal(y2, xp.asarray([xp.inf, xp.inf]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     @pytest.mark.parametrize('x', [[0.]*5, [1, 2, np.inf, 9]])
     def test_return_nan(self, x, xp):
         x = xp.asarray(x)
@@ -130,6 +132,10 @@ class TestVariation:
         y = variation(x)
         xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
 
+    # internal dask warning we can't do anything about
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):

@@ -114,7 +114,7 @@ class Normal(ContinuousDistribution):
             # exact is faster (and obviously more accurate) for reasonable orders
             return sigma**order * special.factorial2(int(order) - 1, exact=True)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, *, mu, sigma, **kwargs):
+    def _sample_formula(self, full_shape, rng, *, mu, sigma, **kwargs):
         return rng.normal(loc=mu, scale=sigma, size=full_shape)[()]
 
 
@@ -196,7 +196,7 @@ class StandardNormal(Normal):
     def _moment_standardized_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, **kwargs):
+    def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
 
 
@@ -345,7 +345,7 @@ class Uniform(ContinuousDistribution):
 
     _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
 
-    def _sample_formula(self, sample_shape, full_shape, rng, a, b, ab, **kwargs):
+    def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
         try:
             return rng.uniform(a, b, size=full_shape)[()]
         except OverflowError:  # happens when there are NaNs

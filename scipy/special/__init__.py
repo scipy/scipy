@@ -23,8 +23,9 @@ Error handling
 
 Errors are handled by returning NaNs or other appropriate values.
 Some of the special function routines can emit warnings or raise
-exceptions when an error occurs. By default this is disabled; to
-query and control the current error handling state the following
+exceptions when an error occurs. By default this is disabled, except
+for memory allocation errors, which result in an exception being raised.
+To query and control the current error handling state the following
 functions are provided.
 
 .. autosummary::
@@ -777,9 +778,6 @@ Convenience functions
 
 """  # noqa: E501
 
-import os
-import warnings
-
 
 def _load_libsf_error_state():
     """Load libsf_error_state.dll shared library on Windows
@@ -796,6 +794,7 @@ def _load_libsf_error_state():
     in `scipy/tools/openblas_support.py`:
     https://github.com/scipy/scipy/blob/bb92c8014e21052e7dde67a76b28214dd1dcb94a/tools/openblas_support.py#L239-L274
     """  # noqa: E501
+    import os
     if os.name == "nt":
         try:
             from ctypes import WinDLL

@@ -148,7 +148,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             new_coords = np.unravel_index(flat_coords, shape, order=order)
 
-        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.shape))
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(shape))
         new_coords = tuple(np.asarray(co, dtype=idx_dtype) for co in new_coords)
 
         # Handle copy here rather than passing on to the constructor so that no
@@ -866,10 +866,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             o_array = np.asanyarray(other)
 
             if o_array.ndim == 0 and o_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmatmul__ can kick in if that's implemented.
-                return NotImplemented
-
+                raise TypeError(f"dot argument not supported type: '{type(other)}'")
             try:
                 other.shape
             except AttributeError:
@@ -1082,9 +1079,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             other_array = np.asanyarray(other)
 
             if other_array.ndim == 0 and other_array.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented
-                return NotImplemented
-
+                raise TypeError(f"tensordot arg not supported type: '{type(other)}'")
             try:
                 other.shape
             except AttributeError:
@@ -1337,7 +1332,7 @@ def _process_axes(ndim_a, ndim_b, axes):
             raise ValueError("axes integer is out of bounds for input arrays")
         axes_a = list(range(ndim_a - axes, ndim_a))
         axes_b = list(range(axes))
-    elif isinstance(axes, (tuple, list)):
+    elif isinstance(axes, tuple | list):
         if len(axes) != 2:
             raise ValueError("axes must be a tuple/list of length 2")
         axes_a, axes_b = axes

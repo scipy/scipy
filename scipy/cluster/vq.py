@@ -478,7 +478,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     if k != guess:
         raise ValueError("If k_or_guess is a scalar, it must be an integer.")
     if k < 1:
-        raise ValueError("Asked for %d clusters." % k)
+        raise ValueError(f"Asked for {k} clusters.")
 
     rng = check_random_state(rng)
 
@@ -798,8 +798,9 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         nc = int(code_book)
 
         if nc < 1:
-            raise ValueError("Cannot ask kmeans2 for %d clusters"
-                             " (k was %s)" % (nc, code_book))
+            raise ValueError(
+                f"Cannot ask kmeans2 for {nc} clusters (k was {code_book})"
+            )
         elif nc != code_book:
             warnings.warn("k was not an integer, was converted.", stacklevel=2)
 

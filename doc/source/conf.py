@@ -4,7 +4,6 @@ from os.path import relpath, dirname
 import re
 import sys
 import warnings
-from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
@@ -71,7 +70,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = f'2008-{date.today().year}, The SciPy community'
+copyright = '2008, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -132,6 +131,7 @@ nitpick_ignore = [
     ("py:class", "None.  Remove all items from D."),
     ("py:class", "(k, v), remove and return some (key, value) pair as a"),
     ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "None.  Update D from mapping/iterable E and F."),
     ("py:class", "v, remove specified key and return the corresponding value."),
 ]
 
@@ -208,7 +208,7 @@ html_sidebars = {
     "index": ["search-button-field"],
     "**": ["search-button-field", "sidebar-nav-bs"]
 }
-
+html_js_files = ['custom-icons.js']  # defines custom icon(s) used in header
 html_theme_options = {
     "header_links_before_dropdown": 6,
     "icon_links": [
@@ -218,9 +218,10 @@ html_theme_options = {
         "icon": "fa-brands fa-github",
       },
       {
-        "name": "X",
-        "url": "https://x.com/SciPy_team",
-        "icon": "fa-brands fa-x-twitter",
+        "name": "Scientific Python Forum",
+        "url": "https://discuss.scientific-python.org/c/contributor/scipy/",
+        "icon": "fa-custom fa-SciPy_Forum", # defined in file `_static/custom-icons.js`
+        "type": "fontawesome",
       },
     ],
     "logo": {
@@ -259,7 +260,7 @@ if 'versionwarning' in tags:  # noqa: F821
     html_context = {
         'VERSIONCHECK_JS': src
     }
-    html_js_files = ['versioncheck.js']
+    html_js_files += ['versioncheck.js', ]
 
 html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
@@ -408,6 +409,7 @@ myst_enable_extensions = [
     "colon_fence",
     "dollarmath",
     "substitution",
+    "linkify",
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
@@ -481,7 +483,7 @@ def linkcode_resolve(domain, info):
         obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
-    if isinstance(obj, (rv_generic, multi_rv_generic)):
+    if isinstance(obj, rv_generic | multi_rv_generic):
         obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
