@@ -1017,8 +1017,6 @@ class TestNdimageFilters:
                         mode=['reflect', 'nearest', 'constant'])
     kwargs_rank = dict(origin=(-1, 0, 1))
 
-    @skip_xp_backends("array_api_strict",
-         reason="fancy indexing is only available in 2024 version")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/8339")
     @pytest.mark.parametrize("filter_func, size0, size, kwargs",
                              [(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
