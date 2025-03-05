@@ -76,10 +76,6 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
 # TODO: re-check whether this works after lazywhere moved to array-api-extra
 @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
-@skip_xp_backends('array_api_strict',
-                  reason=("`array_api_strict.where` `fillvalue` doesn't "
-                           "accept Python floats. See data-apis/array-api#807.")
-)
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -175,6 +171,8 @@ class TestTrimmedStats:
         y = stats.tstd(x, limits=None)
         xp_assert_close(y, xp.std(x, correction=1))
 
+    @pytest.mark.xfail_xp_backends("array_api_strict",
+                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmin(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmin(x), xp.asarray(0))
@@ -214,6 +212,8 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foobar')
 
+    @pytest.mark.xfail_xp_backends("array_api_strict",
+                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmax(self, xp):
         x = xp.arange(10)
         xp_assert_equal(stats.tmax(x), xp.asarray(9))
@@ -240,7 +240,7 @@ class TestTrimmedStats:
 
     @skip_xp_backends(np_only=True,
                       reason="Only NumPy arrays support scalar input/`nan_policy`.")
-    def test_tax_scalar_and_nanpolicy(self, xp):
+    def test_tmax_scalar_and_nanpolicy(self, xp):
         assert_equal(stats.tmax(4), 4)
 
         x = np.arange(10.)
@@ -262,6 +262,12 @@ class TestTrimmedStats:
         y_ref = xp.asarray([4., 5., 6., 7., 8.])
         xp_assert_close(y, xp.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
         xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
+
+    def test_gh_22626(self, xp):
+        # Test that `tmin`/`tmax` returns exact result with outrageously large integers
+        x = xp.arange(2**62, 2**62+10)
+        xp_assert_equal(stats.tmin(x[None, :]), x)
+        xp_assert_equal(stats.tmax(x[None, :]), x)
 
 
 class TestPearsonrWilkinson:
@@ -7943,13 +7949,10 @@ class TestFOneWay:
 
     def test_known_exact(self):
         # Another trivial dataset for which the exact F and p can be
-        # calculated.
+        # calculated on most platforms
         F, p = stats.f_oneway([2], [2], [2, 3, 4])
-        # The use of assert_equal might be too optimistic, but the calculation
-        # in this case is trivial enough that it is likely to go through with
-        # no loss of precision.
-        assert_equal(F, 3/5)
-        assert_equal(p, 5/8)
+        assert_allclose(F, 3/5, rtol=1e-15)  # assert_equal fails on some CI platforms
+        assert_allclose(p, 5/8, rtol=1e-15)
 
     def test_large_integer_array(self):
         a = np.array([655, 788], dtype=np.uint16)

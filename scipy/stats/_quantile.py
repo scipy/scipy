@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import (xp_take_along_axis, xp_default_dtype,
-                                   xp_ravel, array_namespace)
+from scipy._lib._array_api import xp_default_dtype, xp_ravel, array_namespace
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 from scipy.stats._stats_py import _length_nonmasked
@@ -317,8 +316,8 @@ def _quantile_hf(y, p, n, method, xp):
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 
-    return ((1 - g) * xp_take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
-            + g * xp_take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
+    return ((1 - g) * xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
+            + g * xp.take_along_axis(y, xp.astype(jp1, xp.int64), axis=-1))
 
 
 def _quantile_hd(y, p, n, xp):

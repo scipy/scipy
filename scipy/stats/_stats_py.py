@@ -44,7 +44,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._array_api import is_lazy_array, xp_ravel
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
-                              AxisError, _lazywhere)
+                              AxisError, _lazywhere, np_vecdot)
 from scipy._lib.deprecation import _deprecate_positional_args
 
 import scipy.special as special
@@ -614,10 +614,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     if xp.all(mask):
         raise ValueError("No array values within given limits")
     if xp.any(mask):
-        # hopefully this (and many other instances of this idiom) are temporary when
-        # data-apis/array-api#807 is resolved
-        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
-        a = xp.where(mask, xp.asarray(val, dtype=dtype), a)
+        a = xp.where(mask, val, a)
     return a, mask
 
 
@@ -781,19 +778,15 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    # remember original dtype; _put_val_to_limits might need to change it
-    dtype = a.dtype
+    max_ = xp.iinfo(a.dtype).max if xp.isdtype(a.dtype, 'integral') else xp.inf
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
-                                 val=xp.inf, xp=xp)
+                                 val=max_, xp=xp)
 
-    min = xp.min(a, axis=axis)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, min, xp.nan)
-
-    if not xp.any(xp.isnan(res)):
-        # needed if input is of integer dtype
-        res = xp.astype(res, dtype, copy=False)
-
+    min_ = xp.min(a, axis=axis)
+    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
+    # Output dtype is data-dependent
+    # Possible loss of precision for int types
+    res = min_ if xp.all(valid) else xp.where(valid, min_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
@@ -843,19 +836,15 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    # remember original dtype; _put_val_to_limits might need to change it
-    dtype = a.dtype
+    min_ = xp.iinfo(a.dtype).min if xp.isdtype(a.dtype, 'integral') else -xp.inf
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
-                                 val=-xp.inf, xp=xp)
+                                 val=min_, xp=xp)
 
-    max = xp.max(a, axis=axis)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, max, xp.nan)
-
-    if not xp.any(xp.isnan(res)):
-        # needed if input is of integer dtype
-        res = xp.astype(res, dtype, copy=False)
-
+    max_ = xp.max(a, axis=axis)
+    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
+    # Output dtype is data-dependent
+    # Possible loss of precision for int types
+    res = max_ if xp.all(valid) else xp.where(valid, max_, xp.nan)
     return res[()] if res.ndim == 0 else res
 
 
@@ -3992,16 +3981,14 @@ def f_oneway(*samples, axis=0, equal_var=True):
 
         # calculate adjusted grand mean
         # "... and $\hat{y} = \sum w_t y_t / \sum w_t$. When all..."
-        y_hat = np.sum(w_t * y_t, axis=0) / np.sum(w_t, axis=0)
+        y_hat = np_vecdot(w_t, y_t, axis=0) / np.sum(w_t, axis=0)
 
         # adjust f statistic
         # ref.[4] p.334 eq.29
-        numerator = np.sum(w_t * (y_t - y_hat)**2, axis=0) / (k - 1)
+        numerator =  np_vecdot(w_t, (y_t - y_hat)**2, axis=0) / (k - 1)
         denominator = (
                 1 + 2 * (k - 2) / (k**2 - 1) *
-                np.sum((1 / (n_t - 1)) *
-                       (1 - w_t / s_w_t)**2,
-                       axis=0)
+                np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0)
         )
         f = numerator / denominator
 
@@ -4013,8 +4000,7 @@ def f_oneway(*samples, axis=0, equal_var=True):
         # ref.[4] p.334 eq.30
         hat_f2 = (
                 (k**2 - 1) /
-                (3 * np.sum((1 / (n_t - 1)) *
-                            (1 - w_t / s_w_t)**2, axis=0))
+                (3 * np_vecdot(1 / (n_t - 1), (1 - w_t / s_w_t)**2, axis=0))
         )
 
         # calculate p value
@@ -4166,6 +4152,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
     weights = inv_sq_se / np.sum(inv_sq_se, axis=0, keepdims=True)
 
     # (3) determine variance-weighted estimate of the common mean
+    # Consider replacing with vecdot when data-apis/array-api#910 is resolved
     var_w = np.sum(weights * means, axis=0, keepdims=True)
 
     # (4) determine one-sample t statistic for each group
@@ -4185,7 +4172,7 @@ def alexandergovern(*samples, nan_policy='propagate', axis=0):
           (b**2*10 + 8*b*c**4 + 1000*b)))
 
     # (9) calculate statistic
-    A = np.sum(z**2, axis=0)
+    A = np_vecdot(z, z, axis=0)
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
@@ -4461,6 +4448,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     --------
     spearmanr : Spearman rank-order correlation coefficient.
     kendalltau : Kendall's tau, a correlation measure for ordinal data.
+    :ref:`hypothesis_pearsonr` : Extended example
 
     Notes
     -----
@@ -4621,6 +4609,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
+
+    For a more detailed example, see :ref:`hypothesis_pearsonr`.
 
     """
     xp = array_namespace(x, y)
@@ -8858,9 +8848,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     rankx_mean = np.mean(rankx)
     ranky_mean = np.mean(ranky)
 
-    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    temp_x = rankcx - rankx - rankcx_mean + rankx_mean
+    Sx = np_vecdot(temp_x, temp_x)
     Sx /= nx - 1
-    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    temp_y = rankcy - ranky - rankcy_mean + ranky_mean
+    Sy = np_vecdot(temp_y, temp_y)
     Sy /= ny - 1
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
@@ -9054,8 +9046,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
         norm = _SimpleNormal()
         Zi = norm.isf(pvalues)
-        # could use `einsum` or clever `matmul` for performance,
-        # but this is the most readable
+        # Consider `vecdot` when data-apis/array-api#910 is resolved
         statistic = (xp.sum(weights * Zi, axis=axis)
                      / xp_vector_norm(weights, axis=axis))
         pval = _get_pvalue(statistic, norm, alternative="greater", xp=xp)
@@ -9478,8 +9469,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
     # "let T2 equal the number of observations less than x*."
-    T1 = (X <= x_star).sum()
-    T2 = (X < x_star).sum()
+    T1 = np.count_nonzero(X <= x_star)
+    T2 = np.count_nonzero(X < x_star)
 
     # "The null distribution of the test statistics T1 and T2 is "
     # "the binomial distribution, with parameters n = sample size, and "
@@ -9997,11 +9988,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     # If p = 1 or p = 2, we avoid using np.power, which introduces an overhead
     # of about 15%.
     if p == 1:
-        return np.sum(np.multiply(np.abs(u_cdf - v_cdf), deltas))
+        return np_vecdot(np.abs(u_cdf - v_cdf), deltas)
     if p == 2:
-        return np.sqrt(np.sum(np.multiply(np.square(u_cdf - v_cdf), deltas)))
-    return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
-                                       deltas)), 1/p)
+        return np.sqrt(np_vecdot(np.square(u_cdf - v_cdf), deltas))
+    return np.power(np_vecdot(np.power(np.abs(u_cdf - v_cdf), p), deltas), 1/p)
 
 
 def _validate_distribution(values, weights):
@@ -10120,7 +10110,7 @@ def _sum_of_squares(a, axis=0):
 
     """
     a, axis = _chk_asarray(a, axis)
-    return np.sum(a*a, axis)
+    return np_vecdot(a, a, axis=axis)
 
 
 def _square_of_sums(a, axis=0):
@@ -10503,7 +10493,7 @@ def _br(x, *, r=0):
     x = np.triu(x)
     j = np.arange(n, dtype=x.dtype)
     n = np.asarray(n, dtype=x.dtype)[()]
-    return (np.sum(special.binom(j, r[:, np.newaxis])*x, axis=-1)
+    return (np_vecdot(special.binom(j, r[:, np.newaxis]), x, axis=-1)
             / special.binom(n-1, r) / n)
 
 
@@ -10593,7 +10583,7 @@ def lmoment(sample, order=None, *, axis=0, sorted=False, standardize=True):
     n = sample.shape[-1]
     bk[..., n:] = 0  # remove NaNs due to n_moments > n
 
-    lmoms = np.sum(prk * bk, axis=-1)
+    lmoms = np_vecdot(prk, bk, axis=-1)
     if standardize and n_moments > 2:
         lmoms[2:] /= lmoms[1]
 
@@ -10917,6 +10907,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
+    # consider using `vecdot` if `axis` tuple support is added (data-apis/array-api#910)
     norm = xp.sum(weights, axis=axis)
     wsum = xp.sum(x * weights, axis=axis)
     with np.errstate(divide='ignore', invalid='ignore'):

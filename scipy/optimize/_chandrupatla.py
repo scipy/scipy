@@ -2,7 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_sign, xp_copy, xp_take_along_axis
+from scipy._lib._array_api import xp_sign, xp_copy
 
 # TODO:
 # - (maybe?) don't use fancy indexing assignment
@@ -411,8 +411,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     # Ensure that x1 < x2 < x3 initially.
     xs, fs = xp.stack((x1, x2, x3)), xp.stack((f1, f2, f3))
     i = xp.argsort(xs, axis=0)
-    x1, x2, x3 = xp_take_along_axis(xs, i, axis=0)  # data-apis/array-api#808
-    f1, f2, f3 = xp_take_along_axis(fs, i, axis=0)  # data-apis/array-api#808
+    x1, x2, x3 = xp.take_along_axis(xs, i, axis=0)  # data-apis/array-api#808
+    f1, f2, f3 = xp.take_along_axis(fs, i, axis=0)  # data-apis/array-api#808
     q0 = xp_copy(x3)  # "At the start, q0 is set at x3..." ([1] after (7))
 
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,

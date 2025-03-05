@@ -2,6 +2,7 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import warnings
 import threading
 import numpy as np
 import scipy.linalg
@@ -3274,16 +3275,26 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p, eps=1e-15):
+    def _process_parameters(self, n, p):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
+        eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
         p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        i_adjusted = np.abs(p_adjusted) > eps
+        # only make adjustment when it's significant
+        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
         p[i_adjusted, -1] = p_adjusted[i_adjusted]
+
+        if np.any(i_adjusted):
+            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
+                       f"{eps=}. Currently, the last element of these rows is adjusted "
+                       "to compensate, but this condition will produce NaNs "
+                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
+                       "to 1.0 to avoid futher disruption.")
+            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)

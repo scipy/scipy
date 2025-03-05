@@ -2924,7 +2924,7 @@ def test_binary_input_as_output(function, iterations, brute_force, xp):
     xp_assert_equal(data, expected)
 
 
-@skip_xp_backends(np_only=True, exception=["cupy"],
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
                   reason="inplace output= is numpy-specific")
 def test_binary_hit_or_miss_input_as_output(xp):
     rstate = np.random.RandomState(123)
