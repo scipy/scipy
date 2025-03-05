@@ -124,13 +124,13 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     -----
     Repeated diagonal offsets are disallowed.
 
-    The result from `diags_array` is the sparse equivalent of::
+    The result from ``diags_array`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    ``diags_array`` differs from ``dia_array`` in the way it handles off-diagonals.
+    ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
     Specifically, `dia_array` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
     offset, while ``diags_array`` assumes the input data has no padding.
@@ -323,7 +323,7 @@ def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
 
     Returns an identity matrix with shape ``(n, n)`` using a given
-    sparse format and dtype. This differs from ``eye_array`` in
+    sparse format and dtype. This differs from `eye_array` in
     that it has a square shape with ones only on the main diagonal.
     It is thus the multiplicative identity. ``eye_array`` allows
     rectangular shapes and the diagonal can be offset from the main one.
@@ -1164,11 +1164,11 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
-        This random state will be used for sampling `indices` (the sparsity
+        This random state will be used for sampling ``indices`` (the sparsity
         structure), and by default for the data values too (see `data_sampler`).
     data_sampler : callable, optional (default depends on dtype)
-        Sampler of random data values with keyword arg `size`.
-        This function should take a single keyword argument `size` specifying
+        Sampler of random data values with keyword arg ``size``.
+        This function should take a single keyword argument ``size`` specifying
         the length of its returned ndarray. It is used to generate the nonzero
         values in the matrix after the locations of those values are chosen.
         By default, uniform [0, 1) random values are used unless `dtype` is
