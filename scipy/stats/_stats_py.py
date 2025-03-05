@@ -614,10 +614,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     if xp.all(mask):
         raise ValueError("No array values within given limits")
     if xp.any(mask):
-        # hopefully this (and many other instances of this idiom) are temporary when
-        # data-apis/array-api#807 is resolved
-        dtype = xp.asarray(1.).dtype if xp.isdtype(a.dtype, 'integral') else a.dtype
-        a = xp.where(mask, xp.asarray(val, dtype=dtype), a)
+        a = xp.where(mask, val, a)
     return a, mask
 
 
@@ -781,18 +778,13 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    # remember original dtype; _put_val_to_limits might need to change it
-    dtype = a.dtype
+    max = xp.iinfo(a.dtype).max if xp.isdtype(a.dtype, 'integral') else xp.inf
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
-                                 val=xp.inf, xp=xp)
+                                 val=max, xp=xp)
 
     min = xp.min(a, axis=axis)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, min, xp.nan)
-
-    if not xp.any(xp.isnan(res)):
-        # needed if input is of integer dtype
-        res = xp.astype(res, dtype, copy=False)
+    res = xp.where(n != 0, min, xp.nan) if xp.any(n == 0) else min
 
     return res[()] if res.ndim == 0 else res
 
@@ -843,18 +835,13 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    # remember original dtype; _put_val_to_limits might need to change it
-    dtype = a.dtype
+    min = xp.iinfo(a.dtype).min if xp.isdtype(a.dtype, 'integral') else -xp.inf
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
-                                 val=-xp.inf, xp=xp)
+                                 val=min, xp=xp)
 
     max = xp.max(a, axis=axis)
     n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis)
-    res = xp.where(n != 0, max, xp.nan)
-
-    if not xp.any(xp.isnan(res)):
-        # needed if input is of integer dtype
-        res = xp.astype(res, dtype, copy=False)
+    res = xp.where(n != 0, max, xp.nan) if xp.any(n == 0) else max
 
     return res[()] if res.ndim == 0 else res
 
