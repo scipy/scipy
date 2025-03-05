@@ -1120,10 +1120,20 @@ class TestMakeDistribution:
 
             @property
             def support(self):
-                return 'a', 'b'
+                return {'endpoints': ('a', 'b')}
 
             def pdf(self, x, a, b):
                 return 1 / (x * (np.log(b) - np.log(a)))
+
+            def sample(self, shape, *, a, b, rng=None):
+                p = rng.uniform(size=shape)
+                return np.exp(np.log(a) + p * (np.log(b) - np.log(a)))
+
+            def moment(self, order, kind='raw', *, a, b):
+                if order == 1 and kind == 'raw':
+                    # quadrature is perfectly accurate here; add 1e-10 error so we
+                    # can tell the difference between the two
+                    return (b - a) / np.log(b/a) + 1e-10
 
         LogUniform = stats.make_distribution(MyLogUniform())
 
@@ -1147,6 +1157,95 @@ class TestMakeDistribution:
             for order in range(5):
                 assert_allclose(X.moment(order, kind=kind),
                                 Y.moment(order, kind=kind))
+
+        # Confirm that the `sample` and `moment` methods are overriden as expected
+        sample_formula = X.sample(shape=10, rng=0, method='formula')
+        sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
+        assert_allclose(sample_formula, sample_inverse)
+        assert not np.all(sample_formula == sample_inverse)
+
+        assert_allclose(X.mean(method='formula'), X.mean(method='quadrature'))
+        assert not X.mean(method='formula') == X.mean(method='quadrature')
+
+    # pdf and cdf formulas below can warn on boundary of support in some cases.
+    # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
+    @pytest.mark.parametrize("c", [-1, 0, 1, np.asarray([-2.1, -1., 0., 1., 2.1])])
+    def test_custom_variable_support(self, c):
+        rng = np.random.default_rng(7548723590230982)
+
+        class MyGenExtreme:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {
+                    'c': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'mu': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'sigma': {'endpoints': (0, np.inf), 'inclusive': (False, False)}
+                }
+
+            @property
+            def support(self):
+                def left(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c >= 0] = -np.inf
+                    result[c < 0] = mu[c < 0] + sigma[c < 0] / c[c < 0]
+                    return result[()]
+
+                def right(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c <= 0] = np.inf
+                    result[c > 0] = mu[c > 0] + sigma[c > 0] / c[c > 0]
+                    return result[()]
+
+                return {"endpoints": (left, right), "inclusive": (False, False)}
+
+            def pdf(self, x, *, c, mu, sigma):
+                x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+                t = np.empty_like(x)
+                mask = (c == 0)
+                t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
+                result = 1/sigma * t**(1 - c)*np.exp(-t)
+                return result[()]
+
+            def cdf(self, x, *, c, mu, sigma):
+                x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+                t = np.empty_like(x)
+                mask = (c == 0)
+                t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
+                return np.exp(-t)[()]
+
+        GenExtreme1 = stats.make_distribution(MyGenExtreme())
+        GenExtreme2 = stats.make_distribution(stats.genextreme)
+
+        X1 = GenExtreme1(c=c, mu=0, sigma=1)
+        X2 = GenExtreme2(c=c)
+
+        x = X1.sample(shape=10, rng=rng)
+        p = X1.cdf(x)
+
+        assert_allclose(X1.support(), X2.support())
+        assert_allclose(X1.entropy(), X2.entropy(), rtol=5e-6)
+        assert_allclose(X1.median(), X2.median())
+        assert_allclose(X1.logpdf(x), X2.logpdf(x))
+        assert_allclose(X1.pdf(x), X2.pdf(x))
+        assert_allclose(X1.logcdf(x), X2.logcdf(x))
+        assert_allclose(X1.cdf(x), X2.cdf(x))
+        assert_allclose(X1.logccdf(x), X2.logccdf(x))
+        assert_allclose(X1.ccdf(x), X2.ccdf(x))
+        assert_allclose(X1.icdf(p), X2.icdf(p))
+        assert_allclose(X1.iccdf(p), X2.iccdf(p))
 
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'

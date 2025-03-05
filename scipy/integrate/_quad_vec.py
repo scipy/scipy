@@ -339,7 +339,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         neval += _quadrature.num_eval
 
         if global_integral is None:
-            if isinstance(ig, (float, complex)):
+            if isinstance(ig, float | complex):
                 # Specialize for scalars
                 if norm_func in (_max_norm, np.linalg.norm):
                     norm_func = abs

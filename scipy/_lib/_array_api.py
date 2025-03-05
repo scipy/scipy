@@ -41,7 +41,7 @@ __all__ = [
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
-    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_unsupported_param_msg', 'xp_vector_norm',
 ]
 
 
@@ -551,21 +551,6 @@ def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # see data-apis/array-api#824
     xp = array_namespace(x) if xp is None else xp
     return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
-
-
-def xp_take_along_axis(arr: Array,
-                       indices: Array, /, *,
-                       axis: int = -1,
-                       xp: ModuleType | None = None) -> Array:
-    # Dispatcher for np.take_along_axis for backends that support it;
-    # see data-apis/array-api/pull#816
-    xp = array_namespace(arr) if xp is None else xp
-    if is_torch(xp):
-        return xp.take_along_dim(arr, indices, dim=axis)
-    elif is_array_api_strict(xp):
-        raise NotImplementedError("Array API standard does not define take_along_axis")
-    else:
-        return xp.take_along_axis(arr, indices, axis)
 
 
 # utility to broadcast arrays and promote to common dtype
