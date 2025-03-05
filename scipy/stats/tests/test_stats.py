@@ -40,9 +40,10 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy, is_jax,
+from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
                                    is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib import array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
@@ -2938,7 +2939,7 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
-    @skip_xp_backends(eager_only=True, reason="No `nan_policy='raise'` for lazy arrays.")
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'raise'.")
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
@@ -3013,7 +3014,7 @@ class TestZmapZscore:
         expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
-    @skip_xp_backends(eager_only=True, reason="No `nan_policy='raise'` for lazy arrays.")
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'raise'.")
     def test_zscore_nan_raise(self, xp):
         x = xp.asarray([1, 2, xp.nan, 4, 5])
         with pytest.raises(ValueError, match="The input contains nan..."):
@@ -9579,12 +9580,6 @@ class TestXP_Var:
         mask = (x == 3)
         x = xp.where(mask, xp.asarray(xp.nan), x)
 
-        if not is_jax(xp):  # skip jax.numpy (lazy array -> no `nan_policy='raise'`)
-            # nan_policy='raise' raises an error
-            message = 'The input contains nan values'
-            with pytest.raises(ValueError, match=message):
-                _xp_var(x, nan_policy='raise')
-
         # `nan_policy='propagate'` is the default, and the result is NaN
         res1 = _xp_var(x)
         res2 = _xp_var(x, nan_policy='propagate')
@@ -9603,6 +9598,13 @@ class TestXP_Var:
             res = _xp_var(x * np.nan, nan_policy='omit')
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
+
+    @skip_xp_backends(eager_only=True)
+    def test_nan_policy_raise(self, xp):
+        # nan_policy='raise' raises an error when NaNs are present
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            _xp_var(xp.asarray([1, 2, np.nan]), nan_policy='raise')
 
     def test_empty(self, xp):
         message = 'One or more sample arguments is too small...'

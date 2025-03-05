@@ -404,7 +404,7 @@ def _ebrahimi_entropy(X, m, *, xp):
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
     i = xp.arange(1, n+1, dtype=X.dtype)
-    ci = xp.where(i <= m, 1 + (i - 1)/m, xp.ones_like(i)*2)
+    ci = xp.where(i <= m, 1 + (i - 1)/m, 2.)
     cond = i >= n - m + 1
     ci = xpx.at(ci, cond).set(1 + (n - i[cond])/m)
 

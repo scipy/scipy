@@ -4747,7 +4747,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
-    r = xp.asarray(xp.clip(r, -one, one))
+    r = xp.clip(r, -one, one)
     r = xpx.at(r, const_xy).set(xp.nan)
 
     # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
