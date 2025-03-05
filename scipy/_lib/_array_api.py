@@ -763,8 +763,10 @@ def make_skip_xp_backends(fun_name, capabilities_table=None):
 
     decorators = []
     if cpu_only:
-        decorators.append(pytest.mark.skip_xp_backends(
-            cpu_only=True, exceptions=exceptions, reason=reason))
+        kwargs = dict(cpu_only=True, exceptions=exceptions)
+        # if we pass `reason=None`, it doesn't work
+        kwargs |= {'reason': reason} if reason is not None else {}
+        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
 
     if np_only:
         decorators.append(pytest.mark.skip_xp_backends(np_only=True))
