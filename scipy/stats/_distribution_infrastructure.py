@@ -7,7 +7,7 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _rng_spawn, _RichResult
+from scipy._lib._util import _rng_spawn, _RichResult, _lazywhere
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
@@ -3917,7 +3917,7 @@ def make_distribution(dist):
                 stats.poisson_binom}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
-    if isinstance(dist, (stats.rv_continuous, stats.rv_discrete)):
+    if isinstance(dist, stats.rv_continuous | stats.rv_discrete):
         return _make_distribution_rv_generic(dist)
     elif getattr(dist, "__make_distribution_version__", "0.0.0") >= "1.16.0":
         return _make_distribution_custom(dist)
