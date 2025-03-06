@@ -2039,3 +2039,48 @@ def test_compare_as_davenport_as_euler():
             eul = rot.as_euler(seq)
             dav = rot.as_davenport(ax, order)
             assert_allclose(eul, dav, rtol=1e-12)
+
+
+def test_zero_length_rotation():
+    r = Rotation.random(num=0)
+    assert len(r) == 0
+
+    # Quaternion
+    r_quat = Rotation.from_quat(np.zeros((0, 4)))
+    assert len(r_quat) == 0
+    assert r.as_quat().shape == (0, 4)
+
+    # Matrix
+    r_matrix = Rotation.from_matrix(np.zeros((0, 3, 3)))
+    assert len(r_matrix) == 0
+    assert r.as_matrix().shape == (0, 3, 3)
+
+    # Euler
+    r_euler = Rotation.from_euler("xyz", np.zeros((0, 3)))
+    assert len(r_euler) == 0
+    assert r.as_euler("xyz").shape == (0, 3)
+
+    # Vector rotation
+    v = np.array([1, 2, 3])
+    v_rotated = r.apply(v)
+    assert v_rotated.shape == (0, 3)
+
+    # Multiplication
+    r_single = Rotation.random()
+    r_mult = r * r_single
+    assert len(r_mult) == 0
+
+    r_inv = r.inv()
+    assert len(r_inv) == 0
+
+    magnitude = r.magnitude()
+    assert magnitude.shape == (0,)
+
+    with pytest.raises(RuntimeWarning):
+        r.mean()
+
+    # Comparison
+    assert r.approx_equal(Rotation.random(0)).shape == (0,)
+    r3 = Rotation.random(2)
+    with pytest.raises(ValueError):
+        r.approx_equal(r3)
