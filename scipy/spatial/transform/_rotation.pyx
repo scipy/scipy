@@ -15,12 +15,20 @@ np.import_array()
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
+    if n == 0:
+        return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
+    if n1 == 0:
+        return array( shape=(1, n2), itemsize=sizeof(double), format=b"d" )[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d" )[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
