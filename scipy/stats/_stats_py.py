@@ -4676,8 +4676,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        x = xp.where(const_x[..., np.newaxis], xp.asarray(np.nan, dtype=dtype), x)
-        y = xp.where(const_y[..., np.newaxis], xp.asarray(np.nan, dtype=dtype), y)
+        x = xp.where(const_x[..., xp.newaxis], xp.asarray(xp.nan, dtype=dtype), x)
+        y = xp.where(const_y[..., xp.newaxis], xp.asarray(xp.nan, dtype=dtype), y)
 
     if isinstance(method, PermutationMethod):
         def statistic(y, axis):

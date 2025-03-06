@@ -9605,7 +9605,7 @@ class TestXP_Var:
         # nan_policy='raise' raises an error when NaNs are present
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
-            _xp_var(xp.asarray([1, 2, np.nan]), nan_policy='raise')
+            _xp_var(xp.asarray([1, 2, xp.nan]), nan_policy='raise')
 
     def test_empty(self, xp):
         message = 'One or more sample arguments is too small...'
