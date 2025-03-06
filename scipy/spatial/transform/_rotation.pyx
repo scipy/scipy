@@ -456,7 +456,12 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef Py_ssize_t n
+    if p.shape[0] == 1:
+        n = q.shape[0]
+    else:
+        n = p.shape[0]
+         
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
