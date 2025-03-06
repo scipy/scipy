@@ -56,13 +56,7 @@ def get_array_special_func(f_name, xp, n_array_args):
 
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
-
-        if xp.isdtype(x.dtype, 'integral'):
-            x = xp.astype(x, xp.float64)
-        if xp.isdtype(y.dtype, 'integral'):
-            y = xp.astype(y, xp.float64)
         x, y = xp.broadcast_arrays(x, y)
-
         res = xpx.apply_where(
             (x > 0) & (y > 0),
             (x, y),

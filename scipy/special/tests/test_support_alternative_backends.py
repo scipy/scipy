@@ -17,28 +17,6 @@ def test_dispatch_to_unrecognized_library():
     xp_assert_close(res, ref)
 
 
-@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
-def test_rel_entr_generic(dtype):
-    xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
-    x = [-1, 0, 0, 1]
-    y = [1, 0, 2, 3]
-
-    x_xp = xp.asarray(x, dtype=dtype_xp)
-    y_xp = xp.asarray(y, dtype=dtype_xp)
-    res = f(x_xp, y_xp)
-
-    x_np = np.asarray(x, dtype=dtype_np)
-    y_np = np.asarray(y, dtype=dtype_np)
-    ref = special.rel_entr(x_np[-1], y_np[-1])
-    ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
-    ref = xp.asarray(ref)
-
-    xp_assert_close(res, ref)
-
-
 @pytest.mark.fail_slow(5)
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
