@@ -2957,6 +2957,9 @@ cdef class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
+        if self._quat.shape[0] == 0:
+            raise RuntimeWarning("Mean of empty rotation.")
+            
         if weights is None:
             weights = np.ones(len(self))
         else:
