@@ -115,7 +115,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     ----------
     A : transposable linear operator
         The operator whose exponential is of interest.
-    B : ndarray
+    B : ndarray, sparse array
         The matrix or vector to be multiplied by the matrix exponential of A.
     start : scalar, optional
         The starting time point of the sequence.
