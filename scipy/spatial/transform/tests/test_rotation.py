@@ -1631,18 +1631,23 @@ def test_slerp_rot_is_rotation():
         t = np.array([0, 1])
         Slerp(t, r)
 
+SLERP_MESSAGE = "must be a sequence of at least 2 rotations"
 
 def test_slerp_single_rot():
-    msg = "must be a sequence of at least 2 rotations"
-    with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([1, 2, 3, 4])
+    r = Rotation.from_quat([1, 2, 3, 4])
+    with pytest.raises(ValueError, match=SLERP_MESSAGE):
         Slerp([1], r)
 
 
+def test_slerp_rot_len0():
+    r = Rotation.random()
+    with pytest.raises(ValueError, match=SLERP_MESSAGE):
+        Slerp([], r)
+
+
 def test_slerp_rot_len1():
-    msg = "must be a sequence of at least 2 rotations"
-    with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([[1, 2, 3, 4]])
+    r = Rotation.random(1)
+    with pytest.raises(ValueError, match=SLERP_MESSAGE):
         Slerp([1], r)
 
 
