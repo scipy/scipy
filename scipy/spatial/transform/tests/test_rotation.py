@@ -2072,7 +2072,7 @@ def test_zero_length_rotation():
     magnitude = r.magnitude()
     assert magnitude.shape == (0,)
 
-    with pytest.raises(RuntimeWarning):
+    with pytest.raises(ValueError):
         r.mean()
 
     # Comparison
