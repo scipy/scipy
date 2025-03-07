@@ -2042,35 +2042,95 @@ def test_compare_as_davenport_as_euler():
             assert_allclose(eul, dav, rtol=1e-12)
 
 
-def test_zero_length_rotation():
+def test_zero_length_rotation_construction():
     r = Rotation.random(num=0)
     assert len(r) == 0
 
-    # Quaternion
+    r_ide = Rotation.identity(num=0)
+    assert len(r_ide) == 0
+
+    r_get = Rotation.random(num=3)[[]]
+    assert len(r_get) == 0
+
+    # Representations
+    assert r.as_quat().shape == (0, 4)
+    assert r.as_matrix().shape == (0, 3, 3)
+    assert r.as_euler("xyz").shape == (0, 3)
+    assert r.as_rotvec().shape == (0, 3)
+    assert r.as_mrp().shape == (0, 3)
+    assert r.as_davenport(np.eye(3), "extrinsic").shape == (0, 3)
+
+    # Construction
     r_quat = Rotation.from_quat(np.zeros((0, 4)))
     assert len(r_quat) == 0
-    assert r.as_quat().shape == (0, 4)
 
-    # Matrix
     r_matrix = Rotation.from_matrix(np.zeros((0, 3, 3)))
     assert len(r_matrix) == 0
-    assert r.as_matrix().shape == (0, 3, 3)
 
-    # Euler
     r_euler = Rotation.from_euler("xyz", np.zeros((0, 3)))
     assert len(r_euler) == 0
-    assert r.as_euler("xyz").shape == (0, 3)
+
+    r_vec = Rotation.from_rotvec(np.zeros((0, 3)))
+    assert len(r_vec) == 0
+
+    r_dav = Rotation.from_davenport(np.eye(3), "extrinsic", np.zeros((0, 3)))
+    assert len(r_dav) == 0
+
+    r_mrp = Rotation.from_mrp(np.zeros((0, 3)))
+    assert len(r_mrp) == 0
+
+
+def test_zero_length_array():
+    r = Rotation.random(num=0)
 
     # Vector rotation
     v = np.array([1, 2, 3])
     v_rotated = r.apply(v)
     assert v_rotated.shape == (0, 3)
 
+    v0 = np.zeros((0, 3))
+    v0_rot = r.apply(v0)
+    assert v0_rot.shape == (0, 3)
+
+    v2 = np.ones((2, 3))
+    with pytest.raises(ValueError):
+        r.apply(v2)
+
     # Multiplication
     r_single = Rotation.random()
-    r_mult = r * r_single
-    assert len(r_mult) == 0
+    r_mult_left = r * r_single
+    assert len(r_mult_left) == 0
 
+    r_mult_right = r_single * r
+    assert len(r_mult_right) == 0
+
+    r0 = Rotation.random(0)
+    r0_mult = r * r0
+    assert len(r0_mult) == 0
+
+    r2 = Rotation.random(2)
+    with pytest.raises(ValueError):
+        r0 * r2
+
+    with pytest.raises(ValueError):
+        r2 * r0
+
+    # Concatenate
+    p_con = r.concatenate(Rotation.random(0))
+    assert len(p_con) == 0
+
+    p_con = r.concatenate(Rotation.random(1))
+    assert len(p_con) == 1
+
+    p_con = r.concatenate(Rotation.random(3))
+    assert len(p_con) == 3
+
+    # Power
+    for pp in [-1.5, -1, 0, 1, 1.5]:
+        pow0 = r0**0
+        assert len(pow0) == 0
+
+    # Methods
     r_inv = r.inv()
     assert len(r_inv) == 0
 
@@ -2082,6 +2142,21 @@ def test_zero_length_rotation():
 
     # Comparison
     assert r.approx_equal(Rotation.random(0)).shape == (0,)
+    assert r.approx_equal(Rotation.random()).shape == (0,)
+
     r3 = Rotation.random(2)
     with pytest.raises(ValueError):
         r.approx_equal(r3)
+
+    # Get / set
+    r_get = r[[]]
+    assert len(r_get) == 0
+
+    with pytest.raises(IndexError):
+        r[[0]]
+
+    with pytest.raises(IndexError):
+        r[[True]]
+
+    with pytest.raises(IndexError):
+        r[0] = Rotation.random()
