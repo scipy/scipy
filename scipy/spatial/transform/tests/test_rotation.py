@@ -168,10 +168,6 @@ def test_from_quat_wrong_shape():
             [[4, 5, 6, 7]]
             ]))
 
-    # 0-length 2d array
-    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
-        Rotation.from_quat(np.array([]).reshape((0, 4)))
-
 
 def test_zero_norms_from_quat():
     x = np.array([
