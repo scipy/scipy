@@ -3266,61 +3266,90 @@ def test_sparse_hessian(method, sparse_type):
 
 
 class TestFunctionArguments:
+    # Test that minimize accepts list and tuple as inputs for args
+    def setup_method(self):
+        self.x0 = np.array([-1, 1])
+    
+    one_arg = [-1]
+    two_args = [-1, -1]
+    
+    derivative_free_algorithms = ["powell", "nelder-mead", "cobyla", "cobyqa"]
+    gradient_using_algorithms = ["slsqp", "bfgs", "l-bfgs-b", "tnc", "cg"]
+    hessian_using_algorithms = ["dogleg", "trust-constr", "trust-ncg", "trust-exact",
+                                "trust-krylov", "newton-cg"]
 
-    def fun_one_arg(self, x, a):
+    def fun_one_arg(x, a):
         return rosen(x) + a
     
-    def fun_grad_one_arg(self, x, a):
+    def fun_grad_one_arg(x, a):
         return rosen_der(x)
     
-    def fun_hess_one_arg(self, x, a):
+    def fun_hess_one_arg(x, a):
         return rosen_hess(x)
     
-    def fun_two_args(self, x, a, b):
+    def fun_two_args(x, a, b):
         return rosen(x) + a + b
 
-    def fun_grad_two_args(self, x, a, b):
+    def fun_grad_two_args(x, a, b):
         return rosen_der(x)
     
-    def fun_hess_two_args(self, x, a, b):
+    def fun_hess_two_args(x, a, b):
         return rosen_hess(x)
 
-    @pytest.mark.parametrize("method", ["powell", "nelder-mead", "cobyla", "cobyqa"])
-    def test_one_arg_derivative_free(self, method):
-        test_args = [-1.0]
-        x0 = [-1.0, 1.0]
+    def assert_results_equal(self, res1, res2):
+        assert_allclose(res1.x, res2.x)
+        assert res1.nfev == res2.nfev
 
-        res_tuple_args = optimize.minimize(self.fun_one_arg, x0=x0,
-                                           args=tuple(test_args), method=method)
-        res_list_args = optimize.minimize(self.fun_one_arg, x0=x0, args=test_args, method=method)
-        assert_allclose(res_tuple_args.x, res_list_args.x)
-        assert res_tuple_args.nfev == res_list_args.nfev
+    def run_optimization(self, fun, args, method, grad=None, hess=None):
+        result = optimize.minimize(fun, x0=self.x0, args=args, method=method,
+                                   jac=grad, hess=hess)
+        return result
     
-    @pytest.mark.parametrize("method", ["slsqp", "bfgs", "l-bfgs-b", "tnc", "newton-cg"])
-    def test_one_arg_with_gradient(self, method):
-        test_args = [-1.0]
-        x0 = [-1.0, 1.0]
-
-        res_tuple_args = optimize.minimize(self.fun_one_arg, x0=x0, jac=self.fun_grad_one_arg,
-                                           args=tuple(test_args), method=method)
-        res_list_args = optimize.minimize(self.fun_one_arg, x0=x0, jac=self.fun_grad_one_arg, args=test_args, method=method)
-        assert_allclose(res_tuple_args.x, res_list_args.x)
-        assert res_tuple_args.nfev == res_list_args.nfev
+    @pytest.mark.parametrize("method", derivative_free_algorithms)
+    @pytest.mark.parametrize("objective, arguments", [(fun_one_arg, one_arg),
+                                                      (fun_two_args, two_args)])
+    def test_derivative_free(self, method, objective, arguments):
+        res_tuple_args = self.run_optimization(objective, tuple(arguments), method)
+        res_list_args = self.run_optimization(objective, arguments, method)
+        self.assert_results_equal(res_tuple_args, res_list_args)
     
-    @pytest.mark.parametrize("method", ["slsqp", "bfgs", "l-bfgs-b", "tnc", "newton-cg"])
-    def test_two_args_with_gradient(self, method):
-        test_args = [-1.0, -1.0]
-        x0 = [-1.0, 1.0]
 
-        res_tuple_args = optimize.minimize(self.fun_two_args, x0=x0, jac=self.fun_grad_two_args,
-                                          args=tuple(test_args), method=method)
-        res_list_args = optimize.minimize(self.fun_two_args, x0=x0, jac=self.fun_grad_two_args,
-                                          args=test_args, method=method)
-        assert_allclose(res_tuple_args.x, res_list_args.x)
-        assert res_tuple_args.nfev == res_list_args.nfev
+    @pytest.mark.parametrize("method", gradient_using_algorithms)
+    @pytest.mark.parametrize("objective, jac, arguments", [(fun_one_arg,
+                                                            fun_grad_one_arg,
+                                                            one_arg),
+                                                           (fun_two_args,
+                                                            fun_grad_two_args,
+                                                            two_args)])
+    def test_with_gradient(self, method, objective, jac, arguments):
+        res_tuple_args = self.run_optimization(objective,
+                                               tuple(arguments), method,
+                                               jac)
+        res_list_args = self.run_optimization(objective,
+                                               arguments, method,
+                                               jac)
+        self.assert_results_equal(res_tuple_args, res_list_args)
+    
+    @pytest.mark.parametrize("method", hessian_using_algorithms)
+    @pytest.mark.parametrize("objective, jac, hess, arguments", [(fun_one_arg,
+                                                                  fun_grad_one_arg,
+                                                                  fun_hess_one_arg,
+                                                                  one_arg),
+                                                                 (fun_two_args,
+                                                                  fun_grad_two_args,
+                                                                  fun_hess_two_args,
+                                                                  two_args)])
+    def test_with_hessian(self, method, objective, jac, hess, arguments):
+        res_tuple_args = self.run_optimization(objective,
+                                               tuple(arguments), method,
+                                               jac, hess)
+        res_list_args = self.run_optimization(objective,
+                                              arguments, method,
+                                              jac, hess)
+        self.assert_results_equal(res_tuple_args, res_list_args)
+    
 
-
-@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize('workers', [None, 2]   )
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b',
