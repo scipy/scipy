@@ -65,7 +65,6 @@ void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, do
 // static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 // static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 // static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
-static void __slsqp_body(struct SLSQP_static_vars S, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* funx, double* gradx, double* buffer, int* indices);
 
 struct SLSQP_static_vars {
     double acc;
@@ -91,12 +90,13 @@ struct SLSQP_static_vars {
     int n;
 };
 
+void __slsqp_body(struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 
 // Some helper x macros to pack and unpack the SLSQP_static_vars struct and
 // the Python dictionary.
 
 #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol)
-#define STRUCT_INT_FIELD_NAMES X(exact) X(inconsistent) X(reset) X(iter) X(itermax) X(line) X(meq) X(mode)
+#define STRUCT_INT_FIELD_NAMES X(exact) X(inconsistent) X(reset) X(iter) X(itermax) X(line) X(m) X(meq) X(mode) X(n)
 #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_DOUBLE_FIELD_NAMES
 
 
@@ -214,7 +214,7 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
 }
 
-
+/*
 static PyObject*
 ldp_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
@@ -729,7 +729,7 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     return Py_BuildValue("NNi", PyArray_Return(ap_x), PyArray_Return(ap_y), mode);
 }
-
+*/
 
 static PyObject*
 slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
@@ -755,12 +755,12 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     // The required arrays C, d, x, xl, xu, gradx, sol are passed as numpy arrays.
     // The remaining arrays are going to be allocated in the buffer.
 
-    if (!PyArg_ParseTuple(args, "O!dO!O!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "O!dO!O!O!O!O!O!O!O!O!",
                           &PyDict_Type, (PyObject **)&input_dict,
                           &funx,
+                          &PyArray_Type, (PyObject **)&ap_gradx,
                           &PyArray_Type, (PyObject **)&ap_C,
                           &PyArray_Type, (PyObject **)&ap_d,
-                          &PyArray_Type, (PyObject **)&ap_gradx,
                           &PyArray_Type, (PyObject **)&ap_sol,
                           &PyArray_Type, (PyObject **)&ap_mult,
                           &PyArray_Type, (PyObject **)&ap_xl,
@@ -771,26 +771,28 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
+    // Parse the dictionary, if the field is not found, raise an error.
+    // Do it separately for doubles and ints.
     // Initialize the struct that will be populated from dict with zeros
     #define X(name) Vars.name = 0;
     STRUCT_FIELD_NAMES
     #undef X
 
-    // Parse the dictionary, if the field is not found, raise an error.
-    // Do it separately for doubles and ints.
     #define X(name) \
         PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (name##_obj == NULL) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
-        Vars.name = PyFloat_AsDouble(name##_obj); \
+        if (!name##_obj) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
+        Vars.name = PyFloat_AsDouble(name##_obj);
     STRUCT_DOUBLE_FIELD_NAMES
     #undef X
 
-    #define X(name) name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (name##_obj == NULL) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
-        Vars.name = PyLong_AsLong(name##_obj); \
-    STRUCT_INT_FIELD_NAMES
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
     #undef X
 
+    // Basic error checks for the numpy arrays.
     if ((PyArray_TYPE(ap_C) != NPY_FLOAT64) || (PyArray_TYPE(ap_d) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_gradx) != NPY_FLOAT64) || (PyArray_TYPE(ap_sol) != NPY_FLOAT64) ||
         (PyArray_TYPE(ap_xl) != NPY_FLOAT64) || (PyArray_TYPE(ap_xu) != NPY_FLOAT64) ||
@@ -801,63 +803,53 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     }
 
     // Buffer is 1D hence both F and C contiguous, test with either of them.
-    if (!PyArray_IS_C_CONTIGUOUS(ap_buffer))
-    {
-        PYERR(slsqp_error, "Input array buffer must be 1d contiguous.");
-    }
+    if (!PyArray_IS_C_CONTIGUOUS(ap_buffer)) { PYERR(slsqp_error, "Input array buffer must be 1d contiguous."); }
 
     // Derive the number of variables from the solution vector length.
     int ndim_sol = PyArray_NDIM(ap_sol);
-    if (ndim_sol != 1) { PYERR(slsqp_error, "Input array sol must be 1D."); }
     npy_intp* shape_sol = PyArray_SHAPE(ap_sol);
-    if ((int)shape_sol[0] != Vars.n) {
-        PYERR(slsqp_error, "Input array \"sol\" must have at least n elements.");
-    }
     int ndim_mult = PyArray_NDIM(ap_mult);
-    if (ndim_mult != 1) { PYERR(slsqp_error, "Input array \"mult\" must be 1D."); }
     npy_intp* shape_mult = PyArray_SHAPE(ap_mult);
-    if ((int)shape_mult[0] != 2*Vars.n + Vars.m + 2) {
-        PYERR(slsqp_error, "Input array \"mult\" must have m + 2*n + 2 elements.");
-    }
-
-    // Derive the number of constraints from the row number of A
     int ndim_C = PyArray_NDIM(ap_C);
-    if (ndim_C != 2) { PYERR(slsqp_error, "Input array \"C\" must be 2D."); }
-    npy_intp* shape_C = PyArray_SHAPE(ap_C);
-    if (Vars.m = (int)shape_C[0]) { PYERR(slsqp_error, "Input array \"C\" must have  \"m\" rows."); }
-    if (Vars.n = (int)shape_C[1]) { PYERR(slsqp_error, "Input array \"C\" must have  \"n\" columns."); }
-
     int ndim_d = PyArray_NDIM(ap_d);
-    if (ndim_d != 1) { PYERR(slsqp_error, "Input array C must be 1D."); }
-    npy_intp* shape_d = PyArray_SHAPE(ap_d);
-    if (Vars.m != (int)shape_d[0]) { PYERR(slsqp_error, "Input array d must have the same number of rows as C."); }
-
     int ndim_gradx = PyArray_NDIM(ap_gradx);
-    if (ndim_gradx != 1) { PYERR(slsqp_error, "Input array gradx must be 1D."); }
-    npy_intp* shape_gradx = PyArray_SHAPE(ap_gradx);
     int ndim_xl = PyArray_NDIM(ap_xl);
-    if (ndim_xl != 1) { PYERR(slsqp_error, "Input array xl must be 1D."); }
-    npy_intp* shape_xl = PyArray_SHAPE(ap_xl);
     int ndim_xu = PyArray_NDIM(ap_xu);
-    if (ndim_xu != 1) { PYERR(slsqp_error, "Input array xu must be 1D."); }
-    npy_intp* shape_xu = PyArray_SHAPE(ap_xu);
 
-    __slsqp_body(Vars, &funx, ap_gradx, ap_C, ap_d, ap_sol, ap_mult, ap_xl, ap_xu, ap_buffer, ap_indices);
+    if (ndim_sol != 1) { PYERR(slsqp_error, "Input array sol must be 1D."); }
+    if ((int)shape_sol[0] != Vars.n) { PYERR(slsqp_error, "Input array \"sol\" must have at least n elements."); }
+    if (ndim_mult != 1) { PYERR(slsqp_error, "Input array \"mult\" must be 1D."); }
+    if ((int)shape_mult[0] != 2*Vars.n + Vars.m + 2) { PYERR(slsqp_error, "Input array \"mult\" must have m + 2*n + 2 elements."); }
+    if (ndim_C != 2) { PYERR(slsqp_error, "Input array \"C\" must be 2D."); }
+    if (ndim_d != 1) { PYERR(slsqp_error, "Input array d must be 1D."); }
+    if (ndim_gradx != 1) { PYERR(slsqp_error, "Input array gradx must be 1D."); }
+    if (ndim_xl != 1) { PYERR(slsqp_error, "Input array xl must be 1D."); }
+    if (ndim_xu != 1) { PYERR(slsqp_error, "Input array xu must be 1D."); }
+
+    double* gradx_data = (double*)PyArray_DATA(ap_gradx);
+    double* C_data = (double*)PyArray_DATA(ap_C);
+    double* d_data = (double*)PyArray_DATA(ap_d);
+    double* sol_data = (double*)PyArray_DATA(ap_sol);
+    double* mult_data = (double*)PyArray_DATA(ap_mult);
+    double* xl_data = (double*)PyArray_DATA(ap_xl);
+    double* xu_data = (double*)PyArray_DATA(ap_xu);
+    double* buffer_data = (double*)PyArray_DATA(ap_buffer);
+    int* indices_data = (int*)PyArray_DATA(ap_indices);
+
+    __slsqp_body(Vars, &funx, gradx_data, C_data, d_data, sol_data, mult_data, xl_data, xu_data, buffer_data, indices_data);
 
     // Map struct variables back to dictionary.
     #define X(name) \
-        PyObject* name##_obj = PyFloat_FromDouble(Vars.name); \
         if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
     STRUCT_DOUBLE_FIELD_NAMES
     #undef X
 
     #define X(name) \
-        PyObject* name##_obj = PyLong_FromLong(Vars.name); \
         if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
     STRUCT_INT_FIELD_NAMES
     #undef X
 
-    return;
+    Py_RETURN_NONE;
 
 };
 
