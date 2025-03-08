@@ -2160,3 +2160,19 @@ def test_zero_length_array():
 
     with pytest.raises(IndexError):
         r[0] = Rotation.random()
+
+
+def test_boolean_indexes():
+    r = Rotation.random(3)
+
+    r0 = r[[False, False, False]]
+    assert len(r0) == 0
+
+    r1 = r[[False, True, False]]
+    assert len(r1) == 1
+
+    r3 = r[[True, True, True]]
+    assert len(r3) == 3
+
+    with pytest.raises(IndexError):
+        r[[True, True]]
