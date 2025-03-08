@@ -997,6 +997,71 @@ add_newdoc(
 
 
 add_newdoc(
+    "betaincinva",
+    r"""
+    betaincinva(y, b, x, out=None)
+
+    Inverse of the regularized incomplete beta function with respect to `a`.
+
+    Computes :math:`a` such that:
+
+    .. math::
+
+        y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
+
+    Parameters
+    ----------
+    y, b : array_like
+        Positive, real-valued parameters
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the inverse of the regularized incomplete beta function
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    betaincinv : 
+        inverse of the regularized incomplete beta function with respect to `x`
+    gamma : gamma function
+
+    Notes
+    -----
+    This function wraps the ``ibeta_inva`` routine from the
+    Boost Math C++ library [2]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+    .. [2] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    This function is the inverse of `betainc` for fixed
+    values of :math:`b` and :math:`x`.
+
+    >>> a, b, x = 1.2, 3.1, 0.2
+    >>> y = sc.betainc(a, b, x)
+    >>> sc.betaincinva(y, b, x)
+    1.2
+
+    """)
+
+
+add_newdoc(
     "betainccinv",
     r"""
     betainccinv(a, b, y, out=None)

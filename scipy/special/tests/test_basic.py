@@ -1384,11 +1384,13 @@ class TestBetaInc:
           0.9688708782196045),
          # gh-12796:
          (4, 99997, 0.0001947841578892121, 0.999995)])
-    def test_betainc_betaincinv(self, a, b, x, p):
+    def test_betainc_betaincinv_betaincinva(self, a, b, x, p):
         p1 = special.betainc(a, b, x)
         assert_allclose(p1, p, rtol=1e-15)
         x1 = special.betaincinv(a, b, p)
         assert_allclose(x1, x, rtol=5e-13)
+        a1 = special.betaincinva(p, b, x)
+        assert_allclose(a1, a, rtol=1e-13)
 
     # Expected values computed with mpmath:
     #     from mpmath import mp
@@ -1441,13 +1443,14 @@ class TestBetaInc:
         assert_allclose(x, ref, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
-                                      special.betaincc, special.betainccinv])
+                                      special.betaincinva, special.betaincc,
+                                      special.betainccinv])
     @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
-                special.betainc(*args)
+                func(*args)
 
     @pytest.mark.parametrize(
         "args,expected",
@@ -1523,6 +1526,10 @@ class TestBetaInc:
         result = special.betaincinv(a, a, x)
         assert_allclose(result, x, rtol=10 * np.finfo(dtype).eps)
 
+
+    def test_btdtria_deprecation(self):
+        with pytest.warns(DeprecationWarning, match="deprecated in SciPy 1.16.0"):
+            special.btdtria(0.5, 2, 3)
 
 class TestCombinatorics:
     def test_comb(self):
