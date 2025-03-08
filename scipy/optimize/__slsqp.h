@@ -61,10 +61,11 @@ void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, 
 void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
 void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, double* x, int* incx);
 
-static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
-static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
+// static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
+// static void lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
+// static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
+// static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
+static void __slsqp_body(struct SLSQP_static_vars S, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* funx, double* gradx, double* buffer, int* indices);
 
 struct SLSQP_static_vars {
     double acc;
@@ -80,18 +81,23 @@ struct SLSQP_static_vars {
     double tol;
     int exact;
     int inconsistent;
-    int ireset;
+    int reset;
     int iter;
     int itermax;
     int line;
-    int mode;
     int m;
     int meq;
+    int mode;
     int n;
-    int n1;
-    int n2;
-    int n3;
 };
+
+
+// Some helper x macros to pack and unpack the SLSQP_static_vars struct and
+// the Python dictionary.
+
+#define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol)
+#define STRUCT_INT_FIELD_NAMES X(exact) X(inconsistent) X(reset) X(iter) X(itermax) X(line) X(meq) X(mode)
+#define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_DOUBLE_FIELD_NAMES
 
 
 static PyObject*
@@ -422,7 +428,6 @@ lsi_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 }
 
 
-
 static PyObject*
 lsei_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
@@ -646,7 +651,7 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
     size_t lsei_size = ((n+1) + (m-meq) + meq)*(n+3) + ((n+2) + (m-meq))*(n-meq)
                        + ((m-meq) + 2)*((n+1-meq)+1) + 2*(m-meq) + (n+1-meq)
                        + meq + n;
-    size_t lsq_size = (n+1)*(n+2) + (n+2)*meq + meq + (m - meq + 2*n)*(n+1) + (m - meq) + 2*(n+1);
+    size_t lsq_size = (n+1)*(n+2) + (n+2)*meq + meq + (m - meq + 2*n)*(n+1) + (m - meq) + 2*(n+1) + m*n;
     size_t total_size = lsei_size + lsq_size;
 
     double* mem_ret = calloc(total_size, sizeof(double));
@@ -655,7 +660,6 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
         free(indices);
         PYERR(slsqp_error, "Memory allocation for buffer failed.");
     }
-
 
     double* restrict Lf =     &mem_ret[0];
     double* restrict gradx =  &mem_ret[n*(n+1)/2];
@@ -689,7 +693,7 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
     npy_intp row_stride_xu = (strides_xu[0]/sizeof(double));
 
     // Copy the data from the numpy arrays in Fortran order
-    for (int i = 0; i <= n*(n+1)/2; i++) { Lf[i] = data_Lf[i*row_stride]; }
+    for (int i = 0; i < n*(n+1)/2; i++) { Lf[i] = data_Lf[i*row_stride]; }
 
     // Only C matrix is 2D use both strides to store in Fortran order
     for (int j = 0; j < n; j++) {
@@ -707,7 +711,7 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
     }
 
     // Call lsq
-    lsq((int)m, (int)meq, (int)n, (int)augmented, Lf, gradx, C, d, xl, xu, x, y, buffer, indices, &mode);
+    lsq((int)m, (int)meq, (int)n, (int)augmented, 0, Lf, gradx, C, d, xl, xu, x, y, buffer, indices, &mode);
     free(indices);
     // Carry the solution and multipliers to the top of the buffer.
     for (int i = 0; i < m + 3*n; i++) { mem_ret[i] = mem_ret[n*(n+1)/2 + n + n*m + m + n + n + i];}
@@ -727,19 +731,155 @@ lsq_wrapper(PyObject* Py_UNUSED(dummy), PyObject* args)
 }
 
 
+static PyObject*
+slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
+{
+
+    // TODO:
+    // Exact calloc size (needed?)
+
+    PyArrayObject *ap_gradx=NULL, *ap_C=NULL, *ap_d=NULL, *ap_mult=NULL;
+    PyArrayObject *ap_sol =NULL, *ap_xl=NULL, *ap_xu=NULL, *ap_buffer=NULL;
+    PyArrayObject* ap_indices=NULL;
+    PyObject* input_dict = NULL;
+    double funx;
+    struct SLSQP_static_vars Vars;
+
+    // The Python input should provide with a dictionary that maps to the struct
+    // SLSQP_static_vars. Necessary fields that would make the algorithm change
+    // behavior are m, meq, n, acc, maxiter, and mode. The rest can be left as zero.
+    // Changing values mid run is not recommended as they hold the internal state
+    // of the algorithm.
+    // The reason why they are returned is to make the algorithm stateless.
+
+    // The required arrays C, d, x, xl, xu, gradx, sol are passed as numpy arrays.
+    // The remaining arrays are going to be allocated in the buffer.
+
+    if (!PyArg_ParseTuple(args, "O!dO!O!O!O!O!O!",
+                          &PyDict_Type, (PyObject **)&input_dict,
+                          &funx,
+                          &PyArray_Type, (PyObject **)&ap_C,
+                          &PyArray_Type, (PyObject **)&ap_d,
+                          &PyArray_Type, (PyObject **)&ap_gradx,
+                          &PyArray_Type, (PyObject **)&ap_sol,
+                          &PyArray_Type, (PyObject **)&ap_mult,
+                          &PyArray_Type, (PyObject **)&ap_xl,
+                          &PyArray_Type, (PyObject **)&ap_xu,
+                          &PyArray_Type, (PyObject **)&ap_buffer,
+                          &PyArray_Type, (PyObject **)&ap_indices))
+    {
+        return NULL;
+    }
+
+    // Initialize the struct that will be populated from dict with zeros
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    // Parse the dictionary, if the field is not found, raise an error.
+    // Do it separately for doubles and ints.
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (name##_obj == NULL) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
+        Vars.name = PyFloat_AsDouble(name##_obj); \
+    STRUCT_DOUBLE_FIELD_NAMES
+    #undef X
+
+    #define X(name) name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (name##_obj == NULL) { PYERR(slsqp_error, #name " not found in the dictionary."); } \
+        Vars.name = PyLong_AsLong(name##_obj); \
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    if ((PyArray_TYPE(ap_C) != NPY_FLOAT64) || (PyArray_TYPE(ap_d) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_gradx) != NPY_FLOAT64) || (PyArray_TYPE(ap_sol) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_xl) != NPY_FLOAT64) || (PyArray_TYPE(ap_xu) != NPY_FLOAT64) ||
+        (PyArray_TYPE(ap_buffer) != NPY_FLOAT64) || (PyArray_TYPE(ap_indices) != NPY_INT32))
+    {
+        PYERR(slsqp_error, "All inputs to slsqp must be of type numpy.float64, "
+                           "except \"indices\" which must be of numpy.int32.");
+    }
+
+    // Buffer is 1D hence both F and C contiguous, test with either of them.
+    if (!PyArray_IS_C_CONTIGUOUS(ap_buffer))
+    {
+        PYERR(slsqp_error, "Input array buffer must be 1d contiguous.");
+    }
+
+    // Derive the number of variables from the solution vector length.
+    int ndim_sol = PyArray_NDIM(ap_sol);
+    if (ndim_sol != 1) { PYERR(slsqp_error, "Input array sol must be 1D."); }
+    npy_intp* shape_sol = PyArray_SHAPE(ap_sol);
+    if ((int)shape_sol[0] != Vars.n) {
+        PYERR(slsqp_error, "Input array \"sol\" must have at least n elements.");
+    }
+    int ndim_mult = PyArray_NDIM(ap_mult);
+    if (ndim_mult != 1) { PYERR(slsqp_error, "Input array \"mult\" must be 1D."); }
+    npy_intp* shape_mult = PyArray_SHAPE(ap_mult);
+    if ((int)shape_mult[0] != 2*Vars.n + Vars.m + 2) {
+        PYERR(slsqp_error, "Input array \"mult\" must have m + 2*n + 2 elements.");
+    }
+
+    // Derive the number of constraints from the row number of A
+    int ndim_C = PyArray_NDIM(ap_C);
+    if (ndim_C != 2) { PYERR(slsqp_error, "Input array \"C\" must be 2D."); }
+    npy_intp* shape_C = PyArray_SHAPE(ap_C);
+    if (Vars.m = (int)shape_C[0]) { PYERR(slsqp_error, "Input array \"C\" must have  \"m\" rows."); }
+    if (Vars.n = (int)shape_C[1]) { PYERR(slsqp_error, "Input array \"C\" must have  \"n\" columns."); }
+
+    int ndim_d = PyArray_NDIM(ap_d);
+    if (ndim_d != 1) { PYERR(slsqp_error, "Input array C must be 1D."); }
+    npy_intp* shape_d = PyArray_SHAPE(ap_d);
+    if (Vars.m != (int)shape_d[0]) { PYERR(slsqp_error, "Input array d must have the same number of rows as C."); }
+
+    int ndim_gradx = PyArray_NDIM(ap_gradx);
+    if (ndim_gradx != 1) { PYERR(slsqp_error, "Input array gradx must be 1D."); }
+    npy_intp* shape_gradx = PyArray_SHAPE(ap_gradx);
+    int ndim_xl = PyArray_NDIM(ap_xl);
+    if (ndim_xl != 1) { PYERR(slsqp_error, "Input array xl must be 1D."); }
+    npy_intp* shape_xl = PyArray_SHAPE(ap_xl);
+    int ndim_xu = PyArray_NDIM(ap_xu);
+    if (ndim_xu != 1) { PYERR(slsqp_error, "Input array xu must be 1D."); }
+    npy_intp* shape_xu = PyArray_SHAPE(ap_xu);
+
+    __slsqp_body(Vars, &funx, ap_gradx, ap_C, ap_d, ap_sol, ap_mult, ap_xl, ap_xu, ap_buffer, ap_indices);
+
+    // Map struct variables back to dictionary.
+    #define X(name) \
+        PyObject* name##_obj = PyFloat_FromDouble(Vars.name); \
+        if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
+    STRUCT_DOUBLE_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyLong_FromLong(Vars.name); \
+        if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    return;
+
+};
+
 
 // The commented wrappers are for debugging purposes and they will be optimized out
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
 
-
+static char doc_slsqp[] = (
+    "Sequential Least Squares Programming (SLSQP) optimizer.\n\n"
+    "    x, info = slsqp(S: dict, funx: np.float64, "
+    "gradx: NDArray, C: NDarray, d: NDArray, "
+    "sol: NDArray, xl: NDArray, xu: NDArray, buffer: NDArray, indices: NDArray)"
+    "\n\n");
+/*
 static char doc_lsq_wrapper[] = ("Convert the given compact representation of the"
                                  " linearized problem to an LSEI problem\n\n");
 
 static char doc_lsei_wrapper[] = ("Compute the least squares solution subject to "
                                  "equality and inequality constraints.\n\n"
                                  "    x, xnorm, mode = lsei_wrapper(A, b, E, f, G, h)\n\n");
-/*
+
 static char doc_lsi_wrapper[] = ("Compute the least squares solution subject to "
                                  "inequality constraints.\n\n"
                                  "    x, xnorm, mode = lsi_wrapper(A, b, G, h)\n\n");
@@ -751,10 +891,11 @@ static char doc_ldp_wrapper[] = ("Compute the least distance solution.\n\n"
 // Sentinel terminated method list.
 static struct PyMethodDef slsqplib_module_methods[] = {
   {"nnls", nnls, METH_VARARGS, doc_nnls},
+  {"slsqp", slsqp, METH_VARARGS, doc_slsqp},
   // {"ldp_wrapper", ldp_wrapper, METH_VARARGS, doc_ldp_wrapper},
   // {"lsi_wrapper", lsi_wrapper, METH_VARARGS, doc_lsi_wrapper},
-  {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
-  {"lsq_wrapper", lsq_wrapper, METH_VARARGS, doc_lsq_wrapper},
+  // {"lsei_wrapper", lsei_wrapper, METH_VARARGS, doc_lsei_wrapper},
+  // {"lsq_wrapper", lsq_wrapper, METH_VARARGS, doc_lsq_wrapper},
   {NULL, NULL, 0, NULL}
 };
 
