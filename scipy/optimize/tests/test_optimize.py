@@ -3265,6 +3265,61 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nhev == res_sparse.nhev
 
 
+class TestFunctionArguments:
+
+    def fun_one_arg(self, x, a):
+        return rosen(x) + a
+    
+    def fun_grad_one_arg(self, x, a):
+        return rosen_der(x)
+    
+    def fun_hess_one_arg(self, x, a):
+        return rosen_hess(x)
+    
+    def fun_two_args(self, x, a, b):
+        return rosen(x) + a + b
+
+    def fun_grad_two_args(self, x, a, b):
+        return rosen_der(x)
+    
+    def fun_hess_two_args(self, x, a, b):
+        return rosen_hess(x)
+
+    @pytest.mark.parametrize("method", ["powell", "nelder-mead", "cobyla", "cobyqa"])
+    def test_one_arg_derivative_free(self, method):
+        test_args = [-1.0]
+        x0 = [-1.0, 1.0]
+
+        res_tuple_args = optimize.minimize(self.fun_one_arg, x0=x0,
+                                           args=tuple(test_args), method=method)
+        res_list_args = optimize.minimize(self.fun_one_arg, x0=x0, args=test_args, method=method)
+        assert_allclose(res_tuple_args.x, res_list_args.x)
+        assert res_tuple_args.nfev == res_list_args.nfev
+    
+    @pytest.mark.parametrize("method", ["slsqp", "bfgs", "l-bfgs-b", "tnc", "newton-cg"])
+    def test_one_arg_with_gradient(self, method):
+        test_args = [-1.0]
+        x0 = [-1.0, 1.0]
+
+        res_tuple_args = optimize.minimize(self.fun_one_arg, x0=x0, jac=self.fun_grad_one_arg,
+                                           args=tuple(test_args), method=method)
+        res_list_args = optimize.minimize(self.fun_one_arg, x0=x0, jac=self.fun_grad_one_arg, args=test_args, method=method)
+        assert_allclose(res_tuple_args.x, res_list_args.x)
+        assert res_tuple_args.nfev == res_list_args.nfev
+    
+    @pytest.mark.parametrize("method", ["slsqp", "bfgs", "l-bfgs-b", "tnc", "newton-cg"])
+    def test_two_args_with_gradient(self, method):
+        test_args = [-1.0, -1.0]
+        x0 = [-1.0, 1.0]
+
+        res_tuple_args = optimize.minimize(self.fun_two_args, x0=x0, jac=self.fun_grad_two_args,
+                                          args=tuple(test_args), method=method)
+        res_list_args = optimize.minimize(self.fun_two_args, x0=x0, jac=self.fun_grad_two_args,
+                                          args=test_args, method=method)
+        assert_allclose(res_tuple_args.x, res_list_args.x)
+        assert res_tuple_args.nfev == res_list_args.nfev
+
+
 @pytest.mark.parametrize('workers', [None, 2])
 @pytest.mark.parametrize(
     'method',
