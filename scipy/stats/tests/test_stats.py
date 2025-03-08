@@ -40,9 +40,10 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, xp_copy, is_lazy_array, is_numpy,
+from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
                                    is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
+from scipy._lib import array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
@@ -73,7 +74,6 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-@skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
 # TODO: re-check whether this works after lazywhere moved to array-api-extra
 @skip_xp_backends("dask.array", reason="lazywhere doesn't work with dask")
 class TestTrimmedStats:
@@ -84,7 +84,8 @@ class TestTrimmedStats:
         "ignore:invalid value encountered in divide:RuntimeWarning:dask"
     )
     def test_tmean(self, xp):
-        x = xp.asarray(X.tolist())  # use default dtype of xp
+        default_dtype = xp_default_dtype(xp)
+        x = xp.asarray(X, dtype=default_dtype)
 
         y = stats.tmean(x, (2, 8), (True, True))
         xp_assert_close(y, xp.asarray(5.0))
@@ -114,8 +115,7 @@ class TestTrimmedStats:
         y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
         xp_assert_close(y, xp.asarray(y_true))
 
-        x_2d_with_nan = xp_copy(x_2d)
-        x_2d_with_nan[-1, -3:] = xp.nan
+        x_2d_with_nan = xpx.at(x_2d)[-1, -3:].set(xp.nan, copy=True)
         y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
         y_true = [7, 4.5, 5.5, 6.5, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
@@ -185,8 +185,7 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0, 2, 4, 6, 8]))
         xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0))
 
-        x = xp.arange(10.)
-        x[9] = xp.nan
+        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -226,8 +225,7 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmax(x, axis=1), xp.asarray([1, 3, 5, 7, 9]))
         xp_assert_equal(stats.tmax(x, axis=None), xp.asarray(9))
 
-        x = xp.arange(10.)
-        x[9] = xp.nan
+        x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmax(x), xp.asarray(xp.nan))
 
         # check that if a full slice is masked, the output returns a
@@ -394,8 +392,6 @@ class TestPearsonr:
         check_named_results(res, attributes)
         assert_equal(res.correlation, res.statistic)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_r_almost_exactly_pos1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
@@ -405,8 +401,6 @@ class TestPearsonr:
         # square root of the error in r.
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_r_almost_exactly_neg1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
@@ -416,8 +410,6 @@ class TestPearsonr:
         # square root of the error in r.
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_basic(self, xp):
         # A basic test, with a correlation coefficient
         # that is not 1 or -1.
@@ -427,9 +419,6 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(3**0.5/2))
         xp_assert_close(prob, xp.asarray(1/3))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment',
-                      )
     def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
@@ -441,9 +430,6 @@ class TestPearsonr:
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment',
-                      )
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)
@@ -457,9 +443,6 @@ class TestPearsonr:
             # (The exact value of r would be 1.)
             stats.pearsonr(x, y)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment',
-                      )
     def test_very_small_input_values(self, xp):
         # Very small values in an input.  A naive implementation will
         # suffer from underflow.
@@ -475,9 +458,6 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.7272930540750450, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment',
-                      )
     def test_very_large_input_values(self, xp):
         # Very large values in an input.  A naive implementation will
         # suffer from overflow.
@@ -492,8 +472,6 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.8660254037844386, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_extremely_large_input_values(self, xp):
         # Extremely large values in x and y.  These values would cause the
         # product sigma_x * sigma_y to overflow if the two factors were
@@ -507,7 +485,6 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64))
 
-    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_pos1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -522,7 +499,6 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
-    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_neg1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -538,7 +514,6 @@ class TestPearsonr:
         xp_assert_equal(high, one)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
-    @skip_xp_backends('jax.numpy', reason="JAX doesn't allow item assignment.")
     def test_length_two_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
@@ -575,8 +550,6 @@ class TestPearsonr:
         ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_negative_correlation_pvalue_gh17795(self, xp):
         x = xp.arange(10.)
         y = -x
@@ -585,8 +558,6 @@ class TestPearsonr:
         xp_assert_close(test_greater.pvalue, xp.asarray(1.))
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_length3_r_exactly_negative_one(self, xp):
         x = xp.asarray([1., 2., 3.])
         y = xp.asarray([5., -4., -13.])
@@ -738,33 +709,31 @@ class TestPearsonr:
                 stats.pearsonr(x, x, method=stats.PermutationMethod())
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0 = xp.asarray(rng.random((3, 5)))
-        y0 = xp.asarray(rng.random((3, 5)))
+        x0, y0 = rng.random((4, 5)), rng.random((4, 5))
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = xp_copy(x0)
-            x[0, ...] = 1
-            res = stats.pearsonr(x, y0, axis=1)
+            x0[0, ...], y0[1, ...] = 1, 2
+            x, y = xp.asarray(x0), xp.asarray(y0)
+            res = stats.pearsonr(x, y, axis=1)
             ci = res.confidence_interval()
-            nan = xp.asarray(xp.nan, dtype=xp.float64)
-            xp_assert_equal(res.statistic[0], nan)
-            xp_assert_equal(res.pvalue[0], nan)
-            xp_assert_equal(ci.low[0], nan)
-            xp_assert_equal(ci.high[0], nan)
-            assert not xp.any(xp.isnan(res.statistic[1:]))
-            assert not xp.any(xp.isnan(res.pvalue[1:]))
-            assert not xp.any(xp.isnan(ci.low[1:]))
-            assert not xp.any(xp.isnan(ci.high[1:]))
+            nans = xp.asarray([xp.nan, xp.nan], dtype=xp.float64)
+            xp_assert_equal(res.statistic[0:2], nans)
+            xp_assert_equal(res.pvalue[0:2], nans)
+            xp_assert_equal(ci.low[0:2], nans)
+            xp_assert_equal(ci.high[0:2], nans)
+            assert xp.all(xp.isfinite(res.statistic[2:]))
+            assert xp.all(xp.isfinite(res.pvalue[2:]))
+            assert xp.all(xp.isfinite(ci.low[2:]))
+            assert xp.all(xp.isfinite(ci.high[2:]))
 
         message = 'An input array is nearly constant'
         with pytest.warns(stats.NearConstantInputWarning, match=message):
-            x[0, 0] = 1 + 1e-15
-            stats.pearsonr(x, y0, axis=1)
+            x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
+            x, y = xp.asarray(x0), xp.asarray(y0)
+            stats.pearsonr(x, y, axis=1)
 
         # length 2 along axis
         x = xp.asarray([[1, 2], [1, 2], [2, 1], [2, 1.]])
@@ -795,8 +764,6 @@ class TestPearsonr:
         ref = stats.pearsonr(x, y, axis=-1)
         assert_equal(res.statistic, ref.statistic)
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_array_api(self, xp, axis, alternative):
@@ -1309,9 +1276,9 @@ class TestCorrSpearmanr:
     def test_gh_8111(self):
         # Regression test for gh-8111 (different result for float/int/bool).
         n = 100
-        np.random.seed(234568)
-        x = np.random.rand(n)
-        m = np.random.rand(n) > 0.7
+        rng = np.random.RandomState(234568)
+        x = rng.rand(n)
+        m = rng.rand(n) > 0.7
 
         # bool against float, no nans
         a = (x > .5)
@@ -1347,9 +1314,9 @@ class TestCorrSpearmanr2:
         assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
 
     def test_normal_draws(self):
-        np.random.seed(7546)
-        x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                      np.random.normal(loc=1, scale=1, size=500)])
+        rng = np.random.RandomState(7546)
+        x = np.array([rng.normal(loc=1, scale=1, size=500),
+                      rng.normal(loc=1, scale=1, size=500)])
         corr = [[1.0, 0.3],
                 [0.3, 1.0]]
         x = np.dot(np.linalg.cholesky(corr), x)
@@ -1703,9 +1670,9 @@ def test_kendalltau():
         assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check with larger arrays
-    np.random.seed(7546)
-    x = np.array([np.random.normal(loc=1, scale=1, size=500),
-                  np.random.normal(loc=1, scale=1, size=500)])
+    rng = np.random.RandomState(7546)
+    x = np.array([rng.normal(loc=1, scale=1, size=500),
+                  rng.normal(loc=1, scale=1, size=500)])
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
@@ -1751,15 +1718,15 @@ def test_kendalltau():
 
 
 def test_kendalltau_vs_mstats_basic():
-    np.random.seed(42)
+    rng = np.random.RandomState(42)
     for s in range(3, 10):
         a = []
         # Generate rankings with ties
         for i in range(s):
             a += [i]*i
         b = list(a)
-        np.random.shuffle(a)
-        np.random.shuffle(b)
+        rng.shuffle(a)
+        rng.shuffle(b)
         expected = mstats_basic.kendalltau(a, b)
         actual = stats.kendalltau(a, b)
         assert_approx_equal(actual[0], expected[0])
@@ -1776,6 +1743,7 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
+@pytest.mark.thread_unsafe
 def test_kendalltau_gh18139_overflow():
     # gh-18139 reported an overflow in `kendalltau` that appeared after
     # SciPy 0.15.1. Check that this particular overflow does not occur.
@@ -1941,9 +1909,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171b)
     def test_against_R_lt_171b(self, alternative, p_expected, rev):
-        np.random.seed(0)
-        x = np.random.rand(100)
-        y = np.random.rand(100)
+        rng = np.random.RandomState(0)
+        x = rng.rand(100)
+        y = rng.rand(100)
         stat_expected = -0.04686868686868687
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
@@ -1953,9 +1921,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, p_expected, rev", case_R_lt_171c)
     def test_against_R_lt_171c(self, alternative, p_expected, rev):
-        np.random.seed(0)
-        x = np.random.rand(170)
-        y = np.random.rand(170)
+        rng = np.random.RandomState(0)
+        x = rng.rand(170)
+        y = rng.rand(170)
         stat_expected = 0.1115906717716673
         self.exact_test(x, y, alternative, rev, stat_expected, p_expected)
 
@@ -1964,9 +1932,9 @@ class TestKendallTauAlternative:
 
     @pytest.mark.parametrize("alternative, rev", case_gt_171)
     def test_gt_171(self, alternative, rev):
-        np.random.seed(0)
-        x = np.random.rand(400)
-        y = np.random.rand(400)
+        rng = np.random.RandomState(0)
+        x = rng.rand(400)
+        y = rng.rand(400)
         res0 = stats.kendalltau(x, y, method='exact',
                                 alternative=alternative)
         res1 = stats.kendalltau(x, y, method='asymptotic',
@@ -2887,7 +2855,6 @@ class TestSEM:
 
 
 @skip_xp_backends("dask.array", reason="lazywhere doesn't work for dask.array")
-@skip_xp_backends('jax.numpy', reason="JAX can't do item assignment")
 class TestZmapZscore:
 
     @pytest.mark.parametrize(
@@ -2973,6 +2940,7 @@ class TestZmapZscore:
         expected = xp.stack((res0, res1))
         xp_assert_close(z, expected)
 
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'raise'.")
     def test_zmap_nan_policy_raise(self, xp):
         scores = xp.asarray([1, 2, 3])
         compare = xp.asarray([-8, -3, 2, 7, 12, xp.nan])
@@ -3047,6 +3015,7 @@ class TestZmapZscore:
         expected = xp.concat([xp.asarray([xp.nan]), stats.zscore(x[1:], ddof=1)])
         xp_assert_close(z, expected)
 
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'raise'.")
     def test_zscore_nan_raise(self, xp):
         x = xp.asarray([1, 2, xp.nan, 4, 5])
         with pytest.raises(ValueError, match="The input contains nan..."):
@@ -3617,15 +3586,14 @@ class TestMoments:
                          order=order)
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = xp.reshape(xp.arange(8.), (2, -1))
-        a[1, 0] = np.nan
-        mm = stats.moment(a, 2, axis=1)
-        xp_assert_close(mm, xp.asarray([1.25, np.nan]), atol=1e-15)
+        a = xpx.at(a)[1, 0].set(xp.nan)
+
+        mm = stats.moment(xp.asarray(a), 2, axis=1)
+        xp_assert_close(mm, xp.asarray([1.25, xp.nan]), atol=1e-15)
 
     def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
@@ -3687,8 +3655,6 @@ class TestSkew(SkewKurtosisTest):
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
     )
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_skewness(self, xp):
         # Scalar test case
         y = stats.skew(xp.asarray(self.scalar_testcase))
@@ -3716,16 +3682,14 @@ class TestSkew(SkewKurtosisTest):
         # `skew` must return a scalar for 1-dim input (only for NumPy arrays)
         assert_equal(stats.skew(arange(10)), 0.0)
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_skew_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = xp.arange(8.)
         a = xp.reshape(a, (2, -1))
-        a[1, 0] = xp.nan
+        a = xpx.at(a)[1, 0].set(xp.nan)
         with np.errstate(invalid='ignore'):
-            s = stats.skew(a, axis=1)
+            s = stats.skew(xp.asarray(a), axis=1)
         xp_assert_equal(s, xp.asarray([0, xp.nan]))
 
     def test_skew_constant_value(self, xp):
@@ -3743,19 +3707,16 @@ class TestSkew(SkewKurtosisTest):
             a = 1. + xp.arange(-3., 4)*1e-16
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
     def test_precision_loss_gh15554(self, xp):
         # gh-15554 was one of several issues that have reported problems with
         # constant or near-constant input. We can't always fix these, but
         # make sure there's a warning.
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             rng = np.random.default_rng(34095309370)
-            a = xp.asarray(rng.random(size=(100, 10)))
+            a = rng.random(size=(100, 10))
             a[:, 0] = 1.01
-            stats.skew(a)
+            stats.skew(xp.asarray(a))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
     @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
@@ -3786,8 +3747,6 @@ class TestSkew(SkewKurtosisTest):
 
 class TestKurtosis(SkewKurtosisTest):
 
-    @skip_xp_backends('jax.numpy',
-                      reason='JAX arrays do not support item assignment')
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_kurtosis(self, xp):
         # Scalar test case
@@ -3850,7 +3809,6 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
     @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
@@ -4005,7 +3963,7 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_1))
 
     @skip_xp_backends(cpu_only=True, exceptions=["cupy", "jax.numpy"])
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -4836,9 +4794,9 @@ class TestKSTwoSamples:
 
     def test_gh11184(self):
         # 3000, 3001, exact two-sided
-        np.random.seed(123456)
-        x = np.random.normal(size=3000)
-        y = np.random.normal(size=3001) * 1.5
+        rng = np.random.RandomState(123456)
+        x = rng.normal(size=3000)
+        y = rng.normal(size=3001) * 1.5
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15,
                       mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15,
@@ -4847,9 +4805,9 @@ class TestKSTwoSamples:
     @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
-        np.random.seed(123456)
-        x = np.random.normal(size=10000)
-        y = np.random.normal(size=10001) * 1.5
+        rng = np.random.RandomState(123456)
+        x = rng.normal(size=10000)
+        y = rng.normal(size=10001) * 1.5
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 3.3149311398483503e-49,
                       mode='asymp')
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15,
@@ -4861,10 +4819,10 @@ class TestKSTwoSamples:
 
     @pytest.mark.xslow
     def test_gh12999(self):
-        np.random.seed(123456)
+        rng = np.random.RandomState(123456)
         for x in range(1000, 12000, 1000):
-            vals1 = np.random.normal(size=(x))
-            vals2 = np.random.normal(size=(x + 10), loc=0.5)
+            vals1 = rng.normal(size=(x))
+            vals2 = rng.normal(size=(x + 10), loc=0.5)
             exact = stats.ks_2samp(vals1, vals2, mode='exact').pvalue
             asymp = stats.ks_2samp(vals1, vals2, mode='asymp').pvalue
             # these two p-values should be in line with each other
@@ -5390,6 +5348,7 @@ class Test_ttest_ind_permutations:
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("a,b,update,p_d", params)
     def test_ttest_ind_permutations(self, a, b, update, p_d):
         options_a = {'axis': None, 'equal_var': False}
@@ -5404,10 +5363,10 @@ class Test_ttest_ind_permutations:
         assert_array_almost_equal(pvalue, p_d)
 
     def test_ttest_ind_exact_alternative(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 3
-        a = np.random.rand(2, N, 2)
-        b = np.random.rand(2, N, 2)
+        a = rng.rand(2, N, 2)
+        b = rng.rand(2, N, 2)
 
         options_p = {'axis': 1, 'permutations': 1000}
 
@@ -5447,10 +5406,10 @@ class Test_ttest_ind_permutations:
 
     def test_ttest_ind_exact_selection(self):
         # test the various ways of activating the exact test
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 3
-        a = np.random.rand(N)
-        b = np.random.rand(N)
+        a = rng.rand(N)
+        b = rng.rand(N)
         res0 = stats.ttest_ind(a, b)
         res1 = stats.ttest_ind(a, b, permutations=1000)
         res2 = stats.ttest_ind(a, b, permutations=0)
@@ -5463,9 +5422,9 @@ class Test_ttest_ind_permutations:
         # the exact distribution of the test statistic should have
         # binom(na + nb, na) elements, all unique. This was not always true
         # in gh-4824; fixed by gh-13661.
-        np.random.seed(0)
-        a = np.random.rand(3)
-        b = np.random.rand(4)
+        rng = np.random.RandomState(0)
+        a = rng.rand(3)
+        b = rng.rand(4)
 
         data = np.concatenate((a, b))
         na, nb = len(a), len(b)
@@ -5479,10 +5438,10 @@ class Test_ttest_ind_permutations:
         assert len(t_stat) == n_unique
 
     def test_ttest_ind_randperm_alternative(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(2, 3, N)
-        b = np.random.rand(3, N)
+        a = rng.rand(2, 3, N)
+        b = rng.rand(3, N)
         options_p = {'axis': -1, 'permutations': 1000, "random_state": 0}
 
         options_p.update(alternative="greater")
@@ -5509,10 +5468,10 @@ class Test_ttest_ind_permutations:
 
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(N, 4)
-        b = np.random.rand(N, 4)
+        a = rng.rand(N, 4)
+        b = rng.rand(N, 4)
         options_p = {'permutations': 20000, "random_state": 0}
 
         options_p.update(alternative="greater")
@@ -5542,10 +5501,10 @@ class Test_ttest_ind_permutations:
                         res_2_ab.pvalue[mask], atol=2e-2)
 
     def test_ttest_ind_permutation_nanpolicy(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         N = 50
-        a = np.random.rand(N, 5)
-        b = np.random.rand(N, 5)
+        a = rng.rand(N, 5)
+        b = rng.rand(N, 5)
         a[5, 1] = np.nan
         b[8, 2] = np.nan
         a[9, 3] = np.nan
@@ -5955,7 +5914,7 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -6352,7 +6311,7 @@ def test_ttest_1samp_new_omit(xp):
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=["cupy", "jax.numpy"])
-@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic impl mutates array.')
+@pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,
@@ -9587,7 +9546,6 @@ class TestXP_Mean:
         xp_assert_close(res, xp.asarray(ref))
 
 
-@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestXP_Var:
     @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
@@ -9625,11 +9583,6 @@ class TestXP_Var:
         mask = (x == 3)
         x = xp.where(mask, xp.asarray(xp.nan), x)
 
-        # nan_policy='raise' raises an error
-        message = 'The input contains nan values'
-        with pytest.raises(ValueError, match=message):
-            _xp_var(x, nan_policy='raise')
-
         # `nan_policy='propagate'` is the default, and the result is NaN
         res1 = _xp_var(x)
         res2 = _xp_var(x, nan_policy='propagate')
@@ -9648,6 +9601,13 @@ class TestXP_Var:
             res = _xp_var(x * np.nan, nan_policy='omit')
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
+
+    @skip_xp_backends(eager_only=True)
+    def test_nan_policy_raise(self, xp):
+        # nan_policy='raise' raises an error when NaNs are present
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            _xp_var(xp.asarray([1, 2, xp.nan]), nan_policy='raise')
 
     def test_empty(self, xp):
         message = 'One or more sample arguments is too small...'

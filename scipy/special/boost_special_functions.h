@@ -915,7 +915,7 @@ ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 	return NAN;
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0) || (x > 1)) {
-	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
+	sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
 	return NAN;
     }
     Real y;
