@@ -1143,24 +1143,24 @@ class _spbase(SparseABC):
         numpy.matrix.sum : NumPy's implementation of 'sum' for matrices
 
         """
-        vaxis = validateaxis(axis, ndim=self.ndim)
+        axis = validateaxis(axis, ndim=self.ndim)
 
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
 
         # Note: all valid 1D axis values are canonically `None` so use this code.
-        if vaxis is None:
+        if axis is None:
             ones = self._ascontainer(np.ones((self.shape[-1], 1), dtype=res_dtype))
             return (self @ ones).sum(dtype=dtype, out=out)
 
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
-        if vaxis == 0:
+        if axis == 0:
             # sum over columns
             ones = self._ascontainer(np.ones((1, self.shape[0]), dtype=res_dtype))
             ret = ones @ self
-        else:  # vaxis == 1:
+        else:  # axis == 1:
             # sum over rows
             ones = self._ascontainer(np.ones((self.shape[1], 1), dtype=res_dtype))
             ret = self @ ones
