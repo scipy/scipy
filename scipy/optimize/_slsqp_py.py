@@ -419,7 +419,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "inconsistent": 0,
         "reset": 0,
         "iter": 0,
-        "itermax": 0,
+        "itermax": maxiter,
         "line": 0,
         "m": m,
         "meq": meq,
@@ -461,7 +461,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     while True:
         # Call SLSQP
-        slsqp(Vars, fx, C, d, g, x, mult, xl, xu, buffer, indices)
+        slsqp(Vars, fx, g, C, d, x, mult, xl, xu, buffer, indices)
 
         if Vars['mode'] == 1:  # objective and constraint evaluation required
             fx = wrapped_fun(x)
@@ -505,11 +505,16 @@ def _eval_constraint(d: NDArray, x: NDArray, cons: Dict):
     if (not cons['eq']) and (not cons['ineq']):
         return
 
-    for ind, con in enumerate(cons['eq']):
-        d[ind] = con['fun'](x, *con['args'])
-
-    for ind, con in enumerate(cons['ineq']):
-        d[ind] = con['fun'](x, *con['args'])
+    if cons['eq']:
+        eqs = np.concat(
+            [atleast_1d(con['fun'](x, *con['args'])) for con in cons['eq']]
+            )
+        d[:len(eqs)] = eqs
+    if cons['ineq']:
+        ineqs = np.concat(
+            [atleast_1d(con['fun'](x, *con['args'])) for con in cons['ineq']]
+            )
+        d[-len(ineqs):] = ineqs
 
     return
 
@@ -518,10 +523,9 @@ def _eval_con_normals(C: NDArray, x: NDArray, cons: Dict, m: int, meq: int):
     if m == 0:
         return
 
-    for ind, con in enumerate(cons['eq']):
-        C[ind, :] = con['jac'](x, *con['args'])
-
-    for ind, con in enumerate(cons['ineq']):
-        C[ind + meq, :] = con['jac'](x, *con['args'])
+    if meq > 0:
+        C[:meq, :] = np.vstack([con['jac'](x, *con['args']) for con in cons['eq']])
+    if m > meq:
+        C[meq:, :] = np.vstack([con['jac'](x, *con['args']) for con in cons['ineq']])
 
     return
