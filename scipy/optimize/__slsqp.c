@@ -1,23 +1,55 @@
 #include "__slsqp.h"
 
 void __nnls(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, int* restrict indices, const int maxiter, double* rnorm, int* info);
+static void __slsqp_body(struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
-static void lsq(int m, int meq, int n, int nl, double* S, double* t, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
+static void lsq(int m, int meq, int n, int augment, double aug_weight, double* Lf, double* gradx, double* C, double* d, double* xl, double* xu, double* x, double* y, double* buffer, int* jw, int* mode);
 static void ldl_update(int n, double* a, double* z, double sigma, double* w);
 
-void slsqp_body(
-    struct SLSQP_static_vars S, double* A, double* C, double* d, double* x,
-    double* xl, double* xu, double* u, double* v, double* funx, double* bfgs,
-    double* gradx, double* sol, double* r, double* mu, double* x0, double* buffer,
-    int* indices)
+
+// The main SLSQP function. The function argument naming in the Fortran code is
+// exceedingly inconsistent and very difficult to follow. Hence we adopted the
+// following naming convention in SLSQP and the nested function arguments:
+//
+//  - funx: The function value at the current point.
+//  - gradx: The gradient of the function at the current point.
+//  - C: The equality and inequality constraint normals.
+//  - d: The  equality and inequality constraints.
+//
+//  If applicable, the following are the problem matrix naming convention:
+//
+//  - A: The coefficient matrix of cost function |Ax - b|
+//  - b: The RHS of cost function |Ax - b|
+//  - E: The (E)quality constraint matrix of Ex = f
+//  - f: The equality constraint RHS of Ex = f
+//  - G: The inequality constraint matrix of Gx >= h
+//  - h: The inequality constraint RHS of Gx >= h
+static void
+__slsqp_body(
+    struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d,
+    double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices)
 {
 
     int one = 1, lda = (S.m > 0 ? S.m : 1);
     int j;
     double done = 1.0, dzero = 0.0, dmone = -1.0;
     double alfmin = 0.0, alpha = 0.0, f0 = 0.0, gs = 0.0, t0 = 0.0, t = 0.0;
+    int n = S.n;
+    int m = S.m;
+    int n1 = n + 1;
+    int n2 = n1*n/2;
+    int n3 = n2 + 1;
+
+    // Chop the buffer for various array pointers.
+    double* restrict bfgs       = &buffer[0];
+    double* restrict x0         = &buffer[n*(n+1)/2];
+    double* restrict mu         = &buffer[n*(n+1)/2 + n];
+    double* restrict s          = &buffer[n*(n+1)/2 + n + m];
+    double* restrict u          = &buffer[n*(n+1)/2 + n + m + n1];
+    double* restrict v          = &buffer[n*(n+1)/2 + n + m + n1 + n1];
+    double* restrict lsq_buffer = &buffer[n*(n+1)/2 + n + m + n1 + n1 + n1];
 
     // The badlin flag keeps track whether the SQP problem on the current
     // iteration was inconsistent or not.
@@ -31,50 +63,46 @@ void slsqp_body(
     if (S.mode == 1) { goto MODE1; }
 
 MODE0:
-
-    // We always use inexact line-search since exact search is broken in the
+    // We always use inexact line search, since exact search is broken in the
     // original Fortran code.
     S.exact = 0; // (S.acc < 0.0 ? 1 : 0);
     S.acc = fabs(S.acc);
     S.tol = 10*S.acc;
     S.iter = 0;
-    S.ireset = 0;
-    int n1 = S.n + 1;
-    int n2 = n1*S.n/2;
-    int n3 = n2 + 1;
-    for (int i = 0; i < S.n; i++) { sol[i] = 0.0; }
-    for (int i = 0; i < S.m; i++) { mu[i] = 0.0; }
+    S.reset = 0;
+    for (int i = 0; i < n; i++) { s[i] = 0.0; }
+    for (int i = 0; i < m; i++) { mu[i] = 0.0; }
 
 RESET_BFGS:
     // Reset the BFGS matrix stored in packed format
-    S.ireset++;
-    if (S.ireset > 5) { goto LABEL255;}
+    S.reset++;
+    if (S.reset > 5) { goto LABEL255;}
     for (int i = 0; i < n2; i++) { bfgs[i] = 0.0; }
     j = 0;
-    for (int i = 0; i < S.n; i++)
+    for (int i = 0; i < n; i++)
     {
         bfgs[j] = 1.0;
-        j += S.n - i;
+        j += n - i;
     }
     // 120
 
-    // Main iteration: Search direction, steplength, LDL'-update
-
 ITER_START:
+    // Main iteration: Search direction, steplength, LDL'-update
     // 130
     S.iter++;
     S.mode = 9;
     if (S.iter > S.itermax) { return; }
 
     // Search direction as solution of the QP-problem
-    for (int i = 0; i < S.n; i++)
+    for (int i = 0; i < n; i++)
     {
-        u[i] = xl[i] - x[i];
-        v[i] = xu[i] - x[i];
+        u[i] = xl[i] - sol[i];
+        v[i] = xu[i] - sol[i];
     }
 
     S.h4 = 1.0;
-    lsq(S.m, S.meq, S.n, n3, bfgs, gradx, C, d, u, v, sol, r, buffer, indices, &S.mode);
+    // augment and aug_weight are not used and hence 0.
+    lsq(m, S.meq, n, 0, 0, bfgs, gradx, C, d, u, v, s, mult, lsq_buffer, indices, &S.mode);
 
     // Augmented problem for inconsistent linearization
 
@@ -83,34 +111,42 @@ ITER_START:
     // even if the augmented problem was solved.
     badlin = 0;
 
+    // If equality constraints are not full rank and all are equality constrained
+    // then the problem is inconsistent.
     if ((S.mode == 6) && (S.n == S.meq)) { S.mode = 4;}
+
+    // If inconsistency detected, we augment the problem and try again.
+    // Fortran code augments the problem matrices by embedding them in larger
+    // buffers then calls lsq. However, these matrices are then copied into
+    // another buffer inside lsq hence we can let lsq insert into the second
+    // buffer without modifying the original matrices. The only change lsq needs
+    // is the weightvalue of the augmented variable which starts at 100 and
+    // being multiplied by 10 on each iteration. Hence we only pass that value
+    // with "aug_weight".
     if (S.mode == 4)
     {
         badlin = 1;
-        for (int j = 0; j < S.m; j++)
+        for (int j = 0; j < m; j++)
         {
-            if (j <= S.meq)
+            if (j < S.meq)
             {
-                C[j + n1*S.n] = -d[j];
+                C[j + n1*n] = -d[j];
             } else {
-                C[j + n1*S.n] = fmax(-d[j], 0.0);
+                C[j + n1*n] = fmax(-d[j], 0.0);
             }
         }
-        for (int i = 0; i < S.n; i++) { sol[i] = 0.0; }
+        // Reset the RHS of the constraints to zero of the augmented system.
+        for (int i = 0; i < n; i++) { s[i] = 0.0; }
         S.h3 = 0.0;
-        gradx[S.n] = 0.0;
-        bfgs[n2] = 100.0;
-        sol[S.n] = 1.0;
-        u[S.n] = 0.0;
-        v[S.n] = 1.0;
+        double rho = 100.0;
         S.inconsistent = 0;
         while (1)
         {
-            lsq(S.m, S.meq, n1, n3, bfgs, gradx, C, d, u, v, sol, r, buffer, indices, &S.mode);
-            S.h4 = 1.0 - sol[S.n];
+            lsq(m, S.meq, n, 1, rho, bfgs, gradx, C, d, u, v, s, mult, lsq_buffer, indices, &S.mode);
+            S.h4 = 1.0 - s[n];
             if (S.mode == 4)
             {
-                bfgs[n2] *= 10.0;
+                rho *= 10.0;
                 S.inconsistent++;
                 if (S.inconsistent > 5) { return; }
                 continue;
@@ -125,15 +161,33 @@ ITER_START:
 
     // Update multipliers for L1-test
     for (int i = 0; i < S.n; i++) { v[i] = gradx[i]; }
-    dgemv_("T", &S.m, &S.n, &dmone, A, &lda, r, &one, &done, v, &one);
+    dgemv_("T", &S.m, &S.n, &dmone, C, &lda, mult, &one, &done, v, &one);
     f0 = *funx;
-    for (int i = 0; i < S.n; i++) { x0[i] = x[i]; }
-    gs = ddot_(&S.n, gradx, &one, sol, &one);
+    for (int i = 0; i < S.n; i++) { x0[i] = sol[i]; }
+    gs = ddot_(&S.n, gradx, &one, s, &one);
     S.h1 = fabs(gs);
     S.h2 = 0.0;
     for (int j = 0; j < S.m; j++)
     {
-        if (j <= S.meq)
+        if (j < S.meq)
+        {
+            S.h3 = d[j];
+        } else {
+            S.h3 = 0.0;
+        }
+        S.h2 += fmax(-d[j], S.h3);
+        S.h3 = fabs(mult[j]);
+        mu[j] = fmax(S.h3, (S.h3 + mu[j])/2.0);
+        S.h1 += mu[j]*fmax(-d[j], S.h3);
+    }
+
+    // Check convergence
+    S.mode = 0;
+    if ((S.h1 < S.acc) && (S.h2 < S.acc) && (!badlin) && (*funx == *funx)) { return; }
+    S.h1 = 0.0;
+    for (int j = 0; j < S.m; j++)
+    {
+        if (j < S.meq)
         {
             S.h3 = d[j];
         } else {
@@ -141,7 +195,7 @@ ITER_START:
         }
         S.h1 += mu[j]*fmax(-d[j], S.h3);
     }
-
+    // 180
     t0 = *funx + S.h1;
     S.h3 = gs - S.h1*S.h4;
     S.mode = 8;
@@ -151,15 +205,14 @@ ITER_START:
     S.line = 0;
     alpha = 1.0;
 
-    // We use inexact line search unconditionally see the definition of S.inexact
-    // at the beginning of the function.
-    // if (S.inexact == 1)
-    // {
+    // Inexact line search
+LINE_SEARCH:
+
     S.line++;
     S.h3 *= alpha;
     for (int i = 0; i < S.n; i++) {
-        sol[i] *= alpha;
-        x[i] = x0[i] + sol[i];
+        s[i] *= alpha;
+        sol[i] = x0[i] + s[i];
     }
     S.mode = 1;
     return;
@@ -168,7 +221,7 @@ MODE1:
     t = *funx;
     for (int j = 0; j < S.m; j++)
     {
-        if (j <= S.meq)
+        if (j < S.meq)
         {
             S.h1 = d[j];
         } else {
@@ -178,17 +231,17 @@ MODE1:
     }
     S.h1 = t - t0;
 
-    if (!((S.h1 <= S.h3 / 10.0) || (S.line > 10)))
+    if ((S.h1 > S.h3 / 10.0) && (S.line <= 10))
     {
         alpha = fmax(S.h3/(2.0*(S.h3 - S.h1)), alfmin);
-        goto MODE1;
+        goto LINE_SEARCH;
     }
 
     // Check convergence
     S.h3 = 0.0;
-    for (int j = 0; j < S.m; j++)
+    for (int j = 0; j < m; j++)
     {
-        if (j <= S.meq)
+        if (j < S.meq)
         {
             S.h1 = d[j];
         } else {
@@ -197,10 +250,11 @@ MODE1:
         S.h3 += fmax(-d[j], S.h1);
     }
     if (
-        ((fabs(*funx - f0) < S.acc) || (dnrm2_(&S.n, sol, &one) < S.acc)) &&
+        ((fabs(*funx - f0) < S.acc) || (dnrm2_(&n, s, &one) < S.acc)) &&
         (S.h3 < S.acc) &&
         (!badlin) &&
-        (*funx == *funx))
+        (*funx == *funx) // To filter for finite entries
+    )
     {
         S.mode = 0;
         return;
@@ -210,11 +264,11 @@ MODE1:
     return;
 
 LABEL255:
-    // Checked relaxed convergence in case of positive directional derivative
+    // Check relaxed convergence in case of positive directional derivative
     S.h3 = 0.0;
     for (int j = 0; j < S.m; j++)
     {
-        if (j <= S.meq)
+        if (j < S.meq)
         {
             S.h1 = d[j];
         } else {
@@ -222,10 +276,11 @@ LABEL255:
         }
         S.h3 += fmax(-d[j], S.h1);
     }
-    if (((fabs(*funx - f0) < S.tol) || (dnrm2_(&S.n, sol, &one) < S.tol)) &&
+    if (((fabs(*funx - f0) < S.tol) || (dnrm2_(&n, sol, &one) < S.tol)) &&
         (S.h3 < S.tol) &&
         (!badlin) &&
-        (*funx == *funx))
+        (*funx == *funx)
+    )
     {
         S.mode = 0;
         return;
@@ -239,40 +294,44 @@ MODEM1:
     // Call Jacobian at current x
 
     // Update Cholesky factors of Hessian matrix modified by BFGS formula
-    dgemv_("T", &S.m, &S.n, &dmone, A, &lda, r, &one, &dzero, u, &one);
+    // u[i] = gradx[i] - C.T @ mult - v[i]
+    for (int i = 0; i < n; i++) { u[i] = gradx[i]; }
+    dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &dzero, u, &one);
     for (int i = 0; i < S.n; i++)
     {
-        u[i] = gradx[i] - v[i];
+        u[i] = u[i] - v[i];
     }
 
     // L'*S
-    for (int i = 0; i < S.n; i++) { v[i] = sol[i]; }
-    dtpmv_("L", "T", "N", &S.n, bfgs, v, &one);
+    for (int i = 0; i < n; i++) { v[i] = s[i]; }
+    dtpmv_("L", "T", "N", &n, bfgs, v, &one);
+
     // D*L'*S
     j = 0;
-    for (int i = 0; i < S.n; i++) {
+    for (int i = 0; i < n; i++) {
         v[i] = bfgs[j]*v[i];
-        j += S.n - i;
+        j += n - i;
     }
-    // L*D*L'*S
-    dtpmv_("L", "N", "N", &S.n, bfgs, v, &one);
 
-    S.h1 = ddot_(&S.n, sol, &one, u, &one);
-    S.h2 = ddot_(&S.n, sol, &one, v, &one);
+    // L*D*L'*S
+    dtpmv_("L", "N", "N", &n, bfgs, v, &one);
+
+    S.h1 = ddot_(&n, sol, &one, u, &one);
+    S.h2 = ddot_(&n, sol, &one, v, &one);
     S.h3 = 0.2*S.h2;
     if (S.h1 < S.h3)
     {
         S.h4 = (S.h2 - S.h3) / (S.h2 - S.h1);
         S.h1 = S.h3;
-        for (int i = 0; i < S.n; i++) { u[i] *= S.h4; }
+        for (int i = 0; i < n; i++) { u[i] *= S.h4; }
         double tmp_dbl = 1.0 - S.h4;
-        daxpy_(&S.n, &tmp_dbl, v, &one, u, &one);
+        daxpy_(&n, &tmp_dbl, v, &one, u, &one);
     }
     // Test for singular update, and reset hessian if so
     if ((S.h1 == 0.0) || (S.h2 = 0.0)) { goto RESET_BFGS; }
 
-    ldl_update(S.n, bfgs, u, 1.0 / S.h1, v);
-    ldl_update(S.n, bfgs, v, -1.0 / S.h2, u);
+    ldl_update(n, bfgs, u, 1.0 / S.h1, v);
+    ldl_update(n, bfgs, v, -1.0 / S.h2, u);
 
     // End of main iteration
     goto ITER_START;
@@ -288,7 +347,7 @@ MODEM1:
  *      xl <= x <= xu
  *
  * Problem data is kept in Lf, gradx, C, d, xl, xu arrays in a rather tedious
- * format. C(m, n) is the constraint matrix, d(n) is the constraint bounds.
+ * format. C(m, n) is the constraint normals, d(n) is the constraint bounds.
  * xl(n) and xu(n) are the lower and upper bounds on x.
  *
  * Lf is the LDL' factor of the BFGS matrix also holding the diagonal entries.
@@ -350,21 +409,19 @@ MODEM1:
  * for this extra space.
  *
  */
-void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* C,
-         double* d, double* xl, double* xu, double* x, double* y, double* buffer,
-         int* jw, int* mode)
+void lsq(
+    int m, int meq, int n, int augment, double aug_weight, double* Lf,
+    double* gradx, double* C, double* d, double* xl, double* xu, double* x,
+    double* y, double* buffer, int* jw, int* mode)
 {
-    int one = 1;
+    int one = 1, orign = n;
     int mineq = m - meq;
     double xnorm = 0.0;
     int cursor = 0;
     int ld = n;
     int n_wG_rows = 0;
 
-    if (augment)
-    {
-        ld = n + 1;
-    }
+    if (augment) { ld = n + 1; }
 
     // Recover A and b from Lf and gradx
     for (int i = 0; i < (ld+2)*ld; i++) { buffer[i] = 0.0; }
@@ -394,7 +451,7 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
     }
 
     // If augmented, Fill in the augmented system extra entries.
-    if (augment) { wA[ld*ld - 1] = Lf[ld*(ld+1)/2 + 1]; }
+    if (augment) { wA[ld*ld - 1] = aug_weight; }
 
     // If augmented, also increase the number of variables by 1.
     if (augment) { n++; }
@@ -404,12 +461,22 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
     double* restrict wf = &buffer[n*(n+1) + n + n*meq];
     if (meq > 0)
     {
-        for (int j = 0; j < n; j++)
+        for (int j = 0; j < n-1; j++)
         {
             for (int i = 0; i < meq; i++)
             {
                 wE[i + j*meq] = C[i + j*m];
             }
+        }
+        if (augment)
+        {
+            // n is incremented hence all C is now in wE. Add the extra column.
+            for (int i = 0; i < meq; i++) { wE[i + (n-1)*meq] = -d[i]; }
+
+        } else  {
+            // If not augmented then handle j = n - 1 that is skipped.
+            for (int i = 0; i < meq; i++) { wE[i + (n-1)*meq] = 0.0; }
+
         }
         for (int i = 0; i < meq; i++) { wf[i] = -d[i]; }
     }
@@ -429,12 +496,12 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
     // code where the max allocated row number and the actual row number of wG
     // has been kept separate making the code tedious.
 
+    int nancount = 0;
+    int nrow = mineq;
     if (m > meq)
     {
-        int nancount = 0;
-        int nrow = mineq;
         for (int i = 0; i < mineq; i++) { wh[i] = -d[meq + i]; }
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < orign; i++)  // orign is the non-augmented n
         {
             if (isnan(xl[i]))
             {
@@ -444,7 +511,7 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
                 nrow++;
             }
         }
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < orign; i++)
         {
             if (isnan(xu[i]))
             {
@@ -456,7 +523,8 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
         }
         // Now that we now the actual row number of wG, we can populate it.
         n_wG_rows = mineq + 2*n - nancount;
-        for (int j = 0; j < n; j++)
+
+        for (int j = 0; j < orign; j++)
         {
             for (int i = 0; i < mineq; i++)
             {
@@ -465,7 +533,7 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
         }
         // Reset counter
         nrow = mineq;
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < orign; i++)
         {
             if (!isnan(xl[i]))
             {
@@ -473,7 +541,7 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
                 nrow++;
             }
         }
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < orign; i++)
         {
             if (!isnan(xu[i]))
             {
@@ -482,7 +550,16 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
             }
         }
     }
-/*
+
+    // Handle the 0 <= delta <= 1 constraint for the augmented system.
+    if (augment)
+    {
+        wG[nrow + orign*n_wG_rows] = 1.0;
+        wh[nrow] = 0.0;
+        wG[nrow + 1 + orign*n_wG_rows] = -1.0;
+        wh[nrow + 1] = -1.0;
+    }
+
     // print wA and wb
     printf("A matrix \n");
     for (int i = 0; i < ld; i++)
@@ -522,7 +599,7 @@ void lsq(int m, int meq, int n, int augment, double* Lf, double* gradx, double* 
     printf("h matrix \n");
     for (int i = 0; i < n_wG_rows; i++) { printf("%f ", wh[i]); }
     printf("\n");
-*/
+
     // Assign the remaining part of the buffer to the LSEI problem.
     double* lsei_scratch = &wh[mineq + 2*n];
 
