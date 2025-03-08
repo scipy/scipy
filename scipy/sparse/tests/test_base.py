@@ -1087,6 +1087,12 @@ class _TestCommon:
         datsp.sum(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
 
+        # check that wrong shape out parameter raises
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.sum(out=array([0]))
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.sum(out=array([[0]] if self.is_array_test else 0))
+
     def test_numpy_sum(self):
         # See gh-5987
         dat = array([[0, 1, 2],
@@ -1183,6 +1189,12 @@ class _TestCommon:
         dat.mean(axis=1, out=dat_out, keepdims=keep)
         datsp.mean(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
+
+        # check that wrong shape out parameter raises
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.mean(out=array([0]))
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.mean(out=array([[0]] if self.is_array_test else 0))
 
     def test_numpy_mean(self):
         # See gh-5987
