@@ -2115,17 +2115,22 @@ def test_zero_length_array():
     with pytest.raises(ValueError):
         r2 * r0
 
-    # Concatenate
-    p_con = r.concatenate(Rotation.random(0))
-    assert len(p_con) == 0
 
-    p_con = r.concatenate(Rotation.random(1))
-    assert len(p_con) == 1
+def test_zero_rotation_concatentation():
+    r = Rotation.random(num=0)
 
-    p_con = r.concatenate(Rotation.random(3))
-    assert len(p_con) == 3
+    r0 = Rotation.concatenate([r, r])
+    assert len(r0) == 0
 
-    # Power
+    r1 = r.concatenate([Rotation.random(), r])
+    assert len(r1) == 1
+
+    r3 = r.concatenate([Rotation.random(3), r])
+    assert len(r3) == 3
+
+    r4 = r.concatenate([r, Rotation.random(4)])
+    assert len(r4) == 4
+
     for pp in [-1.5, -1, 0, 1, 1.5]:
         pow0 = r0**0
         assert len(pow0) == 0
