@@ -1,7 +1,7 @@
 #include "__slsqp.h"
 
 void __nnls(const int m, const int n, double* restrict a, double* restrict b, double* restrict x, double* restrict w, double* restrict zz, int* restrict indices, const int maxiter, double* rnorm, int* info);
-static void __slsqp_body(struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
+// static void __slsqp_body(struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 static void ldp(int m, int n, double* g, double* h, double* x, double* buffer, int* indices, double* xnorm, int* mode);
 static void lsi(int me, int mg, int n, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
 static void lsei(int ma, int me, int mg, int n, double* a, double* b, double* e, double* f, double* g, double* h, double* x, double* buffer, int* jw, double* xnorm, int* mode);
@@ -26,7 +26,7 @@ static void ldl_update(int n, double* a, double* z, double sigma, double* w);
 //  - f: The equality constraint RHS of Ex = f
 //  - G: The inequality constraint matrix of Gx >= h
 //  - h: The inequality constraint RHS of Gx >= h
-static void
+void
 __slsqp_body(
     struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d,
     double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices)
@@ -40,7 +40,6 @@ __slsqp_body(
     int m = S.m;
     int n1 = n + 1;
     int n2 = n1*n/2;
-    int n3 = n2 + 1;
 
     // Chop the buffer for various array pointers.
     double* restrict bfgs       = &buffer[0];
@@ -126,15 +125,6 @@ ITER_START:
     if (S.mode == 4)
     {
         badlin = 1;
-        for (int j = 0; j < m; j++)
-        {
-            if (j < S.meq)
-            {
-                C[j + n1*n] = -d[j];
-            } else {
-                C[j + n1*n] = fmax(-d[j], 0.0);
-            }
-        }
         // Reset the RHS of the constraints to zero of the augmented system.
         for (int i = 0; i < n; i++) { s[i] = 0.0; }
         S.h3 = 0.0;
@@ -160,14 +150,14 @@ ITER_START:
     }
 
     // Update multipliers for L1-test
-    for (int i = 0; i < S.n; i++) { v[i] = gradx[i]; }
-    dgemv_("T", &S.m, &S.n, &dmone, C, &lda, mult, &one, &done, v, &one);
+    for (int i = 0; i < n; i++) { v[i] = gradx[i]; }
+    dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &done, v, &one);
     f0 = *funx;
-    for (int i = 0; i < S.n; i++) { x0[i] = sol[i]; }
+    for (int i = 0; i < n; i++) { x0[i] = sol[i]; }
     gs = ddot_(&S.n, gradx, &one, s, &one);
     S.h1 = fabs(gs);
     S.h2 = 0.0;
-    for (int j = 0; j < S.m; j++)
+    for (int j = 0; j < m; j++)
     {
         if (j < S.meq)
         {
@@ -185,7 +175,7 @@ ITER_START:
     S.mode = 0;
     if ((S.h1 < S.acc) && (S.h2 < S.acc) && (!badlin) && (*funx == *funx)) { return; }
     S.h1 = 0.0;
-    for (int j = 0; j < S.m; j++)
+    for (int j = 0; j < m; j++)
     {
         if (j < S.meq)
         {
@@ -210,7 +200,7 @@ LINE_SEARCH:
 
     S.line++;
     S.h3 *= alpha;
-    for (int i = 0; i < S.n; i++) {
+    for (int i = 0; i < n; i++) {
         s[i] *= alpha;
         sol[i] = x0[i] + s[i];
     }
@@ -283,7 +273,6 @@ LABEL255:
     )
     {
         S.mode = 0;
-        return;
     } else {
         S.mode = 8;
     }
@@ -297,7 +286,7 @@ MODEM1:
     // u[i] = gradx[i] - C.T @ mult - v[i]
     for (int i = 0; i < n; i++) { u[i] = gradx[i]; }
     dgemv_("T", &m, &n, &dmone, C, &lda, mult, &one, &dzero, u, &one);
-    for (int i = 0; i < S.n; i++)
+    for (int i = 0; i < n; i++)
     {
         u[i] = u[i] - v[i];
     }
@@ -559,7 +548,7 @@ void lsq(
         wG[nrow + 1 + orign*n_wG_rows] = -1.0;
         wh[nrow + 1] = -1.0;
     }
-
+/*
     // print wA and wb
     printf("A matrix \n");
     for (int i = 0; i < ld; i++)
@@ -599,7 +588,7 @@ void lsq(
     printf("h matrix \n");
     for (int i = 0; i < n_wG_rows; i++) { printf("%f ", wh[i]); }
     printf("\n");
-
+*/
     // Assign the remaining part of the buffer to the LSEI problem.
     double* lsei_scratch = &wh[mineq + 2*n];
 
