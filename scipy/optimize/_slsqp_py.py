@@ -16,9 +16,9 @@ Functions
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
-from scipy.optimize._slsqp import slsqp
-from numpy import (zeros, array, linalg, append, concatenate, finfo,
-                   sqrt, vstack, isfinite, atleast_1d)
+# from scipy.optimize._slsqp import slsqp
+from scipy.optimize._slsqplib import slsqp
+from numpy import (array, linalg, finfo, sqrt, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
@@ -26,7 +26,8 @@ from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
-
+from numpy.typing import NDArray
+from typing import Dict
 
 __docformat__ = "restructuredtext en"
 
@@ -249,7 +250,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     """
     _check_unknown_options(unknown_options)
-    iter = maxiter - 1
     acc = ftol
     epsilon = eps
 
@@ -344,19 +344,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                for c in cons['ineq']]))
     # m = The total number of constraints
     m = meq + mieq
-    # la = The number of constraints, or 1 if there are no constraints
-    la = array([1, m]).max()
     # n = The number of independent variables
     n = len(x)
-
-    # Define the workspaces for SLSQP
-    n1 = n + 1
-    mineq = m - meq + n1 + n1
-    len_w = (3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq) \
-            + 2*meq + n1 + ((n+1)*n)//2 + 2*m + 3*n + 3*n1 + 1
-    len_jw = mineq
-    w = zeros(len_w)
-    jw = zeros(len_jw)
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
@@ -393,125 +382,146 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
     wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
 
-    # Initialize the iteration counter and the mode value
-    mode = array(0, int)
-    acc = array(acc, float)
-    majiter = array(iter, int)
-    majiter_prev = 0
-
-    # Initialize internal SLSQP state variables
-    alpha = array(0, float)
-    f0 = array(0, float)
-    gs = array(0, float)
-    h1 = array(0, float)
-    h2 = array(0, float)
-    h3 = array(0, float)
-    h4 = array(0, float)
-    t = array(0, float)
-    t0 = array(0, float)
-    tol = array(0, float)
-    iexact = array(0, int)
-    incons = array(0, int)
-    ireset = array(0, int)
-    itermx = array(0, int)
-    line = array(0, int)
-    n1 = array(0, int)
-    n2 = array(0, int)
-    n3 = array(0, int)
+    # Initialize internal SLSQP state variables dictionary
+    # This dictionary is passed to the SLSQP matching the C struct defined as
+    #
+    # struct SLSQP_static_vars {
+    #     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol;
+    #     int exact, inconsistent, reset, iter, itermax, line, mode, meq;
+    # };
+    #
+    # exact : a dummy variable and should be kept 0 since the underlying code
+    #         always uses an inexact search.
+    # inconsistent: a boolean set to 1 if the linearized QP is not well-defined
+    #               while the original nonlinear problem is still solvable. Then
+    #               the problem is augmented with a regularizing dummy variable.
+    # reset: holds the count of resetting bfgs to identity matrix.
+    # iter  : the current and itermax is the maximum number of iterations.
+    # line  : the current line search iteration.
+    # mode  : the exit mode of the solver.
+    # alpha, f0, gs, h1, h2, h3, h4, t, t0 : internal variables used by the solver.
+    #
+    # The dict holds the intermediate state of the solver. The keys are the same
+    # as the C struct members and will be modified in-place.
+    Vars = {
+        "acc": acc,
+        "alpha": 0.0,
+        "f0": 0.0,
+        "gs": 0.0,
+        "h1": 0.0,
+        "h2": 0.0,
+        "h3": 0.0,
+        "h4": 0.0,
+        "t": 0.0,
+        "t0": 0.0,
+        "tol": 0.0,
+        "exact": 0,
+        "inconsistent": 0,
+        "reset": 0,
+        "iter": 0,
+        "itermax": 0,
+        "line": 0,
+        "m": m,
+        "meq": meq,
+        "mode": 0,
+        "n": n
+    }
 
     # Print the header if iprint >= 2
     if iprint >= 2:
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
+    # Internal buffer and int array
+    n1 = n + 1
+    mineq = max(m - meq, 0)
+    indices = np.zeros([max(m, n, 1)], dtype=np.int32)
+    buffer = np.zeros(
+        max((3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq)
+            + 2*meq + n1 + ((n+1)*n)//2 + 2*m + 3*n + 3*n1 + 1, 1),
+        dtype=np.float64
+    )
+
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
     # ScalarFunction
     fx = wrapped_fun(x)
-    g = append(wrapped_grad(x), 0.0)
-    c = _eval_constraint(x, cons)
-    a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
+    g = wrapped_grad(x)
 
-    while 1:
+    # Allocate the multiplier array both for constraints and user specified
+    # bounds (extra +2 is for a possible augmented problem).
+    mult = np.zeros([max(1, m + 2*n + 2)], dtype=np.float64)
+
+    # Allocate the constraints and normals once and repopulate as needed
+    C = np.zeros([max(1, m), n], dtype=np.float64, order='F')
+    d = np.zeros([max(1, m)], dtype=np.float64)
+    _eval_con_normals(C, x, cons, m, meq)
+    _eval_constraint(d, x, cons)
+
+    iter_prev = 0
+
+    while True:
         # Call SLSQP
-        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
-              alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-              iexact, incons, ireset, itermx, line,
-              n1, n2, n3)
+        slsqp(Vars, fx, C, d, g, x, mult, xl, xu, buffer, indices)
 
-        if mode == 1:  # objective and constraint evaluation required
+        if Vars['mode'] == 1:  # objective and constraint evaluation required
             fx = wrapped_fun(x)
-            c = _eval_constraint(x, cons)
+            _eval_constraint(d, x, cons)
 
-        if mode == -1:  # gradient evaluation required
-            g = append(wrapped_grad(x), 0.0)
-            a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
+        if Vars['mode'] == -1:  # gradient evaluation required
+            g = wrapped_grad(x)
+            _eval_con_normals(C, x, cons, m, meq)
 
-        if majiter > majiter_prev:
+        if Vars['iter'] > iter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
                 callback(np.copy(x))
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print(f"{majiter:5d} {sf.nfev:5d} {fx:16.6E} {linalg.norm(g):16.6E}")
+                print(f"{Vars['iter']:5d} {sf.nfev:5d} {fx:16.6E} {linalg.norm(g):16.6E}")
 
         # If exit mode is not -1 or 1, slsqp has completed
-        if abs(mode) != 1:
+        if abs(Vars['mode']) != 1:
             break
 
-        majiter_prev = int(majiter)
+        iter_prev = Vars['iter']
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
+        print(exit_modes[Vars['mode']] + f"    (Exit mode {Vars['mode']})")
         print("            Current function value:", fx)
-        print("            Iterations:", majiter)
+        print("            Iterations:", Vars['iter'])
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
-                          nfev=sf.nfev, njev=sf.ngev, status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+    return OptimizeResult(
+        x=x, fun=fx, jac=g[:-1], nit=Vars['iter'], nfev=sf.nfev, njev=sf.ngev,
+        status=Vars['mode'], message=exit_modes[Vars['mode']],
+        success=(Vars['mode'] == 0), multipliers=mult
+    )
 
 
-def _eval_constraint(x, cons):
-    # Compute constraints
-    if cons['eq']:
-        c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                            for con in cons['eq']])
-    else:
-        c_eq = zeros(0)
+def _eval_constraint(d: NDArray, x: NDArray, cons: Dict):
+    if (not cons['eq']) and (not cons['ineq']):
+        return
 
-    if cons['ineq']:
-        c_ieq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                             for con in cons['ineq']])
-    else:
-        c_ieq = zeros(0)
+    for ind, con in enumerate(cons['eq']):
+        d[ind] = con['fun'](x, *con['args'])
 
-    # Now combine c_eq and c_ieq into a single matrix
-    c = concatenate((c_eq, c_ieq))
-    return c
+    for ind, con in enumerate(cons['ineq']):
+        d[ind] = con['fun'](x, *con['args'])
+
+    return
 
 
-def _eval_con_normals(x, cons, la, n, m, meq, mieq):
-    # Compute the normals of the constraints
-    if cons['eq']:
-        a_eq = vstack([con['jac'](x, *con['args'])
-                       for con in cons['eq']])
-    else:  # no equality constraint
-        a_eq = zeros((meq, n))
+def _eval_con_normals(C: NDArray, x: NDArray, cons: Dict, m: int, meq: int):
+    if m == 0:
+        return
 
-    if cons['ineq']:
-        a_ieq = vstack([con['jac'](x, *con['args'])
-                        for con in cons['ineq']])
-    else:  # no inequality constraint
-        a_ieq = zeros((mieq, n))
+    for ind, con in enumerate(cons['eq']):
+        C[ind, :] = con['jac'](x, *con['args'])
 
-    # Now combine a_eq and a_ieq into a single a matrix
-    if m == 0:  # no constraints
-        a = zeros((la, n))
-    else:
-        a = vstack((a_eq, a_ieq))
-    a = concatenate((a, zeros([la, 1])), 1)
+    for ind, con in enumerate(cons['ineq']):
+        C[ind + meq, :] = con['jac'](x, *con['args'])
 
-    return a
+    return
