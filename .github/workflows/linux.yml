@@ -468,28 +468,27 @@ jobs:
       with:
         submodules: recursive
         fetch-tags: true
-    # TODO: replace with setup-python when there is support
-    - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796 # v5.3.1
+    - uses: actions/setup-python@9e62be81b28222addecf85e47571213eb7680449 # v5.5.0-dev
       with:
         python-version: '3.13t'
 
     - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
-    # TODO: remove pip pre-release install after Python 3.13 release
-    - name: Install pre-release pip
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev gfortran
+    - name: Install nightly Cython
       run: |
-        pip install -U --pre pip
-    - name: Install nightly NumPy and Cython
-      run: |
-        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython numpy
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple cython
     - name: Install Python dependencies
       run: |
-        pip install pythran ninja meson-python pybind11 click rich_click pydevtool
+        pip install numpy ninja meson-python pybind11 click rich_click pydevtool
         pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
         echo "N_TEST_WORKERS=2" >> "$GITHUB_ENV"
+    - name: Install Pythran master
+      run: |
+        # 0.17.0 doesn't support free-threading, update once the next release is out
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
     - name: Install pytest-run-parallel
       if: ${{ matrix.parallel == '1'}}
       run: |
@@ -498,17 +497,13 @@ jobs:
         echo "N_TEST_WORKERS=1" >> "$GITHUB_ENV"
     - name: Build and run tests
       env:
-        PYTHON_GIL: 0
+        TODO_TEST_SELECTION: 0
       # TODO: For some reason the Meson installation path points to
       # python3/site-packages as opposed to python3.13/site-packages,
       # then the dev.py scripts do not work as expected.
       run: |
-        # python dev.py build --with-scipy-openblas
-        # python dev.py --no-build test -j2 --mode full
-        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
-        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
-        pushd $RUNNER_TEMP
-        PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
+        python dev.py build --with-scipy-openblas
+        python dev.py --no-build test -m full -j$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
 
   #################################################################################
   clang-17-build-only:
