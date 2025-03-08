@@ -2165,7 +2165,6 @@ def test_zero_rotation_approx_equal():
     r = Rotation.random(0)
     assert r.approx_equal(Rotation.random(0)).shape == (0,)
     assert r.approx_equal(Rotation.random()).shape == (0,)
-    assert Rotation.random(0).approx_equal(r).shape == (0,)
     assert Rotation.random().approx_equal(r).shape == (0,)
 
     approx_msg = "Expected equal number of rotations in both or a single rotation in either object"
