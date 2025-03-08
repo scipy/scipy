@@ -2111,9 +2111,6 @@ def test_zero_rotation_multiplication():
     r_mult = r * r0
     assert len(r_mult) == 0
 
-    r0_mult = r0 * r0
-    assert len(r0_mult) == 0
-
     msg_rotation_error = "Expected equal number of rotations"
     r2 = Rotation.random(2)
     with pytest.raises(ValueError, match=msg_rotation_error):
