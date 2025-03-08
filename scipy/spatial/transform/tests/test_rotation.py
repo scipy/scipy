@@ -2042,7 +2042,7 @@ def test_compare_as_davenport_as_euler():
             assert_allclose(eul, dav, rtol=1e-12)
 
 
-def test_zero_length_rotation_construction():
+def test_zero_rotation_construction():
     r = Rotation.random(num=0)
     assert len(r) == 0
 
@@ -2052,15 +2052,6 @@ def test_zero_length_rotation_construction():
     r_get = Rotation.random(num=3)[[]]
     assert len(r_get) == 0
 
-    # Representations
-    assert r.as_quat().shape == (0, 4)
-    assert r.as_matrix().shape == (0, 3, 3)
-    assert r.as_euler("xyz").shape == (0, 3)
-    assert r.as_rotvec().shape == (0, 3)
-    assert r.as_mrp().shape == (0, 3)
-    assert r.as_davenport(np.eye(3), "extrinsic").shape == (0, 3)
-
-    # Construction
     r_quat = Rotation.from_quat(np.zeros((0, 4)))
     assert len(r_quat) == 0
 
@@ -2080,10 +2071,19 @@ def test_zero_length_rotation_construction():
     assert len(r_mrp) == 0
 
 
-def test_zero_length_array():
+def test_zero_rotation_representation():
+    r = Rotation.random(num=0)
+    assert r.as_quat().shape == (0, 4)
+    assert r.as_matrix().shape == (0, 3, 3)
+    assert r.as_euler("xyz").shape == (0, 3)
+    assert r.as_rotvec().shape == (0, 3)
+    assert r.as_mrp().shape == (0, 3)
+    assert r.as_davenport(np.eye(3), "extrinsic").shape == (0, 3)
+
+
+def test_zero_rotation_array_rotation():
     r = Rotation.random(num=0)
 
-    # Vector rotation
     v = np.array([1, 2, 3])
     v_rotated = r.apply(v)
     assert v_rotated.shape == (0, 3)
@@ -2096,7 +2096,10 @@ def test_zero_length_array():
     with pytest.raises(ValueError, match="Expected equal numbers of rotations and vectors"):
         r.apply(v2)
 
-    # Multiplication
+
+def test_zero_rotation_multiplication():
+    r = Rotation.random(num=0)
+
     r_single = Rotation.random()
     r_mult_left = r * r_single
     assert len(r_mult_left) == 0
@@ -2105,7 +2108,10 @@ def test_zero_length_array():
     assert len(r_mult_right) == 0
 
     r0 = Rotation.random(0)
-    r0_mult = r * r0
+    r_mult = r * r0
+    assert len(r_mult) == 0
+
+    r0_mult = r0 * r0
     assert len(r0_mult) == 0
 
     msg_rotation_error = "Expected equal number of rotations"
@@ -2132,23 +2138,38 @@ def test_zero_rotation_concatentation():
     r4 = r.concatenate([r, Rotation.random(4)])
     assert len(r4) == 4
 
+
+def test_zero_rotation_power():
+    r = Rotation.random(num=0)
     for pp in [-1.5, -1, 0, 1, 1.5]:
         pow0 = r**pp
         assert len(pow0) == 0
 
-    # Methods
+
+def test_zero_rotation_inverse():
+    r = Rotation.random(num=0)
     r_inv = r.inv()
     assert len(r_inv) == 0
 
+
+def test_zero_rotation_magnitude():
+    r = Rotation.random(num=0)
     magnitude = r.magnitude()
     assert magnitude.shape == (0,)
 
+
+def test_zero_rotation_mean():
+    r = Rotation.random(num=0)
     with pytest.raises(ValueError, match="Mean of an empty rotation set is undefined."):
         r.mean()
 
-    # Comparison
+
+def test_zero_rotation_approx_equal():
+    r = Rotation.random(0)
     assert r.approx_equal(Rotation.random(0)).shape == (0,)
     assert r.approx_equal(Rotation.random()).shape == (0,)
+    assert Rotation.random(0).approx_equal(r).shape == (0,)
+    assert Rotation.random().approx_equal(r).shape == (0,)
 
     approx_msg = "Expected equal number of rotations in both or a single rotation in either object"
     r3 = Rotation.random(2)
@@ -2157,8 +2178,16 @@ def test_zero_rotation_concatentation():
 
     with pytest.raises(ValueError, match=approx_msg):
         r3.approx_equal(r)
+
+
+def test_zero_rotation_get_set():
+    r = Rotation.random(0)
+
     r_get = r[[]]
     assert len(r_get) == 0
+
+    r_slice = r[:0]
+    assert len(r_slice) == 0
 
     with pytest.raises(IndexError):
         r[[0]]
