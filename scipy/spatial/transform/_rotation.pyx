@@ -2958,7 +2958,7 @@ cdef class Rotation:
         array([0.24945696, 0.25054542, 0.24945696])
         """
         if self._quat.shape[0] == 0:
-            raise ValueError("Mean of empty rotation.")
+            raise ValueError("Mean of an empty rotation set is undefined.")
             
         if weights is None:
             weights = np.ones(len(self))
