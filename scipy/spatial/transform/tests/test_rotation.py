@@ -2093,7 +2093,7 @@ def test_zero_length_array():
     assert v0_rot.shape == (0, 3)
 
     v2 = np.ones((2, 3))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Expected equal numbers of rotations and vectors"):
         r.apply(v2)
 
     # Multiplication
@@ -2108,11 +2108,12 @@ def test_zero_length_array():
     r0_mult = r * r0
     assert len(r0_mult) == 0
 
+    msg_rotation_error = "Expected equal number of rotations"
     r2 = Rotation.random(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=msg_rotation_error):
         r0 * r2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=msg_rotation_error):
         r2 * r0
 
 
@@ -2142,18 +2143,20 @@ def test_zero_rotation_concatentation():
     magnitude = r.magnitude()
     assert magnitude.shape == (0,)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Mean of an empty rotation set is undefined."):
         r.mean()
 
     # Comparison
     assert r.approx_equal(Rotation.random(0)).shape == (0,)
     assert r.approx_equal(Rotation.random()).shape == (0,)
 
+    approx_msg = "Expected equal number of rotations in both or a single rotation in either object"
     r3 = Rotation.random(2)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=approx_msg):
         r.approx_equal(r3)
 
-    # Get / set
+    with pytest.raises(ValueError, match=approx_msg):
+        r3.approx_equal(r)
     r_get = r[[]]
     assert len(r_get) == 0
 
