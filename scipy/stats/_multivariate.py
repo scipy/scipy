@@ -3586,20 +3586,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    This class is wrapping the random_rot code from the MDP Toolkit,
-    https://github.com/mdp-toolkit/mdp-toolkit
+    Return a random rotation matrix, drawn from the Haar distribution (the only
+    uniform distribution on SO(N)). The algorithm generates a Haar-distributed
+    orthogonal matrix in O(N) by using a related `ortho_group` and correcting
+    the determinant to +1.
 
-    Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(N)).
-    The algorithm is described in the paper
-    Stewart, G.W., "The efficient generation of random orthogonal
-    matrices with an application to condition estimators", SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
-
-    See also the similar `ortho_group`. For a random rotation in three
-    dimensions, see `scipy.spatial.transform.Rotation.random`.
+    For a random rotation in three dimensions, see
+    `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
