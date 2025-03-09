@@ -854,26 +854,29 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     return svals, ppcc
 
 
-def _log_mean(logx):
+def _log_mean(logx, axis):
     # compute log of mean of x from log(x)
-    res = special.logsumexp(logx, axis=0) - math.log(logx.shape[0])
-    return res
+    return (
+        special.logsumexp(logx, axis=axis, keepdims=True)
+        - math.log(logx.shape[axis])
+    )
 
 
-def _log_var(logx, xp):
+def _log_var(logx, xp, axis):
     # compute log of variance of x from log(x)
-    logmean = _log_mean(logx)
+    logmean = _log_mean(logx, axis=axis)
     # get complex dtype with component dtypes same as `logx` dtype;
     # see data-apis/array-api#841
     dtype = xp.result_type(logx.dtype, xp.complex64)
     pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
     logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
-    res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
-           - math.log(logx.shape[0]))
-    return res
+    return (
+        xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=axis)))
+        - math.log(logx.shape[axis])
+    )
 
 
-def boxcox_llf(lmb, data):
+def boxcox_llf(lmb, data, *, axis=0):
     r"""The boxcox log-likelihood function.
 
     Parameters
@@ -955,7 +958,7 @@ def boxcox_llf(lmb, data):
     """
     xp = array_namespace(data)
     data = xp.asarray(data)
-    N = data.shape[0]
+    N = data.shape[axis]
     if N == 0:
         return xp.nan
 
@@ -968,16 +971,16 @@ def boxcox_llf(lmb, data):
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        logvar = xp.log(xp.var(logdata, axis=0))
+        logvar = xp.log(xp.var(logdata, axis=axis))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
-        logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
+        logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
-    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
+    res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
     res = xp.astype(res, dt)
     res = res[()] if res.ndim == 0 else res
     return res
