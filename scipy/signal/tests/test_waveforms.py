@@ -506,7 +506,7 @@ class TestSawtoothRFFT:
     def test_values(self, n, xp):
         """Test output against reference values. """
         vv0 = -8 / 3 * xp.asarray([1. + 1.j, 2, 1. - 1.j, 0, 1. + 1.j])
-        Xa_ref = xp.zeros(6, dtype=vv0.dtype)
+        Xa_ref = xp.zeros((6,), dtype=vv0.dtype)
         Xa_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
         Xb_ref = xp.zeros_like(Xa_ref)
         Xb_ref[2::2] = Xa_ref[1:3]
@@ -521,7 +521,7 @@ class TestSawtoothRFFT:
     def test_norm_parameter(self, norm: Literal['backward', 'ortho', 'forward'], xp):
         """Verify that parameter `norm` is compatible with `scipy.fft.irfft`. """
         vv0 = -8 / 3 * xp.asarray([1. + 1.j, 2., 1. - 1.j, 0., 1. + 1.j])
-        X0_ref = xp.zeros(6, dtype=vv0.dtype)
+        X0_ref = xp.zeros((6,), dtype=vv0.dtype)
         X0_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
         x0_ref = irfft(X0_ref, norm='forward')
         
@@ -533,7 +533,7 @@ class TestSawtoothRFFT:
     @pytest.mark.parametrize('n', (10, 11))
     def test_duty01(self, n, norm: Literal['backward', 'ortho', 'forward'], xp):
         """Test for parameter ``duty=0`` and ``duty=1``. """
-        X01a_ref = xp.zeros(6, dtype='complex128')
+        X01a_ref = xp.zeros((6,), dtype='complex128')
         X01a_ref[1:] = 1j / xp.pi / xp.arange(1, 6)
         X01b_ref = xp.zeros_like(X01a_ref)
         X01b_ref[2::2] = X01a_ref[1:3]
