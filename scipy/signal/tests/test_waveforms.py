@@ -533,7 +533,7 @@ class TestSawtoothRFFT:
     @pytest.mark.parametrize('n', (10, 11))
     def test_duty01(self, n, norm: Literal['backward', 'ortho', 'forward'], xp):
         """Test for parameter ``duty=0`` and ``duty=1``. """
-        X01a_ref = xp.zeros((6,), dtype='complex128')
+        X01a_ref = xp.asarray([0.j, 0.j, 0.j, 0.j, 0.j, 0.j])
         X01a_ref[1:] = 1j / xp.pi / xp.arange(1, 6)
         X01b_ref = xp.zeros_like(X01a_ref)
         X01b_ref[2::2] = X01a_ref[1:3]

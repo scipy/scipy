@@ -10,7 +10,6 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
-from scipy.fft import rfft
 from .windows._windows import _namespace  # helper to determine array API namespace
 
 __all__ = ['sawtooth', 'sawtooth_rfft', 'square', 'square_rfft', 'gausspulse', 'chirp',
@@ -220,8 +219,7 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
     n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
-    X_dtype = rfft([0.,], norm=norm).dtype  # use same dtype as rfft produces
-    X = xp.zeros((n_X,), dtype=X_dtype, device=device)
+    X = xp.zeros((n_X,), dtype=xp.complex128, device=device)
 
     ll = xp.arange(1, (n_X + m_cyc - 1) // m_cyc, device=device) * xp.pi
     if duty == 0:
@@ -473,8 +471,7 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
     n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
-    X_dtype = rfft([0.,], norm=norm).dtype  # Use same dtype as rfft produces
-    X = xp.zeros((n_X,), dtype=X_dtype, device=device)
+    X = xp.zeros((n_X,), dtype=xp.complex128, device=device)
 
     fac0, fac1 = scale_factors[norm], scale_factors[norm] * 1j / xp.pi
     X[0] = fac0 * (2 * duty - 1)  # zeroth Fourier coefficient
