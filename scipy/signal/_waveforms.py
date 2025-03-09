@@ -215,7 +215,7 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
     if not (0 <= duty <= 1):
         raise ValueError(f"0 <= duty <= 1 does not hold for parameter {duty=}!")
 
-    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
+    scale_factors = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}
     if norm not in scale_factors:
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
@@ -468,7 +468,7 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
     if not (0 < duty < 1):
         raise ValueError(f"0 < duty < 1 does not hold for parameter {duty=}!")
 
-    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
+    scale_factors = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}
     if norm not in scale_factors:
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
