@@ -2093,7 +2093,8 @@ def test_zero_rotation_array_rotation():
     assert v0_rot.shape == (0, 3)
 
     v2 = np.ones((2, 3))
-    with pytest.raises(ValueError, match="Expected equal numbers of rotations and vectors"):
+    with pytest.raises(
+        ValueError, match="Expected equal numbers of rotations and vectors"):
         r.apply(v2)
 
 
@@ -2167,7 +2168,7 @@ def test_zero_rotation_approx_equal():
     assert r.approx_equal(Rotation.random()).shape == (0,)
     assert Rotation.random().approx_equal(r).shape == (0,)
 
-    approx_msg = "Expected equal number of rotations in both or a single rotation in either object"
+    approx_msg = "Expected equal number of rotations"
     r3 = Rotation.random(2)
     with pytest.raises(ValueError, match=approx_msg):
         r.approx_equal(r3)
