@@ -428,6 +428,10 @@ class TestDelaunay:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Delaunay, masked_array)
 
+    # Shouldn't be inherently unsafe; retry with cpython 3.14 once traceback
+    # thread safety issues are fixed (also goes for other test with same name
+    # further down)
+    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.Delaunay, points_with_nan)
@@ -607,6 +611,7 @@ class TestConvexHull:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
+    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
