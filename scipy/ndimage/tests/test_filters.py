@@ -6,6 +6,10 @@ import re
 import numpy as np
 import pytest
 from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
+from numpy.typing import NDArray
+from hypothesis import strategies as st
+from hypothesis import given
+import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2764,3 +2768,44 @@ def test_gh_22333():
     expected = [58, 67, 87, 108, 163, 108, 108, 108, 87]
     actual = ndimage.median_filter(x, size=9, mode='constant')
     assert_array_equal(actual, expected)
+
+
+@pytest.mark.slow
+@given(
+    arr=npst.arrays(
+        dtype=np.float64,
+        shape=st.integers(min_value=1, max_value=20).map(lambda x: x * 50),
+    ),
+    size=st.integers(min_value=1, max_value=25),
+    mode=st.sampled_from(['reflect', 'constant', 'nearest', 'mirror', 'wrap']),
+)
+def test_gh_22586_median_filter_no_segfault_and_1d_matches_nd(
+    arr: NDArray[np.float64],
+    size: int,
+    mode: str,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    size = min(size, len(arr))
+    mf = functools.partial(
+        ndimage.median_filter,
+        size=size,
+        mode=mode,
+    )
+    actual = mf(arr)
+
+    # Monkeypatch _rank_filter_1d.rank_filter() to actually call
+    # _nd_image.rank_filter() so that 1D results from the optimized
+    # implementation can be compared to the general ND implementation
+
+    def _1d_to_nd_rank_filter(i, r, s, *args):
+        from scipy.ndimage import _nd_image
+        return _nd_image.rank_filter(i, r, np.ones(s, dtype=bool), *args)
+
+    with monkeypatch.context():
+        monkeypatch.setattr(
+            'scipy.ndimage._rank_filter_1d.rank_filter',
+            _1d_to_nd_rank_filter,
+        )
+        desired = mf(arr)
+
+    np.testing.assert_allclose(actual, desired)
