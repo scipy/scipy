@@ -511,10 +511,10 @@ class TestSawtoothRFFT:
         Xb_ref = xp.zeros_like(Xa_ref)
         Xb_ref[2::2] = Xa_ref[1:3]
 
-        Xa = waveforms.sawtooth_rfft(n, 1, duty=0.25)
+        Xa = waveforms.sawtooth_rfft(n, 1, duty=0.25, xp=xp)
         xp_assert_close(Xa, n * Xa_ref, atol=1e-12)
 
-        Xb = waveforms.sawtooth_rfft(n, 2, duty=0.25)
+        Xb = waveforms.sawtooth_rfft(n, 2, duty=0.25, xp=xp)
         xp_assert_close(Xb, n * Xb_ref, atol=1e-12)
 
     @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
@@ -525,7 +525,7 @@ class TestSawtoothRFFT:
         X0_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
         x0_ref = irfft(X0_ref, norm='forward')
         
-        X0 = waveforms.sawtooth_rfft(10, 1, duty=0.25, norm=norm)
+        X0 = waveforms.sawtooth_rfft(10, 1, duty=0.25, norm=norm, xp=xp)
         x0 = irfft(X0, norm=norm)
         xp_assert_close(x0, x0_ref, atol=1e-12)
 
@@ -537,19 +537,20 @@ class TestSawtoothRFFT:
         X01a_ref[1:] = 1j / xp.pi / xp.arange(1, 6)
         X01b_ref = xp.zeros_like(X01a_ref)
         X01b_ref[2::2] = X01a_ref[1:3]
-        
-        s = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}[norm]
 
-        X0a = waveforms.sawtooth_rfft(n, 1, duty=0, norm=norm)
+        # using `xp.sqrt(n)` instead of `np.sqrt(n)` does pass CI (on pytorch):
+        s = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}[norm]
+
+        X0a = waveforms.sawtooth_rfft(n, 1, duty=0, norm=norm, xp=xp)
         xp_assert_close(X0a, -s * X01a_ref, atol=1e-12)
 
-        X0b = waveforms.sawtooth_rfft(n, 2, duty=0, norm=norm)
+        X0b = waveforms.sawtooth_rfft(n, 2, duty=0, norm=norm, xp=xp)
         xp_assert_close(X0b, -s * X01b_ref, atol=1e-12)
 
-        X1a = waveforms.sawtooth_rfft(n, 1, duty=1, norm=norm)
+        X1a = waveforms.sawtooth_rfft(n, 1, duty=1, norm=norm, xp=xp)
         xp_assert_close(X1a, s * X01a_ref, atol=1e-12)
 
-        X1b = waveforms.sawtooth_rfft(n, 2, duty=1, norm=norm)
+        X1b = waveforms.sawtooth_rfft(n, 2, duty=1, norm=norm, xp=xp)
         xp_assert_close(X1b, s * X01b_ref, atol=1e-12)
 
 
@@ -600,7 +601,7 @@ class TestSquareRFFT:
         X0 = xp.asarray([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0, (1 - 1j) / 5]) / xp.pi
         X0[0] = -0.5
         
-        X = waveforms.square_rfft(n, 1, 0.25)
+        X = waveforms.square_rfft(n, 1, 0.25, xp=xp)
         xp_assert_close(X, X0*n, atol=1e-12)
 
     @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
@@ -609,6 +610,6 @@ class TestSquareRFFT:
         X_ref = xp.asarray([4., 0., -(8 + 8j) / xp.pi, 0., -8j / xp.pi])
         x_ref = irfft(X_ref, norm='backward')
         
-        X = waveforms.square_rfft(8, 2, 0.75, norm=norm)
+        X = waveforms.square_rfft(8, 2, 0.75, norm=norm, xp=xp)
         x = irfft(X, norm=norm)
         xp_assert_close(x, x_ref, atol=1e-12)
