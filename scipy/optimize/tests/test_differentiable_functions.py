@@ -563,6 +563,76 @@ class TestVectorialFunction(TestCase):
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(J_analit, J_approx)
 
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.5, 3.0])
+        ex = ExVectorialFunction()
+        ex2 = ExVectorialFunction()
+        v = np.array([1.0, 2.0])
+
+        with MapWrapper(2) as mapper:
+            approx = VectorFunction(ex.fun, x0, '2-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '2-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, '3-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '3-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            # The following tests are somewhat redundant because the LinearOperator
+            # produced by VectorFunction.hess does not use any parallelisation.
+            # The tests are left for completeness, in case that situation changes.
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, ex.jac,
+                                    '2-point', None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, ex2.jac,
+                                           '2-point', None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+
+            H_analit = ex2.hess(x0, v)
+            H_approx_series = approx_series.hess(x0, v)
+            H_approx = approx.hess(x0, v)
+            x = [5, 2.0]
+            assert_allclose(H_approx.dot(x), H_analit.dot(x))
+            assert_allclose(H_approx_series.dot(x), H_analit.dot(x))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+
     def test_finite_difference_hess_linear_operator(self):
         ex = ExVectorialFunction()
         nfev = 0
