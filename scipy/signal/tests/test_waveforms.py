@@ -506,7 +506,7 @@ class TestSawtoothRFFT:
     def test_values(self, n, xp):
         """Test output against reference values. """
         Xa_ref = xp.zeros(6, dtype=complex)
-        vv0 = -8 / 3 * xp.array([1 + 1j, 2, 1 - 1j, 0, 1 + 1j], dtype=complex)
+        vv0 = -8 / 3 * xp.asarray([1 + 1j, 2, 1 - 1j, 0, 1 + 1j], dtype=complex)
         Xa_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
         Xb_ref = xp.zeros_like(Xa_ref)
         Xb_ref[2::2] = Xa_ref[1:3]
@@ -521,7 +521,7 @@ class TestSawtoothRFFT:
     def test_norm_parameter(self, norm: Literal['backward', 'ortho', 'forward'], xp):
         """Verify that parameter `norm` is compatible with `scipy.fft.irfft`. """
         X0_ref = xp.zeros(6, dtype=complex)
-        vv0 = -8 / 3 * xp.array([1 + 1j, 2, 1 - 1j, 0, 1 + 1j], dtype=complex)
+        vv0 = -8 / 3 * xp.asarray([1 + 1j, 2, 1 - 1j, 0, 1 + 1j], dtype=complex)
         X0_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
         x0_ref = irfft(X0_ref, norm='forward')
         
@@ -597,7 +597,7 @@ class TestSquareRFFT:
     @pytest.mark.parametrize('n', (10, 11))
     def test_values(self, n, xp):
         """Test output against reference values. """
-        X0 = xp.array([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0, (1 - 1j) / 5]) / xp.pi
+        X0 = xp.asarray([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0, (1 - 1j) / 5]) / xp.pi
         X0[0] = -0.5
         
         X = waveforms.square_rfft(n, 1, 0.25)
@@ -606,7 +606,7 @@ class TestSquareRFFT:
     @pytest.mark.parametrize('norm', ('backward', 'ortho', 'forward'))
     def test_norm_parameter(self, norm: Literal['backward', 'ortho', 'forward'], xp):
         """Test that parameter `norm` is compatible with `scipy.fft.irfft`. """
-        X_ref = xp.array([4., 0., -(8 + 8j) / xp.pi, 0., -8j / xp.pi])
+        X_ref = xp.asarray([4., 0., -(8 + 8j) / xp.pi, 0., -8j / xp.pi])
         x_ref = irfft(X_ref, norm='backward')
         
         X = waveforms.square_rfft(8, 2, 0.75, norm=norm)
