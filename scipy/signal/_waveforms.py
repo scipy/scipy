@@ -208,9 +208,9 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
     >>> plt.show()
     """
     xp = _namespace(xp)  # select numpy if parameter xp is None
-    if not (isinstance(n, int | xp.int32 | xp.int64) and n > 0):
+    if not (isinstance(n, int | np.integer) and n > 0):
         raise ValueError(f"Parameter {n=} is not a positive integer!")
-    if not (isinstance(m_cyc, int | xp.int32 | xp.int64) and 0 < m_cyc < n // 2):
+    if not (isinstance(m_cyc, int | np.integer) and 0 < m_cyc < n // 2):
         raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
     if not (0 <= duty <= 1):
         raise ValueError(f"0 <= duty <= 1 does not hold for parameter {duty=}!")
@@ -461,9 +461,9 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
     >>> plt.show()
     """
     xp = _namespace(xp)  # select numpy if parameter xp is None
-    if not (isinstance(n, int | xp.int32 | xp.int64) and n > 0):
+    if not (isinstance(n, int | np.integer) and n > 0):
         raise ValueError(f"Parameter {n=} is not a positive integer!")
-    if not (isinstance(m_cyc, int | xp.int32 | xp.int64) and 0 < m_cyc < n // 2):
+    if not (isinstance(m_cyc, int | np.integer) and 0 < m_cyc < n // 2):
         raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
     if not (0 < duty < 1):
         raise ValueError(f"0 < duty < 1 does not hold for parameter {duty=}!")
