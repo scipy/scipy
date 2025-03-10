@@ -4,7 +4,8 @@ import operator
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API
+    array_namespace, scipy_namespace_for, is_dask, is_numpy, is_marray,
+    xp_device, SCIPY_ARRAY_API
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -40,15 +41,31 @@ def get_array_special_func(f_name, xp, n_array_args):
     def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
+
         if is_marray(_xp):
-            data_args = [np.asarray(arg.data) for arg in array_args]
-            out = _f(*data_args, *other_args, **kwargs)
+            data_args = [arg.data for arg in array_args]
+            f = globals()[f_name]  # Allow nested wrapping
+            out = f(*data_args, *other_args, **kwargs)
             mask = functools.reduce(operator.or_, (arg.mask for arg in array_args))
             return _xp.asarray(out, mask=mask)
+
+        elif is_dask(_xp):
+            f = globals()[f_name]  # Allow nested wrapping
+            # IMPORTANT: this works only because all ufuncs in this module
+            # are elementwise. It would be a grave mistake to apply this to gufuncs,
+            # as they would change their output depending on chunking!
+            return _xp.map_blocks(
+                # Hide other_args as well as kwargs such as dtype from map_blocks
+                lambda *array_args: f(*array_args, *other_args, **kwargs),
+                *array_args
+            )
+
         else:
+            assert array_args  # is_numpy(xp) is True
+            device = xp_device(array_args[0])
             array_args = [np.asarray(arg) for arg in array_args]
             out = _f(*array_args, *other_args, **kwargs)
-            return _xp.asarray(out)
+            return _xp.asarray(out, device=device)
 
     return __f
 
@@ -83,14 +100,19 @@ def _xlogy(xp, spx):
     return __xlogy
 
 
+def _get_native_func(xp, spx, f_name):
+    f = getattr(spx.special, f_name, None) if spx else None
+    if f is None and hasattr(xp, 'special'):
+        f = getattr(xp.special, f_name, None)
+    return f
+
+
 def _chdtr(xp, spx):
     # The difference between this and just using `gammainc`
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = getattr(spx.special, 'gammainc', None) if spx else None  # noqa: F811
-    if gammainc is None and hasattr(xp, 'special'):
-        gammainc = getattr(xp.special, 'gammainc', None)
+    gammainc = _get_native_func(xp, spx, 'gammainc')  # noqa: F811
     if gammainc is None:
         return None
 
@@ -109,9 +131,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = getattr(spx.special, 'gammaincc', None) if spx else None  # noqa: F811
-    if gammaincc is None and hasattr(xp, 'special'):
-        gammaincc = getattr(xp.special, 'gammaincc', None)
+    gammaincc = _get_native_func(xp, spx, 'gammaincc')  # noqa: F811
     if gammaincc is None:
         return None
 
@@ -124,9 +144,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     if betainc is None:
         return None
 
@@ -137,9 +155,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     if betainc is None:
         return None
 
@@ -152,10 +168,7 @@ def _stdtr(xp, spx):
 
 
 def _stdtrit(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
-
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     # If betainc is not defined, the root-finding would be done with `xp`
     # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
