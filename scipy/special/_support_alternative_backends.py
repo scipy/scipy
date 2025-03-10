@@ -6,6 +6,7 @@ import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API
 )
+import scipy._lib.array_api_extra as xpx
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -53,25 +54,18 @@ def get_array_special_func(f_name, xp, n_array_args):
     return __f
 
 
-def _get_shape_dtype(*args, xp):
-    args = xp.broadcast_arrays(*args)
-    shape = args[0].shape
-    dtype = xp.result_type(*args)
-    if xp.isdtype(dtype, 'integral'):
-        dtype = xp.float64
-        args = [xp.asarray(arg, dtype=dtype) for arg in args]
-    return args, shape, dtype
-
-
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
-        args, shape, dtype = _get_shape_dtype(x, y, xp=xp)
-        x, y = args
-        res = xp.full(x.shape, xp.inf, dtype=dtype)
-        res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=dtype)
-        i = (x > 0) & (y > 0)
-        res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
+        x, y = xp.broadcast_arrays(x, y)
+        res = xpx.apply_where(
+            (x > 0) & (y > 0),
+            (x, y),
+            lambda x, y: x * (xp.log(x) - xp.log(y)),
+            fill_value=xp.inf
+        )
+        res = xpx.at(res)[(x == 0) & (y >= 0)].set(0)
         return res
+
     return __rel_entr
 
 

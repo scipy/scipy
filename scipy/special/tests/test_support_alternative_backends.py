@@ -4,7 +4,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import is_cupy, is_dask, is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api import is_cupy, is_jax, is_torch, SCIPY_DEVICE
 from scipy._lib.array_api_compat import numpy as np
 
 
@@ -14,28 +14,6 @@ def test_dispatch_to_unrecognized_library():
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
-    xp_assert_close(res, ref)
-
-
-@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
-def test_rel_entr_generic(dtype):
-    xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
-    x = [-1, 0, 0, 1]
-    y = [1, 0, 2, 3]
-
-    x_xp = xp.asarray(x, dtype=dtype_xp)
-    y_xp = xp.asarray(y, dtype=dtype_xp)
-    res = f(x_xp, y_xp)
-
-    x_np = np.asarray(x, dtype=dtype_np)
-    y_np = np.asarray(y, dtype=dtype_np)
-    ref = special.rel_entr(x_np[-1], y_np[-1])
-    ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
-    ref = xp.asarray(ref)
-
     xp_assert_close(res, ref)
 
 
@@ -53,8 +31,6 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     "and cannot delegate to PyTorch.")
-    if is_dask(xp) and f_name == 'rel_entr':
-        pytest.skip("boolean index assignment")
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
