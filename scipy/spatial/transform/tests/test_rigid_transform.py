@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RigidTransform
+from scipy.spatial.transform._rigid_transform import normalize_dual_quaternion
 
 
 def test_repr():
@@ -896,3 +897,16 @@ def test_copy_flag():
     tf = RigidTransform(matrix, normalize=False, copy=False)
     matrix[0, 0] = 2
     assert tf.as_matrix()[0, 0] == 2
+
+
+def test_normalize_dual_quaternion():
+    dual_quat = normalize_dual_quaternion(np.zeros((1, 8)))
+    assert_allclose(np.linalg.norm(dual_quat[0, :4]), 1.0, atol=1e-12)
+    assert_allclose(dual_quat[0, :4] @ dual_quat[0, 4:], 0.0, atol=1e-12)
+
+    rng = np.random.default_rng(103213650)
+    dual_quat = rng.normal(size=(1000, 8))
+    dual_quat = normalize_dual_quaternion(dual_quat)
+    assert_allclose(np.linalg.norm(dual_quat[:, :4], axis=1), 1.0, atol=1e-12)
+    assert_allclose(np.einsum("ij,ij->i", dual_quat[:, :4], dual_quat[:, 4:]),
+                    0.0, atol=1e-12)

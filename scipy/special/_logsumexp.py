@@ -1,5 +1,4 @@
 import numpy as np
-from scipy._lib._util import _asarray_validated
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
@@ -330,10 +329,11 @@ def softmax(x, axis=None):
     array([ 1.,  1.,  1.])
 
     """
-    x = _asarray_validated(x, check_finite=False)
-    x_max = np.amax(x, axis=axis, keepdims=True)
-    exp_x_shifted = np.exp(x - x_max)
-    return exp_x_shifted / np.sum(exp_x_shifted, axis=axis, keepdims=True)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
+    x_max = xp.max(x, axis=axis, keepdims=True)
+    exp_x_shifted = xp.exp(x - x_max)
+    return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
 def log_softmax(x, axis=None):
@@ -387,23 +387,22 @@ def log_softmax(x, axis=None):
     array([  0., -inf])
 
     """
+    xp = array_namespace(x)
+    x = xp.asarray(x)
 
-    x = _asarray_validated(x, check_finite=False)
-
-    x_max = np.amax(x, axis=axis, keepdims=True)
+    x_max = xp.max(x, axis=axis, keepdims=True)
 
     if x_max.ndim > 0:
-        x_max[~np.isfinite(x_max)] = 0
-    elif not np.isfinite(x_max):
+        x_max = xpx.at(x_max, ~xp.isfinite(x_max)).set(0)
+    elif not xp.isfinite(x_max):
         x_max = 0
 
     tmp = x - x_max
-    exp_tmp = np.exp(tmp)
+    exp_tmp = xp.exp(tmp)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = np.sum(exp_tmp, axis=axis, keepdims=True)
-        out = np.log(s)
+        s = xp.sum(exp_tmp, axis=axis, keepdims=True)
+        out = xp.log(s)
 
-    out = tmp - out
-    return out
+    return tmp - out
