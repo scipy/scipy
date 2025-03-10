@@ -33,14 +33,14 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
 @cython.nonecheck(False)
 def evaluate_ndbspline(const double[:, ::1] xi,
                        const double[:, ::1] t,
-                       const npy_int32[::1] len_t,
-                       const npy_int32[::1] k,
-                       int[::1] nu,
+                       const npy_int64[::1] len_t,
+                       const npy_int64[::1] k,
+                       npy_int64[::1] nu,
                        bint extrapolate,
                        const double[::1] c1r,
                        npy_intp num_c_tr,
-                       const npy_intp[::1] strides_c1,
-                       const npy_intp[:, ::] indices_k1d,
+                       const npy_int64[::1] strides_c1,
+                       const npy_int64[:, ::] indices_k1d,
                        double[:, ::1] out,
                       ):
         """Evaluate an N-dim tensor product spline or its derivative.
@@ -226,10 +226,10 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.boundscheck(False)
 def _colloc_nd(const double[:, ::1] xvals,
                const double[:, ::1] _t,
-               const npy_int32[::1] len_t,
-               const npy_int32[::1] k,
-               const npy_intp[:, ::1] _indices_k1d,
-               const npy_intp[::1] _cstrides):
+               const npy_int64[::1] len_t,
+               const npy_int64[::1] k,
+               const npy_int64[:, ::1] _indices_k1d,
+               const npy_int64[::1] _cstrides):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
