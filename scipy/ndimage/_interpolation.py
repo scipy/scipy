@@ -33,6 +33,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
+from scipy._lib import array_api_extra as xpx
 
 from scipy import special
 from . import _ni_support
@@ -818,6 +819,9 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     complex_output = np.iscomplexobj(input)
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
+    if all(z == 1 for z in zoom):  # early exit for gh-20999
+        output = xpx.at(output)[...].set(input)
+        return output
     if complex_output:
         # import under different name to avoid confusion with zoom parameter
         from scipy.ndimage._interpolation import zoom as _zoom
