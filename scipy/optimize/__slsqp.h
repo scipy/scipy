@@ -56,6 +56,7 @@ void dlartgp_(double* f, double* g, double* cs, double* sn, double* r);
 double dnrm2_(int* n, double* x, int* incx);
 void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
 void dormr2_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
+void dscal_(int* n, double* da, double* dx, int* incx);
 void dtpmv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
 void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, int* incx);
 void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
@@ -90,7 +91,7 @@ struct SLSQP_static_vars {
     int n;
 };
 
-void __slsqp_body(struct SLSQP_static_vars S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
+void __slsqp_body(struct SLSQP_static_vars* S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 
 // Some helper x macros to pack and unpack the SLSQP_static_vars struct and
 // the Python dictionary.
@@ -836,16 +837,27 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     double* buffer_data = (double*)PyArray_DATA(ap_buffer);
     int* indices_data = (int*)PyArray_DATA(ap_indices);
 
-    __slsqp_body(Vars, &funx, gradx_data, C_data, d_data, sol_data, mult_data, xl_data, xu_data, buffer_data, indices_data);
+    __slsqp_body(&Vars, &funx, gradx_data, C_data, d_data, sol_data, mult_data, xl_data, xu_data, buffer_data, indices_data);
 
+    PyObject* val = NULL;
     // Map struct variables back to dictionary.
     #define X(name) \
-        if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
+        val = PyFloat_FromDouble(Vars.name); \
+        if ((!val) || (PyDict_SetItemString(input_dict, #name, val) < 0)) { \
+            Py_XDECREF(val); \
+            PYERR(slsqp_error, "Setting " #name " failed."); \
+        } \
+        Py_DECREF(val);
     STRUCT_DOUBLE_FIELD_NAMES
     #undef X
 
     #define X(name) \
-        if (PyDict_SetItemString(input_dict, #name, name##_obj)) { PYERR(slsqp_error, "Setting " #name " failed."); }
+        val = PyLong_FromLong((long)Vars.name); \
+        if ((!val) || (PyDict_SetItemString(input_dict, #name, val) < 0)) { \
+            Py_XDECREF(val); \
+            PYERR(slsqp_error, "Setting " #name " failed."); \
+        } \
+        Py_DECREF(val);
     STRUCT_INT_FIELD_NAMES
     #undef X
 
