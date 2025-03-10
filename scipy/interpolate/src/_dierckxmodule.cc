@@ -838,9 +838,6 @@ py_evaluate_ndbspline(PyObject *self, PyObject *args)
 
     // sanity checks
     int64_t ndim = PyArray_DIM(a_t, 0);
-//    int64_t *kdata = static_cast<int64_t *>(PyArray_DATA(a_k));
-//    int64_t max_k = *std::max_element(kdata, kdata + ndim);
-
     if (PyArray_DIM(a_xi, 1) != ndim) {
         std::string msg = ("Expected data points in " + std::to_string(ndim) + "-D"
                            " space, got " + std::to_string(PyArray_DIM(a_xi, 1)) +
