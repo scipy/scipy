@@ -59,7 +59,6 @@ py3.extension_module('_special_ufuncs',
   cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_gufuncs',
@@ -70,7 +69,6 @@ py3.extension_module('_gufuncs',
   cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_specfun',
@@ -133,7 +131,6 @@ py3.extension_module('_ufuncs',
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
@@ -171,7 +168,6 @@ py3.extension_module('_ufuncs_cxx',
   dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_ellip_harm_2',
@@ -183,7 +179,6 @@ py3.extension_module('_ellip_harm_2',
   dependencies: [lapack_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('cython_special',
@@ -202,7 +197,6 @@ py3.extension_module('cython_special',
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_comb',
