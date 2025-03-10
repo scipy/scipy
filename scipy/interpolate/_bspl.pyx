@@ -312,6 +312,9 @@ def _colloc_nd(const double[:, ::1] xvals,
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
 
+    #print("CY: ", csr_data.shape, size, volume, np.asarray(k))
+
+
     # ### Iterate over the data points ###
     for j in range(size):
         # For each point, iterate over the dimensions

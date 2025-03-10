@@ -100,6 +100,8 @@ typedef Array2D<double, BOUNDS_CHECK> RealArray2D;
 typedef Array1D<double, BOUNDS_CHECK> RealArray1D;
 typedef Array1D<const double, BOUNDS_CHECK> ConstRealArray1D;
 typedef Array2D<const double, BOUNDS_CHECK> ConstRealArray2D;
+
+typedef Array1D<int64_t, BOUNDS_CHECK> IndexArray1D;
 typedef Array1D<const int64_t, BOUNDS_CHECK> ConstIndexArray1D;
 typedef Array2D<const int64_t, BOUNDS_CHECK> ConstIndexArray2D;
 
@@ -247,11 +249,26 @@ _evaluate_ndbspline(/* inputs */
                     int i_extrap,
                     /* flattened coefficients */
                     const double *c1_ptr, int64_t num_c1,
-                    // pre-tabulated helpers for iterating over (k+1)**ndim subarrays
+                    /* pre-tabulated helpers for iterating over (k+1)**ndim subarrays */
                     const int64_t *strides_c1_ptr,                           // shape (ndim,)
                     const int64_t *indices_k1d_ptr,  int64_t num_k1d,        // shape (num_k1, ndim)
-                    // output
+                    /* output */
                     double *out_ptr, int64_t num_c_tr            // out, shape(npts, num_c_tr)
+);
+
+
+void
+_coloc_nd(/* inputs */
+          const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
+          const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
+          const int64_t *len_t_ptr,                          // len_t, shape (ndim,)
+          const int64_t *k_ptr,                              // k, shape (ndim,)
+          /* pre-tabulated helpers for iterating over (k+1)**ndim subarrays */
+          const int64_t *indices_k1d_ptr, int64_t num_k1d,   // shape (num_k1, ndim)
+          const int64_t *strides_c1_ptr,                     // shape (ndim,)
+          /* outputs */
+          int64_t *csr_indices_ptr, int64_t volume,          // shape (npts*volume,)
+          double *csr_data_ptr
 );
 
 

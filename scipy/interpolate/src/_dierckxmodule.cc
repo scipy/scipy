@@ -706,7 +706,6 @@ py_find_interval(PyObject *self, PyObject *args)
 
     PyObject *py_interval = PyLong_FromSsize_t(interval);
     return py_interval;
-
 }
 
 
@@ -880,8 +879,92 @@ py_evaluate_ndbspline(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, e.what());
         return NULL;
     }
+}
 
 
+/*
+def _colloc_nd(const double[:, ::1] xvals,
+               const double[:, ::1] _t,
+               const npy_int64[::1] len_t,
+               const npy_int64[::1] k,
+               const npy_int64[:, ::1] _indices_k1d,
+               const npy_int64[::1] _cstrides):
+*/
+static PyObject*
+py_coloc_nd(PyObject *self, PyObject *args)
+{
+    PyObject *py_xi, *py_t, *py_len_t, *py_k, *py_indices_k1d, *py_strides;
+
+    if(!PyArg_ParseTuple(args, "OOOOOO",
+                         &py_xi, &py_t, &py_len_t, &py_k,
+                         &py_indices_k1d, &py_strides)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_xi, 2, NPY_DOUBLE) &&
+          check_array(py_t, 2, NPY_DOUBLE) &&
+          check_array(py_len_t, 1, NPY_INT64) &&
+          check_array(py_k, 1, NPY_INT64) &&
+          check_array(py_indices_k1d, 2, NPY_INT64) &&
+          check_array(py_strides, 1, NPY_INT64))) {
+        return NULL;
+    }
+    PyArrayObject *a_xi = (PyArrayObject *)py_xi;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_len_t = (PyArrayObject *)py_len_t;
+    PyArrayObject *a_k = (PyArrayObject *)py_k;
+    PyArrayObject *a_indices_k1d = (PyArrayObject *)py_indices_k1d;
+    PyArrayObject *a_strides = (PyArrayObject *)py_strides;
+
+    /* allocate the outputs */
+    npy_intp npts = PyArray_DIM(a_xi, 0);
+    npy_intp ndim = PyArray_DIM(a_xi, 1);
+
+    // the number of non-zero b-splines at each data point
+    npy_intp volume = 1;
+    int64_t *k_data = static_cast<int64_t *>(PyArray_DATA(a_k));
+    for (int d=0; d < ndim; d++) {
+        volume *= k_data[d] + 1;
+    }
+
+    // Allocate the colocation matrix in the CSR format.
+    npy_intp dims[1] = {npts*volume};
+    PyObject *py_csr_data = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    PyObject *py_csr_indices = PyArray_SimpleNew(1, dims, NPY_INT64);
+    PyObject *py_csr_indptr = PyArray_Arange(0, volume*npts + 1, volume, NPY_INT64);
+
+    if ((py_csr_data == NULL) || (py_csr_indices == NULL) || (py_csr_indptr == NULL)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyArrayObject *a_csr_data = (PyArrayObject *)py_csr_data;
+    PyArrayObject *a_csr_indices = (PyArrayObject *)py_csr_indices;
+
+    // heavy lifting happens here
+    try {
+        fitpack::_coloc_nd(
+            /* inputs */
+            static_cast<const double *>(PyArray_DATA(a_xi)), npts, ndim,
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 1),
+            static_cast<const int64_t *>(PyArray_DATA(a_len_t)),
+            static_cast<const int64_t *>(PyArray_DATA(a_k)),
+            /* tabulated helpers */
+            static_cast<const int64_t *>(PyArray_DATA(a_indices_k1d)), PyArray_DIM(a_indices_k1d, 0),
+            static_cast<const int64_t *>(PyArray_DATA(a_strides)),
+            /* outputs */
+            static_cast<int64_t *>(PyArray_DATA(a_csr_indices)), volume,
+            static_cast<double *>(PyArray_DATA(a_csr_data))
+        );
+        return Py_BuildValue("(NNN)", PyArray_Return(a_csr_data),
+                                      PyArray_Return(a_csr_indices),
+                                      py_csr_indptr
+        );
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
 }
 
 
@@ -909,6 +992,8 @@ static PyMethodDef DierckxMethods[] = {
      doc_find_interval},
     {"evaluate_ndbspline", py_evaluate_ndbspline, METH_VARARGS,
      doc_evaluate_ndbspline},
+    {"_coloc_nd", py_coloc_nd, METH_VARARGS,
+     "..."},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

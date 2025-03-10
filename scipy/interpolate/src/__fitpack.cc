@@ -695,4 +695,105 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
 }
 
 
+void
+_coloc_nd(/* inputs */
+          const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
+          const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
+          const int64_t *len_t_ptr,                          // len_t, shape (ndim,)
+          const int64_t *k_ptr,                              // k, shape (ndim,)
+          /* pre-tabulated helpers for iterating over (k+1)**ndim subarrays */
+          const int64_t *indices_k1d_ptr, int64_t num_k1d,        // shape (num_k1, ndim)
+          const int64_t *strides_c1_ptr,                          // shape (ndim,)
+          /* outputs */
+          int64_t *csr_indices_ptr, int64_t volume,               // shape (npts*volume,)
+          double *csr_data_ptr
+)
+{
+    auto xi = ConstRealArray2D(xi_ptr, npts, ndim);
+    auto t = ConstRealArray2D(t_ptr, ndim, max_len_t);
+    auto len_t = ConstIndexArray1D(len_t_ptr, ndim);
+    auto k = ConstIndexArray1D(k_ptr, ndim);
+
+    auto strides_c1 = ConstIndexArray1D(strides_c1_ptr, ndim);
+    auto indices_k1d = ConstIndexArray2D(indices_k1d_ptr, num_k1d, ndim);
+
+    auto csr_indices = IndexArray1D(csr_indices_ptr, npts*volume);
+    auto csr_data = RealArray1D(csr_data_ptr, npts*volume);
+
+    // allocate work arrays (small, allocations unlikely to fail)
+    int64_t max_k = *std::max_element(k_ptr, k_ptr + ndim); 
+    std::vector<double> wrk(2*max_k + 2);
+    std::vector<int64_t> i(ndim);
+
+    std::vector<double> v_b(ndim * (max_k + 1));
+    auto b = RealArray2D(v_b.data(), ndim, max_k + 1);
+
+    // Iterate over the data points
+    for (int64_t j=0; j < npts; j++){
+
+        // For each point, iterate over the dimensions
+        bool out_of_bounds = false;
+        for(int d=0; d < ndim; d++) {
+            double xd = xi(j, d);
+            int64_t kd = k(d);
+
+            // knots in the dimension d
+            const double *td = t.data + max_len_t*d;
+
+            // get the location of x[d] in td
+            int64_t i_d = _find_interval(td, len_t(d), kd, xd, kd, 1);
+
+            if (i_d < 0) {
+                out_of_bounds = true;
+                break;
+            }
+
+            // compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(td, xd, kd, i_d, 0, wrk.data());
+
+            for (int s=0; s < kd + 1; s++) {
+                b(d, s) = wrk[s];
+            }
+            i[d] = i_d;
+        } // for (d=...
+
+        if (out_of_bounds) {
+            std::string mesg = ("Data point " + std::to_string(j) + "is out of bounds");
+            throw std::out_of_range(mesg);
+        }
+
+        // Iterate over the products of non-zero b-splines and place them
+        // into the current row of the design matrix
+        for (int64_t iflat=0; iflat < volume; iflat++) {
+            // The `idx_cflat` computation is an unrolled version of
+            // idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
+            //
+            // `_indiced_k1d` array is pre-tabulated such that `idx_d` is a d-th component
+            // of `idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))`
+            int64_t idx_cflat = 0;
+            double factor = 1.0;
+            for (int d=0; d < ndim; d++) {
+                int64_t idx_d = indices_k1d(iflat, d);
+                factor *= b(d, idx_d);
+                int64_t idx = idx_d + i[d] - k(d);
+                idx_cflat += idx * strides_c1(d);
+            }
+
+
+            /* 
+             *  Fill the row of the colocation matrix in the CSR format.
+             * If it were dense, it would have been just
+             * >>> matr[j, idx_cflat] = factor
+             *
+             * Each row of the full matrix has `volume` non-zero elements.
+             * Thus the CSR format `indptr` increases in steps of `volume`
+             */
+            csr_indices(j*volume + iflat) = idx_cflat;
+            csr_data(j*volume + iflat) = factor;
+        }  // for (iflat=...
+    } // for( j=...
+}
+
+
+
 } // namespace fitpack

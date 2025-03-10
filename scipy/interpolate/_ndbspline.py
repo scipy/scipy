@@ -253,7 +253,7 @@ class NdBSpline:
         # The strides of the coeffs array: the computation is equivalent to
         # >>> cstrides = [s // 8 for s in np.empty(c_shape).strides]
         cs = c_shape[1:] + (1,)
-        cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
+        cstrides = np.cumprod(cs[::-1], dtype=np.int64)[::-1].copy()
 
         # heavy lifting happens here
         data, indices, indptr = _bspl._colloc_nd(xvals,
@@ -262,6 +262,15 @@ class NdBSpline:
                                                 k,
                                                 _indices_k1d,
                                                 cstrides)
+
+        data2, indices2, indptr2 = _dierckx._coloc_nd(xvals,
+                _t, len_t, k, _indices_k1d, cstrides)
+
+        from numpy.testing import assert_equal, assert_allclose
+        assert_equal(indices, indices2)
+        assert_equal(indptr, indptr2)
+        assert_allclose(data, data2, atol=1e-15)
+
         return csr_array((data, indices, indptr))
 
 
