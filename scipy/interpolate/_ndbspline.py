@@ -5,8 +5,7 @@ import numpy as np
 
 from math import prod
 
-from . import _bspl   # type: ignore[attr-defined]
-from . import _dierckx
+from . import _dierckx  # type: ignore[attr-defined]
 
 import scipy.sparse.linalg as ssl
 from scipy.sparse import csr_array
@@ -177,22 +176,7 @@ class NdBSpline:
                                   for s in c1.strides], dtype=np.int64)
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
-        out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
-
-        _bspl.evaluate_ndbspline(xi,
-                                 self._t,
-                                 self._len_t,
-                                 self._k,
-                                 nu,
-                                 extrapolate,
-                                 c1r,
-                                 num_c_tr,
-                                 _strides_c1,
-                                 self._indices_k1d,
-                                 out,)
-        out = out.view(self.c.dtype)
-
-        out2 = _dierckx.evaluate_ndbspline(xi,
+        out = _dierckx.evaluate_ndbspline(xi,
                                  self._t,
                                  self._len_t,
                                  self._k,
@@ -203,12 +187,8 @@ class NdBSpline:
                                  _strides_c1,
                                  self._indices_k1d,
         )
-        out2 = out2.view(self.c.dtype)
-
-        from numpy.testing import assert_allclose
-        assert_allclose(out, out2, atol=1e-15)
-
-        return out2.reshape(xi_shape[:-1] + self.c.shape[ndim:])
+        out = out.view(self.c.dtype)
+        return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
 
     @classmethod
     def design_matrix(cls, xvals, t, k, extrapolate=True):
@@ -256,20 +236,8 @@ class NdBSpline:
         cstrides = np.cumprod(cs[::-1], dtype=np.int64)[::-1].copy()
 
         # heavy lifting happens here
-        data, indices, indptr = _bspl._colloc_nd(xvals,
-                                                _t,
-                                                len_t,
-                                                k,
-                                                _indices_k1d,
-                                                cstrides)
-
-        data2, indices2, indptr2 = _dierckx._coloc_nd(xvals,
+        data, indices, indptr = _dierckx._coloc_nd(xvals,
                 _t, len_t, k, _indices_k1d, cstrides)
-
-        from numpy.testing import assert_equal, assert_allclose
-        assert_equal(indices, indices2)
-        assert_equal(indptr, indptr2)
-        assert_allclose(data, data2, atol=1e-15)
 
         return csr_array((data, indices, indptr))
 

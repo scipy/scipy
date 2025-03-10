@@ -882,6 +882,49 @@ py_evaluate_ndbspline(PyObject *self, PyObject *args)
 }
 
 
+static char doc_coloc_nd[] =
+    "Construct the N-D tensor product collocation matrix as a CSR array.\n"
+    "\n"
+    "In the dense representation, each row of the collocation matrix corresponds\n"
+    "to a data point and contains non-zero b-spline basis functions which are\n"
+    "non-zero at this data point.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "xvals : ndarray, shape(size, ndim)\n"
+    "    Data points. ``xvals[j, :]`` gives the ``j``-th data point as an\n"
+    "    ``ndim``-dimensional array.\n"
+    "t : tuple of 1D arrays, length-ndim\n"
+    "    Tuple of knot vectors\n"
+    "k : ndarray, shape (ndim,)\n"
+    "    Spline degrees\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "csr_data, csr_indices, csr_indptr\n"
+    "    The collocation matrix in the CSR array format.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor\n"
+    "product spline, i.e. a linear combination of\n"
+    "\n"
+    "   B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)\n"
+    "\n"
+    "Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector\n"
+    "``t`` evaluated at ``x``.\n"
+    "\n"
+    "Since ``B`` functions are localized, for each point `(x1, ..., xN)` we\n"
+    "loop over the dimensions, and\n"
+    "- find the location in the knot array, `t[i] <= x < t[i+1]`,\n"
+    "- compute all non-zero `B` values\n"
+    "- place these values into the relevant row\n"
+    "\n"
+    "In the dense representation, the collocation matrix would have had a row per\n"
+    "data point, and each row has the values of the basis elements (i.e., tensor\n"
+    "products of B-splines) evaluated at this data point. Since the matrix is very\n"
+    "sparse (has size = len(x)**ndim, with only (k+1)**ndim non-zero elements per\n"
+    "row), we construct it in the CSR format.\n";
 /*
 def _colloc_nd(const double[:, ::1] xvals,
                const double[:, ::1] _t,
@@ -971,7 +1014,7 @@ py_coloc_nd(PyObject *self, PyObject *args)
 /////////////////////////////////////
 
 static PyMethodDef DierckxMethods[] = {
-    //...
+    /* FITPACK replacement helpers*/
     {"fpknot", py_fpknot, METH_VARARGS, 
      "fpknot replacement"},
     {"fpback", py_fpback, METH_VARARGS,
@@ -980,20 +1023,23 @@ static PyMethodDef DierckxMethods[] = {
      "row-by-row QR triangularization"},
     {"data_matrix", py_data_matrix, METH_VARARGS,
      "(m, k+1) array of non-zero b-splines"},
+    /* BSpline helpers */
+    {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
+     doc_evaluate_spline},
+    {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS, 
+     doc_evaluate_all_bspl},
+    {"find_interval", py_find_interval, METH_VARARGS,
+     doc_find_interval},
+    /* make_{interp,lsq}_spline helpers*/
     {"_coloc", py_coloc, METH_VARARGS,
       doc_coloc},
     {"_norm_eq_lsq", py_norm_eq_lsq, METH_VARARGS,
      doc_norm_eq_lsq},
-    {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
-     doc_evaluate_spline},
-    {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS,
-     doc_evaluate_all_bspl},
-    {"find_interval", py_find_interval, METH_VARARGS,
-     doc_find_interval},
+    /* NdBSpline helpers */
     {"evaluate_ndbspline", py_evaluate_ndbspline, METH_VARARGS,
      doc_evaluate_ndbspline},
     {"_coloc_nd", py_coloc_nd, METH_VARARGS,
-     "..."},
+     doc_coloc_nd},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
