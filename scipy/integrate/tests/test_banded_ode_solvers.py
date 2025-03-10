@@ -251,6 +251,7 @@ def banded_stiff_jac(t, y):
         [0,  0.04,           3e7*2*y[2],         0, 0]
     ])
 
+@pytest.mark.thread_unsafe
 def test_banded_lsoda():
     # expected solution is given by problem with full jacobian
     tfull, yfull = _solve_robertson_lsoda(use_jac=True, banded=False)
