@@ -3586,10 +3586,10 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    Return a random rotation matrix, drawn from the Haar distribution (the only
-    uniform distribution on SO(N)). The algorithm generates a Haar-distributed
-    orthogonal matrix in O(N) by using a related `ortho_group` and correcting
-    the determinant to +1.
+    The ``rvs`` method returns a random rotation matrix drawn from the Haar
+    distribution, the only uniform distribution on SO(N). The algorithm generates
+    a Haar-distributed orthogonal matrix in O(N) using the ``rvs`` method of
+    `ortho_group`, then adjusts the matrix to ensure that the determinant is +1.
 
     For a random rotation in three dimensions, see
     `scipy.spatial.transform.Rotation.random`.
