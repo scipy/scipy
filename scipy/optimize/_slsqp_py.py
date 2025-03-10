@@ -16,7 +16,6 @@ Functions
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
-# from scipy.optimize._slsqp import slsqp
 from scipy.optimize._slsqplib import slsqp
 from numpy import (array, linalg, finfo, sqrt, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
@@ -27,7 +26,6 @@ from ._constraints import old_bound_to_new, _arr_to_scalar
 from scipy._lib._array_api import array_namespace
 from scipy._lib import array_api_extra as xpx
 from numpy.typing import NDArray
-from typing import Dict
 
 __docformat__ = "restructuredtext en"
 
@@ -366,7 +364,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if bnderr.any():
             raise ValueError("SLSQP Error: lb > ub in bounds "
                              f"{', '.join(str(b) for b in bnderr)}.")
-        xl, xu = bnds[:, 0], bnds[:, 1]
+        xl, xu = bnds[:, 0].copy(), bnds[:, 1].copy()
 
         # Mark infinite bounds with nans; the Fortran code understands this
         infbnd = ~isfinite(bnds)
@@ -414,7 +412,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         "h4": 0.0,
         "t": 0.0,
         "t0": 0.0,
-        "tol": 0.0,
+        "tol": 10.0*acc,
         "exact": 0,
         "inconsistent": 0,
         "reset": 0,
@@ -432,14 +430,21 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print(f"{'NIT':>5} {'FC':>5} {'OBJFUN':>16} {'GNORM':>16}")
 
     # Internal buffer and int array
-    n1 = n + 1
-    mineq = max(m - meq, 0)
-    indices = np.zeros([max(m, n, 1)], dtype=np.int32)
-    buffer = np.zeros(
-        max((3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq)
-            + 2*meq + n1 + ((n+1)*n)//2 + 2*m + 3*n + 3*n1 + 1, 1),
-        dtype=np.float64
+    indices = np.zeros([max(m + 2*n + 2, 1)], dtype=np.int32)
+
+    # The worst case workspace requirements for the buffer are:
+
+    # n*(n+1)//2 + m + 4*n + 3                                                  # SLSQP
+    # (n+1)*(n+2) + (n+1)*meq + meq + (mineq + 2*n + 2)*(n+1) + mineq + 3*n + 3 # LSQ
+    # mineq + 2n + 2 + 2*meq + (n+1) + (mineq + 3n + 3)*(n + 1 - meq)           # LSEI
+    # (mineq + 2n + 2 + 2)*(n + 2) + mineq + 2n + 2                             # LDP
+    # mineq + 2n + 2                                                            # NNLS
+
+    # If we sum all up and simplify by the help of sympy we get the following
+    buffer_size = (
+        n*(n+1)//2 + 3*m*n - (m + 5*n + 7)*meq + 9*m + 8*n*n + 35*n + meq*meq + 28
     )
+    buffer = np.zeros(max(buffer_size, 1), dtype=np.float64)
 
     # mode is zero on entry, so call objective, constraints and gradients
     # there should be no func evaluations here because it's cached from
@@ -495,13 +500,13 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Gradient evaluations:", sf.ngev)
 
     return OptimizeResult(
-        x=x, fun=fx, jac=g[:-1], nit=Vars['iter'], nfev=sf.nfev, njev=sf.ngev,
+        x=x, fun=fx, jac=g, nit=Vars['iter'], nfev=sf.nfev, njev=sf.ngev,
         status=Vars['mode'], message=exit_modes[Vars['mode']],
-        success=(Vars['mode'] == 0), multipliers=mult
+        success=(Vars['mode'] == 0), multipliers=mult[:m]
     )
 
 
-def _eval_constraint(d: NDArray, x: NDArray, cons: Dict):
+def _eval_constraint(d: NDArray, x: NDArray, cons: dict):
     if (not cons['eq']) and (not cons['ineq']):
         return
 
@@ -519,7 +524,7 @@ def _eval_constraint(d: NDArray, x: NDArray, cons: Dict):
     return
 
 
-def _eval_con_normals(C: NDArray, x: NDArray, cons: Dict, m: int, meq: int):
+def _eval_con_normals(C: NDArray, x: NDArray, cons: dict, m: int, meq: int):
     if m == 0:
         return
 
