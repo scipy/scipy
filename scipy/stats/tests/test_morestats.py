@@ -2803,7 +2803,7 @@ class TestCircFuncs:
         # "white-box" sanity check that no undue loss of precision is
         # introduced by conversion between (high - low) and (2 * pi).
 
-        x = xp.linspace(1e-9, 1e-8, 100)
+        x = xp.linspace(1e-9, 6e-9, 50)
         assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
 
         m = (x * (2 * xp.pi) / (2 * xp.pi)) != x

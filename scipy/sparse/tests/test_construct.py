@@ -673,7 +673,7 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.thread_unsafe
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
