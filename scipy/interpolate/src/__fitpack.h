@@ -257,7 +257,7 @@ _evaluate_ndbspline(/* inputs */
 );
 
 
-void
+int
 _coloc_nd(/* inputs */
           const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
           const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)

@@ -986,7 +986,7 @@ py_coloc_nd(PyObject *self, PyObject *args)
 
     // heavy lifting happens here
     try {
-        fitpack::_coloc_nd(
+        int status = fitpack::_coloc_nd(
             /* inputs */
             static_cast<const double *>(PyArray_DATA(a_xi)), npts, ndim,
             static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 1),
@@ -999,6 +999,11 @@ py_coloc_nd(PyObject *self, PyObject *args)
             static_cast<int64_t *>(PyArray_DATA(a_csr_indices)), volume,
             static_cast<double *>(PyArray_DATA(a_csr_data))
         );
+        if (status < 0) {
+            std::string mesg = ("Data point " + std::to_string(-status) + " is out of bounds");
+            PyErr_SetString(PyExc_ValueError, mesg.c_str());
+        }
+
         return Py_BuildValue("(NNN)", PyArray_Return(a_csr_data),
                                       PyArray_Return(a_csr_indices),
                                       py_csr_indptr

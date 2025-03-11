@@ -217,7 +217,6 @@ data_matrix( /* inputs */
     triangularized matrix.
 
     This routine MODIFIES `a` & `y` in-place.
-
  */
 void
 qr_reduce(double *aptr, const int64_t m, const int64_t nz, // a(m, nz), packed
@@ -428,7 +427,6 @@ fpknot(const double *x_ptr, int64_t m,
 }
 
 
-
 /*
  * Evaluate the spline function
 */
@@ -472,7 +470,6 @@ _evaluate_spline(
                     out(ip, jp) += c(interval + a -k, jp) * wrk[a];
                 }
             }
-
         }
     }
 }
@@ -516,6 +513,7 @@ _coloc_matrix(const double *xptr, int64_t m,       // x, shape(m,)
         }
     }
 }
+
 
 void
 norm_eq_lsq(const double *xptr, int64_t m,            // x, shape (m,)
@@ -689,13 +687,15 @@ _evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, sh
                 out(j, i_c) += c1(idx_cflat_base + i_c) * factor;
             }
         }
-
     } // for (j=...
-
 }
 
 
-void
+/*
+ * Return value is 0 on a normal return, and negative on error:
+ * if the data point `j` is problematic, return `-j`.
+ */
+int
 _coloc_nd(/* inputs */
           const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
           const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
@@ -758,8 +758,8 @@ _coloc_nd(/* inputs */
         } // for (d=...
 
         if (out_of_bounds) {
-            std::string mesg = ("Data point " + std::to_string(j) + "is out of bounds");
-            throw std::out_of_range(mesg);
+            // bail out
+            return -j;
         }
 
         // Iterate over the products of non-zero b-splines and place them
@@ -779,7 +779,6 @@ _coloc_nd(/* inputs */
                 idx_cflat += idx * strides_c1(d);
             }
 
-
             /* 
              *  Fill the row of the colocation matrix in the CSR format.
              * If it were dense, it would have been just
@@ -792,8 +791,9 @@ _coloc_nd(/* inputs */
             csr_data(j*volume + iflat) = factor;
         }  // for (iflat=...
     } // for( j=...
-}
 
+    return 0;
+}
 
 
 } // namespace fitpack
