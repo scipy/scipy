@@ -26,6 +26,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
     double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T, tmp_work;
     double pivot = 1.0, pivot2 = 0.0;
     *info = 1;
+    if (m <= 0 || n <= 0)
+    {
+        *info = 2;
+        return;
+    }
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
     for (i = 0; i < n; i++) { x[i] = 0.0; }
@@ -41,7 +46,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
             tmp = 0.0;
             for (k = indz; k < m; k++)
             {
-                tmp += a[k + j*m] * b[k];
+                tmp = tmp + a[k + j*m] * b[k];
             }
             w[j] = tmp;
         }
@@ -134,11 +139,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
             {
                 for (i = 0; i <= ip; i++)
                 {
-                    zz[i] -= a[i + jj*m] * zz[ip + 1];
+                    zz[i] = zz[i] - a[i + jj*m] * zz[ip + 1];
                 }
             }
             jj = indices[ip];
-            zz[ip] /= a[ip + jj*m];
+            zz[ip] = zz[ip] / a[ip + jj*m];
         }
 
         // ****** Inner loop ******
@@ -171,7 +176,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
             for (ip = 0; ip < indz; ip++)
             {
                 k = indices[ip];
-                x[k] += alpha*(zz[ip] - x[k]);
+                x[k] = x[k] + alpha*(zz[ip] - x[k]);
             }
 
             // Modify a, b, and the indicies to move coefficient i from set p
@@ -191,6 +196,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                         dlartgp_(&a[j-1 + ii*m], &a[j + ii*m], &cc, &ss, &a[j-1 + ii*m]);
                         a[j + ii*m] = 0.0;
                         // Apply the Givens rotation to all columns except ii.
+                        // Because the columns are not ordered we do it manually.
                         for (k = 0; k < n; k++)
                         {
                             if (k != ii)
