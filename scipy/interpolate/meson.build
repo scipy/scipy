@@ -87,10 +87,15 @@ fitpack_src = [
   'fitpack/pardtc.f'
 ]
 
-# TODO: Add flags for 64 bit ints
+if use_ilp64
+  _fflag_intsize = _fflag_ilp64
+else
+  _fflag_intsize = _fflag_lp64
+endif
+
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: [_fflag_Wno_maybe_uninitialized, _fflag_ilp64],
+  fortran_args: [_fflag_Wno_maybe_uninitialized, _fflag_intsize],
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -150,6 +155,9 @@ py3.extension_module('_dierckx',
     subdir: 'scipy/interpolate'
 )
 
+# Build _fitpack and dfitpack extensions: both are FITPACK wrappers.
+# XXX: some functions from dfitpack use the F_INT macro defined in dfitpack.pyf, while
+#      others rely on the build flags only. Consider cleaning this up at some point.
 
 _c_args_fitpack = []
 if use_ilp64
@@ -168,13 +176,20 @@ _fitpack = py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
+if use_ilp64
+   # generator only accepts strings, not files
+   f2c_map_file = f2py_ilp64_opts[1]
+   extra_arg = f2py_ilp64_opts[0] + '=' + fs.parent(f2c_map_file) / fs.name(f2c_map_file)
+  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf', extra_args: extra_arg)
+else
+  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf')
+endif
 
-# TODO: Add flags for 64 bit ints
 py3.extension_module('_dfitpack',
-  f2py_gen.process('src/dfitpack.pyf'),
-  c_args: [Wno_unused_variable],
+  _dfitpackmodule_obj,
+  c_args: [Wno_unused_variable] + _c_args_fitpack,
   link_args: version_link_args,
-  dependencies: [lapack_ilp64, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   link_with: [fitpack_lib],
   override_options: ['b_lto=false'],
   install: true,
