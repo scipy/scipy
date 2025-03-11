@@ -2456,6 +2456,7 @@ def test_powell_output():
 
 
 class TestRosen:
+    @make_skip_xp_backends("rosen")
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
         x = xp.asarray([1, 1, 1])

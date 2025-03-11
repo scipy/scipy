@@ -2,11 +2,13 @@ import pytest
 
 import scipy.constants as sc
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api import make_skip_xp_backends
 from numpy.testing import assert_allclose
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@make_skip_xp_backends("convert_temperature")
 class TestConvertTemperature:
     def test_convert_temperature(self, xp):
         xp_assert_equal(sc.convert_temperature(xp.asarray(32.), 'f', 'Celsius'),
@@ -63,6 +65,7 @@ class TestConvertTemperature:
             sc.convert_temperature(1, old_scale="kelvin", new_scale="brie")
 
 
+@make_skip_xp_backends("lambda2nu")
 class TestLambdaToNu:
     def test_lambda_to_nu(self, xp):
         xp_assert_equal(sc.lambda2nu(xp.asarray([sc.speed_of_light, 1])),
@@ -75,6 +78,7 @@ class TestLambdaToNu:
                         [1, sc.speed_of_light])
 
 
+@make_skip_xp_backends("nu2lambda")
 class TestNuToLambda:
     def test_nu_to_lambda(self, xp):
         xp_assert_equal(sc.nu2lambda(xp.asarray([sc.speed_of_light, 1])),
