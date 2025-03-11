@@ -349,20 +349,24 @@ some point).
 
 What we want is sparse arrays that act like ``numpy.ndarray``. Initial
 support for a new set of classes (``csr_array`` et al.) was added in SciPy
-``1.8.0`` and stabilized in ``1.12.0`` when construction functions for
-arrays were added. Support for 1-D array is expected in ``1.13.0``.
+``1.8.0`` and stabilized in ``1.12.0`` with construction functions for
+arrays, ``1.14.0`` with 1D array support and ``1.15.0`` with 1D indexing.
+The sparse array codebase now supports all sparse matrix features and in
+addition supports 1D arrays and the first steps toward nD arrays.
+There is a transition guide to help users and libraries convert their code
+to sparse arrays.
 
-Next steps toward sparse array support:
+Next steps toward sparse array conversion:
 
-- Extend sparse array API to 1-D arrays.
+- Extend sparse array API to nD arrays.
     - Support for COO, CSR and DOK formats.
-    - CSR 1D support for min-max, indexing, arithmetic.
+    - Some COO features exist in 1.15.
+- Introduce support for broadcasting in operations where sparse formats
+  can effectively do that.
 - Help other libraries convert to sparse arrays from sparse matrices.
-  Create transition guide and helpful scripts to flag code that needs
-  further examination. NetworkX, scikit-learn and scikit-image are in
+  NetworkX, dipy, scikit-image, pyamg, cvxpy and scikit-learn are in
   progress or have completed conversion to sparse arrays.
-- After sparse array code is mature (~1 release cycle?) add deprecation
-  warnings for sparse matrix.
+- Add deprecation warnings for sparse matrix.
 - Work with NumPy on deprecation/removal of ``numpy.matrix``.
 - Deprecate and then remove sparse matrix in favor of sparse array.
 - Start API shift of construction function names (``diags``, ``block``, etc.)

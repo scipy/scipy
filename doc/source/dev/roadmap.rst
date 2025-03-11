@@ -63,18 +63,25 @@ possible then.  Finally, resolving open AIX build issues would help users.
 Implement sparse arrays in addition to sparse matrices
 ------------------------------------------------------
 
-The sparse matrix formats are mostly feature-complete, however the main issue
+SciPy sparse matrices are being replaced by sparse arrays.
+The sparse matrix formats are mostly feature-complete, however their main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
 some point). What we want is sparse *arrays* that act like ``numpy.ndarray``
 (See discussion at `gh-18915 <https://github.com/scipy/scipy/issues/18915>`_).
-Sparse arrays have largely been implemented in ``scipy.sparse`` at this time.
-Some functionality is still being completed. The future plan is:
+Sparse arrays support all features of sparse matrices as of 1.15.
+In addition to 2D arrays, 1D sparse arrays are supported in DOK, COO, CSR formats.
+Further functionality e.g. nD array support and broadcasting for some operations
+is being developed.  The future plan is:
 
-- Provide a feature-complete sparse array API (including 1D-array).
-    - Extend sparse array API to 1D arrays:
-        - COO, CSR and DOK formats.
-        - The CSR 1D format uses 2D CSR code to do 1D things like
-          indexing/min-max/arithmetic.
+- Extend sparse array API to nD arrays:
+    - COO, CSR and DOK formats. COO format already partially in place.
+    - The nD formats use 2D CSR code to do nD things like
+      indexing/min-max/arithmetic.
+- Sparse array binary operations will support broadcasting in some settings.
+  Broadcasting is tricky for sparse arrays because it leans heavily on the strided
+  memory model of dense arrays, and so does not always fit sparse data formats.
+  Our optimistic goal is to support broadcasting for all operations where that
+  makes sense for sparse data structures. We start with binary operations like `A + B`.
 - Help other libraries convert to sparse arrays from sparse matrices.
   Create transition guide and helpful scripts to flag code that needs changing.
 - Deprecate and then remove "sparse matrix" in favor of "sparse array".
