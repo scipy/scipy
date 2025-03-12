@@ -3809,22 +3809,22 @@ def _make_distribution_rv_generic(dist):
 
 
 def _get_domain_info(info):
-    support_info = {"endpoints": info} if isinstance(info, tuple) else info
+    domain_info = {"endpoints": info} if isinstance(info, tuple) else info
     typical = info.pop("typical", None)
-    return support_info, typical
+    return domain_info, typical
 
 
 def _make_distribution_custom(dist):
     parameters = []
 
     for name, info in dist.parameters.items():
-        support_info, typical = _get_domain_info(info)
-        domain = _RealDomain(**support_info)
+        domain_info, typical = _get_domain_info(info)
+        domain = _RealDomain(**domain_info)
         param = _RealParameter(name, domain=domain, typical=typical)
         parameters.append(param)
 
-    support_info, _ = _get_domain_info(dist.support)
-    _x_support = _RealDomain(**support_info)
+    domain_info, _ = _get_domain_info(dist.support)
+    _x_support = _RealDomain(**domain_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
