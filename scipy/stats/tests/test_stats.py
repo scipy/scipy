@@ -75,7 +75,6 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 
-@make_skip_xp_backends("trimmed statistics")
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -2855,9 +2854,7 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
-@make_skip_xp_backends("zmap_zscore")
 class TestZmapZscore:
-
     @pytest.mark.parametrize(
         'x, y',
         [([1., 2., 3., 4.], [1., 2., 3., 4.]),
