@@ -621,10 +621,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     return a, mask
 
 
-@xp_capabilities("trimmed statistics", skip_backends=[
-    ('jax', "JAX doesn't allow item assignment."),
-    ("dask", "lazywhere doesn't work with dask"),
-])
+@xp_capabilities("trimmed statistics")
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
     result_to_tuple=lambda x: (x,)
@@ -2673,9 +2670,7 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-@xp_capabilities('zmap_zscore', skip_backends=[
-    ("dask", "lazywhere doesn't work for dask.array"),
-    ("jax", "JAX can't do item assignment")])
+@xp_capabilities('zmap_zscore')
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the z score.
@@ -2937,7 +2932,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     return z
 
 
-@xp_capabilities(skip_backends=[("dask", "lazywhere doesn't work for dask.array")])
+@xp_capabilities()
 def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
     r"""
     Calculate the geometric standard deviation of an array.
