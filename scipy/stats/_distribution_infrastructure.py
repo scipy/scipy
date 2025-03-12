@@ -3511,9 +3511,9 @@ def make_distribution(dist):
             in which case support for an old interface version may be deprecated
             and eventually removed.
         parameters : dict
-            A dictionary describing the parameters of the distribution.
             Each key is the name of a parameter,
-            and the corresponding value is itself a dictionary with the following items.
+            and the corresponding value is either a dictionary or tuple.
+            If a dictionary, it may have the following items.
 
             endpoints : tuple
                 A tuple defining the lower and upper endpoints of the domain of the
@@ -3526,10 +3526,14 @@ def make_distribution(dist):
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-        support : dict
-            A dictionary describing the support of the distribution. It has items
-            "endpoints" and "inclusive" with the same structure as the matching
-            items in the values of the parameters dict described above.
+            Missing keys in inner dictionaries will receive default values,
+            ``endpoints=(-inf, inf)`` and ``inclusive=(False, False)``.
+            A ``tuple`` value ``(a, b)`` is equivalent to ``{endpoints: (a, b)}``.
+
+        support : dict or tuple
+            A dictionary describing the support of the distribution or a tuple
+            describing the endpoints of the support. This behaves identically to
+            the values of the parameters dict described above.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3743,19 +3747,21 @@ def _make_distribution_rv_generic(dist):
     return CustomDistribution
 
 
+def _get_domain_info(info):
+    return {"endpoints": info} if isinstance(info, tuple) else info
+
+
 def _make_distribution_custom(dist):
     parameters = []
 
     for name, info in dist.parameters.items():
-        domain = _RealDomain(endpoints=info['endpoints'],
-                             inclusive=info['inclusive'])
+        info = _get_domain_info(info)
+        domain = _RealDomain(**info)
         param = _RealParameter(name, domain=domain)
         parameters.append(param)
 
-    endpoints = dist.support["endpoints"]
-    inclusive = dist.support.get("inclusive", (True, True))
-
-    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+    support_info = _get_domain_info(dist.support)
+    _x_support = _RealDomain(**support_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
