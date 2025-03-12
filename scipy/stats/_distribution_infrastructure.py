@@ -3513,27 +3513,26 @@ def make_distribution(dist):
         parameters : dict
             Each key is the name of a parameter,
             and the corresponding value is either a dictionary or tuple.
-            If a dictionary, it may have the following items.
+            If a dictionary, it may have the following items, with default
+            values used for entries which aren't present.
 
-            endpoints : tuple
+            endpoints : tuple, default: (-inf, inf)
                 A tuple defining the lower and upper endpoints of the domain of the
                 parameter; allowable values are floats, the name (string) of another
                 parameter, or a callable taking parameters as keyword only
                 arguments and returning the numerical value of an endpoint for
                 given parameter values.
 
-            inclusive : tuple of bool
+            inclusive : tuple of bool, default: (False, False)
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-            typical : tuple
+            typical : tuple, default: ``endpoints``
                 Defining endpoints of a typical range of values of a parameter. Can be
                 used for sampling parameter values for testing. Behaves like the
                 ``endpoints`` tuple above, and should define a subinterval of the
                 domain given by ``endpoints``.
 
-            Missing keys in inner dictionaries will receive default values,
-            ``endpoints=(-inf, inf)`` and ``inclusive=(False, False)``.
             A ``tuple`` value ``(a, b)`` is equivalent to ``{endpoints: (a, b)}``.
 
         support : dict or tuple
