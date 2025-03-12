@@ -40,7 +40,6 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._array_api import is_lazy_array, xp_ravel, xp_capabilities
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               normalize_axis_index, np_vecdot, AxisError)
@@ -83,6 +82,7 @@ from scipy._lib._array_api import (
     xp_sign,
     xp_vector_norm,
     xp_broadcast_promote,
+    xp_capabilities,
 )
 import scipy._lib.array_api_extra as xpx
 
