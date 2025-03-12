@@ -1,3 +1,4 @@
+import itertools as it
 import os
 import pickle
 from copy import deepcopy
@@ -85,6 +86,25 @@ class Test_RealDomain:
         right_comparison = '<=' if inclusive_b else '<'
         ref = eval(f'(a {left_comparison} x) & (x {right_comparison} b)')
         assert_equal(res, ref)
+
+    @pytest.mark.parametrize("inclusive", list(it.product([True, False], repeat=2)))
+    @pytest.mark.parametrize("a,b", [(0, 1), (3, 1)])
+    def test_contains_function_endpoints(self, inclusive, a, b):
+        # Test `contains` when endpoints are defined by functions.
+        endpoints = (lambda a, b: (a - b) / 2, lambda a, b: (a + b) / 2)
+        domain = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+        x = np.asarray([(a - 2*b)/2, (a - b)/2, a/2, (a + b)/2, (a + 2*b)/2])
+        res = domain.contains(x, dict(a=a, b=b))
+
+        numerical_endpoints = ((a - b) / 2, (a + b) / 2)
+        assert numerical_endpoints == domain.get_numerical_endpoints(dict(a=a, b=b))
+        alpha, beta = numerical_endpoints
+
+        left_comparison = '<=' if inclusive[0] else '<'
+        right_comparison = '<=' if inclusive[1] else '<'
+        ref = eval(f'(alpha {left_comparison} x) & (x {right_comparison} beta)')
+        assert_equal(res, ref)
+
 
     @pytest.mark.parametrize('case', [
         (-np.inf, np.pi, False, True, r"(-\infty, \pi]"),
