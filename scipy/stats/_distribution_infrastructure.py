@@ -3617,6 +3617,61 @@ def make_distribution(dist):
     >>> np.isclose(Y.cdf(2.), X.cdf(2.))
     np.True_
 
+    Create a custom distribution with variable support.
+
+    >>> class MyGenExtreme:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {"c": {}, "mu": {}, "sigma": (0, np.inf)}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         def left(*, c, mu, sigma):
+    ...             c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+    ...             result = np.empty_like(c)
+    ...             result[c >= 0] = -np.inf
+    ...             result[c < 0] = mu[c < 0] + sigma[c < 0] / c[c < 0]
+    ...             return result[()]
+    ...
+    ...         def right(*, c, mu, sigma):
+    ...             c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+    ...             result = np.empty_like(c)
+    ...             result[c <= 0] = np.inf
+    ...             result[c > 0] = mu[c > 0] + sigma[c > 0] / c[c > 0]
+    ...             return result[()]
+    ...
+    ...     def pdf(self, x, *, c, mu, sigma):
+    ...         x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+    ...         t = np.empty_like(x)
+    ...         mask = (c == 0)
+    ...         t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+    ...         t[~mask] = (
+    ...             1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+    ...         )**(1/c[~mask])
+    ...         return np.exp(-t)[()]
+    ...
+    ...     def cdf(self, x, *, c, mu, sigma):
+    ...         x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+    ...         t = np.empty_like(x)
+    ...         mask = (c == 0)
+    ...         t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+    ...         t[~mask] = (
+    ...             1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+    ...         )**(1/c[~mask])
+    ...         return np.exp(-t)[()]
+    >>>
+    >>> MyGenExtreme = stats.make_distribution(MyGenExtreme())
+    >>> Y = MyGenExtreme(c=1, mu=0, sigma=1)
+
+    >>> GenExtreme = stats.make_distribution(stats.genextreme)
+    >>> X = GenExtreme(c=1)
+    >>> np.isclose(Y.cdf(0.1), X.cdf(0.1))
+    np.True_
+
     """
     if dist in {stats.levy_stable, stats.vonmises}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
