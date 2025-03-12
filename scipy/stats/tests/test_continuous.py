@@ -100,9 +100,9 @@ class Test_RealDomain:
         assert numerical_endpoints == domain.get_numerical_endpoints(dict(a=a, b=b))
         alpha, beta = numerical_endpoints
 
-        left_comparison = '<=' if inclusive[0] else '<'
-        right_comparison = '<=' if inclusive[1] else '<'
-        ref = eval(f'(alpha {left_comparison} x) & (x {right_comparison} beta)')
+        above_left = alpha <= x if inclusive[0] else alpha < x
+        below_right = x <= beta if inclusive[1] else x < beta
+        ref = above_left & below_right
         assert_equal(res, ref)
 
 
