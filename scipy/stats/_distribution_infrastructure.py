@@ -3526,6 +3526,12 @@ def make_distribution(dist):
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
+            typical : tuple
+                Defining endpoints of a typical range of values of a parameter. Can be
+                used for sampling parameter values for testing. Behaves like the
+                ``endpoints`` tuple above, and should define a subinterval of the
+                domain given by ``endpoints``.
+
             Missing keys in inner dictionaries will receive default values,
             ``endpoints=(-inf, inf)`` and ``inclusive=(False, False)``.
             A ``tuple`` value ``(a, b)`` is equivalent to ``{endpoints: (a, b)}``.
@@ -3533,7 +3539,8 @@ def make_distribution(dist):
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
             describing the endpoints of the support. This behaves identically to
-            the values of the parameters dict described above.
+            the values of the parameters dict described above, except that the key
+            ``typical`` is ignored.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3748,19 +3755,21 @@ def _make_distribution_rv_generic(dist):
 
 
 def _get_domain_info(info):
-    return {"endpoints": info} if isinstance(info, tuple) else info
+    support_info = {"endpoints": info} if isinstance(info, tuple) else info
+    typical = info.pop("typical", None)
+    return support_info, typical
 
 
 def _make_distribution_custom(dist):
     parameters = []
 
     for name, info in dist.parameters.items():
-        info = _get_domain_info(info)
-        domain = _RealDomain(**info)
-        param = _RealParameter(name, domain=domain)
+        support_info, typical = _get_domain_info(info)
+        domain = _RealDomain(**support_info)
+        param = _RealParameter(name, domain=domain, typical=typical)
         parameters.append(param)
 
-    support_info = _get_domain_info(dist.support)
+    support_info, _ = _get_domain_info(dist.support)
     _x_support = _RealDomain(**support_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
