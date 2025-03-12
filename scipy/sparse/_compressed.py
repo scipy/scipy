@@ -677,9 +677,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if axis % 2 == 1:
                 ret = ret.T
 
-            if out is not None and out.shape != ret.shape:
-                raise ValueError('dimensions do not match')
-
             return ret.sum(axis=(), dtype=dtype, out=out)
         else:
             # _spbase handles the situations when axis is in {None, -2, -1, 0, 1}
