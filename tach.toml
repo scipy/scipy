@@ -28,7 +28,7 @@ depends_on = ["scipy._lib"]
 
 [[modules]]
 path = "scipy._lib"
-depends_on = ["scipy", "scipy.linalg"]
+depends_on = ["scipy"]
 
 [[modules]]
 path = "scipy._lib.cobyqa"
