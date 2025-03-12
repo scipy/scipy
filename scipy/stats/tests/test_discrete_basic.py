@@ -36,14 +36,18 @@ def cases_test_discrete_basic():
 
 
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
-def test_discrete_basic(distname, arg, first_case):
+def test_discrete_basic(distname, arg, first_case, num_parallel_threads):
+    if (isinstance(distname, str) and distname.startswith('nchypergeom')
+            and num_parallel_threads > 1):
+        pytest.skip(reason='nchypergeom has a global random generator')
+
     try:
         distfn = getattr(stats, distname)
     except TypeError:
         distfn = distname
         distname = 'sample distribution'
-    np.random.seed(9765456)
-    rvs = distfn.rvs(size=2000, *arg)
+    rng = np.random.RandomState(9765456)
+    rvs = distfn.rvs(*arg, size=2000, random_state=rng)
     supp = np.unique(rvs)
     m, v = distfn.stats(*arg)
     check_cdf_ppf(distfn, arg, supp, distname + ' cdf_ppf')
@@ -68,9 +72,10 @@ def test_discrete_basic(distname, arg, first_case):
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
             check_scale_docstring(distfn)
-        check_random_state_property(distfn, arg)
-        if distname not in {'poisson_binom'}:  # can't be pickled
-            check_pickling(distfn, arg)
+        if num_parallel_threads == 1:
+            check_random_state_property(distfn, arg)
+            if distname not in {'poisson_binom'}:  # can't be pickled
+                check_pickling(distfn, arg)
         check_freezing(distfn, arg)
 
         # Entropy
@@ -413,6 +418,7 @@ def test_integer_shapes(distname, shapename, shapes):
     assert not np.any(np.isnan(pmf[2, :]))
 
 
+@pytest.mark.parallel_threads(1)
 def test_frozen_attributes():
     # gh-14827 reported that all frozen distributions had both pmf and pdf
     # attributes; continuous should have pdf and discrete should have pmf.
@@ -564,11 +570,11 @@ def test_rv_sample():
 def test__pmf_float_input():
     # gh-21272
     # test that `rvs()` can be computed when `_pmf` requires float input
-    
+
     class rv_exponential(stats.rv_discrete):
         def _pmf(self, i):
             return (2/3)*3**(1 - i)
-    
+
     rv = rv_exponential(a=0.0, b=float('inf'))
     rvs = rv.rvs(random_state=42)  # should not crash due to integer input to `_pmf`
     assert_allclose(rvs, 0)
