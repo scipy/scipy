@@ -152,7 +152,6 @@ py3.extension_module('_slsqplib',
     '__nnls.h',
     '__nnls.c'
   ],
-  c_args: ['-Wall', '-Wextra'],
   dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
   install: true,
