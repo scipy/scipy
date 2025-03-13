@@ -95,7 +95,6 @@ _dop_int_dtype = _dop.types.intvar.dtype
 _vode_int_dtype = _vode.types.intvar.dtype
 _lsoda_int_dtype = _lsoda.types.intvar.dtype
 
-
 # lsoda, vode and zvode are not thread-safe. VODE_LOCK protects both vode and
 # zvode; they share the `def run` implementation
 LSODA_LOCK = threading.Lock()
