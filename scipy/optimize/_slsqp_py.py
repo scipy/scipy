@@ -17,7 +17,7 @@ __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
 from ._slsqplib import slsqp
-from scipy.linalg import lanorm
+from scipy.linalg import norm as lanorm
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
