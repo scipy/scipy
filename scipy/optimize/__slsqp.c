@@ -100,9 +100,9 @@ RESET_BFGS:
 ITER_START:
     // Main iteration: Search direction, steplength, LDL'-update
     // 130
-    S->iter++;
     S->mode = 9;
-    if (S->iter > S->itermax) { return; }
+    if (S->iter >= S->itermax) { return; }
+    S->iter++;
 
     // Search direction as solution of the QP-problem
     for (int i = 0; i < n; i++)
