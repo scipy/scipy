@@ -107,6 +107,7 @@ _arpack = py3.extension_module('_arpack',
   link_args: version_link_args,
   dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
   fortran_args: _fflag_ilp64,
+  c_args: ['-DHAVE_BLAS_ILP64'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'
