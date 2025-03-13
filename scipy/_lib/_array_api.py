@@ -9,9 +9,10 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 import os
 import dataclasses
 import functools
+import itertools
 import textwrap
 
-from collections.abc import Generator, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
@@ -600,140 +601,303 @@ def is_marray(xp):
 
 
 
-def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
-                       exceptions=None, reason=None):
-    skip_backends = [] if skip_backends is None else skip_backends
-    exceptions = [] if exceptions is None else exceptions
-
-    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
-
-    # Default capabilities
-    numpy = capabilities(cpu=True, gpu=False)
-    strict = capabilities(cpu=True, gpu=False)
-    cupy = capabilities(cpu=False, gpu=True)
-    torch = capabilities(cpu=True, gpu=True)
-    jax = capabilities(cpu=True, gpu=True)
-    dask = capabilities(cpu=True, gpu=True)
-
-    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
-                        torch=torch, jax=jax, dask=dask)
-
-    for backend, _ in skip_backends:  # ignoring the reason
-        setattr(capabilities[backend], 'cpu', False)
-        setattr(capabilities[backend], 'gpu', False)
-
-    other_backends = {'cupy', 'torch', 'jax', 'dask'}
-
-    if cpu_only:
-        for backend in other_backends - set(exceptions):
-            setattr(capabilities[backend], 'gpu', False)
-
-    if np_only:
-        for backend in other_backends:
-            setattr(capabilities[backend], 'cpu', False)
-            setattr(capabilities[backend], 'gpu', False)
-
-    return capabilities
+@dataclasses.dataclass
+class Capability:
+    display_name: str
+    # True if this backend support computation on SCIPY_DEVICE=cpu
+    cpu: bool | None
+    # True if this backend support computation on SCIPY_DEVICE=cuda
+    gpu: bool | None
+    # Reason why either cpu or gpu is not supported
+    reason: str | None = None
 
 
-def _make_capabilities_table(capabilities):
-    numpy = capabilities['numpy']
-    cupy = capabilities['cupy']
-    torch = capabilities['torch']
-    jax = capabilities['jax']
-    dask = capabilities['dask']
-
-    for backend in [numpy, cupy, torch, jax, dask]:
-        for attr in ['cpu', 'gpu']:
-            val = "✓" if getattr(backend, attr) else "✗"
-            val += " " * (len('{numpy.}') + len(attr) - 1)
-            setattr(backend, attr, val)
-
-    table = f"""                
-    +---------+-------------+-------------+
-    | Library | CPU         | GPU         |
-    +=========+=============+=============+
-    | NumPy   | {numpy.cpu} | n/a         |
-    +---------+-------------+-------------+
-    | CuPy    | n/a         | {cupy.gpu } |
-    +---------+-------------+-------------+
-    | PyTorch | {torch.cpu} | {torch.gpu} |
-    +---------+-------------+-------------+
-    | JAX     | {jax.cpu  } | {jax.gpu  } |
-    +---------+-------------+-------------+
-    | Dask    | {dask.cpu } | {dask.gpu } |
-    +---------+-------------+-------------+
-    """
-    return table
+@dataclasses.dataclass
+class JaxCapability(Capability):
+    # True if this function works when wrapped with jax.jit;
+    # False otherwise. Enforced by xpx.lazy_xp_function.
+    jit: bool = True
+    # Parameters for jax.jit applied by xpx.lazy_xp_function.
+    static_argnames: str | Sequence[str, ...] | None = None
+    static_argnums: int | Sequence[int, ...] | None = None
 
 
-def _make_capabilities_note(fun_name, capabilities):
-    table = _make_capabilities_table(capabilities)
-    note = f"""
-    `{fun_name}` has experimental support for Python Array API Standard compatible
-    backends in addition to NumPy. Please consider testing these features
-    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
-    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
-    combinations of backend and device (or other capability) are supported.
-    {table}
-    See :ref:`dev-arrayapi` for more information.
-    """
-    return textwrap.dedent(note)
+@dataclasses.dataclass
+class DaskCapability(Capability):
+    # Maximum number of internal calls to compute() performed
+    # internally. 0 means that the function is properly lazy;
+    # 1+ means that performance will be terrible unless the user
+    # calls persist() ahead of time.
+    # Enforced by xpx.lazy_xp_function.
+    allow_compute: int = 0
+
+    # If False, chunks will be squashed into a single one, which
+    # is likely to harm performance. This typically happens when
+    # the developer implementing Array API support is unsure on
+    # whether there are any reductions along axes (a function that
+    # performs reductions may return outputs that change depending
+    # on chunk size!)
+    chunked: bool = True
 
 
-def xp_capabilities(name=None, capabilities_table=None, **kwargs):
-    capabilities_table = (xp_capabilities_table if capabilities_table is None
-                          else capabilities_table)
+class Capabilities:
+    func: Callable | None = None
+    backends: dict[str, Capability]
+    # This is a raw list of args, kwargs for pytest.mark.skip|xfail_xp_backends
+    # to avoid importing pytest in production.
+    _pytest_marks: list[tuple[str, tuple[str, ...], dict[str, Any]]]
+
+    def __init__(self, *, skip_backends=(), xfail_backends=(),
+                 cpu_only=False, np_only=False,
+                 exceptions=(), reason=None, 
+                 jax_jit: bool = True,
+                 static_argnames=None, static_argnums=None,
+                 allow_dask_compute=0):
+
+        self.func = None  # Assigned later by self.apply_to
+
+        aliases = {"jax": "jax.numpy", "dask": "dask.array"}
+        skip_backends = [(aliases.get(name, name), reason)
+                         for name, reason in skip_backends]
+        xfail_backends = [(aliases.get(name, name), reason)
+                          for name, reason in xfail_backends]
+
+        self._pytest_marks = []
+        if cpu_only:
+            self._pytest_marks.append(("skip_xp_backends", (), {"cpu_only": True}))
+        if np_only:
+            self._pytest_marks.append(("skip_xp_backends", (), {"np_only": True}))
+        self._pytest_marks += [
+            ("skip_xp_backends", (name,), {"reason": reason})
+            for name, reason in skip_backends
+        ]
+        self._pytest_marks += [
+            ("xfail_xp_backends", (name,), {"reason": reason})
+            for name, reason in xfail_backends
+        ]
+
+        # Default capabilities
+        self.backends = {
+            "numpy": Capability("NumPy", cpu=True, gpu=None),
+            "array_api_strict": Capability("array-api-strict", cpu=True, gpu=False),
+            "cupy": Capability("CuPy", cpu=None, gpu=True),
+            "torch": Capability("Torch", cpu=True, gpu=True),
+            "jax.numpy": JaxCapability("JAX", cpu=True, gpu=True,
+                                       jit=jax_jit, static_argnames=static_argnames,
+                                       static_argnums=static_argnums),
+            # 'cpu' strictly means numpy meta-namespace here.
+            # Dask+CuPy is untested and unsupported by SciPy.
+            # PyTorch and JAX are unsupported upstream by Dask.
+            "dask.array": DaskCapability("Dask", cpu=True, gpu=None,
+                                         allow_compute=allow_dask_compute),
+        }
+
+        for name, cap in self.backends.items():
+            if np_only and name != "numpy" and name not in exceptions:
+                cap.cpu = False
+                cap.gpu = False
+                cap.reason = reason
+            elif cpu_only and name not in exceptions:
+                cap.gpu = False
+                cap.reason = reason
+
+        for name, reason in itertools.chain(skip_backends, xfail_backends):
+            cap = self.backends[name]
+            cap.cpu = False
+            cap.gpu = False
+            cap.reason = reason  # Overrides cpu_only and np_only
+
+        self.backends["numpy"].gpu = None
+        self.backends["cupy"].cpu = None
+        self.backends["dask.array"].gpu = None
+
+    @property
+    def numpy(self) -> Capability:
+        return self.backends["numpy"]
+
+    @property
+    def array_api_strict(self) -> Capability:
+        return self.backends["array_api_strict"]
+
+    @property
+    def cupy(self) -> Capability:
+        return self.backends["cupy"]
+
+    @property
+    def torch(self) -> Capability:
+        return self.backends["torch"]
+
+    @property
+    def jax(self) -> JaxCapability:
+        return self.backends["jax.numpy"]
+
+    @property
+    def dask(self) -> DaskCapability:
+        return self.backends["dask.array"]
+
+    def apply_to(self, func):
+        """Apply the capabilities to a function."""
+        # Make copy of self, replacing func
+        c = object.__new__(type(self))
+        c.func = func
+        c.backends = self.backends
+        c._pytest_marks = self._pytest_marks
+
+        func.capabilities = c
+        c._update_docstring()
+
+    def _as_rst_table(self):
+        """Generate a reStructuredText table of capabilities."""
+        def cap_str(cap, attr):
+            v = getattr(cap, attr)
+            if v is None:
+                return "n/a"
+            elif v:
+                warns = []
+                if isinstance(cap, JaxCapability) and not cap.jit:
+                    warns.append("no jit")
+                elif isinstance(cap, DaskCapability):
+                    if cap.allow_compute:
+                        warns.append("computes graph")
+                    if not cap.chunked:
+                        warns.append("squashes chunks")
+                return "⚠ " + ", ".join(warns) if warns else "✓"
+            else:
+                return "✗"
+
+        cells = [["Library", "CPU", "GPU"]]
+        for cap in self.backends.values():
+            if cap.display_name == "array-api-strict":
+                continue  # its only purpose is unit testing
+            cells.append(
+                [cap.display_name, cap_str(cap, 'cpu'), cap_str(cap, 'gpu')]
+            )
+        col_lens = [max(len(cell) for cell in col) for col in zip(*cells)]
+        fmt_row = "| " + " | ".join(f"{{:{l}s}}" for l in col_lens) + " |"
+        row_sep = "+" + "+".join('-' * (l + 2) for l in col_lens) + "+"
+
+        rows = [row_sep]
+        for row in cells:
+            rows += [fmt_row.format(*row), row_sep]
+        rows[2] = rows[2].replace('-', '=')  # Header separator
+
+        return "\n".join(rows)
+
+    def __repr__(self):
+        return self._as_rst_table()
+
+    def _update_docstring(self):
+        assert self.func
+        func_name = self.func.__name__
+        table = self._as_rst_table()
+
+        note = f"""
+        `{func_name}` has experimental support for Python Array API Standard
+        compatible backends in addition to NumPy. Please consider testing these
+        features by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+        CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+        combinations of backend and device (or other capability) are supported.
+
+        {textwrap.indent(table, ' ' * 8).lstrip()}
+
+        See :ref:`dev-arrayapi` for more information.
+        """
+        note = textwrap.dedent(note)
+
+        doc = FunctionDoc(self.func)
+        doc['Notes'].append(note)
+        self.func.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+    def _lazy_xp_function(self):
+        """Tag self.func with xpx.lazy_xp_function."""
+        from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+        assert self.func
+        lazy_xp_function(self.func, jax_jit=self.jax.jit,
+                         static_argnames=self.jax.static_argnames,
+                         static_argnums=self.jax.static_argnums,
+                         allow_dask_compute=self.dask.allow_compute)
+
+    def _make_pytest_marks(self):
+        import pytest
+
+        return [
+            getattr(pytest.mark, mark)(*args, **kwargs)
+            for mark, args, kwargs in self._pytest_marks
+        ]
+
+    def test_case(self, test_func):
+        """Return a pytest decorator and apply lazy_xp_function::
+
+            from scipy.mymod import func
+
+            @func.capabilities.skip_xp_backends
+            def test_func(..., xp):
+                ...
+
+        expands to::
+
+            from scipy.mymod import func
+            from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+            lazy_xp_function(func, ...)
+            
+            @pytest.mark.skip_xp_backends(...)
+            @pytest.mark.skip_xp_backends(...)
+            @pytest.mark.skip_xp_backends(...)
+            def test_func(xp):
+                ...
+        """
+        self._lazy_xp_function()
+        for mark in self._make_pytest_marks():
+            test_func = mark(test_func)
+        return test_func
+
+    def pytest_param(self):
+        """Return a pytest.mark.parametrize argument and apply lazy_xp_function::
+
+            from scipy.mymod import f1, f2
+
+            @pytest.mark.parametrize("func", [
+                f1.capabilities.pytest_param,
+                f2.capabilities.pytest_param,
+            ])
+            def test_func(func, xp):
+                ...
+
+        expands to::
+
+            from scipy.mymod import f1, f2
+            from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+            lazy_xp_function(f1, ...)
+            lazy_xp_function(f2, ...)
+
+            @pytest.mark.parametrize("func", [
+                pytest.param(f1, marks=[pytest.mark.skip_xp_backends(...), ...]),
+                pytest.param(f2, marks=[pytest.mark.skip_xp_backends(...), ...]),
+            ])            
+            def test_func(func, xp):
+                ...
+        """
+        import pytest
+
+        assert self.func
+        self._lazy_xp_function()
+        return pytest.param(self.func, marks=self._make_pytest_marks())
+
+
+def xp_capabilities(*, like=None, **kwargs):
+    if like and kwargs:
+        raise TypeError("like is mutually exclusive with other arguments")
+    capabilities = like.capabilities if like else Capabilities(**kwargs)
 
     def decorator(f):
-        fun_name = f.__name__
-        table_entry = name or fun_name
-        if table_entry not in capabilities_table:
-            capabilities_table[table_entry] = kwargs
-        capabilities = _make_capabilities(**capabilities_table[table_entry])
-
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        note = _make_capabilities_note(fun_name, capabilities)
-        doc = FunctionDoc(wrapper)
-        doc['Notes'].append(note)
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        capabilities.apply_to(wrapper)
 
         return wrapper
     return decorator
-
-
-def make_skip_xp_backends(fun_name, capabilities_table=None):
-    capabilities_table = (xp_capabilities_table if capabilities_table is None
-                          else capabilities_table)
-
-    import pytest
-
-    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
-    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
-    np_only = capabilities_table[fun_name].get('np_only', None)
-    exceptions = capabilities_table[fun_name].get('exceptions', None)
-    reason = capabilities_table[fun_name].get('reason', None)
-
-    decorators = []
-    if cpu_only:
-        kwargs = dict(cpu_only=True, exceptions=exceptions)
-        # if we pass `reason=None`, it doesn't work
-        kwargs |= {'reason': reason} if reason is not None else {}
-        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
-
-    if np_only:
-        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
-
-    for backend, reason in skip_backends:
-        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
-        backend = backends.get(backend, backend)
-        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
-
-    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
-
-
-# Is it OK to have a dictionary that is mutated (once upon import) in many places?
-xp_capabilities_table = {}  # type: ignore[var-annotated]
