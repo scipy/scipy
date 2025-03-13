@@ -3625,7 +3625,8 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def parameters(self):
-    ...         return {"a": (-np.inf, np.inf), "b": (-np.inf, np.inf)}
+    ...         return {"a": (-np.inf, np.inf), 
+    ...                 "b": {'endpoints':('a', np.inf), 'inclusive':(True, False)}}
     ...
     ...     @property
     ...     def support(self):
