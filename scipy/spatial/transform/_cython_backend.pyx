@@ -996,7 +996,6 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
     # other secondary vectors
     if n_inf > 1:
         raise ValueError("Only one infinite weight is allowed")
-
     elif n_inf == 1:
         if return_sensitivity:
             raise ValueError("Cannot return sensitivity matrix with an "
@@ -1016,7 +1015,7 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
         cross_norm = _norm3(cross)
         theta = atan2(cross_norm, _dot3(a_pri[0], b_pri[0]))
         tolerance = 1e-3  # tolerance for small angle approximation (rad)
-        q_flip = np.array([0.0, 0.0, 0.0, 1.0])
+        q_flip = np.array([[0.0, 0.0, 0.0, 1.0]])
         if (np.pi - theta) < tolerance:
             # Near pi radians, the Taylor series approximation of x/sin(x)
             # diverges, so for numerical stability we flip pi and then
@@ -1038,7 +1037,7 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
             r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
         else:
             r = cross * theta / np.sin(theta)
-        q_pri = _compose_quat(from_rotvec(r), q_flip)
+        q_pri = _compose_quat(from_rotvec(r[None, :]), q_flip)
 
         if N == 1:
             # No secondary vectors, so we are done
@@ -1073,7 +1072,7 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
                             * np.einsum('ij,ij->i', a_sec, a_pri)))
             phi = atan2(np.sum(weights_sec * sin_term),
                         np.sum(weights_sec * cos_term))
-            q_sec = from_rotvec(phi * a_pri[0])
+            q_sec = from_rotvec((phi * a_pri[0])[None, :])
 
             # Compose these to get the optimal rotation
             q_opt = _compose_quat(q_sec, q_pri)
@@ -1089,7 +1088,7 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
         a_est = apply(q_opt, b)
         rssd = np.sqrt(np.sum(weights_inf_zero @ (a - a_est)**2))
 
-        return q_opt, rssd, None
+        return q_opt[0, ...], rssd, None
 
     # If no infinite weights and multiple vectors, proceed with normal
     # algorithm

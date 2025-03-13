@@ -545,28 +545,27 @@ def align_vectors(
     # For the special case of a single vector pair, we use the infinite
     # weight code path
     weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    # DECISION: We cannot error out on multiple infinite weights. We return NaN instead.
     n_inf = xp.sum(xp.astype(weight_is_inf, atleast_f32(a)))
+    weights = xp.where(n_inf > 1, xp.asarray(xp.nan, device=device(a)), weights)
 
-    # Check for an infinite weight, which indicates that the corresponding
-    # vector pair is the primary unmoving reference to which we align the
-    # other secondary vectors
-    if n_inf > 1:
-        raise ValueError("Only one infinite weight is allowed")
-
-    elif n_inf == 1:
-        if return_sensitivity:
-            raise ValueError(
-                "Cannot return sensitivity matrix with an "
-                "infinite weight or one vector pair"
-            )
+    if n_inf == 1:
         a_pri = a[weight_is_inf]
         b_pri = b[weight_is_inf]
         a_pri_norm = xp.linalg.vector_norm(a_pri[..., 0, :], axis=-1)
         b_pri_norm = xp.linalg.vector_norm(b_pri[..., 0, :], axis=-1)
-        if a_pri_norm == 0 or b_pri_norm == 0:
-            raise ValueError("Cannot align zero length primary vectors")
-        a_pri /= a_pri_norm
-        b_pri /= b_pri_norm
+
+        # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
+        # zero and mark the result as invalid.
+        a_pri_norm = xp.where(
+            a_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), a_pri_norm
+        )
+        b_pri_norm = xp.where(
+            b_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), b_pri_norm
+        )
+
+        a_pri = a_pri / a_pri_norm
+        b_pri = b_pri / b_pri_norm
 
         # We first find the minimum angle rotation between the primary
         # vectors.
@@ -589,7 +588,7 @@ def align_vectors(
                 r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
             else:
                 r = cross  # Shortest angle orthogonal axis of rotation
-            q_flip = from_rotvec(r / np.linalg.norm(r) * np.pi)
+            q_flip = from_rotvec(r / xp.linalg.vecnorm(r) * np.pi)
             theta = np.pi - theta
             cross = -cross
         if abs(theta) < tolerance:
@@ -597,7 +596,7 @@ def align_vectors(
             theta2 = theta * theta
             r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
         else:
-            r = cross * theta / np.sin(theta)
+            r = cross * theta / xp.sin(theta)
         q_pri = compose_quat(from_rotvec(r), q_flip)
 
         if N == 1:
@@ -627,16 +626,17 @@ def align_vectors(
             # problem.
             # Note that einsum('ij,ij->i', X, Y) is the row-wise dot
             # product of X and Y.
-            sin_term = np.einsum("ij,ij->i", np.cross(c_sec, a_sec), a_pri)
-            cos_term = np.einsum("ij,ij->i", c_sec, a_sec) - (
-                np.einsum("ij,ij->i", c_sec, a_pri)
-                * np.einsum("ij,ij->i", a_sec, a_pri)
+            sin_term = xp.linalg.vecdot(xp.linalg.cross(c_sec, a_sec), a_pri)
+            cos_term = xp.linalg.vecdot(c_sec, a_sec) - (
+                xp.linalg.vecdot(c_sec, a_pri) * xp.linalg.vecdot(a_sec, a_pri)
             )
-            phi = atan2(np.sum(weights_sec * sin_term), np.sum(weights_sec * cos_term))
-            q_sec = from_rotvec(phi * a_pri[0])
+            phi = xp.atan2(
+                xp.sum(weights_sec * sin_term), xp.sum(weights_sec * cos_term)
+            )
+            q_sec = from_rotvec(phi * a_pri[0, ...])
 
             # Compose these to get the optimal rotation
-            q_opt = _compose_quat(q_sec, q_pri)
+            q_opt = compose_quat(q_sec, q_pri)
 
         # Calculated the root sum squared distance. We force the error to
         # be zero for the infinite weight vectors since they will align
@@ -645,13 +645,12 @@ def align_vectors(
         if N > 1 or weights[0] == xp.inf:
             # Skip non-infinite weight single vectors pairs, we used the
             # infinite weight code path but don't want to zero that weight
-            weights_inf_zero[weight_is_inf] = 0
+            weights_inf_zero = xpx.at(weights_inf_zero)[weight_is_inf].set(0)
         a_est = apply(q_opt, b)
         rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
 
-        q_opt = xp.where(
-            xp.isnan(weights), xp.asarray(xp.nan, device=device(q_opt)), q_opt
-        )
+        mask = xp.any(xp.isnan(weights), axis=-1)
+        q_opt = xp.where(mask, xp.asarray(xp.nan, device=device(q_opt)), q_opt)
         return q_opt, rssd, None
 
     # If no infinite weights and multiple vectors, proceed with normal

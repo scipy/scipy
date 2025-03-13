@@ -11,6 +11,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 import scipy.spatial.transform._cython_backend as cython_backend
 import scipy.spatial.transform._array_api_backend as array_api_backend
 from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike
+from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng
 
@@ -159,6 +160,11 @@ class Rotation:
         return rot
 
     def apply(self, points: Array, inverse: bool = False) -> Array:
+        points = array_namespace(self._quat).asarray(
+            points,
+            device=device(self._quat),
+            dtype=array_api_backend.atleast_f32(self._quat),
+        )
         result = self._backend.apply(self._quat, points, inverse=inverse)
         if self._single and points.ndim == 1:
             return result[0, ...]

@@ -1434,27 +1434,27 @@ def test_align_vectors_improper_rotation(xp):
 
 
 def test_align_vectors_rssd_sensitivity(xp):
-    rssd_expected = 0.141421356237308
+    rssd_expected = xp.asarray(0.141421356237308)
     sens_expected = xp.asarray([[0.2, 0.0, 0.0], [0.0, 1.5, 1.0], [0.0, 1.0, 1.0]])
     atol = 1e-6
     a = xp.asarray([[0, 1, 0], [0, 1, 1], [0, 1, 1]])
     b = xp.asarray([[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]])
     rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
-    assert np.isclose(rssd, rssd_expected, atol=atol)
-    assert np.allclose(sens, sens_expected, atol=atol)
+    assert xp.all(xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp))
+    assert_allclose(sens, sens_expected, atol=atol)
 
 
 def test_align_vectors_scaled_weights(xp):
     n = 10
     a = xp.asarray(Rotation.random(n, rng=0).apply([1, 0, 0]))
     b = xp.asarray(Rotation.random(n, rng=1).apply([1, 0, 0]))
-    scale = 2
+    scale = xp.asarray(2.0)
 
     est1, rssd1, cov1 = Rotation.align_vectors(a, b, xp.ones(n), True)
     est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * xp.ones(n), True)
 
     assert_allclose(est1.as_matrix(), est2.as_matrix())
-    assert_allclose(np.sqrt(scale) * rssd1, rssd2, atol=1e-6)
+    assert_allclose(xp.sqrt(scale) * rssd1, rssd2, atol=1e-6)
     assert_allclose(cov1, cov2)
 
 
@@ -1496,9 +1496,10 @@ def test_align_vectors_noise(xp):
 
 
 def test_align_vectors_invalid_input(xp):
-    with pytest.raises(ValueError, match="Expected input `a` to have shape"):
-        a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
-        Rotation.align_vectors(a, b)
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Expected input `a` to have shape"):
+            a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
+            Rotation.align_vectors(a, b)
 
     with pytest.raises(ValueError, match="Expected input `b` to have shape"):
         a, b = xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3, 4])
@@ -1515,14 +1516,13 @@ def test_align_vectors_invalid_input(xp):
         weights = xp.asarray([[1]])
         Rotation.align_vectors(a, b, weights)
 
+    a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
+    weights = xp.asarray([1, 2, 3])
     with pytest.raises(ValueError, match="Expected `weights` to have number of values"):
-        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
-        weights = xp.asarray([1, 2, 3])
         Rotation.align_vectors(a, b, weights)
 
     a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
     weights = xp.asarray([-1])
-    # DECISION: We cannot do value-based checking in non-branching code. Instead, we return NaNs.
     if is_numpy(xp):
         with pytest.raises(
             ValueError, match="`weights` may not contain negative values"
@@ -1533,22 +1533,49 @@ def test_align_vectors_invalid_input(xp):
         assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
         assert xp.isnan(rssd), "RSSD should be nan"
 
-    with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
-        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
-        weights = xp.asarray([np.inf, np.inf])
-        Rotation.align_vectors(a, b, weights)
+    a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
+    weights = xp.asarray([np.inf, np.inf])
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
+            Rotation.align_vectors(a, b, weights)
+    elif is_array_api_strict(xp):
+        with pytest.raises(ValueError, match="SVD did not converge"):
+            Rotation.align_vectors(a, b, weights)
+    elif is_torch(xp):
+        with pytest.raises(Exception, match="linalg.svd: "):
+            Rotation.align_vectors(a, b, weights)
+    else:
+        r, rssd = Rotation.align_vectors(a, b, weights)
+        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
+        assert xp.isnan(rssd), "RSSD should be nan"
 
-    with pytest.raises(ValueError, match="Cannot align zero length primary vectors"):
-        Rotation.align_vectors(xp.asarray([[0, 0, 0]]), xp.asarray([[1, 2, 3]]))
+    a, b = xp.asarray([[0, 0, 0]]), xp.asarray([[1, 2, 3]])
+    if is_numpy(xp):
+        with pytest.raises(
+            ValueError, match="Cannot align zero length primary vectors"
+        ):
+            Rotation.align_vectors(a, b)
+    else:
+        r, rssd = Rotation.align_vectors(a, b)
+        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
+        assert xp.isnan(rssd), "RSSD should be nan"
 
-    with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-        a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
-        weights = xp.asarray([np.inf, 1])
-        Rotation.align_vectors(a, b, weights, return_sensitivity=True)
+    a, b = (xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]]))
+    weights = xp.asarray([np.inf, 1])
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
+            Rotation.align_vectors(a, b, weights, return_sensitivity=True)
+    else:
+        r, rssd, sens = Rotation.align_vectors(a, b, weights, return_sensitivity=True)
+        assert sens is None, "Sensitivity matrix should be None"
 
-    with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-        a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
-        Rotation.align_vectors(a, b, return_sensitivity=True)
+    a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
+            Rotation.align_vectors(a, b, return_sensitivity=True)
+    else:
+        r, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
+        assert sens is None, "Sensitivity matrix should be None"
 
 
 def test_align_vectors_align_constrain(xp):
@@ -1563,25 +1590,25 @@ def test_align_vectors_align_constrain(xp):
     R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
     assert_allclose(R.apply(b), a, atol=atol)  # Pri and sec align exactly
-    assert xp.isclose(rssd, 0, atol=atol)
+    assert xpx.isclose(rssd, xp.asarray(0.0), atol=atol, xp=xp)
 
     # Do the same but with an inexact secondary rotation
     b = xp.asarray([[1, 0, 0], [1, 2, 0]])
-    rssd_expected = 1.0
+    rssd_expected = xp.asarray(1.0)
     R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
-    assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
-    assert xp.isclose(rssd, rssd_expected, atol=atol)
+    assert_allclose(R.apply(b)[0, ...], a[0, ...], atol=atol)  # Only pri aligns exactly
+    assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
     a_expected = xp.asarray([[0, 1, 0], [0, 1, 2]])
     assert_allclose(R.apply(b), a_expected, atol=atol)
 
     # Check random vectors
     b = xp.asarray([[1, 2, 3], [-2, 3, -1]])
     a = xp.asarray([[-1, 3, 2], [1, -1, 2]])
-    rssd_expected = 1.3101595297515016
+    rssd_expected = xp.asarray(1.3101595297515016)
     R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
-    assert_allclose(R.apply(b)[0], a[0], atol=atol)  # Only pri aligns exactly
-    assert xp.isclose(rssd, rssd_expected, atol=atol)
+    assert_allclose(R.apply(b)[0, ...], a[0, ...], atol=atol)  # Only pri aligns exactly
+    assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
 
 
 def test_align_vectors_near_inf():
