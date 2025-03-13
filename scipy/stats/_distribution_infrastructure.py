@@ -3646,7 +3646,7 @@ def make_distribution(dist):
     >>>
     >>> MyUniformCube = stats.make_distribution(MyUniformCube())
     >>> X = MyUniformCube(a=-2, b=2)
-    >>> Y = stats.Uniform(a=-2, b=-2)**3
+    >>> Y = stats.Uniform(a=-2, b=2)**3
     >>> X.support()
     (-8.0, 8.0)
     >>> np.isclose(X.cdf(2.1), Y.cdf(2.1))
