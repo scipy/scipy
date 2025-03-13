@@ -3511,25 +3511,35 @@ def make_distribution(dist):
             in which case support for an old interface version may be deprecated
             and eventually removed.
         parameters : dict
-            A dictionary describing the parameters of the distribution.
             Each key is the name of a parameter,
-            and the corresponding value is itself a dictionary with the following items.
+            and the corresponding value is either a dictionary or tuple.
+            If a dictionary, it may have the following items, with default
+            values used for entries which aren't present.
 
-            endpoints : tuple
+            endpoints : tuple, default: (-inf, inf)
                 A tuple defining the lower and upper endpoints of the domain of the
                 parameter; allowable values are floats, the name (string) of another
                 parameter, or a callable taking parameters as keyword only
                 arguments and returning the numerical value of an endpoint for
                 given parameter values.
 
-            inclusive : tuple of bool
+            inclusive : tuple of bool, default: (False, False)
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-        support : dict
-            A dictionary describing the support of the distribution. It has items
-            "endpoints" and "inclusive" with the same structure as the matching
-            items in the values of the parameters dict described above.
+            typical : tuple, default: ``endpoints``
+                Defining endpoints of a typical range of values of a parameter. Can be
+                used for sampling parameter values for testing. Behaves like the
+                ``endpoints`` tuple above, and should define a subinterval of the
+                domain given by ``endpoints``.
+
+            A ``tuple`` value ``(a, b)`` is equivalent to ``{endpoints: (a, b)}``.
+
+        support : dict or tuple
+            A dictionary describing the support of the distribution or a tuple
+            describing the endpoints of the support. This behaves identically to
+            the values of the parameters dict described above, except that the key
+            ``typical`` is ignored.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3604,6 +3614,41 @@ def make_distribution(dist):
     >>> MyLogUniform = stats.make_distribution(MyLogUniform())
     >>> Y = MyLogUniform(a=1.0, b=3.0)
     >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
+    Create a custom distribution with variable support.
+
+    >>> class MyUniformCube:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {"a": (-np.inf, np.inf), 
+    ...                 "b": {'endpoints':('a', np.inf), 'inclusive':(True, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         def left(*, a, b):
+    ...             return a**3
+    ...
+    ...         def right(*, a, b):
+    ...             return b**3
+    ...         return (left, right)
+    ...
+    ...     def pdf(self, x, *, a, b):
+    ...         return 1 / (3*(b - a)*np.cbrt(x)**2)
+    ...
+    ...     def cdf(self, x, *, a, b):
+    ...         return (np.cbrt(x) - a) / (b - a)
+    >>>
+    >>> MyUniformCube = stats.make_distribution(MyUniformCube())
+    >>> X = MyUniformCube(a=-2, b=2)
+    >>> Y = stats.Uniform(a=-2, b=2)**3
+    >>> X.support()
+    (-8.0, 8.0)
+    >>> np.isclose(X.cdf(2.1), Y.cdf(2.1))
     np.True_
 
     """
@@ -3743,19 +3788,23 @@ def _make_distribution_rv_generic(dist):
     return CustomDistribution
 
 
+def _get_domain_info(info):
+    domain_info = {"endpoints": info} if isinstance(info, tuple) else info
+    typical = domain_info.pop("typical", None)
+    return domain_info, typical
+
+
 def _make_distribution_custom(dist):
     parameters = []
 
     for name, info in dist.parameters.items():
-        domain = _RealDomain(endpoints=info['endpoints'],
-                             inclusive=info['inclusive'])
-        param = _RealParameter(name, domain=domain)
+        domain_info, typical = _get_domain_info(info)
+        domain = _RealDomain(**domain_info)
+        param = _RealParameter(name, domain=domain, typical=typical)
         parameters.append(param)
 
-    endpoints = dist.support["endpoints"]
-    inclusive = dist.support.get("inclusive", (True, True))
-
-    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+    domain_info, _ = _get_domain_info(dist.support)
+    _x_support = _RealDomain(**domain_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
