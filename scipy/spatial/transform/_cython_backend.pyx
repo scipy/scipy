@@ -1028,7 +1028,7 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
                 r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
             else:
                 r = cross  # Shortest angle orthogonal axis of rotation
-            q_flip = from_rotvec(r / np.linalg.norm(r) * np.pi)
+            q_flip = from_rotvec((r / np.linalg.norm(r) * np.pi)[None, ...])
             theta = np.pi - theta
             cross = -cross
         if abs(theta) < tolerance:
@@ -1761,12 +1761,6 @@ cdef class Rotation:
         """
         return create_group(cls, group, axis=axis)
 
-
-    def __repr__(Rotation self):
-        m = f"{self.as_matrix()!r}".splitlines()
-        # bump indent (+21 characters)
-        m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
-        return "Rotation.from_matrix(" + "\n".join(m) + ")"
 
 class Slerp:
     """Spherical Linear Interpolation of Rotations.

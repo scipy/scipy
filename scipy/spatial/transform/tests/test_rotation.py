@@ -1611,10 +1611,12 @@ def test_align_vectors_align_constrain(xp):
     assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
 
 
-def test_align_vectors_near_inf():
+def test_align_vectors_near_inf(xp):
     # align_vectors should return near the same result for high weights as for
     # infinite weights. rssd will be different with floating point error on the
     # exactly aligned vector being multiplied by a large non-infinite weight
+
+    # TODO: Consider jitting for JAX. Non-jitted version is quite slow
     n = 100
     mats = []
     for i in range(6):
@@ -1622,8 +1624,9 @@ def test_align_vectors_near_inf():
 
     for i in range(n):
         # Get random pairs of 3-element vectors
-        a = [1 * mats[0][i][0], 2 * mats[1][i][0]]
-        b = [3 * mats[2][i][0], 4 * mats[3][i][0]]
+        # Creating tensors from list of numpy arrays fails in PyTorch
+        a = xp.asarray(np.array([1 * mats[0][i][0], 2 * mats[1][i][0]]))
+        b = xp.asarray(np.array([3 * mats[2][i][0], 4 * mats[3][i][0]]))
 
         R, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
         R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
@@ -1631,45 +1634,49 @@ def test_align_vectors_near_inf():
 
     for i in range(n):
         # Get random triplets of 3-element vectors
-        a = [1 * mats[0][i][0], 2 * mats[1][i][0], 3 * mats[2][i][0]]
-        b = [4 * mats[3][i][0], 5 * mats[4][i][0], 6 * mats[5][i][0]]
+        a = np.array([1 * mats[0][i][0], 2 * mats[1][i][0], 3 * mats[2][i][0]])
+        b = np.array([4 * mats[3][i][0], 5 * mats[4][i][0], 6 * mats[5][i][0]])
+        a = xp.asarray(a)
+        b = xp.asarray(b)
 
         R, _ = Rotation.align_vectors(a, b, weights=[1e10, 2, 1])
         R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 2, 1])
         assert_allclose(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
 
-def test_align_vectors_parallel():
+def test_align_vectors_parallel(xp):
     atol = 1e-12
-    a = [[1, 0, 0], [0, 1, 0]]
-    b = [[0, 1, 0], [0, 1, 0]]
-    m_expected = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+    a = xp.asarray([[1, 0, 0], [0, 1, 0]])
+    b = xp.asarray([[0, 1, 0], [0, 1, 0]])
+    m_expected = xp.asarray([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
     R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
-    R, _ = Rotation.align_vectors(a[0], b[0])
+    R, _ = Rotation.align_vectors(a[0, ...], b[0, ...])
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
-    assert_allclose(R.apply(b[0]), a[0], atol=atol)
+    assert_allclose(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
-    b = [[1, 0, 0], [1, 0, 0]]
-    m_expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    b = xp.asarray([[1, 0, 0], [1, 0, 0]])
+    m_expected = xp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
-    R, _ = Rotation.align_vectors(a[0], b[0])
+    R, _ = Rotation.align_vectors(a[0, ...], b[0, ...])
     assert_allclose(R.as_matrix(), m_expected, atol=atol)
-    assert_allclose(R.apply(b[0]), a[0], atol=atol)
+    assert_allclose(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
 
-def test_align_vectors_antiparallel():
+def test_align_vectors_antiparallel(xp):
     # Test exact 180 deg rotation
     atol = 1e-12
     as_to_test = np.array(
         [[[1, 0, 0], [0, 1, 0]], [[0, 1, 0], [1, 0, 0]], [[0, 0, 1], [0, 1, 0]]]
     )
-    bs_to_test = [[-a[0], a[1]] for a in as_to_test]
+
+    bs_to_test = np.array([[-a[0], a[1]] for a in as_to_test])
     for a, b in zip(as_to_test, bs_to_test):
+        a, b = xp.asarray(a), xp.asarray(b)
         R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
         assert_allclose(R.magnitude(), np.pi, atol=atol)
-        assert_allclose(R.apply(b[0]), a[0], atol=atol)
+        assert_allclose(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
     # Test exact rotations near 180 deg
     Rs = Rotation.random(100, rng=0)
@@ -1678,21 +1685,22 @@ def test_align_vectors_antiparallel():
     b = [[-1, 0, 0], [0, 1, 0]]
     as_to_test = []
     for dR in dRs:
-        as_to_test.append([dR.apply(a[0]), a[1]])
+        as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
     for a in as_to_test:
+        a, b = xp.asarray(a), xp.asarray(b)
         R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
         R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
         assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
-def test_align_vectors_primary_only():
+def test_align_vectors_primary_only(xp):
     atol = 1e-12
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
     for mat_a, mat_b in zip(mats_a, mats_b):
         # Get random 3-element unit vectors
-        a = mat_a[0]
-        b = mat_b[0]
+        a = xp.asarray(mat_a[0])
+        b = xp.asarray(mat_b[0])
 
         # Compare to align_vectors with primary only
         R, rssd = Rotation.align_vectors(a, b)
@@ -1700,8 +1708,23 @@ def test_align_vectors_primary_only():
         assert np.isclose(rssd, 0, atol=atol)
 
 
-def test_repr_single_rotation():
-    q = np.array([0, 0, 0, 1])
+def test_align_vectors_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    rng = np.random.default_rng(14697284569885399755764481408308808739)
+    c = Rotation.random(rng=rng)
+    c = c.from_quat(jax.numpy.asarray(c.as_quat()))
+    b = jax.numpy.asarray(rng.normal(size=(5, 3)))
+    a = c.apply(b)
+
+    est, rssd = jax.block_until_ready(jax.jit(Rotation.align_vectors)(a, b))
+    assert_allclose(c.as_quat(), est.as_quat())
+    assert_allclose(rssd, 0, atol=1e-7)
+
+
+def test_repr_single_rotation(xp):
+    q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
     expected = """\
 Rotation.from_matrix(array([[1., 0., 0.],
@@ -1710,8 +1733,8 @@ Rotation.from_matrix(array([[1., 0., 0.],
     assert actual == expected
 
 
-def test_repr_rotation_sequence():
-    q = np.array([[0, 1, 0, 1], [0, 0, 1, 1]]) / np.sqrt(2)
+def test_repr_rotation_sequence(xp):
+    q = xp.asarray([[0.0, 1, 0, 1], [0, 0, 1, 1]]) / np.sqrt(2)
     actual = f"{Rotation.from_quat(q)!r}"
     expected = """\
 Rotation.from_matrix(array([[[ 0.,  0.,  1.],

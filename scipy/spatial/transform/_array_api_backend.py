@@ -549,109 +549,7 @@ def align_vectors(
     n_inf = xp.sum(xp.astype(weight_is_inf, atleast_f32(a)))
     weights = xp.where(n_inf > 1, xp.asarray(xp.nan, device=device(a)), weights)
 
-    if n_inf == 1:
-        a_pri = a[weight_is_inf]
-        b_pri = b[weight_is_inf]
-        a_pri_norm = xp.linalg.vector_norm(a_pri[..., 0, :], axis=-1)
-        b_pri_norm = xp.linalg.vector_norm(b_pri[..., 0, :], axis=-1)
-
-        # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
-        # zero and mark the result as invalid.
-        a_pri_norm = xp.where(
-            a_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), a_pri_norm
-        )
-        b_pri_norm = xp.where(
-            b_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), b_pri_norm
-        )
-
-        a_pri = a_pri / a_pri_norm
-        b_pri = b_pri / b_pri_norm
-
-        # We first find the minimum angle rotation between the primary
-        # vectors.
-        cross = xp.linalg.cross(b_pri[..., 0, :], a_pri[..., 0, :])
-        cross_norm = xp.linalg.vector_norm(cross, axis=-1)
-        theta = xp.atan2(
-            cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1)
-        )
-        tolerance = 1e-3  # tolerance for small angle approximation (rad)
-        q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0])
-        if (np.pi - theta) < tolerance:
-            # Near pi radians, the Taylor series approximation of x/sin(x)
-            # diverges, so for numerical stability we flip pi and then
-            # rotate back by the small angle pi - theta
-            if cross_norm == 0:
-                # For antiparallel vectors, cross = [0, 0, 0] so we need to
-                # manually set an arbitrary orthogonal axis of rotation
-                i = xp.argmin(xp.abs(a_pri[..., 0, :]))
-                r = xp.zeros(3)
-                r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
-            else:
-                r = cross  # Shortest angle orthogonal axis of rotation
-            q_flip = from_rotvec(r / xp.linalg.vecnorm(r) * np.pi)
-            theta = np.pi - theta
-            cross = -cross
-        if abs(theta) < tolerance:
-            # Small angle Taylor series approximation for numerical stability
-            theta2 = theta * theta
-            r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
-        else:
-            r = cross * theta / xp.sin(theta)
-        q_pri = compose_quat(from_rotvec(r), q_flip)
-
-        if N == 1:
-            # No secondary vectors, so we are done
-            q_opt = q_pri
-        else:
-            a_sec = a[~weight_is_inf]
-            b_sec = b[~weight_is_inf]
-            weights_sec = weights[~weight_is_inf]
-
-            # We apply the first rotation to the b vectors to align the
-            # primary vectors, resulting in vectors c. The secondary
-            # vectors must now be rotated about that primary vector to best
-            # align c to a.
-            c_sec = apply(q_pri, b_sec)
-
-            # Calculate vector components for the angle calculation. The
-            # angle phi to rotate a single 2D vector C to align to 2D
-            # vector A in the xy plane can be found with the equation
-            # phi = atan2(cross(C, A), dot(C, A))
-            #     = atan2(|C|*|A|*sin(phi), |C|*|A|*cos(phi))
-            # The below equations perform the same operation, but with the
-            # 3D rotation restricted to the 2D plane normal to a_pri, where
-            # the secondary vectors are projected into that plane. We then
-            # find the composite angle from the weighted sum of the
-            # axial components in that plane, minimizing the 2D alignment
-            # problem.
-            # Note that einsum('ij,ij->i', X, Y) is the row-wise dot
-            # product of X and Y.
-            sin_term = xp.linalg.vecdot(xp.linalg.cross(c_sec, a_sec), a_pri)
-            cos_term = xp.linalg.vecdot(c_sec, a_sec) - (
-                xp.linalg.vecdot(c_sec, a_pri) * xp.linalg.vecdot(a_sec, a_pri)
-            )
-            phi = xp.atan2(
-                xp.sum(weights_sec * sin_term), xp.sum(weights_sec * cos_term)
-            )
-            q_sec = from_rotvec(phi * a_pri[0, ...])
-
-            # Compose these to get the optimal rotation
-            q_opt = compose_quat(q_sec, q_pri)
-
-        # Calculated the root sum squared distance. We force the error to
-        # be zero for the infinite weight vectors since they will align
-        # exactly.
-        weights_inf_zero = xp.asarray(weights, copy=True)
-        if N > 1 or weights[0] == xp.inf:
-            # Skip non-infinite weight single vectors pairs, we used the
-            # infinite weight code path but don't want to zero that weight
-            weights_inf_zero = xpx.at(weights_inf_zero)[weight_is_inf].set(0)
-        a_est = apply(q_opt, b)
-        rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
-
-        mask = xp.any(xp.isnan(weights), axis=-1)
-        q_opt = xp.where(mask, xp.asarray(xp.nan, device=device(q_opt)), q_opt)
-        return q_opt, rssd, None
+    q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_inf_weight(a, b, weights)
 
     # If no infinite weights and multiple vectors, proceed with normal
     # algorithm
@@ -673,10 +571,125 @@ def align_vectors(
     # TODO: We currently need to always compute the sensitivity matrix because jit code needs to be
     # non-branching. We should check if compilers can optimize the where statement (e.g. in jax)
     # and check if we can have an eager version that only evaluates the branch that is needed.
+    # Blocked by xpx.apply_where
+    # Tracking issue: https://github.com/data-apis/array-api-extra/pull/141
     zeta = (s[..., 0] + s[..., 1]) * (s[..., 1] + s[..., 2]) * (s[..., 2] + s[..., 0])
     kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
     sensitivity = xp.mean(weights) / zeta * (kappa * xp.eye(3) + B @ B.mT)
-    return from_matrix(C), rssd, sensitivity
+    q_opt = xp.where(weight_is_inf, q_opt_inf, from_matrix(C))
+    rssd = xp.where(weight_is_inf, rssd_inf, rssd)
+    sensitivity = xp.where(weight_is_inf, sensitivity_inf, sensitivity)
+    return q_opt, rssd, sensitivity
+
+
+def _align_vectors_inf_weight(
+    a: Array, b: Array, weights: Array
+) -> tuple[Array, Array, None]:
+    xp = array_namespace(a)
+    N = a.shape[0]
+    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    a_pri = a[weight_is_inf]
+    b_pri = b[weight_is_inf]
+    a_pri_norm = xp.linalg.vector_norm(a_pri[..., 0, :], axis=-1)
+    b_pri_norm = xp.linalg.vector_norm(b_pri[..., 0, :], axis=-1)
+
+    # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
+    # zero and mark the result as invalid.
+    a_pri_norm = xp.where(
+        a_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), a_pri_norm
+    )
+    b_pri_norm = xp.where(
+        b_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), b_pri_norm
+    )
+
+    a_pri = a_pri / a_pri_norm
+    b_pri = b_pri / b_pri_norm
+
+    # We first find the minimum angle rotation between the primary
+    # vectors.
+    cross = xp.linalg.cross(b_pri[..., 0, :], a_pri[..., 0, :])
+    cross_norm = xp.linalg.vector_norm(cross, axis=-1)
+    theta = xp.atan2(cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1))
+    tolerance = 1e-3  # tolerance for small angle approximation (rad)
+    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0])
+
+    # Near pi radians, the Taylor series approximation of x/sin(x) diverges, so for numerical
+    # stability we flip pi and then rotate back by the small angle pi - theta
+    flip = xp.asarray(np.pi - theta < tolerance)
+    # For antiparallel vectors, cross = [0, 0, 0] so we need to manually set an arbitrary
+    # orthogonal axis of rotation
+    i = xp.argmin(xp.abs(a_pri[..., 0, :]))
+    r = xp.zeros(3)
+    r = xpx.at(r)[i - 1].set(a_pri[0, i - 2])
+    r = xpx.at(r)[i - 2].set(-a_pri[0, i - 1])
+    r = xp.where(cross_norm == 0, r, cross)
+
+    q_flip = xp.where(flip, from_rotvec(r / xp.linalg.vector_norm(r) * np.pi), q_flip)
+    theta = xp.where(flip, np.pi - theta, theta)
+    cross = xp.where(flip, -cross, cross)
+
+    # Small angle Taylor series approximation for numerical stability
+    theta2 = theta * theta
+    small_scale = xp.abs(theta) < tolerance
+    r_small_scale = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
+    # We need to handle the case where theta is 0 to avoid division by zero. We use the value of the
+    # Taylor series approximation, but non-branching operations require that we still divide by the
+    # angle. Since we do not use the result where the angle is close to 0, this is safe.
+    theta = theta + xp.asarray(small_scale, dtype=theta.dtype)
+    r_large_scale = cross * theta / xp.sin(theta)
+    r = xp.where(small_scale, r_small_scale, r_large_scale)
+    q_pri = compose_quat(from_rotvec(r), q_flip)
+
+    # Case 1): No secondary vectors, q_opt is q_pri -> Immediately done
+    # Case 2): Secondary vectors exist
+    a_sec = a[~weight_is_inf]
+    b_sec = b[~weight_is_inf]
+    weights_sec = weights[~weight_is_inf]
+
+    # We apply the first rotation to the b vectors to align the
+    # primary vectors, resulting in vectors c. The secondary
+    # vectors must now be rotated about that primary vector to best
+    # align c to a.
+    c_sec = apply(q_pri, b_sec)
+
+    # Calculate vector components for the angle calculation. The
+    # angle phi to rotate a single 2D vector C to align to 2D
+    # vector A in the xy plane can be found with the equation
+    # phi = atan2(cross(C, A), dot(C, A))
+    #     = atan2(|C|*|A|*sin(phi), |C|*|A|*cos(phi))
+    # The below equations perform the same operation, but with the
+    # 3D rotation restricted to the 2D plane normal to a_pri, where
+    # the secondary vectors are projected into that plane. We then
+    # find the composite angle from the weighted sum of the
+    # axial components in that plane, minimizing the 2D alignment
+    # problem.
+    sin_term = xp.linalg.vecdot(xp.linalg.cross(c_sec, a_sec), a_pri)
+    cos_term = xp.linalg.vecdot(c_sec, a_sec) - (
+        xp.linalg.vecdot(c_sec, a_pri) * xp.linalg.vecdot(a_sec, a_pri)
+    )
+    phi = xp.atan2(xp.sum(weights_sec * sin_term), xp.sum(weights_sec * cos_term))
+    q_sec = from_rotvec(phi * a_pri[0, ...])
+
+    # Compose these to get the optimal rotation
+    q_opt = xp.where(xp.asarray(N == 1), q_pri, compose_quat(q_sec, q_pri))
+
+    # Calculated the root sum squared distance. We force the error to
+    # be zero for the infinite weight vectors since they will align
+    # exactly.
+    weights_inf_zero = xp.asarray(weights, copy=True)
+    if N > 1 or weights[0] == xp.inf:
+        # Skip non-infinite weight single vectors pairs, we used the
+        # infinite weight code path but don't want to zero that weight
+        weights_inf_zero = xpx.at(weights_inf_zero)[weight_is_inf].set(0)
+    a_est = apply(q_opt, b)
+    rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
+
+    mask = xp.any(xp.isnan(weights), axis=-1)
+    q_opt = xp.where(mask, xp.asarray(xp.nan, device=device(q_opt)), q_opt)
+    return (
+        q_opt,
+        rssd,
+    )
 
 
 def _normalize_quaternion(quat: Array) -> Array:

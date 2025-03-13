@@ -275,6 +275,12 @@ class Rotation:
             dtype = xp.result_type(xp.float32, xp.float64)
         return xp.asarray(quat, dtype=dtype)
 
+    def __repr__(self):
+        m = f"{np.asarray(self.as_matrix())!r}".splitlines()
+        # bump indent (+21 characters)
+        m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
+        return "Rotation.from_matrix(" + "\n".join(m) + ")"
+
 
 def __dir__():
     return __all__
