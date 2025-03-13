@@ -579,6 +579,11 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         NaN = _get_nan(a)
         return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
+    if a.ndim == 1:
+        vals, cnts = np.unique(a, return_counts=True)
+        modes, counts = vals[cnts.argmax()], cnts.max()
+        return ModeResult(modes[()], counts[()])
+
     # `axis` is always -1 after the `_axis_nan_policy` decorator
     y = np.sort(a, axis=-1)
     # Get boolean array of elements that are different from the previous element
