@@ -7,6 +7,9 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
+import dataclasses
+import functools
+import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
@@ -32,6 +35,7 @@ from scipy._lib.array_api_compat import (
     is_array_api_strict_namespace as is_array_api_strict
 )
 from scipy._lib._sparse import issparse
+from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -41,7 +45,7 @@ __all__ = [
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_copysign', 'xp_device',
     'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
-    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
 ]
 
 
@@ -553,21 +557,6 @@ def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
 
 
-def xp_take_along_axis(arr: Array,
-                       indices: Array, /, *,
-                       axis: int = -1,
-                       xp: ModuleType | None = None) -> Array:
-    # Dispatcher for np.take_along_axis for backends that support it;
-    # see data-apis/array-api/pull#816
-    xp = array_namespace(arr) if xp is None else xp
-    if is_torch(xp):
-        return xp.take_along_dim(arr, indices, dim=axis)
-    elif is_array_api_strict(xp):
-        raise NotImplementedError("Array API standard does not define take_along_axis")
-    else:
-        return xp.take_along_axis(arr, indices, axis=axis)
-
-
 # utility to broadcast arrays and promote to common dtype
 def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
@@ -652,3 +641,143 @@ def xp_default_dtype(xp):
 def is_marray(xp):
     """Returns True if `xp` is an MArray namespace; False otherwise."""
     return "marray" in xp.__name__
+
+
+
+def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
+                       exceptions=None, reason=None):
+    skip_backends = [] if skip_backends is None else skip_backends
+    exceptions = [] if exceptions is None else exceptions
+
+    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
+
+    # Default capabilities
+    numpy = capabilities(cpu=True, gpu=False)
+    strict = capabilities(cpu=True, gpu=False)
+    cupy = capabilities(cpu=False, gpu=True)
+    torch = capabilities(cpu=True, gpu=True)
+    jax = capabilities(cpu=True, gpu=True)
+    dask = capabilities(cpu=True, gpu=True)
+
+    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
+                        torch=torch, jax=jax, dask=dask)
+
+    for backend, _ in skip_backends:  # ignoring the reason
+        setattr(capabilities[backend], 'cpu', False)
+        setattr(capabilities[backend], 'gpu', False)
+
+    other_backends = {'cupy', 'torch', 'jax', 'dask'}
+
+    if cpu_only:
+        for backend in other_backends - set(exceptions):
+            setattr(capabilities[backend], 'gpu', False)
+
+    if np_only:
+        for backend in other_backends:
+            setattr(capabilities[backend], 'cpu', False)
+            setattr(capabilities[backend], 'gpu', False)
+
+    return capabilities
+
+
+def _make_capabilities_table(capabilities):
+    numpy = capabilities['numpy']
+    cupy = capabilities['cupy']
+    torch = capabilities['torch']
+    jax = capabilities['jax']
+    dask = capabilities['dask']
+
+    for backend in [numpy, cupy, torch, jax, dask]:
+        for attr in ['cpu', 'gpu']:
+            val = "✓" if getattr(backend, attr) else "✗"
+            val += " " * (len('{numpy.}') + len(attr) - 1)
+            setattr(backend, attr, val)
+
+    table = f"""                
+    +---------+-------------+-------------+
+    | Library | CPU         | GPU         |
+    +=========+=============+=============+
+    | NumPy   | {numpy.cpu} | n/a         |
+    +---------+-------------+-------------+
+    | CuPy    | n/a         | {cupy.gpu } |
+    +---------+-------------+-------------+
+    | PyTorch | {torch.cpu} | {torch.gpu} |
+    +---------+-------------+-------------+
+    | JAX     | {jax.cpu  } | {jax.gpu  } |
+    +---------+-------------+-------------+
+    | Dask    | {dask.cpu } | {dask.gpu } |
+    +---------+-------------+-------------+
+    """
+    return table
+
+
+def _make_capabilities_note(fun_name, capabilities):
+    table = _make_capabilities_table(capabilities)
+    note = f"""
+    `{fun_name}` has experimental support for Python Array API Standard compatible
+    backends in addition to NumPy. Please consider testing these features
+    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+    combinations of backend and device (or other capability) are supported.
+    {table}
+    See :ref:`dev-arrayapi` for more information.
+    """
+    return textwrap.dedent(note)
+
+
+def xp_capabilities(name=None, capabilities_table=None, **kwargs):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    def decorator(f):
+        fun_name = f.__name__
+        table_entry = name or fun_name
+        if table_entry not in capabilities_table:
+            capabilities_table[table_entry] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[table_entry])
+
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        note = _make_capabilities_note(fun_name, capabilities)
+        doc = FunctionDoc(wrapper)
+        doc['Notes'].append(note)
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator
+
+
+def make_skip_xp_backends(fun_name, capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    import pytest
+
+    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
+    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+    np_only = capabilities_table[fun_name].get('np_only', None)
+    exceptions = capabilities_table[fun_name].get('exceptions', None)
+    reason = capabilities_table[fun_name].get('reason', None)
+
+    decorators = []
+    if cpu_only:
+        kwargs = dict(cpu_only=True, exceptions=exceptions)
+        # if we pass `reason=None`, it doesn't work
+        kwargs |= {'reason': reason} if reason is not None else {}
+        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
+
+    if np_only:
+        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
+
+    for backend, reason in skip_backends:
+        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
+        backend = backends.get(backend, backend)
+        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
+
+    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
+
+
+# Is it OK to have a dictionary that is mutated (once upon import) in many places?
+xp_capabilities_table = {}  # type: ignore[var-annotated]

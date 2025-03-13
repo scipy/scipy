@@ -192,8 +192,6 @@ class TestDifferentialEntropy:
                     axis=1,
                 )
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
@@ -203,8 +201,6 @@ class TestDifferentialEntropy:
         default_entropy = stats.differential_entropy(values)
         xp_assert_close(entropy, default_entropy)
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_transposed(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
@@ -230,11 +226,7 @@ class TestDifferentialEntropy:
     @pytest.mark.parametrize('method', [
         'vasicek',
         'van es',
-        pytest.param(
-            'ebrahimi',
-            marks=skip_xp_backends("jax.numpy",
-                                   reason="JAX doesn't support item assignment")
-        ),
+        'ebrahimi',
         pytest.param(
             'correa',
             marks=skip_xp_backends("array_api_strict",
@@ -272,11 +264,7 @@ class TestDifferentialEntropy:
     @pytest.mark.parametrize('method', [
         'vasicek',
         'van es',
-        pytest.param(
-            'ebrahimi',
-            marks=skip_xp_backends("jax.numpy",
-                                   reason="JAX doesn't support item assignment")
-        ),
+        'ebrahimi',
         pytest.param(
             'correa',
             marks=skip_xp_backends("array_api_strict",
@@ -302,10 +290,7 @@ class TestDifferentialEntropy:
 
     @pytest.mark.parametrize('n, method', [
         (8, 'van es'),
-        pytest.param(
-            12, 'ebrahimi',
-            marks=skip_xp_backends("jax.numpy", reason="Needs array assignment")
-        ),
+        (12, 'ebrahimi'),
         (1001, 'vasicek')
     ])
     def test_method_auto(self, n, method, xp):
@@ -315,8 +300,6 @@ class TestDifferentialEntropy:
         res2 = stats.differential_entropy(rvs, method=method)
         xp_assert_equal(res1, res2)
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
     @pytest.mark.parametrize('method', [
         "vasicek",
         "van es",
