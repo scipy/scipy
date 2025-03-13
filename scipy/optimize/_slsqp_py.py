@@ -16,8 +16,8 @@ Functions
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
 import numpy as np
-from scipy.optimize._slsqplib import slsqp
-from numpy import (array, linalg, finfo, sqrt, isfinite, atleast_1d)
+from ._slsqplib import slsqp
+from scipy.linalg import lanorm
 from ._optimize import (OptimizeResult, _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
@@ -29,7 +29,7 @@ from numpy.typing import NDArray
 
 __docformat__ = "restructuredtext en"
 
-_epsilon = sqrt(finfo(float).eps)
+_epsilon = np.sqrt(np.finfo(np.float64).eps)
 
 
 def approx_jacobian(x, func, epsilon, *args):
@@ -336,9 +336,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
+    meq = sum(map(len, [np.atleast_1d(c['fun'](x, *c['args']))
               for c in cons['eq']]))
-    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
+    mieq = sum(map(len, [np.atleast_1d(c['fun'](x, *c['args']))
                for c in cons['ineq']]))
     # m = The total number of constraints
     m = meq + mieq
@@ -352,8 +352,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl.fill(np.nan)
         xu.fill(np.nan)
     else:
-        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
-                      for (l, u) in bounds], float)
+        bnds = np.array([(_arr_to_scalar(lo), _arr_to_scalar(up))
+                      for (lo, up) in bounds], float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
@@ -367,7 +367,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl, xu = bnds[:, 0].copy(), bnds[:, 1].copy()
 
         # Mark infinite bounds with nans; the Fortran code understands this
-        infbnd = ~isfinite(bnds)
+        infbnd = ~np.isfinite(bnds)
         xl[infbnd[:, 0]] = np.nan
         xu[infbnd[:, 1]] = np.nan
 
@@ -483,7 +483,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print(f"{Vars['iter']:5d} {sf.nfev:5d} {fx:16.6E} {linalg.norm(g):16.6E}")
+                print(f"{Vars['iter']:5d} {sf.nfev:5d} {fx:16.6E} {lanorm(g):16.6E}")
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(Vars['mode']) != 1:
@@ -511,13 +511,13 @@ def _eval_constraint(d: NDArray, x: NDArray, cons: dict):
         return
 
     if cons['eq']:
-        eqs = np.concat(
-            [atleast_1d(con['fun'](x, *con['args'])) for con in cons['eq']]
+        eqs = np.concatenate(
+            [np.atleast_1d(con['fun'](x, *con['args'])) for con in cons['eq']]
             )
         d[:len(eqs)] = eqs
     if cons['ineq']:
-        ineqs = np.concat(
-            [atleast_1d(con['fun'](x, *con['args'])) for con in cons['ineq']]
+        ineqs = np.concatenate(
+            [np.atleast_1d(con['fun'](x, *con['args'])) for con in cons['ineq']]
             )
         d[-len(ineqs):] = ineqs
 
