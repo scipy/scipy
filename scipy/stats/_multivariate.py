@@ -2,6 +2,7 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import warnings
 import threading
 import numpy as np
 import scipy.linalg
@@ -3274,16 +3275,26 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p, eps=1e-15):
+    def _process_parameters(self, n, p):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
+        eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
         p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        i_adjusted = np.abs(p_adjusted) > eps
+        # only make adjustment when it's significant
+        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
         p[i_adjusted, -1] = p_adjusted[i_adjusted]
+
+        if np.any(i_adjusted):
+            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
+                       f"{eps=}. Currently, the last element of these rows is adjusted "
+                       "to compensate, but this condition will produce NaNs "
+                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
+                       "to 1.0 to avoid futher disruption.")
+            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
@@ -3575,20 +3586,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    This class is wrapping the random_rot code from the MDP Toolkit,
-    https://github.com/mdp-toolkit/mdp-toolkit
+    The ``rvs`` method returns a random rotation matrix drawn from the Haar
+    distribution, the only uniform distribution on SO(N). The algorithm generates
+    a Haar-distributed orthogonal matrix in O(N) using the ``rvs`` method of
+    `ortho_group`, then adjusts the matrix to ensure that the determinant is +1.
 
-    Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(N)).
-    The algorithm is described in the paper
-    Stewart, G.W., "The efficient generation of random orthogonal
-    matrices with an application to condition estimators", SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
-
-    See also the similar `ortho_group`. For a random rotation in three
-    dimensions, see `scipy.spatial.transform.Rotation.random`.
+    For a random rotation in three dimensions, see
+    `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
