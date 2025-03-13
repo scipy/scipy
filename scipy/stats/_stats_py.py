@@ -621,7 +621,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     return a, mask
 
 
-@xp_capabilities("trimmed statistics", skip_backends=[
+@xp_capabilities(skip_backends=[
     ('jax', "JAX doesn't allow item assignment."),
     ("dask", "lazywhere doesn't work with dask"),
 ])
@@ -680,7 +680,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     return mean[()] if mean.ndim == 0 else mean
 
 
-@xp_capabilities("trimmed statistics")
+@xp_capabilities(skip_backends=[
+    ('jax', "JAX doesn't allow item assignment."),
+    ("dask", "lazywhere doesn't work with dask"),
+])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
@@ -740,7 +743,10 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         return _xp_var(a, correction=ddof, axis=axis, nan_policy='omit', xp=xp)
 
 
-@xp_capabilities("trimmed statistics")
+@xp_capabilities(skip_backends=[
+    ('jax', "JAX doesn't allow item assignment."),
+    ("dask", "lazywhere doesn't work with dask"),
+])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
@@ -800,7 +806,10 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities("trimmed statistics")
+@xp_capabilities(skip_backends=[
+    ('jax', "JAX doesn't allow item assignment."),
+    ("dask", "lazywhere doesn't work with dask"),
+])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
@@ -859,7 +868,10 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res[()] if res.ndim == 0 else res
 
 
-@xp_capabilities("trimmed statistics")
+@xp_capabilities(skip_backends=[
+    ('jax', "JAX doesn't allow item assignment."),
+    ("dask", "lazywhere doesn't work with dask"),
+])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
@@ -912,7 +924,10 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return tvar(a, limits, inclusive, axis, ddof, _no_deco=True)**0.5
 
 
-@xp_capabilities("trimmed statistics")
+@xp_capabilities(skip_backends=[
+    ('jax', "JAX doesn't allow item assignment."),
+    ("dask", "lazywhere doesn't work with dask"),
+])
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
 )
@@ -2673,7 +2688,7 @@ def _isconst(x):
         return (y[0] == y).all(keepdims=True)
 
 
-@xp_capabilities('zmap_zscore', skip_backends=[
+@xp_capabilities(skip_backends=[
     ("dask", "lazywhere doesn't work for dask.array"),
     ("jax", "JAX can't do item assignment")])
 def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
@@ -2761,7 +2776,9 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities('zmap_zscore')
+@xp_capabilities(skip_backends=[
+    ("dask", "lazywhere doesn't work for dask.array"),
+    ("jax", "JAX can't do item assignment")])
 def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     """
     Compute the geometric standard score.
@@ -2856,7 +2873,9 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
-@xp_capabilities('zmap_zscore')
+@xp_capabilities(skip_backends=[
+    ("dask", "lazywhere doesn't work for dask.array"),
+    ("jax", "JAX can't do item assignment")])
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -6031,7 +6050,7 @@ def unpack_TtestResult(res):
             res._standard_error, res._estimate)
 
 
-@xp_capabilities('ttests', cpu_only=True, exceptions=["cupy", "jax.numpy"])
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -6321,7 +6340,7 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 Ttest_indResult = namedtuple('Ttest_indResult', ('statistic', 'pvalue'))
 
 
-@xp_capabilities('ttests')
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
                          equal_var=True, alternative="two-sided"):
     r"""
@@ -6467,7 +6486,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 _ttest_ind_dep_msg = "Use ``method`` to perform a permutation test."
 
 
-@xp_capabilities('ttests')
+@xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
 @_deprecate_positional_args(version='1.17.0',
                             deprecated_args={'permutations', 'random_state'},
                             custom_message=_ttest_ind_dep_msg)
@@ -7433,7 +7452,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 
-@xp_capabilities('power_divergence')
+@xp_capabilities()
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
