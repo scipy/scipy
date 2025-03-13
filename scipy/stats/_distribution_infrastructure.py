@@ -3631,12 +3631,10 @@ def make_distribution(dist):
     ...     @property
     ...     def support(self):
     ...         def left(*, a, b):
-    ...             a = np.asarray(a)
-    ...             return (a**3)[()]
+    ...             return a**3
     ...
     ...         def right(*, a, b):
-    ...             b = np.asarray(b)
-    ...             return (b**3)[()]
+    ...             return b**3
     ...         return (left, right)
     ...
     ...     def pdf(self, x, *, a, b):
