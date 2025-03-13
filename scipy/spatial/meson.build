@@ -19,7 +19,7 @@ py3.extension_module('_qhull',
     '../_build_utils/src',
   ],
   link_args: version_link_args,
-  dependencies: [lapack_ilp64, np_dep, qhull_r_dep],
+  dependencies: [np_dep, qhull_r_dep],
   install: true,
   subdir: 'scipy/spatial'
 )
