@@ -16,7 +16,7 @@ from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
-from typing import Any, Literal, TypeAlias
+from typing import cast, Any, Literal, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -618,8 +618,8 @@ class JaxCapability(Capability):
     # False otherwise. Enforced by xpx.lazy_xp_function.
     jit: bool = True
     # Parameters for jax.jit applied by xpx.lazy_xp_function.
-    static_argnames: str | Sequence[str, ...] | None = None
-    static_argnums: int | Sequence[int, ...] | None = None
+    static_argnames: str | Sequence[str] | None = None
+    static_argnums: int | Sequence[int] | None = None
 
 
 @dataclasses.dataclass
@@ -729,11 +729,11 @@ class Capabilities:
 
     @property
     def jax(self) -> JaxCapability:
-        return self.backends["jax.numpy"]
+        return cast(JaxCapability, self.backends["jax.numpy"])
 
     @property
     def dask(self) -> DaskCapability:
-        return self.backends["dask.array"]
+        return cast(DaskCapability, self.backends["dask.array"])
 
     def apply_to(self, func):
         """Apply the capabilities to a function."""
