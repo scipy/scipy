@@ -832,7 +832,7 @@ class Capabilities:
             from scipy.mymod import func
 
             @func.capabilities.skip_xp_backends
-            def test_func(..., xp):
+            def test_func(xp):
                 ...
 
         expands to::
