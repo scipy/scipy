@@ -11,25 +11,14 @@ from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import Array, array_namespace, is_numpy, xp_size
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
+                                   is_numpy, is_marray, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._sparse import issparse
 import scipy._lib.array_api_extra as xpx
 
+from numpy.exceptions import AxisError, DTypePromotionError
 
-AxisError: type[Exception]
-ComplexWarning: type[Warning]
-VisibleDeprecationWarning: type[Warning]
-
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError
-    )
-else:
-    from numpy import (  # type: ignore[attr-defined, no-redef]
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
-    )
-    DTypePromotionError = TypeError  # type: ignore
 
 np_long: type
 np_ulong: type
@@ -148,8 +137,11 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
                 dtype = (temp1 * fillvalue).dtype
         else:
            dtype = xp.result_type(temp1.dtype, fillvalue)
-        out = xp.full(cond.shape, dtype=dtype,
-                      fill_value=xp.asarray(fillvalue, dtype=dtype))
+        # whenever mdhaber/marray#89 is resolved, `data` won't need to be extracted here
+        # whenever PAAPIS 2024.12 is released, no need for fill_value to be an array
+        fill_value = xp.asarray(fillvalue, dtype=dtype)
+        fill_value = fill_value.data if is_marray(xp) else fill_value
+        out = xp.full(cond.shape, dtype=dtype, fill_value=fill_value)
     else:
         ncond = ~cond
         temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
@@ -526,8 +518,7 @@ def _asarray_validated(a, check_finite=True,
 
     """
     if not sparse_ok:
-        import scipy.sparse
-        if scipy.sparse.issparse(a):
+        if issparse(a):
             msg = ('Sparse arrays/matrices are not supported by this function. '
                    'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')
@@ -659,6 +650,32 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+class _ScalarFunctionWrapper:
+    """
+    Object to wrap scalar user function, allowing picklability
+    """
+    def __init__(self, f, args=None):
+        self.f = f
+        self.args = [] if args is None else args
+        self.nfev = 0
+
+    def __call__(self, x):
+        # Send a copy because the user may overwrite it.
+        # The user of this class might want `x` to remain unchanged.
+        fx = self.f(np.copy(x), *self.args)
+        self.nfev += 1
+
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
@@ -731,6 +748,29 @@ class MapWrapper:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
                             " form f(func, iterable)") from e
+
+
+def _workers_wrapper(func):
+    """
+    Wrapper to deal with setup-cleanup of workers outside a user function via a
+    ContextManager. It saves having to do the setup/tear down with within that
+    function, which can be messy.
+    """
+    @functools.wraps(func)
+    def inner(*args, **kwds):
+        kwargs = kwds.copy()
+        if 'workers' not in kwargs:
+            _workers = map
+        elif 'workers' in kwargs and kwargs['workers'] is None:
+            _workers = map
+        else:
+            _workers = kwargs['workers']
+
+        with MapWrapper(_workers) as mf:
+            kwargs['workers'] = mf
+            return func(*args, **kwargs)
+
+    return inner
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
@@ -948,11 +988,14 @@ def _contains_nan(
     if xp is None:
         xp = array_namespace(a)
 
-    inexact = (xp.isdtype(a.dtype, "real floating")
-               or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+    if xp.isdtype(a.dtype, "real floating"):
+        # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
+        # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
+    elif xp.isdtype(a.dtype, "complex floating"):
+        # Typically `real` and `imag` produce views; otherwise, `xp.any(xp.isnan(a))`
+        # would be more efficient.
+        contains_nan = xp.isnan(xp.max(xp.real(a))) | xp.isnan(xp.max(xp.imag(a)))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
@@ -967,12 +1010,20 @@ def _contains_nan(
     # The implicit call to bool(contains_nan) must happen after testing
     # nan_policy to prevent lazy and device-bound xps from raising in the
     # default policy='propagate' case.
-    if nan_policy == 'raise' and contains_nan:
-        msg = "The input contains nan values"
-        raise ValueError(msg)
-    if nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp) and contains_nan:
-        msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-        raise ValueError(msg)
+    if nan_policy == 'raise':
+        if is_lazy_array(a):
+            msg = "nan_policy='raise' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "The input contains nan values"
+            raise ValueError(msg)
+    elif nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp):
+        if is_lazy_array(a):
+            msg = "nan_policy='omit' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
+            raise ValueError(msg)
 
     return contains_nan
 
@@ -1051,7 +1102,9 @@ def _get_nan(*data, xp=None):
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    res = xp.asarray(xp.nan, dtype=dtype)[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
@@ -1294,3 +1347,15 @@ def _apply_over_batch(*argdefs):
 
         return wrapper
     return decorator
+
+
+def np_vecdot(x1, x2, /, *, axis=-1):
+    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
+    # available. As functions are translated to Array API, `np_vecdot` can be
+    # replaced with `xp.vecdot`.
+    if np.__version__ > "2.0":
+        return np.vecdot(x1, x2, axis=axis)
+    else:
+        # of course there are other fancy ways of doing this (e.g. `einsum`)
+        # but let's keep it simple since it's temporary
+        return np.sum(x1 * x2, axis=axis)

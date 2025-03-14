@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_assert_close, array_namespace, is_cupy
+from scipy._lib._array_api import xp_assert_close, is_cupy
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -14,7 +14,6 @@ xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 def npr(xp, *args):
-    xp = array_namespace(xp.ones(1))
     return xp.concat(tuple(xpx.atleast_nd(x, ndim=1, xp=xp) for x in args))
 
 
@@ -140,8 +139,7 @@ class TestSymIIR:
         # d is the Kronecker delta function, and u is the unit step
 
         # y0 * z1**n * u[n]
-        astype = array_namespace(signal).astype
-        pos = astype(xp.arange(n), dtype)
+        pos = xp.astype(xp.arange(n), dtype)
         comp1 = initial * z1**pos
 
         # -z1 / (1 - z1) * z1**(k - 1) * u[k - 1]
@@ -169,8 +167,7 @@ class TestSymIIR:
         for i in range(1, n):
             exp_out[i] = c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
 
-        flip = array_namespace(xp.empty(0)).flip
-        exp_out = flip(exp_out)
+        exp_out = xp.flip(exp_out)
 
         out = symiirorder1(signal, c0, z1, precision)
         xp_assert_close(out, exp_out, atol=4e-6, rtol=6e-7)
@@ -197,9 +194,8 @@ class TestSymIIR:
         atol = {xp.float64: 1e-15, xp.float32: 1e-7}[dtype]
         xp_assert_close(res, exp_res, atol=atol)
 
-        xp_test = array_namespace(s)  # https://github.com/pytorch/pytorch/issues/51284
         I1 = xp.asarray(
-            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
+            1 + 1j, dtype=xp.result_type(s, xp.complex64)
         )
         s = s * I1
         res = symiirorder1(s, 0.5, 0.1)
@@ -266,10 +262,8 @@ class TestSymIIR:
              r**(n_exp + 3) * xp.sin(omega * (n_exp + 4)) +
              r**(n_exp + 4) * xp.sin(omega * (n_exp + 3))) / xp.sin(omega))
 
-        astype = array_namespace(xp.ones(2)).astype
-
         expected = npr(xp, fwd_initial_1, fwd_initial_2)[None, :]
-        expected = astype(expected, dtype)
+        expected = xp.astype(expected, dtype)
 
         n = 100
         signal = np.ones(n, dtype=dtype)
@@ -323,8 +317,7 @@ class TestSymIIR:
         diff = (_compute_symiirorder2_bwd_hs(idx - 1, cs, r * r, omega) +
                 _compute_symiirorder2_bwd_hs(idx + 2, cs, r * r, omega))
 
-        cumulative_sum = array_namespace(ic2).cumulative_sum
-        ic2_1_all = cumulative_sum(diff * out[:1:-1])
+        ic2_1_all = xp.cumulative_sum(diff * out[:1:-1])
         pos = xp.nonzero(diff ** 2 < c_precision)[0]
         ic2[1] = ic2_1_all[pos[0]]
 
@@ -366,8 +359,7 @@ class TestSymIIR:
         # Apply the system cs / (1 - a2 * z - a3 * z^2)) in backwards
         exp = xp.empty(n, dtype=dtype)
 
-        flip = array_namespace(exp).flip
-        exp[-2:] = flip(ic2)
+        exp[-2:] = xp.flip(ic2)
 
         for i in range(n - 3, -1, -1):
             exp[i] = cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2]
@@ -407,10 +399,7 @@ class TestSymIIR:
         # In that respect, sosfilt is likely doing a better job.
         xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
 
-        xp_test = array_namespace(s)  # https://github.com/pytorch/pytorch/issues/51284
-        I1 = xp.asarray(
-            1 + 1j, dtype=xp_test.result_type(s, xp.complex64)
-        )
+        I1 = xp.asarray(1 + 1j, dtype=xp.result_type(s, xp.complex64))
         s = s * I1
 
         with pytest.raises((TypeError, ValueError)):
@@ -419,19 +408,23 @@ class TestSymIIR:
     @skip_xp_backends(cpu_only=True)
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir1_integer_input(self, xp):
-        astype = array_namespace(xp.ones(1)).astype
-        bool_ = array_namespace(xp.ones(1)).bool
-        s = xp.where(astype(xp.arange(100) % 2, bool_), xp.asarray(-1), xp.asarray(1))
-        expected = symiirorder1(astype(s, xp.float64), 0.5, 0.5)
+        s = xp.where(
+            xp.astype(xp.arange(100) % 2, xp.bool),
+            xp.asarray(-1),
+            xp.asarray(1),
+        )
+        expected = symiirorder1(xp.astype(s, xp.float64), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
     @skip_xp_backends(cpu_only=True)
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir2_integer_input(self, xp):
-        astype = array_namespace(xp.ones(1)).astype
-        bool_ = array_namespace(xp.ones(1)).bool
-        s = xp.where(astype(xp.arange(100) % 2, bool_), xp.asarray(-1), xp.asarray(1))
-        expected = symiirorder2(astype(s, xp.float64), 0.5, xp.pi / 3.0)
+        s = xp.where(
+            xp.astype(xp.arange(100) % 2, xp.bool),
+            xp.asarray(-1),
+            xp.asarray(1),
+        )
+        expected = symiirorder2(xp.astype(s, xp.float64), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)

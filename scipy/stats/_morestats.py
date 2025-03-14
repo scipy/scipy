@@ -15,7 +15,6 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
 )
 
@@ -23,7 +22,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2)
+                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -309,7 +308,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -375,7 +374,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -2884,7 +2883,7 @@ def bartlett(*samples, axis=0):
         raise ValueError("Must enter at least two input sample vectors.")
 
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -3870,12 +3869,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(f"Sample {k + 1} is empty. All samples must "
+                             f"contain at least one value.")
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
+                             f"All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
     contains_nan = _contains_nan(cdata, nan_policy)
@@ -3920,10 +3918,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
-            raise ValueError(msg)
+            raise ValueError(
+                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                f"median ({grand_median!r}), so they are ignored, resulting in an "
+                f"empty sample."
+            )
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)

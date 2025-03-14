@@ -1,3 +1,4 @@
+import itertools as it
 import os
 import pickle
 from copy import deepcopy
@@ -45,6 +46,7 @@ class Test_RealDomain:
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
            data=strategies.data())
+    @pytest.mark.thread_unsafe
     def test_contains(self, shapes, inclusive_a, inclusive_b, data):
         # Test `contains` when endpoints are defined by parameters
         input_shapes, result_shape = shapes
@@ -85,6 +87,25 @@ class Test_RealDomain:
         ref = eval(f'(a {left_comparison} x) & (x {right_comparison} b)')
         assert_equal(res, ref)
 
+    @pytest.mark.parametrize("inclusive", list(it.product([True, False], repeat=2)))
+    @pytest.mark.parametrize("a,b", [(0, 1), (3, 1)])
+    def test_contains_function_endpoints(self, inclusive, a, b):
+        # Test `contains` when endpoints are defined by functions.
+        endpoints = (lambda a, b: (a - b) / 2, lambda a, b: (a + b) / 2)
+        domain = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+        x = np.asarray([(a - 2*b)/2, (a - b)/2, a/2, (a + b)/2, (a + 2*b)/2])
+        res = domain.contains(x, dict(a=a, b=b))
+
+        numerical_endpoints = ((a - b) / 2, (a + b) / 2)
+        assert numerical_endpoints == domain.get_numerical_endpoints(dict(a=a, b=b))
+        alpha, beta = numerical_endpoints
+
+        above_left = alpha <= x if inclusive[0] else alpha < x
+        below_right = x <= beta if inclusive[1] else x < beta
+        ref = above_left & below_right
+        assert_equal(res, ref)
+
+
     @pytest.mark.parametrize('case', [
         (-np.inf, np.pi, False, True, r"(-\infty, \pi]"),
         ('a', 5, True, False, "[a, 5)")
@@ -105,6 +126,7 @@ class Test_RealDomain:
            inclusive_a=strategies.booleans(),
            inclusive_b=strategies.booleans(),
            )
+    @pytest.mark.thread_unsafe
     def test_str2(self, a, b, inclusive_a, inclusive_b):
         # I wrote this independently from the implementation of __str__, but
         # I imagine it looks pretty similar to __str__.
@@ -175,6 +197,7 @@ class TestDistributions:
     @settings(max_examples=20)
     @pytest.mark.parametrize('family', families)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_support_moments_sample(self, family, data, seed):
         rng = np.random.default_rng(seed)
 
@@ -214,6 +237,7 @@ class TestDistributions:
                               ])
     @settings(max_examples=20)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_funcs(self, family, data, seed, func, methods, arg):
         if family == Uniform and func == 'mode':
             pytest.skip("Mode is not unique; `method`s disagree.")
@@ -247,6 +271,7 @@ class TestDistributions:
                     check_ccdf2(dist, False, x, y, xy_result_shape, methods)
                     check_ccdf2(dist, True, x, y, xy_result_shape, methods)
 
+    @pytest.mark.thread_unsafe
     def test_plot(self):
         try:
             import matplotlib.pyplot as plt
@@ -1032,7 +1057,7 @@ class TestAttributes:
 
 class TestMakeDistribution:
     @pytest.mark.parametrize('i, distdata', enumerate(distcont))
-    def test_make_distribution(self, i, distdata):
+    def test_rv_generic(self, i, distdata):
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
@@ -1105,6 +1130,148 @@ class TestMakeDistribution:
                             Y.rvs(size=10, random_state=np.random.default_rng(seed)),
                             rtol=rtol)
 
+    def test_custom(self):
+        rng = np.random.default_rng(7548723590230982)
+
+        class MyLogUniform:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {'a': {'endpoints': (0, np.inf), 'inclusive': (False, False)},
+                        'b': {'endpoints': ('a', np.inf), 'inclusive': (False, False)}}
+
+            @property
+            def support(self):
+                return {'endpoints': ('a', 'b')}
+
+            def pdf(self, x, a, b):
+                return 1 / (x * (np.log(b) - np.log(a)))
+
+            def sample(self, shape, *, a, b, rng=None):
+                p = rng.uniform(size=shape)
+                return np.exp(np.log(a) + p * (np.log(b) - np.log(a)))
+
+            def moment(self, order, kind='raw', *, a, b):
+                if order == 1 and kind == 'raw':
+                    # quadrature is perfectly accurate here; add 1e-10 error so we
+                    # can tell the difference between the two
+                    return (b - a) / np.log(b/a) + 1e-10
+
+        LogUniform = stats.make_distribution(MyLogUniform())
+
+        X = LogUniform(a=np.exp(1), b=np.exp(3))
+        Y = stats.exp(Uniform(a=1., b=3.))
+        x = X.sample(shape=10, rng=rng)
+        p = X.cdf(x)
+
+        assert_allclose(X.support(), Y.support())
+        assert_allclose(X.entropy(), Y.entropy())
+        assert_allclose(X.median(), Y.median())
+        assert_allclose(X.logpdf(x), Y.logpdf(x))
+        assert_allclose(X.pdf(x), Y.pdf(x))
+        assert_allclose(X.logcdf(x), Y.logcdf(x))
+        assert_allclose(X.cdf(x), Y.cdf(x))
+        assert_allclose(X.logccdf(x), Y.logccdf(x))
+        assert_allclose(X.ccdf(x), Y.ccdf(x))
+        assert_allclose(X.icdf(p), Y.icdf(p))
+        assert_allclose(X.iccdf(p), Y.iccdf(p))
+        for kind in ['raw', 'central', 'standardized']:
+            for order in range(5):
+                assert_allclose(X.moment(order, kind=kind),
+                                Y.moment(order, kind=kind))
+
+        # Confirm that the `sample` and `moment` methods are overriden as expected
+        sample_formula = X.sample(shape=10, rng=0, method='formula')
+        sample_inverse = X.sample(shape=10, rng=0, method='inverse_transform')
+        assert_allclose(sample_formula, sample_inverse)
+        assert not np.all(sample_formula == sample_inverse)
+
+        assert_allclose(X.mean(method='formula'), X.mean(method='quadrature'))
+        assert not X.mean(method='formula') == X.mean(method='quadrature')
+
+    # pdf and cdf formulas below can warn on boundary of support in some cases.
+    # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
+    @pytest.mark.parametrize("c", [-1, 0, 1, np.asarray([-2.1, -1., 0., 1., 2.1])])
+    def test_custom_variable_support(self, c):
+        rng = np.random.default_rng(7548723590230982)
+
+        class MyGenExtreme:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return {
+                    'c': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'mu': {'endpoints': (-np.inf, np.inf), 'inclusive': (False, False)},
+                    'sigma': {'endpoints': (0, np.inf), 'inclusive': (False, False)}
+                }
+
+            @property
+            def support(self):
+                def left(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c >= 0] = -np.inf
+                    result[c < 0] = mu[c < 0] + sigma[c < 0] / c[c < 0]
+                    return result[()]
+
+                def right(*, c, mu, sigma):
+                    c, mu, sigma = np.broadcast_arrays(c, mu, sigma)
+                    result = np.empty_like(c)
+                    result[c <= 0] = np.inf
+                    result[c > 0] = mu[c > 0] + sigma[c > 0] / c[c > 0]
+                    return result[()]
+
+                return {"endpoints": (left, right), "inclusive": (False, False)}
+
+            def pdf(self, x, *, c, mu, sigma):
+                x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+                t = np.empty_like(x)
+                mask = (c == 0)
+                t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
+                result = 1/sigma * t**(1 - c)*np.exp(-t)
+                return result[()]
+
+            def cdf(self, x, *, c, mu, sigma):
+                x, c, mu, sigma = np.broadcast_arrays(x, c, mu, sigma)
+                t = np.empty_like(x)
+                mask = (c == 0)
+                t[mask] = np.exp(-(x[mask] - mu[mask])/sigma[mask])
+                t[~mask] = (
+                    1  - c[~mask]*(x[~mask] - mu[~mask])/sigma[~mask]
+                )**(1/c[~mask])
+                return np.exp(-t)[()]
+
+        GenExtreme1 = stats.make_distribution(MyGenExtreme())
+        GenExtreme2 = stats.make_distribution(stats.genextreme)
+
+        X1 = GenExtreme1(c=c, mu=0, sigma=1)
+        X2 = GenExtreme2(c=c)
+
+        x = X1.sample(shape=10, rng=rng)
+        p = X1.cdf(x)
+
+        assert_allclose(X1.support(), X2.support())
+        assert_allclose(X1.entropy(), X2.entropy(), rtol=5e-6)
+        assert_allclose(X1.median(), X2.median())
+        assert_allclose(X1.logpdf(x), X2.logpdf(x))
+        assert_allclose(X1.pdf(x), X2.pdf(x))
+        assert_allclose(X1.logcdf(x), X2.logcdf(x))
+        assert_allclose(X1.cdf(x), X2.cdf(x))
+        assert_allclose(X1.logccdf(x), X2.logccdf(x))
+        assert_allclose(X1.ccdf(x), X2.ccdf(x))
+        assert_allclose(X1.icdf(p), X2.icdf(p))
+        assert_allclose(X1.iccdf(p), X2.iccdf(p))
+
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
         with pytest.raises(NotImplementedError, match=message):
@@ -1175,6 +1342,7 @@ class TestTransforms:
 
     @pytest.mark.fail_slow(10)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
+    @pytest.mark.thread_unsafe
     def test_loc_scale(self, data, seed):
         # Need tests with negative scale
         rng = np.random.default_rng(seed)
@@ -1794,12 +1962,18 @@ class TestMixture:
         with pytest.raises(ValueError, match=message):
             Mixture([Normal(), Normal()], weights=[1.5, -0.5])
 
-    def test_basic(self):
+    @pytest.mark.parametrize('shape', [(), (10,)])
+    def test_basic(self, shape):
         rng = np.random.default_rng(582348972387243524)
         X = Mixture((Normal(mu=-0.25, sigma=1.1), Normal(mu=0.5, sigma=0.9)),
                     weights=(0.4, 0.6))
         Y = MixedDist()
-        x = rng.random(10)
+        x = rng.random(shape)
+
+        def assert_allclose(res, ref, **kwargs):
+            if shape == ():
+                assert np.isscalar(res)
+            np.testing.assert_allclose(res, ref, **kwargs)
 
         assert_allclose(X.logentropy(), Y.logentropy())
         assert_allclose(X.entropy(), Y.entropy())
@@ -1857,3 +2031,17 @@ class TestMixture:
         assert X.components[0] == components[0]
         X.weights[0] = weights[1]
         assert X.weights[0] == weights[0]
+
+    def test_inverse(self):
+        # Originally, inverse relied on the mean to start the bracket search.
+        # This didn't work for distributions with non-finite mean. Check that
+        # this is resolved.
+        rng = np.random.default_rng(24358934657854237863456)
+        Cauchy = stats.make_distribution(stats.cauchy)
+        X0 = Cauchy()
+        X = stats.Mixture([X0, X0])
+        p = rng.random(size=10)
+        np.testing.assert_allclose(X.icdf(p), X0.icdf(p))
+        np.testing.assert_allclose(X.iccdf(p), X0.iccdf(p))
+        np.testing.assert_allclose(X.ilogcdf(p), X0.ilogcdf(p))
+        np.testing.assert_allclose(X.ilogccdf(p), X0.ilogccdf(p))

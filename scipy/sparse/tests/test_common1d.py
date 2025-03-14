@@ -4,13 +4,13 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
+from numpy.exceptions import ComplexWarning
 
 from scipy.sparse import (
         bsr_array, csc_array, dia_array, lil_array,
         coo_array, csr_array, dok_array,
     )
 from scipy.sparse._sputils import supported_dtypes, matrix
-from scipy._lib._util import ComplexWarning
 
 
 sup_complex = np.testing.suppress_warnings()
@@ -142,7 +142,7 @@ class TestCommon1D:
             datsp.sum(axis=(0, 1))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.sum(axis=1.5)
-        with pytest.raises(ValueError, match='dimensions do not match'):
+        with pytest.raises(ValueError, match='output parameter.*wrong.*dimension'):
             datsp.sum(axis=0, out=out)
 
     def test_numpy_sum(self, spcreator):
@@ -180,7 +180,7 @@ class TestCommon1D:
             datsp.mean(axis=(0, 1))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.mean(axis=1.5)
-        with pytest.raises(ValueError, match='dimensions do not match'):
+        with pytest.raises(ValueError, match='output parameter.*wrong.*dimension'):
             datsp.mean(axis=1, out=out)
 
     def test_sum_dtype(self, spcreator):
@@ -209,16 +209,21 @@ class TestCommon1D:
         dat = np.array([0, 1, 2])
         datsp = spcreator(dat)
 
-        dat_out = np.array([0])
-        datsp_out = np.array([0])
+        dat_out = np.array(0)
+        datsp_out = np.array(0)
 
-        dat.mean(out=dat_out, keepdims=True)
+        dat.mean(out=dat_out)
         datsp.mean(out=datsp_out)
         assert_allclose(dat_out, datsp_out)
 
-        dat.mean(axis=0, out=dat_out, keepdims=True)
+        dat.mean(axis=0, out=dat_out)
         datsp.mean(axis=0, out=datsp_out)
         assert_allclose(dat_out, datsp_out)
+
+        with pytest.raises(ValueError, match="output parameter.*dimension"):
+            datsp.mean(out=np.array([0]))
+        with pytest.raises(ValueError, match="output parameter.*dimension"):
+            datsp.mean(out=np.array([[0]]))
 
     def test_numpy_mean(self, spcreator):
         dat = np.array([0, 1, 2])

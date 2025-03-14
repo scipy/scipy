@@ -7,8 +7,11 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
+import dataclasses
+import functools
+import textwrap
 
-from collections.abc import Generator
+from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import ModuleType
@@ -20,6 +23,7 @@ import numpy.typing as npt
 from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
+    is_lazy_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -27,18 +31,20 @@ from scipy._lib.array_api_compat import (
     is_cupy_namespace as is_cupy,
     is_torch_namespace as is_torch,
     is_jax_namespace as is_jax,
+    is_dask_namespace as is_dask,
     is_array_api_strict_namespace as is_array_api_strict
 )
+from scipy._lib._sparse import issparse
+from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp',
+    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_copysign', 'xp_device',
-    'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
-    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
+    'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
 ]
 
 
@@ -57,8 +63,9 @@ Array: TypeAlias = Any  # To be changed to a Protocol later (see array-api#589)
 ArrayLike: TypeAlias = Array | npt.ArrayLike
 
 
-def _compliance_scipy(arrays):
-    """Raise exceptions on known-bad subclasses.
+def _compliance_scipy(arrays: Iterable[ArrayLike]) -> Iterator[Array]:
+    """Raise exceptions on known-bad subclasses. Discard 0-dimensional ArrayLikes
+    and convert 1+-dimensional ArrayLikes to numpy.
 
     The following subclasses are not supported and raise and error:
     - `numpy.ma.MaskedArray`
@@ -67,10 +74,10 @@ def _compliance_scipy(arrays):
     - Any array-like which is neither array API compatible nor coercible by NumPy
     - Any array-like which is coerced by NumPy to an unsupported dtype
     """
-    for i in range(len(arrays)):
-        array = arrays[i]
+    for array in arrays:
+        if array is None:
+            continue
 
-        from scipy.sparse import issparse
         # this comes from `_util._asarray_validated`
         if issparse(array):
             msg = ('Sparse arrays/matrices are not supported by this function. '
@@ -80,14 +87,19 @@ def _compliance_scipy(arrays):
 
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("Inputs of type `numpy.ma.MaskedArray` are not supported.")
-        elif isinstance(array, np.matrix):
+
+        if isinstance(array, np.matrix):
             raise TypeError("Inputs of type `numpy.matrix` are not supported.")
+
         if isinstance(array, np.ndarray | np.generic):
             dtype = array.dtype
             if not (np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_)):
                 raise TypeError(f"An argument has dtype `{dtype!r}`; "
                                 f"only boolean and numerical dtypes are supported.")
-        elif not is_array_api_obj(array):
+
+        if is_array_api_obj(array):
+            yield array
+        else:
             try:
                 array = np.asanyarray(array)
             except TypeError:
@@ -100,8 +112,11 @@ def _compliance_scipy(arrays):
                     f"only boolean and numerical dtypes are supported."
                 )
                 raise TypeError(message)
-            arrays[i] = array
-    return arrays
+            # Ignore 0-dimensional arrays, coherently with array-api-compat.
+            # Raise if there are 1+-dimensional array-likes mixed with non-numpy
+            # Array API objects.
+            if array.ndim:
+                yield array
 
 
 def _check_finite(array: Array, xp: ModuleType) -> None:
@@ -141,11 +156,13 @@ def array_namespace(*arrays: Array) -> ModuleType:
         # here we could wrap the namespace if needed
         return np_compat
 
-    _arrays = [array for array in arrays if array is not None]
-
-    _arrays = _compliance_scipy(_arrays)
-
-    return array_api_compat.array_namespace(*_arrays)
+    api_arrays = list(_compliance_scipy(arrays))
+    # In case of a mix of array API compliant arrays and scalars, return
+    # the array API namespace. If there are only ArrayLikes (e.g. lists),
+    # return NumPy (wrapped by array-api-compat).
+    if api_arrays:
+        return array_api_compat.array_namespace(*api_arrays)
+    return np_compat
 
 
 def _asarray(
@@ -252,9 +269,6 @@ def _strict_check(actual, desired, xp, *,
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
-        else:
-            # Wrap namespace if needed
-            xp = array_namespace(xp.asarray(0))
  
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
@@ -275,6 +289,9 @@ def _strict_check(actual, desired, xp, *,
         assert actual.dtype == desired.dtype, _msg
 
     if check_shape:
+        if is_dask(xp):
+            actual.compute_chunk_sizes()
+            desired.compute_chunk_sizes()
         _msg = f"Shapes do not match.\nActual: {actual.shape}\nDesired: {desired.shape}"
         assert actual.shape == desired.shape, _msg
 
@@ -461,42 +478,6 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     return None
 
 
-# temporary substitute for xp.moveaxis, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_moveaxis_to_end(
-        x: Array,
-        source: int,
-        /, *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(xp) if xp is None else xp
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
-
-
-# temporary substitute for xp.copysign, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # no attempt to account for special cases
-    xp = array_namespace(x1, x2) if xp is None else xp
-    abs_x1 = xp.abs(x1)
-    return xp.where(x2 >= 0, abs_x1, -abs_x1)
-
-
-# partial substitute for xp.sign, which does not cover the NaN special case
-# that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    if is_numpy(xp):  # only NumPy implements the special cases correctly
-        return xp.sign(x)
-    sign = xp.zeros_like(x)
-    one = xp.asarray(1, dtype=x.dtype)
-    sign = xp.where(x > 0, one, sign)
-    sign = xp.where(x < 0, -one, sign)
-    sign = xp.where(xp.isnan(x), xp.nan*one, sign)
-    return sign
-
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
                    axis: int | tuple[int] | None = None,
@@ -532,33 +513,11 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.reshape(x, (-1,))
 
 
-def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # Convenience wrapper of xp.real that allows non-complex input;
-    # see data-apis/array-api#824
-    xp = array_namespace(x) if xp is None else xp
-    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
-
-
-def xp_take_along_axis(arr: Array,
-                       indices: Array, /, *,
-                       axis: int = -1,
-                       xp: ModuleType | None = None) -> Array:
-    # Dispatcher for np.take_along_axis for backends that support it;
-    # see data-apis/array-api/pull#816
-    xp = array_namespace(arr) if xp is None else xp
-    if is_torch(xp):
-        return xp.take_along_dim(arr, indices, dim=axis)
-    elif is_array_api_strict(xp):
-        raise NotImplementedError("Array API standard does not define take_along_axis")
-    else:
-        return xp.take_along_axis(arr, indices, axis)
-
-
 # utility to broadcast arrays and promote to common dtype
 def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
-    args = [(xp.asarray(arg) if arg is not None else arg) for arg in args]
+    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
 
     # determine minimum dtype
@@ -582,7 +541,12 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
-    shape = np.broadcast_shapes(*shapes) if len(shapes) != 1 else args_not_none[0].shape
+    try:
+        shape = (np.broadcast_shapes(*shapes) if len(shapes) != 1
+                 else args_not_none[0].shape)
+    except ValueError as e:
+        message = "Array shapes are incompatible for broadcasting."
+        raise ValueError(message) from e
 
     out = []
     for arg in args:
@@ -594,7 +558,8 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
         # Even if two arguments need broadcasting, this is faster than
         # `broadcast_arrays`, especially since we've already determined `shape`
         if arg.shape != shape:
-            arg = xp.broadcast_to(arg, shape)
+            kwargs = {'subok': True} if is_numpy(xp) else {}
+            arg = xp.broadcast_to(arg, shape, **kwargs)
 
         # convert dtype/copy only if needed
         if (arg.dtype != dtype) or ensure_writeable:
@@ -627,3 +592,148 @@ def xp_default_dtype(xp):
     else:
         # we default to float64
         return xp.float64
+
+
+def is_marray(xp):
+    """Returns True if `xp` is an MArray namespace; False otherwise."""
+    return "marray" in xp.__name__
+
+
+
+def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
+                       exceptions=None, reason=None):
+    skip_backends = [] if skip_backends is None else skip_backends
+    exceptions = [] if exceptions is None else exceptions
+
+    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
+
+    # Default capabilities
+    numpy = capabilities(cpu=True, gpu=False)
+    strict = capabilities(cpu=True, gpu=False)
+    cupy = capabilities(cpu=False, gpu=True)
+    torch = capabilities(cpu=True, gpu=True)
+    jax = capabilities(cpu=True, gpu=True)
+    dask = capabilities(cpu=True, gpu=True)
+
+    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
+                        torch=torch, jax=jax, dask=dask)
+
+    for backend, _ in skip_backends:  # ignoring the reason
+        setattr(capabilities[backend], 'cpu', False)
+        setattr(capabilities[backend], 'gpu', False)
+
+    other_backends = {'cupy', 'torch', 'jax', 'dask'}
+
+    if cpu_only:
+        for backend in other_backends - set(exceptions):
+            setattr(capabilities[backend], 'gpu', False)
+
+    if np_only:
+        for backend in other_backends:
+            setattr(capabilities[backend], 'cpu', False)
+            setattr(capabilities[backend], 'gpu', False)
+
+    return capabilities
+
+
+def _make_capabilities_table(capabilities):
+    numpy = capabilities['numpy']
+    cupy = capabilities['cupy']
+    torch = capabilities['torch']
+    jax = capabilities['jax']
+    dask = capabilities['dask']
+
+    for backend in [numpy, cupy, torch, jax, dask]:
+        for attr in ['cpu', 'gpu']:
+            val = "✓" if getattr(backend, attr) else "✗"
+            val += " " * (len('{numpy.}') + len(attr) - 1)
+            setattr(backend, attr, val)
+
+    table = f"""                
+    +---------+-------------+-------------+
+    | Library | CPU         | GPU         |
+    +=========+=============+=============+
+    | NumPy   | {numpy.cpu} | n/a         |
+    +---------+-------------+-------------+
+    | CuPy    | n/a         | {cupy.gpu } |
+    +---------+-------------+-------------+
+    | PyTorch | {torch.cpu} | {torch.gpu} |
+    +---------+-------------+-------------+
+    | JAX     | {jax.cpu  } | {jax.gpu  } |
+    +---------+-------------+-------------+
+    | Dask    | {dask.cpu } | {dask.gpu } |
+    +---------+-------------+-------------+
+    """
+    return table
+
+
+def _make_capabilities_note(fun_name, capabilities):
+    table = _make_capabilities_table(capabilities)
+    note = f"""
+    `{fun_name}` has experimental support for Python Array API Standard compatible
+    backends in addition to NumPy. Please consider testing these features
+    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+    combinations of backend and device (or other capability) are supported.
+    {table}
+    See :ref:`dev-arrayapi` for more information.
+    """
+    return textwrap.dedent(note)
+
+
+def xp_capabilities(name=None, capabilities_table=None, **kwargs):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    def decorator(f):
+        fun_name = f.__name__
+        table_entry = name or fun_name
+        if table_entry not in capabilities_table:
+            capabilities_table[table_entry] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[table_entry])
+
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        note = _make_capabilities_note(fun_name, capabilities)
+        doc = FunctionDoc(wrapper)
+        doc['Notes'].append(note)
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator
+
+
+def make_skip_xp_backends(fun_name, capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    import pytest
+
+    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
+    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
+    np_only = capabilities_table[fun_name].get('np_only', None)
+    exceptions = capabilities_table[fun_name].get('exceptions', None)
+    reason = capabilities_table[fun_name].get('reason', None)
+
+    decorators = []
+    if cpu_only:
+        kwargs = dict(cpu_only=True, exceptions=exceptions)
+        # if we pass `reason=None`, it doesn't work
+        kwargs |= {'reason': reason} if reason is not None else {}
+        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
+
+    if np_only:
+        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
+
+    for backend, reason in skip_backends:
+        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
+        backend = backends.get(backend, backend)
+        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
+
+    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
+
+
+# Is it OK to have a dictionary that is mutated (once upon import) in many places?
+xp_capabilities_table = {}  # type: ignore[var-annotated]
