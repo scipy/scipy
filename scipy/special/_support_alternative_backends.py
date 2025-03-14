@@ -79,7 +79,7 @@ def _xlogy(xp, spx):
     def __xlogy(x, y, *, xp=xp):
         with np.errstate(divide='ignore', invalid='ignore'):
             temp = x * xp.log(y)
-        return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+        return xp.where(x == 0., 0., temp)
     return __xlogy
 
 

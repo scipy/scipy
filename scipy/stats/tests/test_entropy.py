@@ -28,7 +28,7 @@ class TestEntropy:
         xp_assert_less(xp.abs(S - 4.), xp.asarray(1.e-5))
 
         qk = xp.ones(16)
-        qk = xp.where(xp.arange(16) < 8, xp.asarray(2.), qk)
+        qk = xp.where(xp.arange(16) < 8, 2., qk)
         S = stats.entropy(pk, qk)
         S2 = stats.entropy(pk, qk, base=2.)
         xp_assert_less(xp.abs(S/S2 - math.log(2.)), xp.asarray(1.e-5))
