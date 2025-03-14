@@ -470,10 +470,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         # If the integration limits were such that b < a, we reversed them
         # to perform the calculation, and the final result needs to be negated.
         if log and xp.any(negative):
-            dtype = res['integral'].dtype
-            pi = xp.asarray(xp.pi, dtype=dtype)[()]
-            j = xp.asarray(1j, dtype=xp.complex64)[()]  # minimum complex type
-            res['integral'] = res['integral'] + negative*pi*j
+            res['integral'] = res['integral'] + negative * xp.pi* 1.0j
         else:
             res['integral'][negative] *= -1
 
