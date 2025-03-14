@@ -15,7 +15,6 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
 )
 
@@ -2884,7 +2883,7 @@ def bartlett(*samples, axis=0):
         raise ValueError("Must enter at least two input sample vectors.")
 
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]

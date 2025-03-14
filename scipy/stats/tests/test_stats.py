@@ -2842,7 +2842,7 @@ class TestSEM:
                         stats.sem(testcase, ddof=2))
 
         x = xp.arange(10.)
-        x = xp.where(x == 9, xp.asarray(xp.nan), x)
+        x = xp.where(x == 9, xp.nan, x)
         xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
@@ -3780,7 +3780,7 @@ class TestKurtosis(SkewKurtosisTest):
         xp_assert_close(y, xp.asarray(1.64))
 
         x = xp.arange(10.)
-        x = xp.where(x == 8, xp.asarray(xp.nan), x)
+        x = xp.where(x == 8, xp.nan, x)
         xp_assert_equal(stats.kurtosis(x), xp.asarray(xp.nan))
 
     def test_kurtosis_nan_policy(self):
@@ -6406,7 +6406,7 @@ class TestDescribe:
 
     def test_describe_nan_policy_other(self, xp):
         x = xp.arange(10.)
-        x = xp.where(x==9, xp.asarray(xp.nan), x)
+        x = xp.where(x==9, xp.nan, x)
 
         if is_lazy_array(x):
             with pytest.raises(TypeError, match='not supported for lazy arrays'):
@@ -9467,7 +9467,7 @@ class TestXP_Mean:
     def test_nan_policy(self, xp):
         x = xp.arange(10.)
         mask = (x == 3)
-        x = xp.where(mask, xp.asarray(xp.nan), x)
+        x = xp.where(mask, xp.nan, x)
 
         # nan_policy='raise' raises an error
         if is_lazy_array(x):
@@ -9491,7 +9491,7 @@ class TestXP_Mean:
 
         # `nan_policy='omit'` omits NaNs in `weights`, too
         weights = xp.ones(10)
-        weights = xp.where(mask, xp.asarray(xp.nan), weights)
+        weights = xp.where(mask, xp.nan, weights)
         res = _xp_mean(xp.arange(10.), weights=weights, nan_policy='omit')
         ref = xp.mean(x[~mask])
         xp_assert_close(res, ref)
@@ -9590,7 +9590,7 @@ class TestXP_Var:
     def test_nan_policy(self, xp):
         x = xp.arange(10.)
         mask = (x == 3)
-        x = xp.where(mask, xp.asarray(xp.nan), x)
+        x = xp.where(mask, xp.nan, x)
 
         # `nan_policy='propagate'` is the default, and the result is NaN
         res1 = _xp_var(x)

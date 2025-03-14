@@ -2,7 +2,7 @@ import math
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_sign, xp_copy
+from scipy._lib._array_api import xp_copy
 
 # TODO:
 # - (maybe?) don't use fancy indexing assignment
@@ -187,7 +187,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
 
         # If the bracket is no longer valid, report failure (unless a function
         # tolerance is met, as detected above).
-        i = (xp_sign(work.f1) == xp_sign(work.f2)) & ~stop
+        i = (xp.sign(work.f1) == xp.sign(work.f2)) & ~stop
         NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
         work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True
@@ -448,7 +448,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # tol away from x2."
         # See also QBASIC code after "Accept Ql adjust if close to X2".
         j = xp.abs(q1[i] - work.x2[i]) <= work.xtol[i]
-        xi[j] = work.x2[i][j] + xp_sign(x32[i][j]) * work.xtol[i][j]
+        xi[j] = work.x2[i][j] + xp.sign(x32[i][j]) * work.xtol[i][j]
 
         # "If condition (7) is not satisfied, golden sectioning of the larger
         # interval is carried out to introduce the new point."
@@ -466,7 +466,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # point. In QBASIC code, see "IF SGN(X-X2) = SGN(X3-X2) THEN...".
         # There is an awful lot of data copying going on here; this would
         # probably benefit from code optimization or implementation in Pythran.
-        i = xp_sign(x - work.x2) == xp_sign(work.x3 - work.x2)
+        i = xp.sign(x - work.x2) == xp.sign(work.x3 - work.x2)
         xi, x1i, x2i, x3i = x[i], work.x1[i], work.x2[i], work.x3[i],
         fi, f1i, f2i, f3i = f[i], work.f1[i], work.f2[i], work.f3[i]
         j = fi > f2i
