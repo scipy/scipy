@@ -410,6 +410,7 @@ Others are generalized to multiple samples.
 
    f_oneway
    tukey_hsd
+   games_howell
    dunnett
    kruskal
    alexandergovern
