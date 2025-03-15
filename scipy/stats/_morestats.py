@@ -2892,14 +2892,13 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    # sum dtype can be removed when 2023.12 rules kick in
     dtype = Ni.dtype
-    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    Ntot = xp.sum(Ni, axis=0)
     spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
     numer = ((Ntot - k) * xp.log(spsq)
              - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
     denom = (1 + 1/(3*(k - 1))
-             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
+             * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
