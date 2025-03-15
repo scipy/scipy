@@ -225,8 +225,7 @@ def _logsumexp(a, b, axis, return_sign, xp):
             m = xp.abs(m)
         else:
             # `a_max` can have a sign component for complex input
-            j = xp.asarray(1j, dtype=a_max.dtype)
-            sgn = sgn * xp.exp(xp.imag(a_max) * j)
+            sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
