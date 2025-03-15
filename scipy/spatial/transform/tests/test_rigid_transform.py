@@ -948,3 +948,13 @@ def test_empty_transform_representation():
     assert tf.as_matrix().shape == (0, 4, 4)
     assert tf.as_exp_coords().shape == (0, 6)
     assert tf.as_dual_quat().shape == (0, 8)
+
+
+def test_empty_transform_application():
+    tf = RigidTransform.identity(0)
+
+    assert tf.apply(np.zeros((3,))).shape == (0, 3)
+    assert tf.apply(np.empty((0, 3))).shape == (0, 3)
+
+    with pytest.raises(ValueError, match="operands could not be broadcast together"):
+        tf.apply(np.zeros((2, 3)))

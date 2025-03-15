@@ -1820,9 +1820,7 @@ cdef class RigidTransform:
         array([-1.73205081, -1.        , -3.        ])
         """
         vector = np.asarray(vector, dtype=float)
-        if (vector.ndim not in [1, 2]
-                or vector.shape[-1] != 3
-                or vector.shape[0] == 0):
+        if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
             raise ValueError("Expected vector to have shape (N, 3), or (3,), "
                              f"got {vector.shape}.")
 
