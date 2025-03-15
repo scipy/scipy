@@ -457,7 +457,7 @@ cdef class _Qhull:
                 #Store the halfspaces in _points and the dual points in _dual_points later
                 self._point_arrays.append(np.array(points, copy=True))
                 dists = points[:, :-1].dot(interior_point)+points[:, -1]
-                arr = np.array(-points[:, :-1]/dists, dtype=np.double, order="C", copy=True)
+                arr = np.array(-points[:, :-1]/dists[:, np.newaxis], dtype=np.double, order="C", copy=True)
             else:
                 arr = np.array(points, dtype=np.double, order="C", copy=True)
 

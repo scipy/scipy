@@ -1186,6 +1186,38 @@ class Test_HalfspaceIntersection:
 
         assert_allclose(hs.dual_points, qhalf_points)
 
+    @pytest.mark.parametrize("k", range(1,4))
+    def test_halfspace_batch(self, k):
+        # Test that we can add halfspaces a few at a time
+        big_square = np.array([[ 1.,  0., -2.],
+                               [-1.,  0., -2.],
+                               [ 0.,  1., -2.],
+                               [ 0., -1., -2.]])
+
+        small_square = np.array([[ 1.,  0., -1.],
+                                 [-1.,  0., -1.],
+                                 [ 0.,  1., -1.],
+                                 [ 0., -1., -1.]])
+
+        hs = qhull.HalfspaceIntersection(big_square, np.zeros((2,)), incremental=True)
+        hs.add_halfspaces(small_square[0:k,:])
+        hs.add_halfspaces(small_square[k:4,:])
+        hs.close()
+
+        # Check the intersections are correct (they are the corners of the small square)
+        expected_intersections = np.array([[1., 1.],
+                                           [1., -1.],
+                                           [-1., 1.],
+                                           [-1., -1.]])
+        actual_intersections = hs.intersections
+        # They may be in any order, so just check that under some permutation 
+        # expected=actual.
+        close = np.isclose(actual_intersections[np.newaxis],
+                           expected_intersections[:, np.newaxis])
+        close = np.all(close, axis=-1)
+
+        assert (np.count_nonzero(close, axis=0) == 1).all()
+        assert (np.count_nonzero(close, axis=1) == 1).all()
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
