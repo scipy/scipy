@@ -958,3 +958,19 @@ def test_empty_transform_application():
 
     with pytest.raises(ValueError, match="operands could not be broadcast together"):
         tf.apply(np.zeros((2, 3)))
+
+
+def test_empty_transform_composition():
+    tf_empty = RigidTransform.identity(0)
+    tf_single = RigidTransform.identity()
+    tf_many = RigidTransform.identity(3)
+
+    assert len(tf_empty * tf_empty) == 0
+    assert len(tf_empty * tf_single) == 0
+    assert len(tf_single * tf_empty) == 0
+
+    with pytest.raises(ValueError, match="Expected equal number of transforms"):
+        tf_many * tf_empty
+
+    with pytest.raises(ValueError, match="Expected equal number of transforms"):
+        tf_empty * tf_many
