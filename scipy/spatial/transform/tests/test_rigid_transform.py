@@ -993,3 +993,22 @@ def test_empty_transform_inv_and_pow():
     tf = RigidTransform.identity(0)
     assert len(tf.inv()) == 0
     assert len(tf ** 0.5) == 0
+
+
+def test_empty_transform_indexing():
+    tf_many = RigidTransform.identity(3)
+    tf_zero = tf_many[[]]
+    assert len(tf_zero) == 0
+
+    assert len(tf_zero[[]]) == 0
+    assert len(tf_zero[:5]) == 0  # Slices can go out of bounds.
+
+    with pytest.raises(IndexError):
+        tf_zero[0]
+
+    with pytest.raises(IndexError):
+        tf_zero[[0, 2]]
+
+    with pytest.raises(IndexError):
+        tf_zero[[False, True]]
+
