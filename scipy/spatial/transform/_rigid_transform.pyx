@@ -474,7 +474,6 @@ cdef class RigidTransform:
         matrix = np.asarray(matrix, dtype=float)
 
         if (matrix.ndim not in [2, 3]
-                or matrix.shape[0] == 0
                 or matrix.shape[-1] != 4
                 or matrix.shape[-2] != 4):
             raise ValueError("Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
@@ -735,9 +734,7 @@ cdef class RigidTransform:
         """
         translation = np.asarray(translation, dtype=float)
 
-        if (translation.ndim not in [1, 2]
-                or translation.shape[0] == 0
-                or translation.shape[-1] != 3):
+        if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
             raise ValueError("Expected `translation` to have shape (3,), or (N, 3), "
                              f"got {translation.shape}.")
 
@@ -908,8 +905,7 @@ cdef class RigidTransform:
         """
         exp_coords = np.asarray(exp_coords, dtype=float)
 
-        if (exp_coords.ndim not in [1, 2] or exp_coords.shape[0] == 0
-                or exp_coords.shape[-1] != 6):
+        if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
             raise ValueError(
                 "Expected `exp_coords` to have shape (6,), or (N, 6), "
                 f"got {exp_coords.shape}.")
@@ -978,8 +974,7 @@ cdef class RigidTransform:
         """
         dual_quat = np.asarray(dual_quat, dtype=float)
 
-        if (dual_quat.ndim not in [1, 2] or dual_quat.shape[0] == 0
-                or dual_quat.shape[-1] != 8):
+        if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
             raise ValueError(
                 "Expected `dual_quat` to have shape (8,), or (N, 8), "
                 f"got {dual_quat.shape}.")
