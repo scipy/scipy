@@ -1323,6 +1323,19 @@ class TestZoom:
         expected = ndimage.zoom(a, factor)
         xp_assert_close(actual, expected)
 
+    def test_zoom_1_gh20999(self, xp):
+        # gh-20999 reported that zoom with `zoom=1` (or sequence of ones)
+        # introduced noise. Check that this is resolve.
+        x = xp.eye(3)
+        xp_assert_equal(ndimage.zoom(x, 1), x)
+        xp_assert_equal(ndimage.zoom(x, (1, 1)), x)
+
+        if is_jax(xp):  # jax doesn't support `output`
+            return
+        output = xp.zeros_like(x)
+        ndimage.zoom(x, 1, output=output)
+        xp_assert_equal(output, x)
+
 
 class TestRotate:
 
