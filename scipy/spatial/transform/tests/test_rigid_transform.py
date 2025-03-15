@@ -987,3 +987,9 @@ def test_empty_transform_concatenation():
     assert len(RigidTransform.concatenate([tf_empty, tf_many])) == 2
     assert len(RigidTransform.concatenate([tf_many, tf_empty])) == 2
     assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
+
+
+def test_empty_transform_inv_and_pow():
+    tf = RigidTransform.identity(0)
+    assert len(tf.inv()) == 0
+    assert len(tf ** 0.5) == 0
