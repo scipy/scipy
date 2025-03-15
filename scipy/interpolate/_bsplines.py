@@ -2271,9 +2271,9 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
 
     >>> import matplotlib.pyplot as plt
     >>> grid = np.linspace(x[0], x[-1], 400)
+    >>> plt.plot(x, y, '.')
     >>> plt.plot(grid, spl(grid), label='Spline')
     >>> plt.plot(grid, func(grid), label='Original function')
-    >>> plt.scatter(x, y, marker='.')
     >>> plt.legend(loc='best')
     >>> plt.show()
 
