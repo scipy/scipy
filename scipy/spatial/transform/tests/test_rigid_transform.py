@@ -974,3 +974,16 @@ def test_empty_transform_composition():
 
     with pytest.raises(ValueError, match="Expected equal number of transforms"):
         tf_empty * tf_many
+
+
+def test_empty_transform_concatenation():
+    tf_empty = RigidTransform.identity(0)
+    tf_single = RigidTransform.identity()
+    tf_many = RigidTransform.identity(2)
+
+    assert len(RigidTransform.concatenate([tf_empty, tf_empty])) == 0
+    assert len(RigidTransform.concatenate([tf_empty, tf_single])) == 1
+    assert len(RigidTransform.concatenate([tf_single, tf_empty])) == 1
+    assert len(RigidTransform.concatenate([tf_empty, tf_many])) == 2
+    assert len(RigidTransform.concatenate([tf_many, tf_empty])) == 2
+    assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
