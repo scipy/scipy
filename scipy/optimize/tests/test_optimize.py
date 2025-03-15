@@ -2456,20 +2456,20 @@ def test_powell_output():
 
 
 class TestRosen:
-    @make_skip_xp_backends("rosen")
+    @make_skip_xp_backends(optimize.rosen)
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
         x = xp.asarray([1, 1, 1])
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 
-    @make_skip_xp_backends("rosen_der")
+    @make_skip_xp_backends(optimize.rosen_der)
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
-    @make_skip_xp_backends("rosen_hess_prod")
+    @make_skip_xp_backends(optimize.rosen_hess, optimize.rosen_hess_prod)
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 
