@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -92,12 +93,14 @@ template <typename T> inline int maxSortUp(T *data, Mediator *m, int i) {
 
 // creates new Mediator: to calculate `nItems` running rank.
 Mediator *MediatorNew(int nItems, int rank) {
-  Mediator *m = new Mediator;
-  m->pos = new int[nItems];
-  m->heap = new int[nItems];
-  if ((m == nullptr) || (m->pos == nullptr) || (m->heap == nullptr)) {
-    printf("out of memory\n");
-    exit(1);
+  Mediator *m = new (std::nothrow) Mediator;
+  if (!m) {
+    PyErr_SetString(PyExc_MemoryError, "memory allocation error");
+  }
+  m->pos = new (std::nothrow) int[nItems];
+  m->heap = new (std::nothrow) int[nItems];
+  if ((!m->pos) || (!m->heap)) {
+    PyErr_SetString(PyExc_MemoryError, "memory allocation error");
   }
   m->heap += rank; // points to rank
   m->N = nItems;
@@ -157,11 +160,13 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
   int lim2 = arr_len - lim;
   int offset;
   Mediator *m = MediatorNew(win_len, rank);
-  T *data = new T[win_len];
+  T *data = new (std::nothrow) T[win_len];
+  if (!data) {
+    PyErr_SetString(PyExc_MemoryError, "memory allocation error");
+  }
   for (int i = 0; i < win_len; ++i) {
     data[i] = 0;
   }
-
 
   switch (mode) {
   case REFLECT:
@@ -186,10 +191,9 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
     break;
   case WRAP:
     if (win_len % 2 == 0) {
-        offset = 2;
-    }
-    else {
-        offset = 0;
+      offset = 2;
+    } else {
+      offset = 0;
     }
     for (i = arr_len - lim - offset - 2 * origin; i < arr_len; i++) {
       MediatorInsert(data, m, in_arr[i]);
@@ -315,19 +319,17 @@ static struct PyModuleDef _rank_filter_1d = {
     myMethods};
 
 // init the module
-PyMODINIT_FUNC
-PyInit__rank_filter_1d(void)
-{
-    PyObject *module;
+PyMODINIT_FUNC PyInit__rank_filter_1d(void) {
+  PyObject *module;
 
-    import_array();
-    module = PyModule_Create(&_rank_filter_1d);
-    if (module == NULL) {
-        return module;
-    }
+  import_array();
+  module = PyModule_Create(&_rank_filter_1d);
+  if (!module) {
+    return module;
+  }
 
 #if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+  PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
 #endif
 
   return module;
