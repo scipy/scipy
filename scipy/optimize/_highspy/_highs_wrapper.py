@@ -333,9 +333,16 @@ def check_option(highs_inst, option, value):
 def _get_marg_bnds(solution_col_dual, basis_col_status):
     numcol = len(basis_col_status)
     marg_bnds = np.zeros((2, numcol))
-    for ii in range(numcol):
-        if basis_col_status[ii] == _h.HighsBasisStatus.kLower:
-            marg_bnds[0, ii] = solution_col_dual[ii]
-        elif basis_col_status[ii] == _h.HighsBasisStatus.kUpper:
-            marg_bnds[1, ii] = solution_col_dual[ii]
+    basis_col_status_values = np.array(
+        [status.value for status in basis_col_status],
+        dtype='uint8'
+    )
+    solution_col_dual_array = np.array(solution_col_dual, dtype='float64')
+    is_lower = basis_col_status_values == _h.HighsBasisStatus.kLower.value
+    is_upper = basis_col_status_values == _h.HighsBasisStatus.kUpper.value
+    # If is_lower, write to row 0. If is_upper, write to row 1. If neither, write
+    # nothing. Note that is_lower and is_upper cannot be True at the same index.
+    marg_bnds = np.zeros((2, numcol))
+    marg_bnds[0, is_lower] = solution_col_dual_array[is_lower]
+    marg_bnds[1, is_upper] = solution_col_dual_array[is_upper]
     return marg_bnds
