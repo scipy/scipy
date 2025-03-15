@@ -18,7 +18,8 @@ from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
-                       check_shape, check_reshape_kwargs, isscalarlike, isdense)
+                       check_shape, check_reshape_kwargs, isscalarlike,
+                       isdense, broadcast_shapes)
 
 import operator
 
@@ -716,7 +717,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if batch_shape_A != batch_shape_B:
                     try:
                         # This will raise an error if the shapes are not broadcastable
-                        np.broadcast_shapes(batch_shape_A, batch_shape_B)
+                        broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
 
@@ -756,7 +757,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if batch_shape_A != batch_shape_B:
                     try:
                         # This will raise an error if the shapes are not broadcastable
-                        np.broadcast_shapes(batch_shape_A, batch_shape_B)
+                        broadcast_shapes(batch_shape_A, batch_shape_B)
                     except ValueError:
                         raise ValueError("Batch dimensions are not broadcastable")
 
@@ -780,7 +781,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 result = self.reshape(1, self.shape[0])._matmul_multivector(other)
                 return result.reshape(tuple(other.shape[:-2]) + tuple(other.shape[-1:]))
 
-            broadcast_shape = np.broadcast_shapes(self.shape[:-2], other.shape[:-2])
+            broadcast_shape = broadcast_shapes(self.shape[:-2], other.shape[:-2])
             self_shape = broadcast_shape + self.shape[-2:]
             other_shape = broadcast_shape + other.shape[-2:]
 
@@ -1199,7 +1200,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         other_shape = other.shape
 
         # Determine the new shape to broadcast self and other
-        broadcast_shape = np.broadcast_shapes(self_shape[:-2], other_shape[:-2])
+        broadcast_shape = broadcast_shapes(self_shape[:-2], other_shape[:-2])
         self_new_shape = tuple(broadcast_shape) + self_shape[-2:]
         other_new_shape = tuple(broadcast_shape) + other_shape[-2:]
 
