@@ -470,7 +470,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         # If the integration limits were such that b < a, we reversed them
         # to perform the calculation, and the final result needs to be negated.
         if log and xp.any(negative):
-            res['integral'] = res['integral'] + negative * xp.pi* 1.0j
+            res['integral'] = res['integral'] + negative * xp.pi * 1.0j
         else:
             res['integral'][negative] *= -1
 
