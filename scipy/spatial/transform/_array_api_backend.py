@@ -9,7 +9,7 @@ with any Array API-compatible backend.
 import re
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, Array, ArrayLike
+from scipy._lib._array_api import array_namespace, Array, ArrayLike, is_jax
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
 
@@ -549,10 +549,34 @@ def align_vectors(
     n_inf = xp.sum(xp.astype(weight_is_inf, atleast_f32(a)))
     weights = xp.where(n_inf > 1, xp.asarray(xp.nan, device=device(a)), weights)
 
-    q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_inf_weight(a, b, weights)
+    inf_branch = xp.any(weight_is_inf, axis=-1)
+    # DECISION: We cannot compute both branches for all frameworks. There are two main reasons:
+    # 1. Computing both for eager execution models is expensive.
+    # 2. Some operations will fail when running the unused branch because of numerical and
+    # algorithmical issues. Numpy e.g. will raise an exception when trying to compute the svd of a
+    # matrix with infinite weights. To prevent this, we only compute the branch that is needed. Jax
+    # jit however requires us to take the full compute graph. Therefore, we use xp.where for jax and
+    # a branching version for non-jax frameworks.
+    #
+    # Note that we could also solve this by exploiting the externals of xpx.apply_where. However,
+    # we'd have to rely on the implementation details of apply_where, which is something we should
+    # avoid in the long run.
+    if is_jax(xp):
+        q_opt, rssd, sensitivity = _align_vectors(a, b, weights)
+        q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_fixed(a, b, weights)
+        q_opt = xp.where(~inf_branch, q_opt, q_opt_inf)
+        rssd = xp.where(~inf_branch, rssd, rssd_inf)
+        sensitivity = xp.where(~inf_branch, sensitivity, sensitivity_inf)
+    else:
+        if xp.any(inf_branch):
+            q_opt, rssd, sensitivity = _align_vectors_fixed(a, b, weights)
+        else:
+            q_opt, rssd, sensitivity = _align_vectors(a, b, weights)
+    return q_opt, rssd, sensitivity
 
-    # If no infinite weights and multiple vectors, proceed with normal
-    # algorithm
+
+def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Array]:
+    xp = array_namespace(a)
     B = (weights[:, None] * a).mT @ b
     u, s, vh = xp.linalg.svd(B)
 
@@ -571,27 +595,45 @@ def align_vectors(
     # TODO: We currently need to always compute the sensitivity matrix because jit code needs to be
     # non-branching. We should check if compilers can optimize the where statement (e.g. in jax)
     # and check if we can have an eager version that only evaluates the branch that is needed.
-    # Blocked by xpx.apply_where
-    # Tracking issue: https://github.com/data-apis/array-api-extra/pull/141
+    # See xpx.apply_where, issue: https://github.com/data-apis/array-api-extra/pull/141
     zeta = (s[..., 0] + s[..., 1]) * (s[..., 1] + s[..., 2]) * (s[..., 2] + s[..., 0])
     kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
     sensitivity = xp.mean(weights) / zeta * (kappa * xp.eye(3) + B @ B.mT)
-    q_opt = xp.where(weight_is_inf, q_opt_inf, from_matrix(C))
-    rssd = xp.where(weight_is_inf, rssd_inf, rssd)
-    sensitivity = xp.where(weight_is_inf, sensitivity_inf, sensitivity)
+    q_opt = from_matrix(C)
     return q_opt, rssd, sensitivity
 
 
-def _align_vectors_inf_weight(
+def _align_vectors_fixed(
     a: Array, b: Array, weights: Array
-) -> tuple[Array, Array, None]:
+) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
     N = a.shape[0]
     weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
-    a_pri = a[weight_is_inf]
-    b_pri = b[weight_is_inf]
-    a_pri_norm = xp.linalg.vector_norm(a_pri[..., 0, :], axis=-1)
-    b_pri_norm = xp.linalg.vector_norm(b_pri[..., 0, :], axis=-1)
+    # We cannot use boolean masks for indexing because of jax. For the same reason, we also cannot
+    # use dynamic slices. As a workaround, we roll the array so that the infinitely weighted vector
+    # is at index 0. We then use static slices to get the primary and secondary vectors.
+    #
+    # Note that argmax fulfils a secondary purpose here:
+    # When we trace this function with jax, this function might get executed even if weight_is_inf
+    # does not have a single valid entry. Argmax will still give us a valid index which allows us to
+    # proceed with the function (the results are discarded anyways), whereas boolean indexing would
+    # result in invalid, zero-shaped arrays.
+
+    inf_idx = xp.argmax(xp.astype(weight_is_inf, xp.uint8))
+    # Bug: torch.argmax returns a tensor, but does not support tensors as shifts in xp.roll. We
+    # cannot convert to int because this raises a jax concretization error during jitting. This
+    # will ideally be solved by an update of array-api-compat.
+    # Tracking issue: https://github.com/data-apis/array-api/issues/914
+    if not is_jax(xp):
+        inf_idx = int(inf_idx)
+    a_sorted = xp.roll(a, shift=-inf_idx, axis=0)
+    b_sorted = xp.roll(b, shift=-inf_idx, axis=0)
+    weights_sorted = xp.roll(weights, shift=-inf_idx, axis=0)
+
+    a_pri = a_sorted[0, ...][None, ...]  # Effectively [[0], ...]
+    b_pri = b_sorted[0, ...][None, ...]
+    a_pri_norm = xp.linalg.vector_norm(a_pri, axis=-1, keepdims=True)
+    b_pri_norm = xp.linalg.vector_norm(b_pri, axis=-1, keepdims=True)
 
     # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
     # zero and mark the result as invalid.
@@ -642,9 +684,10 @@ def _align_vectors_inf_weight(
 
     # Case 1): No secondary vectors, q_opt is q_pri -> Immediately done
     # Case 2): Secondary vectors exist
-    a_sec = a[~weight_is_inf]
-    b_sec = b[~weight_is_inf]
-    weights_sec = weights[~weight_is_inf]
+    # We cannot use boolean masks here because of jax
+    a_sec = a_sorted[1:, ...]
+    b_sec = b_sorted[1:, ...]
+    weights_sec = weights_sorted[1:]
 
     # We apply the first rotation to the b vectors to align the
     # primary vectors, resulting in vectors c. The secondary
@@ -677,19 +720,19 @@ def _align_vectors_inf_weight(
     # be zero for the infinite weight vectors since they will align
     # exactly.
     weights_inf_zero = xp.asarray(weights, copy=True)
-    if N > 1 or weights[0] == xp.inf:
-        # Skip non-infinite weight single vectors pairs, we used the
-        # infinite weight code path but don't want to zero that weight
-        weights_inf_zero = xpx.at(weights_inf_zero)[weight_is_inf].set(0)
+
+    multiple_vectors = xp.asarray(N > 1, device=device(weights))
+    mask = xp.logical_or(multiple_vectors, weights[0] == xp.inf)
+    mask = xp.logical_and(mask, weight_is_inf)
+    # Skip non-infinite weight single vectors pairs, we used the
+    # infinite weight code path but don't want to zero that weight
+    weights_inf_zero = xpx.at(weights_inf_zero)[mask].set(0)
     a_est = apply(q_opt, b)
     rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
 
     mask = xp.any(xp.isnan(weights), axis=-1)
     q_opt = xp.where(mask, xp.asarray(xp.nan, device=device(q_opt)), q_opt)
-    return (
-        q_opt,
-        rssd,
-    )
+    return q_opt, rssd, xp.asarray(xp.nan, device=device(q_opt))
 
 
 def _normalize_quaternion(quat: Array) -> Array:

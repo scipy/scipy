@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
     is_numpy,
     is_array_api_strict,
     is_torch,
+    is_jax,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1098,7 +1099,6 @@ def test_approx_equal_single_rotation(xp):
 
     p = Rotation.from_rotvec(xp.asarray([0, 0, 1e-9]))  # less than default atol of 1e-8
     q = Rotation.from_quat(xp.eye(4))
-    print(q[3])
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
 
@@ -1496,10 +1496,9 @@ def test_align_vectors_noise(xp):
 
 
 def test_align_vectors_invalid_input(xp):
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="Expected input `a` to have shape"):
-            a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
-            Rotation.align_vectors(a, b)
+    with pytest.raises(ValueError, match="Expected input `a` to have shape"):
+        a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
+        Rotation.align_vectors(a, b)
 
     with pytest.raises(ValueError, match="Expected input `b` to have shape"):
         a, b = xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3, 4])
@@ -1538,12 +1537,12 @@ def test_align_vectors_invalid_input(xp):
     if is_numpy(xp):
         with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
             Rotation.align_vectors(a, b, weights)
-    elif is_array_api_strict(xp):
-        with pytest.raises(ValueError, match="SVD did not converge"):
-            Rotation.align_vectors(a, b, weights)
-    elif is_torch(xp):
-        with pytest.raises(Exception, match="linalg.svd: "):
-            Rotation.align_vectors(a, b, weights)
+    # elif is_array_api_strict(xp):
+    #     with pytest.raises(ValueError, match="SVD did not converge"):
+    #         Rotation.align_vectors(a, b, weights)
+    # elif is_torch(xp):
+    #     with pytest.raises(Exception, match="linalg.svd: "):
+    #         Rotation.align_vectors(a, b, weights)
     else:
         r, rssd = Rotation.align_vectors(a, b, weights)
         assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
@@ -1567,7 +1566,7 @@ def test_align_vectors_invalid_input(xp):
             Rotation.align_vectors(a, b, weights, return_sensitivity=True)
     else:
         r, rssd, sens = Rotation.align_vectors(a, b, weights, return_sensitivity=True)
-        assert sens is None, "Sensitivity matrix should be None"
+        assert xp.all(xp.isnan(sens)), "Sensitivity matrix should be nan"
 
     a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
     if is_numpy(xp):
@@ -1575,7 +1574,7 @@ def test_align_vectors_invalid_input(xp):
             Rotation.align_vectors(a, b, return_sensitivity=True)
     else:
         r, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
-        assert sens is None, "Sensitivity matrix should be None"
+        assert xp.all(xp.isnan(sens)), "Sensitivity matrix should be nan"
 
 
 def test_align_vectors_align_constrain(xp):
@@ -1616,11 +1615,17 @@ def test_align_vectors_near_inf(xp):
     # infinite weights. rssd will be different with floating point error on the
     # exactly aligned vector being multiplied by a large non-infinite weight
 
-    # TODO: Consider jitting for JAX. Non-jitted version is quite slow
     n = 100
     mats = []
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
+
+    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    align_vectors = Rotation.align_vectors
+    if is_jax(xp):
+        import jax  # Must be installed because is_jax succeeds
+
+        align_vectors = jax.jit(Rotation.align_vectors)
 
     for i in range(n):
         # Get random pairs of 3-element vectors
@@ -1628,8 +1633,8 @@ def test_align_vectors_near_inf(xp):
         a = xp.asarray(np.array([1 * mats[0][i][0], 2 * mats[1][i][0]]))
         b = xp.asarray(np.array([3 * mats[2][i][0], 4 * mats[3][i][0]]))
 
-        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
-        R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R, _ = align_vectors(a, b, weights=[1e10, 1])
+        R2, _ = align_vectors(a, b, weights=[np.inf, 1])
         assert_allclose(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
     for i in range(n):
@@ -1639,8 +1644,8 @@ def test_align_vectors_near_inf(xp):
         a = xp.asarray(a)
         b = xp.asarray(b)
 
-        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 2, 1])
-        R2, _ = Rotation.align_vectors(a, b, weights=[np.inf, 2, 1])
+        R, _ = align_vectors(a, b, weights=[1e10, 2, 1])
+        R2, _ = align_vectors(a, b, weights=[np.inf, 2, 1])
         assert_allclose(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
 
@@ -1671,10 +1676,17 @@ def test_align_vectors_antiparallel(xp):
         [[[1, 0, 0], [0, 1, 0]], [[0, 1, 0], [1, 0, 0]], [[0, 0, 1], [0, 1, 0]]]
     )
 
+    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    align_vectors = Rotation.align_vectors
+    if is_jax(xp):
+        import jax  # Must be installed because is_jax succeeds
+
+        align_vectors = jax.jit(Rotation.align_vectors)
+
     bs_to_test = np.array([[-a[0], a[1]] for a in as_to_test])
     for a, b in zip(as_to_test, bs_to_test):
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R, _ = align_vectors(a, b, weights=[np.inf, 1])
         assert_allclose(R.magnitude(), np.pi, atol=atol)
         assert_allclose(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
@@ -1688,8 +1700,8 @@ def test_align_vectors_antiparallel(xp):
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
     for a in as_to_test:
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
-        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        R, _ = align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = align_vectors(a, b, weights=[1e10, 1])
         assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
@@ -1697,13 +1709,21 @@ def test_align_vectors_primary_only(xp):
     atol = 1e-12
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
+
+    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    align_vectors = Rotation.align_vectors
+    if is_jax(xp):
+        import jax  # Must be installed because is_jax succeeds
+
+        align_vectors = jax.jit(Rotation.align_vectors)
+
     for mat_a, mat_b in zip(mats_a, mats_b):
         # Get random 3-element unit vectors
         a = xp.asarray(mat_a[0])
         b = xp.asarray(mat_b[0])
 
         # Compare to align_vectors with primary only
-        R, rssd = Rotation.align_vectors(a, b)
+        R, rssd = align_vectors(a, b)
         assert_allclose(R.apply(b), a, atol=atol)
         assert np.isclose(rssd, 0, atol=atol)
 
