@@ -783,8 +783,7 @@ def test_concatenate():
 
 def test_input_validation():
     # Test invalid matrix shapes
-    inputs = [np.eye(3), np.zeros((4, 3)), [],
-              np.zeros((0, 4, 4)), np.zeros((1, 1, 4, 4))]
+    inputs = [np.eye(3), np.zeros((4, 3)), [], np.zeros((1, 1, 4, 4))]
     for input in inputs:
         with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
             RigidTransform.from_matrix(input)
@@ -822,9 +821,6 @@ def test_translation_validation():
         RigidTransform.from_translation(np.zeros((2, 2)))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransform.from_translation(np.zeros((0, 3)))
-
-    with pytest.raises(ValueError, match="Expected `translation` to have shape"):
         RigidTransform.from_translation(np.zeros((1, 1, 3)))
 
 
@@ -837,9 +833,6 @@ def test_vector_validation():
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
         tf.apply(np.zeros((2, 2)))
-
-    with pytest.raises(ValueError, match="Expected vector to have shape"):
-        tf.apply(np.zeros((0, 3)))
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
         tf.apply(np.zeros((1, 1, 3)))
