@@ -901,8 +901,8 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
         raise ValueError(message)
 
     message = 'All elements of `a`, `b`, and `step` must be real numbers.'
+    dtype = xp.result_type(a, b, step)
     a, b, step = xp.broadcast_arrays(xp.asarray(a), xp.asarray(b), xp.asarray(step))
-    dtype = xp.result_type(a.dtype, b.dtype, step.dtype)
     if not xp.isdtype(dtype, 'numeric') or xp.isdtype(dtype, 'complex floating'):
         raise ValueError(message)
 

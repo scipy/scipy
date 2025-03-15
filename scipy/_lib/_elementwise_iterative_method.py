@@ -15,7 +15,7 @@
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, xp_size
+from ._array_api import array_namespace, xp_size, xp_result_type
 
 _ESIGNERR = -1
 _ECONVERR = -2
@@ -82,9 +82,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     # and cause failure.
     # There might be benefit to combining the `xs` into a single array and
     # calling `func` once on the combined array. For now, keep them separate.
+    xat = xp_result_type(*xs, force_floating=True, xp=xp)
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
-    xat = xp.result_type(*[xa.dtype for xa in xas])
-    xat = xp.asarray(1.).dtype if xp.isdtype(xat, "integral") else xat
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
     fs = [xp.asarray(func(x, *args)) for x in xs]

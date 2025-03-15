@@ -863,8 +863,7 @@ def _log_var(logx, xp):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx)
     # get complex dtype with component dtypes same as `logx` dtype;
-    # see data-apis/array-api#841
-    dtype = xp.result_type(logx.dtype, xp.complex64)
+    dtype = xp.result_type(logx.dtype, 1j)
     pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
     logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
     res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
