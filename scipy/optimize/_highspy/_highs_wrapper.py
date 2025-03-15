@@ -263,14 +263,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
     basis = highs.getBasis()
 
     # Lagrangians for bounds based on column statuses
-    marg_bnds = np.zeros((2, numcol))
-    basis_col_status = basis.col_status
-    solution_col_dual = solution.col_dual
-    for ii in range(numcol):
-        if basis_col_status[ii] == _h.HighsBasisStatus.kLower:
-            marg_bnds[0, ii] = solution_col_dual[ii]
-        elif basis_col_status[ii] == _h.HighsBasisStatus.kUpper:
-            marg_bnds[1, ii] = solution_col_dual[ii]
+    marg_bnds = _get_marg_bnds(solution.col_dual, basis.col_status)
 
     res.update(
         {
@@ -336,3 +329,13 @@ def check_option(highs_inst, option, value):
     if status != _h.HighsStatus.kOk:
         return 4, "Failed to validate option value."
     return 0, "Check option succeeded."
+
+def _get_marg_bnds(solution_col_dual, basis_col_status):
+    numcol = len(basis_col_status)
+    marg_bnds = np.zeros((2, numcol))
+    for ii in range(numcol):
+        if basis_col_status[ii] == _h.HighsBasisStatus.kLower:
+            marg_bnds[0, ii] = solution_col_dual[ii]
+        elif basis_col_status[ii] == _h.HighsBasisStatus.kUpper:
+            marg_bnds[1, ii] = solution_col_dual[ii]
+    return marg_bnds
