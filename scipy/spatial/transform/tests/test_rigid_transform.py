@@ -750,6 +750,12 @@ def test_indexing():
     assert_allclose(tf_slice.as_matrix()[:, :3, :3], r[0:2].as_matrix(), atol=atol)
     assert_allclose(tf_slice.as_matrix()[:, :3, 3], t[0:2], atol=atol)
 
+    # Test boolean indexing
+    tf_masked = tf[[False, True]]
+    assert_allclose(tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(),
+                    atol=atol)
+    assert_allclose(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
+
 
 def test_concatenate():
     atol = 1e-12
@@ -1011,4 +1017,3 @@ def test_empty_transform_indexing():
 
     with pytest.raises(IndexError):
         tf_zero[[False, True]]
-
