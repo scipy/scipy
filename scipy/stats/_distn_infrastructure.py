@@ -26,7 +26,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy._lib._finite_differences import _derivative
+from scipy.stats._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
