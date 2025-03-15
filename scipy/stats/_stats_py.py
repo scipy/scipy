@@ -81,6 +81,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_broadcast_promote,
+    xp_result_type,
 )
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
@@ -143,16 +144,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _convert_common_float(*arrays, xp=None):
-    xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [_asarray(array, subok=True) for array in arrays]
-    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
-               else array.dtype) for array in arrays]
-    dtype = xp.result_type(*dtypes)
-    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
-    return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -2865,7 +2856,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = _convert_common_float(a, xp=xp)
+    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
@@ -2927,7 +2918,8 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
-    scores, compare = _convert_common_float(scores, compare, xp=xp)
+    scores, compare = xp_broadcast_promote(scores, compare, broadcast=False,
+                                           force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
         if like_zscore:  # zscore should not emit SmallSampleWarning
@@ -3058,7 +3050,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
+    a = xp_broadcast_promote(a, force_floating=True)  # just promote to correct float
 
     kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
@@ -4698,9 +4690,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     y = xp.moveaxis(y, axis, -1)
     axis = -1
 
-    dtype = xp.result_type(x.dtype, y.dtype)
-    if xp.isdtype(dtype, "integral"):
-        dtype = xp.asarray(1.).dtype
+    dtype = xp_result_type(x.dtype, y.dtype, force_floating=True, xp=xp)
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -7373,16 +7363,14 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     elif lambda_ is None:
         lambda_ = 1
 
-    f_obs = xp.asarray(f_obs)
-    dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
+    dtype = xp_result_type(f_obs, f_exp, force_floating=True, xp=xp)
     f_obs = xp.asarray(f_obs, dtype=dtype)
-    f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
 
     if f_exp is not None:
-        f_exp = xp.asarray(f_exp)
-        dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
         f_exp = xp.asarray(f_exp, dtype=dtype)
 
+        # not sure why we force to float64, but not going to touch it
+        f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = xp.broadcast_to(f_obs_float, bshape)
         f_exp = xp.broadcast_to(f_exp, bshape)

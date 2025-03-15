@@ -45,6 +45,7 @@ __all__ = [
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
+    'xp_result_type', 'xp_broadcast_promote'
 ]
 
 
@@ -513,31 +514,47 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.reshape(x, (-1,))
 
 
-# utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
-    xp = array_namespace(*args) if xp is None else xp
-
-    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
+# utility to find common dtype with option to force floating
+def xp_result_type(*args, xp, force_floating=False):
+    args = [(_asarray(arg, subok=True) if np.iterable(arg) else arg)
+            for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
 
-    # determine minimum dtype
-    default_float = xp.asarray(1.).dtype
-    dtypes = [arg.dtype for arg in args_not_none]
-    try:  # follow library's prefered mixed promotion rules
-        dtype = xp.result_type(*dtypes)
-        if force_floating and xp.isdtype(dtype, 'integral'):
-            # If we were to add `default_float` before checking whether the result
-            # type is otherwise integral, we risk promotion from lower float.
-            dtype = xp.result_type(dtype, default_float)
+    try:  # follow library's preferred promotion rules
+        dtype = (xp.result_type(*args_not_none, 1.0) if force_floating
+                 else xp.result_type(*args_not_none))
     except TypeError:  # mixed type promotion isn't defined
-        float_dtypes = [dtype for dtype in dtypes
-                        if not xp.isdtype(dtype, 'integral')]
-        if float_dtypes:
-            dtype = xp.result_type(*float_dtypes, default_float)
+        default_float = xp_default_dtype(xp)
+        float_args = []
+        for arg in args_not_none:
+            arg = xp.asarray(arg) if np.isscalar(arg) else arg
+            dtype = getattr(arg, 'dtype', arg)
+            if not xp.isdtype(dtype, 'integral'):
+                float_args.append(arg)
+        if float_args:
+            dtype = xp.result_type(*float_args, default_float)
         elif force_floating:
             dtype = default_float
         else:
-            dtype = xp.result_type(*dtypes)
+            dtype = xp.result_type(*args_not_none)
+
+    return dtype
+
+
+# utility to broadcast arrays and promote to common dtype
+def xp_broadcast_promote(*args, broadcast=True, ensure_writeable=False,
+                         force_floating=False, xp=None):
+    xp = array_namespace(*args) if xp is None else xp
+
+    dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
+
+    args = [(_asarray(arg, dtype=dtype, subok=True) if arg is not None else arg)
+            for arg in args]
+
+    if not broadcast:
+        return args[0] if len(args)==1 else tuple(args)
+
+    args_not_none = [arg for arg in args if arg is not None]
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
@@ -566,7 +583,7 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             arg = xp.astype(arg, dtype, copy=True)
         out.append(arg)
 
-    return out
+    return out[0] if len(out)==1 else tuple(out)
 
 
 def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
