@@ -199,12 +199,14 @@ class Rotation:
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
     def __getstate__(self):
-        return self._xp.asarray(self._quat, dtype=float)
+        return (self._quat, self._single)
 
     def __setstate__(self, state):
-        xp = array_namespace(state)
+        quat, single = state
+        xp = array_namespace(quat)
         self._backend = backend_registry.get(xp, array_api_backend)
-        self._quat = xp.asarray(state, copy=True)
+        self._quat = xp.asarray(quat, copy=True)
+        self._single = single
 
     @property
     def single(self):
@@ -250,6 +252,77 @@ class Rotation:
         if self._single:
             quat = quat[0]
         return Rotation(quat, normalize=True, copy=False)
+
+    def __pow__(self, n: float, modulus: None = None) -> Rotation:
+        """Compose this rotation with itself `n` times.
+
+        Composition of a rotation ``p`` with itself can be extended to
+        non-integer ``n`` by considering the power ``n`` to be a scale factor
+        applied to the angle of rotation about the rotation's fixed axis. The
+        expression ``q = p ** n`` can also be expressed as
+        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
+
+        If ``n`` is negative, then the rotation is inverted before the power
+        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
+
+        Parameters
+        ----------
+        n : float
+            The number of times to compose the rotation with itself.
+        modulus : None
+            This overridden argument is not applicable to Rotations and must be
+            ``None``.
+
+        Returns
+        -------
+        power : `Rotation` instance
+            If the input Rotation ``p`` contains ``N`` multiple rotations, then
+            the output will contain ``N`` rotations where the ``i`` th rotation
+            is equal to ``p[i] ** n``
+
+        Notes
+        -----
+        For example, a power of 2 will double the angle of rotation, and a
+        power of 0.5 will halve the angle. There are three notable cases: if
+        ``n == 1`` then the original rotation is returned, if ``n == 0``
+        then the identity rotation is returned, and if ``n == -1`` then
+        ``p.inv()`` is returned.
+
+        Note that fractional powers ``n`` which effectively take a root of
+        rotation, do so using the shortest path smallest representation of that
+        angle (the principal root). This means that powers of ``n`` and ``1/n``
+        are not necessarily inverses of each other. For example, a 0.5 power of
+        a +240 degree rotation will be calculated as the 0.5 power of a -120
+        degree rotation, with the result being a rotation of -60 rather than
+        +120 degrees.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+
+        Raising a rotation to a power:
+
+        >>> p = R.from_rotvec([1, 0, 0])
+        >>> q = p ** 2
+        >>> q.as_rotvec()
+        array([2., 0., 0.])
+        >>> r = p ** 0.5
+        >>> r.as_rotvec()
+        array([0.5, 0., 0.])
+
+        Inverse powers do not necessarily cancel out:
+
+        >>> p = R.from_rotvec([0, 0, 120], degrees=True)
+        >>> ((p ** 2) ** 0.5).as_rotvec(degrees=True)
+        array([  -0.,   -0., -60.])
+
+        """
+        if modulus is not None:
+            raise NotImplementedError("modulus not supported")
+        quat = self._backend.pow(self._quat, n)
+        if self._single:
+            quat = quat[0]
+        return Rotation(quat, normalize=False, copy=False)
 
     def _to_array(self, quat: ArrayLike) -> Array:
         """Convert the quaternion to an array.

@@ -1903,35 +1903,43 @@ def test_slerp_call_scalar_time():
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
 
 
-def test_multiplication_stability():
+def test_multiplication_stability(xp):
     qs = Rotation.random(50, rng=0)
+    qs = Rotation.from_quat(xp.asarray(qs.as_quat()))
     rs = Rotation.random(1000, rng=1)
-    for q in qs:
-        rs *= q * rs
-        assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
+    rs = Rotation.from_quat(xp.asarray(rs.as_quat()))
+
+    for i in range(len(qs)):  # Iterating over qs directly is slow
+        rs = rs * qs[i] * rs
+
+    assert_allclose(xp.linalg.vector_norm(rs.as_quat(), axis=1), 1)
 
 
-def test_pow():
+def test_pow(xp):
     atol = 1e-14
     p = Rotation.random(10, rng=0)
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
     p_inv = p.inv()
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         # Test accuracy
         q = p**n
         r = Rotation.identity(10)
+        r = Rotation.from_quat(xp.asarray(r.as_quat()))
         for _ in range(abs(n)):
             if n > 0:
                 r = r * p
             else:
                 r = r * p_inv
         ang = (q * r.inv()).magnitude()
-        assert np.all(ang < atol)
+        assert xp.all(ang < atol)
 
         # Test shape preservation
         r = Rotation.from_quat([0, 0, 0, 1])
+        r = Rotation.from_quat(xp.asarray(r.as_quat()))
         assert (r**n).as_quat().shape == (4,)
         r = Rotation.from_quat([[0, 0, 0, 1]])
+        r = Rotation.from_quat(xp.asarray(r.as_quat()))
         assert (r**n).as_quat().shape == (1, 4)
 
     # Large angle fractional
@@ -1941,20 +1949,22 @@ def test_pow():
         assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
 
     # Small angle
-    p = Rotation.from_rotvec([1e-12, 0, 0])
+    p = Rotation.from_rotvec(xp.asarray([1e-12, 0, 0]))
     n = 3
     q = p**n
     r = Rotation.from_rotvec(n * p.as_rotvec())
     assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
 
 
-def test_pow_errors():
+def test_pow_errors(xp):
     p = Rotation.random(rng=0)
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
     with pytest.raises(NotImplementedError, match="modulus not supported"):
         pow(p, 1, 1)
 
 
 def test_rotation_within_numpy_array():
+    # TODO: Do we want to support this for all Array API frameworks?
     single = Rotation.random(rng=0)
     multiple = Rotation.random(2, rng=1)
 
@@ -1984,15 +1994,19 @@ def test_rotation_within_numpy_array():
     assert_equal(array.shape, (3, 2))
 
 
-def test_pickling():
-    r = Rotation.from_quat([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)])
+def test_pickling(xp):
+    if is_array_api_strict(xp):
+        pytest.skip(f"Pickle is not supported for {xp}")
+    r = Rotation.from_quat(xp.asarray([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)]))
     pkl = pickle.dumps(r)
     unpickled = pickle.loads(pkl)
     assert_allclose(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-def test_deepcopy():
-    r = Rotation.from_quat([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)])
+def test_deepcopy(xp):
+    if is_array_api_strict(xp):
+        pytest.skip(f"Deepcopy is not supported for {xp}")
+    r = Rotation.from_quat(xp.asarray([0, 0, np.sin(np.pi / 4), np.cos(np.pi / 4)]))
     r1 = copy.deepcopy(r)
     assert_allclose(r.as_matrix(), r1.as_matrix(), atol=1e-15)
 

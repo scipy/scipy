@@ -735,6 +735,24 @@ def _align_vectors_fixed(
     return q_opt, rssd, xp.asarray(xp.nan, device=device(q_opt))
 
 
+def pow(quat: Array, n: float) -> Array:
+    xp = array_namespace(quat)
+    # general scaling of rotation angle
+    result = from_rotvec(n * as_rotvec(quat))
+    # Special cases 0 -> identity, -1 -> inv, 1 -> copy
+    identity = xp.zeros(
+        (*quat.shape[:-1], 4), dtype=atleast_f32(quat), device=device(quat)
+    )
+    identity = xpx.at(identity)[..., 3].set(1)
+    mask = xp.asarray(n == 0, device=device(quat))
+    result = xp.where(mask, identity, result)
+    mask = xp.asarray(n == -1, device=device(quat))
+    result = xp.where(mask, inv(quat), result)
+    mask = xp.asarray(n == 1, device=device(quat))
+    result = xp.where(mask, quat, result)
+    return result
+
+
 def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat_norm = xp.linalg.vector_norm(quat, axis=-1, keepdims=True)

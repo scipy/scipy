@@ -1120,6 +1120,20 @@ def align_vectors(a, b, weights=None, return_sensitivity: cython.bint = False):
         return from_matrix(C), rssd, sensitivity
     return from_matrix(C), rssd, None
 
+
+@cython.embedsignature(True)
+def pow(quat: double[:, :], n: float) -> double[:, :]:
+    # Exact short-cuts
+    if n == 0:
+        return identity(quat.shape[0])
+    elif n == -1:
+        return inv(quat)
+    elif n == 1:
+        return quat
+    # general scaling of rotation angle
+    return from_rotvec(n * as_rotvec(quat))
+
+
 cdef class Rotation:
     cdef double[:, :] _quat
     cdef bint _single
@@ -1599,87 +1613,6 @@ cdef class Rotation:
         if self._single and other._single:
             result = result[0]
         return self.__class__(result, normalize=True, copy=False)
-
-    @cython.embedsignature(True)
-    def __pow__(Rotation self, float n, modulus):
-        """Compose this rotation with itself `n` times.
-
-        Composition of a rotation ``p`` with itself can be extended to
-        non-integer ``n`` by considering the power ``n`` to be a scale factor
-        applied to the angle of rotation about the rotation's fixed axis. The
-        expression ``q = p ** n`` can also be expressed as
-        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
-
-        If ``n`` is negative, then the rotation is inverted before the power
-        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
-
-        Parameters
-        ----------
-        n : float
-            The number of times to compose the rotation with itself.
-        modulus : None
-            This overridden argument is not applicable to Rotations and must be
-            ``None``.
-
-        Returns
-        -------
-        power : `Rotation` instance
-            If the input Rotation ``p`` contains ``N`` multiple rotations, then
-            the output will contain ``N`` rotations where the ``i`` th rotation
-            is equal to ``p[i] ** n``
-
-        Notes
-        -----
-        For example, a power of 2 will double the angle of rotation, and a
-        power of 0.5 will halve the angle. There are three notable cases: if
-        ``n == 1`` then the original rotation is returned, if ``n == 0``
-        then the identity rotation is returned, and if ``n == -1`` then
-        ``p.inv()`` is returned.
-
-        Note that fractional powers ``n`` which effectively take a root of
-        rotation, do so using the shortest path smallest representation of that
-        angle (the principal root). This means that powers of ``n`` and ``1/n``
-        are not necessarily inverses of each other. For example, a 0.5 power of
-        a +240 degree rotation will be calculated as the 0.5 power of a -120
-        degree rotation, with the result being a rotation of -60 rather than
-        +120 degrees.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-
-        Raising a rotation to a power:
-
-        >>> p = R.from_rotvec([1, 0, 0])
-        >>> q = p ** 2
-        >>> q.as_rotvec()
-        array([2., 0., 0.])
-        >>> r = p ** 0.5
-        >>> r.as_rotvec()
-        array([0.5, 0., 0.])
-
-        Inverse powers do not necessarily cancel out:
-
-        >>> p = R.from_rotvec([0, 0, 120], degrees=True)
-        >>> ((p ** 2) ** 0.5).as_rotvec(degrees=True)
-        array([  -0.,   -0., -60.])
-
-        """
-        if modulus is not None:
-            raise NotImplementedError("modulus not supported")
-
-        # Exact short-cuts
-        if n == 0:
-            return Rotation.identity(None if self._single else len(self._quat))
-        elif n == -1:
-            return self.inv()
-        elif n == 1:
-            if self._single:
-                return self.__class__(self._quat[0], normalize=False, copy=True)
-            else:
-                return self.__class__(self._quat, normalize=False, copy=True)
-        else:  # general scaling of rotation angle
-            return Rotation.from_rotvec(n * self.as_rotvec())
 
     @cython.embedsignature(True)
     def inv(self):
