@@ -1186,6 +1186,24 @@ class Test_HalfspaceIntersection:
 
         assert_allclose(hs.dual_points, qhalf_points)
 
+    @pytest.mark.parametrize("k", range(1,4))
+    def test_halfspace_batch(self, k):
+        # Test that we can add halfspaces a few at a time
+        big_square = np.array([[ 1.,  0., -2.],
+                               [-1.,  0., -2.],
+                               [ 0.,  1., -2.],
+                               [ 0., -1., -2.]])
+
+        small_square = np.array([[ 1.,  0., -1.],
+                                 [-1.,  0., -1.],
+                                 [ 0.,  1., -1.],
+                                 [ 0., -1., -1.]])
+
+        hs = qhull.HalfspaceIntersection(big_square, np.zeros((2,)), incremental=True)
+        hs.add_halfspaces(small_square[0:k,:])
+        hs.add_halfspaces(small_square[k:4,:])
+        hs.close()
+        # TODO: add correctness test here.
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
