@@ -1542,7 +1542,7 @@ cdef class RigidTransform:
         len_self = len(self._matrix)
         len_other = len(other._matrix)
         if not(len_self == 1 or len_other == 1 or len_self == len_other):
-            raise ValueError("Expected equal number of transforms in both or a"
+            raise ValueError("Expected equal number of transforms in both or a "
                              "single transform in either object, got "
                              f"{len_self} transforms in first and {len_other}"
                              "transforms in second object.")
