@@ -519,6 +519,9 @@ def xp_result_type(*args, xp, force_floating=False):
     args = [(_asarray(arg, subok=True) if np.iterable(arg) else arg)
             for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
+    if is_numpy(xp) and xp.__version__ < '2.0':
+        # Follow NEP 50 promotion rules anyway
+        args_not_none = [getattr(arg, 'dtype', arg) for arg in args_not_none]
 
     try:  # follow library's preferred promotion rules
         dtype = (xp.result_type(*args_not_none, 1.0) if force_floating
