@@ -92,6 +92,7 @@ class TestContinuedFraction:
         with pytest.raises(ValueError, match=message):
             _continued_fraction(a1, b1, log=2)
 
+    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_basic(self, shape, dtype, xp):
