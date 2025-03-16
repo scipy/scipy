@@ -384,7 +384,6 @@ class TestCephes:
         dfd, dfn, x = 1, 50000, 29.72591544307521
         assert_allclose(cephes.fdtri(dfd, dfn, cephes.fdtr(dfd, dfn, x)), x, rtol=1e-15)
 
-    @pytest.mark.xfail(reason='Returns nan on i686.')
     def test_fdtri_mysterious_failure(self):
         assert_allclose(cephes.fdtri(1, 1, 0.5), 1)
 
