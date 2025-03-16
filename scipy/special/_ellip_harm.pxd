@@ -34,6 +34,7 @@ from . cimport sf_error
 
 from libc.math cimport sqrt, fabs, pow, NAN
 from libc.stdlib cimport malloc, free
+from scipy.linalg.cython_lapack cimport dstevr
 
 cdef extern from "lapack_defs.h":
     ctypedef int CBLAS_INT  # actual type defined in the header
@@ -162,7 +163,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
     for i in range(0, size-1):
         dd[i] = g[i]*ss[i]/ss[i+1]
 
-    c_dstevr("V", "I", &size, d, dd, &vl, &vu, &tp, &tp, &tol, &c, w, eigv,
+    dstevr("V", "I", &size, d, dd, &vl, &vu, &tp, &tp, &tol, &c, w, eigv,
              &size, isuppz, work, &lwork, iwork, &liwork, &info)
 
     if info != 0:
