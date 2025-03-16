@@ -7351,7 +7351,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     xp = array_namespace(f_obs)
-    default_float = xp.asarray(1.).dtype
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
