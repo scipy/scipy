@@ -1863,4 +1863,51 @@ f_ppf_double(double dfn, double dfd, double x)
     return f_ppf_wrap(dfn, dfd, x);
 }
 
+template<typename Real>
+Real
+f_sf_wrap(const Real dfn, const Real dfd, const Real x)
+{
+    if (std::isnan(x) || std::isnan(dfn) || std::isnan(dfd)) {
+	return NAN;
+    }
+    if ((dfn <= 0) || (dfd <= 0) || (x < 0)) {
+	sf_error("fdtrc", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	// inf => 0. We've already returned if x < 0, so this can only be +inf.
+	return 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(boost::math::complement(
+                boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
+    } catch (...) {
+	/* Boost was unable to produce a result. Can happen when one or both
+	 * of v1 and v2 is very small and x is very large. e.g.
+	 * ncdtr(1e-100, 3, 1.5, 1e100). */
+        sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Boost can return results far out of bounds when dfd and dfn are both large
+	 * and of similar magnitude. Return NAN if the result is out of bounds because
+	 * the answer cannot be trusted. */
+	sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+f_sf_float(float dfn, float dfd, float x)
+{
+    return f_sf_wrap(dfn, dfd, x);
+}
+
+double
+f_sf_double(double dfn, double dfd, double x)
+{
+    return f_sf_wrap(dfn, dfd, x);
+}
 #endif

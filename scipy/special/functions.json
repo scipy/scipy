@@ -336,8 +336,9 @@
         }
     },
     "fdtrc": {
-        "xsf_wrappers.h": {
-            "xsf_fdtrc": "ddd->d"
+        "boost_special_functions.h++": {
+            "f_sf_float": "fff->f",
+            "f_sf_double": "ddd->d"
         }
     },
     "fdtri": {

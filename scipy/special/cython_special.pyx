@@ -1344,7 +1344,6 @@ cdef extern from r"xsf_wrappers.h":
     double xsf_chdtr(double df, double x) nogil
     double xsf_chdtrc(double df, double x) nogil
     double xsf_chdtri(double df, double y) nogil
-    double xsf_fdtrc(double a, double b, double x) nogil
     double xsf_gdtr(double a, double b, double x) nogil
     double xsf_gdtrc(double a, double b, double x) nogil
     double xsf_kolmogorov(double x) nogil
@@ -1615,9 +1614,6 @@ cdef _proto_expn_unsafe_t *_proto_expn_unsafe_t_var = &_func_expn_unsafe
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_expn "expn"(npy_int, npy_double)nogil
-
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_fdtrc "fdtrc"(npy_double, npy_double, npy_double)nogil
 
 from ._cdflib_wrappers cimport fdtridfd as _func_fdtridfd
 ctypedef double _proto_fdtridfd_t(double, double, double) noexcept nogil
@@ -2504,10 +2500,6 @@ cpdef double exprel(double x0) noexcept nogil:
     """See the documentation for scipy.special.exprel"""
     return special_exprel(x0)
 
-cpdef double fdtrc(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtrc"""
-    return xsf_fdtrc(x0, x1, x2)
-
 cpdef double fdtridfd(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtridfd"""
     return _func_fdtridfd(x0, x1, x2)
@@ -3126,6 +3118,15 @@ cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept 
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_float)(x0, x1, x2)
     elif df_number_t is double:
         return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_cdf_double)(x0, x1, x2)
+    else:
+        return NAN
+
+cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.fdtr"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_double)(x0, x1, x2)
     else:
         return NAN
 
