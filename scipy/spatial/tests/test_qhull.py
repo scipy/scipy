@@ -1215,12 +1215,10 @@ class Test_HalfspaceIntersection:
         actual_intersections = hs.intersections
         # They may be in any order, so just check that under some permutation 
         # expected=actual.
-        close = np.isclose(actual_intersections[np.newaxis],
-                           expected_intersections[:, np.newaxis])
-        close = np.all(close, axis=-1)
 
-        assert (np.count_nonzero(close, axis=0) == 1).all()
-        assert (np.count_nonzero(close, axis=1) == 1).all()
+        ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))
+        ind2 = np.lexsort((expected_intersections[:, 1], expected_intersections[:, 0]))
+        assert_allclose(actual_intersections[ind1], expected_intersections[ind2])
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
