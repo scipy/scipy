@@ -56,6 +56,11 @@ def connected_components(csgraph, directed=True, connection='weak',
     labels: ndarray
         The length-N array of labels of the connected components.
 
+    Notes
+    -----
+    The algorithmic complexity is for a graph with E edges and V
+    vertices is ``O(E + V)``.
+
     References
     ----------
     .. [1] D. J. Pearce, "An Improved Algorithm for Finding the Strongly
@@ -157,6 +162,9 @@ def breadth_first_tree(csgraph, i_start, directed=True):
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
+
     Examples
     --------
     The following example shows the computation of a depth-first tree
@@ -232,6 +240,9 @@ def depth_first_tree(csgraph, i_start, directed=True):
     -----
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -321,6 +332,9 @@ cpdef breadth_first_order(csgraph, i_start,
     -----
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
@@ -530,6 +544,9 @@ cpdef depth_first_order(csgraph, i_start,
     -----
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    Algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(V + E)``.
 
     Examples
     --------
