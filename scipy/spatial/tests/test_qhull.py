@@ -1199,7 +1199,10 @@ class Test_HalfspaceIntersection:
                                  [ 0.,  1., -1.],
                                  [ 0., -1., -1.]])
 
-        hs = qhull.HalfspaceIntersection(big_square, np.zeros((2,)), incremental=True)
+        hs = qhull.HalfspaceIntersection(big_square,
+                                         np.array([0.3141, 0.2718]),
+                                         incremental=True)
+
         hs.add_halfspaces(small_square[0:k,:])
         hs.add_halfspaces(small_square[k:4,:])
         hs.close()
