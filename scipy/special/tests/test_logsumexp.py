@@ -415,3 +415,19 @@ class TestLogSoftmax:
         x = xp.reshape(x, (2, 2, 2))
         expect = xp.reshape(expect, (2, 2, 2))
         xp_assert_close(log_softmax(x, axis=(1, 2)), expect, rtol=1e-13)
+
+
+@skip_xp_backends('numpy', reason='because')
+@skip_xp_backends('dask.array', reason='because')
+@skip_xp_backends('jax.numpy', reason='because')
+@skip_xp_backends('array_api_strict', reason='because')
+@pytest.mark.parametrize('dtype_a', dtypes)
+@pytest.mark.parametrize('dtype_b', dtypes)
+def test_torch_bug(xp, dtype_a, dtype_b):
+    # This is very confusing. I can't produce the failures outside of tests.
+    # I want to see if it fails in CI and whether others can reproduce.
+    a = xp.asarray([2, 1], dtype=getattr(xp, dtype_a))
+    b = xp.asarray([1, -1], dtype=getattr(xp, dtype_b))
+    dtype_1 = xp.result_type(a, b, 1.0)
+    dtype_2 = xp.result_type(b, a, 1.0)
+    assert dtype_1 == dtype_2
