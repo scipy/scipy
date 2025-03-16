@@ -2910,7 +2910,6 @@ class HalfspaceIntersection(_QhullUser):
         Parameters
         ----------
         halfspaces : ndarray of double, shape (n_new_ineq, ndim+1)
-        Input halfspaces.
             New halfspaces to add. The dimensionality (ndim) should match that of the
             initial halfspaces. Like in the constructor, these are stacked 
             inequalites of the form Ax + b <= 0 in format [A; b]. The original
