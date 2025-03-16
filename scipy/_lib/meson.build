@@ -17,8 +17,8 @@ endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
-if not fs.exists('prima/README.md')
-  error('Missing the `prima` submodule! Run `git submodule update --init` to fix this.')
+if not fs.exists('pyprima/pyprima/README.md')
+  error('Missing the `pyprima` submodule! Run `git submodule update --init` to fix this.')
 endif
 
 _lib_pxd = [
@@ -286,44 +286,44 @@ py3.install_sources(
 
 py3.install_sources(
   [
-    'prima/pyprima/src/pyprima/__init__.py',
+    'pyprima/pyprima/__init__.py',
   ],
   subdir: 'scipy/_lib/pyprima'
 )
 
 py3.install_sources(
   [
-    'prima/pyprima/src/pyprima/common/__init__.py',
-    'prima/pyprima/src/pyprima/common/_bounds.py',
-    'prima/pyprima/src/pyprima/common/_linear_constraints.py',
-    'prima/pyprima/src/pyprima/common/_nonlinear_constraints.py',
-    'prima/pyprima/src/pyprima/common/_project.py',
-    'prima/pyprima/src/pyprima/common/checkbreak.py',
-    'prima/pyprima/src/pyprima/common/consts.py',
-    'prima/pyprima/src/pyprima/common/evaluate.py',
-    'prima/pyprima/src/pyprima/common/history.py',
-    'prima/pyprima/src/pyprima/common/infos.py',
-    'prima/pyprima/src/pyprima/common/linalg.py',
-    'prima/pyprima/src/pyprima/common/message.py',
-    'prima/pyprima/src/pyprima/common/powalg.py',
-    'prima/pyprima/src/pyprima/common/preproc.py',
-    'prima/pyprima/src/pyprima/common/present.py',
-    'prima/pyprima/src/pyprima/common/ratio.py',
-    'prima/pyprima/src/pyprima/common/redrho.py',
-    'prima/pyprima/src/pyprima/common/selectx.py',
+    'pyprima/pyprima/common/__init__.py',
+    'pyprima/pyprima/common/_bounds.py',
+    'pyprima/pyprima/common/_linear_constraints.py',
+    'pyprima/pyprima/common/_nonlinear_constraints.py',
+    'pyprima/pyprima/common/_project.py',
+    'pyprima/pyprima/common/checkbreak.py',
+    'pyprima/pyprima/common/consts.py',
+    'pyprima/pyprima/common/evaluate.py',
+    'pyprima/pyprima/common/history.py',
+    'pyprima/pyprima/common/infos.py',
+    'pyprima/pyprima/common/linalg.py',
+    'pyprima/pyprima/common/message.py',
+    'pyprima/pyprima/common/powalg.py',
+    'pyprima/pyprima/common/preproc.py',
+    'pyprima/pyprima/common/present.py',
+    'pyprima/pyprima/common/ratio.py',
+    'pyprima/pyprima/common/redrho.py',
+    'pyprima/pyprima/common/selectx.py',
   ],
   subdir: 'scipy/_lib/pyprima/common'
 )
 
 py3.install_sources(
   [
-    'prima/pyprima/src/pyprima/cobyla/__init__.py',
-    'prima/pyprima/src/pyprima/cobyla/cobyla.py',
-    'prima/pyprima/src/pyprima/cobyla/cobylb.py',
-    'prima/pyprima/src/pyprima/cobyla/geometry.py',
-    'prima/pyprima/src/pyprima/cobyla/initialize.py',
-    'prima/pyprima/src/pyprima/cobyla/trustregion.py',
-    'prima/pyprima/src/pyprima/cobyla/update.py',
+    'pyprima/pyprima/cobyla/__init__.py',
+    'pyprima/pyprima/cobyla/cobyla.py',
+    'pyprima/pyprima/cobyla/cobylb.py',
+    'pyprima/pyprima/cobyla/geometry.py',
+    'pyprima/pyprima/cobyla/initialize.py',
+    'pyprima/pyprima/cobyla/trustregion.py',
+    'pyprima/pyprima/cobyla/update.py',
   ],
   subdir: 'scipy/_lib/pyprima/cobyla'
 )
