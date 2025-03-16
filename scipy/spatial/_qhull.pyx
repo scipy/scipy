@@ -2909,9 +2909,12 @@ class HalfspaceIntersection(_QhullUser):
 
         Parameters
         ----------
-        halfspaces : ndarray
-            New halfspaces to add. The dimensionality should match that of the
-            initial halfspaces.
+        halfspaces : ndarray of double, shape (n_new_ineq, ndim+1)
+        Input halfspaces.
+            New halfspaces to add. The dimensionality (ndim) should match that of the
+            initial halfspaces. Like in the constructor, these are stacked 
+            inequalites of the form Ax + b <= 0 in format [A; b]. The original
+            feasible point must also be feasible for these new inequalities.
         restart : bool, optional
             Whether to restart processing from scratch, rather than
             adding halfspaces incrementally.
