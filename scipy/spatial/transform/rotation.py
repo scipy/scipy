@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from typing import Iterable
 
 import numpy as np
 
@@ -118,6 +119,37 @@ class Rotation:
         return cls(cython_backend.identity(num), normalize=False, copy=False)
 
     def inv(self):
+        """Invert this rotation.
+
+        Composition of a rotation with its inverse results in an identity
+        transformation.
+
+        Returns
+        -------
+        inverse : `Rotation` instance
+            Object containing inverse of the rotations in the current instance.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Inverting a single rotation:
+
+        >>> p = R.from_euler('z', 45, degrees=True)
+        >>> q = p.inv()
+        >>> q.as_euler('zyx', degrees=True)
+        array([-45.,   0.,   0.])
+
+        Inverting multiple rotations:
+
+        >>> p = R.from_rotvec([[0, 0, np.pi/3], [-np.pi/4, 0, 0]])
+        >>> q = p.inv()
+        >>> q.as_rotvec()
+        array([[-0.        , -0.        , -1.04719755],
+               [ 0.78539816, -0.        , -0.        ]])
+
+        """
         q_inv = self._backend.inv(self._quat)
         if self._single:
             q_inv = q_inv[0, ...]
@@ -184,6 +216,66 @@ class Rotation:
             return cls(q, normalize=False, copy=False), rssd, sensitivity
         return cls(q, normalize=False, copy=False), rssd
 
+    @classmethod
+    def concatenate(cls, rotations: Rotation | Iterable[Rotation]) -> Rotation:
+        """Concatenate a sequence of `Rotation` objects into a single object.
+
+        This is useful if you want to, for example, take the mean of a set of
+        rotations and need to pack them into a single object to do so.
+
+        Parameters
+        ----------
+        rotations : sequence of `Rotation` objects
+            The rotations to concatenate. If a single `Rotation` object is
+            passed in, a copy is returned.
+
+        Returns
+        -------
+        concatenated : `Rotation` instance
+            The concatenated rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r1 = R.from_rotvec([0, 0, 1])
+        >>> r2 = R.from_rotvec([0, 0, 2])
+        >>> rc = R.concatenate([r1, r2])
+        >>> rc.as_rotvec()
+        array([[0., 0., 1.],
+                [0., 0., 2.]])
+        >>> rc.mean().as_rotvec()
+        array([0., 0., 1.5])
+
+        Concatenation of a split rotation recovers the original object.
+
+        >>> rs = [r for r in rc]
+        >>> R.concatenate(rs).as_rotvec()
+        array([[0., 0., 1.],
+                [0., 0., 2.]])
+
+        Note that it may be simpler to create the desired rotations by passing
+        in a single list of the data during initialization, rather then by
+        concatenating:
+
+        >>> R.from_rotvec([[0, 0, 1], [0, 0, 2]]).as_rotvec()
+        array([[0., 0., 1.],
+                [0., 0., 2.]])
+
+        Notes
+        -----
+        .. versionadded:: 1.8.0
+        """
+        if isinstance(rotations, Rotation):
+            return cls(rotations.as_quat(), normalize=False, copy=True)
+        if not all(isinstance(x, Rotation) for x in rotations):
+            raise TypeError("input must contain Rotation objects only")
+
+        xp = array_namespace(rotations[0].as_quat())
+        quats = xp.concat(
+            [xpx.atleast_nd(x.as_quat(), ndim=2, xp=xp) for x in rotations]
+        )
+        return cls(quats, normalize=False)
+
     def __getitem__(self, indexer) -> Rotation:
         if self._single or self._quat.ndim == 1:
             raise TypeError("Single rotation is not subscriptable.")
@@ -242,6 +334,72 @@ class Rotation:
         return self._quat.shape[0]
 
     def __mul__(self, other):
+        """Compose this rotation with the other.
+
+        If `p` and `q` are two rotations, then the composition of 'q followed
+        by p' is equivalent to `p * q`. In terms of rotation matrices,
+        the composition can be expressed as
+        ``p.as_matrix() @ q.as_matrix()``.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to be composed with this one. Note
+            that rotation compositions are not commutative, so ``p * q`` is
+            generally different from ``q * p``.
+
+        Returns
+        -------
+        composition : `Rotation` instance
+            This function supports composition of multiple rotations at a time.
+            The following cases are possible:
+
+            - Either ``p`` or ``q`` contains a single rotation. In this case
+              `composition` contains the result of composing each rotation in
+              the other object with the single rotation.
+            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each
+              rotation ``p[i]`` is composed with the corresponding rotation
+              ``q[i]`` and `output` contains ``N`` rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Composition of two single rotations:
+
+        >>> p = R.from_quat([0, 0, 1, 1])
+        >>> q = R.from_quat([1, 0, 0, 1])
+        >>> p.as_matrix()
+        array([[ 0., -1.,  0.],
+               [ 1.,  0.,  0.],
+               [ 0.,  0.,  1.]])
+        >>> q.as_matrix()
+        array([[ 1.,  0.,  0.],
+               [ 0.,  0., -1.],
+               [ 0.,  1.,  0.]])
+        >>> r = p * q
+        >>> r.as_matrix()
+        array([[0., 0., 1.],
+               [1., 0., 0.],
+               [0., 1., 0.]])
+
+        Composition of two objects containing equal number of rotations:
+
+        >>> p = R.from_quat([[0, 0, 1, 1], [1, 0, 0, 1]])
+        >>> q = R.from_rotvec([[np.pi/4, 0, 0], [-np.pi/4, 0, np.pi/4]])
+        >>> p.as_quat()
+        array([[0.        , 0.        , 0.70710678, 0.70710678],
+               [0.70710678, 0.        , 0.        , 0.70710678]])
+        >>> q.as_quat()
+        array([[ 0.38268343,  0.        ,  0.        ,  0.92387953],
+               [-0.37282173,  0.        ,  0.37282173,  0.84971049]])
+        >>> r = p * q
+        >>> r.as_quat()
+        array([[ 0.27059805,  0.27059805,  0.65328148,  0.65328148],
+               [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
+
+        """
         if not _broadcastable(self._quat.shape, other._quat.shape):
             raise ValueError(
                 "Expected equal number of rotations in both or a single "
@@ -342,10 +500,14 @@ class Rotation:
         if quat.ndim not in (1, 2) or quat.shape[-1] != 4 or quat.shape[0] == 0:
             raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
-        if quat.dtype == xp.float32 and not is_numpy(xp):
-            dtype = xp.float32
+        # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
+        # implementation, but it might make more sense to preserve float32 if passed in by the user.
+        # This would make the behavior more consistent with the Array API backend, but requires
+        # changes in the cython backend.
+        if is_numpy(xp):
+            dtype = xp.float64
         else:
-            dtype = xp.result_type(xp.float32, xp.float64)
+            dtype = array_api_backend.atleast_f32(quat)
         return xp.asarray(quat, dtype=dtype)
 
     def __repr__(self):

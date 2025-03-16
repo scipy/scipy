@@ -1909,7 +1909,8 @@ def test_multiplication_stability(xp):
     rs = Rotation.random(1000, rng=1)
     rs = Rotation.from_quat(xp.asarray(rs.as_quat()))
 
-    for i in range(len(qs)):  # Iterating over qs directly is slow
+    # Iterating over qs directly is slow with jax arrays. TODO: Find out why.
+    for i in range(len(qs)):
         rs = rs * qs[i] * rs
 
     assert_allclose(xp.linalg.vector_norm(rs.as_quat(), axis=1), 1)
@@ -2022,36 +2023,39 @@ def test_as_euler_contiguous():
     assert all(i >= 0 for i in e2.strides)
 
 
-def test_concatenate():
+def test_concatenate(xp):
     rotation = Rotation.random(10, rng=0)
+    rotation = Rotation.from_quat(xp.asarray(rotation.as_quat()))
     sizes = [1, 2, 3, 1, 3]
     starts = [0] + list(np.cumsum(sizes))
     split = [rotation[i : i + n] for i, n in zip(starts, sizes)]
     result = Rotation.concatenate(split)
-    assert_equal(rotation.as_quat(), result.as_quat())
+    xp_assert_equal(rotation.as_quat(), result.as_quat())
 
     # Test Rotation input for multiple rotations
     result = Rotation.concatenate(rotation)
-    assert_equal(rotation.as_quat(), result.as_quat())
+    xp_assert_equal(rotation.as_quat(), result.as_quat())
 
     # Test that a copy is returned
     assert rotation is not result
 
     # Test Rotation input for single rotations
-    result = Rotation.concatenate(Rotation.identity())
-    assert_equal(Rotation.identity().as_quat(), result.as_quat())
+    rot = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    result = Rotation.concatenate(rot)
+    xp_assert_equal(rot.as_quat(), result.as_quat())
 
 
-def test_concatenate_wrong_type():
+def test_concatenate_wrong_type(xp):
     with pytest.raises(TypeError, match="Rotation objects only"):
-        Rotation.concatenate([Rotation.identity(), 1, None])
+        rot = Rotation(xp.asarray(Rotation.identity().as_quat()))
+        Rotation.concatenate([rot, 1, None])
 
 
 # Regression test for gh-16663
-def test_len_and_bool():
-    rotation_multi_one = Rotation([[0, 0, 0, 1]])
-    rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
-    rotation_single = Rotation([0, 0, 0, 1])
+def test_len_and_bool(xp):
+    rotation_multi_one = Rotation(xp.asarray([[0, 0, 0, 1]]))
+    rotation_multi = Rotation(xp.asarray([[0, 0, 0, 1], [0, 0, 0, 1]]))
+    rotation_single = Rotation(xp.asarray([0, 0, 0, 1]))
 
     assert len(rotation_multi_one) == 1
     assert len(rotation_multi) == 2

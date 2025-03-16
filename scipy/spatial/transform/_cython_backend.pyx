@@ -800,7 +800,7 @@ def random(num=None, rng=None):
 
 
 @cython.embedsignature(True)
-def identity(num = None) -> double[:, :]:
+def identity(num: cython.int | None = None) -> double[:, :]:
     if num is None:
         return np.array([0, 0, 0, 1])
     q = np.zeros((num, 4))
@@ -1134,6 +1134,162 @@ def pow(quat: double[:, :], n: float) -> double[:, :]:
     return from_rotvec(n * as_rotvec(quat))
 
 
+@cython.embedsignature(True)
+def from_davenport(axes, order: str, angles: double[:, :], degrees: cython.bint = False) -> double[:, :]:
+    """Initialize from Davenport angles.
+
+    Rotations in 3-D can be represented by a sequence of 3
+    rotations around a sequence of axes.
+
+    The three rotations can either be in a global frame of reference
+    (extrinsic) or in a body centred frame of reference (intrinsic), which
+    is attached to, and moves with, the object under rotation [1]_.
+
+    For both Euler angles and Davenport angles, consecutive axes must
+    be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
+    ``axis3``). For Euler angles, there is an additional relationship
+    between ``axis1`` or ``axis3``, with two possibilities:
+
+        - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+        - ``axis1 == axis3`` (symmetric sequence)
+
+    For Davenport angles, this last relationship is relaxed [2]_, and only
+    the consecutive orthogonal axes requirement is maintained.
+
+    Parameters
+    ----------
+    axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
+        Axis of rotation, if one dimensional. If two dimensional, describes the
+        sequence of axes for rotations, where each axes[i, :] is the ith
+        axis. If more than one axis is given, then the second axis must be
+        orthogonal to both the first and third axes.
+    order : string
+        If it is equal to 'e' or 'extrinsic', the sequence will be
+        extrinsic. If it is equal to 'i' or 'intrinsic', sequence
+        will be treated as intrinsic.
+    angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
+        Euler angles specified in radians (`degrees` is False) or degrees
+        (`degrees` is True).
+        For a single axis, `angles` can be:
+
+        - a single value
+        - array_like with shape (N,), where each `angle[i]`
+            corresponds to a single rotation
+        - array_like with shape (N, 1), where each `angle[i, 0]`
+            corresponds to a single rotation
+
+        For 2 and 3 axes, `angles` can be:
+
+        - array_like with shape (W,) where `W` is the number of rows of
+            `axes`, which corresponds to a single rotation with `W` axes
+        - array_like with shape (N, W) where each `angle[i]`
+            corresponds to a sequence of Davenport angles describing a
+            single rotation
+
+    degrees : bool, optional
+        If True, then the given angles are assumed to be in degrees.
+        Default is False.
+
+    Returns
+    -------
+    rotation : `Rotation` instance
+        Object containing the rotation represented by the sequence of
+        rotations around given axes with given angles.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
+    .. [2] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
+            the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+
+    Davenport angles are a generalization of Euler angles, when we use the
+    canonical basis axes:
+
+    >>> ex = [1, 0, 0]
+    >>> ey = [0, 1, 0]
+    >>> ez = [0, 0, 1]
+
+    Initialize a single rotation with a given axis sequence:
+
+    >>> axes = [ez, ey, ex]
+    >>> r = R.from_davenport(axes, 'extrinsic', [90, 0, 0], degrees=True)
+    >>> r.as_quat().shape
+    (4,)
+
+    It is equivalent to Euler angles in this case:
+
+    >>> r.as_euler('zyx', degrees=True)
+    array([90.,  0., -0.])
+
+    Initialize multiple rotations in one object:
+
+    >>> r = R.from_davenport(axes, 'extrinsic', [[90, 45, 30], [35, 45, 90]], degrees=True)
+    >>> r.as_quat().shape
+    (2, 4)
+
+    Using only one or two axes is also possible:
+
+    >>> r = R.from_davenport([ez, ex], 'extrinsic', [[90, 45], [35, 45]], degrees=True)
+    >>> r.as_quat().shape
+    (2, 4)
+
+    Non-canonical axes are possible, and they do not need to be normalized,
+    as long as consecutive axes are orthogonal:
+
+    >>> e1 = [2, 0, 0]
+    >>> e2 = [0, 1, 0]
+    >>> e3 = [1, 0, 1]
+    >>> axes = [e1, e2, e3]
+    >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
+    >>> r.as_quat()
+    [ 0.701057,  0.430459, -0.092296,  0.560986]
+    """
+    if order in ['e', 'extrinsic']:
+        extrinsic = True
+    elif order in ['i', 'intrinsic']:
+        extrinsic = False
+    else:
+        raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
+                            "sequences or 'i'/'intrinsic' for intrinsic "
+                            "sequences, got {}".format(order))
+
+    axes = np.asarray(axes)
+    if axes.ndim == 1:
+        axes = axes.reshape([1, 3])
+
+    num_axes = len(axes)
+
+    if axes.shape[1] != 3:
+        raise ValueError("Axes must be vectors of length 3.")
+
+    if num_axes < 1 or num_axes > 3:
+        raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
+
+    # normalize axes
+    norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
+    axes = axes / norm.reshape(num_axes, 3)
+
+    if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or
+        num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
+        raise ValueError("Consecutive axes must be orthogonal.")
+
+    angles, is_single = _format_angles(angles, degrees, num_axes)
+
+    q = identity(len(angles))
+    for i in range(num_axes):
+        qi = from_rotvec(angles[:, i, np.newaxis] * axes[i])
+        if extrinsic:
+            q = compose_quat(qi, q)
+        else:
+            q = compose_quat(q, qi)
+
+    return q[0] if is_single else q
+
+
 cdef class Rotation:
     cdef double[:, :] _quat
     cdef bint _single
@@ -1170,162 +1326,6 @@ cdef class Rotation:
                     raise ValueError("Found zero norm quaternions in `quat`.")
 
         self._quat = quat
-
-    @cython.embedsignature(True)
-    @classmethod
-    def from_davenport(cls, axes, order, angles, degrees=False):
-        """Initialize from Davenport angles.
-
-        Rotations in 3-D can be represented by a sequence of 3
-        rotations around a sequence of axes.
-
-        The three rotations can either be in a global frame of reference
-        (extrinsic) or in a body centred frame of reference (intrinsic), which
-        is attached to, and moves with, the object under rotation [1]_.
-
-        For both Euler angles and Davenport angles, consecutive axes must
-        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
-        ``axis3``). For Euler angles, there is an additional relationship
-        between ``axis1`` or ``axis3``, with two possibilities:
-
-            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
-            - ``axis1 == axis3`` (symmetric sequence)
-
-        For Davenport angles, this last relationship is relaxed [2]_, and only
-        the consecutive orthogonal axes requirement is maintained.
-
-        Parameters
-        ----------
-        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimensional. If two dimensional, describes the
-            sequence of axes for rotations, where each axes[i, :] is the ith
-            axis. If more than one axis is given, then the second axis must be
-            orthogonal to both the first and third axes.
-        order : string
-            If it is equal to 'e' or 'extrinsic', the sequence will be
-            extrinsic. If it is equal to 'i' or 'intrinsic', sequence
-            will be treated as intrinsic.
-        angles : float or array_like, shape (N,) or (N, [1 or 2 or 3])
-            Euler angles specified in radians (`degrees` is False) or degrees
-            (`degrees` is True).
-            For a single axis, `angles` can be:
-
-            - a single value
-            - array_like with shape (N,), where each `angle[i]`
-              corresponds to a single rotation
-            - array_like with shape (N, 1), where each `angle[i, 0]`
-              corresponds to a single rotation
-
-            For 2 and 3 axes, `angles` can be:
-
-            - array_like with shape (W,) where `W` is the number of rows of
-              `axes`, which corresponds to a single rotation with `W` axes
-            - array_like with shape (N, W) where each `angle[i]`
-              corresponds to a sequence of Davenport angles describing a
-              single rotation
-
-        degrees : bool, optional
-            If True, then the given angles are assumed to be in degrees.
-            Default is False.
-
-        Returns
-        -------
-        rotation : `Rotation` instance
-            Object containing the rotation represented by the sequence of
-            rotations around given axes with given angles.
-
-        References
-        ----------
-        .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-        .. [2] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
-               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-
-        Davenport angles are a generalization of Euler angles, when we use the
-        canonical basis axes:
-
-        >>> ex = [1, 0, 0]
-        >>> ey = [0, 1, 0]
-        >>> ez = [0, 0, 1]
-
-        Initialize a single rotation with a given axis sequence:
-
-        >>> axes = [ez, ey, ex]
-        >>> r = R.from_davenport(axes, 'extrinsic', [90, 0, 0], degrees=True)
-        >>> r.as_quat().shape
-        (4,)
-
-        It is equivalent to Euler angles in this case:
-
-        >>> r.as_euler('zyx', degrees=True)
-        array([90.,  0., -0.])
-
-        Initialize multiple rotations in one object:
-
-        >>> r = R.from_davenport(axes, 'extrinsic', [[90, 45, 30], [35, 45, 90]], degrees=True)
-        >>> r.as_quat().shape
-        (2, 4)
-
-        Using only one or two axes is also possible:
-
-        >>> r = R.from_davenport([ez, ex], 'extrinsic', [[90, 45], [35, 45]], degrees=True)
-        >>> r.as_quat().shape
-        (2, 4)
-
-        Non-canonical axes are possible, and they do not need to be normalized,
-        as long as consecutive axes are orthogonal:
-
-        >>> e1 = [2, 0, 0]
-        >>> e2 = [0, 1, 0]
-        >>> e3 = [1, 0, 1]
-        >>> axes = [e1, e2, e3]
-        >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
-        >>> r.as_quat()
-        [ 0.701057,  0.430459, -0.092296,  0.560986]
-        """
-        if order in ['e', 'extrinsic']:
-            extrinsic = True
-        elif order in ['i', 'intrinsic']:
-            extrinsic = False
-        else:
-            raise ValueError("order should be 'e'/'extrinsic' for extrinsic "
-                             "sequences or 'i'/'intrinsic' for intrinsic "
-                             "sequences, got {}".format(order))
-
-        axes = np.asarray(axes)
-        if axes.ndim == 1:
-            axes = axes.reshape([1, 3])
-
-        num_axes = len(axes)
-
-        if axes.shape[1] != 3:
-            raise ValueError("Axes must be vectors of length 3.")
-
-        if num_axes < 1 or num_axes > 3:
-            raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
-
-        # normalize axes
-        norm = np.repeat(np.linalg.norm(axes, axis=1), 3)
-        axes = axes / norm.reshape(num_axes, 3)
-
-        if (num_axes > 1 and abs(np.dot(axes[0], axes[1])) >= 1e-7 or
-            num_axes > 2 and abs(np.dot(axes[1], axes[2])) >= 1e-7):
-            raise ValueError("Consecutive axes must be orthogonal.")
-
-        angles, is_single = _format_angles(angles, degrees, num_axes)
-
-        q = Rotation.identity(len(angles))
-        for i in range(num_axes):
-            qi = Rotation.from_rotvec(angles[:, i, np.newaxis] * axes[i])
-            if extrinsic:
-                q = qi * q
-            else:
-                q = q * qi
-
-        return q[0] if is_single else q
 
     @cython.embedsignature(True)
     def as_davenport(self, axes, order, degrees=False):
@@ -1472,188 +1472,6 @@ cdef class Rotation:
             angles = np.rad2deg(angles)
 
         return angles[0] if self._single else angles
-
-    @cython.embedsignature(True)
-    @classmethod
-    def concatenate(cls, rotations):
-        """Concatenate a sequence of `Rotation` objects into a single object.
-
-        This is useful if you want to, for example, take the mean of a set of
-        rotations and need to pack them into a single object to do so.
-
-        Parameters
-        ----------
-        rotations : sequence of `Rotation` objects
-            The rotations to concatenate. If a single `Rotation` object is
-            passed in, a copy is returned.
-
-        Returns
-        -------
-        concatenated : `Rotation` instance
-            The concatenated rotations.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> r1 = R.from_rotvec([0, 0, 1])
-        >>> r2 = R.from_rotvec([0, 0, 2])
-        >>> rc = R.concatenate([r1, r2])
-        >>> rc.as_rotvec()
-        array([[0., 0., 1.],
-               [0., 0., 2.]])
-        >>> rc.mean().as_rotvec()
-        array([0., 0., 1.5])
-
-        Concatenation of a split rotation recovers the original object.
-
-        >>> rs = [r for r in rc]
-        >>> R.concatenate(rs).as_rotvec()
-        array([[0., 0., 1.],
-               [0., 0., 2.]])
-
-        Note that it may be simpler to create the desired rotations by passing
-        in a single list of the data during initialization, rather then by
-        concatenating:
-
-        >>> R.from_rotvec([[0, 0, 1], [0, 0, 2]]).as_rotvec()
-        array([[0., 0., 1.],
-               [0., 0., 2.]])
-
-        Notes
-        -----
-        .. versionadded:: 1.8.0
-        """
-        if isinstance(rotations, Rotation):
-            return cls(rotations.as_quat(), normalize=False, copy=True)
-
-        if not all(isinstance(x, Rotation) for x in rotations):
-            raise TypeError("input must contain Rotation objects only")
-
-        quats = np.concatenate([np.atleast_2d(x.as_quat()) for x in rotations])
-        return cls(quats, normalize=False)
-
-
-    @cython.embedsignature(True)
-    def __mul__(Rotation self, Rotation other):
-        """Compose this rotation with the other.
-
-        If `p` and `q` are two rotations, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of rotation matrices,
-        the composition can be expressed as
-        ``p.as_matrix() @ q.as_matrix()``.
-
-        Parameters
-        ----------
-        other : `Rotation` instance
-            Object containing the rotations to be composed with this one. Note
-            that rotation compositions are not commutative, so ``p * q`` is
-            generally different from ``q * p``.
-
-        Returns
-        -------
-        composition : `Rotation` instance
-            This function supports composition of multiple rotations at a time.
-            The following cases are possible:
-
-            - Either ``p`` or ``q`` contains a single rotation. In this case
-              `composition` contains the result of composing each rotation in
-              the other object with the single rotation.
-            - Both ``p`` and ``q`` contain ``N`` rotations. In this case each
-              rotation ``p[i]`` is composed with the corresponding rotation
-              ``q[i]`` and `output` contains ``N`` rotations.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Composition of two single rotations:
-
-        >>> p = R.from_quat([0, 0, 1, 1])
-        >>> q = R.from_quat([1, 0, 0, 1])
-        >>> p.as_matrix()
-        array([[ 0., -1.,  0.],
-               [ 1.,  0.,  0.],
-               [ 0.,  0.,  1.]])
-        >>> q.as_matrix()
-        array([[ 1.,  0.,  0.],
-               [ 0.,  0., -1.],
-               [ 0.,  1.,  0.]])
-        >>> r = p * q
-        >>> r.as_matrix()
-        array([[0., 0., 1.],
-               [1., 0., 0.],
-               [0., 1., 0.]])
-
-        Composition of two objects containing equal number of rotations:
-
-        >>> p = R.from_quat([[0, 0, 1, 1], [1, 0, 0, 1]])
-        >>> q = R.from_rotvec([[np.pi/4, 0, 0], [-np.pi/4, 0, np.pi/4]])
-        >>> p.as_quat()
-        array([[0.        , 0.        , 0.70710678, 0.70710678],
-               [0.70710678, 0.        , 0.        , 0.70710678]])
-        >>> q.as_quat()
-        array([[ 0.38268343,  0.        ,  0.        ,  0.92387953],
-               [-0.37282173,  0.        ,  0.37282173,  0.84971049]])
-        >>> r = p * q
-        >>> r.as_quat()
-        array([[ 0.27059805,  0.27059805,  0.65328148,  0.65328148],
-               [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
-
-        """
-        len_self = len(self._quat)
-        len_other = len(other._quat)
-        if not(len_self == 1 or len_other == 1 or len_self == len_other):
-            raise ValueError("Expected equal number of rotations in both "
-                             "or a single rotation in either object, "
-                             "got {} rotations in first and {} rotations in "
-                             "second object.".format(
-                                len(self), len(other)))
-        result = _compose_quat(self._quat, other._quat)
-        if self._single and other._single:
-            result = result[0]
-        return self.__class__(result, normalize=True, copy=False)
-
-    @cython.embedsignature(True)
-    def inv(self):
-        """Invert this rotation.
-
-        Composition of a rotation with its inverse results in an identity
-        transformation.
-
-        Returns
-        -------
-        inverse : `Rotation` instance
-            Object containing inverse of the rotations in the current instance.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-
-        Inverting a single rotation:
-
-        >>> p = R.from_euler('z', 45, degrees=True)
-        >>> q = p.inv()
-        >>> q.as_euler('zyx', degrees=True)
-        array([-45.,   0.,   0.])
-
-        Inverting multiple rotations:
-
-        >>> p = R.from_rotvec([[0, 0, np.pi/3], [-np.pi/4, 0, 0]])
-        >>> q = p.inv()
-        >>> q.as_rotvec()
-        array([[-0.        , -0.        , -1.04719755],
-               [ 0.78539816, -0.        , -0.        ]])
-
-        """
-        cdef np.ndarray quat = np.array(self._quat, copy=True)
-        quat[:, 0] *= -1
-        quat[:, 1] *= -1
-        quat[:, 2] *= -1
-        if self._single:
-            quat = quat[0]
-        return self.__class__(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @classmethod
