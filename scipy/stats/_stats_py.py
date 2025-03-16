@@ -1112,10 +1112,8 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
-    else:
-        a = xp.asarray(a)
+    dtype = xp_result_type(a, force_floating=True, xp=xp)
+    a = xp.asarray(a, dtype=dtype)
 
     order = xp.asarray(order, dtype=a.dtype)
     if xp_size(order) == 0:
@@ -1182,8 +1180,8 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
+    dtype = xp_result_type(a, force_floating=True, xp=xp)
+    a = xp.asarray(a, dtype=dtype)
 
     dtype = a.dtype
 
@@ -6748,11 +6746,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     """
     xp = array_namespace(a, b)
 
-    default_float = xp.asarray(1.).dtype
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, default_float)
-    if xp.isdtype(b.dtype, 'integral'):
-        b = xp.astype(b, default_float)
+    dtype = xp_result_type(a, b, force_floating=True, xp=xp)
+    a = xp.asarray(a, dtype=dtype)
+    b = xp.asarray(b, dtype=dtype)
 
     if axis is None:
         a, b, axis = xp_ravel(a), xp_ravel(b), 0
