@@ -12,21 +12,23 @@ static void ldl_update(int n, double* a, double* z, double sigma, double* w);
  * exceedingly inconsistent and very difficult to follow. Hence we adopted the
  * following naming convention in SLSQP and the nested function arguments:
  *
- *  - funx: The function value at the current point.
- *  - gradx: The gradient of the function at the current point.
- *  - C: The equality and inequality constraint normals.
- *  - d: The  equality and inequality constraints.
- *  - xl: The lower bounds on x
- *  - xu: The upper bounds on x
- *  - sol: The solution vector
- *  - mult: The Lagrange multipliers
+ *  - funx: The function value at the current point. (1)
+ *  - gradx: The gradient of the function at the current point. (n)
+ *  - C: The equality and inequality constraint normals. (m x n)
+ *  - d: The  equality and inequality constraints, (m)
+ *  - xl: The lower bounds on x, (n)
+ *  - xu: The upper bounds on x, (n)
+ *  - sol: The solution vector, (n)
+ *  - mult: The Lagrange multipliers, (m + 2*n + 2)
  *  - buffer: A buffer to hold various intermediate arrays.
- *  - indices: An array to hold the indices of the active constraints.
+ *  - indices: An array to hold the indices of the active constraints. (m + 2*n + 2)
  *
  *  The buffer size should be greater than:
- *  n*(n+1)/2 + 4*n + 3 + m
- *   + (2*(m - meq)*(n + 1)+2)*(n - meq +1) + 2*2*(m-meq)*(n + 1) + 2*(m-meq)*(n + 1)
- *   + 2*meq + ld + (ld + 2*(m-meq)*(n + 1))*(n - meq) + n*(n+1)/2 + n + m + 3*(n + 1)
+ *  n*(n+1)//2 + m + 4*n + 3                                           # SLSQP
+ *  (n+1)*(n+2) + (n+1)*meq + m + (mineq + 2*n + 2)*(n+1) +  3*n + 3   # LSQ
+ *  mineq + 2n + 2 + 2*meq + (n+1) + (mineq + 3n + 3)*(n + 1 - meq)    # LSEI
+ *  (mineq + 2n + 2 + 2)*(n + 2) + mineq + 2n + 2                      # LDP
+ *  mineq + 2n + 2                                                     # NNLS
  *
  *
  *  If applicable, the following are the problem matrix naming convention:
@@ -539,7 +541,8 @@ void lsq(
 
     n_wG_rows = mineq + 2*n - nancount;
 
-    // Now that we know the actual row number of wG, populate with C.
+    // Now that we know the actual row number of wG, we can finally populate
+    // the top part with C.
     if (m > meq)
     {
         for (int j = 0; j < orign; j++)
@@ -551,7 +554,7 @@ void lsq(
         }
     }
 
-    // if augmented add the extra column.
+    // If augmented add the extra column.
     if (augment)
     {
         for (int i = 0; i < mineq; i++)
@@ -593,6 +596,7 @@ void lsq(
         // Set the user-defined bounds on x to NaN
         for (int i = 0; i < 2*n; i++) { y[m + i] = NAN; }
     }
+
     // Clamp the solution, if given, to the finite bound interval
     for (int i = 0; i < n; i++)
     {
@@ -602,6 +606,7 @@ void lsq(
 
     return;
 }
+
 
 /*
  * Solve equality and inequality constrained least squares problem (LSEI)
@@ -917,6 +922,33 @@ ldp(int m, int n, double* g, double* h, double* x,
 }
 
 
+/*
+ *   LDL     LDL' - RANK-ONE - UPDATE
+ *   PURPOSE:
+ *           UPDATES THE LDL' FACTORS OF MATRIX A BY RANK-ONE MATRIX
+ *           SIGMA*Z*Z'
+ *   INPUT ARGUMENTS: (* MEANS PARAMETERS ARE CHANGED DURING EXECUTION)
+ *     N     : ORDER OF THE COEFFICIENT MATRIX A
+ *   * A     : POSITIVE DEFINITE MATRIX OF DIMENSION N;
+ *             ONLY THE LOWER TRIANGLE IS USED AND IS STORED COLUMN BY
+ *             COLUMN AS ONE DIMENSIONAL ARRAY OF DIMENSION N*(N+1)/2.
+ *   * Z     : VECTOR OF DIMENSION N OF UPDATING ELEMENTS
+ *     SIGMA : SCALAR FACTOR BY WHICH THE MODIFYING DYADE Z*Z' IS
+ *             MULTIPLIED
+ *   OUTPUT ARGUMENTS:
+ *     A     : UPDATED LDL' FACTORS
+ *   WORKING ARRAY:
+ *     W     : VECTOR OP DIMENSION N (USED ONLY IF SIGMA .LT. ZERO)
+ *   METHOD:
+ *     THAT OF FLETCHER AND POWELL AS DESCRIBED IN :
+ *     FLETCHER,R.,(1974) ON THE MODIFICATION OF LDL' FACTORIZATION.
+ *     POWELL,M.J.D.      MATH.COMPUTATION 28, 1067-1078.
+ *   IMPLEMENTED BY:
+ *     KRAFT,D., DFVLR - INSTITUT FUER DYNAMIK DER FLUGSYSTEME
+ *               D-8031  OBERPFAFFENHOFEN
+ *   STATUS: 15. JANUARY 1980
+ *   SUBROUTINES REQUIRED: NONE
+ */
 static void
 ldl_update(int n, double* a, double* z, double sigma, double* w)
 {
