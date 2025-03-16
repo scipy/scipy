@@ -224,7 +224,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Options
     -------
     ftol : float
-        Precision goal for the value of f in the stopping criterion.
+        Precision target for the value of f in the stopping criterion. This value
+        controls the final accuracy for checking various optimality conditions;
+        gradient of the lagrangian and absolute sum of the constraint violations
+        should be lower than ``ftol``. Similarly, if computed step size and the
+        objective function chage are checked against this value. Default is 1e-6.
     eps : float
         Step size used for numerical approximation of the Jacobian.
     disp : bool
@@ -366,7 +370,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                              f"{', '.join(str(b) for b in bnderr)}.")
         xl, xu = bnds[:, 0].copy(), bnds[:, 1].copy()
 
-        # Mark infinite bounds with nans; the Fortran code understands this
+        # Mark infinite bounds with nans; the C code expects this
         infbnd = ~np.isfinite(bnds)
         xl[infbnd[:, 0]] = np.nan
         xu[infbnd[:, 1]] = np.nan
@@ -434,11 +438,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # The worst case workspace requirements for the buffer are:
 
-    # n*(n+1)//2 + m + 4*n + 3                                                  # SLSQP
-    # (n+1)*(n+2) + (n+1)*meq + meq + (mineq + 2*n + 2)*(n+1) + mineq + 3*n + 3 # LSQ
-    # mineq + 2n + 2 + 2*meq + (n+1) + (mineq + 3n + 3)*(n + 1 - meq)           # LSEI
-    # (mineq + 2n + 2 + 2)*(n + 2) + mineq + 2n + 2                             # LDP
-    # mineq + 2n + 2                                                            # NNLS
+    # n*(n+1)//2 + m + 4*n + 3                                           # SLSQP
+    # (n+1)*(n+2) + (n+1)*meq + m + (mineq + 2*n + 2)*(n+1) +  3*n + 3   # LSQ
+    # mineq + 2n + 2 + 2*meq + (n+1) + (mineq + 3n + 3)*(n + 1 - meq)    # LSEI
+    # (mineq + 2n + 2 + 2)*(n + 2) + mineq + 2n + 2                      # LDP
+    # mineq + 2n + 2                                                     # NNLS
 
     # If we sum all up and simplify by the help of sympy we get the following
     buffer_size = (
