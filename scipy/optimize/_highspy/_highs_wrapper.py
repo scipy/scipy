@@ -332,7 +332,6 @@ def check_option(highs_inst, option, value):
 
 def _get_marg_bnds(solution_col_dual, basis_col_status):
     numcol = len(basis_col_status)
-    marg_bnds = np.zeros((2, numcol))
     basis_col_status_values = np.array(
         [status.value for status in basis_col_status],
         dtype='uint8'
