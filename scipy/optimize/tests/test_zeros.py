@@ -11,8 +11,7 @@ import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
 from scipy import optimize
-from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
-                            OptimizeResult)
+from scipy.optimize import (_zeros_py as zeros, newton, root_scalar, OptimizeResult)
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
@@ -25,7 +24,7 @@ _FLOAT_EPS = finfo(float).eps
 
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
-gradient_methods = [zeros.newton]
+gradient_methods = [zeros.newton, zeros._muller]
 all_methods = bracket_methods + gradient_methods
 
 # A few test functions used frequently:
@@ -961,5 +960,89 @@ def test_maxiter_int_check_gh10236(method):
     # gh-10236 reported that the error message when `maxiter` is not an integer
     # was difficult to interpret. Check that this was resolved (by gh-10907).
     message = "'float' object cannot be interpreted as an integer"
-    with pytest.raises(TypeError, match=message):
-        method(f1, 0.0, 1.0, maxiter=72.45)
+    if method != zeros._muller:
+        with pytest.raises(TypeError, match=message):
+            method(f1, 0.0, 1.0, maxiter=72.45)
+    else:
+        with pytest.raises(TypeError, match=message):
+            method(f1, 0.0, 1.0, 2.0, maxiter=72.45)
+
+class Test_muller(TestScalarRootFinders):
+    def test__muller_real_roots(self):
+        for f in [f1, f2]:
+            x = zeros._muller(f, x0=3, x1=4, x2=5, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+        
+    def test__muller_complex_roots(self):
+        def f1(x):
+            return x + 1+1j
+        
+        def f2(x):
+            return x**2 + 1
+        
+        def f3(x):
+            return x**4 + 1j
+        
+        for f in [f1, f2, f3]:
+            x = zeros._muller(f, x0=1, x1=2, x2=3, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+
+            x = zeros._muller(f, x0=1.5j, x1=2j, x2=3, tol=1e-6)
+            assert_allclose(f(x), 0, atol=1e-6)
+
+
+    def test__muller_by_name(self):
+        r"""Invoke _muller through root_scalar()"""
+        for f in [f1, f2]:
+            r = root_scalar(f, method='muller', x0=3, x1=4, x2=5, xtol=1e-6)
+            assert_allclose(f(r.root), 0, atol=1e-6)
+
+
+    def test__muller_fail(self):
+        message = 'x0, x1, and x2 must be different'
+        with pytest.raises(ValueError, match=message):
+            zeros._muller(f1, x0=3, x1=3, x2=5, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros._muller(f1, x0=3, x1=5, x2=5, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros._muller(f1, x0=3, x1=5, x2=3, tol=1e-6)
+        with pytest.raises(ValueError, match=message):
+            zeros._muller(f1, x0=3, x1=3, x2=3, tol=1e-6)
+
+
+
+    def test__muller_full_output(self, capsys):
+        # Test the full_output capability, both when converging and not.
+        # Use simple polynomials, to avoid hitting platform dependencies
+        # (e.g., exp & trig) in number of iterations
+
+        x0 = 3
+        x1 = 4
+        x2 = 5
+
+        def f1(x):
+            return x ** 2 + 1
+
+        expected_counts = (31, 33)
+
+        kwargs = {'tol': 1e-6, 'full_output': True, }
+
+        x, r = zeros._muller(f1, x0, x1, x2, disp=False, **kwargs)
+        assert_(r.converged)
+        assert_equal(x, r.root)
+        assert_equal((r.iterations, r.function_calls), expected_counts)
+
+
+        # Now repeat, allowing one fewer iteration to force convergence failure
+        iters = r.iterations - 1
+        x, r = zeros._muller(f1, x0, x1, x2, maxiter=iters, disp=False, **kwargs)
+        assert_(not r.converged)
+        assert_equal(x, r.root)
+        assert_equal(r.iterations, iters)
+
+        msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+        with pytest.raises(RuntimeError, match=msg):
+            x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
+
+    
+

@@ -11,7 +11,7 @@ _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
-           'RootResults']
+           '_muller', 'RootResults']
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
@@ -1394,3 +1394,189 @@ def toms748(f, a, b, args=(), k=1,
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag),
                            "toms748")
+
+
+def _muller(f, x0, x1, x2, args=(), tol=1.48e-8, maxiter=50,
+           rtol=0.0, full_output=False, disp=True):
+    """
+    Find a root of a real or complex function using the Muller's method.
+
+    Find a root of the scalar-valued function `func` given a nearby scalar
+    starting points `x0`, `x1`, and `x2`.
+    The Muller method requires three starting points, but no derivatives,
+    and it works well for complex-valued roots. It will converge towards
+    complex roots even with real starting points. As with other root-finding
+    methods, initial guesses should be distinct.
+
+    `muller` is for finding roots of a scalar-valued functions of a single
+    variable. For problems involving several variables, see `root`.
+
+    Parameters
+    ----------
+    f : callable
+        The function whose root is wanted. It must be a function of a
+        single variable of the form ``f(x,a,b,c...)``, where ``a,b,c...``
+        are extra arguments that can be passed in the `args` parameter.
+        The function can be either real- or complex-valued, but it should 
+        support complex numbers, as intermediate guesses will be complex.
+    x0 : float, complex
+        An initial estimate of the root that should be somewhere near the
+        actual root. 
+    x1 : float, complex
+        Another estimate of the root.
+    x2 : float, complex
+        Another estimate of the root.
+    args : tuple, optional
+        Extra arguments to be used in the function call.
+    tol : float, optional
+        The allowable error of the root's value. If `func` is complex-valued,
+        a larger `tol` is recommended as both the real and imaginary parts
+        of `x` contribute to ``|x - x0|``.
+    maxiter : int, optional
+        Maximum number of iterations.
+    rtol : float, optional
+        Tolerance (relative) for termination.
+    full_output : bool, optional
+        If `full_output` is False (default), the root is returned.
+        If True and `x0` is scalar, the return value is ``(x, r)``, where ``x``
+        is the root and ``r`` is a `RootResults` object.
+        If True and `x0` is non-scalar, the return value is ``(x, converged,
+        zero_der)`` (see Returns section for details).
+    disp : bool, optional
+        If True, raise a RuntimeError if the algorithm didn't converge, with
+        the error message containing the number of iterations and current
+        function value. Otherwise, the convergence status is recorded in a
+        `RootResults` return object.
+        Ignored if `x0` is not scalar.
+        *Note: this has little to do with displaying, however,
+        the `disp` keyword cannot be renamed for backwards compatibility.*
+
+    Returns
+    -------
+    root : float, complex, sequence, or ndarray
+        Estimated location where function is zero.
+    r : `RootResults`, optional
+        Present if ``full_output=True`` and `x0` is scalar.
+        Object containing information about the convergence. In particular,
+        ``r.converged`` is True if the routine converged.
+    converged : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements converged successfully.
+    zero_der : ndarray of bool, optional
+        Present if ``full_output=True`` and `x0` is non-scalar.
+        For vector functions, indicates which elements had a zero derivative.
+
+    See Also
+    --------
+    root_scalar : interface to root solvers for scalar functions
+    root : interface to root solvers for multi-input, multi-output functions
+
+    Notes
+    -----
+    The order of convergence of the Muller's method is approximately 1.84.
+    This is slightly faster than secant method, but slower than Newton's
+    method which is quadratic.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize import muller
+
+    >>> def f(x):
+    ...     return (x**2 + 1)  # roots at x = 1j and x = -1j
+
+    >>> root = muller(f, 0, 1, 2 + 1j)
+    >>> root
+    -1.2168152957711588e-17+1j
+
+    """
+
+    if tol <= 0:
+        raise ValueError(f"tol too small ({tol:g} <= 0)")
+    maxiter = operator.index(maxiter)
+    if maxiter < 1:
+        raise ValueError("maxiter must be greater than 0")
+    if np.size(x0) > 1:
+        raise ValueError("operations on arrays are not yet supported")
+
+    funcalls = 0
+
+    # Ensure inputs are numpy arrays and converted to complex.
+    p0 = np.asarray(x0, dtype=complex)[()] * 1.0
+    p1 = np.asarray(x1, dtype=complex)[()] * 1.0
+    p2 = np.asarray(x2, dtype=complex)[()] * 1.0
+
+    converged = False
+    method = "muller"
+
+    if x0 == x1 or x0 == x2 or x1 == x2:
+        raise ValueError("x0, x1, and x2 must be different")
+
+    f0, f1, f2 = f(p0, *args), f(p1, *args), f(p2, *args)
+    funcalls += 3
+
+    # If one of the guesses is a root, return it immediately.
+    if np.isclose(f0, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x0, funcalls, 0, _ECONVERGED), method)
+    if np.isclose(f1, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x1, funcalls, 0, _ECONVERGED), method)
+    if np.isclose(f2, 0, rtol=rtol, atol=tol):
+        return _results_select(full_output, (x2, funcalls, 0, _ECONVERGED), method)
+
+    for itr in range(maxiter):
+        p1p0 = p1 - p0
+        p2p1 = p2 - p1
+        p0p2 = p0 - p2
+
+        # Gracefully handle division by zero.
+        # This can be avoided entirely by taking the zero value to be some epsilon > 0,
+        # but in my experience this leads to silent failure to converge that's
+        # difficult to diagnose.
+        if p1p0 == 0 or p2p1 == 0 or p0p2 == 0:
+            msg = "Division by zero has occured. Two initial values might be too close."
+            if disp:
+                msg += (
+                    " Failed to converge after %d iterations, value is %s."
+                    % (itr + 1, p2))
+                raise RuntimeError(msg)
+            warnings.warn(msg, RuntimeWarning, stacklevel=2)
+            return _results_select(
+                full_output, (p2, funcalls, itr + 1, _ECONVERR), method)
+
+        f0_f1_diff = (f0 - f1) / p1p0
+        f1_f2_diff = (f1 - f2) / p2p1
+        f0_f2_diff = (f0 - f2) / p0p2
+
+        w = f1_f2_diff + f0_f2_diff - f0_f1_diff
+
+        discriminant = np.sqrt(w**2 - 4 * f2 * f0_f2_diff)
+
+        # Chose maximal denominator for individual values.
+        denominator = (
+            w + discriminant
+            if np.abs(w + discriminant) > np.abs(w - discriminant)
+            else w - discriminant
+        )
+
+        h = -2 * f2 / denominator
+        p = p2 + h
+
+        converged = np.isclose(h, 0, rtol=rtol, atol=tol)
+
+        if converged:
+            return _results_select(
+                full_output, (p, funcalls, itr + 1, _ECONVERGED), method
+            )
+        
+        p0, p1, p2 = p1, p2, p
+
+        f0, f1, f2 = f1, f2, f(p2, *args)
+        funcalls += 1
+
+    if disp:
+        msg = "Failed to converge after %d iterations, value is %s." % (itr + 1, p2)
+        raise RuntimeError(msg)
+    
+    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
+
+
