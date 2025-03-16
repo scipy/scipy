@@ -1031,7 +1031,7 @@ static PyMethodDef DierckxMethods[] = {
     /* BSpline helpers */
     {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
      doc_evaluate_spline},
-    {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS, 
+    {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS,
      doc_evaluate_all_bspl},
     {"find_interval", py_find_interval, METH_VARARGS,
      doc_find_interval},
