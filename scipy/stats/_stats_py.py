@@ -10468,7 +10468,8 @@ def expectile(a, alpha=0.5, *, weights=None):
     >>> expectile(a, alpha=0.8)
     2.5714285714285716
     >>> weights = [1, 3, 1, 1]
-
+    >>> expectile(a, alpha=0.8, weights=weights)
+    3.3333333333333335
     """
     if alpha < 0 or alpha > 1:
         raise ValueError(
