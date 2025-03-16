@@ -123,8 +123,12 @@ py3.extension_module('_ufuncs',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+<<<<<<< HEAD
     xsf_dep,
     lapack_ilp64,
+=======
+    lapack_dep,
+>>>>>>> BLD: special: link to LP64-bit LAPACK, use cython_special in ellip_harm
     npymath_lib,
     np_dep,
   ],
@@ -193,7 +197,7 @@ py3.extension_module('cython_special',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_dep],
+  dependencies: [xsf_dep, np_dep, npymath_lib, sf_error_state_dep, lapack_ilp64],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
