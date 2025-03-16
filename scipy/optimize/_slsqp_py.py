@@ -448,6 +448,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     buffer_size = (
         n*(n+1)//2 + 3*m*n - (m + 5*n + 7)*meq + 9*m + 8*n*n + 35*n + meq*meq + 28
     )
+    # If no inequality constraints are given, top up workspace for the missing
+    # terms.
+    if mieq == 0:
+        buffer_size += 2*n*(n + 1)
     buffer = np.zeros(max(buffer_size, 1), dtype=np.float64)
 
     # mode is zero on entry, so call objective, constraints and gradients
