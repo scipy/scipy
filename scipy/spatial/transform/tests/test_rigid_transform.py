@@ -921,24 +921,31 @@ def test_normalize_dual_quaternion():
 def test_empty_transform_construction():
     tf = RigidTransform.from_matrix(np.empty((0, 4, 4)))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.from_rotation(Rotation.random(0))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.from_translation(np.empty((0, 3)))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.from_components(np.empty((0, 3)), Rotation.random(0))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.from_exp_coords(np.empty((0, 6)))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.from_dual_quat(np.empty((0, 8)))
     assert len(tf) == 0
+    assert not tf.single
 
     tf = RigidTransform.identity(0)
     assert len(tf) == 0
+    assert not tf.single
 
 
 def test_empty_transform_representation():
