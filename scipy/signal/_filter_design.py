@@ -867,7 +867,7 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
 def sosfreqz(*args, **kwargs):
     """
-    Compute the frequency response of a digital filter in SOS format.
+    Compute the frequency response of a digital filter in SOS format (legacy).
 
    .. legacy:: function
         
