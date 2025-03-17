@@ -991,6 +991,9 @@ def test_empty_transform_concatenation():
 def test_empty_transform_inv_and_pow():
     tf = RigidTransform.identity(0)
     assert len(tf.inv()) == 0
+    assert len(tf ** 0) == 0
+    assert len(tf ** 1) == 0
+    assert len(tf ** -1) == 0
     assert len(tf ** 0.5) == 0
 
 
