@@ -92,6 +92,7 @@ Filter design
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   sosfreqz      -- Digital filter frequency response for SOS format filter (legacy).
    freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    gammatone     -- FIR and IIR gammatone filter design.
