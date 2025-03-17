@@ -752,7 +752,7 @@ lsei(int ma, int me, int mg, int n,
 
     t = dnrm2_(&me, &x[nvars], &one);
     // Modify the norm by adding the equality solution.
-    *xnorm = sqrt((*xnorm)*(*xnorm) + t*t);
+    *xnorm = hypot(*xnorm, t);
     if (*mode != 1) { return; }
 
 ORIGINAL_BASIS:
@@ -843,7 +843,7 @@ lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h,
     // If any, compute the norm of the tail of b and add to xnorm
     tmp_int = ma - n;
     tmp_dbl = dnrm2_(&tmp_int, &b[(n + 1 > ma ? ma : n + 1) - 1], &one);
-    *xnorm = sqrt((*xnorm)*(*xnorm) + tmp_dbl*tmp_dbl);
+    *xnorm = hypot(*xnorm, tmp_dbl);
 
     return;
 }
