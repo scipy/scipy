@@ -43,8 +43,7 @@ __all__ = [
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_copysign', 'xp_device',
-    'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
+    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
 ]
 
@@ -479,42 +478,6 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     return None
 
 
-# temporary substitute for xp.moveaxis, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_moveaxis_to_end(
-        x: Array,
-        source: int,
-        /, *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(xp) if xp is None else xp
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
-
-
-# temporary substitute for xp.copysign, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # no attempt to account for special cases
-    xp = array_namespace(x1, x2) if xp is None else xp
-    abs_x1 = xp.abs(x1)
-    return xp.where(x2 >= 0, abs_x1, -abs_x1)
-
-
-# partial substitute for xp.sign, which does not cover the NaN special case
-# that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    if is_numpy(xp):  # only NumPy implements the special cases correctly
-        return xp.sign(x)
-    sign = xp.zeros_like(x)
-    one = xp.asarray(1, dtype=x.dtype)
-    sign = xp.where(x > 0, one, sign)
-    sign = xp.where(x < 0, -one, sign)
-    sign = xp.where(xp.isnan(x), xp.nan*one, sign)
-    return sign
-
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
                    axis: int | tuple[int] | None = None,
@@ -548,13 +511,6 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     # this function for readability
     xp = array_namespace(x) if xp is None else xp
     return xp.reshape(x, (-1,))
-
-
-def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # Convenience wrapper of xp.real that allows non-complex input;
-    # see data-apis/array-api#824
-    xp = array_namespace(x) if xp is None else xp
-    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
 
 
 # utility to broadcast arrays and promote to common dtype
