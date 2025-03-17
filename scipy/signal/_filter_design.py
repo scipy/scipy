@@ -792,8 +792,10 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
     Notes
     -----
+    This function used to be called ``sosfreqz`` in older versions (≥ 0.19.0)
+    
     .. versionadded:: 1.15.0
-    This function used to be called sosfreqz in older versions (>=0.19.0)
+    
 
     Examples
     --------
