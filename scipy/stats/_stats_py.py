@@ -80,6 +80,7 @@ from scipy._lib._array_api import (
     xp_vector_norm,
     xp_broadcast_promote,
     xp_capabilities,
+    xp_ravel,
 )
 import scipy._lib.array_api_extra as xpx
 
