@@ -15,7 +15,6 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
 )
 
@@ -2884,7 +2883,7 @@ def bartlett(*samples, axis=0):
         raise ValueError("Must enter at least two input sample vectors.")
 
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -2893,14 +2892,13 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    # sum dtype can be removed when 2023.12 rules kick in
     dtype = Ni.dtype
-    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    Ntot = xp.sum(Ni, axis=0)
     spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
     numer = ((Ntot - k) * xp.log(spsq)
              - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
     denom = (1 + 1/(3*(k - 1))
-             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
+             * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))

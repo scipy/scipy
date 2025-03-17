@@ -79,8 +79,6 @@ from scipy._lib._array_api import (
     is_numpy,
     is_marray,
     xp_size,
-    xp_moveaxis_to_end,
-    xp_sign,
     xp_vector_norm,
     xp_broadcast_promote,
 )
@@ -503,8 +501,7 @@ def _mode_result(mode, count):
     return ModeResult(mode, count)
 
 
-@_axis_nan_policy_factory(_mode_result, override={'vectorization': True,
-                                                  'nan_propagation': False})
+@_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
 
@@ -580,8 +577,27 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         NaN = _get_nan(a)
         return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
-    vals, cnts = np.unique(a, return_counts=True)
-    modes, counts = vals[cnts.argmax()], cnts.max()
+    if a.ndim == 1:
+        vals, cnts = np.unique(a, return_counts=True)
+        modes, counts = vals[cnts.argmax()], cnts.max()
+        return ModeResult(modes[()], counts[()])
+
+    # `axis` is always -1 after the `_axis_nan_policy` decorator
+    y = np.sort(a, axis=-1)
+    # Get boolean array of elements that are different from the previous element
+    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=bool),
+                        (y[..., :-1] != y[..., 1:]) & ~np.isnan(y[..., :-1])], axis=-1)
+    # Get linear integer indices of these elements in a raveled array
+    indices = np.arange(y.size)[i.ravel()]
+    # The difference between integer indices is the number of repeats
+    counts = np.diff(indices, append=y.size)
+    # Now we form an array of `counts` corresponding with each element of `y`...
+    counts = np.reshape(np.repeat(counts, counts), y.shape)
+    # ... so we can get the argmax of *each slice* separately.
+    k = np.argmax(counts, axis=-1, keepdims=True)
+    # Extract the corresponding element/count, and eliminate the reduced dimension
+    modes = np.take_along_axis(y, k, axis=-1)[..., 0]
+    counts = np.take_along_axis(counts, k, axis=-1)[..., 0]
     return ModeResult(modes[()], counts[()])
 
 
@@ -1343,7 +1359,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
-        vals = xp.where(zero, xp.asarray(xp.nan, dtype=m2.dtype), m3 / m2**1.5)
+        vals = xp.where(zero, xp.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if is_lazy_array(can_correct) or xp.any(can_correct):
@@ -1450,8 +1466,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m4 = _moment(a, 4, axis, mean=mean, xp=xp)
     with np.errstate(all='ignore'):
         zero = m2 <= (xp.finfo(m2.dtype).eps * mean_reduced)**2
-        NaN = _get_nan(m4, xp=xp)
-        vals = xp.where(zero, NaN, m4 / m2**2.0)
+        vals = xp.where(zero, xp.nan, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
@@ -1690,7 +1705,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         W2 = -1 + xp.sqrt(2 * (beta2 - 1))
         delta = 1 / xp.sqrt(0.5 * xp.log(W2))
         alpha = xp.sqrt(2.0 / (W2 - 1))
-        y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
+        y = xp.where(y == 0, 1., y)
         Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
         pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
 
@@ -1798,8 +1813,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + (1+4.0/(sqrtbeta1**2))**0.5)
     term1 = 1 - 2/(9.0*A)
     denom = 1 + x * (2/(A-4.0))**0.5
-    NaN = _get_nan(x, xp=xp)
-    term2 = xp_sign(denom) * xp.where(denom == 0.0, NaN,
+    term2 = xp.sign(denom) * xp.where(denom == 0.0, xp.nan,
                                       ((1-2.0/A)/xp.abs(denom))**(1/3))
     if xp.any(denom == 0):
         msg = ("Test statistic not defined in some cases due to division by "
@@ -4680,10 +4694,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     if n < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
 
-    # `moveaxis` only recently added to array API, so it's not yey available in
-    # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
-    x = xp_moveaxis_to_end(x, axis, xp=xp)
-    y = xp_moveaxis_to_end(y, axis, xp=xp)
+    x = xp.moveaxis(x, axis, -1)
+    y = xp.moveaxis(y, axis, -1)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)
@@ -4705,8 +4717,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        x = xp.where(const_x[..., xp.newaxis], xp.asarray(xp.nan, dtype=dtype), x)
-        y = xp.where(const_y[..., xp.newaxis], xp.asarray(xp.nan, dtype=dtype), y)
+        x = xp.where(const_x[..., xp.newaxis], xp.nan, x)
+        y = xp.where(const_y[..., xp.newaxis], xp.nan, y)
 
     if isinstance(method, PermutationMethod):
         def statistic(y, axis):
@@ -4775,8 +4787,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
-    one = xp.asarray(1, dtype=dtype)
-    r = xp.clip(r, -one, one)
+    r = xp.clip(r, -1., 1.)
     r = xpx.at(r, const_xy).set(xp.nan)
 
     # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
@@ -6294,7 +6305,7 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2, xp=None):
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
-    df = xp.where(xp.isnan(df), xp.asarray(1.), df)
+    df = xp.where(xp.isnan(df), 1., df)
     denom = xp.sqrt(vn1 + vn2)
     return df, denom
 
@@ -6307,9 +6318,8 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    zero = xp.asarray(0.)
-    v1 = xp.where(xp.asarray(n1 == 1), zero, v1)
-    v2 = xp.where(xp.asarray(n2 == 1), zero, v2)
+    v1 = xp.where(xp.asarray(n1 == 1), 0., v1)
+    v2 = xp.where(xp.asarray(n2 == 1), 0., v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
@@ -10458,7 +10468,8 @@ def expectile(a, alpha=0.5, *, weights=None):
     >>> expectile(a, alpha=0.8)
     2.5714285714285716
     >>> weights = [1, 3, 1, 1]
-
+    >>> expectile(a, alpha=0.8, weights=weights)
+    3.3333333333333335
     """
     if alpha < 0 or alpha > 1:
         raise ValueError(
@@ -10941,8 +10952,8 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
-        x = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), x)
-        weights = xp.where(nan_mask, xp.asarray(0, dtype=x.dtype), weights)
+        x = xp.where(nan_mask, 0., x)
+        weights = xp.where(nan_mask, 0., weights)
 
     # Perform the mean calculation itself
     if weights is None:
