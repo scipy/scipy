@@ -751,10 +751,17 @@ def test_indexing():
     assert_allclose(tf_slice.as_matrix()[:, :3, 3], t[0:2], atol=atol)
 
     # Test boolean indexing
+    tf_masked = tf[[True, True]]
+    assert_allclose(tf_masked.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
+    assert_allclose(tf_masked.as_matrix()[:, :3, 3], t, atol=atol)
+
     tf_masked = tf[[False, True]]
     assert_allclose(tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(),
                     atol=atol)
     assert_allclose(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
+
+    tf_masked = tf[[False, False]]
+    assert len(tf_masked) == 0
 
 
 def test_concatenate():
