@@ -175,24 +175,23 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
-    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')``
+    This way, if ``x`` and ``y`` are 1-D arrays and ``z = correlate(x, y, 'full')``
     then
 
     .. math::
 
-          z[k] = (x * y)(k - N + 1)
-               = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
+          z[k] = \sum_{l=0}^{N-1} x_l \, y_{l-k}^{*}
 
-    for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
-
-    where :math:`||x||` is the length of ``x``, :math:`N = \max(||x||,||y||)`,
-    and :math:`y_m` is 0 when m is outside the range of y.
-
+    for :math:`k = -(M-1), \dots, (N-1)`, where :math:`N` is the length of ``x``, 
+    :math:`M` is the length of ``y``, and :math:`y_m = 0` when :math:`m` is outside the 
+    valid range :math:`[0, M-1]`. The size of :math:`z` is :math:`N + M - 1` and 
+    :math:`y^*` denotes the complex conjugate of :math:`y`.
+    
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
     rounding integers can lose precision), ``method='direct'`` is always used.
 
-    When using "same" mode with even-length inputs, the outputs of `correlate`
+    When using ``mode='same'`` with even-length inputs, the outputs of `correlate`
     and `correlate2d` differ: There is a 1-index offset between them.
 
     Examples
@@ -2359,13 +2358,19 @@ def lfiltic(b, a, y, x=None):
         if x is not None:
             _reject_objects(x, 'lfiltic')
 
-    a = xp.asarray(a)
-    b = xp.asarray(b)
-
-    N = xp_size(a) - 1
-    M = xp_size(b) - 1
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
+    if a.ndim > 1:
+        raise ValueError('Filter coefficients `a` must be 1-D.')
+    if b.ndim > 1:
+        raise ValueError('Filter coefficients `b` must be 1-D.')
+    N = a.shape[0] - 1
+    M = b.shape[0] - 1
     K = max(M, N)
     y = xp.asarray(y)
+
+    if N < 0:
+        raise ValueError("There must be at least one `a` coefficient.")
 
     if x is None:
         result_type = xp.result_type(b, a, y)
@@ -2380,24 +2385,27 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.astype(x, result_type)
 
-        concat = array_namespace(a).concat
-
         L = xp_size(x)
         if L < M:
-            x = concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L)))
 
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, np.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
         zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+
+    if a[0] != 1.:
+        if a[0] == 0.:
+            raise ValueError("First `a` filter coefficient must be non-zero.")
+        zi /= a[0]
 
     return zi
 
@@ -3914,25 +3922,9 @@ def _angle(z, xp):
     """np.angle replacement
     """
     # XXX: https://github.com/data-apis/array-api/issues/595
-    if xp.isdtype(z.dtype, 'complex floating'):
-        zreal, zimag = xp.real(z), xp.imag(z)
-    else:
-        zreal, zimag = z, 0
-
-    a = xp.atan2(zimag, zreal)
+    zimag = xp.imag(z) if xp.isdtype(z.dtype, 'complex floating') else 0.
+    a = xp.atan2(zimag, xp.real(z))
     return a
-
-
-def _mean(x, *args, xp, **kwds):
-    # https://github.com/data-apis/array-api/pull/850
-    if xp.isdtype(x.dtype, 'complex floating'):
-        I = xp.asarray(1j, dtype=xp.complex64
-                                 if x.dtype == xp.float32
-                                 else xp.complex128)
-        return (xp.mean(xp.real(x), *args, **kwds) +
-                I * xp.mean(xp.imag(x), *args, **kwds))
-    else:
-        return xp.mean(x, *args, **kwds)
 
 
 def vectorstrength(events, period):
@@ -4003,15 +3995,12 @@ def vectorstrength(events, period):
         raise ValueError('periods must be positive')
 
     # this converts the times to vectors
-    I2pi = xp.asarray(2j*xp.pi, dtype=xp.complex64
-                        if period.dtype == xp.float32
-                        else xp.complex128)
-    events_ = xp.astype(events, I2pi.dtype) if is_torch(xp) else events
-    vectors = xp.exp(I2pi/period.T @ events_)
+    events_ = xp.astype(events, period.dtype)
+    vectors = xp.exp(2j * (xp.pi / period.T @ events_))
 
     # the vector strength is just the magnitude of the mean of the vectors
     # the vector phase is the angle of the mean of the vectors
-    vectormean = _mean(vectors, axis=1, xp=xp)
+    vectormean = xp.mean(vectors, axis=1)
     strength = xp.abs(vectormean)
     phase = _angle(vectormean, xp)
 

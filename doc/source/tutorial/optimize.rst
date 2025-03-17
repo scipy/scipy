@@ -878,6 +878,12 @@ meet your needs (e.g. execution time, objective function value).
      -
      -
      -
+   * - COBYQA
+     - ✓
+     - ✓
+     -
+     -
+     -
    * - SLSQP
      - ✓
      - ✓

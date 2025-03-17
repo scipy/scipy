@@ -2331,7 +2331,8 @@ class TestNdimageMorphology:
                                               [2, 3, 1, 3, 1],
                                               [5, 5, 3, 3, 1]]))
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8398")
     def test_grey_erosion01_overlap(self, xp):
 
@@ -2526,8 +2527,8 @@ class TestNdimageMorphology:
                                                structure=structure)
         assert_array_almost_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
     def test_white_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2580,8 +2581,8 @@ class TestNdimageMorphology:
         output = ndimage.white_tophat(array, structure=structure)
         xp_assert_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
     def test_white_tophat04(self, xp):
         array = np.eye(5, dtype=bool)
         structure = np.ones((3, 3), dtype=bool)
@@ -2593,8 +2594,8 @@ class TestNdimageMorphology:
         output = xp.empty_like(array, dtype=xp.float64)
         ndimage.white_tophat(array, structure=structure, output=output)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
     def test_black_tophat01(self, xp):
         array = xp.asarray([[3, 2, 5, 1, 4],
                             [7, 6, 9, 3, 5],
@@ -2647,8 +2648,8 @@ class TestNdimageMorphology:
         output = ndimage.black_tophat(array, structure=structure)
         xp_assert_equal(output, expected)
 
-    @skip_xp_backends("jax.numpy", reason="output array is read-only.")
-    @skip_xp_backends("dask.array", reason="converts dask output array to numpy")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
     def test_black_tophat04(self, xp):
         array = xp.asarray(np.eye(5, dtype=bool))
         structure = xp.asarray(np.ones((3, 3), dtype=bool))
@@ -2923,7 +2924,7 @@ def test_binary_input_as_output(function, iterations, brute_force, xp):
     xp_assert_equal(data, expected)
 
 
-@skip_xp_backends(np_only=True, exception=["cupy"],
+@skip_xp_backends(np_only=True, exceptions=["cupy"],
                   reason="inplace output= is numpy-specific")
 def test_binary_hit_or_miss_input_as_output(xp):
     rstate = np.random.RandomState(123)
