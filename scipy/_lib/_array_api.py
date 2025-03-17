@@ -893,11 +893,13 @@ def xp_capabilities(*, like=None, **kwargs):
     capabilities = like.capabilities if like else Capabilities(**kwargs)
 
     def decorator(f):
+        # Don't overwrite docstring of original function
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
         capabilities.apply_to(wrapper)
+        wrapper.wrapped = f
 
         return wrapper
     return decorator
