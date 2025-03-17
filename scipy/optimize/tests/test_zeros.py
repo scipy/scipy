@@ -978,7 +978,8 @@ def test_maxiter_int_check_gh10236(method):
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
-@pytest.mark.pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth])
+@pytest.mark.parametrize("method", [zeros.bisect, zeros.ridder,
+                                    zeros.brentq, zeros.brenth])
 def test_bisect_special_parameter(method):
     # give some zeros method strange parameters
     # and check whether an exception appears
