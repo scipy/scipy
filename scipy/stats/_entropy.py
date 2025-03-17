@@ -8,7 +8,7 @@ import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
-from scipy._lib._array_api import array_namespace, xp_broadcast_promote
+from scipy._lib._array_api import array_namespace, xp_promote
 from scipy._lib import array_api_extra as xpx
 
 __all__ = ['entropy', 'differential_entropy']
@@ -318,7 +318,7 @@ def differential_entropy(
 
     """
     xp = array_namespace(values)
-    values = xp_broadcast_promote(values, force_floating=True, xp=xp)
+    values = xp_promote(values, force_floating=True, xp=xp)
     values = xp.moveaxis(values, axis, -1)
     n = values.shape[-1]  # type: ignore[union-attr]
 

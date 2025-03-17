@@ -219,7 +219,7 @@ class TestBracketRoot:
 
         xp_assert_equal(res.status, ref_flags)
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#273')
+    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize('xmin', [-5, None])
     @pytest.mark.parametrize('xmax', [5, None])

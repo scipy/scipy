@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_broadcast_promote
+from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -27,8 +27,8 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    xl0, xr0, xmin, xmax, factor = xp_broadcast_promote(xl0, xr0, xmin, xmax, factor,
-                                                        force_floating=True, xp=xp)
+    xl0, xr0, xmin, xmax, factor = xp_promote(
+        xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
 
     if (not xp.isdtype(xl0.dtype, "numeric")
         or xp.isdtype(xl0.dtype, "complex floating")):
@@ -443,8 +443,8 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
     factor = 2.0 if factor is None else factor
 
-    xm0, xl0, xr0, xmin, xmax, factor = xp_broadcast_promote(
-        xm0, xl0, xr0, xmin, xmax, factor, force_floating=True, xp=xp)
+    xm0, xl0, xr0, xmin, xmax, factor = xp_promote(
+        xm0, xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
 
     if (not xp.isdtype(xm0.dtype, "numeric")
         or xp.isdtype(xm0.dtype, "complex floating")):

@@ -1995,7 +1995,7 @@ class TestPpccMax:
 
 class TestBoxcox_llf:
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#274')
+    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#274')
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_basic(self, dtype, xp):
         dt = getattr(xp, dtype)
@@ -2027,7 +2027,7 @@ class TestBoxcox_llf:
     def test_empty(self, xp):
         assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#274')
+    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#274')
     def test_gh_6873(self, xp):
         # Regression test for gh-6873.
         # This example was taken from gh-7534, a duplicate of gh-6873.
@@ -2036,7 +2036,7 @@ class TestBoxcox_llf:
         # The expected value was computed with mpmath.
         xp_assert_close(llf, xp.asarray(-17.93934208579061))
 
-    @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#274')
+    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#274')
     def test_instability_gh20021(self, xp):
         data = xp.asarray([2003, 1950, 1997, 2000, 2009])
         llf = stats.boxcox_llf(1e-8, data)

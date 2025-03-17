@@ -45,7 +45,7 @@ __all__ = [
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
-    'xp_result_type', 'xp_broadcast_promote'
+    'xp_result_type', 'xp_promote'
 ]
 
 
@@ -515,7 +515,23 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
 
 
 # utility to find common dtype with option to force floating
-def xp_result_type(*args, xp, force_floating=False):
+def xp_result_type(*args, force_floating=False, xp=None):
+    """
+    Returns the dtype that results from applying type promotion rules
+    (see Array API Standard Type Promotion Rules) to the arguments. Augments
+    standard `result_type` in two ways:
+
+    - There is a `force_floating` argument that ensures that the result type
+      is floating point. It works by adding `1.0` to the arguments passed to
+      the backend-defined `xp.result_type`.
+    - When a TypeError is raised (e.g. due to an unsupported promotion),
+      we define a custom rule: use the result type of the default float
+      and any other floats passed. See
+      https://github.com/scipy/scipy/pull/22695/files#r1997905891
+      for rationale.
+    """
+    xp = array_namespace(*args) if xp is None else xp
+
     args = [(_asarray(arg, subok=True) if np.iterable(arg) else arg)
             for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
@@ -527,26 +543,28 @@ def xp_result_type(*args, xp, force_floating=False):
         dtype = (xp.result_type(*args_not_none, 1.0) if force_floating
                  else xp.result_type(*args_not_none))
     except TypeError:  # mixed type promotion isn't defined
-        default_float = xp_default_dtype(xp)
+        # use `result_type` of default floating point type and any floats present
+        # This can be revisited, but right now, the only backends that get here
+        # are array-api-strict (which is not for production use) and PyTorch
+        # (due to data-apis/array-api-compat#279).
         float_args = []
         for arg in args_not_none:
-            arg = xp.asarray(arg) if np.isscalar(arg) else arg
-            dtype = getattr(arg, 'dtype', arg)
-            if not xp.isdtype(dtype, 'integral'):
+            arg_array = xp.asarray(arg) if np.isscalar(arg) else arg
+            dtype = getattr(arg_array, 'dtype', arg)
+            if not xp.isdtype(dtype, ('integral', 'bool')):
                 float_args.append(arg)
-        if float_args:
-            dtype = xp.result_type(*float_args, default_float)
-        elif force_floating:
-            dtype = default_float
-        else:
-            dtype = xp.result_type(*args_not_none)
+        dtype = xp.result_type(*float_args, xp_default_dtype(xp))
 
     return dtype
 
 
-# utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, broadcast=True, ensure_writeable=False,
-                         force_floating=False, xp=None):
+def xp_promote(*args, broadcast=False, ensure_writeable=False,
+               force_floating=False, xp=None):
+    """
+    Promotes elements of *args to result dtype, ignoring `None`s.
+    Includes options for forcing promotion to floating point and
+    broadcasting the arrays, again ignoring `None`s.
+    """
     xp = array_namespace(*args) if xp is None else xp
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)

@@ -5,7 +5,7 @@ import operator
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API,
-    xp_broadcast_promote,
+    xp_promote,
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -56,9 +56,9 @@ def get_array_special_func(f_name, xp, n_array_args):
 
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
-        x, y = xp_broadcast_promote(x, y, force_floating=True, xp=xp)
+        x, y = xp_promote(x, y, broadcast=True, force_floating=True, xp=xp)
         res = xp.full(x.shape, xp.inf, dtype=x.dtype)
-        res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=x.dtype)
+        res[(x == 0) & (y >= 0)] = 0
         i = (x > 0) & (y > 0)
         res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
         return res

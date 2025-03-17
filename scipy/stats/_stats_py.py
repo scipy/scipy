@@ -80,7 +80,7 @@ from scipy._lib._array_api import (
     is_marray,
     xp_size,
     xp_vector_norm,
-    xp_broadcast_promote,
+    xp_promote,
     xp_result_type,
 )
 from scipy._lib import array_api_extra as xpx
@@ -1112,7 +1112,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     order = xp.asarray(order, dtype=a.dtype)
     if xp_size(order) == 0:
@@ -1179,7 +1179,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
+    a = xp_promote(a, force_floating=True, xp=xp)
     dtype = a.dtype
 
     # moment of empty array is the same regardless of order
@@ -2851,7 +2851,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
+    a = xp_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
@@ -2913,8 +2913,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
-    scores, compare = xp_broadcast_promote(scores, compare, broadcast=False,
-                                           force_floating=True, xp=xp)
+    scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
         if like_zscore:  # zscore should not emit SmallSampleWarning
@@ -3045,7 +3044,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = xp_broadcast_promote(a, force_floating=True)  # just promote to correct float
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
@@ -6743,9 +6742,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     """
     xp = array_namespace(a, b)
 
-    dtype = xp_result_type(a, b, force_floating=True, xp=xp)
-    a = xp.asarray(a, dtype=dtype)
-    b = xp.asarray(b, dtype=dtype)
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if axis is None:
         a, b, axis = xp_ravel(a), xp_ravel(b), 0
@@ -9036,8 +9033,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
     """
     xp = array_namespace(pvalues, weights)
-    pvalues, weights = xp_broadcast_promote(pvalues, weights,
-                                            force_floating=True, xp=xp)
+    pvalues, weights = xp_promote(pvalues, weights, broadcast=True,
+                                  force_floating=True, xp=xp)
 
     if xp_size(pvalues) == 0:
         # This is really only needed for *testing* _axis_nan_policy decorator
@@ -10898,7 +10895,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
+    x, weights = xp_promote(x, weights, broadcast=True, force_floating=True)
     if weights is not None:
         x, weights = _share_masks(x, weights, xp=xp)
 

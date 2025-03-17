@@ -13,6 +13,7 @@ from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
@@ -192,7 +193,7 @@ class TestLogSumExp:
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('torch', reason='data-apis/array-api-compat#273')
+    @xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
