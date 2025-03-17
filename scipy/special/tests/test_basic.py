@@ -3057,10 +3057,10 @@ class TestGamma:
         pts = [0.25,
                np.nextafter(0.25, 0), 0.25 - 1e-12,
                np.nextafter(0.25, 1), 0.25 + 1e-12]
-        for xp in pts:
-            y = special.gammaincinv(.4, xp)
+        for pt in pts:
+            y = special.gammaincinv(.4, pt)
             x = special.gammainc(0.4, y)
-            assert_allclose(x, xp, rtol=1e-12)
+            assert_allclose(x, pt, rtol=1e-12)
 
     def test_rgamma(self):
         rgam = special.rgamma(8)
