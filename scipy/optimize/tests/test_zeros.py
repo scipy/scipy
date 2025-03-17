@@ -511,9 +511,8 @@ class TestNewton(TestScalarRootFinders):
     def test_newton_special_parameters(self):
         # give zeros.newton() some strange parameters
         # and check whether an exception appears
-        with pytest.raises(ValueError) as excinfo:
-            _ = zeros.newton(f1, 3, tol=-1e-6)
-        assert "tol too small" in excinfo.exconly()
+        with pytest.raises(ValueError, match="tol too small"):
+            zeros.newton(f1, 3, tol=-1e-6)
 
         with pytest.raises(ValueError) as excinfo:
             _ = zeros.newton(f1, 3, tol=1e-6, maxiter=-50)
