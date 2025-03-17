@@ -1112,8 +1112,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    dtype = xp_result_type(a, force_floating=True, xp=xp)
-    a = xp.asarray(a, dtype=dtype)
+    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
 
     order = xp.asarray(order, dtype=a.dtype)
     if xp_size(order) == 0:
@@ -1180,9 +1179,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    dtype = xp_result_type(a, force_floating=True, xp=xp)
-    a = xp.asarray(a, dtype=dtype)
-
+    a = xp_broadcast_promote(a, force_floating=True, xp=xp)
     dtype = a.dtype
 
     # moment of empty array is the same regardless of order

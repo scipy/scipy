@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_result_type
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_broadcast_promote
 from scipy._lib import array_api_extra as xpx
 
 
@@ -382,8 +382,7 @@ def rosen(x):
     >>> plt.show()
     """
     xp = array_namespace(x)
-    dtype = xp_result_type(x, force_floating=True, xp=xp)
-    x = xp.asarray(x, dtype=dtype)
+    x = xp_broadcast_promote(x, force_floating=True, xp=xp)
     r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
                axis=0, dtype=x.dtype)
     return r
@@ -418,8 +417,7 @@ def rosen_der(x):
 
     """
     xp = array_namespace(x)
-    dtype = xp_result_type(x, force_floating=True, xp=xp)
-    x = xp.asarray(x, dtype=dtype)
+    x = xp_broadcast_promote(x, force_floating=True, xp=xp)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
@@ -463,8 +461,7 @@ def rosen_hess(x):
 
     """
     xp = array_namespace(x)
-    dtype = xp_result_type(x, force_floating=True, xp=xp)
-    x = xp.asarray(x, dtype=dtype)
+    x = xp_broadcast_promote(x, force_floating=True, xp=xp)
 
     H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
@@ -508,8 +505,7 @@ def rosen_hess_prod(x, p):
 
     """
     xp = array_namespace(x, p)
-    dtype = xp_result_type(x, p, force_floating=True, xp=xp)
-    x = xp.asarray(x, dtype=dtype)
+    x = xp_broadcast_promote(x, force_floating=True, xp=xp)
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
     p = xp.asarray(p, dtype=x.dtype)
     Hp = xp.zeros(x.shape[0], dtype=x.dtype)

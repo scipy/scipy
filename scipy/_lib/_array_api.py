@@ -551,7 +551,7 @@ def xp_broadcast_promote(*args, broadcast=True, ensure_writeable=False,
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True) if arg is not None else arg)
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
             for arg in args]
 
     if not broadcast:

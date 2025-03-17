@@ -16,7 +16,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_vector_norm,
-    xp_result_type,
+    xp_broadcast_promote,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -953,8 +953,7 @@ def boxcox_llf(lmb, data):
 
     """
     xp = array_namespace(data)
-    dtype = xp_result_type(data, force_floating=True, xp=xp)
-    data = xp.asarray(data, dtype=dtype)
+    data = xp_broadcast_promote(data, force_floating=True, xp=xp)
 
     N = data.shape[0]
     if N == 0:
@@ -974,7 +973,7 @@ def boxcox_llf(lmb, data):
         logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
-    res = xp.astype(res, dtype)
+    res = xp.astype(res, data.dtype)
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -3928,8 +3927,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
-    dtype = xp_result_type(samples, force_floating=True, xp=xp)
-    samples = xp.asarray(samples, dtype=dtype)
+    samples = xp_broadcast_promote(samples, force_floating=True, xp=xp)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
