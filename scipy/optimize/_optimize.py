@@ -4239,7 +4239,7 @@ def linewalker(func, brack, **options):
         Additional arguments (if present), passed to func.
 
     Optional Parameters
-    ----------
+    -------------------
     grid_size: int
         Number of equally-spaced grid indices (candidate solutions) along the line segment of interest.
         Recommended range: 1000 <= grid_size <= 10000
@@ -4269,8 +4269,8 @@ def linewalker(func, brack, **options):
     initial_number_of_samples >= 2
     force_sample_at_predicted_minimizer ??? 1 or 2
         
-    Returns dictionary containing:
-    -------
+    Returns dictionary containing
+    -----------------------------
         'fun': float
             Minimum evaluated function value
         'x': float
