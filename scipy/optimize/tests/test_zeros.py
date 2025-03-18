@@ -514,13 +514,11 @@ class TestNewton(TestScalarRootFinders):
         with pytest.raises(ValueError, match="tol too small"):
             zeros.newton(f1, 3, tol=-1e-6)
 
-        with pytest.raises(ValueError) as excinfo:
-            _ = zeros.newton(f1, 3, tol=1e-6, maxiter=-50)
-        assert "maxiter must be greater than 0" in excinfo.exconly()
+        with pytest.raises(ValueError, match="maxiter must be greater than 0"):
+            zeros.newton(f1, 3, tol=1e-6, maxiter=-50)
 
-        with pytest.raises(ValueError) as excinfo:
-            _ = zeros.newton(f1, 3, x1=3)
-        assert "x1 and x0 must be different" in excinfo.exconly()
+        with pytest.raises(ValueError, match="x1 and x0 must be different" ):
+            zeros.newton(f1, 3, x1=3)
 
 
 def test_gh_5555():
