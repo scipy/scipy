@@ -4,14 +4,14 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch, array_namespace,
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch, SCIPY_ARRAY_API,
                                    is_array_api_strict, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
 
 
+@pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
 def test_dispatch_to_unrecognized_library():
     xp = pytest.importorskip("array_api_strict")
-    xp = array_namespace(xp.asarray(1.))  # xp must match what array_namespace returns
     f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
@@ -19,10 +19,10 @@ def test_dispatch_to_unrecognized_library():
     xp_assert_close(res, ref)
 
 
+@pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
 def test_rel_entr_generic(dtype):
     xp = pytest.importorskip("array_api_strict")
-    xp = array_namespace(xp.asarray(1.))  # xp must match what array_namespace returns
     f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
