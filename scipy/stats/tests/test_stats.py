@@ -133,7 +133,6 @@ class TestTrimmedStats:
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in divide:RuntimeWarning:dask"
     )
-    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_tvar(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
 
@@ -2994,7 +2993,6 @@ class TestZscore:
         xp_assert_close(z[0, :], z0_expected)
         xp_assert_close(z[1, :], z1_expected)
 
-    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_nan_propagate(self, xp):
         x = xp.asarray([1, 2, np.nan, 4, 5])
         z = stats.zscore(x, nan_policy='propagate')
@@ -3025,7 +3023,6 @@ class TestZscore:
         with pytest.raises(ValueError, match="The input contains nan..."):
             stats.zscore(x, nan_policy='raise')
 
-    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
@@ -3080,7 +3077,6 @@ class TestZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
-    @skip_xp_backends('cupy', reason="cupy/cupy#8391")
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
@@ -3560,7 +3556,6 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex128'])
     @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
     def test_constant_moments(self, dtype, expect, order, xp):
@@ -3632,23 +3627,23 @@ class SkewKurtosisTest:
     testcase = [1., 2., 3., 4.]
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
-
-@make_skip_xp_backends(stats.skew)
-class TestSkew(SkewKurtosisTest):
-    @make_skip_xp_backends(stats.kurtosis)
-    @pytest.mark.parametrize('stat_fun', [stats.skew, stats.kurtosis])
-    def test_empty_1d(self, stat_fun, xp):
+    def test_empty_1d(self, xp):
         x = xp.asarray([])
         if is_numpy(xp):
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stat_fun(x)
+                res = self.stat_fun(x)
         else:
             with np.testing.suppress_warnings() as sup:
                 # array_api_strict produces these
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 sup.filter(RuntimeWarning, "invalid value encountered")
-                res = stat_fun(x)
+                res = self.stat_fun(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
+
+
+@make_skip_xp_backends(stats.skew)
+class TestSkew(SkewKurtosisTest):
+    stat_fun = stats.skew
 
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
@@ -3745,6 +3740,7 @@ class TestSkew(SkewKurtosisTest):
 
 @make_skip_xp_backends(stats.kurtosis)
 class TestKurtosis(SkewKurtosisTest):
+    stat_fun = stats.kurtosis
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_kurtosis(self, xp):
@@ -6107,7 +6103,6 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     # internal dask warning we can't do anything about
     @pytest.mark.filterwarnings(
         "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
@@ -6352,7 +6347,6 @@ class TestDescribe:
         xp_assert_equal(sk, xp.asarray(xp.nan))
         xp_assert_equal(kurt, xp.asarray(xp.nan))
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_numbers(self, xp):
         x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
         nc = 5
@@ -6438,7 +6432,6 @@ class TestDescribe:
         attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_ddof(self, xp):
         x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
         nc = 5
@@ -6456,7 +6449,6 @@ class TestDescribe:
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_describe_axis_none(self, xp):
         x = xp.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
 
@@ -6487,7 +6479,6 @@ class TestDescribe:
 
 class NormalityTests:
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_against_R(self, alternative, xp):
         # testa against R `dagoTest` from package `fBasics`
@@ -6519,7 +6510,6 @@ class NormalityTests:
         xp_assert_close(res_pvalue, ref_pvalue)
         check_named_results(res, ('statistic', 'pvalue'), xp=xp)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_nan(self, xp):
         # nan in input -> nan output (default nan_policy='propagate')
         test_fun = getattr(stats, self.test_name)
@@ -6565,7 +6555,6 @@ class TestKurtosisTest(NormalityTests):
     test_name = 'kurtosistest'
     case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_intuitive(self, xp):
         # intuitive tests; see gh-13549. excess kurtosis of laplace is 3 > 0
         a2 = stats.laplace.rvs(size=10000, random_state=123)
@@ -6573,7 +6562,6 @@ class TestKurtosisTest(NormalityTests):
         pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
         xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_gh9033_regression(self, xp):
         # regression test for issue gh-9033: x clearly non-normal but power of
         # negative denom needs to be handled correctly to reject normality
@@ -6582,7 +6570,6 @@ class TestKurtosisTest(NormalityTests):
         x = xp.asarray(x, dtype=xp.float64)
         assert stats.kurtosistest(x)[1] < 0.01
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     def test_kurtosistest_too_few_observations(self, xp):
         # kurtosistest requires at least 5 observations; 4 should warn and return NaN.
         # Regression test for ticket #1425.

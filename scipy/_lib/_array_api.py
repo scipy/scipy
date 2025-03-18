@@ -734,8 +734,7 @@ def xp_capabilities(capabilities_table=None, **kwargs):
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        if wrapper not in capabilities_table:
-            capabilities_table[wrapper] = kwargs
+        capabilities_table[wrapper] = kwargs
         capabilities = _make_capabilities(**capabilities_table[wrapper])
 
         note = _make_capabilities_note(f.__name__, capabilities)
@@ -755,21 +754,21 @@ def make_skip_xp_backends(*funs, capabilities_table=None):
 
     skip_backends = []
     cpu_only = False
-    cpu_only_reason = ""
+    cpu_only_reason = set()
     np_only = False
     exceptions = []
 
     for fun in funs:
         skip_backends += capabilities_table[fun].get('skip_backends', [])
         cpu_only |= capabilities_table[fun].get('cpu_only', False)
-        cpu_only_reason += capabilities_table[fun].get('reason', "")
+        cpu_only_reason.add(capabilities_table[fun].get('reason', ""))
         np_only |= capabilities_table[fun].get('np_only', False)
         exceptions += capabilities_table[fun].get('exceptions', [])
 
     decorators = []
     if cpu_only:
         kwargs = dict(cpu_only=True, exceptions=exceptions)
-        kwargs |= {'reason': cpu_only_reason}
+        kwargs |= {'reason': "\n".join(cpu_only_reason)}
         decorators.append(pytest.mark.skip_xp_backends(**kwargs))
 
     if np_only:
