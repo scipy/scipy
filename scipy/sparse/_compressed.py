@@ -663,8 +663,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Sum the array/matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
-        # The _spbase base class already does axis=0 and axis=1 efficiently
-        # so we only do the case axis=None here
+        # The _spbase base class already does axis=None and major axis efficiently
+        # so we only do the case axis= minor axis
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
@@ -679,7 +679,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
             return ret.sum(axis=(), dtype=dtype, out=out)
         else:
-            # _spbase handles the situations when axis is in {None, -2, -1, 0, 1}
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
     sum.__doc__ = _spbase.sum.__doc__
