@@ -4237,29 +4237,6 @@ def linewalker(func, brack, **options):
         the search grid (see `scipy.optimize.linewalker`).
     kwargs : tuple, optional
         Additional arguments (if present), passed to func.
-    grid_size: int
-        Number of equally-spaced grid indices (candidate solutions) along the line segment of interest.
-        Recommended range: 1000 <= grid_size <= 10000
-    max_num_function_evaluations: int
-        A positive integer indicating the maximum number of function evaluations that can be taken
-        Recommended range: initial_number_of_samples+1 <= max_num_function_evaluations <= 50
-    initial_number_of_samples: int
-        A positive integer >= 2 denoting the number of initial samples (function evaluations) that must be made.
-        Recommended range: initial_number_of_samples >= 10
-    force_sample_at_predicted_minimizer: int
-        An integer denoting the number of iterations in which to force a sample (function
-        evaluation) to be taken at the predicted minimizer. An integer <= 0 means that no
-        sample will be forced.  A positive integer K means that, if the grid index
-        corresponding to the predicted minimizer has not been sampled, then a sample
-        will be taken there in the last K major iterations.
-        If K > 'max_num_function_evaluations'-'initial_number_of_samples', then every
-        sample after the first 'initial_number_of_samples' initial samples are made will
-        be at the index of a predicted global minimizer, assuming that this index has not
-        already been sampled. The polishing (a.k.a. "sampling around the bend") is
-        disabled if a global minimizer is sampled. It is not recommended to set this
-        parameter > 2 since much can be learned from sampling a nonconvex function at
-        diverse points.
-        Recommended range: 1 <= force_sample_at_predicted_minimizer <= 2
         
     Returns
     -------
@@ -4292,40 +4269,6 @@ def linewalker(func, brack, **options):
     not necessarily lie in the range ``(xa, xb)``.
 
     >>> import numpy as np
-    >>> from scipy.optimize import linewalker, minimize_scalar
-    >>> 
-    >>> def f(x):
-    ...     return (x-1)**2
-    >>> 
-    >>> res = linewalker(f, brack=(-1, 2))
-    >>> 
-    >>> print(f"\
-    ...     {res['fun'] = },\n\
-    ...     {res['x'] = },\n\
-    ...     {res['nit'] = },\n\
-    ...     {res['nfev'] = },\n\
-    ...     {res['success'] = },\n\
-    ...     {res['message'] = }\n\
-    ...     {res['f_min_evaluated'] = },\n\
-    ...     {res['minimizer_evaluated'] = },\n\
-    ...     {res['num_major_iterations'] = },\n\
-    ...     {res['num_function_evaluations'] = },\n\
-    ...     {res['f_min_predicted'] = },\n\
-    ...     {res['ix_arg_min_evaluated'] = },\n\
-    ...     {res['grid_size'] = },\n\
-    ...     res['fit'] len, mean = {len(res['fit'])}{np.mean(res['fit'])},\n\
-    ...     {res['max_fit'] = },\n\
-    ...     {res['min_fit'] = },\n\
-    ...     {res['range_fit'] = },\n\
-    ...     {res['ix_arg_max_fit'] = },\n\
-    ...     {res['ix_arg_min_fit'] = },\n\
-    ...     res['ix'] len, mean = {len(res['ix'])}{np.mean(res['ix'])},\n\
-    ...     res['ix_sorted'] len, mean = {len(res['ix_sorted'])}{np.mean(res['ix_sorted'])},\n\
-    ...     res['x_coord'] len, mean = {len(res['x_coord'])}{np.mean(res['x_coord'])},\n\
-    ...     res['sp'] len, mean = {len(res['sp'])}{np.mean(res['sp'])}\
-    ... ")
-
-    .. versionadded:: 1.15.2
 
     """
 
