@@ -1,6 +1,7 @@
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace,
+    xp_capabilities,
     xp_size,
     xp_broadcast_promote,
     xp_float_to_complex,
@@ -10,6 +11,7 @@ from scipy._lib import array_api_extra as xpx
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
+@xp_capabilities(static_argnames=("axis", "keepdims", "return_sign"))
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -57,7 +59,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     See Also
     --------
-    numpy.logaddexp, numpy.logaddexp2
+    :data:`numpy.logaddexp`
+    :data:`numpy.logaddexp2`
 
     Notes
     -----
@@ -137,8 +140,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     return (out, sgn) if return_sign else out
 
 
-def _wrap_radians(x, xp=None):
-    xp = array_namespace(x) if xp is None else xp
+def _wrap_radians(x, xp):
     # Wrap radians to (-pi, pi] interval
     wrapped = -((-x + xp.pi) % (2 * xp.pi) - xp.pi)
     # preserve relative precision
@@ -235,6 +237,7 @@ def _logsumexp(a, b, axis, return_sign, xp):
     return out, sgn
 
 
+@xp_capabilities(static_argnames="axis")
 def softmax(x, axis=None):
     r"""Compute the softmax function.
 
@@ -333,6 +336,7 @@ def softmax(x, axis=None):
     return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
+@xp_capabilities(static_argnames="axis")
 def log_softmax(x, axis=None):
     r"""Compute the logarithm of the softmax function.
 

@@ -9,7 +9,6 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
-from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -17,11 +16,6 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
-
-lazy_xp_function(_wrap_radians, static_argnames="xp")
-lazy_xp_function(logsumexp, static_argnames=("axis", "keepdims", "return_sign"))
-lazy_xp_function(softmax, static_argnames="axis")
-lazy_xp_function(log_softmax, static_argnames="axis")
 
 
 def test_wrap_radians(xp):
@@ -33,6 +27,7 @@ def test_wrap_radians(xp):
     xp_assert_close(res, ref, atol=0)
 
 
+@logsumexp.capabilities.test_case
 class TestLogSumExp:
     # numpy warning filters don't work for dask (dask/dask#3245)
     # (also we should not expect the numpy warning filter to work for any Array API
@@ -266,6 +261,7 @@ class TestLogSumExp:
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
+@softmax.capabilities.test_case
 class TestSoftmax:
     def test_softmax_fixtures(self, xp):
         xp_assert_close(softmax(xp.asarray([1000., 0., 0., 0.])),
@@ -334,6 +330,7 @@ class TestSoftmax:
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
 
 
+@log_softmax.capabilities.test_case
 class TestLogSoftmax:
     def test_log_softmax_basic(self, xp):
         xp_assert_close(log_softmax(xp.asarray([1000., 1.])),
