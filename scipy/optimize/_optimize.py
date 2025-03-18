@@ -4237,9 +4237,6 @@ def linewalker(func, brack, **options):
         the search grid (see `scipy.optimize.linewalker`).
     kwargs : tuple, optional
         Additional arguments (if present), passed to func.
-
-    Optional Parameters
-    -------------------
     grid_size: int
         Number of equally-spaced grid indices (candidate solutions) along the line segment of interest.
         Recommended range: 1000 <= grid_size <= 10000
@@ -4263,62 +4260,59 @@ def linewalker(func, brack, **options):
         parameter > 2 since much can be learned from sampling a nonconvex function at
         diverse points.
         Recommended range: 1 <= force_sample_at_predicted_minimizer <= 2
-
-    grid_size >= 2
-    max_num_function_evaluations >= 0
-    initial_number_of_samples >= 2
-    force_sample_at_predicted_minimizer ??? 1 or 2
         
-    Returns dictionary containing
-    -----------------------------
-        'fun': float
-            Minimum evaluated function value
-        'x': float
-            x coordinate of the minimum evaluated function value
-        'nit': int
-            Number of major iterations performed
-        'nfev': int
-            Number of function evaluations taken
-        'success': bool
-            True if minima was found
-        'message': string
-            Message
-        'f_min_evaluated': float
-            Minimum evaluated function value
-        'minimizer_evaluated': float
-            x coordinate of the minimum evaluated function value
-        'num_major_iterations': int
-            Number of major iterations performed
-        'num_function_evaluations': int
-            Number of function evaluations taken
-        'f_min_predicted': float
-            Minimum predicted function value
-        'ix_arg_min_evaluated': int
-            Grid index of the minimum evaluated function value
-        'grid_size': int
-            lenth of fit
-        'fit': np.ndarray(float)
-            An array of floats (1D array of N elements)
-        'max_fit': float
-            Maximum value over all elements of fit
-        'min_fit': float
-            Minimum value over all elements of fit
-        'range_fit': float
-            max_fit-min_fit
-        'ix_arg_max_fit': int
-            Index of the maximum (predicted) value in fit
-        'ix_arg_min_fit': int
-            Index of the minimum (predicted) value in fit
-        'ix': np.ndarray(int)
-            An array of distinct nonnegative integers indicating the indices at which
-            function evaluations have been made
-        'ix_sorted': np.ndarray(int)
-            ix sorted in ascending order
-        'x_coord': np.ndarray(float)
-            An array of floats containing the x-coordinate associated with each grid index
-        'sp': np.ndarray(bool)
-            boolean array: sp[i]=True implies a function evaluation (sample) will be made at
-            grid point/index i. sp is short for "sample" or "sample point"
+    Returns
+    -------
+    surrogate : dict
+        A dictionary containing various values from the surrogate
+            'fun': float
+                Minimum evaluated function value
+            'x': float
+                x coordinate of the minimum evaluated function value
+            'nit': int
+                Number of major iterations performed
+            'nfev': int
+                Number of function evaluations taken
+            'success': bool
+                True if minima was found
+            'message': string
+                Message
+            'f_min_evaluated': float
+                Minimum evaluated function value
+            'minimizer_evaluated': float
+                x coordinate of the minimum evaluated function value
+            'num_major_iterations': int
+                Number of major iterations performed
+            'num_function_evaluations': int
+                Number of function evaluations taken
+            'f_min_predicted': float
+                Minimum predicted function value
+            'ix_arg_min_evaluated': int
+                Grid index of the minimum evaluated function value
+            'grid_size': int
+                lenth of fit
+            'fit': np.ndarray(float)
+                An array of floats (1D array of N elements)
+            'max_fit': float
+                Maximum value over all elements of fit
+            'min_fit': float
+                Minimum value over all elements of fit
+            'range_fit': float
+                max_fit-min_fit
+            'ix_arg_max_fit': int
+                Index of the maximum (predicted) value in fit
+            'ix_arg_min_fit': int
+                Index of the minimum (predicted) value in fit
+            'ix': np.ndarray(int)
+                An array of distinct nonnegative integers indicating the indices at which
+                function evaluations have been made
+            'ix_sorted': np.ndarray(int)
+                ix sorted in ascending order
+            'x_coord': np.ndarray(float)
+                An array of floats containing the x-coordinate associated with each grid index
+            'sp': np.ndarray(bool)
+                boolean array: sp[i]=True implies a function evaluation (sample) will be made at
+                grid point/index i. sp is short for "sample" or "sample point"
 
     See also
     --------
