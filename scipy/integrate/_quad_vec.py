@@ -145,7 +145,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         'trapezoid' (composite trapezoid rule).
         Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite.
     full_output : bool, optional
-        Return an additional ``info`` dictionary.
+        Return an additional ``info`` object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
