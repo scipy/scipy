@@ -2108,7 +2108,7 @@ def test_Xdist_deprecated_args(metric):
         pdist(X1, metric, 2.)
 
     for arg in ["p", "V", "VI"]:
-        kwargs = {arg: "foo"}
+        kwargs = {arg: np.asarray(1.)}
 
         if ((arg == "V" and metric == "seuclidean")
                 or (arg == "VI" and metric == "mahalanobis")
