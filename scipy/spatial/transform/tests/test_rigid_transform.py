@@ -750,6 +750,19 @@ def test_indexing():
     assert_allclose(tf_slice.as_matrix()[:, :3, :3], r[0:2].as_matrix(), atol=atol)
     assert_allclose(tf_slice.as_matrix()[:, :3, 3], t[0:2], atol=atol)
 
+    # Test boolean indexing
+    tf_masked = tf[[True, True]]
+    assert_allclose(tf_masked.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
+    assert_allclose(tf_masked.as_matrix()[:, :3, 3], t, atol=atol)
+
+    tf_masked = tf[[False, True]]
+    assert_allclose(tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(),
+                    atol=atol)
+    assert_allclose(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
+
+    tf_masked = tf[[False, False]]
+    assert len(tf_masked) == 0
+
 
 def test_concatenate():
     atol = 1e-12
@@ -777,8 +790,7 @@ def test_concatenate():
 
 def test_input_validation():
     # Test invalid matrix shapes
-    inputs = [np.eye(3), np.zeros((4, 3)), [],
-              np.zeros((0, 4, 4)), np.zeros((1, 1, 4, 4))]
+    inputs = [np.eye(3), np.zeros((4, 3)), [], np.zeros((1, 1, 4, 4))]
     for input in inputs:
         with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
             RigidTransform.from_matrix(input)
@@ -816,9 +828,6 @@ def test_translation_validation():
         RigidTransform.from_translation(np.zeros((2, 2)))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransform.from_translation(np.zeros((0, 3)))
-
-    with pytest.raises(ValueError, match="Expected `translation` to have shape"):
         RigidTransform.from_translation(np.zeros((1, 1, 3)))
 
 
@@ -831,9 +840,6 @@ def test_vector_validation():
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
         tf.apply(np.zeros((2, 2)))
-
-    with pytest.raises(ValueError, match="Expected vector to have shape"):
-        tf.apply(np.zeros((0, 3)))
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
         tf.apply(np.zeros((1, 1, 3)))
@@ -910,3 +916,114 @@ def test_normalize_dual_quaternion():
     assert_allclose(np.linalg.norm(dual_quat[:, :4], axis=1), 1.0, atol=1e-12)
     assert_allclose(np.einsum("ij,ij->i", dual_quat[:, :4], dual_quat[:, 4:]),
                     0.0, atol=1e-12)
+
+
+def test_empty_transform_construction():
+    tf = RigidTransform.from_matrix(np.empty((0, 4, 4)))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.from_rotation(Rotation.random(0))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.from_translation(np.empty((0, 3)))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.from_components(np.empty((0, 3)), Rotation.random(0))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.from_exp_coords(np.empty((0, 6)))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.from_dual_quat(np.empty((0, 8)))
+    assert len(tf) == 0
+    assert not tf.single
+
+    tf = RigidTransform.identity(0)
+    assert len(tf) == 0
+    assert not tf.single
+
+
+def test_empty_transform_representation():
+    tf = RigidTransform.identity(0)
+
+    assert len(tf.rotation) == 0
+    assert tf.translation.shape == (0, 3)
+
+    t, r = tf.as_components()
+    assert t.shape == (0, 3)
+    assert len(r) == 0
+
+    assert tf.as_matrix().shape == (0, 4, 4)
+    assert tf.as_exp_coords().shape == (0, 6)
+    assert tf.as_dual_quat().shape == (0, 8)
+
+
+def test_empty_transform_application():
+    tf = RigidTransform.identity(0)
+
+    assert tf.apply(np.zeros((3,))).shape == (0, 3)
+    assert tf.apply(np.empty((0, 3))).shape == (0, 3)
+
+    with pytest.raises(ValueError, match="operands could not be broadcast together"):
+        tf.apply(np.zeros((2, 3)))
+
+
+def test_empty_transform_composition():
+    tf_empty = RigidTransform.identity(0)
+    tf_single = RigidTransform.identity()
+    tf_many = RigidTransform.identity(3)
+
+    assert len(tf_empty * tf_empty) == 0
+    assert len(tf_empty * tf_single) == 0
+    assert len(tf_single * tf_empty) == 0
+
+    with pytest.raises(ValueError, match="Expected equal number of transforms"):
+        tf_many * tf_empty
+
+    with pytest.raises(ValueError, match="Expected equal number of transforms"):
+        tf_empty * tf_many
+
+
+def test_empty_transform_concatenation():
+    tf_empty = RigidTransform.identity(0)
+    tf_single = RigidTransform.identity()
+    tf_many = RigidTransform.identity(2)
+
+    assert len(RigidTransform.concatenate([tf_empty, tf_empty])) == 0
+    assert len(RigidTransform.concatenate([tf_empty, tf_single])) == 1
+    assert len(RigidTransform.concatenate([tf_single, tf_empty])) == 1
+    assert len(RigidTransform.concatenate([tf_empty, tf_many])) == 2
+    assert len(RigidTransform.concatenate([tf_many, tf_empty])) == 2
+    assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
+
+
+def test_empty_transform_inv_and_pow():
+    tf = RigidTransform.identity(0)
+    assert len(tf.inv()) == 0
+    assert len(tf ** 0) == 0
+    assert len(tf ** 1) == 0
+    assert len(tf ** -1) == 0
+    assert len(tf ** 0.5) == 0
+
+
+def test_empty_transform_indexing():
+    tf_many = RigidTransform.identity(3)
+    tf_zero = tf_many[[]]
+    assert len(tf_zero) == 0
+
+    assert len(tf_zero[[]]) == 0
+    assert len(tf_zero[:5]) == 0  # Slices can go out of bounds.
+
+    with pytest.raises(IndexError):
+        tf_zero[0]
+
+    with pytest.raises(IndexError):
+        tf_zero[[0, 2]]
+
+    with pytest.raises(IndexError):
+        tf_zero[[False, True]]
