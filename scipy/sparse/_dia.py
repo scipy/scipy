@@ -180,9 +180,6 @@ class _dia_base(_data_matrix):
         if not isinstance(other, _dia_base):
             return other._add_sparse(self)
 
-        if self.shape != other.shape:
-            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
-
         # Fast path for exact equality of the sparsity structure.
         if np.array_equal(self.offsets, other.offsets):
             return self._with_data(self.data + other.data)
