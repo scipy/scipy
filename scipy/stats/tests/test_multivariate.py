@@ -3,6 +3,7 @@ Test functions for multivariate normal distributions.
 
 """
 import pickle
+from dataclasses import dataclass
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
@@ -29,11 +30,13 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          dirichlet_multinomial, vonmises)
 
 from scipy.stats import _covariance, Covariance
+from scipy.stats._continuous_distns import _norm_pdf as norm_pdf
 from scipy import stats
 
-from scipy.integrate import tanhsinh
+from scipy.integrate import tanhsinh, cubature, quad
 from scipy.integrate import romb, qmc_quad, dblquad, tplquad
 from scipy.special import multigammaln
+import scipy.special as special
 
 from .common_tests import check_random_state_property
 from .data._mvt import _qsimvtv
@@ -291,6 +294,231 @@ def _sample_orthonormal_matrix(n):
     return u
 
 
+@dataclass
+class MVNProblem:
+    """Instantiate a multivariate normal integration problem with special structure.
+
+    When covariance matrix is a correlation matrix where the off-diagonal entries
+    ``covar[i, j] == lambdas[i]*lambdas[j]`` for ``i != j``, then the multidimensional
+    integral reduces to a simpler univariate integral that can be numerically integrated
+    easily.
+
+    The ``generate_*()`` classmethods provide a few options for creating variations
+    of this problem.
+
+    References
+    ----------
+    .. [1] Tong, Y.L. "The Multivariate Normal Distribution".
+           Springer-Verlag. p192. 1990.
+    """
+    ndim : int
+    low : np.ndarray
+    high : np.ndarray
+    lambdas : np.ndarray
+    covar : np.ndarray
+    target_val : float
+    target_err : float
+
+    #: The `generator_halves()` case has an analytically-known true value that we'll
+    #:  record here. It remain None for most cases, though.
+    true_val : float | None = None
+
+    def __init__(self, ndim, low, high, lambdas):
+        super().__init__()
+        self.ndim = ndim
+        self.low = low
+        self.high = high
+        self.lambdas = lambdas
+
+        self.covar = np.outer(self.lambdas, self.lambdas)
+        np.fill_diagonal(self.covar, 1.0)
+        self.find_target()
+
+    @classmethod
+    def generate_semigeneral(cls, ndim, rng=None):
+        """Random lambdas, random upper bounds, infinite lower bounds.
+        """
+        rng = np.random.default_rng(rng)
+        low = np.full(ndim, -np.inf)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        lambdas = rng.uniform(-1.0, 1.0, size=ndim)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+
+    @classmethod
+    def generate_constant(cls, ndim, rng=None):
+        """Constant off-diagonal covariance, random upper bounds, infinite lower bounds.
+        """
+        rng = np.random.default_rng(rng)
+        low = np.full(ndim, -np.inf)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        sigma = np.sqrt(rng.uniform(0.0, 1.0))
+        lambdas = np.full(ndim, sigma)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+
+    @classmethod
+    def generate_halves(cls, ndim, rng=None):
+        """Off-diagonal covariance of 0.5, negative orthant bounds.
+
+        True analytically-derived answer is 1/(ndim+1).
+        """
+        low = np.full(ndim, -np.inf)
+        high = np.zeros(ndim)
+        lambdas = np.sqrt(0.5)
+
+        self = cls(
+            ndim=ndim,
+            low=low,
+            high=high,
+            lambdas=lambdas,
+        )
+        self.true_val = 1 / (ndim+1)
+        return self
+
+    def find_target(self, **kwds):
+        """Perform the simplified integral and store the results.
+        """
+        d = dict(
+            a=-9.0,
+            b=+9.0,
+        )
+        d.update(kwds)
+        self.target_val, self.target_err = quad(self.univariate_func, **d)
+
+    def _univariate_term(self, t):
+        """The parameter-specific term of the univariate integrand,
+        for separate plotting.
+        """
+        denom = np.sqrt(1 - self.lambdas**2)
+        return np.prod(
+            special.ndtr((self.high + self.lambdas*t[:, np.newaxis]) / denom) -
+            special.ndtr((self.low + self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+
+    def univariate_func(self, t):
+        """Univariate integrand.
+        """
+        t = np.atleast_1d(t)
+        return np.squeeze(norm_pdf(t) * self._univariate_term(t))
+
+    def plot_integrand(self):
+        """Plot the univariate integrand and its component terms for understanding.
+        """
+        from matplotlib import pyplot as plt
+
+        t = np.linspace(-9.0, 9.0, 1001)
+        plt.plot(t, norm_pdf(t), label=r'$\phi(t)$')
+        plt.plot(t, self._univariate_term(t), label=r'$f(t)$')
+        plt.plot(t, self.univariate_func(t), label=r'$f(t)*phi(t)$')
+        plt.legend()
+
+
+@dataclass
+class SingularMVNProblem:
+    """Instantiate a multivariate normal integration problem with a special singular
+    covariance structure.
+    
+    When covariance matrix is a correlation matrix where the off-diagonal entries
+    ``covar[i, j] == -lambdas[i]*lambdas[j]`` for ``i != j``, and
+    ``sum(lambdas**2 / (1+lambdas**2)) == 1``, then the matrix is singular, and
+    the multidimensional integral reduces to a simpler univariate integral that 
+    can be numerically integrated fairly easily.
+    
+    The lower bound must be infinite, though the upper bounds can be general.
+    
+    References
+    ----------
+    .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
+           singular multivariate normal distribution." Journal of Statistical
+           Computation and Simulation, 51(2-4), 121-135. doi:10.1080/00949659508811627
+    """
+    ndim : int
+    low : np.ndarray
+    high : np.ndarray
+    lambdas : np.ndarray
+    covar : np.ndarray
+    target_val : float
+    target_err : float
+    
+    def __init__(self, ndim, high, lambdas):
+        self.ndim = ndim
+        self.high = high
+        self.lambdas = lambdas
+
+        self.low = np.full(ndim, -np.inf)
+        self.covar = -np.outer(self.lambdas, self.lambdas)
+        np.fill_diagonal(self.covar, 1.0)
+        self.find_target()
+
+    @classmethod
+    def generate_semiinfinite(cls, ndim, rng=None):
+        """Singular lambdas, random upper bounds.
+        """
+        rng = np.random.default_rng(rng)
+        high = rng.uniform(0.0, np.sqrt(ndim), size=ndim)
+        p = rng.dirichlet(np.full(ndim, 1.0))
+        lambdas = np.sqrt(p / (1-p)) * rng.choice([-1.0, 1.0], size=ndim)
+
+        self = cls(
+            ndim=ndim,
+            high=high,
+            lambdas=lambdas,
+        )
+        return self
+    
+    def find_target(self, **kwds):
+        d = dict(
+            a=-9.0,
+            b=+9.0,
+        )
+        d.update(kwds)
+        self.target_val, self.target_err = quad(self.univariate_func, **d)
+
+    def _univariate_term(self, t):
+        denom = np.sqrt(1 + self.lambdas**2)
+        i1 = np.prod(
+            special.ndtr((self.high - 1j*self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+        i2 = np.prod(
+            special.ndtr((-self.high + 1j*self.lambdas*t[:, np.newaxis]) / denom),
+            axis=1,
+        )
+        # The imaginary part is an odd function, so it can be ignored; it will integrate
+        # out to 0.
+        return (i1 - (-1)**self.ndim * i2).real
+
+    def univariate_func(self, t):
+        t = np.atleast_1d(t)
+        return (norm_pdf(t) * self._univariate_term(t)).squeeze()
+    
+    def plot_integrand(self):
+        """Plot the univariate integrand and its component terms for understanding.
+        """
+        from matplotlib import pyplot as plt
+
+        t = np.linspace(-9.0, 9.0, 1001)
+        plt.plot(t, norm_pdf(t), label=r'$\phi(t)$')
+        plt.plot(t, self._univariate_term(t), label=r'$f(t)$')
+        plt.plot(t, self.univariate_func(t), label=r'$f(t)*phi(t)$')
+        plt.ylim(-0.1, 1.1)
+        plt.legend()
+
+
 class TestMultivariateNormal:
     def test_input_shape(self):
         mu = np.arange(3)
@@ -483,17 +711,17 @@ class TestMultivariateNormal:
         assert_allclose(psd.log_pdet, large_total_log)
 
     def test_broadcasting(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 4
 
         # Construct a random covariance matrix.
-        data = np.random.randn(n, n)
+        data = rng.randn(n, n)
         cov = np.dot(data, data.T)
-        mean = np.random.randn(n)
+        mean = rng.randn(n)
 
         # Construct an ndarray which can be interpreted as
         # a 2x3 array whose elements are random data vectors.
-        X = np.random.randn(2, 3, n)
+        X = rng.randn(2, 3, n)
 
         # Check that multiple data points can be evaluated at once.
         desired_pdf = multivariate_normal.pdf(X, mean, cov)
@@ -724,25 +952,25 @@ class TestMultivariateNormal:
         # Generate large sample and compare sample mean and sample covariance
         # with mean and covariance matrix.
 
-        np.random.seed(2846)
+        rng = np.random.RandomState(2846)
 
         n = 3
-        mean = np.random.randn(n)
-        M = np.random.randn(n, n)
+        mean = rng.randn(n)
+        M = rng.randn(n, n)
         cov = np.dot(M, M.T)
         size = 5000
 
-        sample = multivariate_normal.rvs(mean, cov, size)
+        sample = multivariate_normal.rvs(mean, cov, size, random_state=rng)
 
         assert_allclose(np.cov(sample.T), cov, rtol=1e-1)
         assert_allclose(sample.mean(0), mean, rtol=1e-1)
 
     def test_entropy(self):
-        np.random.seed(2846)
+        rng = np.random.RandomState(2846)
 
         n = 3
-        mean = np.random.randn(n)
-        M = np.random.randn(n, n)
+        mean = rng.randn(n)
+        M = rng.randn(n, n)
         cov = np.dot(M, M.T)
 
         rv = multivariate_normal(mean, cov)
@@ -809,6 +1037,70 @@ class TestMultivariateNormal:
         expected_signs = np.array([1, -1, -1, 1])
         cdf = multivariate_normal.cdf(b, mean, cov, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
+
+    @pytest.mark.slow
+    def test_cdf_vs_cubature(self):
+        ndim = 3
+        rng = np.random.default_rng(123)
+        a = rng.uniform(size=(ndim, ndim))
+        cov = a.T @ a
+        m = rng.uniform(size=ndim)
+        dist = multivariate_normal(mean=m, cov=cov)
+        x = rng.uniform(low=-3, high=3, size=(ndim,))
+        cdf = dist.cdf(x)
+        dist_i = multivariate_normal(mean=[0]*ndim, cov=cov)
+        cdf_i = cubature(dist_i.pdf, [-np.inf]*ndim, x - m).estimate
+        assert_allclose(cdf, cdf_i, atol=5e-6)
+
+    def test_cdf_known(self):
+        # https://github.com/scipy/scipy/pull/17410#issuecomment-1312628547
+        for ndim in range(2, 12):
+            cov = np.full((ndim, ndim), 0.5)
+            np.fill_diagonal(cov, 1.)
+            dist = multivariate_normal([0]*ndim, cov=cov)
+            assert_allclose(
+                dist.cdf([0]*ndim),
+                1. / (1. + ndim),
+                atol=5e-5
+            )
+
+    @pytest.mark.parametrize("ndim", range(2, 10))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_semigeneral(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=5e-5)
+
+    @pytest.mark.parametrize("ndim", range(2, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e2])
+    def test_cdf_vs_univariate_2(self, seed, ndim):
+        rng = np.random.default_rng(seed)
+        case = MVNProblem.generate_constant(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar)
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=5e-5)
+
+    @pytest.mark.parametrize("ndim", range(4, 11))
+    @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e4])
+    def test_cdf_vs_univariate_singular(self, seed, ndim):
+        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds. 
+        # No idea why.
+        rng = np.random.default_rng(seed)
+        case = SingularMVNProblem.generate_semiinfinite(ndim=ndim, rng=rng)
+        assert (case.low == -np.inf).all()
+
+        dist = multivariate_normal(mean=[0]*ndim, cov=case.covar, allow_singular=True,
+                                   # default maxpts is too slow, limit it here
+                                   maxpts=10_000*case.covar.shape[0]
+        )
+        cdf_val = dist.cdf(case.high, rng=rng)
+        assert_allclose(cdf_val, case.target_val, atol=1e-3)
 
     def test_mean_cov(self):
         # test the interaction between a Covariance object and mean
@@ -1495,22 +1787,22 @@ class TestWishart:
         w = wishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(248042)
-        w_rvs = wishart.rvs(df, scale)
-        np.random.seed(248042)
-        frozen_w_rvs = w.rvs()
+        rng = np.random.RandomState(248042)
+        w_rvs = wishart.rvs(df, scale, random_state=rng)
+        rng = np.random.RandomState(248042)
+        frozen_w_rvs = w.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the Bartlett (1933)
         # decomposition of a Wishart into D A A' D', where D is the Cholesky
         # factorization of the scale matrix and A is the lower triangular matrix
         # with the square root of chi^2 variates on the diagonal and N(0,1)
         # variates in the lower triangle.
-        np.random.seed(248042)
-        covariances = np.random.normal(size=3)
+        rng = np.random.RandomState(248042)
+        covariances = rng.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df),
-            np.random.chisquare(df-1),
-            np.random.chisquare(df-2),
+            rng.chisquare(df),
+            rng.chisquare(df-1),
+            rng.chisquare(df-2),
         ]**0.5
 
         # Construct the lower-triangular A matrix
@@ -1531,7 +1823,7 @@ class TestWishart:
         # chi-squared distribution.
         # Test variance, mean, entropy, pdf
         # Kolgomorov-Smirnov test for rvs
-        np.random.seed(482974)
+        rng = np.random.default_rng(482974)
 
         sn = 500
         dim = 1
@@ -1552,7 +1844,7 @@ class TestWishart:
             assert_allclose(w.pdf(X), c.pdf(X))
 
             # rvs
-            rvs = w.rvs(size=sn)
+            rvs = w.rvs(size=sn, random_state=rng)
             args = (df,)
             alpha = 0.01
             check_distribution_rvs('chi2', args, alpha, rvs)
@@ -1562,7 +1854,7 @@ class TestWishart:
         # transformed to a scaled chi-squared distribution.
         # For :math:`S \sim W_p(V,n)` and :math:`\lambda \in \mathbb{R}^p` we have
         # :math:`\lambda' S \lambda \sim \lambda' V \lambda \times \chi^2(n)`
-        np.random.seed(482974)
+        rng = np.random.default_rng(482974)
 
         sn = 500
         df = 10
@@ -1587,7 +1879,7 @@ class TestWishart:
         assert_allclose(w.pdf(X), c.pdf(X))
 
         # rvs
-        rvs = w.rvs(size=sn)
+        rvs = w.rvs(size=sn, random_state=rng)
         args = (df,0,sigma_lamda)
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
@@ -1637,10 +1929,17 @@ class TestMultinomial:
     @pytest.mark.parametrize("n", [0, 3])
     def test_rvs_np(self, n):
         # test that .rvs agrees w/numpy
-        sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
-        rndm = np.random.RandomState(123)
-        np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
-        assert_equal(sc_rvs, np_rvs)
+        message = "Some rows of `p` do not sum to 1.0 within..."
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*3, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*3, size=7)
+            assert_equal(sc_rvs, np_rvs)
+        with pytest.warns(FutureWarning, match=message):
+            rndm = np.random.RandomState(123)
+            sc_rvs = multinomial.rvs(n, [1/4.]*5, size=7, random_state=123)
+            np_rvs = rndm.multinomial(n, [1/4.]*5, size=7)
+            assert_equal(sc_rvs, np_rvs)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
@@ -1715,7 +2014,7 @@ class TestMultinomial:
         assert_allclose(ent0, binom.entropy(n, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
-        ent0 = multinomial.entropy([2, 3], [.2, .3])
+        ent0 = multinomial.entropy([2, 3], [.2, .8])
         assert_allclose(ent0, [binom.entropy(2, .2), binom.entropy(3, .2)],
                         rtol=1e-8)
 
@@ -1764,6 +2063,17 @@ class TestMultinomial:
         logpmf = multinomial.logpmf(x, n, p)
         assert np.isfinite(logpmf)
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_gh_22565(self, dtype):
+        # Same issue as gh-11860 above, essentially, but the original
+        # fix didn't completely solve the problem.
+        n = 19
+        p = np.asarray([0.2, 0.2, 0.2, 0.2, 0.2], dtype=dtype)
+        res1 = multinomial.pmf(x=[1, 2, 5, 7, 4], n=n, p=p)
+        res2 = multinomial.pmf(x=[1, 2, 4, 5, 7], n=n, p=p)
+        np.testing.assert_allclose(res1, res2, rtol=1e-15)
+
+
 class TestInvwishart:
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
@@ -1802,7 +2112,7 @@ class TestInvwishart:
         # just an inverse gamma distribution.
         # Test variance, mean, pdf, entropy
         # Kolgomorov-Smirnov test for rvs
-        np.random.seed(482974)
+        rng = np.random.RandomState(482974)
 
         sn = 500
         dim = 1
@@ -1822,7 +2132,7 @@ class TestInvwishart:
             assert_allclose(iw.pdf(X), ig.pdf(X))
 
             # rvs
-            rvs = iw.rvs(size=sn)
+            rvs = iw.rvs(size=sn, random_state=rng)
             args = (df/2, 0, 1./2)
             alpha = 0.01
             check_distribution_rvs('invgamma', args, alpha, rvs)
@@ -1843,10 +2153,10 @@ class TestInvwishart:
         iw = invwishart(df, scale)
 
         # Get the generated random variables from a known seed
-        np.random.seed(608072)
-        iw_rvs = invwishart.rvs(df, scale)
-        np.random.seed(608072)
-        frozen_iw_rvs = iw.rvs()
+        rng = np.random.RandomState(608072)
+        iw_rvs = invwishart.rvs(df, scale, random_state=rng)
+        rng = np.random.RandomState(608072)
+        frozen_iw_rvs = iw.rvs(random_state=rng)
 
         # Manually calculate what it should be, based on the decomposition in
         # https://arxiv.org/abs/2310.15884 of an invers-Wishart into L L',
@@ -1855,12 +2165,12 @@ class TestInvwishart:
         # variates on the diagonal and N(0,1) variates in the lower triangle.
         # the diagonal chi^2 variates in this A are reversed compared to those
         # in the Bartlett decomposition A for Wishart rvs.
-        np.random.seed(608072)
-        covariances = np.random.normal(size=3)
+        rng = np.random.RandomState(608072)
+        covariances = rng.normal(size=3)
         variances = np.r_[
-            np.random.chisquare(df-2),
-            np.random.chisquare(df-1),
-            np.random.chisquare(df),
+            rng.chisquare(df-2),
+            rng.chisquare(df-1),
+            rng.chisquare(df),
         ]**0.5
 
         # Construct the lower-triangular A matrix
@@ -1930,21 +2240,16 @@ class TestInvwishart:
 
 class TestSpecialOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = special_ortho_group.rvs(3)
-        expected = np.array([[-0.99394515, -0.04527879, 0.10011432],
-                             [0.04821555, -0.99846897, 0.02711042],
-                             [0.09873351, 0.03177334, 0.99460653]])
-        assert_array_almost_equal(x, expected)
-
-        random_state = np.random.RandomState(seed=514)
-        x = special_ortho_group.rvs(3, random_state=random_state)
+        x = special_ortho_group.rvs(3, random_state=np.random.default_rng(514))
+        expected = np.array([[-0.93200988, 0.01533561, -0.36210826],
+                             [0.35742128, 0.20446501, -0.91128705],
+                             [0.06006333, -0.97875374, -0.19604469]])
         assert_array_almost_equal(x, expected)
 
     def test_invalid_dim(self):
         assert_raises(ValueError, special_ortho_group.rvs, None)
         assert_raises(ValueError, special_ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, special_ortho_group.rvs, 1)
+        assert_raises(ValueError, special_ortho_group.rvs, -1)
         assert_raises(ValueError, special_ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -1979,8 +2284,9 @@ class TestSpecialOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(514)
-        xs = special_ortho_group.rvs(dim, size=samples)
+        xs = special_ortho_group.rvs(
+            dim, size=samples, random_state=np.random.default_rng(513)
+        )
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -1997,12 +2303,20 @@ class TestSpecialOrthoGroup:
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    def test_one_by_one(self):
+        # Test that the distribution is a delta function at the identity matrix
+        # when dim=1
+        assert_allclose(special_ortho_group.rvs(1, size=1000), 1, rtol=1e-13)
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
+
 
 class TestOrthoGroup:
     def test_reproducibility(self):
         seed = 514
-        np.random.seed(seed)
-        x = ortho_group.rvs(3)
+        rng = np.random.RandomState(seed)
+        x = ortho_group.rvs(3, random_state=rng)
         x2 = ortho_group.rvs(3, random_state=seed)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
         assert_almost_equal(np.linalg.det(x), -1)
@@ -2015,7 +2329,7 @@ class TestOrthoGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, ortho_group.rvs, None)
         assert_raises(ValueError, ortho_group.rvs, (2, 2))
-        assert_raises(ValueError, ortho_group.rvs, 1)
+        assert_raises(ValueError, ortho_group.rvs, -1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2067,8 +2381,8 @@ class TestOrthoGroup:
         dim = 5
         samples = 1000  # Not too many, or the test takes too long
         ks_prob = .05
-        np.random.seed(518)  # Note that the test is sensitive to seed too
-        xs = ortho_group.rvs(dim, size=samples)
+        rng = np.random.RandomState(518)  # Note that the test is sensitive to seed too
+        xs = ortho_group.rvs(dim, size=samples, random_state=rng)
 
         # Dot a few rows (0, 1, 2) with unit vectors (0, 2, 4, 3),
         #   effectively picking off entries in the matrices of xs.
@@ -2085,19 +2399,34 @@ class TestOrthoGroup:
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
+    def test_one_by_one(self):
+        # Test that the 1x1 distribution gives ±1 with equal probability.
+        dim = 1
+        xs = ortho_group.rvs(dim, size=5000, random_state=np.random.default_rng(514))
+        assert_allclose(np.abs(xs), 1, rtol=1e-13)
+        k = np.sum(xs > 0)
+        n = len(xs)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
+
+    def test_zero_by_zero(self):
+        assert_equal(special_ortho_group.rvs(0, size=4).shape, (4, 0, 0))
+
     @pytest.mark.slow
     def test_pairwise_distances(self):
         # Test that the distribution of pairwise distances is close to correct.
-        np.random.seed(514)
+        rng = np.random.RandomState(514)
 
-        def random_ortho(dim):
-            u, _s, v = np.linalg.svd(np.random.normal(size=(dim, dim)))
+        def random_ortho(dim, random_state=None):
+            u, _s, v = np.linalg.svd(rng.normal(size=(dim, dim)))
             return np.dot(u, v)
 
         for dim in range(2, 6):
             def generate_test_statistics(rvs, N=1000, eps=1e-10):
                 stats = np.array([
-                    np.sum((rvs(dim=dim) - rvs(dim=dim))**2)
+                    np.sum((rvs(dim=dim, random_state=rng) -
+                            rvs(dim=dim, random_state=rng))**2)
                     for _ in range(N)
                 ])
                 # Add a bit of noise to account for numeric accuracy.
@@ -2114,9 +2443,9 @@ class TestOrthoGroup:
 
 class TestRandomCorrelation:
     def test_reproducibility(self):
-        np.random.seed(514)
+        rng = np.random.RandomState(514)
         eigs = (.5, .8, 1.2, 1.5)
-        x = random_correlation.rvs(eigs)
+        x = random_correlation.rvs(eigs, random_state=rng)
         x2 = random_correlation.rvs(eigs, random_state=514)
         expected = np.array([[1., -0.184851, 0.109017, -0.227494],
                              [-0.184851, 1., 0.231236, 0.326669],
@@ -2157,13 +2486,13 @@ class TestRandomCorrelation:
         def norm(i, e):
             return i*e/sum(e)
 
-        np.random.seed(123)
+        rng = np.random.RandomState(123)
 
-        eigs = [norm(i, np.random.uniform(size=i)) for i in range(2, 6)]
+        eigs = [norm(i, rng.uniform(size=i)) for i in range(2, 6)]
         eigs.append([4,0,0,0])
 
         ones = [[1.]*len(e) for e in eigs]
-        xs = [random_correlation.rvs(e) for e in eigs]
+        xs = [random_correlation.rvs(e, random_state=rng) for e in eigs]
 
         # Test that determinants are products of eigenvalues
         #   These are positive by construction
@@ -2274,8 +2603,8 @@ class TestUniformDirection:
 
 class TestUnitaryGroup:
     def test_reproducibility(self):
-        np.random.seed(514)
-        x = unitary_group.rvs(3)
+        rng = np.random.RandomState(514)
+        x = unitary_group.rvs(3, random_state=rng)
         x2 = unitary_group.rvs(3, random_state=514)
 
         expected = np.array(
@@ -2290,7 +2619,7 @@ class TestUnitaryGroup:
     def test_invalid_dim(self):
         assert_raises(ValueError, unitary_group.rvs, None)
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
-        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, -1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
 
     def test_frozen_matrix(self):
@@ -2319,17 +2648,22 @@ class TestUnitaryGroup:
         # the complex plane, are uncorrelated.
 
         # Generate samples
-        dim = 5
-        samples = 1000  # Not too many, or the test takes too long
-        np.random.seed(514)  # Note that the test is sensitive to seed too
-        xs = unitary_group.rvs(dim, size=samples)
+        for dim in (1, 5):
+            samples = 1000  # Not too many, or the test takes too long
+            # Note that the test is sensitive to seed too
+            xs = unitary_group.rvs(
+                dim, size=samples, random_state=np.random.default_rng(514)
+            )
 
-        # The angles "x" of the eigenvalues should be uniformly distributed
-        # Overall this seems to be a necessary but weak test of the distribution.
-        eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
-        x = np.arctan2(eigs.imag, eigs.real)
-        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
-        assert_(res.pvalue > 0.05)
+            # The angles "x" of the eigenvalues should be uniformly distributed
+            # Overall this seems to be a necessary but weak test of the distribution.
+            eigs = np.vstack([scipy.linalg.eigvals(x) for x in xs])
+            x = np.arctan2(eigs.imag, eigs.real)
+            res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
+            assert_(res.pvalue > 0.05)
+
+    def test_zero_by_zero(self):
+        assert_equal(unitary_group.rvs(0, size=4).shape, (4, 0, 0))
 
 
 class TestMultivariateT:
@@ -2443,6 +2777,7 @@ class TestMultivariateT:
         _, p = normaltest(samples)
         assert ((p > P_VAL_MIN).all())
 
+    @pytest.mark.thread_unsafe
     @patch('scipy.stats.multivariate_normal._logpdf')
     def test_mvt_with_inf_df_calls_normal(self, mock):
         dist = multivariate_t(0, 1, df=np.inf, seed=7)
@@ -3393,7 +3728,8 @@ def check_pickling(distfn, args):
     distfn.random_state = rndm
 
 
-def test_random_state_property():
+@pytest.mark.thread_unsafe
+def test_random_state_property(num_parallel_threads):
     scale = np.eye(3)
     scale[0, 1] = 0.5
     scale[1, 0] = 0.5
@@ -3753,6 +4089,21 @@ class TestDirichletMultinomial:
         assert_equal(dist.var(), 0)
         assert_equal(dist.cov(), 0)
 
+    def test_n_is_zero(self):
+        # similarly, only one possible outcome if n is zero
+        n = 0
+        alpha = np.asarray([1., 1.])
+        x = np.asarray([0, 0])
+        dist = dirichlet_multinomial(alpha, n)
+
+        assert_equal(dist.pmf(x), 1)
+        assert_equal(dist.pmf(x+1), 0)
+        assert_equal(dist.logpmf(x), 0)
+        assert_equal(dist.logpmf(x+1), -np.inf)
+        assert_equal(dist.mean(), [0, 0])
+        assert_equal(dist.var(), [0, 0])
+        assert_equal(dist.cov(), [[0, 0], [0, 0]])
+
     @pytest.mark.parametrize('method_name', ['pmf', 'logpmf'])
     def test_against_betabinom_pmf(self, method_name):
         rng, m, alpha, n, x = self.get_params(100)
@@ -3815,11 +4166,11 @@ class TestDirichletMultinomial:
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, [3, -1, 4], n0)
 
-        text = "`n` must be a positive integer."
+        text = "`n` must be a non-negative integer."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 49.1)
         with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, alpha0, 0)
+            dirichlet_multinomial.logpmf(x0, alpha0, -1)
 
         x = np.array([1, 2, 3, 4])
         alpha = np.array([3, 4, 5])

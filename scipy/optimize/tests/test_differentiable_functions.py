@@ -5,6 +5,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
 from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._util import MapWrapper
 from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
@@ -129,6 +130,67 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.0, 0.3])
+        ex = ExScalarFunction()
+        ex2 = ExScalarFunction()
+        with MapWrapper(2) as mapper:
+            approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '2-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            approx = ScalarFunction(ex.fun, x0, (), '3-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '3-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                          )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x1 = np.array([3.0, 4.0])
+
+            approx = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                    '3-point', None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), ex2.grad,
+                                           '3-point', None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x1), ex.grad(x1))
+            assert_allclose(approx_series.grad(x1), ex.grad(x1))
+            approx_series.hess(x1)
+            approx.hess(x1)
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx_series.ngev, ex2.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
 
     def test_fun_and_grad(self):
         ex = ExScalarFunction()
@@ -500,6 +562,76 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(J_analit, J_approx)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.5, 3.0])
+        ex = ExVectorialFunction()
+        ex2 = ExVectorialFunction()
+        v = np.array([1.0, 2.0])
+
+        with MapWrapper(2) as mapper:
+            approx = VectorFunction(ex.fun, x0, '2-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '2-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, '3-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '3-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            # The following tests are somewhat redundant because the LinearOperator
+            # produced by VectorFunction.hess does not use any parallelisation.
+            # The tests are left for completeness, in case that situation changes.
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, ex.jac,
+                                    '2-point', None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, ex2.jac,
+                                           '2-point', None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+
+            H_analit = ex2.hess(x0, v)
+            H_approx_series = approx_series.hess(x0, v)
+            H_approx = approx.hess(x0, v)
+            x = [5, 2.0]
+            assert_allclose(H_approx.dot(x), H_analit.dot(x))
+            assert_allclose(H_approx_series.dot(x), H_analit.dot(x))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
 
     def test_finite_difference_hess_linear_operator(self):
         ex = ExVectorialFunction()

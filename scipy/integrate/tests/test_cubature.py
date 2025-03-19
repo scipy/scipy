@@ -21,6 +21,7 @@ from scipy.integrate._rules import (
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 # The integrands ``genz_malik_1980_*`` come from the paper:
 #   A.C. Genz, A.A. Malik, Remarks on algorithm 006: An adaptive algorithm for
@@ -115,13 +116,10 @@ def genz_malik_1980_f_2_exact(a, b, alphas, betas, xp):
     a = xp.reshape(a, (*([1]*(len(alphas.shape) - 1)), ndim))
     b = xp.reshape(b, (*([1]*(len(alphas.shape) - 1)), ndim))
 
-    # `xp` is the unwrapped namespace, so `.atan` won't work for `xp = np` and np<2.
-    xp_test = array_namespace(a)
-
     return (
         (-1)**ndim * 1/xp.prod(alphas, axis=-1)
         * xp.prod(
-            xp_test.atan((a - betas)/alphas) - xp_test.atan((b - betas)/alphas),
+            xp.atan((a - betas)/alphas) - xp.atan((b - betas)/alphas),
             axis=-1,
         )
     )
@@ -533,6 +531,8 @@ class TestCubatureProblems:
     Tests that `cubature` gives the correct answer.
     """
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         # -- f1 --
         (
@@ -779,6 +779,8 @@ class TestCubatureProblems:
             err_msg=f"estimate_error={res.error}, subdivisions={res.subdivisions}",
         )
 
+    @skip_xp_backends("dask.array",
+                      reason="Dask hangs/takes a long time for some test cases")
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate, like `f(x, *args)`
@@ -966,10 +968,8 @@ class TestCubatureProblems:
                    f"true_error={xp.abs(res.estimate - exact)}")
         assert res.status == "converged", err_msg
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1116,10 +1116,8 @@ class TestCubatureProblems:
             check_0d=False,
         )
 
-    @skip_xp_backends(
-        "jax.numpy",
-        reasons=["transforms make use of indexing assignment"],
-    )
+    @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+    @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
     @pytest.mark.parametrize("problem", [
         (
             # Function to integrate
@@ -1323,10 +1321,8 @@ class TestRulesCubature:
             GenzMalikCubature(1, xp=xp)
 
 
-@skip_xp_backends(
-    "jax.numpy",
-    reasons=["transforms make use of indexing assignment"],
-)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
 class TestTransformations:
     @pytest.mark.parametrize(("a", "b", "points"), [
         (
@@ -1344,19 +1340,18 @@ class TestTransformations:
         transformation.
         """
 
-        xp_compat = array_namespace(xp.empty(0))
         points = [xp.asarray(p, dtype=xp.float64) for p in points]
 
         f_transformed = _InfiniteLimitsTransform(
             # Bind `points` and `xp` argument in f
-            lambda x: f_with_problematic_points(x, points, xp_compat),
-            xp.asarray(a, dtype=xp_compat.float64),
-            xp.asarray(b, dtype=xp_compat.float64),
-            xp=xp_compat,
+            lambda x: f_with_problematic_points(x, points, xp),
+            xp.asarray(a, dtype=xp.float64),
+            xp.asarray(b, dtype=xp.float64),
+            xp=xp,
         )
 
         for point in points:
-            transformed_point = f_transformed.inv(xp_compat.reshape(point, (1, -1)))
+            transformed_point = f_transformed.inv(xp.reshape(point, (1, -1)))
 
             with pytest.raises(Exception, match="called with a problematic point"):
                 f_transformed(transformed_point)

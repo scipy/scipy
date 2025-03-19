@@ -2,10 +2,10 @@
 import numpy as np
 import scipy.sparse
 
-from .common import Benchmark, safe_import
+from .common import Benchmark, safe_import, is_xslow
 
 with safe_import():
-    from scipy.sparse.csgraph import dijkstra
+    from scipy.sparse.csgraph import dijkstra, shortest_path
 
 
 class Dijkstra(Benchmark):
@@ -40,3 +40,33 @@ class Dijkstra(Benchmark):
                  directed=False,
                  indices=self.indices,
                  min_only=min_only)
+
+
+class DijkstraDensity(Benchmark):
+    """
+    Benchmark performance of Dijkstra, adapted from [^1]
+
+    [^1]: https://github.com/scipy/scipy/pull/20717#issuecomment-2562795171
+    """
+    params = [
+        [10, 100, 1000],
+        [0.1, 0.3, 0.5, 0.9],
+    ]
+    param_names = ["n", "density"]
+
+    def setup(self, n, density):
+        if n >= 1000 and not is_xslow():
+            raise NotImplementedError("skipped")
+
+        rng = np.random.default_rng(42)
+        self.graph = scipy.sparse.random_array(
+            shape=(n, n),
+            density=density,
+            format='csr',
+            rng=rng,
+            data_sampler=lambda size: rng.integers(100, size=size, dtype=np.uint32),
+        )
+
+
+    def time_test_shortest_path(self, n, density):
+        shortest_path(self.graph, method="D", directed=False)

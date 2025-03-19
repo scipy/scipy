@@ -96,6 +96,7 @@
 
 #include <math.h>
 #include <complex.h>
+#include <memory>     // unique_ptr
 
 namespace xsf {
 namespace amos {
@@ -2362,6 +2363,7 @@ inline int besy(
     //                            CANCE BY ARGUMENT REDUCTION
     //                    IERR=5, ERROR              - NO COMPUTATION,
     //                            ALGORITHM TERMINATION CONDITION NOT MET
+    //                    IERR=6, Memory allocation failed.
     //
     //***LONG DESCRIPTION
     //
@@ -2450,7 +2452,6 @@ inline int besy(
     std::complex<double> c1, c2, hci, st;
     double elim, exr, exi, ey, tay, xx, yy, ascle, rtol, atol, tol, aa, bb, r1m5;
     int i, k, k1, k2, nz, nz1, nz2;
-    std::complex<double>* cwrk = new std::complex<double>[n];
 
     xx = std::real(z);
     yy = std::imag(z);
@@ -2467,7 +2468,14 @@ inline int besy(
     nz1 = besh(z, fnu, kode, 1, n, cy, ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
-    nz2 = besh(z, fnu, kode, 2, n, cwrk, ierr);
+    auto cwrk = std::unique_ptr<std::complex<double>[]>
+                    {new (std::nothrow) std::complex<double>[n]};
+    if (cwrk == nullptr) {
+        *ierr = 6;  // Memory allocation failed.
+        return 0;
+    }
+
+    nz2 = besh(z, fnu, kode, 2, n, cwrk.get(), ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
     nz = (nz1 > nz2 ? nz2 : nz1);
@@ -2531,7 +2539,6 @@ inline int besy(
         if ((st == 0.0) && (ey == 0.0)) { nz += 1; }
     }
 
-    delete [] cwrk;
     return nz;
 }
 

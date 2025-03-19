@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   musllinux_x86_64:
-    name: musl Ubuntu-latest, fast, py3.10/npAny, dev.py
+    name: musl Ubuntu-latest, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     runs-on: ubuntu-latest
     # If using act to run CI locally the github object does not exist and
@@ -57,7 +57,7 @@ jobs:
             git -c user.email="you@example.com" merge --no-commit my_ref_name
         fi
 
-        ln -s /usr/local/bin/python3.10 /usr/local/bin/python
+        ln -s /usr/local/bin/python3.11 /usr/local/bin/python
         git submodule update --init
 
 

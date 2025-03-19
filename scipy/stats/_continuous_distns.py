@@ -27,7 +27,6 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
     get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
-from scipy.stats._distribution_infrastructure import _log1mexp
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_PI, _LOG_SQRT_2_OVER_PI)
@@ -1945,7 +1944,7 @@ class dpareto_lognorm_gen(rv_continuous):
         return out[()]
 
     def _logsf(self, x, u, s, a, b):
-        return _log1mexp(self._logcdf(x, u, s, a, b))
+        return scu._log1mexp(self._logcdf(x, u, s, a, b))
 
     # Infrastructure doesn't seem to do this, so...
 
@@ -3432,29 +3431,39 @@ class genextreme_gen(rv_continuous):
         g3 = g(3)
         g4 = g(4)
         g2mg12 = np.where(abs(c) < 1e-7, (c*np.pi)**2.0/6.0, g2-g1**2.0)
-        gam2k = np.where(abs(c) < 1e-7, np.pi**2.0/6.0,
-                         sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0)
+        def gam2k_f(c):
+            return sc.expm1(sc.gammaln(2.0*c+1.0)-2*sc.gammaln(c + 1.0))/c**2.0
+        gam2k = _lazywhere(abs(c) >= 1e-7, (c,), f=gam2k_f, fillvalue=np.pi**2.0/6.0)
         eps = 1e-14
-        gamk = np.where(abs(c) < eps, -_EULER, sc.expm1(sc.gammaln(c + 1))/c)
+        def gamk_f(c):
+            return sc.expm1(sc.gammaln(c + 1))/c
+        gamk = _lazywhere(abs(c) >= eps, (c,), f=gamk_f, fillvalue=-_EULER)
 
+        # mean
         m = np.where(c < -1.0, np.nan, -gamk)
+        
+        # variance
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = _lazywhere(c >= -1./3,
-                         (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2mg12:
-                             np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
-                         fillvalue=np.nan)
-        sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
+        def sk1_eval(c, *args):
+            def sk1_eval_f(c, g1, g2, g3, g2mg12):
+                return np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5
+            return _lazywhere(c >= -1./3, (c,)+args, f=sk1_eval_f, fillvalue=np.nan)
+
+        sk_fill = 12*np.sqrt(6)*_ZETA3/np.pi**3
+        args = (g1, g2, g3, g2mg12)
+        sk = _lazywhere(abs(c) > eps**0.29, (c,)+args, f=sk1_eval, fillvalue=sk_fill)
 
         # kurtosis
-        ku1 = _lazywhere(c >= -1./4,
-                         (g1, g2, g3, g4, g2mg12),
-                         lambda g1, g2, g3, g4, g2mg12:
-                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
-                         fillvalue=np.nan)
-        ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
+        def ku1_eval(c, *args):
+            def ku1_eval_f(g1, g2, g3, g4, g2mg12):
+                return (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2 - 3
+            return _lazywhere(c >= -1./4, args, ku1_eval_f, fillvalue=np.nan)
+
+        args = (g1, g2, g3, g4, g2mg12)
+        ku = _lazywhere(abs(c) > eps**0.23, (c,)+args, f=ku1_eval, fillvalue=12.0/5.0)
+
         return m, v, sk, ku
 
     def _fitstart(self, data):
@@ -5019,10 +5028,10 @@ class invgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         # invgauss.pdf(x, mu) =
         #                  1 / sqrt(2*pi*x**3) * exp(-(x-mu)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*((x-mu)/mu)**2)
+        return 1.0/np.sqrt(2*np.pi*x**3.0)*np.exp(-1.0/(2*x)*(x/mu - 1)**2)
 
     def _logpdf(self, x, mu):
-        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - ((x-mu)/mu)**2/(2*x)
+        return -0.5*np.log(2*np.pi) - 1.5*np.log(x) - (x/mu - 1)**2/(2*x)
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
@@ -5030,14 +5039,14 @@ class invgauss_gen(rv_continuous):
 
     def _logcdf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+        a = _norm_logcdf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(np.exp(b - a))
 
     def _logsf(self, x, mu):
         fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+        a = _norm_logsf(fac * (x/mu - 1))
+        b = 2 / mu + _norm_logcdf(-fac * (x/mu + 1))
         return a + np.log1p(-np.exp(b - a))
 
     def _sf(self, x, mu):
@@ -8124,8 +8133,7 @@ class nct_gen(rv_continuous):
         return sc.nctdtr(df, nc, x)
 
     def _ppf(self, q, df, nc):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_ppf(q, df, nc)
+        return sc.nctdtrit(df, nc, q)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432

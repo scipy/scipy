@@ -1131,8 +1131,7 @@ class _BivariateSplineBase:
                 newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
             if ier != 0:
                 # This should not happen under normal conditions.
-                raise ValueError("Unexpected error code returned by"
-                                 " pardtc: %d" % ier)
+                raise ValueError(f"Unexpected error code returned by pardtc: {ier}")
             nx = len(tx)
             ny = len(ty)
             newtx = tx[dx:nx - dx]
@@ -1158,7 +1157,8 @@ Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
 the maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached:
 s too small.
-Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
+Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.
+Try increasing maxit by passing it as a keyword argument.""",
                     4: """
 No more knots can be added because the number of b-spline coefficients
 (nx-kx-1)*(ny-ky-1) already exceeds the number of data points m:
@@ -1575,6 +1575,9 @@ class RectBivariateSpline(BivariateSpline):
         Positive smoothing factor defined for estimation condition:
         ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
         function. Default is ``s=0``, which is for interpolation.
+    maxit : int, optional
+        The maximal number of iterations maxit allowed for finding a
+        smoothing spline with fp=s. Default is ``maxit=20``.
 
     See Also
     --------
@@ -1607,7 +1610,7 @@ class RectBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0, maxit=20):
         x, y, bbox = ravel(x), ravel(y), ravel(bbox)
         z = np.asarray(z)
         if not np.all(diff(x) > 0.0):
@@ -1629,7 +1632,7 @@ class RectBivariateSpline(BivariateSpline):
         xb, xe, yb, ye = bbox
         with FITPACK_LOCK:
             nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
-                                                            ye, kx, ky, s)
+                                                            ye, kx, ky, s, maxit)
 
         if ier not in [0, -1, -2]:
             msg = _surfit_messages.get(ier, f'ier={ier}')
@@ -2313,7 +2316,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
-        elif isinstance(pole_values, (float, np.float32, np.float64)):
+        elif isinstance(pole_values, float | np.float32 | np.float64):
             pole_values = (pole_values, pole_values)
         if isinstance(pole_continuity, bool):
             pole_continuity = (pole_continuity, pole_continuity)

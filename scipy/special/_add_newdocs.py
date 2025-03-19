@@ -792,6 +792,21 @@ add_newdoc(
     function by multiplying the result of ``betainc(a, b, x)`` by
     ``beta(a, b)``.
 
+    ``betainc(a, b, x)`` is treated as a two parameter family of functions
+    of a single variable `x`, rather than as a function of three variables.
+    This impacts only the limiting cases ``a = 0``, ``b = 0``, ``a = inf``,
+    ``b = inf``.
+
+    In general
+
+    .. math::
+
+        \lim_{(a, b) \rightarrow (a_0, b_0)} \mathrm{betainc}(a, b, x)
+
+    is treated as a pointwise limit in ``x``. Thus for example,
+    ``betainc(0, b, 0)`` equals ``0`` for ``b > 0``, although it would be
+    indeterminate when considering the simultaneous limit ``(a, x) -> (0+, 0+)``.
+
     This function wraps the ``ibeta`` routine from the
     Boost Math C++ library [2]_.
 
@@ -882,6 +897,11 @@ add_newdoc(
     Notes
     -----
     .. versionadded:: 1.11.0
+
+    Like `betainc`, ``betaincc(a, b, x)`` is treated as a two parameter
+    family of functions of a single variable `x`, rather than as a function of
+    three variables. See the `betainc` docstring for more info on how this
+    impacts limiting cases.
 
     This function wraps the ``ibetac`` routine from the
     Boost Math C++ library [2]_.
@@ -6751,7 +6771,7 @@ add_newdoc("nctdtrit",
     df : array_like
         Degrees of freedom of the distribution. Should be in range (0, inf).
     nc : array_like
-        Noncentrality parameter. Should be in range (-1e6, 1e6).
+        Noncentrality parameter.
     p : array_like
         CDF values, in range (0, 1].
     out : ndarray, optional
@@ -6767,6 +6787,19 @@ add_newdoc("nctdtrit",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Notes
+    -----
+    This function calculates the quantile of the non-central t distribution using
+    the Boost Math C++ library [1]_.
+
+    Note that the argument order of `nctdtrit` is different from that of the
+    similar ``ppf`` method of `scipy.stats.nct`: `t` is the last
+    parameter of `nctdtrit` but the first parameter of ``scipy.stats.nct.ppf``.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
 
     Examples
     --------

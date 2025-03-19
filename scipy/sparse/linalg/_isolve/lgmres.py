@@ -16,7 +16,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
            prepend_outer_v=False):
     """
-    Solve a matrix equation using the LGMRES algorithm.
+    Solve ``Ax = b`` with the LGMRES algorithm.
 
     The LGMRES algorithm [1]_ [2]_ is designed to avoid some problems
     in the convergence in restarted GMRES, and often converges in fewer

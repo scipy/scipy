@@ -87,7 +87,7 @@ from ._byteordercodes import native_code, swapped_code
 
 from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       arr_to_chars, arr_dtype_number, MatWriteError,
-                      MatReadError, MatReadWarning)
+                      MatReadError, MatReadWarning, MatWriteWarning)
 
 # Reader object for matlab 5 format variables
 from ._mio5_utils import VarReader5
@@ -221,7 +221,7 @@ class MatFile5Reader(MatFileReader):
         hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
-        hdict['__version__'] = '%d.%d' % (v_major, v_minor)
+        hdict['__version__'] = f'{v_major}.{v_minor}'
         return hdict
 
     def initialize_read(self):
@@ -267,7 +267,7 @@ class MatFile5Reader(MatFileReader):
             check_stream_limit = False
             self._matrix_reader.set_stream(self.mat_stream)
         if not mdtype == miMATRIX:
-            raise TypeError('Expecting miMATRIX type here, got %d' % mdtype)
+            raise TypeError(f'Expecting miMATRIX type here, got {mdtype}')
         header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
@@ -482,10 +482,14 @@ def to_writeable(source):
         dtype = []
         values = []
         for field, value in source.items():
-            if (isinstance(field, str) and
-                    field[0] not in '_0123456789'):
-                dtype.append((str(field), object))
-                values.append(value)
+            if isinstance(field, str):
+                if field[0] not in '_0123456789':
+                    dtype.append((str(field), object))
+                    values.append(value)
+                else:
+                    msg = (f"Starting field name with a underscore "
+                           f"or a digit ({field}) is ignored")
+                    warnings.warn(msg, MatWriteWarning, stacklevel=2)
         if dtype:
             return np.array([tuple(values)], dtype)
         else:
@@ -512,7 +516,7 @@ NDT_ARRAY_FLAGS = MDTYPES[native_code]['dtypes']['array_flags']
 class VarWriter5:
     ''' Generic matlab matrix writing class '''
     mat_tag = np.zeros((), NDT_TAG_FULL)
-    mat_tag['mdtype'] = miMATRIX  # type: ignore[call-overload]
+    mat_tag['mdtype'] = miMATRIX
 
     def __init__(self, file_writer):
         self.file_stream = file_writer.file_stream
@@ -789,12 +793,11 @@ class VarWriter5:
         length = max([len(fieldname) for fieldname in fieldnames])+1
         max_length = (self.long_field_names and 64) or 32
         if length > max_length:
-            raise ValueError("Field names are restricted to %d characters" %
-                             (max_length-1))
+            raise ValueError(
+                f"Field names are restricted to {max_length - 1} characters"
+            )
         self.write_element(np.array([length], dtype='i4'))
-        self.write_element(
-            np.array(fieldnames, dtype='S%d' % (length)),
-            mdtype=miINT8)
+        self.write_element(np.array(fieldnames, dtype=f'S{length}'), mdtype=miINT8)
         A = np.atleast_2d(arr).flatten('F')
         for el in A:
             for f in fieldnames:
@@ -879,6 +882,9 @@ class MatFile5Writer:
         self._matrix_writer = VarWriter5(self)
         for name, var in mdict.items():
             if name[0] == '_':
+                msg = (f"Starting field name with a "
+                       f"underscore ({name}) is ignored")
+                warnings.warn(msg, MatWriteWarning, stacklevel=2)
                 continue
             is_global = name in self.global_vars
             if self.do_compression:
