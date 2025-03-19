@@ -3083,6 +3083,7 @@ class TestZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
