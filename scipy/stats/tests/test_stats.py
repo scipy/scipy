@@ -3643,7 +3643,8 @@ class SkewKurtosisTest:
 
 @make_skip_xp_backends(stats.skew)
 class TestSkew(SkewKurtosisTest):
-    stat_fun = stats.skew
+    def stat_fun(self, x):
+        return stats.skew(x)
 
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in scalar divide:RuntimeWarning:dask"
@@ -3740,7 +3741,8 @@ class TestSkew(SkewKurtosisTest):
 
 @make_skip_xp_backends(stats.kurtosis)
 class TestKurtosis(SkewKurtosisTest):
-    stat_fun = stats.kurtosis
+    def stat_fun(self, x):
+        return stats.kurtosis(x)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_kurtosis(self, xp):
