@@ -717,7 +717,8 @@ def make_skip_xp_backends(*funs, capabilities_table=None):
     for fun in funs:
         skip_backends += capabilities_table[fun].get('skip_backends', [])
         cpu_only |= capabilities_table[fun].get('cpu_only', False)
-        cpu_only_reason.add(capabilities_table[fun].get('reason', ""))
+        # Empty reason causes the decorator to have no effect
+        cpu_only_reason.add(capabilities_table[fun].get('reason', "No reason given."))
         np_only |= capabilities_table[fun].get('np_only', False)
         exceptions += capabilities_table[fun].get('exceptions', [])
 
