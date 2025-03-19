@@ -288,7 +288,10 @@ def value_indices_signature(arr, *args, **kwds):
     return array_namespace(arr)
 
 
-vectorized_filter_signature = None
+def vectorized_filter_signature(
+    input, function, size=None, footprint=None, output=None, *args, **kwds
+):
+    return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
 def watershed_ift_signature(input, markers, structure=None, output=None):

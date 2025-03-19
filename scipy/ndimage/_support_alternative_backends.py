@@ -23,6 +23,11 @@ def _maybe_convert_arg(arg, xp):
         return arg
 
 
+# Some cupyx.scipy.ndimage functions don't exist or are incompatible with
+# their SciPy counterparts
+CUPY_BLOCKLIST = ['vectorized_filter']
+
+
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -30,7 +35,7 @@ def delegate_xp(delegator, module_name):
             xp = delegator(*args, **kwds)
 
             # try delegating to a cupyx/jax namesake
-            if is_cupy(xp):
+            if is_cupy(xp) and func.__name__ not in CUPY_BLOCKLIST:
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
@@ -72,7 +77,7 @@ for func_name in _ndimage_api.__all__:
     delegator = getattr(_delegators, func_name + "_signature")
 
     f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API and delegator is not None
+         if SCIPY_ARRAY_API
          else bare_func)
 
     # add the decorated function to the namespace, to be imported in __init__.py

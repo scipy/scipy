@@ -15,7 +15,8 @@ from scipy._lib._array_api import (
     xp_assert_close,
     xp_assert_equal,
 )
-from scipy._lib._array_api import is_cupy, is_torch, array_namespace
+from scipy._lib._array_api import (is_cupy, is_torch, is_dask, is_jax, array_namespace,
+                                   is_array_api_strict, xp_copy)
 from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
@@ -2766,11 +2767,7 @@ def test_gh_22333():
     assert_array_equal(actual, expected)
 
 
-vf_skip_reason = "`vectorized_filter` requires `sliding_window_view`"
-@pytest.mark.skip_xp_backends('array_api_strict', reason=vf_skip_reason)
-@pytest.mark.skip_xp_backends('dask.array', reason=vf_skip_reason)
-@pytest.mark.skip_xp_backends('torch', reason=vf_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy', reason=vf_skip_reason)
+@pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestVectorizedFilter:
     @pytest.mark.parametrize("axes, size",
                              [(None, (3, 4, 5)), ((0, 2), (3, 4)), ((-1,), (5,))])
@@ -2781,9 +2778,12 @@ class TestVectorizedFilter:
     def test_against_generic_filter(self, axes, size, origin, mode, use_output, xp):
         rng = np.random.default_rng(435982456983456987356)
 
+        if use_output and (is_dask(xp) or is_jax(xp)):
+            pytest.skip("Requires mutable arrays.")
+
         input = rng.random(size=(11, 12, 13))
         input_copy = input.copy()  # check that it is not modified
-        output = xp.zeros_like(input) if use_output else None
+        output = xp.zeros(input.shape) if use_output else None
 
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
@@ -2793,30 +2793,35 @@ class TestVectorizedFilter:
         if use_output:
             xp_assert_equal(output, res)
 
-        kwargs.pop('size')
-        kwargs.pop('output')
-        kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
-        ref = ndimage.generic_filter(input, np.mean, **kwargs)
-        kwargs['footprint'] = xp.asarray(kwargs['footprint'])
-        kwargs['output'] = output
-        res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
-        xp_assert_close(res, xp.asarray(ref), atol=1e-15)
-        if use_output:
-            xp_assert_equal(output, res)
+        if not (is_array_api_strict(xp) or is_dask(xp)):
+            # currently requires support for [..., mask] indexing
+            kwargs.pop('size')
+            kwargs.pop('output')
+            kwargs['footprint'] = rng.random(size=size or input.shape) > 0.5
+            ref = ndimage.generic_filter(input, np.mean, **kwargs)
+            kwargs['footprint'] = xp.asarray(kwargs['footprint'])
+            kwargs['output'] = output
+            res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
+            xp_assert_close(res, xp.asarray(ref), atol=1e-15)
+            if use_output:
+                xp_assert_equal(output, res)
 
         xp_assert_equal(xp.asarray(input), xp.asarray(input_copy))
 
     @pytest.mark.parametrize("dtype",
-                             [np.uint8, np.uint16, np.uint32, np.uint64,
-                              np.int8, np.int16, np.int32, np.int64,
-                              np.float32, np.float64, np.complex64, np.complex128])
+                             ["uint8", "uint16", "uint32", "uint64",
+                              "int8", "int16", "int32", "int64",
+                              "float32", "float64", "complex64", "complex128"])
     @pytest.mark.parametrize("batch_memory", [1, 16*3, np.inf])
     @pytest.mark.parametrize("use_footprint", [False, True])
     def test_dtype_batch_memory(self, dtype, batch_memory, use_footprint, xp):
-        rng = xp.random.default_rng(435982456983456987356)
+        rng = np.random.default_rng(435982456983456987356)
         w = 3
+        dtype = getattr(xp, dtype)
 
         if use_footprint:
+            if (is_dask(xp) or is_array_api_strict(xp)):
+                pytest.skip("Requires [..., mask] indexing.")
             footprint = xp.asarray([True, False, True])
             kwargs = dict(footprint=footprint, batch_memory=batch_memory)
         else:
@@ -2830,12 +2835,12 @@ class TestVectorizedFilter:
         # *won't* fit.
         n = 16*3 + 1
         input = rng.integers(0, 42, size=(n,))
-        input = input + input*1j if xp.issubdtype(dtype, xp.complexfloating) else input
-        input = input.astype(dtype)
+        input = input + input*1j if xp.isdtype(dtype, 'complex floating') else input
+        input_padded = xp.asarray(np.pad(input, [(1, 1)], mode='symmetric'), dtype=dtype)
+        input = xp.asarray(input, dtype=dtype)
 
-        input2 = xp.pad(input, [(1, 1)], mode='symmetric')
-        ref = [xp.sum(input2[i: i + w][footprint]) for i in range(n)]
-        sum_dtype = xp.sum(input2).dtype
+        ref = [xp.sum(input_padded[i: i + w][footprint]) for i in range(n)]
+        sum_dtype = xp.sum(input_padded).dtype
 
         message = "`batch_memory` is insufficient for minimum chunk size."
         context = (pytest.raises(ValueError, match=message)
@@ -2851,18 +2856,20 @@ class TestVectorizedFilter:
             assert res.dtype == dtype
 
     def test_mode_valid(self, xp):
-        rng = xp.random.default_rng(435982456983456987356)
+        rng = np.random.default_rng(435982456983456987356)
         input = rng.random(size=(10, 11))
-        input_copy = input.copy()  # check that it is not modified
+        input_xp = xp.asarray(input)
+        input_xp_copy = xp_copy(input_xp)  # check that it is not modified
         size = (3, 5)
-        function = xp.mean
-        res = ndimage.vectorized_filter(input, function, size=size, mode='valid')
-        view = xp.lib.stride_tricks.sliding_window_view(input, size)
-        ref = function(view, axis=(-2, -1))
-        xp_assert_close(res, ref)
-        xp_assert_equal(xp.asarray(res.shape),
-                        xp.asarray(input.shape - np.asarray(size) + 1))
-        xp_assert_equal(input, input_copy)
+
+        res = ndimage.vectorized_filter(input_xp, xp.mean, size=size, mode='valid')
+
+        view = np.lib.stride_tricks.sliding_window_view(input, size)
+        ref = np.mean(view, axis=(-2, -1))
+
+        xp_assert_close(res, xp.asarray(ref))
+        assert res.shape == tuple(input.shape - np.asarray(size) + 1)
+        xp_assert_equal(input_xp, input_xp_copy)
 
     def test_input_validation(self, xp):
         input = xp.ones((10, 10))
@@ -2919,18 +2926,19 @@ class TestVectorizedFilter:
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, mode='valid', cval=1)
 
-        message = "`cval` must include only numbers.|Unsupported dtype..."
-        with pytest.raises(ValueError, match=message):
+        other_messages = "|Unsupported dtype...|The array_api_strict..."
+        message = "`cval` must include only numbers." + other_messages
+        with pytest.raises((ValueError, TypeError), match=message):
             ndimage.vectorized_filter(input, function, size=size,
                               mode='constant', cval='a duck')
 
-        message = "`batch_memory` must be positive number.|Unsupported dtype..."
+        message = "`batch_memory` must be positive number." + other_messages
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, batch_memory=0)
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, batch_memory=(1, 2))
-        with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, size=size,batch_memory="a duck")
+        with pytest.raises((ValueError, TypeError), match=message):
+            ndimage.vectorized_filter(input, function, size=size, batch_memory="a duck")
 
     @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
     def test_zero_size(self, shape, xp):
@@ -2940,22 +2948,23 @@ class TestVectorizedFilter:
 
     @pytest.mark.filterwarnings("ignore:Mean of empty slice.:RuntimeWarning")
     def test_edge_cases(self, xp):
-        rng = xp.random.default_rng(4835982345234982)
+        rng = np.random.default_rng(4835982345234982)
         function = xp.mean
 
         # 0-D input
-        input = xp.asarray(1)
-        res = ndimage.vectorized_filter(xp.asarray(1), function, size=())
+        input = xp.asarray(1.)
+        res = ndimage.vectorized_filter(input, function, size=())
         xp_assert_equal(res, xp.asarray(function(input, axis=())))
 
-        res = ndimage.vectorized_filter(xp.asarray(1), function, footprint=True)
-        xp_assert_equal(res, xp.asarray(function(input[True], axis=())))
+        if not (is_array_api_strict(xp) or is_dask(xp)):
+            res = ndimage.vectorized_filter(input, function, footprint=True)
+            xp_assert_equal(res, xp.asarray(function(input[True], axis=())))
 
-        res = ndimage.vectorized_filter(xp.asarray(1), function, footprint=False)
-        xp_assert_equal(res, xp.asarray(function(input[False], axis=())))
+            res = ndimage.vectorized_filter(input, function, footprint=False)
+            xp_assert_equal(res, xp.asarray(function(input[False], axis=())))
 
         # 1x1 window
-        input = rng.random((5, 5))
+        input = xp.asarray(rng.random((5, 5)))
         res = ndimage.vectorized_filter(input, function, size=1)
         xp_assert_equal(res, input)
 
