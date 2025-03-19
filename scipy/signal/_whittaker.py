@@ -8,10 +8,11 @@ from scipy.linalg import solve, toeplitz
 # 3) Use sparse/banded arrays for _solve_WH_order_direct
 # 4) GCV for lamb
 # 5) Case weights
+# 6) 2-d, maybe even 3-d WH smoothing
 
-def whittaker_handerson(signal, lamb = 0.0):
-    """
-    Whittaker-Handerson (WH) smoothing/graduation of a discrete signal.
+def whittaker_henderson(signal, lamb = 0.0):
+    r"""
+    Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
     This implements WH of order 2, see [1] and [2]. WH can be seen as a P-Spline
     (penalized B-Spline) of degree zero for equidistant knots.
@@ -68,7 +69,10 @@ def whittaker_handerson(signal, lamb = 0.0):
         msg = f"Input signal array must be at least of shape (3,); got {n}"
         raise ValueError(msg)
 
-    if lamb == 0.0:
+    if lamb < 0:
+        msg = f"Parameter lamb must be non-negative; got {lamb=}."
+        raise ValueError(msg)
+    elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
         if n < 5:
