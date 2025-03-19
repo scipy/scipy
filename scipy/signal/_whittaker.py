@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import solve, toeplitz
+from scipy.linalg import solveh_banded
 
 
 # TODO:
@@ -58,15 +58,16 @@ def whittaker_henderson(signal, lamb = 0.0):
            Computational Statistics and Data Analysis 52:959-74.
            :doi:`10.1016/j.csda.2006.11.038`
     """
+    p = 2  # the order of the penalty
     signal = np.asarray(signal)
     if signal.ndim != 1:
         msg = f"Input signal array must be of shape (n,); got {signal.shape}"
         raise ValueError(msg)
 
     n = signal.shape[0]
-    if n < 3:
+    if n < 2 * p - 1:
         # signal must be at least of length 3 (=order+1).
-        msg = f"Input signal array must be at least of shape (3,); got {n}"
+        msg = f"Input signal array must be at least of shape ({2 * p - 1},); got {n}."
         raise ValueError(msg)
 
     if lamb < 0:
@@ -75,10 +76,9 @@ def whittaker_henderson(signal, lamb = 0.0):
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
-        if n < 5:
-            x = _solve_WH_order_direct(signal, lamb=lamb)
-        else:
-            x = _solve_WH_order2_fast(signal, lamb=lamb)
+        x = _solve_WH_order_direct(signal, lamb=lamb)
+        # If performance matters and p == 2, think about a C++/Pybind implementation of
+        # x = _solve_WH_order2_fast(signal, lamb=lamb)
     return x
 
 
@@ -86,13 +86,26 @@ def _solve_WH_order_direct(y, lamb):
     """Solve the WH optimization problem directly with matrices."""
     n = y.shape[0]
     p = 2  # order of difference penalty
-    col = np.zeros(n - p)
-    col[0] = 1
-    row = np.zeros(n)
-    row[:3] = [1, -2, 1]
-    M = toeplitz(c=col, r=row)
-    A = np.eye(n, dtype=np.float64) + lamb * (M.T @ M)
-    x = solve(A, y)
+    M_raw = np.diff(np.eye(2*p + 1), n=p, axis=0)  # as if n = p
+    MTM_raw = M_raw.T @ M_raw
+    # Because our matrix A = np.eye(n, dtype=np.float64) + lamb * (M.T @ M) is
+    # symmetric and banded with u = l = p, we construct it in the lower "ab"-format
+    # for use in solveh_banded, i.e. each row in ab is a subdiagonal of A:
+    #   ab[0, :]   = np.diagonal(A, 0)
+    #   ab[1, :-1] = np.diagonal(A, 1)
+    #   ab[1, :-2] = np.diagonal(A, 2)
+    #   ..
+    ab = np.zeros((p + 1, 2*p + 1))
+    for i in range(p + 1):
+        ab[i, :ab.shape[1] - i] = np.diagonal(MTM_raw, i)
+    ab *= lamb
+    ab = np.hstack([
+        ab[:, :p+1],
+        np.repeat(ab[:, p:p+1], n - (2*p+1), axis=1),
+        ab[:, -p:],
+    ])   
+    ab[0, :] += 1.0  # This corresponds to np.eye(n).
+    x = solveh_banded(ab, y, lower=True)
     return x
 
 
