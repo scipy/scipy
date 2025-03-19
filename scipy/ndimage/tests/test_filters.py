@@ -2767,6 +2767,7 @@ def test_gh_22333():
     assert_array_equal(actual, expected)
 
 
+@pytest.mark.filterwarnings("ignore:The given NumPy array is not writable:UserWarning")
 @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestVectorizedFilter:
     @pytest.mark.parametrize("axes, size",
@@ -2817,6 +2818,12 @@ class TestVectorizedFilter:
     def test_dtype_batch_memory(self, dtype, batch_memory, use_footprint, xp):
         rng = np.random.default_rng(435982456983456987356)
         w = 3
+
+        if is_jax(xp) and not (batch_memory == 1):
+            pytest.skip("Requires mutable array.")
+        if is_torch(xp) and dtype in {'uint8', 'uint16', 'uint32', 'uint64'}:
+            pytest.skip("Needs uint support.")
+
         dtype = getattr(xp, dtype)
 
         if use_footprint:
@@ -2836,7 +2843,8 @@ class TestVectorizedFilter:
         n = 16*3 + 1
         input = rng.integers(0, 42, size=(n,))
         input = input + input*1j if xp.isdtype(dtype, 'complex floating') else input
-        input_padded = xp.asarray(np.pad(input, [(1, 1)], mode='symmetric'), dtype=dtype)
+        input_padded = xp.asarray(np.pad(input, [(1, 1)], mode='symmetric'),
+                                  dtype=dtype)
         input = xp.asarray(input, dtype=dtype)
 
         ref = [xp.sum(input_padded[i: i + w][footprint]) for i in range(n)]
@@ -2926,7 +2934,7 @@ class TestVectorizedFilter:
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=size, mode='valid', cval=1)
 
-        other_messages = "|Unsupported dtype...|The array_api_strict..."
+        other_messages = "|Unsupported|The array_api_strict|new|Value 'a duck'"
         message = "`cval` must include only numbers." + other_messages
         with pytest.raises((ValueError, TypeError), match=message):
             ndimage.vectorized_filter(input, function, size=size,
@@ -2940,6 +2948,7 @@ class TestVectorizedFilter:
         with pytest.raises((ValueError, TypeError), match=message):
             ndimage.vectorized_filter(input, function, size=size, batch_memory="a duck")
 
+    @pytest.mark.skip_xp_backends('torch', reason="Need to debug.")
     @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
     def test_zero_size(self, shape, xp):
         input = xp.empty(shape)

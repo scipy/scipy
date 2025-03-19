@@ -36,7 +36,7 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy, is_cupy
+from scipy._lib._array_api import array_namespace, is_cupy
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -186,7 +186,8 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                 output = xp.empty(view.shape[:-n_axes], dtype=temp.dtype)
                 output[i:i2, ...] = temp
             else:
-                output[i:i2, ...] = footprinted_function(xp.asarray(view[i:i2]), **kwargs)
+                output[i:i2, ...] = footprinted_function(xp.asarray(view[i:i2]),
+                                                         **kwargs)
         return output
 
     return (input, wrapped_function, size, mode, cval,
