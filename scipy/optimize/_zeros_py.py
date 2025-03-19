@@ -544,6 +544,21 @@ def bisect(f, a, b, args=(),
         Object containing information about the convergence. In particular,
         ``r.converged`` is True if the routine converged.
 
+    Notes
+    -----
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x)``.
+
+    A nonzero value of `xtol` may be useful for saving function evaluations
+    when a root is near zero in applications where the tiny absolute
+    differences available between floating point numbers near zero are not
+    meaningful. The default value ``xtol=2e-12`` may lead to surprising
+    behavior if one expects `bisect` to always compute roots with relative
+    error near machine precision. Care should be taken to select `xtol` for the
+    use case at hand.
+
     Examples
     --------
 
@@ -641,6 +656,19 @@ def ridder(f, a, b, args=(),
 
     The routine used here diverges slightly from standard presentations in
     order to be a bit more careful of tolerance.
+
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x)``.
+
+    A nonzero value of `xtol` may be useful for saving function evaluations
+    when a root is near zero in applications where the tiny absolute
+    differences available between floating point numbers near zero are not
+    meaningful. The default value ``xtol=2e-12`` may lead to surprising
+    behavior if one expects `ridder` to always compute roots with relative
+    error near machine precision. Care should be taken to select `xtol` for the
+    use case at hand.
 
     References
     ----------
@@ -760,6 +788,19 @@ def brentq(f, a, b, args=(),
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x)``.
+
+    A nonzero value of `xtol` may be useful for saving function evaluations
+    when a root is near zero in applications where the tiny absolute
+    differences available between floating point numbers near zero are not
+    meaningful. The default value ``xtol=2e-12`` may lead to surprising
+    behavior if one expects `brentq` to always compute roots with relative
+    error near machine precision. Care should be taken to select `xtol` for the
+    use case at hand.
+
     References
     ----------
     .. [Brent1973]
@@ -873,6 +914,20 @@ def brenth(f, a, b, args=(),
     fsolve : N-D root-finding
     brentq, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
+    Notes
+    -----
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x)``.
+
+    A nonzero value of `xtol` may be useful for saving function evaluations
+    when a root is near zero in applications where the tiny absolute
+    differences available between floating point numbers near zero are not
+    meaningful. The default value ``xtol=2e-12`` may lead to surprising
+    behavior if one expects `brenth` to always compute roots with relative
+    error near machine precision. Care should be taken to select `brenth` for the
+    use case at hand.
 
     References
     ----------
@@ -1343,6 +1398,19 @@ def toms748(f, a, b, args=(), k=1,
     For higher values of `k`, the efficiency index approaches
     the kth root of ``(3k-2)``, hence ``k=1`` or ``k=2`` are
     usually appropriate.
+
+    As mentioned in the parameter documentation, the computed root ``x0`` will
+    satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+    exact root. In equation form, this terminating condition is ``abs(x - x0)
+    <= xtol + rtol * abs(x)``.
+
+    A nonzero value of `xtol` may be useful for saving function evaluations
+    when a root is near zero in applications where the tiny absolute
+    differences available between floating point numbers near zero are not
+    meaningful. The default value ``xtol=2e-12`` may lead to surprising
+    behavior if one expects `toms748` to always compute roots with relative
+    error near machine precision. Care should be taken to select `xtol` for the
+    use case at hand.
 
     References
     ----------
