@@ -2297,15 +2297,17 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         raise ValueError('A 2-dimensional array must be passed.')
 
     n = X.shape[0]
-    # lazy_apply doesn't support Array kwargs
-    args = (X, *(kwargs.pop(k, None) for k in ('w', 'V', 'VI')))
-    return xpx.lazy_apply(_np_pdist, *args,
+    return xpx.lazy_apply(_np_pdist, X, out,
+                          # lazy_apply doesn't support Array kwargs
+                          kwargs.pop('w', None),
+                          kwargs.pop('V', None),
+                          kwargs.pop('VI', None),
                           # See src/distance_pybind.cpp::pdist
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
-                          as_numpy=True, metric=metric, out=out, **kwargs)
+                          as_numpy=True, metric=metric, **kwargs)
 
 
-def _np_pdist(X, w, V, VI, metric='euclidean', out=None, **kwargs):
+def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
 
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)

@@ -71,7 +71,8 @@ except Exception:
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
-use_linkage = skip_xp_backends(cpu_only=True, reason="linkage() invokes Cython code")
+use_linkage = skip_xp_backends(cpu_only=True, exceptions=["jax.numpy"],
+                               reason="linkage() invokes Cython code")
 
 lazy_xp_function(single)
 lazy_xp_function(ward)

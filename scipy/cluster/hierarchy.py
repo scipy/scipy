@@ -2059,9 +2059,11 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     b : bool
         True if the inconsistency matrix is valid; False otherwise.
 
-        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
-        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
-        or throw=True, calling this function materializes the array.
+    Notes
+    -----
+    *Array API support (experimental):* If the input is a lazy Array (e.g. Dask
+    or JAX), the return value may be a 0-dimensional bool Array. When warning=True
+    or throw=True, calling this function materializes the array.
 
     See Also
     --------
@@ -2207,9 +2209,11 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     b : bool
         True if the inconsistency matrix is valid; False otherwise.
 
-        *Array API support (experimental) note:* If the input is a lazy Array (e.g. Dask
-        or JAX), the return value may be a 0-dimensional bool Array. When warning=True
-        or throw=True, calling this function materializes the array.
+    Notes
+    -----
+    *Array API support (experimental):* If the input is a lazy Array (e.g. Dask
+    or JAX), the return value may be a 0-dimensional bool Array. When warning=True
+    or throw=True, calling this function materializes the array.
 
     See Also
     --------
@@ -2336,9 +2340,11 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
     If xp is a lazy backend (e.g. Dask or JAX), return a 0-dimensional bool Array.
     """
     conds = xp.concat([xp.reshape(cond, (1, )) for cond, _ in args])
-    if (not throw and not warning) or not materialize:
+
+    lazy = is_lazy_array(conds)
+    if not throw and not warning or (lazy and not materialize):
         out = ~xp.any(conds)
-        return out if is_lazy_array(out) else bool(out)
+        return out if lazy else bool(out)
 
     if is_dask(xp):
         # Only materialize the graph once, instead of once per check
@@ -4210,7 +4216,7 @@ def leaders(Z, T):
 
     Notes
     -----
-    *Array API support (experimental) note:* This function returns arrays
+    *Array API support (experimental):* This function returns arrays
     with data-dependent shape. In JAX, at the moment of writing this makes it
     impossible to execute it inside `@jax.jit`.
     """
@@ -4241,8 +4247,6 @@ def leaders(Z, T):
                              f'when examining linkage node {s} (< 2n-1).')
         return L, M
 
-    return xpx.lazy_apply(func, Z, T,
-                          validate=is_lazy_array(Z),
-                          shape=((None,), (None, )),
-                          dtype=(xp.int32, xp.int32),
+    return xpx.lazy_apply(func, Z, T, validate=is_lazy_array(Z),
+                          shape=((None,), (None, )), dtype=(xp.int32, xp.int32),
                           as_numpy=True)
