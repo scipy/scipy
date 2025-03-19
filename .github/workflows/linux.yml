@@ -506,10 +506,6 @@ jobs:
 
     - name: Build SciPy
       run: |
-        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
-        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
-        pushd $RUNNER_TEMP
-        PYTHON_GIL=0 python -m pytest --pyargs scipy -n$N_TEST_WORKERS --durations=10 $EXTRA_PYTEST_ARGS
         spin build --with-scipy-openblas
 
     - name: Run tests (full)
