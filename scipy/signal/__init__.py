@@ -38,7 +38,7 @@ B-splines
    cspline1d_eval      -- Evaluate a cubic spline at the given points.
    qspline1d_eval      -- Evaluate a quadratic spline at the given points.
    spline_filter       -- Smoothing spline (cubic) filtering of a rank-2 array.
-   whittaker_handerson -- Whittaker-Handerson smoothing/graduation
+   whittaker_henderson -- Whittaker-Henderson smoothing/graduation
 
 Filtering
 =========

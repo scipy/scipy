@@ -24,7 +24,7 @@ from ._spectral_py import *         # noqa: F403
 from ._short_time_fft import *         # noqa: F403
 from ._peak_finding import *         # noqa: F403
 from ._czt import *         # noqa: F403
-from ._whittaker import whittaker_handerson  # noqa: F401
+from ._whittaker import whittaker_henderson  # noqa: F401
 from .windows import get_window  # keep this one in signal namespace  # noqa: F401
 
 
