@@ -819,7 +819,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     complex_output = np.iscomplexobj(input)
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
-    if all(z == 1 for z in zoom):  # early exit for gh-20999
+    if all(z == 1 for z in zoom) and prefilter:  # early exit for gh-20999
         output = xpx.at(output)[...].set(input)
         return output
     if complex_output:
