@@ -16,7 +16,7 @@ from scipy._lib._array_api import (
     xp_assert_equal,
 )
 from scipy._lib._array_api import is_cupy, is_torch, array_namespace
-from scipy.ndimage._filters import _gaussian_kernel1d, vectorized_filter
+from scipy.ndimage._filters import _gaussian_kernel1d
 
 from . import types, float_types, complex_types
 
@@ -2766,8 +2766,11 @@ def test_gh_22333():
     assert_array_equal(actual, expected)
 
 
-@pytest.mark.skip_xp_backends('array_api_strict', reason='because')
-@pytest.mark.skip_xp_backends('dask.array', reason='because')
+vf_skip_reason = "`vectorized_filter` requires `sliding_window_view`"
+@pytest.mark.skip_xp_backends('array_api_strict', reason=vf_skip_reason)
+@pytest.mark.skip_xp_backends('dask.array', reason=vf_skip_reason)
+@pytest.mark.skip_xp_backends('torch', reason=vf_skip_reason)
+@pytest.mark.skip_xp_backends('jax.numpy', reason=vf_skip_reason)
 class TestVectorizedFilter:
     @pytest.mark.parametrize("axes, size",
                              [(None, (3, 4, 5)), ((0, 2), (3, 4)), ((-1,), (5,))])
@@ -2785,7 +2788,7 @@ class TestVectorizedFilter:
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         kwargs['output'] = output
-        res = vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
+        res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
         xp_assert_close(res, xp.asarray(ref), atol=1e-15)
         if use_output:
             xp_assert_equal(output, res)
@@ -2796,7 +2799,7 @@ class TestVectorizedFilter:
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         kwargs['footprint'] = xp.asarray(kwargs['footprint'])
         kwargs['output'] = output
-        res = vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
+        res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
         xp_assert_close(res, xp.asarray(ref), atol=1e-15)
         if use_output:
             xp_assert_equal(output, res)
@@ -2838,12 +2841,12 @@ class TestVectorizedFilter:
         context = (pytest.raises(ValueError, match=message)
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
-            res = vectorized_filter(input, xp.sum, **kwargs)
+            res = ndimage.vectorized_filter(input, xp.sum, **kwargs)
             xp_assert_close(res, xp.asarray(ref, dtype=sum_dtype))
             assert res.dtype == sum_dtype
 
             output = xp.empty_like(input)
-            res = vectorized_filter(input, xp.sum, output=output, **kwargs)
+            res = ndimage.vectorized_filter(input, xp.sum, output=output, **kwargs)
             xp_assert_close(res, xp.asarray(ref, dtype=dtype))
             assert res.dtype == dtype
 
@@ -2853,11 +2856,12 @@ class TestVectorizedFilter:
         input_copy = input.copy()  # check that it is not modified
         size = (3, 5)
         function = xp.mean
-        res = vectorized_filter(input, function, size=size, mode='valid')
+        res = ndimage.vectorized_filter(input, function, size=size, mode='valid')
         view = xp.lib.stride_tricks.sliding_window_view(input, size)
         ref = function(view, axis=(-2, -1))
         xp_assert_close(res, ref)
-        xp_assert_equal(xp.asarray(res.shape), xp.asarray(input.shape - np.asarray(size) + 1))
+        xp_assert_equal(xp.asarray(res.shape),
+                        xp.asarray(input.shape - np.asarray(size) + 1))
         xp_assert_equal(input, input_copy)
 
     def test_input_validation(self, xp):
@@ -2868,69 +2872,70 @@ class TestVectorizedFilter:
 
         message = "`function` must be a callable."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, "eggplant", size=size)
+            ndimage.vectorized_filter(input, "eggplant", size=size)
 
         message = "Either `size` or `footprint` must be provided."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function)
+            ndimage.vectorized_filter(input, function)
 
         message = "Either `size` or `footprint` may be provided, not both."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, footprint=footprint)
+            ndimage.vectorized_filter(input, function, size=size, footprint=footprint)
 
         message = "All elements of `size` must be positive integers."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=(1, -1))
+            ndimage.vectorized_filter(input, function, size=(1, -1))
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=0)
+            ndimage.vectorized_filter(input, function, size=0)
 
         message = "The dimensionality of the window"
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=(1, 2, 3))
+            ndimage.vectorized_filter(input, function, size=(1, 2, 3))
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, footprint=xp.ones((2, 2, 2)))
+            ndimage.vectorized_filter(input, function, footprint=xp.ones((2, 2, 2)))
 
         message = "`axes` must be provided if the dimensionality..."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=(1,))
+            ndimage.vectorized_filter(input, function, size=(1,))
 
         message = "All elements of `origin` must be integers"
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, origin=(1, 1.5))
+            ndimage.vectorized_filter(input, function, size=size, origin=(1, 1.5))
 
         message = "`origin` must be an integer or tuple of integers with length..."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, origin=(1, 2, 3))
+            ndimage.vectorized_filter(input, function, size=size, origin=(1, 2, 3))
 
         message = "`mode` must be one of..."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, mode='coconut')
+            ndimage.vectorized_filter(input, function, size=size, mode='coconut')
 
         message = "`mode='valid'` is incompatible with use of `origin`."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, mode='valid', origin=1)
+            ndimage.vectorized_filter(input, function, size=size,
+                                      mode='valid', origin=1)
 
         message = "Use of `cval` is compatible only with `mode='constant'`."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, mode='valid', cval=1)
+            ndimage.vectorized_filter(input, function, size=size, mode='valid', cval=1)
 
         message = "`cval` must include only numbers.|Unsupported dtype..."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size,
+            ndimage.vectorized_filter(input, function, size=size,
                               mode='constant', cval='a duck')
 
         message = "`batch_memory` must be positive number.|Unsupported dtype..."
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, batch_memory=0)
+            ndimage.vectorized_filter(input, function, size=size, batch_memory=0)
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, batch_memory=(1, 2))
+            ndimage.vectorized_filter(input, function, size=size, batch_memory=(1, 2))
         with pytest.raises(ValueError, match=message):
-            vectorized_filter(input, function, size=size, batch_memory="shrubbery")
+            ndimage.vectorized_filter(input, function, size=size,batch_memory="a duck")
 
     @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
     def test_zero_size(self, shape, xp):
         input = xp.empty(shape)
-        res = vectorized_filter(input, xp.mean, size=1)
+        res = ndimage.vectorized_filter(input, xp.mean, size=1)
         xp_assert_equal(res, input)
 
     @pytest.mark.filterwarnings("ignore:Mean of empty slice.:RuntimeWarning")
@@ -2940,21 +2945,21 @@ class TestVectorizedFilter:
 
         # 0-D input
         input = xp.asarray(1)
-        res = vectorized_filter(xp.asarray(1), function, size=())
+        res = ndimage.vectorized_filter(xp.asarray(1), function, size=())
         xp_assert_equal(res, xp.asarray(function(input, axis=())))
 
-        res = vectorized_filter(xp.asarray(1), function, footprint=True)
+        res = ndimage.vectorized_filter(xp.asarray(1), function, footprint=True)
         xp_assert_equal(res, xp.asarray(function(input[True], axis=())))
 
-        res = vectorized_filter(xp.asarray(1), function, footprint=False)
+        res = ndimage.vectorized_filter(xp.asarray(1), function, footprint=False)
         xp_assert_equal(res, xp.asarray(function(input[False], axis=())))
 
         # 1x1 window
         input = rng.random((5, 5))
-        res = vectorized_filter(input, function, size=1)
+        res = ndimage.vectorized_filter(input, function, size=1)
         xp_assert_equal(res, input)
 
         # window is bigger than input shouldn't be a problem
-        res = vectorized_filter(input, function, size=21)
-        ref = vectorized_filter(input, function, size=21)
+        res = ndimage.vectorized_filter(input, function, size=21)
+        ref = ndimage.vectorized_filter(input, function, size=21)
         xp_assert_close(res, ref)

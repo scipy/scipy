@@ -72,7 +72,7 @@ for func_name in _ndimage_api.__all__:
     delegator = getattr(_delegators, func_name + "_signature")
 
     f = (delegate_xp(delegator, MODULE_NAME)(bare_func)
-         if SCIPY_ARRAY_API
+         if SCIPY_ARRAY_API and delegator is not None
          else bare_func)
 
     # add the decorated function to the namespace, to be imported in __init__.py
