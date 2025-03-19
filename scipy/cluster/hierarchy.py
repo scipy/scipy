@@ -136,7 +136,7 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask, is_jax,
-                                   is_lazy_array, xp_copy, xp_device)
+                                   is_lazy_array, xp_copy)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -1019,10 +1019,8 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
     elif y.ndim == 2:
-        # FIXME Python scalar 0 requires Array API 2024.12 support
-        zero = xp.zeros((), dtype=y.dtype, device=xp_device(y))
         if (not lazy and y.shape[0] == y.shape[1]
-            and xp.all(xpx.isclose(xp.linalg.diagonal(y), zero))
+            and xp.all(xpx.isclose(xp.linalg.diagonal(y), 0))
             and xp.all(y >= 0) and xp.all(xpx.isclose(y, y.T))):
             warnings.warn('The symmetric non-negative hollow observation '
                           'matrix looks suspiciously like an uncondensed '
