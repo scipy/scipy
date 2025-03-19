@@ -821,53 +821,6 @@ def _linewalker(func, brack, **kwargs):
     """
     Return the minimizer of a function of one variable using the linewalker
     method.
-
-    Given a function of one variable and a bracketing interval,
-    return a minimizer of the function or the minimum function value
-    found with the function evalution budget max_num_function_evaluations.
-
-    Parameters
-    ----------
-    func : callable func(x,*args)
-        Objective function to minimize.
-    brack : tuple
-        A pair (xa, xb) such that xa < xb to be used as end points in constructing
-        the search grid (see `scipy.optimize.linewalker`).
-    kwargs : tuple, optional
-        Additional arguments (if present), passed to func.
-        
-    Returns
-    -------
-    surrogate : dict
-        A dictionary containing various values from the surrogate
-
-    See also
-    --------
-    minimize_scalar: Interface to minimization algorithms for scalar
-        univariate functions. See the 'Linewalker' `method` in particular.
-
-    Notes
-    -----
-    Linewalker constructs a smooth surrogate on a set of equally-spaced grid points 
-    by evaluating the true function at a sparse set of judiciously chosen grid points.
-    At each iteration, the surrogate`s non-tabu local minima and maxima are identified
-    as candidates for sampling. Tabu search constructs are also used to promote 
-    diversification. If no non-tabu extrema are identified, a simple exploration step
-    is taken by sampling the midpoint of the largest unexplored interval. The algorithm
-    continues until a user-defined function evaluation limit is reached.
-
-    Linewalker is particularly well-suited for nonconvex (multimodal) functions.
-    If the underlying function is known to be convex, use a local solver.
-
-    Examples
-    --------
-    We illustrate the behaviour of the function when `brack` is of
-    size 2 and 3, respectively. In the case where `brack` is of the
-    form (xa,xb), we can see for the given values, the output need
-    not necessarily lie in the range ``(xa, xb)``.
-
-    >>> import numpy as np
-
     """
 
     default_args = {

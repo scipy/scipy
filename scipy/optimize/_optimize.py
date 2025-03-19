@@ -4237,7 +4237,7 @@ def linewalker(func, brack, **options):
         the search grid (see `scipy.optimize.linewalker`).
     kwargs : tuple, optional
         Additional arguments (if present), passed to func.
-        
+
     Returns
     -------
     surrogate : dict
@@ -4269,6 +4269,7 @@ def linewalker(func, brack, **options):
     not necessarily lie in the range ``(xa, xb)``.
 
     >>> import numpy as np
+    >>> from scipy.optimize import linewalker, minimize_scalar
 
     """
 
