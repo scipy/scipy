@@ -551,13 +551,14 @@ def bisect(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x)``.
 
-    A nonzero value of `xtol` may be useful for saving function evaluations
-    when a root is near zero in applications where the tiny absolute
-    differences available between floating point numbers near zero are not
-    meaningful. The default value ``xtol=2e-12`` may lead to surprising
-    behavior if one expects `bisect` to always compute roots with relative
-    error near machine precision. Care should be taken to select `xtol` for the
-    use case at hand.
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `bisect` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     Examples
     --------
@@ -664,13 +665,14 @@ def ridder(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x)``.
 
-    A nonzero value of `xtol` may be useful for saving function evaluations
-    when a root is near zero in applications where the tiny absolute
-    differences available between floating point numbers near zero are not
-    meaningful. The default value ``xtol=2e-12`` may lead to surprising
-    behavior if one expects `ridder` to always compute roots with relative
-    error near machine precision. Care should be taken to select `xtol` for the
-    use case at hand.
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `ridder` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -796,13 +798,14 @@ def brentq(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x)``.
 
-    A nonzero value of `xtol` may be useful for saving function evaluations
-    when a root is near zero in applications where the tiny absolute
-    differences available between floating point numbers near zero are not
-    meaningful. The default value ``xtol=2e-12`` may lead to surprising
-    behavior if one expects `brentq` to always compute roots with relative
-    error near machine precision. Care should be taken to select `xtol` for the
-    use case at hand.
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `brentq` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -926,13 +929,14 @@ def brenth(f, a, b, args=(),
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x)``.
 
-    A nonzero value of `xtol` may be useful for saving function evaluations
-    when a root is near zero in applications where the tiny absolute
-    differences available between floating point numbers near zero are not
-    meaningful. The default value ``xtol=2e-12`` may lead to surprising
-    behavior if one expects `brenth` to always compute roots with relative
-    error near machine precision. Care should be taken to select `brenth` for the
-    use case at hand.
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `brenth` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
@@ -1410,13 +1414,14 @@ def toms748(f, a, b, args=(), k=1,
     exact root. In equation form, this terminating condition is ``abs(x - x0)
     <= xtol + rtol * abs(x)``.
 
-    A nonzero value of `xtol` may be useful for saving function evaluations
-    when a root is near zero in applications where the tiny absolute
-    differences available between floating point numbers near zero are not
-    meaningful. The default value ``xtol=2e-12`` may lead to surprising
-    behavior if one expects `toms748` to always compute roots with relative
-    error near machine precision. Care should be taken to select `xtol` for the
-    use case at hand.
+    The default value ``xtol=2e-12`` may lead to surprising behavior if one
+    expects `toms748` to always compute roots with relative error near machine
+    precision. Care should be taken to select `xtol` for the use case at hand.
+    Setting ``xtol=5e-324``, the smallest subnormal number, will ensure the
+    highest level of accuracy. Larger values of `xtol` may be useful for saving
+    function evaluations when a root is at or near zero in applications where
+    the tiny absolute differences available between floating point numbers near
+    zero are not meaningful.
 
     References
     ----------
