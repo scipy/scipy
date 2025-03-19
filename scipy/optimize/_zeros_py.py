@@ -581,7 +581,7 @@ def bisect(f, a, b, args=(),
     brentq, brenth, bisect, newton
     fixed_point : scalar fixed-point finder
     fsolve : n-dimensional root-finding
-    elementwise.find_root : Efficient elementwise 1-D root-finder.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     """
     if not isinstance(args, tuple):
@@ -647,7 +647,7 @@ def ridder(f, a, b, args=(),
     --------
     brentq, brenth, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
-    elementwise.find_root : Efficient elementwise 1-D root-finder.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -787,7 +787,7 @@ def brentq(f, a, b, args=(),
     fsolve : N-D root-finding
     brenth, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
-    elementwise.find_root : Efficient elementwise 1-D root-finder.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -920,7 +920,7 @@ def brenth(f, a, b, args=(),
     fsolve : N-D root-finding
     brentq, ridder, bisect, newton : 1-D root-finding
     fixed_point : scalar fixed-point finder
-    elementwise.find_root : Efficient elementwise 1-D root-finder.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
@@ -1386,7 +1386,7 @@ def toms748(f, a, b, args=(), k=1,
     --------
     brentq, brenth, ridder, bisect, newton
     fsolve : find roots in N dimensions.
-    elementwise.find_root : Efficient elementwise 1-D root-finder.
+    elementwise.find_root : efficient elementwise 1-D root-finder
 
     Notes
     -----
