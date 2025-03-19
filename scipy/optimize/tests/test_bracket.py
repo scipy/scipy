@@ -381,6 +381,7 @@ class TestBracketRoot:
         assert res.success
 
 
+@pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
