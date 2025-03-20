@@ -4224,6 +4224,182 @@ def linewalker(func, brack, **options):
     Return the minimizer of a function of one variable using the linewalker
     method.
 
+    Given a function of one variable and a bracketing interval,
+    return a minimizer of the function or the minimum function value
+    found with the function evalution budget max_num_function_evaluations.
+
+    Parameters
+    ----------
+    func : callable func(x,*args)
+        Objective function to minimize.
+    brack : tuple
+        A pair (xa, xb) such that xa < xb to be used as end points in constructing
+        the search grid (see `scipy.optimize.linewalker`).
+    kwargs : tuple, optional
+        Additional arguments (if present), passed to func.
+
+    .. versionadded:: 1.15.2
+
+    Optional Parameters
+
+    grid_size: int
+        Number of equally-spaced grid indices (candidate solutions) along the line segment of interest.
+        Recommended range: 1000 <= grid_size <= 10000
+    max_num_function_evaluations: int
+        A positive integer indicating the maximum number of function evaluations that can be taken
+        Recommended range: initial_number_of_samples+1 <= max_num_function_evaluations <= 50
+    initial_number_of_samples: int
+        A positive integer >= 2 denoting the number of initial samples (function evaluations) that must be made.
+        Recommended range: initial_number_of_samples >= 10
+    force_sample_at_predicted_minimizer: int
+        An integer denoting the number of iterations in which to force a sample (function
+        evaluation) to be taken at the predicted minimizer. An integer <= 0 means that no
+        sample will be forced.  A positive integer K means that, if the grid index
+        corresponding to the predicted minimizer has not been sampled, then a sample
+        will be taken there in the last K major iterations.
+        If K > 'max_num_function_evaluations'-'initial_number_of_samples', then every
+        sample after the first 'initial_number_of_samples' initial samples are made will
+        be at the index of a predicted global minimizer, assuming that this index has not
+        already been sampled. The polishing (a.k.a. "sampling around the bend") is
+        disabled if a global minimizer is sampled. It is not recommended to set this
+        parameter > 2 since much can be learned from sampling a nonconvex function at
+        diverse points.
+        Recommended range: 1 <= force_sample_at_predicted_minimizer <= 2
+        
+    Returns
+    -------
+    'fun': float
+        Minimum evaluated function value
+    'x': float
+        x coordinate of the minimum evaluated function value
+    'nit': int
+        Number of major iterations performed
+    'nfev': int
+        Number of function evaluations taken
+    'success': bool
+        True if minima was found
+    'message': string
+        Message
+    'f_min_evaluated': float
+        Minimum evaluated function value
+    'minimizer_evaluated': float
+        x coordinate of the minimum evaluated function value
+    'num_major_iterations': int
+        Number of major iterations performed
+    'num_function_evaluations': int
+        Number of function evaluations taken
+    'f_min_predicted': float
+        Minimum predicted function value
+    'ix_arg_min_evaluated': int
+        Grid index of the minimum evaluated function value
+    'grid_size': int
+        lenth of fit
+    'fit': np.ndarray(float)
+        An array of floats (1D array of N elements)
+    'max_fit': float
+        Maximum value over all elements of fit
+    'min_fit': float
+        Minimum value over all elements of fit
+    'range_fit': float
+        max_fit-min_fit
+    'ix_arg_max_fit': int
+        Index of the maximum (predicted) value in fit
+    'ix_arg_min_fit': int
+        Index of the minimum (predicted) value in fit
+    'ix': np.ndarray(int)
+        An array of distinct nonnegative integers indicating the indices at which
+        function evaluations have been made
+    'ix_sorted': np.ndarray(int)
+        ix sorted in ascending order
+    'x_coord': np.ndarray(float)
+        An array of floats containing the x-coordinate associated with each grid index
+    'sp': np.ndarray(bool)
+        boolean array: sp[i]=True implies a function evaluation (sample) will be made at
+        grid point/index i. sp is short for "sample" or "sample point"
+
+    See also
+    --------
+    minimize_scalar: Interface to minimization algorithms for scalar
+        univariate functions. See the 'Linewalker' `method` in particular.
+
+    Notes
+    -----
+    Linewalker constructs a smooth surrogate on a set of equally-spaced grid points 
+    by evaluating the true function at a sparse set of judiciously chosen grid points.
+    At each iteration, the surrogate`s non-tabu local minima and maxima are identified
+    as candidates for sampling. Tabu search constructs are also used to promote 
+    diversification. If no non-tabu extrema are identified, a simple exploration step
+    is taken by sampling the midpoint of the largest unexplored interval. The algorithm
+    continues until a user-defined function evaluation limit is reached.
+
+    Linewalker is particularly well-suited for nonconvex (multimodal) functions.
+    If the underlying function is known to be convex, use a local solver.
+
+    Examples
+    --------
+    We illustrate the behaviour of the function when `brack` is of
+    size 2 and 3, respectively. In the case where `brack` is of the
+    form (xa,xb), we can see for the given values, the output need
+    not necessarily lie in the range ``(xa, xb)``.
+
+    >>> import numpy as np
+    >>> from scipy.optimize import linewalker, minimize_scalar
+    >>> 
+    >>> def f(x):
+    >>>     return (x-1)**2
+    >>> 
+    >>> res = linewalker(f, brack=(-1, 2))
+    >>> 
+    >>> print(f"\
+    ...     {res['fun'] = },\n\
+    ...     {res['x'] = },\n\
+    ...     {res['nit'] = },\n\
+    ...     {res['nfev'] = },\n\
+    ...     {res['success'] = },\n\
+    ...     {res['message'] = }\n\
+    ...     {res['f_min_evaluated'] = },\n\
+    ...     {res['minimizer_evaluated'] = },\n\
+    ...     {res['num_major_iterations'] = },\n\
+    ...     {res['num_function_evaluations'] = },\n\
+    ...     {res['f_min_predicted'] = },\n\
+    ...     {res['ix_arg_min_evaluated'] = },\n\
+    ...     {res['grid_size'] = },\n\
+    ...     res['fit'] len, mean = {len(res['fit'])}, {np.mean(res['fit'])},\n\
+    ...     {res['max_fit'] = },\n\
+    ...     {res['min_fit'] = },\n\
+    ...     {res['range_fit'] = },\n\
+    ...     {res['ix_arg_max_fit'] = },\n\
+    ...     {res['ix_arg_min_fit'] = },\n\
+    ...     res['ix'] len, mean = {len(res['ix'])}, {np.mean(res['ix'])},\n\
+    ...     res['ix_sorted'] len, mean = {len(res['ix_sorted'])}, {np.mean(res['ix_sorted'])},\n\
+    ...     res['x_coord'] len, mean = {len(res['x_coord'])}, {np.mean(res['x_coord'])},\n\
+    ...     res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}\
+    ... ")
+
+    res['fun'] = np.float64(0.0),
+    res['x'] = np.float64(1.0),
+    res['nit'] = 19,
+    res['nfev'] = 30,
+    res['success'] = True,
+    res['message'] = 'success'
+    res['f_min_evaluated'] = np.float64(0.0),
+    res['minimizer_evaluated'] = np.float64(1.0),
+    res['num_major_iterations'] = 19,
+    res['num_function_evaluations'] = 30,
+    res['f_min_predicted'] = np.float64(-5.3577671966469964e-15),
+    res['ix_arg_min_evaluated'] = np.int64(666),
+    res['grid_size'] = 1000,
+    res['fit'] len, mean = 1000, 1.0015823438786493,
+    res['max_fit'] = np.float64(3.9999999958493935),
+    res['min_fit'] = np.float64(-5.3577671966469964e-15),
+    res['range_fit'] = np.float64(3.999999995849399),
+    res['ix_arg_max_fit'] = np.int64(0),
+    res['ix_arg_min_fit'] = np.int64(666),
+    res['ix'] len, mean = 30, 570.4666666666667,
+    res['ix_sorted'] len, mean = 30, 570.4666666666667,
+    res['x_coord'] len, mean = 1000, 0.5,
+    res['sp'] len, mean = 1000, 0.03
+
     """
 
     try:
