@@ -549,7 +549,7 @@ def bisect(f, a, b, args=(),
     As mentioned in the parameter documentation, the computed root ``x0`` will
     satisfy ``np.isclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
     exact root. In equation form, this terminating condition is ``abs(x - x0)
-    <= xtol + rtol * abs(x)``.
+    <= xtol + rtol * abs(x0)``.
 
     The default value ``xtol=2e-12`` may lead to surprising behavior if one
     expects `bisect` to always compute roots with relative error near machine
