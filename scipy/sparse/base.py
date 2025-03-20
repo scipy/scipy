@@ -6,20 +6,11 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'MAXPRINT',
     'SparseEfficiencyWarning',
-    'SparseFormatWarning',
     'SparseWarning',
-    'asmatrix',
-    'check_reshape_kwargs',
-    'check_shape',
-    'get_sum_dtype',
-    'isdense',
-    'isscalarlike',
     'issparse',
     'isspmatrix',
     'spmatrix',
-    'validateaxis',
 ]
 
 

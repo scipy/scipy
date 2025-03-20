@@ -26,11 +26,11 @@ import pytest
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore
-from scipy.signal import get_window, welch, stft, istft, spectrogram
+from scipy.signal import check_COLA, get_window, welch, stft, istft, spectrogram
 
 from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
-    _calc_dual_canonical_window, ShortTimeFFT, PAD_TYPE
-from scipy.signal.windows import gaussian
+    _calc_dual_canonical_window, closest_STFT_dual_window, ShortTimeFFT, PAD_TYPE
+from scipy.signal.windows import blackman, gaussian, hamming, nuttall, triang
 
 
 def test__calc_dual_canonical_window_roundtrip():
@@ -58,6 +58,132 @@ def test__calc_dual_canonical_window_exceptions():
     # Verify that parameter `win` may not be integers:
     with pytest.raises(ValueError, match="Parameter 'win' cannot be of int.*"):
         _calc_dual_canonical_window(np.ones(4, dtype=int), 1)
+
+def test_closest_STFT_dual_window_exceptions():
+    """Raise all exceptions in `closest_STFT_dual_window`."""
+    with pytest.raises(ValueError, match="Parameters `win` and `desired_dual` are.*"):
+        closest_STFT_dual_window(np.ones(4), 2, np.ones(5))
+    with pytest.raises(ValueError, match="Parameters `win` and `desired_dual` are.*"):
+        closest_STFT_dual_window(np.ones((4, 1)), 2, np.ones(4))
+    with pytest.raises(ValueError, match="Parameter win must have finite entries!"):
+        closest_STFT_dual_window(np.ones(4)*np.nan, 2, np.ones(4))
+    with pytest.raises(ValueError, match="Parameter desired_dual must have finite.*"):
+        closest_STFT_dual_window(np.ones(4), 2, np.ones(4)*np.nan)
+    with pytest.raises(ValueError, match="Parameter hop=20 is not an integer.*"):
+        closest_STFT_dual_window(np.ones(4), 20, np.ones(4))
+    with pytest.raises(ValueError, match="Parameter hop=2.0 is not an integer.*"):
+        # noinspection PyTypeChecker
+        closest_STFT_dual_window(np.ones(4), 2., np.ones(4))
+
+    with pytest.raises(ValueError, match="Unable to calculate scaled closest dual.*"):
+        closest_STFT_dual_window(np.ones(4), 2, np.zeros(4), scaled=True)
+
+
+@pytest.mark.parametrize("scaled", (True, False))
+@pytest.mark.parametrize('sym_win', (False, True))
+@pytest.mark.parametrize('hop', (8, 9))
+@pytest.mark.parametrize('m', (16, 17))
+@pytest.mark.parametrize('win_name', ('hann', 'hamming'))
+def test_closest_STFT_dual_window_roundtrip(win_name, m, hop, sym_win, scaled):
+    """Do roundtrip, i.e., compare dual of dual windows.
+
+    The  default for parameter `desired_dual` is also verified.
+    """
+    win = get_window(win_name, m, not sym_win)
+    d1, s1 = closest_STFT_dual_window(win, hop, np.ones_like(win), scaled=scaled)
+    d2, s2 = closest_STFT_dual_window(win, hop, scaled=scaled)  # equals d1, s1
+    d3, s3 = closest_STFT_dual_window(d1, hop, win * s1, scaled=True)  # roundtrip
+
+    # Validate default for parameter `desired_dual` works (hard coded => assert ok):
+    xp_assert_equal(d2, d1, err_msg="Default for parameter `desired_dual` is not ok!")
+    assert s2 == s1, "Default for parameter `desired_dual` is not ok!"
+
+    res = np.finfo(win.dtype).resolution * 5
+    xp_assert_close(s1*s3, 1., atol=res, err_msg="Invalid Scale factors")
+    xp_assert_close(d3, win, atol=res, err_msg="Roundtrip failed!")
+
+    if scaled:  # check that scaling factor is correct:
+        d3, _ = closest_STFT_dual_window(win, hop, np.ones(m) * s1, scaled=False)
+        xp_assert_close(d3, d1, atol=res, err_msg="Roundtrip failed!")
+
+
+@pytest.mark.parametrize('scaled', (False, True))
+def test_closest_STFT_dual_window_STFT_roundtrip(scaled):
+    """STFT Roundtrip correctness of closest dual window. """
+    np.random.seed(5613830)
+    n, m_num, hop = 15, 7, 3
+    w, desires_dual = hamming(m_num), triang(m_num)
+    d, _ = closest_STFT_dual_window(w, hop, desires_dual, scaled=scaled)
+
+    SFT = ShortTimeFFT(w, hop=hop, dual_win=d, fs=1, scale_to=None, phase_shift=None)
+    x = 10 * np.random.randn(n)
+    Sx = SFT.stft(x)
+    y = SFT.istft(Sx, 0, n)
+
+    atol = np.finfo(w.dtype).resolution * 10
+    xp_assert_close(y, x, atol=atol, err_msg="Invalid closest window")
+
+
+@pytest.mark.parametrize('scaled', (False, True))
+def test_closest_STFT_dual_window_STFT_roundtrip_complex(scaled):
+    """STFT Roundtrip correctness of closest dual window with complex values. """
+    np.random.seed(34905436)
+    n, m_num, hop = 15, 7, 3
+    win = 1j*hamming(m_num) + nuttall(m_num)
+    desires_dual = 1j*triang(m_num) + blackman(m_num)
+    dual, s = closest_STFT_dual_window(win, hop, desires_dual, scaled=scaled)
+
+    SFT = ShortTimeFFT(win, hop=hop, dual_win=dual, fs=1, fft_mode='twosided',
+                       scale_to=None, phase_shift=None)
+    x = 10 * np.random.randn(n) + 10j * np.random.randn(n)
+    Sx = SFT.stft(x)
+    y = SFT.istft(Sx, 0, n)
+
+    atol = np.finfo(win.dtype).resolution * 10
+    xp_assert_close(y, x, atol=atol, err_msg=f"Invalid complex closest window ({s=})")
+
+
+@pytest.mark.parametrize("win_name, nperseg, noverlap, scale_fac", ([
+                         ('boxcar',      16,        8,       1/2),
+                         ('boxcar',      18,       12,       1/3),
+                         ('boxcar',      16,       12,       1/4),
+                         ('bartlett',    16,        8,        1.),
+                         ('bartlett',    16,       12,       1/2),
+                         ('bartlett',    30,       25,       1/3),
+                         ('hann',        16,        8,        1.),
+                         ('hann',        18,       12,       2/3),
+                         ('hann',        16,       12,       1/2),
+                         ('blackman',     9,        6,     50/63),
+                         ('boxcar',       8,        7,       1/8)]))  # hop = 1
+def test_closest_STFT_dual_window_cola(win_name, nperseg, noverlap, scale_fac):
+    """Test if `closest_STFT_dual_window` generalizes `check_COLA`.
+
+    The parameters were taken from the `check_COLA` documentation.
+    Note that `check_COLA` only guarantees the existence of a dual window with constant
+    values but not that those values are unity (which is clear, when investigating the
+    'boxcar' examples). The values for `scale_fac` were determined empirically.
+    """
+    desired_dual = get_window(win_name, nperseg, fftbins=True)
+    assert check_COLA(desired_dual, nperseg, noverlap), "COLA cond. violated!"
+
+    win = np.ones(nperseg)  # check scaled window:
+    d_s, s = closest_STFT_dual_window(win, nperseg-noverlap, desired_dual, scaled=True)
+
+    res = np.finfo(desired_dual.dtype).resolution
+    rel_tol_d = max(abs(d_s))*res*3
+    xp_assert_close(s, scale_fac, atol=res*10,
+                    err_msg=f"Scale factor off by {s/scale_fac}")
+    xp_assert_close(d_s, desired_dual*scale_fac, atol=res*10, rtol=rel_tol_d,
+                    err_msg="Calculated incorrect scaled window!")
+
+    # check unscaled window:
+    d_u, u = closest_STFT_dual_window(win * scale_fac, nperseg - noverlap,
+                                      desired_dual, scaled=False)
+
+    # this should be hard-coded not computed, so no need for allclose
+    assert u == 1., "Scaling factor not 1 for parameter `scaled=True`!"
+    xp_assert_close(d_u, desired_dual, atol=res*10, rtol=rel_tol_d,
+                    err_msg="Calculated incorrect unscaled window!")
 
 
 def test_invalid_initializer_parameters():
@@ -180,6 +306,7 @@ def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
 def test_invalid_fft_mode_RuntimeError():
     """Ensure exception gets raised when property `fft_mode` is invalid. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
+    # noinspection PyTypeChecker
     SFT._fft_mode = 'invalid_typ'
 
     with pytest.raises(RuntimeError):
@@ -220,6 +347,78 @@ def test_from_window(win_params, Nx: int):
         v0, v1, v2 = (getattr(SFT_, n_) for SFT_ in (SFT0, SFT1, SFT2))
         assert v1 == v0, f"SFT1.{n_}={v1} does not equal SFT0.{n_}={v0}"
         assert v2 == v0, f"SFT2.{n_}={v2} does not equal SFT0.{n_}={v0}"
+
+
+def test_from_win_equals_dual_exceptions():
+    """Raise all occurring exceptions in `ShortTimeFFT.from_closest_win_equals_dual`.
+    """
+    with pytest.raises(ValueError, match="Parameter desired_win is not 1d, but.*"):
+        ShortTimeFFT.from_win_equals_dual(np.ones((3, 4)), hop=1, fs=1)
+    with pytest.raises(ValueError, match="Parameter desired_win cannot be of int.*"):
+        ShortTimeFFT.from_win_equals_dual(np.ones(4, dtype=int), hop=1, fs=1)
+    with pytest.raises(ValueError, match="Parameter desired_win is not 1d, but.*"):
+        ShortTimeFFT.from_win_equals_dual(np.array([]), hop=1, fs=1)
+    with pytest.raises(ValueError, match="Parameter desired_win must have finite.*"):
+        ShortTimeFFT.from_win_equals_dual(np.ones(3) * np.inf, hop=1, fs=1)
+    with pytest.raises(ValueError, match="Parameter hop=0 is not an integer .*"):
+        ShortTimeFFT.from_win_equals_dual(np.ones(4), hop=0, fs=1)
+    with pytest.raises(ValueError, match="Parameter hop=5 is not an integer .*"):
+        ShortTimeFFT.from_win_equals_dual(np.ones(4), hop=5, fs=1)
+
+    with pytest.raises(ValueError, match="P.+ desired_win does not have valid.*"):
+        w = np.array([1, 0, 1, 0, 1], dtype=float)
+        ShortTimeFFT.from_win_equals_dual(w, hop=2, fs=1)
+    with pytest.raises(ValueError, match="Parameter scale_to='invalid' not in.*"):
+        # noinspection PyTypeChecker
+        ShortTimeFFT.from_win_equals_dual(w, hop=2, fs=1, scale_to='invalid')
+
+@pytest.mark.parametrize('fft_bins', (True, False))
+@pytest.mark.parametrize('m, hop', [(16, 8), (16, 7), (17, 8), (17, 9), (16, 16)])
+def test_from_win_equals_dual_params(m, hop, fft_bins):
+    """Test windows parameterizations for `ShortTimeFFT.from_closest_win_equals_dual`.
+
+    The flattop window is used since it also has negative values.
+    """
+    desired_win = get_window('flattop', m, fftbins=fft_bins)
+    SFT0 = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1)
+    xp_assert_close(SFT0.dual_win, SFT0.win, err_msg="win must equals dual window!")
+
+    SFT1 = ShortTimeFFT(SFT0.win, hop, fs=1)
+    xp_assert_close(SFT1.dual_win, SFT0.win, err_msg="dual win isn't canonical win!")
+
+
+@pytest.mark.parametrize('fft_bins', (True, False))
+@pytest.mark.parametrize('m, hop', [(16, 8), (16, 7), (17, 8), (17, 9), (16, 16)])
+@pytest.mark.parametrize('scale_to', (None, 'unitary'))
+def test_from_win_equals_dual_roundtrip(m, hop, fft_bins, scale_to):
+    """Testing roundtrip verifies that the dual window is correct.
+    """
+    desired_win = get_window('flattop', m, fftbins=fft_bins)
+    SFT0 = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1)
+
+    x = np.cos(np.arange(2*m)**2)
+    x1 = SFT0.istft(SFT0.stft(x), 0, len(x))
+    xp_assert_close(x1, x, err_msg="Roundtrip for win equaling its dual failed!")
+
+
+def test_from_win_equals_dual_unitary():
+    """Check that STFT can be unitary mapping. """
+    m, hop = 8, 4
+    des_win = get_window('hann', m)
+    SFT = ShortTimeFFT.from_win_equals_dual(des_win, hop, 1, fft_mode='twosided',
+                                            scale_to='unitary')
+    # Orthogonal signals:
+    x, y = np.tile([-1, -1, 1, 1], 4), np.tile([1, -1, -1, 1], 4)
+    Sxx, Sxy = SFT.spectrogram(x), SFT.spectrogram(x, y)
+
+    atol = np.finfo(Sxx.dtype).resolution
+    assert sum(x * y) == 0
+    xp_assert_close(np.sum(Sxx), np.sum(x ** 2, dtype=Sxx.dtype), atol=atol,
+                    err_msg="Energies do not match!")
+    xp_assert_close(np.sum(Sxy), 0.0j, atol=atol,
+                    err_msg="STFT scalar product of Sx and Sy not 0!")
+    xp_assert_close(SFT.dual_win, SFT.win*SFT.m_num, atol=atol,
+                    err_msg="Wrong factor for dual_win/win!")
 
 
 def test_dual_win_roundtrip():
@@ -506,6 +705,25 @@ def test_minimal_length_signal(m_num):
     with pytest.raises(ValueError, match=rf"S.shape\[t_axis\]={Sx.shape[1]-1}"
                        f" needs to have at least {Sx.shape[1]} slices"):
         SFT.istft(Sx[:, :-1], k1=n)
+
+
+def test_compare_stft_detrend():
+    """Test the detrending in `ShortTimeFFT.stft_detrend()`. """
+    SFT = ShortTimeFFT(np.ones(4), 4, fs=1)
+    x0 = np.zeros(4) # signal without trend
+    x1 = x0 + 3  # signal with constant trend
+    x2 = x0 + np.arange(len(x0))  # signal with linear trend
+
+    kw = dict(k_offset=2, p1=1)  # we want only one slice
+    Sx0 = SFT.stft(x0, **kw)  # no trend
+    Sx1 = SFT.stft_detrend(x1, detr='constant', **kw)
+    Sx2 = SFT.stft_detrend(x2, detr='linear', **kw)
+    Sx3 = SFT.stft_detrend(x1, detr=lambda x: x - np.mean(x), **kw)
+
+    atol = np.finfo(Sx0.dtype).resolution * 5  # needed to compare with array of zeros
+    xp_assert_close(Sx1, Sx0, atol=atol, err_msg="Constant detrending failed!")
+    xp_assert_close(Sx0, Sx2, atol=atol, err_msg="Linear detrending failed!")
+    xp_assert_close(Sx0, Sx3, atol=atol, err_msg="Detrending using a function failed!")
 
 
 def test_tutorial_stft_sliding_win():

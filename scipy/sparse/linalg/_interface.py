@@ -55,14 +55,14 @@ __all__ = ['LinearOperator', 'aslinearoperator']
 class LinearOperator:
     """Common interface for performing matrix vector products
 
-    Many iterative methods (e.g. cg, gmres) do not need to know the
-    individual entries of a matrix to solve a linear system A@x=b.
+    Many iterative methods (e.g. `cg`, `gmres`) do not need to know the
+    individual entries of a matrix to solve a linear system ``A@x = b``.
     Such solvers only require the computation of matrix vector
-    products, A@v where v is a dense vector.  This class serves as
+    products, ``A@v`` where ``v`` is a dense vector.  This class serves as
     an abstract interface between iterative solvers and matrix-like
     objects.
 
-    To construct a concrete LinearOperator, either pass appropriate
+    To construct a concrete `LinearOperator`, either pass appropriate
     callables to the constructor of this class, or subclass it.
 
     A subclass must implement either one of the methods ``_matvec``
@@ -82,17 +82,17 @@ class LinearOperator:
     Parameters
     ----------
     shape : tuple
-        Matrix dimensions (M, N).
+        Matrix dimensions ``(M, N)``.
     matvec : callable f(v)
-        Returns returns A @ v.
+        Returns returns ``A @ v``.
     rmatvec : callable f(v)
-        Returns A^H @ v, where A^H is the conjugate transpose of A.
+        Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``.
     matmat : callable f(V)
-        Returns A @ V, where V is a dense matrix with dimensions (N, K).
+        Returns ``A @ V``, where ``V`` is a dense matrix with dimensions ``(N, K)``.
     dtype : dtype
         Data type of the matrix.
     rmatmat : callable f(V)
-        Returns A^H @ V, where V is a dense matrix with dimensions (M, K).
+        Returns ``A^H @ V``, where ``V`` is a dense matrix with dimensions ``(M, K)``.
 
     Attributes
     ----------
@@ -108,17 +108,17 @@ class LinearOperator:
 
     Notes
     -----
-    The user-defined matvec() function must properly handle the case
-    where v has shape (N,) as well as the (N,1) case.  The shape of
-    the return type is handled internally by LinearOperator.
+    The user-defined `matvec` function must properly handle the case
+    where ``v`` has shape ``(N,)`` as well as the ``(N,1)`` case.  The shape of
+    the return type is handled internally by `LinearOperator`.
 
     It is highly recommended to explicitly specify the `dtype`, otherwise
     it is determined automatically at the cost of a single matvec application
-    on `int8` zero vector using the promoted `dtype` of the output.
-    Python `int` could be difficult to automatically cast to numpy integers
+    on ``int8`` zero vector using the promoted `dtype` of the output.
+    Python ``int`` could be difficult to automatically cast to numpy integers
     in the definition of the `matvec` so the determination may be inaccurate.
     It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
-    the same dtype of the output given an `int8` input as `matvec`.
+    the same dtype of the output given an ``int8`` input as `matvec`.
 
     LinearOperator instances can also be multiplied, added with each
     other and exponentiated, all lazily: the result of these operations
@@ -399,8 +399,7 @@ class LinearOperator:
             X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
 
         if X.shape[0] != self.shape[0]:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
@@ -548,7 +547,7 @@ class LinearOperator:
         else:
             dt = 'dtype=' + str(self.dtype)
 
-        return '<%dx%d %s with %s>' % (M, N, self.__class__.__name__, dt)
+        return f'<{M}x{N} {self.__class__.__name__} with {dt}>'
 
     def adjoint(self):
         """Hermitian adjoint.

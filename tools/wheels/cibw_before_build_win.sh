@@ -17,10 +17,8 @@ FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_conf
 if [[ $FREE_THREADED_BUILD == "True" ]]; then
     python -m pip install -U --pre pip
     python -m pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy cython
-    # TODO: Remove meson installation from source once a new release
-    # that includes https://github.com/mesonbuild/meson/pull/13851 is available
-    python -m pip install git+https://github.com/mesonbuild/meson
-    python -m pip install ninja meson-python pybind11 pythran
+    python -m pip install git+https://github.com/serge-sans-paille/pythran
+    python -m pip install ninja meson-python pybind11
 fi
 
 # delvewheel is the equivalent of delocate/auditwheel for windows.

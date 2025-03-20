@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import (overload, Any, SupportsFloat, Literal, Protocol, SupportsIndex)
 
 import numpy as np

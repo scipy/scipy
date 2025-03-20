@@ -44,7 +44,7 @@ Before Implementation
    distributions to SciPy is not supported,  mainly due to the increase in user
    confusion resulting from such additions.
 
-2. Create a `SciPy Issue on github <https://github.com/scipy/scipy/issues>`_,
+2. Create a `SciPy Issue on GitHub <https://github.com/scipy/scipy/issues>`_,
    listing the distribution, references and reasons for its inclusion.
 
 

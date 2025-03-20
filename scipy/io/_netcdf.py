@@ -132,9 +132,13 @@ class netcdf_file:
 
     Notes
     -----
+    This module is derived from
+    `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
     The major advantage of this module over other modules is that it doesn't
-    require the code to be linked to the NetCDF libraries. This module is
-    derived from `pupynere <https://bitbucket.org/robertodealmeida/pupynere/>`_.
+    require the code to be linked to the NetCDF libraries. However, for a more
+    recent version of the NetCDF standard and additional features, please consider
+    the permissively-licensed
+    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
 
     NetCDF files are a self-describing binary data format. The file contains
     metadata that describes the dimensions and variables in the file. More
@@ -563,7 +567,7 @@ class netcdf_file:
             types = [(int, NC_INT), (float, NC_FLOAT), (str, NC_CHAR)]
 
             # bytes index into scalars in py3k. Check for "string" types
-            if isinstance(values, (str, bytes)):
+            if isinstance(values, str | bytes):
                 sample = values
             else:
                 try:
@@ -682,8 +686,8 @@ class netcdf_file:
                     actual_size = reduce(mul, (1,) + shape[1:]) * size
                     padding = -actual_size % 4
                     if padding:
-                        dtypes['names'].append('_padding_%d' % var)
-                        dtypes['formats'].append('(%d,)>b' % padding)
+                        dtypes['names'].append(f'_padding_{var}')
+                        dtypes['formats'].append(f'({padding},)>b')
 
                 # Data will be set later.
                 data = None
@@ -855,6 +859,12 @@ class netcdf_variable:
     See also
     --------
     isrec, shape
+
+    Notes
+    -----
+    For a more recent version of the NetCDF standard and additional features, please
+    consider the permissively-licensed
+    `netcdf4-python <https://unidata.github.io/netcdf4-python/>`_.
 
     """
     def __init__(self, data, typecode, size, shape, dimensions,

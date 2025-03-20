@@ -16,7 +16,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
            prepend_outer_v=False):
     """
-    Solve a matrix equation using the LGMRES algorithm.
+    Solve ``Ax = b`` with the LGMRES algorithm.
 
     The LGMRES algorithm [1]_ [2]_ is designed to avoid some problems
     in the convergence in restarted GMRES, and often converges in fewer
@@ -119,7 +119,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A,M,x,b,postprocess = make_system(A,M,x0,b)
+    A,M,x,b = make_system(A,M,x0,b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
@@ -140,7 +140,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
 
     if b_norm == 0:
         x = b
-        return (postprocess(x), 0)
+        return (x, 0)
 
     ptol_max_factor = 1.0
 
@@ -192,7 +192,7 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
-            return postprocess(x), k_outer + 1
+            return x, k_outer + 1
 
         # Inner loop tolerance control
         if pres > ptol:
@@ -225,6 +225,6 @@ def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=
         x += dx
     else:
         # didn't converge ...
-        return postprocess(x), maxiter
+        return x, maxiter
 
-    return postprocess(x), 0
+    return x, 0

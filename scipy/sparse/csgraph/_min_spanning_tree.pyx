@@ -27,7 +27,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix, 2 dimensions
+    csgraph : array_like or sparse array or matrix, 2 dimensions
         The N x N matrix representing an undirected graph over N nodes
         (see notes below).
     overwrite : bool, optional
@@ -79,12 +79,12 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     removing the edges with weights 8 and 6.  In compressed sparse
     representation, the solution looks like this:
 
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import minimum_spanning_tree
-    >>> X = csr_matrix([[0, 8, 0, 3],
-    ...                 [0, 0, 2, 5],
-    ...                 [0, 0, 0, 6],
-    ...                 [0, 0, 0, 0]])
+    >>> X = csr_array([[0, 8, 0, 3],
+    ...                [0, 0, 2, 5],
+    ...                [0, 0, 0, 6],
+    ...                [0, 0, 0, 0]])
     >>> Tcsr = minimum_spanning_tree(X)
     >>> Tcsr.toarray().astype(int)
     array([[0, 0, 0, 3],

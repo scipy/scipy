@@ -27,8 +27,8 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     
     Parameters
     ----------
-    graph : sparse matrix
-        Input sparse in CSC or CSR sparse matrix format.
+    graph : sparse array or matrix
+        Input sparse in CSC or CSR sparse array or matrix format.
     symmetric_mode : bool, optional
         Is input matrix guaranteed to be symmetric.
 
@@ -48,7 +48,7 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
 
     >>> graph = [
@@ -57,9 +57,9 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ... [2, 0, 0, 3],
     ... [0, 0, 0, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 5 stored elements and shape (4, 4)>
         Coords	Values
         (0, 1)	1
@@ -190,8 +190,8 @@ def structural_rank(graph):
 
     Parameters
     ----------
-    graph : sparse matrix
-        Input sparse matrix.
+    graph : sparse array or matrix
+        Input sparse array.
 
     Returns
     -------
@@ -207,7 +207,7 @@ def structural_rank(graph):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import structural_rank
 
     >>> graph = [
@@ -216,9 +216,9 @@ def structural_rank(graph):
     ... [2, 0, 0, 3],
     ... [0, 1, 3, 0]
     ... ]
-    >>> graph = csr_matrix(graph)
+    >>> graph = csr_array(graph)
     >>> print(graph)
-    <Compressed Sparse Row sparse matrix of dtype 'int64'
+    <Compressed Sparse Row sparse array of dtype 'int64'
         with 8 stored elements and shape (4, 4)>
         Coords	Values
         (0, 1)	1

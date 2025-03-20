@@ -51,8 +51,6 @@ https://physics.nist.gov/cuu/Constants/
 # Updated to 2018 values by Jakob Jakobson, 2019
 # Updated to 2022 values by Jakob Jakobson, 2024
 
-from __future__ import annotations
-
 import warnings
 import math
 

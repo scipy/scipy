@@ -14,7 +14,9 @@ and writing MATLAB files.
    MatReadError - Exception indicating a read issue
    MatReadWarning - Warning class for read issues
    MatWriteError - Exception indicating a write issue
+   MatWriteWarning - Warning class for write issues
    mat_struct - Class used when ``struct_as_record=False``
+   varmats_from_mat - Pull variables out of mat 5 file as a sequence of mat file objects
 
 .. autosummary::
    :toctree: generated/
@@ -37,16 +39,16 @@ namespace also exist in this namespace:
 
 Notes
 -----
-MATLAB(R) is a registered trademark of The MathWorks, Inc., 3 Apple Hill
+MATLAB® is a registered trademark of The MathWorks, Inc., 3 Apple Hill
 Drive, Natick, MA 01760-2098, USA.
 
 """
 # Matlab file read and write utilities
 from ._mio import loadmat, savemat, whosmat
-from ._mio5 import MatlabFunction
+from ._mio5 import MatlabFunction, varmats_from_mat
 from ._mio5_params import MatlabObject, MatlabOpaque, mat_struct
 from ._miobase import (matfile_version, MatReadError, MatReadWarning,
-                      MatWriteError)
+                      MatWriteError, MatWriteWarning)
 
 # Deprecated namespaces, to be removed in v2.0.0
 from .import (mio, mio5, mio5_params, mio4, byteordercodes,
@@ -55,7 +57,8 @@ from .import (mio, mio5, mio5_params, mio4, byteordercodes,
 __all__ = [
     'loadmat', 'savemat', 'whosmat', 'MatlabObject',
     'matfile_version', 'MatReadError', 'MatReadWarning',
-    'MatWriteError', 'mat_struct', 'MatlabOpaque', 'MatlabFunction'
+    'MatWriteError', 'MatWriteWarning', 'mat_struct', 'MatlabOpaque',
+    'MatlabFunction', 'varmats_from_mat',
 ]
 
 from scipy._lib._testutils import PytestTester

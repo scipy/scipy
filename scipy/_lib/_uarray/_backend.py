@@ -6,6 +6,7 @@ from . import _uarray
 import copyreg
 import pickle
 import contextlib
+import threading
 
 from ._uarray import (  # type: ignore
     BackendNotImplementedError,
@@ -174,7 +175,7 @@ def generate_multimethod(
     argument_extractor: ArgumentExtractorType,
     argument_replacer: ArgumentReplacerType,
     domain: str,
-    default: typing.Optional[typing.Callable] = None,
+    default: typing.Callable | None = None,
 ):
     """
     Generates a multimethod.
@@ -266,15 +267,16 @@ def set_backend(backend, coerce=False, only=False):
     skip_backend: A context manager that allows skipping of backends.
     set_global_backend: Set a single, global backend for a domain.
     """
+    tid = threading.get_native_id()
     try:
-        return backend.__ua_cache__["set", coerce, only]
+        return backend.__ua_cache__[tid, "set", coerce, only]
     except AttributeError:
         backend.__ua_cache__ = {}
     except KeyError:
         pass
 
     ctx = _SetBackendContext(backend, coerce, only)
-    backend.__ua_cache__["set", coerce, only] = ctx
+    backend.__ua_cache__[tid, "set", coerce, only] = ctx
     return ctx
 
 
@@ -294,15 +296,16 @@ def skip_backend(backend):
     set_backend: A context manager that allows setting of backends.
     set_global_backend: Set a single, global backend for a domain.
     """
+    tid = threading.get_native_id()
     try:
-        return backend.__ua_cache__["skip"]
+        return backend.__ua_cache__[tid, "skip"]
     except AttributeError:
         backend.__ua_cache__ = {}
     except KeyError:
         pass
 
     ctx = _SkipBackendContext(backend)
-    backend.__ua_cache__["skip"] = ctx
+    backend.__ua_cache__[tid, "skip"] = ctx
     return ctx
 
 

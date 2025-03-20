@@ -398,6 +398,8 @@ def test_pickle():
         for k in A.__dict__:
             assert_equal(getattr(A, k), getattr(B, k))
 
+
+@pytest.mark.thread_unsafe
 def test_inheritance():
     class Empty(interface.LinearOperator):
         pass

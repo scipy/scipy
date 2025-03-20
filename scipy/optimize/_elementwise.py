@@ -342,11 +342,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     (where one of the inequalities is strict) are the values of `f` evaluated
     at those points, then the algorithm is considered to have converged when:
 
-    - ``xr - xl <= abs(xm)*xrtol + xatol`` or
+    - ``abs(xr - xm)/2 <= abs(xm)*xrtol + xatol`` or
     - ``(fl - 2*fm + fr)/2 <= abs(fm)*frtol + fatol``.
-
-    Note that first of these differs from the termination conditions described
-    in [1]_.
 
     The default value of `xrtol` is the square root of the precision of the
     appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal

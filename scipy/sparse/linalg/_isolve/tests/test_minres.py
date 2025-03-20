@@ -8,11 +8,11 @@ from pytest import raises as assert_raises
 
 def get_sample_problem():
     # A random 10 x 10 symmetric matrix
-    np.random.seed(1234)
-    matrix = np.random.rand(10, 10)
+    rng = np.random.RandomState(1234)
+    matrix = rng.rand(10, 10)
     matrix = matrix + matrix.T
     # A random vector of length 10
-    vector = np.random.rand(10)
+    vector = rng.rand(10)
     return matrix, vector
 
 
@@ -28,8 +28,8 @@ def test_singular():
 def test_x0_is_used_by():
     A, b = get_sample_problem()
     # Random x0 to feed minres
-    np.random.seed(12345)
-    x0 = np.random.rand(10)
+    rng = np.random.RandomState(12345)
+    x0 = rng.rand(10)
     trace = []
 
     def trace_iterates(xk):
@@ -62,36 +62,36 @@ def test_asymmetric_fail():
 
 
 def test_minres_non_default_x0():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     rtol = 1e-6
-    a = np.random.randn(5, 5)
+    a = rng.randn(5, 5)
     a = np.dot(a, a.T)
-    b = np.random.randn(5)
-    c = np.random.randn(5)
+    b = rng.randn(5)
+    c = rng.randn(5)
     x = minres(a, b, x0=c, rtol=rtol)[0]
     assert norm(a @ x - b) <= rtol * norm(b)
 
 
 def test_minres_precond_non_default_x0():
-    np.random.seed(12345)
+    rng = np.random.RandomState(12345)
     rtol = 1e-6
-    a = np.random.randn(5, 5)
+    a = rng.randn(5, 5)
     a = np.dot(a, a.T)
-    b = np.random.randn(5)
-    c = np.random.randn(5)
-    m = np.random.randn(5, 5)
+    b = rng.randn(5)
+    c = rng.randn(5)
+    m = rng.randn(5, 5)
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, rtol=rtol)[0]
     assert norm(a @ x - b) <= rtol * norm(b)
 
 
 def test_minres_precond_exact_x0():
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     rtol = 1e-6
     a = np.eye(10)
     b = np.ones(10)
     c = np.ones(10)
-    m = np.random.randn(10, 10)
+    m = rng.randn(10, 10)
     m = np.dot(m, m.T)
     x = minres(a, b, M=m, x0=c, rtol=rtol)[0]
     assert norm(a @ x - b) <= rtol * norm(b)

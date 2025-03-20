@@ -6,13 +6,13 @@ import numpy as np
 
 from scipy import stats
 from scipy.stats import norm, expon  # type: ignore[attr-defined]
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import array_namespace, is_array_api_strict, is_jax
 from scipy._lib._array_api_no_0d import (xp_assert_close, xp_assert_equal,
                                          xp_assert_less)
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
+@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
 class TestEntropy:
-    @array_api_compatible
     def test_entropy_positive(self, xp):
         # See ticket #497
         pk = xp.asarray([0.5, 0.2, 0.3])
@@ -22,33 +22,29 @@ class TestEntropy:
         xp_assert_equal(eself, xp.asarray(0.))
         xp_assert_less(-edouble, xp.asarray(0.))
 
-    @array_api_compatible
     def test_entropy_base(self, xp):
         pk = xp.ones(16)
         S = stats.entropy(pk, base=2.)
         xp_assert_less(xp.abs(S - 4.), xp.asarray(1.e-5))
 
         qk = xp.ones(16)
-        qk = xp.where(xp.arange(16) < 8, xp.asarray(2.), qk)
+        qk = xp.where(xp.arange(16) < 8, 2., qk)
         S = stats.entropy(pk, qk)
         S2 = stats.entropy(pk, qk, base=2.)
         xp_assert_less(xp.abs(S/S2 - math.log(2.)), xp.asarray(1.e-5))
 
-    @array_api_compatible
     def test_entropy_zero(self, xp):
         # Test for PR-479
         x = xp.asarray([0., 1., 2.])
         xp_assert_close(stats.entropy(x),
                         xp.asarray(0.63651416829481278))
 
-    @array_api_compatible
     def test_entropy_2d(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         xp_assert_close(stats.entropy(pk, qk),
                         xp.asarray([0.1933259, 0.18609809]))
 
-    @array_api_compatible
     def test_entropy_2d_zero(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.0, 0.1], [0.3, 0.6], [0.5, 0.3]])
@@ -59,20 +55,17 @@ class TestEntropy:
         xp_assert_close(stats.entropy(pk, qk),
                         xp.asarray([0.17403988, 0.18609809]))
 
-    @array_api_compatible
     def test_entropy_base_2d_nondefault_axis(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         xp_assert_close(stats.entropy(pk, axis=1),
                         xp.asarray([0.63651417, 0.63651417, 0.66156324]))
 
-    @array_api_compatible
     def test_entropy_2d_nondefault_axis(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         xp_assert_close(stats.entropy(pk, qk, axis=1),
                         xp.asarray([0.23104906, 0.23104906, 0.12770641]))
 
-    @array_api_compatible
     def test_entropy_raises_value_error(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.1, 0.2], [0.6, 0.3]])
@@ -80,33 +73,28 @@ class TestEntropy:
         with pytest.raises(ValueError, match=message):
             stats.entropy(pk, qk)
 
-    @array_api_compatible
     def test_base_entropy_with_axis_0_is_equal_to_default(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         xp_assert_close(stats.entropy(pk, axis=0),
                         stats.entropy(pk))
 
-    @array_api_compatible
     def test_entropy_with_axis_0_is_equal_to_default(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         xp_assert_close(stats.entropy(pk, qk, axis=0),
                         stats.entropy(pk, qk))
 
-    @array_api_compatible
     def test_base_entropy_transposed(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         xp_assert_close(stats.entropy(pk.T),
                         stats.entropy(pk, axis=1))
 
-    @array_api_compatible
     def test_entropy_transposed(self, xp):
         pk = xp.asarray([[0.1, 0.2], [0.6, 0.3], [0.3, 0.5]])
         qk = xp.asarray([[0.2, 0.1], [0.3, 0.6], [0.5, 0.3]])
         xp_assert_close(stats.entropy(pk.T, qk.T),
                         stats.entropy(pk, qk, axis=1))
 
-    @array_api_compatible
     def test_entropy_broadcasting(self, xp):
         rng = np.random.default_rng(74187315492831452)
         x = xp.asarray(rng.random(3))
@@ -115,7 +103,6 @@ class TestEntropy:
         xp_assert_equal(res[0], stats.entropy(x, y[0, ...]))
         xp_assert_equal(res[1], stats.entropy(x, y[1, ...]))
 
-    @array_api_compatible
     def test_entropy_shape_mismatch(self, xp):
         x = xp.ones((10, 1, 12))
         y = xp.ones((11, 2))
@@ -123,7 +110,6 @@ class TestEntropy:
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, y)
 
-    @array_api_compatible
     def test_input_validation(self, xp):
         x = xp.ones(10)
         message = "`base` must be a positive number."
@@ -131,8 +117,7 @@ class TestEntropy:
             stats.entropy(x, base=-2)
 
 
-@array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends("dask.array", reason="boolean index assignment")
 class TestDifferentialEntropy:
     """
     Vasicek results are compared with the R package vsgoftest.
@@ -207,8 +192,6 @@ class TestDifferentialEntropy:
                     axis=1,
                 )
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_with_axis_0_is_equal_to_default(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((100, 3))
@@ -218,8 +201,6 @@ class TestDifferentialEntropy:
         default_entropy = stats.differential_entropy(values)
         xp_assert_close(entropy, default_entropy)
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
     def test_base_differential_entropy_transposed(self, xp):
         random_state = np.random.RandomState(0)
         values = random_state.standard_normal((3, 100))
@@ -242,13 +223,17 @@ class TestDifferentialEntropy:
         with pytest.raises(ValueError, match=message):
             stats.differential_entropy(x, method='ekki-ekki')
 
-    @pytest.mark.parametrize('method', ['vasicek', 'van es',
-                                        'ebrahimi', 'correa'])
+    @pytest.mark.parametrize('method', [
+        'vasicek',
+        'van es',
+        'ebrahimi',
+        pytest.param(
+            'correa',
+            marks=skip_xp_backends("array_api_strict",
+                                   reason="Needs fancy indexing.")
+        )
+    ])
     def test_consistency(self, method, xp):
-        if is_jax(xp) and method == 'ebrahimi':
-            pytest.xfail("Needs array assignment.")
-        elif is_array_api_strict(xp) and method == 'correa':
-            pytest.xfail("Needs fancy indexing.")
         # test that method is a consistent estimator
         n = 10000 if method == 'correa' else 1000000
         rvs = stats.norm.rvs(size=n, random_state=0)
@@ -276,17 +261,21 @@ class TestDifferentialEntropy:
     rmse_std_cases = {norm: norm_rmse_std_cases,
                       expon: expon_rmse_std_cases}
 
-    @pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa'])
+    @pytest.mark.parametrize('method', [
+        'vasicek',
+        'van es',
+        'ebrahimi',
+        pytest.param(
+            'correa',
+            marks=skip_xp_backends("array_api_strict",
+                                   reason="Needs fancy indexing.")
+        )
+    ])
     @pytest.mark.parametrize('dist', [norm, expon])
     def test_rmse_std(self, method, dist, xp):
         # test that RMSE and standard deviation of estimators matches values
         # given in differential_entropy reference [6]. Incidentally, also
         # tests vectorization.
-        if is_jax(xp) and method == 'ebrahimi':
-            pytest.xfail("Needs array assignment.")
-        elif is_array_api_strict(xp) and method == 'correa':
-            pytest.xfail("Needs fancy indexing.")
-
         reps, n, m = 10000, 50, 7
         expected = self.rmse_std_cases[dist][method]
         rmse_expected, std_expected = xp.asarray(expected[0]), xp.asarray(expected[1])
@@ -297,31 +286,34 @@ class TestDifferentialEntropy:
                                          method=method, axis=-1)
         xp_assert_close(xp.sqrt(xp.mean((res - true_entropy)**2)),
                         rmse_expected, atol=0.005)
-        xp_test = array_namespace(res)
-        xp_assert_close(xp_test.std(res, correction=0), std_expected, atol=0.002)
+        xp_assert_close(xp.std(res, correction=0), std_expected, atol=0.002)
 
-    @pytest.mark.parametrize('n, method', [(8, 'van es'),
-                                           (12, 'ebrahimi'),
-                                           (1001, 'vasicek')])
+    @pytest.mark.parametrize('n, method', [
+        (8, 'van es'),
+        (12, 'ebrahimi'),
+        (1001, 'vasicek')
+    ])
     def test_method_auto(self, n, method, xp):
-        if is_jax(xp) and method == 'ebrahimi':
-            pytest.xfail("Needs array assignment.")
         rvs = stats.norm.rvs(size=(n,), random_state=0)
         rvs = xp.asarray(rvs.tolist())
         res1 = stats.differential_entropy(rvs)
         res2 = stats.differential_entropy(rvs, method=method)
         xp_assert_equal(res1, res2)
 
-    @pytest.mark.skip_xp_backends('jax.numpy',
-                                  reason="JAX doesn't support item assignment")
-    @pytest.mark.parametrize('method', ["vasicek", "van es", "correa", "ebrahimi"])
+    @pytest.mark.parametrize('method', [
+        "vasicek",
+        "van es",
+        pytest.param(
+            "correa",
+            marks=skip_xp_backends("array_api_strict", reason="Needs fancy indexing.")
+        ),
+        "ebrahimi"
+    ])
     @pytest.mark.parametrize('dtype', [None, 'float32', 'float64'])
     def test_dtypes_gh21192(self, xp, method, dtype):
         # gh-21192 noted a change in the output of method='ebrahimi'
         # with integer input. Check that the output is consistent regardless
         # of input dtype.
-        if is_array_api_strict(xp) and method == 'correa':
-            pytest.xfail("Needs fancy indexing.")
         x = [1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 8, 9, 10, 11]
         dtype_in = getattr(xp, str(dtype), None)
         dtype_out = getattr(xp, str(dtype), xp.asarray(1.).dtype)

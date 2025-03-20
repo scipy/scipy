@@ -1,10 +1,10 @@
-import os
 import sys
 import functools
+import operator
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy
+    array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API
 )
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
@@ -12,10 +12,9 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc, betaincc, stdtr  # noqa: F401
+    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit  # noqa: F401
 )
 
-_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
@@ -41,9 +40,15 @@ def get_array_special_func(f_name, xp, n_array_args):
     def __f(*args, _f=_f, _xp=xp, **kwargs):
         array_args = args[:n_array_args]
         other_args = args[n_array_args:]
-        array_args = [np.asarray(arg) for arg in array_args]
-        out = _f(*array_args, *other_args, **kwargs)
-        return _xp.asarray(out)
+        if is_marray(_xp):
+            data_args = [np.asarray(arg.data) for arg in array_args]
+            out = _f(*data_args, *other_args, **kwargs)
+            mask = functools.reduce(operator.or_, (arg.mask for arg in array_args))
+            return _xp.asarray(out, mask=mask)
+        else:
+            array_args = [np.asarray(arg) for arg in array_args]
+            out = _f(*array_args, *other_args, **kwargs)
+            return _xp.asarray(out)
 
     return __f
 
@@ -74,7 +79,7 @@ def _xlogy(xp, spx):
     def __xlogy(x, y, *, xp=xp):
         with np.errstate(divide='ignore', invalid='ignore'):
             temp = x * xp.log(y)
-        return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+        return xp.where(x == 0., 0., temp)
     return __xlogy
 
 
@@ -146,12 +151,35 @@ def _stdtr(xp, spx):
     return __stdtr
 
 
+def _stdtrit(xp, spx):
+    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+
+    # If betainc is not defined, the root-finding would be done with `xp`
+    # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
+    # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
+    if betainc is None:
+        return None
+
+    from scipy.optimize.elementwise import bracket_root, find_root
+
+    def __stdtrit(df, p):
+        def fun(t, df, p):  return stdtr(df, t) - p
+        res_bracket = bracket_root(fun, xp.zeros_like(p), args=(df, p))
+        res_root = find_root(fun, res_bracket.bracket, args=(df, p))
+        return res_root.x
+
+    return __stdtrit
+
+
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
                             'chdtr': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
                             'stdtr': _stdtr,
+                            'stdtrit': _stdtrit,
                             }
 
 
@@ -192,10 +220,12 @@ array_special_func_map = {
     'betainc': 3,
     'betaincc': 3,
     'stdtr': 2,
+    'stdtrit': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
-    f = (support_alternative_backends(f_name, n_array_args) if _SCIPY_ARRAY_API
+    f = (support_alternative_backends(f_name, n_array_args)
+         if SCIPY_ARRAY_API
          else getattr(_ufuncs, f_name))
     sys.modules[__name__].__dict__[f_name] = f
 

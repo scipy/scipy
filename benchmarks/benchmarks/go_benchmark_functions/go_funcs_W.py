@@ -85,6 +85,7 @@ class Wavy(Benchmark):
     For Global Optimization Problems Int. Journal of Mathematical Modelling
     and Numerical Optimisation, 2013, 4, 150-194.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -93,7 +94,6 @@ class Wavy(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -215,6 +215,8 @@ class Weierstrass(Benchmark):
     be included in the outer sum. Mishra code has it right as does the
     reference referred to in Jamil#166.
     """
+    change_dimensionality = True
+
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
@@ -222,7 +224,6 @@ class Weierstrass(Benchmark):
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1
@@ -263,6 +264,7 @@ class Whitley(Benchmark):
 
     TODO Jamil#167 has '+ 1' inside the cos term, when it should be outside it.
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -273,7 +275,6 @@ class Whitley(Benchmark):
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 0.0
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

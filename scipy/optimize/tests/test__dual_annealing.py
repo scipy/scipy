@@ -19,6 +19,8 @@ from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
 
+import threading
+
 
 class TestDualAnnealing:
 
@@ -36,8 +38,8 @@ class TestDualAnnealing:
         self.qv = 2.62
         self.seed = 1234
         self.rng = check_random_state(self.seed)
-        self.nb_fun_call = 0
-        self.ngev = 0
+        self.nb_fun_call = threading.local()
+        self.ngev = threading.local()
 
     def callback(self, x, f, context):
         # For testing callback mechanism. Should stop for e <= 1 as
@@ -53,11 +55,15 @@ class TestDualAnnealing:
             shift = 0
         y = np.sum((x - shift) ** 2 - 10 * np.cos(2 * np.pi * (
             x - shift))) + 10 * np.size(x) + shift
-        self.nb_fun_call += 1
+        if not hasattr(self.nb_fun_call, 'c'):
+            self.nb_fun_call.c = 0
+        self.nb_fun_call.c += 1
         return y
 
     def rosen_der_wrapper(self, x, args=()):
-        self.ngev += 1
+        if not hasattr(self.ngev, 'c'):
+            self.ngev.c = 0
+        self.ngev.c += 1
         return rosen_der(x, *args)
 
     # FIXME: there are some discontinuities in behaviour as a function of `qv`,
@@ -125,16 +131,18 @@ class TestDualAnnealing:
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
                              no_local_search=True, rng=self.seed)
-        assert_allclose(ret.fun, 0., atol=1e-4)
+        assert_allclose(ret.fun, 0., atol=1.2e-4)
 
     def test_nb_fun_call(self):
+        self.nb_fun_call.c = 0
         ret = dual_annealing(self.func, self.ld_bounds, rng=self.seed)
-        assert_equal(self.nb_fun_call, ret.nfev)
+        assert_equal(self.nb_fun_call.c, ret.nfev)
 
     def test_nb_fun_call_no_ls(self):
+        self.nb_fun_call.c = 0
         ret = dual_annealing(self.func, self.ld_bounds,
                              no_local_search=True, rng=self.seed)
-        assert_equal(self.nb_fun_call, ret.nfev)
+        assert_equal(self.nb_fun_call.c, ret.nfev)
 
     def test_max_reinit(self):
         assert_raises(ValueError, dual_annealing, self.weirdfunc,
@@ -179,6 +187,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
+    @pytest.mark.thread_unsafe
     def test_deprecated_local_search_options_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -191,6 +200,7 @@ class TestDualAnnealing:
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
 
+    @pytest.mark.thread_unsafe
     def test_minimizer_kwargs_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -280,7 +290,7 @@ class TestDualAnnealing:
         ret = dual_annealing(rosen, self.ld_bounds,
                              minimizer_kwargs=minimizer_opts,
                              rng=self.seed)
-        assert ret.njev == self.ngev
+        assert ret.njev == self.ngev.c
 
     @pytest.mark.fail_slow(10)
     def test_from_docstring(self):

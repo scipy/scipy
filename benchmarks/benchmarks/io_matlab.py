@@ -72,13 +72,17 @@ class MemUsage(Benchmark):
 
     def track_savemat(self, size, compressed):
         size = int(self.sizes[size])
-
-        code = """
+        code = f"""
         import numpy as np
         from scipy.io import savemat
-        x = np.random.rand(%d//8).view(dtype=np.uint8)
-        savemat('%s', dict(x=x), do_compression=%r, oned_as='row')
-        """ % (size, self.filename, compressed)
+        x = np.random.rand({size}//8).view(dtype=np.uint8)
+        savemat(
+            '{self.filename}', 
+            dict(x=x), 
+            do_compression={compressed}, 
+            oned_as='row'
+        )
+        """
         time, peak_mem = run_monitored(code)
         return peak_mem / size
 
@@ -94,8 +98,8 @@ class StructArr(Benchmark):
     def make_structarr(n_vars, n_fields, n_structs):
         var_dict = {}
         for vno in range(n_vars):
-            vname = 'var%00d' % vno
-            end_dtype = [('f%d' % d, 'i4', 10) for d in range(n_fields)]
+            vname = f'var{vno:02d}'
+            end_dtype = [(f'f{d}', 'i4', 10) for d in range(n_fields)]
             s_arrs = np.zeros((n_structs,), dtype=end_dtype)
             var_dict[vname] = s_arrs
         return var_dict

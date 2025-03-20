@@ -4,9 +4,11 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse, SparseEfficiencyWarning,
                           csr_array, csc_array, eye_array, diags_array)
-from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
+from scipy.sparse._sputils import (is_pydata_spmatrix, convert_pydata_sparse_to_scipy,
+                                   get_index_dtype, safely_cast_index_arrays)
 from scipy.linalg import LinAlgError
 import copy
+import threading
 
 from . import _superlu
 
@@ -16,13 +18,15 @@ try:
 except ImportError:
     noScikit = True
 
-useUmfpack = not noScikit
+useUmfpack = threading.local()
+
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
            'MatrixRankWarning', 'spsolve_triangular', 'is_sptriangular', 'spbandwidth']
 
 
 class MatrixRankWarning(UserWarning):
+    """Warning for exactly singular matrices."""
     pass
 
 
@@ -87,9 +91,10 @@ def use_solver(**kwargs):
     True
     >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
+    global useUmfpack
     if 'useUmfpack' in kwargs:
-        globals()['useUmfpack'] = kwargs['useUmfpack']
-    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        useUmfpack.u = kwargs['useUmfpack']
+    if useUmfpack.u and 'assumeSortedIndices' in kwargs:
         umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
@@ -125,21 +130,6 @@ def _get_umf_family(A):
     A_new.indices = np.asarray(A.indices, dtype=np.int64)
 
     return family, A_new
-
-def _safe_downcast_indices(A):
-    # check for safe downcasting
-    max_value = np.iinfo(np.intc).max
-
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for SuperLU")
-
-    if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for SuperLU")
-
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
-    return indices, indptr
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -256,7 +246,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if M != b.shape[0]:
         raise ValueError(f"matrix - rhs dimension mismatch ({A.shape} - {b.shape[0]})")
 
-    use_umfpack = use_umfpack and useUmfpack
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    use_umfpack = use_umfpack and useUmfpack.u
 
     if b_is_vector and use_umfpack:
         if b_is_sparse:
@@ -270,7 +263,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -321,8 +314,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 col_segs.append(np.full(segment_length, j, dtype=int))
                 data_segs.append(np.asarray(xj[w], dtype=A.dtype))
             sparse_data = np.concatenate(data_segs)
-            sparse_row = np.concatenate(row_segs)
-            sparse_col = np.concatenate(col_segs)
+            idx_dtype = get_index_dtype(maxval=max(b.shape))
+            sparse_row = np.concatenate(row_segs, dtype=idx_dtype)
+            sparse_col = np.concatenate(col_segs, dtype=idx_dtype)
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
@@ -378,6 +372,10 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()``
+    method is used with complex arguments an error is generated. Instead, cast the
+    initial array to complex and then factorize.
+
     This function uses the SuperLU library.
 
     References
@@ -421,7 +419,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -475,6 +473,10 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     Notes
     -----
+    When a real array is factorized and the returned SuperLU object's ``solve()`` method
+    is used with complex arguments an error is generated. Instead, cast the initial 
+    array to complex and then factorize.
+
     To improve the better approximation to the inverse, you may need to
     increase `fill_factor` AND decrease `drop_tol`.
 
@@ -517,7 +519,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices, indptr = _safe_downcast_indices(A)
+    indices, indptr = safely_cast_index_arrays(A, np.intc, "SuperLU")
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -568,7 +570,10 @@ def factorized(A):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if useUmfpack:
+    if not hasattr(useUmfpack, 'u'):
+        useUmfpack.u = not noScikit
+
+    if useUmfpack.u:
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
@@ -581,7 +586,7 @@ def factorized(A):
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
-                  " .astype(), or set linsolve.useUmfpack = False")
+                  " .astype(), or set linsolve.useUmfpack.u = False")
 
         umf_family, A = _get_umf_family(A)
         umf = umfpack.UmfpackContext(umf_family)
@@ -772,11 +777,12 @@ def is_sptriangular(A):
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csc_array, eye_array
+    >>> from scipy.sparse.linalg import is_sptriangular
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.is_sptriangular(A)
+    >>> is_sptriangular(A)
     (True, False)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.is_sptriangular(D)
+    >>> D = eye_array(3, format='csr')
+    >>> is_sptriangular(D)
     (True, True)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok", "lil")):
@@ -784,7 +790,7 @@ def is_sptriangular(A):
              SparseEfficiencyWarning, stacklevel=2)
         A = csr_array(A)
 
-    # bsr and lil are better off converting to csr
+    # bsr is better off converting to csr
     if A.format == "dia":
         return A.offsets.max() <= 0, A.offsets.min() >= 0
     elif A.format == "coo":
@@ -845,12 +851,13 @@ def spbandwidth(A):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.sparse.linalg import spbandwidth
     >>> from scipy.sparse import csc_array, eye_array
     >>> A = csc_array([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
-    >>> scipy.sparse.linalg.spbandwidth(A)
+    >>> spbandwidth(A)
     (2, 0)
-    >>> D = eye_array((3,3), format='csr')
-    >>> scipy.sparse.linalg.spbandwidth(D)
+    >>> D = eye_array(3, format='csr')
+    >>> spbandwidth(D)
     (0, 0)
     """
     if not (issparse(A) and A.format in ("csc", "csr", "coo", "dia", "dok")):

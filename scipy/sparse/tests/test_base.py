@@ -28,6 +28,9 @@ import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
         assert_allclose, suppress_warnings)
+from numpy.exceptions import ComplexWarning
+
+from types import GenericAlias
 
 import scipy.linalg
 
@@ -43,7 +46,6 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
-from scipy._lib._util import ComplexWarning
 
 IS_COLAB = ('google.colab' in sys.modules)
 
@@ -931,12 +933,12 @@ class _TestCommon:
                 # check that dense_setdiag worked
                 d = np.diag(a, k)
                 if np.asarray(v).ndim == 0:
-                    assert_array_equal(d, v, err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d, v, err_msg="{msg} {r}")
                 else:
                     n = min(len(d), len(v))
-                    assert_array_equal(d[:n], v[:n], err_msg="%s %d" % (msg, r))
+                    assert_array_equal(d[:n], v[:n], err_msg="{msg} {r}")
                 # check that sparse setdiag worked
-                assert_array_equal(b.toarray(), a, err_msg="%s %d" % (msg, r))
+                assert_array_equal(b.toarray(), a, err_msg="{msg} {r}")
 
         # comprehensive test
         np.random.seed(1234)
@@ -945,7 +947,6 @@ class _TestCommon:
             for m,n in shapes:
                 ks = np.arange(-m+1, n-1)
                 for k in ks:
-                    msg = repr((dtype, m, n, k))
                     a = np.zeros((m, n), dtype=dtype)
                     b = self.spcreator((m, n), dtype=dtype)
 
@@ -1058,11 +1059,11 @@ class _TestCommon:
         datsp = self.spcreator(dat)
 
         def check(dtype):
-            dat_mean = dat.mean(dtype=dtype)
-            datsp_mean = datsp.mean(dtype=dtype)
+            dat_sum = dat.sum(dtype=dtype)
+            datsp_sum = datsp.sum(dtype=dtype)
 
-            assert_array_almost_equal(dat_mean, datsp_mean)
-            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+            assert_array_almost_equal(dat_sum, datsp_sum)
+            assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
         for dtype in self.checked_dtypes:
             check(dtype)
@@ -1088,6 +1089,12 @@ class _TestCommon:
         datsp.sum(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
 
+        # check that wrong shape out parameter raises
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.sum(out=array([0]))
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.sum(out=array([[0]] if self.is_array_test else 0))
+
     def test_numpy_sum(self):
         # See gh-5987
         dat = array([[0, 1, 2],
@@ -1095,11 +1102,11 @@ class _TestCommon:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        dat_mean = np.sum(dat)
-        datsp_mean = np.sum(datsp)
+        dat_sum = np.sum(dat)
+        datsp_sum = np.sum(datsp)
 
-        assert_array_almost_equal(dat_mean, datsp_mean)
-        assert_equal(dat_mean.dtype, datsp_mean.dtype)
+        assert_array_almost_equal(dat_sum, datsp_sum)
+        assert_equal(dat_sum.dtype, datsp_sum.dtype)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -1184,6 +1191,12 @@ class _TestCommon:
         dat.mean(axis=1, out=dat_out, keepdims=keep)
         datsp.mean(axis=1, out=datsp_out)
         assert_array_almost_equal(dat_out, datsp_out)
+
+        # check that wrong shape out parameter raises
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.mean(out=array([0]))
+        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+            datsp.mean(out=array([[0]] if self.is_array_test else 0))
 
     def test_numpy_mean(self):
         # See gh-5987
@@ -1462,7 +1475,7 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
-    # github issue #15210
+    # GitHub issue #15210
     def test_rmul_scalar_type_error(self):
         datsp = self.datsp_dtypes[np.float64]
         with assert_raises(TypeError):
@@ -1684,13 +1697,7 @@ class _TestCommon:
         B = self.spcreator(A)
 
         if self.is_array_test:  # sparrays use element-wise power
-            # Todo: Add 1+3j to tested exponent list when np1.24 is no longer supported
-            #    Complex exponents of 0 (our implicit fill value) change in numpy-1.25
-            #    from `(nan+nanj)` to `0`. Old value makes array element-wise result
-            #    dense and is hard to check for without any `isnan` method.
-            # So while untested here, element-wise complex exponents work with np>=1.25.
-            # for exponent in [1, 2, 2.2, 3, 1+3j]:
-            for exponent in [1, 2, 2.2, 3]:
+            for exponent in [1, 2, 2.2, 3, 1+3j]:
                 ret_sp = B**exponent
                 ret_np = A**exponent
                 assert_array_equal(ret_sp.toarray(), ret_np)
@@ -2184,6 +2191,15 @@ class _TestCommon:
             assert_array_equal(spm.todok().toarray(), m)
             assert_array_equal(spm.tobsr().toarray(), m)
 
+    def test_dtype_check(self):
+        a = np.array([[3.5, 0, 1.1], [0, 0, 0]], dtype=np.float16)
+        with assert_raises(ValueError, match="does not support dtype"):
+            self.spcreator(a)
+
+        A32 = self.spcreator(a.astype(np.float32))
+        with assert_raises(ValueError, match="does not support dtype"):
+            self.spcreator(A32, dtype=np.float16)
+
     def test_pickle(self):
         import pickle
         sup = suppress_warnings()
@@ -2346,20 +2362,14 @@ class _TestInplaceArithmetic:
 
         # Matrix multiply from __rmatmul__
         y = a.copy()
-        # skip this test if numpy doesn't support __imatmul__ yet.
-        # move out of the try/except once numpy 1.24 is no longer supported.
-        try:
-            y @= b.T
-        except TypeError:
-            pass
-        else:
-            x = a.copy()
-            y = a.copy()
-            with assert_raises(ValueError, match="dimension mismatch"):
-                x @= b
-            x = x.dot(a.T)
-            y @= b.T
-            assert_array_equal(x, y)
+        y @= b.T
+        x = a.copy()
+        y = a.copy()
+        with assert_raises(ValueError, match="dimension mismatch"):
+            x @= b
+        x = x.dot(a.T)
+        y @= b.T
+        assert_array_equal(x, y)
 
         # Floor division is not supported
         with assert_raises(TypeError, match="unsupported operand"):
@@ -2502,7 +2512,7 @@ class _TestGetSet:
             check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
-        # Regression test for github issue 4428.
+        # Regression test for GitHub issue 4428.
 
         def check(dtype):
             A = self.spcreator((3, 10), dtype=dtype)
@@ -2543,6 +2553,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
+@pytest.mark.thread_unsafe
 class _TestSolve:
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
@@ -2761,6 +2772,42 @@ class _TestSlicing:
             check_2(a, a)
             check_2(a, -2)
             check_2(-2, a)
+
+    def test_None_slicing(self):
+        B = self.asdense(arange(50).reshape(5,10))
+        A = self.spcreator(B)
+
+        assert A[1, 2].ndim == 0
+        assert A[None, 1, 2:4].shape == (1, 2)
+        assert A[None, 1, 2, None].shape == (1, 1)
+
+        # see gh-22458
+        assert A[None, 1].shape == (1, 10)
+        assert A[1, None].shape == (1, 10)
+        assert A[None, 1, :].shape == (1, 10)
+        assert A[1, None, :].shape == (1, 10)
+        assert A[1, :, None].shape == (10, 1)
+
+        assert A[None, 1:3, 2].shape == B[None, 1:3, 2].shape == (1, 2)
+        assert A[1:3, None, 2].shape == B[1:3, None, 2].shape == (2, 1)
+        assert A[1:3, 2, None].shape == B[1:3, 2, None].shape == (2, 1)
+        assert A[None, 1, 2:4].shape == B[None, 1, 2:4].shape == (1, 2)
+        assert A[1, None, 2:4].shape == B[1, None, 2:4].shape == (1, 2)
+        assert A[1, 2:4, None].shape == B[1, 2:4, None].shape == (2, 1)
+
+        # different for spmatrix
+        if self.is_array_test:
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2,)
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (2,)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1,)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1,)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1,)
+        else:
+            assert A[1, 2:4].shape == B[1, 2:4].shape == (1, 2)
+            assert A[1:3, 2].shape == B[1:3, 2].shape == (2, 1)
+            assert A[None, 1, 2].shape == B[None, 1, 2].shape == (1, 1)
+            assert A[1, None, 2].shape == B[1, None, 2].shape == (1, 1)
+            assert A[1, 2, None].shape == B[1, 2, None].shape == (1, 1)
 
     def test_ellipsis_slicing(self):
         b = self.asdense(arange(50).reshape(5,10))
@@ -3545,47 +3592,48 @@ class _TestArithmetic:
     """
     def __arith_init(self):
         # these can be represented exactly in FP (so arithmetic should be exact)
-        self.__A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
+        __A = array([[-1.5, 6.5, 0, 2.25, 0, 0],
                           [3.125, -7.875, 0.625, 0, 0, 0],
                           [0, 0, -0.125, 1.0, 0, 0],
                           [0, 0, 8.375, 0, 0, 0]], 'float64')
-        self.__B = array([[0.375, 0, 0, 0, -5, 2.5],
+        __B = array([[0.375, 0, 0, 0, -5, 2.5],
                           [14.25, -3.75, 0, 0, -0.125, 0],
                           [0, 7.25, 0, 0, 0, 0],
                           [18.5, -0.0625, 0, 0, 0, 0]], 'complex128')
-        self.__B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
+        __B.imag = array([[1.25, 0, 0, 0, 6, -3.875],
                                [2.25, 4.125, 0, 0, 0, 2.75],
                                [0, 4.125, 0, 0, 0, 0],
                                [-0.0625, 0, 0, 0, 0, 0]], 'float64')
 
         # fractions are all x/16ths
-        assert_array_equal((self.__A*16).astype('int32'),16*self.__A)
-        assert_array_equal((self.__B.real*16).astype('int32'),16*self.__B.real)
-        assert_array_equal((self.__B.imag*16).astype('int32'),16*self.__B.imag)
+        assert_array_equal((__A*16).astype('int32'),16*__A)
+        assert_array_equal((__B.real*16).astype('int32'),16*__B.real)
+        assert_array_equal((__B.imag*16).astype('int32'),16*__B.imag)
 
-        self.__Asp = self.spcreator(self.__A)
-        self.__Bsp = self.spcreator(self.__B)
+        __Asp = self.spcreator(__A)
+        __Bsp = self.spcreator(__B)
+        return __A, __B, __Asp, __Bsp
 
     @pytest.mark.fail_slow(20)
     def test_add_sub(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
         assert_array_equal(
-            (self.__Asp + self.__Bsp).toarray(), self.__A + self.__B
+            (__Asp + __Bsp).toarray(), __A + __B
         )
 
         # check conversions
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 else:
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 Bsp = self.spcreator(B)
 
                 # addition
@@ -3611,22 +3659,22 @@ class _TestArithmetic:
                 assert_array_equal(A - Bsp,D1)          # check dense - sparse
 
     def test_mu(self):
-        self.__arith_init()
+        __A, __B, __Asp, __Bsp = self.__arith_init()
 
         # basic tests
-        assert_array_equal((self.__Asp @ self.__Bsp.T).toarray(),
-                           self.__A @ self.__B.T)
+        assert_array_equal((__Asp @ __Bsp.T).toarray(),
+                            __A @ __B.T)
 
         for x in supported_dtypes:
             with np.errstate(invalid="ignore"):
-                A = self.__A.astype(x)
+                A = __A.astype(x)
             Asp = self.spcreator(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
-                    B = self.__B.astype(y)
+                    B = __B.astype(y)
                 else:
                     with np.errstate(invalid="ignore"):
-                        B = self.__B.real.astype(y)
+                        B = __B.real.astype(y)
                 Bsp = self.spcreator(B)
 
                 D1 = A @ B.T
@@ -4297,6 +4345,12 @@ class TestCSRMatrix(_MatrixMixin, TestCSR):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             return csr_matrix(*args, **kwargs)
+    
+    def test_spmatrix_subscriptable(self):
+        result = csr_matrix[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is csr_matrix
+        assert result.__args__ == (np.int8,)
 
 
 TestCSRMatrix.init_class()
@@ -4832,6 +4886,17 @@ class TestCOO(sparse_test_class(getset=False,
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
+    
+    def test_sparray_subscriptable(self):
+        result = coo_array[np.int8, tuple[int]]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8, tuple[int])
+
+        result = coo_array[np.int8]
+        assert isinstance(result, GenericAlias)
+        assert result.__origin__ is coo_array
+        assert result.__args__ == (np.int8,)
 
 
 class TestCOOMatrix(_MatrixMixin, TestCOO):
@@ -5055,7 +5120,7 @@ class TestBSR(sparse_test_class(getset=False,
         assert_array_equal(asp.nnz, 3*4)
         assert_array_equal(asp.toarray(), bsp.toarray())
 
-    # github issue #9687
+    # GitHub issue #9687
     def test_eliminate_zeros_all_zero(self):
         np.random.seed(0)
         m = self.bsr_container(np.random.random((12, 12)), blocksize=(2, 3))
@@ -5452,6 +5517,7 @@ class Test64Bit:
         else:
             raise ValueError(f"matrix {m!r} has no integer indices")
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works
 
@@ -5465,6 +5531,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)
 
@@ -5484,6 +5551,7 @@ class Test64Bit:
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
+    @pytest.mark.thread_unsafe
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are
         # dealt with. The point here is to trigger points in the code
@@ -5550,31 +5618,33 @@ class RunAll64Bit:
         check(cls, method_name)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.slow
 class Test64BitArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_limit_10(self, cls, method_name):
-       self._check_resiliency(cls, method_name, maxval_limit=10)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-   @pytest.mark.fail_slow(2)
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_random(self, cls, method_name):
-       # bsr_array.eliminate_zeros relies on csr_array constructor
-       # not making copies of index arrays --- this is not
-       # necessarily true when we pick the index data type randomly
-       self._check_resiliency(cls, method_name, random=True)
+    @pytest.mark.fail_slow(2)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_random(self, cls, method_name):
+        # bsr_array.eliminate_zeros relies on csr_array constructor
+        # not making copies of index arrays --- this is not
+        # necessarily true when we pick the index data type randomly
+        self._check_resiliency(cls, method_name, random=True)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_32(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-   @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
-   def test_resiliency_all_64(self, cls, method_name):
-       self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
+    @pytest.mark.parametrize('cls,method_name', cases_64bit("sparray"))
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
 
+@pytest.mark.thread_unsafe
 class Test64BitMatrix(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
     @pytest.mark.fail_slow(5)

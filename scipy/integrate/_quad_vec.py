@@ -3,7 +3,6 @@ import copy
 import heapq
 import collections
 import functools
-import warnings
 
 import numpy as np
 
@@ -144,9 +143,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'gk15' (Gauss-Kronrod 15-point rule),
         'trapezoid' (composite trapezoid rule).
-        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
+        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite.
     full_output : bool, optional
-        Return an additional ``info`` dictionary.
+        Return an additional ``info`` object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
@@ -158,25 +157,25 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Estimate for the result
     err : float
         Error estimate for the result in the given norm
-    info : dict
+    info : object
         Returned only when ``full_output=True``.
-        Info dictionary. Is an object with the attributes:
+        Result object with the attributes:
 
-            success : bool
-                Whether integration reached target precision.
-            status : int
-                Indicator for convergence, success (0),
-                failure (1), and failure due to rounding error (2).
-            neval : int
-                Number of function evaluations.
-            intervals : ndarray, shape (num_intervals, 2)
-                Start and end points of subdivision intervals.
-            integrals : ndarray, shape (num_intervals, ...)
-                Integral for each interval.
-                Note that at most ``cache_size`` values are recorded,
-                and the array may contains *nan* for missing items.
-            errors : ndarray, shape (num_intervals,)
-                Estimated integration error for each interval.
+        success : bool
+            Whether integration reached target precision.
+        status : int
+            Indicator for convergence, success (0),
+            failure (1), and failure due to rounding error (2).
+        neval : int
+            Number of function evaluations.
+        intervals : ndarray, shape (num_intervals, 2)
+            Start and end points of subdivision intervals.
+        integrals : ndarray, shape (num_intervals, ...)
+            Integral for each interval.
+            Note that at most ``cache_size`` values are recorded,
+            and the array may contains *nan* for missing items.
+        errors : ndarray, shape (num_intervals,)
+            Estimated integration error for each interval.
 
     Notes
     -----
@@ -310,16 +309,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         _quadrature = {None: _quadrature_gk21,
                        'gk21': _quadrature_gk21,
                        'gk15': _quadrature_gk15,
-                       'trapz': _quadrature_trapezoid,  # alias for backcompat
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
         raise ValueError(f"unknown quadrature {quadrature!r}") from e
-
-    if quadrature == "trapz":
-        msg = ("`quadrature='trapz'` is deprecated in favour of "
-               "`quadrature='trapezoid' and will raise an error from SciPy 1.16.0 "
-               "onwards.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     # Initial interval set
     if points is None:
@@ -347,7 +339,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         neval += _quadrature.num_eval
 
         if global_integral is None:
-            if isinstance(ig, (float, complex)):
+            if isinstance(ig, float | complex):
                 # Specialize for scalars
                 if norm_func in (_max_norm, np.linalg.norm):
                     norm_func = abs

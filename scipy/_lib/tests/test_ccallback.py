@@ -9,12 +9,6 @@ from scipy._lib import _ccallback_c as _test_ccallback_cython
 from scipy._lib import _test_ccallback
 from scipy._lib._ccallback import LowLevelCallable
 
-try:
-    import cffi
-    HAVE_CFFI = True
-except ImportError:
-    HAVE_CFFI = False
-
 
 ERROR_VALUE = 2.0
 
@@ -29,8 +23,7 @@ def callback_python(a, user_data=None):
         return a + user_data
 
 def _get_cffi_func(base, signature):
-    if not HAVE_CFFI:
-        pytest.skip("cffi not installed")
+    cffi = pytest.importorskip("cffi")
 
     # Get function address
     voidp = ctypes.cast(base, ctypes.c_void_p)
@@ -48,8 +41,7 @@ def _get_ctypes_data():
 
 
 def _get_cffi_data():
-    if not HAVE_CFFI:
-        pytest.skip("cffi not installed")
+    cffi = pytest.importorskip("cffi")
     ffi = cffi.FFI()
     return ffi.new('double *', 2.0)
 

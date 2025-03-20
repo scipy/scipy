@@ -13,12 +13,12 @@ def test_graph_reverse_cuthill_mckee():
                 [0, 1, 0, 0, 0, 1, 0, 1],
                 [0, 0, 0, 1, 0, 0, 1, 0],
                 [0, 1, 0, 0, 0, 1, 0, 1]], dtype=int)
-    
+
     graph = csr_array(A)
     perm = reverse_cuthill_mckee(graph)
     correct_perm = np.array([6, 3, 7, 5, 1, 2, 4, 0])
     assert_equal(perm, correct_perm)
-    
+
     # Test int64 indices input
     graph.indices = graph.indices.astype('int64')
     graph.indptr = graph.indptr.astype('int64')
@@ -28,14 +28,14 @@ def test_graph_reverse_cuthill_mckee():
 
 def test_graph_reverse_cuthill_mckee_ordering():
     data = np.ones(63,dtype=int)
-    rows = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 
+    rows = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2,
                 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
                 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9,
-                9, 10, 10, 10, 10, 10, 11, 11, 11, 11, 
+                9, 10, 10, 10, 10, 10, 11, 11, 11, 11,
                 12, 12, 12, 13, 13, 13, 13, 14, 14, 14,
                 14, 15, 15, 15, 15, 15])
     cols = np.array([0, 2, 5, 8, 10, 1, 3, 9, 11, 0, 2,
-                7, 10, 1, 3, 11, 4, 6, 12, 14, 0, 7, 13, 
+                7, 10, 1, 3, 11, 4, 6, 12, 14, 0, 7, 13,
                 15, 4, 6, 14, 2, 5, 7, 15, 0, 8, 10, 13,
                 1, 9, 11, 0, 2, 8, 10, 15, 1, 3, 9, 11,
                 4, 12, 14, 5, 8, 13, 15, 4, 6, 12, 14,
@@ -53,18 +53,18 @@ def test_graph_structural_rank():
                    [1, 0, 1],
                    [0, 1, 0]])
     assert_equal(structural_rank(A), 3)
-    
+
     # Test square matrix #2
     rows = np.array([0,0,0,0,0,1,1,2,2,3,3,3,3,3,3,4,4,5,5,6,6,7,7])
     cols = np.array([0,1,2,3,4,2,5,2,6,0,1,3,5,6,7,4,5,5,6,2,6,2,4])
     data = np.ones_like(rows)
     B = coo_array((data,(rows,cols)), shape=(8,8))
     assert_equal(structural_rank(B), 6)
-    
+
     #Test non-square matrix
     C = csc_array([[1, 0, 2, 0],
                    [2, 0, 4, 0]])
     assert_equal(structural_rank(C), 2)
-    
+
     #Test tall matrix
     assert_equal(structural_rank(C.T), 2)

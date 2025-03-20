@@ -51,6 +51,7 @@ Testing
 -------
 - :doc:`numpy:reference/testing` is the definitive guide to writing unit tests
   of NumPy or SciPy code (part of the NumPy documentation)
+- :ref:`writing-test-tips` contains tips for writing units tests
 - :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and
   run tests locally
 - :ref:`debugging-linalg-issues` 
@@ -60,8 +61,8 @@ Testing
 Documentation
 -------------
 - :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_ (part of the NumPy documentation)
-- :ref:`contributing-docs` contains information on how to contribute to the SciPy documentation
-- :ref:`rendering-documentation` it's important to check how changes to the documentation render before merging a PR; this document explains how you can do that
+- :ref:`contributing-docs` contains information on how to render and contribute to the SciPy documentation
+- :ref:`adding-notebooks` explains how to add pages in Jupyter notebook/MyST format to the SciPy documentation (interactive or not)
 
 .. _toc-benchmarking:
 
@@ -100,10 +101,12 @@ Compiled code
     ../core-dev/index
     ../missing-bits
     NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
+    writing_test_tips
     devpy_test
     debugging_linalg_issues
     How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
     rendering_documentation
+    adding_notebooks
     benchmarking
     cython
     compiled_code

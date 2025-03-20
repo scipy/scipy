@@ -100,10 +100,23 @@ class IndexMixin:
                 else:
                     res = self._get_arrayXarray(row, col)
 
+        # handle spmatrix (must be 2d, dont let 1d new_shape start reshape)
+        if not isinstance(self, sparray):
+            if new_shape == () or (len(new_shape) == 1 and res.ndim != 0):
+                # res handles cases not inflated by None
+                return res
+            if len(new_shape) == 1:
+                # shape inflated to 1D by None in index. Make 2D
+                new_shape = (1,) + new_shape
+            # reshape if needed (when None changes shape, e.g. A[1,:,None])
+            return res if new_shape == res.shape else res.reshape(new_shape)
+
         # package the result and return
-        if isinstance(self, sparray) and res.shape != new_shape:
+        if res.shape != new_shape:
             # handle formats that support indexing but not 1D (lil for now)
             if self.format == "lil" and len(new_shape) != 2:
+                if res.shape == ():
+                    return self._coo_container([res], shape = new_shape)
                 return res.tocoo().reshape(new_shape)
             return res.reshape(new_shape)
         return res
@@ -233,8 +246,9 @@ class IndexMixin:
         ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
         if ellip_slices:
             if ellps_pos is None:
-                ellps_pos = prelim_ndim
-            index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
+                index_1st.extend(ellip_slices)
+            else:
+                index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
 
         # second pass (have processed ellipsis and preprocessed arrays)
         idx_shape = []
@@ -315,12 +329,12 @@ class IndexMixin:
         # Check bounds
         max_indx = x.max()
         if max_indx >= length:
-            raise IndexError('index (%d) out of range' % max_indx)
+            raise IndexError(f'index ({max_indx}) out of range')
 
         min_indx = x.min()
         if min_indx < 0:
             if min_indx < -length:
-                raise IndexError('index (%d) out of range' % min_indx)
+                raise IndexError(f'index ({min_indx}) out of range')
             if x is idx or not x.flags.owndata:
                 x = x.copy()
             x[x < 0] += length
@@ -332,7 +346,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -M or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += M
         return self._get_intXslice(i, slice(None))
@@ -343,7 +357,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -N or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += N
         return self._get_sliceXint(slice(None), i)

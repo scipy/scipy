@@ -6,10 +6,14 @@ from scipy._lib._tmpdirs import tempdir, in_tempdir, in_dir
 
 from numpy.testing import assert_, assert_equal
 
+import pytest
+
+
 MY_PATH = abspath(__file__)
 MY_DIR = dirname(MY_PATH)
 
 
+@pytest.mark.thread_unsafe
 def test_tempdir():
     with tempdir() as tmpdir:
         fname = pjoin(tmpdir, 'example_file.txt')
@@ -18,6 +22,7 @@ def test_tempdir():
     assert_(not exists(tmpdir))
 
 
+@pytest.mark.thread_unsafe
 def test_in_tempdir():
     my_cwd = getcwd()
     with in_tempdir() as tmpdir:
@@ -29,6 +34,7 @@ def test_in_tempdir():
     assert_equal(getcwd(), my_cwd)
 
 
+@pytest.mark.thread_unsafe
 def test_given_directory():
     # Test InGivenDirectory
     cwd = getcwd()

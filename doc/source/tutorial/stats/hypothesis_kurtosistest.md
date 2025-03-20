@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_kurtosistest.ipynb
+.. notebooklite:: hypothesis_kurtosistest.md
    :new_tab: True
 ```
 
 (hypothesis_kurtosistest)=
+
++++
+
 # Kurtosis test
 
 The kurtosis test {func}`scipy.stats.kurtosistest` function tests the null

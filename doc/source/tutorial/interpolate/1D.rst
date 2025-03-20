@@ -182,6 +182,60 @@ linear extrapolation since ``make_interp_spline`` extrapolates by default. Consi
 See :ref:`the extrapolation section <tutorial-extrapolation>` for more details
 and discussion.
 
+.. _tutorial-interpolate_batching:
+
+Batches of ``y``
+================
+
+Univariate interpolators accept not only one-dimensional ``y`` arrays, but also
+``y.ndim > 1``. The interpretation is that ``y`` is a *batch* of 1D data arrays: by
+default, the zeroth dimension of ``y`` is the interpolation axis, and the trailing 
+dimensions are batch dimensions.
+Consider a collection (a *batch*) of functions :math:`f_j` sampled at the points
+:math:`x_i`. We can instantiate a single interpolator for all of these functions by 
+providing a two-dimensional array ``y`` such that ``y[i, j]`` records :math:`f_j(x_i)`.
+
+To illustrate:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import make_interp_spline
+    >>> n = 11
+    >>> x = 2 * np.pi * np.arange(n) / n
+    >>> x.shape
+    (11,)
+    >>> y = np.stack((np.sin(x)**2, np.cos(x)), axis=1)
+    >>> y.shape
+    (11, 2)
+    >>> spl = make_interp_spline(x, y)
+    >>> xv = np.linspace(0, 2*np.pi, 51)
+    >>> plt.plot(x, y, 'o')
+    >>> plt.plot(xv, spl(xv), '-')
+    >>> plt.show()
+
+Several notes are in order. First and foremost, the behavior here looks similar to
+NumPy's broadcasting, but differs in two respects:
+
+1. The ``x`` array is expected to be 1D even if the ``y`` array is not: ``x.ndim == 1``
+   while ``y.ndim >= 1``. There is no broadcasting of ``x`` vs ``y``.
+
+2. By default, the *trailing* dimensions are used as batch dimensions, in contrast 
+   to the NumPy convention of using the *leading* dimensions as batch dimensions.
+
+Second, the interpolation axis can be controlled by an optional ``axis`` argument. The
+example above uses the default value of ``axis=0``. For a non-default values, the
+following is true:
+
+- ``y.shape[axis] == x.size`` (otherwise en error is raised)
+- the shape of ``spl(xv)`` is ``y.shape[axis:] + xv.shape + y.shape[:axis]``
+
+
+While we demonstrated the batching behavior with `make_interp_spline`, in fact the
+majority of univariate interpolators support this functionality: `PchipInterpolator` and
+`Akima1DInterpolator`, `CubicSpline`; low-level polynomial representation classes,
+`PPoly`, `BPoly` and `BSpline`; as well as :ref:`least-squares fit and spline smoothing
+functions<tutorial-interpolate_fitpack>`, `make_lsq_spline` and `make_smoothing_spline`.
+
 
 .. _tutorial-interpolate_parametric:
 
@@ -198,9 +252,10 @@ this construction readily generalizes to higher dimensions where
 :math:`\mathbf{p}_j` are points in an N-dimensional space.
 
 Spline curves can be easily constructed using the fact that interpolation
-functions handle multidimensional data arrays. The values of the parameter
-``u``, corresponding to the data points, need to be separately supplied
-by the user.
+functions handle multidimensional data arrays, as discussed in
+:ref:`the previous section <tutorial-interpolate_batching>`.
+The values of the parameter, ``u``, corresponding to the data points, need to be
+separately supplied by the user.
 
 The choice of parametrization is problem-dependent and different parametrizations
 may produce vastly different curves. As an example, we consider three
@@ -265,6 +320,20 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
     ...    ax[j].set_title(parametrizations[j])
     >>> plt.show()
 
+
+
+Missing data
+============
+
+We note that `scipy.interpolate` does *not* support interpolation with missing
+data. Two popular ways of representing missing data are using masked arrays of
+the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``.
+
+Neither of these two approaches is directly supported in `scipy.interpolate`.
+Individual routines may offer partial support, and/or workarounds, but in
+general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+means *not-a-number*, i.e. a result of an illegal mathematical operation
+(e.g., division by zero), not *missing*.
 
 
 .. _tutorial-interpolate_interp1d:
@@ -386,18 +455,3 @@ based on `numpy.searchsorted`. For example, the ``"nearest"`` mode is nothing bu
 
 Other variants are similar, see the ``interp1d`` `source code <https://github.com/scipy/scipy/blob/v1.14.1/scipy/interpolate/_interpolate.py#L486>`_
 for details.
-
-
-Missing data
-============
-
-We note that `scipy.interpolate` does *not* support interpolation with missing
-data. Two popular ways of representing missing data are using masked arrays of
-the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``. 
-
-Neither of these two approaches is directly supported in `scipy.interpolate`.
-Individual routines may offer partial support, and/or workarounds, but in
-general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
-means *not-a-number*, i.e. a result of an illegal mathematical operation
-(think a division by zero), not *missing*.
-

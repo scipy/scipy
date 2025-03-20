@@ -128,7 +128,7 @@ def unique_key(adict):
     done = False
     n = 1
     while not done:
-        newkey = '__l%s' % (n)
+        newkey = f'__l{n}'
         if newkey in allkeys:
             n += 1
         else:
@@ -146,7 +146,7 @@ def expand_sub(substr, names):
     def listrepl(mobj):
         thelist = conv(mobj.group(1).replace(r'\,', '@comma@'))
         if template_name_re.match(thelist):
-            return "<%s>" % (thelist)
+            return f"<{thelist}>"
         name = None
         for key in lnames.keys():    # see if list is already in dictionary
             if lnames[key] == thelist:
@@ -154,7 +154,7 @@ def expand_sub(substr, names):
         if name is None:      # this list is not in the dictionary yet
             name = unique_key(lnames)
             lnames[name] = thelist
-        return "<%s>" % name
+        return f"<{name}>"
 
     substr = list_re.sub(listrepl, substr) # convert all lists to named templates
                                            # newnames are constructed as needed
@@ -166,7 +166,7 @@ def expand_sub(substr, names):
         if r not in rules:
             thelist = lnames.get(r, names.get(r, None))
             if thelist is None:
-                raise ValueError('No replicates found for <%s>' % (r))
+                raise ValueError(f'No replicates found for <{r}>')
             if r not in names and not thelist.startswith('_'):
                 names[r] = thelist
             rule = [i.replace('@comma@', ',') for i in thelist.split(',')]
@@ -263,6 +263,9 @@ def main():
                         help="Path to the input file")
     parser.add_argument("-o", "--outdir", type=str,
                         help="Path to the output directory")
+    parser.add_argument("--free-threading",
+                        action=argparse.BooleanOptionalAction,
+                        help="Whether to add --free-threading-compatible")
     args = parser.parse_args()
 
     if not args.infile.endswith(('.pyf', '.pyf.src', '.f.src')):
@@ -281,12 +284,16 @@ def main():
     else:
         fname_pyf = args.infile
 
+    nogil_arg = []
+    if args.free_threading:
+        nogil_arg = ['--freethreading-compatible']
+
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
-        p = subprocess.Popen(['f2py', fname_pyf,
-                            '--build-dir', outdir_abs], #'--quiet'],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            cwd=os.getcwd())
+        p = subprocess.Popen(
+            ['f2py', fname_pyf, '--build-dir', outdir_abs] + nogil_arg,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=os.getcwd()
+        )
         out, err = p.communicate()
         if not (p.returncode == 0):
             raise RuntimeError(f"Processing {fname_pyf} with f2py failed!\n"

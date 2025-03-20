@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_bartlett.ipynb
+.. notebooklite:: hypothesis_bartlett.md
    :new_tab: True
 ```
 
 (hypothesis_bartlett)=
+
++++
+
 # Bartlett's test for equal variances
 
 In [^1], the influence of vitamin C on the tooth growth of guinea pigs was

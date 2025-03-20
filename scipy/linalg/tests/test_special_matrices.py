@@ -172,9 +172,6 @@ class TestBlockDiag:
         a = block_diag([2, 3], 4)
         assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, block_diag, [[[1]]])
-
     def test_no_args(self):
         a = block_diag()
         assert_equal(a.ndim, 2)
@@ -211,6 +208,7 @@ class TestBlockDiag:
 
 
 class TestKron:
+    @pytest.mark.thread_unsafe
     def test_dep(self):
         with pytest.deprecated_call(match="`kron`"):
             kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
@@ -503,8 +501,7 @@ def test_invpascal():
         # precision when n is greater than 18.  Instead we'll cast both to
         # object arrays, and then multiply.
         e = ip.astype(object).dot(p.astype(object))
-        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
-                                              (n, kind, exact))
+        assert_array_equal(e, eye(n), err_msg=f"n={n}  kind={kind!r} exact={exact!r}")
 
     kinds = ['symmetric', 'lower', 'upper']
 
@@ -611,6 +608,7 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),

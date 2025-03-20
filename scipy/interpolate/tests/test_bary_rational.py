@@ -92,6 +92,7 @@ class TestAAA:
         with pytest.raises(ValueError, match="greater"):
             AAA([1], [1], max_terms=-1)
 
+    @pytest.mark.thread_unsafe
     def test_convergence_error(self):
         with pytest.warns(RuntimeWarning, match="AAA failed"):
             AAA(UNIT_INTERVAL, np.exp(UNIT_INTERVAL),  max_terms=1)
@@ -199,8 +200,8 @@ class TestAAA:
     @pytest.mark.parametrize("func,atol,rtol",
                              [(lambda x: np.abs(x + 0.5 + 0.01j), 5e-13, 1e-7),
                               (lambda x: np.sin(1/(1.05 - x)), 2e-13, 1e-7),
-                              (lambda x: np.exp(-1/(x**2)), 3.5e-13, 0),
-                              (lambda x: np.exp(-100*x**2), 7e-13, 0),
+                              (lambda x: np.exp(-1/(x**2)), 3.5e-12, 0),
+                              (lambda x: np.exp(-100*x**2), 2e-12, 0),
                               (lambda x: np.exp(-10/(1.2 - x)), 1e-14, 0),
                               (lambda x: 1/(1+np.exp(100*(x + 0.5))), 2e-13, 1e-7),
                               (lambda x: np.abs(x - 0.95), 1e-6, 1e-7)])
@@ -245,6 +246,7 @@ class TestAAA:
         r = AAA(z, np.tan(np.pi*z/2))
         assert_allclose(np.sort(np.abs(r.poles()))[:4], [1, 1, 3, 3], rtol=9e-7)
 
+    @pytest.mark.thread_unsafe
     def test_spiral_cleanup(self):
         z = np.exp(np.linspace(-0.5, 0.5 + 15j*np.pi, num=1000))
         # here we set `rtol=0` to force froissart doublets, without cleanup there

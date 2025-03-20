@@ -1,6 +1,11 @@
 Probability distributions
 -------------------------
 
+*SciPy has two infrastructures for working with probability distributions.
+This tutorial is for the older one, which has many pre-defined distributions;
+however, the new infrastructure can be used with most of these and has many
+advantages. For the new infrastructure, see* :doc:`rv_infrastructure`.
+
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
 <continuous-random-variables>` and :ref:`discrete random variables
@@ -78,7 +83,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 108
+    number of continuous distributions: 109
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   21
 

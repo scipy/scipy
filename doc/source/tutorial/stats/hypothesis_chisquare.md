@@ -11,12 +11,17 @@ kernelspec:
   name: python3
 ---
 
++++ {"tags": ["jupyterlite_sphinx_strip"]}
+
 ```{eval-rst}
-.. jupyterlite:: ../../_contents/hypothesis_chisquare.ipynb
+.. notebooklite:: hypothesis_chisquare.md
    :new_tab: True
 ```
 
 (hypothesis_chisquare)=
+
++++
+
 # Chi-square test
 
 The {class}`chi-square test <scipy.stats.chisquare>` tests the null hypothesis

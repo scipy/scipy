@@ -87,38 +87,38 @@ def _get_test_tolerance(type_char, mattype=None, D_type=None, which=None):
 
 
 def generate_matrix(N, complex_=False, hermitian=False,
-                    pos_definite=False, sparse=False):
-    M = np.random.random((N, N))
+                    pos_definite=False, sparse=False, rng=None):
+    M = rng.random((N, N))
     if complex_:
-        M = M + 1j * np.random.random((N, N))
+        M = M + 1j * rng.random((N, N))
 
     if hermitian:
         if pos_definite:
             if sparse:
                 i = np.arange(N)
-                j = np.random.randint(N, size=N-2)
+                j = rng.randint(N, size=N-2)
                 i, j = np.meshgrid(i, j)
                 M[i, j] = 0
             M = np.dot(M.conj(), M.T)
         else:
             M = np.dot(M.conj(), M.T)
             if sparse:
-                i = np.random.randint(N, size=N * N // 4)
-                j = np.random.randint(N, size=N * N // 4)
+                i = rng.randint(N, size=N * N // 4)
+                j = rng.randint(N, size=N * N // 4)
                 ind = np.nonzero(i == j)
                 j[ind] = (j[ind] + 1) % N
                 M[i, j] = 0
                 M[j, i] = 0
     else:
         if sparse:
-            i = np.random.randint(N, size=N * N // 2)
-            j = np.random.randint(N, size=N * N // 2)
+            i = rng.randint(N, size=N * N // 2)
+            j = rng.randint(N, size=N * N // 2)
             M[i, j] = 0
     return M
 
 
-def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
-    M = np.random.random((N, N))
+def generate_matrix_symmetric(N, pos_definite=False, sparse=False, rng=None):
+    M = rng.random((N, N))
 
     M = 0.5 * (M + M.T)  # Make M symmetric
 
@@ -298,16 +298,18 @@ class SymmetricParams:
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
-        np.random.seed(2300)
+        rng = np.random.RandomState(2300)
         Ar = generate_matrix(N, hermitian=True,
-                             pos_definite=True).astype('f').astype('d')
+                             pos_definite=True,
+                             rng=rng).astype('f').astype('d')
         M = generate_matrix(N, hermitian=True,
-                            pos_definite=True).astype('f').astype('d')
+                            pos_definite=True,
+                            rng=rng).astype('f').astype('d')
         Ac = generate_matrix(N, hermitian=True, pos_definite=True,
-                             complex_=True).astype('F').astype('D')
+                             complex_=True, rng=rng).astype('F').astype('D')
         Mc = generate_matrix(N, hermitian=True, pos_definite=True,
-                             complex_=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+                             complex_=True, rng=rng).astype('F').astype('D')
+        v0 = rng.random(N)
 
         # standard symmetric problem
         SS = DictWithRepr("std-symmetric")
@@ -359,12 +361,12 @@ class NonSymmetricParams:
         # these should all be float32 so that the eigenvalues
         # are the same in float32 and float64
         N = 6
-        np.random.seed(2300)
-        Ar = generate_matrix(N).astype('f').astype('d')
+        rng = np.random.RandomState(2300)
+        Ar = generate_matrix(N, rng=rng).astype('f').astype('d')
         M = generate_matrix(N, hermitian=True,
-                            pos_definite=True).astype('f').astype('d')
-        Ac = generate_matrix(N, complex_=True).astype('F').astype('D')
-        v0 = np.random.random(N)
+                            pos_definite=True, rng=rng).astype('f').astype('d')
+        Ac = generate_matrix(N, complex_=True, rng=rng).astype('F').astype('D')
+        v0 = rng.random(N)
 
         # standard real nonsymmetric problem
         SNR = DictWithRepr("std-real-nonsym")
@@ -396,7 +398,10 @@ class NonSymmetricParams:
         self.complex_test_cases = [SNC, GNC]
 
 
-def test_symmetric_modes():
+@pytest.mark.iterations(1)
+@pytest.mark.thread_unsafe
+def test_symmetric_modes(num_parallel_threads):
+    assert num_parallel_threads == 1
     params = SymmetricParams()
     k = 2
     symmetric = True
@@ -436,8 +441,8 @@ def test_symmetric_starting_vector():
 
 
 def test_symmetric_no_convergence():
-    np.random.seed(1234)
-    m = generate_matrix(30, hermitian=True, pos_definite=True)
+    rng = np.random.RandomState(1234)
+    m = generate_matrix(30, hermitian=True, pos_definite=True, rng=rng)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
         w, v = eigsh(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol, ncv=9)
@@ -504,8 +509,8 @@ def test_general_nonsymmetric_starting_vector():
 
 
 def test_standard_nonsymmetric_no_convergence():
-    np.random.seed(1234)
-    m = generate_matrix(30, complex_=True)
+    rng = np.random.RandomState(1234)
+    m = generate_matrix(30, complex_=True, rng=rng)
     tol, rtol, atol = _get_test_tolerance('d')
     try:
         w, v = eigs(m, 4, which='LM', v0=m[:, 0], maxiter=5, tol=tol)
@@ -572,6 +577,8 @@ def test_linearoperator_deallocation():
     with assert_deallocated(lambda: arpack.IterOpInv(M_o, M_o, 0.3)):
         pass
 
+
+@pytest.mark.thread_unsafe
 def test_parallel_threads():
     results = []
     v0 = np.random.rand(50)
@@ -629,10 +636,11 @@ def test_regression_arpackng_1315():
 
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
+    rng = np.random.RandomState(1234)
     A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
-    A = generate_matrix(4, sparse=False)
-    M_dense = np.random.random((4, 4))
-    M_sparse = generate_matrix(4, sparse=True)
+    A = generate_matrix(4, sparse=False, rng=rng)
+    M_dense = rng.random((4, 4))
+    M_sparse = generate_matrix(4, sparse=True, rng=rng)
     M_linop = aslinearoperator(M_dense)
     eig_tuple1 = eig(A, b=M_dense)
     eig_tuple2 = eig(A, b=M_sparse)
@@ -655,10 +663,12 @@ def test_eigs_for_k_greater():
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
+    rng = np.random.RandomState(1234)
     A_sparse = diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4))  # sparse
-    A = generate_matrix(4, sparse=False)
-    M_dense = generate_matrix_symmetric(4, pos_definite=True)
-    M_sparse = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
+    A = generate_matrix(4, sparse=False, rng=rng)
+    M_dense = generate_matrix_symmetric(4, pos_definite=True, rng=rng)
+    M_sparse = generate_matrix_symmetric(
+        4, pos_definite=True, sparse=True, rng=rng)
     M_linop = aslinearoperator(M_dense)
     eig_tuple1 = eigh(A, b=M_dense)
     eig_tuple2 = eigh(A, b=M_sparse)
@@ -682,7 +692,7 @@ def test_real_eigs_real_k_subset():
     rng = np.random.default_rng(2)
 
     n = 10
-    A = random_array(shape=(n, n), density=0.5, random_state=rng)
+    A = random_array(shape=(n, n), density=0.5, rng=rng)
     A.data *= 2
     A.data -= 1
     A += A.T  # make symmetric to test real eigenvalues

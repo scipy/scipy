@@ -3,9 +3,8 @@
 import numpy as np
 
 from scipy.sparse import csr_array, issparse, csr_matrix
-from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
-
-from ._tools import _safe_downcast_indices
+from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy, is_pydata_spmatrix,
+                                   safely_cast_index_arrays)
 
 cimport numpy as np
 
@@ -21,7 +20,7 @@ class MaximumFlowResult:
     ----------
     flow_value : int
         The value of the maximum flow.
-    flow : csr_matrix
+    flow : csr_array
         The maximum flow.
     """
 
@@ -43,7 +42,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     Parameters
     ----------
-    csgraph : csr_matrix
+    csgraph : csr_array
         The square matrix representing a directed graph whose (i, j)'th entry
         is an integer representing the capacity of the edge between
         vertices i and j.
@@ -132,9 +131,9 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     Here, the maximum flow is simply the capacity of the edge:
 
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.csgraph import maximum_flow
-    >>> graph = csr_matrix([[0, 5], [0, 0]])
+    >>> graph = csr_array([[0, 5], [0, 0]])
     >>> maximum_flow(graph, 0, 1).flow_value
     5
     >>> maximum_flow(graph, 0, 1, method='edmonds_karp').flow_value
@@ -145,18 +144,18 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
         (0) --5--> (1) --3--> (2)
 
-    >>> graph = csr_matrix([[0, 5, 0], [0, 0, 3], [0, 0, 0]])
+    >>> graph = csr_array([[0, 5, 0], [0, 0, 3], [0, 0, 0]])
     >>> maximum_flow(graph, 0, 2).flow_value
     3
 
     A less trivial example is given in [2]_, Chapter 26.1:
 
-    >>> graph = csr_matrix([[0, 16, 13,  0,  0,  0],
-    ...                     [0,  0, 10, 12,  0,  0],
-    ...                     [0,  4,  0,  0, 14,  0],
-    ...                     [0,  0,  9,  0,  0, 20],
-    ...                     [0,  0,  0,  7,  0,  4],
-    ...                     [0,  0,  0,  0,  0,  0]])
+    >>> graph = csr_array([[0, 16, 13,  0,  0,  0],
+    ...                    [0,  0, 10, 12,  0,  0],
+    ...                    [0,  4,  0,  0, 14,  0],
+    ...                    [0,  0,  9,  0,  0, 20],
+    ...                    [0,  0,  0,  7,  0,  4],
+    ...                    [0,  0,  0,  0,  0,  0]])
     >>> maximum_flow(graph, 0, 5).flow_value
     23
 
@@ -175,7 +174,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     by :func:`maximum_bipartite_matching`. Then the CSR representation of the
     graph constructed above contains this matrix as a block. Here's an example:
 
-    >>> graph = csr_matrix([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 1, 0]])
+    >>> graph = csr_array([[0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 1, 0]])
     >>> print(graph.toarray())
     [[0 1 0 1]
      [1 0 1 0]
@@ -191,7 +190,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     ...                           np.repeat(i + j + 1, j)])
     >>> data = np.ones(n + i + j, dtype=int)
     >>>
-    >>> graph_flow = csr_matrix((data, indices, indptr))
+    >>> graph_flow = csr_array((data, indices, indptr))
     >>> print(graph_flow.toarray())
     [[0 1 1 1 0 0 0 0 0]
      [0 0 0 0 0 1 0 1 0]
@@ -254,10 +253,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     if not csgraph.has_sorted_indices:
         csgraph = csgraph.sorted_indices()
 
-    csgraph_indices, csgraph_indptr = _safe_downcast_indices(csgraph)
-    if csgraph_indices is not csgraph.indices:
+    indices, indptr = safely_cast_index_arrays(csgraph, idx_dtype=ITYPE, msg="csgraph")
+    if indices is not csgraph.indices:
         # create a new object without copying data
-        csgraph = csr_array((csgraph.data, csgraph_indices, csgraph_indptr),
+        csgraph = csr_array((csgraph.data, indices, indptr),
                             shape=csgraph.shape, dtype=csgraph.dtype)
 
     # Our maximum flow solvers assume that edges always exist
@@ -292,12 +291,12 @@ def _add_reverse_edges(a):
 
     Parameters
     ----------
-    a : csr_matrix
+    a : csr_array
         The square matrix in CSR format representing a directed graph
 
     Returns
     -------
-    res : csr_matrix
+    res : csr_array
         A new matrix in CSR format in which the missing edges are represented
         by explicit zeros.
 
@@ -320,7 +319,7 @@ def _add_reverse_edges(a):
     # allocate twice the number of non-zeros in `a` for the data, which
     # will always be enough. It might be too many entries in case `a` has
     # some reverse edges already; in that case, over-allocating is not
-    # a problem since csr_matrix implicitly truncates elements of data
+    # a problem since csr_array implicitly truncates elements of data
     # and indices that go beyond the indices given by indptr.
     res_data = np.zeros(2 * a.nnz, ITYPE)
     cdef ITYPE_t[:] res_data_view = res_data

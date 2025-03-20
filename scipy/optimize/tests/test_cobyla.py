@@ -62,7 +62,7 @@ class TestCobyla:
 
     def test_minimize_constraint_violation(self):
         rng = np.random.default_rng(1234)
-        pb = rng.random((10, 10))
+        pb = rng.random(size=(10, 10))
         spread = rng.random(10)
 
         def p(w):

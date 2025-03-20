@@ -628,7 +628,7 @@ void pbdv(T v, T x, T &pdf, T &pdd) {
         num = std::abs((int) v) + 2;
         dv = (T *) malloc(sizeof(T) * 2 * num);
         if (dv == NULL) {
-            set_error("pbdv", SF_ERROR_OTHER, "memory allocation error");
+            set_error("pbdv", SF_ERROR_MEMORY, "memory allocation error");
             pdf = std::numeric_limits<T>::quiet_NaN();
             pdd = std::numeric_limits<T>::quiet_NaN();
         } else {
@@ -653,7 +653,7 @@ void pbvv(T v, T x, T &pvf, T &pvd) {
         num = std::abs((int) v) + 2;
         vv = (T *) malloc(sizeof(T) * 2 * num);
         if (vv == NULL) {
-            set_error("pbvv", SF_ERROR_OTHER, "memory allocation error");
+            set_error("pbvv", SF_ERROR_MEMORY, "memory allocation error");
             pvf = std::numeric_limits<T>::quiet_NaN();
             pvd = std::numeric_limits<T>::quiet_NaN();
         } else {

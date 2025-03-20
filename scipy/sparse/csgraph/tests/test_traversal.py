@@ -84,10 +84,11 @@ def test_return_type():
         sup.filter(PendingDeprecationWarning, "the matrix subclass.*")
 
         nm_csgraph = np.matrix([[0, 1, 2, 0, 0],
-                        [1, 0, 0, 0, 3],
-                        [2, 0, 0, 7, 0],
-                        [0, 0, 7, 0, 1],
-                        [0, 3, 0, 1, 0]])
+                                [1, 0, 0, 0, 3],
+                                [2, 0, 0, 7, 0],
+                                [0, 0, 7, 0, 1],
+                                [0, 3, 0, 1, 0]])
+
     csgraph = csr_matrix(nm_csgraph)
     assert isinstance(laplacian(csgraph), coo_matrix)
     assert isinstance(minimum_spanning_tree(csgraph), csr_matrix)

@@ -1,7 +1,7 @@
 """Test how the ufuncs in special handle nan inputs.
 
 """
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_, suppress_warnings
@@ -35,6 +35,7 @@ def _get_ufuncs():
 UFUNCS, UFUNC_NAMES = _get_ufuncs()
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("func", UFUNCS, ids=UFUNC_NAMES)
 def test_nan_inputs(func):
     args = (np.nan,)*func.nin

@@ -1,10 +1,10 @@
 py3.extension_module('_sigtools',
   [
-    '_firfilter.c',
-    '_sigtoolsmodule.c',
-    '_medianfilter.c',
-    tempita_gen.process('_correlate_nd.c.in'),
-    tempita_gen.process('_lfilter.c.in'),
+    '_firfilter.cc',
+    '_sigtoolsmodule.cc',
+    '_medianfilter.cc',
+    '_lfilter.cc',
+    '_correlate_nd.cc'
   ],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -62,6 +62,9 @@ py3.extension_module('_spline',
 
 py3.install_sources([
     '__init__.py',
+    '_support_alternative_backends.py',
+    '_signal_api.py',
+    '_delegators.py',
     '_arraytools.py',
     '_spline_filters.py',
     '_czt.py',
@@ -88,7 +91,7 @@ py3.install_sources([
     'spectral.py',
     'spline.py',
     'waveforms.py',
-    'wavelets.py'
+    'wavelets.py',
   ],
   subdir: 'scipy/signal'
 )

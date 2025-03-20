@@ -151,7 +151,27 @@ def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
     return np.linalg.norm(e, axis=0) / np.sqrt(e.shape[0])
 
+def test_duplicate_timestamps():
+    def upward_cannon(t, y):
+        return [y[1], -9.80665]
 
+    def hit_ground(t, y):
+        return y[0]
+
+    hit_ground.terminal = True
+    hit_ground.direction = -1
+
+    sol = solve_ivp(upward_cannon, [0, np.inf], [0, 0.01],
+                    max_step=0.05 * 0.001 / 9.80665,
+                    events=hit_ground, dense_output=True)
+    assert_allclose(sol.sol(0.01), np.asarray([-0.00039033, -0.08806632]),
+                    rtol=1e-5, atol=1e-8)
+    assert_allclose(sol.t_events, np.asarray([[0.00203943]]), rtol=1e-5, atol=1e-8)
+    assert_allclose(sol.y_events, [np.asarray([[ 0.0, -0.01 ]])], atol=1e-9)
+    assert sol.success
+    assert_equal(sol.status, 1)
+
+@pytest.mark.thread_unsafe
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
@@ -216,6 +236,7 @@ def test_integration():
         assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
+@pytest.mark.thread_unsafe
 def test_integration_complex():
     rtol = 1e-3
     atol = 1e-6
@@ -325,11 +346,14 @@ def test_integration_const_jac():
 
 @pytest.mark.slow
 @pytest.mark.parametrize('method', ['Radau', 'BDF', 'LSODA'])
-def test_integration_stiff(method):
+def test_integration_stiff(method, num_parallel_threads):
     rtol = 1e-6
     atol = 1e-6
     y0 = [1e4, 0, 0]
     tspan = [0, 1e8]
+
+    if method == 'LSODA' and num_parallel_threads > 1:
+        pytest.skip(reason='LSODA does not allow for concurrent calls')
 
     def fun_robertson(t, state):
         x, y, z = state
@@ -347,7 +371,7 @@ def test_integration_stiff(method):
     assert res.njev < 200
 
 
-def test_events():
+def test_events(num_parallel_threads):
     def event_rational_1(t, y):
         return y[0] - y[1] ** 0.7
 
@@ -360,6 +384,9 @@ def test_events():
     event_rational_3.terminal = True
 
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
+        if method == 'LSODA' and num_parallel_threads > 1:
+            continue
+
         res = solve_ivp(fun_rational, [5, 8], [1/3, 2/9], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
@@ -446,6 +473,9 @@ def test_events():
     event_rational_1.direction = 0
     event_rational_2.direction = 0
     for method in ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA']:
+        if method == 'LSODA' and num_parallel_threads > 1:
+            continue
+
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
@@ -562,11 +592,13 @@ def test_event_terminal_iv():
         solve_ivp(*args, events=event)
 
 
-def test_max_step():
+def test_max_step(num_parallel_threads):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
     for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
+        if method is LSODA and num_parallel_threads > 1:
+            continue
         for t_span in ([5, 9], [5, 1]):
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
                             max_step=0.5, atol=atol, method=method,
@@ -604,12 +636,14 @@ def test_max_step():
                 assert_raises(RuntimeError, solver.step)
 
 
-def test_first_step():
+def test_first_step(num_parallel_threads):
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
     first_step = 0.1
     for method in [RK23, RK45, DOP853, Radau, BDF, LSODA]:
+        if method is LSODA and num_parallel_threads > 1:
+            continue
         for t_span in ([5, 9], [5, 1]):
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
                             max_step=0.5, atol=atol, method=method,
@@ -730,6 +764,7 @@ def test_t_eval_dense_output():
     assert_(np.all(e < 5))
 
 
+@pytest.mark.thread_unsafe
 def test_t_eval_early_event():
     def early_event(t, y):
         return t - 7
@@ -758,7 +793,10 @@ def test_t_eval_early_event():
         assert res.t_events[0][0] == 7
 
 
-def test_event_dense_output_LSODA():
+def test_event_dense_output_LSODA(num_parallel_threads):
+    if num_parallel_threads > 1:
+        pytest.skip('LSODA does not allow for concurrent execution')
+
     def event_lsoda(t, y):
         return y[0] - 2.02e-5
 
@@ -1091,6 +1129,7 @@ def test_args():
     assert_allclose(zfinalevents[2], [zfinal])
 
 
+@pytest.mark.thread_unsafe
 def test_array_rtol():
     # solve_ivp had a bug with array_like `rtol`; see gh-15482
     # check that it's fixed
@@ -1109,8 +1148,12 @@ def test_array_rtol():
     # tighter rtol improves the error
     assert err2 < err1
 
+
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
-def test_integration_zero_rhs(method):
+def test_integration_zero_rhs(method, num_parallel_threads):
+    if method == 'LSODA' and num_parallel_threads > 1:
+        pytest.skip(reason='LSODA does not allow for concurrent execution')
+
     result = solve_ivp(fun_zero, [0, 10], np.ones(3), method=method)
     assert_(result.success)
     assert_equal(result.status, 0)
@@ -1147,7 +1190,7 @@ def test_zero_interval(method):
     res = solve_ivp(f, (0.0, 0.0), np.array([1.0]), method=method)
     assert res.success
     assert_allclose(res.y[0, -1], 1.0)
-    
+
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
 def test_tbound_respected_small_interval(method):
@@ -1155,7 +1198,7 @@ def test_tbound_respected_small_interval(method):
     SMALL = 1e-4
 
     # f[y(t)] = 2y(t) on t in [0,SMALL]
-    #           undefined otherwise 
+    #           undefined otherwise
     def f(t, y):
         if t > SMALL:
             raise ValueError("Function was evaluated outside interval")
@@ -1180,13 +1223,13 @@ def test_tbound_respected_larger_interval(method):
         dQdr = -2.0 * r * ((-0.2 - V(r)) * P + 1 / r * Q)
         return np.array([dPdr, dQdr])
 
-    result = solve_ivp(func, 
+    result = solve_ivp(func,
                        (-17, 2),
                        y0=np.array([1, -11]),
                        max_step=0.03,
                        vectorized=False,
                        t_eval=None,
-                       atol=1e-8, 
+                       atol=1e-8,
                        rtol=1e-5)
     assert result.success
 
@@ -1195,11 +1238,11 @@ def test_tbound_respected_larger_interval(method):
 def test_tbound_respected_oscillator(method):
     "Regression test for gh-9198"
     def reactions_func(t, y):
-        if (t > 205): 
+        if (t > 205):
             raise ValueError("Called outside interval")
-        yprime = np.array([1.73307544e-02, 
-                           6.49376470e-06, 
-                           0.00000000e+00, 
+        yprime = np.array([1.73307544e-02,
+                           6.49376470e-06,
+                           0.00000000e+00,
                            0.00000000e+00])
         return yprime
 
@@ -1209,8 +1252,8 @@ def test_tbound_respected_oscillator(method):
         t1 = 200.0
         return solve_ivp(reactions_func,
                          (t0, t1),
-                         init_state.copy(), 
-                         dense_output=True, 
+                         init_state.copy(),
+                         dense_output=True,
                          max_step=t1 - t0)
     result = run_sim2(1000, 100, 100)
     assert result.success
@@ -1230,7 +1273,7 @@ def test_inital_maxstep():
                             ]:
             step_no_max = select_initial_step(fun_rational, t0, y0, t_bound,
                                             np.inf,
-                                            fun_rational(t0,y0), 
+                                            fun_rational(t0,y0),
                                             np.sign(t_bound - t0),
                                             method_order,
                                             rtol, atol)
@@ -1239,6 +1282,6 @@ def test_inital_maxstep():
                                             max_step,
                                             fun_rational(t0, y0),
                                             np.sign(t_bound - t0),
-                                            method_order, 
+                                            method_order,
                                             rtol, atol)
             assert_equal(max_step, step_with_max)

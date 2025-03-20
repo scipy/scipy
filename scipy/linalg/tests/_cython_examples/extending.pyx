@@ -3,6 +3,7 @@
 #cython: boundscheck=False
 #cython: wraparound=False
 
+cimport scipy.linalg
 from scipy.linalg.cython_blas cimport cdotu
 from scipy.linalg.cython_lapack cimport dgtsv
 

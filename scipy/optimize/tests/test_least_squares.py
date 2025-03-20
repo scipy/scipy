@@ -1,4 +1,5 @@
 from itertools import product
+from multiprocessing import Pool
 
 import numpy as np
 from numpy.linalg import norm
@@ -6,13 +7,14 @@ from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-from scipy.sparse import issparse, lil_matrix
+from scipy.sparse import issparse, lil_array
 from scipy.sparse.linalg import aslinearoperator
 
 from scipy.optimize import least_squares, Bounds, minimize
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
+from scipy.optimize import OptimizeResult
 
 def fun_trivial(x, a=0):
     return (x - a)**2 + 5.0
@@ -92,7 +94,7 @@ class BroydenTridiagonal:
         self.x0 = make_strictly_feasible(self.x0, self.lb, self.ub)
 
         if mode == 'sparse':
-            self.sparsity = lil_matrix((n, n), dtype=int)
+            self.sparsity = lil_array((n, n), dtype=int)
             i = np.arange(n)
             self.sparsity[i, i] = 1
             i = np.arange(1, n)
@@ -116,7 +118,7 @@ class BroydenTridiagonal:
         return f
 
     def _jac(self, x):
-        J = lil_matrix((self.n, self.n))
+        J = lil_array((self.n, self.n))
         i = np.arange(self.n)
         J[i, i] = 3 - 2 * x
         i = np.arange(1, self.n)
@@ -133,6 +135,7 @@ class ExponentialFittingProblem:
     def __init__(self, a, b, noise, n_outliers=1, x_range=(-1, 1),
                  n_points=11, rng=None):
         rng = np.random.default_rng(rng)
+
         self.m = n_points
         self.n = 2
 
@@ -386,6 +389,27 @@ class BaseMixin:
                                 ftol=ftol, gtol=gtol, xtol=xtol,
                                 method=self.method)
             assert_allclose(res.x, x_opt)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        serial = least_squares(fun_trivial, 2.0, method=self.method)
+
+        reses = []
+        for workers in [None, 2]:
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers
+            )
+            reses.append(res)
+        with Pool() as workers:
+            res = least_squares(
+                fun_trivial, 2.0, method=self.method, workers=workers.map
+            )
+            reses.append(res)
+        for res in reses:
+            assert res.success
+            assert_equal(res.x, serial.x)
+            assert_equal(res.nfev, serial.nfev)
+            assert_equal(res.njev, serial.njev)
 
 
 class BoundsMixin:
@@ -785,6 +809,73 @@ def test_basic():
     # test that 'method' arg is really optional
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
+
+
+def test_callback():
+    # test that callback function works as expected
+
+    results = []
+    
+    def my_callback_optimresult(intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        
+    def my_callback_x(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        return False
+        
+    def my_callback_optimresult_stop_exception(
+        intermediate_result: OptimizeResult):
+        results.append(intermediate_result)
+        raise StopIteration
+
+    def my_callback_x_stop_exception(x):
+        r = OptimizeResult()
+        r.nit = 1
+        r.x = x
+        results.append(r)
+        raise StopIteration
+
+    # Try for different function signatures and stop methods
+    callbacks_nostop = [my_callback_optimresult, my_callback_x]
+    callbacks_stop = [my_callback_optimresult_stop_exception,
+                      my_callback_x_stop_exception]
+    
+    # Try for all the implemented methods: trf, trf_bounds and dogbox
+    calls = [
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='trf', 
+                                       bounds=(-8.0, 8.0), callback=callback),
+        lambda callback: least_squares(fun_trivial, 5.0, method='dogbox', 
+                                       callback=callback)
+    ]
+
+    for mycallback, call in product(callbacks_nostop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that results data makes sense
+        assert results[-1].nit > 0
+        # Check that it didn't stop because of the callback
+        assert res.status != -2
+        # final callback x should be same as final result
+        assert_allclose(results[-1].x, res.x)
+
+    for mycallback, call in product(callbacks_stop, calls):
+        results.clear()
+        # Call the different implemented methods
+        res = call(mycallback)
+        # Check that callback was called
+        assert len(results) > 0
+        # Check that only one iteration was run
+        assert results[-1].nit == 1
+        # Check that it stopped because of the callback
+        assert res.status == -2
 
 
 def test_small_tolerances_for_lm():

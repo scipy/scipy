@@ -56,6 +56,15 @@ def data_local(func, dataname, *a, **kw):
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
 
 
+# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
+# and sph_harm_y respectively. The deprecated functions listed above are
+# implemented as shims around their respective replacements. The replacements
+# are tested separately, but tests for the deprecated functions remain to
+# verify the correctness of the shims.
+
+
 def ellipk_(k):
     return ellipk(k*k)
 
@@ -84,13 +93,17 @@ def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
 def lpn_(n, x):
-    return lpn(n.astype('l'), x)[0][-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpn(n.astype('l'), x)[0][-1]
 
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
 
 def legendre_p_via_lpmn(n, x):
-    return lpmn(0, n, x)[0][0,-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpmn(0, n, x)[0][0,-1]
 
 def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
@@ -187,7 +200,9 @@ def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
 
 def sph_harm_(m, n, theta, phi):
-    y = sph_harm(m, n, theta, phi)
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        y = sph_harm(m, n, theta, phi)
     return (y.real, y.imag)
 
 def cexpm1(x, y):
@@ -280,7 +295,7 @@ BOOST_TESTS = [
 
         data(pdtrik, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 2, rtol=3e-9),
-        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data', 
+        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 3, rtol=4e-9),
 
         data(cbrt, 'cbrt_data_ipp-cbrt_data', 1, 0),
@@ -646,6 +661,7 @@ BOOST_TESTS = [
 ]
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
      _test_factory(test)
