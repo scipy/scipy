@@ -120,25 +120,27 @@ class TestLineSearch:
                     (name, bind_index(value, 0), bind_index(value, 1)))
 
         # the choice of seed affects whether the tests pass
-        rng = self.rng = np.random.default_rng(1231892908)
+        rng = np.random.default_rng(1231892908)
         self.A = rng.standard_normal((self.N, self.N))
 
     def scalar_iter(self):
+        rng = np.random.default_rng(2231892908)
         for name, phi, derphi in self.scalar_funcs:
-            for old_phi0 in self.rng.standard_normal(3):
+            for old_phi0 in rng.standard_normal(3):
                 yield name, phi, derphi, old_phi0
 
     def line_iter(self):
+        rng = np.random.default_rng(2231892908)
         for name, f, fprime in self.line_funcs:
             k = 0
             while k < 9:
-                x = self.rng.standard_normal(self.N)
-                p = self.rng.standard_normal(self.N)
+                x = rng.standard_normal(self.N)
+                p = rng.standard_normal(self.N)
                 if np.dot(p, fprime(x)) >= 0:
                     # always pick a descent direction
                     continue
                 k += 1
-                old_fv = float(self.rng.standard_normal())
+                old_fv = float(rng.standard_normal())
                 yield name, f, fprime, x, p, old_fv
 
     # -- Generic scalar searches
