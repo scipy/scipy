@@ -14,7 +14,6 @@ Result classes
    RelativeRiskResult
    BinomTestResult
    TukeyHSDResult
-   GamesHowellResult
    DunnettResult
    PearsonRResult
    FitResult
