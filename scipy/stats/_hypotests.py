@@ -1784,9 +1784,9 @@ class TukeyHSDResult:
                https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
                28 November 2020.
         .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
-           with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+               with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
+               Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
+               doi: https://doi.org/10.3102/10769986001002113.
 
         Examples
         --------

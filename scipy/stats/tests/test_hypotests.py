@@ -1756,7 +1756,6 @@ class TestGamesHowell:
             .replace(" == ", " ").split()[3:],
             dtype=float).reshape(-1, 5)
         res_games = stats.tukey_hsd(*data, equal_var=False)
-        breakpoint()
         # loop over the comparisons
         # note confidence intervals are not provided by PMCMRplus
         for j, i, _, _, p in res_expect:
