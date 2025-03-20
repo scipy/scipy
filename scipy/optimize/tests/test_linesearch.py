@@ -129,7 +129,6 @@ class TestLineSearch:
                 yield name, phi, derphi, old_phi0
 
     def line_iter(self):
-        rng = np.random.RandomState(1234)
         for name, f, fprime in self.line_funcs:
             k = 0
             while k < 9:
