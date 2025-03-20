@@ -710,15 +710,6 @@ def _initialize_vector_of_function_evaluations(
     option: Dict['str', Any]) -> None:
     """
     Initialize function evaluations
-
-    Args:
-        lw_progress (_type_): _description_
-        func (_type_): _description_
-        surrogate (Surrogate): _description_
-        option (_type_): _description_
-
-    Returns:
-        _type_: _description_
     """
     # an integer counter denoting the number of function evaluations (samples) made thus far
     i_sample_counter = 0
