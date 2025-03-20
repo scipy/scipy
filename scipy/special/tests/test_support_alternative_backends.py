@@ -1,4 +1,8 @@
+from functools import partial
+
 import pytest
+from hypothesis import given, strategies
+import hypothesis.extra.numpy as npst
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
@@ -18,84 +22,180 @@ def test_dispatch_to_unrecognized_library():
     xp_assert_close(res, ref)
 
 
-@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
-def test_rel_entr_generic(dtype):
-    xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
-    x = [-1, 0, 0, 1]
-    y = [1, 0, 2, 3]
+def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
+    """Skip tests for specific intersections of scipy.special functions 
+    vs. backends vs. dtypes vs. devices.
+    Also suggest bespoke tweaks.
 
-    x_xp = xp.asarray(x, dtype=dtype_xp)
-    y_xp = xp.asarray(y, dtype=dtype_xp)
-    res = f(x_xp, y_xp)
-
-    x_np = np.asarray(x, dtype=dtype_np)
-    y_np = np.asarray(y, dtype=dtype_np)
-    ref = special.rel_entr(x_np[-1], y_np[-1])
-    ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
-    ref = xp.asarray(ref)
-
-    xp_assert_close(res, ref)
-
-
-@pytest.mark.fail_slow(5)
-# `reversed` is for developer convenience: test new function first = less waiting
-@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@pytest.mark.parametrize('dtype', ['float32', 'float64'])
-@pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
-                                    [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
+    Returns
+    -------
+    positive_only : bool
+        Whether you should exclusively test positive inputs.
+    dtypes_np_ref : dtype
+        The dtypes to use for the reference NumPy arrays.
+    """
     if (SCIPY_DEVICE != 'cpu'
         and is_torch(xp)
         and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
     ):
         pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
                     "and cannot delegate to PyTorch.")
+
     if is_dask(xp) and f_name == 'rel_entr':
         pytest.skip("boolean index assignment")
+
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
+
     if is_array_api_strict(xp) and f_name == "xlogy":
         pytest.skip(f"`{f_name}` needs data-apis/array-api-strict#131 to be resolved")
 
-    shapes = shapes[:n_args]
-    f = getattr(special, f_name)
+    if any('int' in dtype for dtype in dtypes) and (
+        (is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
+        or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
+        or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr'})
+    ):
+        pytest.skip(f"`{f_name}` does not support integer types")
 
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
-
-    # # To test the robustness of the alternative backend's implementation,
-    # # use Hypothesis to generate arguments
-    # from hypothesis import given, strategies, reproduce_failure, assume
-    # import hypothesis.extra.numpy as npst
-    # @given(data=strategies.data())
-    # mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
-    # shapes, final_shape = data.draw(mbs)
-    # elements = dict(allow_subnormal=False)  # consider min_value, max_value
-    # args_np = [np.asarray(data.draw(npst.arrays(dtype_np, shape, elements=elements)),
-    #                       dtype=dtype_np)
-    #            for shape in shapes]
-
-    # For CI, be a little more forgiving; just generate normally distributed arguments
-    rng = np.random.default_rng(984254252920492019)
-    args_np = [rng.standard_normal(size=shape, dtype=dtype_np) for shape in shapes]
+    # int/float mismatched args support is sketchy
+    if (any('int' in dtype for dtype in dtypes)
+        and any('float' in dtype for dtype in dtypes)
+        and ((is_torch(xp) or is_jax(xp) or is_dask(xp) and f_name == 'xlogy')
+             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc')))
+    ):
+        pytest.xfail("dtypes do not match")
 
     if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
         # gh-20972
         or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')):
-        args_np[0] = np.abs(args_np[0])
-        args_np[1] = np.abs(args_np[1])
+        positive_only = True
+    else:
+        positive_only = False
+
+    if (any('int' in dtype for dtype in dtypes)
+        and is_torch(xp) and xp.asarray(1.).dtype == xp.float32
+        and f_name not in {'betainc', 'betaincc', 'stdtr', 'stdtrit'}
+    ):
+        # When xp promotes int to float32, explicitly convert numpy arrays to float32
+        # to prevent them from being automatically promoted to float64 instead.
+        # To reproduce:
+        #     SCIPY_DEFAULT_DTYPE=float32 python dev.py test -b torch
+        dtypes_np_ref = [np.float32 if 'int' in dtype else getattr(np, dtype)
+                         for dtype in dtypes]
+    else:
+        dtypes_np_ref = [getattr(np, dtype) for dtype in dtypes]
+
+    return positive_only, dtypes_np_ref
+
+
+@pytest.mark.parametrize('f_name,n_args', array_special_func_map.items())
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
+@pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
+                                    [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
+def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
+    positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
+        xp, f_name, [dtype])
+    f = getattr(special, f_name)
+    dtype_np = getattr(np, dtype)
+    dtype_xp = getattr(xp, dtype)
+
+    shapes = shapes[:n_args]
+    rng = np.random.default_rng(984254252920492019)
+    if 'int' in dtype:
+        iinfo = np.iinfo(dtype_np)
+        rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
+    else:
+        rand = rng.standard_normal
+    args_np = [rand(size=shape, dtype=dtype_np) for shape in shapes]
+    if positive_only:
+        args_np = [np.abs(arg) for arg in args_np]
 
     args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
+    args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
 
     res = f(*args_xp)
-    ref = xp.asarray(f(*args_np), dtype=dtype_xp)
+    ref = f(*args_np)
 
-    eps = np.finfo(dtype_np).eps
-    xp_assert_close(res, ref, atol=10*eps)
+    # When dtype_np is integer, the output dtype can be float
+    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
+    xp_assert_close(res, xp.asarray(ref), atol=atol)
+
+
+@pytest.mark.parametrize('f_name,n_args',
+                         [(f_name, n_args)
+                          for f_name, n_args in array_special_func_map.items()
+                          if n_args >= 2])
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
+    """Test mix-n-match of int and float arguments"""
+    assert n_args <= 3
+    dtypes = ['int64', 'float32', 'float64'][:n_args]
+    dtypes_xp = [xp.int64, xp.float32, xp.float64][:n_args]
+    positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
+        xp, f_name, dtypes)
+    f = getattr(special, f_name)
+
+    rng = np.random.default_rng(984254252920492019)
+    iinfo = np.iinfo(np.int64)
+    randint = partial(rng.integers, iinfo.min, iinfo.max + 1)
+    args_np = [
+        randint(size=1, dtype=np.int64),
+        rng.standard_normal(size=1, dtype=np.float32),
+        rng.standard_normal(size=1, dtype=np.float64),
+    ][:n_args]
+    if positive_only:
+        args_np = [np.abs(arg) for arg in args_np]
+
+    args_xp = [xp.asarray(arg, dtype=dtype_xp)
+               for arg, dtype_xp in zip(args_np, dtypes_xp)]
+    args_np = [np.asarray(arg, dtype=dtype_np_ref)
+               for arg, dtype_np_ref in zip(args_np, dtypes_np_ref)]
+
+    res = f(*args_xp)
+    ref = f(*args_np)
+
+    atol = 10 * np.finfo(ref.dtype).eps
+    xp_assert_close(res, xp.asarray(ref), atol=atol)
+
+
+@pytest.mark.xslow
+@given(data=strategies.data())
+@pytest.mark.fail_slow(5)
+# `reversed` is for developer convenience: test new function first = less waiting
+@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings(
+    "ignore:overflow encountered:RuntimeWarning:array_api_strict"
+)
+def test_support_alternative_backends_hypothesis(xp, f_name, n_args, data):
+    dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
+    positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
+        xp, f_name, [dtype])
+    f = getattr(special, f_name)
+    dtype_np = getattr(np, dtype)
+    dtype_xp = getattr(xp, dtype)
+
+    elements = {'allow_subnormal': False}
+    # Most failures are due to NaN or infinity; uncomment to suppress them
+    # elements['allow_infinity'] = False
+    # elements['allow_nan'] = False
+    if positive_only:
+        elements['min_value'] = 0
+
+    shapes, _ = data.draw(npst.mutually_broadcastable_shapes(num_shapes=n_args))
+    args_np = [data.draw(npst.arrays(dtype_np, shape, elements=elements))
+               for shape in shapes]
+
+    args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
+    args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
+
+    res = f(*args_xp)
+    ref = f(*args_np)
+
+    # When dtype_np is integer, the output dtype can be float
+    atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
+    xp_assert_close(res, xp.asarray(ref), atol=atol)
 
 
 def test_chdtr_gh21311(xp):
