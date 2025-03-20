@@ -4344,12 +4344,12 @@ def linewalker(func, brack, **options):
 
     >>> import numpy as np
     >>> from scipy.optimize import linewalker, minimize_scalar
-    >>> 
+
     >>> def f(x):
-    >>>     return (x-1)**2
-    >>> 
+    ...     return (x-1)**2
+
     >>> res = linewalker(f, brack=(-1, 2))
-    >>> 
+
     >>> print(f"\
     ...     {res['fun'] = },\n\
     ...     {res['x'] = },\n\
@@ -4376,28 +4376,28 @@ def linewalker(func, brack, **options):
     ...     res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}\
     ... ")
 
-    res['fun'] = np.float64(0.0),
-    res['x'] = np.float64(1.0),
-    res['nit'] = 19,
-    res['nfev'] = 30,
-    res['success'] = True,
-    res['message'] = 'success'
-    res['f_min_evaluated'] = np.float64(0.0),
-    res['minimizer_evaluated'] = np.float64(1.0),
-    res['num_major_iterations'] = 19,
-    res['num_function_evaluations'] = 30,
-    res['f_min_predicted'] = np.float64(-5.3577671966469964e-15),
-    res['ix_arg_min_evaluated'] = np.int64(666),
-    res['grid_size'] = 1000,
-    res['fit'] len, mean = 1000, 1.0015823438786493,
-    res['max_fit'] = np.float64(3.9999999958493935),
-    res['min_fit'] = np.float64(-5.3577671966469964e-15),
-    res['range_fit'] = np.float64(3.999999995849399),
-    res['ix_arg_max_fit'] = np.int64(0),
-    res['ix_arg_min_fit'] = np.int64(666),
-    res['ix'] len, mean = 30, 570.4666666666667,
-    res['ix_sorted'] len, mean = 30, 570.4666666666667,
-    res['x_coord'] len, mean = 1000, 0.5,
+    res['fun'] = np.float64(0.0)
+    res['x'] = np.float64(1.0)
+    res['nit'] = 19
+    res['nfev'] = 30
+    res['success'] = True
+    res['message'] = 'success
+    res['f_min_evaluated'] = np.float64(0.0)
+    res['minimizer_evaluated'] = np.float64(1.0)
+    res['num_major_iterations'] = 19
+    res['num_function_evaluations'] = 30
+    res['f_min_predicted'] = np.float64(-5.3577671966469964e-15)
+    res['ix_arg_min_evaluated'] = np.int64(666)
+    res['grid_size'] = 1000
+    res['fit'] len, mean = 1000, 1.0015823438786493
+    res['max_fit'] = np.float64(3.9999999958493935)
+    res['min_fit'] = np.float64(-5.3577671966469964e-15)
+    res['range_fit'] = np.float64(3.999999995849399)
+    res['ix_arg_max_fit'] = np.int64(0)
+    res['ix_arg_min_fit'] = np.int64(666)
+    res['ix'] len, mean = 30, 570.4666666666667
+    res['ix_sorted'] len, mean = 30, 570.4666666666667
+    res['x_coord'] len, mean = 1000, 0.5
     res['sp'] len, mean = 1000, 0.03
 
     """
