@@ -78,7 +78,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
                         rtol=rtol, atol=atol)
 
 
-def magic_square(n, rng=11322890):
+def magic_square(n, rng=11322891):
     """
     Generates a linear program for which integer solutions represent an
     n x n magic square; binary decision variables represent the presence
