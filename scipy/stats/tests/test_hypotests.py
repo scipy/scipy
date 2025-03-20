@@ -1705,7 +1705,7 @@ class TestGamesHowell:
         res_expect = np.asarray(
             res_expect_str.replace(" - ", " ").split()[8:],
             dtype=float).reshape(-1, 6)
-        res_games = stats.games_howell(*data)
+        res_games = stats.tukey_hsd(*data, equal_var=False)
         conf = res_games.confidence_interval()
         # loop over the comparisons
         for i, j, s, l, h, p in res_expect:
@@ -1755,7 +1755,8 @@ class TestGamesHowell:
             res_expect_str.replace(" - ", " ")
             .replace(" == ", " ").split()[3:],
             dtype=float).reshape(-1, 5)
-        res_games = stats.games_howell(*data)
+        res_games = stats.tukey_hsd(*data, equal_var=False)
+        breakpoint()
         # loop over the comparisons
         # note confidence intervals are not provided by PMCMRplus
         for j, i, _, _, p in res_expect:
@@ -1765,8 +1766,13 @@ class TestGamesHowell:
     @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
     def test_conf_level_invalid(self, cl):
         with assert_raises(ValueError, match="must be between 0 and 1"):
-            r = stats.games_howell([23, 7, 3], [3, 4], [9, 4])
+            r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4], equal_var=False)
             r.confidence_interval(cl)
+
+    def test_equal_var_input_validation(self):
+        message = "Expected a boolean value for 'equal_var'"
+        with pytest.raises(TypeError, match=message):
+            stats.tukey_hsd(*self.data_diff_size, equal_var="False")
 
     # Data validation test has been covered by TestTukeyHSD
     # like empty, 1d, inf, and lack of tretments
