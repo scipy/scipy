@@ -553,7 +553,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         im2 = affine_transform(im, matrix, output_shape=(1024, 1024))
 
         plt.imshow(im2)
-        plt.savefig("tmp.png")
 
 
     Notes
