@@ -264,14 +264,14 @@ class TestExpmActionInterval:
         BI = np.identity(5, dtype=int)
         BI_sparse = scipy.sparse.csr_array(BI)
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
-        assert_allclose(np.diag(expm_multiply(A,BI_sparse,0,1)[-1]), Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A complex, B int
         A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags_array(np.exp(-1j*np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
-        assert_allclose(np.diag(expm_multiply(A,BI_sparse,0,1)[-1]), Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A int, B complex
         A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
@@ -280,7 +280,7 @@ class TestExpmActionInterval:
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
         BI = np.identity(5, dtype=complex)*1j
         assert_allclose(
-            np.diag(expm_multiply(A,scipy.sparse.csr_array(BI),0,1)[-1]),
+            np.diag(expm_multiply(A, scipy.sparse.csr_array(BI), 0, 1)[-1]),
             Aexpm.dot(B)
         )
 
