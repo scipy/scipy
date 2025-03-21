@@ -1725,19 +1725,14 @@ class TukeyHSDResult:
            Method."
            https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
            28 November 2020.
-    .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
-       with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-       Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-       doi: https://doi.org/10.3102/10769986001002113.
     """
 
-    def __init__(self, statistic, pvalue, _k, _df, _stand_err, _equal_var):
+    def __init__(self, statistic, pvalue, _nobs, _ntreatments, _stand_err):
         self.statistic = statistic
         self.pvalue = pvalue
-        self._df = _df
-        self._k = _k
+        self._ntreatments = _ntreatments
+        self._nobs = _nobs
         self._stand_err = _stand_err
-        self._equal_var = _equal_var
         self._ci = None
         self._ci_cl = None
 
@@ -1747,8 +1742,7 @@ class TukeyHSDResult:
         # it will be called with the default CL of .95.
         if self._ci is None:
             self.confidence_interval(confidence_level=.95)
-        method = "Tukey's HSD" if self._equal_var else "Games-Howell"
-        s = (f"{method} Pairwise Group Comparisons"
+        s = ("Tukey's HSD Pairwise Group Comparisons"
              f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
         for i in range(self.pvalue.shape[0]):
@@ -1783,10 +1777,6 @@ class TukeyHSDResult:
                Tukey's Method."
                https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
                28 November 2020.
-        .. [2] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
-               with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-               Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-               doi: https://doi.org/10.3102/10769986001002113.
 
         Examples
         --------
@@ -1819,25 +1809,16 @@ class TukeyHSDResult:
         # treatments. ("Confidence limits for Tukey's method")[1]. Note that
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
-        params = (confidence_level, self._k, self._df)
+        params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
         srd = distributions.studentized_range.ppf(*params)
         # also called maximum critical value, the Tukey criterion is the
         # studentized range critical value * the square root of mean square
         # error over the sample size.
-        if self._equal_var:
-            # scalar tukey criterion
-            criterion = srd * self._stand_err
-        else:
-            # ref.2 p.6
-            # H0 was rejected if $|v| \ge q(\alpha, K, \nu)/\sqrt{2}$
-            # games-howell criterion with different values in array
-            # make it into a matrix for the operation with the statistic
-            temp = srd * self._stand_err / np.sqrt(2)
-            criterion = abs(_make_matrix(self._k, temp, temp))
+        tukey_criterion = srd * self._stand_err
         # the confidence levels are determined by the
-        # `mean_differences` +- `criterion`
-        upper_conf = self.statistic + criterion
-        lower_conf = self.statistic - criterion
+        # `mean_differences` +- `tukey_criterion`
+        upper_conf = self.statistic + tukey_criterion
+        lower_conf = self.statistic - tukey_criterion
         self._ci = ConfidenceInterval(low=lower_conf, high=upper_conf)
         self._ci_cl = confidence_level
         return self._ci
@@ -1857,20 +1838,7 @@ def _tukey_hsd_iv(args):
     return args
 
 
-def _make_matrix(k, values, fill_diagonal=0.):
-    # 1D result list is returned by games_howell
-    # to make the same behavior as tukey_hsd,
-    # matrix is constructed here
-    values = np.asarray(values)
-    indices = np.triu_indices(k, 1)
-    matrix = np.zeros((k, k), dtype=values.dtype)
-    matrix[indices] = values
-    matrix -= matrix.T
-    np.fill_diagonal(matrix, fill_diagonal)
-    return matrix
-
-
-def tukey_hsd(*args, equal_var=True):
+def tukey_hsd(*args):
     """Perform Tukey's HSD test for equality of means over multiple treatments.
 
     Tukey's honestly significant difference (HSD) test performs pairwise
@@ -1893,10 +1861,6 @@ def tukey_hsd(*args, equal_var=True):
     sample1, sample2, ... : array_like
         The sample measurements for each group. There must be at least
         two arguments.
-    equal_var: bool, optional
-        If True (default), perform the Tukey's honestly significant
-        difference (HSD) test. If false, perform the Games-Howell test,
-        which does not assume equal population variances [7]_.
 
     Returns
     -------
@@ -1923,8 +1887,7 @@ def tukey_hsd(*args, equal_var=True):
 
     Notes
     -----
-    The use of Tukey's honestly significant difference (HSD) test
-    relies on several assumptions.
+    The use of this test relies on several assumptions.
 
     1. The observations are independent within and among groups.
     2. The observations within each group are normally distributed.
@@ -1933,8 +1896,7 @@ def tukey_hsd(*args, equal_var=True):
 
     The original formulation of the test was for samples of equal size [6]_.
     In case of unequal sample sizes, the test uses the Tukey-Kramer method
-    [4]_. In case of heterogeneous variances, the Games-Howell test is used
-    by setting `equal_var` to be False [7]_.
+    [4]_.
 
     References
     ----------
@@ -1958,10 +1920,7 @@ def tukey_hsd(*args, equal_var=True):
     .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
            Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
            www.jstor.org/stable/3001913. Accessed 14 June 2021.
-    .. [7] P. A. Games and J. F. Howell, "Pairwise Multiple Comparison Procedures
-           with Unequal N's and/or Variances: A Monte Carlo Study," Journal of
-           Educational Statistics, vol. 1, no. 2, pp. 113-125, Jun. 1976,
-           doi: https://doi.org/10.3102/10769986001002113.
+
 
     Examples
     --------
@@ -2031,83 +1990,38 @@ def tukey_hsd(*args, equal_var=True):
     ntreatments = len(args)
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])
+    nobs = np.sum(nsamples_treatments)
 
-    if not isinstance(equal_var, bool):
-        raise TypeError("Expected a boolean value for 'equal_var'")
+    # determine mean square error [5]. Note that this is sometimes called
+    # mean square error within.
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_treatments - 1)) / (nobs - ntreatments))
 
-    if equal_var:
-        nobs = np.sum(nsamples_treatments)
-
-        # determine mean square error [5]. Note that this is sometimes called
-        # mean square error within.
-        mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
-                      (nsamples_treatments - 1)) / (nobs - ntreatments))
-
-        # The calculation of the standard error differs when treatments differ in
-        # size. See ("Unequal sample sizes")[1].
-        if np.unique(nsamples_treatments).size == 1:
-            # all input groups are the same length, so only one value needs to be
-            # calculated [1].
-            normalize = 2 / nsamples_treatments[0]
-        else:
-            # to compare groups of differing sizes, we must compute a variance
-            # value for each individual comparison. Use broadcasting to get the
-            # resulting matrix. [3], verified against [4] (page 308).
-            normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
-
-        # the standard error is used in the computation of the tukey criterion and
-        # finding the p-values.
-        stand_err = np.sqrt(normalize * mse / 2)
-
-        # the mean difference is the test statistic.
-        mean_differences = means[None].T - means
-
-        # Calculate the t-statistic to use within the survival function of the
-        # studentized range to get the p-value.
-        t_stat = np.abs(mean_differences) / stand_err
-
-        params = t_stat, ntreatments, nobs - ntreatments
-        pvalues = distributions.studentized_range.sf(*params)
-
-        res_params = (mean_differences, pvalues, ntreatments,
-                      nobs - ntreatments, stand_err, equal_var)
-
+    # The calculation of the standard error differs when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
+    if np.unique(nsamples_treatments).size == 1:
+        # all input groups are the same length, so only one value needs to be
+        # calculated [1].
+        normalize = 2 / nsamples_treatments[0]
     else:
-        pairs = list(combinations(range(ntreatments), 2))
-        variances = np.asarray([np.var(arg, ddof=1) for arg in args])
-        mean_differences = [means[i] - means[j] for i, j in pairs]
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix. [3], verified against [4] (page 308).
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
 
-        # the denominator Behrens-Fisher statistic ref.7 p.5 with notation $v$
-        # calculated by sample variance and sample size
-        stand_err = [
-            np.sqrt(variances[i] / nsamples_treatments[i]
-                    + variances[j] / nsamples_treatments[j])
-            for i, j in pairs
-        ]
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
 
-        # Welch degree of freedom ref.7 p.5 with notation $\nu$
-        nus = [
-            (variances[i] / nsamples_treatments[i]
-             + variances[j] / nsamples_treatments[j])**2
-            / ((variances[i] / nsamples_treatments[i])**2
-               / (nsamples_treatments[i] - 1)
-               + (variances[j] / nsamples_treatments[j])**2
-               / (nsamples_treatments[j] - 1))
-            for i, j in pairs
-        ]
+    # the mean difference is the test statistic.
+    mean_differences = means[None].T - means
 
-        # Behrens-Fisher statistic ref.7 p.5 with notation $v$
-        v = np.asarray(mean_differences) / np.asarray(stand_err)
+    # Calculate the t-statistic to use within the survival function of the
+    # studentized range to get the p-value.
+    t_stat = np.abs(mean_differences) / stand_err
 
-        # H0 was rejected if $|v| \ge q(\alpha, K, \nu)/\sqrt{2}$
-        # ref.7 p.6
-        params = abs(v) * np.sqrt(2), ntreatments, nus
-        pvalues = distributions.studentized_range.sf(*params)
+    params = t_stat, ntreatments, nobs - ntreatments
+    pvalues = distributions.studentized_range.sf(*params)
 
-        # results is in games_howell is in 1D. To make sure same behavior
-        # as tukey_hsd, matrix is constructed to pass to TukeyHSDResult
-        mean_differences = _make_matrix(ntreatments, mean_differences)
-        pvalues = _make_matrix(ntreatments, pvalues, fill_diagonal=1.)
-        res_params = mean_differences, pvalues, ntreatments, nus, stand_err, equal_var
-
-    return TukeyHSDResult(*res_params)
+    return TukeyHSDResult(mean_differences, pvalues, ntreatments,
+                          nobs, stand_err)
