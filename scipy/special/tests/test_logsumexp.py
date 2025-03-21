@@ -1,3 +1,4 @@
+import itertools as it
 import math
 import pytest
 
@@ -266,18 +267,35 @@ class TestLogSumExp:
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
-    @pytest.mark.parametrize('x', [
-        [-np.inf, -np.inf],
-        [np.inf, np.inf],
-        [-np.inf + 0j, -np.inf + 0.7533j],
-        [np.inf + 1j, -0.9116 + 0.7533j],
-        [np.inf + 1.0000j, np.inf + 0.7533j],
-    ])
-    def test_gh22601_infinite_elements(self, x, xp):
+
+    @pytest.mark.parametrize('x,y', it.product(
+        [
+            -np.inf,
+            np.inf,
+            complex(-np.inf, 0.),
+            complex(-np.inf, -0.),
+            complex(-np.inf, np.inf),
+            complex(-np.inf, -np.inf),
+            complex(np.inf, 0.),
+            complex(np.inf, -0.),
+            complex(np.inf, np.inf),
+            complex(np.inf, -np.inf),
+            # Phase in each quadrant.
+            complex(-np.inf, 0.7533),
+            complex(-np.inf, 2.3562),
+            complex(-np.inf, 3.9270),
+            complex(-np.inf, 5.4978),
+            complex(np.inf, 0.7533),
+            complex(np.inf, 2.3562),
+            complex(np.inf, 3.9270),
+            complex(np.inf, 5.4978),
+        ], repeat=2)
+    )
+    def test_gh22601_infinite_elements(self, x, y, xp):
         # Test that `logsumexp` does reasonable things in the presence of
         # real and complex infinities.
-        res = logsumexp(xp.asarray(x))
-        ref = xp.log(xp.sum(xp.exp(xp.asarray(x))))
+        res = logsumexp(xp.asarray([x, y]))
+        ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
         xp_assert_equal(res, ref)
 
 
