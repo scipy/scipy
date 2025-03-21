@@ -540,6 +540,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     >>> from scipy.ndimage import affine_transform
     >>> from scipy.datasets import face
     >>> from matplotlib import pyplot as plt
+    >>> import numpy as np
 
     >>> im = face(gray=True)
     >>> matrix = (0.5, 2)
@@ -550,18 +551,17 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     Rotate an image by 90 degrees and project it onto an expanded canvas::
 
     >>> matrix = ((0, 1), (1, 0))
-    >>> im2 = affine_transform(im, matrix, output_shape=(1024, 1024))
+    >>> im3 = affine_transform(im, matrix, output_shape=(1024, 1024))
 
-    >>> plt.imshow(im2)
+    >>> plt.imshow(im3)
 
     Offset the rotation so that the image is centred::
 
-    >>> matrix = ((0, 1), (1, 0))
     >>> output_shape = (1200, 1200)
     >>> offset = (np.array(im.shape) - output_shape) / 2
-    >>> im2 = affine_transform(im, matrix, offset=offset, output_shape=output_shape)
+    >>> im4 = affine_transform(im, matrix, offset=offset, output_shape=output_shape)
 
-    >>> plt.imshow(im2)
+    >>> plt.imshow(im4)
 
     Notes
     -----
