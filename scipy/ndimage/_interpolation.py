@@ -537,6 +537,10 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     --------
     Use the ``affine_transform`` to stretch an image::
 
+        from scipy.ndimage import affine_transform
+        from scipy.datasets import face
+        from matplotlib import pyplot as plt
+
         im = face(gray=True)
         matrix = (0.5, 2)
         im2 = affine_transform(im, matrix)
