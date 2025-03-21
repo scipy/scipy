@@ -195,56 +195,55 @@ def _logsumexp(a, b, axis, return_sign, xp):
     # of the exponential. Possible enhancement: include log of `b` magnitude in `a`.
     a_max, i_max = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
 
-    # for precision, these terms are separated out of the main sum.
-    a = xpx.at(a, i_max).set(-xp.inf)
+    # When a_max is finite, perform the logsumexp trick to prevent overflow/underflow
+    # If a_max is infinite, use direct logsumexp calculation to delegate edge case
+    # handling to the behavior of xp.log and xp.exp which should follow the C99 standard
+    # for complex values.
+    a_max_finite = xp.isfinite(a_max)
+    # For precision, these terms are separated out of the main sum in typical
+    # cases where the logsumexp trick is used.
+    a = xpx.at(a, xp.logical_and(a_max_finite, i_max)).set(-xp.inf)
     i_max_dt = xp.astype(i_max, a.dtype)
     # This is an inefficient way of getting `m` because it is the sum of a sparse
     # array; however, this is the simplest way I can think of to get the right shape.
     m = (xp.sum(i_max_dt, axis=axis, keepdims=True, dtype=a.dtype) if b is None
          else xp.sum(b * i_max_dt, axis=axis, keepdims=True, dtype=a.dtype))
 
+    # Shift in cases where logsumexp trick is used. This will warn on some backends
+    # for cases where a_max has non finite values since a - a_max will be computed
+    # regardless of the value of a_max_finite.
+    a = xp.where(a_max_finite, a - a_max, a)
 
-    # `a - shift` will introduce NaNs if both `a` and `shift` have infinities of the
-    # same sign.
-    # For positive infinite `shift`, `a - shift` does the right thing if all of `a` are
-    # finite. If some of `a` are imaginary with `+inf` real component, it is not a huge
-    # problem for NaNs to appear. The *best* `logsumexp` result in this case could have
-    # either `inf` or `nan` real part and finite or `nan` imaginary part, depending on
-    # the specifics. The logic for this is not implemented, and previous implementations
-    # of `logsumexp` have returned garbage phase for multiple complex infinities, so
-    # returning `nan + nan*j` is an improvement over a result with incorrect phase.
-    # For negative infinities, this can only occur if *all* elements have negative
-    # infinite real part, so the result is the logarithm of `0`, and the phase is
-    # meaningless. The value returned by `logsumexp` will have the same phase as
-    # `a_max`, which should be fine, since this function has never had a principled
-    # phase convention for this case. Perhaps NaN phase would be best, but we save
-    # that for another day.
-    shift = xp.where(xp.logical_or(xp.isfinite(a_max), xp_real(a_max) > 0),
-                     a_max, 0.)
+    # Exponentiate
+    exp = xp.exp(a)
+    exp = b * exp if b is not None else exp
 
-    # Shift, exponentiate, scale, and sum
-    exp = b * xp.exp(a - shift) if b is not None else xp.exp(a - shift)
+    # Sum
     s = xp.sum(exp, axis=axis, keepdims=True, dtype=exp.dtype)
-    s = xp.where(s == 0, s, s/m)
+
+    # Scale in cases where logsumexp trick is used.
+    s = xp.where((s != 0) & a_max_finite, s / m, s)
 
     # Separate sign/magnitude information
     sgn = None
     if return_sign:
         # Use the numpy>=2.0 convention for sign.
         # When all array libraries agree, this can become sng = xp.sign(s).
-        sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+        sgn = xp.where(a_max_finite,
+                       _sign(s + 1, xp=xp) * _sign(m, xp=xp),
+                       _sign(s, xp=xp))
 
         if xp.isdtype(s.dtype, "real floating"):
             # The log functions need positive arguments
-            s = xp.where(s < -1, -s - 2, s)
+            s = xp.where(xp.logical_and(s < -1, a_max_finite), -s - 2, s)
+            s = xp.where(~a_max_finite, xp.abs(s), s)
             m = xp.abs(m)
         else:
             # `a_max` can have a sign component for complex input
-            sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
+            sgn = xp.where(a_max_finite, sgn * xp.exp(xp.imag(a_max) * 1.0j), sgn)
 
-    # Take log and undo shift
-    out = xp.log1p(s) + xp.log(m) + a_max
-
+    # Take log. Undo shift in cases where logsumexp trick is used.
+    out = xp.where(a_max_finite, xp.log1p(s) + xp.log(m) + a_max, xp.log(s))
     out = xp.real(out) if return_sign else out
 
     return out, sgn
