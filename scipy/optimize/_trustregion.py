@@ -3,9 +3,10 @@ import math
 import warnings
 
 import numpy as np
+from scipy._lib._util import OptimizeResult
 import scipy.linalg
 from ._optimize import (_check_unknown_options, _status_message,
-                        OptimizeResult, _prepare_scalar_function,
+                        _prepare_scalar_function,
                         _call_callback_maybe_halt)
 from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
 from scipy.optimize._differentiable_functions import FD_METHODS

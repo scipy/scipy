@@ -38,8 +38,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
-                              _call_callback_maybe_halt, _transition_to_rng)
+from scipy._lib._util import (MapWrapper, check_random_state, _call_callback_maybe_halt,
+                              _transition_to_rng, OptimizeResult)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy._lib._array_api import array_namespace, xp_capabilities
 from scipy._lib import array_api_extra as xpx
@@ -107,51 +107,6 @@ def _wrap_callback(callback, method=None):
 
     wrapped_callback.stop_iteration = False
     return wrapped_callback
-
-
-class OptimizeResult(_RichResult):
-    """
-    Represents the optimization result.
-
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimization.
-    success : bool
-        Whether or not the optimizer exited successfully.
-    status : int
-        Termination status of the optimizer. Its value depends on the
-        underlying solver. Refer to `message` for details.
-    message : str
-        Description of the cause of the termination.
-    fun : float
-        Value of objective function at `x`.
-    jac, hess : ndarray
-        Values of objective function's Jacobian and its Hessian at `x` (if
-        available). The Hessian may be an approximation, see the documentation
-        of the function in question.
-    hess_inv : object
-        Inverse of the objective function's Hessian; may be an approximation.
-        Not available for all solvers. The type of this attribute may be
-        either np.ndarray or scipy.sparse.linalg.LinearOperator.
-    nfev, njev, nhev : int
-        Number of evaluations of the objective functions and of its
-        Jacobian and Hessian.
-    nit : int
-        Number of iterations performed by the optimizer.
-    maxcv : float
-        The maximum constraint violation.
-
-    Notes
-    -----
-    Depending on the specific solver being used, `OptimizeResult` may
-    not have all attributes listed here, and they may have additional
-    attributes not listed here. Since this class is essentially a
-    subclass of dict with attribute accessors, one can see which
-    attributes are available using the `OptimizeResult.keys` method.
-
-    """
-    pass
 
 
 class OptimizeWarning(UserWarning):

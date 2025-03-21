@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from ._optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 from ._pava_pybind import pava
 
 if TYPE_CHECKING:

@@ -14,7 +14,7 @@ from scipy.optimize import least_squares, Bounds
 from scipy.optimize._lsq.least_squares import IMPLEMENTED_LOSSES
 from scipy.optimize._lsq.common import EPS, make_strictly_feasible, CL_scaling_vector
 
-from scipy.optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 
 def fun_trivial(x, a=0):
     return (x - a)**2 + 5.0

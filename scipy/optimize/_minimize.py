@@ -15,12 +15,13 @@ from warnings import warn
 
 import numpy as np
 
+from scipy._lib._util import OptimizeResult
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
-                        _minimize_scalar_golden, MemoizeJac, OptimizeResult,
-                        _wrap_callback, _recover_from_bracket_error)
+                        _minimize_scalar_golden, MemoizeJac, _wrap_callback,
+                        _recover_from_bracket_error)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov

@@ -10,14 +10,13 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan, OptimizeResult
 
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_vector_norm,
 )
-
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
@@ -2282,7 +2281,7 @@ def anderson(x, dist='norm'):
 
     # FitResult initializer expects an optimize result, so let's work with it
     message = '`anderson` successfully fit the distribution to the data.'
-    res = optimize.OptimizeResult(success=True, message=message)
+    res = OptimizeResult(success=True, message=message)
     res.x = np.array(fit_params)
     fit_result = FitResult(getattr(distributions, dist), y,
                            discrete=False, res=res)

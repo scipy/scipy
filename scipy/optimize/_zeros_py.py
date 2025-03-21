@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 import operator
 from . import _zeros
-from ._optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 import numpy as np
 
 

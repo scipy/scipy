@@ -15,7 +15,9 @@ References
 
 import inspect
 import numpy as np
-from ._optimize import OptimizeWarning, OptimizeResult
+
+from scipy._lib._util import OptimizeResult
+from ._optimize import OptimizeWarning
 from warnings import warn
 from ._highspy._highs_wrapper import _highs_wrapper
 from ._highspy._core import(

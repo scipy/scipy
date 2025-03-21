@@ -5,9 +5,10 @@ import multiprocessing
 from multiprocessing.dummy import Pool as ThreadPool
 import platform
 
+from scipy._lib._util import OptimizeResult
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution, OptimizeResult
+from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen, minimize

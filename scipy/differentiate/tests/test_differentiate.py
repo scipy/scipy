@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 
 import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import OptimizeResult
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal, xp_assert_less
 from scipy._lib._array_api import is_numpy, is_torch
@@ -593,14 +594,14 @@ class TestJacobian(JacobianHessianTest):
         res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
         res10 = jacobian(lambda x: df1_1xy(x, z[1]), z[0:1], initial_step=10)
         res11 = jacobian(lambda y: df1_1xy(z[0], y), z[1:2], initial_step=10)
-        ref = optimize.OptimizeResult()
+        ref = OptimizeResult()
         for attr in ['success', 'status', 'df', 'nit', 'nfev']:
             ref_attr = xp.asarray([[getattr(res00, attr), getattr(res01, attr)],
                                    [getattr(res10, attr), getattr(res11, attr)]])
             ref[attr] = xp.squeeze(
                 ref_attr,
                 axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
-            )            
+            )
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 

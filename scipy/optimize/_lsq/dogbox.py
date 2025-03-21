@@ -44,7 +44,7 @@ import numpy as np
 from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from scipy.optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 from scipy._lib._util import _call_callback_maybe_halt
 
 

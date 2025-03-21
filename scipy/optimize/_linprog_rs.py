@@ -25,7 +25,7 @@ from ._optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
 from ._linprog_util import _postsolve
-from ._optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 
 
 def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,

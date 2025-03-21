@@ -5,11 +5,11 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from scipy.optimize import _minpack, OptimizeResult
+from scipy.optimize import _minpack
 from scipy.optimize._numdiff import approx_derivative, group_columns
 from scipy.optimize._minimize import Bounds
 from scipy._lib._sparse import issparse
-from scipy._lib._util import _workers_wrapper
+from scipy._lib._util import OptimizeResult, _workers_wrapper
 
 from .trf import trf
 from .dogbox import dogbox

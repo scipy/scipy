@@ -11,7 +11,8 @@ import numpy as np
 
 from warnings import warn
 
-from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
+from scipy._lib._util import OptimizeResult
+from ._optimize import MemoizeJac, _check_unknown_options
 from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import _nonlin as nonlin

@@ -3,7 +3,7 @@ from typing import (  # noqa: UP035
 )
 
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._direct import direct as _direct  # type: ignore
 

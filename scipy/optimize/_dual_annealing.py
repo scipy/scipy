@@ -8,7 +8,7 @@ A Dual Annealing global optimization algorithm
 """
 
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 from scipy.optimize import minimize, Bounds
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state, _transition_to_rng

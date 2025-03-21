@@ -6,7 +6,7 @@ from numpy.linalg import pinv
 
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
-from scipy.optimize import OptimizeResult
+from scipy._lib._util import OptimizeResult
 
 
 EPS = np.finfo(float).eps

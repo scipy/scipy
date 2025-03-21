@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
-from scipy._lib._util import check_random_state, _transition_to_rng
+from scipy._lib._util import check_random_state, _transition_to_rng, OptimizeResult
 
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
@@ -1145,7 +1145,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_mc_samples, axis=-1,
                                  alternative=alternative)
-    opt_res = optimize.OptimizeResult()
+    opt_res = OptimizeResult()
     opt_res.success = True
     opt_res.message = "The fit was performed successfully."
     opt_res.x = nhd_vals

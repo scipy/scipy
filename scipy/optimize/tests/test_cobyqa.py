@@ -3,11 +3,11 @@ import pytest
 import threading
 from numpy.testing import assert_allclose, assert_equal
 
+from scipy._lib._util import OptimizeResult
 from scipy.optimize import (
     Bounds,
     LinearConstraint,
     NonlinearConstraint,
-    OptimizeResult,
     minimize,
 )
 

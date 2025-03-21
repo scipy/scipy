@@ -10,7 +10,8 @@ from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping, OptimizeResult
+from scipy._lib._util import OptimizeResult
+from scipy.optimize import basinhopping
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 

@@ -31,6 +31,7 @@ from scipy._lib._array_api_no_0d import (
     xp_assert_equal,
     xp_assert_less,
 )
+from scipy._lib._util import OptimizeResult
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -2582,7 +2583,7 @@ class TestYeojohnson:
 
         def optimizer(fun, lam_yeo):
             out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
-            result = optimize.OptimizeResult()
+            result = OptimizeResult()
             result.x = out
             return result
 
