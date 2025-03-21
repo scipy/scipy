@@ -537,25 +537,31 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     --------
     Use the ``affine_transform`` to stretch an image::
 
-        from scipy.ndimage import affine_transform
-        from scipy.datasets import face
-        from matplotlib import pyplot as plt
+    >>> from scipy.ndimage import affine_transform
+    >>> from scipy.datasets import face
+    >>> from matplotlib import pyplot as plt
 
-        im = face(gray=True)
-        matrix = (0.5, 2)
-        im2 = affine_transform(im, matrix)
+    >>> im = face(gray=True)
+    >>> matrix = (0.5, 2)
+    >>> im2 = affine_transform(im, matrix)
 
-        plt.imshow(im2)
-        plt.savefig("tmp2.png")
+    >>> plt.imshow(im2)
 
-    Rotation an image by 90 degrees and project it onto an expanded canvas
+    Rotate an image by 90 degrees and project it onto an expanded canvas::
 
-        matrix = ((0, 1), (1, 0))
-        im2 = affine_transform(im, matrix, output_shape=(1024, 1024))
+    >>> matrix = ((0, 1), (1, 0))
+    >>> im2 = affine_transform(im, matrix, output_shape=(1024, 1024))
 
-        plt.imshow(im2)
-        plt.savefig("tmp.png")
+    >>> plt.imshow(im2)
 
+    Offset the rotation so that the image is centred::
+
+    >>> matrix = ((0, 1), (1, 0))
+    >>> output_shape = (1200, 1200)
+    >>> offset = (np.array(im.shape) - output_shape) / 2
+    >>> im2 = affine_transform(im, matrix, offset=offset, output_shape=output_shape)
+
+    >>> plt.imshow(im2)
 
     Notes
     -----
