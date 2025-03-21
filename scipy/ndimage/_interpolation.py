@@ -546,7 +546,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         im2 = affine_transform(im, matrix)
 
         plt.imshow(im2)
-        plt.savefig("tmp2.png")
 
     Rotation an image by 90 degrees and project it onto an expanded canvas
 
