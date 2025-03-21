@@ -533,6 +533,26 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     affine_transform : ndarray
         The transformed input.
 
+    Examples
+    --------
+    Use the ``affine_transform`` to stretch an image::
+
+        im = face(gray=True)
+        matrix = (0.5, 2)
+        im2 = affine_transform(im, matrix)
+
+        plt.imshow(im2)
+        plt.savefig("tmp2.png")
+
+    Rotation an image by 90 degrees and project it onto an expanded canvas
+
+        matrix = ((0, 1), (1, 0))
+        im2 = affine_transform(im, matrix, output_shape=(1024, 1024))
+
+        plt.imshow(im2)
+        plt.savefig("tmp.png")
+
+
     Notes
     -----
     The given matrix and offset are used to find for each point in the
