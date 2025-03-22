@@ -333,6 +333,15 @@ def test_construct_shortest_path():
         for directed in (True, False):
             check(method, directed)
 
+@pytest.mark.parametrize("directed", [True, False])
+def test_construct_dist_matrix_predecessors_error(directed):
+    SP1, pred = shortest_path(directed_G,
+                                directed=directed,
+                                overwrite=False,
+                                return_predecessors=True)
+    assert_raises(TypeError, construct_dist_matrix,
+                  directed_G, pred.astype(np.int64), directed)
+
 
 def test_unweighted_path():
     def check(method, directed):
