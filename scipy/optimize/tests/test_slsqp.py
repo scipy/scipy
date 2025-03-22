@@ -634,7 +634,11 @@ def test_slsqp_segfault_wrong_workspace_computation():
         constraints = ({'type': 'eq', 'fun': lambda x: metric_a(x) - target},
                        {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
         weights = np.array([len(v)*[1./len(v)]])[0]
-        result = minimize(metric_b, weights, args=(v,), method='SLSQP', constraints=constraints)
+        result = minimize(metric_b,
+                          weights,
+                          args=(v,),
+                          method='SLSQP',
+                          constraints=constraints)
         return result
 
     efficient_metric(x, target)
