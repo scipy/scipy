@@ -1,17 +1,28 @@
+from types import ModuleType
+
 import pytest
 
+from scipy import special
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    is_array_api_strict, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
+from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+
+special_wrapped = ModuleType("special_wrapped")
+lazy_xp_modules = [special_wrapped]
+for f_name in array_special_func_map:
+    f = getattr(special, f_name)
+    setattr(special_wrapped, f_name, f)
+    lazy_xp_function(f)
 
 
 def test_dispatch_to_unrecognized_library():
     xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
+    f = get_array_special_func('ndtr', xp=xp)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
@@ -21,7 +32,7 @@ def test_dispatch_to_unrecognized_library():
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
 def test_rel_entr_generic(dtype):
     xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
+    f = get_array_special_func('rel_entr', xp=xp)
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
     x = [-1, 0, 0, 1]
@@ -62,7 +73,8 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
         pytest.skip(f"`{f_name}` needs data-apis/array-api-strict#131 to be resolved")
 
     shapes = shapes[:n_args]
-    f = getattr(special, f_name)
+    f = getattr(special, f_name)  # Unwrapped
+    fw = getattr(special_wrapped, f_name)  # Wrapped by lazy_xp_function
 
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
@@ -91,7 +103,14 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
 
     args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
 
-    res = f(*args_xp)
+    if is_dask(xp):
+        # We're using map_blocks to dispatch the function to Dask.
+        # This is the correct thing to do IF all tested functions are elementwise;
+        # otherwise the output would change depending on chunking.
+        # Try to trigger bugs related to having multiple chunks.
+        args_xp = [arg.rechunk(5) for arg in args_xp]
+
+    res = fw(*args_xp)
     ref = xp.asarray(f(*args_np), dtype=dtype_xp)
 
     eps = np.finfo(dtype_np).eps
