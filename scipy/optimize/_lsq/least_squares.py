@@ -75,13 +75,14 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
         njev = info.get('njev', None)
     else:
         # jac-method in ['2-point', '3-point', 'cs']
-        # Historically no analytic callable meant that `_minpack._lmdif` was used.
-        # Internally lmdif estimates jacobians by two-point finite differences,
-        # reporting the total number of function evaluations (nfev), with njev = 0.
-        # Now we have lifted that numeric differentiation into Python and
-        # lmder is used instead, with jac representing a wrapped version of our
-        # numerical differentiation. lmder reports nfev and njev. We need to set
-        # `njev = None`.
+        # Historically no analytic callable meant that `_minpack._lmdif` was used,
+        # with the jacobian being estimated with finite differences. The
+        # total number of nfev were tracked by lmdif.
+        # Now scipy is doing the FD and we can use `_minpack._lmder`. Therefore scipy
+        # has to track nfev itself. This is done by the VectorFunction used in
+        # `least_squares`. We will therefore correct the OptimizeResult.nfev in
+        # `least_squares`.
+        # If there are no analytic jacobian evaluations we need to set `njev=None`.
         njev = None
 
     status = FROM_MINPACK_TO_COMMON[status]
@@ -239,6 +240,7 @@ def construct_loss_function(m, loss, f_scale):
 
 
 class _WrapArgsKwargs:
+    # Supplies a user function with args and kwargs.
     def __init__(self, f, args=(), kwargs=None):
         self.f = f
         self.args = args
