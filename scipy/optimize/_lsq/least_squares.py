@@ -6,7 +6,8 @@ from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
-from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._differentiable_functions import VectorFunction
+from scipy.optimize._numdiff import group_columns
 from scipy.optimize._minimize import Bounds
 from scipy._lib._sparse import issparse
 from scipy._lib._util import _workers_wrapper
@@ -41,13 +42,8 @@ FROM_MINPACK_TO_COMMON = {
 }
 
 
-def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
+def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=None):
     n = x0.size
-
-    if diff_step is None:
-        epsfcn = EPS
-    else:
-        epsfcn = diff_step**2
 
     # Compute MINPACK's `diag`, which is inverse of our `x_scale` and
     # ``x_scale='jac'`` corresponds to ``diag=None``.
@@ -60,40 +56,46 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
     col_deriv = False
     factor = 100.0
 
-    if jac is None:
-        if max_nfev is None:
-            # n squared to account for Jacobian evaluations.
-            max_nfev = 100 * n * (n + 1)
-        x, info, status = _minpack._lmdif(
-            fun, x0, (), full_output, ftol, xtol, gtol,
-            max_nfev, epsfcn, factor, diag)
-    else:
-        if max_nfev is None:
-            max_nfev = 100 * n
-        x, info, status = _minpack._lmder(
-            fun, jac, x0, (), full_output, col_deriv,
-            ftol, xtol, gtol, max_nfev, factor, diag)
+    if max_nfev is None:
+        max_nfev = 100 * n
+
+    # lmder is typically used for systems with analytic jacobians, with lmdif being
+    # used if there is only an objective fun (lmdif uses finite differences to estimate
+    # jacobian). Otherwise they're very similar internally.
+    # We now do all the finite differencing in VectorFunction, which means we can drop
+    # lmdif and just use lmder.
+    x, info, status = _minpack._lmder(
+        fun, jac, x0, (), full_output, col_deriv,
+        ftol, xtol, gtol, max_nfev, factor, diag)
 
     f = info['fvec']
-
-    if callable(jac):
-        J = jac(x)
-    else:
-        J = np.atleast_2d(approx_derivative(fun, x))
+    J = jac(x)
 
     cost = 0.5 * np.dot(f, f)
     g = J.T.dot(f)
     g_norm = norm(g, ord=np.inf)
 
-    nfev = info['nfev']
-    njev = info.get('njev', None)
+    if callable(jac_method):
+        # user supplied a callable ("analytic") jac
+        njev = info.get('njev', None)
+    else:
+        # jac-method in ['2-point', '3-point', 'cs']
+        # Historically no analytic callable meant that `_minpack._lmdif` was used,
+        # with the jacobian being estimated with finite differences. The
+        # total number of nfev were tracked by lmdif.
+        # Now scipy is doing the FD and we can use `_minpack._lmder`. Therefore scipy
+        # has to track nfev itself. This is done by the VectorFunction used in
+        # `least_squares`. We will therefore correct the OptimizeResult.nfev in
+        # `least_squares`.
+        # If there are no analytic jacobian evaluations we need to set `njev=None`.
+        njev = None
 
     status = FROM_MINPACK_TO_COMMON[status]
     active_mask = np.zeros_like(x0, dtype=int)
 
     return OptimizeResult(
         x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev, status=status)
+        active_mask=active_mask, nfev=np.nan, njev=njev, status=status)
 
 
 def prepare_bounds(bounds, n):
@@ -242,6 +244,17 @@ def construct_loss_function(m, loss, f_scale):
     return loss_function
 
 
+class _WrapArgsKwargs:
+    # Supplies a user function with args and kwargs.
+    def __init__(self, f, args=(), kwargs=None):
+        self.f = f
+        self.args = args
+        self.kwargs = kwargs or {}
+
+    def __call__(self, x):
+        return self.f(x, *self.args, **self.kwargs)
+
+
 @_workers_wrapper
 def least_squares(
         fun, x0, jac='2-point', bounds=(-np.inf, np.inf), method='trf',
@@ -286,8 +299,7 @@ def least_squares(
         twice as many operations as '2-point' (default). The scheme 'cs'
         uses complex steps, and while potentially the most accurate, it is
         applicable only when `fun` correctly handles complex inputs and
-        can be analytically continued to the complex plane. Method 'lm'
-        always uses the '2-point' scheme. If callable, it is used as
+        can be analytically continued to the complex plane If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse array (csr_array preferred for performance) or
@@ -861,15 +873,36 @@ def least_squares(
     if method == 'trf':
         x0 = make_strictly_feasible(x0, lb, ub)
 
-    if kwargs is None:
-        kwargs = {}
     if tr_options is None:
         tr_options = {}
 
-    def fun_wrapped(x):
-        return np.atleast_1d(fun(x, *args, **kwargs))
+    ###########################################################################
+    # assemble VectorFunction
+    ###########################################################################
+    # first wrap the args/kwargs
+    fun_wrapped = _WrapArgsKwargs(fun, args=args, kwargs=kwargs)
+    jac_wrapped = jac
+    if callable(jac):
+        jac_wrapped = _WrapArgsKwargs(jac, args=args, kwargs=kwargs)
 
-    f0 = fun_wrapped(x0)
+    def _dummy_hess(x, *args):
+        # we don't care about Hessian evaluations
+        return x
+
+    vector_fun = VectorFunction(
+        fun_wrapped,
+        x0,
+        jac_wrapped,
+        _dummy_hess,
+        finite_diff_rel_step=diff_step,
+        finite_diff_jac_sparsity=jac_sparsity,
+        finite_diff_bounds=bounds,
+        workers=workers
+    )
+    ###########################################################################
+
+    f0 = vector_fun.fun(x0)
+    J0 = vector_fun.jac(x0)
 
     if f0.ndim != 1:
         raise ValueError("`fun` must return at most 1-d array_like. "
@@ -897,82 +930,46 @@ def least_squares(
     else:
         initial_cost = 0.5 * np.dot(f0, f0)
 
-    if callable(jac):
-        J0 = jac(x0, *args, **kwargs)
-
-        if issparse(J0):
-            J0 = J0.tocsr()
-
-            def jac_wrapped(x, _=None):
-                return jac(x, *args, **kwargs).tocsr()
-
-        elif isinstance(J0, LinearOperator):
-            def jac_wrapped(x, _=None):
-                return jac(x, *args, **kwargs)
-
-        else:
-            J0 = np.atleast_2d(J0)
-
-            def jac_wrapped(x, _=None):
-                return np.atleast_2d(jac(x, *args, **kwargs))
-
-    else:  # Estimate Jacobian by finite differences.
+    if not callable(jac):
+        # Estimate Jacobian by finite differences.
         if method == 'lm':
             if jac_sparsity is not None:
                 raise ValueError("method='lm' does not support "
                                  "`jac_sparsity`.")
-
-            if jac != '2-point':
-                warn(f"jac='{jac}' works equivalently to '2-point' for method='lm'.",
-                     stacklevel=2)
-
-            J0 = jac_wrapped = None
         else:
+            # this will raise a ValueError if the jac_sparsity isn't correct
+            _ = check_jac_sparsity(jac_sparsity, m, n)
+
             if jac_sparsity is not None and tr_solver == 'exact':
                 raise ValueError("tr_solver='exact' is incompatible "
                                  "with `jac_sparsity`.")
 
-            jac_sparsity = check_jac_sparsity(jac_sparsity, m, n)
+    if J0.shape != (m, n):
+        raise ValueError(
+            f"The return value of `jac` has wrong shape: expected {(m, n)}, "
+            f"actual {J0.shape}."
+        )
 
-            def jac_wrapped(x, f):
-                J = approx_derivative(fun, x, rel_step=diff_step, method=jac,
-                                      f0=f, bounds=bounds, args=args,
-                                      kwargs=kwargs, sparsity=jac_sparsity,
-                                      workers=workers)
-                if J.ndim != 2:  # J is guaranteed not sparse.
-                    J = np.atleast_2d(J)
+    if not isinstance(J0, np.ndarray):
+        if method == 'lm':
+            raise ValueError("method='lm' works only with dense "
+                             "Jacobian matrices.")
 
-                return J
-
-            J0 = jac_wrapped(x0, f0)
-
-    if J0 is not None:
-        if J0.shape != (m, n):
+        if tr_solver == 'exact':
             raise ValueError(
-                f"The return value of `jac` has wrong shape: expected {(m, n)}, "
-                f"actual {J0.shape}."
-            )
+                "tr_solver='exact' works only with dense "
+                "Jacobian matrices.")
 
-        if not isinstance(J0, np.ndarray):
-            if method == 'lm':
-                raise ValueError("method='lm' works only with dense "
-                                 "Jacobian matrices.")
+    jac_scale = isinstance(x_scale, str) and x_scale == 'jac'
+    if isinstance(J0, LinearOperator) and jac_scale:
+        raise ValueError("x_scale='jac' can't be used when `jac` "
+                         "returns LinearOperator.")
 
-            if tr_solver == 'exact':
-                raise ValueError(
-                    "tr_solver='exact' works only with dense "
-                    "Jacobian matrices.")
-
-        jac_scale = isinstance(x_scale, str) and x_scale == 'jac'
-        if isinstance(J0, LinearOperator) and jac_scale:
-            raise ValueError("x_scale='jac' can't be used when `jac` "
-                             "returns LinearOperator.")
-
-        if tr_solver is None:
-            if isinstance(J0, np.ndarray):
-                tr_solver = 'exact'
-            else:
-                tr_solver = 'lsmr'
+    if tr_solver is None:
+        if isinstance(J0, np.ndarray):
+            tr_solver = 'exact'
+        else:
+            tr_solver = 'lsmr'
 
     # Wrap callback function.  If callback is None, callback_wrapped also is None
     callback_wrapped = _wrap_callback(callback)
@@ -981,11 +978,15 @@ def least_squares(
         if callback is not None:
             warn("Callback function specified, but not supported with `lm` method.",
                  stacklevel=2)
-        result = call_minpack(fun_wrapped, x0, jac_wrapped, ftol, xtol, gtol,
-                              max_nfev, x_scale, diff_step)
+        result = call_minpack(vector_fun.fun, x0, vector_fun.jac, ftol, xtol, gtol,
+                              max_nfev, x_scale, jac_method=jac)
+        # VectorFunction tracks number of times fun was actually called (it tries to
+        # memoise where possible), including numerical differentiation.
+        # Tesult object needs to be patched with the correct number.
+        result.nfev = vector_fun.nfev
 
     elif method == 'trf':
-        result = trf(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol, xtol,
+        result = trf(vector_fun.fun, vector_fun.jac, x0, f0, J0, lb, ub, ftol, xtol,
                      gtol, max_nfev, x_scale, loss_function, tr_solver,
                      tr_options.copy(), verbose, callback=callback_wrapped)
 
@@ -997,7 +998,7 @@ def least_squares(
             tr_options = tr_options.copy()
             del tr_options['regularize']
 
-        result = dogbox(fun_wrapped, jac_wrapped, x0, f0, J0, lb, ub, ftol,
+        result = dogbox(vector_fun.fun, vector_fun.jac, x0, f0, J0, lb, ub, ftol,
                         xtol, gtol, max_nfev, x_scale, loss_function,
                         tr_solver, tr_options, verbose, callback=callback_wrapped)
 
