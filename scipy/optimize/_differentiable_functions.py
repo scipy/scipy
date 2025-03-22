@@ -524,7 +524,12 @@ class VectorFunction:
                     return jac(x).toarray()
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False
-
+            elif isinstance(self.J, LinearOperator):
+                # no atleast_2D for LinearOperators
+                def jac_wrapped(x):
+                    self.njev += 1
+                    return jac(x)
+                self.sparse_jacobian = False
             else:
                 def jac_wrapped(x):
                     self.njev += 1
