@@ -69,7 +69,6 @@ py3.extension_module('_quadpack',
   subdir: 'scipy/integrate'
 )
 
-
 py3.extension_module('_odepack',
   '_odepackmodule.c',
   fortran_args: fortran_ignore_warnings,
@@ -80,7 +79,6 @@ py3.extension_module('_odepack',
   link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
-
 
 py3.extension_module('_vode',
   f2py_gen.process('vode.pyf'),
