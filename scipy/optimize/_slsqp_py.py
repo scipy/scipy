@@ -491,7 +491,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print(f"{state_dict['iter']:5d} {sf.nfev:5d} {fx:16.6E} {lanorm(g):16.6E}")
+                print(f"{state_dict['iter']:5d} {sf.nfev:5d} "
+                      f"{fx:16.6E} {lanorm(g):16.6E}")
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(state_dict['mode']) != 1:
