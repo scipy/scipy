@@ -59,6 +59,11 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
     if max_nfev is None:
         max_nfev = 100 * n
 
+    # lmder is typically used for systems with analytic jacobians, with lmdif being
+    # used if there is only an objective fun (lmdif uses finite differences to estimate
+    # jacobian). Otherwise they're very similar internally.
+    # We now do all the finite differencing in VectorFunction, which means we can drop
+    # lmdif and just use lmder.
     x, info, status = _minpack._lmder(
         fun, jac, x0, (), full_output, col_deriv,
         ftol, xtol, gtol, max_nfev, factor, diag)
@@ -294,8 +299,7 @@ def least_squares(
         twice as many operations as '2-point' (default). The scheme 'cs'
         uses complex steps, and while potentially the most accurate, it is
         applicable only when `fun` correctly handles complex inputs and
-        can be analytically continued to the complex plane. Method 'lm'
-        always uses the '2-point' scheme. If callable, it is used as
+        can be analytically continued to the complex plane If callable, it is used as
         ``jac(x, *args, **kwargs)`` and should return a good approximation
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse array (csr_array preferred for performance) or
