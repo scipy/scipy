@@ -555,6 +555,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     See Also
     --------
+    csd: Cross power spectral density using Welch's method
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
 
@@ -562,12 +563,16 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
+    50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
-    windows may require a larger overlap.
+    windows may require a larger overlap. If `noverlap` is 0, this
+    method is equivalent to Bartlett's method [2]_.
 
-    If `noverlap` is 0, this method is equivalent to Bartlett's method
-    [2]_.
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided the spectral
+    power density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
 
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
@@ -744,6 +749,12 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
+
+    The ratio of the cross spectrum (``scaling='spectrum'``) divided by the cross
+    spectral density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
 
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
@@ -1935,7 +1946,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     -----
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default Hann window an overlap of
-    50% is a reasonable trade off between accurately estimating the
+    50% is a reasonable trade-off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 

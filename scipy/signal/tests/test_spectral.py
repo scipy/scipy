@@ -558,6 +558,15 @@ class TestWelch:
         assert_raises(ValueError, welch, x, nperseg=8,
                       average='unrecognised-average')
 
+    def test_ratio_scale_to(self):
+        """Verify the factor of ``sum(abs(window)**2)*fs / abs(sum(window))**2``
+        used in the `welch`  and `csd` docstrs. """
+        x, win, fs = np.array([1., 0, 0, 0]), np.ones(4), 12
+        params = dict(fs=fs, window=win, return_onesided=False, detrend=None)
+        p_dens = welch(x, scaling='density', **params)[1]
+        p_spec = welch(x, scaling='spectrum', **params)[1]
+        p_fac = sum(win**2)*fs / abs(sum(win))**2
+        assert_allclose(p_spec / p_dens, p_fac)
 
 class TestCSD:
     def test_pad_shorter_x(self):
