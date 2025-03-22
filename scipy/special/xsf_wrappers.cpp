@@ -608,6 +608,8 @@ double xsf_gdtrc(double a, double b, double x) { return xsf::gdtrc(a, b, x); }
 
 double xsf_gdtrib(double a, double p, double x) { return xsf::gdtrib(a, p, x); }
 
+double xsf_gdtria(double p, double b, double x) { return xsf::gdtria(p, b, x); }
+
 double xsf_kolmogorov(double x) { return xsf::kolmogorov(x); }
 
 double xsf_kolmogc(double x) { return xsf::kolmogc(x); }

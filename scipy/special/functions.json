@@ -359,8 +359,8 @@
         }
     },
     "gdtria": {
-        "_cdflib_wrappers.pxd": {
-            "gdtria": "ddd->d"
+        "xsf_wrappers.h": {
+            "xsf_gdtria": "ddd->d"
         }
     },
     "gdtrib": {
