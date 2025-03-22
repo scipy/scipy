@@ -1,10 +1,18 @@
 /*
+ * This file and the accompanying __slsqp.c file are the C translations of the
+ * Fortran77 code of the SLSQP algorithm for the SciPy project and hence inherits
+ * SciPy license. The original Fortran code is available at
+ * http://www.netlib.org/toms/733 written by Dieter Kraft, see:
+ *
  *  ALGORITHM 733, COLLECTED ALGORITHMS FROM ACM.
  *  TRANSACTIONS ON MATHEMATICAL SOFTWARE,
  *  VOL. 20, NO. 3, SEPTEMBER, 1994, PP. 262-281.
  *  https://doi.org/10.1145/192115.192124
  *
  *
+ * The original Fortran code is released for use under BSD license, with the
+ * following statement from the original license holder ACM publications:
+  *
  *  https://web.archive.org/web/20170106155705/http://permalink.gmane.org/gmane.comp.python.scientific.devel/6725
  *  ------
  *  From: Deborah Cotton <cotton@hq.acm.org>
@@ -188,10 +196,6 @@ nnls(PyObject* Py_UNUSED(dummy), PyObject* args) {
 static PyObject*
 slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-
-    // TODO:
-    // Exact calloc size (needed?)
-
     PyArrayObject *ap_gradx=NULL, *ap_C=NULL, *ap_d=NULL, *ap_mult=NULL;
     PyArrayObject *ap_sol =NULL, *ap_xl=NULL, *ap_xu=NULL, *ap_buffer=NULL;
     PyArrayObject* ap_indices=NULL;
@@ -291,14 +295,27 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     double* gradx_data = (double*)PyArray_DATA(ap_gradx);
     double* C_data = (double*)PyArray_DATA(ap_C);
     double* d_data = (double*)PyArray_DATA(ap_d);
-    double* sol_data = (double*)PyArray_DATA(ap_sol);
+    double* restrict sol_data = (double*)PyArray_DATA(ap_sol);
     double* mult_data = (double*)PyArray_DATA(ap_mult);
-    double* xl_data = (double*)PyArray_DATA(ap_xl);
-    double* xu_data = (double*)PyArray_DATA(ap_xu);
+    double* restrict xl_data = (double*)PyArray_DATA(ap_xl);
+    double* restrict xu_data = (double*)PyArray_DATA(ap_xu);
     double* buffer_data = (double*)PyArray_DATA(ap_buffer);
     int* indices_data = (int*)PyArray_DATA(ap_indices);
 
     __slsqp_body(&Vars, &funx, gradx_data, C_data, d_data, sol_data, mult_data, xl_data, xu_data, buffer_data, indices_data);
+
+    // During the intermediate steps, there can be a few ULPs of bound violations,
+    // hence we clamp the solution if given, to the finite bound values when mode
+    // is 1 or -1.
+    if ((Vars.mode == 1) || (Vars.mode == -1))
+    {
+        int n = Vars.n;
+        for (int i = 0; i < n; i++)
+        {
+            if ((!isnan(xl_data[i])) && (sol_data[i] < xl_data[i])) { sol_data[i] = xl_data[i]; }
+            else if ((!isnan(xu_data[i])) && (sol_data[i] > xu_data[i])) { sol_data[i] = xu_data[i]; }
+        }
+    }
 
     // Map struct variables back to dictionary.
     // Py_XXX_FromXXX returns a new reference, hence needs to be decremented.
