@@ -50,7 +50,7 @@ linalg_cython_gen = generator(cython,
 
 # fblas
 fblas_module = custom_target('fblas_module',
-  output: ['_fblasmodule.c'],
+  output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
   input: 'fblas.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
@@ -69,7 +69,9 @@ py3.extension_module('_fblas',
   fortran_args: _fflag_lp64,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
+  link_with: [g77_abi_wrappers],
   install: true,
+  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
@@ -131,9 +133,11 @@ if use_ilp64
 
   py3.extension_module('_fblas_64',
     fblas64_module,
+    #['_fblas_64module.c'],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep], #g77_abi_wrappers],
+    link_with: [g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -147,10 +151,12 @@ if use_ilp64
 
   py3.extension_module('_flapack_64',
     flapack64_module,
+    #['_flapack_64module.c'],
     c_args: [Wno_empty_body],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep, g77_abi_wrappers],
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep], #g77_abi_wrappers],
+    link_with: [g77_abi_wrappers],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
