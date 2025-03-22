@@ -31,6 +31,19 @@ def download_all(path=None):
     path : str, optional
         Directory path to download all the dataset files.
         If None, default to the system cache_dir detected by pooch.
+    
+    Examples
+    --------
+    Download the dataset to the default cache location:
+
+    >>> from scipy import datasets
+    >>> datasets.download_all()
+
+    Download the dataset to the current directory:
+
+    >>> from scipy import datasets
+    >>> datasets.download_all(".")
+    
     """
     if pooch is None:
         raise ImportError("Missing optional dependency 'pooch' required "
