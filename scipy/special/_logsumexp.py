@@ -219,7 +219,7 @@ def _logsumexp(a, b, axis, return_sign, xp):
     # `a_max`, which should be fine, since this function has never had a principled
     # phase convention for this case. Perhaps NaN phase would be best, but we save
     # that for another day.
-    shift = xp.where(xp.logical_or(xp.isfinite(a_max), xp_real(a_max) > 0),
+    shift = xp.where(xp.logical_or(xp.isfinite(a_max), xp.real(a_max) > 0),
                      a_max, 0.)
 
     # Shift, exponentiate, scale, and sum
