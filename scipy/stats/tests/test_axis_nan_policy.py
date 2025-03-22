@@ -334,6 +334,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (1,))
 @pytest.mark.parametrize(("data_generator"), ("mixed",))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
@@ -505,6 +506,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("data_generator"),
                          ("all_nans", "all_finite", "mixed", "empty"))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
@@ -822,6 +824,7 @@ def _check_arrays_broadcastable(arrays, axis):
 @pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parallel_threads(1)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
     if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
@@ -908,22 +911,21 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
 
 def paired_non_broadcastable_cases():
-    rng = np.random.default_rng(91359824598245)
     for case in axis_nan_policy_cases:
         hypotest, args, kwds, n_samples, n_outputs, paired, unpacker = case
         if n_samples == 1:  # broadcasting only needed with >1 sample
             continue
-        yield case + (rng,)
+        yield case
 
 
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
-                          "paired", "unpacker", "rng"),
+                          "paired", "unpacker"),
                          paired_non_broadcastable_cases())
 def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
-                           unpacker, rng, axis):
+                           unpacker, axis):
     # test for correct error message when shapes are not broadcastable
-
+    rng = np.random.default_rng(91359824598245)
     get_samples = True
     while get_samples:
         samples = [rng.random(size=rng.integers(2, 100, size=2))
@@ -948,7 +950,6 @@ def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
     other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
         hypotest(other_sample, *most_samples, *args, **kwds)
-
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays
@@ -1114,13 +1115,13 @@ def test_mixed_mask_nan_1():
     m, n = 3, 20
     axis = -1
 
-    np.random.seed(0)
-    a = np.random.rand(m, n)
-    b = np.random.rand(m, n)
-    mask_a1 = np.random.rand(m, n) < 0.2
-    mask_a2 = np.random.rand(m, n) < 0.1
-    mask_b1 = np.random.rand(m, n) < 0.15
-    mask_b2 = np.random.rand(m, n) < 0.15
+    rng = np.random.RandomState(0)
+    a = rng.rand(m, n)
+    b = rng.rand(m, n)
+    mask_a1 = rng.rand(m, n) < 0.2
+    mask_a2 = rng.rand(m, n) < 0.1
+    mask_b1 = rng.rand(m, n) < 0.15
+    mask_b2 = rng.rand(m, n) < 0.15
     mask_a1[2, :] = True
 
     a_nans = a.copy()

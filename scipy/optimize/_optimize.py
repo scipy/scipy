@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities
 from scipy._lib import array_api_extra as xpx
 
 
@@ -338,6 +338,7 @@ def _check_clip_x(x, bounds):
     return x
 
 
+@xp_capabilities()
 def rosen(x):
     """
     The Rosenbrock function.
@@ -389,6 +390,7 @@ def rosen(x):
     return r
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -431,6 +433,7 @@ def rosen_der(x):
     return der
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -474,6 +477,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.

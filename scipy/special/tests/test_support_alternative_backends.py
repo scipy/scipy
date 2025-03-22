@@ -4,7 +4,8 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import is_cupy, is_dask, is_jax, is_torch, SCIPY_DEVICE
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
+                                   is_array_api_strict, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
 
 
@@ -57,6 +58,8 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
         pytest.skip("boolean index assignment")
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
+    if is_array_api_strict(xp) and f_name == "xlogy":
+        pytest.skip(f"`{f_name}` needs data-apis/array-api-strict#131 to be resolved")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
