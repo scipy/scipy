@@ -3,16 +3,18 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api import (is_array_api_strict, xp_default_dtype,
+                                   is_numpy)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
+from scipy.stats.tests.test_stats import skip_xp_backends
+
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
@@ -264,6 +266,27 @@ class TestLogSumExp:
         ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
+
+    @skip_xp_backends("torch",
+        reason="`torch` has different ideas about ops involving complex infinity")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.parametrize('x, ref', [
+        ([-np.inf, -np.inf], -np.inf),
+        ([np.inf, np.inf], np.inf),
+        ([-np.inf + 0j, -np.inf + 0.7533j], -np.inf),
+        ([np.inf + 1j, -0.9116 + 0.7533j], np.inf + 1j),
+        ([np.inf + 1.0000j, np.inf + 0.7533j], np.nan + np.nan*1j),
+    ])
+    def test_gh22601_infinite_elements(self, x, ref, xp):
+        # Test that `logsumexp` does reasonable things in the presence of
+        # real and complex infinities.
+        if is_numpy(xp) and xp.__version__ < "2.0":
+            pytest.skip("NumPy pre 2.0 warns during assertion.")
+        res = logsumexp(xp.asarray(x))
+        if np.isneginf(np.real(ref)):
+            xp_assert_equal(xp.real(res), xp.asarray(ref))
+        else:
+            xp_assert_equal(res, xp.asarray(ref))
 
 
 class TestSoftmax:
