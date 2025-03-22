@@ -302,7 +302,7 @@ if blas_name == 'auto'
     endif
   endforeach
 else
-  if blas_name == 'mkl'
+  if uses_mkl
     mkl_uses_sdl = false
     blas = dependency('mkl',
       modules: blas_interface + mkl_opts,
@@ -406,6 +406,7 @@ dependency_map = {
   'PYBIND11': pybind11_dep,
 }
 
+# NB: from this point on blas_name is e.g. 'mkl-lp64-dynamic-seq'
 blas_name = blas.name()
 lapack_name = lapack.name()
 uses_mkl = blas_name.to_lower().startswith('mkl')
@@ -446,11 +447,12 @@ if use_ilp64
   endif
 
   # Run the detection
-  if blas_name == 'mkl'
+  if uses_mkl
+    mkl_uses_sdl = false   # FIXME, why
     if mkl_uses_sdl
       mkl_opts = ['sdl: true']
     endif
-    blas_ilp64 = dependency('mkl', modules: [blas_interface, mkl_opts])
+    blas_ilp64 = dependency('mkl', modules: ['interface: ilp64'] + mkl_opts)
     lapack_ilp64 = blas_ilp64
   else
     if blas_name == 'openblas'
@@ -478,6 +480,8 @@ if use_ilp64
     _blas_incdir = ['.']
   endif
   # Declare the ILP64 dependencies
+  message('BLAS / LAPACK ILP64 detected: ', blas_ilp64.name(), ', ', lapack_ilp64.name())
+
   blas_ilp64 = declare_dependency(
     dependencies: [blas_ilp64],
     compile_args: _args_blas,
@@ -485,8 +489,11 @@ if use_ilp64
   )
   lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
 else
+  # we're not using ILP64; user will link to the always-available LP64 blas/lapack
+  # (all users must use preprocessor macros BLAS_NAME to handle the two options)
   blas_ilp64 = blas
   lapack_ilp64 = lapack
+  message('LAPACK ILP64 not requested / not detected.')
 endif
 
 # End of BLAS/LAPACK handling
