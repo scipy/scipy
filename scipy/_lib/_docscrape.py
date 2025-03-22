@@ -320,8 +320,8 @@ class NumpyDocString(Mapping):
                 description = line_match.group("desc")
                 if line_match.group("trailing") and description:
                     self._error_location(
-                        "Unexpected comma or period after function list at index %d of "
-                        'line "%s"' % (line_match.end("trailing"), line),
+                        f'Unexpected comma or period after function list at '
+                        f'index {line_match.end("trailing")} of {line}',
                         error=False,
                     )
             if not description and line.startswith(" "):
@@ -404,8 +404,8 @@ class NumpyDocString(Mapping):
                 section = " ".join(section)
                 if self.get(section):
                     self._error_location(
-                        "The section %s appears twice in  %s"
-                        % (section, "\n".join(self._doc._str))
+                        f"The section {section} appears twice in "
+                        f"{'\n'.join(self._doc._str)}"
                     )
 
             if section in ("Parameters", "Other Parameters", "Attributes", "Methods"):
