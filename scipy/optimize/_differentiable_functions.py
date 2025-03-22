@@ -545,9 +545,9 @@ class VectorFunction:
                     sparse_jacobian is None and sps.issparse(self.J)):
                 def update_jac():
                     self._update_fun()
-                    self.J, dct = sps.csr_array(
-                        approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                          **finite_diff_options))
+                    _J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                                **finite_diff_options)
+                    self.J = sps.csr_array(_J)
                     self.nfev += dct['nfev']
                 self.J = sps.csr_array(self.J)
                 self.sparse_jacobian = True
@@ -555,8 +555,9 @@ class VectorFunction:
             elif sps.issparse(self.J):
                 def update_jac():
                     self._update_fun()
-                    self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                                    **finite_diff_options).toarray()
+                    _J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                                    **finite_diff_options)
+                    self.J = _J.toarray()
                     self.nfev += dct['nfev']
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False

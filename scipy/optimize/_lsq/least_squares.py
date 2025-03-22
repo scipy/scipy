@@ -870,16 +870,14 @@ def least_squares(
     if tr_options is None:
         tr_options = {}
 
-    #########################
+    ###########################################################################
     # assemble VectorFunction
-    #########################
+    ###########################################################################
     # first wrap the args/kwargs
     fun_wrapped = _WrapArgsKwargs(fun, args=args, kwargs=kwargs)
     jac_wrapped = jac
     if callable(jac):
         jac_wrapped = _WrapArgsKwargs(jac, args=args, kwargs=kwargs)
-
-    # sparse_jacobian = None,
 
     _dummy_hess = lambda x, v: x
     vector_fun = VectorFunction(
@@ -892,6 +890,7 @@ def least_squares(
         finite_diff_bounds=bounds,
         workers=workers
     )
+    ###########################################################################
 
     f0 = vector_fun.fun(x0)
     J0 = vector_fun.jac(x0)
@@ -929,6 +928,9 @@ def least_squares(
                 raise ValueError("method='lm' does not support "
                                  "`jac_sparsity`.")
         else:
+            # this will raise a ValueError if the jac_sparsity isn't correct
+            _ = check_jac_sparsity(jac_sparsity, m, n)
+
             if jac_sparsity is not None and tr_solver == 'exact':
                 raise ValueError("tr_solver='exact' is incompatible "
                                  "with `jac_sparsity`.")
