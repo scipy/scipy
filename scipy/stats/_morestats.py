@@ -16,6 +16,7 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_vector_norm,
+    xp_promote,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -863,8 +864,7 @@ def _log_var(logx, xp):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx)
     # get complex dtype with component dtypes same as `logx` dtype;
-    # see data-apis/array-api#841
-    dtype = xp.result_type(logx.dtype, xp.complex64)
+    dtype = xp.result_type(logx.dtype, 1j)
     pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
     logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
     res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
@@ -953,15 +953,11 @@ def boxcox_llf(lmb, data):
 
     """
     xp = array_namespace(data)
-    data = xp.asarray(data)
+    data = xp_promote(data, force_floating=True, xp=xp)
+
     N = data.shape[0]
     if N == 0:
         return xp.nan
-
-    dt = data.dtype
-    if xp.isdtype(dt, 'integral'):
-        data = xp.asarray(data, dtype=xp.float64)
-        dt = xp.float64
 
     logdata = xp.log(data)
 
@@ -977,7 +973,7 @@ def boxcox_llf(lmb, data):
         logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
-    res = xp.astype(res, dt)
+    res = xp.astype(res, data.dtype, copy=False)
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -3931,9 +3927,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
-    if xp.isdtype(samples.dtype, 'integral'):
-        dtype = xp.asarray(1.).dtype  # get default float type
-        samples = xp.asarray(samples, dtype=dtype)
+    samples = xp_promote(samples, force_floating=True, xp=xp)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine

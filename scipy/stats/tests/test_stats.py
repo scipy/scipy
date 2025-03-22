@@ -433,6 +433,7 @@ class TestPearsonr:
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
 
+    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)
@@ -2746,7 +2747,7 @@ class TestMode:
         # was deprecated, so check for the appropriate error.
         my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
         test = np.zeros(10, dtype=my_dtype)
-        message = "Argument `a` is not....|An argument has dtype..."
+        message = "Argument `a` is not....|An argument has dtype...|The DType..."
         with pytest.raises(TypeError, match=message):
             stats.mode(test, nan_policy=nan_policy)
 
