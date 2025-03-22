@@ -885,7 +885,10 @@ def least_squares(
     if callable(jac):
         jac_wrapped = _WrapArgsKwargs(jac, args=args, kwargs=kwargs)
 
-    _dummy_hess = lambda x, v: x
+    def _dummy_hess(x, *args):
+        # we don't care about Hessian evaluations
+        return x
+
     vector_fun = VectorFunction(
         fun_wrapped,
         x0,
