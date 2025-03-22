@@ -7,7 +7,7 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._differentiable_functions import VectorFunction
-from scipy.optimize._numdiff import approx_derivative, group_columns
+from scipy.optimize._numdiff import group_columns
 from scipy.optimize._minimize import Bounds
 from scipy._lib._sparse import issparse
 from scipy._lib._util import _workers_wrapper
@@ -42,7 +42,7 @@ FROM_MINPACK_TO_COMMON = {
 }
 
 
-def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale):
+def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=None):
     n = x0.size
 
     # Compute MINPACK's `diag`, which is inverse of our `x_scale` and
@@ -65,23 +65,31 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale):
 
     f = info['fvec']
     J = jac(x)
-    nfev = info['nfev']
-    njev = info.get('njev', None)
-
 
     cost = 0.5 * np.dot(f, f)
     g = J.T.dot(f)
     g_norm = norm(g, ord=np.inf)
 
-    nfev = info['nfev']
-    njev = info.get('njev', None)
+    if callable(jac_method):
+        # user supplied a callable ("analytic") jac
+        njev = info.get('njev', None)
+    else:
+        # jac-method in ['2-point', '3-point', 'cs']
+        # Historically no analytic callable meant that `_minpack._lmdif` was used.
+        # Internally lmdif estimates jacobians by two-point finite differences,
+        # reporting the total number of function evaluations (nfev), with njev = 0.
+        # Now we have lifted that numeric differentiation into Python and
+        # lmder is used instead, with jac representing a wrapped version of our
+        # numerical differentiation. lmder reports nfev and njev. We need to set
+        # `njev = None`.
+        njev = None
 
     status = FROM_MINPACK_TO_COMMON[status]
     active_mask = np.zeros_like(x0, dtype=int)
 
     return OptimizeResult(
         x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=nfev, njev=njev, status=status)
+        active_mask=active_mask, nfev=np.nan, njev=njev, status=status)
 
 
 def prepare_bounds(bounds, n):
@@ -237,7 +245,7 @@ class _WrapArgsKwargs:
         self.kwargs = kwargs or {}
 
     def __call__(self, x):
-        return self.f(x, *args, **kwargs)
+        return self.f(x, *self.args, **self.kwargs)
 
 
 @_workers_wrapper
@@ -866,14 +874,14 @@ def least_squares(
     # assemble VectorFunction
     #########################
     # first wrap the args/kwargs
-    fun_wrapped = _WrapArgsKwargs(f, args=args, kwargs=kwargs)
+    fun_wrapped = _WrapArgsKwargs(fun, args=args, kwargs=kwargs)
     jac_wrapped = jac
     if callable(jac):
         jac_wrapped = _WrapArgsKwargs(jac, args=args, kwargs=kwargs)
 
     # sparse_jacobian = None,
 
-    _dummy_hess = lambda x: x
+    _dummy_hess = lambda x, v: x
     vector_fun = VectorFunction(
         fun_wrapped,
         x0,
@@ -960,7 +968,11 @@ def least_squares(
             warn("Callback function specified, but not supported with `lm` method.",
                  stacklevel=2)
         result = call_minpack(vector_fun.fun, x0, vector_fun.jac, ftol, xtol, gtol,
-                              max_nfev, x_scale)
+                              max_nfev, x_scale, jac_method=jac)
+        # VectorFunction tracks number of times fun was actually called (it tries to
+        # memoise where possible), including numerical differentiation.
+        # Tesult object needs to be patched with the correct number.
+        result.nfev = vector_fun.nfev
 
     elif method == 'trf':
         result = trf(vector_fun.fun, vector_fun.jac, x0, f0, J0, lb, ub, ftol, xtol,
