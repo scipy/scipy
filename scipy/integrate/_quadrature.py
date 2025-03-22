@@ -1,14 +1,14 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
 import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
+from collections.abc import Callable
 
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
+from scipy._lib._array_api import _asarray, array_namespace, xp_broadcast_promote
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -41,7 +41,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     dx : scalar, optional
         The spacing between sample points when `x` is None. The default is 1.
     axis : int, optional
-        The axis along which to integrate.
+        The axis along which to integrate. The default is the last axis.
 
     Returns
     -------
@@ -119,50 +119,47 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     >>> integrate.trapezoid(a, axis=1)
     array([2.,  8.])
     """
-    y = np.asanyarray(y)
-    if x is None:
-        d = dx
-    else:
-        x = np.asanyarray(x)
-        if x.ndim == 1:
-            d = np.diff(x)
-            # reshape to correct shape
-            shape = [1]*y.ndim
-            shape[axis] = d.shape[0]
-            d = d.reshape(shape)
-        else:
-            d = np.diff(x, axis=axis)
+    xp = array_namespace(y)
+    y = _asarray(y, xp=xp, subok=True)
+    # Cannot just use the broadcasted arrays that are returned
+    # because trapezoid does not follow normal broadcasting rules
+    # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
+    result_dtype = xp_broadcast_promote(y, force_floating=True, xp=xp)[0].dtype
     nd = y.ndim
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
     slice1[axis] = slice(1, None)
     slice2[axis] = slice(None, -1)
+    if x is None:
+        d = dx
+    else:
+        x = _asarray(x, xp=xp, subok=True)
+        if x.ndim == 1:
+            d = x[1:] - x[:-1]
+            # make d broadcastable to y
+            slice3 = [None] * nd
+            slice3[axis] = slice(None)
+            d = d[tuple(slice3)]
+        else:
+            # if x is n-D it should be broadcastable to y
+            x = xp.broadcast_to(x, y.shape)
+            d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
-        ret = (d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0).sum(axis)
+        ret = xp.sum(
+            d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
+            axis=axis, dtype=result_dtype
+        )
     except ValueError:
         # Operations didn't work, cast to ndarray
-        d = np.asarray(d)
-        y = np.asarray(y)
-        ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
+        d = xp.asarray(d)
+        y = xp.asarray(y)
+        ret = xp.sum(
+            d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
+            axis=axis, dtype=result_dtype
+        )
     return ret
 
 
-if TYPE_CHECKING:
-    # workaround for mypy function attributes see:
-    # https://github.com/python/mypy/issues/2087#issuecomment-462726600
-    from typing import Protocol
-
-    class CacheAttributes(Protocol):
-        cache: dict[int, tuple[Any, Any]]
-else:
-    CacheAttributes = Callable
-
-
-def cache_decorator(func: Callable) -> CacheAttributes:
-    return cast(CacheAttributes, func)
-
-
-@cache_decorator
 def _cached_roots_legendre(n):
     """
     Cache roots_legendre results to speed up calls of the fixed_quad
@@ -271,11 +268,6 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         0 or None are the only values accepted. Default is None, which means
         `res` has one element less than `y` along the axis of integration.
 
-        .. deprecated:: 1.12.0
-            The option for non-zero inputs for `initial` will be deprecated in
-            SciPy 1.15.0. After this time, a ValueError will be raised if
-            `initial` is not None or 0.
-
     Returns
     -------
     res : ndarray
@@ -337,12 +329,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     if initial is not None:
         if initial != 0:
-            warnings.warn(
-                "The option for values for `initial` other than None or 0 is "
-                "deprecated as of SciPy 1.12.0 and will raise a value error in"
-                " SciPy 1.15.0.",
-                DeprecationWarning, stacklevel=2
-            )
+            raise ValueError("`initial` must be `None` or `0`.")
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
@@ -391,14 +378,10 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-def simpson(y, *, x=None, dx=1.0, axis=-1):
+def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
-
-    If there are an even number of samples, N, then there are an odd
-    number of intervals (N-1), but Simpson's rule requires an even number
-    of intervals. The parameter 'even' controls how this is handled.
 
     Parameters
     ----------
@@ -911,7 +894,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = show[1]
             except (TypeError, IndexError):
                 width = 8
-            formstr = "%%%d.%df" % (width, precis)
+            formstr = f"%{width}.{precis}f"
 
             title = "Richardson Extrapolation Table for Romberg Integration"
             print(title, "=" * len(title), sep="\n", end="\n")

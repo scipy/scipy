@@ -172,7 +172,7 @@ def spline_filter(input, order=3, output=np.float64, mode='mirror'):
 
     Examples
     --------
-    We can filter an image using multidimentional splines:
+    We can filter an image using multidimensional splines:
 
     >>> from scipy.ndimage import spline_filter
     >>> import numpy as np
@@ -228,7 +228,7 @@ def _prepad_for_spline_filter(input, mode, cval):
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
-                        extra_arguments=(), extra_keywords={}):
+                        extra_arguments=(), extra_keywords=None):
     """
     Apply an arbitrary geometric transform.
 
@@ -333,6 +333,8 @@ def geometric_transform(input, mapping, output_shape=None,
     array([2, 3, 4, 1, 2])
 
     """
+    if extra_keywords is None:
+        extra_keywords = {}
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
     input = np.asarray(input)
@@ -614,12 +616,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
-        warnings.warn(
-            "The behavior of affine_transform with a 1-D "
-            "array supplied for the matrix parameter has changed in "
-            "SciPy 0.18.0.",
-            stacklevel=2
-        )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval, npad, False)
     else:

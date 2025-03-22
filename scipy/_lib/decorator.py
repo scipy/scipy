@@ -89,7 +89,7 @@ class FunctionMaker:
                           'kwonlydefaults'):
                     setattr(self, a, getattr(argspec, a))
                 for i, arg in enumerate(self.args):
-                    setattr(self, 'arg%d' % i, arg)
+                    setattr(self, f'arg{i}', arg)
                 allargs = list(self.args)
                 allshortargs = list(self.args)
                 if self.varargs:
@@ -98,7 +98,7 @@ class FunctionMaker:
                 elif self.kwonlyargs:
                     allargs.append('*')  # single star syntax
                 for a in self.kwonlyargs:
-                    allargs.append('%s=None' % a)
+                    allargs.append(f'{a}=None')
                     allshortargs.append(f'{a}={a}')
                 if self.varkw:
                     allargs.append('**' + self.varkw)
@@ -122,7 +122,7 @@ class FunctionMaker:
         # check existence required attributes
         assert hasattr(self, 'name')
         if not hasattr(self, 'signature'):
-            raise TypeError('You are decorating a non-function: %s' % func)
+            raise TypeError(f'You are decorating a non-function: {func}')
 
     def update(self, func, **kw):
         "Update the signature of func with the data in self"
@@ -147,7 +147,7 @@ class FunctionMaker:
         evaldict = evaldict or {}
         mo = DEF.match(src)
         if mo is None:
-            raise SyntaxError('not a valid function template\n%s' % src)
+            raise SyntaxError(f'not a valid function template\n{src}')
         name = mo.group(1)  # extract the function name
         names = set([name] + [arg.strip(' *') for arg in
                               self.shortsignature.split(',')])
@@ -160,7 +160,7 @@ class FunctionMaker:
         # Ensure each generated function has a unique filename for profilers
         # (such as cProfile) that depend on the tuple of (<filename>,
         # <definition line>, <function name>) being unique.
-        filename = '<decorator-gen-%d>' % (next(self._compile_count),)
+        filename = f'<decorator-gen-{next(self._compile_count)}>'
         try:
             code = compile(src, filename, 'single')
             exec(code, evaldict)
@@ -238,7 +238,7 @@ def decorator(caller, _func=None):
     evaldict['_call_'] = caller
     evaldict['_decorate_'] = decorate
     return FunctionMaker.create(
-        '%s(func)' % name, 'return _decorate_(func, _call_)',
+        f'{name}(func)', 'return _decorate_(func, _call_)',
         evaldict, doc=doc, module=caller.__module__,
         __wrapped__=caller)
 
@@ -301,13 +301,13 @@ def dispatch_on(*dispatch_args):
     dispatching on the given arguments.
     """
     assert dispatch_args, 'No dispatch args passed'
-    dispatch_str = '(%s,)' % ', '.join(dispatch_args)
+    dispatch_str = f"({', '.join(dispatch_args)},)"
 
     def check(arguments, wrong=operator.ne, msg=''):
         """Make sure one passes the expected number of arguments"""
         if wrong(len(arguments), len(dispatch_args)):
-            raise TypeError('Expected %d arguments, got %d%s' %
-                            (len(dispatch_args), len(arguments), msg))
+            raise TypeError(f'Expected {len(dispatch_args)} arguments, '
+                            'got {len(arguments)}{msg}')
 
     def gen_func_dec(func):
         """Decorator turning a function into a generic function"""
@@ -315,7 +315,7 @@ def dispatch_on(*dispatch_args):
         # first check the dispatch arguments
         argset = set(getfullargspec(func).args)
         if not set(dispatch_args) <= argset:
-            raise NameError('Unknown dispatch arguments %s' % dispatch_str)
+            raise NameError(f'Unknown dispatch arguments {dispatch_str}')
 
         typemap = {}
 
@@ -390,7 +390,7 @@ def dispatch_on(*dispatch_args):
             return func(*args, **kw)
 
         return FunctionMaker.create(
-            func, 'return _f_(%s, %%(shortsignature)s)' % dispatch_str,
+            func, f'return _f_({dispatch_str}, %%(shortsignature)s)',
             dict(_f_=_dispatch), register=register, default=func,
             typemap=typemap, vancestors=vancestors, ancestors=ancestors,
             dispatch_info=dispatch_info, __wrapped__=func)

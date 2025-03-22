@@ -11,22 +11,24 @@ from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
 from scipy import sparse
-from scipy.linalg import eig, eigh, toeplitz, orth
-from scipy.sparse import spdiags, diags, eye, csr_matrix
-from scipy.sparse.linalg import eigs, LinearOperator
+from scipy.linalg import (eigh, toeplitz,
+                          cholesky_banded, cho_solve_banded)
+from scipy.sparse import dia_array, eye_array, csr_array
+from scipy.sparse.linalg import eigsh, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 from scipy._lib._util import np_long, np_ulong
+from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
+                                                        MikotaPair)
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
-INT_DTYPES = {np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong}
+INT_DTYPES = (np.intc, np_long, np.longlong, np.uintc, np_ulong, np.ulonglong)
 # np.half is unsupported on many test systems so excluded
-REAL_DTYPES = {np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-VDTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
-MDTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+INEXACTDTYPES = REAL_DTYPES + COMPLEX_DTYPES
+ALLDTYPES = INT_DTYPES + INEXACTDTYPES
 
 
 def sign_align(A, B):
@@ -52,59 +54,30 @@ def ElasticRod(n):
     return A, B
 
 
-def MikotaPair(n):
-    """Build a pair of full diagonal matrices for the generalized eigenvalue
-    problem. The Mikota pair acts as a nice test since the eigenvalues are the
-    squares of the integers n, n=1,2,...
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize("n", [10, 20])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_ElasticRod(n):
+    """Check eigh vs. lobpcg consistency for elastic rod model.
     """
-    x = np.arange(1, n+1)
-    B = diag(1./x)
-    y = np.arange(n-1, 0, -1)
-    z = np.arange(2*n-1, 0, -2)
-    A = diag(z)-diag(y, -1)-diag(y, 1)
-    return A, B
-
-
-def compare_solutions(A, B, m):
-    """Check eig vs. lobpcg consistency.
-    """
-    n = A.shape[0]
+    A, B = ElasticRod(n)
+    m = 2
     rnd = np.random.RandomState(0)
-    V = rnd.random((n, m))
-    X = orth(V)
+    X = rnd.standard_normal((n, m))
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
-    w, _ = eig(A, b=B)
+    w, _ = eigh(A, b=B)
     w.sort()
     assert_almost_equal(w[:int(m/2)], eigvals[:int(m/2)], decimal=2)
 
 
-def test_Small():
-    A, B = ElasticRod(10)
-    with pytest.warns(UserWarning, match="The problem size"):
-        compare_solutions(A, B, 10)
-    A, B = MikotaPair(10)
-    with pytest.warns(UserWarning, match="The problem size"):
-        compare_solutions(A, B, 10)
-
-
-def test_ElasticRod():
-    A, B = ElasticRod(20)
-    msg = "Exited at iteration.*|Exited postprocessing with accuracies.*"
-    with pytest.warns(UserWarning, match=msg):
-        compare_solutions(A, B, 2)
-
-
-def test_MikotaPair():
-    A, B = MikotaPair(20)
-    compare_solutions(A, B, 2)
-
-
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
-@pytest.mark.parametrize("Vdtype", sorted(REAL_DTYPES, key=str))
-@pytest.mark.parametrize("Bdtype", sorted(REAL_DTYPES, key=str))
-@pytest.mark.parametrize("BVdtype", sorted(REAL_DTYPES, key=str))
+@pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
+@pytest.mark.parametrize("Bdtype", ALLDTYPES)
+@pytest.mark.parametrize("BVdtype", INEXACTDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
@@ -116,20 +89,30 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     X = rnd.standard_normal((n, m)).astype(Vdtype)
     Xcopy = np.copy(X)
     vals = np.arange(1, n+1, dtype=float)
-    B = diags([vals], [0], (n, n)).astype(Bdtype)
+    B = dia_array(([vals], [0]), shape=(n, n)).astype(Bdtype)
     BX = B @ X
     BX = BX.astype(BVdtype)
-    dtype = min(X.dtype, B.dtype, BX.dtype)
+    is_all_complex = (np.issubdtype(Vdtype, np.complexfloating) and
+                     np.issubdtype(BVdtype, np.complexfloating))
+    is_all_notcomplex = (not np.issubdtype(Vdtype, np.complexfloating) and
+                        not np.issubdtype(Bdtype, np.complexfloating) and
+                        not np.issubdtype(BVdtype, np.complexfloating))
+
+    # All complex or all not complex can calculate in-place
+    check_inplace = is_all_complex or is_all_notcomplex
     # np.longdouble tol cannot be achieved on most systems
-    atol = m * n * max(np.finfo(dtype).eps, np.finfo(np.float64).eps)
+    atol = m * n * max(np.finfo(Vdtype).eps,
+                       np.finfo(BVdtype).eps,
+                       np.finfo(np.float64).eps)
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # Check in-place.
-    assert_equal(X, Xo)
-    assert_equal(id(X), id(Xo))
-    assert_equal(BX, BXo)
-    assert_equal(id(BX), id(BXo))
-    # Check BXo.
+    if check_inplace:
+        # Check in-place
+        assert_equal(X, Xo)
+        assert_equal(id(X), id(Xo))
+        assert_equal(BX, BXo)
+        assert_equal(id(BX), id(BXo))
+    # Check BXo
     assert_allclose(B @ Xo, BXo, atol=atol, rtol=atol)
     # Check B-orthonormality
     assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m),
@@ -139,13 +122,14 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
     assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
     assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
-    # Check in-place.
-    assert_equal(X, Xo1)
-    assert_equal(id(X), id(Xo1))
-    # Check BXo1.
+    if check_inplace:
+        # Check in-place.
+        assert_equal(X, Xo1)
+        assert_equal(id(X), id(Xo1))
+    # Check BXo1
     assert_allclose(B @ Xo1, BXo1, atol=atol, rtol=atol)
 
-    # Introduce column-scaling in X.
+    # Introduce column-scaling in X
     scaling = 1.0 / np.geomspace(10, 1e10, num=m)
     X = Xcopy * scaling
     X = X.astype(Vdtype)
@@ -153,13 +137,14 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
-    # The output should be the same, up the signs of the columns.
+    # The output should be the same, up the signs of the columns
     Xo1 =  sign_align(Xo1, Xo)
     assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
     BXo1 =  sign_align(BXo1, BXo)
     assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
@@ -210,7 +195,7 @@ def test_diagonal(n, m, m_excluded):
     # A is the diagonal matrix whose entries are 1,...n,
     # B is the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
-    A_s = diags([vals], [0], (n, n))
+    A_s = dia_array(([vals], [0]), shape=(n, n))
     A_a = A_s.toarray()
 
     def A_f(x):
@@ -220,8 +205,8 @@ def test_diagonal(n, m, m_excluded):
                           matmat=A_f,
                           shape=(n, n), dtype=float)
 
-    B_a = eye(n)
-    B_s = csr_matrix(B_a)
+    B_a = eye_array(n)
+    B_s = csr_array(B_a)
 
     def B_f(x):
         return B_a @ x
@@ -231,7 +216,7 @@ def test_diagonal(n, m, m_excluded):
                           shape=(n, n), dtype=float)
 
     # Let the preconditioner M be the inverse of A.
-    M_s = diags([1./vals], [0], (n, n))
+    M_s = dia_array(([1./vals], [0]), shape=(n, n))
     M_a = M_s.toarray()
 
     def M_f(x):
@@ -319,6 +304,7 @@ def _check_fiedler(n, p):
     assert_allclose(lobpcg_w, analytic_w[:2], atol=1e-14)
 
 
+@pytest.mark.thread_unsafe
 def test_fiedler_small_8():
     """Check the dense workaround path for small matrices.
     """
@@ -349,6 +335,7 @@ def test_failure_to_run_iterations():
     assert np.max(eigenvalues) > 0
 
 
+@pytest.mark.thread_unsafe
 def test_failure_to_run_iterations_nonsymmetric():
     """Check that the code exists gracefully without breaking
     if the matrix in not symmetric.
@@ -411,20 +398,21 @@ def test_hermitian():
 # The n=5 case tests the alternative small matrix code path that uses eigh().
 @pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, atol', [(20, 1e-3), (5, 1e-8)])
-def test_eigs_consistency(n, atol):
-    """Check eigs vs. lobpcg consistency.
+def test_eigsh_consistency(n, atol):
+    """Check eigsh vs. lobpcg consistency.
     """
     vals = np.arange(1, n+1, dtype=np.float64)
-    A = spdiags(vals, 0, n, n)
+    A = dia_array((vals, 0), shape=(n, n))
     rnd = np.random.RandomState(0)
     X = rnd.standard_normal((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
-    vals, _ = eigs(A, k=2)
+    vals, _ = eigsh(A, k=2)
 
     _check_eigen(A, lvals, lvecs, atol=atol, rtol=0)
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
+@pytest.mark.thread_unsafe
 def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
@@ -449,7 +437,7 @@ def test_tolerance_float32():
     n = 50
     m = 3
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
@@ -457,11 +445,11 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-@pytest.mark.parametrize("vdtype", VDTYPES)
-@pytest.mark.parametrize("mdtype", MDTYPES)
+@pytest.mark.parametrize("vdtype", INEXACTDTYPES)
+@pytest.mark.parametrize("mdtype", ALLDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
-                                      sparse.csr_matrix,
-                                      sparse.coo_matrix])
+                                      sparse.csr_array,
+                                      sparse.coo_array])
 def test_dtypes(vdtype, mdtype, arr_type):
     """Test lobpcg in various dtypes.
     """
@@ -477,6 +465,7 @@ def test_dtypes(vdtype, mdtype, arr_type):
     assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_inplace_warning():
@@ -487,13 +476,14 @@ def test_inplace_warning():
     n = 6
     m = 1
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.cdouble)
     X = rnd.standard_normal((n, m))
     with pytest.warns(UserWarning, match="Inplace update"):
         eigvals, _ = lobpcg(A, X, maxiter=2, verbosityLevel=1)
 
 
+@pytest.mark.thread_unsafe
 def test_maxit():
     """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)
@@ -505,7 +495,7 @@ def test_maxit():
     n = 50
     m = 4
     vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
+    A = dia_array(([vals], [0]), shape=(n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float64)
@@ -533,6 +523,100 @@ def test_maxit():
     assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
 
 
+@pytest.mark.xslow
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_sakurai():
+    """Check lobpcg and eighs accuracy for the Sakurai example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    n = 50
+    tol = 100 * n * n * n* np.finfo(float).eps
+    sakurai_obj = Sakurai(n, dtype='int')
+    A = sakurai_obj
+    m = 3
+    ee = sakurai_obj.eigenvalues(3)
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, m))
+    el, _ = lobpcg(A, X, tol=1e-9, maxiter=5000, largest=False)
+    accuracy = max(abs(ee - el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    a_l = LinearOperator((n, n), matvec=A, matmat=A, dtype='float64')
+    ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - ea) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+
+
+@pytest.mark.parametrize("n", [500, 1000])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_sakurai_inverse(n):
+    """Check lobpcg and eighs accuracy for the sakurai_inverse example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    def a(x):
+        return cho_solve_banded((c, False), x)
+    tol = 100 * n * n * n* np.finfo(float).eps
+    sakurai_obj = Sakurai(n)
+    A = sakurai_obj.tobanded().astype(np.float64)
+    m = 3
+    ee = sakurai_obj.eigenvalues(3)
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, m))
+    c = cholesky_banded(A)
+    el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
+    accuracy = max(abs(ee - 1. / el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
+    ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - np.sort(1. / ea)) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+
+
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize("n", [10, 20, 128, 256, 512, 1024, 2048])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_MikotaPair(n):
+    """Check lobpcg and eighs accuracy for the Mikota example
+    already used in `benchmarks/benchmarks/sparse_linalg_lobpcg.py`.
+    """
+    def a(x):
+        return cho_solve_banded((c, False), x)
+    mik = MikotaPair(n)
+    mik_k = mik.k
+    mik_m = mik.m
+    Ac = mik_k
+    Bc = mik_m
+    Ab = mik_k.tobanded()
+    eigenvalues = mik.eigenvalues
+    if n == 10:
+        m = 3 # lobpcg calls eigh
+    elif n == 20:
+        m = 2
+    else:
+        m = 10
+    ee = eigenvalues(m)
+    tol = 100 * m * n * n * np.finfo(float).eps
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(n, m))
+    c = cholesky_banded(Ab.astype(np.float32))
+    el, _ = lobpcg(Ac, X, Bc, M=a, tol=1e-4,
+                   maxiter=40, largest=False)
+    accuracy = max(abs(ee - el) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+    B = LinearOperator((n, n), matvec=Bc, matmat=Bc, dtype='float64')
+    A = LinearOperator((n, n), matvec=Ac, matmat=Ac, dtype='float64')
+    c = cholesky_banded(Ab)
+    a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
+    ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
+                  v0 = rng.normal(size=(n, 1)))
+    accuracy = max(abs(ee - np.sort(1./ea)) / ee)
+    assert_allclose(accuracy, 0., atol=tol)
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("n", [15])
 @pytest.mark.parametrize("m", [1, 2])
@@ -551,7 +635,7 @@ def test_diagonal_data_types(n, m):
     list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
     for s_f_i, s_f in enumerate(list_sparse_format):
 
-        As64 = diags([vals * vals], [0], (n, n), format=s_f)
+        As64 = dia_array(([vals * vals], [0]), shape=(n, n)).asformat(s_f)
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
@@ -565,7 +649,7 @@ def test_diagonal_data_types(n, m):
 
         listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
-        Bs64 = diags([vals], [0], (n, n), format=s_f)
+        Bs64 = dia_array(([vals], [0]), shape=(n, n)).asformat(s_f)
         Bf64 = Bs64.toarray()
         Bs32 = Bs64.astype(np.float32)
 
@@ -578,7 +662,7 @@ def test_diagonal_data_types(n, m):
         listB = [Bf64, Bs64, Bs32, Bs32f, Bs32LO, lambda v: Bs32 @ v]
 
         # Define the preconditioner function as LinearOperator.
-        Ms64 = diags([1./vals], [0], (n, n), format=s_f)
+        Ms64 = dia_array(([1./vals], [0]), shape=(n, n)).asformat(s_f)
 
         def Ms64precond(x):
             return Ms64 @ x

@@ -219,6 +219,10 @@ qhull_misc_lib_check()
 
 
 class QhullError(RuntimeError):
+    """
+    Raised when Qhull encounters an error condition, such as 
+    geometrical degeneracy when options to resolve are not enabled.
+    """
     pass
 
 
@@ -453,7 +457,7 @@ cdef class _Qhull:
                 #Store the halfspaces in _points and the dual points in _dual_points later
                 self._point_arrays.append(np.array(points, copy=True))
                 dists = points[:, :-1].dot(interior_point)+points[:, -1]
-                arr = np.array(-points[:, :-1]/dists, dtype=np.double, order="C", copy=True)
+                arr = np.array(-points[:, :-1]/dists[:, np.newaxis], dtype=np.double, order="C", copy=True)
             else:
                 arr = np.array(points, dtype=np.double, order="C", copy=True)
 
@@ -2076,8 +2080,6 @@ class Delaunay(_QhullUser):
 
         Parameters
         ----------
-        tri : DelaunayInfo
-            Delaunay triangulation
         xi : ndarray of double, shape (..., ndim)
             Points to locate
         bruteforce : bool, optional
@@ -2112,8 +2114,9 @@ class Delaunay(_QhullUser):
 
         xi = np.asanyarray(xi)
 
-        if xi.shape[-1] != self.ndim:
-            raise ValueError("wrong dimensionality in xi")
+        with cython.boundscheck(True):
+            if xi.shape[-1] != self.ndim:
+                raise ValueError("wrong dimensionality in xi")
 
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
@@ -2906,9 +2909,11 @@ class HalfspaceIntersection(_QhullUser):
 
         Parameters
         ----------
-        halfspaces : ndarray
-            New halfspaces to add. The dimensionality should match that of the
-            initial halfspaces.
+        halfspaces : ndarray of double, shape (n_new_ineq, ndim+1)
+            New halfspaces to add. The dimensionality (ndim) should match that of the
+            initial halfspaces. Like in the constructor, these are stacked 
+            inequalites of the form Ax + b <= 0 in format [A; b]. The original
+            feasible point must also be feasible for these new inequalities.
         restart : bool, optional
             Whether to restart processing from scratch, rather than
             adding halfspaces incrementally.

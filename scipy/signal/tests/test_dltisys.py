@@ -2,11 +2,12 @@
 # April 4, 2011
 
 import numpy as np
-from numpy.testing import (assert_equal,
-                           assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_almost_equal,
-                           suppress_warnings)
+from numpy.testing import suppress_warnings
 from pytest import raises as assert_raises
+from scipy._lib._array_api import (
+    assert_array_almost_equal, assert_almost_equal, xp_assert_close, xp_assert_equal,
+)
+
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
@@ -59,7 +60,7 @@ class TestDLTI:
 
         assert_array_almost_equal(yout_truth, yout)
         assert_array_almost_equal(xout_truth, xout)
-        assert_equal(len(tout), yout.shape[0])
+        assert len(tout) == len(yout)
 
         # Transfer functions (assume dt = 0.5)
         num = np.asarray([1.0, -0.1])
@@ -122,22 +123,22 @@ class TestDLTI:
 
         tout, yout = dstep((a, b, c, d, dt), n=10)
 
-        assert_equal(len(yout), 3)
+        assert len(yout) == 3
 
         for i in range(0, len(yout)):
-            assert_equal(yout[i].shape[0], 10)
+            assert yout[i].shape[0] == 10
             assert_array_almost_equal(yout[i].flatten(), yout_step_truth[i])
 
         # Check that the other two inputs (tf, zpk) will work as well
         tfin = ([1.0], [1.0, 1.0], 0.5)
         yout_tfstep = np.asarray([0.0, 1.0, 0.0])
         tout, yout = dstep(tfin, n=3)
-        assert_equal(len(yout), 1)
+        assert len(yout) == 1
         assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
 
         zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
         tout, yout = dstep(zpkin, n=3)
-        assert_equal(len(yout), 1)
+        assert len(yout) == 1
         assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
 
         # Raise an error for continuous-time systems
@@ -166,22 +167,22 @@ class TestDLTI:
 
         tout, yout = dimpulse((a, b, c, d, dt), n=10)
 
-        assert_equal(len(yout), 3)
+        assert len(yout) == 3
 
         for i in range(0, len(yout)):
-            assert_equal(yout[i].shape[0], 10)
+            assert yout[i].shape[0] == 10
             assert_array_almost_equal(yout[i].flatten(), yout_imp_truth[i])
 
         # Check that the other two inputs (tf, zpk) will work as well
         tfin = ([1.0], [1.0, 1.0], 0.5)
         yout_tfimpulse = np.asarray([0.0, 1.0, -1.0])
         tout, yout = dimpulse(tfin, n=3)
-        assert_equal(len(yout), 1)
+        assert len(yout) == 1
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
 
         zpkin = tf2zpk(tfin[0], tfin[1]) + (0.5,)
         tout, yout = dimpulse(zpkin, n=3)
-        assert_equal(len(yout), 1)
+        assert len(yout) == 1
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
 
         # Raise an error for continuous-time systems
@@ -196,9 +197,9 @@ class TestDLTI:
         n = 5
         u = np.zeros(n).reshape(-1, 1)
         tout, yout, xout = dlsim((a, b, c, d, 1), u)
-        assert_array_equal(tout, np.arange(float(n)))
-        assert_array_equal(yout, np.zeros((n, 1)))
-        assert_array_equal(xout, np.zeros((n, 1)))
+        xp_assert_equal(tout, np.arange(float(n)))
+        xp_assert_equal(yout, np.zeros((n, 1)))
+        xp_assert_equal(xout, np.zeros((n, 1)))
 
     def test_dlsim_simple1d(self):
         a = np.array([[0.5]])
@@ -208,10 +209,10 @@ class TestDLTI:
         n = 5
         u = np.zeros(n).reshape(-1, 1)
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
-        assert_array_equal(tout, np.arange(float(n)))
+        xp_assert_equal(tout, np.arange(float(n)))
         expected = (0.5 ** np.arange(float(n))).reshape(-1, 1)
-        assert_array_equal(yout, expected)
-        assert_array_equal(xout, expected)
+        xp_assert_equal(yout, expected)
+        xp_assert_equal(xout, expected)
 
     def test_dlsim_simple2d(self):
         lambda1 = 0.5
@@ -227,12 +228,12 @@ class TestDLTI:
         n = 5
         u = np.zeros(n).reshape(-1, 1)
         tout, yout, xout = dlsim((a, b, c, d, 1), u, x0=1)
-        assert_array_equal(tout, np.arange(float(n)))
+        xp_assert_equal(tout, np.arange(float(n)))
         # The analytical solution:
         expected = (np.array([lambda1, lambda2]) **
                                 np.arange(float(n)).reshape(-1, 1))
-        assert_array_equal(yout, expected)
-        assert_array_equal(xout, expected)
+        xp_assert_equal(yout, expected)
+        xp_assert_equal(xout, expected)
 
     def test_more_step_and_impulse(self):
         lambda1 = 0.5
@@ -253,8 +254,8 @@ class TestDLTI:
         stp0 = (1.0 / (1 - lambda1)) * (1.0 - lambda1 ** np.arange(n))
         stp1 = (1.0 / (1 - lambda2)) * (1.0 - lambda2 ** np.arange(n))
 
-        assert_allclose(ys[0][:, 0], stp0)
-        assert_allclose(ys[1][:, 0], stp1)
+        xp_assert_close(ys[0][:, 0], stp0)
+        xp_assert_close(ys[1][:, 0], stp1)
 
         # Check an impulse response with an initial condition.
         x0 = np.array([1.0, 1.0])
@@ -268,17 +269,17 @@ class TestDLTI:
         y0 = imp[:n, 0] + np.dot(imp[1:n + 1, :], x0)
         y1 = imp[:n, 1] + np.dot(imp[1:n + 1, :], x0)
 
-        assert_allclose(yi[0][:, 0], y0)
-        assert_allclose(yi[1][:, 0], y1)
+        xp_assert_close(yi[0][:, 0], y0)
+        xp_assert_close(yi[1][:, 0], y1)
 
         # Check that dt=0.1, n=3 gives 3 time values.
         system = ([1.0], [1.0, -0.5], 0.1)
         t, (y,) = dstep(system, n=3)
-        assert_allclose(t, [0, 0.1, 0.2])
-        assert_array_equal(y.T, [[0, 1.0, 1.5]])
+        xp_assert_close(t, [0, 0.1, 0.2])
+        xp_assert_equal(y.T, [[0, 1.0, 1.5]])
         t, (y,) = dimpulse(system, n=3)
-        assert_allclose(t, [0, 0.1, 0.2])
-        assert_array_equal(y.T, [[0, 1, 0.5]])
+        xp_assert_close(t, [0, 0.1, 0.2])
+        xp_assert_equal(y.T, [[0, 1, 0.5]])
 
 
 class TestDlti:
@@ -288,24 +289,24 @@ class TestDlti:
         dt = 0.05
         # TransferFunction
         s = dlti([1], [-1], dt=dt)
-        assert_(isinstance(s, TransferFunction))
-        assert_(isinstance(s, dlti))
-        assert_(not isinstance(s, lti))
-        assert_equal(s.dt, dt)
+        assert isinstance(s, TransferFunction)
+        assert isinstance(s, dlti)
+        assert not isinstance(s, lti)
+        assert s.dt == dt
 
         # ZerosPolesGain
         s = dlti(np.array([]), np.array([-1]), 1, dt=dt)
-        assert_(isinstance(s, ZerosPolesGain))
-        assert_(isinstance(s, dlti))
-        assert_(not isinstance(s, lti))
-        assert_equal(s.dt, dt)
+        assert isinstance(s, ZerosPolesGain)
+        assert isinstance(s, dlti)
+        assert not isinstance(s, lti)
+        assert s.dt == dt
 
         # StateSpace
         s = dlti([1], [-1], 1, 3, dt=dt)
-        assert_(isinstance(s, StateSpace))
-        assert_(isinstance(s, dlti))
-        assert_(not isinstance(s, lti))
-        assert_equal(s.dt, dt)
+        assert isinstance(s, StateSpace)
+        assert isinstance(s, dlti)
+        assert not isinstance(s, lti)
+        assert s.dt == dt
 
         # Number of inputs
         assert_raises(ValueError, dlti, 1)
@@ -325,13 +326,13 @@ class TestStateSpaceDisc:
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4, dt=0.05)
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(StateSpace(s) is not s)
-        assert_(s.to_ss() is not s)
+        assert StateSpace(s) is not s
+        assert s.to_ss() is not s
 
     def test_properties(self):
         # Test setters/getters for cross class properties.
@@ -339,8 +340,8 @@ class TestStateSpaceDisc:
 
         # Getters
         s = StateSpace(1, 1, 1, 1, dt=0.05)
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
+        xp_assert_equal(s.poles, [1.])
+        xp_assert_equal(s.zeros, [0.])
 
 
 class TestTransferFunction:
@@ -355,13 +356,13 @@ class TestTransferFunction:
     def test_conversion(self):
         # Check the conversion functions
         s = TransferFunction([1, 0], [1, -1], dt=0.05)
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(TransferFunction(s) is not s)
-        assert_(s.to_tf() is not s)
+        assert TransferFunction(s) is not s
+        assert s.to_tf() is not s
 
     def test_properties(self):
         # Test setters/getters for cross class properties.
@@ -369,8 +370,8 @@ class TestTransferFunction:
 
         # Getters
         s = TransferFunction([1, 0], [1, -1], dt=0.05)
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
+        xp_assert_equal(s.poles, [1.])
+        xp_assert_equal(s.zeros, [0.])
 
 
 class TestZerosPolesGain:
@@ -385,13 +386,13 @@ class TestZerosPolesGain:
     def test_conversion(self):
         # Check the conversion functions
         s = ZerosPolesGain(1, 2, 3, dt=0.05)
-        assert_(isinstance(s.to_ss(), StateSpace))
-        assert_(isinstance(s.to_tf(), TransferFunction))
-        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+        assert isinstance(s.to_ss(), StateSpace)
+        assert isinstance(s.to_tf(), TransferFunction)
+        assert isinstance(s.to_zpk(), ZerosPolesGain)
 
         # Make sure copies work
-        assert_(ZerosPolesGain(s) is not s)
-        assert_(s.to_zpk() is not s)
+        assert ZerosPolesGain(s) is not s
+        assert s.to_zpk() is not s
 
 
 class Test_dfreqresp:
@@ -447,7 +448,7 @@ class Test_dfreqresp:
             sup.filter(RuntimeWarning, message="divide by zero")
             sup.filter(RuntimeWarning, message="invalid value encountered")
             w, H = dfreqresp(system, n=2)
-        assert_equal(w[0], 0.)  # a fail would give not-a-number
+        assert w[0] == 0.   # a fail would give not-a-number
 
     def test_error(self):
         # Raise an error for continuous-time systems
@@ -504,7 +505,7 @@ class Test_bode:
         assert_almost_equal(phase, expected_phase, decimal=4)
 
         # Test frequency
-        assert_equal(np.array(w) / dt, w2)
+        xp_assert_equal(np.array(w) / dt, w2)
 
     def test_auto(self):
         # Test bode() magnitude calculation.
@@ -543,7 +544,7 @@ class Test_bode:
             sup.filter(RuntimeWarning, message="divide by zero")
             sup.filter(RuntimeWarning, message="invalid value encountered")
             w, mag, phase = dbode(system, n=2)
-        assert_equal(w[0], 0.)  # a fail would give not-a-number
+        assert w[0] == 0.  # a fail would give not-a-number
 
     def test_imaginary(self):
         # bode() should not fail on a system with pure imaginary poles.
@@ -562,37 +563,37 @@ class TestTransferFunctionZConversion:
 
     def test_full(self):
         # Numerator and denominator same order
-        num = [2, 3, 4]
-        den = [5, 6, 7]
+        num = np.asarray([2.0, 3, 4])
+        den = np.asarray([5.0, 6, 7])
         num2, den2 = TransferFunction._z_to_zinv(num, den)
-        assert_equal(num, num2)
-        assert_equal(den, den2)
+        xp_assert_equal(num, num2)
+        xp_assert_equal(den, den2)
 
         num2, den2 = TransferFunction._zinv_to_z(num, den)
-        assert_equal(num, num2)
-        assert_equal(den, den2)
+        xp_assert_equal(num, num2)
+        xp_assert_equal(den, den2)
 
     def test_numerator(self):
         # Numerator lower order than denominator
-        num = [2, 3]
-        den = [5, 6, 7]
+        num = np.asarray([2.0, 3])
+        den = np.asarray([50, 6, 7])
         num2, den2 = TransferFunction._z_to_zinv(num, den)
-        assert_equal([0, 2, 3], num2)
-        assert_equal(den, den2)
+        xp_assert_equal([0.0, 2, 3], num2)
+        xp_assert_equal(den, den2)
 
         num2, den2 = TransferFunction._zinv_to_z(num, den)
-        assert_equal([2, 3, 0], num2)
-        assert_equal(den, den2)
+        xp_assert_equal([2.0, 3, 0], num2)
+        xp_assert_equal(den, den2)
 
     def test_denominator(self):
         # Numerator higher order than denominator
-        num = [2, 3, 4]
-        den = [5, 6]
+        num = np.asarray([2., 3, 4])
+        den = np.asarray([5.0, 6])
         num2, den2 = TransferFunction._z_to_zinv(num, den)
-        assert_equal(num, num2)
-        assert_equal([0, 5, 6], den2)
+        xp_assert_equal(num, num2)
+        xp_assert_equal([0.0, 5, 6], den2)
 
         num2, den2 = TransferFunction._zinv_to_z(num, den)
-        assert_equal(num, num2)
-        assert_equal([5, 6, 0], den2)
+        xp_assert_equal(num, num2)
+        xp_assert_equal([5.0, 6, 0], den2)
 

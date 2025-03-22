@@ -601,9 +601,9 @@ c
       if (info .eq. 2) info = 3
 c
       if (msglvl .gt. 0) then
-         call ivout (logfil, 1, mxiter, ndigit,
+         call ivout (logfil, 1, [mxiter], ndigit,
      &               '_naupd: Number of update iterations taken')
-         call ivout (logfil, 1, np, ndigit,
+         call ivout (logfil, 1, [np], ndigit,
      &               '_naupd: Number of wanted "converged" Ritz values')
          call zvout  (logfil, np, workl(ritz), ndigit,
      &               '_naupd: The final Ritz values')

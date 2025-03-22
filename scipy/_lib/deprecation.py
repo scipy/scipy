@@ -2,6 +2,7 @@ from inspect import Parameter, signature
 import functools
 import warnings
 from importlib import import_module
+from scipy._lib._docscrape import FunctionDoc
 
 
 __all__ = ["_deprecated"]
@@ -12,7 +13,7 @@ __all__ = ["_deprecated"]
 _NoValue = object()
 
 def _sub_module_deprecation(*, sub_package, module, private_modules, all,
-                            attribute, correct_module=None):
+                            attribute, correct_module=None, dep_version="1.16.0"):
     """Helper function for deprecating modules that are public but were
     intended to be private.
 
@@ -32,6 +33,8 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
     correct_module : str, optional
         Module in `sub_package` that `attribute` should be imported from.
         Default is that `attribute` should be imported from ``scipy.sub_package``.
+    dep_version : str, optional
+        Version in which deprecated attributes will be removed.
     """
     if correct_module is not None:
         correct_import = f"scipy.{sub_package}.{correct_module}"
@@ -58,7 +61,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
             f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
             f"the `scipy.{sub_package}.{module}` namespace. "
             f"`scipy.{sub_package}.{module}.{attribute}` will be removed "
-            f"in SciPy 1.14.0, and the `scipy.{sub_package}.{module}` namespace "
+            f"in SciPy {dep_version}, and the `scipy.{sub_package}.{module}` namespace "
             f"will be removed in SciPy 2.0.0."
         )
 
@@ -150,7 +153,7 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
     old_name = f"{module.__name__}.{routine_name}"
 
     if new_name is None:
-        depdoc = "`%s` is deprecated!" % old_name
+        depdoc = f"`{old_name}` is deprecated!"
     else:
         depdoc = f"`{old_name}` is deprecated, use `{new_name}` instead!"
 
@@ -178,7 +181,8 @@ def deprecate_cython_api(module, routine_name, new_name=None, message=None):
 
 # taken from scikit-learn, see
 # https://github.com/scikit-learn/scikit-learn/blob/1.3.0/sklearn/utils/validation.py#L38
-def _deprecate_positional_args(func=None, *, version=None):
+def _deprecate_positional_args(func=None, *, version=None,
+                               deprecated_args=None, custom_message=""):
     """Decorator for methods that issues warnings for positional arguments.
 
     Using the keyword-only argument syntax in pep 3102, arguments after the
@@ -190,10 +194,16 @@ def _deprecate_positional_args(func=None, *, version=None):
         Function to check arguments on.
     version : callable, default=None
         The version when positional arguments will result in error.
+    deprecated_args : set of str, optional
+        Arguments to deprecate - whether passed by position or keyword.
+    custom_message : str, optional
+        Custom message to add to deprecation warning and documentation.
     """
     if version is None:
         msg = "Need to specify a version where signature will be changed"
         raise ValueError(msg)
+
+    deprecated_args = set() if deprecated_args is None else set(deprecated_args)
 
     def _inner_deprecate_positional_args(f):
         sig = signature(f)
@@ -206,21 +216,29 @@ def _deprecate_positional_args(func=None, *, version=None):
             elif param.kind == Parameter.KEYWORD_ONLY:
                 kwonly_args.append(name)
 
+        def warn_deprecated_args(kwargs):
+            intersection = deprecated_args.intersection(kwargs)
+            if intersection:
+                message = (f"Arguments {intersection} are deprecated, whether passed "
+                           "by position or keyword. They will be removed in SciPy "
+                           f"{version}. ")
+                message += custom_message
+                warnings.warn(message, category=DeprecationWarning, stacklevel=3)
+
         @functools.wraps(f)
         def inner_f(*args, **kwargs):
+
             extra_args = len(args) - len(all_args)
             if extra_args <= 0:
+                warn_deprecated_args(kwargs)
                 return f(*args, **kwargs)
 
             # extra_args > 0
-            args_msg = [
-                f"{name}={arg}"
-                for name, arg in zip(kwonly_args[:extra_args], args[-extra_args:])
-            ]
-            args_msg = ", ".join(args_msg)
+            kwonly_extra_args = set(kwonly_args[:extra_args]) - deprecated_args
+            args_msg = ", ".join(kwonly_extra_args)
             warnings.warn(
                 (
-                    f"You are passing {args_msg} as a positional argument. "
+                    f"You are passing as positional arguments: {args_msg}. "
                     "Please change your invocation to use keyword arguments. "
                     f"From SciPy {version}, passing these as positional "
                     "arguments will result in an error."
@@ -229,7 +247,24 @@ def _deprecate_positional_args(func=None, *, version=None):
                 stacklevel=2,
             )
             kwargs.update(zip(sig.parameters, args))
+            warn_deprecated_args(kwargs)
             return f(**kwargs)
+
+        doc = FunctionDoc(inner_f)
+        kwonly_extra_args = set(kwonly_args) - deprecated_args
+        admonition = f"""
+.. deprecated:: {version}
+    Use of argument(s) ``{kwonly_extra_args}`` by position is deprecated; beginning in 
+    SciPy {version}, these will be keyword-only. """
+        if deprecated_args:
+            admonition += (f"Argument(s) ``{deprecated_args}`` are deprecated, whether "
+                           "passed by position or keyword; they will be removed in "
+                           f"SciPy {version}. ")
+        admonition += custom_message
+        doc['Extended Summary'] += [admonition]
+
+        doc = str(doc).split("\n", 1)[1]  # remove signature
+        inner_f.__doc__ = str(doc)
 
         return inner_f
 

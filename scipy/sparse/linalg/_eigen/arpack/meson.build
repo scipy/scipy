@@ -1,4 +1,5 @@
 arpack_sources = [
+  'ARPACK/SRC/ccdotc.f',
   'ARPACK/SRC/cgetv0.f',
   'ARPACK/SRC/cnaitr.f',
   'ARPACK/SRC/cnapps.f',
@@ -65,6 +66,7 @@ arpack_sources = [
   'ARPACK/SRC/zngets.f',
   'ARPACK/SRC/zsortc.f',
   'ARPACK/SRC/zstatn.f',
+  'ARPACK/SRC/zzdotc.f',
   'ARPACK/UTIL/cmout.f',
   'ARPACK/UTIL/cvout.f',
   'ARPACK/UTIL/dmout.f',
@@ -96,7 +98,7 @@ arpack_lib = static_library('arpack_lib',
 arpack_module = custom_target('arpack_module',
   output: ['_arpackmodule.c', '_arpack-f2pywrappers.f'],
   input: 'arpack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
 )
 
 _arpack = py3.extension_module('_arpack',

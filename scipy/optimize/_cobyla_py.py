@@ -240,7 +240,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         try:
             ctype = con['type'].lower()
         except KeyError as e:
-            raise KeyError('Constraint %d has no type defined.' % ic) from e
+            raise KeyError(f'Constraint {ic} has no type defined.') from e
         except TypeError as e:
             raise TypeError('Constraints must be defined using a '
                             'dictionary.') from e
@@ -248,12 +248,12 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype != 'ineq':
-                raise ValueError("Constraints of type '%s' not handled by "
-                                 "COBYLA." % con['type'])
+                raise ValueError(f"Constraints of type '{con['type']}' not handled by "
+                                 "COBYLA.")
 
         # check function
         if 'fun' not in con:
-            raise KeyError('Constraint %d has no function defined.' % ic)
+            raise KeyError(f'Constraint {ic} has no function defined.')
 
         # check extra arguments
         if 'args' not in con:

@@ -87,7 +87,7 @@ auto pava(
     return std::make_tuple(xa, wa, ra, b + 1);  // b + 1 is number of blocks
 }
 
-PYBIND11_MODULE(_pava_pybind, m) {
+PYBIND11_MODULE(_pava_pybind, m, py::mod_gil_not_used()) {
     if (_import_array() != 0) {
         throw py::error_already_set();
     }

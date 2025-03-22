@@ -5,6 +5,7 @@ import numpy as np
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis, getdtype)
+from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
 
@@ -13,6 +14,7 @@ __all__ = ['isspmatrix', 'issparse', 'sparray',
 
 
 class SparseWarning(Warning):
+    """General warning for :mod:`scipy.sparse`."""
     pass
 
 
@@ -21,6 +23,9 @@ class SparseFormatWarning(SparseWarning):
 
 
 class SparseEfficiencyWarning(SparseWarning):
+    """The warning emitted when the operation is
+    inefficient for sparse matrices.
+    """
     pass
 
 
@@ -58,13 +63,18 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _spbase:
+# `_spbase` is a subclass of `SparseABC`.
+# This allows other submodules to check for instances of sparse subclasses
+# via `scipy._lib._sparse.issparse`, without introducing
+# an import dependency on `scipy.sparse`.
+class _spbase(SparseABC):
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
+    _allow_nd = (2,)
 
     @property
     def ndim(self) -> int:
@@ -157,8 +167,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        is_array = isinstance(self, sparray)
-        shape = check_shape(args, self.shape, allow_1d=is_array)
+        # Don't restrict ndim on this first call. That happens in constructor
+        shape = check_shape(args, self.shape, allow_nd=range(1, 65))
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -252,8 +262,9 @@ class _spbase:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                f'cannot upcast [{self.dtype.name}] to a floating point format'
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -333,8 +344,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"getnnz not implemented for {clsname}.")
 
     @property
     def nnz(self) -> int:
@@ -498,6 +509,12 @@ class _spbase:
         """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
+    def _broadcast_to(self, shape, copy=False):
+        if self.shape == shape:
+            return self.copy() if copy else self
+        else:
+            return self.tocsr()._broadcast_to(shape, copy)
+
     def __eq__(self, other):
         return self.tocsr().__eq__(other)
 
@@ -610,7 +627,7 @@ class _spbase:
             elif other.shape == (N, 1):
                 result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
-                    return result
+                    return result.reshape(1)
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
                 return self._matmul_multivector(other)
@@ -619,9 +636,12 @@ class _spbase:
             # scalar value
             return self._mul_scalar(other)
 
+        err_prefix = "matmul: dimension mismatch with signature"
         if issparse(other):
-            if self.shape[-1] != other.shape[0]:
-                raise ValueError('dimension mismatch')
+            if N != other.shape[0]:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -639,8 +659,10 @@ class _spbase:
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape != (N,) and other.shape != (N, 1):
-                raise ValueError('dimension mismatch')
+            if other.shape[0] != N:
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},1?)->(n,1?)"
+                )
 
             result = self._matmul_vector(np.ravel(other))
 
@@ -649,7 +671,10 @@ class _spbase:
 
             if other.ndim == 2 and other.shape[1] == 1:
                 # If 'other' was an (nx1) column vector, reshape the result
-                result = result.reshape(-1, 1)
+                if self.ndim == 1:
+                    result = result.reshape(1)
+                else:
+                    result = result.reshape(-1, 1)
 
             return result
 
@@ -658,7 +683,9 @@ class _spbase:
             # dense 2D array or matrix ("multivector")
 
             if other.shape[0] != N:
-                raise ValueError('dimension mismatch')
+                raise ValueError(
+                    f"{err_prefix} (n,k={N}),(k={other.shape[0]},m)->(n,m)"
+                )
 
             result = self._matmul_multivector(np.asarray(other))
 
@@ -877,16 +904,16 @@ class _spbase:
         Examples
         --------
         >>> from scipy.sparse import csr_array
-        >>> A = csr_array([[1,2,0],[0,0,3],[4,0,5]])
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> A.nonzero()
-        (array([0, 0, 1, 2, 2]), array([0, 1, 2, 0, 2]))
+        (array([0, 0, 1, 2, 2], dtype=int32), array([0, 1, 2, 0, 2], dtype=int32))
 
         """
 
         # convert to COOrdinate format
         A = self.tocoo()
         nz_mask = A.data != 0
-        return (A.row[nz_mask], A.col[nz_mask])
+        return tuple(idx[nz_mask] for idx in A.coords)
 
     def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
@@ -1123,13 +1150,8 @@ class _spbase:
         if self.ndim == 1:
             if axis not in (None, -1, 0):
                 raise ValueError("axis must be None, -1 or 0")
-            ret = (self @ np.ones(self.shape, dtype=res_dtype)).astype(dtype)
-
-            if out is not None:
-                if any(dim != 1 for dim in out.shape):
-                    raise ValueError("dimensions do not match")
-                out[...] = ret
-            return ret
+            res = self @ np.ones(self.shape, dtype=res_dtype)
+            return res.sum(dtype=dtype, out=out)
 
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
@@ -1156,9 +1178,6 @@ class _spbase:
             ret = self @ self._ascontainer(
                 np.ones((N, 1), dtype=res_dtype)
             )
-
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 
@@ -1371,37 +1390,31 @@ class _spbase:
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
 
+    @classmethod
+    def __class_getitem__(cls, arg, /):
+        """
+        Return a parametrized wrapper around the `~scipy.sparse.sparray` type.
+
+        .. versionadded:: 1.16.0
+
+        Returns
+        -------
+        alias : types.GenericAlias
+            A parametrized `~scipy.sparse.sparray` type.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_array
+
+        >>> coo_array[np.int8, tuple[int]]
+        scipy.sparse._coo.coo_array[numpy.int8, tuple[int]]
+        """
+        from types import GenericAlias
+        return GenericAlias(cls, arg)
+
 
 sparray.__doc__ = _spbase.__doc__
-
-
-def issparse(x):
-    """Is `x` of a sparse array or sparse matrix type?
-
-    Parameters
-    ----------
-    x
-        object to check for being a sparse array or sparse matrix
-
-    Returns
-    -------
-    bool
-        True if `x` is a sparse array or a sparse matrix, False otherwise
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import csr_array, csr_matrix, issparse
-    >>> issparse(csr_matrix([[5]]))
-    True
-    >>> issparse(csr_array([[5]]))
-    True
-    >>> issparse(np.array([[5]]))
-    False
-    >>> issparse(5)
-    False
-    """
-    return isinstance(x, _spbase)
 
 
 def isspmatrix(x):

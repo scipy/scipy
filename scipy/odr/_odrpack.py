@@ -36,6 +36,7 @@ robert.kern@gmail.com
 
 """
 import os
+from threading import Lock
 
 import numpy as np
 from warnings import warn
@@ -46,6 +47,7 @@ __all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
            'odr_error', 'odr_stop']
 
 odr = __odrpack.odr
+ODR_LOCK = Lock()
 
 
 class OdrWarning(UserWarning):
@@ -286,10 +288,10 @@ class Data:
     def __getattr__(self, attr):
         """ Dispatch attribute access to the metadata dictionary.
         """
-        if attr in self.meta:
+        if attr != "meta" and attr in self.meta:
             return self.meta[attr]
         else:
-            raise AttributeError("'%s' not in metadata" % attr)
+            raise AttributeError(f"'{attr}' not in metadata")
 
 
 class RealData(Data):
@@ -408,17 +410,18 @@ class RealData(Data):
             return weights
 
     def __getattr__(self, attr):
-        lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
+
+        if attr not in ('wd', 'we'):
+            if attr != "meta" and attr in self.meta:
+                return self.meta[attr]
+            else:
+                raise AttributeError(f"'{attr}' not in metadata")
+        else:
+            lookup_tbl = {('wd', 'sx'): (self._sd2wt, self.sx),
                       ('wd', 'covx'): (self._cov2wt, self.covx),
                       ('we', 'sy'): (self._sd2wt, self.sy),
                       ('we', 'covy'): (self._cov2wt, self.covy)}
 
-        if attr not in ('wd', 'we'):
-            if attr in self.meta:
-                return self.meta[attr]
-            else:
-                raise AttributeError("'%s' not in metadata" % attr)
-        else:
             func, arg = lookup_tbl[(attr, self._ga_flags[attr])]
 
             if arg is not None:
@@ -492,14 +495,14 @@ class Model:
         i.e. ``beta = array([B_1, B_2, ..., B_p])``
     `fjacb`
         if the response variable is multi-dimensional, then the
-        return array's shape is `(q, p, n)` such that ``fjacb(x,beta)[l,k,i] =
-        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If `q == 1`, then
-        the return array is only rank-2 and with shape `(p, n)`.
+        return array's shape is ``(q, p, n)`` such that ``fjacb(x,beta)[l,k,i] =
+        d f_l(X,B)/d B_k`` evaluated at the ith data point.  If ``q == 1``, then
+        the return array is only rank-2 and with shape ``(p, n)``.
     `fjacd`
-        as with fjacb, only the return array's shape is `(q, m, n)`
+        as with fjacb, only the return array's shape is ``(q, m, n)``
         such that ``fjacd(x,beta)[l,j,i] = d f_l(X,B)/d X_j`` at the ith data
-        point.  If `q == 1`, then the return array's shape is `(m, n)`. If
-        `m == 1`, the shape is (q, n). If `m == q == 1`, the shape is `(n,)`.
+        point.  If ``q == 1``, then the return array's shape is ``(m, n)``. If
+        ``m == 1``, the shape is (q, n). If `m == q == 1`, the shape is ``(n,)``.
 
     """
 
@@ -533,10 +536,10 @@ class Model:
         """ Dispatch attribute access to the metadata.
         """
 
-        if attr in self.meta:
+        if attr != "meta" and attr in self.meta:
             return self.meta[attr]
         else:
-            raise AttributeError("'%s' not in metadata" % attr)
+            raise AttributeError(f"'{attr}' not in metadata")
 
 
 class Output:
@@ -551,9 +554,9 @@ class Output:
         Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
-        Note that this `cov_beta` is not scaled by the residual variance 
-        `res_var`, whereas `sd_beta` is. This means 
-        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same 
+        Note that this `cov_beta` is not scaled by the residual variance
+        `res_var`, whereas `sd_beta` is. This means
+        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same
         result as `output.sd_beta`.
     delta : ndarray, optional
         Array of estimated errors in input variables, of same shape as `x`.
@@ -614,7 +617,7 @@ class Output:
             print('Inverse Condition #:', self.inv_condnum)
             print('Reason(s) for Halting:')
             for r in self.stopreason:
-                print('  %s' % r)
+                print(f'  {r}')
 
 
 class ODR:
@@ -849,24 +852,24 @@ class ODR:
         if res.shape not in fcn_perms:
             print(res.shape)
             print(fcn_perms)
-            raise OdrError("fcn does not output %s-shaped array" % y_s)
+            raise OdrError(f"fcn does not output {y_s}-shaped array")
 
         if self.model.fjacd is not None:
             res = self.model.fjacd(*arglist)
             if res.shape not in fjacd_perms:
                 raise OdrError(
-                    "fjacd does not output %s-shaped array" % repr((q, m, n)))
+                    f"fjacd does not output {repr((q, m, n))}-shaped array")
         if self.model.fjacb is not None:
             res = self.model.fjacb(*arglist)
             if res.shape not in fjacb_perms:
                 raise OdrError(
-                    "fjacb does not output %s-shaped array" % repr((q, p, n)))
+                    f"fjacb does not output {repr((q, p, n))}-shaped array")
 
         # check shape of delta0
 
         if self.delta0 is not None and self.delta0.shape != self.data.x.shape:
             raise OdrError(
-                "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
+                f"delta0 is not a {repr(self.data.x.shape)}-shaped array")
 
         if self.data.x.size == 0:
             warn("Empty data detected for ODR instance. "
@@ -1120,7 +1123,8 @@ class ODR:
             if obj is not None:
                 kwds[attr] = obj
 
-        self.output = Output(odr(*args, **kwds))
+        with ODR_LOCK:
+            self.output = Output(odr(*args, **kwds))
 
         return self.output
 

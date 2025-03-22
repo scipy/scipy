@@ -36,8 +36,8 @@ def warn_extraneous(extraneous):
         Extraneous keyword arguments
     """
     if extraneous:
-        warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join(f"`{x}`" for x in extraneous)),
+        warn("The following arguments have no effect for a chosen solver: "
+             f"{', '.join(f'`{x}`' for x in extraneous)}.",
              stacklevel=3)
 
 
@@ -65,7 +65,7 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, t_bound, 
+def select_initial_step(fun, t0, y0, t_bound,
                         max_step, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
@@ -80,7 +80,7 @@ def select_initial_step(fun, t0, y0, t_bound,
     y0 : ndarray, shape (n,)
         Initial value of the dependent variable.
     t_bound : float
-        End-point of integration interval; used to ensure that t0+step<=tbound 
+        End-point of integration interval; used to ensure that t0+step<=tbound
         and that fun is only evaluated in the interval [t0,tbound]
     max_step : float
         Maximum allowable step size.
@@ -112,7 +112,7 @@ def select_initial_step(fun, t0, y0, t_bound,
     interval_length = abs(t_bound - t0)
     if interval_length == 0.0:
         return 0.0
-    
+
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)
     d1 = norm(f0 / scale)

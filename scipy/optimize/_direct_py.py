@@ -1,15 +1,11 @@
-from __future__ import annotations
 from typing import (  # noqa: UP035
-    Any, Callable, Iterable, TYPE_CHECKING
+    Any, Callable, Iterable
 )
 
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
 from ._direct import direct as _direct  # type: ignore
-
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 __all__ = ['direct']
 
@@ -38,7 +34,10 @@ SUCCESS_MESSAGES = (
 
 
 def direct(
-    func: Callable[[npt.ArrayLike, tuple[Any]], float],
+    func: Callable[
+        [np.ndarray[tuple[int], np.dtype[np.float64]]],
+        float | np.floating[Any] | np.integer[Any] | np.bool_,
+    ],
     bounds: Iterable | Bounds,
     *,
     args: tuple = (),
@@ -50,7 +49,10 @@ def direct(
     f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-6,
-    callback: Callable[[npt.ArrayLike], None] | None = None
+    callback: Callable[
+        [np.ndarray[tuple[int], np.dtype[np.float64]]],
+        object,
+    ] | None = None,
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the
@@ -106,10 +108,10 @@ def direct(
         of the complete search space. Must lie between 0 and 1.
         Default is 1e-16.
     len_tol : float, optional
-        If `locally_biased=True`, terminate the optimization once half of
+        If ``locally_biased=True``, terminate the optimization once half of
         the normalized maximal side length of the hyperrectangle containing
         the lowest function value is smaller than `len_tol`.
-        If `locally_biased=False`, terminate the optimization once half of
+        If ``locally_biased=False``, terminate the optimization once half of
         the normalized diagonal of the hyperrectangle containing the lowest
         function value is smaller than `len_tol`. Must lie between 0 and 1.
         Default is 1e-6.

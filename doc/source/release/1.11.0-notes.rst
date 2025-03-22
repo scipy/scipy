@@ -108,8 +108,8 @@ New features
 - A new public base class `scipy.sparse.sparray` was introduced, allowing further
   extension of the sparse array API (such as the support for 1-dimensional
   sparse arrays) without breaking backwards compatibility.
-  `isinstance(x, scipy.sparse.sparray)` to select the new sparse array classes,
-  while `isinstance(x, scipy.sparse.spmatrix)` selects only the old sparse
+  ``isinstance(x, scipy.sparse.sparray)`` to select the new sparse array classes,
+  while ``isinstance(x, scipy.sparse.spmatrix)`` selects only the old sparse
   matrix classes.
 - Division of sparse arrays by a dense array now returns sparse arrays.
 - `scipy.sparse.isspmatrix` now only returns `True` for the sparse matrices instances.

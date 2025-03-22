@@ -32,13 +32,13 @@ c          tridiagonal matrix in positions 1 through N-1.
 c          On exit, E has been destroyed.
 c
 c  Z       Real array, dimension (N).  (OUTPUT)
-c          On exit, Z contains the last row of the orthonormal 
-c          eigenvector matrix of the symmetric tridiagonal matrix.  
+c          On exit, Z contains the last row of the orthonormal
+c          eigenvector matrix of the symmetric tridiagonal matrix.
 c          If an error exit is made, Z contains the last row of the
 c          eigenvector matrix associated with the stored eigenvalues.
 c
 c  WORK    Real array, dimension (max(1,2*N-2)).  (WORKSPACE)
-c          Workspace used in accumulating the transformation for 
+c          Workspace used in accumulating the transformation for
 c          computing the last components of the eigenvectors.
 c
 c  INFO    Integer.  (OUTPUT)
@@ -62,9 +62,9 @@ c     saxpy   Level 1 BLAS that computes a vector triad.
 c     scopy   Level 1 BLAS that copies one vector to another.
 c     sswap   Level 1 BLAS that swaps the contents of two vectors.
 c     lsame   LAPACK character comparison routine.
-c     slae2   LAPACK routine that computes the eigenvalues of a 2-by-2 
+c     slae2   LAPACK routine that computes the eigenvalues of a 2-by-2
 c             symmetric matrix.
-c     slaev2  LAPACK routine that eigendecomposition of a 2-by-2 symmetric 
+c     slaev2  LAPACK routine that eigendecomposition of a 2-by-2 symmetric
 c             matrix.
 c     slamch  LAPACK routine that determines machine constants.
 c     slanst  LAPACK routine that computes the norm of a matrix.
@@ -72,7 +72,7 @@ c     slapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     slartg  LAPACK Givens rotation construction routine.
 c     slascl  LAPACK routine for careful scaling of a matrix.
 c     slaset  LAPACK matrix initialization routine.
-c     slasr   LAPACK routine that applies an orthogonal transformation to 
+c     slasr   LAPACK routine that applies an orthogonal transformation to
 c             a matrix.
 c     slasrt  LAPACK sorting routine.
 c     ssteqr  LAPACK routine that computes eigenvalues and eigenvectors
@@ -84,19 +84,19 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
+c     Rice University
+c     Houston, Texas
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: stqrb.F   SID: 2.5   DATE OF SID: 8/27/96   RELEASE: 2
 c
 c\Remarks
 c     1. Starting with version 2.5, this routine is a modified version
 c        of LAPACK version 2.0 subroutine SSTEQR. No lines are deleted,
-c        only commeted out and new lines inserted.
+c        only commented out and new lines inserted.
 c        All lines commented out have "c$$$" at the beginning.
 c        Note that the LAPACK version 1.0 subroutine SSTEQR contained
-c        bugs. 
+c        bugs.
 c
 c\EndLib
 c
@@ -118,9 +118,9 @@ c
      &           d( n ), e( n-1 ), z( n ), work( 2*n-2 )
 c
 c     .. parameters ..
-      Real               
+      Real
      &                   zero, one, two, three
-      parameter          ( zero = 0.0E+0, one = 1.0E+0, 
+      parameter          ( zero = 0.0E+0, one = 1.0E+0,
      &                     two = 2.0E+0, three = 3.0E+0 )
       integer            maxit
       parameter          ( maxit = 30 )
@@ -129,7 +129,7 @@ c     .. local scalars ..
       integer            i, icompz, ii, iscale, j, jtot, k, l, l1, lend,
      &                   lendm1, lendp1, lendsv, lm1, lsv, m, mm, mm1,
      &                   nm1, nmaxit
-      Real               
+      Real
      &                   anorm, b, c, eps, eps2, f, g, p, r, rt1, rt2,
      &                   s, safmax, safmin, ssfmax, ssfmin, tst
 c     ..
@@ -380,9 +380,9 @@ c$$$     $                  z( 1, l ), ldz )
 c
 c             *** New starting with version 2.5 ***
 c
-              call slasr( 'r', 'v', 'b', 1, mm, work( l ), 
+              call slasr( 'r', 'v', 'b', 1, mm, work( l ),
      &                    work( n-1+l ), z( l ), 1 )
-c             *************************************                             
+c             *************************************
          end if
 c
          d( l ) = d( l ) - p
@@ -440,7 +440,7 @@ c
                 tst      = z(l)
                 z(l)   = c*tst - s*z(l-1)
                 z(l-1) = s*tst + c*z(l-1)
-c               ************************************* 
+c               *************************************
             else
                call slae2( d( l-1 ), e( l-1 ), d( l ), rt1, rt2 )
             end if
@@ -502,7 +502,7 @@ c           *** New starting with version 2.5 ***
 c
             call slasr( 'r', 'v', 'f', 1, mm, work( m ), work( n-1+m ),
      &                  z( m ), 1 )
-c           *************************************                             
+c           *************************************
          end if
 c
          d( l ) = d( l ) - p

@@ -117,11 +117,9 @@ and PRs under the Milestone for the release
 (https://github.com/scipy/scipy/milestones), PRs labeled "backport-candidate",
 and that the release notes are up-to-date and included in the html docs.
 
-Then edit ``meson.build`` and ``tools/version_utils.py`` to get the correct version number (set
-``version:`` in the former, and ``ISRELEASED = True`` in the latter). It is
-also necessary to adjust the ``version`` in ``pyproject.toml``. Commit these
-changes with a message like ``REL: set version to <version-number>``.  Don't push
-this commit to the SciPy repo yet.
+Then update the ``version`` in ``pyproject.toml`` and commit the change with a
+message like ``REL: set version to <version-number>``.  Don't push this commit
+to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures
 the tag is signed). If ``gpg2`` is preferred, then
@@ -226,6 +224,14 @@ table of releases in ``index.rst``.  Push that commit, then do ``make upload
 USERNAME=yourusername``. This is only for proper releases,
 not release candidates.
 
+.. note::
+
+  The version switcher on the deployed docs will not consider the new release
+  as the stable release until the changes to ``version_switcher.json`` have
+  been merged into the ``main`` branch
+  (see `gh-22305 <https://github.com/scipy/scipy/pull/22305>`__). Hence forward
+  porting the release notes and version switcher changes to ``main`` should
+  ideally be done at the same time as deploying the docs for the new release.
 
 Wrapping up
 -----------
