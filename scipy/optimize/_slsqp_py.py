@@ -405,7 +405,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     #
     # The dict holds the intermediate state of the solver. The keys are the same
     # as the C struct members and will be modified in-place.
-    Vars = {
+    state_dict = {
         "acc": acc,
         "alpha": 0.0,
         "f0": 0.0,
@@ -468,66 +468,75 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     C = np.zeros([max(1, m), n], dtype=np.float64, order='F')
     d = np.zeros([max(1, m)], dtype=np.float64)
     _eval_con_normals(C, x, cons, m, meq)
-    _eval_constraint(d, x, cons)
+    _eval_constraint(d, x, cons, m, meq)
 
     iter_prev = 0
 
     while True:
         # Call SLSQP
-        slsqp(Vars, fx, g, C, d, x, mult, xl, xu, buffer, indices)
+        slsqp(state_dict, fx, g, C, d, x, mult, xl, xu, buffer, indices)
 
-        if Vars['mode'] == 1:  # objective and constraint evaluation required
-            fx = wrapped_fun(x)
-            _eval_constraint(d, x, cons)
+        if state_dict['mode'] == 1:  # objective and constraint evaluation required
+            fx = sf.fun(x)
+            _eval_constraint(d, x, cons, m, meq)
 
-        if Vars['mode'] == -1:  # gradient evaluation required
-            g = wrapped_grad(x)
+        if state_dict['mode'] == -1:  # gradient evaluation required
+            g = sf.grad(x)
             _eval_con_normals(C, x, cons, m, meq)
 
-        if Vars['iter'] > iter_prev:
+        if state_dict['iter'] > iter_prev:
             # call callback if major iteration has incremented
             if callback is not None:
                 callback(np.copy(x))
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print(f"{Vars['iter']:5d} {sf.nfev:5d} {fx:16.6E} {lanorm(g):16.6E}")
+                print(f"{state_dict['iter']:5d} {sf.nfev:5d} {fx:16.6E} {lanorm(g):16.6E}")
 
         # If exit mode is not -1 or 1, slsqp has completed
-        if abs(Vars['mode']) != 1:
+        if abs(state_dict['mode']) != 1:
             break
 
-        iter_prev = Vars['iter']
+        iter_prev = state_dict['iter']
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(exit_modes[Vars['mode']] + f"    (Exit mode {Vars['mode']})")
+        print(
+            exit_modes[state_dict['mode']] + f"    (Exit mode {state_dict['mode']})"
+        )
         print("            Current function value:", fx)
-        print("            Iterations:", Vars['iter'])
+        print("            Iterations:", state_dict['iter'])
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
     return OptimizeResult(
-        x=x, fun=fx, jac=g, nit=Vars['iter'], nfev=sf.nfev, njev=sf.ngev,
-        status=Vars['mode'], message=exit_modes[Vars['mode']],
-        success=(Vars['mode'] == 0), multipliers=mult[:m]
+        x=x, fun=fx, jac=g, nit=state_dict['iter'], nfev=sf.nfev, njev=sf.ngev,
+        status=state_dict['mode'], message=exit_modes[state_dict['mode']],
+        success=(state_dict['mode'] == 0), multipliers=mult[:m]
     )
 
-
-def _eval_constraint(d: NDArray, x: NDArray, cons: dict):
-    if (not cons['eq']) and (not cons['ineq']):
+# The following functions modify their first input argument in-place.
+def _eval_constraint(d: NDArray, x: NDArray, cons: dict, m: int, meq: int):
+    if m == 0:
         return
 
-    if cons['eq']:
-        eqs = np.concatenate(
-            [np.atleast_1d(con['fun'](x, *con['args'])) for con in cons['eq']]
-            )
-        d[:len(eqs)] = eqs
-    if cons['ineq']:
-        ineqs = np.concatenate(
-            [np.atleast_1d(con['fun'](x, *con['args'])) for con in cons['ineq']]
-            )
-        d[-len(ineqs):] = ineqs
+    # The reason why we don't use regular increments with a sane for loop is that
+    # the constraint evaluations do not necessarily return scalars. Their
+    # output length needs to be taken into account while placing them in d.
+
+    if meq > 0:
+        row = 0
+        for con in cons['eq']:
+            temp = np.atleast_1d(con['fun'](x, *con['args'])).ravel()
+            d[row:row + len(temp)] = temp
+            row += len(temp)
+
+    if m > meq:
+        row = meq
+        for con in cons['ineq']:
+            temp = np.atleast_1d(con['fun'](x, *con['args'])).ravel()
+            d[row:row + len(temp)] = temp
+            row += len(temp)
 
     return
 
@@ -537,8 +546,17 @@ def _eval_con_normals(C: NDArray, x: NDArray, cons: dict, m: int, meq: int):
         return
 
     if meq > 0:
-        C[:meq, :] = np.vstack([con['jac'](x, *con['args']) for con in cons['eq']])
+        row = 0
+        for con in cons['eq']:
+            temp = np.atleast_2d(con['jac'](x, *con['args']))
+            C[row:row + temp.shape[0], :] = temp
+            row += temp.shape[0]
+
     if m > meq:
-        C[meq:, :] = np.vstack([con['jac'](x, *con['args']) for con in cons['ineq']])
+        row = meq
+        for con in cons['ineq']:
+            temp = np.atleast_2d(con['jac'](x, *con['args']))
+            C[row:row + temp.shape[0], :] = temp
+            row += temp.shape[0]
 
     return
