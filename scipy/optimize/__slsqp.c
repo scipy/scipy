@@ -43,8 +43,10 @@ static void ldl_update(int n, double* a, double* z, double sigma, double* w);
  */
 void
 __slsqp_body(
-    struct SLSQP_static_vars* S, double* funx, double* gradx, double* C, double* d,
-    double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices)
+    struct SLSQP_static_vars* S, double* funx, double* restrict gradx,
+    double* restrict C, double* restrict d, double* restrict sol,
+    double* restrict mult, double* restrict xl, double* restrict xu, double* buffer,
+    int* indices)
 {
 
     int one = 1, lda = (S->m > 0 ? S->m : 1);
@@ -70,7 +72,8 @@ __slsqp_body(
 
     // Fortran code uses reverse communication for the iterations hence it
     // needs to jump back to where it left off. Thus the goto statements are
-    // kept as is. Fortunately, they do not overlap and have a clean separation.
+    // kept as is. Fortunately, they do not overlap too much and have a relatively
+    // clean separation.
     if (S->mode ==  0) { goto MODE0; }
     if (S->mode == -1) { goto MODEM1; }
     if (S->mode == 1) { goto MODE1; }
@@ -421,9 +424,10 @@ MODEM1:
  *
  */
 void lsq(
-    int m, int meq, int n, int augment, double aug_weight, double* Lf,
-    double* gradx, double* C, double* d, double* xl, double* xu, double* x,
-    double* y, double* buffer, int* jw, int* mode)
+    int m, int meq, int n, int augment, double aug_weight, double* restrict Lf,
+    double* restrict gradx, double* restrict C, double* restrict d,
+    double* restrict xl, double* restrict xu, double* restrict x,
+    double* restrict y, double* buffer, int* jw, int* mode)
 {
     int one = 1, orign = n;
     int mineq = m - meq;
@@ -583,7 +587,7 @@ void lsq(
     }
 
     // Assign the remaining part of the buffer to the LSEI problem.
-    double* lsei_scratch = &wh[mineq + 2*n];
+    double* restrict lsei_scratch = &wh[mineq + 2*n];
 
     lsei(ld, meq, n_wG_rows, n, wA, wb, wE, wf, wG, wh, x, lsei_scratch, jw, &xnorm, mode);
 
@@ -635,8 +639,10 @@ void lsq(
  */
 void
 lsei(int ma, int me, int mg, int n,
-     double* a, double* b, double* e, double* f, double* g, double* h,
-     double* x, double* buffer, int* jw, double* xnorm, int* mode)
+     double* restrict a, double* restrict b, double* restrict e,
+     double* restrict f, double* restrict g, double* restrict h,
+     double* restrict x, double* restrict buffer, int* jw,
+     double* xnorm, int* mode)
 {
     int one = 1, nvars = 0, info = 0, lde = 0, ldg = 0;
     double done = 1.0, dmone = -1.0, dzero = 0.0, t= 0.0;
@@ -679,7 +685,7 @@ lsei(int ma, int me, int mg, int n,
     // Check the diagonal elements of E for rank deficiency.
     for (int i = 0; i < me; i++)
     {
-        if (!(fabs(e[i + i*me]) >= epsmach)) { *mode = 6;return; }
+        if (!(fabs(e[i + (nvars + i)*me]) >= epsmach)) { *mode = 6;return; }
     }
     // Solve E*x = f and modify b.
     // Note: RQ forms R at the right of E instead of [0, 0] position.
@@ -718,7 +724,7 @@ lsei(int ma, int me, int mg, int n,
         // We deliberately use the unblocked algorithm to avoid allocation.
         int lwork = ma*nvars + 3*nvars + 1;
         // Save the RHS for residual computation
-        double* wb_orig = &lsi_scratch[lwork];
+        double* restrict wb_orig = &lsi_scratch[lwork];
         for (int i = 0; i < ma; i++) { wb_orig[i] = wb[i]; }
 
         int krank = 0;
@@ -798,8 +804,9 @@ ORIGINAL_BASIS:
  *
 */
 void
-lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h,
-    double* x, double* buffer, int* jw, double* xnorm, int* mode)
+lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restrict g,
+    double* restrict h, double* restrict x, double* restrict buffer, int* jw,
+    double* xnorm, int* mode)
 {
     int one = 1, tmp_int = 0, info = 0;
     double done = 1.0, dmone = -1.0, tmp_dbl = 0.0;
@@ -867,8 +874,8 @@ lsi(int ma, int mg, int n, double* a, double* b, double* g, double* h,
  *
 */
 void
-ldp(int m, int n, double* g, double* h, double* x,
-    double* buffer, int* indices, double* xnorm, int* mode)
+ldp(int m, int n, double* restrict g, double* restrict h, double* restrict x,
+    double* restrict buffer, int* indices, double* xnorm, int* mode)
 {
     int one = 1;
     double dzero = 0.0, rnorm = 0.0;
@@ -923,34 +930,25 @@ ldp(int m, int n, double* g, double* h, double* x,
 
 
 /*
- *   LDL     LDL' - RANK-ONE - UPDATE
- *   PURPOSE:
- *           UPDATES THE LDL' FACTORS OF MATRIX A BY RANK-ONE MATRIX
- *           SIGMA*Z*Z'
- *   INPUT ARGUMENTS: (* MEANS PARAMETERS ARE CHANGED DURING EXECUTION)
- *     N     : ORDER OF THE COEFFICIENT MATRIX A
- *   * A     : POSITIVE DEFINITE MATRIX OF DIMENSION N;
- *             ONLY THE LOWER TRIANGLE IS USED AND IS STORED COLUMN BY
- *             COLUMN AS ONE DIMENSIONAL ARRAY OF DIMENSION N*(N+1)/2.
- *   * Z     : VECTOR OF DIMENSION N OF UPDATING ELEMENTS
- *     SIGMA : SCALAR FACTOR BY WHICH THE MODIFYING DYADE Z*Z' IS
- *             MULTIPLIED
- *   OUTPUT ARGUMENTS:
- *     A     : UPDATED LDL' FACTORS
- *   WORKING ARRAY:
- *     W     : VECTOR OP DIMENSION N (USED ONLY IF SIGMA .LT. ZERO)
- *   METHOD:
- *     THAT OF FLETCHER AND POWELL AS DESCRIBED IN :
- *     FLETCHER,R.,(1974) ON THE MODIFICATION OF LDL' FACTORIZATION.
- *     POWELL,M.J.D.      MATH.COMPUTATION 28, 1067-1078.
- *   IMPLEMENTED BY:
- *     KRAFT,D., DFVLR - INSTITUT FUER DYNAMIK DER FLUGSYSTEME
- *               D-8031  OBERPFAFFENHOFEN
- *   STATUS: 15. JANUARY 1980
- *   SUBROUTINES REQUIRED: NONE
+ *
+ * Updates the LDL' factors of matrix a by rank-one matrix sigma*z*z'
+ * n     : order of the coefficient matrix a
+ * a     : positive definite matrix of dimension n; only the lower triangle is
+ *         used and is stored column by column as one dimensional array of
+ *         dimension n*(n+1)/2.
+ * z     : vector of dimension n of updating elements
+ * sigma : scalar factor by which the modifying dyade z*z' is multiplied
+ * w     : working array of dimension n
+ *
+ * Uses the composite-t method of fletcher and powell as described in "On the
+ * modification of LDL' factorizations", DOI:10.1090/S0025-5718-1974-0359297-1
+ *
+ * Implemented by: Dieter Kraft, dfvlr - Institut für Dynamik der Flugsysteme
+ *                 D-8031  Oberpfaffenhofen
+ *
  */
 static void
-ldl_update(int n, double* a, double* z, double sigma, double* w)
+ldl_update(int n, double* restrict a, double* restrict z, double sigma, double* restrict w)
 {
     int j, ij = 0;
     const double epsmach = 2.220446049250313e-16;
