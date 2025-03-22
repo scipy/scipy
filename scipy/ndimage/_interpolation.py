@@ -616,12 +616,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
-        warnings.warn(
-            "The behavior of affine_transform with a 1-D "
-            "array supplied for the matrix parameter has changed in "
-            "SciPy 0.18.0.",
-            stacklevel=2
-        )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval, npad, False)
     else:
