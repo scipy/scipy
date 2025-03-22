@@ -298,6 +298,9 @@ def main():
         if args.f2cmap:
             cmd += ['--f2cmap', args.f2cmap]
 
+        print("!!! CMD =", cmd, " at ", os.getcwd())
+
+
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, cwd=os.getcwd())
         out, err = p.communicate()
