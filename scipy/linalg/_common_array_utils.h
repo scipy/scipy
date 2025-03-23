@@ -73,13 +73,18 @@ void zdscal_(int* n, double* sa, SCIPY_Z* sx, int* incx);
 void ztrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, int* info);
 // void ztrsyl3_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* c, int* ldc, double* scale, double* swork, int* ldswork, int* info);
 
-
+/*
+ *  These swap functions are used to convert a C-contiguous n*n array to an F-
+ *  contiguous one and back. Recursively halves on the longer dimension each
+ *  time until it reaches to a small enough piece such that tries to benefit the
+ *  locality of the data. Last letter denotes the LAPACK flavor s,d,c,z.
+ */
 static inline void
-swap_cf_s(float* restrict a, float* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_s(float* restrict src, float* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    float *bb = b;
-    float *aa = a;
+    float *bb = dst;
+    float *aa = src;
     if (r < 16) {
         for (j = 0; j < c; j++)
         {
@@ -96,23 +101,23 @@ swap_cf_s(float* restrict a, float* restrict b, const Py_ssize_t r, const Py_ssi
         if (r > c)
         {
             r2 = r/2;
-            swap_cf_s(a, b, r2, c, n);
-            swap_cf_s(a + r2, b+(r2)*n, r-r2, c, n);
+            swap_cf_s(src, dst, r2, c, n);
+            swap_cf_s(src + r2, dst+(r2)*n, r-r2, c, n);
         } else {  // Nope
             c2 = c/2;
-            swap_cf_s(a, b, r, c2, n);
-            swap_cf_s(a+(c2)*n, b+c2, r, c-c2, n);
+            swap_cf_s(src, dst, r, c2, n);
+            swap_cf_s(src+(c2)*n, dst+c2, r, c-c2, n);
         }
     }
 }
 
 
 static inline void
-swap_cf_d(double* restrict a, double* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_d(double* restrict src, double* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    double *bb = b;
-    double *aa = a;
+    double *bb = dst;
+    double *aa = src;
     if (r < 16) {
         for (j = 0; j < c; j++)
         {
@@ -129,23 +134,23 @@ swap_cf_d(double* restrict a, double* restrict b, const Py_ssize_t r, const Py_s
         if (r > c)
         {
             r2 = r/2;
-            swap_cf_d(a, b, r2, c, n);
-            swap_cf_d(a + r2, b+(r2)*n, r-r2, c, n);
+            swap_cf_d(src, dst, r2, c, n);
+            swap_cf_d(src + r2, dst+(r2)*n, r-r2, c, n);
         } else {  // Nope
             c2 = c/2;
-            swap_cf_d(a, b, r, c2, n);
-            swap_cf_d(a+(c2)*n, b+c2, r, c-c2, n);
+            swap_cf_d(src, dst, r, c2, n);
+            swap_cf_d(src+(c2)*n, dst+c2, r, c-c2, n);
         }
     }
 }
 
 
 static inline void
-swap_cf_c(SCIPY_C* restrict a, SCIPY_C* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_c(SCIPY_C* restrict src, SCIPY_C* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    SCIPY_C *bb = b;
-    SCIPY_C *aa = a;
+    SCIPY_C *bb = dst;
+    SCIPY_C *aa = src;
     if (r < 16) {
         for (j = 0; j < c; j++)
         {
@@ -162,23 +167,23 @@ swap_cf_c(SCIPY_C* restrict a, SCIPY_C* restrict b, const Py_ssize_t r, const Py
         if (r > c)
         {
             r2 = r/2;
-            swap_cf_c(a, b, r2, c, n);
-            swap_cf_c(a + r2, b+(r2)*n, r-r2, c, n);
+            swap_cf_c(src, dst, r2, c, n);
+            swap_cf_c(src + r2, dst+(r2)*n, r-r2, c, n);
         } else {  // Nope
             c2 = c/2;
-            swap_cf_c(a, b, r, c2, n);
-            swap_cf_c(a+(c2)*n, b+c2, r, c-c2, n);
+            swap_cf_c(src, dst, r, c2, n);
+            swap_cf_c(src+(c2)*n, dst+c2, r, c-c2, n);
         }
     }
 }
 
 
 static inline void
-swap_cf_z(SCIPY_Z* restrict a, SCIPY_Z* restrict b, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
+swap_cf_z(SCIPY_Z* restrict src, SCIPY_Z* restrict dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
 {
     Py_ssize_t i, j, ith_row, r2, c2;
-    SCIPY_Z *bb = b;
-    SCIPY_Z *aa = a;
+    SCIPY_Z *bb = dst;
+    SCIPY_Z *aa = src;
     if (r < 16) {
         for (j = 0; j < c; j++)
         {
@@ -195,12 +200,12 @@ swap_cf_z(SCIPY_Z* restrict a, SCIPY_Z* restrict b, const Py_ssize_t r, const Py
         if (r > c)
         {
             r2 = r/2;
-            swap_cf_z(a, b, r2, c, n);
-            swap_cf_z(a + r2, b+(r2)*n, r-r2, c, n);
+            swap_cf_z(src, dst, r2, c, n);
+            swap_cf_z(src + r2, dst+(r2)*n, r-r2, c, n);
         } else {  // Nope
             c2 = c/2;
-            swap_cf_z(a, b, r, c2, n);
-            swap_cf_z(a+(c2)*n, b+c2, r, c-c2, n);
+            swap_cf_z(src, dst, r, c2, n);
+            swap_cf_z(src+(c2)*n, dst+c2, r, c-c2, n);
         }
     }
 }
