@@ -36,6 +36,7 @@ def download_all(path=None):
     --------
     Download the datasets to the default cache location:
 
+    >>> from scipy import datasets
     >>> datasets.download_all()
 
     Download the datasets to the current directory:
