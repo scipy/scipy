@@ -818,6 +818,44 @@ class TestVectorialFunction(TestCase):
         res = vf.jac(x0)
         assert res.dtype == np.float32
 
+    def test_sparse_analytic_jac(self):
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+        def sparse_adapter(func):
+            def inner(x):
+                f_x = func(x)
+                return csr_array(f_x)
+            return inner
+
+        # jac(x) returns dense jacobian
+        vf1 = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                            (-np.inf, np.inf), sparse_jacobian=None)
+        # jac(x) returns sparse jacobian, but sparse_jacobian=False requests dense
+        vf2 = VectorFunction(ex.fun, x0, sparse_adapter(ex.jac), ex.hess, None, None,
+                            (-np.inf, np.inf), sparse_jacobian=False)
+
+        res1 = vf1.jac(x0 + 1)
+        res2 = vf2.jac(x0 + 1)
+        assert_equal(res1, res2)
+
+    def test_sparse_numerical_jac(self):
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+        N = len(x0)
+
+        # normal dense numerical difference
+        vf1 = VectorFunction(ex.fun, x0, '2-point', ex.hess, None, None,
+                             (-np.inf, np.inf), sparse_jacobian=None)
+        # use sparse numerical difference, but ask it to be converted to dense
+        finite_diff_jac_sparsity = csr_array(np.ones((N, N)))
+        vf2 = VectorFunction(ex.fun, x0, '2-point', ex.hess, None,
+                             finite_diff_jac_sparsity, (-np.inf, np.inf),
+                             sparse_jacobian=False)
+
+        res1 = vf1.jac(x0 + 1)
+        res2 = vf2.jac(x0 + 1)
+        assert_equal(res1, res2)
+
 
 def test_LinearVectorFunction():
     A_dense = np.array([
