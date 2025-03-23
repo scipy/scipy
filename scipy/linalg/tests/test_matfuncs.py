@@ -271,12 +271,11 @@ class TestLogM:
 
 
 class TestSqrtM:
-    def setup_method(self):
-        self.rng = np.random.default_rng(1738151906092735)
 
     def test_round_trip_random_float(self):
+        rng = np.random.default_rng(1738151906092735)
         for n in range(1, 6):
-            M_unscaled = self.rng.standard_normal((n, n))
+            M_unscaled = rng.standard_normal((n, n))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm = sqrtm(M)
@@ -284,9 +283,10 @@ class TestSqrtM:
                 assert_allclose(M_sqrtm_round_trip, M)
 
     def test_round_trip_random_complex(self):
+        rng = np.random.default_rng(1738151906092736)
         for n in range(1, 6):
-            M_unscaled = (self.rng.standard_normal((n, n)) +
-                          1j * self.rng.standard_normal((n, n)))
+            M_unscaled = (rng.standard_normal((n, n)) +
+                          1j * rng.standard_normal((n, n)))
             for scale in np.logspace(-4, 4, 9):
                 M = M_unscaled * scale
                 M_sqrtm = sqrtm(M)
@@ -528,6 +528,25 @@ class TestSqrtM:
 
         assert s.shape == (0, 0)
         assert s.dtype == s0.dtype
+
+    def test_cf_noncontig_nd_inputs(self):
+        # Check that non-contiguous arrays are handled correctly.
+        # Generate an L, U pair for invertible random matrix.
+        rng = np.random.default_rng(1738151906092735)
+        n = 13
+        A = rng.uniform(size=(3, 2*n, 2*n))
+        L, U = np.tril(A, k=-1) + np.eye(2*n), np.triu(A)
+        A = L @ U
+        # Create strided views of 3D array.
+        A_noncontig_c = A[:, ::2, ::2]
+        A_noncontig_f = np.asfortranarray(A)[:, 1::2, 1::2]
+        assert_allclose(sqrtm(A[:, ::2, ::2]), sqrtm(A_noncontig_c))
+        assert_allclose(sqrtm(A[:, 1::2, 1::2]), sqrtm(A_noncontig_f))
+
+    def test_empty_sizes(self):
+        A = np.empty(shape=[4, 0, 5, 5], dtype=float)
+        sqA = sqrtm(A)
+        assert_array_equal(sqrtm(A), A)
 
 
 class TestFractionalMatrixPower:
