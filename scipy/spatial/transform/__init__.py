@@ -17,13 +17,12 @@ Rotations in 3 dimensions
    RotationSpline
 """
 
-from ._cython_backend import Slerp
 from ._rotation_spline import RotationSpline
 
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import rotation
-from .rotation import Rotation
+from .rotation import Rotation, Slerp
 
 
 from scipy._lib._testutils import PytestTester

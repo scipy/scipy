@@ -11,7 +11,7 @@ import numpy as np
 from scipy._lib.deprecation import _sub_module_deprecation
 import scipy.spatial.transform._cython_backend as cython_backend
 import scipy.spatial.transform._array_api_backend as array_api_backend
-from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike
+from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike, is_jax
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng
@@ -427,7 +427,7 @@ class Rotation:
         """Whether this instance represents a single rotation."""
         # TODO: Remove this once we properly support broadcasting with arbitrary
         # number of rotations
-        return self._single
+        return self._single or self._quat.ndim == 1
 
     def __bool__(self):
         """Comply with Python convention for objects to be True.
@@ -637,6 +637,171 @@ class Rotation:
         # bump indent (+21 characters)
         m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
         return "Rotation.from_matrix(" + "\n".join(m) + ")"
+
+
+class Slerp:
+    """Spherical Linear Interpolation of Rotations.
+
+    The interpolation between consecutive rotations is performed as a rotation
+    around a fixed axis with a constant angular velocity [1]_. This ensures
+    that the interpolated rotations follow the shortest path between initial
+    and final orientations.
+
+    Parameters
+    ----------
+    times : array_like, shape (N,)
+        Times of the known rotations. At least 2 times must be specified.
+    rotations : `Rotation` instance
+        Rotations to perform the interpolation between. Must contain N
+        rotations.
+
+    Methods
+    -------
+    __call__
+
+    See Also
+    --------
+    Rotation
+
+    Notes
+    -----
+    .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Slerp#Quaternion_Slerp
+
+    Examples
+    --------
+    >>> from scipy.spatial.transform import Rotation as R
+    >>> from scipy.spatial.transform import Slerp
+
+    Setup the fixed keyframe rotations and times:
+
+    >>> key_rots = R.random(5, random_state=2342345)
+    >>> key_times = [0, 1, 2, 3, 4]
+
+    Create the interpolator object:
+
+    >>> slerp = Slerp(key_times, key_rots)
+
+    Interpolate the rotations at the given times:
+
+    >>> times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
+    >>> interp_rots = slerp(times)
+
+    The keyframe rotations expressed as Euler angles:
+
+    >>> key_rots.as_euler('xyz', degrees=True)
+    array([[ 14.31443779, -27.50095894,  -3.7275787 ],
+           [ -1.79924227, -24.69421529, 164.57701743],
+           [146.15020772,  43.22849451, -31.34891088],
+           [ 46.39959442,  11.62126073, -45.99719267],
+           [-88.94647804, -49.64400082, -65.80546984]])
+
+    The interpolated rotations expressed as Euler angles. These agree with the
+    keyframe rotations at both endpoints of the range of keyframe times.
+
+    >>> interp_rots.as_euler('xyz', degrees=True)
+    array([[  14.31443779,  -27.50095894,   -3.7275787 ],
+           [   4.74588574,  -32.44683966,   81.25139984],
+           [  10.71094749,  -31.56690154,   38.06896408],
+           [  -1.79924227,  -24.69421529,  164.57701743],
+           [  11.72796022,   51.64207311, -171.7374683 ],
+           [ 146.15020772,   43.22849451,  -31.34891088],
+           [  68.10921869,   20.67625074,  -48.74886034],
+           [  46.39959442,   11.62126073,  -45.99719267],
+           [  12.35552615,    4.21525086,  -64.89288124],
+           [ -30.08117143,  -19.90769513,  -78.98121326],
+           [ -88.94647804,  -49.64400082,  -65.80546984]])
+
+    """
+
+    def __init__(self, times: ArrayLike, rotations: Rotation):
+        if not isinstance(rotations, Rotation):
+            raise TypeError("`rotations` must be a `Rotation` instance.")
+        if rotations.single or len(rotations) == 1:
+            raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
+        q = rotations.as_quat()
+        xp = array_namespace(q)
+        times = xp.asarray(times, device=device(q), dtype=q.dtype)
+        if times.ndim != 1:
+            raise ValueError(
+                "Expected times to be specified in a 1 dimensional array, got "
+                f"{times.ndim} dimensions."
+            )
+        if times.shape[0] != len(rotations):
+            raise ValueError(
+                "Expected number of rotations to be equal to number of "
+                f"timestamps given, got {len(rotations)} rotations and "
+                f"{times.shape[0]} timestamps."
+            )
+        self.times = times
+        # TODO: Replace with xp.diff once we upgrade to Array API 2024.12
+        self.timedelta = times[1:] - times[:-1]
+
+        # We cannot check for values for jit compiled code, so we cannot raise an error on timedelta
+        # < 0 in jax. Instead, we set timedelta to nans
+        # DECISION: Do we want to introduce this special case for jax or should all implementations
+        # set the timedelta to nans?
+        if is_jax(xp):
+            mask = xp.any(self.timedelta <= 0)
+            self.timedelta = xp.where(mask, xp.asarray(xp.nan), self.timedelta)
+            self.times = xp.where(mask, xp.asarray(xp.nan), self.times)
+        elif xp.any(self.timedelta <= 0):
+            raise ValueError("Times must be in strictly increasing order.")
+
+        self.rotations = rotations[:-1]
+        self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
+
+    def __call__(self, times: ArrayLike) -> Rotation:
+        """Interpolate rotations.
+
+        Compute the interpolated rotations at the given `times`.
+
+        Parameters
+        ----------
+        times : array_like
+            Times to compute the interpolations at. Can be a scalar or
+            1-dimensional.
+
+        Returns
+        -------
+        interpolated_rotation : `Rotation` instance
+            Object containing the rotations computed at given `times`.
+
+        """
+        # Clearly differentiate from self.times property
+        xp = array_namespace(self.times)
+        compute_times = xp.asarray(
+            times, device=device(self.times), dtype=self.times.dtype
+        )
+        if compute_times.ndim > 1:
+            raise ValueError("`times` must be at most 1-dimensional.")
+
+        single_time = compute_times.ndim == 0
+        compute_times = xpx.atleast_nd(compute_times, ndim=1, xp=xp)
+
+        # side = 'left' (default) excludes t_min.
+        ind = xp.searchsorted(self.times, compute_times) - 1
+        # Include t_min. Without this step, index for t_min equals -1
+        ind = xp.where(compute_times == self.times[0], xp.asarray(0), ind)
+        if xp.any(xp.logical_or(ind < 0, ind > len(self.rotations) - 1)):
+            raise ValueError(
+                "Interpolation times must be within the range "
+                f"[{self.times[0]}, {self.times[-1]}], both inclusive."
+            )
+
+        alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
+
+        result = self.rotations[ind] * Rotation.from_rotvec(
+            self.rotvecs[ind] * alpha[:, None]
+        )
+
+        if single_time:
+            result = result[0]
+
+        return result
 
 
 def __dir__():

@@ -161,7 +161,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if num_axes < 1 or num_axes > 3:
         raise ValueError(
             "Expected axis specification to be a non-empty "
-            "string of upto 3 characters, got {}".format(seq)
+            f"string of upto 3 characters, got {seq}"
         )
 
     intrinsic = re.match(r"^[XYZ]{1,3}$", seq) is not None
@@ -169,18 +169,17 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if not (intrinsic or extrinsic):
         raise ValueError(
             "Expected axes from `seq` to be from ['x', 'y', "
-            "'z'] or ['X', 'Y', 'Z'], got {}".format(seq)
+            f"'z'] or ['X', 'Y', 'Z'], got {seq}"
         )
 
     if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
-        raise ValueError(
-            "Expected consecutive axes to be different, got {}".format(seq)
-        )
+        raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
     angles = xp.asarray(angles, dtype=atleast_f32(angles))
-    angles = xpx.atleast_nd(angles, ndim=1, xp=xp)
+    angles, is_single = _format_angles(angles, degrees, num_axes)
     axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()])
-    return _elementary_quat_compose(angles, axes, intrinsic, degrees)
+    q = _elementary_quat_compose(angles, axes, intrinsic)
+    return q[0, ...] if is_single else q
 
 
 def from_davenport(
@@ -937,13 +936,9 @@ def _compute_davenport_from_quat(
     return angles
 
 
-def _elementary_quat_compose(
-    angles: Array, axes: Array, intrinsic: bool, degrees: bool
-) -> Array:
+def _elementary_quat_compose(angles: Array, axes: Array, intrinsic: bool) -> Array:
     xp = array_namespace(angles)
-    degrees = xp.asarray(degrees, device=device(angles))
     intrinsic = xp.asarray(intrinsic, device=device(angles))
-    angles = xp.where(degrees, _deg2rad(angles), angles)
     quat = _make_elementary_quat(axes[0], angles[..., 0])
     for i in range(1, axes.shape[0]):
         ax_quat = _make_elementary_quat(axes[i], angles[..., i])

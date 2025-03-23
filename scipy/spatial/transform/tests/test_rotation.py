@@ -629,6 +629,12 @@ def test_from_euler_single_rotation(xp):
     assert_allclose(quat, expected_quat)
 
 
+def test_from_euler_single_axis_multiple_angles(xp):
+    angles = xp.asarray([0, 90])
+    quat = Rotation.from_euler("z", angles, degrees=True).as_quat()
+    assert quat.shape == (2, 4), f"Expected shape (2, 4), got {quat.shape}"
+
+
 def test_single_intrinsic_extrinsic_rotation(xp):
     angles = xp.asarray(90)
     extrinsic = Rotation.from_euler("z", angles, degrees=True).as_matrix()
@@ -1767,23 +1773,25 @@ Rotation.from_matrix(array([[[ 0.,  0.,  1.],
     assert actual == expected
 
 
-def test_slerp():
+def test_slerp(xp):
     rnd = np.random.RandomState(0)
 
-    key_rots = Rotation.from_quat(rnd.uniform(size=(5, 4)))
+    q = rnd.uniform(size=(5, 4))
+    key_rots = Rotation.from_quat(xp.asarray(q))
     key_quats = key_rots.as_quat()
 
     key_times = [0, 1, 2, 3, 4]
     interpolator = Slerp(key_times, key_rots)
+    assert isinstance(interpolator.times, type(xp.asarray(0)))
 
     times = [0, 0.5, 0.25, 1, 1.5, 2, 2.75, 3, 3.25, 3.60, 4]
     interp_rots = interpolator(times)
     interp_quats = interp_rots.as_quat()
 
     # Dot products are affected by sign of quaternions
-    interp_quats[interp_quats[:, -1] < 0] *= -1
+    interp_quats = xp.where(interp_quats[:, [-1]] < 0, -interp_quats, interp_quats)
     # Checking for quaternion equality, perform same operation
-    key_quats[key_quats[:, -1] < 0] *= -1
+    key_quats = xp.where(key_quats[:, [-1]] < 0, -key_quats, key_quats)
 
     # Equality at keyframes, including both endpoints
     assert_allclose(interp_quats[0], key_quats[0])
@@ -1794,105 +1802,114 @@ def test_slerp():
 
     # Constant angular velocity between keyframes. Check by equating
     # cos(theta) between quaternion pairs with equal time difference.
-    cos_theta1 = np.sum(interp_quats[0] * interp_quats[2])
-    cos_theta2 = np.sum(interp_quats[2] * interp_quats[1])
+    cos_theta1 = xp.sum(interp_quats[0] * interp_quats[2])
+    cos_theta2 = xp.sum(interp_quats[2] * interp_quats[1])
     assert_allclose(cos_theta1, cos_theta2)
 
-    cos_theta4 = np.sum(interp_quats[3] * interp_quats[4])
-    cos_theta5 = np.sum(interp_quats[4] * interp_quats[5])
+    cos_theta4 = xp.sum(interp_quats[3] * interp_quats[4])
+    cos_theta5 = xp.sum(interp_quats[4] * interp_quats[5])
     assert_allclose(cos_theta4, cos_theta5)
 
     # theta1: 0 -> 0.25, theta3 : 0.5 -> 1
     # Use double angle formula for double the time difference
-    cos_theta3 = np.sum(interp_quats[1] * interp_quats[3])
+    cos_theta3 = xp.sum(interp_quats[1] * interp_quats[3])
     assert_allclose(cos_theta3, 2 * (cos_theta1**2) - 1)
 
     # Miscellaneous checks
     assert_equal(len(interp_rots), len(times))
 
 
-def test_slerp_rot_is_rotation():
+def test_slerp_rot_is_rotation(xp):
     with pytest.raises(TypeError, match="must be a `Rotation` instance"):
-        r = np.array([[1, 2, 3, 4], [0, 0, 0, 1]])
-        t = np.array([0, 1])
+        r = xp.asarray([[1, 2, 3, 4], [0, 0, 0, 1]])
+        t = xp.asarray([0, 1])
         Slerp(t, r)
 
 
-def test_slerp_single_rot():
+def test_slerp_single_rot(xp):
     msg = "must be a sequence of at least 2 rotations"
     with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([1, 2, 3, 4])
+        r = Rotation.from_quat(xp.asarray([1.0, 2, 3, 4]))
         Slerp([1], r)
 
 
-def test_slerp_rot_len1():
+def test_slerp_rot_len1(xp):
     msg = "must be a sequence of at least 2 rotations"
     with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([[1, 2, 3, 4]])
+        r = Rotation.from_quat(xp.asarray([[1.0, 2, 3, 4]]))
         Slerp([1], r)
 
 
-def test_slerp_time_dim_mismatch():
+def test_slerp_time_dim_mismatch(xp):
     with pytest.raises(
         ValueError, match="times to be specified in a 1 dimensional array"
     ):
         rnd = np.random.RandomState(0)
-        r = Rotation.from_quat(rnd.uniform(size=(2, 4)))
-        t = np.array([[1], [2]])
+        r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(2, 4))))
+        t = xp.asarray([[1], [2]])
         Slerp(t, r)
 
 
-def test_slerp_num_rotations_mismatch():
+def test_slerp_num_rotations_mismatch(xp):
     with pytest.raises(
         ValueError, match="number of rotations to be equal to number of timestamps"
     ):
         rnd = np.random.RandomState(0)
-        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
-        t = np.arange(7)
+        r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+        t = xp.arange(7)
         Slerp(t, r)
 
 
-def test_slerp_equal_times():
-    with pytest.raises(ValueError, match="strictly increasing order"):
-        rnd = np.random.RandomState(0)
-        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
-        t = [0, 1, 2, 2, 4]
-        Slerp(t, r)
-
-
-def test_slerp_decreasing_times():
-    with pytest.raises(ValueError, match="strictly increasing order"):
-        rnd = np.random.RandomState(0)
-        r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
-        t = [0, 1, 3, 2, 4]
-        Slerp(t, r)
-
-
-def test_slerp_call_time_dim_mismatch():
+def test_slerp_equal_times(xp):
     rnd = np.random.RandomState(0)
-    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
-    t = np.arange(5)
+    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+    t = [0, 1, 2, 2, 4]
+    if is_jax(xp):  # Jax cannot error out, so we need to check for NaN
+        s = Slerp(t, r)
+        assert xp.all(xp.isnan(s.times))
+    else:
+        with pytest.raises(ValueError, match="strictly increasing order"):
+            Slerp(t, r)
+
+
+def test_slerp_decreasing_times(xp):
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+    if is_jax(xp):
+        t = [0, 1, 3, 2, 4]
+        s = Slerp(t, r)
+        assert xp.all(xp.isnan(s.times))
+    else:
+        with pytest.raises(ValueError, match="strictly increasing order"):
+            t = [0, 1, 3, 2, 4]
+            Slerp(t, r)
+
+
+def test_slerp_call_time_dim_mismatch(xp):
+    rnd = np.random.RandomState(0)
+    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+    t = xp.arange(5)
     s = Slerp(t, r)
 
     with pytest.raises(ValueError, match="`times` must be at most 1-dimensional."):
-        interp_times = np.array([[3.5], [4.2]])
+        interp_times = xp.asarray([[3.5], [4.2]])
         s(interp_times)
 
 
-def test_slerp_call_time_out_of_range():
+def test_slerp_call_time_out_of_range(xp):
     rnd = np.random.RandomState(0)
-    r = Rotation.from_quat(rnd.uniform(size=(5, 4)))
-    t = np.arange(5) + 1
+    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+    t = xp.arange(5) + 1
     s = Slerp(t, r)
 
     with pytest.raises(ValueError, match="times must be within the range"):
-        s([0, 1, 2])
+        s(xp.asarray([0, 1, 2]))
     with pytest.raises(ValueError, match="times must be within the range"):
-        s([1, 2, 6])
+        s(xp.asarray([1, 2, 6]))
 
 
-def test_slerp_call_scalar_time():
-    r = Rotation.from_euler("X", [0, 80], degrees=True)
+def test_slerp_call_scalar_time(xp):
+    r = Rotation.from_euler("X", xp.asarray([0, 80]), degrees=True)
     s = Slerp([0, 1], r)
 
     r_interpolated = s(0.25)
@@ -1901,6 +1918,19 @@ def test_slerp_call_scalar_time():
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
+
+
+def test_slerp_call_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    r = Rotation.from_euler("X", np.array([0, 80]), degrees=True)
+    print(r.as_quat().shape)
+    r = Rotation.from_euler("X", jax.numpy.array([0, 80]), degrees=True)
+    print(r.as_quat().shape)
+    print(len(r))
+    s = Slerp([0, 1], r)
+    jax.block_until_ready(jax.jit(s)(0.25))
 
 
 def test_multiplication_stability(xp):
