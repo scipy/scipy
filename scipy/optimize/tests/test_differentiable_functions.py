@@ -481,8 +481,9 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(analit.njev, njev)
-        approx = VectorFunction(ex.fun, x0, '2-point', ex.hess, None, None,
-                                (-np.inf, np.inf), None)
+        # create with defaults for the keyword arguments, to
+        # ensure that the defaults work
+        approx = VectorFunction(ex.fun, x0, '2-point', ex.hess)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
