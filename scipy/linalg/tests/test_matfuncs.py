@@ -532,7 +532,7 @@ class TestSqrtM:
     def test_cf_noncontig_nd_inputs(self):
         # Check that non-contiguous arrays are handled correctly.
         # Generate an L, U pair for invertible random matrix.
-        rng = np.random.default_rng(1738151906092735)
+        rng = np.random.default_rng(1738151906092737)
         n = 13
         A = rng.uniform(size=(3, 2*n, 2*n))
         L, U = np.tril(A, k=-1) + np.eye(2*n), np.triu(A)
@@ -545,8 +545,22 @@ class TestSqrtM:
 
     def test_empty_sizes(self):
         A = np.empty(shape=[4, 0, 5, 5], dtype=float)
-        sqA = sqrtm(A)
         assert_array_equal(sqrtm(A), A)
+
+    def test_negative_strides(self):
+        rng = np.random.default_rng(1738151906092738)
+        A = rng.uniform(size=(3, 5, 5))
+        A_negneg_orig = A[:, ::-1, ::-1]
+        A_negneg_copy = A[:, ::-1, ::-1].copy()
+        assert_allclose(sqrtm(A_negneg_orig), sqrtm(A_negneg_copy))
+
+        A_posneg_orig = A[:, :, ::-1]
+        A_posneg_copy = A[:, :, ::-1].copy()
+        assert_allclose(sqrtm(A_posneg_orig), sqrtm(A_posneg_copy))
+
+        A_negpos_orig = A[:, ::-1, :]
+        A_negpos_copy = A[:, ::-1, :].copy()
+        assert_allclose(sqrtm(A_negpos_orig), sqrtm(A_negpos_copy))
 
 
 class TestFractionalMatrixPower:
