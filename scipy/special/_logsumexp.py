@@ -209,10 +209,8 @@ def _logsumexp(a, b, axis, return_sign, xp):
     m = (xp.sum(i_max_dt, axis=axis, keepdims=True, dtype=a.dtype) if b is None
          else xp.sum(b * i_max_dt, axis=axis, keepdims=True, dtype=a.dtype))
 
-    # Shift in cases where logsumexp trick is used. This will warn on some backends
-    # for cases where a_max has non finite values since a - a_max will be computed
-    # regardless of the value of a_max_finite.
-    a = xp.where(a_max_finite, a - a_max, a)
+    # Shift in cases where logsumexp trick is used.
+    a = xpx.apply_where(a_max_finite, (a, a_max), lambda a, a_max: a - a_max, fill_value=a)
 
     # Exponentiate
     exp = xp.exp(a)
@@ -235,8 +233,12 @@ def _logsumexp(a, b, axis, return_sign, xp):
 
         if xp.isdtype(s.dtype, "real floating"):
             # The log functions need positive arguments
-            s = xp.where(xp.logical_and(s < -1, a_max_finite), -s - 2, s)
-            s = xp.where(~a_max_finite, xp.abs(s), s)
+            s = xpx.apply_where(
+                a_max_finite,
+                s,
+                lambda s: xp.abs(s + 1) - 1,
+                lambda s: xp.abs(s),
+            )
             m = xp.abs(m)
         else:
             # `a_max` can have a sign component for complex input
