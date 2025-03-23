@@ -684,11 +684,17 @@ class VectorFunction:
     def fun(self, x):
         self._update_x(x)
         self._update_fun()
-        return self.f
+        # returns a copy so that downstream can't overwrite the
+        # internal attribute
+        return self.f.copy()
 
     def jac(self, x):
         self._update_x(x)
         self._update_jac()
+        if hasattr(self.J, "copy"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy a LinearOperator
+            return self.J.copy()
         return self.J
 
     def hess(self, x, v):
@@ -696,6 +702,10 @@ class VectorFunction:
         self._update_v(v)
         self._update_x(x)
         self._update_hess()
+        if hasattr(self.H, "copy"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy non-arrays
+            return self.H.copy()
         return self.H
 
 
