@@ -429,7 +429,8 @@ class VectorFunction:
     """
     def __init__(self, fun, x0, jac, hess,
                  finite_diff_rel_step=None, finite_diff_jac_sparsity=None,
-                 finite_diff_bounds=(-np.inf, np.inf), sparse_jacobian=None, workers=None):
+                 finite_diff_bounds=(-np.inf, np.inf), sparse_jacobian=None,
+                 workers=None):
         if not callable(jac) and jac not in FD_METHODS:
             raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
