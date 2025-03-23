@@ -34,14 +34,12 @@ def download_all(path=None):
     
     Examples
     --------
-    Download the dataset to the default cache location:
+    Download the datasets to the default cache location:
 
-    >>> from scipy import datasets
     >>> datasets.download_all()
 
-    Download the dataset to the current directory:
+    Download the datasets to the current directory:
 
-    >>> from scipy import datasets
     >>> datasets.download_all(".")
     
     """
