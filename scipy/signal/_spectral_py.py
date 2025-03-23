@@ -378,8 +378,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the squared magnitude
-        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        where `Pxx` has units of V²/Hz and computing the squared magnitude
+        spectrum ('spectrum') where `Pxx` has units of V², if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
     axis : int, optional
@@ -400,6 +400,12 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Notes
     -----
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided the spectral
+    power density (``scaling='density'``) is the constant factor of
+    ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
+    If `return_onesided` is ``True``, the values of the negative frequencies are added
+    to values of the corresponding positive ones.
+
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of the power spectral density and
     the magnitude (squared) spectrum.
