@@ -553,8 +553,8 @@ def least_squares(
 
     Notes
     -----
-    Method 'lm' (Levenberg-Marquardt) calls a wrapper over least-squares
-    algorithms implemented in MINPACK (lmder, lmdif). It runs the
+    Method 'lm' (Levenberg-Marquardt) calls a wrapper over a least-squares
+    algorithm implemented in MINPACK (lmder). It runs the
     Levenberg-Marquardt algorithm formulated as a trust-region type algorithm.
     The implementation is based on paper [JJMore]_, it is very robust and
     efficient with a lot of smart tricks. It should be your first choice
