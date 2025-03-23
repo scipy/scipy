@@ -183,6 +183,62 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     return _elementary_quat_compose(angles, axes, intrinsic, degrees)
 
 
+def from_davenport(
+    axes: Array, order: str, angles: Array, degrees: bool = False
+) -> Array:
+    xp = array_namespace(axes)
+    if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
+        extrinsic = True
+    elif order in ["i", "intrinsic"]:
+        extrinsic = False
+    else:
+        raise ValueError(
+            "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/"
+            f"'intrinsic' for intrinsic sequences, got {order}"
+        )
+    axes = xp.asarray(axes, dtype=atleast_f32(axes))
+    angles = xp.asarray(angles, dtype=atleast_f32(axes))
+
+    axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
+    if axes.shape[-1] != 3:
+        raise ValueError("Axes must be vectors of length 3.")
+
+    num_axes = axes.shape[0]
+    if num_axes < 1 or num_axes > 3:
+        raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
+
+    axes = axes / xp.linalg.vector_norm(axes, axis=-1, keepdims=True)
+
+    # Check if axes are orthogonal. Checks are shape dependant and can therefore be jitted.
+    axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool)
+    if num_axes > 1:
+        # Cannot be True yet, so we do not need to use xp.logical_or
+        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
+            xp.abs(xp.vecdot(axes[..., 0, :], axes[..., 1, :])) > 1e-7
+        )
+    if num_axes > 2:
+        axes_not_orthogonal = xpx.at(axes_not_orthogonal)[..., 0].set(
+            xp.logical_or(
+                xp.abs(xp.vecdot(axes[..., 1, :], axes[..., 2, :])) > 1e-7,
+                axes_not_orthogonal[..., 0],
+            )
+        )
+
+    axes = xp.where(axes_not_orthogonal, xp.asarray(xp.nan, device=device(axes)), axes)
+    angles, single = _format_angles(angles, degrees, num_axes)
+
+    dim_q = (4) if single else (angles.shape[0], 4)
+    q = xp.zeros(dim_q, dtype=angles.dtype, device=device(angles))
+    q = xpx.at(q)[..., 3].set(1)
+
+    if not single:
+        angles = angles[..., None]
+    for i in range(num_axes):
+        qi = from_rotvec(angles[:, i, ...] * axes[i, :])
+        q = compose_quat(qi, q) if extrinsic else compose_quat(q, qi)
+    return q
+
+
 def as_quat(
     quat: Array, canonical: bool = False, *, scalar_first: bool = False
 ) -> Array:
@@ -277,8 +333,7 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
 
     _device = device(quat)
     axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()], device=_device)
-    angle_first = 0 if extrinsic else 2
-    angle_third = 2 if extrinsic else 0
+
     extrinsic = xp.asarray(extrinsic, device=_device)
     axes = xp.where(extrinsic, axes, xp.flip(axes))
     i, j, k = axes
@@ -293,39 +348,47 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     c = xp.where(symmetric, quat[..., j], quat[..., j] + quat[..., 3])
     d = xp.where(symmetric, quat[..., k] * sign, quat[..., k] * sign - quat[..., i])
 
-    eps = 1e-7
-    half_sum = xp.atan2(b, a)
-    half_diff = xp.atan2(d, c)
-
-    angles = xp.zeros((*quat.shape[:-1], 3), dtype=quat.dtype)
-    angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
-
-    # Check if the second angle is close to 0 or pi, causing a singularity.
-    # - Case 0: Second angle is neither close to 0 nor pi.
-    # - Case 1: Second angle is close to 0.
-    # - Case 2: Second angle is close to pi.
-    case1 = xp.abs(angles[..., 1]) <= eps
-    case2 = xp.abs(angles[..., 1] - np.pi) <= eps
-    case0 = ~(case1 | case2)
-
-    one = xp.asarray(1, dtype=angles.dtype, device=_device)
-    a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * xp.where(extrinsic, -one, one))
-    angles = xpx.at(angles)[..., 0].set(a0)
-
-    a1 = xp.where(case0, half_sum - half_diff, angles[..., angle_first])
-    angles = xpx.at(angles)[..., angle_first].set(a1)
-
-    a3 = xp.where(case0, half_sum + half_diff, angles[..., angle_third])
-    a3 = xp.where(symmetric, a3, a3 * sign)
-    angles = xpx.at(angles)[..., angle_third].set(a3)
-
-    a1 = xp.where(symmetric, angles[..., 1], angles[..., 1] - np.pi / 2)
-    angles = xpx.at(angles)[..., 1].set(a1)
-
-    angles = (angles + np.pi) % (2 * np.pi) - np.pi
-
+    angles = _get_angles(extrinsic, symmetric, sign, np.pi / 2, a, b, c, d)
     degrees = xp.asarray(degrees, device=_device)
     angles = xp.where(degrees, _rad2deg(angles), angles)
+    return angles
+
+
+def as_davenport(
+    quat: Array, axes: ArrayLike, order: str, degrees: bool = False
+) -> Array:
+    xp = array_namespace(quat)
+    axes = xp.asarray(axes, dtype=atleast_f32(quat))
+
+    # Check argument validity
+    if order in ["e", "extrinsic"]:
+        extrinsic = True
+    elif order in ["i", "intrinsic"]:
+        extrinsic = False
+    else:
+        raise ValueError(
+            "order should be 'e'/'extrinsic' for extrinsic "
+            "sequences or 'i'/'intrinsic' for intrinsic "
+            "sequences, got {}".format(order)
+        )
+    if axes.shape[0] != 3:
+        raise ValueError(f"Expected 3 axes, got {axes.shape}.")
+    if axes.shape[1] != 3:
+        raise ValueError("Axes must be vectors of length 3.")
+
+    # normalize axes
+    axes = axes / xp.linalg.vector_norm(axes, axis=-1, keepdims=True)
+    if xp.vecdot(axes[0, ...], axes[1, ...]) >= 1e-7:
+        raise ValueError("Consecutive axes must be orthogonal.")
+    if xp.vecdot(axes[1, ...], axes[2, ...]) >= 1e-7:
+        raise ValueError("Consecutive axes must be orthogonal.")
+
+    extrinsic = xp.asarray(extrinsic, device=device(quat))
+    angles = _compute_davenport_from_quat(
+        quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
+    )
+    if degrees:
+        angles = _rad2deg(angles)
     return angles
 
 
@@ -782,6 +845,98 @@ def _elementary_basis_index(axis: str) -> int:
     raise ValueError(f"Expected axis to be from ['x', 'y', 'z'], got {axis}")
 
 
+def _format_angles(angles: Array, degrees: bool, num_axes: int) -> tuple[Array, bool]:
+    xp = array_namespace(angles)
+    angles = xp.where(xp.asarray(degrees), _deg2rad(angles), angles)
+
+    is_single = False
+    # Prepare angles to have shape (num_rot, num_axes)
+    if num_axes == 1:
+        if angles.ndim == 0:
+            # (1, 1)
+            angles = xpx.atleast_nd(angles, ndim=2, xp=xp)
+            is_single = True
+        elif angles.ndim == 1:
+            # (N, 1)
+            angles = angles[:, None]
+        elif angles.ndim == 2 and angles.shape[-1] != 1:
+            raise ValueError(
+                "Expected `angles` parameter to have shape (N, 1), got {}.".format(
+                    angles.shape
+                )
+            )
+        elif angles.ndim > 2:
+            raise ValueError(
+                "Expected float, 1D array, or 2D array for "
+                "parameter `angles` corresponding to `seq`, "
+                "got shape {}.".format(angles.shape)
+            )
+    else:  # 2 or 3 axes
+        if angles.ndim not in [1, 2] or angles.shape[-1] != num_axes:
+            raise ValueError(
+                "Expected `angles` to be at most "
+                "2-dimensional with width equal to number "
+                "of axes specified, got "
+                "{} for shape".format(angles.shape)
+            )
+
+        if angles.ndim == 1:
+            # (1, num_axes)
+            angles = angles[None, :]
+            is_single = True
+
+    # By now angles should have shape (num_rot, num_axes)
+    # sanity check
+    if angles.ndim != 2 or angles.shape[-1] != num_axes:
+        raise ValueError(
+            "Expected angles to have shape (num_rotations, num_axes), got {}.".format(
+                angles.shape
+            )
+        )
+
+    return angles, is_single
+
+
+def _compute_davenport_from_quat(
+    quat: Array, n1: Array, n2: Array, n3: Array, extrinsic: Array
+) -> Array:
+    # The algorithm assumes extrinsic frame transformations. The algorithm
+    # in the paper is formulated for rotation quaternions, which are stored
+    # directly by Rotation.
+    # Adapt the algorithm for our case by reversing both axis sequence and
+    # angles for intrinsic rotations when needed
+    xp = array_namespace(quat)
+    _n1 = xp.where(extrinsic, n1, n3)
+    _n3 = xp.where(extrinsic, n3, n1)
+    n1, n3 = _n1, _n3
+
+    n_cross = xp.linalg.cross(n1, n2)
+    lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
+
+    # alternative set of angles compatible with as_euler implementation
+    mask = xp.asarray(lamb < 0, device=device(quat))
+    n2 = xp.where(mask, -n2, n2)
+    lamb = xp.where(mask, -lamb, lamb)
+    n_cross = xp.where(mask, -n_cross, n_cross)
+    correct_set = xp.where(mask, xp.asarray(True), xp.asarray(False))
+
+    quat_lamb = xp.asarray([*(xp.sin(lamb / 2) * n2), xp.cos(lamb / 2)])
+
+    q_trans = compose_quat(quat_lamb, quat)
+    a = q_trans[..., 3]
+    b = xp.linalg.vecdot(q_trans[..., :3], n1)
+    c = xp.linalg.vecdot(q_trans[..., :3], n2)
+    d = xp.linalg.vecdot(q_trans[..., :3], n_cross)
+
+    symmetric = xp.asarray(False, device=device(quat))
+    angles = _get_angles(extrinsic, symmetric, 1, lamb, a, b, c, d)
+    angles = xpx.at(angles)[..., 1].set(
+        xp.where(correct_set, -angles[..., 1], angles[..., 1])
+    )
+
+    return angles
+
+
 def _elementary_quat_compose(
     angles: Array, axes: Array, intrinsic: bool, degrees: bool
 ) -> Array:
@@ -804,6 +959,55 @@ def _make_elementary_quat(axis: int, angle: Array) -> Array:
     quat = xpx.at(quat)[..., 3].set(xp.cos(angle / 2.0))
     quat = xpx.at(quat)[..., axis].set(xp.sin(angle / 2.0))
     return quat
+
+
+def _get_angles(
+    extrinsic: Array,
+    symmetric: Array,
+    sign: int,
+    lamb: float,
+    a: Array,
+    b: Array,
+    c: Array,
+    d: Array,
+) -> Array:
+    xp = array_namespace(a)
+    eps = 1e-7
+    half_sum = xp.atan2(b, a)
+    half_diff = xp.atan2(d, c)
+    angles = xp.zeros((*a.shape, 3), dtype=a.dtype)
+    _device = device(a)
+
+    angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
+
+    angle_first = xp.where(extrinsic, xp.asarray(0), xp.asarray(2))
+    angle_third = xp.where(extrinsic, xp.asarray(2), xp.asarray(0))
+
+    # Check if the second angle is close to 0 or pi, causing a singularity.
+    # - Case 0: Second angle is neither close to 0 nor pi.
+    # - Case 1: Second angle is close to 0.
+    # - Case 2: Second angle is close to pi.
+    case1 = xp.abs(angles[..., 1]) <= eps
+    case2 = xp.abs(angles[..., 1] - np.pi) <= eps
+    case0 = ~(case1 | case2)
+
+    one = xp.asarray(1, dtype=angles.dtype, device=_device)
+    a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * xp.where(extrinsic, -one, one))
+    angles = xpx.at(angles)[..., 0].set(a0)
+
+    a1 = xp.where(case0, half_sum - half_diff, angles[..., angle_first])
+    angles = xpx.at(angles)[..., angle_first].set(a1)
+
+    a3 = xp.where(case0, half_sum + half_diff, angles[..., angle_third])
+    a3 = xp.where(symmetric, a3, a3 * sign)
+    angles = xpx.at(angles)[..., angle_third].set(a3)
+
+    a1 = xp.where(symmetric, angles[..., 1], angles[..., 1] - lamb)
+    angles = xpx.at(angles)[..., 1].set(a1)
+
+    angles = (angles + np.pi) % (2 * np.pi) - np.pi
+
+    return angles
 
 
 def compose_quat(p: Array, q: Array) -> Array:

@@ -72,6 +72,18 @@ class Rotation:
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return cls(quat, normalize=False, copy=False)
 
+    @classmethod
+    def from_davenport(
+        cls,
+        axes: ArrayLike,
+        order: str,
+        angles: ArrayLike | float,
+        degrees: bool = False,
+    ) -> Rotation:
+        backend = backend_registry.get(array_namespace(axes), array_api_backend)
+        quat = backend.from_davenport(axes, order, angles, degrees)
+        return cls(quat, normalize=False, copy=False)
+
     def as_quat(self, canonical=False, *, scalar_first=False):
         quat = self._backend.as_quat(
             self._quat, canonical=canonical, scalar_first=scalar_first
@@ -103,6 +115,116 @@ class Rotation:
         if self._single:
             return euler[0, ...]
         return euler
+
+    def as_davenport(self, axes: ArrayLike, order: str, degrees: bool = False) -> Array:
+        """Represent as Davenport angles.
+
+        Any orientation can be expressed as a composition of 3 elementary
+        rotations.
+
+        For both Euler angles and Davenport angles, consecutive axes must
+        be are orthogonal (``axis2`` is orthogonal to both ``axis1`` and
+        ``axis3``). For Euler angles, there is an additional relationship
+        between ``axis1`` or ``axis3``, with two possibilities:
+
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
+            - ``axis1 == axis3`` (symmetric sequence)
+
+        For Davenport angles, this last relationship is relaxed [1]_, and only
+        the consecutive orthogonal axes requirement is maintained.
+
+        A slightly modified version of the algorithm from [2]_ has been used to
+        calculate Davenport angles for the rotation about a given sequence of
+        axes.
+
+        Davenport angles, just like Euler angles, suffer from the problem of
+        gimbal lock [3]_, where the representation loses a degree of freedom
+        and it is not possible to determine the first and third angles
+        uniquely. In this case, a warning is raised, and the third angle is set
+        to zero. Note however that the returned angles still represent the
+        correct rotation.
+
+        Parameters
+        ----------
+        axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
+            Axis of rotation, if one dimensional. If two dimensional, describes the
+            sequence of axes for rotations, where each axes[i, :] is the ith
+            axis. If more than one axis is given, then the second axis must be
+            orthogonal to both the first and third axes.
+        order : string
+            If it belongs to the set {'e', 'extrinsic'}, the sequence will be
+            extrinsic. If if belongs to the set {'i', 'intrinsic'}, sequence
+            will be treated as intrinsic.
+        degrees : boolean, optional
+            Returned angles are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+        Returns
+        -------
+        angles : ndarray, shape (3,) or (N, 3)
+            Shape depends on shape of inputs used to initialize object.
+            The returned angles are in the range:
+
+            - First angle belongs to [-180, 180] degrees (both inclusive)
+            - Third angle belongs to [-180, 180] degrees (both inclusive)
+            - Second angle belongs to a set of size 180 degrees,
+                given by: ``[-abs(lambda), 180 - abs(lambda)]``, where ``lambda``
+                is the angle between the first and third axes.
+
+        References
+        ----------
+        .. [1] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
+                the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
+                conversion: A direct, general and computationally efficient method.
+                PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
+        .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+
+        Davenport angles are a generalization of Euler angles, when we use the
+        canonical basis axes:
+
+        >>> ex = [1, 0, 0]
+        >>> ey = [0, 1, 0]
+        >>> ez = [0, 0, 1]
+
+        Represent a single rotation:
+
+        >>> r = R.from_rotvec([0, 0, np.pi/2])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([90.,  0.,  0.])
+        >>> r.as_euler('zxy', degrees=True)
+        array([90.,  0.,  0.])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (3,)
+
+        Represent a stack of single rotation:
+
+        >>> r = R.from_rotvec([[0, 0, np.pi/2]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([[90.,  0.,  0.]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (1, 3)
+
+        Represent multiple rotations in a single object:
+
+        >>> r = R.from_rotvec([
+        ... [0, 0, 90],
+        ... [45, 0, 0]], degrees=True)
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True)
+        array([[90.,  0.,  0.],
+                [ 0., 45.,  0.]])
+        >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
+        (2, 3)
+        """
+        davenport = self._backend.as_davenport(self._quat, axes, order, degrees)
+        if self._single:
+            return davenport[0, ...]
+        return davenport
 
     @classmethod
     @_transition_to_rng("random_state", position_num=2)

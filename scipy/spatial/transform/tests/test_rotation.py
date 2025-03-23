@@ -2068,54 +2068,81 @@ def test_len_and_bool(xp):
     assert rotation_single
 
 
-def test_from_davenport_single_rotation():
-    axis = [0, 0, 1]
+def test_from_davenport_single_rotation(xp):
+    axis = xp.asarray([0, 0, 1])
     quat = Rotation.from_davenport(axis, "extrinsic", 90, degrees=True).as_quat()
-    expected_quat = np.array([0, 0, 1, 1]) / np.sqrt(2)
+    expected_quat = xp.asarray([0.0, 0, 1, 1]) / np.sqrt(2)
     assert_allclose(quat, expected_quat)
 
 
-def test_from_davenport_one_or_two_axes():
-    ez = [0, 0, 1]
-    ey = [0, 1, 0]
+def test_from_davenport_one_or_two_axes(xp):
+    ez = xp.asarray([0.0, 0, 1])
+    ey = xp.asarray([0.0, 1, 0])
 
     # Single rotation, single axis, axes.shape == (3, )
-    rot = Rotation.from_rotvec(np.array(ez) * np.pi / 4)
+    rot = Rotation.from_rotvec(ez * np.pi / 4)
     rot_dav = Rotation.from_davenport(ez, "e", np.pi / 4)
     assert_allclose(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
     # Single rotation, single axis, axes.shape == (1, 3)
-    rot = Rotation.from_rotvec([np.array(ez) * np.pi / 4])
-    rot_dav = Rotation.from_davenport([ez], "e", [np.pi / 4])
+    axes = xp.reshape(ez, (1, 3))  # Torch can't create tensors from xp.asarray([ez])
+    rot = Rotation.from_rotvec(axes * np.pi / 4)
+    rot_dav = Rotation.from_davenport(axes, "e", [np.pi / 4])
     assert_allclose(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
     # Single rotation, two axes, axes.shape == (2, 3)
-    rot = Rotation.from_rotvec([np.array(ez) * np.pi / 4, np.array(ey) * np.pi / 6])
+    axes = xp.stack([ez, ey], axis=0)
+    rot = Rotation.from_rotvec(axes * xp.asarray([[np.pi / 4], [np.pi / 6]]))
     rot = rot[0] * rot[1]
-    rot_dav = Rotation.from_davenport([ey, ez], "e", [np.pi / 6, np.pi / 4])
+    axes_dav = xp.stack([ey, ez], axis=0)
+    rot_dav = Rotation.from_davenport(axes_dav, "e", [np.pi / 6, np.pi / 4])
     assert_allclose(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
     # Two rotations, single axis, axes.shape == (3, )
-    rot = Rotation.from_rotvec([np.array(ez) * np.pi / 6, np.array(ez) * np.pi / 4])
-    rot_dav = Rotation.from_davenport([ez], "e", [np.pi / 6, np.pi / 4])
+    axes = xp.stack([ez, ez], axis=0)
+    rot = Rotation.from_rotvec(axes * xp.asarray([[np.pi / 6], [np.pi / 4]]))
+    axes_dav = xp.reshape(ez, (1, 3))
+    rot_dav = Rotation.from_davenport(axes_dav, "e", [np.pi / 6, np.pi / 4])
     assert_allclose(rot.as_quat(canonical=True), rot_dav.as_quat(canonical=True))
 
 
-def test_from_davenport_invalid_input():
+def test_from_davenport_invalid_input(xp):
     ez = [0, 0, 1]
     ey = [0, 1, 0]
     ezy = [0, 1, 1]
-    with pytest.raises(ValueError, match="must be orthogonal"):
-        Rotation.from_davenport([ez, ezy], "e", [0, 0])
-    with pytest.raises(ValueError, match="must be orthogonal"):
-        Rotation.from_davenport([ez, ey, ezy], "e", [0, 0, 0])
+
+    # DECISION: We cannot raise in Array API frameworks, so we return NaN.
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="must be orthogonal"):
+            Rotation.from_davenport(xp.asarray([ez, ezy]), "e", [0, 0])
+    else:
+        q = Rotation.from_davenport(xp.asarray([ez, ezy]), "e", [0, 0]).as_quat()
+        assert xp.all(xp.isnan(q))
+    if is_numpy(xp):
+        with pytest.raises(ValueError, match="must be orthogonal"):
+            Rotation.from_davenport(xp.asarray([ez, ey, ezy]), "e", [0, 0, 0])
+    else:
+        q = Rotation.from_davenport(xp.asarray([ez, ey, ezy]), "e", [0, 0, 0]).as_quat()
+        assert xp.all(xp.isnan(q))
     with pytest.raises(ValueError, match="order should be"):
-        Rotation.from_davenport([ez], "xyz", [0])
+        Rotation.from_davenport(xp.asarray([ez]), "xyz", [0])
     with pytest.raises(ValueError, match="Expected `angles`"):
-        Rotation.from_davenport([ez, ey, ez], "e", [0, 1, 2, 3])
+        Rotation.from_davenport(xp.asarray([ez, ey, ez]), "e", [0, 1, 2, 3])
 
 
-def test_as_davenport():
+def test_from_davenport_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    axes = jax.numpy.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
+    order = "e"
+    angles = jax.numpy.array([0.0, 0.0, 0.0])
+    from_davenport = jax.jit(Rotation.from_davenport, static_argnums=(1,))
+    r = jax.block_until_ready(from_davenport(axes, order, angles))
+    assert isinstance(r, Rotation)
+
+
+def test_as_davenport(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2124,21 +2151,23 @@ def test_as_davenport():
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     lambdas = rnd.uniform(low=0, high=np.pi, size=(20,))
 
-    e1 = np.array([1, 0, 0])
-    e2 = np.array([0, 1, 0])
+    e1 = xp.asarray([1.0, 0, 0])
+    e2 = xp.asarray([0.0, 1, 0])
 
     for lamb in lambdas:
-        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb * e2).apply(e1)]
+        e3 = xp.asarray(Rotation.from_rotvec(lamb * e2).apply(e1))
+        ax_lamb = xp.stack([e1, e2, e3], axis=0)
         angles[:, 1] = angles_middle - lamb
         for order in ["extrinsic", "intrinsic"]:
-            ax = ax_lamb if order == "intrinsic" else ax_lamb[::-1]
-            rot = Rotation.from_davenport(ax, order, angles)
-            angles_dav = rot.as_davenport(ax, order)
+            ax = ax_lamb if order == "intrinsic" else xp.flip(ax_lamb, axis=0)
+            rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
+            angles_dav = rot.as_davenport(xp.asarray(ax), order)
+            assert isinstance(angles_dav, type(xp.asarray(0)))
             assert_allclose(angles_dav, angles)
 
 
 @pytest.mark.thread_unsafe
-def test_as_davenport_degenerate():
+def test_as_davenport_degenerate(xp):
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     rnd = np.random.RandomState(0)
@@ -2151,23 +2180,41 @@ def test_as_davenport_degenerate():
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     lambdas = rnd.uniform(low=0, high=np.pi, size=(5,))
 
-    e1 = np.array([1, 0, 0])
-    e2 = np.array([0, 1, 0])
+    e1 = xp.asarray([1.0, 0, 0])
+    e2 = xp.asarray([0.0, 1, 0])
 
     for lamb in lambdas:
-        ax_lamb = [e1, e2, Rotation.from_rotvec(lamb * e2).apply(e1)]
+        e3 = xp.asarray(Rotation.from_rotvec(lamb * e2).apply(e1))
+        ax_lamb = xp.stack([e1, e2, e3], axis=0)
         angles[:, 1] = angles_middle - lamb
         for order in ["extrinsic", "intrinsic"]:
-            ax = ax_lamb if order == "intrinsic" else ax_lamb[::-1]
-            rot = Rotation.from_davenport(ax, order, angles)
-            with pytest.warns(UserWarning, match="Gimbal lock"):
-                angles_dav = rot.as_davenport(ax, order)
+            ax = ax_lamb if order == "intrinsic" else xp.flip(ax_lamb, axis=0)
+            rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
+            if is_numpy(xp):
+                with pytest.warns(UserWarning, match="Gimbal lock"):
+                    angles_dav = rot.as_davenport(xp.asarray(ax), order)
+            else:  # We cannot warn in Array API frameworks.
+                angles_dav = rot.as_davenport(xp.asarray(ax), order)
             mat_expected = rot.as_matrix()
-            mat_estimated = Rotation.from_davenport(ax, order, angles_dav).as_matrix()
+            mat_estimated = Rotation.from_davenport(
+                xp.asarray(ax), order, angles_dav
+            ).as_matrix()
             assert_array_almost_equal(mat_expected, mat_estimated)
 
 
-def test_compare_from_davenport_from_euler():
+def test_as_davenport_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    axes = jax.numpy.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
+    order = "e"
+    angles = jax.numpy.array([0.0, 0.0, 0.0])
+    from_davenport = jax.jit(Rotation.from_davenport, static_argnums=(1,))
+    r = jax.block_until_ready(from_davenport(axes, order, angles))
+    assert isinstance(r, Rotation)
+
+
+def test_compare_from_davenport_from_euler(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2182,8 +2229,10 @@ def test_compare_from_davenport_from_euler():
             ax = [basis_vec(i) for i in seq]
             if order == "intrinsic":
                 seq = seq.upper()
-            eul = Rotation.from_euler(seq, angles)
-            dav = Rotation.from_davenport(ax, order, angles)
+            eul = Rotation.from_euler(seq, xp.asarray(angles))
+            dav = Rotation.from_davenport(xp.asarray(ax), order, xp.asarray(angles))
+            # Sanity check that we are testing with the correct xp framework
+            assert isinstance(eul.as_quat(), type(xp.asarray(0)))
             assert_allclose(
                 eul.as_quat(canonical=True), dav.as_quat(canonical=True), rtol=1e-12
             )
@@ -2196,12 +2245,14 @@ def test_compare_from_davenport_from_euler():
             ax = [basis_vec(i) for i in seq]
             if order == "intrinsic":
                 seq = seq.upper()
-            eul = Rotation.from_euler(seq, angles)
-            dav = Rotation.from_davenport(ax, order, angles)
+            eul = Rotation.from_euler(seq, xp.asarray(angles))
+            dav = Rotation.from_davenport(xp.asarray(ax), order, xp.asarray(angles))
+            # Sanity check that we are testing with the correct xp framework
+            assert isinstance(eul.as_quat(), type(xp.asarray(0)))
             assert_allclose(eul.as_quat(), dav.as_quat(), rtol=1e-12)
 
 
-def test_compare_as_davenport_as_euler():
+def test_compare_as_davenport_as_euler(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2216,9 +2267,11 @@ def test_compare_as_davenport_as_euler():
             ax = [basis_vec(i) for i in seq]
             if order == "intrinsic":
                 seq = seq.upper()
-            rot = Rotation.from_euler(seq, angles)
+            rot = Rotation.from_euler(seq, xp.asarray(angles))
             eul = rot.as_euler(seq)
-            dav = rot.as_davenport(ax, order)
+            dav = rot.as_davenport(xp.asarray(ax), order)
+            # Sanity check that we are testing with the correct xp framework
+            assert isinstance(eul, type(xp.asarray(0)))
             assert_allclose(eul, dav, rtol=1e-12)
 
     # asymmetric sequences
@@ -2229,7 +2282,9 @@ def test_compare_as_davenport_as_euler():
             ax = [basis_vec(i) for i in seq]
             if order == "intrinsic":
                 seq = seq.upper()
-            rot = Rotation.from_euler(seq, angles)
+            rot = Rotation.from_euler(seq, xp.asarray(angles))
             eul = rot.as_euler(seq)
-            dav = rot.as_davenport(ax, order)
+            dav = rot.as_davenport(xp.asarray(ax), order)
+            # Sanity check that we are testing with the correct xp framework
+            assert isinstance(eul, type(xp.asarray(0)))
             assert_allclose(eul, dav, rtol=1e-12)
