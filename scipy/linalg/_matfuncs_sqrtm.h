@@ -14,19 +14,19 @@ void matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ap_ret, i
 static PyObject* sqrtm_error;
 
 /*
-This function accepts an nD NumPy array of size (..., n, n) and, if possible,
-computes the matrix square root for each (n, n) slice. The input must be at
-least 2-dimensional.
-
-Real valued input has the possibility of resulting in a complex-valued result
-and this is tracked internally and hence depending on the resulting flag the
-caller should view the resulting single/double (n, 2n) array as (n, n)
-single/double complex array.
-
-This function tests for the dtypes to be LAPACK compatible and for squareness.
-
-This function does not test for 0-dimensional, or nD arrays where some dimensions
-are 0. It is expected to have this case caught by the caller.
+ * This function accepts an nD NumPy array of size (..., n, n) and, if possible,
+ * computes the matrix square root for each (n, n) slice. The input must be at
+ * least 2-dimensional.
+ *
+ * Real valued input has the possibility of resulting in a complex-valued result
+ * and this is tracked internally and hence depending on the resulting flag the
+ * caller should view the resulting single/double (n, 2n) array as (n, n)
+ * single/double complex array.
+ *
+ * This function tests for the dtypes to be LAPACK compatible and for squareness.
+ *
+ * IMPORTANT: This function does not test for 0-dimensional, or nD arrays where
+ * some dimensions are 0. It is expected to have this case caught by the caller.
 */
 static PyObject*
 recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
@@ -74,27 +74,31 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
     if (PyArray_TYPE(ap_Am) == NPY_FLOAT32)
     {
         mem_ret = malloc(ret_dims*sizeof(float));
+        if (mem_ret == NULL) { PYERR(sqrtm_error, "Memory allocation failed in scipy.linalg.sqrtm."); }
         matrix_squareroot_s(ap_Am, (float*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
 
     } else if (PyArray_TYPE(ap_Am) == NPY_FLOAT64) {
 
         mem_ret = malloc(ret_dims*sizeof(double));
+        if (mem_ret == NULL) { PYERR(sqrtm_error, "Memory allocation failed in scipy.linalg.sqrtm."); }
         matrix_squareroot_d(ap_Am, (double*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX64) {
 
         mem_ret = malloc(ret_dims*sizeof(SCIPY_C));
+        if (mem_ret == NULL) { PYERR(sqrtm_error, "Memory allocation failed in scipy.linalg.sqrtm."); }
         matrix_squareroot_c(ap_Am, (SCIPY_C*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else if (PyArray_TYPE(ap_Am) == NPY_COMPLEX128) {
 
         mem_ret = malloc(ret_dims*sizeof(SCIPY_Z));
+        if (mem_ret == NULL) { PYERR(sqrtm_error, "Memory allocation failed in scipy.linalg.sqrtm."); }
         matrix_squareroot_z(ap_Am, (SCIPY_Z*)mem_ret, &isIllconditioned, &isSingular, &info, &isComplex);
         isComplex = 1;
 
     } else {
-        PYERR(sqrtm_error, "Unsupported input data type to sqrtm C function.");
+        PYERR(sqrtm_error, "Unsupported input data type to scipy.linalg.sqrtm C function.");
     }
 
     if (info < 0)
@@ -111,7 +115,10 @@ recursive_schur_sqrtm(PyObject *dummy, PyObject *args) {
         npy_intp new_size = (ret_dims/2)*(input_type == NPY_FLOAT32 ? sizeof(float) : sizeof(double));
         void* mem_ret_half = realloc(mem_ret, new_size);
         // Quite unlikely but still allowed to fail
-        if (!mem_ret_half) { PYERR(sqrtm_error, "Memory reallocation failed."); }
+        if (!mem_ret_half) {
+            free(mem_ret);
+            PYERR(sqrtm_error, "Memory reallocation failed.");
+        }
         PyArrayObject* ap_ret = (PyArrayObject*)PyArray_SimpleNewFromData(ndim, shape, input_type, mem_ret_half);
         return Py_BuildValue("Niii",PyArray_Return(ap_ret), isIllconditioned, isSingular, info);
 
