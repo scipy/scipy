@@ -43,7 +43,7 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
     float tmp_float = 0.0f, one = 1.0f, zero = 0.0f;
     sgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, NULL, &intn, &tmp_float, &lwork, NULL, &info);
     // Improbable to fail at lwork query but check anyway
-    if (info != 0) { *sq_info = -100; }
+    if (info != 0) { *sq_info = -100; return;}
     lwork = (int)tmp_float;
     // 2n*n + 2n*n for data and vs for potentially converting to complex if needed
     // n + n for wr, wi (needed for gees calls)
@@ -55,6 +55,9 @@ matrix_squareroot_s(const PyArrayObject* ap_Am, float* restrict ret_data, int* i
     // --------------------------------------------------------------------
     // Pointers to the variables inside the buffer for easy access
     // --------------------------------------------------------------------
+
+    // Since we already allocated n*2n for the input, we can use the first and
+    // second n*n for C to F conversion when needed.
     float* restrict data = &buffer[0];
     float* restrict data2 = &buffer[n*n];
     float* restrict vs = &buffer[2*n*n];
@@ -329,7 +332,7 @@ matrix_squareroot_d(const PyArrayObject* ap_Am, double* restrict ret_data, int* 
     int info = 0, sdim = 0, lwork = -1, intn = (int)n;
     double tmp_float = 0.0, one = 1.0, zero = 0.0;
     dgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, NULL, &intn, &tmp_float, &lwork, NULL, &info);
-    if (info != 0) { *sq_info = -100; }
+    if (info != 0) { *sq_info = -100; return; }
     lwork = (int)tmp_float;
     size_t buffer_size = 4*n*n + 2*n + lwork;
     double* restrict buffer = malloc(buffer_size*sizeof(double));
@@ -519,7 +522,7 @@ matrix_squareroot_c(const PyArrayObject* ap_Am, SCIPY_C* restrict ret_data, int*
     int info = 0, sdim = 0, lwork = -1, intn = (int)n;
     SCIPY_C tmp_float = CPLX_C(0.0f, 0.0f), cone = CPLX_C(1.0f, 0.0f), czero = CPLX_C(0.0f, 0.0f);
     cgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, &intn, &tmp_float, &lwork, NULL, NULL, &info);
-    if (info != 0) { *sq_info = -100; }
+    if (info != 0) { *sq_info = -100; return; }
 
     lwork = (int)crealf(tmp_float);
     size_t buffer_size = 2*n*n + 2*n + lwork;
@@ -621,7 +624,7 @@ matrix_squareroot_z(const PyArrayObject* ap_Am, SCIPY_Z* restrict ret_data, int*
     int info = 0, sdim = 0, lwork = -1, intn = (int)n;
     SCIPY_Z tmp_float = CPLX_Z(0.0f, 0.0f), cone = CPLX_Z(1.0f, 0.0f), czero = CPLX_Z(0.0f, 0.0f);
     zgees_("V", "N", NULL, &intn, NULL, &intn, &sdim, NULL, NULL, &intn, &tmp_float, &lwork, NULL, NULL, &info);
-    if (info != 0) { *sq_info = -100; }
+    if (info != 0) { *sq_info = -100; return; }
 
     lwork = (int)creal(tmp_float);
     size_t buffer_size = 2*n*n + 2*n + lwork;
