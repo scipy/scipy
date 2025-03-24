@@ -110,7 +110,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     axis = tuple(range(a.ndim)) if axis is None else axis
 
     if xp_size(a) != 0:
-        with np.errstate(over='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
             # Where result is infinite, we use the direct logsumexp calculation to
             # delegate edge case handling to the behavior of `xp.log` and `xp.exp`,
             # which should follow the C99 standard for complex values.
