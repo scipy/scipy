@@ -560,8 +560,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     >>> output_shape = (1200, 1200)
     >>> offset = (np.array(im.shape) - output_shape) / 2
     >>> im4 = affine_transform(im, matrix, offset=offset, output_shape=output_shape)
-
     >>> plt.imshow(im4)
+    >>> plt.show()
 
     Notes
     -----
