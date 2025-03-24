@@ -6,7 +6,7 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_copy
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._util import _ScalarFunctionWrapper
 
@@ -497,7 +497,7 @@ class VectorFunction:
 
         def update_fun():
             self.nfev += 1
-            self.f = fun_wrapped(xp.astype(self.x, _dtype))
+            self.f = fun_wrapped(xp_copy(self.x))
 
         self._update_fun_impl = update_fun
         update_fun()
@@ -507,7 +507,7 @@ class VectorFunction:
 
         # Jacobian Evaluation
         if callable(jac):
-            self.J = jac(xp.astype(self.x, _dtype))
+            self.J = jac(xp_copy(self.x))
             self.J_updated = True
             self.njev += 1
 
@@ -539,7 +539,7 @@ class VectorFunction:
                 self.sparse_jacobian = False
 
             def update_jac():
-                self.J = jac_wrapped(xp.astype(self.x, _dtype))
+                self.J = jac_wrapped(xp_copy(self.x))
 
         elif jac in FD_METHODS:
             self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
@@ -582,7 +582,7 @@ class VectorFunction:
 
         # Define Hessian
         if callable(hess):
-            self.H = hess(xp.astype(self.x, _dtype), self.v)
+            self.H = hess(xp_copy(self.x), self.v)
             self.H_updated = True
             self.nhev += 1
 
@@ -604,10 +604,10 @@ class VectorFunction:
                 self.H = np.atleast_2d(np.asarray(self.H))
 
             def update_hess():
-                self.H = hess_wrapped(xp.astype(self.x, _dtype), self.v)
+                self.H = hess_wrapped(xp_copy(self.x), self.v)
         elif hess in FD_METHODS:
             def jac_dot_v(x, v):
-                return jac_wrapped(xp.astype(x, _dtype)).T.dot(v)
+                return jac_wrapped(xp_copy(x)).T.dot(v)
 
             def update_hess():
                 self._update_jac()
@@ -686,8 +686,7 @@ class VectorFunction:
         self._update_fun()
         # returns a copy so that downstream can't overwrite the
         # internal attribute
-        xp = array_namespace(self.f)
-        return xp.astype(self.f, self.f.dtype)
+        return xp_copy(self.f)
 
     def jac(self, x):
         self._update_x(x)
