@@ -551,8 +551,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     >>> matrix = ((0, 1), (1, 0))
     >>> im3 = affine_transform(im, matrix, output_shape=(1024, 1024))
-
     >>> plt.imshow(im3)
+    >>> plt.show()
 
     Offset the rotation so that the image is centred::
 
