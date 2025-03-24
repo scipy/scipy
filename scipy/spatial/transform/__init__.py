@@ -18,7 +18,7 @@ Rotations in 3 dimensions
    RotationSpline
 """
 
-from ._rigid_transform import RigidTransform
+# from ._rigid_transform import RigidTransform
 from ._rotation_spline import RotationSpline
 
 
