@@ -4,8 +4,7 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, xp_default_dtype,
-                                   is_numpy)
+from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 

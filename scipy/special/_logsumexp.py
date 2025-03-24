@@ -111,9 +111,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     if xp_size(a) != 0:
         with np.errstate(over='ignore'):
-            # Where result is infinite, we use the direct logsumexp calculation to delegate
-            # edge case handling to the behavior of `xp.log` and `xp.exp`, which should
-            # follow the C99 standard for complex values.
+            # Where result is infinite, we use the direct logsumexp calculation to
+            # delegate edge case handling to the behavior of `xp.log` and `xp.exp`,
+            # which should follow the C99 standard for complex values.
             b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
             sum = xp.sum(b_exp_a, axis=axis, keepdims=True)
             sgn_inf = _sign(sum, xp) if return_sign else None
