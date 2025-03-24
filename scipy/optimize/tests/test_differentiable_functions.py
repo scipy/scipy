@@ -762,6 +762,29 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+    def test_fgh_overlap(self):
+        # VectorFunction.fun/jac should return copies to internal attributes
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+
+        vf = VectorFunction(ex.fun, x0, '3-point', ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+        f = vf.fun(np.array([1.1, 0.1]))
+        J = vf.jac([1.1, 0.1])
+        assert vf.f is not f
+        assert vf.J is not J
+        assert_equal(f, vf.f)
+        assert_equal(J, vf.J)
+
+        vf = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+        f = vf.fun(np.array([1.1, 0.1]))
+        J = vf.jac([1.1, 0.1])
+        assert vf.f is not f
+        assert vf.J is not J
+        assert_equal(f, vf.f)
+        assert_equal(J, vf.J)
+
     @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # VectorFunction should not store references to arrays, it should

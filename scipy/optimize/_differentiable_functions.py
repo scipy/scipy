@@ -451,7 +451,7 @@ class VectorFunction:
         if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to floating
+        # promotes to floating, ensures that it's a copy
         self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
 
@@ -497,7 +497,7 @@ class VectorFunction:
 
         def update_fun():
             self.nfev += 1
-            self.f = fun_wrapped(self.x)
+            self.f = fun_wrapped(xp.astype(self.x, _dtype))
 
         self._update_fun_impl = update_fun
         update_fun()
@@ -507,7 +507,7 @@ class VectorFunction:
 
         # Jacobian Evaluation
         if callable(jac):
-            self.J = jac(self.x)
+            self.J = jac(xp.astype(self.x, _dtype))
             self.J_updated = True
             self.njev += 1
 
@@ -539,7 +539,7 @@ class VectorFunction:
                 self.sparse_jacobian = False
 
             def update_jac():
-                self.J = jac_wrapped(self.x)
+                self.J = jac_wrapped(xp.astype(self.x, _dtype))
 
         elif jac in FD_METHODS:
             self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
@@ -562,7 +562,7 @@ class VectorFunction:
                 def update_jac():
                     self._update_fun()
                     _J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                                    **finite_diff_options)
+                                                **finite_diff_options)
                     self.J = _J.toarray()
                     self.nfev += dct['nfev']
                 self.J = self.J.toarray()
@@ -582,7 +582,7 @@ class VectorFunction:
 
         # Define Hessian
         if callable(hess):
-            self.H = hess(self.x, self.v)
+            self.H = hess(xp.astype(self.x, _dtype), self.v)
             self.H_updated = True
             self.nhev += 1
 
@@ -604,10 +604,10 @@ class VectorFunction:
                 self.H = np.atleast_2d(np.asarray(self.H))
 
             def update_hess():
-                self.H = hess_wrapped(self.x, self.v)
+                self.H = hess_wrapped(xp.astype(self.x, _dtype), self.v)
         elif hess in FD_METHODS:
             def jac_dot_v(x, v):
-                return jac_wrapped(x).T.dot(v)
+                return jac_wrapped(xp.astype(x, _dtype)).T.dot(v)
 
             def update_hess():
                 self._update_jac()
@@ -686,15 +686,17 @@ class VectorFunction:
         self._update_fun()
         # returns a copy so that downstream can't overwrite the
         # internal attribute
-        return self.f.copy()
+        xp = array_namespace(self.f)
+        return xp.astype(self.f, self.f.dtype)
 
     def jac(self, x):
         self._update_x(x)
         self._update_jac()
-        if hasattr(self.J, "copy"):
+        if hasattr(self.J, "astype"):
             # returns a copy so that downstream can't overwrite the
             # internal attribute. But one can't copy a LinearOperator
-            return self.J.copy()
+            xp = array_namespace(self.J)
+            return xp.astype(self.J, self.J.dtype)
         return self.J
 
     def hess(self, x, v):
@@ -702,10 +704,11 @@ class VectorFunction:
         self._update_v(v)
         self._update_x(x)
         self._update_hess()
-        if hasattr(self.H, "copy"):
+        if hasattr(self.H, "astype"):
             # returns a copy so that downstream can't overwrite the
             # internal attribute. But one can't copy non-arrays
-            return self.H.copy()
+            xp = array_namespace(self.H)
+            return xp.astype(self.H, self.H.dtype)
         return self.H
 
 

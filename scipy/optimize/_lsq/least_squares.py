@@ -10,6 +10,7 @@ from scipy.optimize._differentiable_functions import VectorFunction
 from scipy.optimize._numdiff import group_columns
 from scipy.optimize._minimize import Bounds
 from scipy._lib._sparse import issparse
+from scipy._lib._array_api import array_namespace
 from scipy._lib._util import _workers_wrapper
 
 from .trf import trf
@@ -64,8 +65,12 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
     # jacobian). Otherwise they're very similar internally.
     # We now do all the finite differencing in VectorFunction, which means we can drop
     # lmdif and just use lmder.
+
+    # for sending a copy of x0 into _lmder
+    xp = array_namespace(x0)
+
     x, info, status = _minpack._lmder(
-        fun, jac, x0, (), full_output, col_deriv,
+        fun, jac, xp.astype(x0, x0.dtype), (), full_output, col_deriv,
         ftol, xtol, gtol, max_nfev, factor, diag)
 
     f = info['fvec']
