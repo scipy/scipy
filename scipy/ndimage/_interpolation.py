@@ -541,7 +541,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     >>> from scipy.datasets import face
     >>> from matplotlib import pyplot as plt
     >>> import numpy as np
-
     >>> im = face(gray=True)
     >>> matrix = (0.5, 2)
     >>> im2 = affine_transform(im, matrix)
