@@ -1,10 +1,10 @@
+import itertools as it
 import math
 import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, xp_default_dtype,
-                                   is_numpy)
+from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -35,11 +35,13 @@ def test_wrap_radians(xp):
     xp_assert_close(res, ref, atol=0)
 
 
+# numpy warning filters don't work for dask (dask/dask#3245)
+# (also we should not expect the numpy warning filter to work for any Array API
+# library)
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 class TestLogSumExp:
-    # numpy warning filters don't work for dask (dask/dask#3245)
-    # (also we should not expect the numpy warning filter to work for any Array API
-    # library)
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered in log")
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
@@ -119,8 +121,6 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -267,26 +267,36 @@ class TestLogSumExp:
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
-    @skip_xp_backends("torch",
-        reason="`torch` has different ideas about ops involving complex infinity")
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    @pytest.mark.parametrize('x, ref', [
-        ([-np.inf, -np.inf], -np.inf),
-        ([np.inf, np.inf], np.inf),
-        ([-np.inf + 0j, -np.inf + 0.7533j], -np.inf),
-        ([np.inf + 1j, -0.9116 + 0.7533j], np.inf + 1j),
-        ([np.inf + 1.0000j, np.inf + 0.7533j], np.nan + np.nan*1j),
-    ])
-    def test_gh22601_infinite_elements(self, x, ref, xp):
+
+    @pytest.mark.parametrize('x,y', it.product(
+        [
+            -np.inf,
+            np.inf,
+            complex(-np.inf, 0.),
+            complex(-np.inf, -0.),
+            complex(-np.inf, np.inf),
+            complex(-np.inf, -np.inf),
+            complex(np.inf, 0.),
+            complex(np.inf, -0.),
+            complex(np.inf, np.inf),
+            complex(np.inf, -np.inf),
+            # Phase in each quadrant.
+            complex(-np.inf, 0.7533),
+            complex(-np.inf, 2.3562),
+            complex(-np.inf, 3.9270),
+            complex(-np.inf, 5.4978),
+            complex(np.inf, 0.7533),
+            complex(np.inf, 2.3562),
+            complex(np.inf, 3.9270),
+            complex(np.inf, 5.4978),
+        ], repeat=2)
+    )
+    def test_gh22601_infinite_elements(self, x, y, xp):
         # Test that `logsumexp` does reasonable things in the presence of
         # real and complex infinities.
-        if is_numpy(xp) and xp.__version__ < "2.0":
-            pytest.skip("NumPy pre 2.0 warns during assertion.")
-        res = logsumexp(xp.asarray(x))
-        if np.isneginf(np.real(ref)):
-            xp_assert_equal(xp.real(res), xp.asarray(ref))
-        else:
-            xp_assert_equal(res, xp.asarray(ref))
+        res = logsumexp(xp.asarray([x, y]))
+        ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
+        xp_assert_equal(res, ref)
 
 
 class TestSoftmax:
