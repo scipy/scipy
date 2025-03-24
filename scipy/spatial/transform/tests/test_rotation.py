@@ -1920,15 +1920,12 @@ def test_slerp_call_scalar_time(xp):
     assert_allclose(delta.magnitude(), 0, atol=1e-16)
 
 
-def test_slerp_call_jax_compile():
+def test_slerp_jax_compile():
     pytest.importorskip("jax")
     import jax
 
     r = Rotation.from_euler("X", np.array([0, 80]), degrees=True)
-    print(r.as_quat().shape)
     r = Rotation.from_euler("X", jax.numpy.array([0, 80]), degrees=True)
-    print(r.as_quat().shape)
-    print(len(r))
     s = Slerp([0, 1], r)
     jax.block_until_ready(jax.jit(s)(0.25))
 
