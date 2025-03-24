@@ -535,7 +535,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
 
     Examples
     --------
-    Use the ``affine_transform`` to stretch an image::
+    Use the `affine_transform` to stretch an image::
 
     >>> from scipy.ndimage import affine_transform
     >>> from scipy.datasets import face
