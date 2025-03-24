@@ -788,12 +788,14 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
     See Also
     --------
-    freqz, sosfilt
+    freqz, sosfilt, sosfreqz
 
     Notes
     -----
-    .. versionadded:: 0.19.0
-
+    This function used to be called ``sosfreqz`` in older versions (≥ 0.19.0)
+    
+    .. versionadded:: 1.15.0
+        
     Examples
     --------
     Design a 15th-order bandpass filter in SOS format.
@@ -865,11 +867,14 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
 
 def sosfreqz(*args, **kwargs):
     """
-    Compute the frequency response of a digital filter in SOS format.
+    Compute the frequency response of a digital filter in SOS format (legacy).
 
-    .. warning:: This function is an alias, provided for backward
-                 compatibility. New code should use the function
-                 :func:`scipy.signal.freqz_sos`.
+   .. legacy:: function
+        
+        This function is an alias, provided for backward compatibility. 
+        New code should use the function :func:`scipy.signal.freqz_sos`.
+        This function became obsolete from version 1.15.0.
+        
     """
     return freqz_sos(*args, **kwargs)
 

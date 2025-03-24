@@ -7,8 +7,9 @@ from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
 from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
-from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
+from scipy._lib._util import _asarray_validated, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+import scipy._lib.array_api_extra as xpx
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 # from ._lsq.common import make_strictly_feasible
@@ -936,7 +937,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         ydata = np.asarray(ydata, float)
 
-    if isinstance(xdata, (list, tuple, np.ndarray)):
+    if isinstance(xdata, list | tuple | np.ndarray):
         # `xdata` is passed straight to the user-defined `f`, so allow
         # non-array_like `xdata`.
         if check_finite:
@@ -1119,10 +1120,10 @@ def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
         if use_accel:
             p2 = func(p1, *args)
             d = p2 - 2.0 * p1 + p0
-            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+            p = xpx.apply_where(d != 0, (p0, p1, d), _del2, fill_value=p2)
         else:
             p = p1
-        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        relerr = xpx.apply_where(p0 != 0, (p, p0), _relerr, fill_value=p)
         if np.all(np.abs(relerr) < xtol):
             return p
         p0 = p

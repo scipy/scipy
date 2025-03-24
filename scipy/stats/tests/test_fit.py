@@ -42,7 +42,8 @@ mle_failing_fits = [
 
 # these pass but are XSLOW (>1s)
 mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
-                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
+                  'jf_skew_t', 'nct', 'recipinvgauss', 'rel_breitwigner',
+                  'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -129,10 +130,10 @@ def test_cont_fit(distname, arg, method):
 
     for fit_size in fit_sizes:
         # Note that if a fit succeeds, the other fit_sizes are skipped
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         with np.errstate(all='ignore'):
-            rvs = distfn.rvs(size=fit_size, *arg)
+            rvs = distfn.rvs(size=fit_size, *arg, random_state=rng)
             if method == 'MLE' and distfn.name in mle_use_floc0:
                 kwds = {'floc': 0}
             else:

@@ -46,7 +46,6 @@ from scipy.sparse._sputils import (
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
-
 from . import _arpack
 arpack_int = _arpack.timing.nbx.dtype
 
@@ -277,9 +276,13 @@ class ArpackError(RuntimeError):
     ARPACK error
     """
 
-    def __init__(self, info, infodict=_NAUPD_ERRORS):
+    def __init__(self, info, infodict=None):
+        if infodict is None:
+            infodict = _NAUPD_ERRORS
+
         msg = infodict.get(info, "Unknown error")
-        RuntimeError.__init__(self, f"ARPACK error {info}: {msg}")
+        super().__init__(f"ARPACK error {info}: {msg}")
+
 
 
 class ArpackNoConvergence(ArpackError):

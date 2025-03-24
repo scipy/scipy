@@ -121,6 +121,29 @@ Support is provided in `scipy.stats` for the following functions:
 `scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
 and `scipy.stats.monte_carlo_test`.
 
+Some features provide a capability table in the documentation like this:
+
++---------+-------------+-------------+
+| Library | CPU         | GPU         |
++=========+=============+=============+
+| NumPy   | ✓           | n/a         |
++---------+-------------+-------------+
+| CuPy    | n/a         | ✓           |
++---------+-------------+-------------+
+| PyTorch | ✓           | ✗           |
++---------+-------------+-------------+
+| JAX     | ✓           | ✓           |
++---------+-------------+-------------+
+| Dask    | ✗           | ✗           |
++---------+-------------+-------------+
+
+In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
+arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
+support multiple devices (CPU and GPU), but SciPy support for such arrays may be
+limited; for instance, this SciPy feature is only expected to work with PyTorch arrays
+located on the CPU. While the elements of the table marked with "n/a" are inherently
+out of scope, we are continually working on filling in the rest.
+
 Please see `the tracker issue`_ for updates.
 
 
@@ -241,11 +264,11 @@ which is valued to the currently tested array namespace.
 
 The following pytest markers are available:
 
-* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to skip tests.
-* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   xfail certain backends or categories of backends.
   See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
   to use this marker to xfail tests.
@@ -296,20 +319,15 @@ The following examples demonstrate how to use the markers::
   def test_toto_masked_array(self):
       ...
 
-Passing a custom reason to ``reason`` when ``cpu_only=True`` is unsupported
-since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
-the reason for using ``cpu_only`` is likely just that compiled code is used
-in the function(s) being tested.
-
 Passing names of backends into ``exceptions`` means that they will not be skipped
-by ``cpu_only=True``. This is useful when delegation is implemented for some,
-but not all, non-CPU backends, and the CPU code path requires conversion to NumPy
-for compiled code::
+by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
+is implemented for some, but not all, non-CPU backends, and the CPU code path 
+requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['jax.numpy'])
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   def test_toto(self, xp):

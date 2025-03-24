@@ -61,6 +61,7 @@ class TestGoBenchmarkFunctions:
     def test_redimension(self):
         # check that problems can be redimensioned, use LJ for this.
         LJ = self.benchmark_functions['LennardJones']
+        assert LJ.change_dimensionality
         L = LJ()
         L.change_dimensions(10)
 

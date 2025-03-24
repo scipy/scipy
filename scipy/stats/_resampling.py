@@ -7,7 +7,7 @@ import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
+from scipy._lib._array_api import array_namespace, is_numpy
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -183,20 +183,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
-    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
-               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
-               "explicitly broadcast elements of `data` to the same shape (ignoring "
-               "`axis`) before performing the calculation. To avoid this warning in "
-               "the meantime, ensure that all samples have the same shape (except "
-               "potentially along `axis`).")
-    data = [np.atleast_1d(sample) for sample in data]
-    reduced_shapes = set()
-    for sample in data:
-        reduced_shape = list(sample.shape)
-        reduced_shape.pop(axis)
-        reduced_shapes.add(tuple(reduced_shape))
-    if len(reduced_shapes) != 1:
-        warnings.warn(message, FutureWarning, stacklevel=3)
+    data = _broadcast_arrays(data, axis_int)
 
     data_iv = []
     for sample in data:
@@ -331,15 +318,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
          Each element of `data` is a sample containing scalar observations from an
          underlying distribution. Elements of `data` must be broadcastable to the
          same shape (with the possible exception of the dimension specified by `axis`).
-
-         .. versionchanged:: 1.14.0
-             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
-             elements of `data` are not the same (with the exception of the dimension
-             specified by `axis`).
-             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
-             elements to the same shape (except along `axis`) before performing
-             the calculation.
-
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -735,7 +713,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)

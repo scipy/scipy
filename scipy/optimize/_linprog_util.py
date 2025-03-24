@@ -1407,9 +1407,10 @@ def _postsolve(x, postsolve_args, complete=False):
         x = rev(x)
 
     fun = x.dot(c)
-    slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
-    # report residuals of ORIGINAL EQ constraints
-    con = b_eq - A_eq.dot(x)
+    with np.errstate(invalid="ignore"):
+        slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
+        # report residuals of ORIGINAL EQ constraints
+        con = b_eq - A_eq.dot(x)
 
     return x, fun, slack, con
 

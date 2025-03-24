@@ -746,6 +746,7 @@ class TestTanhSinh:
         _tanhsinh(np.sin, 1, x)
 
 
+@pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
 @pytest.mark.skip_xp_backends('array_api_strict', reason='No fancy indexing.')
 @pytest.mark.skip_xp_backends('jax.numpy', reason='No mutation.')
 @pytest.mark.skip_xp_backends(

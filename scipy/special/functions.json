@@ -554,8 +554,9 @@
         }
     },
     "nctdtrit": {
-        "_cdflib_wrappers.pxd": {
-            "nctdtrit": "ddd->d"
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
         }
     },
     "ndtri": {
@@ -840,12 +841,6 @@
         "boost_special_functions.h++": {
             "nct_pdf_float": "fff->f",
             "nct_pdf_double": "ddd->d"
-        }
-    },
-    "_nct_ppf": {
-        "boost_special_functions.h++": {
-            "nct_ppf_float": "fff->f",
-            "nct_ppf_double": "ddd->d"
         }
     },
     "_nct_sf": {

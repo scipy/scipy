@@ -509,7 +509,7 @@ def broadcast_shapes(*shapes):
     """
     if not shapes:
         return ()
-    shapes = [shp if isinstance(shp, (tuple, list)) else (shp,) for shp in shapes]
+    shapes = [shp if isinstance(shp, tuple | list) else (shp,) for shp in shapes]
     big_shp = max(shapes, key=len)
     out = list(big_shp)
     for shp in shapes:

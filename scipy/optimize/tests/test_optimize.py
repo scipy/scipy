@@ -35,6 +35,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._array_api import make_skip_xp_backends
 from scipy._lib._util import MapWrapper
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -1319,6 +1320,8 @@ class TestOptimizeSimple(CheckOptimize):
 
             if method == 'tnc':
                 kwargs['options'] = dict(maxfun=100)
+            elif method == 'cobyla':
+                kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -1553,7 +1556,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'cobyqa', 'slsqp',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method, num_parallel_threads):
@@ -1684,6 +1687,23 @@ class TestOptimizeSimple(CheckOptimize):
         if method == 'cobyqa':
             ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
             assert res.nfev == ref.nfev == maxiter
+        elif method == 'cobyla':
+            # COBYLA calls the callback once per iteration, not once per function
+            # evaluation, so this test is not applicable. However we can test
+            # the COBYLA status to verify that res stopped back on the callback
+            # and ref stopped based on the iteration limit.
+            # COBYLA requires at least n+2 function evaluations
+            maxiter = max(maxiter, len(kwargs['x0'])+2)
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.status == 30
+            assert res.message == ("Return from COBYLA because the callback function "
+                                   "requested termination")
+            assert ref.status == 3
+            assert ref.message == ("Return from COBYLA because the objective function "
+                                   "has been evaluated MAXFUN times.")
+            # Return early because res/ref will be unequal for COBYLA for the reasons
+            # mentioned above.
+            return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
             assert res.nit == ref.nit == maxiter
@@ -2455,21 +2475,20 @@ def test_powell_output():
 
 
 class TestRosen:
+    @make_skip_xp_backends(optimize.rosen)
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
         x = xp.asarray([1, 1, 1])
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
+    @make_skip_xp_backends(optimize.rosen_der)
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
-    @skip_xp_backends('jax.numpy',
-                      reason="JAX arrays do not support item assignment")
+    @make_skip_xp_backends(optimize.rosen_hess, optimize.rosen_hess_prod)
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 
@@ -3266,7 +3285,17 @@ def test_sparse_hessian(method, sparse_type):
 
 
 @pytest.mark.parametrize('workers', [None, 2])
-@pytest.mark.parametrize('method', ['l-bfgs-b'])
+@pytest.mark.parametrize(
+    'method',
+    ['l-bfgs-b',
+     'bfgs',
+     'slsqp',
+     'trust-constr',
+     'Newton-CG',
+     'CG',
+     'tnc',
+     'trust-ncg',
+     'trust-krylov'])
 class TestWorkers:
 
     def setup_method(self):
@@ -3275,19 +3304,26 @@ class TestWorkers:
     def test_smoke(self, workers, method):
         # checks parallelised optimization output is same as serial
         workers = workers or map
+
+        kwds = {'jac': None, 'hess': None}
+        if method in ['Newton-CG', 'trust-ncg', 'trust-krylov']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der
+            kwds['hess'] = '2-point'
+
         with MapWrapper(workers) as mf:
             res = optimize.minimize(
-                rosen, self.x0, options={"workers":mf}, method=method
+                rosen, self.x0, options={"workers":mf}, method=method, **kwds
             )
         res_default = optimize.minimize(
-            rosen, self.x0, method=method
+            rosen, self.x0, method=method, **kwds
         )
         assert_equal(res.x, res_default.x)
         assert_equal(res.nfev, res_default.nfev)
 
     def test_equal_bounds(self, workers, method):
         workers = workers or map
-        if method not in ['l-bfgs-b']:
+        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr', 'tnc']:
             pytest.skip(f"{method} cannot use bounds")
 
         bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
@@ -3296,4 +3332,4 @@ class TestWorkers:
                 rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
             )
         assert res.success
-        assert_equal(res.x[1], 2.0)
+        assert_allclose(res.x[1], 2.0)

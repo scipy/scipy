@@ -119,7 +119,8 @@ class TestSpline:
         out = ndimage.spline_filter(data, order=order)
         assert_array_almost_equal(out, xp.asarray([1]))
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='output=dtype is numpy-specific')
     def test_spline03(self, dtype, order, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
@@ -1307,7 +1308,8 @@ class TestZoom:
                           match="It is recommended to use mode"):
             ndimage.zoom(x, 2, mode=mode, grid_mode=True),
 
-    @skip_xp_backends(np_only=True, reason='inplace output= is numpy-specific')
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     def test_zoom_output_shape(self, xp):
         """Ticket #643"""
         x = xp.reshape(xp.arange(12), (3, 4))

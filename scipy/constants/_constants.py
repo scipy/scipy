@@ -15,7 +15,7 @@ from ._codata import value as _cd
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-from scipy._lib._array_api import array_namespace, _asarray
+from scipy._lib._array_api import array_namespace, _asarray, xp_capabilities
 
 
 """
@@ -225,6 +225,7 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
+@xp_capabilities()
 def convert_temperature(
     val: "npt.ArrayLike",
     old_scale: str,
@@ -304,6 +305,7 @@ def convert_temperature(
 # optics
 
 
+@xp_capabilities()
 def lambda2nu(lambda_: "npt.ArrayLike") -> Any:
     """
     Convert wavelength to optical frequency
@@ -335,6 +337,7 @@ def lambda2nu(lambda_: "npt.ArrayLike") -> Any:
     return c / _asarray(lambda_, xp=xp, subok=True)
 
 
+@xp_capabilities()
 def nu2lambda(nu: "npt.ArrayLike") -> Any:
     """
     Convert optical frequency to wavelength.

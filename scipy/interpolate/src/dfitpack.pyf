@@ -630,8 +630,8 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
      end subroutine spherfit_lsq
 
      subroutine regrid_smth(iopt,mx,x,my,y,z,xb,xe,yb,ye,kx,ky,s,&
-        nxest,nyest,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
-       !  nx,tx,ny,ty,c,fp,ier = regrid_smth(x,y,z,[xb,xe,yb,ye,kx,ky,s])
+        nxest,nyest,maxit,nx,tx,ny,ty,c,fp,wrk,lwrk,iwrk,kwrk,ier)
+       !  nx,tx,ny,ty,c,fp,ier = regrid_smth(x,y,z,[xb,xe,yb,ye,kx,ky,s,maxit])
 
        fortranname regrid
        threadsafe
@@ -653,6 +653,7 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
             :: nxest = mx+kx+1
        integer intent(hide),depend(ky,my),check(nyest>=2*(ky+1)) &
             :: nyest = my+ky+1
+       integer optional :: maxit = 20
        integer intent(out) :: nx
        real*8 dimension(nxest),intent(out),depend(nxest) :: tx
        integer intent(out) :: ny

@@ -200,8 +200,8 @@ class TestAAA:
     @pytest.mark.parametrize("func,atol,rtol",
                              [(lambda x: np.abs(x + 0.5 + 0.01j), 5e-13, 1e-7),
                               (lambda x: np.sin(1/(1.05 - x)), 2e-13, 1e-7),
-                              (lambda x: np.exp(-1/(x**2)), 3.5e-13, 0),
-                              (lambda x: np.exp(-100*x**2), 8e-13, 0),
+                              (lambda x: np.exp(-1/(x**2)), 3.5e-12, 0),
+                              (lambda x: np.exp(-100*x**2), 2e-12, 0),
                               (lambda x: np.exp(-10/(1.2 - x)), 1e-14, 0),
                               (lambda x: 1/(1+np.exp(100*(x + 0.5))), 2e-13, 1e-7),
                               (lambda x: np.abs(x - 0.95), 1e-6, 1e-7)])

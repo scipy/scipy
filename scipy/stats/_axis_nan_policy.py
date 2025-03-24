@@ -42,6 +42,7 @@ def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
+    arrays = tuple(arrays)
     if not arrays:
         return arrays
     xp = array_namespace(*arrays) if xp is None else xp

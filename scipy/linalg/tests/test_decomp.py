@@ -769,11 +769,11 @@ class TestEigTridiagonal:
     def test_eigvalsh_tridiagonal(self):
         """Compare eigenvalues of eigvalsh_tridiagonal with those of eig."""
         # can't use ?STERF with subselection
-        for driver in ('sterf', 'stev', 'stebz', 'stemr', 'auto'):
+        for driver in ('sterf', 'stev', 'stevd', 'stebz', 'stemr', 'auto'):
             w = eigvalsh_tridiagonal(self.d, self.e, lapack_driver=driver)
             assert_array_almost_equal(sort(w), self.w)
 
-        for driver in ('sterf', 'stev'):
+        for driver in ('sterf', 'stev', 'stevd'):
             assert_raises(ValueError, eigvalsh_tridiagonal, self.d, self.e,
                           lapack_driver=driver, select='i',
                           select_range=(0, 1))
@@ -806,7 +806,7 @@ class TestEigTridiagonal:
         # can't use ?STERF when eigenvectors are requested
         assert_raises(ValueError, eigh_tridiagonal, self.d, self.e,
                       lapack_driver='sterf')
-        for driver in ('stebz', 'stev', 'stemr', 'auto'):
+        for driver in ('stebz', 'stev', 'stevd', 'stemr', 'auto'):
             w, evec = eigh_tridiagonal(self.d, self.e, lapack_driver=driver)
             evec_ = evec[:, argsort(w)]
             assert_array_almost_equal(sort(w), self.w)

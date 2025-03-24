@@ -1658,8 +1658,7 @@ def chebwin(M, at, sym=True, *, xp=None, device=None):
         w = w[:n]
         w = xp.concat((xp.flip(w[1:n]), w))
     else:
-        I = xp.asarray(1j, device=device)
-        p = p * xp.exp(I * xp.pi / M * xp.arange(M, dtype=xp.float64, device=device))
+        p = p * xp.exp(1j * xp.pi / M * xp.arange(M, dtype=xp.float64, device=device))
         w = xp.real(sp_fft.fft(p))
         n = M // 2 + 1
         w = xp.concat((xp.flip(w[1:n]), w[1:n]))
@@ -2200,8 +2199,7 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False,
             else:
                 s = sp_fft.rfft(windows[0])
                 shift = -(1 - 1./M) * xp.arange(1, M//2 + 1, dtype=xp.float64)
-                I = xp.asarray(1j)
-                s[1:] *= 2 * xp.exp(-I * xp.pi * shift)
+                s[1:] *= 2 * xp.exp(-1j * xp.pi * shift)
                 correction = M / s.real.sum()
             windows *= correction
     # else we're already l2 normed, so do nothing

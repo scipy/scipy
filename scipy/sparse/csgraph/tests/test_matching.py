@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_equal
 import pytest
 
-from scipy.sparse import csr_array, diags_array
+from scipy.sparse import csr_array, coo_array, diags_array
 from scipy.sparse.csgraph import (
     maximum_bipartite_matching, min_weight_full_bipartite_matching
 )
@@ -152,9 +152,15 @@ def test_matching_large_random_graph_with_one_edge_incident_to_each_vertex():
 @pytest.mark.parametrize('num_rows,num_cols', [(0, 0), (2, 0), (0, 3)])
 def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
     biadjacency = csr_array((num_cols, num_rows))
+    biadjacency1 = coo_array((num_cols, num_rows))
+
     row_ind, col_ind = min_weight_full_bipartite_matching(biadjacency)
     assert len(row_ind) == 0
     assert len(col_ind) == 0
+
+    row_ind1, col_ind1 = min_weight_full_bipartite_matching(biadjacency1)
+    assert len(row_ind1) == 0
+    assert len(col_ind1) == 0
 
 
 @pytest.mark.parametrize('biadjacency',
@@ -169,6 +175,8 @@ def test_min_weight_full_matching_trivial_graph(num_rows, num_cols):
 def test_min_weight_full_matching_infeasible_problems(biadjacency):
     with pytest.raises(ValueError):
         min_weight_full_bipartite_matching(csr_array(biadjacency))
+    with pytest.raises(ValueError):
+        min_weight_full_bipartite_matching(coo_array(biadjacency))
 
 
 def test_min_weight_full_matching_large_infeasible():
@@ -223,13 +231,17 @@ def test_min_weight_full_matching_large_infeasible():
         ])
     with pytest.raises(ValueError, match='no full matching exists'):
         min_weight_full_bipartite_matching(csr_array(a))
+    with pytest.raises(ValueError, match='no full matching exists'):
+        min_weight_full_bipartite_matching(coo_array(a))
 
 
 @pytest.mark.thread_unsafe
 def test_explicit_zero_causes_warning():
+    biadjacency = csr_array(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
     with pytest.warns(UserWarning):
-        biadjacency = csr_array(((2, 0, 3), (0, 1, 1), (0, 2, 3)))
         min_weight_full_bipartite_matching(biadjacency)
+    with pytest.warns(UserWarning):
+        min_weight_full_bipartite_matching(biadjacency.tocoo())
 
 
 # General test for linear sum assignment solvers to make it possible to rely
