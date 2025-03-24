@@ -208,8 +208,7 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     if assume_a not in {None, 'diagonal', 'tridiagonal', 'banded', 'lower triangular',
                         'upper triangular', 'symmetric', 'hermitian',
-                        'positive definite', 'symmetric positive definite', 'general',
-                        'sym', 'her', 'pos', 'gen'}:
+                        'positive definite', 'general',  'sym', 'her', 'pos', 'gen'}:
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
