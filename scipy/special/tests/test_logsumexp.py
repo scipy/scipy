@@ -41,6 +41,7 @@ def test_wrap_radians(xp):
 # library)
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array

@@ -109,21 +109,24 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     b = xpx.atleast_nd(b, ndim=1, xp=xp) if b is not None else b
     axis = tuple(range(a.ndim)) if axis is None else axis
 
-    with np.errstate(over='ignore'):
-        # Where result is infinite, we use the direct logsumexp calculation to delegate
-        # edge case handling to the behavior of `xp.log` and `xp.exp`, which should
-        # follow the C99 standard for complex values.
-        b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
-        sum = xp.sum(b_exp_a, axis=axis, keepdims=True)
-        sgn_inf = _sign(sum, xp) if return_sign else None
-        sum = xp.abs(sum) if return_sign else sum
-        out_inf = xp.log(sum)
-
     if xp_size(a) != 0:
+        with np.errstate(over='ignore'):
+            # Where result is infinite, we use the direct logsumexp calculation to delegate
+            # edge case handling to the behavior of `xp.log` and `xp.exp`, which should
+            # follow the C99 standard for complex values.
+            b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
+            sum = xp.sum(b_exp_a, axis=axis, keepdims=True)
+            sgn_inf = _sign(sum, xp) if return_sign else None
+            sum = xp.abs(sum) if return_sign else sum
+            out_inf = xp.log(sum)
+
         with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
             out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
 
-        out_finite = xp.isfinite(out)  # replace infinite results
+        # Replace infinite results. This probably could be done with an
+        # `apply_where`-like strategy to avoid redundant calculation, but currently
+        # `apply_where` itself is only for elementwise functions.
+        out_finite = xp.isfinite(out)
         out = xp.where(out_finite, out, out_inf)
         sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
     else:
