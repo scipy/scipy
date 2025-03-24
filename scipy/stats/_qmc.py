@@ -76,9 +76,9 @@ def check_random_state(seed=None):
         Random number generator.
 
     """
-    if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
+    if seed is None or isinstance(seed, numbers.Integral | np.integer):
         return np.random.default_rng(seed)
-    elif isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    elif isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
     else:
         raise ValueError(f'{seed!r} cannot be used to seed a'

@@ -139,7 +139,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric):
 
 
 def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-    """Replicate FITPACK's constructing the knot vector.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
 
     Parameters
     ----------
@@ -712,7 +712,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
-    r"""Find the B-spline representation of a 1D function.
+    r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
@@ -736,7 +736,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
         especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
-        satisfying the conditions::
+        satisfying the LSQ (least-squares) constraint::
 
             sum((w * (g(x)  - y))**2 ) <= s
 
@@ -829,7 +829,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """
+    """  # noqa:E501
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
@@ -846,7 +846,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=None):
     r"""
-    Find a smoothed B-spline representation of a parametric N-D curve.
+    Create a smoothing parametric B-spline curve with bounded error, minimizing derivative jumps.
 
     Given a list of N 1D arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
@@ -965,7 +965,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """
+    """  # noqa:E501
     x = np.stack(x, axis=1)
 
     # construct the default parametrization of the curve

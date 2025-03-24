@@ -486,8 +486,10 @@ class TestConvolve2d:
             xp_assert_close(
                 xp.squeeze(
                     signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
-                    axis=None),
-                signal.convolve(a, b, mode=mode))
+                    axis=0
+                ),
+                signal.convolve(a, b, mode=mode)
+            )
 
     def test_invalid_dims(self, xp):
         assert_raises(ValueError, convolve2d, 3, 4)
@@ -2011,6 +2013,34 @@ class _TestLinearFilter:
                             if isinstance(self.dtype, str)
                             else self.dtype)
         assert xp_size(zf) == 0
+
+    @skip_xp_backends('jax.numpy', reason='jax does not support inplace ops')
+    @pytest.mark.parametrize('a', (1, [1], [1, .5, 1.5], 2, [2], [2, 1, 3]),
+                             ids=str)
+    def test_lfiltic(self, a, xp):
+        # Test for #22470: lfiltic does not handle `a[0] != 1`
+        # and, more in general, test that lfiltic behaves consistently with lfilter
+        if is_cupy(xp) and isinstance(a, int | float):
+            pytest.skip('cupy does not supoprt scalar filter coefficients')
+        x = self.generate(6, xp)  # arbitrary input
+        b = self.convert_dtype([.5, 1., .2], xp)  # arbitrary b
+        a = self.convert_dtype(a, xp)
+        N = xp_size(a) - 1
+        M = xp_size(b) - 1
+        K = M + N if is_cupy(xp) else max(N, M)
+        # compute reference initial conditions as final conditions of lfilter
+        y1, zi_1 = lfilter(b, a, x, zi=self.generate(K, xp))
+        # copute initial conditions from lfiltic
+        zi_2 = lfiltic(b, a, xp.flip(y1), xp.flip(x))
+        # compare lfiltic's output with reference
+        self.assert_array_almost_equal(zi_1, zi_2)
+
+    def test_lfiltic_bad_coeffs(xp):
+        # Test for invalid filter coefficients (wrong shape or zero `a[0]`)
+        assert_raises(ValueError, lfiltic, [1, 2], [], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [0, 2], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [1, 2], [[1], [2]], [0, 0], [0, 1])
+        assert_raises(ValueError, lfiltic, [[1], [2]], [1], [0, 0], [0, 1])
 
     @skip_xp_backends(
         'array_api_strict', reason='int64 and float64 cannot be promoted together'
@@ -4437,3 +4467,8 @@ class TestUniqueRoots:
         unique, multiplicity = unique_roots(p, 2)
         assert_almost_equal(unique, [np.min(p)], decimal=15)
         xp_assert_equal(multiplicity, [100])
+
+
+def test_gh_22684():
+    actual = signal.resample_poly(np.arange(2000, dtype=np.complex64), 6, 4)
+    assert actual.dtype == np.complex64

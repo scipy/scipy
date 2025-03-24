@@ -82,13 +82,13 @@ test = [
     "scikit-umfpack",
     "pooch",
     "hypothesis>=6.30",
-    "array-api-strict>=2.0,<2.1.1",
+    "array-api-strict>=2.3",
     "Cython",
     "meson",
     'ninja; sys_platform != "emscripten"',
 ]
 doc = [
-    "sphinx>=5.0.0",
+    "sphinx>=5.0.0,<8.2.0",
     "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-copybutton",
@@ -98,8 +98,9 @@ doc = [
     "jupytext",
     "myst-nb>=1.2.0",
     "pooch",
-    "jupyterlite-sphinx>=0.17.1",
+    "jupyterlite-sphinx>=0.19.1",
     "jupyterlite-pyodide-kernel",
+    "linkify-it-py"
 ]
 dev = [
     "mypy==1.10.0",

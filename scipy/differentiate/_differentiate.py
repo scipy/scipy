@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_sign, xp_copy, xp_take_along_axis
+from scipy._lib._array_api import array_namespace, xp_copy
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -400,7 +400,7 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
-    hdir = xp.astype(xp_sign(hdir), dtype)
+    hdir = xp.astype(xp.sign(hdir), dtype)
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
@@ -1121,7 +1121,7 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
 
     nfev = xp.cumulative_sum(xp.stack(nfev), axis=0)
     res_nit = xp.astype(res.nit[xp.newaxis, ...], xp.int64)  # appease torch
-    res.nfev = xp_take_along_axis(nfev, res_nit, axis=0)[0]
+    res.nfev = xp.take_along_axis(nfev, res_nit, axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit

@@ -1,5 +1,5 @@
 from functools import wraps
-from scipy._lib._util import _lazywhere
+import scipy._lib.array_api_extra as xpx
 import numpy as np
 from ._ufuncs import (_spherical_jn, _spherical_yn, _spherical_in,
                       _spherical_kn, _spherical_jn_d, _spherical_yn_d,
@@ -28,9 +28,9 @@ def use_reflection(sign_n_even=None, reflection_fun=None):
                 return fun(n, z, derivative)  # complex dtype just works
 
             f2 = standard_reflection if reflection_fun is None else reflection_fun
-            return _lazywhere(z.real >= 0, (n, z),
-                              f=lambda n, z: fun(n, z, derivative),
-                              f2=lambda n, z: f2(n, z, derivative))[()]
+            return xpx.apply_where(z.real >= 0, (n, z),
+                                   lambda n, z: fun(n, z, derivative),
+                                   lambda n, z: f2(n, z, derivative))[()]
         return wrapper
     return decorator
 

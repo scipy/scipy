@@ -550,8 +550,6 @@ class TestChandrupatlaMinimize:
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
 class TestFindRoot:
 
     def f(self, q, p):

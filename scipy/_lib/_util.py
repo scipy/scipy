@@ -15,7 +15,6 @@ from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
                                    is_numpy, is_marray, xp_size)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
-import scipy._lib.array_api_extra as xpx
 
 from numpy.exceptions import AxisError, DTypePromotionError
 
@@ -70,88 +69,6 @@ try:
 except ImportError:
     class Generator:  # type: ignore[no-redef]
         pass
-
-
-def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
-    """Return elements chosen from two possibilities depending on a condition
-
-    Equivalent to ``f(*arrays) if cond else fillvalue`` performed elementwise.
-
-    Parameters
-    ----------
-    cond : array
-        The condition (expressed as a boolean array).
-    arrays : tuple of array
-        Arguments to `f` (and `f2`). Must be broadcastable with `cond`.
-    f : callable
-        Where `cond` is True, output will be ``f(arr1[cond], arr2[cond], ...)``
-    fillvalue : object
-        If provided, value with which to fill output array where `cond` is
-        not True.
-    f2 : callable
-        If provided, output will be ``f2(arr1[cond], arr2[cond], ...)`` where
-        `cond` is not True.
-
-    Returns
-    -------
-    out : array
-        An array with elements from the output of `f` where `cond` is True
-        and `fillvalue` (or elements from the output of `f2`) elsewhere. The
-        returned array has data type determined by Type Promotion Rules
-        with the output of `f` and `fillvalue` (or the output of `f2`).
-
-    Notes
-    -----
-    ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
-    `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
-    only where `cond` is True.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
-    >>> def f(a, b):
-    ...     return a*b
-    >>> _lazywhere(a > 2, (a, b), f, np.nan)
-    array([ nan,  nan,  21.,  32.])
-
-    """
-    xp = array_namespace(cond, *arrays)
-
-    if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
-        raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
-
-    args = xp.broadcast_arrays(cond, *arrays)
-    bool_dtype = xp.asarray([True]).dtype  # numpy 1.xx doesn't have `bool`
-    cond, arrays = xp.astype(args[0], bool_dtype, copy=False), args[1:]
-
-    temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
-
-    if f2 is None:
-        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
-        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
-        # `result_type` should/will handle mixed array/Python scalars;
-        # remove this special logic when it does.
-        if type(fillvalue) in {bool, int, float, complex}:
-            with np.errstate(invalid='ignore'):
-                dtype = (temp1 * fillvalue).dtype
-        else:
-           dtype = xp.result_type(temp1.dtype, fillvalue)
-        # whenever mdhaber/marray#89 is resolved, `data` won't need to be extracted here
-        # whenever PAAPIS 2024.12 is released, no need for fill_value to be an array
-        fill_value = xp.asarray(fillvalue, dtype=dtype)
-        fill_value = fill_value.data if is_marray(xp) else fill_value
-        out = xp.full(cond.shape, dtype=dtype, fill_value=fill_value)
-    else:
-        ncond = ~cond
-        temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
-        dtype = xp.result_type(temp1, temp2)
-        out = xp.empty(cond.shape, dtype=dtype)
-        out = xpx.at(out, ncond).set(temp2)
-
-    out = xpx.at(out, cond).set(temp1)
-
-    return out
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -750,6 +667,29 @@ class MapWrapper:
                             " form f(func, iterable)") from e
 
 
+def _workers_wrapper(func):
+    """
+    Wrapper to deal with setup-cleanup of workers outside a user function via a
+    ContextManager. It saves having to do the setup/tear down with within that
+    function, which can be messy.
+    """
+    @functools.wraps(func)
+    def inner(*args, **kwds):
+        kwargs = kwds.copy()
+        if 'workers' not in kwargs:
+            _workers = map
+        elif 'workers' in kwargs and kwargs['workers'] is None:
+            _workers = map
+        else:
+            _workers = kwargs['workers']
+
+        with MapWrapper(_workers) as mf:
+            kwargs['workers'] = mf
+            return func(*args, **kwargs)
+
+    return inner
+
+
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
                  endpoint=False):
     """
@@ -1079,7 +1019,9 @@ def _get_nan(*data, xp=None):
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    res = xp.asarray(xp.nan, dtype=dtype)[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
@@ -1322,3 +1264,15 @@ def _apply_over_batch(*argdefs):
 
         return wrapper
     return decorator
+
+
+def np_vecdot(x1, x2, /, *, axis=-1):
+    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
+    # available. As functions are translated to Array API, `np_vecdot` can be
+    # replaced with `xp.vecdot`.
+    if np.__version__ > "2.0":
+        return np.vecdot(x1, x2, axis=axis)
+    else:
+        # of course there are other fancy ways of doing this (e.g. `einsum`)
+        # but let's keep it simple since it's temporary
+        return np.sum(x1 * x2, axis=axis)

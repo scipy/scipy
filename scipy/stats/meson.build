@@ -31,18 +31,6 @@ py3.extension_module('_ansari_swilk_statistics',
   subdir: 'scipy/stats'
 )
 
-py3.extension_module('_mvn',
-  [f2py_gen.process('mvn.pyf'), 'mvndst.f'],
-  # Wno-surprising is to suppress a pointless warning with GCC 10-12
-  # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
-  fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
-  dependencies: [fortranobject_dep],
-  link_args: version_link_args,
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/stats'
-)
-
 py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
@@ -132,6 +120,7 @@ py3.install_sources([
     '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
+    '_finite_differences.py',
     '_fit.py',
     '_hypotests.py',
     '_kde.py',
