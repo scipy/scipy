@@ -26,8 +26,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 *, callback=None):
     """
     Minimize a function using the Constrained Optimization By Linear
-    Approximation (COBYLA) method. This method wraps a FORTRAN
-    implementation of the algorithm.
+    Approximation (COBYLA) method. This method uses the pure-python implementation
+    of the algorithm from PRIMA.
 
     Parameters
     ----------
@@ -112,6 +112,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Powell M.J.D. (2007), "A view of algorithms for optimization without
     derivatives", Cambridge University Technical Report DAMTP 2007/NA03
 
+    Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
+    Modernization and Amelioration", http://www.libprima.net,
+    DOI: 10.5281/zenodo.8052654
 
     Examples
     --------
@@ -209,6 +212,11 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     f_target : float
         Stop if the objective function is less than `f_target`.
 
+    References
+    ----------
+    Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
+    Modernization and Amelioration", http://www.libprima.net,
+    DOI: 10.5281/zenodo.8052654
     """
     from .._lib.pyprima import minimize
     from .._lib.pyprima.common.infos import SMALL_TR_RADIUS, FTARGET_ACHIEVED
