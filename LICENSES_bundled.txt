@@ -305,4 +305,4 @@ License 2-Clause BSD
 Name: pyprima
 Files: scipy/_lib/pyprima
 License: BSD-3-Clause
-  For details, see scipy/_lib/pyprima/LICENCE.txt
+  For details, see scipy/_lib/pyprima/prima/LICENCE.txt
