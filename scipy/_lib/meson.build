@@ -287,6 +287,7 @@ py3.install_sources(
 py3.install_sources(
   [
     'pyprima/prima/pyprima/src/pyprima/__init__.py',
+    'pyprima/prima/LICENCE.txt',
   ],
   subdir: 'scipy/_lib/pyprima'
 )

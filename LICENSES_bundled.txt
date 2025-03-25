@@ -301,3 +301,8 @@ Name: getLebedevSphere
 Files: scipy/integrate/_lebedev.py
 License 2-Clause BSD
   For details, see scipy/integrate/_lebedev.py
+
+Name: pyprima
+Files: scipy/_lib/pyprima
+License: BSD-3-Clause
+  For details, see scipy/_lib/pyprima/LICENCE.txt
