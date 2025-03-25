@@ -114,7 +114,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 
     Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
     Modernization and Amelioration", http://www.libprima.net,
-    DOI: 10.5281/zenodo.8052654
+    :doi:`10.5281/zenodo.8052654`
 
     Examples
     --------
@@ -216,7 +216,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     ----------
     Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
     Modernization and Amelioration", http://www.libprima.net,
-    DOI: 10.5281/zenodo.8052654
+    :doi:`10.5281/zenodo.8052654`
     """
     from .._lib.pyprima import minimize
     from .._lib.pyprima.common.infos import SMALL_TR_RADIUS, FTARGET_ACHIEVED
