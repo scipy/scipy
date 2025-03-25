@@ -148,7 +148,7 @@ XSF_HOST_DEVICE void swap(T &a, T &b) {
 // Reimplement std::clamp until it's available in CuPy
 template <typename T>
 XSF_HOST_DEVICE constexpr T clamp(T &v, T &lo, T &hi) {
-    return v < lo ? lo : (v > hi ? lo : v);
+    return v < lo ? lo : (v > hi ? hi : v);
 }
 
 template <typename T>
