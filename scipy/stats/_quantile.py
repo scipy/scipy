@@ -36,7 +36,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis', 'winsor'}
+               'harrell-davis', 'winsor_less', 'winsor_more', 'winsor_round',
+               'trim_less', 'trim_more', 'trim_round'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -170,6 +171,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     quantile : scalar or ndarray
         The resulting quantile(s). The dtype is the result dtype of `x` and `p`.
 
+    See Also
+    --------
+    `numpy.quantile`
+    :ref:`outliers`
+
     Notes
     -----
     Given a sample `x` from an underlying distribution, `quantile` provides a
@@ -279,8 +285,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         res = _quantile_hf(y, p, n, method, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
-    elif method in {'winsor'}:
+    elif method.startswith('winsor'):
         res = _quantile_winsor(y, p, n, method, xp)
+    elif method.startswith('trim'):
+        res = _quantile_trim(y, p, n, method, xp)
 
     res = xpx.at(res, p_mask).set(xp.nan)
 
@@ -340,5 +348,22 @@ def _quantile_hd(y, p, n, xp):
 
 
 def _quantile_winsor(y, p, n, method, xp):
-    j = xp.where(p < 0.5, xp.floor(p*n), xp.ceil(n*p - 1))
+    ops = dict(winsor_less=(xp.floor, xp.ceil),
+               winsor_more=(xp.ceil, xp.floor),
+               winsor_round=(xp.round, xp.round))
+    op_left, op_right = ops[method]
+    j = xp.where(p < 0.5, op_left(p*n), op_right(n*p - 1))
     return xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
+
+
+def _quantile_trim(y, p, n, method, xp):
+    ops = dict(trim_less=(xp.floor, xp.ceil),
+               trim_more=(xp.ceil, xp.floor),
+               trim_round=(xp.round, xp.round))
+    op_left, op_right = ops[method]
+    j = xp.where(p < 0.5, op_left(p*n)-1, op_right(n*p))
+    j_clip = xp.clip(j, 0*n, n-1)
+    res = xp.take_along_axis(y, xp.astype(j_clip, xp.int64), axis=-1)
+    res[j < 0] -= 1
+    res[j >= n] += 1
+    return res
