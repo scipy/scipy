@@ -2321,7 +2321,7 @@ def test_compare_as_davenport_as_euler(xp):
             assert_allclose(eul, dav, rtol=1e-12)
 
 
-def test_zero_rotation_construction():
+def test_zero_rotation_construction(xp):
     r = Rotation.random(num=0)
     assert len(r) == 0
 
@@ -2331,69 +2331,70 @@ def test_zero_rotation_construction():
     r_get = Rotation.random(num=3)[[]]
     assert len(r_get) == 0
 
-    r_quat = Rotation.from_quat(np.zeros((0, 4)))
+    r_quat = Rotation.from_quat(xp.zeros((0, 4)))
     assert len(r_quat) == 0
 
-    r_matrix = Rotation.from_matrix(np.zeros((0, 3, 3)))
+    r_matrix = Rotation.from_matrix(xp.zeros((0, 3, 3)))
     assert len(r_matrix) == 0
 
-    r_euler = Rotation.from_euler("xyz", np.zeros((0, 3)))
+    r_euler = Rotation.from_euler("xyz", xp.zeros((0, 3)))
     assert len(r_euler) == 0
 
-    r_vec = Rotation.from_rotvec(np.zeros((0, 3)))
+    r_vec = Rotation.from_rotvec(xp.zeros((0, 3)))
     assert len(r_vec) == 0
 
-    r_dav = Rotation.from_davenport(np.eye(3), "extrinsic", np.zeros((0, 3)))
+    r_dav = Rotation.from_davenport(xp.eye(3), "extrinsic", xp.zeros((0, 3)))
     assert len(r_dav) == 0
 
-    r_mrp = Rotation.from_mrp(np.zeros((0, 3)))
+    r_mrp = Rotation.from_mrp(xp.zeros((0, 3)))
     assert len(r_mrp) == 0
 
 
-def test_zero_rotation_representation():
-    r = Rotation.random(num=0)
+def test_zero_rotation_representation(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
     assert r.as_quat().shape == (0, 4)
     assert r.as_matrix().shape == (0, 3, 3)
     assert r.as_euler("xyz").shape == (0, 3)
     assert r.as_rotvec().shape == (0, 3)
     assert r.as_mrp().shape == (0, 3)
-    assert r.as_davenport(np.eye(3), "extrinsic").shape == (0, 3)
+    assert r.as_davenport(xp.eye(3), "extrinsic").shape == (0, 3)
 
 
-def test_zero_rotation_array_rotation():
-    r = Rotation.random(num=0)
+def test_zero_rotation_array_rotation(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
 
-    v = np.array([1, 2, 3])
+    v = xp.asarray([1, 2, 3])
     v_rotated = r.apply(v)
     assert v_rotated.shape == (0, 3)
 
-    v0 = np.zeros((0, 3))
+    v0 = xp.zeros((0, 3))
     v0_rot = r.apply(v0)
     assert v0_rot.shape == (0, 3)
 
-    v2 = np.ones((2, 3))
+    v2 = xp.ones((2, 3))
     with pytest.raises(
         ValueError, match="Expected equal numbers of rotations and vectors"
     ):
         r.apply(v2)
 
 
-def test_zero_rotation_multiplication():
-    r = Rotation.random(num=0)
+def test_zero_rotation_multiplication(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
 
-    r_single = Rotation.random()
+    r_single = Rotation.from_quat(xp.asarray([0.0, 0, 0, 1]))
     r_mult_left = r * r_single
     assert len(r_mult_left) == 0
 
     r_mult_right = r_single * r
     assert len(r_mult_right) == 0
 
-    r0 = Rotation.random(0)
+    r0 = Rotation.from_quat(xp.zeros((0, 4)))
     r_mult = r * r0
     assert len(r_mult) == 0
 
     msg_rotation_error = "Expected equal number of rotations"
     r2 = Rotation.random(2)
+    r2 = Rotation.from_quat(xp.asarray(r2.as_quat()))
     with pytest.raises(ValueError, match=msg_rotation_error):
         r0 * r2
 
@@ -2401,55 +2402,61 @@ def test_zero_rotation_multiplication():
         r2 * r0
 
 
-def test_zero_rotation_concatentation():
-    r = Rotation.random(num=0)
+def test_zero_rotation_concatentation(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
 
     r0 = Rotation.concatenate([r, r])
     assert len(r0) == 0
 
-    r1 = r.concatenate([Rotation.random(), r])
+    r1 = Rotation.from_quat(xp.asarray([0.0, 0, 0, 1]))
+    r1 = r.concatenate([r1, r])
     assert len(r1) == 1
 
-    r3 = r.concatenate([Rotation.random(3), r])
+    r3 = Rotation.from_quat(xp.asarray(Rotation.random(3).as_quat()))
+    r3 = r.concatenate([r3, r])
     assert len(r3) == 3
 
-    r4 = r.concatenate([r, Rotation.random(4)])
+    r4 = Rotation.from_quat(xp.asarray(Rotation.random(4).as_quat()))
+    r4 = r.concatenate([r, r4])
     assert len(r4) == 4
 
 
-def test_zero_rotation_power():
-    r = Rotation.random(num=0)
+def test_zero_rotation_power(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
     for pp in [-1.5, -1, 0, 1, 1.5]:
         pow0 = r**pp
         assert len(pow0) == 0
 
 
-def test_zero_rotation_inverse():
-    r = Rotation.random(num=0)
+def test_zero_rotation_inverse(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
     r_inv = r.inv()
     assert len(r_inv) == 0
 
 
-def test_zero_rotation_magnitude():
-    r = Rotation.random(num=0)
+def test_zero_rotation_magnitude(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
     magnitude = r.magnitude()
     assert magnitude.shape == (0,)
 
 
-def test_zero_rotation_mean():
-    r = Rotation.random(num=0)
+def test_zero_rotation_mean(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
     with pytest.raises(ValueError, match="Mean of an empty rotation set is undefined."):
         r.mean()
 
 
-def test_zero_rotation_approx_equal():
-    r = Rotation.random(0)
-    assert r.approx_equal(Rotation.random(0)).shape == (0,)
-    assert r.approx_equal(Rotation.random()).shape == (0,)
-    assert Rotation.random().approx_equal(r).shape == (0,)
+def test_zero_rotation_approx_equal(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
+    r0 = Rotation.from_quat(xp.zeros((0, 4)))
+    assert r.approx_equal(r0).shape == (0,)
+    r1 = Rotation.from_quat(xp.asarray([0.0, 0, 0, 1]))
+    assert r.approx_equal(r1).shape == (0,)
+    r2 = Rotation.from_quat(xp.asarray(Rotation.random().as_quat()))
+    assert r2.approx_equal(r).shape == (0,)
 
     approx_msg = "Expected equal number of rotations"
-    r3 = Rotation.random(2)
+    r3 = Rotation.from_quat(xp.asarray(Rotation.random(2).as_quat()))
     with pytest.raises(ValueError, match=approx_msg):
         r.approx_equal(r3)
 
@@ -2457,36 +2464,41 @@ def test_zero_rotation_approx_equal():
         r3.approx_equal(r)
 
 
-def test_zero_rotation_get_set():
-    r = Rotation.random(0)
+def test_zero_rotation_get_set(xp):
+    r = Rotation.from_quat(xp.zeros((0, 4)))
 
-    r_get = r[[]]
+    r_get = r[xp.asarray([], dtype=xp.bool)]
     assert len(r_get) == 0
 
     r_slice = r[:0]
     assert len(r_slice) == 0
 
-    with pytest.raises(IndexError):
-        r[[0]]
+    if is_jax(xp):  # DECISION: Should we manually check and raise for jax here?
+        with pytest.raises(TypeError, match="Slice size at index 0 in gather op"):
+            r[xp.asarray([0])]
+    else:
+        with pytest.raises(IndexError):
+            r[xp.asarray([0])]
 
     with pytest.raises(IndexError):
-        r[[True]]
+        r[xp.asarray([True])]
 
     with pytest.raises(IndexError):
-        r[0] = Rotation.random()
+        r[0] = Rotation.from_quat(xp.asarray([0.0, 0, 0, 1]))
 
 
-def test_boolean_indexes():
+def test_boolean_indexes(xp):
     r = Rotation.random(3)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
 
-    r0 = r[[False, False, False]]
+    r0 = r[xp.asarray([False, False, False])]
     assert len(r0) == 0
 
-    r1 = r[[False, True, False]]
+    r1 = r[xp.asarray([False, True, False])]
     assert len(r1) == 1
 
-    r3 = r[[True, True, True]]
+    r3 = r[xp.asarray([True, True, True])]
     assert len(r3) == 3
 
     with pytest.raises(IndexError):
-        r[[True, True]]
+        r[xp.asarray([True, True])]

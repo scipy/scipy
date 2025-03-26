@@ -409,6 +409,15 @@ def approx_equal(
     quat: Array, other: Array, atol: float | None = None, degrees: bool = False
 ) -> Array:
     xp = array_namespace(quat)
+
+    if not broadcastable(quat.shape, other.shape):
+        raise ValueError(
+            "Expected equal number of rotations in both "
+            "or a single rotation in either object, "
+            f"got {quat.shape[0]} rotations in first and {other.shape[0]} rotations in "
+            "second object."
+        )
+
     # DECISION: We cannot warn conditioned on the value of `degrees`. However, we should not need
     # to warn in the first place. If the user has set the degree flag and atol is None, the function
     # is still working as expected.
@@ -424,6 +433,9 @@ def approx_equal(
 
 def mean(quat: Array, weights: Array | None = None) -> Array:
     xp = array_namespace(quat)
+    if quat.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
         weights = xp.ones(quat.shape[:-1], dtype=atleast_f32(quat))
@@ -545,7 +557,14 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     # this may significantly slow down the function. We should check that compilers can optimize
     # the where statement (e.g. in jax) and check if we can have an eager version that only
     # evaluates the branch that is needed.
-    points = xp.asarray(points, device=device(quat), dtype=atleast_f32(quat))[..., None]
+    points = points[..., None]
+    if not broadcastable(mat.shape, points.shape):
+        raise ValueError(
+            "Expected equal numbers of rotations and vectors "
+            ", or a single rotation, or a single vector, got "
+            f"{mat.shape[0]} rotations and {points.shape[0]} vectors."
+        )
+
     return xp.where(inverse, mat.mT @ points, mat @ points)[..., 0]
 
 
@@ -1019,6 +1038,13 @@ def compose_quat(p: Array, q: Array) -> Array:
     )
     quat = xp.stack([qx, qy, qz, qw], axis=-1)
     return quat
+
+
+def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
+    """Check if two shapes are broadcastable."""
+    return all(
+        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
+    )
 
 
 def _deg2rad(angles: Array) -> Array:

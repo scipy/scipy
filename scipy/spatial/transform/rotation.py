@@ -401,6 +401,11 @@ class Rotation:
     def __getitem__(self, indexer) -> Rotation:
         if self._single or self._quat.ndim == 1:
             raise TypeError("Single rotation is not subscriptable.")
+        is_array = isinstance(indexer, type(self._quat))
+        # Masking is only specified in the Array API when the array is the sole index
+        # TODO: Make access to xp more efficient
+        if is_array and indexer.dtype == array_namespace(self._quat).bool:
+            return Rotation(self._quat[indexer], normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
     def __setitem__(self, indexer, value: Rotation):
@@ -522,7 +527,7 @@ class Rotation:
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         """
-        if not _broadcastable(self._quat.shape, other._quat.shape):
+        if not array_api_backend.broadcastable(self._quat.shape, other._quat.shape):
             raise ValueError(
                 "Expected equal number of rotations in both or a single "
                 f"rotation in either object, got {self._quat.shape[:-1]} rotations in "
@@ -815,13 +820,6 @@ def __getattr__(name):
         private_modules=["_rotation"],
         all=__all__,
         attribute=name,
-    )
-
-
-def _broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
-    """Check if two shapes are broadcastable."""
-    return all(
-        (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
     )
 
 
