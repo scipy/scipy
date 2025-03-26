@@ -184,7 +184,6 @@ class TestLogSumExp:
         desired = np.asarray(1000.0 + math.log(2.0))
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype', dtypes)
     def test_dtypes_a(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -194,7 +193,6 @@ class TestLogSumExp:
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
     def test_dtypes_ab(self, dtype_a, dtype_b, xp):
@@ -225,7 +223,6 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.filterwarnings(
         "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
     )

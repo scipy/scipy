@@ -58,8 +58,6 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
         pytest.skip("boolean index assignment")
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
-    if is_array_api_strict(xp) and f_name == "xlogy":
-        pytest.skip(f"`{f_name}` needs data-apis/array-api-strict#131 to be resolved")
 
     shapes = shapes[:n_args]
     f = getattr(special, f_name)
