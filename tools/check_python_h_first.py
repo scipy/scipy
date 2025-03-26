@@ -9,6 +9,7 @@ import os.path
 import re
 import subprocess
 import sys
+from get_submodule_paths import get_submodule_paths
 
 HEADER_PATTERN = re.compile(
     r'^\s*#\s*include\s*[<"]((?:\w+/)*\w+(?:\.h[hp+]{0,2})?)[>"]\s*$'
@@ -142,9 +143,14 @@ def check_python_h_included_first(name_to_check: str) -> int:
 
 def process_files(file_list: list[str]) -> int:
     n_out_of_order = 0
+    submodule_paths = get_submodule_paths()
+    root_directory = os.path.dirname(os.path.dirname(__file__))
     for name_to_check in sorted(
         file_list, key=lambda name: "h" not in os.path.splitext(name)[1].lower()
     ):
+        name_to_check = os.path.join(root_directory, name_to_check)
+        if any(submodule_path in name_to_check for submodule_path in submodule_paths):
+            continue
         try:
             n_out_of_order += check_python_h_included_first(name_to_check)
         except UnicodeDecodeError:

@@ -1,4 +1,5 @@
 from numpy import arange, newaxis, hstack, prod, array
+from scipy import linalg
 
 
 def _central_diff_weights(Np, ndiv=1):
@@ -54,7 +55,6 @@ def _central_diff_weights(Np, ndiv=1):
         )
     if Np % 2 == 0:
         raise ValueError("The number of points must be odd.")
-    from scipy import linalg
 
     ho = Np >> 1
     x = arange(-ho, ho + 1.0)
