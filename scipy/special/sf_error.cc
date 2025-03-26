@@ -77,9 +77,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-#ifdef WITH_THREAD
     save = PyGILState_Ensure();
-#endif
 
     if (PyErr_Occurred()) {
         goto skip_warn;
@@ -120,11 +118,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
-#ifdef WITH_THREAD
     PyGILState_Release(save);
-#else
-    ;
-#endif
 }
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
