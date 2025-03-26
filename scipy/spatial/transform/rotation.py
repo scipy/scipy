@@ -529,7 +529,7 @@ class Rotation:
                 f"first and {other._quat.shape[:-1]} rotations in second object."
             )
         quat = self._backend.compose_quat(self._quat, other._quat)
-        if self._single:
+        if self._single and other._single:
             quat = quat[0]
         return Rotation(quat, normalize=True, copy=False)
 
@@ -619,7 +619,7 @@ class Rotation:
         xp = array_namespace(quat)
         quat = xp.asarray(quat)
         # TODO: Remove this once we properly support broadcasting
-        if quat.ndim not in (1, 2) or quat.shape[-1] != 4 or quat.shape[0] == 0:
+        if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
             raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
         # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
@@ -720,7 +720,7 @@ class Slerp:
     def __init__(self, times: ArrayLike, rotations: Rotation):
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
-        if rotations.single or len(rotations) == 1:
+        if rotations.single or len(rotations) <= 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
         q = rotations.as_quat()
         xp = array_namespace(q)

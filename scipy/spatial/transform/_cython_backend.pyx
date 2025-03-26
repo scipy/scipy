@@ -15,12 +15,20 @@ np.import_array()
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
+    if n == 0:
+        return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
@@ -255,6 +263,13 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 def compose_quat(
     const double[:, :] p, const double[:, :] q
 ) -> double[:, :]:
+    cdef len_p = p.shape[0]
+    cdef len_q = q.shape[0]
+    if not(len_p == 1 or len_q == 1 or len_p == len_q):
+        raise ValueError("Expected equal number of rotations in both "
+                         "or a single rotation in either object, "
+                         f"got {len_p} rotations in first and {len_q} rotations in "
+                         "second object.")
     return _compose_quat(p, q)
 
 
@@ -263,7 +278,7 @@ def compose_quat(
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef Py_ssize_t n = q.shape[0] if p.shape[0] == 1 else p.shape[0]
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
@@ -360,8 +375,8 @@ def _format_angles(angles, degrees, num_axes):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def from_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, scalar_first: cython.bint = False):
-    if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
+def from_quat(quat: double[:, :], normalize: cython.bint = True, copy: cython.bint = True, scalar_first: cython.bint = False):
+    if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
 
     # TODO: We always assume quat is a 2D array with shape (N, 4). Instead, we should broadcast over
@@ -378,12 +393,6 @@ def from_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cy
         for ind in range(num_rotations):
             if isnan(_normalize4(quat[ind, :])):
                 raise ValueError("Found zero norm quaternions in `quat`.")
-        # TODO: A broadcasted version of this would be faster for rotations > 100 and work for any
-        # number of leading dimensions.
-        # quat_norm = np.linalg.norm(quat, axis=-1, keepdims=True)
-        # if np.any(quat_norm == 0):
-        #     raise ValueError("Found zero norm quaternions in `quat`.")
-        # quat /= quat_norm
 
     return np.asarray(quat, dtype=float)
 
@@ -419,6 +428,7 @@ def from_euler(seq, angles, degrees=False):
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def from_matrix(matrix) -> double[:, :]:
+    cdef int ind
     is_single = False
     matrix = np.array(matrix, dtype=float)
 
@@ -588,8 +598,8 @@ def from_mrp(mrp) -> double[:, :]:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
-    if quat.ndim != 2 or quat.shape[1] != 4 or quat.shape[0] == 0:
+def as_quat(quat: double[:, :], normalize: cython.bint = True, copy: cython.bint = True, canonical: cython.bint = False, scalar_first: cython.bint = False):
+    if quat.ndim != 2 or quat.shape[1] != 4:
         raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
     # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
     # set self._single to True so that we can return appropriate objects
@@ -616,7 +626,7 @@ def as_quat(quat: cython.double[:, :], normalize: cython.bint = True, copy: cyth
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_matrix(quat: cython.double[:, :]):
+def as_matrix(quat: double[:, :]):
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
     cdef double[:, :, :] matrix = _empty3(num_rotations, 3, 3)
@@ -660,7 +670,7 @@ def as_matrix(quat: cython.double[:, :]):
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def as_rotvec(quat: cython.double[:, :], degrees: cython.bint = False) -> double[:, :]:
+def as_rotvec(quat: double[:, :], degrees: cython.bint = False) -> double[:, :]:
     cdef Py_ssize_t num_rotations = len(quat)
     cdef double angle, scale, angle2
     cdef double[:, :] rotvec = _empty2(num_rotations, 3)
@@ -689,7 +699,7 @@ def as_rotvec(quat: cython.double[:, :], degrees: cython.bint = False) -> double
 
 
 @cython.embedsignature(True)
-def as_mrp(quat: cython.double[:, :]) -> cython.double[:, :]:
+def as_mrp(quat: double[:, :]) -> double[:, :]:
     cdef Py_ssize_t num_rotations = len(quat)
     cdef double[:, :] mrps = _empty2(num_rotations, 3)
     cdef int sign
@@ -709,7 +719,7 @@ def as_mrp(quat: cython.double[:, :]) -> cython.double[:, :]:
 
 
 @cython.embedsignature(True)
-def as_euler(quat: cython.double[:, :], seq: str, degrees: cython.bint = False):
+def as_euler(quat: double[:, :], seq: str, degrees: cython.bint = False):
     # Prepare axis sequence to call Euler angles conversion algorithm.
     if len(seq) != 3:
         raise ValueError("Expected 3 axes, got {}.".format(seq))
@@ -851,7 +861,7 @@ def identity(num: cython.int | None = None) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def magnitude(quat: cython.double[:, :]) -> double[:, :]:
+def magnitude(quat: double[:, :]) -> double[:, :]:
     cdef Py_ssize_t num_rotations = quat.shape[0]
     cdef double[:] angles = _empty1(num_rotations)
 
@@ -873,13 +883,15 @@ def approx_equal(quat: double[:, :], other: double[:, :], atol=None, degrees: cy
     elif degrees:
         atol = np.deg2rad(atol)
 
-    q_result = _compose_quat(other, inv(quat))
-    angles = magnitude(q_result)
+    angles = magnitude(compose_quat(other, inv(quat)))
     return angles < atol
 
 
 @cython.embedsignature(True)
 def mean(quat: double[:, :], weights=None):
+    if quat.shape[0] == 0:
+        raise ValueError("Mean of an empty rotation set is undefined.")
+
     if weights is None:
         weights = np.ones(quat.shape[0])
     else:
@@ -952,7 +964,7 @@ def reduce(quat: double[: :], left=None, right=None) -> tuple[double[:, :], int[
 
 
 @cython.embedsignature(True)
-def apply(quat: cython.double[:, :], vectors, inverse=False):
+def apply(quat: double[:, :], vectors, inverse=False):
     vectors = np.asarray(vectors)
     if vectors.ndim > 2 or vectors.shape[-1] != 3:
         raise ValueError("Expected input of shape (3,) or (P, 3), "
@@ -1341,8 +1353,7 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if (quat.ndim not in [1, 2]
-            or quat.shape[len(quat.shape) - 1] != 4
-            or quat.shape[0] == 0):
+            or quat.shape[len(quat.shape) - 1] != 4):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
