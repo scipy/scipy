@@ -4,9 +4,10 @@ import operator
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API,
-    xp_promote,
+    array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
+    xp_promote, SCIPY_ARRAY_API
 )
+import scipy._lib.array_api_extra as xpx
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -56,12 +57,22 @@ def get_array_special_func(f_name, xp, n_array_args):
 
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
+        # https://github.com/data-apis/array-api-extra/issues/160
+        mxp = array_namespace(x._meta, y._meta) if is_dask(xp) else xp
         x, y = xp_promote(x, y, broadcast=True, force_floating=True, xp=xp)
-        res = xp.full_like(x, fill_value=xp.inf)
-        res[(x == 0) & (y >= 0)] = 0
-        i = (x > 0) & (y > 0)
-        res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
+        xy_pos = (x > 0) & (y > 0)
+        xy_inf = xp.isinf(x) & xp.isinf(y)
+        res = xpx.apply_where(
+            xy_pos & ~xy_inf,
+            (x, y),
+            # Note: for very large x, this can overflow.
+            lambda x, y: x * (mxp.log(x) - mxp.log(y)),
+            fill_value=xp.inf
+        )
+        res = xpx.at(res)[(x == 0) & (y >= 0)].set(0)
+        res = xpx.at(res)[xp.isnan(x) | xp.isnan(y) | (xy_pos & xy_inf)].set(xp.nan)
         return res
+
     return __rel_entr
 
 
