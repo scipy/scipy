@@ -51,6 +51,16 @@ New features
 
 ``scipy.optimize`` improvements
 ===============================
+- COBYLA was updated to use the new Python implementation from the
+  `PRIMA <https://www.libprima.net>`_ package
+  (Z. Zhang, Python implementation by N. Belakovski).
+  As compared to the old Powell implementation, the new one results in fewer function
+  evaluations on average, but it depends on the problem and for some
+  problems it can result in more function evaluations or a less optimal
+  result. For those cases the user can try modifying the initial and final
+  trust region radii given by `rhobeg` and `tol` respectively. A larger `rhobeg`
+  can help the algorithm take bigger steps initially, while a smaller `tol`
+  can help it for keep going and find a better solution.
 
 
 ``scipy.signal`` improvements
