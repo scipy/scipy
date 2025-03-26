@@ -302,7 +302,7 @@ if blas_name == 'auto'
     endif
   endforeach
 else
-  if uses_mkl
+  if blas_name.to_lower().startswith('mkl')
     mkl_uses_sdl = false
     blas = dependency('mkl',
       modules: blas_interface + mkl_opts,
