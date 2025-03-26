@@ -83,9 +83,11 @@ def shortest_path(csgraph, method='auto',
            'BF'   -- Bellman-Ford algorithm.
                      This algorithm can be used when weights are negative.
                      If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr representation.
+                     Computational cost of the algorithm is ``O(I * N^2 * k)``,
+                     where ``k`` is the average number of connected edges per node
+                     and ``I = len(indices)``. If ``I = N``, then the time complexity
+                     will be ``O[N(N^2 k)]``. The input csgraph will be converted
+                     to a csr representation.
 
            'J'    -- Johnson's algorithm.
                      Like the Bellman-Ford algorithm, Johnson's algorithm is
@@ -344,6 +346,8 @@ def floyd_warshall(csgraph, directed=True,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
+    The algorithmic complexity is for a graph with ``V`` vertices is ``O(V^3)``.
+
     Examples
     --------
     >>> from scipy.sparse import csr_array
@@ -574,6 +578,10 @@ def dijkstra(csgraph, directed=True, indices=None,
 
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    The algorithmic complexity is approximately ``O(I * (E + N) * log(N))``,
+    where ``N`` is the number of vertices, ``E`` is the number of edges
+    in the graph, and ``I = len(indices)`` if indices is passed. Otherwise, ``I = N``.
 
     Examples
     --------
@@ -933,6 +941,11 @@ def bellman_ford(csgraph, directed=True, indices=None,
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
 
+    Computational cost of the algorithm is ``O(I * N^2 * k)``, where
+    ``N`` is the number of vertices in the graph, ``k`` is the average number
+    of connected edges per node and ``I = len(indices)``. If ``I = N``, then
+    the time complexity will be ``O[N(N^2 k)]``.
+
     Examples
     --------
     >>> from scipy.sparse import csr_array
@@ -1175,6 +1188,9 @@ def johnson(csgraph, directed=True, indices=None,
 
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    The algorithmic complexity for a graph with ``V`` vertices and ``E`` edges is,
+    ``O(V^2 * log V + V * E)``.
 
     Examples
     --------
@@ -1466,6 +1482,9 @@ def yen(
 
     If multiple valid solutions are possible, output may vary with SciPy and
     Python version.
+
+    The algorithmic complexity for a graph with ``V`` number of vertices and
+    ``E`` number of edges is ``O(K*V*(E + V*logV))``.
 
     References
     ----------
