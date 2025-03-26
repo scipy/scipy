@@ -35,6 +35,10 @@ path = "scipy._lib.cobyqa"
 unchecked = true
 
 [[modules]]
+path = "scipy._lib.pyprima"
+unchecked = true
+
+[[modules]]
 path = "scipy.cluster"
 depends_on = ["scipy.cluster.vq", "scipy.cluster.hierarchy", "scipy._lib"]
 
