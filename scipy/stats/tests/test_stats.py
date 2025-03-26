@@ -9633,8 +9633,7 @@ class TestXP_Var:
     @skip_xp_backends(eager_only=True)
     def test_nan_policy_warns(self, xp):
         x = xp.arange(10.)
-        mask = (x == 3)
-        x = xp.where(mask, xp.nan, x)
+        x = xp.where(x == 3, xp.nan, x)
 
         # Check for warning if omitting NaNs causes empty slice
         message = 'After omitting NaNs...'
