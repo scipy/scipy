@@ -8,9 +8,12 @@
 #pragma once
 
 #include "config.h"
+#include "error.h"
+#include "digamma.h"
 
 #include "cephes/beta.h"
 #include "cephes/gamma.h"
+#include "cephes/unity.h"
 
 namespace xsf {
 
@@ -84,6 +87,35 @@ XSF_HOST_DEVICE inline double binom(double n, double k) {
 
 XSF_HOST_DEVICE inline float binom(float n, float k) {
     return binom(static_cast<double>(n), static_cast<double>(k));
+}
+
+XSF_HOST_DEVICE inline double binomln(double n, double k) {
+    /* Natural logarithm of absolute value of binomial coefficient */
+    if (std::abs(k) > 1e-7) {
+	double result = n >= -1 ? -std::log1p(n) : -std::log(-n - 1);
+        result -= cephes::lbeta(1 + n - k, 1 + k);
+	if (!std::isfinite(result)) {
+	    result = (cephes::lgam(n + 1) - cephes::lgam(n - k + 1)) - cephes::lgam(k + 1);
+	    if (std::isfinite(result)) {
+		/* If the first formula didn't work at all, this second formula
+		 * probably isn't that accurate. */
+		set_error("_binomln", SF_ERROR_LOSS, NULL);
+	    }
+	}
+	return result;
+    }
+    if (std::abs(n) > 1e-7) {
+	/* binomln(n, k) = gammaln(n + 1) - gammaln(n + 1 - k) - gammaln(1 + k)
+	 * gammaln(1 + k) can be computed accurately for small k using lgam1p.
+	 * We can then use the Taylor series expansion
+	 * gammaln(n + 1 - k) = gammaln(n + 1) - k*digamma(n + 1) +
+	 * k^2 * polygamma(1, n + 1) / 2 + ... + (-k)^j * polygamma(j-1, n + 1) / j! + ...
+	 */
+	return -cephes::lgam1p(k) + k*digamma(n + 1);
+    }
+    /* n and k are both small. */
+    set_error("_binomln", SF_ERROR_LOSS, NULL);
+    return cephes::lgam1p(n) - cephes::lgam1p(k) - cephes::lgam1p(n - k);
 }
 
 } // namespace xsf

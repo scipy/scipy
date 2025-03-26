@@ -45,6 +45,7 @@
 // If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
+extern const char *_binomln_doc;
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
 extern const char *_log1mexp_doc;
@@ -301,6 +302,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *binom = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::ff_f>(xsf::binom), static_cast<xsf::numpy::dd_d>(xsf::binom)}, "binom", binom_doc);
     PyModule_AddObjectRef(_special_ufuncs, "binom", binom);
+
+    PyObject *_binomln = xsf::numpy::ufunc(
+        {static_cast<xsf::numpy::ff_f>(xsf::binom), static_cast<xsf::numpy::dd_d>(xsf::binomln)}, "_binomln", _binomln_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_binomln", _binomln);
 
     PyObject *cbrt = xsf::numpy::ufunc(
         {static_cast<xsf::numpy::d_d>(xsf::cbrt), static_cast<xsf::numpy::f_f>(xsf::cbrt)}, "cbrt", cbrt_doc);
