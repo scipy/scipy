@@ -177,7 +177,7 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
 
     angles = xp.asarray(angles, dtype=atleast_f32(angles))
     angles, is_single = _format_angles(angles, degrees, num_axes)
-    axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()])
+    axes = [_elementary_basis_index(x) for x in seq.lower()]
     q = _elementary_quat_compose(angles, axes, intrinsic)
     return q[0, ...] if is_single else q
 
@@ -331,13 +331,14 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
     _device = device(quat)
-    axes = xp.asarray([_elementary_basis_index(x) for x in seq.lower()], device=_device)
+    axes = [_elementary_basis_index(x) for x in seq.lower()]
+    axes = axes if extrinsic else axes[::-1]
+    i, j, k = axes
+    symmetric = i == k
+    k = 3 - i - j if symmetric else k
 
     extrinsic = xp.asarray(extrinsic, device=_device)
-    axes = xp.where(extrinsic, axes, xp.flip(axes))
-    i, j, k = axes
-    symmetric = xp.asarray(i == k, device=_device)
-    k = xp.where(symmetric, 3 - i - j, k)
+    symmetric = xp.asarray(symmetric, device=_device)
     sign = xp.asarray(
         (i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=_device
     )
@@ -382,7 +383,6 @@ def as_davenport(
     if xp.vecdot(axes[1, ...], axes[2, ...]) >= 1e-7:
         raise ValueError("Consecutive axes must be orthogonal.")
 
-    extrinsic = xp.asarray(extrinsic, device=device(quat))
     angles = _compute_davenport_from_quat(
         quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
     )
@@ -506,14 +506,10 @@ def reduce(
     #          - rs * dot(lv, pv) - dot(cross(lv, pv), rv)
     # where ls and lv denote the scalar and vector components of l.
 
-    def split_rotation(q):
-        q = xpx.atleast_nd(q, ndim=2, xp=xp)
-        return q[..., -1], q[..., :-1]
-
     p = quat
-    ps, pv = split_rotation(p)
-    ls, lv = split_rotation(left)
-    rs, rv = split_rotation(right)
+    ps, pv = _split_rotation(p, xp)
+    ls, lv = _split_rotation(left, xp)
+    rs, rv = _split_rotation(right, xp)
 
     # Compute each term without einsum (not accessible in the Array API)
     # First term: ls * ps * rs
@@ -534,8 +530,11 @@ def reduce(
     max_ind = xp.argmax(xp.reshape(qs, (qs.shape[0], -1)), axis=1)
     left_best = max_ind // rv.shape[0]
     right_best = max_ind % rv.shape[0]
-    left = left[left_best[0], ...]
-    right = right[right_best[0], ...]
+    # Array API limitation: Integer index arrays are only allowed with integer indices
+    # TODO: Can we somehow avoid this?
+    all_idx = xp.arange(left.shape[-1])
+    left = left[left_best[0], all_idx]
+    right = right[right_best[0], all_idx]
 
     # Reduce the rotation using the best indices
     reduced = compose_quat(left, compose_quat(p, right))
@@ -742,10 +741,19 @@ def _align_vectors_fixed(
     # For antiparallel vectors, cross = [0, 0, 0] so we need to manually set an arbitrary
     # orthogonal axis of rotation
     i = xp.argmin(xp.abs(a_pri[..., 0, :]))
-    r = xp.zeros(3)
-    r = xpx.at(r)[i - 1].set(a_pri[0, i - 2])
-    r = xpx.at(r)[i - 2].set(-a_pri[0, i - 1])
-    r = xp.where(cross_norm == 0, r, cross)
+    # TODO: Array API does not support fancy indexing __setitem__. The code is equivalent to doing
+    # the following:
+    # r_components = xp.zeros(3)
+    # r_components = xpx.at(r_components)[i - 1].set(a_pri[0, i - 2])
+    # r_components = xpx.at(r_components)[i - 2].set(-a_pri[0, i - 1])
+    r_components = xp.stack(
+        [
+            xp.where(i == 1, a_pri[0, 2], xp.where(i == 2, -a_pri[0, 1], 0)),
+            xp.where(i == 2, a_pri[0, 0], xp.where(i == 0, -a_pri[0, 2], 0)),
+            xp.where(i == 0, a_pri[0, 1], xp.where(i == 1, -a_pri[0, 0], 0)),
+        ]
+    )
+    r = xp.where(cross_norm == 0, r_components, cross)
 
     q_flip = xp.where(flip, from_rotvec(r / xp.linalg.vector_norm(r) * np.pi), q_flip)
     theta = xp.where(flip, np.pi - theta, theta)
@@ -916,7 +924,7 @@ def _format_angles(angles: Array, degrees: bool, num_axes: int) -> tuple[Array, 
 
 
 def _compute_davenport_from_quat(
-    quat: Array, n1: Array, n2: Array, n3: Array, extrinsic: Array
+    quat: Array, n1: Array, n2: Array, n3: Array, extrinsic: bool
 ) -> Array:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
@@ -924,8 +932,9 @@ def _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
-    _n1 = xp.where(extrinsic, n1, n3)
-    _n3 = xp.where(extrinsic, n3, n1)
+    mask = xp.asarray(extrinsic, device=device(quat))
+    _n1 = xp.where(mask, n1, n3)
+    _n3 = xp.where(mask, n3, n1)
     n1, n3 = _n1, _n3
 
     n_cross = xp.linalg.cross(n1, n2)
@@ -946,8 +955,7 @@ def _compute_davenport_from_quat(
     c = xp.linalg.vecdot(q_trans[..., :3], n2)
     d = xp.linalg.vecdot(q_trans[..., :3], n_cross)
 
-    symmetric = xp.asarray(False, device=device(quat))
-    angles = _get_angles(extrinsic, symmetric, 1, lamb, a, b, c, d)
+    angles = _get_angles(extrinsic, False, 1, lamb, a, b, c, d)
     angles = xpx.at(angles)[..., 1].set(
         xp.where(correct_set, -angles[..., 1], angles[..., 1])
     )
@@ -955,11 +963,11 @@ def _compute_davenport_from_quat(
     return angles
 
 
-def _elementary_quat_compose(angles: Array, axes: Array, intrinsic: bool) -> Array:
+def _elementary_quat_compose(angles: Array, axes: list[int], intrinsic: bool) -> Array:
     xp = array_namespace(angles)
     intrinsic = xp.asarray(intrinsic, device=device(angles))
     quat = _make_elementary_quat(axes[0], angles[..., 0])
-    for i in range(1, axes.shape[0]):
+    for i in range(1, len(axes)):
         ax_quat = _make_elementary_quat(axes[i], angles[..., i])
         quat = xp.where(
             intrinsic, compose_quat(quat, ax_quat), compose_quat(ax_quat, quat)
@@ -976,8 +984,8 @@ def _make_elementary_quat(axis: int, angle: Array) -> Array:
 
 
 def _get_angles(
-    extrinsic: Array,
-    symmetric: Array,
+    extrinsic: bool,
+    symmetric: bool,
     sign: int,
     lamb: float,
     a: Array,
@@ -994,8 +1002,12 @@ def _get_angles(
 
     angles = xpx.at(angles)[..., 1].set(2 * xp.atan2(xp.hypot(c, d), xp.hypot(a, b)))
 
-    angle_first = xp.where(extrinsic, xp.asarray(0), xp.asarray(2))
-    angle_third = xp.where(extrinsic, xp.asarray(2), xp.asarray(0))
+    angle_first = 0 if extrinsic else 2
+    angle_third = 2 if extrinsic else 0
+
+    # Convert extrinsic and symmetric to arrays for use in xp.where
+    extrinsic = xp.asarray(extrinsic, dtype=xp.bool, device=_device)
+    symmetric = xp.asarray(symmetric, dtype=xp.bool, device=_device)
 
     # Check if the second angle is close to 0 or pi, causing a singularity.
     # - Case 0: Second angle is neither close to 0 nor pi.
@@ -1045,6 +1057,11 @@ def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
     return all(
         (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
     )
+
+
+def _split_rotation(q, xp):
+    q = xpx.atleast_nd(q, ndim=2, xp=xp)
+    return q[..., -1], q[..., :-1]
 
 
 def _deg2rad(angles: Array) -> Array:

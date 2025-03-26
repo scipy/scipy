@@ -404,8 +404,16 @@ class Rotation:
         is_array = isinstance(indexer, type(self._quat))
         # Masking is only specified in the Array API when the array is the sole index
         # TODO: Make access to xp more efficient
-        if is_array and indexer.dtype == array_namespace(self._quat).bool:
+        # TODO: This special case handling is mainly a result of Array API limitations. Ideally we
+        # would get rid of them altogether and converge to [indexer, ...] indexing.
+        xp = array_namespace(self._quat)
+        if is_array and indexer.dtype == xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
+        if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
+            # Array API limitation: Integer index arrays are only allowed with integer indices
+            all_ind = xp.arange(4)
+            indexer = xp.reshape(indexer, (indexer.shape[0], 1))
+            return Rotation(self._quat[indexer, all_ind], normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
     def __setitem__(self, indexer, value: Rotation):
@@ -791,16 +799,23 @@ class Slerp:
         ind = xp.searchsorted(self.times, compute_times) - 1
         # Include t_min. Without this step, index for t_min equals -1
         ind = xp.where(compute_times == self.times[0], xp.asarray(0), ind)
-        if xp.any(xp.logical_or(ind < 0, ind > len(self.rotations) - 1)):
-            raise ValueError(
-                "Interpolation times must be within the range "
-                f"[{self.times[0]}, {self.times[-1]}], both inclusive."
-            )
-
+        invalid_ind = xp.logical_or(ind < 0, ind > len(self.rotations) - 1)
+        # We cannot error out on invalid indices for jit compiled code. To not produce an index
+        # error, we set the index to 0 in case it is out of bounds, and later set the result to nan.
+        # DECISION: Do we want to do this for all implementations or only for jax?
+        if is_jax(xp):
+            ind = xp.where(invalid_ind, xp.asarray(0), ind)
+        else:
+            if xp.any(invalid_ind):
+                raise ValueError(
+                    "Interpolation times must be within the range "
+                    f"[{self.times[0]}, {self.times[-1]}], both inclusive."
+                )
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
+        alpha = xp.where(invalid_ind, xp.asarray(xp.nan), alpha)
 
         result = self.rotations[ind] * Rotation.from_rotvec(
-            self.rotvecs[ind] * alpha[:, None]
+            self.rotvecs[ind[:, None], xp.arange(3)] * alpha[:, None]
         )
 
         if single_time:

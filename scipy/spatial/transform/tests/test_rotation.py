@@ -1785,30 +1785,32 @@ def test_slerp(xp):
     interp_quats = interp_rots.as_quat()
 
     # Dot products are affected by sign of quaternions
-    interp_quats = xp.where(interp_quats[:, [-1]] < 0, -interp_quats, interp_quats)
+    mask = (interp_quats[:, -1] < 0)[:, None]
+    interp_quats = xp.where(mask, -interp_quats, interp_quats)
     # Checking for quaternion equality, perform same operation
-    key_quats = xp.where(key_quats[:, [-1]] < 0, -key_quats, key_quats)
+    mask = (key_quats[:, -1] < 0)[:, None]
+    key_quats = xp.where(mask, -key_quats, key_quats)
 
     # Equality at keyframes, including both endpoints
-    assert_allclose(interp_quats[0], key_quats[0])
-    assert_allclose(interp_quats[3], key_quats[1])
-    assert_allclose(interp_quats[5], key_quats[2])
-    assert_allclose(interp_quats[7], key_quats[3])
-    assert_allclose(interp_quats[10], key_quats[4])
+    assert_allclose(interp_quats[0, ...], key_quats[0, ...])
+    assert_allclose(interp_quats[3, ...], key_quats[1, ...])
+    assert_allclose(interp_quats[5, ...], key_quats[2, ...])
+    assert_allclose(interp_quats[7, ...], key_quats[3, ...])
+    assert_allclose(interp_quats[10, ...], key_quats[4, ...])
 
     # Constant angular velocity between keyframes. Check by equating
     # cos(theta) between quaternion pairs with equal time difference.
-    cos_theta1 = xp.sum(interp_quats[0] * interp_quats[2])
-    cos_theta2 = xp.sum(interp_quats[2] * interp_quats[1])
+    cos_theta1 = xp.sum(interp_quats[0, ...] * interp_quats[2, ...])
+    cos_theta2 = xp.sum(interp_quats[2, ...] * interp_quats[1, ...])
     assert_allclose(cos_theta1, cos_theta2)
 
-    cos_theta4 = xp.sum(interp_quats[3] * interp_quats[4])
-    cos_theta5 = xp.sum(interp_quats[4] * interp_quats[5])
+    cos_theta4 = xp.sum(interp_quats[3, ...] * interp_quats[4, ...])
+    cos_theta5 = xp.sum(interp_quats[4, ...] * interp_quats[5, ...])
     assert_allclose(cos_theta4, cos_theta5)
 
     # theta1: 0 -> 0.25, theta3 : 0.5 -> 1
     # Use double angle formula for double the time difference
-    cos_theta3 = xp.sum(interp_quats[1] * interp_quats[3])
+    cos_theta3 = xp.sum(interp_quats[1, ...] * interp_quats[3, ...])
     assert_allclose(cos_theta3, 2 * (cos_theta1**2) - 1)
 
     # Miscellaneous checks
@@ -1906,10 +1908,25 @@ def test_slerp_call_time_out_of_range(xp):
     t = xp.arange(5) + 1
     s = Slerp(t, r)
 
-    with pytest.raises(ValueError, match="times must be within the range"):
-        s(xp.asarray([0, 1, 2]))
-    with pytest.raises(ValueError, match="times must be within the range"):
-        s(xp.asarray([1, 2, 6]))
+    times = xp.asarray([0, 1, 2])
+    # DECISION: Jax error handling deviates from all other implementations. Needs to be unified
+    if is_jax(xp):  # Check that jax returns nan for out of range times
+        q = s(times).as_quat()
+        in_range = xp.logical_and(times >= xp.min(t), times <= xp.max(t))
+        assert xp.all(xp.isnan(q[~in_range, ...]))
+        assert xp.all(~xp.isnan(q[in_range, ...]))
+    else:
+        with pytest.raises(ValueError, match="times must be within the range"):
+            s(times)
+    times = xp.asarray([1, 2, 6])
+    if is_jax(xp):  # Check that jax returns nan for out of range times
+        q = s(times).as_quat()
+        in_range = xp.logical_and(times >= xp.min(t), times <= xp.max(t))
+        assert xp.all(xp.isnan(q[~in_range, ...]))
+        assert xp.all(~xp.isnan(q[in_range, ...]))
+    else:
+        with pytest.raises(ValueError, match="times must be within the range"):
+            s(times)
 
 
 def test_slerp_call_scalar_time(xp):
@@ -1917,7 +1934,7 @@ def test_slerp_call_scalar_time(xp):
     s = Slerp([0, 1], r)
 
     r_interpolated = s(0.25)
-    r_interpolated_expected = Rotation.from_euler("X", 20, degrees=True)
+    r_interpolated_expected = Rotation.from_euler("X", xp.asarray([20]), degrees=True)
 
     delta = r_interpolated * r_interpolated_expected.inv()
 
