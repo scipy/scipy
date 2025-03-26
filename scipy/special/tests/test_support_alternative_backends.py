@@ -6,7 +6,7 @@ from scipy import special
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import (is_cupy, is_jax, is_torch,
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    is_array_api_strict, SCIPY_ARRAY_API, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
 from scipy._lib.array_api_extra.testing import lazy_xp_function
