@@ -180,11 +180,7 @@ py3.extension_module('_ellip_harm_2',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-<<<<<<< HEAD
-  dependencies: [xsf_dep, lapack_dep, np_dep],
-=======
-  dependencies: [np_dep],
->>>>>>> MAINT: special: no need to link to LAPACK explicitly with cython_lapack
+  dependencies: [xsf_dep, np_dep, lapack_dep],
   install: true,
   subdir: 'scipy/special',
 )
