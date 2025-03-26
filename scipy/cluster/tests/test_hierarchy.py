@@ -77,19 +77,18 @@ use_linkage = skip_xp_backends(cpu_only=True, exceptions=["jax.numpy"],
 lazy_xp_function(single)
 lazy_xp_function(ward)
 lazy_xp_function(linkage, static_argnames=('method', 'metric', 'optimal_ordering'))
-lazy_xp_function(cut_tree, jax_jit=False, allow_dask_compute=999, 
-                 static_argnames=('n_clusters', 'height'))
+lazy_xp_function(cut_tree, static_argnames=('n_clusters', 'height'))
 lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=999,
                  static_argnames=('rd', ))
 lazy_xp_function(optimal_leaf_ordering, static_argnames=('metric',))
-lazy_xp_function(cophenet, jax_jit=False, allow_dask_compute=999)
-lazy_xp_function(inconsistent, jax_jit=False, allow_dask_compute=999,
+lazy_xp_function(cophenet, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(inconsistent, jax_jit=False, allow_dask_compute=2,
                  static_argnames=('d',))
-lazy_xp_function(from_mlab_linkage, jax_jit=False, allow_dask_compute=999)
-lazy_xp_function(to_mlab_linkage, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(from_mlab_linkage, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(to_mlab_linkage, jax_jit=False, allow_dask_compute=1)
 lazy_xp_function(is_monotonic)
 
-# These functions materialize lazy arrays iff warning=True or throw=True
+# Note: these functions materialize lazy arrays when warning=True or throw=True
 lazy_xp_function(is_valid_im, static_argnames=("warning", "throw", "name")) 
 lazy_xp_function(is_valid_linkage, static_argnames=("warning", "throw", "name"))
 
@@ -99,9 +98,9 @@ lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=999,
                  static_argnames=('criterion', 'depth'))
 lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=999,
                  static_argnames=('criterion', 'metric', 'depth', 'method'))
-lazy_xp_function(leaves_list, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(leaves_list, jax_jit=False, allow_dask_compute=2)
 lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=999)
-lazy_xp_function(is_isomorphic, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(is_isomorphic, jax_jit=False, allow_dask_compute=2)
 lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=999)
 lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=999,
@@ -500,7 +499,8 @@ class TestIsValidLinkage:
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 0].set(-2)
             xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
+            # Use fully-qualified function name to bypass lazy_xp_function(),
+            # because `is_valid_*` materializes.
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
@@ -514,7 +514,6 @@ class TestIsValidLinkage:
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 1].set(-2)
             xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
@@ -529,7 +528,6 @@ class TestIsValidLinkage:
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 2].set(-0.5)
             xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
@@ -543,7 +541,6 @@ class TestIsValidLinkage:
             Z = linkage(y)
             Z = xpx.at(Z)[i//2, 3].set(-2)
             xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
@@ -596,7 +593,8 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 0].set(-2.0)
             xp_assert_equal(is_valid_im(R), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
+            # Use fully-qualified function name to bypass lazy_xp_function(),
+            # because `is_valid_*`materializes.
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
@@ -611,7 +609,6 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2 , 1].set(-2.0)
             xp_assert_equal(is_valid_im(R), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
@@ -626,7 +623,6 @@ class TestIsValidInconsistent:
             R = inconsistent(Z)
             R = xpx.at(R)[i//2, 2].set(-0.5)
             xp_assert_equal(is_valid_im(R), False, check_namespace=False)
-            # This materializes lazy arrays. Bypass lazy_xp_function().
             with pytest.raises(ValueError):
                 scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 

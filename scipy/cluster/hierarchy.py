@@ -130,7 +130,6 @@ Utility classes:
 import warnings
 import bisect
 from collections import deque
-from functools import wraps
 
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
@@ -1543,9 +1542,9 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
         raise ValueError("The condensed distance matrix must contain only "
                          "finite values.")
 
-    # @wraps causes the Dask key to have prefix "optimal_leaf_ordering-*"
-    @wraps(_optimal_leaf_ordering.optimal_leaf_ordering)
-    def func(Z, y, validate):
+    # The function name is prominently visible on the user-facing Dask dashboard;
+    # make sure it is meaningful.
+    def optimal_leaf_ordering_(Z, y, validate):
         if validate:
             is_valid_linkage(Z, throw=True, name='Z')
             if not np.all(np.isfinite(y)):
@@ -1553,7 +1552,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
                                  "finite values.")
         return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
-    return xpx.lazy_apply(func, Z, y, validate=lazy,
+    return xpx.lazy_apply(optimal_leaf_ordering_, Z, y, validate=lazy,
                           shape=Z.shape, dtype=Z.dtype, as_numpy=True)
 
 
@@ -2351,7 +2350,7 @@ def _lazy_valid_checks(*args, throw=False, warning=False, materialize=False, xp)
         conds = conds.compute()
 
     # Don't call np.asarray(conds), as it would be blocked by the device transfer
-    # guard on CuPY and PyTorch and the densification guard on Sparse, whereas
+    # guard on CuPy and PyTorch and the densification guard on Sparse, whereas
     # bool() will not.
     conds = [bool(cond) for cond in conds]
 
@@ -4233,9 +4232,9 @@ def leaders(Z, T):
 
     n_obs = Z.shape[0] + 1
 
-    # @wraps causes the Dask key to have prefix "leaders-*"
-    @wraps(_hierarchy.leaders)
-    def func(Z, T, validate):
+    # The function name is prominently visible on the user-facing Dask dashboard;
+    # make sure it is meaningful.
+    def leaders_(Z, T, validate):
         if validate:
             is_valid_linkage(Z, throw=True, name='Z')
         n_clusters = int(xpx.nunique(T))
@@ -4247,6 +4246,6 @@ def leaders(Z, T):
                              f'when examining linkage node {s} (< 2n-1).')
         return L, M
 
-    return xpx.lazy_apply(func, Z, T, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(leaders_, Z, T, validate=is_lazy_array(Z),
                           shape=((None,), (None, )), dtype=(xp.int32, xp.int32),
                           as_numpy=True)

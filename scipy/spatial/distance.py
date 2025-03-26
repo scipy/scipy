@@ -2676,7 +2676,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
             raise ValueError(f"Length n of condensed distance matrix {name_str}"
-                             "must be a binomial coefficient, i.e."
+                             "must be a binomial coefficient, i.e. "
                              "there must be a k such that (k \\choose 2)=n)!")
     except Exception as e:
         if throw:
