@@ -124,7 +124,7 @@ py3.extension_module('_ufuncs',
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
     xsf_dep,
-    lapack_ilp64,
+    lapack_dep,
     npymath_lib,
     np_dep,
   ],
