@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import xp_result_type, xp_ravel, array_namespace
+from scipy._lib._array_api import xp_ravel, array_namespace, xp_promote
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 from scipy.stats._stats_py import _length_nonmasked
@@ -15,9 +15,8 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
         raise ValueError("`p` must have real floating dtype.")
 
-    dtype = xp_result_type(x, p, xp=xp)
-    x = xp.asarray(x, dtype=dtype)
-    p = xp.asarray(p, dtype=dtype)
+    x, p = xp_promote(x, p, force_floating=True, xp=xp)
+    dtype = x.dtype
 
     axis_none = axis is None
     ndim = max(x.ndim, p.ndim)

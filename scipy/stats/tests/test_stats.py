@@ -7276,9 +7276,9 @@ class TestGSTD:
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
     @skip_xp_invalid_arg
-    def test_raises_value_error_non_numeric_input(self, xp):
-        # this is raised by NumPy, but it's quite interpretable
-        with pytest.raises(TypeError, match="ufunc 'log' not supported"):
+    def test_raises_error_non_numeric_input(self, xp):
+        # this is raised by `_asarray`, but it's quite interpretable
+        with pytest.raises(ValueError, match="could not convert string to float"):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @skip_xp_backends(eager_only=True)
