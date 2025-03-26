@@ -433,7 +433,6 @@ class TestPearsonr:
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
 
-    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)

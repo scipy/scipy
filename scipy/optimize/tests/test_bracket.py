@@ -43,7 +43,6 @@ def _bracket_minimum(*args, **kwargs):
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
 boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
-@pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#274')
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=boolean_index_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason=boolean_index_skip_reason)
@@ -220,7 +219,6 @@ class TestBracketRoot:
 
         xp_assert_equal(res.status, ref_flags)
 
-    @pytest.mark.xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize('xmin', [-5, None])
     @pytest.mark.parametrize('xmax', [5, None])

@@ -196,7 +196,6 @@ class TestLogSumExp:
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
-    @xfail_xp_backends('torch', reason='data-apis/array-api-compat#273')
     @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
