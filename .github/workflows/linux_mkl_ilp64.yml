@@ -32,8 +32,7 @@ permissions:
 
 jobs:
 
-  mkl:
-    if: "github.repository == 'rgommers/scipy'"
+  mkl-lp64:
     runs-on: ubuntu-latest
     name: "MKL (LP64 split, SDL)"
     steps:
@@ -47,24 +46,12 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements/all.txt
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
-        pip install "mkl==2023.2.0" "mkl-devel==2023.2.0"
-
-    - name: Repair MKL pkg-config files and symlinks
-      run: |
-        # MKL 2023.2 works when installed from conda-forge (except for `-iomp`
-        # and `-tbb` pkg-config files), Spack, or with the standalone Intel
-        # installer. The standalone installer is the worst option, since it's
-        # large and clumsy to install and requires running a setvars.sh script
-        # before things work. The PyPI MKL packages are broken and need the
-        # fixes in this step. For details, see
-        # https://github.com/conda-forge/intel_repack-feedstock/issues/34
-        cd $Python3_ROOT_DIR/lib/pkgconfig
-        sed -i 's/\/intel64//g' mkl*.pc
-        # add the expected .so -> .so.2 symlinks to fix linking
-        cd ..
-        for i in $( ls libmkl*.so.2 ); do ln -s $i ${i%.*}; done
+        pip install mkl mkl-devel
 
     - name: Build with defaults (LP64)
       run: |
@@ -84,5 +71,36 @@ jobs:
         python dev.py build
 
     - name: Test
-      run: python dev.py test
+      run: python dev.py test -j 2
+
+
+  mkl-ilp64:
+    runs-on: ubuntu-latest
+    name: "MKL ILP64"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install mkl mkl-devel
+
+    - name: Build with ILP64
+      run: |
+        pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
+        python dev.py build -C-Dblas-order=mkl -C-Duse-ilp64=true
+
+    - name: Test
+      run: python dev.py test -j 2
+
 
