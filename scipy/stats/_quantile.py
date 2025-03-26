@@ -173,7 +173,7 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
     See Also
     --------
-    `numpy.quantile`
+    numpy.quantile
     :ref:`outliers`
 
     Notes
