@@ -522,8 +522,7 @@ def xp_result_type(*args, force_floating=False, xp=None):
     standard `result_type` in two ways:
 
     - There is a `force_floating` argument that ensures that the result type
-      is floating point. It works by adding `1.0` to the arguments passed to
-      the backend-defined `xp.result_type`.
+      is floating point, even when all args are integer.     
     - When a TypeError is raised (e.g. due to an unsupported promotion),
       we define a custom rule: use the result type of the default float
       and any other floats passed. See
@@ -535,13 +534,16 @@ def xp_result_type(*args, force_floating=False, xp=None):
     args = [(_asarray(arg, subok=True) if np.iterable(arg) else arg)
             for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
+    if force_floating:
+        args_not_none.append(1.0)
+
     if is_numpy(xp) and xp.__version__ < '2.0':
         # Follow NEP 50 promotion rules anyway
         args_not_none = [getattr(arg, 'dtype', arg) for arg in args_not_none]
+        return xp.result_type(*args_not_none)
 
     try:  # follow library's preferred promotion rules
-        dtype = (xp.result_type(*args_not_none, 1.0) if force_floating
-                 else xp.result_type(*args_not_none))
+        return xp.result_type(*args_not_none)
     except TypeError:  # mixed type promotion isn't defined
         # use `result_type` of default floating point type and any floats present
         # This can be revisited, but right now, the only backends that get here
@@ -551,11 +553,9 @@ def xp_result_type(*args, force_floating=False, xp=None):
         for arg in args_not_none:
             arg_array = xp.asarray(arg) if np.isscalar(arg) else arg
             dtype = getattr(arg_array, 'dtype', arg)
-            if not xp.isdtype(dtype, ('integral', 'bool')):
+            if xp.isdtype(dtype, ('real floating', 'complex floating')):
                 float_args.append(arg)
-        dtype = xp.result_type(*float_args, xp_default_dtype(xp))
-
-    return dtype
+        return xp.result_type(*float_args, xp_default_dtype(xp))
 
 
 def xp_promote(*args, broadcast=False, ensure_writeable=False,

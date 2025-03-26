@@ -57,7 +57,7 @@ def get_array_special_func(f_name, xp, n_array_args):
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
         x, y = xp_promote(x, y, broadcast=True, force_floating=True, xp=xp)
-        res = xp.full(x.shape, xp.inf, dtype=x.dtype)
+        res = xp.full_like(x, fill_value=xp.inf)
         res[(x == 0) & (y >= 0)] = 0
         i = (x > 0) & (y > 0)
         res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))

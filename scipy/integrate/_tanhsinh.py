@@ -902,7 +902,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
         raise ValueError(message)
 
     message = 'All elements of `a`, `b`, and `step` must be real numbers.'
-    if not xp.isdtype(a.dtype, 'numeric') or xp.isdtype(a.dtype, 'complex floating'):
+    if not xp.isdtype(a.dtype, ('integral', 'real floating')):
         raise ValueError(message)
 
     valid_b = b >= a  # NaNs will be False

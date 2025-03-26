@@ -30,8 +30,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xl0, xr0, xmin, xmax, factor = xp_promote(
         xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
 
-    if (not xp.isdtype(xl0.dtype, "numeric")
-        or xp.isdtype(xl0.dtype, "complex floating")):
+    if not xp.isdtype(xl0.dtype, ('integral', 'real floating')):
         raise ValueError('`xl0` must be numeric and real.')
 
     if (not xp.isdtype(xr0.dtype, "numeric")
@@ -446,8 +445,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xm0, xl0, xr0, xmin, xmax, factor = xp_promote(
         xm0, xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
 
-    if (not xp.isdtype(xm0.dtype, "numeric")
-        or xp.isdtype(xm0.dtype, "complex floating")):
+    if not xp.isdtype(xm0.dtype, ('integral', 'real floating')):
         raise ValueError('`xm0` must be numeric and real.')
 
     if (not xp.isdtype(xl0.dtype, "numeric")
