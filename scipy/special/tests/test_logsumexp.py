@@ -10,11 +10,8 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
-from scipy.stats.tests.test_stats import skip_xp_backends
 
 from scipy._lib.array_api_extra.testing import lazy_xp_function
-
-
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
