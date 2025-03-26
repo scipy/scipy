@@ -19,23 +19,21 @@ class TestContinuedFraction:
     p = rng.uniform(1, 10, size=10)
 
     def a1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         elif n == 1:
             y = x
         else:
             y = -x**2
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def b1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         else:
             one = x/x  # gets array of correct type, dtype, and shape
             y = one * (2*n - 1)
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def log_a1(self, n, x):
         xp = array_namespace(x)
@@ -92,7 +90,6 @@ class TestContinuedFraction:
         with pytest.raises(ValueError, match=message):
             _continued_fraction(a1, b1, log=2)
 
-    @pytest.mark.xfail_xp_backends('torch', reason='TBD')
     @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('shape', [(), (1,), (3,), (3, 2)])
     def test_basic(self, shape, dtype, xp):
