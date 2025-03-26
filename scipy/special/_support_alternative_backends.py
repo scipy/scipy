@@ -70,7 +70,7 @@ def _rel_entr(xp, spx):
             fill_value=xp.inf
         )
         res = xpx.at(res)[(x == 0) & (y >= 0)].set(0)
-        res = xpx.at(res)[(x != x) | (y != y) | (xy_pos & xy_inf)].set(xp.nan)
+        res = xpx.at(res)[xp.isnan(x) | xp.isnan(y) | (xy_pos & xy_inf)].set(xp.nan)
         return res
 
     return __rel_entr
