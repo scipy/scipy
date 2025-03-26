@@ -62,12 +62,14 @@ py3.extension_module('_zeros',
   subdir: 'scipy/optimize'
 )
 
+
+# TODO: link to ILP64 LAPACK
 py3.extension_module('_lbfgsb',
   [
     '__lbfgsb.h',
     '__lbfgsb.c',
   ],
-  dependencies: [lapack_ilp64, blas_ilp64, np_dep],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
