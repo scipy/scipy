@@ -123,7 +123,7 @@ py3.extension_module('_ufuncs',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
-    lapack_ilp64,
+    lapack_dep,
     npymath_lib,
     np_dep,
   ],
