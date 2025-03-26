@@ -687,7 +687,7 @@ def _make_capabilities_table(capabilities):
             val += " " * (len('{numpy.}') + len(attr) - 1)
             setattr(backend, attr, val)
 
-    table = f"""                
+    table = f"""
     +---------+-------------+-------------+
     | Library | CPU         | GPU         |
     +=========+=============+=============+
@@ -719,22 +719,19 @@ def _make_capabilities_note(fun_name, capabilities):
     return textwrap.dedent(note)
 
 
-def xp_capabilities(name=None, capabilities_table=None, **kwargs):
+def xp_capabilities(capabilities_table=None, **kwargs):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
     def decorator(f):
-        fun_name = f.__name__
-        table_entry = name or fun_name
-        if table_entry not in capabilities_table:
-            capabilities_table[table_entry] = kwargs
-        capabilities = _make_capabilities(**capabilities_table[table_entry])
-
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        note = _make_capabilities_note(fun_name, capabilities)
+        capabilities_table[wrapper] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[wrapper])
+
+        note = _make_capabilities_note(f.__name__, capabilities)
         doc = FunctionDoc(wrapper)
         doc['Notes'].append(note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
@@ -743,23 +740,30 @@ def xp_capabilities(name=None, capabilities_table=None, **kwargs):
     return decorator
 
 
-def make_skip_xp_backends(fun_name, capabilities_table=None):
+def make_skip_xp_backends(*funs, capabilities_table=None):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
     import pytest
 
-    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
-    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
-    np_only = capabilities_table[fun_name].get('np_only', None)
-    exceptions = capabilities_table[fun_name].get('exceptions', None)
-    reason = capabilities_table[fun_name].get('reason', None)
+    skip_backends = []
+    cpu_only = False
+    cpu_only_reason = set()
+    np_only = False
+    exceptions = []
+
+    for fun in funs:
+        skip_backends += capabilities_table[fun].get('skip_backends', [])
+        cpu_only |= capabilities_table[fun].get('cpu_only', False)
+        # Empty reason causes the decorator to have no effect
+        cpu_only_reason.add(capabilities_table[fun].get('reason', "No reason given."))
+        np_only |= capabilities_table[fun].get('np_only', False)
+        exceptions += capabilities_table[fun].get('exceptions', [])
 
     decorators = []
     if cpu_only:
         kwargs = dict(cpu_only=True, exceptions=exceptions)
-        # if we pass `reason=None`, it doesn't work
-        kwargs |= {'reason': reason} if reason is not None else {}
+        kwargs |= {'reason': "\n".join(cpu_only_reason)}
         decorators.append(pytest.mark.skip_xp_backends(**kwargs))
 
     if np_only:
