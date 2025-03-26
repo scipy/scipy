@@ -128,12 +128,13 @@ py3.extension_module('_rgi_cython',
 
 __fitpack_lib = static_library('__fitpack',
     ['src/__fitpack.h', 'src/__fitpack.cc'],
-    dependencies:[lapack, np_dep, py3_dep],
+    dependencies:[lapack_ilp64, np_dep, py3_dep],
 )
 
 __fitpack_dep = declare_dependency(
     link_with: __fitpack_lib,
 )
+
 
 py3.extension_module('_dierckx',
     ['src/_dierckxmodule.cc'],
