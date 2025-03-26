@@ -7,8 +7,6 @@ from scipy.stats._stats_py import _xp_mean, _xp_var
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
-if not SCIPY_ARRAY_API:
-    pytest.skip("MArray is only available if SCIPY_ARRAY_API=1", allow_module_level=True)
 marray = pytest.importorskip('marray')
 skip_backend = pytest.mark.skip_xp_backends
 

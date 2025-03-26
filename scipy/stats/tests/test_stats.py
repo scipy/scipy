@@ -7277,8 +7277,8 @@ class TestGSTD:
 
     @skip_xp_invalid_arg
     def test_raises_error_non_numeric_input(self, xp):
-        # this is raised by `_asarray`, but it's quite interpretable
-        with pytest.raises(ValueError, match="could not convert string to float"):
+        message = "could not convert string to float|The DType..."
+        with pytest.raises((ValueError, TypeError), match=message):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @skip_xp_backends(eager_only=True)
