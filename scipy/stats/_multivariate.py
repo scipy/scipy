@@ -10,7 +10,8 @@ from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy import special
-from scipy._lib._util import check_random_state, _lazywhere
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
@@ -4629,7 +4630,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
-        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
+        return xpx.apply_where(df >= threshold, (dim, df), asymptotic, regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
