@@ -555,12 +555,14 @@ class TestFindRoot:
     def f(self, q, p):
         return special.ndtr(q) - p
 
+    @pytest.mark.parametrize('method', ['chandrupatla', 'secant'])
     @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
-    def test_basic(self, p, xp):
+    def test_basic(self, method, p, xp):
         # Invert distribution CDF and compare against distribution `ppf`
-        a, b = xp.asarray(-5.), xp.asarray(5.)
-        res = find_root(self.f, (a, b), args=(xp.asarray(p),))
         ref = xp.asarray(stats.norm().ppf(p), dtype=xp.asarray(p).dtype)
+        a, b = ((xp.asarray(-5.), xp.asarray(5.)) if method == 'chandrupatla'
+                else (ref+0.1, ref+0.11))
+        res = find_root(self.f, (a, b), args=(xp.asarray(p),), method=method)
         xp_assert_close(res.x, ref)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
