@@ -99,8 +99,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     updated, refer to the source code or the references below.
 
         .. versionchanged:: 1.16.0
-            The original Powell implementation was replaced by a pure Python version
-            from the PRIMA package, with bug fixes and improvements being made.
+            The original Powell implementation was replaced by a pure
+            Python version from the PRIMA package, with bug fixes and
+            improvements being made.
 
 
     References
@@ -217,8 +218,9 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
         Stop if the objective function is less than `f_target`.
 
         .. versionchanged:: 1.16.0
-            The original Powell implementation was replaced by a pure Python version from
-            the PRIMA package, with bug fixes and improvements being made.
+            The original Powell implementation was replaced by a pure
+            Python version from the PRIMA package, with bug fixes and
+            improvements being made.
 
 
     References
