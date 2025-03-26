@@ -565,7 +565,7 @@ def construct_dist_matrix(graph,
     predecessors[i, j] = -9999
 
     It should be noted that `shortest_path` only returns distance matrix
-    by default. With `return_predecessors=True`, it returns a tuple with
+    by default. With ``return_predecessors=True``, it returns a tuple with
     distance matrix as its first element and predecessors array as second
     element.
 
