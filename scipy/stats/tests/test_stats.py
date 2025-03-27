@@ -95,17 +95,6 @@ class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    @staticmethod
-    def lazy_expect(expect, xp):
-        """The output dtype of tmin/tmax is data-dependent: int inputs are cast to
-        float if there are any NaNs. On lazy backends (JAX/Dask), since content tests
-        are impossible, int inputs are always cast to float.
-        """
-        expect = xp.asarray(expect)
-        if is_lazy_array(expect) and xp.isdtype(expect, "integral"):
-            return xp.astype(expect, xp.float64)
-        return expect
-
     @make_skip_xp_backends(stats.tmean)
     def test_tmean(self, xp):
         default_dtype = xp_default_dtype(xp)
@@ -196,20 +185,17 @@ class TestTrimmedStats:
         xp_assert_close(y, xp.std(x, correction=1))
 
     @make_skip_xp_backends(stats.tmin)
-    @pytest.mark.xfail_xp_backends("array_api_strict",
-                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmin(self, xp):
-        x = xp.arange(10)
-        xp_assert_equal(stats.tmin(x), self.lazy_expect(0, xp))
-        xp_assert_equal(stats.tmin(x, lowerlimit=0), self.lazy_expect(0, xp))
-        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False),
-                        self.lazy_expect(1, xp))
+        x = xp.arange(10.)
+        xp_assert_equal(stats.tmin(x), xp.asarray(0.))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0), xp.asarray(0.))
+        xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False), xp.asarray(1.))
 
         x = xp.reshape(x, (5, 2))
         xp_assert_equal(stats.tmin(x, lowerlimit=0, inclusive=False),
-                        self.lazy_expect([2, 1], xp))
-        xp_assert_equal(stats.tmin(x, axis=1), self.lazy_expect([0, 2, 4, 6, 8], xp))
-        xp_assert_equal(stats.tmin(x, axis=None), self.lazy_expect(0, xp))
+                        xp.asarray([2., 1.]))
+        xp_assert_equal(stats.tmin(x, axis=1), xp.asarray([0., 2., 4., 6., 8.]))
+        xp_assert_equal(stats.tmin(x, axis=None), xp.asarray(0.))
 
         x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmin(x), xp.asarray(xp.nan))
@@ -238,20 +224,17 @@ class TestTrimmedStats:
                 stats.tmin(x, nan_policy='foobar')
 
     @make_skip_xp_backends(stats.tmax)
-    @pytest.mark.xfail_xp_backends("array_api_strict",
-                                   reason="broadcast int dtype vs. xp.nan")
     def test_tmax(self, xp):
-        x = xp.arange(10)
-        xp_assert_equal(stats.tmax(x), self.lazy_expect(9, xp))
-        xp_assert_equal(stats.tmax(x, upperlimit=9), self.lazy_expect(9, xp))
-        xp_assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), 
-                        self.lazy_expect(8, xp))
+        x = xp.arange(10.)
+        xp_assert_equal(stats.tmax(x), xp.asarray(9.))
+        xp_assert_equal(stats.tmax(x, upperlimit=9), xp.asarray(9.))
+        xp_assert_equal(stats.tmax(x, upperlimit=9, inclusive=False), xp.asarray(8.))
 
         x = xp.reshape(x, (5, 2))
         xp_assert_equal(stats.tmax(x, upperlimit=9, inclusive=False),
-                        self.lazy_expect([8, 7], xp))
-        xp_assert_equal(stats.tmax(x, axis=1), self.lazy_expect([1, 3, 5, 7, 9], xp))
-        xp_assert_equal(stats.tmax(x, axis=None), self.lazy_expect(9, xp))
+                        xp.asarray([8., 7.]))
+        xp_assert_equal(stats.tmax(x, axis=1), xp.asarray([1., 3., 5., 7., 9.]))
+        xp_assert_equal(stats.tmax(x, axis=None), xp.asarray(9.))
 
         x = xpx.at(xp.arange(10.), 9).set(xp.nan)
         xp_assert_equal(stats.tmax(x), xp.asarray(xp.nan))
@@ -281,6 +264,29 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmax(x, nan_policy='foobar')
 
+    @make_skip_xp_backends(stats.tmin, stats.tmax)
+    def test_tmin_tmax_int_dtype(self, xp):
+        x = xp.reshape(xp.arange(10, dtype=xp.int16), (2, 5)).T
+
+        # When tmin/tmax don't need to inject any NaNs,
+        # retain the input dtype. Dask/JAX can't inspect
+        # the data so they always return float.
+        expect_dtype = xp_default_dtype(xp) if is_lazy_array(x) else x.dtype
+        xp_assert_equal(stats.tmin(x), xp.asarray([0, 5], dtype=expect_dtype))
+        xp_assert_equal(stats.tmax(x), xp.asarray([4, 9], dtype=expect_dtype))
+
+        # When they do inject NaNs, all backends behave the same.
+        xp_assert_equal(stats.tmin(x, lowerlimit=6), xp.asarray([xp.nan, 6.]))
+        xp_assert_equal(stats.tmax(x, upperlimit=3), xp.asarray([3., xp.nan]))
+
+    @skip_xp_backends(eager_only=True, reason="Only with data-dependent output dtype")
+    @make_skip_xp_backends(stats.tmin, stats.tmax)
+    def test_gh_22626(self, xp):
+        # Test that `tmin`/`tmax` returns exact result with outrageously large integers
+        x = xp.arange(2**62, 2**62+10)
+        xp_assert_equal(stats.tmin(x[None, :]), x)
+        xp_assert_equal(stats.tmax(x[None, :]), x)
+
     @make_skip_xp_backends(stats.tsem)
     def test_tsem(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
@@ -289,14 +295,6 @@ class TestTrimmedStats:
         y_ref = xp.asarray([4., 5., 6., 7., 8.])
         xp_assert_close(y, xp.std(y_ref, correction=1) / xp_size(y_ref)**0.5)
         xp_assert_close(stats.tsem(x, limits=[-1, 10]), stats.tsem(x, limits=None))
-
-    @skip_xp_backends(eager_only=True, reason="Only with data-dependent output dtype")
-    @make_skip_xp_backends(stats.tmax, stats.tmin)
-    def test_gh_22626(self, xp):
-        # Test that `tmin`/`tmax` returns exact result with outrageously large integers
-        x = xp.arange(2**62, 2**62+10)
-        xp_assert_equal(stats.tmin(x[None, :]), x)
-        xp_assert_equal(stats.tmax(x[None, :]), x)
 
 
 class TestPearsonrWilkinson:

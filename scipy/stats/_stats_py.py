@@ -806,12 +806,15 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
                                  val=max_, xp=xp)
 
-    min_ = xp.min(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    all_defined = not is_lazy_array(valid) and xp.all(valid)
-    res = min_ if all_defined else xp.where(valid, min_, xp.nan)
+    res = xp.min(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are below lowerlimit
+
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # For eager backends, output dtype is data-dependent
+        # Possible loss of precision for int types
+        res, = xp_broadcast_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+
     return res[()] if res.ndim == 0 else res
 
 
@@ -866,12 +869,15 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
                                  val=min_, xp=xp)
 
-    max_ = xp.max(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    all_defined = not is_lazy_array(valid) and xp.all(valid)
-    res = max_ if all_defined else xp.where(valid, max_, xp.nan)
+    res = xp.max(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are above upperlimit
+
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # For eager backends, output dtype is data-dependent
+        # Possible loss of precision for int types
+        res, = xp_broadcast_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+    
     return res[()] if res.ndim == 0 else res
 
 
