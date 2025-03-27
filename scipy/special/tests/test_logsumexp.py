@@ -1,3 +1,4 @@
+import itertools as it
 import math
 import pytest
 
@@ -9,6 +10,7 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
+
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 
@@ -30,11 +32,13 @@ def test_wrap_radians(xp):
     xp_assert_close(res, ref, atol=0)
 
 
+# numpy warning filters don't work for dask (dask/dask#3245)
+# (also we should not expect the numpy warning filter to work for any Array API
+# library)
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 class TestLogSumExp:
-    # numpy warning filters don't work for dask (dask/dask#3245)
-    # (also we should not expect the numpy warning filter to work for any Array API
-    # library)
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered in log")
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
@@ -114,8 +118,6 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -258,6 +260,37 @@ class TestLogSumExp:
         ref = xp.asarray(0.6931471805599453+1.1102230246251566e-17j)
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
+
+
+    @pytest.mark.parametrize('x,y', it.product(
+        [
+            -np.inf,
+            np.inf,
+            complex(-np.inf, 0.),
+            complex(-np.inf, -0.),
+            complex(-np.inf, np.inf),
+            complex(-np.inf, -np.inf),
+            complex(np.inf, 0.),
+            complex(np.inf, -0.),
+            complex(np.inf, np.inf),
+            complex(np.inf, -np.inf),
+            # Phase in each quadrant.
+            complex(-np.inf, 0.7533),
+            complex(-np.inf, 2.3562),
+            complex(-np.inf, 3.9270),
+            complex(-np.inf, 5.4978),
+            complex(np.inf, 0.7533),
+            complex(np.inf, 2.3562),
+            complex(np.inf, 3.9270),
+            complex(np.inf, 5.4978),
+        ], repeat=2)
+    )
+    def test_gh22601_infinite_elements(self, x, y, xp):
+        # Test that `logsumexp` does reasonable things in the presence of
+        # real and complex infinities.
+        res = logsumexp(xp.asarray([x, y]))
+        ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
+        xp_assert_equal(res, ref)
 
 
 class TestSoftmax:

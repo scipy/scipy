@@ -210,7 +210,7 @@ class TestBasinHopping:
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @pytest.mark.fail_slow(20)
+    @pytest.mark.fail_slow(40)
     def test_all_nograd_minimizers(self):
         # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.

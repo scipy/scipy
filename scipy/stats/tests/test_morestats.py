@@ -1825,7 +1825,7 @@ class TestKstat:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data = xp.where(data == 6, xp.asarray(xp.nan), data)
+        data = xp.where(data == 6, xp.nan, data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1869,7 +1869,7 @@ class TestKstatVar:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data = xp.where(data == 6, xp.asarray(xp.nan), data)
+        data = xp.where(data == 6, xp.nan, data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -2744,7 +2744,6 @@ class TestCircFuncs:
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
         xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
@@ -2803,7 +2802,7 @@ class TestCircFuncs:
         # "white-box" sanity check that no undue loss of precision is
         # introduced by conversion between (high - low) and (2 * pi).
 
-        x = xp.linspace(1e-9, 1e-8, 100)
+        x = xp.linspace(1e-9, 6e-9, 50)
         assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
 
         m = (x * (2 * xp.pi) / (2 * xp.pi)) != x

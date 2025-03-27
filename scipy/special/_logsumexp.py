@@ -3,7 +3,6 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_broadcast_promote,
-    xp_real,
     xp_float_to_complex,
 )
 from scipy._lib import array_api_extra as xpx
@@ -111,8 +110,25 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     axis = tuple(range(a.ndim)) if axis is None else axis
 
     if xp_size(a) != 0:
+        with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+            # Where result is infinite, we use the direct logsumexp calculation to
+            # delegate edge case handling to the behavior of `xp.log` and `xp.exp`,
+            # which should follow the C99 standard for complex values.
+            b_exp_a = xp.exp(a) if b is None else b * xp.exp(a)
+            sum = xp.sum(b_exp_a, axis=axis, keepdims=True)
+            sgn_inf = _sign(sum, xp) if return_sign else None
+            sum = xp.abs(sum) if return_sign else sum
+            out_inf = xp.log(sum)
+
         with np.errstate(divide='ignore', invalid='ignore'):  # log of zero is OK
             out, sgn = _logsumexp(a, b, axis=axis, return_sign=return_sign, xp=xp)
+
+        # Replace infinite results. This probably could be done with an
+        # `apply_where`-like strategy to avoid redundant calculation, but currently
+        # `apply_where` itself is only for elementwise functions.
+        out_finite = xp.isfinite(out)
+        out = xp.where(out_finite, out, out_inf)
+        sgn = xp.where(out_finite, sgn, sgn_inf) if return_sign else sgn
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         shape[axis] = 1
@@ -171,8 +187,7 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
         i = xpx.at(i, ~mask).set(-1)
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
-        # FIXME https://github.com/data-apis/array-api/pull/860
-        a = xp.where(mask, a, xp.zeros((), dtype=a.dtype))
+        a = xp.where(mask, a, 0.)
         max = xp.sum(a, axis=axis, dtype=a.dtype, keepdims=True)
     else:
         max = xp.max(a, axis=axis, keepdims=True)
@@ -182,7 +197,7 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
 
 
 def _sign(x, xp):
-    return x / xp.where(x == 0, xp.asarray(1, dtype=x.dtype), xp.abs(x))
+    return x / xp.where(x == 0, 1., xp.abs(x))
 
 
 def _logsumexp(a, b, axis, return_sign, xp):
@@ -205,12 +220,8 @@ def _logsumexp(a, b, axis, return_sign, xp):
     m = (xp.sum(i_max_dt, axis=axis, keepdims=True, dtype=a.dtype) if b is None
          else xp.sum(b * i_max_dt, axis=axis, keepdims=True, dtype=a.dtype))
 
-    # Arithmetic between infinities will introduce NaNs.
-    # `+ a_max` at the end naturally corrects for removing them here.
-    shift = xp.where(xp.isfinite(a_max), a_max, xp.asarray(0, dtype=a_max.dtype))
-
     # Shift, exponentiate, scale, and sum
-    exp = b * xp.exp(a - shift) if b is not None else xp.exp(a - shift)
+    exp = b * xp.exp(a - a_max) if b is not None else xp.exp(a - a_max)
     s = xp.sum(exp, axis=axis, keepdims=True, dtype=exp.dtype)
     s = xp.where(s == 0, s, s/m)
 
@@ -227,13 +238,12 @@ def _logsumexp(a, b, axis, return_sign, xp):
             m = xp.abs(m)
         else:
             # `a_max` can have a sign component for complex input
-            j = xp.asarray(1j, dtype=a_max.dtype)
-            sgn = sgn * xp.exp(xp.imag(a_max) * j)
+            sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
 
-    out = xp_real(out) if return_sign else out
+    out = xp.real(out) if return_sign else out
 
     return out, sgn
 
