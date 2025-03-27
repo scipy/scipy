@@ -3594,6 +3594,7 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> from scipy import special
 
     Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
 
