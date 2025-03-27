@@ -843,6 +843,9 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
     if all(z == 1 for z in zoom) and prefilter:  # early exit for gh-20999
+        # zoom 1 means "return original image". If `prefilter=False`,
+        # `input` is *not* the original image; processing is still needed
+        # to undo the filter. So we only early exit if `prefilter`.
         output = xpx.at(output)[...].set(input)
         return output
     if complex_output:
