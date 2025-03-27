@@ -322,6 +322,10 @@ class LinearOperator:
         """Default implementation of _rmatvec; defers to adjoint."""
         if type(self)._adjoint == LinearOperator._adjoint:
             # _adjoint not overridden, prevent infinite recursion
+            if (hasattr(self, "_rmatmat")
+                    and type(self)._rmatmat != LinearOperator._rmatmat):
+                # Try to use _rmatmat as a fallback
+                return self._rmatmat(x.reshape(-1, 1)).reshape(-1)
             raise NotImplementedError
         else:
             return self.H.matvec(x)
