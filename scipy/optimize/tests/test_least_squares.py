@@ -20,15 +20,6 @@ def fun_trivial(x, a=0):
     return (x - a)**2 + 5.0
 
 
-class Fun_Trivial_Nfev:
-    def __init__(self):
-        self.nfev = 0
-
-    def __call__(self, x, a=0):
-        self.nfev += 1
-        return fun_trivial(x, a)
-
-
 def jac_trivial(x, a=0.0):
     return 2 * (x - a)
 
