@@ -80,18 +80,11 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
     g = J.T.dot(f)
     g_norm = norm(g, ord=np.inf)
 
+    nfev = info['nfev']
     if callable(jac_method):
         # user supplied a callable ("analytic") jac
         njev = info.get('njev', None)
     else:
-        # jac-method in ['2-point', '3-point', 'cs']
-        # Historically no analytic callable meant that `_minpack._lmdif` was used,
-        # with the jacobian being estimated with finite differences. The
-        # total number of nfev were tracked by lmdif.
-        # Now scipy is doing the FD and we can use `_minpack._lmder`. Therefore scipy
-        # has to track nfev itself. This is done by the VectorFunction used in
-        # `least_squares`. We will therefore correct the OptimizeResult.nfev in
-        # `least_squares`.
         # If there are no analytic jacobian evaluations we need to set `njev=None`.
         njev = None
 
@@ -100,7 +93,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
 
     return OptimizeResult(
         x=x, cost=cost, fun=f, jac=J, grad=g, optimality=g_norm,
-        active_mask=active_mask, nfev=np.nan, njev=njev, status=status)
+        active_mask=active_mask, nfev=nfev, njev=njev, status=status)
 
 
 def prepare_bounds(bounds, n):
@@ -309,6 +302,11 @@ def least_squares(
         (or the exact value) for the Jacobian as an array_like (np.atleast_2d
         is applied), a sparse array (csr_array preferred for performance) or
         a `scipy.sparse.linalg.LinearOperator`.
+
+        .. versionchanged:: 1.16.0
+            An ability to use the '3-point', 'cs' keywords with the 'lm' method.
+            Previously 'lm' was limited to '2-point' and callable.
+
     bounds : 2-tuple of array_like or `Bounds`, optional
         There are two ways to specify bounds:
 
@@ -407,13 +405,12 @@ def least_squares(
         no effect with ``loss='linear'``, but for other `loss` values it is
         of crucial importance.
     max_nfev : None or int, optional
-        Maximum number of function evaluations before the termination.
-        If None (default), the value is chosen automatically:
+        For all methods this parameter controls the maximum number of function
+        evaluations separate to those used in numerical approximation of the jacobian.
+        If None (default), the value is chosen automatically as 100 * n.
 
-        * For 'trf' and 'dogbox' : 100 * n.
-        * For 'lm' :  100 * n if `jac` is callable and 100 * n * (n + 1)
-          otherwise (because 'lm' counts function calls in Jacobian
-          estimation).
+        .. versionchanged:: 1.16.0
+            The default for the 'lm' method is changed to 100 * n.
 
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
@@ -528,9 +525,14 @@ def least_squares(
             sequence of strictly feasible iterates and `active_mask` is
             determined within a tolerance threshold.
         nfev : int
-            Number of function evaluations done. Methods 'trf' and 'dogbox' do
-            not count function calls for numerical Jacobian approximation, as
-            opposed to 'lm' method.
+            Number of function evaluations done. This number does not include
+            the function calls used for numerical Jacobian approximation.
+
+            .. versionchanged:: 1.16.0
+                For the 'lm' method the number of function calls used in numerical
+                Jacobian approximation is no longer included. This is to bring all
+                methods into line.
+
         njev : int or None
             Number of Jacobian evaluations done. If numerical Jacobian
             approximation is used in 'lm' method, it is set to None.
@@ -985,10 +987,6 @@ def least_squares(
                  stacklevel=2)
         result = call_minpack(vector_fun.fun, x0, vector_fun.jac, ftol, xtol, gtol,
                               max_nfev, x_scale, jac_method=jac)
-        # VectorFunction tracks number of times fun was actually called (it tries to
-        # memoise where possible), including numerical differentiation.
-        # Tesult object needs to be patched with the correct number.
-        result.nfev = vector_fun.nfev
 
     elif method == 'trf':
         result = trf(vector_fun.fun, vector_fun.jac, x0, f0, J0, lb, ub, ftol, xtol,

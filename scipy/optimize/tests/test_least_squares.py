@@ -805,14 +805,6 @@ class TestLM(BaseMixin):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')
 
-    def test_nfev_correct(self):
-        # check total number of function evaluations must be exact
-        x0 = np.ones(5)
-        f = Fun_Trivial_Nfev()
-        serial = least_squares(f, x0, method='lm')
-        assert f.nfev == serial.nfev
-        assert serial.njev is None
-
 
 def test_basic():
     # test that 'method' arg is really optional
