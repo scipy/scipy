@@ -1319,10 +1319,8 @@ class TestMakeDistribution:
         X = MyBeta(a=a, b=b)
         Y = MyBeta(mu=mu, nu=nu)
         Z = Beta(a=a, b=b)
-        print(X, Y, Z)
 
         x = Z.sample(shape=10, rng=rng)
-        p = Z.cdf(x)
 
         assert_allclose(Z.support(), X.support())
         assert_allclose(Z.median(), X.median())
