@@ -55,7 +55,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     Returns
     -------
     new_matrix : sparse matrix
-        dia_matrix format with values in ``data`` on diagonals from ``diags``.
+        `dia_matrix` format with values in `data` on diagonals from `diags`.
 
     Notes
     -----
@@ -117,7 +117,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     Returns
     -------
     new_array : dia_array
-        dia_array holding the values in `diagonals` offset from the main diagonal
+        `dia_array` holding the values in `diagonals` offset from the main diagonal
         as indicated in `offsets`.
 
     Notes
@@ -259,7 +259,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Returns
     -------
     new_matrix : dia_matrix
-        dia_matrix holding the values in `diagonals` offset from the main diagonal
+        `dia_matrix` holding the values in `diagonals` offset from the main diagonal
         as indicated in `offsets`.
 
     Notes
