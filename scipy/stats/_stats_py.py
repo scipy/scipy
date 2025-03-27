@@ -79,7 +79,6 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
-    xp_result_type,
     xp_capabilities,
     xp_ravel,
 )
@@ -4638,8 +4637,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     """
     xp = array_namespace(x, y)
-    x = xp.asarray(x)
-    y = xp.asarray(y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
 
     if not is_numpy(xp) and method is not None:
         method = 'invalid'
@@ -4678,8 +4677,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
     axis = -1
-
-    dtype = xp_result_type(x.dtype, y.dtype, force_floating=True, xp=xp)
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -7335,7 +7332,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs)
+    xp = array_namespace(f_obs, f_exp)
+    f_obs, f_exp = xp_promote(f_obs, f_exp, force_floating=True, xp=xp)
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
@@ -7347,12 +7345,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     elif lambda_ is None:
         lambda_ = 1
 
-    dtype = xp_result_type(f_obs, f_exp, force_floating=True, xp=xp)
-    f_obs = xp.asarray(f_obs, dtype=dtype)
-
     if f_exp is not None:
-        f_exp = xp.asarray(f_exp, dtype=dtype)
-
         # not sure why we force to float64, but not going to touch it
         f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
@@ -10891,7 +10884,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    x, weights = xp_promote(x, weights, broadcast=True, force_floating=True)
+    x, weights = xp_promote(x, weights, broadcast=True, force_floating=True, xp=xp)
     if weights is not None:
         x, weights = _share_masks(x, weights, xp=xp)
 

@@ -32,7 +32,8 @@ def _continued_fraction_iv(a, b, args, tolerances, maxiter, log):
     # Call each callable once to determine namespace and dtypes
     a0, b0 = a(0, *args), b(0, *args)
     xp = array_namespace(a0, b0, *args)
-    a0, b0, *args = xp_promote(a0, b0, *args, force_floating=True, broadcast=True)
+    a0, b0, *args = xp_promote(a0, b0, *args, force_floating=True, broadcast=True,
+                               xp=xp)
     shape, dtype = a0.shape, a0.dtype
     a0, b0, *args = (xp_ravel(arg) for arg in (a0, b0) + tuple(args))
 

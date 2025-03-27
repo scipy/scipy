@@ -698,6 +698,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in signature
 
     xp = array_namespace(*data)
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
 
     if not vectorized:
         if is_numpy(xp):
@@ -731,9 +732,6 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     alternative = alternative.lower()
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
-
-    # Infer the desired p-value dtype based on the input types
-    dtype = xp_result_type(*data_iv, force_floating=True, xp=xp)
 
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int, dtype, xp)
