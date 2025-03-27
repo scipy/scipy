@@ -3029,6 +3029,10 @@ class TestZscore:
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
+    @pytest.mark.filterwarnings(
+        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
+    )
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
@@ -3050,6 +3054,7 @@ class TestZscore:
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, xp.nan],
@@ -3069,6 +3074,7 @@ class TestZscore:
                                         [-s, 0, s, xp.nan],
                                         [-s2/2, s2, xp.nan, -s2/2]]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_2d_all_nan_row(self, xp):
         # A row is all nan, and we use axis=1.
         x = xp.asarray([[np.nan, np.nan, np.nan, np.nan],
@@ -3077,6 +3083,7 @@ class TestZscore:
         xp_assert_close(z, xp.asarray([[np.nan, np.nan, np.nan, np.nan],
                                        [-1.0, -1.0, 1.0, 1.0]]))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_2d_all_nan(self, xp):
         # The entire 2d array is nan, and we use axis=None.
         y = xp.full((2, 3), xp.nan)
@@ -3132,6 +3139,8 @@ class TestZscore:
             res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_degenerate_input(self, xp):
         scores = xp.arange(3)
         compare = xp.ones(3)
@@ -3140,6 +3149,7 @@ class TestZscore:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_complex_gh22404(self, xp):
         res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
         ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
@@ -5692,8 +5702,9 @@ class Test_ttest_ind_common:
     def test_nans_on_axis(self, kwds, axis):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
-        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
-        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        rng = np.random.default_rng(363836384995579937222)
+        a = rng.integers(10, size=(5, 3, 10)).astype('float')
+        b = rng.integers(10, size=(5, 3, 10)).astype('float')
         # set some indices in `a` and `b` to be `np.nan`.
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
@@ -7271,6 +7282,7 @@ class TestGSTD:
         with pytest.raises(TypeError, match="ufunc 'log' not supported"):
             stats.gstd('You cannot take the logarithm of a string.')
 
+    @skip_xp_backends(eager_only=True)
     @pytest.mark.parametrize('bad_value', (0, -1, np.inf, np.nan))
     def test_returns_nan_invalid_value(self, bad_value, xp):
         x = xp.asarray(self.array_1d + [bad_value])

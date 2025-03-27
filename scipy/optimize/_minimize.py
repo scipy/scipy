@@ -48,7 +48,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden', 'linewalker']
 
@@ -168,8 +168,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' and 'cobyqa' are defined as a single object
-        or a list of objects specifying constraints to the optimization problem.
+        Constraints for 'trust-constr', 'cobyqa', and 'cobyla' are defined as a single
+        object or a list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
         - `LinearConstraint`
@@ -212,7 +212,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC, SLSQP, and COBYLA support a callable with
+        All methods except TNC and SLSQP support a callable with
         the signature::
 
             callback(intermediate_result: OptimizeResult)
@@ -343,10 +343,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
-    approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
-    constraints functions 'fun' may return either a single number
-    or an array or list of numbers.
+    approximations to the objective function and each constraint.
 
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
@@ -1141,7 +1138,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'cobyqa', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new', 'cobyla']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

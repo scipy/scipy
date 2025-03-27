@@ -85,17 +85,17 @@ def solve(a, b, lower=False, overwrite_a=False,
     corresponding string to ``assume_a`` key chooses the dedicated solver.
     The available options are
 
-    ===================  ================================
-     diagonal             'diagonal'
-     tridiagonal          'tridiagonal'
-     banded               'banded'
-     upper triangular     'upper triangular'
-     lower triangular     'lower triangular'
-     symmetric            'symmetric' (or 'sym')
-     hermitian            'hermitian' (or 'her')
-     positive definite    'positive definite' (or 'pos')
-     general              'general' (or 'gen')
-    ===================  ================================
+    =============================  ================================
+     diagonal                       'diagonal'
+     tridiagonal                    'tridiagonal'
+     banded                         'banded'
+     upper triangular               'upper triangular'
+     lower triangular               'lower triangular'
+     symmetric                      'symmetric' (or 'sym')
+     hermitian                      'hermitian' (or 'her')
+     symmetric positive definite    'positive definite' (or 'pos')
+     general                        'general' (or 'gen')
+    =============================  ================================
 
     Parameters
     ----------
@@ -243,7 +243,7 @@ def solve(a, b, lower=False, overwrite_a=False,
     else:
         trans = 0
         norm = '1'
-    
+
     # Currently we do not have the other forms of the norm calculators
     #   lansy, lanpo, lanhe.
     # However, in any case they only reduce computations slightly...
