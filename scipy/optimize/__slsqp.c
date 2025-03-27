@@ -648,10 +648,9 @@ lsei(int ma, int me, int mg, int n,
     double done = 1.0, dmone = -1.0, dzero = 0.0, t= 0.0;
     const double epsmach = 2.220446049250313e-16;
 
-    // Return if the problem is over-constrained.
     for (int i = 0; i < n; i++) { x[i] = 0.0; }
+    // Return if the problem is over-constrained.
     if (me > n) { *mode = 2; return; }
-    if (ma < n) { *mode = 5; return; }
 
     //    [E]         [E2 |  R]                                [x ]
     //    [A] @ Q.T = [A2 | A1]  ,and, x is partitioned as x = [--]
@@ -784,23 +783,18 @@ ORIGINAL_BASIS:
  * Solve inequality constrained least squares problem
  *      min |Ax - b|  subject to Gx >= h
  *
- * A is (ma x n), b is (ma), G is (mg x n), h is (mg)
+ * A is (ma x n), b is (ma), G is (mg x n), h is (mg), x is (n)
  * buffer is at least (mg+2)*(n+1) + 2*mg
- * jw is (mg)
+ * jw is at least (mg)
  * xnorm is the 2-norm of the residual vector
  * mode is the integer return code
- *
- * The following assumptions must hold
- *  - ma >= n
- *  - A is rank n
- *  - x size is (n)
  *
  * Return codes for mode
  *  1: successful computation
  *  2: error return because of wrong dimensions
  *  3: iteration count exceeded by nnls
  *  4: inequality constraints incompatible
- *  5: matrix e is not rank n
+ *  5: matrix A is not rank n
  *
 */
 void
@@ -812,38 +806,35 @@ lsi(int ma, int mg, int n, double* restrict a, double* restrict b, double* restr
     double done = 1.0, dmone = -1.0, tmp_dbl = 0.0;
     const double epsmach = 2.220446049250313e-16;
 
-    // QR decomposition of a and application to b.
+    // QR decomposition of A and application to b.
     // We use the unblocked versions of the LAPACK routines to avoid
     // allocating extra "work" memory for the blocked versions.
     tmp_int = (ma < n ? ma : n);
     dgeqr2_(&ma, &n, a, &ma, buffer, &buffer[tmp_int], &info);
 
-    // Check the diagonal elements of R for rank deficiency.
-    *mode = 5;
-    *xnorm = 0.0;
-    // Original code has a bug that it checks random entries and returns 5.
-    if (ma < n) { return; }
-
-    for (int i = 0; i < tmp_int; i++) {
-        if (!(fabs(a[i + i*ma]) >= epsmach)) { return; }
-    }
     // Compute Q^T b
     dorm2r_("L", "T", &ma, &one, &tmp_int, a, &ma, buffer, b, &ma, &buffer[tmp_int], &info);
 
+    // Check the diagonal elements of R for rank deficiency.
+    *mode = 5;
+    *xnorm = 0.0;
+    for (int i = 0; i < tmp_int; i++) {
+        if (!(fabs(a[i + i*ma]) >= epsmach)) { return; }
+    }
     // Transform G and h to form the LDP problem.
     // Solve XR = G where R is the upper triangular matrix from the QR.
     // The result is stored in G.
-
     // Note: There is an inherent assumption that ma >= n. This is a bug carried
     // over here from the original slsqp implementation.
     dtrsm_("R", "U", "N", "N", &mg, &n, &done, a, &ma, g, &mg);
     // h = h - Xf
     dgemv_("N", &mg, &n, &dmone, g, &mg, b, &one, &done, h, &one);
 
+    // Solve the LDP problem.
     ldp(mg, n, g, h, x, buffer, jw, xnorm, mode);
     if (*mode != 1) { return; }
 
-    // Solve the original problem
+    // Convert to the solution of the original problem.
     daxpy_(&n, &done, b, &one, x, &one);
     dtrsv_("U", "N", "N", &n, a, &ma, x, &one);
 
