@@ -3689,8 +3689,8 @@ def make_distribution(dist):
     ...             nu = a + b
     ...             mu = a / nu
     ...         elif mu is not None and nu is not None and a is None and b is None:
-    ...             b = mu * nu
-    ...             a = nu - b
+    ...             a = mu * nu
+    ...             b = nu - a
     ...         else:
     ...             raise ValueError("Invalid parameterization of MyBeta.")
     ...         return {"a": a, "b": b, "mu": mu, "nu": nu}
@@ -3700,19 +3700,10 @@ def make_distribution(dist):
     ...         return {'endpoints': (0, 1)}
     ...
     ...     def pdf(self, x, a, b, mu, nu):
-    ...         return x**(a - 1) * (1 - x)**(b - 1) / special.beta(a, b)
-    ...
-    ...     def logpdf(self, x, a, b, mu, nu):
-    ...         return (a - 1) * np.log(x) + (b - 1)*np.log1p(-x) - special.betaln(a, b)
+    ...         return special._ufuncs._beta_pdf(x, a, b)
     ...
     ...     def cdf(self, x, a, b, mu, nu):
     ...         return special.betainc(a, b, x)
-    ...
-    ...     def moment(self, order, kind='raw', *, a, b, mu, nu):
-    ...         if order == 1 and kind == "raw":
-    ...             return mu
-    ...         if order == 2 and kind == "central":
-    ...             return mu * (1 - mu) / (1 + nu)
     >>>
     >>> MyBeta = stats.make_distribution(MyBeta())
     >>> X = MyBeta(a=2.0, b=2.0)
