@@ -706,14 +706,320 @@ py_find_interval(PyObject *self, PyObject *args)
 
     PyObject *py_interval = PyLong_FromSsize_t(interval);
     return py_interval;
+}
 
+
+/*** NDBspline ***/
+
+
+static char doc_evaluate_ndbspline[] =
+        "Evaluate an N-dim tensor product spline or its derivative.\n"
+        "\n"
+        "Parameters\n"
+        "----------\n"
+        "xi : ndarray, shape(npoints, ndim)\n"
+        "    ``npoints`` values to evaluate the spline at, each value is\n"
+        "    a point in an ``ndim``-dimensional space.\n"
+        "t : ndarray, shape(ndim, max_len_t)\n"
+        "    Array of knots for each dimension.\n"
+        "    This array packs the tuple of knot arrays per dimension into a single\n"
+        "    2D array. The array is ragged (knot lengths may differ), hence\n"
+        "    the real knots in dimension ``d`` are ``t[d, :len_t[d]]``.\n"
+        "len_t : ndarray, 1D, shape (ndim,)\n"
+        "    Lengths of the knot arrays, per dimension.\n"
+        "k : tuple of ints, len(ndim)\n"
+        "    Spline degrees in each dimension.\n"
+        "nu : ndarray of ints, shape(ndim,)\n"
+        "    Orders of derivatives to compute, per dimension.\n"
+        "extrapolate : int\n"
+        "    Whether to extrapolate out of bounds or return nans.\n"
+        "c1r: ndarray, one-dimensional\n"
+        "    Flattened array of coefficients.\n"
+        "    The original N-dimensional coefficient array ``c`` has shape\n"
+        "    ``(n1, ..., nd, ...)`` where each ``ni == len(t[d]) - k[d] - 1``,\n"
+        "    and the second '...' represents trailing dimensions of ``c``.\n"
+        "    In code, given the C-ordered array ``c``, ``c1r`` is\n"
+        "    ``c1 = c.reshape(c.shape[:ndim] + (-1,)); c1r = c1.ravel()``\n"
+        "num_c_tr : int\n"
+        "    The number of elements of ``c1r``, which correspond to the trailing\n"
+        "    dimensions of ``c``. In code, this is\n"
+        "    ``c1 = c.reshape(c.shape[:ndim] + (-1,)); num_c_tr = c1.shape[-1]``.\n"
+        "strides_c1 : ndarray, one-dimensional\n"
+        "    Pre-computed strides of the ``c1`` array.\n"
+        "    Note: These are *data* strides, not numpy-style byte strides.\n"
+        "    This array is equivalent to\n"
+        "    ``[stride // s1.dtype.itemsize for stride in s1.strides]``.\n"
+        "indices_k1d : ndarray, shape((k+1)**ndim, ndim)\n"
+        "    Pre-computed mapping between indices for iterating over a flattened\n"
+        "    array of shape ``[k[d] + 1) for d in range(ndim)`` and\n"
+        "    ndim-dimensional indices of the ``(k+1,)*ndim`` dimensional array.\n"
+        "    This is essentially a transposed version of\n"
+        "    ``np.unravel_index(np.arange((k+1)**ndim), (k+1,)*ndim)``.\n"
+        "\n"
+        "Returns\n"
+        "-------\n"
+        "out : ndarray, shape (npoints, num_c_tr)\n"
+        "    Output values of the b-spline at given ``xi`` points.\n"
+        "\n"
+        "Notes\n"
+        "-----\n"
+        "\n"
+        "This function is essentially equivalent to the following: given an\n"
+        "N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the\n"
+        "dimensions, form linear combinations of products,\n"
+        "B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero\n"
+        "at ``x``.\n"
+        "\n"
+        "Since b-splines are localized, the sum has (k+1)**N non-zero elements.\n"
+        "\n"
+        "If ``i = (i1, i2, ..., iN)`` is a vector if intervals of the knot\n"
+        "vectors, ``t[d, id] <= xd < t[d, id+1]``, for ``d=1, 2, ..., N``, then\n"
+        "the core loop of this function is nothing but\n"
+        "\n"
+        "```\n"
+        "result = 0\n"
+        "iters = [range(i[d] - self.k[d], i[d] + 1) for d in range(ndim)]\n"
+        "for idx in itertools.product(*iters):\n"
+        "    term = self.c[idx] * np.prod([B(x[d], self.k[d], idx[d], self.t[d])\n"
+        "                                  for d in range(ndim)])\n"
+        "    result += term\n"
+        "```\n"
+        "\n"
+        "For efficiency reasons, we iterate over the flattened versions of the arrays.\n";
+/*
+def evaluate_ndbspline(const double[:, ::1] xi,
+                       const double[:, ::1] t,
+                       const npy_int64[::1] len_t,
+                       const npy_int64[::1] k,
+                       npy_int64[::1] nu,
+                       bint extrapolate,
+                       const double[::1] c1r,
+                       int num_c_tr,
+                       const npy_int64[::1] strides_c1,
+                       const npy_int64[:, ::] indices_k1d,
+*/
+static PyObject*
+py_evaluate_ndbspline(PyObject *self, PyObject *args)
+{
+    PyObject *py_xi=NULL;
+    PyObject *py_t=NULL, *py_c1r=NULL, *py_strides_c1=NULL, *py_indices_k1d=NULL;
+
+    PyObject *py_len_t=NULL, *py_k=NULL, *py_nu=NULL;
+    int num_c_tr;
+    int i_extrap;
+
+    if(!PyArg_ParseTuple(args, "OOOOOiOiOO",
+                         &py_xi, &py_t, &py_len_t, &py_k, &py_nu, &i_extrap,
+                         &py_c1r, &num_c_tr, &py_strides_c1, &py_indices_k1d)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_xi, 2, NPY_DOUBLE) &&
+          check_array(py_t, 2, NPY_DOUBLE) &&
+          check_array(py_len_t, 1, NPY_INT64) &&
+          check_array(py_k, 1, NPY_INT64) &&
+          check_array(py_nu, 1, NPY_INT64) &&
+          check_array(py_c1r, 1, NPY_DOUBLE) &&
+          check_array(py_strides_c1, 1, NPY_INT64) &&
+          check_array(py_indices_k1d, 2, NPY_INT64))) {
+        return NULL;
+    }
+    PyArrayObject *a_xi = (PyArrayObject *)py_xi;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+
+    PyArrayObject *a_len_t = (PyArrayObject *)py_len_t;
+    PyArrayObject *a_k = (PyArrayObject *)py_k;
+    PyArrayObject *a_nu = (PyArrayObject *)py_nu;
+
+    PyArrayObject *a_c1r = (PyArrayObject *)py_c1r;
+    PyArrayObject *a_strides_c1 = (PyArrayObject *)py_strides_c1;
+    PyArrayObject *a_indices_k1d = (PyArrayObject *)py_indices_k1d;
+
+    // sanity checks
+    int64_t ndim = PyArray_DIM(a_t, 0);
+    if (PyArray_DIM(a_xi, 1) != ndim) {
+        std::string msg = ("Expected data points in " + std::to_string(ndim) + "-D"
+                           " space, got " + std::to_string(PyArray_DIM(a_xi, 1)) +
+                           "-D points.");
+        PyErr_SetString(PyExc_ValueError, msg.c_str());
+        return NULL;
+    }
+
+    // allocate the output
+    npy_intp dims[2] = {PyArray_DIM(a_xi, 0), num_c_tr};
+    PyArrayObject *a_out = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (a_out == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    // heavy lifting happens here
+    try {
+        fitpack::_evaluate_ndbspline(
+            /* inputs */
+            static_cast<const double *>(PyArray_DATA(a_xi)), PyArray_DIM(a_xi, 0), PyArray_DIM(a_xi, 1),
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 1),
+            static_cast<const int64_t *>(PyArray_DATA(a_len_t)),
+            static_cast<const int64_t *>(PyArray_DATA(a_k)),
+            static_cast<const int64_t *>(PyArray_DATA(a_nu)),
+            i_extrap,
+            /* flattened coefficients */
+            static_cast<const double *>(PyArray_DATA(a_c1r)), PyArray_DIM(a_c1r, 0),
+            /* tabulated helpers */
+            static_cast<const int64_t *>(PyArray_DATA(a_strides_c1)),
+            static_cast<const int64_t *>(PyArray_DATA(a_indices_k1d)), PyArray_DIM(a_indices_k1d, 0),
+
+            /* output */
+            static_cast<double*>(PyArray_DATA(a_out)), num_c_tr
+        );
+
+        return (PyObject *)(a_out);
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
+}
+
+
+static char doc_coloc_nd[] =
+    "Construct the N-D tensor product collocation matrix as a CSR array.\n"
+    "\n"
+    "In the dense representation, each row of the collocation matrix corresponds\n"
+    "to a data point and contains non-zero b-spline basis functions which are\n"
+    "non-zero at this data point.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "xvals : ndarray, shape(size, ndim)\n"
+    "    Data points. ``xvals[j, :]`` gives the ``j``-th data point as an\n"
+    "    ``ndim``-dimensional array.\n"
+    "t : tuple of 1D arrays, length-ndim\n"
+    "    Tuple of knot vectors\n"
+    "k : ndarray, shape (ndim,)\n"
+    "    Spline degrees\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "csr_data, csr_indices, csr_indptr\n"
+    "    The collocation matrix in the CSR array format.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor\n"
+    "product spline, i.e. a linear combination of\n"
+    "\n"
+    "   B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)\n"
+    "\n"
+    "Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector\n"
+    "``t`` evaluated at ``x``.\n"
+    "\n"
+    "Since ``B`` functions are localized, for each point `(x1, ..., xN)` we\n"
+    "loop over the dimensions, and\n"
+    "- find the location in the knot array, `t[i] <= x < t[i+1]`,\n"
+    "- compute all non-zero `B` values\n"
+    "- place these values into the relevant row\n"
+    "\n"
+    "In the dense representation, the collocation matrix would have had a row per\n"
+    "data point, and each row has the values of the basis elements (i.e., tensor\n"
+    "products of B-splines) evaluated at this data point. Since the matrix is very\n"
+    "sparse (has size = len(x)**ndim, with only (k+1)**ndim non-zero elements per\n"
+    "row), we construct it in the CSR format.\n";
+/*
+def _colloc_nd(const double[:, ::1] xvals,
+               const double[:, ::1] _t,
+               const npy_int64[::1] len_t,
+               const npy_int64[::1] k,
+               const npy_int64[:, ::1] _indices_k1d,
+               const npy_int64[::1] _cstrides):
+*/
+static PyObject*
+py_coloc_nd(PyObject *self, PyObject *args)
+{
+    PyObject *py_xi, *py_t, *py_len_t, *py_k, *py_indices_k1d, *py_strides;
+
+    if(!PyArg_ParseTuple(args, "OOOOOO",
+                         &py_xi, &py_t, &py_len_t, &py_k,
+                         &py_indices_k1d, &py_strides)) {
+        return NULL;
+    }
+
+    if (!(check_array(py_xi, 2, NPY_DOUBLE) &&
+          check_array(py_t, 2, NPY_DOUBLE) &&
+          check_array(py_len_t, 1, NPY_INT64) &&
+          check_array(py_k, 1, NPY_INT64) &&
+          check_array(py_indices_k1d, 2, NPY_INT64) &&
+          check_array(py_strides, 1, NPY_INT64))) {
+        return NULL;
+    }
+    PyArrayObject *a_xi = (PyArrayObject *)py_xi;
+    PyArrayObject *a_t = (PyArrayObject *)py_t;
+    PyArrayObject *a_len_t = (PyArrayObject *)py_len_t;
+    PyArrayObject *a_k = (PyArrayObject *)py_k;
+    PyArrayObject *a_indices_k1d = (PyArrayObject *)py_indices_k1d;
+    PyArrayObject *a_strides = (PyArrayObject *)py_strides;
+
+    /* allocate the outputs */
+    npy_intp npts = PyArray_DIM(a_xi, 0);
+    npy_intp ndim = PyArray_DIM(a_xi, 1);
+
+    // the number of non-zero b-splines at each data point
+    npy_intp volume = 1;
+    int64_t *k_data = static_cast<int64_t *>(PyArray_DATA(a_k));
+    for (int d=0; d < ndim; d++) {
+        volume *= k_data[d] + 1;
+    }
+
+    // Allocate the colocation matrix in the CSR format.
+    npy_intp dims[1] = {npts*volume};
+    PyObject *py_csr_data = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
+    PyObject *py_csr_indices = PyArray_SimpleNew(1, dims, NPY_INT64);
+    PyObject *py_csr_indptr = PyArray_Arange(0, volume*npts + 1, volume, NPY_INT64);
+
+    if ((py_csr_data == NULL) || (py_csr_indices == NULL) || (py_csr_indptr == NULL)) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    PyArrayObject *a_csr_data = (PyArrayObject *)py_csr_data;
+    PyArrayObject *a_csr_indices = (PyArrayObject *)py_csr_indices;
+
+    // heavy lifting happens here
+    try {
+        int status = fitpack::_coloc_nd(
+            /* inputs */
+            static_cast<const double *>(PyArray_DATA(a_xi)), npts, ndim,
+            static_cast<const double *>(PyArray_DATA(a_t)), PyArray_DIM(a_t, 1),
+            static_cast<const int64_t *>(PyArray_DATA(a_len_t)),
+            static_cast<const int64_t *>(PyArray_DATA(a_k)),
+            /* tabulated helpers */
+            static_cast<const int64_t *>(PyArray_DATA(a_indices_k1d)), PyArray_DIM(a_indices_k1d, 0),
+            static_cast<const int64_t *>(PyArray_DATA(a_strides)),
+            /* outputs */
+            static_cast<int64_t *>(PyArray_DATA(a_csr_indices)), volume,
+            static_cast<double *>(PyArray_DATA(a_csr_data))
+        );
+        if (status < 0) {
+            std::string mesg = ("Data point " + std::to_string(-status) + " is out of bounds");
+            PyErr_SetString(PyExc_ValueError, mesg.c_str());
+        }
+
+        return Py_BuildValue("(NNN)", PyArray_Return(a_csr_data),
+                                      PyArray_Return(a_csr_indices),
+                                      py_csr_indptr
+        );
+    }
+    catch (std::exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    }
 }
 
 
 /////////////////////////////////////
 
 static PyMethodDef DierckxMethods[] = {
-    //...
+    /* FITPACK replacement helpers*/
     {"fpknot", py_fpknot, METH_VARARGS, 
      "fpknot replacement"},
     {"fpback", py_fpback, METH_VARARGS,
@@ -722,16 +1028,23 @@ static PyMethodDef DierckxMethods[] = {
      "row-by-row QR triangularization"},
     {"data_matrix", py_data_matrix, METH_VARARGS,
      "(m, k+1) array of non-zero b-splines"},
-    {"_coloc", py_coloc, METH_VARARGS,
-      doc_coloc},
-    {"_norm_eq_lsq", py_norm_eq_lsq, METH_VARARGS,
-     doc_norm_eq_lsq},
+    /* BSpline helpers */
     {"evaluate_spline", py_evaluate_spline, METH_VARARGS,
      doc_evaluate_spline},
     {"evaluate_all_bspl", py_evaluate_all_bspl, METH_VARARGS,
      doc_evaluate_all_bspl},
     {"find_interval", py_find_interval, METH_VARARGS,
      doc_find_interval},
+    /* make_{interp,lsq}_spline helpers*/
+    {"_coloc", py_coloc, METH_VARARGS,
+      doc_coloc},
+    {"_norm_eq_lsq", py_norm_eq_lsq, METH_VARARGS,
+     doc_norm_eq_lsq},
+    /* NdBSpline helpers */
+    {"evaluate_ndbspline", py_evaluate_ndbspline, METH_VARARGS,
+     doc_evaluate_ndbspline},
+    {"_coloc_nd", py_coloc_nd, METH_VARARGS,
+     doc_coloc_nd},
     //...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
