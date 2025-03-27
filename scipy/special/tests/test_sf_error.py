@@ -2,7 +2,7 @@ import sys
 import warnings
 
 import numpy as np
-from numpy.testing import assert_, assert_equal, IS_PYPY
+from numpy.testing import assert_, assert_equal, HAS_REFCOUNT
 import pytest
 from pytest import raises as assert_raises
 
@@ -73,7 +73,8 @@ def test_seterr():
         sc.seterr(**entry_err)
 
 
-@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
+@pytest.mark.thread_unsafe
+@pytest.mark.skipif(not HAS_REFCOUNT, reason="Python lacks refcounts")
 def test_sf_error_special_refcount():
     # Regression test for gh-16233.
     # Check that the reference count of scipy.special is not increased

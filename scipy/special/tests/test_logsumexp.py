@@ -10,11 +10,8 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
-from scipy.stats.tests.test_stats import skip_xp_backends
 
 from scipy._lib.array_api_extra.testing import lazy_xp_function
-
-
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
@@ -184,7 +181,6 @@ class TestLogSumExp:
         desired = np.asarray(1000.0 + math.log(2.0))
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype', dtypes)
     def test_dtypes_a(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -194,7 +190,6 @@ class TestLogSumExp:
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
     def test_dtypes_ab(self, dtype_a, dtype_b, xp):
@@ -225,7 +220,6 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.filterwarnings(
         "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
     )

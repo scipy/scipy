@@ -5729,8 +5729,9 @@ class Test_ttest_ind_common:
     def test_nans_on_axis(self, kwds, axis):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
-        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
-        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        rng = np.random.default_rng(363836384995579937222)
+        a = rng.integers(10, size=(5, 3, 10)).astype('float')
+        b = rng.integers(10, size=(5, 3, 10)).astype('float')
         # set some indices in `a` and `b` to be `np.nan`.
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
