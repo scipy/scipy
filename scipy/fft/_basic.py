@@ -1170,13 +1170,12 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     --------
     >>> import scipy.fft
     >>> import numpy as np
-    >>> x = np.meshgrid(np.arange(5), np.arange(5))[1]
+    >>> x = np.meshgrid([1, 0, -1, 0], [0, 1, 0, 1])[0]
     >>> scipy.fft.rfft2(x)
-    array([[ 50.  +0.j        ,   0.  +0.j        ,   0.  +0.j        ],
-           [-12.5+17.20477401j,   0.  +0.j        ,   0.  +0.j        ],
-           [-12.5 +4.0614962j ,   0.  +0.j        ,   0.  +0.j        ],
-           [-12.5 -4.0614962j ,   0.  +0.j        ,   0.  +0.j        ],
-           [-12.5-17.20477401j,   0.  +0.j        ,   0.  +0.j        ]])
+    array([[0.+0.j, 8.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j],
+           [0.+0.j, 0.+0.j, 0.+0.j]])
 
     """
     return (Dispatchable(x, np.ndarray),)
