@@ -433,6 +433,27 @@ class TestNNLS:
         """Test that using atol parameter triggers deprecation warning"""
         a = np.array([[1, 0], [1, 0], [0, 1]])
         b = np.array([2, 1, 1])
-        
+
         with pytest.warns(DeprecationWarning, match="{'atol'}"):
             nnls(a, b, atol=1e-8)
+
+    def test_2D_singleton_RHS_input(self):
+        # Test that a 2D singleton RHS input is accepted
+        A = np.array([[1.0, 0.5, -1.],
+                      [1.0, 0.5, 0.0],
+                      [1.0, 0.5, 0.0],
+                      [0.0, 0.0, 1.0]])
+        b = np.array([[2.0, 1.0, 1.0, 0.5]]).T
+        x, r = nnls(A, b)
+        assert_allclose(x, np.array([4.0/3.0, 0.0, 0.0]))
+        assert_allclose(r, 0.9574271077563385)
+
+    def test_2D_not_singleton_RHS_input_2(self):
+        # Test that a 2D but not a column vector RHS input is rejected
+        A = np.array([[1.0, 0.5, -1.],
+                      [1.0, 0.5, 0.0],
+                      [1.0, 0.5, 0.0],
+                      [0.0, 0.0, 1.0]])
+        b = np.ones(shape=[4, 2], dtype=np.float64)
+        with pytest.raises(ValueError, match="Expected a 1D array"):
+            nnls(A, b)
