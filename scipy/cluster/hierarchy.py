@@ -4232,8 +4232,6 @@ def leaders(Z, T):
 
     n_obs = Z.shape[0] + 1
 
-    # The function name is prominently visible on the user-facing Dask dashboard;
-    # make sure it is meaningful.
     def leaders_(Z, T, validate):
         if validate:
             is_valid_linkage(Z, throw=True, name='Z')
