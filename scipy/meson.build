@@ -91,15 +91,12 @@ inc_np = include_directories(incdir_numpy)
 numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
 np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
-
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
@@ -143,6 +140,7 @@ cpp_args_pythran = [
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
   fortranobject_c,
+  c_args: numpy_nodepr_api,
   dependencies: py3_dep,
   include_directories: [inc_np, inc_f2py],
   gnu_symbol_visibility: 'hidden',
@@ -257,6 +255,8 @@ if lapack_order == ['auto']
   lapack_order += ['openblas', 'flexiblas', 'lapack']
 endif
 
+message('BLAS_ODER = ', blas_order, 'BLAS_NAME =', blas_name)
+
 # MKL-specific options
 _threading_opt = get_option('mkl-threading')
 if _threading_opt == 'auto'
@@ -274,12 +274,15 @@ mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
 #
 # First try scipy-openblas, and if found don't look for blas/lapack, we
 # know what's inside the scipy-openblas wheels already.
+generate_blas_wrappers = false
 if blas_name == 'openblas' or blas_name == 'auto'
   blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
   endif
 endif
+
 if blas_name == 'auto'
   foreach _name : blas_order
     if _name == 'mkl'
@@ -294,6 +297,10 @@ if blas_name == 'auto'
       if not blas.found() and mkl_may_use_sdl
         blas = dependency('mkl', modules: ['sdl: true'], required: false)
       endif
+    elif _name == 'openblas'
+      # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
+      # that too to make the fallback detection with CMake work
+      blas = dependency(['openblas', 'OpenBLAS'], modules: blas_interface, required: false)
     else
       blas = dependency(_name, modules: blas_interface, required: false)
     endif
@@ -302,21 +309,33 @@ if blas_name == 'auto'
     endif
   endforeach
 else
-  if blas_name.to_lower().startswith('mkl')
-    mkl_uses_sdl = false
-    blas = dependency('mkl',
-      modules: blas_interface + mkl_opts,
-      required: false,
-      version: mkl_version_req,
-    )
-    # Same deal as above - try again for MKL
-    if not blas.found() and mkl_may_use_sdl
-      mkl_uses_sdl = true
-      blas = dependency('mkl', modules: ['sdl: true'], required: false)
-    endif
+  # blas_name != 'auto': a specific BLAS requested; ignore blas-order
+  if blas_name == 'openblas'
+    _name = ['openblas', 'OpenBLAS']
   else
-    blas = dependency(blas_name, modules: blas_interface, required: false)
+    _name = blas_name
   endif
+  blas = dependency(blas_name, modules: blas_interface, required: false)
+  
+
+#  if blas_name.to_lower().startswith('mkl')
+#    mkl_uses_sdl = false
+#    blas = dependency('mkl',
+#      modules: blas_interface + mkl_opts,
+#      required: false,
+#      version: mkl_version_req,
+#    )
+#    # Same deal as above - try again for MKL
+#    if not blas.found() and mkl_may_use_sdl
+#      mkl_uses_sdl = true
+#      blas = dependency('mkl', modules: ['sdl: true'], required: false)
+#    endif
+#  elif blas_name.to_lower().startswith('openblas')
+#    # same deal with openblas
+#    blas = dependency(['openblas', 'OpenBLAS'], modules: blas_interface, required: false)
+#  else
+#    blas = dependency(blas_name, modules: blas_interface, required: false)
+#  endif
 endif
 
 if not blas.found()
@@ -374,7 +393,6 @@ endif
 
 _args_blas_lapack = []
 accelerate_flag = []
-generate_blas_wrappers = false
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -416,14 +434,14 @@ if use_g77_abi
   g77_abi_wrappers = static_library(
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [py3_dep, blas, np_dep],
+    dependencies: [py3_dep, cblas, blas_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: [py3_dep, blas, np_dep],
+    dependencies: [py3_dep, blas_dep, np_dep],
     gnu_symbol_visibility: 'hidden',
   )
 endif
