@@ -157,6 +157,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
 # `reversed` is for developer convenience: test new function first = less waiting
 @pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings(
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
