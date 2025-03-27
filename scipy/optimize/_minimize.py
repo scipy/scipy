@@ -942,9 +942,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     .. [4] Papageorgiou, D.J., Kronqvist, J. and Kumaran, K. (2024).
            Linewalker: line search for black box derivative-free optimization
            and surrogate model construction. Optimization and Engineering, pp.1-65.
-    .. [5] Papageorgiou, D.J., Kronqvist, J., Ramanujam, A., Kor, J., Kim, Y. and Li, C. (2024).
-           Solution polishing via path relinking for continuous black-box optimization.
-           Optimization Letters, pp.1-42.
+    .. [5] Papageorgiou, D.J., Kronqvist, J., Ramanujam, A., Kor, J., Kim, Y. and 
+           Li, C. (2024). Solution polishing via path relinking for continuous 
+           black-box optimization. Optimization Letters, pp.1-42.
 
     Examples
     --------

@@ -6,13 +6,17 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 import math
-from typing import Any, Callable, Dict, Tuple
+from typing import Any
+from collections.abc import Callable
 import numpy as np
 from ._cython_linewalker import CythonLinewalker
 
 @dataclass
 class _LinewalkerProgress:
-    """ a class to store the linewalker algorithm's progess over the course of major iterations """
+    """ 
+    a class to store the linewalker algorithm's progess over the course of major 
+    iterations 
+    """
     # Function value at the grid index at ix_arg_min_evaluated
     f_min_evaluated: float = 1e15
 
@@ -22,19 +26,20 @@ class _LinewalkerProgress:
     # Index of the sample when the ix_arg_min_evaluated was evaluated.
     i_sample_when_minimizer_was_evaluated: int = -1
 
-    # Major iteration (of main "while" loop) when the function was evaluated at ix_arg_min_evaluated
+    # Major iteration (of main "while" loop) when the function was evaluated at
+    # ix_arg_min_evaluated
     iter_when_minimizer_was_evaluated: int = 0
 
-    # a positive integer denoting the maximum number of function evaluations (the "budget") that
-    # can be made over the entire algorithm
+    # a positive integer denoting the maximum number of function evaluations
+    # (the "budget") that can be made over the entire algorithm
     max_num_function_evaluations: int = 30
 
-    # a positive integer denoting the maximum number of function evaluations to make per major
-    # iteration
+    # a positive integer denoting the maximum number of function evaluations
+    # to make per major iteration
     max_num_evaluations_per_iteration: int = 1
 
-    # a nonnegative integer denoting the number of major iterations (times entering the main WHILE
-    # loop)
+    # a nonnegative integer denoting the number of major iterations (times
+    # entering the main WHILE loop)
     num_major_iterations: int = 0
     previous_evaluated_objval_improvement: float = 0
 
@@ -42,11 +47,14 @@ class _LinewalkerProgress:
     save_metrics_per_iter: bool = False
 
     # ixNewNonTabuInIter
-    diversify_in_iter: np.ndarray = field(default_factory=lambda: np.array([], dtype=bool))
-    num_local_extrema_in_iter: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
-    tabu_tenure_in_iter: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
+    diversify_in_iter: np.ndarray = \
+        field(default_factory=lambda: np.array([], dtype=bool))
+    num_local_extrema_in_iter: np.ndarray = \
+        field(default_factory=lambda: np.array([], dtype=int))
+    tabu_tenure_in_iter: np.ndarray = \
+        field(default_factory=lambda: np.array([], dtype=int))
 
-    def __init__(self, option: Dict['str', Any]):
+    def __init__(self, option: dict[str, Any]):
         """ Initialize a LinewalkerProgess object. """
         for key, value in option.items():
             if hasattr(self, key):
@@ -54,7 +62,9 @@ class _LinewalkerProgress:
 
         # Initialize arrays if saving metrics in each major iteration
         if self.save_metrics_per_iter:
-            n: int = self.max_num_function_evaluations - option['initial_number_of_samples']
+            n: int = \
+                self.max_num_function_evaluations - \
+                option['initial_number_of_samples']
             self.diversify_in_iter = np.zeros(n, dtype=bool)
             self.num_local_extrema_in_iter = np.zeros(n, dtype=int)
             self.tabu_tenure_in_iter = np.zeros(n, dtype=int)
@@ -131,17 +141,22 @@ class _Surrogate:
     # ix_new = np.union1d(ix_new_local_minima, ix_new_local_maxima)
     ix_new: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
 
-    # Indices of new local maxima: ix_new_local_maxima = np.setdiff1d(ix_local_maxima, ix)
-    ix_new_local_maxima: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
+    # Indices of new local maxima:
+    # ix_new_local_maxima = np.setdiff1d(ix_local_maxima, ix)
+    ix_new_local_maxima: np.ndarray = \
+        field(default_factory=lambda: np.array([], dtype=int))
 
-    # Indices of new local minima: ix_new_local_minima = np.setdiff1d(ix_local_minima, ix)
-    ix_new_local_minima: np.ndarray = field(default_factory=lambda: np.array([], dtype=int))
+    # Indices of new local minima:
+    # ix_new_local_minima = np.setdiff1d(ix_local_minima, ix)
+    ix_new_local_minima: np.ndarray = \
+        field(default_factory=lambda: np.array([], dtype=int))
 
-    # boolean array: sp[i]=True implies a function evaluation (sample) will be made at
-    # grid point/index i. sp is short for "sample" or "sample point"
+    # boolean array: sp[i]=True implies a function evaluation (sample)
+    # will be made at grid point/index i. sp is short for "sample" or "sample point"
     sp: np.ndarray = field(default_factory=lambda: np.array([], dtype=bool))
 
-    # An array of floats containing the x-coordinate associated with each grid index # Formerly Xset
+    # An array of floats containing the x-coordinate associated with each
+    # grid index. Formerly Xset
     x_coord: np.ndarray = field(default_factory=lambda: np.array([], dtype=float))
 
     # First-derivative smoothing parameter
@@ -169,7 +184,8 @@ class _Surrogate:
     # Main diagonal of pentadiagonal matrix from compute_fit_vectors5
     d3: np.ndarray = field(default_factory=lambda: np.array([], dtype=float))
 
-    # Higher (second rightmost) diagonal of pentadiagonal matrix from compute_fit_vectors5
+    # Higher (second rightmost) diagonal of pentadiagonal matrix from
+    # compute_fit_vectors5
     d4: np.ndarray = field(default_factory=lambda: np.array([], dtype=float))
 
     # Highest (Rightmost) diagonal of pentadiagonal matrix from compute_fit_vectors5
@@ -179,13 +195,14 @@ class _Surrogate:
     penta = None
     compute_fit_vectors5 = None
 
-    def __init__(self, x1: int, x2: int, option: Dict['str', Any]):
+    def __init__(self, x1: int, x2: int, option: dict[str, Any]):
         """ Initialize a Surrogate object. """
         for key, value in option.items():
             if hasattr(self, key):
                 setattr(self, key, value)
 
-        self.fit = np.zeros(self.grid_size) # Initialize fit (surrogate / function approximation)
+        # Initialize fit (surrogate / function approximation)
+        self.fit = np.zeros(self.grid_size)
 
         # Define the smoothing matrix or matrices
         self.d1, self.d2, self.d3, self.d4, self.d5 = _compute_fit_vectors5(
@@ -206,7 +223,10 @@ class _Surrogate:
         self.ix_sorted = np.sort(self.ix)
 
     def insert(self, i: int, fnc_val: float) -> None:
-        """ Insert the index i and the function value fnc_val into appropriate surrogate members """
+        """
+        Insert the index i and the function value fnc_val into appropriate surrogate
+        members 
+        """
         self.func[i] = fnc_val
         self.ix = np.append(self.ix, i)
 
@@ -236,16 +256,18 @@ class _Surrogate:
             np.ndarray: a numpy array containing a single element - an int corresponding
             to the grid index at which the largest unexplored interval is bisected
         """
-        num_unexplored_points_per_interval_vector = self.ix_sorted[1:] - self.ix_sorted[:-1]
+        num_unexplored_points_per_interval_vector = \
+            self.ix_sorted[1:] - self.ix_sorted[:-1]
         idx_interval_vector = np.where(
             num_unexplored_points_per_interval_vector >=
             np.max(num_unexplored_points_per_interval_vector) - 1)[0]
         i_min_func_tiebreaker_left_end_point = self.ix_sorted[idx_interval_vector[0]]
-        i_min_func_tiebreaker_right_end_point = self.ix_sorted[idx_interval_vector[0] + 1]
+        i_min_func_tiebreaker_right_end_point = \
+            self.ix_sorted[idx_interval_vector[0] + 1]
 
-        # If there is more than one "max" interval with the same number of unexplored/unsampled
-        # points, we break the tie by selecting the interval containing the minimum predicted
-        # fit value
+        # If there is more than one "max" interval with the same number of
+        # unexplored/unsampled points, we break the tie by selecting the
+        # interval containing the minimum predicted fit value
         if len(idx_interval_vector) > 1:
             min_func_tiebreaker = 1e15
             for i in idx_interval_vector:
@@ -266,7 +288,8 @@ class _Surrogate:
 
     def find_local_extrema(self) -> None:
         """
-        Given a surrogate with a 'fit' array of N floats and an int array 'ix' indicating,
+        Given a surrogate with a 'fit' array of N floats and an int array 'ix'
+        indicating,
         1) find all strictly local (and therefore global) extrema (maxima and minima)
         values and associated indices of fit
         2) find all new strictly local extrema, i.e., indices of local extrema that
@@ -283,8 +306,10 @@ class _Surrogate:
         max_absolute_tolerance = self.max_relative_tolerance * previous_range_fit
         min_absolute_tolerance = self.min_relative_tolerance * previous_range_fit
 
-        is_fit_local_maxima = fit[1:-1] > np.maximum(fit[:-2], fit[2:]) + max_absolute_tolerance
-        is_fit_local_minima = fit[1:-1] < np.minimum(fit[:-2], fit[2:]) - min_absolute_tolerance
+        is_fit_local_maxima = \
+            fit[1:-1] > np.maximum(fit[:-2], fit[2:]) + max_absolute_tolerance
+        is_fit_local_minima = \
+            fit[1:-1] < np.minimum(fit[:-2], fit[2:]) - min_absolute_tolerance
 
         ix_local_maxima = np.where(is_fit_local_maxima)[0] + 1
         ix_local_minima = np.where(is_fit_local_minima)[0] + 1
@@ -296,7 +321,7 @@ class _Surrogate:
         self.ix_new_local_minima = np.setdiff1d(self.ix_local_minima, self.ix)
         self.ix_new = np.union1d(self.ix_new_local_minima, self.ix_new_local_maxima)
 
-    def select_initial_grid_indices_to_sample(self, option: Dict['str', Any]) -> None:
+    def select_initial_grid_indices_to_sample(self, option: dict[str, Any]) -> None:
         """
         Select the grid indices that should be sampled at initialization.
 
@@ -317,7 +342,8 @@ class _Surrogate:
 
         if option['initial_sampling_method'] == 'uniform':
             i_sp = np.round(
-                np.linspace(0, self.grid_size-1, option['initial_number_of_samples'])).astype(int)
+                np.linspace(0, self.grid_size-1,
+                            option['initial_number_of_samples'])).astype(int)
             for i in i_sp:
                 self.sp[i] = True
         elif option['initial_sampling_method'] == 'random':
@@ -332,22 +358,25 @@ class _Surrogate:
     def determine_if_potential_minimum_is_undersampled(
         self, ix_candidate: int,
         num_immediate_neighbors: int,
-        option: Dict[str, Any]) -> bool:
+        option: dict[str, Any]) -> bool:
         """ Determine if a potential global minimum is undersampled.
             In early iterations when the fit could be poor/inaccurate, we may not want
             to sample near a potential minimum *too* frequently.
             In later iterations when the fit becomes more accurate, we may want to
-            resample near a potential minimum if it does not have *too many* immediate neighbors
+            resample near a potential minimum if it does not have *too many* immediate 
+            neighbors
         """
         fraction_of_lower_range = option['min_fraction_of_range_improvement']
         maxnum_immediate_neighbors = option['maxnum_immediate_neighbors']
-        if len(self.ix) > option['num_samples_before_increasing_maxnum_immediate_neighbors']:
+        if len(self.ix) > option[\
+            'num_samples_before_increasing_maxnum_immediate_neighbors']:
             fraction_of_lower_range = min(
                 1.0, option['range_improvement_multiplier'] * fraction_of_lower_range)
             maxnum_immediate_neighbors += 1
         fit_has_potential_better_global_minimum = \
             self.fit[ix_candidate] <= \
-            self.func[self.ix_arg_min_evaluated] + fraction_of_lower_range * self.range_fit
+                self.func[self.ix_arg_min_evaluated] + fraction_of_lower_range *\
+                self.range_fit
         potential_minimum_is_undersampled = \
             fit_has_potential_better_global_minimum and \
             (num_immediate_neighbors <= maxnum_immediate_neighbors)
@@ -355,7 +384,8 @@ class _Surrogate:
 
     def find_extremum_with_largest_normalized_deviation(self) -> int:
         """
-        Find extremum whose interval has the largest normalized deviation from a straight line
+        Find extremum whose interval has the largest normalized deviation from a
+        straight line
 
         Returns:
             int: Index of the extremum with the largest normalized deviation
@@ -373,7 +403,8 @@ class _Surrogate:
             run = ix_right_ept - ix_left_ept
             slope = rise / run
             intercept = -slope * ix_left_ept + self.func[ix_left_ept]
-            y_linear = [slope * x + intercept for x in range(ix_left_ept, ix_right_ept + 1)]
+            y_linear = \
+                [slope * x + intercept for x in range(ix_left_ept, ix_right_ept + 1)]
 
             # Compute normalized Mean Absolute Error (mae) between fit and the
             # straightline approximation
@@ -410,12 +441,15 @@ class _TabuStruct:
     min_fraction_of_range_improvement: float = 0.01
 
     # a scalar between [0,1]. Usage: Given N grid indices and |ix| samples, we require
-    # new sample indices to be at least (roughly) min_grid_points_separation_multiplier*(N/|ix|)
-    # indices from an existing sample index. Example: min_grid_points_separation_multiplier=0.1,
+    # new sample indices to be at least (roughly)
+    # min_grid_points_separation_multiplier*(N/|ix|)
+    # indices from an existing sample index. Example:
+    # min_grid_points_separation_multiplier=0.1,
     # N=1000, |ix|=17, then ceil(min_grid_points_separation_multiplier*N/|ix|)=6
     min_grid_points_separation_multiplier: float = 0.10
 
-    # The larger the multiplier, the GREATER the number of grid points needed for separation
+    # The larger the multiplier, the GREATER the number of grid points needed
+    # for separation
     max_grid_points_separation_multiplier: float = 0.25
 
     # Specified as a fraction of the total range of the function
@@ -433,22 +467,25 @@ class _TabuStruct:
     # a binary flag: 0 => not enforce; 1 => long-term tabu tenure is enforced
     enforce_long_term_tabu_tenure: int = 1
 
-    # Nonnegative integer indicating the number of iterations remaining to override short-
-    # and long-term tabu tenures. When the user's goal is to optimize, we may wish to ensure
-    # that a sample (function evaluation) is made at a predicted minimizer. This parameter
-    # is used in an asperation criterion.  a positive integer K implies that the algorithm
-    # may override all tabu tenures when there are K or fewer major iterations remaining.
-    # 0 => Linewalker will never force a sample by overriding a tabu tenure
+    # Nonnegative integer indicating the number of iterations remaining to
+    # override short- and long-term tabu tenures. When the user's goal is
+    # to optimize, we may wish to ensure that a sample (function
+    # evaluation) is made at a predicted minimizer. This parameter
+    # is used in an asperation criterion.  a positive integer K
+    # implies that the algorithm may override all tabu tenures when
+    # there are K or fewer major iterations remaining. 0 => Linewalker
+    # will never force a sample by overriding a tabu tenure
     force_sample_at_predicted_minimizer: int = 0
 
-    def __init__(self, surrogate: _Surrogate, option: Dict['str', Any]):
+    def __init__(self, surrogate: _Surrogate, option: dict[str, Any]):
         """ Initialize a TabuStruct object. """
         # Update attributes based on the option dictionary
         for key, value in option.items():
             if hasattr(self, key):
                 setattr(self, key, value)
 
-        self.tabu_grid_distance = option['grid_size'] / (2 * option['max_num_function_evaluations'])
+        self.tabu_grid_distance = \
+            option['grid_size'] / (2 * option['max_num_function_evaluations'])
 
         if self.tabu_tenure_num_iterations > 0:
             self.index_list = copy.deepcopy(surrogate.ix)
@@ -456,18 +493,19 @@ class _TabuStruct:
 
     def compute_grid_distance_to_all_samples(
         self, ix_candidate: int,
-        surrogate: _Surrogate) -> Tuple[bool, int]:
+        surrogate: _Surrogate) -> tuple[bool, int]:
         """
-        Given a candidate index 'ix_candidate' of where to sample, compute the grid distance
-        to all existing samples. The grid distance between index i and j is defined as abs(i-j),
-        i.e., the number of indices between i and j.
+        Given a candidate index 'ix_candidate' of where to sample, compute the 
+        grid distance to all existing samples. The grid distance between index
+        i and j is defined as abs(i-j), i.e., the number of indices between i and j.
         """
         abs_grid_distance_to_sample = np.abs(ix_candidate - surrogate.ix_sorted)
         if self.enforce_long_term_tabu_tenure == 1:
-            # Ratio of (ix_candidate's objective function distance from the min or max of the
-            # fit) to (half of the range of the fit). If ix_candidate's objval is near the
-            # minimum or the maximum, then this fraction will be very small. If ix_candidate's
-            # objval is near the average, then the fraction will be close to 1.
+            # Ratio of (ix_candidate's objective function distance from the min or
+            # max of the fit) to (half of the range of the fit). If ix_candidate's
+            # objval is near the minimum or the maximum, then this fraction will
+            # be very small. If ix_candidate's objval is near the average, then
+            # the fraction will be close to 1.
             distance_ratio_to_mid_fit = \
                 min(surrogate.max_fit - surrogate.fit[ix_candidate], \
                     surrogate.fit[ix_candidate] - surrogate.min_fit) / \
@@ -519,7 +557,8 @@ class _TabuStruct:
             if num_local_extrema >= self.tabu_tenure_num_iterations:
                 self.tabu_tenure_num_iterations += 1
             elif num_local_extrema < \
-                 self.tabu_tenure_num_iterations - 1 and self.tabu_tenure_num_iterations > 1:
+                 self.tabu_tenure_num_iterations - 1 and \
+                    self.tabu_tenure_num_iterations > 1:
                 self.tabu_tenure_num_iterations -= 1
 
     def update_tabu_lists(self, i: int, _iter: int) -> None:
@@ -544,14 +583,16 @@ class _TabuStruct:
         lw_progress: _LinewalkerProgress,
         # num_major_iterations: int,
         # previous_evaluated_objval_improvement: float,
-        option: Dict['str', Any]) -> np.ndarray:
+        option: dict[str, Any]) -> np.ndarray:
         """
         Manage tabu_struct
         """
         if self.tabu_tenure_num_iterations <= 0: # There is no tabu_struct to manage
             return surrogate.ix_new
 
-        num_local_extrema = len(surrogate.ix_local_minima) + len(surrogate.ix_local_maxima)
+        num_local_extrema = \
+            len(surrogate.ix_local_minima) + \
+            len(surrogate.ix_local_maxima)
         self.update_short_term_tabu_tenure(num_local_extrema)
         self.remove_no_longer_tabu_indices(lw_progress.num_major_iterations)
 
@@ -559,16 +600,18 @@ class _TabuStruct:
         if self.index_list.size == 0:
             ix_new_non_tabu = surrogate.ix_new
         else:
-            # Initialize as an empty list, although this will later be converted to a numpy array
+            # Initialize as an empty list, although this will later be converted to
+            # a numpy array
             ix_new_non_tabu = []
             for ix_candidate in surrogate.ix_new:
                 ix_left_ept, ix_right_ept = \
                     _find_left_and_right_neighbors(ix_candidate, surrogate.ix_sorted)
-                is_min_grid_distance_to_all_samples_satisfied, num_immediate_neighbors = \
+                is_min_grid_distance_to_all_samples_satisfied, \
+                    num_immediate_neighbors = \
                     self.compute_grid_distance_to_all_samples(ix_candidate, surrogate)
 
-                # NonTabu Check 1: Is ix_candidate sufficiently far away from all tabu points
-                # AND from all previously-sampled points
+                # NonTabu Check 1: Is ix_candidate sufficiently far away from all
+                # tabu points AND from all previously-sampled points
                 is_min_grid_distance_condition_true = \
                     self.is_candidate_sufficiently_far_away(
                         is_min_grid_distance_to_all_samples_satisfied, ix_candidate)
@@ -576,11 +619,12 @@ class _TabuStruct:
                     ix_new_non_tabu.append(ix_candidate)
                     continue
 
-                # NonTabu Check 2 - Aspiration criterion 1: Potential minimum is undersampled.
-                # Overrides short- and long-term tabu tenures
+                # NonTabu Check 2 - Aspiration criterion 1: Potential minimum is
+                # undersampled. Overrides short- and long-term tabu tenures
                 # Is ix_candidate a potential minimizer AND is there at most
-                # maxnum_immediate_neighbors points in the interval |-----x------| that have
-                # been sampled. If so, go back and sample again "around the corner"
+                # maxnum_immediate_neighbors points in the interval
+                # |-----x------| that have been sampled. If so, go back and
+                # sample again "around the corner"
                 potential_minimum_is_undersampled = \
                     surrogate.determine_if_potential_minimum_is_undersampled(
                         ix_candidate, num_immediate_neighbors, option)
@@ -588,12 +632,13 @@ class _TabuStruct:
                     ix_new_non_tabu.append(ix_candidate)
                     continue
 
-                # NonTabu Check 3 - Aspiration criterion 2: Resample near a newly-found minimum.
-                # Overrides short-term tabu tenures only
-                # Is ix_candidate near a newly-found minimum that was just evaluated/found in
-                # the previous iteration?
-                # Note that fit(ix_arg_min_evaluated) may not equal min(fit), meaning that
-                # Check 2 may not catch this possibility, so we include an additional catch
+                # NonTabu Check 3 - Aspiration criterion 2: Resample near a
+                # newly-found minimum. Overrides short-term tabu tenures only
+                # Is ix_candidate near a newly-found minimum that was just
+                # evaluated/found in the previous iteration?
+                # Note that fit(ix_arg_min_evaluated) may not equal min(fit),
+                # meaning that Check 2 may not catch this possibility, so we
+                # include an additional catch
                 new_minimum_was_just_evaluated = \
                     (ix_left_ept <= surrogate.ix_arg_min_evaluated <= ix_right_ept) \
                     and (lw_progress.previous_evaluated_objval_improvement >= \
@@ -603,10 +648,11 @@ class _TabuStruct:
                     ix_new_non_tabu.append(ix_candidate)
                     continue
 
-                # NonTabu Check 4 (Aspiration criterion 3: Force sample at predicted minimizer
-                # force_sample_at_predicted_minimizer; overrides short- and long-term tabu tenures.
-                # When the user's goal is to optimize, we may wish to ensure that a sample
-                # (function evaluation) is made at a predicted minimizer
+                # NonTabu Check 4 (Aspiration criterion 3: Force sample at predicted
+                # minimizer force_sample_at_predicted_minimizer; overrides short-
+                # and long-term tabu tenures. When the user's goal is to optimize,
+                # we may wish to ensure that a sample (function evaluation) is
+                # made at a predicted minimizer
                 if ((lw_progress.max_num_function_evaluations-len(surrogate.ix) <= \
                         self.force_sample_at_predicted_minimizer) and \
                     surrogate.fit[ix_candidate] == surrogate.min_fit):
@@ -685,7 +731,9 @@ def _penta(n, e, _a, _d, _c, f, _b):
 
     return x
 
-def _find_left_and_right_neighbors(ix_candidate: int, ix_sorted: np.ndarray) -> Tuple[int, int]:
+def _find_left_and_right_neighbors(\
+        ix_candidate: int, ix_sorted: np.ndarray) -> \
+            tuple[int, int]:
     """
     Given an index ix_candidate and a sorted array ix_sorted of distinct int values,
     returns the elements ix_left_ept and ix_right_ept such that ix_sorted[iStar-1] =
@@ -707,19 +755,22 @@ def _initialize_vector_of_function_evaluations(
     func: Callable[[float], float],
     lw_progress: _LinewalkerProgress,
     surrogate: _Surrogate,
-    option: Dict['str', Any]) -> None:
+    option: dict[str, Any]) -> None:
     """
     Initialize function evaluations
     """
-    # an integer counter denoting the number of function evaluations (samples) made thus far
+    # an integer counter denoting the number of function evaluations
+    # (samples) made thus far
     i_sample_counter = 0
 
-    # func stores the true function value at each grid index that is actually evaluated.
-    # func would need to be modified if we allowed for noisy function evaluations because
-    # we may choose to sample the same grid index multiple times.
+    # func stores the true function value at each grid index that is
+    # actually evaluated. func would need to be modified if we allowed
+    # for noisy function evaluations because we may choose to sample
+    # the same grid index multiple times.
     surrogate.func = np.zeros(option['grid_size'], dtype=float)
 
-    # vector of indices where samples (function evaluations) have been taken (or soon will be taken)
+    # vector of indices where samples (function evaluations) have been
+    # taken (or soon will be taken)
     surrogate.ix = np.where(surrogate.sp)[0]
 
     for grid_index in surrogate.ix:
@@ -733,8 +784,8 @@ def _initialize_vector_of_function_evaluations(
             surrogate.func[grid_index] = option['f2']
 
         else:
-            foo = func(surrogate.x_coord[grid_index])
-            surrogate.func[grid_index] = foo
+            surrogate.func[grid_index] = \
+                func(surrogate.x_coord[grid_index])
 
         if surrogate.func[grid_index] < lw_progress.f_min_evaluated:
             lw_progress.update_minimizer_evaluated(
@@ -746,7 +797,7 @@ def _polish_non_tabu_candidates(
     surrogate: _Surrogate,
     diversify: bool,
     ix_new_to_evaluate: np.ndarray, # ixNewToEvaluate: Any,
-    option: Dict[str, Any]) -> np.ndarray:
+    option: dict[str, Any]) -> np.ndarray:
     """
     Polish non-tabu candidates
     """
@@ -755,13 +806,16 @@ def _polish_non_tabu_candidates(
 
     max_deviation_from_optimum = \
         option['max_fractional_deviation_from_optimum'] * surrogate.range_fit
-    num_remaining_evaluations = option['max_num_function_evaluations'] - len(surrogate.ix_sorted)
+    num_remaining_evaluations = \
+        option['max_num_function_evaluations'] - len(surrogate.ix_sorted)
     ix_new_to_evaluate_updated = np.zeros(len(ix_new_to_evaluate), dtype=int)
 
     for i, ix_candidate in enumerate(ix_new_to_evaluate):
-        # force_sample_at_predicted_minimizer; overrides short- and long-term tabu tenures
+        # force_sample_at_predicted_minimizer; overrides short- and long-term
+        # tabu tenures
         sample_at_predicted_minimizer: bool = \
-            (num_remaining_evaluations <= option['force_sample_at_predicted_minimizer'] and \
+            (num_remaining_evaluations <= \
+             option['force_sample_at_predicted_minimizer'] and \
             surrogate.fit[ix_candidate] == surrogate.min_fit)
         if sample_at_predicted_minimizer:
             ix_new_to_evaluate_updated[i] = ix_candidate
@@ -793,7 +847,7 @@ def _polish_non_tabu_candidates(
 def _sort_new_samples_to_evaluate(
     surrogate: _Surrogate,
     ix_new: np.ndarray,
-    option: Dict['str', Any]) -> np.ndarray:
+    option: dict[str, Any]) -> np.ndarray:
     """
     Sort candidate list of new indices to evaluate according to overall 'goal'
     """
@@ -804,7 +858,8 @@ def _sort_new_samples_to_evaluate(
 
     if len(ix_new) > num_remaining_evaluations:
         i_fit_val_sorted = np.argsort(surrogate.fit[ix_new])
-        ix_new_to_evaluate_unpolished = ix_new[i_fit_val_sorted[:num_remaining_evaluations]]
+        ix_new_to_evaluate_unpolished = \
+            ix_new[i_fit_val_sorted[:num_remaining_evaluations]]
 
     return ix_new_to_evaluate_unpolished
 
@@ -816,7 +871,8 @@ def _linewalker(func, brack, **kwargs):
 
     default_args = {
 
-        # Number of equally-spaced grid indices (candidate solutions) along the line segment of interest
+        # Number of equally-spaced grid indices (candidate solutions) along the
+        # line segment of interest
         'grid_size': 1000,
 
         # First-derivative smoothing parameter for the underlying surrogate
@@ -825,61 +881,84 @@ def _linewalker(func, brack, **kwargs):
         # Second-derivative smoothing parameter for the underlying surrogate
         'mu': 0.01,
 
-        # A positive integer indicating the maximum number of function evaluations that can be taken
+        # A positive integer indicating the maximum number of function evaluations
+        # that can be taken
         'max_num_function_evaluations': 30,
-        
-        # A positive integer indicating the maximum number of function evaluations per major iteration
+
+        # A positive integer indicating the maximum number of function evaluations
+        # per major iteration
         'max_num_evaluations_per_iteration': 1,
-        
-        # A real number >= 0. The predicted value at a local maximum must be at least maximumRelativeTolerance greater than that of its nearest grid indices
+
+        # A real number >= 0. The predicted value at a local maximum must be at least
+        # maximumRelativeTolerance greater than that of its nearest grid indices
         'max_relative_tolerance': 1e-8,
-        
-        # A real number >= 0. The predicted value at a local minimum must be at least minimumRelativeTolerance less than that of its nearest grid indices
+
+        # A real number >= 0. The predicted value at a local minimum must be at least
+        # minimumRelativeTolerance less than that of its nearest grid indices
         'min_relative_tolerance': 1e-8,
-        
+
         # 'chaseGlobalOptima','improveOverallFit'
         'goal': 'chaseGlobalOptima',
-        
-        # Aspiration criterion 2 requires the previously evaluated solution to be min_fraction_of_range_improvement*range_fit, indicating that a significant objective value function improvement was obtained in the previous iteration and that this neighborhood is worth re-exploring
+
+        # Aspiration criterion 2 requires the previously evaluated solution to be
+        # min_fraction_of_range_improvement*range_fit, indicating that a significant
+        # objective value function improvement was obtained in the previous
+        # iteration and that this neighborhood is worth re-exploring
         'min_fraction_of_range_improvement': 0.01,
-        
+
         'min_grid_points_separation_multiplier': 0.10,
-        
+
         'max_grid_points_separation_multiplier': 0.25,
-        
+
         'max_fractional_deviation_from_optimum': 0.01,
 
         # Used with potentialMinimumIsUndersampled: Recommended value = 2 when goal is
         # 'chaseGlobalOptima'; 1 when goal is 'improveOverallFit'
         'maxnum_immediate_neighbors': 1,
-        
+
         # Used with potentialMinimumIsUndersampled
         'num_samples_before_increasing_maxnum_immediate_neighbors': 30,
-        
+
         # Used with potentialMinimumIsUndersampled
         'range_improvement_multiplier': 10,
-        
-        # A non-negative integer; a value <= 0 turns off *all* (=short- and long-term) tabu search-related features
+
+        # A non-negative integer; a value <= 0 turns off *all* (=short- and
+        # long-term) tabu search-related features
         'tabu_tenure_num_iterations': 5,
-        
-        # A binary flag: 0 ==> static; 1 ==> dynamic. If dynamic, the tabu tenure 'tabu_tenure_num_iterations' changes from major iteration to major iteration
+
+        # A binary flag: 0 ==> static; 1 ==> dynamic. If dynamic, the tabu tenure
+        # 'tabu_tenure_num_iterations' changes from major iteration to major iteration
         'tabu_tenure_is_dynamic': 1,
-        
-        # A binary flag: 0 ==> not enforce; 1 ==> long-term tabu tenure is enforced, i.e., we try to avoid sampling "too close" to an sampled index unless an aspiration criterion is met
+
+        # A binary flag: 0 ==> not enforce; 1 ==> long-term tabu tenure is enforced,
+        # i.e., we try to avoid sampling "too close" to an sampled index unless an
+        # aspiration criterion is met
         'enforce_long_term_tabu_tenure': 1,
-        
-        # An integer denoting the number of iterations in which to force a sample (function evaluation) to be taken at the predicted minimizer. An integer <= 0 means that no sample will be forced.  A positive integer K means that, if the grid index corresponding to the predicted minimizer has not been sampled, then a sample will be taken there in the last K major iterations.  If K > 'max_num_function_evaluations'-'initial_number_of_samples', then every sample after the first 'initial_number_of_samples' initial samples are made will be at the index of a predicted global minimizer, assuming that this index has not already been sampled. The polishing (a.k.a. "sampling around the bend") is disabled if a global minimizer is sampled. It is not recommended to set this parameter > 2 since much can be learned from sampling a nonconvex function at diverse points.
+
+        # An integer denoting the number of iterations in which to force a sample
+        # (function evaluation) to be taken at the predicted minimizer. An integer <= 0
+        # means that no sample will be forced.  A positive integer K means that,
+        # if the grid index corresponding to the predicted minimizer has not been
+        # sampled, then a sample will be taken there in the last K major iterations.
+        # If K > 'max_num_function_evaluations'-'initial_number_of_samples', then
+        # every sample after the first 'initial_number_of_samples' initial samples
+        # are made will be at the index of a predicted global minimizer, assuming
+        # that this index has not already been sampled. The polishing (a.k.a.
+        # "sampling around the bend") is disabled if a global minimizer is sampled.
+        # It is not recommended to set this parameter > 2 since much can be learned
+        # from sampling a nonconvex function at diverse points.
         'force_sample_at_predicted_minimizer': 1,
-        
+
         'f1': float('nan'),
-        
+
         'f2': float('nan'),
-        
-        # A positive integer >= 2 denoting the number of initial samples (function evaluations) that must be made
+
+        # A positive integer >= 2 denoting the number of initial samples
+        # (function evaluations) that must be made
         'initial_number_of_samples': 10,
-        
+
         'initial_sampling_method': 'uniform',
-        
+
         'save_metrics_per_iter': 0, # False
     }
 
@@ -890,7 +969,8 @@ def _linewalker(func, brack, **kwargs):
         raise ValueError("grid_size must be greater than or equal to 3.")
 
     if option['initial_number_of_samples'] < 2:
-        raise ValueError("initial_number_of_samples must be greater than or equal to 2.")
+        raise ValueError(\
+            "initial_number_of_samples must be greater than or equal to 2.")
 
     if option['initial_number_of_samples'] > option['max_num_function_evaluations']:
         raise ValueError("initial_number_of_samples must be less than or equal to " \
@@ -913,7 +993,8 @@ def _linewalker(func, brack, **kwargs):
     _initialize_vector_of_function_evaluations(func, lw_progress, surrogate, option)
 
     # ixIterEvaluated = np.zeros(surrogate.ix.size, dtype=int)
-    # an integer counter denoting the number of function evaluations (samples) made thus far
+    # an integer counter denoting the number of function evaluations
+    # (samples) made thus far
     i_sample_counter = surrogate.ix.size
 
     tabu_struct = _TabuStruct(surrogate,option)
@@ -938,9 +1019,11 @@ def _linewalker(func, brack, **kwargs):
             diversify = False
 
         # Determine new samples (grid indices) to evaluate
-        ix_new_to_evaluate_unpolished = _sort_new_samples_to_evaluate(surrogate, ix_new, option)
+        ix_new_to_evaluate_unpolished = \
+            _sort_new_samples_to_evaluate(surrogate, ix_new, option)
         ix_new_to_evaluate_updated = \
-            _polish_non_tabu_candidates(surrogate, diversify, ix_new_to_evaluate_unpolished, option)
+            _polish_non_tabu_candidates(surrogate, diversify, \
+                                        ix_new_to_evaluate_unpolished, option)
         ix_new_to_evaluate = ix_new_to_evaluate_updated
 
         lw_progress.save_metrics(diversify, surrogate, tabu_struct) # Optional
