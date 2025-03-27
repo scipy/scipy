@@ -1788,16 +1788,11 @@ f_cdf_wrap(const Real dfn, const Real dfd, const Real x)
 	y = boost::math::cdf(
                 boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x);
     } catch (...) {
-	/* Boost was unable to produce a result. Can happen when one or both
-	 * of v1 and v2 is very small and x is very large. e.g.
-	 * ncdtr(1e-100, 3, 1.5, 1e100). */
+	/* Boost was unable to produce a result. */
         sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	/* Boost can return results far out of bounds when dfd and dfn are both large
-	 * and of similar magnitude. Return NAN if the result is out of bounds because
-	 * the answer cannot be trusted. */
 	sf_error("fdtr", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
@@ -1883,16 +1878,10 @@ f_sf_wrap(const Real dfn, const Real dfd, const Real x)
 	y = boost::math::cdf(boost::math::complement(
                 boost::math::fisher_f_distribution<Real, SpecialPolicy>(dfn, dfd), x));
     } catch (...) {
-	/* Boost was unable to produce a result. Can happen when one or both
-	 * of v1 and v2 is very small and x is very large. e.g.
-	 * ncdtr(1e-100, 3, 1.5, 1e100). */
         sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
     if ((y < 0) || (y > 1)) {
-	/* Boost can return results far out of bounds when dfd and dfn are both large
-	 * and of similar magnitude. Return NAN if the result is out of bounds because
-	 * the answer cannot be trusted. */
 	sf_error("fdtrc", SF_ERROR_NO_RESULT, NULL);
         y = NAN;
     }
