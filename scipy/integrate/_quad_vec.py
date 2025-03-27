@@ -143,9 +143,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Options: 'gk21' (Gauss-Kronrod 21-point rule),
         'gk15' (Gauss-Kronrod 15-point rule),
         'trapezoid' (composite trapezoid rule).
-        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite
+        Default: 'gk21' for finite intervals and 'gk15' for (semi-)infinite.
     full_output : bool, optional
-        Return an additional ``info`` dictionary.
+        Return an additional ``info`` object.
     args : tuple, optional
         Extra arguments to pass to function, if any.
 
@@ -157,25 +157,25 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
         Estimate for the result
     err : float
         Error estimate for the result in the given norm
-    info : dict
+    info : object
         Returned only when ``full_output=True``.
-        Info dictionary. Is an object with the attributes:
+        Result object with the attributes:
 
-            success : bool
-                Whether integration reached target precision.
-            status : int
-                Indicator for convergence, success (0),
-                failure (1), and failure due to rounding error (2).
-            neval : int
-                Number of function evaluations.
-            intervals : ndarray, shape (num_intervals, 2)
-                Start and end points of subdivision intervals.
-            integrals : ndarray, shape (num_intervals, ...)
-                Integral for each interval.
-                Note that at most ``cache_size`` values are recorded,
-                and the array may contains *nan* for missing items.
-            errors : ndarray, shape (num_intervals,)
-                Estimated integration error for each interval.
+        success : bool
+            Whether integration reached target precision.
+        status : int
+            Indicator for convergence, success (0),
+            failure (1), and failure due to rounding error (2).
+        neval : int
+            Number of function evaluations.
+        intervals : ndarray, shape (num_intervals, 2)
+            Start and end points of subdivision intervals.
+        integrals : ndarray, shape (num_intervals, ...)
+            Integral for each interval.
+            Note that at most ``cache_size`` values are recorded,
+            and the array may contains *nan* for missing items.
+        errors : ndarray, shape (num_intervals,)
+            Estimated integration error for each interval.
 
     Notes
     -----
