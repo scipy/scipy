@@ -24,6 +24,7 @@ from scipy._lib import array_api_compat
 from scipy._lib.array_api_compat import (
     is_array_api_obj,
     is_lazy_array,
+    is_writeable_array,
     size as xp_size,
     numpy as np_compat,
     device as xp_device,
@@ -514,7 +515,7 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
 
 
 # utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, force_floating=False, xp=None):
+def xp_broadcast_promote(*args, copy=False, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
     args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
@@ -561,10 +562,9 @@ def xp_broadcast_promote(*args, force_floating=False, xp=None):
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # This is much faster than xp.astype(arg, dtype, copy=False)
-        if arg.dtype != dtype:
-            arg = xp.astype(arg, dtype)
-
+        # convert dtype/copy only if needed
+        if (arg.dtype != dtype) or (copy and is_writeable_array(arg)):
+            arg = xp.astype(arg, dtype, copy=True)
         out.append(arg)
 
     return out

@@ -104,7 +104,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     """
     xp = array_namespace(a, b)
-    a, b = xp_broadcast_promote(a, b, force_floating=True, xp=xp)
+    a, b = xp_broadcast_promote(a, b, copy=True, force_floating=True, xp=xp)
     a = xpx.atleast_nd(a, ndim=1, xp=xp)
     b = xpx.atleast_nd(b, ndim=1, xp=xp) if b is not None else b
     axis = tuple(range(a.ndim)) if axis is None else axis
@@ -203,14 +203,16 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     # Even if element of `a` is infinite or NaN, it adds nothing to the sum if
     # the corresponding weight is zero.
     if b is not None:
-        a = xpx.at(a, b == 0).set(-xp.inf, copy=True)
+        # Potentially write back to the input.
+        # At the top of logsumexp() we ensured we're working on a copy.
+        a = xpx.at(a, b == 0).set(-xp.inf)
 
     # Find element with maximum real part, since this is what affects the magnitude
     # of the exponential. Possible enhancement: include log of `b` magnitude in `a`.
     a_max, i_max = _elements_and_indices_with_max_real(a, axis=axis, xp=xp)
 
     # for precision, these terms are separated out of the main sum.
-    a = xpx.at(a, i_max).set(-xp.inf, copy=True if b is None else None)
+    a = xpx.at(a, i_max).set(-xp.inf)
     i_max_dt = xp.astype(i_max, a.dtype)
     # This is an inefficient way of getting `m` because it is the sum of a sparse
     # array; however, this is the simplest way I can think of to get the right shape.
