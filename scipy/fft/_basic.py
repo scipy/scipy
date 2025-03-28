@@ -1491,7 +1491,7 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     >>> x = np.array([[1+0j, 2+0j], [2+0j, 1+0j]])  # Hermitian-symmetric input
     >>> scipy.fft.hfft2(x, s=(2, 2))
     array([[ 6.,  0.],
-          [ 0., -2.]])
+           [ 0., -2.]])
 
     """
     return (Dispatchable(x, np.ndarray),)
