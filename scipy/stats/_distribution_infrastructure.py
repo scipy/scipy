@@ -3511,7 +3511,7 @@ def make_distribution(dist):
             in which case support for an old interface version may be deprecated
             and eventually removed.
         parameters : dict or tuple
-            If a ``dict``, each key is the name of a parameter,
+            If a dictionary, each key is the name of a parameter,
             and the corresponding value is either a dictionary or tuple.
             If the value is a dictionary, it may have the following items, with default
             values used for entries which aren't present.
@@ -3533,17 +3533,17 @@ def make_distribution(dist):
                 ``endpoints`` tuple above, and should define a subinterval of the
                 domain given by ``endpoints``.
 
-            A ``tuple`` value ``(a, b)`` associated to a key in the ``parameters``
-            ``dict`` is equivalent to ``{endpoints: (a, b)}``.
+            A tuple value ``(a, b)`` associated to a key in the ``parameters``
+            dictionary is equivalent to ``{endpoints: (a, b)}``.
 
             Custom distributions with multiple parameterizations can be defined by
-            having the ``parameters`` attribute be a ``tuple`` of ``dict``s with
-            the structure described above. In this case, ``dist``'s class must also
-            define a method ``process_parameters` to map between the different
+            having the ``parameters`` attribute be a tuple of dictionaries with
+            the structure described above. In this case, ``dist``\'s class must also
+            define a method ``process_parameters`` to map between the different
             parameterizations. It must take all parameters from all parameterizations
-            as optional keyword arguments and return a ``dict`` mapping parameters to
+            as optional keyword arguments and return a dictionary mapping parameters to
             values, filling in values from other parameterizations using values from
-            the supplied parameterization.
+            the supplied parameterization. See example.
 
         support : dict or tuple
             A dictionary describing the support of the distribution or a tuple
@@ -3558,16 +3558,16 @@ def make_distribution(dist):
         ``moment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`. When multiple
-        parameterizations are defined, these methods must accept all parameters from
-        all parameterizations. The ``moment`` method must accept the ``order`` and
-        ``kind`` arguments by position or keyword, but may return ``None`` if a
-        formula is not available for the arguments; in this case, the infrastructure
-        will fall back to a default implementation. The ``sample`` method must accept
-        ``shape`` by position or keyword, but contrary to the public method of the
-        same name, the argument it receives will be the *full* shape of the output
-        array - that is, the shape passed to the public method prepended to the
-        broadcasted shape of random variable parameters.
+        the corresponding method of `ContinuousDistribution`. 
+        When multiple parameterizations are defined, these methods must accept
+        all parameters from all parameterizations. The ``moment`` method
+        must accept the ``order`` and ``kind`` arguments by position or keyword, but
+        may return ``None`` if a formula is not available for the arguments; in this
+        case, the infrastructure will fall back to a default implementation. The
+        ``sample`` method must accept ``shape`` by position or keyword, but contrary
+        to the public method of the same name, the argument it receives will be the
+        *full* shape of the output array - that is, the shape passed to the public
+        method prepended to the broadcasted shape of random variable parameters.
 
     Returns
     -------
@@ -3675,19 +3675,17 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def parameters(self):
-    ...         return (
-    ...             {"a": (0, np.inf), "b": (0, np.inf)},
-    ...             {"mu": (0, 1), "nu": (0, np.inf)},
-    ...         )
+    ...         return ({"a": (0, np.inf), "b": (0, np.inf)},
+    ...                 {"mu": (0, 1), "nu": (0, np.inf)})
     ...
     ...     def process_parameters(self, a=None, b=None, mu=None, nu=None):
-    ...         if a is not None and b is not None and mu is None and nu is None:
+    ...         if a is not None and b is not None:
     ...             nu = a + b
     ...             mu = a / nu
     ...         else:
     ...             a = mu * nu
     ...             b = nu - a
-    ...         return {"a": a, "b": b, "mu": mu, "nu": nu}
+    ...         return dict(a=a, b=b, mu=mu, nu=nu)
     ...
     ...     @property
     ...     def support(self):
