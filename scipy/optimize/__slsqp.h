@@ -51,6 +51,7 @@ static PyObject* slsqp_error;
 #include <math.h>
 #include "__nnls.h"
 
+// BLAS/LAPACK function prototypes used in SLSQP
 void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
 double ddot_(int* n, double* dx, int* incx, double* dy, int* incy);
 void dgelsy_(int* m, int* n, int* nrhs, double* a, int* lda, double* b, int* ldb, int* jpvt, double* rcond, int* rank, double* work, int* lwork, int* info);
@@ -70,12 +71,16 @@ void dtpsv_(char* uplo, char* trans, char* diag, int* n, double* ap, double* x, 
 void dtrsm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
 void dtrsv_(char* uplo, char* trans, char* diag, int* n, double* a, int* lda, double* x, int* incx);
 
-struct SLSQP_static_vars {
+
+// The SLSQP_vars struct holds the state of the algorithm and passed to Python
+// and back such that it is thread-safe.
+struct SLSQP_vars {
     double acc, alpha, f0, gs, h1, h2, h3, h4, t, t0, tol;
     int exact, inconsistent, reset, iter, itermax, line, m, meq, mode, n;
 };
 
-void __slsqp_body(struct SLSQP_static_vars* S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
+
+void __slsqp_body(struct SLSQP_vars* S, double* funx, double* gradx, double* C, double* d, double* sol, double* mult, double* xl, double* xu, double* buffer, int* indices);
 
 
 static PyObject*
@@ -201,10 +206,10 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
     PyArrayObject* ap_indices=NULL;
     PyObject* input_dict = NULL;
     double funx;
-    struct SLSQP_static_vars Vars;
+    struct SLSQP_vars Vars;
 
     // The Python input should provide with a dictionary that maps to the struct
-    // SLSQP_static_vars. Necessary fields that would make the algorithm change
+    // SLSQP_vars. Necessary fields that would make the algorithm change
     // behavior are m, meq, n, acc, maxiter, and mode. The rest can be left as zero.
     // Changing values mid run is not recommended as they hold the internal state
     // of the algorithm.
@@ -229,7 +234,7 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    // Some helper x macros to pack and unpack the SLSQP_static_vars struct and
+    // Some helper x macros to pack and unpack the SLSQP_vars struct and
     // the Python dictionary.
 
     #define STRUCT_DOUBLE_FIELD_NAMES X(acc) X(alpha) X(f0) X(gs) X(h1) X(h2) X(h3) X(h4) X(t) X(t0) X(tol)
@@ -350,9 +355,9 @@ slsqp(PyObject* Py_UNUSED(dummy), PyObject* args)
 };
 
 
-// The commented wrappers are for debugging purposes and they will be optimized out
 static char doc_nnls[] = ("Compute the nonnegative least squares solution.\n\n"
                            "    x, info = nnls(A)\n\n");
+
 
 static char doc_slsqp[] = (
     "Sequential Least Squares Programming (SLSQP) optimizer.\n\n"
@@ -369,6 +374,7 @@ static struct PyMethodDef slsqplib_module_methods[] = {
   {NULL, NULL, 0, NULL}
 };
 
+
 struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_slsqplib",
@@ -380,6 +386,7 @@ struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
+
 
 PyMODINIT_FUNC
 PyInit__slsqplib(void)

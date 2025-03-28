@@ -43,7 +43,7 @@ static void ldl_update(int n, double* a, double* z, double sigma, double* w);
  */
 void
 __slsqp_body(
-    struct SLSQP_static_vars* S, double* funx, double* restrict gradx,
+    struct SLSQP_vars* S, double* funx, double* restrict gradx,
     double* restrict C, double* restrict d, double* restrict sol,
     double* restrict mult, double* restrict xl, double* restrict xu, double* buffer,
     int* indices)
