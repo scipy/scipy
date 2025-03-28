@@ -410,7 +410,10 @@ def least_squares(
         If None (default), the value is chosen automatically as 100 * n.
 
         .. versionchanged:: 1.16.0
-            The default for the 'lm' method is changed to 100 * n.
+            The default for the 'lm' method is changed to 100 * n, for both a callable and
+            a numerically estimated jacobian. Previously the default when using an estimated
+            jacobian was 100 * n * (n + 1), because the method included evaluations used in
+            the estimation. 
 
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
