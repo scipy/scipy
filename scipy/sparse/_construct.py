@@ -47,7 +47,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     m, n : int, tuple, optional
         Shape of the result. If `n` is None and `m` is a given tuple,
         the shape is this tuple. If omitted, the matrix is square and
-        its shape is len(data[0]).
+        its shape is ``len(data[0])``.
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
@@ -55,7 +55,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     Returns
     -------
     new_matrix : sparse matrix
-        `dia_matrix` format with values in `data` on diagonals from `diags`.
+        `dia_matrix` format with values in ``data`` on diagonals from ``diags``.
 
     Notes
     -----
