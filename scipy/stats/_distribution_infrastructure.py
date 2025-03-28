@@ -3515,8 +3515,9 @@ def make_distribution(dist):
             described below. Each ``dict`` in the ``tuple`` will correspond to a
             separate parametrization of the distribution. If multiple parameterizations
             are specified, ``dist``'s class must also define a method
-           ``_process_parameters`` to allow mapping between the different parameterizations.
-           The requirements for this method are described further below.
+            ``_process_parameters`` to allow mapping between the different
+            parameterizations. The requirements for this method are described further
+            below.
 
             If a ``dict``, each key is the name of a parameter,
             and the corresponding value is either a dictionary or tuple.
@@ -3682,18 +3683,16 @@ def make_distribution(dist):
     ...     def parameters(self):
     ...         return (
     ...             {"a": (0, np.inf), "b": (0, np.inf)},
-    ...             {"mu": (0, np.inf), "nu": (0, np.inf)},
+    ...             {"mu": (0, 1), "nu": (0, np.inf)},
     ...         )
     ...
     ...     def _process_parameters(self, a=None, b=None, mu=None, nu=None):
     ...         if a is not None and b is not None and mu is None and nu is None:
     ...             nu = a + b
     ...             mu = a / nu
-    ...         elif mu is not None and nu is not None and a is None and b is None:
+    ...         else:
     ...             a = mu * nu
     ...             b = nu - a
-    ...         else:
-    ...             raise ValueError("Invalid parameterization of MyBeta.")
     ...         return {"a": a, "b": b, "mu": mu, "nu": nu}
     ...
     ...     @property
@@ -3914,7 +3913,11 @@ def _make_distribution_custom(dist):
         CustomDistribution._moment_standardized_formula = _moment_standardized_formula
 
     if hasattr(dist, '_process_parameters'):
-        setattr(CustomDistribution, "_process_parameters", getattr(dist, "_process_parameters"))
+        setattr(
+            CustomDistribution,
+            "_process_parameters",
+            getattr(dist, "_process_parameters")
+        )
 
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [

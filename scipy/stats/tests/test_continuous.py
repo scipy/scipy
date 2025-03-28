@@ -1286,18 +1286,16 @@ class TestMakeDistribution:
             def parameters(self):
                 return (
                     {"a": (0, np.inf), "b": (0, np.inf)},
-                    {"mu": (0, np.inf), "nu": (0, np.inf)},
+                    {"mu": (0, 1), "nu": (0, np.inf)},
                 )
 
             def _process_parameters(self, a=None, b=None, mu=None, nu=None):
                 if a is not None and b is not None and mu is None and nu is None:
                     nu = a + b
                     mu = a / nu
-                elif mu is not None and nu is not None and a is None and b is None:
+                else:
                     a = mu * nu
                     b = nu - a
-                else:
-                    raise ValueError("Invalid parameterization of MyBeta.")
                 return {"a": a, "b": b, "mu": mu, "nu": nu}
 
             @property
@@ -1321,16 +1319,23 @@ class TestMakeDistribution:
         Z = Beta(a=a, b=b)
 
         x = Z.sample(shape=10, rng=rng)
+        p = Z.cdf(x)
 
-        assert_allclose(Z.support(), X.support())
-        assert_allclose(Z.median(), X.median())
-        assert_allclose(Z.pdf(x), X.pdf(x))
-        assert_allclose(Z.cdf(x), X.cdf(x))
+        assert_allclose(X.support(), Z.support())
+        assert_allclose(X.median(), Z.median())
+        assert_allclose(X.pdf(x), Z.pdf(x))
+        assert_allclose(X.cdf(x), Z.cdf(x))
+        assert_allclose(X.ccdf(x), Z.ccdf(x))
+        assert_allclose(X.icdf(p), Z.icdf(p))
+        assert_allclose(X.iccdf(p), Z.iccdf(p))
 
-        assert_allclose(Z.support(), Y.support())
-        assert_allclose(Z.median(), Y.median())
-        assert_allclose(Z.pdf(x), Y.pdf(x))
-        assert_allclose(Z.cdf(x), Y.cdf(x))
+        assert_allclose(Y.support(), Z.support())
+        assert_allclose(Y.median(), Z.median())
+        assert_allclose(Y.pdf(x), Z.pdf(x))
+        assert_allclose(Y.cdf(x), Z.cdf(x))
+        assert_allclose(Y.ccdf(x), Z.ccdf(x))
+        assert_allclose(Y.icdf(p), Z.icdf(p))
+        assert_allclose(Y.iccdf(p), Z.iccdf(p))
 
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'
