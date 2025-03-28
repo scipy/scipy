@@ -585,7 +585,7 @@ dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
         ierr = -10;
     } else if ((V->mode == 1) && (V->bmat == 1)) {
         ierr = -11;
-    } else if ((V->ishift != 0) && (V->ishift != 1)) {
+    } else if ((V->shift != 0) && (V->shift != 1)) {
         ierr = -12;
     }
 
@@ -1002,7 +1002,7 @@ LINE20:
         V->ido = ido_DONE;
         return;
 
-    } else if ((V->nconv < V->aup2_numcnv) && (V->ishift)) {
+    } else if ((V->nconv < V->aup2_numcnv) && (V->shift)) {
          /*------------------------------------------------*
          | Do not have all the requested eigenvalues yet.  |
          | To prevent possible stagnation, adjust the size |
@@ -1038,7 +1038,7 @@ LINE20:
 
     }
 
-    if (V->ishift == 0)
+    if (V->shift == 0)
     {
          /*------------------------------------------------------*
          | User specified shifts: reverse communication to       |
@@ -1059,7 +1059,7 @@ LINE50:
 
     V->aup2_ushift = 0;
 
-    if (V->ishift == 0)
+    if (V->shift == 0)
     {
          /*---------------------------------*
          | Move the NP shifts from WORKL to |
@@ -2105,7 +2105,7 @@ dngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
         kev += 1;
     }
 
-    if (V->ishift == 1)
+    if (V->shift == 1)
     {
          /*------------------------------------------------------*
          | Sort the unwanted Ritz values used as shifts so that  |
