@@ -3852,6 +3852,11 @@ def _make_distribution_custom(dist):
     )
     parameterizations = []
     for parameterization in dist_parameters:
+        # The attribute name ``parameters`` appears reasonable from a user facing
+        # perspective, but there is a little tension here with the internal. It's
+        # important to keep in mind that the ``parameters`` attribute in a
+        # user-created custom distribution specifies ``_parameterizations`` within
+        # the infrastructure.
         parameters = []
 
         for name, info in parameterization.items():
