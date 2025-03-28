@@ -175,6 +175,9 @@ void snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int 
 void dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
 
 
+#undef ARPACK_cplx
+#undef ARPACK_cplxf
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif /* __cplusplus */
