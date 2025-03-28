@@ -245,17 +245,17 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
     ``method='winsor_round'`` is equivalent to indexing ``y[j]``, where::
 
-        j = int(np.round(p*n)) if p < 0.5 else np.round(n*p - 1)
+        j = int(np.round(p*n) if p < 0.5 else np.round(n*p - 1))
 
     This is useful when winsorizing data: replacing ``p*n`` of the most extreme
     observations with the next most extreme observation. ``method='winsor_less'``
     adjusts the direction of rounding to winsorize fewer elements::
 
-        j = int(np.floor(p*n)) if p < 0.5 else np.ceil(n*p - 1)
+        j = int(np.floor(p*n) if p < 0.5 else np.ceil(n*p - 1))
 
     and ``method='winsor_more'`` rounds to winsorize more elements::
 
-        j = int(np.ceil(p*n)) if p < 0.5 else np.floor(n*p - 1)
+        j = int(np.ceil(p*n) if p < 0.5 else np.floor(n*p - 1))
 
     See :ref:`outliers` for example applications.
 
