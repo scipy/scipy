@@ -35,101 +35,66 @@ quadpack_test_src = [
   'tests/_test_multivariate.c'
 ]
 
-
-if use_ilp64
-  _fflag_intsize = _fflag_ilp64
-else
-  _fflag_intsize = _fflag_lp64
-endif
-
-
 mach_lib = static_library('mach_lib',
   mach_src,
+  fortran_args: fortran_ignore_warnings,
   gnu_symbol_visibility: 'hidden',
-  fortran_args: [fortran_ignore_warnings, _fflag_intsize],
 )
-
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
-  fortran_args: [fortran_ignore_warnings, _fflag_intsize],
+  fortran_args: fortran_ignore_warnings,
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
 )
 
 vode_lib = static_library('vode_lib',
   vode_src,
-  fortran_args: [fortran_ignore_warnings, _fflag_intsize],
+  fortran_args: fortran_ignore_warnings,
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
 )
 
 dop_lib = static_library('dop_lib',
   dop_src,
-  fortran_args: [fortran_ignore_warnings, _fflag_intsize],
+  fortran_args: fortran_ignore_warnings,
   gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_quadpack',
   ['__quadpack.h', '__quadpack.c'],
-  dependencies: [np_dep, ccallback_dep, lapack_ilp64],
+  dependencies: [np_dep, ccallback_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
 
-
-_c_args_lsoda = []
-if use_ilp64
-  _c_args_lsoda += ['-DHAVE_BLAS_ILP64']
-endif
-
 py3.extension_module('_odepack',
   '_odepackmodule.c',
-  fortran_args: [fortran_ignore_warnings, _fflag_intsize],
-  c_args: _c_args_lsoda,
+  fortran_args: fortran_ignore_warnings,
   link_with: [lsoda_lib, mach_lib],
   link_args: version_link_args,
-  dependencies: [lapack_ilp64, np_dep],
+  dependencies: [lapack_dep, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
-
-if use_ilp64
-   # generator only accepts strings, not files
-   f2c_map_file = f2py_ilp64_opts[1]
-   extra_arg = f2py_ilp64_opts[0] + '=' + fs.parent(f2c_map_file) / fs.name(f2c_map_file)
-  _vodemodule_obj = f2py_gen.process('vode.pyf', extra_args: extra_arg)
-  _lsodamodule_obj = f2py_gen.process('lsoda.pyf', extra_args: extra_arg)
-  _dopmodule_obj = f2py_gen.process('dop.pyf', extra_args: extra_arg)
-  _testodeintmodule_obj = f2py_gen.process('tests/test_odeint_banded.pyf', extra_args: extra_arg)
-else
-  _vodemodule_obj = f2py_gen.process('vode.pyf')
-  _lsodamodule_obj = f2py_gen.process('lsoda.pyf')
-  _dopmodule_obj = f2py_gen.process('dop.pyf')
-  _testodeintmodule_obj = f2py_gen.process('tests/test_odeint_banded.pyf')
-endif
-
-
 py3.extension_module('_vode',
-  _vodemodule_obj,
+  f2py_gen.process('vode.pyf'),
   link_with: [vode_lib],
-  fortran_args: [_fflag_intsize],
-  c_args: [Wno_unused_variable] + _c_args_lsoda,
+  c_args: [Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
 )
 
 py3.extension_module('_lsoda',
-  _lsodamodule_obj,
+  f2py_gen.process('lsoda.pyf'),
   link_with: [lsoda_lib, mach_lib],
-  fortran_args: [_fflag_intsize],
-  c_args: [Wno_unused_variable] + _c_args_lsoda,
-  dependencies: [lapack_ilp64, fortranobject_dep],
+  c_args: [Wno_unused_variable],
+  dependencies: [lapack_dep, fortranobject_dep],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -137,10 +102,9 @@ py3.extension_module('_lsoda',
 )
 
 py3.extension_module('_dop',
-  _dopmodule_obj,
+  f2py_gen.process('dop.pyf'),
   link_with: [dop_lib],
-  fortran_args: [_fflag_intsize],
-  c_args: [Wno_unused_variable] + _c_args_lsoda,
+  c_args: [Wno_unused_variable],
   dependencies: [fortranobject_dep],
   link_args: version_link_args,
   install: true,
@@ -157,12 +121,11 @@ py3.extension_module('_test_multivariate',
 )
 
 py3.extension_module('_test_odeint_banded',
-  ['tests/banded5x5.f', _testodeintmodule_obj],
+  ['tests/banded5x5.f', f2py_gen.process('tests/test_odeint_banded.pyf')],
   link_with: [lsoda_lib, mach_lib],
-  fortran_args: [_fflag_intsize, _fflag_Wno_unused_dummy_argument],
-  c_args: _c_args_lsoda,
+  fortran_args: _fflag_Wno_unused_dummy_argument,
   link_args: version_link_args,
-  dependencies: [lapack_ilp64, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate',
