@@ -4486,7 +4486,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     --------
     spearmanr : Spearman rank-order correlation coefficient.
     kendalltau : Kendall's tau, a correlation measure for ordinal data.
-    :ref:`hypothesis_pearsonr` : Extended example
+    :ref:`hypothesis_mwu` : Extended example
 
     Notes
     -----
