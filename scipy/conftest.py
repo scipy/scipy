@@ -143,8 +143,8 @@ if SCIPY_ARRAY_API:
     try:
         import array_api_strict
         xp_available_backends.update({'array_api_strict': array_api_strict})
-        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.0'):
-            raise ImportError("array-api-strict must be >= version 2.0")
+        if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.3'):
+            raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
             api_version='2024.12'
         )

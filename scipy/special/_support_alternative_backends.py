@@ -4,8 +4,10 @@ import operator
 
 import numpy as np
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_marray, SCIPY_ARRAY_API
+    array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
+    xp_broadcast_promote, SCIPY_ARRAY_API
 )
+import scipy._lib.array_api_extra as xpx
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -53,25 +55,24 @@ def get_array_special_func(f_name, xp, n_array_args):
     return __f
 
 
-def _get_shape_dtype(*args, xp):
-    args = xp.broadcast_arrays(*args)
-    shape = args[0].shape
-    dtype = xp.result_type(*args)
-    if xp.isdtype(dtype, 'integral'):
-        dtype = xp.float64
-        args = [xp.asarray(arg, dtype=dtype) for arg in args]
-    return args, shape, dtype
-
-
 def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
-        args, shape, dtype = _get_shape_dtype(x, y, xp=xp)
-        x, y = args
-        res = xp.full(x.shape, xp.inf, dtype=dtype)
-        res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=dtype)
-        i = (x > 0) & (y > 0)
-        res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
+        # https://github.com/data-apis/array-api-extra/issues/160
+        mxp = array_namespace(x._meta, y._meta) if is_dask(xp) else xp
+        x, y = xp_broadcast_promote(x, y, force_floating=True, xp=xp)
+        xy_pos = (x > 0) & (y > 0)
+        xy_inf = xp.isinf(x) & xp.isinf(y)
+        res = xpx.apply_where(
+            xy_pos & ~xy_inf,
+            (x, y),
+            # Note: for very large x, this can overflow.
+            lambda x, y: x * (mxp.log(x) - mxp.log(y)),
+            fill_value=xp.inf
+        )
+        res = xpx.at(res)[(x == 0) & (y >= 0)].set(0)
+        res = xpx.at(res)[xp.isnan(x) | xp.isnan(y) | (xy_pos & xy_inf)].set(xp.nan)
         return res
+
     return __rel_entr
 
 
@@ -79,7 +80,7 @@ def _xlogy(xp, spx):
     def __xlogy(x, y, *, xp=xp):
         with np.errstate(divide='ignore', invalid='ignore'):
             temp = x * xp.log(y)
-        return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+        return xp.where(x == 0., 0., temp)
     return __xlogy
 
 

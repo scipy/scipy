@@ -499,7 +499,6 @@ class TestKaiser:
                                     0.5985765418119844], dtype=xp.float64))
 
 
-@skip_xp_backends("torch", reason="implementation needs 2023.12 standard")
 class TestKaiserBesselDerived:
 
     def test_basic(self, xp):

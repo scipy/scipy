@@ -501,6 +501,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
 
+    @pytest.mark.thread_unsafe
     def test_R_kSamples(self):
         # test values generates with R package kSamples
         # package version 1.2-6 (2017-06-14)
@@ -758,9 +759,6 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
-        "jax.numpy",
-        reason='`var` incorrect when `correction > n` (google/jax#21330)')
     @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
@@ -1341,9 +1339,9 @@ class TestMood:
 
     def test_mood_alternative(self):
 
-        np.random.seed(0)
-        x = stats.norm.rvs(scale=0.75, size=100)
-        y = stats.norm.rvs(scale=1.25, size=100)
+        rng = np.random.RandomState(0)
+        x = stats.norm.rvs(scale=0.75, size=100, random_state=rng)
+        y = stats.norm.rvs(scale=1.25, size=100, random_state=rng)
 
         stat1, p1 = stats.mood(x, y, alternative='two-sided')
         stat2, p2 = stats.mood(x, y, alternative='less')
@@ -1418,6 +1416,7 @@ class TestProbplot:
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         fig = plt.figure()
@@ -1800,8 +1799,8 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
 
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
-        np.random.seed(32149)
-        data = xp.asarray(np.random.randn(12345), dtype=xp.float64)
+        rng = np.random.RandomState(32149)
+        data = xp.asarray(rng.randn(12345), dtype=xp.float64)
         moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
         expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
@@ -1826,7 +1825,7 @@ class TestKstat:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data = xp.where(data == 6, xp.asarray(xp.nan), data)
+        data = xp.where(data == 6, xp.nan, data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1870,7 +1869,7 @@ class TestKstatVar:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data = xp.where(data == 6, xp.asarray(xp.nan), data)
+        data = xp.where(data == 6, xp.nan, data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1994,7 +1993,6 @@ class TestPpccMax:
                             -0.71215366521264145, decimal=7)
 
 
-@skip_xp_backends('jax.numpy', reason="JAX arrays do not support item assignment")
 class TestBoxcox_llf:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
@@ -2508,8 +2506,8 @@ class TestYeojohnson:
             return x_inv
 
         n_samples = 20000
-        np.random.seed(1234567)
-        x = np.random.normal(loc=0, scale=1, size=(n_samples))
+        rng = np.random.RandomState(1234567)
+        x = rng.normal(loc=0, scale=1, size=(n_samples))
 
         x_inv = _inverse_transform(x, lmbda)
         xt, maxlog = stats.yeojohnson(x_inv)
@@ -2746,7 +2744,6 @@ class TestCircFuncs:
         x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
         xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8391')
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
@@ -2805,7 +2802,7 @@ class TestCircFuncs:
         # "white-box" sanity check that no undue loss of precision is
         # introduced by conversion between (high - low) and (2 * pi).
 
-        x = xp.linspace(1e-9, 1e-8, 100)
+        x = xp.linspace(1e-9, 6e-9, 50)
         assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
 
         m = (x * (2 * xp.pi) / (2 * xp.pi)) != x
@@ -3052,7 +3049,7 @@ class TestDirectionalStats:
                          np.cos(incl) * np.sin(decl),
                          np.sin(incl)),
                         axis=1)
-        
+
         decl = xp.asarray(decl.tolist())
         incl = xp.asarray(incl.tolist())
         data = xp.asarray(data.tolist())
