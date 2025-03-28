@@ -1,6 +1,7 @@
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace,
+    xp_device,
     xp_size,
     xp_broadcast_promote,
     xp_float_to_complex,
@@ -132,7 +133,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         shape[axis] = 1
-        out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
+        out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype, device=xp_device(a))
         sgn = xp.sign(out)
 
     if xp.isdtype(out.dtype, 'complex floating'):
@@ -183,7 +184,7 @@ def _elements_and_indices_with_max_real(a, axis=-1, xp=None):
         # Of those, choose one arbitrarily. This is a reasonably
         # simple, array-API compatible way of doing so that doesn't
         # have a problem with `axis` being a tuple or None.
-        i = xp.reshape(xp.arange(xp_size(a)), a.shape)
+        i = xp.reshape(xp.arange(xp_size(a), device=xp_device(a)), a.shape)
         i = xpx.at(i, ~mask).set(-1)
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
