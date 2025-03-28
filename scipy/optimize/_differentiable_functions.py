@@ -6,7 +6,7 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_copy
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._util import _ScalarFunctionWrapper
 
@@ -429,7 +429,8 @@ class VectorFunction:
     """
     def __init__(self, fun, x0, jac, hess,
                  finite_diff_rel_step=None, finite_diff_jac_sparsity=None,
-                 finite_diff_bounds=None, sparse_jacobian=None, workers=None):
+                 finite_diff_bounds=(-np.inf, np.inf), sparse_jacobian=None,
+                 workers=None):
         if not callable(jac) and jac not in FD_METHODS:
             raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
@@ -450,7 +451,7 @@ class VectorFunction:
         if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to floating
+        # promotes to floating, ensures that it's a copy
         self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
 
@@ -496,7 +497,7 @@ class VectorFunction:
 
         def update_fun():
             self.nfev += 1
-            self.f = fun_wrapped(self.x)
+            self.f = fun_wrapped(xp_copy(self.x))
 
         self._update_fun_impl = update_fun
         update_fun()
@@ -506,7 +507,7 @@ class VectorFunction:
 
         # Jacobian Evaluation
         if callable(jac):
-            self.J = jac(self.x)
+            self.J = jac(xp_copy(self.x))
             self.J_updated = True
             self.njev += 1
 
@@ -524,7 +525,12 @@ class VectorFunction:
                     return jac(x).toarray()
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False
-
+            elif isinstance(self.J, LinearOperator):
+                # no atleast_2D for LinearOperators
+                def jac_wrapped(x):
+                    self.njev += 1
+                    return jac(x)
+                self.sparse_jacobian = False
             else:
                 def jac_wrapped(x):
                     self.njev += 1
@@ -533,7 +539,7 @@ class VectorFunction:
                 self.sparse_jacobian = False
 
             def update_jac():
-                self.J = jac_wrapped(self.x)
+                self.J = jac_wrapped(xp_copy(self.x))
 
         elif jac in FD_METHODS:
             self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
@@ -545,9 +551,9 @@ class VectorFunction:
                     sparse_jacobian is None and sps.issparse(self.J)):
                 def update_jac():
                     self._update_fun()
-                    self.J, dct = sps.csr_array(
-                        approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                          **finite_diff_options))
+                    _J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                                **finite_diff_options)
+                    self.J = sps.csr_array(_J)
                     self.nfev += dct['nfev']
                 self.J = sps.csr_array(self.J)
                 self.sparse_jacobian = True
@@ -555,8 +561,9 @@ class VectorFunction:
             elif sps.issparse(self.J):
                 def update_jac():
                     self._update_fun()
-                    self.J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                                    **finite_diff_options).toarray()
+                    _J, dct = approx_derivative(fun_wrapped, self.x, f0=self.f,
+                                                **finite_diff_options)
+                    self.J = _J.toarray()
                     self.nfev += dct['nfev']
                 self.J = self.J.toarray()
                 self.sparse_jacobian = False
@@ -575,7 +582,7 @@ class VectorFunction:
 
         # Define Hessian
         if callable(hess):
-            self.H = hess(self.x, self.v)
+            self.H = hess(xp_copy(self.x), self.v)
             self.H_updated = True
             self.nhev += 1
 
@@ -597,10 +604,10 @@ class VectorFunction:
                 self.H = np.atleast_2d(np.asarray(self.H))
 
             def update_hess():
-                self.H = hess_wrapped(self.x, self.v)
+                self.H = hess_wrapped(xp_copy(self.x), self.v)
         elif hess in FD_METHODS:
             def jac_dot_v(x, v):
-                return jac_wrapped(x).T.dot(v)
+                return jac_wrapped(xp_copy(x)).T.dot(v)
 
             def update_hess():
                 self._update_jac()
@@ -677,11 +684,18 @@ class VectorFunction:
     def fun(self, x):
         self._update_x(x)
         self._update_fun()
-        return self.f
+        # returns a copy so that downstream can't overwrite the
+        # internal attribute
+        return xp_copy(self.f)
 
     def jac(self, x):
         self._update_x(x)
         self._update_jac()
+        if hasattr(self.J, "astype"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy a LinearOperator
+            xp = array_namespace(self.J)
+            return xp.astype(self.J, self.J.dtype)
         return self.J
 
     def hess(self, x, v):
@@ -689,6 +703,11 @@ class VectorFunction:
         self._update_v(v)
         self._update_x(x)
         self._update_hess()
+        if hasattr(self.H, "astype"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy non-arrays
+            xp = array_namespace(self.H)
+            return xp.astype(self.H, self.H.dtype)
         return self.H
 
 
