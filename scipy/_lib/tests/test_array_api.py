@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pytest
 
@@ -272,7 +274,7 @@ def test_xp_result_type_no_force(x, y, xp):
         expected_error = (type(e), str(e))
 
     if expected_error is not None:
-        with pytest.raises(expected_error[0], match=expected_error[1]):
+        with pytest.raises(expected_error[0], match=re.escape(expected_error[1])):
             xp_result_type(x, y, xp=xp)
         return
 

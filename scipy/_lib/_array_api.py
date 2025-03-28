@@ -544,7 +544,8 @@ def xp_result_type(*args, force_floating=False, xp):
 
     if is_numpy(xp) and xp.__version__ < '2.0':
         # Follow NEP 50 promotion rules anyway
-        args_not_none = [getattr(arg, 'dtype', arg) for arg in args_not_none]
+        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
+                         for arg in args_not_none]
         return xp.result_type(*args_not_none)
 
     try:  # follow library's preferred promotion rules
