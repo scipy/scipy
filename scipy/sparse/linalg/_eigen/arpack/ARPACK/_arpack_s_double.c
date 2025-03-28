@@ -2236,7 +2236,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
             tmp_int = lendsv-lsv+1;
             dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
             tmp_int -= 1;
-            dlascl("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
         } else if (iscale == 2) {
             tmp_int = lendsv-lsv+1;
             dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
