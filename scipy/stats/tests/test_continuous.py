@@ -1289,7 +1289,7 @@ class TestMakeDistribution:
                     {"mu": (0, 1), "nu": (0, np.inf)},
                 )
 
-            def _process_parameters(self, a=None, b=None, mu=None, nu=None):
+            def process_parameters(self, a=None, b=None, mu=None, nu=None):
                 if a is not None and b is not None and mu is None and nu is None:
                     nu = a + b
                     mu = a / nu
