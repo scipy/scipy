@@ -232,9 +232,9 @@ class TestArrayAPI:
 
 scalars = [1, 1., 1. + 1j]
 lists = [[1], [1.], [1. + 1j]]
-types = ('int8, int16, int32, int64, '
-         'uint8, uint16, uint32, uint64, '
-         'float32, float64, complex64, complex128').split(', ')
+types = ('int8 int16 int32 int64 '
+         'uint8 uint16 uint32 uint64 '
+         'float32 float64 complex64 complex128').split()
 arrays = [np.asarray([1], dtype=getattr(np, t)) for t in types]
 
 
@@ -285,7 +285,7 @@ def test_xp_result_type_no_force(x, y, xp):
 @pytest.mark.parametrize('x', scalars + lists + types + arrays)
 @pytest.mark.parametrize('y', scalars + lists + types + arrays)
 def test_xp_result_type_force_floating(x, y, xp):
-    # When `force_floating==False` (default), behavior of `xp_result_type`
+    # When `force_floating==True`, behavior of `xp_result_type`
     # should match that of `xp.result_type` with `1.0` appended to the set of
     # arguments (after converting lists to arrays of type `xp`).
     # If this raises a `TypeError`, which is the case when the result

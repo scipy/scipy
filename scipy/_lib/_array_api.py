@@ -523,15 +523,14 @@ def xp_result_type(*args, force_floating=False, xp):
 
     - There is a `force_floating` argument that ensures that the result type
       is floating point, even when all args are integer.     
-    - When a TypeError is raised (e.g. due to an unsupported promotion),
-      we define a custom rule: use the result type of the default float
-      and any other floats passed. See
+    - When a TypeError is raised (e.g. due to an unsupported promotion)
+      and `force_floating=True`, we define a custom rule: use the result type
+      of the default float and any other floats passed. See
       https://github.com/scipy/scipy/pull/22695/files#r1997905891
       for rationale.
-    - To support use when `SCIPY_ARRAY_API=1` is not set, this function accepts
-      array-like iterables, which are immediately converted to NumPy arrays before
-      result type calculation. Consequently, the result dtype may be different
-      when an argument is `1.` vs `[1.]`.
+    - This function accepts array-like iterables, which are immediately converted
+      to the namespace's arrays before result type calculation. Consequently, the
+      result dtype may be different when an argument is `1.` vs `[1.]`.
 
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
@@ -550,9 +549,9 @@ def xp_result_type(*args, force_floating=False, xp):
 
     try:  # follow library's preferred promotion rules
         return xp.result_type(*args_not_none)
-    except TypeError as e:  # mixed type promotion isn't defined
+    except TypeError:  # mixed type promotion isn't defined
         if not force_floating:
-            raise e
+            raise
         # use `result_type` of default floating point type and any floats present
         # This can be revisited, but right now, the only backends that get here
         # are array-api-strict (which is not for production use) and PyTorch
@@ -572,14 +571,18 @@ def xp_promote(*args, broadcast=False, ensure_writeable=False,
     Promotes elements of *args to result dtype, ignoring `None`s.
     Includes options for forcing promotion to floating point and
     broadcasting the arrays, again ignoring `None`s.
+    Type promotion rules follow `xp_result_type` instead of `xp.result_type`.
 
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
 
-    To support use when `SCIPY_ARRAY_API=1` is not set, this function accepts
-    array-like iterables, which are immediately converted to NumPy arrays before
-    result type calculation. Consequently, the result dtype may be different
-    when an argument is `1.` vs `[1.]`.
+    This function accepts array-like iterables, which are immediately converted
+    to the namespace's arrays before result type calculation. Consequently, the
+    result dtype may be different when an argument is `1.` vs `[1.]`.
+    
+    See Also
+    --------
+    xp_result_type
     """
     args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]  # solely to prevent double conversion of iterable to array
