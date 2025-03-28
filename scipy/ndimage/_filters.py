@@ -1861,6 +1861,8 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     A sequence of modes (one per axis) is only supported when the footprint is
     separable. Otherwise, a single mode string must be provided.
 
+    %(nan)s
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
