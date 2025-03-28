@@ -3872,7 +3872,7 @@ class random_correlation_gen(multi_rv_generic):
     ----------
     eigs : 1d ndarray
         Eigenvalues of correlation matrix. All eigenvalues need to be non-negative and
-        need to sum up to the dimension.
+        need to sum to the number of eigenvalues.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
