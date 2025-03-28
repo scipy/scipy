@@ -1273,8 +1273,8 @@ class TestMakeDistribution:
         assert_allclose(X1.icdf(p), X2.icdf(p))
         assert_allclose(X1.iccdf(p), X2.iccdf(p))
 
-    @pytest.mark.parametrize("a", [0.5, 1.0, 2.0, 4.0, 8.0])
-    @pytest.mark.parametrize("b", [0.5, 1.0, 2.0, 4.0, 8.0])
+    @pytest.mark.parametrize("a", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
+    @pytest.mark.parametrize("b", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
     def test_custom_multiple_parameterizations(self, a, b):
         rng = np.random.default_rng(7548723590230982)
         class MyBeta:
