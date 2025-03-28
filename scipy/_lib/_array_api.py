@@ -514,7 +514,7 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
 
 
 # utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
+def xp_broadcast_promote(*args, force_floating=False, xp=None):
     xp = array_namespace(*args) if xp is None else xp
 
     args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
@@ -561,9 +561,10 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ensure_writeable:
-            arg = xp.astype(arg, dtype, copy=True)
+        # This is much faster than xp.astype(arg, dtype, copy=False)
+        if arg.dtype != dtype:
+            arg = xp.astype(arg, dtype)
+
         out.append(arg)
 
     return out
