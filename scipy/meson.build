@@ -456,14 +456,13 @@ lapack = lapack_dep
 if use_ilp64
   # Okay, we need ILP64 BLAS and LAPACK *in addition to LP64*. So we need to
   # detect the ILP64 variants of the found LP64 libraries now.
-  _args_blas = []
+  _args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
   blas_interface = ['interface: ilp64']
   if blas_name == 'flexiblas'
     blas_name = 'flexiblas64'
   endif
-  _args_blas += ['-DHAVE_BLAS_ILP64']
   if 'openblas' in blas_name
-    _args_blas += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
+    _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
   endif
 
   # Run the detection
@@ -474,6 +473,11 @@ if use_ilp64
     endif
     blas_ilp64 = dependency('mkl', modules: ['interface: ilp64'] + mkl_opts)
     lapack_ilp64 = blas_ilp64
+
+    _args_blas_ilp64 += [
+       '-DBLAS_SYMBOL_SUFFIX=_64',
+       '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+     ]
   else
     if blas_name == 'openblas'
       # We cannot allow plain openblas here, that's already the LP64 library and
@@ -496,7 +500,7 @@ if use_ilp64
   endif
   _blas_incdir = []
   if blas_symbol_suffix != ''
-    _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+    _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
     _blas_incdir = ['.']
   endif
   # Declare the ILP64 dependencies
@@ -504,12 +508,20 @@ if use_ilp64
 
   blas_ilp64 = declare_dependency(
     dependencies: [blas_ilp64],
-    compile_args: _args_blas,
+    compile_args: _args_blas_ilp64,
     include_directories: _blas_incdir,
   )
   lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
+
+  g77_abi_wrappers_ilp64 = static_library(
+    'g77_abi_wrappers_ilp64',
+     ['_build_utils/src/wrap_g77_abi_ilp64.c'],
+     dependencies: [py3_dep, blas_ilp64, np_dep],
+     c_args: _args_blas_ilp64,
+     gnu_symbol_visibility: 'hidden',
+   )
 else
-  # we're not using ILP64; user will link to the always-available LP64 blas/lapack
+  # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
   blas_ilp64 = blas
   lapack_ilp64 = lapack
@@ -874,6 +886,17 @@ lapack_dep = declare_dependency(
   dependencies: lapack_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
 )
+
+if use_ilp64
+  blas_ilp64 = declare_dependency(
+    dependencies: blas_ilp64,
+    link_with: [g77_abi_wrappers_ilp64]
+  )
+  lapack_ilp64 = declare_dependency(
+    dependencies: lapack_ilp64,
+    link_with: [g77_abi_wrappers_ilp64]
+  )
+endif
 
 subdir('_lib')
 subdir('special')
