@@ -1170,7 +1170,7 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     --------
     >>> import scipy.fft
     >>> import numpy as np
-    >>> x = np.meshgrid([1, 0, -1, 0], [0, 1, 0, 1])[0]
+    >>> x = np.broadcast_to([1, 0, -1, 0], (4, 4))
     >>> scipy.fft.rfft2(x)
     array([[0.+0.j, 8.+0.j, 0.+0.j],
            [0.+0.j, 0.+0.j, 0.+0.j],
