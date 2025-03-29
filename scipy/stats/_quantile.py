@@ -36,7 +36,7 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     methods = {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation',
                'hazen', 'interpolated_inverted_cdf', 'linear',
                'median_unbiased', 'normal_unbiased', 'weibull',
-               'harrell-davis'}
+               'harrell-davis', 'winsor_less', 'winsor_more', 'winsor_round'}
     if method not in methods:
         message = f"`method` must be one of {methods}"
         raise ValueError(message)
@@ -130,6 +130,10 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
         'harrell-davis' is also available to compute the quantile estimate
         according to [2]_.
+
+        `winsor_less`, `winsor_more`, and `winsor_round` are available for use
+        in trimming and winsorizing data.
+
         See Notes for details.
     axis : int or None, default: 0
         Axis along which the quantiles are computed.
@@ -169,6 +173,11 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     -------
     quantile : scalar or ndarray
         The resulting quantile(s). The dtype is the result dtype of `x` and `p`.
+
+    See Also
+    --------
+    numpy.quantile
+    :ref:`outliers`
 
     Notes
     -----
@@ -234,6 +243,22 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
     :math:`I` is the regularized, lower incomplete beta function
     (`scipy.special.betainc`).
 
+    ``method='winsor_round'`` is equivalent to indexing ``y[j]``, where::
+
+        j = int(np.round(p*n) if p < 0.5 else np.round(n*p - 1))
+
+    This is useful when winsorizing data: replacing ``p*n`` of the most extreme
+    observations with the next most extreme observation. ``method='winsor_less'``
+    adjusts the direction of rounding to winsorize fewer elements::
+
+        j = int(np.floor(p*n) if p < 0.5 else np.ceil(n*p - 1))
+
+    and ``method='winsor_more'`` rounds to winsorize more elements::
+
+        j = int(np.ceil(p*n) if p < 0.5 else np.floor(n*p - 1))
+
+    See :ref:`outliers` for example applications.
+
     Examples
     --------
     >>> import numpy as np
@@ -279,6 +304,8 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
         res = _quantile_hf(y, p, n, method, xp)
     elif method in {'harrell-davis'}:
         res = _quantile_hd(y, p, n, xp)
+    else:  # method.startswith('winsor'):
+        res = _quantile_winsor(y, p, n, method, xp)
 
     res = xpx.at(res, p_mask).set(xp.nan)
 
@@ -335,3 +362,12 @@ def _quantile_hd(y, p, n, xp):
     w = xpx.at(w, xp.isnan(w)).set(0)
     res = xp.vecdot(w, y, axis=-1)
     return xp.moveaxis(res, 0, -1)
+
+
+def _quantile_winsor(y, p, n, method, xp):
+    ops = dict(winsor_less=(xp.floor, xp.ceil),
+               winsor_more=(xp.ceil, xp.floor),
+               winsor_round=(xp.round, xp.round))
+    op_left, op_right = ops[method]
+    j = xp.where(p < 0.5, op_left(p*n), op_right(n*p - 1))
+    return xp.take_along_axis(y, xp.astype(j, xp.int64), axis=-1)
