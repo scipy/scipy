@@ -1,6 +1,13 @@
 import numpy as np
 from scipy.linalg import solve_banded
 from .rotation import Rotation
+from scipy._lib._array_api import is_numpy, array_namespace
+
+# TODO: The current usage of scipy.interpolate.PPoly blocks us from making this available for any
+# Array API framework except for numpy. We can either wait for scipy.interpolate to support the
+# Array API, or implement our own interpolation here.
+# DECISION: Do not reimplement interpolation for the Array API here. Leave rotation splines as
+# numpy-only for now.
 
 
 def _create_skew_matrix(x):
@@ -367,6 +374,12 @@ class RotationSpline:
 
     def __init__(self, times, rotations):
         from scipy.interpolate import PPoly
+
+        # TODO: Remove this check once we can support other Array API frameworks.
+        if not is_numpy(array_namespace(rotations.as_quat())):
+            raise TypeError(
+                "RotationSpline does not support other Array API frameworks besides numpy for now."
+            )
 
         if rotations.single:
             raise ValueError("`rotations` must be a sequence of rotations.")
