@@ -28,6 +28,12 @@ def spdiags(data, diags, m=None, n=None, format=None):
     """
     Return a sparse matrix from diagonals.
 
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use `dia_array` to take advantage
+        of the sparse array functionality. (See Notes below.)
+
     Parameters
     ----------
     data : array_like
@@ -41,20 +47,19 @@ def spdiags(data, diags, m=None, n=None, format=None):
     m, n : int, tuple, optional
         Shape of the result. If `n` is None and `m` is a given tuple,
         the shape is this tuple. If omitted, the matrix is square and
-        its shape is len(data[0]).
+        its shape is ``len(data[0])``.
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
 
-    .. warning::
-
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``dia_array`` to take advantage
-        of the sparse array functionality.
+    Returns
+    -------
+    new_matrix : sparse matrix
+        `dia_matrix` format with values in ``data`` on diagonals from ``diags``.
 
     Notes
     -----
-    This function can be replaced by an equivalent call to ``dia_matrix``
+    This function can be replaced by an equivalent call to `dia_matrix`
     as::
 
         dia_matrix((data, diags), shape=(m, n)).asformat(format)
@@ -109,11 +114,17 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     dtype : dtype, optional
         Data type of the array.
 
+    Returns
+    -------
+    new_array : dia_array
+        `dia_array` holding the values in `diagonals` offset from the main diagonal
+        as indicated in `offsets`.
+
     Notes
     -----
     Repeated diagonal offsets are disallowed.
 
-    The result from `diags_array` is the sparse equivalent of::
+    The result from ``diags_array`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
@@ -122,10 +133,14 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
     ``diags_array`` differs from `dia_array` in the way it handles off-diagonals.
     Specifically, `dia_array` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
-    offset, while ``diags_array` assumes the input data has no padding.
-    Each value in the input ``diagonals`` is used.
+    offset, while ``diags_array`` assumes the input data has no padding.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 1.11
+
+    See Also
+    --------
+    dia_array : constructor for the sparse DIAgonal format.
 
     Examples
     --------
@@ -218,7 +233,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
+        You are encouraged to use `diags_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -241,28 +256,34 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     dtype : dtype, optional
         Data type of the matrix.
 
-    See Also
-    --------
-    spdiags : construct matrix from diagonals
-    diags_array : construct sparse array instead of sparse matrix
+    Returns
+    -------
+    new_matrix : dia_matrix
+        `dia_matrix` holding the values in `diagonals` offset from the main diagonal
+        as indicated in `offsets`.
 
     Notes
     -----
     Repeated diagonal offsets are disallowed.
 
-    The result from `diags` is the sparse equivalent of::
+    The result from ``diags`` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
         + np.diag(diagonals[k], offsets[k])
 
-    ``diags`` differs from ``dia_matrix`` in the way it handles off-diagonals.
+    ``diags`` differs from `dia_matrix` in the way it handles off-diagonals.
     Specifically, `dia_matrix` assumes the data input includes padding
     (ignored values) at the start/end of the rows for positive/negative
-    offset, while ``diags` assumes the input data has no padding.
-    Each value in the input ``diagonals`` is used.
+    offset, while ``diags`` assumes the input data has no padding.
+    Each value in the input `diagonals` is used.
 
     .. versionadded:: 0.11
+
+    See Also
+    --------
+    spdiags : construct matrix from diagonals
+    diags_array : construct sparse array instead of sparse matrix
 
     Examples
     --------
@@ -301,7 +322,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 def identity(n, dtype='d', format=None):
     """Identity matrix in sparse format
 
-    Returns an identity matrix with shape (n,n) using a given
+    Returns an identity matrix with shape ``(n, n)`` using a given
     sparse format and dtype. This differs from `eye_array` in
     that it has a square shape with ones only on the main diagonal.
     It is thus the multiplicative identity. `eye_array` allows
@@ -310,7 +331,7 @@ def identity(n, dtype='d', format=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
+        You are encouraged to use `eye_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -321,6 +342,16 @@ def identity(n, dtype='d', format=None):
         Data type of the matrix
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
+
+    Returns
+    -------
+    new_matrix : sparse matrix
+        A square sparse matrix with ones on the main diagonal and zeros elsewhere.
+
+    See Also
+    --------
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
+    eye : Sparse matrix of chosen shape with ones on a specified diagonal.
 
     Examples
     --------
@@ -341,7 +372,7 @@ def identity(n, dtype='d', format=None):
 
 
 def eye_array(m, n=None, *, k=0, dtype=float, format=None):
-    """Identity matrix in sparse array format
+    """Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Return a sparse array with ones on diagonal.
     Specifically a sparse array (m x n) where the kth diagonal
@@ -359,6 +390,11 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
         Data type of the array
     format : str, optional (default: "dia")
         Sparse format of the result, e.g., format="csr", etc.
+
+    Returns
+    -------
+    new_array : sparse array
+        Sparse array of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Examples
     --------
@@ -415,10 +451,16 @@ def _eye(m, n, k, dtype, format, as_sparray=True):
 
 
 def eye(m, n=None, k=0, dtype=float, format=None):
-    """Sparse matrix with ones on diagonal
+    """Sparse matrix of chosen shape with ones on the kth diagonal and zeros elsewhere.
 
     Returns a sparse matrix (m x n) where the kth diagonal
     is all ones and everything else is zeros.
+
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use `eye_array` to take advantage
+        of the sparse array functionality.
 
     Parameters
     ----------
@@ -433,11 +475,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
 
-    .. warning::
+    Returns
+    -------
+    new_matrix : sparse matrix
+        Sparse matrix of chosen shape with ones on the kth diagonaland zeros elsewhere.
 
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``eye_array`` to take advantage
-        of the sparse array functionality.
+    See Also
+    --------
+    eye_array : Sparse array of chosen shape with ones on a specified diagonal.
 
     Examples
     --------
@@ -780,7 +825,7 @@ def vstack(blocks, format=None, dtype=None):
 
         If you want a sparse array built from blocks that are not sparse
         arrays, use ``block(vstack(blocks))`` or convert one block
-        e.g. `blocks[0] = csr_array(blocks[0])`.
+        e.g. ``blocks[0] = csr_array(blocks[0])``.
 
     See Also
     --------
@@ -808,14 +853,14 @@ def bmat(blocks, format=None, dtype=None):
     """
     Build a sparse array or matrix from sparse sub-blocks
 
-    Note: `block_array` is preferred over `bmat`. They are the same function
-    except that `bmat` can return a deprecated sparse matrix.
-    `bmat` returns a coo_matrix if none of the inputs are a sparse array.
+    Note: `block_array` is preferred over ``bmat``. They are the same function
+    except that ``bmat`` returns a deprecated sparse matrix when none of the
+    inputs are sparse arrays.
 
     .. warning::
 
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``block_array`` to take advantage
+        This function returns a sparse matrix when no inputs are sparse arrays.
+        You are encouraged to use `block_array` to take advantage
         of the sparse array functionality.
 
     Parameters
@@ -1119,11 +1164,11 @@ def random_array(shape, *, density=0.01, format='coo', dtype=None,
         operating system. Types other than `numpy.random.Generator` are
         passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
-        This random state will be used for sampling `indices` (the sparsity
+        This random state will be used for sampling ``indices`` (the sparsity
         structure), and by default for the data values too (see `data_sampler`).
     data_sampler : callable, optional (default depends on dtype)
-        Sampler of random data values with keyword arg `size`.
-        This function should take a single keyword argument `size` specifying
+        Sampler of random data values with keyword arg ``size``.
+        This function should take a single keyword argument ``size`` specifying
         the length of its returned ndarray. It is used to generate the nonzero
         values in the matrix after the locations of those values are chosen.
         By default, uniform [0, 1) random values are used unless `dtype` is
@@ -1255,7 +1300,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage of the
+        You are encouraged to use `random_array` to take advantage of the
         sparse array functionality.
 
     Parameters
@@ -1360,7 +1405,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, rng=None):
     .. warning::
 
         This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``random_array`` to take advantage
+        You are encouraged to use `random_array` to take advantage
         of the sparse array functionality.
 
     Parameters
