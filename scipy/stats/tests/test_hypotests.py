@@ -1418,249 +1418,359 @@ class TestCvm_2samp:
         res = cramervonmises_2samp(x[:4], x[:4])
         assert_equal((res.statistic, res.pvalue), (0.0, 1.0))
 
+#
+# class TestTukeyHSD:
+#
+#     data_same_size = ([24.5, 23.5, 26.4, 27.1, 29.9],
+#                       [28.4, 34.2, 29.5, 32.2, 30.1],
+#                       [26.1, 28.3, 24.3, 26.2, 27.8])
+#     data_diff_size = ([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1],
+#                       [28.4, 34.2, 29.5, 32.2, 30.1],
+#                       [26.1, 28.3, 24.3, 26.2, 27.8])
+#     extreme_size = ([24.5, 23.5, 26.4],
+#                     [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
+#                      30.1],
+#                     [26.1, 28.3, 24.3, 26.2, 27.8])
+#
+#     sas_same_size = """
+#     Comparison LowerCL Difference UpperCL Significance
+#     2 - 3	0.6908830568	4.34	7.989116943	    1
+#     2 - 1	0.9508830568	4.6 	8.249116943 	1
+#     3 - 2	-7.989116943	-4.34	-0.6908830568	1
+#     3 - 1	-3.389116943	0.26	3.909116943	    0
+#     1 - 2	-8.249116943	-4.6	-0.9508830568	1
+#     1 - 3	-3.909116943	-0.26	3.389116943	    0
+#     """
+#
+#     sas_diff_size = """
+#     Comparison LowerCL Difference UpperCL Significance
+#     2 - 1	0.2679292645	3.645	7.022070736	    1
+#     2 - 3	0.5934764007	4.34	8.086523599	    1
+#     1 - 2	-7.022070736	-3.645	-0.2679292645	1
+#     1 - 3	-2.682070736	0.695	4.072070736	    0
+#     3 - 2	-8.086523599	-4.34	-0.5934764007	1
+#     3 - 1	-4.072070736	-0.695	2.682070736	    0
+#     """
+#
+#     sas_extreme = """
+#     Comparison LowerCL Difference UpperCL Significance
+#     2 - 3	1.561605075	    4.34	7.118394925	    1
+#     2 - 1	2.740784879	    6.08	9.419215121	    1
+#     3 - 2	-7.118394925	-4.34	-1.561605075	1
+#     3 - 1	-1.964526566	1.74	5.444526566	    0
+#     1 - 2	-9.419215121	-6.08	-2.740784879	1
+#     1 - 3	-5.444526566	-1.74	1.964526566	    0
+#     """
+#
+#     @pytest.mark.parametrize("data,res_expect_str,atol",
+#                              ((data_same_size, sas_same_size, 1e-4),
+#                               (data_diff_size, sas_diff_size, 1e-4),
+#                               (extreme_size, sas_extreme, 1e-10),
+#                               ),
+#                              ids=["equal size sample",
+#                                   "unequal sample size",
+#                                   "extreme sample size differences"])
+#     def test_compare_sas(self, data, res_expect_str, atol):
+#         '''
+#         SAS code used to generate results for each sample:
+#         DATA ACHE;
+#         INPUT BRAND RELIEF;
+#         CARDS;
+#         1 24.5
+#         ...
+#         3 27.8
+#         ;
+#         ods graphics on;   ODS RTF;ODS LISTING CLOSE;
+#            PROC ANOVA DATA=ACHE;
+#            CLASS BRAND;
+#            MODEL RELIEF=BRAND;
+#            MEANS BRAND/TUKEY CLDIFF;
+#            TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
+#            ods output  CLDiffs =tc;
+#         proc print data=tc;
+#             format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
+#             title "Output with many digits";
+#         RUN;
+#         QUIT;
+#         ODS RTF close;
+#         ODS LISTING;
+#         '''
+#         res_expect = np.asarray(res_expect_str.replace(" - ", " ").split()[5:],
+#                                 dtype=float).reshape((6, 6))
+#         res_tukey = stats.tukey_hsd(*data)
+#         conf = res_tukey.confidence_interval()
+#         # loop over the comparisons
+#         for i, j, l, s, h, sig in res_expect:
+#             i, j = int(i) - 1, int(j) - 1
+#             assert_allclose(conf.low[i, j], l, atol=atol)
+#             assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+#             assert_allclose(conf.high[i, j], h, atol=atol)
+#             assert_allclose((res_tukey.pvalue[i, j] <= .05), sig == 1)
+#
+#     matlab_sm_siz = """
+#         1	2	-8.2491590248597	-4.6	-0.9508409751403	0.0144483269098
+#         1	3	-3.9091590248597	-0.26	3.3891590248597	0.9803107240900
+#         2	3	0.6908409751403	4.34	7.9891590248597	0.0203311368795
+#         """
+#
+#     matlab_diff_sz = """
+#         1	2	-7.02207069748501	-3.645	-0.26792930251500 0.03371498443080
+#         1	3	-2.68207069748500	0.695	4.07207069748500 0.85572267328807
+#         2	3	0.59347644287720	4.34	8.08652355712281 0.02259047020620
+#         """
+#
+#     @pytest.mark.parametrize("data,res_expect_str,atol",
+#                              ((data_same_size, matlab_sm_siz, 1e-12),
+#                               (data_diff_size, matlab_diff_sz, 1e-7)),
+#                              ids=["equal size sample",
+#                                   "unequal size sample"])
+#     def test_compare_matlab(self, data, res_expect_str, atol):
+#         """
+#         vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
+#          26.1, 28.3, 24.3, 26.2, 27.8]
+#         names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
+#          'one', 'one', 'two', 'two', 'two', 'two', 'two'}
+#         [p,t,stats] = anova1(vals,names,"off");
+#         [c,m,h,nms] = multcompare(stats, "CType","hsd");
+#         """
+#         res_expect = np.asarray(res_expect_str.split(),
+#                                 dtype=float).reshape((3, 6))
+#         res_tukey = stats.tukey_hsd(*data)
+#         conf = res_tukey.confidence_interval()
+#         # loop over the comparisons
+#         for i, j, l, s, h, p in res_expect:
+#             i, j = int(i) - 1, int(j) - 1
+#             assert_allclose(conf.low[i, j], l, atol=atol)
+#             assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
+#             assert_allclose(conf.high[i, j], h, atol=atol)
+#             assert_allclose(res_tukey.pvalue[i, j], p, atol=atol)
+#
+#     def test_compare_r(self):
+#         """
+#         Testing against results and p-values from R:
+#         from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
+#         topics/TukeyHSD
+#         > require(graphics)
+#         > summary(fm1 <- aov(breaks ~ tension, data = warpbreaks))
+#         > TukeyHSD(fm1, "tension", ordered = TRUE)
+#         > plot(TukeyHSD(fm1, "tension"))
+#         Tukey multiple comparisons of means
+#         95% family-wise confidence level
+#         factor levels have been ordered
+#         Fit: aov(formula = breaks ~ tension, data = warpbreaks)
+#         $tension
+#         """
+#         str_res = """
+#                 diff        lwr      upr     p adj
+#         2 - 3  4.722222 -4.8376022 14.28205 0.4630831
+#         1 - 3 14.722222  5.1623978 24.28205 0.0014315
+#         1 - 2 10.000000  0.4401756 19.55982 0.0384598
+#         """
+#         res_expect = np.asarray(str_res.replace(" - ", " ").split()[5:],
+#                                 dtype=float).reshape((3, 6))
+#         data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
+#                  27, 14, 29, 19, 29, 31, 41, 20, 44],
+#                 [18, 21, 29, 17, 12, 18, 35, 30, 36,
+#                  42, 26, 19, 16, 39, 28, 21, 39, 29],
+#                 [36, 21, 24, 18, 10, 43, 28, 15, 26,
+#                  20, 21, 24, 17, 13, 15, 15, 16, 28])
+#
+#         res_tukey = stats.tukey_hsd(*data)
+#         conf = res_tukey.confidence_interval()
+#         # loop over the comparisons
+#         for i, j, s, l, h, p in res_expect:
+#             i, j = int(i) - 1, int(j) - 1
+#             # atols are set to the number of digits present in the r result.
+#             assert_allclose(conf.low[i, j], l, atol=1e-7)
+#             assert_allclose(res_tukey.statistic[i, j], s, atol=1e-6)
+#             assert_allclose(conf.high[i, j], h, atol=1e-5)
+#             assert_allclose(res_tukey.pvalue[i, j], p, atol=1e-7)
+#
+#     def test_engineering_stat_handbook(self):
+#         '''
+#         Example sourced from:
+#         https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
+#         '''
+#         group1 = [6.9, 5.4, 5.8, 4.6, 4.0]
+#         group2 = [8.3, 6.8, 7.8, 9.2, 6.5]
+#         group3 = [8.0, 10.5, 8.1, 6.9, 9.3]
+#         group4 = [5.8, 3.8, 6.1, 5.6, 6.2]
+#         res = stats.tukey_hsd(group1, group2, group3, group4)
+#         conf = res.confidence_interval()
+#         lower = np.asarray([
+#             [0, 0, 0, -2.25],
+#             [.29, 0, -2.93, .13],
+#             [1.13, 0, 0, .97],
+#             [0, 0, 0, 0]])
+#         upper = np.asarray([
+#             [0, 0, 0, 1.93],
+#             [4.47, 0, 1.25, 4.31],
+#             [5.31, 0, 0, 5.15],
+#             [0, 0, 0, 0]])
+#
+#         for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
+#             assert_allclose(conf.low[i, j], lower[i, j], atol=1e-2)
+#             assert_allclose(conf.high[i, j], upper[i, j], atol=1e-2)
+#
+#     def test_rand_symm(self):
+#         # test some expected identities of the results
+#         np.random.seed(1234)
+#         data = np.random.rand(3, 100)
+#         res = stats.tukey_hsd(*data)
+#         conf = res.confidence_interval()
+#         # the confidence intervals should be negated symmetric of each other
+#         assert_equal(conf.low, -conf.high.T)
+#         # the `high` and `low` center diagonals should be the same since the
+#         # mean difference in a self comparison is 0.
+#         assert_equal(np.diagonal(conf.high), conf.high[0, 0])
+#         assert_equal(np.diagonal(conf.low), conf.low[0, 0])
+#         # statistic array should be antisymmetric with zeros on the diagonal
+#         assert_equal(res.statistic, -res.statistic.T)
+#         assert_equal(np.diagonal(res.statistic), 0)
+#         # p-values should be symmetric and 1 when compared to itself
+#         assert_equal(res.pvalue, res.pvalue.T)
+#         assert_equal(np.diagonal(res.pvalue), 1)
+#
+#     def test_no_inf(self):
+#         with assert_raises(ValueError, match="...must be finite."):
+#             stats.tukey_hsd([1, 2, 3], [2, np.inf], [6, 7, 3])
+#
+#     def test_is_1d(self):
+#         with assert_raises(ValueError, match="...must be one-dimensional"):
+#             stats.tukey_hsd([[1, 2], [2, 3]], [2, 5], [5, 23, 6])
+#
+#     def test_no_empty(self):
+#         with assert_raises(ValueError, match="...must be greater than one"):
+#             stats.tukey_hsd([], [2, 5], [4, 5, 6])
+#
+#     @pytest.mark.parametrize("nargs", (0, 1))
+#     def test_not_enough_treatments(self, nargs):
+#         with assert_raises(ValueError, match="...more than 1 treatment."):
+#             stats.tukey_hsd(*([[23, 7, 3]] * nargs))
+#
+#     @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
+#     def test_conf_level_invalid(self, cl):
+#         with assert_raises(ValueError, match="must be between 0 and 1"):
+#             r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4])
+#             r.confidence_interval(cl)
+#
+#     def test_2_args_ttest(self):
+#         # that with 2 treatments the `pvalue` is equal to that of `ttest_ind`
+#         res_tukey = stats.tukey_hsd(*self.data_diff_size[:2])
+#         res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
+#         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
+#         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
 
-class TestTukeyHSD:
 
-    data_same_size = ([24.5, 23.5, 26.4, 27.1, 29.9],
-                      [28.4, 34.2, 29.5, 32.2, 30.1],
-                      [26.1, 28.3, 24.3, 26.2, 27.8])
-    data_diff_size = ([24.5, 23.5, 26.28, 26.4, 27.1, 29.9, 30.1, 30.1],
-                      [28.4, 34.2, 29.5, 32.2, 30.1],
-                      [26.1, 28.3, 24.3, 26.2, 27.8])
-    extreme_size = ([24.5, 23.5, 26.4],
-                    [28.4, 34.2, 29.5, 32.2, 30.1, 28.4, 34.2, 29.5, 32.2,
-                     30.1],
-                    [26.1, 28.3, 24.3, 26.2, 27.8])
+class TestGamesHowell:
+    # data with unequal variances
+    data_same_size = ([24., 23., 31., 51.],
+            [34., 18., 18., 26.],
+            [17., 68., 59.,  7.])
 
-    sas_same_size = """
-    Comparison LowerCL Difference UpperCL Significance
-    2 - 3	0.6908830568	4.34	7.989116943	    1
-    2 - 1	0.9508830568	4.6 	8.249116943 	1
-    3 - 2	-7.989116943	-4.34	-0.6908830568	1
-    3 - 1	-3.389116943	0.26	3.909116943	    0
-    1 - 2	-8.249116943	-4.6	-0.9508830568	1
-    1 - 3	-3.909116943	-0.26	3.389116943	    0
+    data_diff_size = ([30.0, 23.0, 51.0],
+                      [-81.0, 71.0, -27.0, 63.0],
+                      [42.0, 11.0, 29.0, 19.0, 50.0],
+                      [23.0, 22.0, 20.0, 18.0, 9.0])
+
+    spss_same_size = """
+            Mean Difference (I-J)  Lower Bound  Upper Bound  Sig
+    0 - 1   8.25                   -16.5493     33.0493      0.559  
+    0 - 2  -5.50                   -63.6702     52.6702      0.941  
+    1 - 2  -13.75                  -74.3174     46.8174      0.683
     """
 
-    sas_diff_size = """
-    Comparison LowerCL Difference UpperCL Significance
-    2 - 1	0.2679292645	3.645	7.022070736	    1
-    2 - 3	0.5934764007	4.34	8.086523599	    1
-    1 - 2	-7.022070736	-3.645	-0.2679292645	1
-    1 - 3	-2.682070736	0.695	4.072070736	    0
-    3 - 2	-8.086523599	-4.34	-0.5934764007	1
-    3 - 1	-4.072070736	-0.695	2.682070736	    0
+    spss_diff_size = """
+            Mean Difference (I-J)  Lower Bound Upper Bound  Sig
+    0 - 1	28.16667	           -141.9854   198.3187	    0.873
+    0 - 2	4.46667	               -37.2831    46.2164	    0.975
+    0 - 3	16.26667	           -35.0933    67.6266	    0.426
+    1 - 2	-23.70000	           -195.3156   147.9156	    0.915
+    1 - 3	-11.90000	           -188.1055   164.3055	    0.986
+    2 - 3	11.80000	           -16.2895	   39.8895      0.476
     """
 
-    sas_extreme = """
-    Comparison LowerCL Difference UpperCL Significance
-    2 - 3	1.561605075	    4.34	7.118394925	    1
-    2 - 1	2.740784879	    6.08	9.419215121	    1
-    3 - 2	-7.118394925	-4.34	-1.561605075	1
-    3 - 1	-1.964526566	1.74	5.444526566	    0
-    1 - 2	-9.419215121	-6.08	-2.740784879	1
-    1 - 3	-5.444526566	-1.74	1.964526566	    0
-    """
-
-    @pytest.mark.parametrize("data,res_expect_str,atol",
-                             ((data_same_size, sas_same_size, 1e-4),
-                              (data_diff_size, sas_diff_size, 1e-4),
-                              (extreme_size, sas_extreme, 1e-10),
-                              ),
-                             ids=["equal size sample",
-                                  "unequal sample size",
-                                  "extreme sample size differences"])
-    def test_compare_sas(self, data, res_expect_str, atol):
-        '''
-        SAS code used to generate results for each sample:
-        DATA ACHE;
-        INPUT BRAND RELIEF;
-        CARDS;
-        1 24.5
-        ...
-        3 27.8
-        ;
-        ods graphics on;   ODS RTF;ODS LISTING CLOSE;
-           PROC ANOVA DATA=ACHE;
-           CLASS BRAND;
-           MODEL RELIEF=BRAND;
-           MEANS BRAND/TUKEY CLDIFF;
-           TITLE 'COMPARE RELIEF ACROSS MEDICINES  - ANOVA EXAMPLE';
-           ods output  CLDiffs =tc;
-        proc print data=tc;
-            format LowerCL 17.16 UpperCL 17.16 Difference 17.16;
-            title "Output with many digits";
-        RUN;
-        QUIT;
-        ODS RTF close;
-        ODS LISTING;
-        '''
-        res_expect = np.asarray(res_expect_str.replace(" - ", " ").split()[5:],
-                                dtype=float).reshape((6, 6))
-        res_tukey = stats.tukey_hsd(*data)
-        conf = res_tukey.confidence_interval()
-        # loop over the comparisons
-        for i, j, l, s, h, sig in res_expect:
-            i, j = int(i) - 1, int(j) - 1
-            assert_allclose(conf.low[i, j], l, atol=atol)
-            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
-            assert_allclose(conf.high[i, j], h, atol=atol)
-            assert_allclose((res_tukey.pvalue[i, j] <= .05), sig == 1)
-
-    matlab_sm_siz = """
-        1	2	-8.2491590248597	-4.6	-0.9508409751403	0.0144483269098
-        1	3	-3.9091590248597	-0.26	3.3891590248597	0.9803107240900
-        2	3	0.6908409751403	4.34	7.9891590248597	0.0203311368795
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, spss_same_size),
+                            (data_diff_size, spss_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_spss(self, data, res_expect_str):
         """
-
-    matlab_diff_sz = """
-        1	2	-7.02207069748501	-3.645	-0.26792930251500 0.03371498443080
-        1	3	-2.68207069748500	0.695	4.07207069748500 0.85572267328807
-        2	3	0.59347644287720	4.34	8.08652355712281 0.02259047020620
+        ONEWAY Value BY Group
+          /MISSING ANALYSIS
+          /CRITERIA=CILEVEL(0.95)
+          /POSTHOC=GH ALPHA(0.05)
         """
-
-    @pytest.mark.parametrize("data,res_expect_str,atol",
-                             ((data_same_size, matlab_sm_siz, 1e-12),
-                              (data_diff_size, matlab_diff_sz, 1e-7)),
-                             ids=["equal size sample",
-                                  "unequal size sample"])
-    def test_compare_matlab(self, data, res_expect_str, atol):
-        """
-        vals = [24.5, 23.5,  26.4, 27.1, 29.9, 28.4, 34.2, 29.5, 32.2, 30.1,
-         26.1, 28.3, 24.3, 26.2, 27.8]
-        names = {'zero', 'zero', 'zero', 'zero', 'zero', 'one', 'one', 'one',
-         'one', 'one', 'two', 'two', 'two', 'two', 'two'}
-        [p,t,stats] = anova1(vals,names,"off");
-        [c,m,h,nms] = multcompare(stats, "CType","hsd");
-        """
-        res_expect = np.asarray(res_expect_str.split(),
-                                dtype=float).reshape((3, 6))
-        res_tukey = stats.tukey_hsd(*data)
-        conf = res_tukey.confidence_interval()
-        # loop over the comparisons
-        for i, j, l, s, h, p in res_expect:
-            i, j = int(i) - 1, int(j) - 1
-            assert_allclose(conf.low[i, j], l, atol=atol)
-            assert_allclose(res_tukey.statistic[i, j], s, atol=atol)
-            assert_allclose(conf.high[i, j], h, atol=atol)
-            assert_allclose(res_tukey.pvalue[i, j], p, atol=atol)
-
-    def test_compare_r(self):
-        """
-        Testing against results and p-values from R:
-        from: https://www.rdocumentation.org/packages/stats/versions/3.6.2/
-        topics/TukeyHSD
-        > require(graphics)
-        > summary(fm1 <- aov(breaks ~ tension, data = warpbreaks))
-        > TukeyHSD(fm1, "tension", ordered = TRUE)
-        > plot(TukeyHSD(fm1, "tension"))
-        Tukey multiple comparisons of means
-        95% family-wise confidence level
-        factor levels have been ordered
-        Fit: aov(formula = breaks ~ tension, data = warpbreaks)
-        $tension
-        """
-        str_res = """
-                diff        lwr      upr     p adj
-        2 - 3  4.722222 -4.8376022 14.28205 0.4630831
-        1 - 3 14.722222  5.1623978 24.28205 0.0014315
-        1 - 2 10.000000  0.4401756 19.55982 0.0384598
-        """
-        res_expect = np.asarray(str_res.replace(" - ", " ").split()[5:],
-                                dtype=float).reshape((3, 6))
-        data = ([26, 30, 54, 25, 70, 52, 51, 26, 67,
-                 27, 14, 29, 19, 29, 31, 41, 20, 44],
-                [18, 21, 29, 17, 12, 18, 35, 30, 36,
-                 42, 26, 19, 16, 39, 28, 21, 39, 29],
-                [36, 21, 24, 18, 10, 43, 28, 15, 26,
-                 20, 21, 24, 17, 13, 15, 15, 16, 28])
-
-        res_tukey = stats.tukey_hsd(*data)
-        conf = res_tukey.confidence_interval()
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ").split()[8:],
+            dtype=float).reshape(-1, 6)
+        res_games = stats.games_howell(*data)
+        conf = res_games.confidence_interval()
         # loop over the comparisons
         for i, j, s, l, h, p in res_expect:
-            i, j = int(i) - 1, int(j) - 1
-            # atols are set to the number of digits present in the r result.
-            assert_allclose(conf.low[i, j], l, atol=1e-7)
-            assert_allclose(res_tukey.statistic[i, j], s, atol=1e-6)
-            assert_allclose(conf.high[i, j], h, atol=1e-5)
-            assert_allclose(res_tukey.pvalue[i, j], p, atol=1e-7)
+            i, j = int(i), int(j)
+            assert_allclose(conf.low[i, j], l, atol=1e-4)
+            assert_allclose(res_games.statistic[i, j], s, atol=1e-4)
+            assert_allclose(conf.high[i, j], h, atol=1e-4)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-3)
 
-    def test_engineering_stat_handbook(self):
-        '''
-        Example sourced from:
-        https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm
-        '''
-        group1 = [6.9, 5.4, 5.8, 4.6, 4.0]
-        group2 = [8.3, 6.8, 7.8, 9.2, 6.5]
-        group3 = [8.0, 10.5, 8.1, 6.9, 9.3]
-        group4 = [5.8, 3.8, 6.1, 5.6, 6.2]
-        res = stats.tukey_hsd(group1, group2, group3, group4)
-        conf = res.confidence_interval()
-        lower = np.asarray([
-            [0, 0, 0, -2.25],
-            [.29, 0, -2.93, .13],
-            [1.13, 0, 0, .97],
-            [0, 0, 0, 0]])
-        upper = np.asarray([
-            [0, 0, 0, 1.93],
-            [4.47, 0, 1.25, 4.31],
-            [5.31, 0, 0, 5.15],
-            [0, 0, 0, 0]])
+    r_same_size = """
+               q value Pr(>|q|)  
+    1 - 0 == 0   -1.52  0.55873 
+    2 - 0 == 0    0.48  0.94115
+    2 - 1 == 0    1.25  0.68298  
+    """
 
-        for (i, j) in [(1, 0), (2, 0), (0, 3), (1, 2), (2, 3)]:
-            assert_allclose(conf.low[i, j], lower[i, j], atol=1e-2)
-            assert_allclose(conf.high[i, j], upper[i, j], atol=1e-2)
+    r_diff_size = """
+               q value Pr(>|q|)  
+    1 - 0 == 0  -1.059  0.87275  
+    2 - 0 == 0  -0.572  0.97526  
+    3 - 0 == 0  -2.621  0.42625  
+    2 - 1 == 0   0.897  0.91490
+    3 - 1 == 0   0.458  0.98614  
+    3 - 2 == 0  -2.199  0.47553
+    """
 
-    def test_rand_symm(self):
-        # test some expected identities of the results
-        np.random.seed(1234)
-        data = np.random.rand(3, 100)
-        res = stats.tukey_hsd(*data)
-        conf = res.confidence_interval()
-        # the confidence intervals should be negated symmetric of each other
-        assert_equal(conf.low, -conf.high.T)
-        # the `high` and `low` center diagonals should be the same since the
-        # mean difference in a self comparison is 0.
-        assert_equal(np.diagonal(conf.high), conf.high[0, 0])
-        assert_equal(np.diagonal(conf.low), conf.low[0, 0])
-        # statistic array should be antisymmetric with zeros on the diagonal
-        assert_equal(res.statistic, -res.statistic.T)
-        assert_equal(np.diagonal(res.statistic), 0)
-        # p-values should be symmetric and 1 when compared to itself
-        assert_equal(res.pvalue, res.pvalue.T)
-        assert_equal(np.diagonal(res.pvalue), 1)
-
-    def test_no_inf(self):
-        with assert_raises(ValueError, match="...must be finite."):
-            stats.tukey_hsd([1, 2, 3], [2, np.inf], [6, 7, 3])
-
-    def test_is_1d(self):
-        with assert_raises(ValueError, match="...must be one-dimensional"):
-            stats.tukey_hsd([[1, 2], [2, 3]], [2, 5], [5, 23, 6])
-
-    def test_no_empty(self):
-        with assert_raises(ValueError, match="...must be greater than one"):
-            stats.tukey_hsd([], [2, 5], [4, 5, 6])
-
-    @pytest.mark.parametrize("nargs", (0, 1))
-    def test_not_enough_treatments(self, nargs):
-        with assert_raises(ValueError, match="...more than 1 treatment."):
-            stats.tukey_hsd(*([[23, 7, 3]] * nargs))
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, r_same_size),
+                            (data_diff_size, r_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_r(self, data, res_expect_str):
+        """
+        games-howell is provided by PMCMRplus package
+        https://search.r-project.org/CRAN/refmans/PMCMRplus/html/gamesHowellTest.html
+        > library("PMCMRplus")
+        > table = data.frame(
+            values = c(24., 23., 31., 51., 34., 18., 18., 26., 17., 68., 59.,  7.),
+            groups = c("0", "0", "0", "0", "1", "1", "1", "1", "2", "2", "2", "2")
+          )
+        > table$groups = as.factor(table$groups)
+        > fit <-aov(values ~ groups, table)
+        > res = gamesHowellTest(fit)
+        > summary(res)
+        """
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ")
+            .replace(" == ", " ").split()[3:],
+            dtype=float).reshape(-1, 5)
+        res_games = stats.games_howell(*data)
+        # loop over the comparisons
+        # note confidence intervals are not provided by PMCMRplus
+        for j, i, _, _, p in res_expect:
+            i, j = int(i), int(j)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-5)
 
     @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
     def test_conf_level_invalid(self, cl):
         with assert_raises(ValueError, match="must be between 0 and 1"):
-            r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4])
+            r = stats.games_howell([23, 7, 3], [3, 4], [9, 4])
             r.confidence_interval(cl)
 
-    def test_2_args_ttest(self):
-        # that with 2 treatments the `pvalue` is equal to that of `ttest_ind`
-        res_tukey = stats.tukey_hsd(*self.data_diff_size[:2])
-        res_ttest = stats.ttest_ind(*self.data_diff_size[:2])
-        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
-        assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
-
+    # Data validation test has been covered by TestTukeyHSD
+    # like empty, 1d, inf, and lack of tretments
+    # because games_howell leverage _tukey_hsd_iv()
 
 class TestPoissonMeansTest:
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
