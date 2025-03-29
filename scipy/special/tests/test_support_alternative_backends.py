@@ -9,6 +9,7 @@ from scipy._lib._array_api import (is_cupy, is_jax, is_torch, SCIPY_ARRAY_API,
 from scipy._lib.array_api_compat import numpy as np
 
 
+@pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
 def test_dispatch_to_unrecognized_library():
     xp = pytest.importorskip("array_api_strict")
     f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
@@ -19,7 +20,7 @@ def test_dispatch_to_unrecognized_library():
 
 
 @pytest.mark.skipif(not SCIPY_ARRAY_API,
-                    reason="xp_broadcast_promote won't accept non-numpy objects")
+                    reason="xp_promote won't accept non-numpy objects")
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
 def test_rel_entr_generic(dtype):
     xp = pytest.importorskip("array_api_strict")

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 
 from scipy import stats
-from scipy._lib._array_api import xp_default_dtype, is_numpy, is_torch
+from scipy._lib._array_api import xp_default_dtype, is_numpy, is_torch, SCIPY_ARRAY_API
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy._lib._util import _apply_over_batch
 
@@ -133,6 +133,8 @@ class TestQuantile:
             if is_torch(xp):
                 pytest.skip("sum_cpu not implemented for UInt64, see "
                             "data-apis/array-api-compat#242")
+            if not SCIPY_ARRAY_API:
+                pytest.skip("MArray is only available if SCIPY_ARRAY_API=1")
             marray = pytest.importorskip('marray')
             kwargs = dict(axis=axis, keepdims=keepdims, method=method)
             mxp = marray._get_namespace(xp)
