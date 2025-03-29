@@ -10,6 +10,7 @@ import numpy as np
 
 from scipy._lib.deprecation import _sub_module_deprecation
 import scipy.spatial.transform._cython_backend as cython_backend
+from scipy.spatial.transform._rotation_groups import create_group
 import scipy.spatial.transform._array_api_backend as array_api_backend
 from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike, is_jax
 from scipy._lib.array_api_compat import device
@@ -306,6 +307,8 @@ class Rotation:
         reduced, left_idx, right_idx = self._backend.reduce(
             self._quat, left=left, right=right
         )
+        if self._single:
+            reduced = reduced[0, ...]
         rot = Rotation(reduced, normalize=False, copy=False)
         if return_indices:
             left_idx = left_idx if left is not None else None
@@ -337,6 +340,47 @@ class Rotation:
         if return_sensitivity:
             return cls(q, normalize=False, copy=False), rssd, sensitivity
         return cls(q, normalize=False, copy=False), rssd
+
+    @classmethod
+    def create_group(cls, group: str, axis: str = "Z"):
+        """Create a 3D rotation group.
+
+        Parameters
+        ----------
+        group : string
+            The name of the group. Must be one of 'I', 'O', 'T', 'Dn', 'Cn',
+            where `n` is a positive integer. The groups are:
+
+                * I: Icosahedral group
+                * O: Octahedral group
+                * T: Tetrahedral group
+                * D: Dicyclic group
+                * C: Cyclic group
+
+        axis : integer
+            The cyclic rotation axis. Must be one of ['X', 'Y', 'Z'] (or
+            lowercase). Default is 'Z'. Ignored for groups 'I', 'O', and 'T'.
+
+        Returns
+        -------
+        rotation : `Rotation` instance
+            Object containing the elements of the rotation group.
+
+        Notes
+        -----
+        This method generates rotation groups only. The full 3-dimensional
+        point groups [PointGroups]_ also contain reflections.
+
+        References
+        ----------
+        .. [PointGroups] `Point groups
+           <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
+           on Wikipedia.
+        """
+        # DECISION: We create groups as numpy arrays only. We have no nice way of specifying the
+        # array framework here. Another option would be to pass in an array_module argument, but
+        # that would change the function signature, and having modules as argument feels off.
+        return create_group(cls, group, axis=axis)
 
     @classmethod
     def concatenate(cls, rotations: Rotation | Iterable[Rotation]) -> Rotation:
