@@ -10,8 +10,10 @@ import warnings
 from typing import Literal
 
 
-__all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
+__all__ = [
+    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence', 'cyclic_sd',
+    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA'
+]
 
 
 def lombscargle(
@@ -1882,6 +1884,171 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     Cxy = np.abs(Pxy)**2 / Pxx / Pyy
 
     return freqs, Cxy
+
+
+def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
+              nperseg=None, noverlap=None, nfft=None, detrend='constant',
+              scaling='density', axis=-1, average='mean'):
+    r"""
+    Estimate the cross cyclic spectral density, Pxy, using Welch's method.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series. Defaults to 16.
+    alpha : float, optional
+        Cyclic / modulation frequency of the `x` and `y` time series. Defaults
+        to 4.
+    sym : bool, optional
+        Choice between the symmetric version: E{Y(f+alpha/2)X*(f-alpha/2)}, and
+        the asymmetric one: E{Y(f)X*(f-alpha)}.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to the min of 256 and length of inpus, and if window is
+        array_like, is set to the length of the window.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = 3 * nperseg // 4``. Defaults to `None`.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the cross cyclic spectral density ('density')
+        where `Pxy` has units of V**2/Hz and computing the cross cyclic
+        spectrum ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        measured in V and `fs` is measured in Hz. Defaults to 'density'
+    axis : int, optional
+        Axis along which the cross cyclic spectral analysis is computed for
+        both inputs; the default is over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Pxy : ndarray
+        Cross cyclic spectral density or cross cyclic power spectrum of x,y,
+        two-sided.
+
+    See Also
+    --------
+    welch: Power spectral density by Welch's method.
+    csd: Cross spectral density by Welch's method.
+
+    Notes
+    -----
+    By convention, Pxy is computed with the conjugate FFT of X
+    multiplied by the FFT of Y.
+
+    .. versionadded:: 1.12
+
+    References
+    ----------
+    .. [1] "Spectral correlation density", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Spectral_correlation_density
+    .. [2] W. Gardner, "Measurement of spectral correlation", IEEE Trans
+           Acoust. vol. 34, pp. 1111-1123, 1986
+    .. [3] R. Boustany and J. Antoni, "Cyclic spectral analysis from the
+           averaged cyclic periodogram", IFAC Proceedings Volumes. vol. 38,
+           pp. 597-630, 2005
+    .. [4] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
+           Process. vol. 21, pp. 597-630, 2007
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.signal import cyclic_sd
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+
+    Generate a signal resulting from amplitude modulation, using a carrier
+    frequency.
+
+    >>> n_times, fs = 1e5, 1e4
+    >>> f_carrier, f_sig = 1214, 28
+    >>> time = np.arange(n_times) / fs
+    >>> sig = np.sin(2*np.pi*f_carrier*time) * (1 + np.sin(2*np.pi*f_sig*time))
+
+    Add a noise.
+
+    >>> noise_power = 10
+    >>> x = sig + rng.normal(scale=np.sqrt(noise_power), size=sig.shape)
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(time, x, label='signal+noise')
+    >>> ax.plot(time, sig, label='signal')
+    >>> ax.set_xlim([0, 0.05])
+    >>> ax.set_ylim([-10, 10])
+    >>> ax.set(xlabel="Time (in s)", ylabel="Amplitude")
+    >>> ax.legend(loc='upper right')
+    >>> plt.show()
+
+    >>> freqs = cyclic_sd(x, x, fs=fs, alpha=0)[0]
+    >>> alphas = np.arange(1, 70)
+    >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
+    >>> for i, alpha in enumerate(alphas):
+    ...     scd[:, i] = cyclic_sd(x, x, fs=fs, alpha=alpha)[1]
+
+    The modulation is expected to occur at frequency f_sig.
+
+    >>> foi = (freqs >= 0) & (freqs <= 2000)
+    >>> scd, freqs = scd[foi], freqs[foi]
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.pcolormesh(alphas, freqs, np.abs(scd))
+    >>> plt.ylabel('Carrier frequency (in Hz)')
+    >>> plt.xlabel('Cyclic / modulation frequency (in Hz)')
+    >>> plt.show()
+    """
+
+    if alpha > fs / 2:
+        raise ValueError("Cyclic frequency must be inferior to Nyquist "
+                         f"frequency, got {alpha}")
+
+    # to avoid leakage, noverlap >= 3/4*nperseg, see Boustany2005
+    if (nperseg is None) and (noverlap is None):
+        nperseg = np.min([256, x.shape[axis], y.shape[axis]])
+        noverlap = int(3 * nperseg / 4)
+    elif (nperseg is not None) and (noverlap is None):
+        raise ValueError("In case nperseg is defined, set noverlap")
+
+    if (noverlap < 3 * nperseg // 4):
+        warnings.warn("To avoid leakage, overlap should be larger than 75%",
+                      stacklevel=2)
+
+    dims = np.delete(np.arange(x.ndim), axis)
+    if sym:
+        yf = np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[axis]))
+        y = y * np.expand_dims(yf, axis=tuple(dims))
+        xf = np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
+    else:
+        xf = np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
+    x = x * np.expand_dims(xf, axis=tuple(dims))
+
+    freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend,
+                     return_onesided=False, scaling=scaling,
+                     axis=axis, average=average)
+
+    return freqs, Pxy
 
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
