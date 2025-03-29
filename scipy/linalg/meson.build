@@ -136,8 +136,9 @@ if use_ilp64
     #['_fblas_64module.c'],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep], #g77_abi_wrappers],
-    link_with: [g77_abi_wrappers],
+    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
+    link_with: [g77_abi_wrappers_ilp64],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
@@ -155,8 +156,9 @@ if use_ilp64
     c_args: [Wno_empty_body],
     fortran_args: _fflag_ilp64,
     link_args: version_link_args,
-    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep], #g77_abi_wrappers],
-    link_with: [g77_abi_wrappers],
+    include_directories: ['../_build_utils/src'],   # for npy_cblas.h
+    dependencies: [lapack_ilp64, blas_ilp64, fortranobject_dep],
+    link_with: [g77_abi_wrappers_ilp64],
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/linalg'
