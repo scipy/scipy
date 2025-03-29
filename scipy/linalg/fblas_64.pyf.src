@@ -1,8 +1,23 @@
 python module _fblas_64
     usercode '''
-#if defined(BLAS_SYMBOL_PREFIX) || defined(BLAS_SYMBOL_SUFFIX)
-#include "blas64-prefix-defines.h"
+#ifndef HAVE_BLAS_ILP64
+#error("HAVE_BLAS_ILP64 not defined.")
 #endif
+#ifndef BLAS_SYMBOL_SUFFIX
+#error("BLAS_SYMBOL_SUFFIX  not defined")
+#endif
+
+#ifdef F_FUNC
+#undef F_FUNC
+#endif
+
+#include "npy_cblas.h"
+#define F_FUNC(f, F) BLAS_FUNC(f)
+
+#ifdef FIX_MKL_2025_ILP64_MISSING_SYMBOL
+#define cspr_64_ cspr_64
+#endif
+
 #define F_INT npy_int64
 '''
 
