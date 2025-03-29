@@ -447,7 +447,8 @@ class Rotation:
             raise TypeError("Single rotation is not subscriptable.")
         is_array = isinstance(indexer, type(self._quat))
         # Masking is only specified in the Array API when the array is the sole index
-        # TODO: Make access to xp more efficient
+        # TODO: Getting xp on every call may be expensive. Check if we can make access to xp more
+        # efficient. Should we store a self._xp attribute?
         # TODO: This special case handling is mainly a result of Array API limitations. Ideally we
         # would get rid of them altogether and converge to [indexer, ...] indexing.
         xp = array_namespace(self._quat)
@@ -794,8 +795,7 @@ class Slerp:
                 f"{times.shape[0]} timestamps."
             )
         self.times = times
-        # TODO: Replace with xp.diff once we upgrade to Array API 2024.12
-        self.timedelta = times[1:] - times[:-1]
+        self.timedelta = xp.diff(times)
 
         # We cannot check for values for jit compiled code, so we cannot raise an error on timedelta
         # < 0 in jax. Instead, we set timedelta to nans

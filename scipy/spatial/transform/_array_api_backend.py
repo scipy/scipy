@@ -37,17 +37,15 @@ def from_matrix(matrix: Array) -> Array:
     matrix = xp.asarray(matrix, copy=True, dtype=atleast_f32(matrix))
     # DECISION: Left-handed case results in NaNs instead of raising an error. This is a deviation
     # from the cython implementation, which raises an error.
-    # TODO: Masking is only necessary because the Array API does not yet support advanced indexing
-    # with arrays of indices. See comment further below.
     mask = xp.linalg.det(matrix) <= 0
-    mask_shape = (1,) * (len(matrix.shape) - 2) + (3, 3)
-    mask = xp.tile(mask[..., None, None], mask_shape)
-    matrix = xpx.at(matrix)[mask].set(xp.nan)
+    mask = xp.broadcast_to(mask[..., None, None], mask.shape + (3, 3))
+    matrix = xp.where(mask, xp.asarray(xp.nan, device=device(matrix)), matrix)
 
     gramians = matrix @ xp.matrix_transpose(matrix)
     # TODO: We need to orthogonalize only the non-orthogonal matrices, but jax does not support
-    # non-concrete boolean indexing or advanced indexing with arrays of indices.
-    # See comment further below.
+    # non-concrete boolean indexing or any form of computation without statically known shapes. We
+    # either have to branch depending on lazy/non-lazy frameworks or pay the performance penalty for
+    # the SVD.
     is_orthogonal = xp.all(xpx.isclose(gramians, xp.eye(3), atol=1e-12, xp=xp))
     U, _, Vt = xp.linalg.svd(matrix)
     orthogonal_matrix = U @ Vt
@@ -60,11 +58,9 @@ def from_matrix(matrix: Array) -> Array:
     )
     choice = xp.argmax(decision, axis=-1, keepdims=True)
     quat = xp.empty((*matrix.shape[:-2], 4), dtype=matrix.dtype)
-    # TODO: The Array API does not yet support advanced indexing with arrays of indices, so we
-    # compute each case and assemble the final result with `xp.where`. Advanced indexing is
-    # currently under development, see https://github.com/data-apis/array-api/issues/669.
-    # As soon as this makes it into the spec, we can optimize this function.
-    # https://github.com/data-apis/array-api/milestone/4
+    # While the Array API now does support advanced indexing, we still need to know the shape of all
+    # arrays statically. This is not possible if we index based on the argmax, so we compute each
+    # case and assemble the final result with `xp.where`.
 
     # Case 0
     quat_0 = xp.stack(
@@ -531,7 +527,7 @@ def reduce(
     left_best = max_ind // rv.shape[0]
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
-    # TODO: Can we somehow avoid this?
+    # TODO: Can we somehow avoid this? Equivalent to x[left_best[0], :]
     all_idx = xp.arange(left.shape[-1])
     left = left[left_best[0], all_idx]
     right = right[right_best[0], all_idx]
@@ -636,7 +632,7 @@ def align_vectors(
     # algorithmical issues. Numpy e.g. will raise an exception when trying to compute the svd of a
     # matrix with infinite weights. To prevent this, we only compute the branch that is needed. Jax
     # jit however requires us to take the full compute graph. Therefore, we use xp.where for jax and
-    # a branching version for non-jax frameworks.
+    # a branching version for non-jax frameworks. Might apply for other lazy frameworks as well.
     #
     # Note that we could also solve this by exploiting the externals of xpx.apply_where. However,
     # we'd have to rely on the implementation details of apply_where, which is something we should
