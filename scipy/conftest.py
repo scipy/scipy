@@ -13,7 +13,8 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp
+    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
+    is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -154,7 +155,6 @@ if SCIPY_ARRAY_API:
     try:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'torch': torch})
-        # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
@@ -407,6 +407,42 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
     reason = skip_xfail_reasons.get(xp.__name__)
     if reason:
         skip_or_xfail(reason=reason)
+
+
+@pytest.fixture
+def nondefault_device(xp):
+    """Fixture that returns a device other than the default device for the backend.
+    Used to test input->output device propagation.
+
+    Usage
+    -----
+    from scipy._lib._array_api import xp_device
+
+    def test(xp, nondefault_device):
+        a = xp.asarray(..., device=nondefault_device)
+        b = f(a)
+        assert xp_device(b) == nondefault_device
+    """
+    if is_dask(xp):
+        pytest.skip(reason="dummy device from array-api-compat does not propagate")
+    if is_torch(xp):
+        pytest.xfail(reason="pytorch/pytorch#150199")
+    if is_jax(xp):
+        # The .device attribute is not accessible inside jax.jit; the consequence
+        # (downstream of array-api-compat hacks) is that a non-default device in
+        # input is not guaranteed to propagate to the output even if the scipy code
+        # states `device=xp_device(arg)`` in all array creation functions.
+        # While this issue is specific to jax.jit, it would be unnecessarily
+        # verbose to skip the test for each jit-capable function and run it for
+        # those that only support eager mode.
+        pytest.xfail(reason="jax-ml/jax#26000")
+
+    info = xp.__array_namespace_info__()
+    default = info.default_device()
+    try:
+        return next(iter(d for d in info.devices() if d != default))
+    except StopIteration:
+        pytest.skip(reason="Only one device available")
 
 
 # Following the approach of NumPy's conftest.py...
