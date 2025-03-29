@@ -1,4 +1,3 @@
-import sys
 import functools
 import operator
 
@@ -20,39 +19,48 @@ from ._ufuncs import (
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
-def get_array_special_func(f_name, xp, n_array_args):
-    spx = scipy_namespace_for(xp)
-    f = None
+def get_array_special_func(f_name, xp):
     if is_numpy(xp):
-        f = getattr(_ufuncs, f_name, None)
-    elif spx is not None:
-        f = getattr(spx.special, f_name, None)
+        return getattr(_ufuncs, f_name)
 
-    if f is not None:
-        return f
+    spx = scipy_namespace_for(xp)
+    if spx is not None:
+        f = getattr(spx.special, f_name, None)
+        if f is not None:
+            return f
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
     if f_name in _generic_implementations:
-        _f = _generic_implementations[f_name](xp=xp, spx=spx)
-        if _f is not None:
-            return _f
+        f = _generic_implementations[f_name](xp=xp, spx=spx)
+        if f is not None:
+            return f
 
-    _f = getattr(_ufuncs, f_name, None)
-    def __f(*args, _f=_f, _xp=xp, **kwargs):
-        array_args = args[:n_array_args]
-        other_args = args[n_array_args:]
-        if is_marray(_xp):
-            data_args = [np.asarray(arg.data) for arg in array_args]
-            out = _f(*data_args, *other_args, **kwargs)
-            mask = functools.reduce(operator.or_, (arg.mask for arg in array_args))
-            return _xp.asarray(out, mask=mask)
+    def f(*args, **kwargs):
+        if is_marray(xp):
+            _f = globals()[f_name]  # Allow nested wrapping
+            data_args = [arg.data for arg in args]
+            out = _f(*data_args, **kwargs)
+            mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+            return xp.asarray(out, mask=mask)
+
+        elif is_dask(xp):
+            # IMPORTANT: map_blocks works only because all ufuncs in this module
+            # are elementwise. It would be a grave mistake to apply this to gufuncs
+            # or any other function with reductions, as they would change their
+            # output depending on chunking!
+
+            _f = globals()[f_name]  # Allow nested wrapping
+            # Hide dtype kwarg from map_blocks
+            return xp.map_blocks(functools.partial(_f, **kwargs), *args)
+
         else:
-            array_args = [np.asarray(arg) for arg in array_args]
-            out = _f(*array_args, *other_args, **kwargs)
-            return _xp.asarray(out)
+            _f = getattr(_ufuncs, f_name)
+            args = [np.asarray(arg) for arg in args]
+            out = _f(*args, **kwargs)
+            return xp.asarray(out)
 
-    return __f
+    return f
 
 
 def _rel_entr(xp, spx):
@@ -84,14 +92,19 @@ def _xlogy(xp, spx):
     return __xlogy
 
 
+def _get_native_func(xp, spx, f_name):
+    f = getattr(spx.special, f_name, None) if spx else None
+    if f is None and hasattr(xp, 'special'):
+        f = getattr(xp.special, f_name, None)
+    return f
+
+
 def _chdtr(xp, spx):
     # The difference between this and just using `gammainc`
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = getattr(spx.special, 'gammainc', None) if spx else None  # noqa: F811
-    if gammainc is None and hasattr(xp, 'special'):
-        gammainc = getattr(xp.special, 'gammainc', None)
+    gammainc = _get_native_func(xp, spx, 'gammainc')  # noqa: F811
     if gammainc is None:
         return None
 
@@ -110,9 +123,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = getattr(spx.special, 'gammaincc', None) if spx else None  # noqa: F811
-    if gammaincc is None and hasattr(xp, 'special'):
-        gammaincc = getattr(xp.special, 'gammaincc', None)
+    gammaincc = _get_native_func(xp, spx, 'gammaincc')  # noqa: F811
     if gammaincc is None:
         return None
 
@@ -125,9 +136,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     if betainc is None:
         return None
 
@@ -138,9 +147,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     if betainc is None:
         return None
 
@@ -153,10 +160,7 @@ def _stdtr(xp, spx):
 
 
 def _stdtrit(xp, spx):
-    betainc = getattr(spx.special, 'betainc', None) if spx else None  # noqa: F811
-    if betainc is None and hasattr(xp, 'special'):
-        betainc = getattr(xp.special, 'betainc', None)
-
+    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
     # If betainc is not defined, the root-finding would be done with `xp`
     # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
@@ -186,18 +190,19 @@ _generic_implementations = {'rel_entr': _rel_entr,
 
 # functools.wraps doesn't work because:
 # 'numpy.ufunc' object has no attribute '__module__'
-def support_alternative_backends(f_name, n_array_args):
+def support_alternative_backends(f_name):
     func = getattr(_ufuncs, f_name)
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        xp = array_namespace(*args[:n_array_args])
-        f = get_array_special_func(f_name, xp, n_array_args)
+        xp = array_namespace(*args)
+        f = get_array_special_func(f_name, xp)
         return f(*args, **kwargs)
 
     return wrapped
 
 
+# function name: number of args (for testing purposes)
 array_special_func_map = {
     'log_ndtr': 1,
     'ndtr': 1,
@@ -224,10 +229,11 @@ array_special_func_map = {
     'stdtrit': 2,
 }
 
-for f_name, n_array_args in array_special_func_map.items():
-    f = (support_alternative_backends(f_name, n_array_args)
-         if SCIPY_ARRAY_API
-         else getattr(_ufuncs, f_name))
-    sys.modules[__name__].__dict__[f_name] = f
+globals().update(
+    {f_name: support_alternative_backends(f_name)
+     if SCIPY_ARRAY_API
+     else getattr(_ufuncs, f_name)
+     for f_name in array_special_func_map}
+)
 
 __all__ = list(array_special_func_map)
