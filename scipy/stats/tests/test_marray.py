@@ -38,6 +38,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('fun, kwargs', [(stats.gmean, {}),
                                          (stats.hmean, {}),
                                          (stats.pmean, {'p': 2})])
@@ -51,6 +52,7 @@ def test_xmean(fun, kwargs, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('keepdims', [False, True])
 def test_xp_mean(axis, keepdims, xp):
