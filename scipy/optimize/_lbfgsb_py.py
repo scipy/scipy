@@ -324,7 +324,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         approximation of the jacobian via forward differences.
     maxfun : int
         Maximum number of function evaluations before minimization terminates.
-        Note that this function may violate the limit because if the gradients
+        Note that this function may violate the limit if the gradients
         are evaluated by numerical differentiation.
     maxiter : int
         Maximum number of algorithm iterations.
@@ -362,8 +362,8 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     If the minimization is slow to converge the optimizer may halt if the
     total number of function evaluations exceeds `maxfun`, or the number of
     algorithm iterations has reached `maxiter` (whichever comes first). If
-    this is the case then `result.success is False`, and an appropriate
-    error message is contained in `result.message`.
+    this is the case then ``result.success=False``, and an appropriate
+    error message is contained in ``result.message``.
 
     """
     _check_unknown_options(unknown_options)
