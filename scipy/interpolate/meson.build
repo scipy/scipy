@@ -129,6 +129,7 @@ py3.extension_module('_rgi_cython',
 __fitpack_lib = static_library('__fitpack',
     ['src/__fitpack.h', 'src/__fitpack.cc'],
     dependencies:[lapack_ilp64, np_dep, py3_dep],
+    c_args: c_flags_ilp64
 )
 
 __fitpack_dep = declare_dependency(
@@ -137,7 +138,7 @@ __fitpack_dep = declare_dependency(
 
 py3.extension_module('_bspl',
   cython_gen_cpp.process('_bspl.pyx'),
-  cpp_args: cython_cpp_args,
+  cpp_args: cython_cpp_args + c_flags_ilp64,
   include_directories: 'src/',
   dependencies: [np_dep, __fitpack_dep],
   link_args: version_link_args,
@@ -151,6 +152,7 @@ py3.extension_module('_dierckx',
     include_directories: 'src/',
     dependencies: [np_dep, __fitpack_dep],
     link_args: version_link_args,
+    cpp_args: c_flags_ilp64,
     install: true,
     subdir: 'scipy/interpolate'
 )
@@ -159,14 +161,10 @@ py3.extension_module('_dierckx',
 # XXX: some functions from dfitpack use the F_INT macro defined in dfitpack.pyf, while
 #      others rely on the build flags only. Consider cleaning this up at some point.
 
-_c_args_fitpack = []
-if use_ilp64
-  _c_args_fitpack += ['-DHAVE_BLAS_ILP64']
-endif
 
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: _c_args_fitpack,
+  c_args: c_flags_ilp64,
   link_with: [fitpack_lib],
   include_directories: 'src/',
   dependencies: np_dep,
@@ -187,7 +185,7 @@ endif
 
 py3.extension_module('_dfitpack',
   _dfitpackmodule_obj,
-  c_args: [Wno_unused_variable] + _c_args_fitpack,
+  c_args: [Wno_unused_variable] +  c_flags_ilp64,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: [fitpack_lib],
