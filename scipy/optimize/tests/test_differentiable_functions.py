@@ -973,7 +973,6 @@ def test_ScalarFunctionNoReferenceCycle():
     platform.python_implementation() == "PyPy",
     reason="assert_deallocate not available on PyPy"
 )
-@pytest.mark.xfail(reason="TODO remove reference cycle from VectorFunction")
 def test_VectorFunctionNoReferenceCycle():
     """Regression test for gh-20768."""
     ex = ExVectorialFunction()
