@@ -334,7 +334,7 @@ def firls_signature(numtaps, bands, desired, *, weight=None, fs=None):
 
 
 def firwin_signature(numtaps, cutoff, *args, **kwds):
-    if isinstance(cutoff, (int, float)):
+    if isinstance(cutoff, int | float):
         xp = np_compat
     else:
         xp = array_namespace(cutoff)

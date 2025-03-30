@@ -374,7 +374,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     array([ 0.04890915,  0.91284326,  0.04890915])
 
     """
-    if isinstance(cutoff, (int, float)):
+    if isinstance(cutoff, int | float):
         xp = np_compat
     else:
         xp = array_namespace(cutoff)
