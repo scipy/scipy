@@ -824,19 +824,19 @@ class MatrixLinearOperator(LinearOperator):
             self.__adj = _AdjointMatrixOperator(self.A)
         return self.__adj
 
+
 class _AdjointMatrixOperator(MatrixLinearOperator):
     def __init__(self, adjoint_array):
-        self.__adjoint = adjoint_array
         self.A = adjoint_array.T.conj()
         self.args = (adjoint_array,)
         self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
 
     @property
     def dtype(self):
-        return self.__adjoint.dtype
+        return self.args[0].dtype
 
     def _adjoint(self):
-        return MatrixLinearOperator(self.__adjoint)
+        return MatrixLinearOperator(self.args[0])
 
 
 class IdentityOperator(LinearOperator):
