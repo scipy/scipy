@@ -2035,7 +2035,7 @@ class TestBoxcox_llf:
         xp_assert_close(llf, xp.asarray(-17.93934208579061))
 
     def test_instability_gh20021(self, xp):
-        data = xp.asarray([2003, 1950, 1997, 2000, 2009])
+        data = xp.asarray([2003, 1950, 1997, 2000, 2009], dtype=xp.float64)
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input

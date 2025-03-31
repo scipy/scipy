@@ -500,7 +500,7 @@ class VectorFunction:
             self.f = fun_wrapped(xp_copy(self.x))
 
         self._update_fun_impl = update_fun
-        update_fun()
+        self._update_fun()
 
         self.v = np.zeros_like(self.f)
         self.m = self.v.size
