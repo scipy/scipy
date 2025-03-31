@@ -9,6 +9,8 @@ project(
     'b_ndebug=if-release',
     'c_std=c17',
     'cpp_std=c++17',
+    'blas=openblas',
+    'lapack=openblas'
   ],
 )
 
