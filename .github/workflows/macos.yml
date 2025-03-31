@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - maintenance/**
-      - ci-blas
   pull_request:
     branches:
       - main
@@ -262,4 +261,4 @@ jobs:
 
     - name: Test
       run: python dev.py test -j2
->>>>>>> Squash several commits to simplify rebasing
+
