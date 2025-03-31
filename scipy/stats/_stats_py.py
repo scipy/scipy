@@ -620,9 +620,10 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
         mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
         mask |= (a > upper_limit) if upper_include else a >= upper_limit
-    if xp.all(mask):
+    lazy = is_lazy_array(mask)
+    if not lazy and xp.all(mask):
         raise ValueError("No array values within given limits")
-    if xp.any(mask):
+    if lazy or xp.any(mask):
         a = xp.where(mask, val, a)
     return a, mask
 
@@ -795,11 +796,15 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
                                  val=max_, xp=xp)
 
-    min_ = xp.min(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    res = min_ if xp.all(valid) else xp.where(valid, min_, xp.nan)
+    res = xp.min(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are below lowerlimit
+
+    # For eager backends, output dtype is data-dependent
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # Possible loss of precision for int types
+        res = xp_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+
     return res[()] if res.ndim == 0 else res
 
 
@@ -854,11 +859,15 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
                                  val=min_, xp=xp)
 
-    max_ = xp.max(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    res = max_ if xp.all(valid) else xp.where(valid, max_, xp.nan)
+    res = xp.max(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are above upperlimit
+
+    # For eager backends, output dtype is data-dependent
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # Possible loss of precision for int types
+        res = xp_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+    
     return res[()] if res.ndim == 0 else res
 
 
@@ -1145,7 +1154,8 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     # Used in e.g. `_moment`, `_zscore`, `_xp_var`. See gh-15905.
     a_zero_mean = a - mean
 
-    if xp_size(a_zero_mean) == 0:
+    if (xp_size(a_zero_mean) == 0 or not precision_warning
+        or is_lazy_array(a_zero_mean)):
         return a_zero_mean
 
     eps = xp.finfo(mean.dtype).eps * 10
@@ -1158,7 +1168,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     with np.errstate(invalid='ignore'):
         precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
 
-    if precision_loss and precision_warning:
+    if precision_loss:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
                    "are nearly identical. Results may be unreliable.")
@@ -10908,11 +10918,12 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
     # Test nan_policy before the implicit call to bool(contains_nan)
     # to avoid raising on lazy xps on the default nan_policy='propagate'
-    if nan_policy == 'omit' and contains_nan:
+    lazy = is_lazy_array(x)
+    if nan_policy == 'omit' and (lazy or contains_nan):
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
-        if xp.any(xp.all(nan_mask, axis=axis)):
+        if not lazy and xp.any(xp.all(nan_mask, axis=axis)):
             message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
