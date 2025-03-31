@@ -564,6 +564,24 @@ class TestVectorialFunction(TestCase):
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(J_analit, J_approx)
 
+    def test_updating_on_initial_setup(self):
+        # Check that memoisation works with the freshly created VectorFunction
+        # On initialization vf.f_updated attribute wasn't being set correctly.
+        x0 = np.array([2.5, 3.0])
+        ex = ExVectorialFunction()
+        vf = VectorFunction(ex.fun, x0, ex.jac, ex.hess)
+        assert vf.f_updated
+        assert vf.nfev == 1
+        assert vf.njev == 1
+        assert ex.nfev == 1
+        assert ex.njev == 1
+        vf.fun(x0)
+        vf.jac(x0)
+        assert vf.nfev == 1
+        assert vf.njev == 1
+        assert ex.nfev == 1
+        assert ex.njev == 1
+
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         x0 = np.array([2.5, 3.0])

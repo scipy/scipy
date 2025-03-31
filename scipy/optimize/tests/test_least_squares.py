@@ -36,6 +36,15 @@ def fun_rosenbrock(x):
     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
 
+class Fun_Rosenbrock:
+    def __init__(self):
+        self.nfev = 0
+
+    def __call__(self, x, a=0):
+        self.nfev += 1
+        return fun_rosenbrock(x)
+
+
 def jac_rosenbrock(x):
     return np.array([
         [-20 * x[0], 10],
@@ -287,6 +296,17 @@ class BaseMixin:
         assert_equal(res.njev, 1)
         assert_equal(res.status, 0)
         assert_equal(res.success, 0)
+
+    def test_nfev(self):
+        # checks that the true number of nfev are being consumed
+        for i in range(1, 3):
+            rng = np.random.default_rng(128908)
+            x0 = rng.uniform(size=2) * 10
+            ftrivial = Fun_Rosenbrock()
+            res = least_squares(
+               ftrivial, x0, jac=jac_rosenbrock, method=self.method, max_nfev=i
+            )
+            assert res.nfev == ftrivial.nfev
 
     def test_rosenbrock(self):
         x0 = [-2, 1]
