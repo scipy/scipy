@@ -1083,10 +1083,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
+    
+    ..math::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for} \lambda \neq 0
+        \log(x),                       &\text{for} \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1541,10 +1546,20 @@ def yeojohnson(x, lmbda=None):
     -----
     The Yeo-Johnson transform is given by::
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for} x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for} x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for} x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for} x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
