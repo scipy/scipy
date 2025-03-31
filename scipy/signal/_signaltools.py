@@ -3638,7 +3638,6 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if window is not None:
         if callable(window):
             # older numpies do not have the .device attribute
-#            device_arg = {'device': x.device if hasattr(x, 'device') else None}
             W = window(sp_fft.fftfreq(Nx, xp=xp, device=xp_device(x)))
         elif hasattr(window, 'shape'):   # must be an array object
             if window.shape != (Nx,):
@@ -3646,7 +3645,6 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
             W = window
         else:
             # older numpies do not have the .device attribute
-#            device_arg = {'device': x.device if hasattr(x, 'device') else None}
             W = sp_fft.ifftshift(get_window(window, Nx, xp=xp, device=xp_device(x)))
 
         newshape_W = [1] * x.ndim
@@ -3903,6 +3901,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
                    xp.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
+    # XXX consider using stats.quantile, which is natively Array API compatible
     def _median(x, *args, **kwds):
         return xp.asarray(np.median(np.asarray(x), *args, **kwds))
 
@@ -4764,7 +4763,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
         if is_torch(xp):
-            y = y.copy()    # XXX: torch chokes on negative strides
+            y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
 
     return xp.asarray(y)
 
