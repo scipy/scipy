@@ -439,12 +439,12 @@ class _VectorJacWrapper:
         # Send a copy because the user may overwrite it.
         # The user of this class might want `x` to remain unchanged.
         if callable(self.jac):
-            J = self.jac(xp_copy(x))
+            J = self.jac(x)
             self.njev += 1
         elif self.jac in FD_METHODS:
             J, dct = approx_derivative(
                 self.fun,
-                xp_copy(x),
+                x,
                 f0=f0,
                 **self.finite_diff_options,
             )
@@ -493,17 +493,17 @@ class _VectorHessWrapper:
 
         # H will be a LinearOperator
         H = approx_derivative(self.jac_dot_v, x,
-                                    f0=J0.T.dot(v),
-                                    args=(v,),
-                                    **self.finite_diff_options)
+                              f0=J0.T.dot(v),
+                              args=(v,),
+                              **self.finite_diff_options)
         return H
 
     def jac_dot_v(self, x, v):
         self.njev += 1
-        return self.jac(xp_copy(x)).T.dot(v)
+        return self.jac(x).T.dot(v)
 
     def _callable_hess(self, x, v):
-        H = self.hess(xp_copy(x), v)
+        H = self.hess(x, v)
 
         if sps.issparse(H):
             return sps.csr_array(H)
@@ -637,12 +637,12 @@ class VectorFunction:
         )
 
         self.hess_wrapped = _VectorHessWrapper(
-            hess, jac=jac, finite_diff_options=finite_diff_options
+            hess, jac=self.jac_wrapped, finite_diff_options=finite_diff_options
         )
 
         # Define Hessian
         if callable(hess) or hess in FD_METHODS:
-            self.H = self.hess_wrapped(self.x, self.v, J0=self.J)
+            self.H = self.hess_wrapped(xp_copy(self.x), self.v, J0=self.J)
             self.H_updated = True
             if callable(hess):
                 self._nhev += 1
@@ -703,17 +703,17 @@ class VectorFunction:
             else:
                 self._njev += 1
 
-            self.J = self.jac_wrapped(self.x, f0=self.f)
+            self.J = self.jac_wrapped(xp_copy(self.x), f0=self.f)
             self.J_updated = True
 
     def _update_hess(self):
         if not self.H_updated:
             if callable(self._orig_hess):
-                self.H = self.hess_wrapped(self.x, self.v)
+                self.H = self.hess_wrapped(xp_copy(self.x), self.v)
                 self._nhev += 1
             elif self._orig_hess in FD_METHODS:
                 self._update_jac()
-                self.H = self.hess_wrapped(self.x, self.v, J0=self.J)
+                self.H = self.hess_wrapped(xp_copy(self.x), self.v, J0=self.J)
             elif isinstance(self._orig_hess, HessianUpdateStrategy):
                 self._update_jac()
                 # When v is updated before x was updated, then x_prev and
