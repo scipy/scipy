@@ -223,6 +223,7 @@ py3.install_sources(
 )
 
 # Must use `custom_target`, because `py3.install_sources` does not work with
+# generated sources - see https://github.com/mesonbuild/meson/issues/7372
 npz_files = [
   [
     '_data_boost',
@@ -257,7 +258,6 @@ foreach npz_file: npz_files
     install_tag: 'tests',
   )
 endforeach
-
 
 # Headers for special functions in `xsf` library are included in
 # both build and install dirs for development purposes. Not public!

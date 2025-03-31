@@ -562,9 +562,6 @@ python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
- # 'linalg.pxd',
- # 'optimize.pxd',
- # 'special.pxd',
 ]
 
 if fs.exists('_distributor_init_local.py')
