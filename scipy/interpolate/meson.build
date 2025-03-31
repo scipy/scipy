@@ -195,7 +195,6 @@ py3.extension_module('_dfitpack',
   subdir: 'scipy/interpolate'
 )
 
-
 if use_pythran
   py3.extension_module('_rbfinterp_pythran',
     pythran_gen.process('_rbfinterp_pythran.py'),
