@@ -20,6 +20,7 @@ for f_name in array_special_func_map:
     lazy_xp_function(f)
 
 
+@pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
 def test_dispatch_to_unrecognized_library():
     xp = pytest.importorskip("array_api_strict")
     f = get_array_special_func('ndtr', xp=xp)
@@ -30,7 +31,7 @@ def test_dispatch_to_unrecognized_library():
 
 
 @pytest.mark.skipif(not SCIPY_ARRAY_API,
-                    reason="xp_broadcast_promote won't accept non-numpy objects")
+                    reason="xp_promote won't accept non-numpy objects")
 @pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
 def test_rel_entr_generic(dtype):
     xp = pytest.importorskip("array_api_strict")

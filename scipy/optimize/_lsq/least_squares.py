@@ -406,7 +406,8 @@ def least_squares(
         of crucial importance.
     max_nfev : None or int, optional
         For all methods this parameter controls the maximum number of function
-        evaluations separate to those used in numerical approximation of the jacobian.
+        evaluations used by each method, separate to those used in numerical
+        approximation of the jacobian.
         If None (default), the value is chosen automatically as 100 * n.
 
         .. versionchanged:: 1.16.0

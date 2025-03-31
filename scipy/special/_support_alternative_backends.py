@@ -4,7 +4,7 @@ import operator
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
-    xp_broadcast_promote, SCIPY_ARRAY_API
+    xp_promote, SCIPY_ARRAY_API
 )
 import scipy._lib.array_api_extra as xpx
 from . import _ufuncs
@@ -67,7 +67,7 @@ def _rel_entr(xp, spx):
     def __rel_entr(x, y, *, xp=xp):
         # https://github.com/data-apis/array-api-extra/issues/160
         mxp = array_namespace(x._meta, y._meta) if is_dask(xp) else xp
-        x, y = xp_broadcast_promote(x, y, force_floating=True, xp=xp)
+        x, y = xp_promote(x, y, broadcast=True, force_floating=True, xp=xp)
         xy_pos = (x > 0) & (y > 0)
         xy_inf = xp.isinf(x) & xp.isinf(y)
         res = xpx.apply_where(
