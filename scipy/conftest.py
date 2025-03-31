@@ -14,7 +14,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_dask, is_jax, is_torch,
+    is_cupy, is_dask, is_jax, is_torch, xp_device,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -155,8 +155,10 @@ if SCIPY_ARRAY_API:
     try:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'torch': torch})
-        torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
+            # FIXME don't set this when SCIPY_DEVICE == "cpu"
+            # as a workaround to pytorch/pytorch#150199
+            torch.set_default_device(SCIPY_DEVICE)
             xp_skip_cpu_only_backends.add('torch')
 
         # default to float64 unless explicitly requested
@@ -423,10 +425,10 @@ def nondefault_device(xp):
         b = f(a)
         assert xp_device(b) == nondefault_device
     """
+    if is_cupy(xp):
+        pytest.xfail(reason="data-apis/array-api-compat#293")
     if is_dask(xp):
         pytest.skip(reason="dummy device from array-api-compat does not propagate")
-    if is_torch(xp):
-        pytest.xfail(reason="pytorch/pytorch#150199")
     if is_jax(xp):
         # The .device attribute is not accessible inside jax.jit; the consequence
         # (downstream of array-api-compat hacks) is that a non-default device in
@@ -435,12 +437,21 @@ def nondefault_device(xp):
         # While this issue is specific to jax.jit, it would be unnecessarily
         # verbose to skip the test for each jit-capable function and run it for
         # those that only support eager mode.
-        pytest.xfail(reason="jax-ml/jax#26000")
+        # Additionally, devices() below only returns CudaDevice objects when
+        # CUDA is enabled, which prevents us from running this test on CPU vs. GPU.
+        pytest.xfail(reason="jax-ml/jax#26000 + jax-ml/jax#27606")
+    if is_torch(xp) and SCIPY_DEVICE != "cpu":
+        # Note workaround when parsing SCIPY_DEVICE above.
+        # Also note that when SCIPY_DEVICE=cpu this test won't run in CI
+        # because CUDA-enabled CI boxes always use SCIPY_DEVICE=cuda.
+        pytest.xfail(reason="pytorch/pytorch#150199")
 
-    info = xp.__array_namespace_info__()
-    default = info.default_device()
+    devices = xp.__array_namespace_info__().devices()
+    # Don't use xp.__array_namespace_info__().default_device():
+    # https://github.com/data-apis/array-api/issues/835
+    default = xp_device(xp.empty(()))
     try:
-        return next(iter(d for d in info.devices() if d != default))
+        return next(iter(d for d in devices if d != default))
     except StopIteration:
         pytest.skip(reason="Only one device available")
 
