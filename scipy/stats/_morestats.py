@@ -900,10 +900,12 @@ def boxcox_llf(lmb, data):
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        llf = (\lambda - 1) \sum_i^N(\log(x_i)) -
+              \frac{N}{2} \log(\sum_i^N (y_i - \bar{y})^2 / N),
 
     where ``y`` is the Box-Cox transformed input data ``x``.
+    This corresponds to the profile log- likelihood of the original data ``x`` with
+    some constant terms dropped.
 
     Examples
     --------
@@ -1654,11 +1656,13 @@ def yeojohnson_llf(lmb, data):
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        llf = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points ``x`` and :math:`\hat{\sigma}^2` is
+    the estimated variance of the Yeo-Johnson transformed input data ``x``.
+    This corresponds to the profile log- likelihood of the original data ``x`` with
+    some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
