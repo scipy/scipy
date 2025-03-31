@@ -56,7 +56,7 @@ jobs:
     - name: Build with defaults (LP64)
       run: |
         pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-        python dev.py build
+        python dev.py build -C-Dblas=mkl
 
     - name: Test
       run: python dev.py test -j 2
@@ -86,7 +86,7 @@ jobs:
     - name: Build with ILP64
       run: |
         pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
-        python dev.py build -C-Dblas-order=mkl -C-Duse-ilp64=true
+        python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
 
     - name: Test
       run: python dev.py test -j 2
