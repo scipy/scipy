@@ -147,8 +147,8 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
                0 &\text{ for } l = 0\ ,\\
                -\frac{\mathbb{j}\tau}{\pi l} &\text{ for } l \neq 0 \wedge d = 0 \ ,\\
                +\frac{\mathbb{j}\tau}{\pi l} &\text{ for } l \neq 0 \wedge d = 1 \ ,\\
-               \frac{\tau}{2\pi^2 l^2 d (d-1)}
-               \left(1 - \operatorname{e}^{\mathbb{j}2\pi d l}\right)
+               \frac{\tau \left(1 - \operatorname{e}^{\mathbb{j}2\pi d l}\right)}{
+                     2\pi^2 l^2 d (d-1)}
                &\text{ for } l \neq 0 \wedge 0 < d < 1 \ .
             \end{cases}
 
@@ -166,8 +166,8 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
 
     Examples
     --------
-    The following cade generates a plot of 1 Hz square wave and its Magnitude
-    spectrum:
+    The following code generates a plot of 1 Hz square wave and its Magnitude spectrum
+    (Consult the `square_rfft` examples on creating a signal with varying frequency):
 
     >>> import numpy as np
     >>> from matplotlib import pyplot as plt
@@ -368,7 +368,7 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
             \end{cases}
 
     The close relationship between Fourier series and the discrete Fourier transform
-    allows to utilize :math:`c[l]` to obtain a closed-form llexpression for `X`. I.e.,
+    allows to utilize :math:`c[l]` to obtain a closed-form expression for `X`. I.e.,
     ``X[m_cyc*l] = s * c[l] / tau``, with ``tau = n * T / m_cyc`` being the duration of
     one cycle. The scaling factor ``s`` has a value of ``n`` for parameter
     `norm` = ``'backward'``, ``sqrt(n)`` for `norm` = ``'ortho'``, or ``1`` for
@@ -380,7 +380,7 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
 
     Examples
     --------
-    The following cade generates a plot of 1 Hz square wave and its Magnitude
+    The following code generates a plot of 1 Hz square wave and its Magnitude
     spectrum:
 
     >>> import numpy as np
