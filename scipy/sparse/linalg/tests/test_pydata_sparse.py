@@ -239,6 +239,10 @@ def test_expm_multiply(matrices):
     x = splin.expm_multiply(A_sparse, b)
     assert_allclose(x, x0)
 
+    x0 = splin.expm_multiply(A_dense, A_dense)
+    x = splin.expm_multiply(A_sparse, A_sparse)
+    assert_allclose(x.todense(), x0)
+
 
 def test_eq(same_matrix):
     sp_sparse, pd_sparse = same_matrix

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import xp_default_dtype, xp_ravel, array_namespace
+from scipy._lib._array_api import xp_ravel, array_namespace, xp_promote
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
 from scipy.stats._stats_py import _length_nonmasked
@@ -8,16 +8,15 @@ from scipy.stats._stats_py import _length_nonmasked
 
 def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     xp = array_namespace(x, p)
-    x = xp.asarray(x)
-    p = xp.asarray(p)
 
-    if not xp.isdtype(x.dtype, ('integral', 'real floating')):
+    if not xp.isdtype(xp.asarray(x).dtype, ('integral', 'real floating')):
         raise ValueError("`x` must have real dtype.")
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp_default_dtype(xp))
 
-    if not xp.isdtype(p.dtype, 'real floating'):
+    if not xp.isdtype(xp.asarray(p).dtype, 'real floating'):
         raise ValueError("`p` must have real floating dtype.")
+
+    x, p = xp_promote(x, p, force_floating=True, xp=xp)
+    dtype = x.dtype
 
     axis_none = axis is None
     ndim = max(x.ndim, p.ndim)
@@ -46,10 +45,6 @@ def _quantile_iv(x, p, method, axis, nan_policy, keepdims):
     if keepdims not in {None, True, False}:
         message = "If specified, `keepdims` must be True or False."
         raise ValueError(message)
-
-    dtype = xp.result_type(p, x)
-    x = xp.astype(x, dtype, copy=False)
-    p = xp.astype(p, dtype, copy=False)
 
     # If data has length zero along `axis`, the result will be an array of NaNs just
     # as if the data had length 1 along axis and were filled with NaNs. This is treated

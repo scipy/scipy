@@ -78,7 +78,7 @@ from scipy._lib._array_api import (
     is_marray,
     xp_size,
     xp_vector_norm,
-    xp_broadcast_promote,
+    xp_promote,
     xp_capabilities,
     xp_ravel,
 )
@@ -143,16 +143,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _convert_common_float(*arrays, xp=None):
-    xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [_asarray(array, subok=True) for array in arrays]
-    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
-               else array.dtype) for array in arrays]
-    dtype = xp.result_type(*dtypes)
-    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
-    return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -1118,10 +1108,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
-    else:
-        a = xp.asarray(a)
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     order = xp.asarray(order, dtype=a.dtype)
     if xp_size(order) == 0:
@@ -1188,9 +1175,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
-
+    a = xp_promote(a, force_floating=True, xp=xp)
     dtype = a.dtype
 
     # moment of empty array is the same regardless of order
@@ -2860,7 +2845,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = _convert_common_float(a, xp=xp)
+    a = xp_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
@@ -2922,7 +2907,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
-    scores, compare = _convert_common_float(scores, compare, xp=xp)
+    scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
         if like_zscore:  # zscore should not emit SmallSampleWarning
@@ -3053,7 +3038,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
@@ -4652,8 +4637,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     """
     xp = array_namespace(x, y)
-    x = xp.asarray(x)
-    y = xp.asarray(y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
 
     if not is_numpy(xp) and method is not None:
         method = 'invalid'
@@ -4692,10 +4677,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
     axis = -1
-
-    dtype = xp.result_type(x.dtype, y.dtype)
-    if xp.isdtype(dtype, "integral"):
-        dtype = xp.asarray(1.).dtype
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -6753,11 +6734,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     """
     xp = array_namespace(a, b)
 
-    default_float = xp.asarray(1.).dtype
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, default_float)
-    if xp.isdtype(b.dtype, 'integral'):
-        b = xp.astype(b, default_float)
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if axis is None:
         a, b, axis = xp_ravel(a), xp_ravel(b), 0
@@ -7355,8 +7332,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs)
-    default_float = xp.asarray(1.).dtype
+    xp = array_namespace(f_obs, f_exp)
+    f_obs, f_exp = xp_promote(f_obs, f_exp, force_floating=True, xp=xp)
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
@@ -7368,16 +7345,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     elif lambda_ is None:
         lambda_ = 1
 
-    f_obs = xp.asarray(f_obs)
-    dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
-    f_obs = xp.asarray(f_obs, dtype=dtype)
-    f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
-
     if f_exp is not None:
-        f_exp = xp.asarray(f_exp)
-        dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
-        f_exp = xp.asarray(f_exp, dtype=dtype)
-
+        # not sure why we force to float64, but not going to touch it
+        f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = xp.broadcast_to(f_obs_float, bshape)
         f_exp = xp.broadcast_to(f_exp, bshape)
@@ -9051,8 +9021,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
     """
     xp = array_namespace(pvalues, weights)
-    pvalues, weights = xp_broadcast_promote(pvalues, weights,
-                                            force_floating=True, xp=xp)
+    pvalues, weights = xp_promote(pvalues, weights, broadcast=True,
+                                  force_floating=True, xp=xp)
 
     if xp_size(pvalues) == 0:
         # This is really only needed for *testing* _axis_nan_policy decorator
@@ -10914,7 +10884,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
+    x, weights = xp_promote(x, weights, broadcast=True, force_floating=True, xp=xp)
     if weights is not None:
         x, weights = _share_masks(x, weights, xp=xp)
 

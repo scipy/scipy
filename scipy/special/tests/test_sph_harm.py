@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from numpy.testing import assert_allclose, suppress_warnings
+from numpy.testing import assert_allclose
 import scipy.special as sc
 
 class TestSphHarm:
@@ -47,6 +47,7 @@ class TestSphHarm:
 
         np.testing.assert_allclose(y_actual, y_desired, rtol=1e-05)
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_first_harmonics():
     # Test against explicit representations of the first four
     # spherical harmonics which use `theta` as the azimuthal angle,
@@ -78,9 +79,7 @@ def test_first_harmonics():
     theta, phi = np.meshgrid(theta, phi)
 
     for harm, m, n in zip(harms, m, n):
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            assert_allclose(sc.sph_harm(m, n, theta, phi),
-                            harm(theta, phi),
-                            rtol=1e-15, atol=1e-15,
-                            err_msg=f"Y^{m}_{n} incorrect")
+        assert_allclose(sc.sph_harm(m, n, theta, phi),
+                        harm(theta, phi),
+                        rtol=1e-15, atol=1e-15,
+                        err_msg=f"Y^{m}_{n} incorrect")

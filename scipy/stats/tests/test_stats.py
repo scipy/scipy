@@ -2111,15 +2111,15 @@ def test_weightedtau_vs_quadratic():
     def weigher(x):
         return 1. / (x + 1)
 
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     for s in range(3,10):
         a = []
         # Generate rankings with ties
         for i in range(s):
             a += [i]*i
         b = list(a)
-        np.random.shuffle(a)
-        np.random.shuffle(b)
+        rng.shuffle(a)
+        rng.shuffle(b)
         # First pass: use element indices as ranks
         rank = np.arange(len(a), dtype=np.intp)
         for _ in range(2):
@@ -2128,7 +2128,7 @@ def test_weightedtau_vs_quadratic():
                 actual = stats.weightedtau(a, b, rank, weigher, add).statistic
                 assert_approx_equal(expected, actual)
             # Second pass: use a random rank
-            np.random.shuffle(rank)
+            rng.shuffle(rank)
 
 
 class TestFindRepeats:
@@ -2746,7 +2746,7 @@ class TestMode:
         # was deprecated, so check for the appropriate error.
         my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
         test = np.zeros(10, dtype=my_dtype)
-        message = "Argument `a` is not....|An argument has dtype..."
+        message = "Argument `a` is not....|An argument has dtype...|The DType..."
         with pytest.raises(TypeError, match=message):
             stats.mode(test, nan_policy=nan_policy)
 
@@ -5702,8 +5702,9 @@ class Test_ttest_ind_common:
     def test_nans_on_axis(self, kwds, axis):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
         # on the correct location
-        a = np.random.randint(10, size=(5, 3, 10)).astype('float')
-        b = np.random.randint(10, size=(5, 3, 10)).astype('float')
+        rng = np.random.default_rng(363836384995579937222)
+        a = rng.integers(10, size=(5, 3, 10)).astype('float')
+        b = rng.integers(10, size=(5, 3, 10)).astype('float')
         # set some indices in `a` and `b` to be `np.nan`.
         a[0][2][3] = np.nan
         b[2][0][6] = np.nan
@@ -7276,9 +7277,9 @@ class TestGSTD:
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
     @skip_xp_invalid_arg
-    def test_raises_value_error_non_numeric_input(self, xp):
-        # this is raised by NumPy, but it's quite interpretable
-        with pytest.raises(TypeError, match="ufunc 'log' not supported"):
+    def test_raises_error_non_numeric_input(self, xp):
+        message = "could not convert string to float|The DType..."
+        with pytest.raises((ValueError, TypeError), match=message):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @skip_xp_backends(eager_only=True)

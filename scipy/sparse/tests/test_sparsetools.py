@@ -21,6 +21,7 @@ def int_to_int8(n):
     return (n + 128) % 256 - 128
 
 
+@pytest.mark.thread_unsafe  # Exception handling in CPython 3.13 has races
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 

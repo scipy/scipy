@@ -26,8 +26,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
                 *, callback=None):
     """
     Minimize a function using the Constrained Optimization By Linear
-    Approximation (COBYLA) method. This method wraps a FORTRAN
-    implementation of the algorithm.
+    Approximation (COBYLA) method. This method uses the pure-python implementation
+    of the algorithm from PRIMA.
 
     Parameters
     ----------
@@ -98,6 +98,11 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     how these issues are resolved, as well as how the points v_i are
     updated, refer to the source code or the references below.
 
+        .. versionchanged:: 1.16.0
+            The original Powell implementation was replaced by a pure
+            Python version from the PRIMA package, with bug fixes and
+            improvements being made.
+
 
     References
     ----------
@@ -112,6 +117,9 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     Powell M.J.D. (2007), "A view of algorithms for optimization without
     derivatives", Cambridge University Technical Report DAMTP 2007/NA03
 
+    Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
+    Modernization and Amelioration", http://www.libprima.net,
+    :doi:`10.5281/zenodo.8052654`
 
     Examples
     --------
@@ -161,7 +169,6 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
             return confunc(x, *consargs)
         nlcs.append(NonlinearConstraint(wrapped_con, 0, np.inf))
 
-
     # options
     opts = {'rhobeg': rhobeg,
             'tol': rhoend,
@@ -184,6 +191,7 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
+    This method uses the pure-python implementation of the algorithm from PRIMA.
 
     Options
     -------
@@ -209,6 +217,17 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     f_target : float
         Stop if the objective function is less than `f_target`.
 
+        .. versionchanged:: 1.16.0
+            The original Powell implementation was replaced by a pure
+            Python version from the PRIMA package, with bug fixes and
+            improvements being made.
+
+
+    References
+    ----------
+    Zhang Z. (2023), "PRIMA: Reference Implementation for Powell's Methods with
+    Modernization and Amelioration", http://www.libprima.net,
+    :doi:`10.5281/zenodo.8052654`
     """
     from .._lib.pyprima import minimize
     from .._lib.pyprima.common.infos import SMALL_TR_RADIUS, FTARGET_ACHIEVED

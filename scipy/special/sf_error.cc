@@ -4,10 +4,11 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+#include "scipy_config.h"
 #include "sf_error.h"
 
 /* If this isn't volatile clang tries to optimize it away */
-static volatile sf_action_t sf_error_actions[] = {
+static volatile SCIPY_TLS sf_action_t sf_error_actions[] = {
     SF_ERROR_IGNORE, /* SF_ERROR_OK */
     SF_ERROR_IGNORE, /* SF_ERROR_SINGULAR */
     SF_ERROR_IGNORE, /* SF_ERROR_UNDERFLOW */
@@ -76,9 +77,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         PyOS_snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-#ifdef WITH_THREAD
     save = PyGILState_Ensure();
-#endif
 
     if (PyErr_Occurred()) {
         goto skip_warn;
@@ -119,11 +118,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     }
 
 skip_warn:
-#ifdef WITH_THREAD
     PyGILState_Release(save);
-#else
-    ;
-#endif
 }
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {

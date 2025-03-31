@@ -1323,6 +1323,23 @@ class TestZoom:
         expected = ndimage.zoom(a, factor)
         xp_assert_close(actual, expected)
 
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    def test_zoom_1_gh20999(self, xp):
+        # gh-20999 reported that zoom with `zoom=1` (or sequence of ones)
+        # introduced noise. Check that this is resolved.
+        x = xp.eye(3)
+        xp_assert_equal(ndimage.zoom(x, 1), x)
+        xp_assert_equal(ndimage.zoom(x, (1, 1)), x)
+
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    @skip_xp_backends("jax.numpy", reason="read-only backend")
+    @xfail_xp_backends("dask.array", reason="numpy round-trip")
+    def test_zoom_1_gh20999_output(self, xp):
+        x = xp.eye(3)
+        output = xp.zeros_like(x)
+        ndimage.zoom(x, 1, output=output)
+        xp_assert_equal(output, x)
+
 
 class TestRotate:
 

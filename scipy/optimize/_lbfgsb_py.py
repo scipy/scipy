@@ -323,11 +323,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations. Note that this function
-        may violate the limit because of evaluating gradients by numerical
-        differentiation.
+        Maximum number of function evaluations before minimization terminates.
+        Note that this function may violate the limit if the gradients
+        are evaluated by numerical differentiation.
     maxiter : int
-        Maximum number of iterations.
+        Maximum number of algorithm iterations.
     iprint : int, optional
         Deprecated option that previously controlled the text printed on the
         screen during the problem solution. Now the code does not emit any
@@ -359,6 +359,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     relationship between the two is ``ftol = factr * numpy.finfo(float).eps``.
     I.e., `factr` multiplies the default machine floating-point precision to
     arrive at `ftol`.
+    If the minimization is slow to converge the optimizer may halt if the
+    total number of function evaluations exceeds `maxfun`, or the number of
+    algorithm iterations has reached `maxiter` (whichever comes first). If
+    this is the case then ``result.success=False``, and an appropriate
+    error message is contained in ``result.message``.
 
     """
     _check_unknown_options(unknown_options)
