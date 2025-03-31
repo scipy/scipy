@@ -9,7 +9,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
 from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
-                                   xp_default_dtype, SCIPY_DEVICE)
+                                   xp_default_dtype, SCIPY_ARRAY_API, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
 
 
