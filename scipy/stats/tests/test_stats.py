@@ -2136,15 +2136,15 @@ def test_weightedtau_vs_quadratic():
     def weigher(x):
         return 1. / (x + 1)
 
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     for s in range(3,10):
         a = []
         # Generate rankings with ties
         for i in range(s):
             a += [i]*i
         b = list(a)
-        np.random.shuffle(a)
-        np.random.shuffle(b)
+        rng.shuffle(a)
+        rng.shuffle(b)
         # First pass: use element indices as ranks
         rank = np.arange(len(a), dtype=np.intp)
         for _ in range(2):
@@ -2153,7 +2153,7 @@ def test_weightedtau_vs_quadratic():
                 actual = stats.weightedtau(a, b, rank, weigher, add).statistic
                 assert_approx_equal(expected, actual)
             # Second pass: use a random rank
-            np.random.shuffle(rank)
+            rng.shuffle(rank)
 
 
 class TestFindRepeats:
@@ -2771,7 +2771,7 @@ class TestMode:
         # was deprecated, so check for the appropriate error.
         my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
         test = np.zeros(10, dtype=my_dtype)
-        message = "Argument `a` is not....|An argument has dtype..."
+        message = "Argument `a` is not....|An argument has dtype...|The DType..."
         with pytest.raises(TypeError, match=message):
             stats.mode(test, nan_policy=nan_policy)
 
@@ -7304,9 +7304,9 @@ class TestGSTD:
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
     @skip_xp_invalid_arg
-    def test_raises_value_error_non_numeric_input(self, xp):
-        # this is raised by NumPy, but it's quite interpretable
-        with pytest.raises(TypeError, match="ufunc 'log' not supported"):
+    def test_raises_error_non_numeric_input(self, xp):
+        message = "could not convert string to float|The DType..."
+        with pytest.raises((ValueError, TypeError), match=message):
             stats.gstd('You cannot take the logarithm of a string.')
 
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
