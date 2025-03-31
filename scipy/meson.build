@@ -231,33 +231,6 @@ blas_name = get_option('blas')
 lapack_name = get_option('lapack')
 blas_symbol_suffix = get_option('blas-symbol-suffix')
 use_ilp64 = get_option('use-ilp64')
-blas_order = get_option('blas-order')
-lapack_order = get_option('lapack-order')
-
-# Detect LP64 (32-bit) BLAS and LAPACK, we always need that
-blas_interface = ['interface: lp64']
-if blas_order == ['auto']
-  blas_order = []
-  if host_machine.system() == 'darwin'
-    blas_order += 'accelerate'
-  endif
-  if host_machine.cpu_family() == 'x86_64'
-    blas_order += 'mkl'
-  endif
-  blas_order += ['openblas', 'flexiblas', 'blis', 'blas']
-endif
-if lapack_order == ['auto']
-  lapack_order = []
-  if host_machine.system() == 'darwin'
-    lapack_order += 'accelerate'
-  endif
-  if host_machine.cpu_family() == 'x86_64'
-    lapack_order += 'mkl'
-  endif
-  lapack_order += ['openblas', 'flexiblas', 'lapack']
-endif
-
-message('BLAS_ODER = ', blas_order, 'BLAS_NAME =', blas_name)
 
 # MKL-specific options
 _threading_opt = get_option('mkl-threading')
@@ -272,119 +245,6 @@ mkl_version_req = '>=2023.0'  # see gh-24824
 mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
 
 
-# BLAS detection.
-#
-# First try scipy-openblas, and if found don't look for blas/lapack, we
-# know what's inside the scipy-openblas wheels already.
-generate_blas_wrappers = false
-if blas_name == 'openblas' or blas_name == 'auto'
-  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
-  if blas.found()
-    blas_name = 'scipy-openblas'
-    generate_blas_wrappers = true
-  endif
-endif
-
-if blas_name == 'auto'
-  foreach _name : blas_order
-    if _name == 'mkl'
-      blas = dependency('mkl',
-        modules: blas_interface + mkl_opts,
-        required: false,  # may be required, but we need to emit a custom error message
-        version: mkl_version_req,
-      )
-      # Insert a second try with MKL, because we may be rejecting older versions
-      # or missing it because no pkg-config installed. If so, we need to retry
-      # with MKL SDL, and drop the version constraint (this always worked).
-      if not blas.found() and mkl_may_use_sdl
-        blas = dependency('mkl', modules: ['sdl: true'], required: false)
-      endif
-    elif _name == 'openblas'
-      # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
-      # that too to make the fallback detection with CMake work
-      blas = dependency(['openblas', 'OpenBLAS'], modules: blas_interface, required: false)
-    else
-      blas = dependency(_name, modules: blas_interface, required: false)
-    endif
-    if blas.found()
-      break
-    endif
-  endforeach
-else
-  # blas_name != 'auto': a specific BLAS requested; ignore blas-order
-  if blas_name == 'openblas'
-    _name = ['openblas', 'OpenBLAS']
-  else
-    _name = blas_name
-  endif
-  blas = dependency(blas_name, modules: blas_interface, required: false)
-  
-
-#  if blas_name.to_lower().startswith('mkl')
-#    mkl_uses_sdl = false
-#    blas = dependency('mkl',
-#      modules: blas_interface + mkl_opts,
-#      required: false,
-#      version: mkl_version_req,
-#    )
-#    # Same deal as above - try again for MKL
-#    if not blas.found() and mkl_may_use_sdl
-#      mkl_uses_sdl = true
-#      blas = dependency('mkl', modules: ['sdl: true'], required: false)
-#    endif
-#  elif blas_name.to_lower().startswith('openblas')
-#    # same deal with openblas
-#    blas = dependency(['openblas', 'OpenBLAS'], modules: blas_interface, required: false)
-#  else
-#    blas = dependency(blas_name, modules: blas_interface, required: false)
-#  endif
-endif
-
-if not blas.found()
-  error('No BLAS library detected! SciPy needs one, please install it.')
-endif
-
-_args_blas = []  # note: used for C and C++ via `blas_dep` below
-if blas_symbol_suffix == 'auto'
-  blas_symbol_suffix = blas.get_variable('symbol_suffix', default_value: '')
-  message(f'BLAS symbol suffix: @blas_symbol_suffix@')
-endif
-_blas_incdir = []
-if blas_symbol_suffix != ''
-  _args_blas += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
-  _blas_incdir = ['.']  # for the generated symbol rename shims in the build dir
-endif
-blas_dep = declare_dependency(
-  dependencies: [blas],
-  compile_args: _args_blas,
-  include_directories: _blas_incdir,
-)
-
-# LAPACK detection
-if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
-  # For these libraries we know that they contain LAPACK, and it's desirable to
-  # use that - no need to run the full detection twice.
-  lapack = blas
-else
-  if lapack_name == 'auto'
-    foreach _name : lapack_order
-      lapack = dependency(_name, modules: ['lapack'] + blas_interface, required: false)
-      if lapack.found()
-        break
-      endif
-    endforeach
-  else
-    lapack = dependency(lapack_name, modules: ['lapack'] + blas_interface, required: false)
-  endif
-endif
-
-if not lapack.found()
-  error('No LAPACK library detected! SciPy needs one, please install it.')
-endif
-lapack_dep = declare_dependency(dependencies: [lapack, blas_dep])
-
-
-
 macOS13_3_or_later = false
 if host_machine.system() == 'darwin'
   r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
@@ -395,6 +255,7 @@ endif
 
 _args_blas_lapack = []
 accelerate_flag = []
+generate_blas_wrappers = false
 if blas_name == 'accelerate'
   if not macOS13_3_or_later
     error('macOS Accelerate is only supported on macOS >=13.3')
@@ -407,6 +268,24 @@ if blas_name == 'accelerate'
   accelerate_flag = '-a'
 endif
 
+# First try scipy-openblas, and if found don't look for cblas or lapack, we
+# know what's inside the scipy-openblas wheels already.
+if blas_name == 'openblas' or blas_name == 'auto'
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
+  if blas.found()
+    blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
+  endif
+endif
+
+# Try any other openblas 
+# pkg-config uses a lower-case name while CMake uses a capitalized name, so try
+# that too to make the fallback detection with CMake work
+if blas_name == 'openblas'
+  blas = dependency(['openblas', 'OpenBLAS'])
+elif blas_name != 'scipy-openblas'  # if so, we found it already
+  blas = dependency(blas_name)
+endif
 
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
@@ -419,6 +298,48 @@ else
   cblas = []
 endif
 
+if blas_name == 'mkl'
+  blas = dependency('mkl',
+    modules: ['interface: lp64'] + mkl_opts,
+    required: false,  # may be required, but we need to emit a custom error message
+    version: mkl_version_req,
+  )
+  # Insert a second try with MKL, because we may be rejecting older versions
+  # or missing it because no pkg-config installed. If so, we need to retry
+  # with MKL SDL, and drop the version constraint (this always worked).
+  if not blas.found() and mkl_may_use_sdl
+    blas = dependency('mkl', modules: ['sdl: true'], required: false)
+  endif
+endif
+
+# fallback BLAS detection
+blas_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: _args_blas_lapack
+)
+
+if not blas.found()
+  error('No BLAS library detected! SciPy needs one, please install it.')
+endif
+
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
+  # For these libraries we know that they contain LAPACK, and it's desirable to
+  # use that - no need to run the full detection twice.
+  lapack = blas
+elif lapack_name == 'openblas'
+  lapack = dependency(['openblas', 'OpenBLAS'])
+else
+  lapack = dependency(lapack_name)
+endif
+
+if not lapack.found()
+  error('No LAPACK library detected! SciPy needs one, please install it.')
+endif
+
+lapack_dep = declare_dependency(
+  dependencies: lapack,
+  compile_args: _args_blas_lapack
+)
 
 dependency_map = {
   'BLAS': blas,
@@ -450,20 +371,18 @@ endif
 
 # Reuse the names, so we ensure we don't lose the arguments wrapped in with
 # declare_dependency. Also, avoids changing `dependencies: blas` to blas_dep in other files.
-blas = blas_dep
-lapack = lapack_dep
+# XXX: unused, remove?
+#blas = blas_dep
+#lapack = lapack_dep
 
-c_flags_ilp64 = []
+# Run ILP64 BLAS detection, if asked
 if use_ilp64
   # Okay, we need ILP64 BLAS and LAPACK *in addition to LP64*. So we need to
   # detect the ILP64 variants of the found LP64 libraries now.
   _args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
   c_flags_ilp64 = ['-DHAVE_BLAS_ILP64']
-
   blas_interface = ['interface: ilp64']
-  if blas_name == 'flexiblas'
-    blas_name = 'flexiblas64'
-  endif
+
   if 'openblas' in blas_name
     _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
   endif
@@ -483,6 +402,7 @@ if use_ilp64
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
   else
+    # XXX: ILP64 detection has only been tested for MKL
     if blas_name == 'openblas'
       # We cannot allow plain openblas here, that's already the LP64 library and
       # will lead to problems (there is, as of now, no combined OpenBLAS build
@@ -529,6 +449,7 @@ else
   # (all users must use preprocessor macros BLAS_NAME to handle the two options)
   blas_ilp64 = blas
   lapack_ilp64 = lapack
+  c_flags_ilp64 = []
   message('LAPACK ILP64 not requested / not detected.')
 endif
 
