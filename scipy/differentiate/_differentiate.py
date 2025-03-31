@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy
+from scipy._lib._array_api import array_namespace, xp_copy, xp_promote
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -906,9 +906,7 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    int_dtype = xp.isdtype(x.dtype, 'integral')
-    x0 = xp.asarray(x, dtype=xp.asarray(1.0).dtype) if int_dtype else x
+    x0 = xp_promote(x, force_floating=True, xp=xp)
 
     if x0.ndim < 1:
         message = "Argument `x` must be at least 1-D."
@@ -1097,9 +1095,9 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     rtol = tolerances.get('rtol', None)
 
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    dtype = x.dtype if not xp.isdtype(x.dtype, 'integral') else xp.asarray(1.).dtype
-    finfo = xp.finfo(dtype)
+    x0 = xp_promote(x, force_floating=True, xp=xp)
+
+    finfo = xp.finfo(x0.dtype)
     rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
 
     # tighten the inner tolerance to make the inner error negligible

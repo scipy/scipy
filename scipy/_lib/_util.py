@@ -12,11 +12,11 @@ from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
 from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, is_marray, xp_size)
+                                   is_numpy, is_marray, xp_size, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
-from numpy.exceptions import AxisError, DTypePromotionError
+from numpy.exceptions import AxisError
 
 
 np_long: type
@@ -1012,13 +1012,7 @@ def _rng_spawn(rng, n_children):
 def _get_nan(*data, xp=None):
     xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [xp.asarray(item) for item in data]
-    try:
-        min_float = getattr(xp, 'float16', xp.float32)
-        dtype = xp.result_type(*data, min_float)  # must be at least a float
-    except DTypePromotionError:
-        # fallback to float64
-        dtype = xp.float64
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
     res = xp.asarray(xp.nan, dtype=dtype)[()]
     # whenever mdhaber/marray#89 is resolved, could just return `res`
     return res.data if is_marray(xp) else res

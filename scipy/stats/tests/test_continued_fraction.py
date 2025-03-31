@@ -19,23 +19,25 @@ class TestContinuedFraction:
     p = rng.uniform(1, 10, size=10)
 
     def a1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         elif n == 1:
             y = x
         else:
             y = -x**2
-        return xp.asarray(y, dtype=x.dtype)
+        if np.isscalar(y) and np.__version__ < "2.0":
+            y = np.full_like(x, y)  # preserve dtype pre NEP 50
+        return y
 
     def b1(self, n, x=1.5):
-        xp = array_namespace(x)
         if n == 0:
             y = 0*x
         else:
             one = x/x  # gets array of correct type, dtype, and shape
             y = one * (2*n - 1)
-        return xp.asarray(y, dtype=x.dtype)
+        if np.isscalar(y) and np.__version__ < "2.0":
+            y = np.full_like(x, y)  # preserve dtype pre NEP 50
+        return y
 
     def log_a1(self, n, x):
         xp = array_namespace(x)
@@ -45,7 +47,7 @@ class TestContinuedFraction:
             y = xp.log(x)
         else:
             y = 2 * xp.log(x) + math.pi * 1j
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def log_b1(self, n, x):
         xp = array_namespace(x)
@@ -54,7 +56,7 @@ class TestContinuedFraction:
         else:
             one = x - x  # gets array of correct type, dtype, and shape
             y = one + math.log(2 * n - 1)
-        return xp.asarray(y, dtype=x.dtype)
+        return y
 
     def test_input_validation(self, xp):
         a1 = self.a1

@@ -4,7 +4,8 @@ import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_ravel
+from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
+                                   xp_promote)
 
 
 __all__ = ['nsum']
@@ -818,14 +819,13 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     # Input validation and standardization
 
     xp = array_namespace(a, b)
+    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
 
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a` and `b` must be real numbers.'
-    a, b = xp.asarray(a), xp.asarray(b)
-    a, b = xp.broadcast_arrays(a, b)
     if (xp.isdtype(a.dtype, 'complex floating')
             or xp.isdtype(b.dtype, 'complex floating')):
         raise ValueError(message)
@@ -894,16 +894,15 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     # Input validation and standardization
 
-    xp = array_namespace(a, b)
+    xp = array_namespace(a, b, step)
+    a, b, step = xp_promote(a, b, step, broadcast=True, force_floating=True, xp=xp)
 
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a`, `b`, and `step` must be real numbers.'
-    a, b, step = xp.broadcast_arrays(xp.asarray(a), xp.asarray(b), xp.asarray(step))
-    dtype = xp.result_type(a.dtype, b.dtype, step.dtype)
-    if not xp.isdtype(dtype, 'numeric') or xp.isdtype(dtype, 'complex floating'):
+    if not xp.isdtype(a.dtype, ('integral', 'real floating')):
         raise ValueError(message)
 
     valid_b = b >= a  # NaNs will be False
