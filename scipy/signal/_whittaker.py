@@ -10,12 +10,13 @@ from scipy.linalg import solveh_banded
 # 5) Case weights
 # 6) 2-d, maybe even 3-d WH smoothing
 
-def whittaker_henderson(signal, lamb = 0.0):
+def whittaker_henderson(signal, lamb = 1.0):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
     This implements WH of order 2, see [1] and [2]. WH can be seen as a P-Spline
-    (penalized B-Spline) of degree zero for equidistant knots.
+    (penalized B-Spline) of degree zero for equidistant knots (at the signal
+    positions).
 
     In econometrics, the WH graduation of order 2 is referred to as the Hodrick and
     Prescott filter (https://doi.org/10.2307/2953682).
