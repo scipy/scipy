@@ -1,5 +1,4 @@
 from collections import namedtuple
-from functools import partial
 
 import numpy as np
 import scipy.sparse as sps
