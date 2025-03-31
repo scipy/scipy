@@ -32,7 +32,7 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
             #error "Accelerate ILP64 support is only available with macOS 13.3 SDK or later"
         #endif
     #else
-        #define NO_APPEND_FORTRAN
+       /* #define NO_APPEND_FORTRAN */
         #ifdef HAVE_BLAS_ILP64
             #define BLAS_SYMBOL_SUFFIX $NEWLAPACK$ILP64
         #else
