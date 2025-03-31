@@ -619,15 +619,17 @@ class VectorFunction:
             self.J_updated = True
             self._nfev += dct['nfev']
 
+        self.sparse_jacobian = False
         if (sparse_jacobian or
                 sparse_jacobian is None and sps.issparse(self.J)):
             self.J = sps.csr_array(self.J)
             self.sparse_jacobian = True
         elif sps.issparse(self.J):
             self.J = self.J.toarray()
-            self.sparse_jacobian = False
+        elif isinstance(self.J, LinearOperator):
+            pass
         else:
-            self.sparse_jacobian = False
+            self.J = np.atleast_2d(self.J)
 
         self.jac_wrapped = _VectorJacWrapper(
             jac,
