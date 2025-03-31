@@ -122,7 +122,7 @@ if use_ilp64
   fblas64_module = custom_target('fblas64_module',
     output: ['_fblas_64module.c', '_fblas_64-f2pywrappers.f'],
     input: 'fblas_64.pyf.src',
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts,
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
     depend_files:
       [
         'fblas_l1.pyf.src',
@@ -147,7 +147,7 @@ if use_ilp64
   flapack64_module = custom_target('flapack64_module',
     output: ['_flapack_64module.c', '_flapack_64-f2pywrappers.f'],
     input: 'flapack_64.pyf.src',
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_ilp64_opts + f2py_freethreading_arg,
   )
 
   py3.extension_module('_flapack_64',
@@ -167,7 +167,6 @@ endif
 
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
-
 
 # _decomp_interpolative
 py3.extension_module('_decomp_interpolative',
