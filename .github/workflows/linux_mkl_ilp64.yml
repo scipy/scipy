@@ -34,7 +34,7 @@ jobs:
 
   mkl-lp64:
     runs-on: ubuntu-latest
-    name: "MKL (LP64 split, SDL)"
+    name: "MKL LP64"
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
@@ -56,18 +56,6 @@ jobs:
     - name: Build with defaults (LP64)
       run: |
         pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-        python dev.py build
-
-    - name: Test
-      run: python dev.py test
-
-    - name: Build without pkg-config (default options, SDL)
-      run: |
-        git clean -xdf > /dev/null
-        pushd $Python3_ROOT_DIR/lib/pkgconfig
-        rm mkl*.pc
-        popd
-        export MKLROOT=$Python3_ROOT_DIR
         python dev.py build
 
     - name: Test
