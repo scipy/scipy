@@ -13,7 +13,7 @@ from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
-from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype, np_compat
+from scipy._lib._array_api import array_namespace, xp_size, xp_default_dtype
 import scipy._lib.array_api_extra as xpx
 
 
@@ -374,10 +374,8 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     array([ 0.04890915,  0.91284326,  0.04890915])
 
     """
-    if isinstance(cutoff, int | float):
-        xp = np_compat
-    else:
-        xp = array_namespace(cutoff)
+    # NB: scipy's version of array_namespace returns `np_compat` for int or floats
+    xp = array_namespace(cutoff)
 
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
@@ -454,7 +452,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     h = 0
     for left, right in bands:
         h += right * xpx.sinc(right * m, xp=xp)
-        h -= left * xp.sinc(left * m)
+        h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
     from .windows import get_window
@@ -652,7 +650,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     # Linearly interpolate the desired response on a uniform mesh `x`.
     x = np.linspace(0.0, nyq, nfreqs)
-    fx = np.interp(x, np.asarray(freq), np.asarray(gain))   # XXX: xpx.interp
+    fx = np.interp(x, np.asarray(freq), np.asarray(gain))  # XXX array-api-extra#193
     x = xp.asarray(x)
     fx = xp.asarray(fx)
 
@@ -1285,8 +1283,7 @@ def minimum_phase(h,
 
     if method == 'hilbert':
         w = xp.arange(n_fft, dtype=xp.float64) * (2 * xp.pi / n_fft * n_half)
-        I = xp.asarray(1j, dtype=xp.complex64 if w.dtype==xp.float32 else xp.complex128)
-        H = xp.real(fft(h, n_fft) * xp.exp(I * w))
+        H = xp.real(fft(h, n_fft) * xp.exp(1j * w))
         dp = max(H) - 1
         ds = 0 - min(H)
         S = 4. / (xp.sqrt(1+dp+ds) + xp.sqrt(1-dp+ds)) ** 2
