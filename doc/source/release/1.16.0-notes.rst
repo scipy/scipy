@@ -24,6 +24,10 @@ This release requires Python 3.11-3.13 and NumPy 1.26.4 or greater.
 Highlights of this release
 **************************
 
+- ``scipy.optimize`` now uses the new Python implementation from the
+  `PRIMA <https://www.libprima.net>`_ package for COBYLA.
+  The PRIMA implementation fixes many bugs in the old Fortran 77 implementation
+  with a better performance on average.
 
 ************
 New features
