@@ -770,7 +770,8 @@ def _estimate_error(work, xp):
         d3 = log_e1 + xp.max(xp.real(work.fjwj), axis=-1)
         d4 = work.d4
         d5 = log_e1 + xp.real(work.Sn)
-        ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4, d5])
+        temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
+        ds = xp.stack([temp, 2 * d1, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
         rerr = aerr - xp.real(work.Sn)
     else:
@@ -780,9 +781,8 @@ def _estimate_error(work, xp):
         d3 = e1 * xp.max(xp.abs(work.fjwj), axis=-1)
         d4 = work.d4
         d5 = e1 * xp.abs(work.Sn)
-        # If `d1` is 0, no need to warn. This does the right thing.
-        # with np.errstate(divide='ignore'):
-        ds = xp.stack([d1**(xp.log(d1)/xp.log(d2)), d1**2, d3, d4, d5])
+        temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
+        ds = xp.stack([temp, d1**2, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
         rerr = aerr/xp.abs(work.Sn)
 
