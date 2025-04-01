@@ -78,7 +78,7 @@ from scipy._lib._array_api import (
     is_marray,
     xp_size,
     xp_vector_norm,
-    xp_broadcast_promote,
+    xp_promote,
     xp_capabilities,
     xp_ravel,
 )
@@ -143,16 +143,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _convert_common_float(*arrays, xp=None):
-    xp = array_namespace(*arrays) if xp is None else xp
-    arrays = [_asarray(array, subok=True) for array in arrays]
-    dtypes = [(xp.asarray(1.).dtype if xp.isdtype(array.dtype, 'integral')
-               else array.dtype) for array in arrays]
-    dtype = xp.result_type(*dtypes)
-    arrays = [xp.astype(array, dtype, copy=False) for array in arrays]
-    return arrays[0] if len(arrays)==1 else tuple(arrays)
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -630,9 +620,10 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
         mask |= (a < lower_limit) if lower_include else a <= lower_limit
     if upper_limit is not None:
         mask |= (a > upper_limit) if upper_include else a >= upper_limit
-    if xp.all(mask):
+    lazy = is_lazy_array(mask)
+    if not lazy and xp.all(mask):
         raise ValueError("No array values within given limits")
-    if xp.any(mask):
+    if lazy or xp.any(mask):
         a = xp.where(mask, val, a)
     return a, mask
 
@@ -805,11 +796,15 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (lowerlimit, None), (inclusive, None),
                                  val=max_, xp=xp)
 
-    min_ = xp.min(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element above lowerlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    res = min_ if xp.all(valid) else xp.where(valid, min_, xp.nan)
+    res = xp.min(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are below lowerlimit
+
+    # For eager backends, output dtype is data-dependent
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # Possible loss of precision for int types
+        res = xp_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+
     return res[()] if res.ndim == 0 else res
 
 
@@ -864,11 +859,15 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     a, mask = _put_val_to_limits(a, (None, upperlimit), (None, inclusive),
                                  val=min_, xp=xp)
 
-    max_ = xp.max(a, axis=axis)
-    valid = ~xp.all(mask, axis=axis)  # At least one element below upperlimit
-    # Output dtype is data-dependent
-    # Possible loss of precision for int types
-    res = max_ if xp.all(valid) else xp.where(valid, max_, xp.nan)
+    res = xp.max(a, axis=axis)
+    invalid = xp.all(mask, axis=axis)  # All elements are above upperlimit
+
+    # For eager backends, output dtype is data-dependent
+    if is_lazy_array(invalid) or xp.any(invalid):
+        # Possible loss of precision for int types
+        res = xp_promote(res, force_floating=True, xp=xp)
+        res = xp.where(invalid, xp.nan, res)
+    
     return res[()] if res.ndim == 0 else res
 
 
@@ -1118,10 +1117,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
-    else:
-        a = xp.asarray(a)
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     order = xp.asarray(order, dtype=a.dtype)
     if xp_size(order) == 0:
@@ -1158,7 +1154,8 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     # Used in e.g. `_moment`, `_zscore`, `_xp_var`. See gh-15905.
     a_zero_mean = a - mean
 
-    if xp_size(a_zero_mean) == 0:
+    if (xp_size(a_zero_mean) == 0 or not precision_warning
+        or is_lazy_array(a_zero_mean)):
         return a_zero_mean
 
     eps = xp.finfo(mean.dtype).eps * 10
@@ -1171,7 +1168,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
     with np.errstate(invalid='ignore'):
         precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
 
-    if precision_loss and precision_warning:
+    if precision_loss:
         message = ("Precision loss occurred in moment calculation due to "
                    "catastrophic cancellation. This occurs when the data "
                    "are nearly identical. Results may be unreliable.")
@@ -1188,9 +1185,7 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     """
     xp = array_namespace(a) if xp is None else xp
 
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.asarray(a, dtype=xp.float64)
-
+    a = xp_promote(a, force_floating=True, xp=xp)
     dtype = a.dtype
 
     # moment of empty array is the same regardless of order
@@ -2860,7 +2855,7 @@ def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = _convert_common_float(a, xp=xp)
+    a = xp_promote(a, force_floating=True, xp=xp)
     log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
     return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
 
@@ -2922,7 +2917,7 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
     like_zscore = (scores is compare)
     xp = array_namespace(scores, compare)
-    scores, compare = _convert_common_float(scores, compare, xp=xp)
+    scores, compare = xp_promote(scores, compare, force_floating=True, xp=xp)
 
     with warnings.catch_warnings():
         if like_zscore:  # zscore should not emit SmallSampleWarning
@@ -3053,7 +3048,7 @@ def gstd(a, axis=0, ddof=1, *, keepdims=False, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
-    a = xp_broadcast_promote(a, force_floating=True)[0]  # just promote to correct float
+    a = xp_promote(a, force_floating=True, xp=xp)
 
     kwargs = dict(axis=axis, correction=ddof, keepdims=keepdims, nan_policy=nan_policy)
     with np.errstate(invalid='ignore', divide='ignore'):
@@ -4652,8 +4647,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     """
     xp = array_namespace(x, y)
-    x = xp.asarray(x)
-    y = xp.asarray(y)
+    x, y = xp_promote(x, y, force_floating=True, xp=xp)
+    dtype = x.dtype
 
     if not is_numpy(xp) and method is not None:
         method = 'invalid'
@@ -4692,10 +4687,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
     axis = -1
-
-    dtype = xp.result_type(x.dtype, y.dtype)
-    if xp.isdtype(dtype, "integral"):
-        dtype = xp.asarray(1.).dtype
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -6753,11 +6744,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     """
     xp = array_namespace(a, b)
 
-    default_float = xp.asarray(1.).dtype
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, default_float)
-    if xp.isdtype(b.dtype, 'integral'):
-        b = xp.astype(b, default_float)
+    a, b = xp_promote(a, b, force_floating=True, xp=xp)
 
     if axis is None:
         a, b, axis = xp_ravel(a), xp_ravel(b), 0
@@ -7355,8 +7342,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs)
-    default_float = xp.asarray(1.).dtype
+    xp = array_namespace(f_obs, f_exp)
+    f_obs, f_exp = xp_promote(f_obs, f_exp, force_floating=True, xp=xp)
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
@@ -7368,16 +7355,9 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
     elif lambda_ is None:
         lambda_ = 1
 
-    f_obs = xp.asarray(f_obs)
-    dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
-    f_obs = xp.asarray(f_obs, dtype=dtype)
-    f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
-
     if f_exp is not None:
-        f_exp = xp.asarray(f_exp)
-        dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
-        f_exp = xp.asarray(f_exp, dtype=dtype)
-
+        # not sure why we force to float64, but not going to touch it
+        f_obs_float = xp.asarray(f_obs, dtype=xp.float64)
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = xp.broadcast_to(f_obs_float, bshape)
         f_exp = xp.broadcast_to(f_exp, bshape)
@@ -9051,8 +9031,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
 
     """
     xp = array_namespace(pvalues, weights)
-    pvalues, weights = xp_broadcast_promote(pvalues, weights,
-                                            force_floating=True, xp=xp)
+    pvalues, weights = xp_promote(pvalues, weights, broadcast=True,
+                                  force_floating=True, xp=xp)
 
     if xp_size(pvalues) == 0:
         # This is really only needed for *testing* _axis_nan_policy decorator
@@ -10914,7 +10894,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
                          or (weights is not None and xp_size(weights) == 0)):
         return gmean(x, weights=weights, axis=axis, keepdims=keepdims)
 
-    x, weights = xp_broadcast_promote(x, weights, force_floating=True)
+    x, weights = xp_promote(x, weights, broadcast=True, force_floating=True, xp=xp)
     if weights is not None:
         x, weights = _share_masks(x, weights, xp=xp)
 
@@ -10938,11 +10918,12 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
     # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
     # Test nan_policy before the implicit call to bool(contains_nan)
     # to avoid raising on lazy xps on the default nan_policy='propagate'
-    if nan_policy == 'omit' and contains_nan:
+    lazy = is_lazy_array(x)
+    if nan_policy == 'omit' and (lazy or contains_nan):
         nan_mask = xp.isnan(x)
         if weights is not None:
             nan_mask |= xp.isnan(weights)
-        if xp.any(xp.all(nan_mask, axis=axis)):
+        if not lazy and xp.any(xp.all(nan_mask, axis=axis)):
             message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
                        else too_small_nd_omit)
             warnings.warn(message, SmallSampleWarning, stacklevel=2)
