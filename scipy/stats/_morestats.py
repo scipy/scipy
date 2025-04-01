@@ -1086,12 +1086,12 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     -----
     The Box-Cox transform is given by:
     
-    ..math::
+    .. math::
 
         y =
         \begin{cases}
-        \frac{x^\lambda - 1}{\lambda}, &\text{for} \lambda \neq 0
-        \log(x),                       &\text{for} \lambda = 0
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
         \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
@@ -1552,16 +1552,16 @@ def yeojohnson(x, lmbda=None):
         y =
         \begin{cases}
         \frac{(x + 1)^\lambda - 1}{\lambda},
-        &\text{for} x \geq 0, \lambda \neq 0
+        &\text{for } x \geq 0, \lambda \neq 0
         \\
         \log(x + 1),
-        &\text{for} x \geq 0, \lambda = 0
+        &\text{for } x \geq 0, \lambda = 0
         \\
         -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
-        &\text{for} x < 0, \lambda \neq 2
+        &\text{for } x < 0, \lambda \neq 2
         \\
         -\log(-x + 1),
-        &\text{for} x < 0, \lambda = 2
+        &\text{for } x < 0, \lambda = 2
         \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
