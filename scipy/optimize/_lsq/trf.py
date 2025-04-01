@@ -373,7 +373,7 @@ def trf_bounds(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev,
 
             cost = cost_new
 
-            J = jac(x, f)
+            J = jac(x)
             njev += 1
 
             if loss_function is not None:
@@ -548,7 +548,7 @@ def trf_no_bounds(fun, jac, x0, f0, J0, ftol, xtol, gtol, max_nfev,
 
             cost = cost_new
 
-            J = jac(x, f)
+            J = jac(x)
             njev += 1
 
             if loss_function is not None:
