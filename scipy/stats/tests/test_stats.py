@@ -84,13 +84,6 @@ lazy_xp_function(stats.tmin, static_argnames=("inclusive", "axis"))
 lazy_xp_function(stats.tmax, static_argnames=("inclusive", "axis"))
 
 
-def eager_warns(x, warning_type, match=None):
-    """pytest.warns context manager, but only if x is not a lazy array."""
-    if is_lazy_array(x):
-        return contextlib.nullcontext()
-    return pytest.warns(warning_type, match=match)
-
-
 class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
@@ -3050,7 +3043,11 @@ class TestZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
@@ -3061,12 +3058,16 @@ class TestZscore:
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:        
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -3075,7 +3076,7 @@ class TestZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with eager_warns(y, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
@@ -3086,14 +3087,17 @@ class TestZscore:
                         [10.0, 12.0, xp.nan, 10.0]])
         s = (3/2)**0.5
         s2 = 2**0.5
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -3170,7 +3174,11 @@ class TestZscore:
         scores = xp.arange(3)
         compare = xp.ones(3)
         ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        with eager_warns(scores, RuntimeWarning, match="Precision loss occurred..."):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(scores)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
@@ -3724,17 +3732,25 @@ class TestSkew(SkewKurtosisTest):
     def test_skew_constant_value(self, xp):
         # Skewness of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(a)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
 
-            # # similarly, from gh-11086:
-            a = xp.asarray([14.3]*7)
+        # # similarly, from gh-11086:
+        a = xp.asarray([14.3]*7)
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
-            a = 1. + xp.arange(-3., 4)*1e-16
+        a = 1. + xp.arange(-3., 4)*1e-16
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
     @skip_xp_backends(eager_only=True)
@@ -3836,10 +3852,17 @@ class TestKurtosis(SkewKurtosisTest):
     def test_kurtosis_constant_value(self, xp):
         # Kurtosis of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(a)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a, fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -6087,8 +6110,11 @@ class TestTTestInd:
         # test zero division problem
         x = xp.zeros(3)
         y = xp.ones(3)
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred"):
+        with warn_ctx:
             t, p = stats.ttest_ind(x, y, equal_var=False)
 
         xp_assert_equal(t, xp.asarray(-xp.inf))
