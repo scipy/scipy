@@ -565,8 +565,7 @@ def xp_result_type(*args, force_floating=False, xp):
         return xp.result_type(*float_args, xp_default_dtype(xp))
 
 
-def xp_promote(*args, broadcast=False, ensure_writeable=False,
-               force_floating=False, xp):
+def xp_promote(*args, broadcast=False, force_floating=False, xp):
     """
     Promotes elements of *args to result dtype, ignoring `None`s.
     Includes options for forcing promotion to floating point and
@@ -619,9 +618,10 @@ def xp_promote(*args, broadcast=False, ensure_writeable=False,
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ensure_writeable:
-            arg = xp.astype(arg, dtype, copy=True)
+        # This is much faster than xp.astype(arg, dtype, copy=False)
+        if arg.dtype != dtype:
+            arg = xp.astype(arg, dtype)
+
         out.append(arg)
 
     return out[0] if len(out)==1 else tuple(out)
