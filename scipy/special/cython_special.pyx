@@ -3122,7 +3122,7 @@ cpdef df_number_t fdtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcept 
         return NAN
 
 cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtr"""
+    """See the documentation for scipy.special.fdtrc"""
     if df_number_t is float:
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_sf_float)(x0, x1, x2)
     elif df_number_t is double:
@@ -3131,7 +3131,7 @@ cpdef df_number_t fdtrc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept
         return NAN
 
 cpdef df_number_t fdtri(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
-    """See the documentation for scipy.special.fdtr"""
+    """See the documentation for scipy.special.fdtri"""
     if df_number_t is float:
         return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_f_ppf_float)(x0, x1, x2)
     elif df_number_t is double:
