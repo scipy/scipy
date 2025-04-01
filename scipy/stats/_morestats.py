@@ -900,12 +900,13 @@ def boxcox_llf(lmb, data):
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i^N(\log(x_i)) -
-              \frac{N}{2} \log(\sum_i^N (y_i - \bar{y})^2 / N),
+        llf = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
-    This corresponds to the profile log- likelihood of the original data ``x`` with
-    some constant terms dropped.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -1544,7 +1545,9 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
+
+    .. math::
 
         y =
         \begin{cases}
@@ -1674,10 +1677,11 @@ def yeojohnson_llf(lmb, data):
         llf = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`N` is the number of data points ``x`` and :math:`\hat{\sigma}^2` is
-    the estimated variance of the Yeo-Johnson transformed input data ``x``.
-    This corresponds to the profile log- likelihood of the original data ``x`` with
-    some constant terms dropped.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
