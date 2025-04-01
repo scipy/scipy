@@ -2580,13 +2580,9 @@ cdef class Rotation:
             raise ValueError("Expected input of shape (3,) or (P, 3), "
                              "got {}.".format(vectors.shape))
 
-        n_vectors = vectors.shape[0]
-        n_rotations = 1 if self.single else len(self)
-
-        single_vector = False
-        if vectors.ndim == 1:
-            n_vectors = 1
-            single_vector = True
+        cdef bint single_vector = vectors.ndim == 1
+        cdef Py_ssize_t n_vectors = 1 if single_vector else len(vectors)
+        cdef Py_ssize_t n_rotations = 1 if self.single else len(self)
 
         if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
             raise ValueError("Expected equal numbers of rotations and vectors "
@@ -2594,7 +2590,7 @@ cdef class Rotation:
                              "{} rotations and {} vectors.".format(
                                 n_rotations, n_vectors))
 
-        matrix = self.as_matrix()
+        cdef np.ndarray matrix = self.as_matrix()
 
         if inverse:
             matrix = np.swapaxes(matrix, -1, -2)
