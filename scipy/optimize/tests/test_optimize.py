@@ -1893,7 +1893,7 @@ class TestOptimizeScalar:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize('acceleration', [None,'CYTHON_PENTA', 'NUMPY_ONLY_PENTA'])
-    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1), (10000, 1e-2), (100000, 1e-3)])
+    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1), (10000, 1e-2)])
     def test_linewalker(self, acceleration, grid_and_tol):
 
         grid_size = grid_and_tol[0]

@@ -4353,41 +4353,40 @@ def linewalker(func, brack, **options):
     ...     return (x-1)**2
 
     >>> res = linewalker(f, brack=(-1, 2))
-
-    >>> print(f"\
-    ...     {res['fun'] = },\n\
-    ...     {res['x'] = },\n\
-    ...     {res['nit'] = },\n\
-    ...     {res['nfev'] = },\n\
-    ...     {res['success'] = },\n\
-    ...     {res['message'] = }\n\
-    ...     {res['f_min_evaluated'] = },\n\
-    ...     {res['minimizer_evaluated'] = },\n\
-    ...     {res['num_major_iterations'] = },\n\
-    ...     {res['num_function_evaluations'] = },\n\
-    ...     {res['f_min_predicted'] = },\n\
-    ...     {res['ix_arg_min_evaluated'] = },\n\
-    ...     {res['grid_size'] = },\n\
-    ...     res['fit'] len, mean = {len(res['fit'])}, {np.mean(res['fit'])},\n\
-    ...     {res['max_fit'] = },\n\
-    ...     {res['min_fit'] = },\n\
-    ...     {res['range_fit'] = },\n\
-    ...     {res['ix_arg_max_fit'] = },\n\
-    ...     {res['ix_arg_min_fit'] = },\n\
-    ...     res['ix'] len, mean = {len(res['ix'])}, {np.mean(res['ix'])},\n\
-    ...     res['ix_sorted'] len, mean = {len(res['ix_sorted'])}, 
-    ...         {np.mean(res['ix_sorted'])},\n\
-    ...     res['x_coord'] len, mean = {len(res['x_coord'])},\
-    ...         {np.mean(res['x_coord'])},\n\
-    ...     res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}\
-    ... ")
+    >>> print(f"{res['fun'] = }")
+    >>> print(f"{res['x'] = }")
+    >>> print(f"{res['nit'] = }")
+    >>> print(f"{res['nfev'] = }")
+    >>> print(f"{res['success'] = }")
+    >>> print(f"{res['message'] = }")
+    >>> print(f"{res['f_min_evaluated'] = }")
+    >>> print(f"{res['minimizer_evaluated'] = }")
+    >>> print(f"{res['num_major_iterations'] = }")
+    >>> print(f"{res['num_function_evaluations'] = }")
+    >>> print(f"{res['f_min_predicted'] = }")
+    >>> print(f"{res['ix_arg_min_evaluated'] = }")
+    >>> print(f"{res['grid_size'] = }")
+    >>> print(f"res['fit'] len, mean = {len(res['fit'])}, {np.mean(res['fit'])}")
+    >>> print(f"{res['max_fit'] = }")
+    >>> print(f"{res['min_fit'] = }")
+    >>> print(f"{res['range_fit'] = }")
+    >>> print(f"{res['ix_arg_max_fit'] = }")
+    >>> print(f"{res['ix_arg_min_fit'] = }")
+    >>> print(f"res['ix'] len, mean = {len(res['ix'])}, {np.mean(res['ix'])}")
+    >>> a = len(res['ix_sorted'])
+    >>> b = np.mean(res['ix_sorted'])
+    >>> print(f"res['ix_sorted'] len, mean = {a}, {b}")
+    >>> a = len(res['x_coord'])
+    >>> b = np.mean(res['x_coord'])
+    >>> print(f"res['x_coord'] len, mean = {a}, {b}")
+    >>> print(f"res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}")
 
     res['fun'] = np.float64(0.0)
     res['x'] = np.float64(1.0)
     res['nit'] = 19
     res['nfev'] = 30
     res['success'] = True
-    res['message'] = 'success
+    res['message'] = 'success'
     res['f_min_evaluated'] = np.float64(0.0)
     res['minimizer_evaluated'] = np.float64(1.0)
     res['num_major_iterations'] = 19
