@@ -28,7 +28,7 @@ def test_wrap_radians(xp):
                     0, 1e-300, 1, math.pi, math.pi+1])
     ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, -math.pi+1])
-    res = _wrap_radians(x, xp)
+    res = _wrap_radians(x, xp=xp)
     xp_assert_close(res, ref, atol=0)
 
 
@@ -291,6 +291,15 @@ class TestLogSumExp:
         res = logsumexp(xp.asarray([x, y]))
         ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
         xp_assert_equal(res, ref)
+
+    def test_no_writeback(self, xp):
+        """Test that logsumexp doesn't accidentally write back to its parameters."""
+        a = xp.asarray([5., 4.])
+        b = xp.asarray([3., 2.])
+        logsumexp(a)
+        logsumexp(a, b=b)
+        xp_assert_equal(a, xp.asarray([5., 4.]))
+        xp_assert_equal(b, xp.asarray([3., 2.]))
 
     @pytest.mark.parametrize("x", [1.0, 1.0j, []])
     def test_device(self, x, xp, nondefault_device):
