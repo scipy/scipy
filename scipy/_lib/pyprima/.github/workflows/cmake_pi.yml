@@ -1,0 +1,119 @@
+name: CMake build on Raspberry Pi
+
+on:
+  push:
+  schedule:
+    - cron: '0 16 * * 6'  # 16h Saturday
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+      stress-test:
+        description: Stress Test (Optional, true or false)
+        required: false
+      verbose-makefile:
+        description: Verbose Makefile (Optional, true or false)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0} , {1}, {2}', inputs.git-ref, inputs.stress-test, inputs.verbose-makefile) || '' }}
+
+
+permissions:
+  contents: read
+
+jobs:
+
+  cmake:
+    runs-on: [self-hosted, cmake_pi]
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - {fc: gfortran, fflags: '-Wall -Wextra -Wpedantic -Werror -pedantic -fimplicit-none -fcheck=all -fstack-check -Wno-function-elimination'}
+          # Flang family with -Mchkptr would fail. See https://forums.developer.nvidia.com/t/bug-in-nvfortran-with-mchkptr-for-unallocated-optional-arguments/223220
+          # As of 20240220, flang and armflang with -Mbounds would fail due to the bug at https://github.com/flang-compiler/flang/issues/1238
+          - {fc: nvfortran, fflags: '-C -Wall -Wextra -Minform=warn -Mstandard -Mbounds -Mchkstk'}
+          - {fc: flang, fflags: '-pedantic -Weverything -Wall -Wextra -Minform=warn -Mstandard'}
+          - {fc: armflang, fflags: '-pedantic -Weverything -Wall -Wextra -Minform=warn -Mstandard'}
+
+    steps:
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Build and test
+        shell: bash
+        run: |
+          export CC=gcc
+          CFLAGS="-Wall -Wextra -Wpedantic -Werror"
+
+          export FC="${{ matrix.toolchain.fc }}"
+          if [[ $FC == "armflang" ]] ; then
+              export FC=$(find /opt/arm/ -name 'armflang' | sort | tail -n 1)
+          fi
+          FFLAGS="${{ matrix.toolchain.fflags }}"
+
+          $FC --version
+          $CC --version
+          cmake --version
+
+          VERBOSE_MAKEFILE=OFF
+          if [[ "${{ github.event.inputs.verbose-makefile }}" == "true" ]] ; then
+              VERBOSE_MAKEFILE=ON
+          fi
+
+          cmake -G Ninja -DCMAKE_VERBOSE_MAKEFILE:BOOL=$VERBOSE_MAKEFILE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. -LAH -DCMAKE_C_FLAGS="${CFLAGS}" -DCMAKE_Fortran_FLAGS="${FFLAGS}" .
+          cmake --build . --target install
+          cmake --build . --target tests
+
+          # As of 20240316, CMake test fails on cobyla with the Classic flang, AOCC flang, and
+          # nvfortran. See https://github.com/libprima/prima/issues/165
+          if [[ $FC == 'gfortran' ]] ; then
+              ctest --output-on-failure -V -E "stress"
+          else
+              ctest --output-on-failure -V -E "stress|cobyla"
+          fi
+
+      - name: Stress test
+        if: ${{ github.event_name == 'schedule' || github.event.inputs.stress-test == 'true' }}
+        shell: bash
+        run: |
+          if [[ $FC == 'gfortran' ]] ; then
+              ctest --output-on-failure -V -R stress
+          else
+              ctest --output-on-failure -V -R stress -E cobyla
+          fi
+
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: cmake
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout_big_test ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

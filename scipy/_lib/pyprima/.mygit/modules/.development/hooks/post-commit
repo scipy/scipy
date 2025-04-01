@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Auto push after commit
+###################################################################################################
+printf "\nAuto push ...\n\n"
+git push origin main
+#git push origin dev_zaikun
+###################################################################################################
+
+## Auto push to gitpersonal,
+####################################################################################################
+#GIT_PERSONAL="$HOME/Bureau/gitpersonal"/
+#MESSAGE=$(git log -n 1 HEAD --format=format:%s%n%b)  # The message of the commit triggering this hook
+#CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+#GIT_ROOT="$(realpath "$CURRENT_DIR/../../")"
+#REPO_NAME="$(basename "$GIT_ROOT")"
+#PSW="$REPO_NAME"2021
+#ZIP_NAME="$REPO_NAME".zip
+#TIME=$(date +%s)
+
+#TMP_DIR=/tmp/"$REPO_NAME"_"$TIME"
+#mkdir -p "$TMP_DIR" || exit 1
+#cd "$TMP_DIR" || exit 1
+
+#printf "\n\nAuto push to gitpersonal ...\n\n"
+
+#git clone "$GIT_ROOT"
+#rm -rf "$REPO_NAME"/.git*
+#zip -e -r  -P  "$PSW" "$ZIP_NAME" "$REPO_NAME/"
+#rm -rf "$REPO_NAME"
+
+#mv "$ZIP_NAME" "$GIT_PERSONAL"/
+
+#cd "$GIT_PERSONAL" && git add * && git add .github/* && git commit -m "$MESSAGE" && git push origin master
+
+####################################################################################################

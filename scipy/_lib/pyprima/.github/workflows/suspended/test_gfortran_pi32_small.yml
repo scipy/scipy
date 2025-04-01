@@ -1,0 +1,76 @@
+name: Test gfortran on Raspberry Pi32, small
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 16 1-31/2 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+
+  test:
+    name: Run gfortran tests
+    runs-on: [self-hosted, ARM, pi32]
+    strategy:
+      fail-fast: false
+      matrix:
+        ikind: [i2, i8]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+        fflags: [-O1, -O2, -O3, -g, -fast]
+        testdim: [small]
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        shell: bash
+        run: bash .github/scripts/misc_setup
+
+      - name: Conduct the test
+        shell: bash
+        run: |
+            #cd "$ROOT_DIR"/fortran/${{ matrix.solver }} && bash ./flint -g && bash ./mlint -g  # On Raspberry Pi, perform lintering only for small tests of gfortran
+            export FFLAGS=${{ matrix.fflags }}
+            export TESTDIM=${{ matrix.testdim }}
+            cd "$ROOT_DIR"/fortran/tests && make gtest_${{ matrix.ikind }}_r4_d1_tst_c.${{ matrix.solver }} && make gtest_${{ matrix.ikind }}_r4_d1_tst.${{ matrix.solver }}
+            cd "$ROOT_DIR"/fortran/tests && make gtest_${{ matrix.ikind }}_r8_d1_tst_c.${{ matrix.solver }} && make gtest_${{ matrix.ikind }}_r8_d1_tst.${{ matrix.solver }}
+            export FS=18
+            cd "$ROOT_DIR"/fortran/examples/${{ matrix.solver }} && make gtest
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.0.0
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        # Note that `$TEST_DIR` does not work on Windows, where its equivalent is `$env:TEST_DIR`.
+        # In the following, we enquire `$TEST_DIR` by using the `env` context, which is platform independent.
+        with:
+          name: ${{ matrix.solver }}-${{ matrix.ikind }}-${{ matrix.fflags }}-${{ matrix.testdim }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        shell: bash  # Important; otherwise, `rm -rf` will not work on Windows.
+        run: rm -rf ${{ env.TEST_DIR }}

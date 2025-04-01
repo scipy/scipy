@@ -1,0 +1,84 @@
+1. Check and complete the pre/post conditions, particularly the finiteness of XPT, XOPT, STEP, X,
+   etc.
+
+2. Profile the Fortran code to find which subroutine costs the most time.
+   We can use gprof and gprof2dot to to this:
+   https://www.thegeekstuff.com/2012/08/gprof-tutorial/
+   https://github.com/jrfonseca/gprof2dot
+   $ gcc -pg main.f90
+   $ gprof a.out gmon.out | gprof2dot | dot -Tpng -o output.png
+
+3. 20230108: See TODO_mat
+
+4. What about solving the TR subproblem of COBYLA using a composite step approach? Vardi or
+   Byrd-Omojokun?
+
+5. Check the definition and update of RESCON in LINCOA, in UPDATE/UPDATERES.
+
+6. Unify the UPDATEQ, UPDATEXF(, and UPDATEH) of BOBYQA/LINCOA/NEWUOA.
+
+7. Implement a subroutine that evaluates the functions, updates NF, updates history/filter, and
+   prints messages?
+
+9. Test whether the scaling threshold in the trust-region subproblem solvers can be improved.
+
+10. For NEWUOA, BOBYQA, LINCOA, implement the trust-redundant subroutine solvers using hmul.
+Update 20230301: This is not doable (cleanly) because we scale the data before starting the TR
+calculation.
+
+11. What about invoking RESCUE in the following way?
+
+After a trust-region step, if the denominator is bad, set TO_RESCUE = .TRUE., but perform the
+update as normal (if the denominator is 0 or NaN occurs, skip the update of H in UPDATEH).
+Set IMPROVE_GEO and REDUCE_RHO to .FALSE. if TO_RESCUE is .TRUE. After a geometry step, set
+TO_RESCUE to .TRUE. if the denominator is bad, but perform the update as normal. If TO_RESCUE is
+.TRUE., invoke RESCUE, which can be regarded as a post-processing.
+
+12. Output more history information in the way of outputting fhist, xhist, etc. This can include:
+statehist: an array of length NF, each element indicating the state of the solver when the
+corresponding function evaluation is invoked: 0 for initialization, 1 for trust region step, 2 for
+geometry step, 3 for rescue.
+radhist: an array of length NF, each element being the radius used by the solver for producing the X
+where the corresponding function evaluation is invoked. Note that trust region step and geometry
+step have different radii.
+rathist: an array of length NF, each element being the ratio of the actual reduction to the
+predicted reduction by the model for the step that leads to the corresponding function evaluation
+ghist: an array of size N-by-NF, each column being the model gradient at the trust region center
+when the corresponding function evaluation is invoked
+jachist (only for COBYLA): similar to ghist, but for the Jacobian matrix of the nonlinear constraints.
+N.B.: Similar to fhist, we always output statehist, radhist, and rathist, since they are 1D arrays.
+In addition, we may use statehist and radhist to improve fmsg, invoking it uniformly by
+```
+    call fmsg(solver, statehist(nf), iprint, nf, radhist(nf), f, x, [optional inputs])
+```
+To this end, we will need to modify fmsg so that it can translate the state index (0, 1, 2, 3) to
+the state name as mentioned above.
+
+13. Try scaling the matrices H and PQ to avoid huge or tiny values.
+
+14. Instead of requiring that each component of X0 is either on the boundary or is away from the
+boundary by at least RHOBEG, we require that each component is away from one boundary by at least
+RHOBEG or away from the other boundary by at least 2*RHOBEG. In other words,
+
+(XU - X0 >= RHOBEG .OR. X0 - XL >= 2*RHOBEG) .AND. (X0 - XL >= RHOBEG .OR. XU - X0 >= 2*RHOBEG) .AND.
+
+X0 - XL >= 2*RHOBEG .OR. XU - X0 >= 2*RHOBEG .OR. X0 - XL >= 2*RHOBEG .AND. XU - X0 >= 2*RHOBEG
+
+
+When HONOUR_X0 is TRUE, instead of setting
+
+RHOBEG = MINVAL([X-XL, XU-X]),
+
+use
+
+RHOBEG = MINVAL([MAX(X-XL, (XU-X) / 2), MAX(XU-X, (X-XL) / 2)]).
+
+15. Fortran test: implement semi_circle and semi_ellipse to test problems with both linear and
+nonlinear constraints, to see whether the SEGFAULT of AOCC Flang on big problems is due to the
+presence of both linear and nonlinear constraints.
+
+16. Fix profiling of various NPT and compiler options.
+
+17. Fix CVAL in LINCOA.
+
+18. Recalculate the model if non-finite values appear.

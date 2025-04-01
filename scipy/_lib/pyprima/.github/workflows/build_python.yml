@@ -1,0 +1,110 @@
+name: Build Python wheels
+
+on:
+  # Trigger the workflow on push or pull request
+  push:
+  pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  #schedule:
+  #  - cron: '0 16 * * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # As of 20240501, macos-12/13 are AMD64, and macOS-14 is ARM64.
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, windows-2019, windows-2022, macos-12, macos-13, macos-14]
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          submodules: recursive
+          fetch-depth: 0  # Get tags for use with git describe
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          submodules: recursive
+          fetch-depth: 0  # Get tags for use with git describe
+
+      - name: Checkout pybind11 submodule
+        run: git submodule update --init python/pybind11
+
+      - name: Set the MACOSX_DEPLOYMENT_TARGET
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d'.' -f 1)
+          echo "MACOSX_DEPLOYMENT_TARGET is $MACOSX_DEPLOYMENT_TARGET"
+          echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET" >> $GITHUB_ENV
+
+
+      - name: Set up Fortran
+        uses: fortran-lang/setup-fortran@main
+        if: ${{ runner.os == 'macOS' }}
+        with:
+          compiler: gcc
+          version: 12
+
+      # Copied from https://github.com/scipy/scipy/blob/main/.github/workflows/wheels.yml
+      # For rtools, see https://github.com/r-windows/rtools-installer/releases, which has been
+      # archived since 20231027.
+      - name: win_amd64 - install rtools
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          # mingw-w64
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+
+      - name: Check the versions of tools
+        shell: bash
+        run: |
+          which cmake && cmake --version
+          which gcc && gcc --version
+          which gfortran && gfortran --version
+          if [[ $(uname) == "Darwin" ]]; then
+              xcodebuild -version
+          fi
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.20.0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./prima_htmlcov
+
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz

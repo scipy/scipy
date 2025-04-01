@@ -1,0 +1,118 @@
+name: Test ifort
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 18 1-31/2 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+
+  test:
+    name: Run ifort tests
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows does not work. On Windows, the options for ifort/ifx starts with "/" instead of "-".
+        os: [ubuntu-latest, macos-12, macos-13]
+        ikind: [i2, i8]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+        fflags: [-O1, -O2, -O3, -g, -fast]
+        testdim: [small, big]
+        exclude:
+          - os: macos-12
+            ikind: i8
+          - os: macos-13
+            ikind: i8
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Install Intel oneAPI on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: bash .github/scripts/install_oneapi_linux.sh
+
+      - name: Install Intel oneAPI on macOS
+        if: startsWith(matrix.os, 'macos')
+        run: bash .github/scripts/install_oneapi_macos.sh
+
+      - name: Miscellaneous setup
+        shell: bash
+        run: bash .github/scripts/misc_setup
+
+      - name: Revise cobyla/trustregion.f90 to see what is wrong with ubuntu-latest, i8, cobyla, -O3, small
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.solver == 'cobyla' && matrix.fflags == '-O3' && matrix.testdim == 'small' }}
+        shell: bash
+        run: |
+          cd fortran/cobyla || exit 42
+          sed -i 's|\(vmultc = cviol + b\)|\1;write(\*,\*) 253, vmultc|' trustregion.f90
+          sed -i "s|\(call assert(all(vmultc >= 0), 'VMULTC >= 0', srname)\)|write(\*,\*) 304, vmultc;\1|" trustregion.f90
+          sed -i 's|\(vmultc(1:nact) = max(ZERO, vmultc(1:nact) - frac \* vmultd(1:nact))\)|\1;write(\*,\*) 367, vmultc|' trustregion.f90
+          sed -i 's|\(vmultc(\[icon, nact\]) = \[ZERO, frac\]\)|\1;write(\*,\*) 377, vmultc|' trustregion.f90
+          sed -i 's|\(vmultc = max(ZERO, (ONE - frac) \* vmultc + frac \* vmultd)\)|\1;write(\*,\*) 557, vmultc|' trustregion.f90
+          cat trustregion.f90
+
+      - name: Conduct the test
+        shell: bash
+        run: |
+          cd "$ROOT_DIR"/fortran/${{ matrix.solver }} && bash ./flint --all && bash ./mlint --all
+          export FFLAGS=${{ matrix.fflags }}
+          export TESTDIM=${{ matrix.testdim }}
+          cd "$ROOT_DIR"/fortran/tests && make itest_${{ matrix.ikind }}.${{ matrix.solver }}
+          cd "$ROOT_DIR"/fortran/examples/${{ matrix.solver }}
+          export EXAMPLE_NUM=1 && make clean && make itest
+          export EXAMPLE_NUM=2 && make clean && make itest
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: ${{ matrix.os }}-${{ matrix.solver }}-${{ matrix.ikind }}-${{ matrix.fflags }}-${{ matrix.testdim }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout_big_test ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

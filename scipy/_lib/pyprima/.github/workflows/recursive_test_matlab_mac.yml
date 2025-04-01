@@ -1,0 +1,71 @@
+name: Recursive test, MATLAB, macOS ARM64
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 16 1-31/3 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+
+env:
+  MATLAB: /Applications/MATLAB_R2023b.app/bin/matlab
+
+jobs:
+  test:
+    name: Recursive test of PRIMA
+    runs-on: [self-hosted, macOS, ARM64]
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        solver: [uobyqa, newuoa, bobyqa, lincoa, cobyla]
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+          submodules: recursive
+
+      - name: Conduct the test  # We do not use matlab-actions/run-command, which is not supported on macOS ARM64 as of 20240119
+        run: ${{ env.MATLAB }} -nojvm -batch "ver; root_dir = pwd(); cd(fullfile(root_dir, 'matlab/tests')); recursive('${{ matrix.solver }}'); copy_crash_dump_files(root_dir);"
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: ${{ matrix.solver }}
+          path: |
+            matlab_crash_dump*
+
+
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

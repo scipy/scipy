@@ -1,0 +1,7 @@
+This folder contains scripts and utilities to run performance profiles of the PRIMA Python bindings against the PRIMA MATLAB bindings.
+
+In general we expect the performance profiles to show a straight line for both the output based and history based profiles since the underlying code is the same. However since there are bound to be some differences in how MATLAB and Python handle floating point arithmetic we expect to see a few cases where one might perform slightly "better" than the other.
+
+In order to use this you will need Python and MATLAB and in the MATLAB GUI you should have run setup.m from the root of the repo. If that has been completed you should be able to run the profiles with simply `python profiles.py`. By default no profiles will be run, so you need to specify which algorithm you'd like to run profiles for using any combination of `-b` for BOBYQA, `-c` for COBYLA, `-l` for LINCOA, `-n` for NEWUOA, and `-u` for UOBYQA. You can also use `-j#` to change the number of jobs used to run the problems. For example to run both UOBYQA and NEWUOA with 4 jobs, you would run `python profiles.py -nuj4`.
+
+It is not necessary to have a MATLAB window open to run the profiles. Each job will create an instance of the MATLAB engine for Python. Please note that this instance takes up about 500MB of memory so you may want to limit the number of jobs accordingly.

@@ -1,0 +1,30 @@
+equipez/PRIMA:
+lint.yml:    - cron: '0 17 * * *'
+test_nagfor.yml:    - cron: '0 19 * * *'
+test_absoft.yml:    - cron: '0 20 * * *'
+verify_small.yml:    - cron: '0 5 * * *', push
+verify_big.yml:    - cron: '0 21 * * *', push
+verify_large.yml:    - cron: '0 13 * * *', push
+profile_cobyla_small.yml:   - push
+profile_uobyqa_small.yml:   - push
+profile_newuoa_small.yml:   - push
+profile_bobyqa_small.yml:   - push
+profile_lincoa_small.yml:   - push
+
+primalib/PRIMA:
+profile_all.yml:    - cron: '0 16 * * *'
+verify_archiva.yml:    - cron: '0 17 * * *'
+test_matlab.yml:    - cron: '0 1, * * *', push
+test_g95.yml:    - cron: '0 5 * * *'
+test_sunf95.yml:    - cron: '0 7 * * *'
+test_aflang.yml:    - cron: '0 4 1-31/3 * *'
+test_flang.yml:    - cron: '0 4 2-31/3 * *'
+test_nvfortran.yml:    - cron: '0 4 3-31/3 * *'
+
+s-prima/PRIMA:
+test_gfortran_gO3.yml:    - cron: '0 16 1-31/4 * *'
+test_gfortran_O12.yml:    - cron: '0 16 2-31/4 * *'
+test_gfortran_big.yml:    - cron: '0 16 3-31/4 * *'
+test_gfortran_fast.yml:    - cron: '0 16 4-31/4 * *'
+test_ifort.yml:    - cron: '0 4 1-31/2 * *'
+test_ifx.yml:    - cron: '0 4 2-31/2 * *'

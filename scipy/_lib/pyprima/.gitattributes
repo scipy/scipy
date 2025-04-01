@@ -1,0 +1,75 @@
+# Configuration files
+*.ini text
+*.cfg text
+./MANIFEST.in text
+
+# MATLAB sources
+*.m     text diff=matlab
+
+# VIM sources
+*.vim text eol=lf
+.vimrc text eol=lf
+.gvimrc text eol=lf
+
+# Python sources
+*.py    text diff=python
+*.pxd   text diff=python
+*.pyx   text diff=python
+*.pyi   text diff=python
+
+# C/C++ sources
+*.c     text diff=c
+*.h     text diff=c
+*.cc    text diff=cpp
+*.cxx   text diff=cpp
+*.cpp   text diff=cpp
+*.hpp   text diff=cpp
+*.hh    text diff=cpp
+
+# Fortran sources
+*.f     text diff=fortran
+*.for   text diff=fortran
+*.f90   text diff=fortran
+*.f95   text diff=fortran
+*.f03   text diff=fortran
+
+# Documents
+*.md    text diff=markdown
+*.txt   text
+*.rst   text
+*.pdf   binary
+*.css   text diff=css
+*.html  text diff=html
+
+# Graphics
+*.png   binary
+*.ico   binary
+*.dia   binary
+*.gif   binary
+*.odg   binary
+*.svg   binary
+*.fig   text
+*.eps   text
+
+# Scripts
+*.sh    text eol=lf
+*.sed   text
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Serialisation
+*.json  text
+*.toml  text
+*.xml   text
+*.yaml  text
+*.yml   text
+
+# Data files
+*.csv   text
+*.pkl   binary
+*.fits  binary
+*.npy   binary
+*.npz   binary
+
+# Version files for git archive
+.git-archival.txt export-subst
