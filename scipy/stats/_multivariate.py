@@ -3859,6 +3859,7 @@ class random_correlation_gen(multi_rv_generic):
     r"""A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
+    The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
@@ -3871,7 +3872,8 @@ class random_correlation_gen(multi_rv_generic):
     Parameters
     ----------
     eigs : 1d ndarray
-        Eigenvalues of correlation matrix
+        Eigenvalues of correlation matrix. All eigenvalues need to be non-negative and
+        need to sum to the number of eigenvalues.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
