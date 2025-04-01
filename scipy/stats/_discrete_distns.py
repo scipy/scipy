@@ -6,7 +6,8 @@ from functools import partial
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
-from scipy._lib._util import _lazywhere, rng_integers
+from scipy._lib._util import rng_integers
+import scipy._lib.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -460,18 +461,18 @@ class betanbinom_gen(rv_discrete):
         # BetaNegativeBinomialDistribution[a, b, n]
         def mean(n, a, b):
             return n * b / (a - 1.)
-        mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
+        mu = xpx.apply_where(a > 1, (n, a, b), mean, fill_value=np.inf)
         def var(n, a, b):
             return (n * b * (n + a - 1.) * (a + b - 1.)
                     / ((a - 2.) * (a - 1.)**2.))
-        var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
+        var = xpx.apply_where(a > 2, (n, a, b), var, fill_value=np.inf)
         g1, g2 = None, None
         def skew(n, a, b):
             return ((2 * n + a - 1.) * (2 * b + a - 1.)
                     / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
                     / (a - 2.)))
         if 's' in moments:
-            g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
+            g1 = xpx.apply_where(a > 3, (n, a, b), skew, fill_value=np.inf)
         def kurtosis(n, a, b):
             term = (a - 2.)
             term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
@@ -487,7 +488,7 @@ class betanbinom_gen(rv_discrete):
             # scipy's Fisher kurtosis
             return term * term_2 / denominator - 3.
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
+            g2 = xpx.apply_where(a > 4, (n, a, b), kurtosis, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -867,14 +868,13 @@ class nhypergeom_gen(rv_discrete):
         return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
-        cond = ((r == 0) & (k == 0))
-        result = _lazywhere(~cond, (k, M, n, r),
-                            lambda k, M, n, r:
-                                (-betaln(k+1, r) + betaln(k+r, 1) -
-                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
-                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
-                            fillvalue=0.0)
-        return result
+        return xpx.apply_where(
+            (r != 0) | (k != 0), (k, M, n, r),
+            lambda k, M, n, r:
+                (-betaln(k+1, r) + betaln(k+r, 1)
+                 - betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1)
+                 + betaln(n+1, M-n+1) - betaln(M+1, 1)),
+            fill_value=0.0)
 
     def _pmf(self, k, M, n, r):
         # same as the following but numerically more precise
@@ -1019,8 +1019,8 @@ class poisson_gen(rv_discrete):
         var = mu
         tmp = np.asarray(mu)
         mu_nonzero = tmp > 0
-        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
-        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
+        g1 = xpx.apply_where(mu_nonzero, tmp, lambda x: sqrt(1.0/x), fill_value=np.inf)
+        g2 = xpx.apply_where(mu_nonzero, tmp, lambda x: 1.0/x, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -1352,10 +1352,10 @@ class zipf_gen(rv_discrete):
         return Pk
 
     def _munp(self, n, a):
-        return _lazywhere(
+        return xpx.apply_where(
             a > n + 1, (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
-            np.inf)
+            fill_value=np.inf)
 
 
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
@@ -1383,8 +1383,7 @@ def _gen_harmonic_leq1(n, a):
 def _gen_harmonic(n, a):
     """Generalized harmonic number"""
     n, a = np.broadcast_arrays(n, a)
-    return _lazywhere(a > 1, (n, a),
-                      f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
+    return xpx.apply_where(a > 1, (n, a), _gen_harmonic_gt1, _gen_harmonic_leq1)
 
 
 class zipfian_gen(rv_discrete):
@@ -1512,13 +1511,13 @@ class dlaplace_gen(rv_discrete):
     def _cdf(self, x, a):
         k = floor(x)
 
-        def f(k, a):
+        def f1(k, a):
             return 1.0 - exp(-a * k) / (exp(a) + 1)
 
         def f2(k, a):
             return exp(a * (k + 1)) / (exp(a) + 1)
 
-        return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
+        return xpx.apply_where(k >= 0, (k, a), f1, f2)
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
