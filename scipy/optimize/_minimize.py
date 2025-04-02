@@ -529,7 +529,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         [ 0.09495377,  0.18996269,  0.38165151,  0.7664427,   1.53713523]
     ])
 
-
     Next, consider a minimization problem with several constraints (namely
     Example 16.4 from [5]_). The objective function is:
 
@@ -547,10 +546,42 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     The optimization problem is solved using the SLSQP method as:
 
-    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
-    ...                constraints=cons)
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
 
-    It should converge to the theoretical solution (1.4 ,1.7).
+    It should converge to the theoretical solution [1.4 ,1.7]. *SLSQP* also
+    returns the multipliers that are used in the solution of the problem. These
+    multipliers, when the problem constraints are linear can be thought as the
+    Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
+    of Lagrange multipliers to inequality-constrained optimization problems.
+
+    Notice that at solution, the first constraint is active, let's evaluate the
+    function at solution:
+
+    >>> cons[0]['fun'](res.x)
+    np.float64(1.4901224698604665e-09)
+
+    Also notice that at optimality there is a non-zero multiplier:
+
+    >>> res.multipliers
+    array([0.8, 0. , 0. ])
+
+    This can be understood as the local sensitivity of the optimal value of the
+    objective function with respect to changes in the first constraint. If we
+    tighten the constraint by a small amount ``eps``:
+
+    >>> eps = 0.01
+    ... cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+
+    we expect the optimal value of the objective function to increase by
+    approximately ``eps * res.multipliers[0]``:
+
+    >>> eps * res.multipliers[0]  # Expected change in f0
+    np.float64(0.008000000027153205)
+    >>> f0 = res.fun  # Keep track of the previous optimal value
+    ... res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
+    ... f1 = res.fun  # New optimal value
+    ... f1 - f0
+    np.float64(0.008019998807885509)
 
     """
     x0 = np.atleast_1d(np.asarray(x0))
