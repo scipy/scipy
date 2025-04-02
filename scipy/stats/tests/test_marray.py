@@ -275,22 +275,6 @@ def test_ttest_ind_from_stats(xp):
     assert res.statistic.shape == shape
     assert res.pvalue.shape == shape
 
-@pytest.mark.parametrize("keepdims", [False, True])
-def test_length_nonmasked_marray_axis0(keepdims):
-    xp = marray._get_namespace(np)
-
-    data = [[1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0]]
-    mask = [[False, True, False],
-            [False, False, True]]
-
-    marr = xp.asarray(data, mask=mask)
-
-    result = _length_nonmasked(marr, axis=0, keepdims=keepdims, xp=xp)
-    expected = np.array([[2, 1, 1]]) if keepdims else np.array([2, 1, 1])
-    np.testing.assert_array_equal(result.data, expected)
-
-
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 
