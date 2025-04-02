@@ -38,7 +38,7 @@ reported by users.)
 
    As a general guideline, try to accumulate small documentation changes (such
    as typos) instead of sending them one by one. Whenever possible, also make
-   sure to use the correct commands to :ref:`skip CI checks <skip-ci>` on
+   sure to use the correct commands to skip CI checks on
    documentation changes.
 
 Some functions/objects defined in C or Fortran extension modules have their
