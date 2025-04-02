@@ -78,14 +78,14 @@ def _assert_success(res, desired_fun=None, desired_x=None,
                         rtol=rtol, atol=atol)
 
 
-def magic_square(n):
+def magic_square(n, rng=11322891):
     """
     Generates a linear program for which integer solutions represent an
     n x n magic square; binary decision variables represent the presence
     (or absence) of an integer 1 to n^2 in each position of the square.
     """
 
-    rng = np.random.RandomState(0)
+    rng = np.random.default_rng(rng)
     M = n * (n**2 + 1) / 2
 
     numbers = np.arange(n**4) // n**2 + 1
@@ -139,7 +139,7 @@ def magic_square(n):
 
     A = np.array(np.vstack(A_list), dtype=float)
     b = np.array(b_list, dtype=float)
-    c = rng.rand(A.shape[1])
+    c = rng.random(A.shape[1])
 
     return A, b, c, numbers, M
 
