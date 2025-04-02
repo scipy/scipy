@@ -56,6 +56,8 @@ CircleCI
 * ``run_benchmarks``: verify how the changes impact performance
 * ``refguide_check``: doctests from examples and benchmarks
 
+.. _skip-ci:
+
 Skipping
 ========
 
