@@ -545,7 +545,9 @@ def test_border_values_exotic():
     assert SFT.lower_border_end == (0, 0)
 
     SFT = ShortTimeFFT(np.flip(w), hop=20, fs=1)
-    assert SFT.upper_border_begin(4) == (0, 0)
+    assert SFT.upper_border_begin(4) == (16, 1)
+    assert SFT.upper_border_begin(3) == (16, 1)
+    assert SFT.upper_border_begin(2) == (16, 1)
 
     SFT._hop = -1  # provoke unreachable line
     with pytest.raises(RuntimeError):
