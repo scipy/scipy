@@ -285,7 +285,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps & coverage report, full, py3.11/npMin & py3.11/npPre, dev.py
+    name: Prerelease deps & coverage report, full, py3.11/npMin & py3.11/npPre, dev.py, SCIPY_ARRAY_API=1
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -362,6 +362,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OPENBLAS_NUM_THREADS=1
+        export SCIPY_ARRAY_API=1
         python dev.py --no-build test --coverage -j2 --mode full -- --cov --cov-report term-missing
 
   #################################################################################
