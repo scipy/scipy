@@ -715,8 +715,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     """
     xp = array_namespace(signal)
     signal = xp_promote(signal, force_floating=True, xp=xp)
-
-    # internals of symiirorder1 are numpy-only
+    # This function uses C internals
     signal = np.asarray(signal)
 
     if abs(z1) >= 1:

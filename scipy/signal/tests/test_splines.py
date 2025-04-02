@@ -373,11 +373,8 @@ class TestSymIIR:
         s = rng.uniform(size=16).astype(dtyp)
         s = xp.asarray(s)
 
-        if is_cupy(xp):
-            # cupy returns f64 for f32 inputs
-            dtype = xp.float64
-        else:
-            dtype = getattr(xp, dtyp)
+        # cupy returns f64 for f32 inputs
+        dtype = xp.float64 if is_cupy(xp) else getattr(xp, dtyp)
 
         res = symiirorder2(s, 0.1, 0.1, precision=1e-10)
 
