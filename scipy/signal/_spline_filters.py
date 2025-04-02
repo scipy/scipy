@@ -714,6 +714,7 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
         The filtered signal.
     """
     xp = array_namespace(signal)
+    signal = xp_promote(signal, force_floating=True, xp=xp)
 
     # internals of symiirorder1 are numpy-only
     signal = np.asarray(signal)
@@ -728,9 +729,6 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     if signal.ndim == 1:
         signal = signal[None, :]
         squeeze_dim = True
-
-    if np.issubdtype(signal.dtype, np.integer):
-        signal = signal.astype(np.promote_types(signal.dtype, np.float32))
 
     y0 = symiirorder1_ic(signal, z1, precision)
 
