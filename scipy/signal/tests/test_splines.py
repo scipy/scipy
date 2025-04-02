@@ -332,10 +332,10 @@ class TestSymIIR:
     def test_symiir2(self, dtype, precision, xp):
         dtype = getattr(xp, dtype)
 
-        r = xp.asarray(0.5, dtype=dtype)
-        omega = xp.asarray(xp.pi / 3.0, dtype=dtype)
-        cs = 1 - 2 * r * xp.cos(omega) + r * r
-        a2 = 2 * r * xp.cos(omega)
+        r = 0.5
+        omega = math.pi / 3.0
+        cs = 1 - 2 * r * math.cos(omega) + r * r
+        a2 = 2 * r * math.cos(omega)
         a3 = -r * r
 
         n = 100
