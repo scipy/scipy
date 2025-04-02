@@ -124,11 +124,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     k_off = nperseg // 2
     p0 = 0  # ST.lower_border_end[1] + 1
     nn = x.shape[axis] if padded else n+k_off+1
-    p1 = ST.upper_border_begin(nn)[1]  # ST.p_max(n) + 1
-
-    # This is bad hack to pass the test test_roundtrip_boundary_extension():
-    if padded is True and nperseg - noverlap == 1:
-        p1 -= nperseg // 2 - 1  # the reasoning behind this is not clear to me
+    # number of frames akin to legacy stft computation
+    p1 = (x.shape[axis] - len(win)) // nstep + 1 # ST.upper_border_begin(nn)[1]  # ST.p_max(n) + 1
 
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
