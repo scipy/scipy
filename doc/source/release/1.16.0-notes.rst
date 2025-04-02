@@ -26,7 +26,7 @@ Highlights of this release
 
 - ``scipy.optimize`` now uses the new Python implementation from the
   `PRIMA <https://www.libprima.net>`_ package for COBYLA.
-  The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_ in the old Fortran 77 implementation.
+  The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_ in the old Fortran 77 implementation
   with a better performance on average.
 
 ************
