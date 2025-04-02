@@ -282,7 +282,8 @@ def test_length_nonmasked_marray_iterable_axis_raises():
     mask = [[False, False], [True, False]]
     marr = xp.asarray(data, mask=mask)
 
-    # This should raise because axis is a tuple, and that's not supported for MArray
+    # Axis tuples are not currently supported for MArray input.
+    # This test can be removed after support is added.
     with pytest.raises(NotImplementedError,
         match="`axis` must be an integer or None for use with `MArray`"):
         _length_nonmasked(marr, axis=(0, 1), xp=xp)
