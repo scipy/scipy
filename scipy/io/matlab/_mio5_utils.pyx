@@ -116,6 +116,8 @@ cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
 
 cdef class VarHeader5:
     cdef readonly object name
+    cdef readonly object class_name
+    cdef int object_id
     cdef readonly int mclass
     cdef readonly object dims
     cdef cnp.int32_t dims_ptr[_MAT_MAXDIMS]
@@ -593,12 +595,21 @@ cdef class VarReader5:
         header.is_global = flags_class >> 10 & 1
         header.is_complex = flags_class >> 11 & 1
         header.nzmax = nzmax
-        # all miMATRIX types except the mxOPAQUE_CLASS have dims and a
-        # name.
         if mc == mxOPAQUE_CLASS:
-            header.name = None
-            header.dims = None
+            header.name = self.read_int8_string()
+            type_system_name = self.read_int8_string()
+            if type_system_name != b'MCOS':
+                raise ValueError('Expecting Type as MATLAB Class Object System')
+            header.class_name = self.read_int8_string()            
+            obj_metadata = self.read_mi_matrix() # object metadata stored as Nx1 uint32 array
+            header.n_dims = obj_metadata[1,0]
+            if header.n_dims > _MAT_MAXDIMS:
+                raise ValueError('Too many dimensions (%d) for numpy arrays'
+                                 % header.n_dims)
+            header.dims = [obj_metadata[2 + i, 0].item() for i in range(header.n_dims)]
+            header.object_id = obj_metadata[-2, 0]
             return header
+
         header.n_dims = self.read_into_int32s(header.dims_ptr, sizeof(header.dims_ptr))
         if header.n_dims > _MAT_MAXDIMS:
             raise ValueError('Too many dimensions (%d) for numpy arrays'
@@ -984,10 +995,5 @@ cdef class VarReader5:
         # Neither res nor the return value of this function are cdef'd as
         # cnp.ndarray, because that only adds useless checks with current
         # Cython (0.23.4).
-        res = np.empty((1,), dtype=OPAQUE_DTYPE)
-        res0 = res[0]
-        res0['s0'] = self.read_int8_string()
-        res0['s1'] = self.read_int8_string()
-        res0['s2'] = self.read_int8_string()
-        res0['arr'] = self.read_mi_matrix()
-        return res
+        return None
+        #! Placeholder, replace with parsing methods from metadata
