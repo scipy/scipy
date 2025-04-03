@@ -896,14 +896,17 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -1077,10 +1080,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
+    
+    .. math::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1092,9 +1100,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1533,12 +1541,24 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for } x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for } x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for } x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for } x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
@@ -1646,15 +1666,18 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
