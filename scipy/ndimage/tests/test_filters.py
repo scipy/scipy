@@ -2789,8 +2789,9 @@ class TestVectorizedFilter:
         kwargs = dict(axes=axes, size=size, origin=origin, mode=mode)
         ref = ndimage.generic_filter(input, np.mean, **kwargs)
         kwargs['output'] = output
-        res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
-        xp_assert_close(res, xp.asarray(ref), atol=1e-15)
+        res = ndimage.vectorized_filter(xp.asarray(input.tolist()),
+                                        xp.mean, **kwargs)
+        xp_assert_close(res, xp.asarray(ref.tolist()), atol=1e-15)
         if use_output:
             xp_assert_equal(output, res)
 
@@ -2802,8 +2803,9 @@ class TestVectorizedFilter:
             ref = ndimage.generic_filter(input, np.mean, **kwargs)
             kwargs['footprint'] = xp.asarray(kwargs['footprint'])
             kwargs['output'] = output
-            res = ndimage.vectorized_filter(xp.asarray(input), xp.mean, **kwargs)
-            xp_assert_close(res, xp.asarray(ref), atol=1e-15)
+            res = ndimage.vectorized_filter(xp.asarray(input.tolist()),
+                                            xp.mean, **kwargs)
+            xp_assert_close(res, xp.asarray(ref.tolist()), atol=1e-15)
             if use_output:
                 xp_assert_equal(output, res)
 
@@ -2821,7 +2823,7 @@ class TestVectorizedFilter:
 
         if is_jax(xp) and not (batch_memory == 1):
             pytest.skip("Requires mutable array.")
-        if is_torch(xp) and dtype in {'uint8', 'uint16', 'uint32', 'uint64'}:
+        if is_torch(xp) and dtype in {'uint16', 'uint32', 'uint64'}:
             pytest.skip("Needs uint support.")
 
         dtype = getattr(xp, dtype)

@@ -426,17 +426,21 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
                           else function(input[footprint]))
 
     if is_cupy(xp):
+        # CuPy is the only GPU backend that has `pad` (with all modes)
+        # and `sliding_window_view`. An enhancement would be to use
+        # no-copy conversion to CuPy whenever the data is on the GPU.
         swv = xp.lib.stride_tricks.sliding_window_view
         pad = xp.pad
     else:
+        # Try to perform no-copy conversion to NumPy for padding and
+        # `sliding_window_view`. (If that fails, fine - for now, the only
+        # GPU backend we support is CuPy.)
         swv = np.lib.stride_tricks.sliding_window_view
         pad = np.pad
         input = np.asarray(input)
         cval = np.asarray(cval)[()] if mode == 'constant' else None
 
-    # Border the image according to `mode` and `offset`. `xp.pad` does the work,
-    # but it uses different names; adjust `mode` accordingly.
-    # Move this to input validation.
+    # Border the image according to `mode` and `offset`.
     if mode != 'valid':
         kwargs = {'constant_values': cval} if mode == 'constant' else {}
         borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
