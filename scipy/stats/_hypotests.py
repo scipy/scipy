@@ -2038,7 +2038,7 @@ def tukey_hsd(*args, equal_var=True):
         # calculated by sample variance and sample size
         # "t-solution rejects H0 if..." [7] p.5
         # the squre root of 2 is considered to calculate the stand_err
-        # "H0 was rejected" [2] p.6
+        # "H0 was rejected" [7] p.6
         stand_err = np.sqrt(
             ((vars_ / nsamples_treatments)[None].T
              + (vars_ / nsamples_treatments)) / 2)
