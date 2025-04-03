@@ -389,6 +389,10 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         Either 'real', 'complex', 'pattern', or 'integer'.
     precision : None or int, optional
         Number of digits to display for real or complex values.
+    .. deprecated:: 1.16.0
+        From SciPy 1.18.0, an exception will be thrown if the precision
+        input is outside the range of 1 to 15, because these values are
+        invalid.
     symmetry : None or str, optional
         Either 'AUTO', 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
@@ -501,6 +505,8 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
 
     if isinstance(a, list) or isinstance(a, tuple) or hasattr(a, "__array__"):
         a = np.asarray(a)
+
+    _mmio._validate_precision(precision)
 
     if symmetry == "AUTO":
         if ALWAYS_FIND_SYMMETRY or (hasattr(a, "shape") and max(a.shape) < 100):
