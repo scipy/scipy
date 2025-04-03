@@ -163,6 +163,8 @@ class TestQuantile:
          ([[], []], 0.5, np.zeros((0,)), {'axis': 0, 'keepdims': False}),
          ([[], []], 0.5, np.zeros((1, 0)), {'axis': 0, 'keepdims': True}),
          ([], [0.5, 0.6], np.full(2, np.nan), {}),
+         (np.arange(1, 28).reshape((3, 3, 3)), 0.5, [[[14.]]],
+          {'axis': None, 'keepdims': True}),
          ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]], 
           {'axis': None, 'keepdims': True}),])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
