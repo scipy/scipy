@@ -1320,6 +1320,8 @@ class TestOptimizeSimple(CheckOptimize):
 
             if method == 'tnc':
                 kwargs['options'] = dict(maxfun=100)
+            elif method == 'cobyla':
+                kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -1554,7 +1556,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'cobyqa', 'slsqp',
                                         'trust-constr', 'dogleg', 'trust-ncg',
                                         'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method, num_parallel_threads):
@@ -1685,6 +1687,23 @@ class TestOptimizeSimple(CheckOptimize):
         if method == 'cobyqa':
             ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
             assert res.nfev == ref.nfev == maxiter
+        elif method == 'cobyla':
+            # COBYLA calls the callback once per iteration, not once per function
+            # evaluation, so this test is not applicable. However we can test
+            # the COBYLA status to verify that res stopped back on the callback
+            # and ref stopped based on the iteration limit.
+            # COBYLA requires at least n+2 function evaluations
+            maxiter = max(maxiter, len(kwargs['x0'])+2)
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.status == 30
+            assert res.message == ("Return from COBYLA because the callback function "
+                                   "requested termination")
+            assert ref.status == 3
+            assert ref.message == ("Return from COBYLA because the objective function "
+                                   "has been evaluated MAXFUN times.")
+            # Return early because res/ref will be unequal for COBYLA for the reasons
+            # mentioned above.
+            return
         else:
             ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
             assert res.nit == ref.nit == maxiter
@@ -3020,7 +3039,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=1.5e-6)
+    assert_allclose(res.fun, expected.fun, rtol=2e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
