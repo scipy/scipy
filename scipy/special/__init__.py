@@ -781,17 +781,18 @@ Convenience functions
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
+from . import _basic
 from . import _ufuncs
+from ._basic import *
 from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
+    beta, betainc, betaln, binom, chdtr, chdtrc, digamma, entr, erf, erfc, erfinv, expi,
+    expit, expn, gamma, gammainc, gammaincc, gammaln, i0, i0e, i1, i1e, log_ndtr, logit,
+    multigammaln, ndtr, ndtri, polygamma, rel_entr, stdtr, stdtrit, xlogy, zeta
+)
 
-from . import _basic
-from ._basic import *
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
@@ -801,7 +802,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
