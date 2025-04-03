@@ -11,10 +11,11 @@ from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
 from ._ufuncs import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit  # noqa: F401
-)
+        beta, betainc, betaln, binom, chdtr, chdtrc, digamma, entr,  # noqa: F401
+        erf, erfc, erfinv, expi, expit, expn, gamma, gammainc,  # noqa: F401
+        gammaincc, gammaln, i0, i0e, i1, i1e, log_ndtr, log_softmax,  # noqa: F401
+        logit, multigammaln, ndtr, ndtri, polygamma, rel_entr,  # noqa: F401
+        softmax, stdtr, stdtrit xlogy, zeta)  # noqa: F401
 
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
@@ -204,26 +205,37 @@ def support_alternative_backends(f_name):
 
 # function name: number of args (for testing purposes)
 array_special_func_map = {
+    'logit': 1,
+    'expit': 1,
     'log_ndtr': 1,
     'ndtr': 1,
     'ndtri': 1,
+    'digamma': 1,
+    'polygamma': 2,
+    'multigammaln': 2,
+    'gammaln': 1,
+    'gamma': 1,
+    'gammainc': 2,
+    'gammaincc': 2,
+    'betaln': 2,
+    'beta': 2,
+    'betainc': 3,
     'erf': 1,
     'erfc': 1,
+    'erfinv': 1,
+    'zeta': 2,
+    'binom': 2,
+    'expi': 1,
+    'expn': 2,
     'i0': 1,
     'i0e': 1,
     'i1': 1,
     'i1e': 1,
-    'gammaln': 1,
-    'gammainc': 2,
-    'gammaincc': 2,
-    'logit': 1,
-    'expit': 1,
     'entr': 1,
     'rel_entr': 2,
     'xlogy': 2,
     'chdtr': 2,
     'chdtrc': 2,
-    'betainc': 3,
     'betaincc': 3,
     'stdtr': 2,
     'stdtrit': 2,
