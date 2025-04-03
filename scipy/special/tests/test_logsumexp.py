@@ -301,12 +301,13 @@ class TestLogSumExp:
         xp_assert_equal(a, xp.asarray([5., 4.]))
         xp_assert_equal(b, xp.asarray([3., 2.]))
 
-    @pytest.mark.parametrize("x", [1.0, 1.0j, []])
-    def test_device(self, x, xp, nondefault_device):
+    @pytest.mark.parametrize("x_raw", [1.0, 1.0j, []])
+    def test_device(self, x_raw, xp, devices):
         """Test input device propagation to output."""
-        x = xp.asarray(x, device=nondefault_device)
-        assert xp_device(logsumexp(x)) == nondefault_device
-        assert xp_device(logsumexp(x, b=x)) == nondefault_device
+        for d in devices:
+            x = xp.asarray(x_raw, device=d)
+            assert xp_device(logsumexp(x)) == xp_device(x)
+            assert xp_device(logsumexp(x, b=x)) == xp_device(x)
 
 
 class TestSoftmax:
