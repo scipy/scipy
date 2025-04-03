@@ -50,7 +50,6 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, jac_method=N
     # ``x_scale='jac'`` corresponds to ``diag=None``.
 
     # 1.16.0 - default x_scale changed to 'jac', with diag=None
-    print(x_scale)
     if x_scale is None or (isinstance(x_scale, str) and x_scale == 'jac'):
         diag = None
     else:
