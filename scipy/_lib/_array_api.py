@@ -12,7 +12,7 @@ import functools
 import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from types import ModuleType
 from typing import Any, Literal, TypeAlias
@@ -441,15 +441,11 @@ def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
         return devices
     elif is_jax(xp):
         import jax # type: ignore[import]
-        num_cpu = jax.device_count(backend='cpu')
-        for i in range(0, num_cpu):
-            devices += [f'cpu:{i}']
-        num_gpu = jax.device_count(backend='gpu')
-        for i in range(0, num_gpu):
-            devices += [f'gpu:{i}']
-        num_tpu = jax.device_count(backend='tpu')
-        for i in range(0, num_tpu):
-            devices += [f'tpu:{i}']
+        devices += jax.devices(backend='cpu')
+        with suppress(RuntimeError):  # jax can choke when gpu unavailable
+            devices += jax.devices(backend='gpu')
+        with suppress(RuntimeError):  # jax can choke when tpu unavailable        
+            devices += jax.devices(backend='tpu')
         return devices
 
     # given namespace is not known to have a list of available devices;

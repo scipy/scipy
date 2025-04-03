@@ -16,6 +16,7 @@ from scipy._lib._array_api import (
 from scipy import fft
 
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -448,7 +449,6 @@ class TestFFTShift:
             x = xp.asarray(np.random.random((n,)))
             xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
-    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
@@ -460,7 +460,6 @@ class TestFFTShift:
         xp_assert_close(fft.fftshift(freqs), shifted)
         xp_assert_close(fft.ifftshift(shifted), freqs)
     
-    @skip_xp_backends('cupy', reason='cupy/cupy#8393')
     def test_uneven_dims(self, xp):
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([
@@ -507,10 +506,6 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestFFTFreq:
 
     def test_definition(self, xp):
@@ -531,6 +526,7 @@ class TestFFTFreq:
         y = 10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
+    @xfail_xp_backends("cupy", reason="data-apis/array-api-compat#293")
     def test_device(self, xp):
         devices = get_xp_devices(xp)
         for d in devices:
@@ -539,10 +535,6 @@ class TestFFTFreq:
             assert xp_device(y) == xp_device(x)
 
 
-@skip_xp_backends("cupy",
-                  reason="CuPy has not implemented the `device` param")
-@skip_xp_backends("jax.numpy",
-                  reason="JAX has not implemented the `device` param")
 class TestRFFTFreq:
 
     def test_definition(self, xp):
@@ -563,6 +555,7 @@ class TestRFFTFreq:
         y = 10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp)
         xp_assert_close(y, x2, check_dtype=False)
 
+    @xfail_xp_backends("cupy", reason="data-apis/array-api-compat#293")
     def test_device(self, xp):
         devices = get_xp_devices(xp)
         for d in devices:
