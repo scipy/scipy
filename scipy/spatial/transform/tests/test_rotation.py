@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
     is_array_api_strict,
     is_torch,
     is_jax,
+    xp_vector_norm,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -73,7 +74,7 @@ def test_from_quat_scalar_first(xp):
     )
 
     q = xp.asarray(rng.randn(100, 4))
-    q /= xp.linalg.vector_norm(q, axis=1)[:, None]
+    q /= xp_vector_norm(q, axis=1)[:, None]
     for i in range(q.shape[0]):  # Array API conforming loop
         qi = q[i, ...]
         r = Rotation.from_quat(qi, scalar_first=True)
@@ -107,7 +108,7 @@ def test_as_quat_scalar_first(xp):
     )
 
     q = xp.asarray(rng.randn(100, 4))
-    q /= xp.linalg.vector_norm(q, axis=1)[:, None]
+    q /= xp_vector_norm(q, axis=1)[:, None]
     for i in range(q.shape[0]):  # Array API conforming loop
         qi = q[i, ...]
         r = Rotation.from_quat(qi)
@@ -151,7 +152,7 @@ def test_quat_double_to_canonical_single_cover(xp):
         [[-1.0, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1], [-1, -1, -1, -1]]
     )
     r = Rotation.from_quat(x)
-    expected_quat = xp.abs(x) / xp.linalg.vector_norm(x, axis=1)[:, None]
+    expected_quat = xp.abs(x) / xp_vector_norm(x, axis=1)[:, None]
     assert_allclose(r.as_quat(canonical=True), expected_quat)
 
 
@@ -450,10 +451,10 @@ def test_from_rotvec_jax_compile():
 
 def test_as_generic_rotvec(xp):
     quat = xp.asarray([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
-    quat /= xp.linalg.vector_norm(quat, axis=-1, keepdims=True)
+    quat /= xp_vector_norm(quat, axis=-1, keepdims=True)
 
     rotvec = Rotation.from_quat(quat).as_rotvec()
-    angle = xp.linalg.vector_norm(rotvec, axis=-1)
+    angle = xp_vector_norm(rotvec, axis=-1)
 
     assert_allclose(quat[:, 3], xp.cos(angle / 2))
     assert_allclose(xp.linalg.cross(rotvec, quat[:, :3]), xp.zeros((3, 3)), atol=1e-15)
@@ -484,7 +485,7 @@ def test_as_rotvec_degrees(xp):
     mat = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
     rot = Rotation.from_matrix(mat)
     rotvec = rot.as_rotvec(degrees=True)
-    angle = xp.linalg.vector_norm(rotvec, axis=-1)
+    angle = xp_vector_norm(rotvec, axis=-1)
     assert_allclose(angle, 120.0)
     assert_allclose(rotvec[0], rotvec[1])
     assert_allclose(rotvec[1], rotvec[2])
@@ -554,7 +555,7 @@ def test_from_mrp_jax_compile():
 
 def test_as_generic_mrp(xp):
     quat = xp.asarray([[1, 2, -1, 0.5], [1, -1, 1, 0.0003], [0, 0, 0, 1]])
-    quat /= xp.linalg.vector_norm(quat, axis=1)[:, None]
+    quat /= xp_vector_norm(quat, axis=1)[:, None]
 
     expected_mrp = xp.asarray(
         [
@@ -1961,7 +1962,7 @@ def test_multiplication_stability(xp):
     for i in range(len(qs)):
         rs = rs * qs[i] * rs
 
-    assert_allclose(xp.linalg.vector_norm(rs.as_quat(), axis=1), 1)
+    assert_allclose(xp_vector_norm(rs.as_quat(), axis=1), 1)
 
 
 def test_pow(xp):

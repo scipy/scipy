@@ -12,7 +12,14 @@ from scipy._lib.deprecation import _sub_module_deprecation
 import scipy.spatial.transform._cython_backend as cython_backend
 from scipy.spatial.transform._rotation_groups import create_group
 import scipy.spatial.transform._array_api_backend as array_api_backend
-from scipy._lib._array_api import array_namespace, Array, is_numpy, ArrayLike, is_jax
+from scipy._lib._array_api import (
+    array_namespace,
+    Array,
+    is_numpy,
+    ArrayLike,
+    is_jax,
+    xp_result_type,
+)
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._util import _transition_to_rng
@@ -1784,10 +1791,11 @@ class Rotation:
                [ 1.09533535, -0.8365163 ,  0.3169873 ]])
 
         """
-        points = array_namespace(self._quat).asarray(
+        xp = array_namespace(self._quat)
+        points = xp.asarray(
             points,
             device=device(self._quat),
-            dtype=array_api_backend.atleast_f32(self._quat),
+            dtype=xp_result_type(self._quat, force_floating=True, xp=xp),
         )
         result = self._backend.apply(self._quat, points, inverse=inverse)
         if self._single and points.ndim == 1:
@@ -2434,7 +2442,7 @@ class Rotation:
         if is_numpy(xp):
             dtype = xp.float64
         else:
-            dtype = array_api_backend.atleast_f32(quat)
+            dtype = xp_result_type(quat, force_floating=True, xp=xp)
         return xp.asarray(quat, dtype=dtype)
 
     def __repr__(self):
