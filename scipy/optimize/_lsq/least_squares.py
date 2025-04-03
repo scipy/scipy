@@ -398,7 +398,8 @@ def least_squares(
             The default value is changed from 1 to None to indicate the default
             approach to scaling.
             For the 'lm' method the default scaling is changed from 1 to 'jac'.
-            This has been found to give better performance.
+            This has been found to give better performance, and is the same
+            scaling performed by ``leastsq``.
 
     loss : str or callable, optional
         Determines the loss function. The following keyword values are allowed:
