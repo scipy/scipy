@@ -1742,7 +1742,7 @@ class GamesHowellResult:
         # it will be called with the default CL of .95.
         if self._ci is None:
             self.confidence_interval(confidence_level=.95)
-        s = ("Games-Howell Pairwise Group Comparisons"
+        s = ("Pairwise Group Comparisons"
              f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
         for i in range(self.pvalue.shape[0]):
