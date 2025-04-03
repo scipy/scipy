@@ -136,103 +136,125 @@ void csc_matmat(const I n_row,
 
 template <class I, class T, class T2>
 void csc_ne_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                 const I Ap[], const I Ai[], const T Ax[],
                 const I Bp[], const I Bi[], const T Bx[],
                       I Cp[],       I Ci[],      T2 Cx[])
 {
-    csr_ne_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_ne_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T, class T2>
 void csc_lt_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                 const I Ap[], const I Ai[], const T Ax[],
                 const I Bp[], const I Bi[], const T Bx[],
                       I Cp[],       I Ci[],      T2 Cx[])
 {
-    csr_lt_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_lt_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T, class T2>
 void csc_gt_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                 const I Ap[], const I Ai[], const T Ax[],
                 const I Bp[], const I Bi[], const T Bx[],
                       I Cp[],       I Ci[],      T2 Cx[])
 {
-    csr_gt_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_gt_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T, class T2>
 void csc_le_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                 const I Ap[], const I Ai[], const T Ax[],
                 const I Bp[], const I Bi[], const T Bx[],
                       I Cp[],       I Ci[],      T2 Cx[])
 {
-    csr_le_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_le_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T, class T2>
 void csc_ge_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                 const I Ap[], const I Ai[], const T Ax[],
                 const I Bp[], const I Bi[], const T Bx[],
                       I Cp[],       I Ci[],      T2 Cx[])
 {
-    csr_ge_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_ge_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_elmul_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                    const I Ap[], const I Ai[], const T Ax[],
                    const I Bp[], const I Bi[], const T Bx[],
                          I Cp[],       I Ci[],       T Cx[])
 {
-    csr_elmul_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_elmul_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_eldiv_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                    const I Ap[], const I Ai[], const T Ax[],
                    const I Bp[], const I Bi[], const T Bx[],
                          I Cp[],       I Ci[],       T Cx[])
 {
-    csr_eldiv_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_eldiv_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 
 template <class I, class T>
 void csc_plus_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                   const I Ap[], const I Ai[], const T Ax[],
                   const I Bp[], const I Bi[], const T Bx[],
                         I Cp[],       I Ci[],       T Cx[])
 {
-    csr_plus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_plus_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_minus_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                    const I Ap[], const I Ai[], const T Ax[],
                    const I Bp[], const I Bi[], const T Bx[],
                          I Cp[],       I Ci[],       T Cx[])
 {
-    csr_minus_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_minus_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 
 template <class I, class T>
 void csc_maximum_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                      const I Ap[], const I Ai[], const T Ax[],
                      const I Bp[], const I Bi[], const T Bx[],
                            I Cp[],       I Ci[],       T Cx[])
 {
-    csr_maximum_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_maximum_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 template <class I, class T>
 void csc_minimum_csc(const I n_row, const I n_col,
+                     const I n_Arow, const I n_Acol,
+                     const I n_Brow, const I n_Bcol,
                      const I Ap[], const I Ai[], const T Ax[],
                      const I Bp[], const I Bi[], const T Bx[],
                            I Cp[],       I Ci[],       T Cx[])
 {
-    csr_minimum_csr(n_col, n_row, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
+    csr_minimum_csr(n_col, n_row, n_Acol, n_Arow, n_Bcol, n_Brow, Ap, Ai, Ax, Bp, Bi, Bx, Cp, Ci, Cx);
 }
 
 
