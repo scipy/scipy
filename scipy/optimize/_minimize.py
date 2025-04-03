@@ -570,7 +570,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     tighten the constraint by a small amount ``eps``:
 
     >>> eps = 0.01
-    ... cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+    >>> cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
 
     we expect the optimal value of the objective function to increase by
     approximately ``eps * res.multipliers[0]``:
@@ -578,9 +578,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     >>> eps * res.multipliers[0]  # Expected change in f0
     np.float64(0.008000000027153205)
     >>> f0 = res.fun  # Keep track of the previous optimal value
-    ... res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
-    ... f1 = res.fun  # New optimal value
-    ... f1 - f0
+    >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
+    >>> f1 = res.fun  # New optimal value
+    >>> f1 - f0
     np.float64(0.008019998807885509)
 
     """
