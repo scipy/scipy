@@ -622,6 +622,8 @@ class VectorFunction:
         self.sparse_jacobian = False
         if (sparse_jacobian or
                 sparse_jacobian is None and sps.issparse(self.J)):
+            # something truthy was specified for sparse_jacobian,
+            # or it turns out that the Jacobian was sparse.
             self.J = sps.csr_array(self.J)
             self.sparse_jacobian = True
         elif sps.issparse(self.J):
@@ -740,8 +742,7 @@ class VectorFunction:
         if hasattr(self.J, "astype"):
             # returns a copy so that downstream can't overwrite the
             # internal attribute. But one can't copy a LinearOperator
-            xp = array_namespace(self.J)
-            return xp.astype(self.J, self.J.dtype)
+            return self.J.astype(self.J.dtype)
         return self.J
 
     def hess(self, x, v):
@@ -752,8 +753,7 @@ class VectorFunction:
         if hasattr(self.H, "astype"):
             # returns a copy so that downstream can't overwrite the
             # internal attribute. But one can't copy non-arrays
-            xp = array_namespace(self.H)
-            return xp.astype(self.H, self.H.dtype)
+            return self.H.astype(self.H.dtype)
         return self.H
 
 
