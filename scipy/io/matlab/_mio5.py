@@ -219,10 +219,11 @@ class MatFile5Reader(MatFileReader):
         hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
         hdr = read_dtype(self.mat_stream, hdr_dtype)
         hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
+        subsystem_offset = hdr["subsystem_offset"]
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = f'{v_major}.{v_minor}'
-        return hdict
+        return hdict, subsystem_offset
 
     def initialize_read(self):
         ''' Run when beginning read of variables
@@ -305,8 +306,11 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
         self.initialize_read()
-        mdict = self.read_file_header()
+        mdict, subsystem_offset = self.read_file_header()
         mdict['__globals__'] = []
+        if subsystem_offset > 0:
+            # Initialize subsystem here
+            pass
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
@@ -324,6 +328,7 @@ class MatFile5Reader(MatFileReader):
                 # We want to keep this raw because mat_dtype processing
                 # will break the format (uint8 as mxDOUBLE_CLASS)
                 process = False
+                #! Skip subsystem processing after implementation
             else:
                 process = True
             if variable_names is not None and name not in variable_names:
