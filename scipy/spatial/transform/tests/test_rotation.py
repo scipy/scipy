@@ -12,6 +12,7 @@ from scipy._lib._array_api import (
     is_array_api_strict,
     is_torch,
     is_jax,
+    is_lazy_array,
     xp_vector_norm,
 )
 import scipy._lib.array_api_extra as xpx
@@ -1869,9 +1870,11 @@ def test_slerp_num_rotations_mismatch(xp):
 
 def test_slerp_equal_times(xp):
     rnd = np.random.RandomState(0)
-    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
+    q = xp.asarray(rnd.uniform(size=(5, 4)))
+    r = Rotation.from_quat(q)
     t = [0, 1, 2, 2, 4]
-    if is_jax(xp):  # Jax cannot error out, so we need to check for NaN
+    # Lazy frameworks cannot error out, so we need to check for NaN
+    if is_lazy_array(q):
         s = Slerp(t, r)
         assert xp.all(xp.isnan(s.times))
     else:
@@ -1881,8 +1884,9 @@ def test_slerp_equal_times(xp):
 
 def test_slerp_decreasing_times(xp):
     rnd = np.random.RandomState(0)
-    r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
-    if is_jax(xp):
+    q = xp.asarray(rnd.uniform(size=(5, 4)))
+    r = Rotation.from_quat(q)
+    if is_lazy_array(q):
         t = [0, 1, 3, 2, 4]
         s = Slerp(t, r)
         assert xp.all(xp.isnan(s.times))
@@ -1910,8 +1914,9 @@ def test_slerp_call_time_out_of_range(xp):
     s = Slerp(t, r)
 
     times = xp.asarray([0, 1, 2])
-    # DECISION: Jax error handling deviates from all other implementations. Needs to be unified
-    if is_jax(xp):  # Check that jax returns nan for out of range times
+    # DECISION: Lazy error handling deviates from eager implementations
+    if is_lazy_array(times):
+        # Check that lazy frameworks return nan for out of range times
         q = s(times).as_quat()
         in_range = xp.logical_and(times >= xp.min(t), times <= xp.max(t))
         assert xp.all(xp.isnan(q[~in_range, ...]))
@@ -1920,7 +1925,8 @@ def test_slerp_call_time_out_of_range(xp):
         with pytest.raises(ValueError, match="times must be within the range"):
             s(times)
     times = xp.asarray([1, 2, 6])
-    if is_jax(xp):  # Check that jax returns nan for out of range times
+    if is_lazy_array(times):
+        # Check that lazy frameworks return nan for out of range times
         q = s(times).as_quat()
         in_range = xp.logical_and(times >= xp.min(t), times <= xp.max(t))
         assert xp.all(xp.isnan(q[~in_range, ...]))

@@ -17,7 +17,7 @@ from scipy._lib._array_api import (
     Array,
     is_numpy,
     ArrayLike,
-    is_jax,
+    is_lazy_array,
     xp_result_type,
 )
 from scipy._lib.array_api_compat import device
@@ -2556,7 +2556,7 @@ class Slerp:
         # < 0 in jax. Instead, we set timedelta to nans
         # DECISION: Do we want to introduce this special case for jax or should all implementations
         # set the timedelta to nans?
-        if is_jax(xp):
+        if is_lazy_array(self.timedelta):
             mask = xp.any(self.timedelta <= 0)
             self.timedelta = xp.where(mask, xp.asarray(xp.nan), self.timedelta)
             self.times = xp.where(mask, xp.asarray(xp.nan), self.times)
@@ -2602,7 +2602,7 @@ class Slerp:
         # We cannot error out on invalid indices for jit compiled code. To not produce an index
         # error, we set the index to 0 in case it is out of bounds, and later set the result to nan.
         # DECISION: Do we want to do this for all implementations or only for jax?
-        if is_jax(xp):
+        if is_lazy_array(invalid_ind):
             ind = xp.where(invalid_ind, xp.asarray(0), ind)
         else:
             if xp.any(invalid_ind):

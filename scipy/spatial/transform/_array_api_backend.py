@@ -13,7 +13,7 @@ from scipy._lib._array_api import (
     array_namespace,
     Array,
     ArrayLike,
-    is_jax,
+    is_lazy_array,
     xp_promote,
     xp_result_type,
     xp_vector_norm,
@@ -649,7 +649,7 @@ def align_vectors(
     # Note that we could also solve this by exploiting the externals of xpx.apply_where. However,
     # we'd have to rely on the implementation details of apply_where, which is something we should
     # avoid in the long run.
-    if is_jax(xp):
+    if is_lazy_array(inf_branch):
         q_opt, rssd, sensitivity = _align_vectors(a, b, weights)
         q_opt_inf, rssd_inf, sensitivity_inf = _align_vectors_fixed(a, b, weights)
         q_opt = xp.where(~inf_branch, q_opt, q_opt_inf)
@@ -708,11 +708,13 @@ def _align_vectors_fixed(
     # result in invalid, zero-shaped arrays.
 
     inf_idx = xp.argmax(xp.astype(weight_is_inf, xp.uint8))
-    # Bug: torch.argmax returns a tensor, but does not support tensors as shifts in xp.roll. We
-    # cannot convert to int because this raises a jax concretization error during jitting. This
-    # will ideally be solved by an update of array-api-compat.
+    # xp.argmax returns an Array, but xp.roll does not support Arrays as shifts. For lazy execution
+    # models, we cannot convert to int because this raises concretization errors. We therefore
+    # convert to int only for eager execution models. This will ideally be solved by an update of
+    # array-api-compat.
+    # TODO: Double-check if this works for other lazy frameworks besides jax.
     # Tracking issue: https://github.com/data-apis/array-api/issues/914
-    if not is_jax(xp):
+    if not is_lazy_array(inf_idx):
         inf_idx = int(inf_idx)
     a_sorted = xp.roll(a, shift=-inf_idx, axis=0)
     b_sorted = xp.roll(b, shift=-inf_idx, axis=0)
