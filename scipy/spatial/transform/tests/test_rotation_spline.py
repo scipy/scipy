@@ -8,7 +8,9 @@ from scipy.spatial.transform._rotation_spline import (
     _rotvec_dot_to_angular_rate_matrix,
     _matrix_vector_product_of_stacks,
     _angular_acceleration_nonlinear_term,
-    _create_block_3_diagonal_matrix)
+    _create_block_3_diagonal_matrix,
+)
+from scipy._lib._array_api import is_numpy
 
 
 def test_angular_rate_to_rotvec_conversions():
@@ -33,8 +35,7 @@ def test_angular_rate_nonlinear_term():
     # the rotation vector
     np.random.seed(0)
     rv = np.random.rand(4, 3)
-    assert_allclose(_angular_acceleration_nonlinear_term(rv, rv), 0,
-                    atol=1e-19)
+    assert_allclose(_angular_acceleration_nonlinear_term(rv, rv), 0, atol=1e-19)
 
 
 def test_create_block_3_diagonal_matrix():
@@ -49,8 +50,7 @@ def test_create_block_3_diagonal_matrix():
     banded = _create_block_3_diagonal_matrix(A, B, d)
 
     # Convert the banded matrix to the full matrix.
-    k, l = list(zip(*product(np.arange(banded.shape[0]),
-                             np.arange(banded.shape[1]))))
+    k, l = list(zip(*product(np.arange(banded.shape[0]), np.arange(banded.shape[1]))))
     k = np.asarray(k)
     l = np.asarray(l)
 
@@ -68,21 +68,22 @@ def test_create_block_3_diagonal_matrix():
     eye = np.eye(3)
 
     # Create the reference full matrix in the most straightforward manner.
-    ref = np.block([
-        [d[0] * eye, B[0], zero, zero, zero],
-        [A[0], d[1] * eye, B[1], zero, zero],
-        [zero, A[1], d[2] * eye, B[2], zero],
-        [zero, zero, A[2], d[3] * eye, B[3]],
-        [zero, zero, zero, A[3], d[4] * eye],
-    ])
+    ref = np.block(
+        [
+            [d[0] * eye, B[0], zero, zero, zero],
+            [A[0], d[1] * eye, B[1], zero, zero],
+            [zero, A[1], d[2] * eye, B[2], zero],
+            [zero, zero, A[2], d[3] * eye, B[3]],
+            [zero, zero, zero, A[3], d[4] * eye],
+        ]
+    )
 
     assert_allclose(full, ref, atol=1e-19)
 
 
 def test_spline_2_rotations():
     times = [0, 10]
-    rotations = Rotation.from_euler('xyz', [[0, 0, 0], [10, -20, 30]],
-                                    degrees=True)
+    rotations = Rotation.from_euler("xyz", [[0, 0, 0], [10, -20, 30]], degrees=True)
     spline = RotationSpline(times, rotations)
 
     rv = (rotations[0].inv() * rotations[1]).as_rotvec()
@@ -115,11 +116,11 @@ def test_spline_properties():
     times = np.array([0, 5, 15, 27])
     angles = [[-5, 10, 27], [3, 5, 38], [-12, 10, 25], [-15, 20, 11]]
 
-    rotations = Rotation.from_euler('xyz', angles, degrees=True)
+    rotations = Rotation.from_euler("xyz", angles, degrees=True)
     spline = RotationSpline(times, rotations)
 
-    assert_allclose(spline(times).as_euler('xyz', degrees=True), angles)
-    assert_allclose(spline(0).as_euler('xyz', degrees=True), angles[0])
+    assert_allclose(spline(times).as_euler("xyz", degrees=True), angles)
+    assert_allclose(spline(0).as_euler("xyz", degrees=True), angles[0])
 
     h = 1e-8
     rv0 = spline(times).as_rotvec()
@@ -160,3 +161,19 @@ def test_error_handling():
     raises(ValueError, s, 10, -1)
 
     raises(ValueError, s, np.arange(10).reshape(5, 2))
+
+
+def test_xp_errors(xp):
+    if is_numpy(xp):
+        return
+
+    times = xp.asarray([0, 10])
+    r = Rotation.random(2)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    raises(
+        TypeError,
+        RotationSpline,
+        times,
+        r,
+        match="RotationSpline does not support other Array API",
+    )
