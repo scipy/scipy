@@ -87,10 +87,15 @@ fitpack_src = [
   'fitpack/pardtc.f'
 ]
 
-# TODO: Add flags for 64 bit ints
+if use_ilp64
+  _fflag_intsize = _fflag_ilp64
+else
+  _fflag_intsize = _fflag_lp64
+endif
+
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized,
+  fortran_args: [_fflag_Wno_maybe_uninitialized, _fflag_intsize],
   override_options: ['b_lto=false'],
   gnu_symbol_visibility: 'hidden',
 )
@@ -123,7 +128,8 @@ py3.extension_module('_rgi_cython',
 
 __fitpack_lib = static_library('__fitpack',
     ['src/__fitpack.h', 'src/__fitpack.cc'],
-    dependencies:[lapack, np_dep, py3_dep],
+    dependencies:[lapack_ilp64, np_dep, py3_dep],
+    c_args: c_flags_ilp64
 )
 
 __fitpack_dep = declare_dependency(
@@ -132,9 +138,9 @@ __fitpack_dep = declare_dependency(
 
 py3.extension_module('_bspl',
   cython_gen_cpp.process('_bspl.pyx'),
-  cpp_args: cython_cpp_args,
+  cpp_args: cython_cpp_args + c_flags_ilp64,
   include_directories: 'src/',
-  dependencies: [lapack, np_dep, __fitpack_dep],
+  dependencies: [np_dep, __fitpack_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
@@ -146,13 +152,19 @@ py3.extension_module('_dierckx',
     include_directories: 'src/',
     dependencies: [np_dep, __fitpack_dep],
     link_args: version_link_args,
+    cpp_args: c_flags_ilp64,
     install: true,
     subdir: 'scipy/interpolate'
 )
 
-# TODO: Add flags for 64 bit ints
-py3.extension_module('_fitpack',
+# Build _fitpack and dfitpack extensions: both are FITPACK wrappers.
+# XXX: some functions from dfitpack use the F_INT macro defined in dfitpack.pyf, while
+#      others rely on the build flags only. Consider cleaning this up at some point.
+
+
+_fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
+  c_args: c_flags_ilp64,
   link_with: [fitpack_lib],
   include_directories: 'src/',
   dependencies: np_dep,
@@ -162,12 +174,20 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
-# TODO: Add flags for 64 bit ints
+if use_ilp64
+   # generator only accepts strings, not files
+   f2c_map_file = f2py_ilp64_opts[1]
+   extra_arg = f2py_ilp64_opts[0] + '=' + fs.parent(f2c_map_file) / fs.name(f2c_map_file)
+  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf', extra_args: extra_arg)
+else
+  _dfitpackmodule_obj = f2py_gen.process('src/dfitpack.pyf')
+endif
+
 py3.extension_module('_dfitpack',
-  f2py_gen.process('src/dfitpack.pyf'),
-  c_args: [Wno_unused_variable],
+  _dfitpackmodule_obj,
+  c_args: [Wno_unused_variable] +  c_flags_ilp64,
   link_args: version_link_args,
-  dependencies: [lapack_dep, fortranobject_dep],
+  dependencies: [fortranobject_dep],
   link_with: [fitpack_lib],
   override_options: ['b_lto=false'],
   install: true,

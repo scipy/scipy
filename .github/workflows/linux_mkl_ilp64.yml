@@ -1,0 +1,94 @@
+name: BLAS tests (Linux)
+
+# This file is meant for testing different BLAS/LAPACK flavors and build
+# options on Linux. All other yml files for Linux will only test without BLAS
+# (mostly because that's easier and faster to build) or with the same 64-bit
+# OpenBLAS build that is used in the wheel jobs.
+#
+# Jobs and their purpose:
+#
+#   - mkl:
+#         Tests MKL installed from PyPI (because easiest/fastest, if broken) in
+#         3 ways: both LP64 and ILP64 via pkg-config, and then using the
+#         Single Dynamic Library (SDL, or `libmkl_rt`).
+
+
+on:
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+jobs:
+
+  mkl-lp64:
+    runs-on: ubuntu-latest
+    name: "MKL LP64"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install mkl mkl-devel
+
+    - name: Build with defaults (LP64)
+      run: |
+        pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
+        python dev.py build -C-Dblas=mkl
+
+    - name: Test
+      run: python dev.py test -j 2
+
+
+  mkl-ilp64:
+    runs-on: ubuntu-latest
+    name: "MKL ILP64"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install mkl mkl-devel
+
+    - name: Build with ILP64
+      run: |
+        pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
+        python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
+
+    - name: Test
+      run: python dev.py test -j 2
+
+
