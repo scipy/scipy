@@ -896,11 +896,11 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i^N \log(x_i) -
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
               \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
     where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
@@ -1104,9 +1104,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1670,11 +1670,11 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
               \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
     where :math:`N` is the number of data points :math:`x`=``data`` and
