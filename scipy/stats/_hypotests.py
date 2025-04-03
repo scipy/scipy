@@ -1810,9 +1810,7 @@ class GamesHowellResult:
         params = (confidence_level, self._ntreatments, self._df)
         srd = distributions.studentized_range.ppf(*params)
 
-        games_criterion = srd * self._stand_err / np.sqrt(2)
-        games_criterion = abs(_make_matrix(
-            self._ntreatments, games_criterion, games_criterion))
+        games_criterion = srd * self._stand_err
         # the confidence levels are determined by the
         # `mean_differences` +- `games_criterion`
         upper_conf = self.statistic + games_criterion
@@ -1989,54 +1987,29 @@ def games_howell(*args):
     means = np.asarray([np.mean(arg) for arg in args])
     nsamples_treatments = np.asarray([a.size for a in args])
 
-    pairs = list(combinations(range(ntreatments), 2))
-    variances = np.asarray([np.var(arg, ddof=1) for arg in args])
-    mean_differences = [means[i] - means[j] for i, j in pairs]
+    vars_ = np.asarray([np.var(arg, ddof=1) for arg in args])
+    mean_differences = means[None].T - means
 
     # the denominator Behrens-Fisher statistic ref.7 p.5 with notation $v$
     # calculated by sample variance and sample size
-    stand_err = [
-        np.sqrt(variances[i] / nsamples_treatments[i]
-                + variances[j] / nsamples_treatments[j])
-        for i, j in pairs
-    ]
+    # the squre root of 2 is considered to calculate the stand_err
+    stand_err = np.sqrt(
+        ((vars_ / nsamples_treatments)[None].T
+         + (vars_ / nsamples_treatments)) / 2)
 
     # Welch degree of freedom ref.7 p.5 with notation $\nu$
-    nus = [
-        (variances[i] / nsamples_treatments[i]
-         + variances[j] / nsamples_treatments[j])**2
-        / ((variances[i] / nsamples_treatments[i])**2
-           / (nsamples_treatments[i] - 1)
-           + (variances[j] / nsamples_treatments[j])**2
-           / (nsamples_treatments[j] - 1))
-        for i, j in pairs
-    ]
+    nus = (
+            ((vars_/nsamples_treatments)[None].T + (vars_/nsamples_treatments))**2
+            / ((((vars_/nsamples_treatments)**2)/(nsamples_treatments-1))[None].T
+            + (((vars_/nsamples_treatments)**2)/(nsamples_treatments-1)))
+    )
 
-    # Behrens-Fisher statistic ref.7 p.5 with notation $v$
-    v = np.asarray(mean_differences) / np.asarray(stand_err)
+    t_stat = mean_differences / stand_err
 
     # H0 was rejected if $|v| \ge q(\alpha, K, \nu)/\sqrt{2}$
     # ref.7 p.6
-    params = abs(v) * np.sqrt(2), ntreatments, nus
+    params = abs(t_stat), ntreatments, nus
     pvalues = distributions.studentized_range.sf(*params)
-
-    # results is in games_howell is in 1D. To make sure same behavior
-    # as tukey_hsd, matrix is constructed to pass to TukeyHSDResult
-    mean_differences = _make_matrix(ntreatments, mean_differences)
-    pvalues = _make_matrix(ntreatments, pvalues, fill_diagonal=1.)
 
     return GamesHowellResult(mean_differences, pvalues, ntreatments,
                           nus, stand_err)
-
-
-def _make_matrix(k, values, fill_diagonal=0.):
-    # 1D result list is returned by games_howell
-    # to make the same behavior as tukey_hsd,
-    # matrix is constructed here
-    values = np.asarray(values)
-    indices = np.triu_indices(k, 1)
-    matrix = np.zeros((k, k), dtype=values.dtype)
-    matrix[indices] = values
-    matrix -= matrix.T
-    np.fill_diagonal(matrix, fill_diagonal)
-    return matrix
