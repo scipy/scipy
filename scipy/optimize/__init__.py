@@ -375,7 +375,7 @@ Univariate (scalar) minimization methods:
    fminbound - Bounded minimization of a scalar function.
    brent - 1-D function minimization using Brent method.
    golden - 1-D function minimization using Golden Section method.
-   linewalker - 1-D function minimization using linewalker method.
+   linewalker - 1-D function minimization using Linewalker method.
 
 Least-squares
 -------------

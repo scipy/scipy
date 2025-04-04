@@ -1,4 +1,4 @@
-.. _optimize.minimize_scalar-bounded:
+.. _optimize.minimize_scalar-linewalker:
 
 minimize_scalar(method='linewalker')
 ------------------------------------------------
