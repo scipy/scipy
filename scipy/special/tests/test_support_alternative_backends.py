@@ -1,22 +1,33 @@
 from functools import partial
-
+from types import ModuleType
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
 
+from scipy import special
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy import special
 from scipy._lib._array_api_no_0d import xp_assert_close
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
+                                   SCIPY_ARRAY_API, SCIPY_DEVICE)
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    xp_default_dtype, SCIPY_ARRAY_API, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
+from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+
+special_wrapped = ModuleType("special_wrapped")
+lazy_xp_modules = [special_wrapped]
+for f_name in array_special_func_map:
+    f = getattr(special, f_name)
+    setattr(special_wrapped, f_name, f)
+    lazy_xp_function(f)
 
 
 @pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
 def test_dispatch_to_unrecognized_library():
     xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
+    f = get_array_special_func('ndtr', xp=xp)
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))

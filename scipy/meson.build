@@ -380,18 +380,41 @@ _cython_tree = [fs.copyfile('__init__.py')]
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
 if cy.version().version_compare('>=3.1.0')
   cython_args += ['-Xfreethreading_compatible=True']
+
+  cython_shared_src = custom_target(
+    install: false,
+    output: '_cyutility.c',
+    command: [
+      cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
+      '--generate-shared=' + meson.current_build_dir()/'_cyutility.c'
+    ],
+  )
+
+  cython_shared_module = py3.extension_module('_cyutility',
+    cython_shared_src,
+    subdir: 'scipy',
+    cython_args: cython_args,
+    install: true,
+    install_tag: 'python-runtime',
+  )
+
+  cython_args += ['--shared=scipy._cyutility']
+else
+  cython_shared_module = []
 endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : _cython_tree)
+  depends : [_cython_tree, cython_shared_module]
+)
 
 cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree])
+  depends : [_cython_tree, cython_shared_module]
+)
 
 if use_pythran
   # TODO: add argument to mark extension modules as safe to run without the GIL,

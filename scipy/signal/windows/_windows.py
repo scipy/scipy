@@ -1379,7 +1379,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
             "shapes"
         )
     elif M < 1:
-        return xp.array([])
+        return xp.asarray([])
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
