@@ -621,6 +621,19 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`. The
     orthonormalized DST-IV is exactly its own inverse.
 
+    Examples
+    --------
+    Compute the DST of a simple 1D array:
+
+    >>> import numpy as np
+    >>> from scipy.fft import dst
+    >>> x = np.array([1, -1, 1, -1])
+    >>> dst(x, type=2)
+    array([0., 0., 0., 8.])
+
+    This computes the Discrete Sine Transform (DST) of type-II for the input array. 
+    The output contains the transformed values corresponding to the given input sequence
+
     References
     ----------
     .. [1] Wikipedia, "Discrete sine transform",
