@@ -156,7 +156,6 @@ CI:
     - .circleci/**
     - .github/workflows/**
     - ci/**
-    - .cirrus.star
 
 DX:
 - changed-files:
