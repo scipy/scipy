@@ -28,4 +28,4 @@ Currently, this includes the following parts of the codebase:
 .. _trlib: https://github.com/felixlen/trlib
 .. _UNU.RAN: https://statmath.wu.ac.at/unuran/
 .. _DIRECT: https://github.com/stevengj/nlopt/tree/master/src/algs/direct
-.. _PRIMA: https://github.com/nbelakovski/prima
+.. _PRIMA: https://github.com/libprima/prima
