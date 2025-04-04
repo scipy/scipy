@@ -34,6 +34,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
     for (i = 0; i < n; i++) { indices[i] = i; }
     for (i = 0; i < n; i++) { x[i] = 0.0; }
 
+    for (i = 0; i < 20; i++)
+    {
+        printf("Some dummy lines for pytest to start capturing earlier\n");
+    }
+
     // Outer loop
     while (indz < (m < n ? m : n))
     {
