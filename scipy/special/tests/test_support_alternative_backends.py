@@ -63,8 +63,8 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     # int/float mismatched args support is sketchy
     if (any('int' in dtype for dtype in dtypes)
         and any('float' in dtype for dtype in dtypes)
-        and ((is_torch(xp) or is_jax(xp) or is_dask(xp) and f_name == 'xlogy')
-             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc')))
+        and ((is_torch(xp) and f_name == 'xlogy')
+             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'xlogy')))
     ):
         pytest.xfail("dtypes do not match")
 
