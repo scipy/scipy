@@ -80,10 +80,12 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
         pytest.xfail("dtypes do not match")
 
     dtypes_np_ref = dtypes
-    if (xp_default_dtype(xp) == xp.float32
+    if (is_torch(xp) and xp_default_dtype(xp) == xp.float32
         and f_name not in {'betainc', 'betaincc', 'stdtr', 'stdtrit'}
     ):
-        # When PyTorch promotes int to float32, explicitly convert the reference
+        # On PyTorch with float32 default dtype, sometimes ints are promoted
+        # to float32, and sometimes to float64.
+        # When they are promoted to float32, explicitly convert the reference
         # numpy arrays to float32 to prevent them from being automatically promoted
         # to float64 instead.
         dtypes_np_ref = ['float32' if 'int' in dtype else dtype for dtype in dtypes]
