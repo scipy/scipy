@@ -9,8 +9,6 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
-                                   SCIPY_ARRAY_API, SCIPY_DEVICE)
-from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
                                    xp_default_dtype, SCIPY_ARRAY_API, SCIPY_DEVICE)
 from scipy._lib.array_api_compat import numpy as np
 from scipy._lib.array_api_extra.testing import lazy_xp_function
@@ -78,7 +76,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
         positive_only = False
 
     if (any('int' in dtype for dtype in dtypes)
-        and is_torch(xp) and xp_default_dtype(xp) == xp.float32
+        and xp_default_dtype(xp) == xp.float32
         and f_name not in {'betainc', 'betaincc', 'stdtr', 'stdtrit'}
     ):
         # When PyTorch promotes int to float32, explicitly convert the reference
@@ -100,7 +98,8 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
 def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
         xp, f_name, [dtype])
-    f = getattr(special, f_name)
+    f = getattr(special, f_name)  # Unwrapped
+    fw = getattr(special_wrapped, f_name)  # Wrapped by lazy_xp_function
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
@@ -118,7 +117,14 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
     args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
     args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
 
-    res = f(*args_xp)
+    if is_dask(xp):
+        # We're using map_blocks to dispatch the function to Dask.
+        # This is the correct thing to do IF all tested functions are elementwise;
+        # otherwise the output would change depending on chunking.
+        # Try to trigger bugs related to having multiple chunks.
+        args_xp = [arg.rechunk(5) for arg in args_xp]
+
+    res = fw(*args_xp)
     ref = f(*args_np)
 
     # When dtype_np is integer, the output dtype can be float
