@@ -1,0 +1,234 @@
+README*.pdf
+
+# Directories created by the CMake building process
+install/
+build/
+include/
+!c/include/
+!python/pybind11/include/
+lib/
+mod/
+
+# Byte-compiled / optimized / DLL files
+trash/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# misc files for testing
+matlab/tests/testdata/
+*.mat
+core
+core.*
+*.cmdx
+*.cmod
+*.dbg
+*.ilm
+*.log
+*.mod
+*__genmod.f90
+flang_unparsed_file*.*90
+main
+*.o
+*.out
+*.output
+*.pyd
+*.so
+*.udb
+*.ilm
+*.lst
+*.cmod
+*.stb
+*NSConflict*
+*_output.txt
+test.newuoa/
+test.cobyla/
+test.bobyqa/
+test.uobyqa/
+test.lincoa/
+testdata/
+bak/
+*_test
+*_tst*
+*log
+log*
+1
+2
+3
+9test
+atest
+dtest
+ftest
+gtest
+itest
+ntest
+rtest
+stest
+vtest
+xtest
+fort.*
+log/
+mlog/
+flog/
+test_data/
+
+# automatically generated intersection-form files
+intersection_form/
+.intersection_form/
+.interform
+
+# automatically generated m files
+# N.B.: Do not include all_solvers.m, dbgstr.m, and get_mexname.m, which are ignored under
+# matlab/interfaces/private, but not under matlab/setup_tools. Those in the latter will be copied to
+# the former during the setup. See also the .gitignore files under matlab/ and matlab/interfaces/private.
+all_precisions.m
+all_variants.m
+
+# plusFORT
+SPAGged/
+_pf_data/
+_gxchk.htm
+
+# Compiled MEX files
+*.mex*
+
+# PyCharm IDE
+.idea/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+wheelhouse
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Mac files
+.DS_Store
+
+# Version file
+_version.txt

@@ -1,0 +1,159 @@
+name: Test gfortran
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 16 * * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+
+  test:
+    name: Run gfortran tests
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-12, macos-13, macos-14]
+        compiler: [gcc]
+        version: [12, 13]  # Too expensive to test all versions
+        ikind: [i2, i8]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+
+    steps:
+
+      - name: Set http.postBuffer and core.compression
+        # This is a workaround for random "early EOF" of checkout.
+        # See https://github.com/actions/checkout/issues/748, https://github.com/actions/checkout/issues/1379
+        if: startsWith(matrix.os, 'windows')
+        run: git config --global http.postBuffer 1048576000 && git config --global core.compression 0
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          submodules: recursive
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          submodules: recursive
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+
+      - name: Miscellaneous setup
+        shell: bash  # Important; otherwise, the following statements do not work on Windows.
+        run: bash .github/scripts/misc_setup
+
+      - name: Make tools such as grep and git available on Windows
+        if: runner.os == 'Windows'
+        run: $env:Path += ";C:\Program Files\Git\usr\bin;C:\Program Files\Git\bin;C:\ProgramData\Chocolatey\bin"
+
+      - name: Set up Fortran
+        if: ${{ matrix.os != 'macos-14' }}
+        uses: fortran-lang/setup-fortran@main
+        with:
+          compiler: ${{ matrix.compiler }}
+          version: ${{ matrix.version }}
+      - name: Set up Fortran for macOS 14  # As of 20240219, fortran-lang/setup-fortran does not support macos-14
+        if: ${{ matrix.os == 'macos-14' }}
+        run: |
+          sudo ln -sf $(which gfortran-${{ matrix.version }}) $(dirname $(which gfortran-${{ matrix.version }}))/gfortran
+          which gfortran && gfortran --version
+
+      - name: Revise string.f90, so that we know what is happening if assertion fails
+        if: ${{ matrix.os == 'macos-14' }}
+        shell: bash
+        run: |
+          cd fortran/common || exit 42
+          $SEDI "s|\(if (abs(x) < REALMAX) then\)|\1\nif (.not. abs(x - str2real(s)) <= abs(x) * 10.0**(-ndgt_loc)) then\nwrite(*,*) '====> x = ', x, 's = ', s, 'sx = ', str2real(s)\nend if|" string.f90
+          cat string.f90
+
+      - name: Revise linalg.f90 regarding a postcondition of p_norm, so that we know what is happening if it fails
+        shell: bash
+        run: |
+          cd fortran/common || exit 42
+          $SEDI "s|'Y >= 0 unless X contains NaN'|'Y >= 0 unless X contains NaN'\&\n\&\/\/num2str(y)\/\/num2str(sum(abs(x)))\/\/num2str(int(is_nan(sum(abs(x)))))\/\/num2str(x)|" linalg.f90
+          $SEDI "s|function p_norm(x, p) result(y)|function p_norm(x, p) result(y)\nuse, non_intrinsic :: string_mod, only : num2str|" linalg.f90
+          cat linalg.f90
+
+      - name: Conduct the test
+        shell: bash  # Important; otherwise, `<` will not work on Windows.
+        # Not sure whether the Makefile has bugs, but on Windows the making of gtest always invokes
+        # the making of gtest_c twice even if the former is up to date after the first making. It
+        # may lead to errors due to parallel making. To avoid this, we make gtest_c first.
+        run: |
+            # 20221212: We skip the linting and extensive test on Windows due to the following
+            # reasons. The example will still be tested on Windows.
+            # 1. Windows does not support the symlink of linux, and hence mlint and flint do not work.
+            # 2. Makefile.common does not work on Windows for the moment due to quotation marks.
+            if [[ "$RUNNER_OS" != "Windows" ]] ; then
+                # Use $(( )) rather than $(expr ). See https://unix.stackexchange.com/questions/63166/bash-e-exits-when-let-or-expr-evaluates-to-0
+                if [[ $(($(date +%-d) % 2)) == 0 ]] ; then
+                    cd "$ROOT_DIR"/fortran/${{ matrix.solver }} && bash ./flint --all && bash ./mlint --all  # Conduct linting only if the test is small.
+                    export TESTDIM=small
+                else
+                    export TESTDIM=big
+                fi
+                echo $TESTDIM
+                echo "TESTDIM=$TESTDIM" >> "$GITHUB_ENV"
+
+                FFLAGS=-O$(($(date +%-d) % 5))
+                FFLAGS=${FFLAGS/O0/g}
+                FFLAGS=${FFLAGS/O4/fast}
+                export FFLAGS
+                echo $FFLAGS
+                echo "FFLAGS=$FFLAGS" >> "$GITHUB_ENV"
+
+                cd "$ROOT_DIR"/fortran/tests && make gtest_${{ matrix.ikind }}_c.${{ matrix.solver }} && make gtest_${{ matrix.ikind }}.${{ matrix.solver }}
+            fi
+
+            cd "$ROOT_DIR"/fortran/examples/${{ matrix.solver }}
+            export EXAMPLE_NUM=1 && make clean && make gtest
+            export EXAMPLE_NUM=2 && make clean && make gtest
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        # Note that `$TEST_DIR` does not work on Windows, where its equivalent is `$env:TEST_DIR`.
+        # In the following, we enquire `$TEST_DIR` by using the `env` context, which is platform independent.
+        with:
+          name: ${{ matrix.os }}-${{ matrix.solver }}-${{ matrix.ikind }}-${{ matrix.version }}-${{ env.TESTDIM }}-${{ env.FFLAGS }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        shell: bash  # Important; otherwise, `rm -rf` will not work on Windows.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

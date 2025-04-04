@@ -1,0 +1,222 @@
+name: Plot performance profiles, broken infnan
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 4 2-31/4 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+  test:
+    name: Profile PRIMA.
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        matlab: [latest]
+        dim: [small]
+        solver: [cobylal, cobylan, uobyqa, newuoa, bobyqa, lincoa]  # prima is too expensive
+        compiler_options: [-O0, -O1, -O2, -O3, -Ofast -fno-stack-arrays, -ffast-math]
+        competitor: [norma]
+
+    steps:
+
+      - name: Get the solver name
+        run:  echo "SOLNAME=$(echo ${{ matrix.solver }} | cut -c1-6)" >> $GITHUB_ENV
+
+      - name: Run `sudo apt update`
+        run: sudo apt update  # Otherwise, free-disk-space or other actions relying on `apt` may fail
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # all of these default to true, but feel free to set to "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false  # Important, or the runner may be shut down due to memory starvation.
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Clone MatCUTEst
+        uses: actions/checkout@v4
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          repository: matcutest/matcutest_compiled
+          path: matcutest
+
+      - name: Set up gfortran on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: fortran-lang/setup-fortran@main
+        with:
+          compiler: gcc
+          version: ${{ env.GFORTRAN_VERSION }}
+      - name: Check gfortran version on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: which gfortran && gfortran --version
+
+      - name: Install epstopdf and ghostscript
+        if: startsWith(matrix.os, 'ubuntu')
+        run: bash .github/scripts/install_epstopdf && bash .github/scripts/install_ghostscript
+
+      - name: Check MATLAB
+        id: check_matlab
+        run: if type 'matlab' &> /dev/null ; then echo "::set-output name=has_matlab::true" ; fi
+
+      - name: Set up MATLAB with optimization toolbox
+        if: ${{ steps.check_matlab.outputs.has_matlab != 'true' }}
+        uses: matlab-actions/setup-matlab@v2.2.0
+        with:
+          release: ${{ matrix.matlab }}
+          cache: true
+          products: Optimization_Toolbox Parallel_Computing_Toolbox
+
+      - name: Revise the Fortran code to break infnan
+        run: |
+          mv fortran/tests/testsuite/inf.F90 fortran/common/ && cat fortran/common/inf.F90
+          mv fortran/tests/testsuite/infnan.F90 fortran/common/ && cat fortran/common/infnan.F90
+
+      - name: Revise setup_compiler_options to print the revised mexopt file
+        run: |
+          cd matlab/tests/private || exit 1
+          sed -i "s|return|for ifile = 1 : length(config_files), ifile, cfile = fullfile(config_dir, config_files{ifile}) , system(['cat ', cfile]); end|" set_compiler_options.m
+
+      - name: Conduct the test
+        uses: matlab-actions/run-command@v2.1.1
+        with:
+          command: |
+            ver;
+            root_dir = pwd();
+
+            cd(fullfile(root_dir, 'matcutest')); install(); which macup
+
+            cd(fullfile(root_dir, 'matlab/tests'));
+            options = struct();
+            options.compiler_options = '${{ matrix.compiler_options }}';
+            options.debug = ~contains('${{ matrix.compiler_options }}', 'fast')
+            options.nr = 1;  % 1 random runs for each problem
+
+            if strcmp('${{ matrix.solver }}', 'cobylal')
+                prof('cobyla', '${{ matrix.dim }}', 'l', '${{ matrix.competitor }}', options);
+            elseif strcmp('${{ matrix.solver }}', 'cobylan')
+                prof('cobyla', '${{ matrix.dim }}', 'n', '${{ matrix.competitor }}', options);
+            elseif  strcmp('${{ matrix.solver }}', 'lincoa')
+                prof('${{ matrix.solver }}', '${{ matrix.dim }}', 'l', '${{ matrix.competitor }}', options);
+            elseif  strcmp('${{ matrix.solver }}', 'bobyqa')
+                prof('${{ matrix.solver }}', '${{ matrix.dim }}', 'b', '${{ matrix.competitor }}', options);
+            else
+                prof('${{ matrix.solver }}', '${{ matrix.dim }}', '${{ matrix.competitor }}', options);
+            end
+
+
+            % Move the files to prepare for uploading artifacts
+
+            solver = '${{ env.SOLNAME }}'
+            cd(fullfile(cd(), 'testdata'));
+            files = dir([solver, '*.summary.*.pdf'])
+            for ifile = 1 : length(files)
+                file = fullfile(files(ifile).folder, files(ifile).name)
+                newfile = fullfile(files(ifile).folder, ['no', '_', files(ifile).name])
+                movefile(file, newfile);
+            end
+            movefile(fullfile(cd(), '*summary*.pdf'), ['/tmp/', solver, '_profile_prima/']);
+            movefile(fullfile(cd(), '*.txt'), ['/tmp/', solver, '_profile_prima/']);
+
+            files = [dir(['/tmp/', solver, '_profile_prima/*start*']); dir(['/tmp/', solver, '_profile_prima/*end*'])]
+            for ifile = 1 : length(files)
+                file = fullfile(files(ifile).folder, files(ifile).name)
+                newfile = fullfile(files(ifile).folder, ['no', '_', files(ifile).name])
+                movefile(file, newfile);
+            end
+
+      - name: List problems that started but did not end
+        # The solver got stuck when solving these problems. Investigate what happened.
+        if: always()
+        shell: bash
+        run: |
+          solver=${{ env.SOLNAME }}
+          cd /tmp/${solver}_profile_prima/
+          ls -R1 *${solver}*_start > ${solver}_prob_start
+          ls -R1 *${solver}*_end > ${solver}_prob_end
+          diff ${solver}_prob_start ${solver}_prob_end > ${solver}_stuck || :
+          printf "\n\n>>>>>>>>>>>>>>>>\nProblems that started but did not end:\n\n"
+          cat ${solver}_stuck
+          printf "\n<<<<<<<<<<<<<<<<\n\n"
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: artifact-${{ matrix.solver }}-${{ matrix.dim }}-${{ matrix.competitor }}-${{ matrix.compiler_options }}
+          path: |
+            /tmp/${{ env.SOLNAME }}_profile_prima/*summary*.pdf
+            /tmp/${{ env.SOLNAME }}_profile_prima/*.txt
+            /tmp/${{ env.SOLNAME }}_profile_prima/*start*
+            /tmp/${{ env.SOLNAME }}_profile_prima/*end*
+            /tmp/${{ env.SOLNAME }}_profile_prima/*stuck*
+            /tmp/${{ env.SOLNAME }}_profile_prima/fort.*
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ./matlab/tests/testdata && rm -rf /tmp/${{ env.SOLNAME }}_profile_prima
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout_big_test ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}
+
+
+  merge_artifacts:
+    continue-on-error: true  # As of 20240218, this action may fail if there are too many artifacts. We ignore the failure.
+    if: always()
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: 00-merged-artifacts
+          pattern: artifact-*

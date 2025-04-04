@@ -1,0 +1,90 @@
+name: Test Absoft
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 20 1-31/3 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+jobs:
+
+  test:
+    name: Run Absoft tests
+    runs-on: [self-hosted, absoft]
+    strategy:
+      fail-fast: false
+      matrix:
+        ikind: [i2]
+        solver: [newuoa, lincoa, bobyqa, uobyqa]  # COBYLA cannot pass the test due to internal subroutines used as arguments
+
+    steps:
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Conduct the test
+        run: |
+          LOCAL="$HOME/local"
+          AFDIR="$(find "$LOCAL" -maxdepth 2 -name "absoft[0-9]*" -type d -print | sort | tail -n 1)"
+          source "$AFDIR"/bin/absvars.sh
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+          # Use $(( )) rather than $(expr ). See https://unix.stackexchange.com/questions/63166/bash-e-exits-when-let-or-expr-evaluates-to-0
+          FFLAGS=-O$(($(date +%-d) % 4))
+          FFLAGS=${FFLAGS/O0/g}
+          export FFLAGS
+          cd "$ROOT_DIR"/fortran/tests && make atest_${{ matrix.ikind }}.${{ matrix.solver }}
+          # af95 cannot handle allocatable characters.
+          # cd "$ROOT_DIR"/fortran/examples/${{ matrix.solver }} && make atest
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.0.0
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: ${{ matrix.solver }}-${{ matrix.ikind }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  merge_artifacts:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: test
+    steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v4.0.0
+      - name: Unzip all artifacts
+        run: ls -al && mv */* ./ && ls -al
+      - name: Upload all files
+        uses: actions/upload-artifact@v4.0.0
+        with:
+          name: all
+          path: ./*
+      - name: Remove all files
+        run: ls -al && rm -rf ./*

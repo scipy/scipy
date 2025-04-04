@@ -1,0 +1,104 @@
+name: Test nvfortran on Raspberry Pi
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 16 3-31/5 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+
+  test:
+    name: Run nvfortran tests
+    runs-on: [self-hosted, pi]
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        ikind: [i2, i8]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+        fflags: [-O1, -O2, -O3, -g, -fast]
+        testdim: [small, big]
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Revise bobyqa/trustregion.f90 to see why `xbdi(trueloc(xopt >= su .and. gopt <= 0)) = 1` leads to a SIGFPE
+        shell: bash
+        run: |
+          cd fortran/bobyqa || exit 42
+          $SEDI "s|xbdi(trueloc(xopt >= su .and. gopt <= 0)) = 1|write(*,*) '=====> su = ', su, 'xopt = ', xopt, 'gopt = ', gopt\nxbdi(trueloc(xopt >= su .and. gopt <= 0)) = 1|"  trustregion.f90
+          cat trustregion.f90
+
+      - name: Conduct the test
+        run: |
+          # Without the following lines, flint does not invoke vtest. No idea why.
+          NVDIR="/opt/nvidia/hpc_sdk/Linux_aarch64/"
+          if [[ -d "$NVDIR" ]] ; then NVBIN=$(find "$NVDIR" -wholename "*compilers/bin" -type d -print | sort | tail -n 1) ; fi
+          if [[ -n "$NVBIN" ]] ; then export PATH=$PATH:"$NVBIN" ; fi
+          cd "$ROOT_DIR"/fortran/${{ matrix.solver }} && bash ./flint -v && bash ./mlint -v
+          # As of nvfortran 23.1, date_and_time() and random_number are not supported on Raspberry Pi
+          # 4B. Thus we have to disable the extensive tests, trying only the simple example.
+          #cd "$ROOT_DIR"/fortran/tests && export FFLAGS=${{ matrix.fflags }} && export TESTDIM=${{ matrix.testdim }} && make vtest_${{ matrix.ikind }}.${{ matrix.solver }}
+          printf "\n\n********************************************************************************"
+          printf "\nExtensive tests are skipped due to the unavailability of date_and_time() and random_number."
+          printf "\nSee the comments in the yml file.\nCheck whether they are available now."
+          printf "\n********************************************************************************\n\n"
+          cd "$ROOT_DIR"/fortran/examples/${{ matrix.solver }}
+          export EXAMPLE_NUM=1 && make clean && make vtest
+          export EXAMPLE_NUM=2 && make clean && make vtest
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: ${{ matrix.solver }}-${{ matrix.ikind }}-${{ matrix.fflags }}-${{ matrix.testdim }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

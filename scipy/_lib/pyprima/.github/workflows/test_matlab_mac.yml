@@ -1,0 +1,88 @@
+name: Test MATLAB, macOS ARM64
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 0 * * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+env:
+  MATLAB: /Applications/MATLAB_R2023b.app/bin/matlab
+
+jobs:
+  test:
+    name: Test MATLAB
+    runs-on: [self-hosted, macOS, ARM64]
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          submodules: recursive
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          submodules: recursive
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Revise fmxapi.F90
+        shell: bash
+        run: |
+          cd matlab/mex_gateways/
+          $SEDI "s|\(.*maybe due to overflow.*$\)|\1\nwrite(*,*) 'x = ', x; write(*,*) 'x_dp = ', x_dp|" fmxapi.F90
+          cat fmxapi.F90
+      - name: Revise postprima.m
+        shell: bash
+        run: |
+          cd matlab/interfaces/private/
+          $SEDI "s/max(\[0, chist\]) > 0)/max(\[0, chist\]) > 0)\nprobinfo.raw_data\noutput\nchist/" postprima.m
+          cat postprima.m
+      # - name: Revise cobylb.f
+      #   shell: bash
+      #   run: |
+      #     cd fortran/classical/cobyla/
+      #     $SEDI "s/cstrv = maxval(\[ZERO, -constr\])/cstrv = maxval([\ZERO, -constr\])\n       write(*,*) 'x = ', x(1:n)\n       write(*,*) 'f = ', f\n       write(*,*) 'constr = ', constr(1:m)\n       write(*,*) 'cstrv = ', cstrv/" cobylb.f
+      #     cat cobylb.f
+
+      - name: Conduct the test  # We do not use matlab-actions/run-command, which is not supported on macOS ARM64 as of 20240119
+        run: ${{ env.MATLAB }} -nojvm -batch "cd matlab/tests; testprima_ex();"
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout_big_test ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

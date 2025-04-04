@@ -1,0 +1,209 @@
+name: Stress test on large problems, MATLAB
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 6 1-31/2 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+      random-seed:
+        description: Random Seed (Optional)
+        required: false
+      precision:
+        description: Test Precision (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0} , seed {1}, precision {2}', inputs.git-ref, inputs.random-seed, inputs.precision) || '' }}
+
+jobs:
+  test:
+    name: Stress test of PRIMA on large problems
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+
+      # The matrix is the same as that of recursive_test_matlab.yml, except for `test`.
+      matrix:
+        os: [ubuntu-20.04, ubuntu-latest, windows-2019, windows-latest, macos-12, macos-13]
+        matlab: [R2020b, R2021a, R2022a, R2023a, latest]
+        solver: [uobyqa, newuoa, bobyqa, lincoa, cobyla]
+        test: [normal, tough]
+
+        # Exclude some versions of OS and MATLAB. We test ONLY the earliest and latest versions of MATLAB on each OS.
+        exclude:
+          # ubuntu-latest: test R2020b and latest
+          - os: ubuntu-latest
+            matlab: R2021a
+          - os: ubuntu-latest
+            matlab: R2022a
+          - os: ubuntu-latest
+            matlab: R2023a
+
+          # ubuntu-20.04: test R2020b and latest
+          - os: ubuntu-20.04
+            matlab: R2021a
+          - os: ubuntu-20.04
+            matlab: R2022a
+          - os: ubuntu-20.04
+            matlab: R2023a
+
+          # macos-13: test R2020b and latest
+          - os: macos-13
+            matlab: R2021a
+          - os: macos-13
+            matlab: R2022a
+          - os: macos-13
+            matlab: R2023a
+
+          # macos-12: test R2022a and latest
+          - os: macos-12
+            matlab: R2020b
+          - os: macos-12
+            matlab: R2021a
+          - os: macos-12
+            matlab: R2023a
+
+          # windows-latest: test R2023a and latest
+          - os: windows-latest
+            matlab: R2020b
+          - os: windows-latest
+            matlab: R2021a
+          - os: windows-latest
+            matlab: R2022a
+
+          # windows-2019: test R2021a and R2022a
+          - os: windows-2019
+            matlab: R2020b
+          - os: windows-2019
+            matlab: R2023a
+          - os: windows-2019
+            matlab: latest
+
+
+    steps:
+
+      - name: Set http.postBuffer and core.compression
+        # This is a workaround for random "early EOF" of checkout.
+        # See https://github.com/actions/checkout/issues/748, https://github.com/actions/checkout/issues/1379
+        if: startsWith(matrix.os, 'windows')
+        run: git config --global http.postBuffer 1048576000 && git config --global core.compression 0
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+        # As of 231227, checkout with ssh fails frequently on Windows runners.
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Decide gfortran version for MATLAB on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          GFVER=12
+          if [[ "${{ matrix.os }}" = "ubuntu-20.04" ]] ; then
+              GFVER=11
+          fi
+          if [[ "${{ matrix.matlab }}" = "R2020b" || "${{ matrix.matlab }}" = "R2021a" ]] ; then
+              GFVER=9
+          fi
+          echo "GFVER=$GFVER" >> $GITHUB_ENV
+      - name: Set up gfortran on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        uses: fortran-lang/setup-fortran@main
+        with:
+          compiler: gcc
+          version: ${{ env.GFVER }}
+      - name: Check gfortran version on Linux
+        if: startsWith(matrix.os, 'ubuntu')
+        run: which gfortran && gfortran --version
+
+      - name: Decide the version of oneAPI to use
+        shell: bash
+        run: |
+          ONEAPI_VERSION=
+          if [[ "${{ matrix.os }}" = "windows-"* ]] ; then
+              if [[ "${{ matrix.matlab }}" = "R2020"* || "${{ matrix.matlab }}" = "R2021"* || "${{ matrix.matlab }}" = "R2022"* || "${{ matrix.matlab }}" = "R2023"* ]] ; then
+                  ONEAPI_VERSION=2023
+              fi
+          fi
+          echo "ONEAPI_VERSION=$ONEAPI_VERSION" >> $GITHUB_ENV
+          echo "ONEAPI_VERSION:" $ONEAPI_VERSION
+
+      - name: Install Intel oneAPI on macOS
+        if: startsWith(matrix.os, 'macos')
+        run: bash .github/scripts/install_oneapi_macos.sh $ONEAPI_VERSION
+
+      - name: Install Intel oneAPI on Windows
+        if: startsWith(matrix.os, 'windows')
+        run: cmd.exe "/K" '".github\scripts\install_oneapi_windows.bat %ONEAPI_VERSION%"'
+
+      - name: Set up MATLAB with optimization toolbox
+        uses: matlab-actions/setup-matlab@v2.2.0
+        with:
+          release: ${{ matrix.matlab }}
+          cache: true
+          products: Optimization_Toolbox Parallel_Computing_Toolbox
+
+      - name: Revise the Fortran code to alternate the integer kind.
+        shell: bash
+        run: |
+          IK=$(( 2**(4 + $(date +%-d) % 3) ))
+          $SEDI "s|#define PRIMA_INTEGER_KIND 0|#define PRIMA_INTEGER_KIND ${IK}|g" fortran/common/ppf.h
+          cat fortran/common/ppf.h
+
+      - name: Conduct the test
+        uses: matlab-actions/run-command@v2.1.1
+        with:
+          command: |
+            ver;
+            root_dir = pwd();
+            cd(fullfile(root_dir, 'matlab/tests'));
+            options = struct();
+            if ~isempty('${{ inputs.random-seed }}')
+                options.seed = str2num('${{ inputs.random-seed }}');
+            end
+            options.tough = strcmp('${{ matrix.test }}', 'tough');
+            if ~isempty('${{ inputs.precision }}')
+                options.precision = '${{ inputs.precision }}';
+            else
+                options.precision = 'date';
+            end
+            stress('${{ matrix.solver }}', options);
+
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

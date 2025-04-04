@@ -1,0 +1,152 @@
+name: Stress test on large problems, Fortran
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 18 2-31/2 * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+  test:
+    name: Stress test of PRIMA on large problems
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14]
+        compiler: [g, i, v, s, f, x, d]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+        testdim: [large]
+        exclude:
+          - os: macos-13
+            compiler: v
+          - os: macos-13
+            compiler: s
+          - os: macos-13
+            compiler: f
+          - os: macos-13
+            compiler: x
+          - os: macos-13
+            compiler: d
+
+          - os: macos-14
+            compiler: i
+          - os: macos-14
+            compiler: v
+          - os: macos-14
+            compiler: s
+          - os: macos-14
+            compiler: f
+          - os: macos-14
+            compiler: x
+          - os: macos-14
+            compiler: d
+
+          - compiler: s  # BOBYQA fails stest for unknown reason
+            solver: bobyqa
+
+    steps:
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Install AOCC
+        if: ${{ matrix.compiler == 'd' }}
+        run: bash .github/scripts/install_aocc
+
+      - name: Install gfortran
+        if: ${{ matrix.compiler == 'g' }}
+        uses: fortran-lang/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+
+      - name: Install Intel oneAPI on Linux
+        if: ${{ startsWith(matrix.os, 'ubuntu') && (matrix.compiler == 'i' || matrix.compiler == 'x') }}
+        run: bash .github/scripts/install_oneapi_linux.sh
+
+      - name: Install Intel oneAPI on macOS
+        if: ${{ startsWith(matrix.os, 'macos') && (matrix.compiler == 'i' || matrix.compiler == 'x') }}
+        run: bash .github/scripts/install_oneapi_macos.sh
+
+      - name: Install nvfortran
+        if: ${{ matrix.compiler == 'v' }}
+        run: bash .github/scripts/install_nvfortran
+
+      - name: Install Oracle sunf95
+        if: ${{ matrix.compiler == 's' }}
+        run: bash .github/scripts/install_sunf95
+
+      # Install Flang after AOCC, to make sure that flang is this one, while AOCC flang will be
+      # known as aflang.
+      - name: Install Flang
+        if: ${{ matrix.compiler == 'f' }}
+        run: bash .github/scripts/install_flang
+
+      - name: Conduct the test
+        run: |
+          cd "$ROOT_DIR"/fortran/tests
+          export TESTDIM=${{ matrix.testdim }}
+          RK=$((2**($(date +%-d) % 3 + 2)))
+          if [[ $RK==16 && dfrv == *${{ matrix.compiler }}* ]] ; then
+              echo "r16 test is skipped for compiler " ${{ matrix.compiler }}
+              echo "Test r8 instead"
+              RK=8
+          fi
+          echo "RK = " $RK
+          make ${{ matrix.compiler }}test_i2_r${RK}_d1_tst.${{ matrix.solver }}
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v4.3.1
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        with:
+          name: ${{ matrix.os }}-${{ matrix.solver }}-${{ matrix.compiler }}-${{ matrix.testdim }}
+          path: ${{ env.TEST_DIR }}/prima/fortran/tests/test.${{ matrix.solver }}/log/*.log
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

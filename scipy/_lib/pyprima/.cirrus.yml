@@ -1,0 +1,159 @@
+task:
+
+  # Perform the task only if the folders or files specified below are changed
+  # See https://cirrus-ci.org/guide/writing-tasks/#conditional-task-execution
+  # skip: the task will be created / triggered, but its execution will be skipped, and it will be marked as successful.
+  #skip: "!changesInclude('.cirrus.yml', 'fortran/**', 'c/**', 'python/**')"
+  # only_if: the task will not be created / triggered.
+  only_if: "changesInclude('.cirrus.yml', 'fortran/**', 'c/**', 'python/**')"
+
+  timeout_in: 120m  # There is a hard limit of 2 hours for free tasks.
+
+  matrix:
+    - name: AMD64 FreeBSD
+      freebsd_instance:
+        image_family: freebsd-14-0
+        architecture: amd64
+
+    # The following seems not available as of 20240409. See
+    # https://github.com/cirruslabs/cirrus-ci-docs/issues/906
+    # https://cirrus-ci.com/task/6720657520590848
+    # - name: ARM64 FreeBSD
+    #   freebsd_instance:
+    #     image_family: freebsd-14-0
+    #     architecture: arm64
+
+    - name: MacOS Silicon
+      macos_instance:
+        image: ghcr.io/cirruslabs/macos-sonoma-base:latest
+
+    - name: AMD64 Ubuntu
+      container:
+        image: ubuntu:latest
+
+    - name: ARM64 Ubuntu
+      arm_container:
+        image: ubuntu:latest
+
+    - name: AMD64 Debian
+      container:
+        image: debian:latest
+
+    - name: ARM64 Debian
+      arm_container:
+        image: debian:latest
+
+    - name: AMD64 Fedora
+      container:
+        image: fedora:latest
+
+    - name: ARM64 Fedora
+      arm_container:
+        image: fedora:latest
+
+    # - name: AMD64 Alpine
+    #   container:
+    #     image: alpine:latest
+
+    # - name: ARM64 Alpine
+    #   arm_container:
+    #     image: alpine:latest
+
+
+  dependencies_script: |
+    set -e
+    set -x
+
+    echo "MK=make" >> $CIRRUS_ENV
+
+    uname -a
+
+    if [ -f /etc/os-release ] ; then
+        cat /etc/os-release
+    fi
+
+    if [ "$(uname)" == "FreeBSD" ] ; then
+        pkg update && pkg upgrade -y && pkg install -y bash gcc git cmake devel/gmake devel/gdb
+        echo "MK=gmake" >> $CIRRUS_ENV
+    elif [ "$(uname)" == "Darwin" ] ; then
+        brew update && brew upgrade && brew install gcc git make cmake
+    elif grep -qi "fedora" /etc/os-release ; then
+        dnf upgrade -y && dnf install -y gcc git make cmake gfortran gdb libasan libubsan
+    #elif grep -qi "alpine" /etc/os-release ; then
+        #apk update && apk upgrade && apk add musl-dev gcc git make cmake gfortran gdb
+    else
+        apt update && apt upgrade -y && apt install -y gcc git make cmake gfortran gdb
+    fi
+
+    type gcc
+    gcc --version
+    type gfortran
+    gfortran --version
+    type cmake
+    cmake --version
+    if [ ! "$(uname)" == "Darwin" ] ; then
+        type gdb
+        gdb --version
+    fi
+
+
+  test_script: |
+    ROOT_DIR=$(git rev-parse --show-toplevel)
+    for SOLVER in uobyqa newuoa bobyqa lincoa cobyla ; do
+        cd $ROOT_DIR/fortran/examples/$SOLVER
+        export EXAMPLE_NUM=1 && $MK gtest
+        export EXAMPLE_NUM=2 && $MK gtest
+    done
+
+
+  cmake_test_script: |
+    ROOT_DIR=$(git rev-parse --show-toplevel)
+    cd $ROOT_DIR
+
+    export CC=gcc
+    CFLAGS="-Wall -Wextra -Wpedantic -Werror"
+    export FC=gfortran
+    #export FFLAGS='-Wall -Wextra -Wpedantic -Werror -fimplicit-none -frecursive -fcheck=all -fstack-check -Wno-function-elimination -Wno-trampolines'
+    export FFLAGS='-Wall -Wextra -Wpedantic -Werror -fimplicit-none -frecursive -fcheck=all -fstack-check -Wno-function-elimination'
+
+    $FC --version
+    $CC --version
+    cmake --version
+
+    cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. -LAH -DCMAKE_C_FLAGS="${CFLAGS}" -DCMAKE_Fortran_FLAGS="${FFLAGS}" .
+    cmake --build . --target install
+    cmake --build . --target tests
+    ctest --output-on-failure -V -E stress
+
+
+  fortran_test_script: |
+    ROOT_DIR=$(git rev-parse --show-toplevel)
+    cd $ROOT_DIR/fortran/tests
+
+    # Decide a random solver to test by $(date + %N)
+    SOLVER_NUM=$(($(date +%N) % 5))
+    if [ $SOLVER_NUM -eq 0 ] ; then
+        SOLVER=uobyqa
+    elif [ $SOLVER_NUM -eq 1 ] ; then
+        SOLVER=newuoa
+    elif [ $SOLVER_NUM -eq 2 ] ; then
+        SOLVER=bobyqa
+    elif [ $SOLVER_NUM -eq 3 ] ; then
+        SOLVER=lincoa
+    else
+        SOLVER=cobyla
+    fi
+    echo $SOLVER_NUM $SOLVER
+
+    # Decide a random integer kind to test by $(date +%N)
+    IK=$((2**($(date +%N) % 3 + 1)))
+    echo $IK
+
+    # Decide a random real kind to test by $(date +%N)
+    RK=$((2**($(date +%N) % 3 + 2)))
+    echo $RK
+
+    $MK clean && $MK gtest_i${IK}_r${RK}_d1_tst.$SOLVER
+
+
+  on_failure:

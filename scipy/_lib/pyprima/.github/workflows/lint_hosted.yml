@@ -1,0 +1,140 @@
+name: Lint the Fortran code and the MEX gateways on GitHub hosted runners
+
+on:
+  # Trigger the workflow on push or pull request
+  #push:
+  #pull_request:  # DANGEROUS! MUST be disabled for self-hosted runners!
+  # Trigger the workflow by cron. The default time zone of GitHub Actions is UTC.
+  schedule:
+    - cron: '0 17 * * *'
+  # Trigger the workflow manually
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: Git Ref (Optional)
+        required: false
+
+# Show the git ref in the workflow name if it is invoked manually.
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('Manual run {0}', inputs.git-ref) || '' }}
+
+
+jobs:
+
+  test:
+    name: Lint the Fortran code
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        linter: [flint, mlint]
+        solver: [newuoa, cobyla, lincoa, bobyqa, uobyqa]
+
+    steps:
+
+      - name: Run `sudo apt update`
+        run: sudo apt update  # Otherwise, free-disk-space or other actions relying on `apt` may fail
+
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # all of these default to true, but feel free to set to "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false  # Important, or the runner may be shut down due to memory starvation.
+
+      - name: Clone Repository (Latest)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref == ''
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+      - name: Clone Repository (Custom Ref)
+        uses: actions/checkout@v4
+        if: github.event.inputs.git-ref != ''
+        with:
+          ref: ${{ github.event.inputs.git-ref }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          submodules: recursive
+
+      - name: Miscellaneous setup
+        run: bash .github/scripts/misc_setup
+
+      - name: Set up MATLAB
+        id: set-up-matlab
+        if: ${{ matrix.linter == 'mlint' }}
+        uses: matlab-actions/setup-matlab@v2.2.0
+        with:
+          release: latest
+          cache: false  # We should not cache MATLAB; otherwise, an empty directory will be cached since we remove $MATLABROOT in the next step
+          products: Parallel_Computing_Toolbox
+
+      - name: Get fintrf.h and remove MATLAB
+        if: ${{ matrix.linter == 'mlint' }}
+        run: |
+          MATLABROOT=${{steps.set-up-matlab.outputs.matlabroot}}
+          # fintrf.h must be located under a directory "extern/include/", or mlint cannot find it.
+          mkdir -p ~/extern/include/
+          cp "$MATLABROOT"/extern/include/fintrf.h ~/extern/include/ || exit 2
+          sudo chmod 777 ~/extern/include/fintrf.h || exit 3
+          # Remove MATLAB, or the runner will run out of space.
+          sudo rm -rf "$MATLABROOT"/* || exit 4
+          # mlint uses `locate` to find fintrf.h
+          sudo apt update && sudo apt install mlocate -y && sudo updatedb
+          locate '/extern/include/fintrf.h' || exit 5
+
+      - name: Install AOCC
+        run: bash .github/scripts/install_aocc
+
+      - name: Install gfortran
+        uses: fortran-lang/setup-fortran@main
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: ${{ env.GFORTRAN_VERSION }}
+
+      - name: Install Intel oneAPI
+        run: bash .github/scripts/install_oneapi_linux.sh
+
+      - name: Install g95
+        run: bash .github/scripts/install_g95
+
+      - name: Install nvfortran
+        run: bash .github/scripts/install_nvfortran
+
+      - name: Install Oracle sunf95
+        run: bash .github/scripts/install_sunf95
+
+      # Install Flang after AOCC, to make sure that flang is this one, while AOCC flang will be
+      # known as aflang.
+      - name: Install Flang
+        run: bash .github/scripts/install_flang
+
+      - name: Conduct the test
+        run: |
+          type gfortran ifort ifx aflang g95 nvfortran sunf95 flang
+          cd "$ROOT_DIR"/fortran/${{ matrix.solver }} && bash ./${{ matrix.linter }} --all
+
+      - name: Remove the test data
+        if: always()  # Always run even if the workflow is canceled manually or due to overtime.
+        run: rm -rf ${{ env.TEST_DIR }}
+
+  # The following job check whether the tests were successful or cancelled due to timeout.
+  # N.B.: Remember to specify `continue-on-error: true` for the job of the tests.
+  check_success_timeout:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: test
+    steps:
+      - name: Clone the GitHub actions scripts
+        uses: actions/checkout@v4
+        with:
+          repository: equipez/github_actions_scripts
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_ACT }} # This forces checkout to use SSH, not HTTPS
+          path: scripts
+
+      - name: Check whether the tests were successful or cancelled due to timeout
+        run: bash scripts/check_success_timeout ${{ secrets.GITHUB_TOKEN }} ${{ github.repository }} ${{ github.run_id }}

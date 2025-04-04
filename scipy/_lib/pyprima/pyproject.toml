@@ -1,0 +1,54 @@
+[build-system]
+# scikit-build-core claims there's no need to explicitly specify Ninja,
+# as it will "automatically be downloaded if needed", but I don't know
+# how it determines "if needed", all I know is that we need it, particularly
+# for Windows.
+requires = ["scikit-build-core", "numpy", "ninja"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "prima"
+dependencies = ["numpy", "scipy >= 1.9.0"]
+dynamic = ["version"]
+# The driving factor for our Python version is that we need a version of SciPy that
+# includes https://github.com/scipy/scipy/pull/15394. This was merged in SciPy 1.9.0,
+# and Python 3.7 only support up to SciPy 1.7.3 whereas 3.8 supports 1.10.1.
+requires-python = ">= 3.8"
+
+[tool.scikit-build]
+cmake.args = ["-G Ninja", "-DBUILD_SHARED_LIBS=OFF", "-DPRIMA_ENABLE_PYTHON=ON"]
+cmake.verbose = true
+logging.level = "INFO"
+metadata.version.provider = "scikit_build_core.metadata.setuptools_scm"
+sdist.include = [".git-archival.txt"]
+install.components = ["Prima_Python_C_Extension"]
+
+[tool.setuptools_scm]  # Section required
+write_to = "_version.txt"
+
+[tool.cibuildwheel]
+build-verbosity = 3
+test-command = "coverage run --branch --source=prima,{project} -m pytest -s {project}/python/tests && coverage html -d {project}/prima_htmlcov"
+test-requires = ["pytest", "coverage", "packaging"]
+# We need scipy and pdfo (which depends on scipy) for compatibility tests.
+# scipy is not available on all platforms we support, so we try to install it
+# if posssible, otherwise we skip it. The test will skip itself if it cannot
+# import scipy. "--only-binary" ensure we do not try to build scipy from
+# source (which requires special setup we have no intention of doing).
+before-test = "pip install --only-binary :all: scipy pdfo || true"
+skip = [
+  # On windows we get a complaint from CMake:
+  # "CMake Error at python/pybind11/tools/FindPythonLibsNew.cmake:191 (message):
+  #   Python config failure: Python is 32-bit, chosen compiler is 64-bit"
+  # I do not see a way to install a 32-bit compiler with the setup-fortran action,
+  # so we will just build 64-bit wheels on windows.
+  "*-win32", 
+  # Disable building PyPy wheels on all platforms. If there is interest in supporting PyPy
+  # we can look into it.
+  "pp*",
+  # Disable musllinux for the moment. It successfully built but there was an error when testing
+  "*musllinux*",
+  # SciPy does not provide binaries for 32-bit Python on Linux starting from 3.10.
+  # As such we can compile but we cannot test, so we skip those.
+  "cp31*-manylinux_i686",
+]

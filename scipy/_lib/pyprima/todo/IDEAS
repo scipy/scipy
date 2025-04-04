@@ -1,0 +1,112 @@
+Fortran
+
+0. Stack management
+Local arrays (array with a constant size that is known at compilation time) are usually stored on
+the stack by default. Automatic arrays (arrays with declared variable sizes that depend on the dummy
+variables) can be either on the stack (e.g., ifort, which is adjustable by -heap-arrays [n]) or on
+the heap (e.g., gfortran, adjustable by fmax-stack-var-size=) by default. To avoid stack overflow
+on all platforms, of course we should assume the former.
+
+As of 20220321, the typical default stack size limits are:
+
+8 MB on Linux (8B*1024*1024)
+512 KB on macOS (8B*256*256)
+1 MB on Windows (8B*512*256).
+
+These numbers are small if we use automatic arrays as matrices in scientific computing. Therefore,
+we have to carefully control the usage of automatic arrays. The case for C/C++ is similar, but it is
+not a major concern for MATLAB, Python, Julia, or R.
+
+This partially explains why Powell always declare a large working space at the beginning of the
+code, and then partition this working space to small pieces, and use them throughout the code
+without declaring new arrays. It was how he controlled the use of memory, particularly stack memory.
+
+Note that dynamic memory allocation was not supported by Fortran until Fortran 90. So Powell had no
+choice. In Modern Fortran, however, we can declare arrays as allocatable and allocate them when
+needed. Such arrays will typically be stored on the heap, which is much more available than stack.
+
+Note that The Fortran standard talks nothing about where to store the arrays. It is totally decided
+by the implementation of the compiler.
+
+Talking about Fortran/C/C++ implementation of DFO solvers, arrays in the main subroutine (*OB)
+should be allocatable --- they tend to be relatively large, and they are not allocated/deallocated
+frequently (normally only once). Also those in SELECTX.
+
+Note particularly:
+1.) For gfortran, -Ofast implies -fstack-arrays, which forces automatic arrays to be on the stack.
+2.) Temporary arrays created at runtime (e.g., by an expression, or by passing non-contiguous arrays)
+are on the stack by default, at least for ifort.
+3.) Fortran functions can return allocatable arrays. Functions that define potentially large arrays
+(e.g., MATPROD) should declare such arrays allocatable instead of automatic. See
+https://stackoverflow.com/questions/58750161/fortran-function-returning-allocatable-array
+
+See https://jblevins.org/log/segfault for some discussion.
+
+Maximal size of local/automatic arrays in the subroutines of the solvers
+
+NEWUOA: 4*N*NPT-NPT-N (classical: (NPT+13)*(NPT+N)+3*N*(N+3)/2), OK if N*NPT < 64*256 (small!)
+COBYLA: max(4+4M+6N, (M+2)*N, (N+2)*N) (classical: N*(3*N+2*M+11)+4*M+6), OK if (M+2)*(N+2) < 256*256
+TODO for COBYLA: implement getmodel(conmat, fval, simi, A), and call it before TR step and GEO step,
+so that we do not need to calculate A within GEOSTEP, which would necessitate a array of (m+1)*n in GEOSTEP.
+
+N.B.:
+1.) We do not implement GETMODEL as a function, or it will create an automatic/temporary array of (m+1)*n.
+2.) Do not call GETMODEL after updatexfc: if we do that, we would also need to call it at three other
+places: after initialization, after CPEN is updated and we call UPDATEPOLE (two places).
+
+However,
+1.) it is not true that we use (stack) memory more efficiently --- it is only true that we keep
+the maximal local/automatic array small.
+2.) the actual use of stack size may be larger than these maximal values, because, when subroutines
+are called, the stack memory of the caller still takes the memory; in addition, we did not calculate
+the temporary arrays or the local/automatic arrays in the linear algebra subroutines, which take at
+most a multiple of the stack size calculated above.
+
+1. Implement a module prima, and then newuoa_mod etc as submodules. Use the solvers by
+
+use, non_intrinsic :: prima_mod, only : newuoa
+use, non_intrinsic :: prima_mod, only : RP, IK
+
+2. Let COBYLA and LINCOA offer an option to respect bounds.
+
+3. Offer a subroutine called `prima`, which behaves similarly as the function `prima` in
+MATLAB/Python. It should be accessible by
+
+use, non_intrinsic :: prima_mod, only : prima
+
+4. Make subroutines trstep (maybe others) available to users by
+
+use, non_intrinsic :: prima_mod, only : trstep
+
+It should solve unconstrained/bound-constrained/linearly-constrained trust region subproblems.
+
+5. Create a module called powalg_mod. It should contain the Powell-style linear algebra subroutines,
+   examples including calquad, shiftbase, updateq, updateh, maybe also trstep.
+
+6. In the implementation of trstep, do not pass the Hessian but pass a function hmul that
+calculates the Hessian vector product. This will make the subroutine independent of the Powell-style
+Hessian triplet (HQ, PQ, XPT). In Fortran, the function hmul should have the following signature:
+!----------------------------!
+function hmul(x) result(y)
+real(RP), intent(in) :: x(:)
+real(RP) :: y(size(x))
+end function
+!----------------------------!
+Note that hmul must have access to the Hessian. Thus it has to be implemented an internal
+function in the function that calls trstep. In MATLAB/Python/R/C++, it can be implemented as an
+anonymous/lambda function with the Hessian being a parameter.
+
+Update 20230312: However, doing this will make the scaling impossible. See the code of trust-region
+subproblems for more information.
+
+Also, implement circle_fun_trsapp etc as internal functions with `args` being a parameter that does
+not need to be passed.
+
+
+C++
+
+See Eigen ( https://eigen.tuxfamily.org ) to get support for matrices, vectors, and basic linear
+algebra. See also
+https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/p1673r12.html.
+https://fortran-lang.discourse.group/t/c-standard-library-dense-linear-algebra-interface/6286/6
+Will BLAS be incorporated in standard C++?

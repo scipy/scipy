@@ -1,0 +1,6 @@
+This directory contains git configurations for the project, including the following.
+
+- config: pushurls, submodules
+- Hooks: prepare-commit-msg, post-commit
+
+Usage: Copy the files to the .git directory in the project root directory.

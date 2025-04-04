@@ -1,0 +1,36 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[submodule]
+	active = .
+[remote "origin"]
+	url = git@github.com:libprima/prima.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+	pushurl = git@github.com:libprima/prima.git
+	pushurl = git@github.com:libsprima/prima.git
+	pushurl = git@github.com:primapack/prima.git
+	pushurl = git@github.com:fortlab/prima.git
+	pushurl = git@github.com:primalib/prima.git
+	pushurl = git@github.com:opt4ai/prima.git
+	pushurl = git@github.com:opt2ai/prima.git
+	pushurl = git@github.com:zequipe/prima.git
+	pushurl = git@github.com:equipez/prima.git
+	pushurl = git@github.com:s-prima/prima.git
+    pushurl = git@github.com:zaikunzhang/prima.git
+	pushurl = git@github.com:sprimalib/prima.git
+	pushurl = git@gitlab.com:libprima/prima.git
+    pushurl = git@gitee.com:libprima/prima.git
+	gh-resolved = base
+[branch "main"]
+	remote = origin
+	merge = refs/heads/main
+[submodule ".development"]
+	url = git@github.com:libprima/prima_development.git
+[submodule ".github/scripts"]
+	url = git@github.com:equipez/github_actions_scripts.git
+[submodule "python/pybind11"]
+	url = https://github.com/pybind/pybind11
+[pull]
+	rebase = false

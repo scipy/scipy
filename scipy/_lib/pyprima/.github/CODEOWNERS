@@ -1,0 +1,5 @@
+# .github/CODEOWNERS
+# Define individuals or teams that are responsible for code in the repository.
+# See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners for details.
+
+*  @zaikunzhang
