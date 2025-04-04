@@ -73,7 +73,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
 
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
-        and ((is_torch(xp) and f_name == 'xlogy')
+        and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
                                            'rel_entr', 'xlogy')))
     ):
