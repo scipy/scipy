@@ -4,7 +4,7 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api import is_array_api_strict, xp_default_dtype, xp_device
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -300,6 +300,14 @@ class TestLogSumExp:
         logsumexp(a, b=b)
         xp_assert_equal(a, xp.asarray([5., 4.]))
         xp_assert_equal(b, xp.asarray([3., 2.]))
+
+    @pytest.mark.parametrize("x_raw", [1.0, 1.0j, []])
+    def test_device(self, x_raw, xp, devices):
+        """Test input device propagation to output."""
+        for d in devices:
+            x = xp.asarray(x_raw, device=d)
+            assert xp_device(logsumexp(x)) == xp_device(x)
+            assert xp_device(logsumexp(x, b=x)) == xp_device(x)
 
 
 class TestSoftmax:
