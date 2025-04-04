@@ -41,7 +41,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     -------
     positive_only : bool
         Whether you should exclusively test positive inputs.
-    dtypes_np_ref : dtype
+    dtypes_np_ref : list[str]
         The dtypes to use for the reference NumPy arrays.
     """
     if (SCIPY_DEVICE != 'cpu'
@@ -53,22 +53,6 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     if is_jax(xp) and f_name == "stdtrit":
         pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
 
-    if any('int' in dtype for dtype in dtypes) and (
-        (is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
-        or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
-        or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr'})
-    ):
-        pytest.skip(f"`{f_name}` does not support integer types")
-
-    # int/float mismatched args support is sketchy
-    if (any('int' in dtype for dtype in dtypes)
-        and any('float' in dtype for dtype in dtypes)
-        and ((is_torch(xp) and f_name == 'xlogy')
-             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
-                                           'rel_entr', 'xlogy')))
-    ):
-        pytest.xfail("dtypes do not match")
-
     if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
         # gh-20972
         or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')):
@@ -76,17 +60,33 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     else:
         positive_only = False
 
-    if (any('int' in dtype for dtype in dtypes)
-        and xp_default_dtype(xp) == xp.float32
+    if not any('int' in dtype for dtype in dtypes):
+        return positive_only, dtypes
+
+    # Integer-specific issues from this point onwards
+
+    if ((is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
+        or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
+        or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr'})
+    ):
+        pytest.skip(f"`{f_name}` does not support integer types")
+
+    # int/float mismatched args support is sketchy
+    if (any('float' in dtype for dtype in dtypes)
+        and ((is_torch(xp) and f_name == 'xlogy')
+             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
+                                           'rel_entr', 'xlogy')))
+    ):
+        pytest.xfail("dtypes do not match")
+
+    dtypes_np_ref = dtypes
+    if (xp_default_dtype(xp) == xp.float32
         and f_name not in {'betainc', 'betaincc', 'stdtr', 'stdtrit'}
     ):
         # When PyTorch promotes int to float32, explicitly convert the reference
         # numpy arrays to float32 to prevent them from being automatically promoted
         # to float64 instead.
-        dtypes_np_ref = [np.float32 if 'int' in dtype else getattr(np, dtype)
-                         for dtype in dtypes]
-    else:
-        dtypes_np_ref = [getattr(np, dtype) for dtype in dtypes]
+        dtypes_np_ref = ['float32' if 'int' in dtype else dtype for dtype in dtypes]
 
     return positive_only, dtypes_np_ref
 
