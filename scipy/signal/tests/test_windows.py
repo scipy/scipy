@@ -502,7 +502,7 @@ class TestKaiser:
 class TestKaiserBesselDerived:
 
     def test_basic(self, xp):
-        # cover case `M < 1`
+        # cover case `M < 1`
         w = windows.kaiser_bessel_derived(0.5, beta=4.0, xp=xp)
         xp_assert_equal(w, xp.asarray([]))
 
