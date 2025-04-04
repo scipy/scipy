@@ -627,9 +627,9 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
     >>> import numpy as np
     >>> from scipy.fft import dst
-    >>> x = np.array([1, 2, 3, 4])
+    >>> x = np.array([1, -1, 1, -1])
     >>> dst(x, type=2)
-    array([13.06562965, -5.65685425,  5.411961  , -4.        ])
+    array([0., 0., 0., 8.])
 
     This computes the Discrete Sine Transform (DST) of type-II for the input array. 
     The output contains the transformed values corresponding to the given input sequence
