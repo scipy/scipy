@@ -12,6 +12,7 @@ from scipy._lib._util import _apply_over_batch
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
+from scipy._lib.deprecation import _NoValue
 from ._misc import norm
 from ._basic import solve, inv
 from ._decomp_svd import svd
@@ -145,7 +146,7 @@ def fractional_matrix_power(A, t):
 
 
 @_apply_over_batch(('A', 2))
-def logm(A, disp=True):
+def logm(A, disp=_NoValue):
     """
     Compute matrix logarithm.
 
@@ -159,6 +160,10 @@ def logm(A, disp=True):
     disp : bool, optional
         Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(expm(logm(A)) - A, 1) / norm(A, 1)``.
 
     Returns
     -------
@@ -200,6 +205,12 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
     A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
@@ -733,7 +744,7 @@ def funm(A, func, disp=True):
 
 
 @_apply_over_batch(('A', 2))
-def signm(A, disp=True):
+def signm(A, disp=_NoValue):
     """
     Matrix sign function.
 
@@ -746,6 +757,11 @@ def signm(A, disp=True):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(signm @ signm - signm, 1)``.
+
 
     Returns
     -------
@@ -766,6 +782,13 @@ def signm(A, disp=True):
     array([-1.+0.j,  1.+0.j,  1.+0.j])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     A = _asarray_square(A)
 
     def rounded_sign(x):
@@ -775,7 +798,7 @@ def signm(A, disp=True):
         else:
             c = 1e3*eps*amax(x)
         return sign((absolute(rx) > c) * rx)
-    result, errest = funm(A, rounded_sign, disp=0)
+    result, errest = funm(A, rounded_sign, disp=False)
     errtol = {0: 1e3*feps, 1: 1e3*eps}[_array_precision[result.dtype.char]]
     if errest < errtol:
         return result
