@@ -64,7 +64,8 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     if (any('int' in dtype for dtype in dtypes)
         and any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name == 'xlogy')
-             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'xlogy')))
+             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
+                                           'rel_entr', 'xlogy')))
     ):
         pytest.xfail("dtypes do not match")
 
