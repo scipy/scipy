@@ -5,7 +5,7 @@ from numpy import (zeros_like, array, tan, arange, floor,
                    moveaxis, abs, complex64, float32)
 import numpy as np
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_promote
 
 from scipy._lib._util import normalize_axis_index
 
@@ -714,8 +714,8 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
         The filtered signal.
     """
     xp = array_namespace(signal)
-
-    # internals of symiirorder1 are numpy-only
+    signal = xp_promote(signal, force_floating=True, xp=xp)
+    # This function uses C internals
     signal = np.asarray(signal)
 
     if abs(z1) >= 1:
@@ -728,9 +728,6 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     if signal.ndim == 1:
         signal = signal[None, :]
         squeeze_dim = True
-
-    if np.issubdtype(signal.dtype, np.integer):
-        signal = signal.astype(np.promote_types(signal.dtype, np.float32))
 
     y0 = symiirorder1_ic(signal, z1, precision)
 
@@ -797,10 +794,9 @@ def symiirorder2(input, r, omega, precision=-1.0):
         The filtered signal.
     """
     xp = array_namespace(input)
-
-    # internals are numpy-only
-    input = np.asarray(input)
-    omega = np.asarray(omega)
+    input = xp_promote(input, force_floating=True, xp=xp)
+    # This function uses C internals
+    input = np.ascontiguousarray(input)
 
     if r >= 1.0:
         raise ValueError('r must be less than 1.0')
@@ -808,22 +804,16 @@ def symiirorder2(input, r, omega, precision=-1.0):
     if input.ndim > 2:
         raise ValueError('Input must be 1D or 2D')
 
-    if not input.flags.c_contiguous:
-        input = input.copy()
-
     squeeze_dim = False
     if input.ndim == 1:
         input = input[None, :]
         squeeze_dim = True
 
-    if np.issubdtype(input.dtype, np.integer):
-        input = input.astype(np.promote_types(input.dtype, np.float32))
-
     rsq = r * r
-    a2 = 2 * r * np.cos(omega)
+    a2 = 2 * r * math.cos(omega)
     a3 = -rsq
-    cs = np.atleast_1d(1 - 2 * r * np.cos(omega) + rsq)
-    sos = np.atleast_2d(np.r_[cs, 0, 0, 1, -a2, -a3]).astype(input.dtype)
+    cs = 1 - 2 * r * math.cos(omega) + rsq
+    sos = np.asarray([cs, 0, 0, 1, -a2, -a3], dtype=input.dtype)
 
     # Find the starting (forward) conditions.
     ic_fwd = symiirorder2_ic_fwd(input, r, omega, precision)
@@ -831,7 +821,7 @@ def symiirorder2(input, r, omega, precision=-1.0):
     # Apply first the system cs / (1 - a2 * z^-1 - a3 * z^-2)
     # Compute the initial conditions in the form expected by sosfilt
     # coef = np.asarray([[a3, a2], [0, a3]], dtype=input.dtype)
-    coef = np.r_[a3, a2, 0, a3].reshape(2, 2).astype(input.dtype)
+    coef = np.asarray([[a3, a2], [0, a3]], dtype=input.dtype)
     zi = np.matmul(coef, ic_fwd[:, :, None])[:, :, 0]
 
     y_fwd, _ = sosfilt(sos, axis_slice(input, 2), zi=zi[None])

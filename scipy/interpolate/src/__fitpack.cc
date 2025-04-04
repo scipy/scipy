@@ -1,4 +1,7 @@
 #include <string>
+#include <cstdint>
+#include <vector>
+#include <algorithm>
 #include "__fitpack.h"
 
 namespace fitpack{
@@ -215,7 +218,6 @@ data_matrix( /* inputs */
     triangularized matrix.
 
     This routine MODIFIES `a` & `y` in-place.
-
  */
 void
 qr_reduce(double *aptr, const int64_t m, const int64_t nz, // a(m, nz), packed
@@ -426,7 +428,6 @@ fpknot(const double *x_ptr, int64_t m,
 }
 
 
-
 /*
  * Evaluate the spline function
 */
@@ -470,7 +471,6 @@ _evaluate_spline(
                     out(ip, jp) += c(interval + a -k, jp) * wrk[a];
                 }
             }
-
         }
     }
 }
@@ -514,6 +514,7 @@ _coloc_matrix(const double *xptr, int64_t m,       // x, shape(m,)
         }
     }
 }
+
 
 void
 norm_eq_lsq(const double *xptr, int64_t m,            // x, shape (m,)
@@ -567,5 +568,235 @@ norm_eq_lsq(const double *xptr, int64_t m,            // x, shape (m,)
         }
     }
 }
+
+
+/*** NDBSpline ***/
+
+/* Evaluate an N-dim tensor product spline or its derivative */
+void
+_evaluate_ndbspline(const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim) 
+                    const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
+                    const int64_t *len_t_ptr,                          // len_t, shape (ndim,)
+                    const int64_t *k_ptr,                              // k, shape (ndim,)
+                    const int64_t *nu_ptr,                             // nu, shape (ndim,)
+                    int i_extrap,
+                    const double *c1_ptr,  int64_t num_c1,             // flattened coefficients
+                    // pre-tabulated helpers for iterating over (k+1)**ndim subarrays
+                    const int64_t *strides_c1_ptr,                           // shape (ndim,)
+                    const int64_t *indices_k1d_ptr,  int64_t num_k1d,        // shape (num_k1, ndim)
+                    double *out_ptr, int64_t num_c_tr    // out, shape(npts, num_c_tr)
+)
+{
+    auto xi = ConstRealArray2D(xi_ptr, npts, ndim);
+    auto t = ConstRealArray2D(t_ptr, ndim, max_len_t);
+    auto len_t = ConstIndexArray1D(len_t_ptr, ndim);
+    auto k = ConstIndexArray1D(k_ptr, ndim);
+    auto nu = ConstIndexArray1D(nu_ptr, ndim);
+    auto c1 = ConstRealArray1D(c1_ptr, num_c1);
+    auto strides_c1 = ConstIndexArray1D(strides_c1_ptr, ndim);
+    auto indices_k1d = ConstIndexArray2D(indices_k1d_ptr, num_k1d, ndim);
+    auto out = RealArray2D(out_ptr, npts, num_c_tr);
+
+    // allocate work arrays (small, allocations unlikely to fail)
+    int64_t max_k = *std::max_element(k_ptr, k_ptr + ndim); 
+    std::vector<double> wrk(2*max_k + 2);
+    std::vector<int64_t> i(ndim);
+
+    std::vector<double> v_b(ndim * (max_k + 1));
+    auto b = RealArray2D(v_b.data(), ndim, max_k + 1);
+
+    // the number of non-zero terms for each point in ``xi``
+    int64_t volume = 1;
+    for (int d=0; d < ndim; d++) {
+        volume *= k(d) + 1;
+    }
+
+    // Iterate over the data points
+    for (int64_t j=0; j < npts; j++){
+
+        // For each point, iterate over the dimensions
+        bool out_of_bounds = false;
+        for(int d=0; d < ndim; d++) {
+            double xd = xi(j, d);
+            int64_t kd = k(d);
+
+            // knots in the dimension d
+            const double *td = t.data + max_len_t*d;
+
+            // get the location of x[d] in td
+            int64_t i_d = _find_interval(td, len_t(d), kd, xd, kd, i_extrap);
+
+            if (i_d < 0) {
+                out_of_bounds = true;
+                break;
+            }
+
+            // compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(td, xd, kd, i_d, nu(d), wrk.data());
+
+            for (int s=0; s < kd + 1; s++) {
+                b(d, s) = wrk[s];
+            }
+            i[d] = i_d;
+        } // for (d=...
+
+        if (out_of_bounds) {
+            // xd was nan or extrapolate=False: Fill the output array
+            // for this data point, xi(j, :), and continue to the next xv in xi.
+
+            for (int i_c=0; i_c < num_c_tr; i_c++) {
+                out(j, i_c) = std::numeric_limits<double>::quiet_NaN();
+            }
+            continue;
+        }
+
+        // proceed to combining non-zero terms
+        for(int i_c=0; i_c < num_c_tr; i_c++) {
+            out(j, i_c) = 0;
+        }
+
+        // iterate over the direct product of non-zero b-splines
+        for (int64_t iflat=0; iflat < volume; iflat++) {
+            /* `idx_b = indiced_k1d[iflat, :]` assignment is equivalent to
+             * idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+             * i.e. `idx_b` would be an ndim-dimensional index corresponding to
+             * `iflat`.
+             *
+             * From the indices in ``idx_b``, we prepare to index into
+             * c1.ravel() : for each dimension d, need to shift the index
+             * by ``i[d] - k[d]`` (see the docstring above).
+             *
+             * Since the strides of `c1` are pre-computed, and the array
+             * is already raveled and is guaranteed to be C-ordered, we only
+             * need to compute the base index for iterating over ``num_c_tr``
+             * elements which represent the trailing dimensions of ``c``.
+             *
+             * This all is essentially equivalent to iterating over
+             * idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,),
+             *                                  c1.shape)
+             */
+            int64_t idx_cflat_base = 0;
+            double factor = 1.0;
+            for (int d=0; d < ndim; d++) {
+                int64_t idx_d = indices_k1d(iflat, d);
+                factor *= b(d, idx_d);
+                int64_t idx = idx_d + i[d] - k(d);
+                idx_cflat_base += idx * strides_c1(d);
+            }
+
+            // finally, collect linear combinations of coef * factor
+            for (int i_c=0; i_c < num_c_tr; i_c++) {
+                out(j, i_c) += c1(idx_cflat_base + i_c) * factor;
+            }
+        }
+    } // for (j=...
+}
+
+
+/*
+ * Construct the N-D tensor product collocation matrix as a CSR array
+ * Return value is 0 on a normal return, and negative on error:
+ * if the data point `j` is problematic, return `-j`.
+ */
+int
+_coloc_nd(/* inputs */
+          const double *xi_ptr, int64_t npts, int64_t ndim,  // xi, shape(npts, ndim)
+          const double *t_ptr, int64_t max_len_t,            // t, shape (ndim, max_len_t)
+          const int64_t *len_t_ptr,                          // len_t, shape (ndim,)
+          const int64_t *k_ptr,                              // k, shape (ndim,)
+          /* pre-tabulated helpers for iterating over (k+1)**ndim subarrays */
+          const int64_t *indices_k1d_ptr, int64_t num_k1d,        // shape (num_k1, ndim)
+          const int64_t *strides_c1_ptr,                          // shape (ndim,)
+          /* outputs */
+          int64_t *csr_indices_ptr, int64_t volume,               // shape (npts*volume,)
+          double *csr_data_ptr
+)
+{
+    auto xi = ConstRealArray2D(xi_ptr, npts, ndim);
+    auto t = ConstRealArray2D(t_ptr, ndim, max_len_t);
+    auto len_t = ConstIndexArray1D(len_t_ptr, ndim);
+    auto k = ConstIndexArray1D(k_ptr, ndim);
+
+    auto strides_c1 = ConstIndexArray1D(strides_c1_ptr, ndim);
+    auto indices_k1d = ConstIndexArray2D(indices_k1d_ptr, num_k1d, ndim);
+
+    auto csr_indices = IndexArray1D(csr_indices_ptr, npts*volume);
+    auto csr_data = RealArray1D(csr_data_ptr, npts*volume);
+
+    // allocate work arrays (small, allocations unlikely to fail)
+    int64_t max_k = *std::max_element(k_ptr, k_ptr + ndim); 
+    std::vector<double> wrk(2*max_k + 2);
+    std::vector<int64_t> i(ndim);
+
+    std::vector<double> v_b(ndim * (max_k + 1));
+    auto b = RealArray2D(v_b.data(), ndim, max_k + 1);
+
+    // Iterate over the data points
+    for (int64_t j=0; j < npts; j++){
+
+        // For each point, iterate over the dimensions
+        bool out_of_bounds = false;
+        for(int d=0; d < ndim; d++) {
+            double xd = xi(j, d);
+            int64_t kd = k(d);
+
+            // knots in the dimension d
+            const double *td = t.data + max_len_t*d;
+
+            // get the location of x[d] in td
+            int64_t i_d = _find_interval(td, len_t(d), kd, xd, kd, 1);
+
+            if (i_d < 0) {
+                out_of_bounds = true;
+                break;
+            }
+
+            // compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(td, xd, kd, i_d, 0, wrk.data());
+
+            for (int s=0; s < kd + 1; s++) {
+                b(d, s) = wrk[s];
+            }
+            i[d] = i_d;
+        } // for (d=...
+
+        if (out_of_bounds) {
+            // bail out
+            return -j;
+        }
+
+        // Iterate over the products of non-zero b-splines and place them
+        // into the current row of the design matrix
+        for (int64_t iflat=0; iflat < volume; iflat++) {
+            // The `idx_cflat` computation is an unrolled version of
+            // idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
+            //
+            // `_indiced_k1d` array is pre-tabulated such that `idx_d` is a d-th component
+            // of `idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))`
+            int64_t idx_cflat = 0;
+            double factor = 1.0;
+            for (int d=0; d < ndim; d++) {
+                int64_t idx_d = indices_k1d(iflat, d);
+                factor *= b(d, idx_d);
+                int64_t idx = idx_d + i[d] - k(d);
+                idx_cflat += idx * strides_c1(d);
+            }
+
+            /* 
+             *  Fill the row of the colocation matrix in the CSR format.
+             * If it were dense, it would have been just
+             * >>> matr[j, idx_cflat] = factor
+             *
+             * Each row of the full matrix has `volume` non-zero elements.
+             * Thus the CSR format `indptr` increases in steps of `volume`
+             */
+            csr_indices(j*volume + iflat) = idx_cflat;
+            csr_data(j*volume + iflat) = factor;
+        }  // for (iflat=...
+    } // for( j=...
+
+    return 0;
+}
+
 
 } // namespace fitpack
