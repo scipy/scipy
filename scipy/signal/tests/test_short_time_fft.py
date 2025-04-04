@@ -332,7 +332,11 @@ def test_border_values():
     assert SFT.p_max(10) == 4
     assert SFT.k_max(10) == 16
     assert SFT.upper_border_begin(10) == (4, 2)
-
+    # Raise exceptions:
+    with pytest.raises(ValueError, match="^Parameter n must be"):
+        SFT.upper_border_begin(3)
+    with pytest.raises(ValueError, match="^Parameter n must be"):
+        SFT._post_padding(3)
 
 def test_border_values_exotic():
     """Ensure that the border calculations are correct for windows with
