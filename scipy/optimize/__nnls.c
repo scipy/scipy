@@ -1,4 +1,5 @@
 #include "__nnls.h"
+#include <stdio.h>
 
 /* Algorithm NNLS: NONNEGATIVE LEAST SQUARES
 *
@@ -89,7 +90,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 a[indz + j*m] = 1.0;
                 dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
                 // See if ztest is positive.
+                printf("----------\n");
+                printf("pivot = %22.17f\n", pivot);
                 ztest = zz[indz] / pivot;
+                printf("After division ztest = %22.17f\n", ztest);
+                printf("----------\n");
                 if (ztest > 0.0)
                 {
                     break;
@@ -141,7 +146,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 }
             }
             jj = indices[ip];
+            printf("---------\n");
+            printf("a[%d,%d] = %22.17f\n", ip, jj, a[ip + jj*m]);
             zz[ip] = zz[ip] / a[ip + jj*m];
+            printf("After division: zz[%d] = %22.17f\n", ip, zz[ip]);
+            printf("---------\n");
         }
 
         // ****** Inner loop ******
@@ -158,7 +167,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 k = indices[ip];
                 if (zz[ip] <= 0.0)
                 {
+                    printf("-----------\n");
+                    printf("zz[%d] = %22.17f, x[%d] = %22.17f, zz[%d] - x[%d] = %22.17f\n", ip, zz[ip], k, x[k], ip, k, zz[ip] - x[k]);
                     T = -x[k] / (zz[ip] - x[k]);
+                    printf("After division: T = %22.17f\n", T);
+                    printf("-----------\n");
                     if (alpha > T)
                     {
                         alpha = T;
@@ -241,7 +254,11 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                     }
                 }
                 jj = indices[ip];
+                printf("---------\n");
+                printf("a[%d,%d] = %22.17f\n", ip, jj, a[ip + jj*m]);
                 zz[ip] = zz[ip] / a[ip + jj*m];
+                printf("After division: zz[%d] = %22.17f\n", ip, zz[ip]);
+                printf("---------\n");
             }
             // ****** end of inner loop ******
         }
