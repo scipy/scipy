@@ -1393,7 +1393,7 @@ class ShortTimeFFT:
         # move window left until does not stick out to the right:
         for q_ in range(q2, q1, -1):
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
-            if k_ < n or all(w2[n-k_:] == 0):
+            if k_ <= n or all(w2[n-k_:] == 0):
                 return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
         return 0, 0  # border starts at first slice
 
