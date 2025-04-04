@@ -13,7 +13,8 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp
+    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
+    is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -154,9 +155,10 @@ if SCIPY_ARRAY_API:
     try:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'torch': torch})
-        # can use `mps` or `cpu`
-        torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
+            # FIXME don't set this when SCIPY_DEVICE == "cpu"
+            # as a workaround to pytorch/pytorch#150199
+            torch.set_default_device(SCIPY_DEVICE)
             xp_skip_cpu_only_backends.add('torch')
 
         # default to float64 unless explicitly requested
@@ -407,6 +409,46 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
     reason = skip_xfail_reasons.get(xp.__name__)
     if reason:
         skip_or_xfail(reason=reason)
+
+
+@pytest.fixture
+def devices(xp):
+    """Fixture that returns a list of all devices for the backend, plus None.
+    Used to test input->output device propagation.
+
+    Usage
+    -----
+    from scipy._lib._array_api import xp_device
+
+    def test_device(xp, devices):
+        for d in devices:
+            x = xp.asarray(..., device=d)
+            y = f(x)
+            assert xp_device(y) == xp_device(x)
+    """
+    if is_cupy(xp):
+        # CuPy does not support devices other than the current one
+        # data-apis/array-api-compat#293
+        pytest.xfail(reason="data-apis/array-api-compat#293")
+    if is_dask(xp):
+        # Skip dummy DASK_DEVICE from array-api-compat, which does not propagate
+        return ["cpu", None]
+    if is_jax(xp):
+        # The .device attribute is not accessible inside jax.jit; the consequence
+        # (downstream of array-api-compat hacks) is that a non-default device in
+        # input is not guaranteed to propagate to the output even if the scipy code
+        # states `device=xp_device(arg)`` in all array creation functions.
+        # While this issue is specific to jax.jit, it would be unnecessarily
+        # verbose to skip the test for each jit-capable function and run it for
+        # those that only support eager mode.
+        pytest.xfail(reason="jax-ml/jax#26000")
+    if is_torch(xp) and SCIPY_DEVICE != "cpu":
+        # Note workaround when parsing SCIPY_DEVICE above.
+        # Also note that when SCIPY_DEVICE=cpu this test won't run in CI
+        # because CUDA-enabled CI boxes always use SCIPY_DEVICE=cuda.
+        pytest.xfail(reason="pytorch/pytorch#150199")
+
+    return xp.__array_namespace_info__().devices() + [None]
 
 
 # Following the approach of NumPy's conftest.py...
