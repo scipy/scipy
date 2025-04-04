@@ -36,7 +36,7 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_cupy
+from scipy._lib._array_api import array_namespace, is_cupy, xp_size
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -120,7 +120,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             raise ValueError(message)
 
     # mode must be one of the allowed strings, and we should convert it to the
-    # value required by `xp.pad` here.
+    # value required by `np.pad`/`cp.pad` here.
     valid_modes = {'reflect', 'constant', 'nearest', 'mirror', 'wrap',
                    'grid-mirror', 'grid-constant', 'grid-wrap', 'valid'}
     if mode not in valid_modes:
@@ -139,7 +139,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("Use of `cval` is compatible only with `mode='constant'`.")
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
-    # dimensionality of `input`. (Full input validation done by `xp.pad`.)
+    # dimensionality of `input`. (Full input validation done by `np.pad`/`cp.pad`.)
     if not xp.isdtype(xp.asarray(cval).dtype, 'numeric'):
         raise ValueError("`cval` must include only numbers.")
 
@@ -413,11 +413,11 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, axes, batch_memory)
 
-    # `xp.pad` raises with these sorts of cases, but the best result is probably
-    # to return the original array. It could be argued that we should call the
-    # function on the empty array with `axis=None` just to determine the output
+    # `np.pad`/`cp.pad` raises with these sorts of cases, but the best result is
+    # probably to return the original array. It could be argued that we should call
+    # the function on the empty array with `axis=None` just to determine the output
     # dtype, but I can also see rationale against that.
-    if input.size == 0:
+    if xp_size(input) == 0:
         return xp.asarray(input)
 
     # This seems to be defined.
@@ -429,8 +429,9 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
         # CuPy is the only GPU backend that has `pad` (with all modes)
         # and `sliding_window_view`. An enhancement would be to use
         # no-copy conversion to CuPy whenever the data is on the GPU.
-        swv = xp.lib.stride_tricks.sliding_window_view
-        pad = xp.pad
+        cp = xp  # let there be no ambiguity!
+        swv = cp.lib.stride_tricks.sliding_window_view
+        pad = cp.pad
     else:
         # Try to perform no-copy conversion to NumPy for padding and
         # `sliding_window_view`. (If that fails, fine - for now, the only

@@ -2950,7 +2950,6 @@ class TestVectorizedFilter:
         with pytest.raises((ValueError, TypeError), match=message):
             ndimage.vectorized_filter(input, function, size=size, batch_memory="a duck")
 
-    @pytest.mark.skip_xp_backends('torch', reason="Need to debug.")
     @pytest.mark.parametrize('shape', [(0,), (1, 0), (0, 1, 0)])
     def test_zero_size(self, shape, xp):
         input = xp.empty(shape)
