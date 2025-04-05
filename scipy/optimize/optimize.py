@@ -21,6 +21,7 @@ __all__ = [  # noqa: F822
     'fminbound',
     'golden',
     'line_search',
+    'linewalker',
     'rosen',
     'rosen_der',
     'rosen_hess',
