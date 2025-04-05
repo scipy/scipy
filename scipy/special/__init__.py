@@ -786,9 +786,10 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
+        beta, betainc, betaln, binom, chdtr, chdtrc, digamma, entr, erf, erfc,
+        erfinv, expi, expit, expn, gamma, gammainc, gammaincc, gammaln, i0, i0e,
+        i1, i1e, log_ndtr, log_softmax, logit, multigammaln, ndtr, ndtri,
+        polygamma, rel_entr, softmax, stdtr, stdtrit xlogy, zeta)
 
 from . import _basic
 from ._basic import *
