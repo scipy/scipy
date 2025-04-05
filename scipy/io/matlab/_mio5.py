@@ -90,7 +90,7 @@ from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       MatReadError, MatReadWarning, MatWriteWarning)
 
 # Reader object for matlab 5 format variables
-from ._mio5_utils import VarReader5
+from ._mio5_utils import VarReader5, SubsystemReader5
 
 # Constants and helper objects
 from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
@@ -219,10 +219,11 @@ class MatFile5Reader(MatFileReader):
         hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
         hdr = read_dtype(self.mat_stream, hdr_dtype)
         hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
+        subsystem_offset = hdr["subsystem_offset"]
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = f'{v_major}.{v_minor}'
-        return hdict
+        return hdict, subsystem_offset
 
     def initialize_read(self):
         ''' Run when beginning read of variables
@@ -235,6 +236,28 @@ class MatFile5Reader(MatFileReader):
         self._file_reader = VarReader5(self)
         # reader for matrix streams
         self._matrix_reader = VarReader5(self)
+
+    def initialize_subsystem(self, sso):
+        ''' Initialize subsystem reader '''
+        cur_pos = self.mat_stream.tell()
+        self.mat_stream.seek(sso)
+        mdtype, byte_count = self._file_reader.read_full_tag()
+        if not byte_count > 0:
+            raise ValueError("Did not read any bytes in subsystem")
+        if mdtype == miCOMPRESSED:
+            # Make new stream from compressed data
+            stream = ZlibInputStream(self.mat_stream, byte_count)
+            mdtype = miMATRIX
+            is_compressed = True
+        else:
+            stream = self.mat_stream
+            is_compressed = False
+        if not mdtype == miMATRIX:
+            raise TypeError(f'Expecting miMATRIX type here, got {mdtype}')
+
+        subsystem = SubsystemReader5(stream, is_compressed)
+        self.mat_stream.seek(cur_pos)
+        return subsystem
 
     def read_var_header(self):
         ''' Read header, return header, next position
@@ -271,7 +294,7 @@ class MatFile5Reader(MatFileReader):
         header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
-    def read_var_array(self, header, process=True):
+    def read_var_array(self, header, subsystem, process=True):
         ''' Read array, given `header`
 
         Parameters
@@ -288,7 +311,7 @@ class MatFile5Reader(MatFileReader):
            array with post-processing applied or not according to
            `process`.
         '''
-        return self._matrix_reader.array_from_header(header, process)
+        return self._matrix_reader.array_from_header(header, process, subsystem)
 
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
@@ -305,8 +328,10 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
         self.initialize_read()
-        mdict = self.read_file_header()
+        mdict, subsystem_offset = self.read_file_header()
         mdict['__globals__'] = []
+        if subsystem_offset > 0:
+            subsystem = self.initialize_subsystem(subsystem_offset)
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
@@ -320,17 +345,15 @@ class MatFile5Reader(MatFileReader):
                 warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
-                name = '__function_workspace__'
-                # We want to keep this raw because mat_dtype processing
-                # will break the format (uint8 as mxDOUBLE_CLASS)
-                process = False
+                self.mat_stream.seek(next_position)
+                continue
             else:
                 process = True
             if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             try:
-                res = self.read_var_array(hdr, process)
+                res = self.read_var_array(hdr, subsystem, process)
             except MatReadError as err:
                 warnings.warn(
                     f'Unreadable variable "{name}", because "{err}"',
