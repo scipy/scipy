@@ -21,14 +21,15 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
 {
     int i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
-    double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T, tmp_work;
-    double pivot = 1.0, pivot2 = 0.0;
+    double tau = 0.0, unorm = 0.0, ztest, alpha, cc, ss, wmax, T, tmp_work;
+    double pivot = 1.0, pivot2 = 0.0, tmp = 0.0;
     *info = 1;
     if (m <= 0 || n <= 0)
     {
         *info = 2;
         return;
     }
+
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
     for (i = 0; i < n; i++) { x[i] = 0.0; }
@@ -37,16 +38,13 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
     while (indz < (m < n ? m : n))
     {
         // Compute the dual vector components in set Z.
+        // Essentially a permuted gemv operation via BLAS ddot, in NumPy notation;
         // w[indices[indz:]] = A[indz:m, indices[indsz:]] @ b[indz:m]
         for (i = indz; i < n; i++)
         {
             j = indices[i];
-            tmp = 0.0;
-            for (k = indz; k < m; k++)
-            {
-                tmp = tmp + a[k + j*m] * b[k];
-            }
-            w[j] = tmp;
+            tmpint = m - indz;
+            w[j] = ddot_(&tmpint, &a[indz + j*m], &one, &b[indz], &one);
         }
 
         // Find the next linearly independent column that corresponds to the
