@@ -673,7 +673,7 @@ cdef class VarReader5:
         header = self.read_header(False)
         return self.array_from_header(header, process)
 
-    cpdef array_from_header(self, VarHeader5 header, int process=1):
+    cpdef array_from_header(self, VarHeader5 header, int process=1, SubsystemReader5 subsystem=None):
         ''' Read array of any class, given matrix `header`
 
         Parameters
@@ -731,7 +731,7 @@ cdef class VarReader5:
             # to make them more re-writeable - don't squeeze
             process = 0
         elif mc == mxOPAQUE_CLASS:
-            arr = self.read_opaque(header)
+            arr = self.read_opaque(header, subsystem)
             arr = mio5p.MatlabOpaque(arr)
             # to make them more re-writeable - don't squeeze
             process = 0
@@ -976,7 +976,7 @@ cdef class VarReader5:
                 result[i] = item
         return result.reshape(tupdims).T
 
-    cpdef object read_opaque(self, VarHeader5 hdr):
+    cpdef object read_opaque(self, VarHeader5 hdr, SubsystemReader5 subsystem):
         ''' Read opaque (function workspace) type
 
         Looking at some mat files, the structure of this type seems to
@@ -997,3 +997,189 @@ cdef class VarReader5:
         # Cython (0.23.4).
         return None
         #! Placeholder, replace with parsing methods from metadata
+
+cdef class SubsystemReader5:
+    cdef int is_swapped # endian indicator derived from subsystem
+    cdef list names # list of all field names and class names
+    cdef list class_names # list of class names ordered by class_id from names
+    cdef list object_list # list of all objects with their attributes like type_id, dependency_id, and class_id
+    cdef list field_content_pos # list of byte markers for field contents
+    cdef _streams.GenericStream cstream
+    cdef cnp.uint64_t type1_pos, type2_pos
+
+    def __cinit__(self, mat_stream, is_compressed=True):
+        self.cstream = _streams.make_stream(mat_stream)
+        if is_compressed:
+            self.cstream.seek(8,1)
+        self.cstream.seek(48, 1) # Skip Array Headers
+        self.is_swapped = self.read_byte_order()
+        self.names = []
+        self.class_names = []
+        self.object_list = []
+        self.field_content_pos = []
+        self.type1_pos = 0
+        self.type2_pos = 0
+
+        self.initialize_subsystem()
+
+    cdef int read_byte_order(self):
+        '''Reads byte order from subsystem'''
+        cdef char byte_order[8]
+
+        self.cstream.read_into(<void *>byte_order, 8)
+        # Check the 3rd and 4th bytes for byte order
+        if byte_order[2] == ord('I') and byte_order[3] == ord('M'):
+            return '<' == swapped_code
+        else:
+            return '>' == swapped_code
+
+    cdef inline int cread_full_tag(self,
+                            cnp.uint32_t* mdtype,
+                            cnp.uint32_t* byte_count) except -1:
+        ''' C method for reading full u4, u4 tag from stream'''
+        cdef cnp.uint32_t u4s[2]
+        self.cstream.read_into(<void *>u4s, 8)
+        if self.is_swapped:
+            mdtype[0] = byteswap_u4(u4s[0])
+            byte_count[0] = byteswap_u4(u4s[1])
+        else:
+            mdtype[0] = u4s[0]
+            byte_count[0] = u4s[1]
+
+    cdef read_int32_blocks(self, cnp.uint32_t* arr, int size):
+        '''Read int32 integers into a pre-allocated array.'''
+        self.cstream.read_into(<void *>arr, size * 4)
+        if self.is_swapped:
+            for i in range(size):
+                arr[i] = byteswap_u4(arr[i])
+
+    cdef cread_names(self, cnp.uint32_t *fc_len_ptr, cnp.uint32_t *byte_end_ptr):
+        '''Read field and class names from the stream.'''
+        cdef:
+            int i
+            cnp.uint32_t byte_count
+            object names
+            char *names_ptr
+            object name
+
+        # Calculate the number of bytes to read
+        byte_count = byte_end_ptr[0] - 40 # 40 is the offset to the start of cell 1
+
+        names = self.cstream.read_string(
+                        byte_count,
+                        <void **>&names_ptr,
+                        copy=True)
+
+        # Names are stored continuously and null terminated
+        for i in range(fc_len_ptr[0]):
+            name = PyUnicode_FromString(names_ptr)
+            self.names.append(name)
+            while names_ptr[0] != 0:
+                names_ptr += 1
+            names_ptr += 1
+
+    cdef cread_class_names(self, cnp.uint32_t *region_ptr):
+        '''Read class names from the stream.'''
+        cdef:
+            int i
+            cnp.uint32_t byte_count
+            int n_blocks
+            cnp.uint32_t u4s[4]
+            int class_index
+
+        # Calculate the number of bytes to read
+        byte_count = region_ptr[1] - region_ptr[0]
+        n_blocks = byte_count // 16
+        # Read and discard first block
+        self.cstream.read_into(<void *>u4s, 16)
+
+        for i in range(0, n_blocks-1):
+            self.cstream.read_into(<void *>u4s, 16)
+            if self.is_swapped:
+                class_index = byteswap_u4(u4s[1])
+            else:
+                class_index = u4s[1]
+            self.class_names.append(self.names[class_index - 1])
+
+        self.type1_pos = self.cstream.tell()
+
+    cdef cread_object_ids(self, cnp.uint32_t *region_ptr):
+        cdef:
+            int i
+            cnp.uint32_t byte_count
+            int n_blocks
+            cnp.uint32_t u4s[6]
+            int class_id, type1_id, type2_id, dependency_id
+
+        byte_count = region[2] - region[1]
+        self.cstream.seek(byte_count, 1) # Skip to Region 3
+
+        # Calculate the number of bytes to read
+        byte_count = region_ptr[3] - region_ptr[2]
+        n_blocks = byte_count // 24
+        # Read and discard first block
+        self.cstream.read_into(<void *>u4s, 24)
+
+        for i in range(0, n_blocks-1):
+            self.cstream.read_into(<void *>u4s, 24)
+            if self.is_swapped:
+                class_id = byteswap_u4(u4s[0])
+                type1_id = byteswap_u4(u4s[3])
+                type2_id = byteswap_u4(u4s[4])
+                dependency_id = byteswap_u4(u4s[5])
+            else:
+                class_id = u4s[0]
+                type1_id = u4s[3]
+                type2_id = u4s[4]
+                dependency_id = u4s[5]
+            self.object_list.append(
+                (class_id, type1_id, type2_id, dependency_id)
+            )
+
+        self.type2_pos = self.cstream.tell()
+
+    cdef extract_field_content_pos(self, cnp.uint32_t *region_ptr, cnp.uint64_t *byte_end_ptr):
+        '''Extracting field content positions from the stream.'''
+        #! Note: Need to check with compressed MAT-files
+        #! Probably will not work
+        cdef:
+            cnp.uint32_t mdtype, byte_count
+            int nbytes
+
+        nbytes = region_ptr[7] - region_ptr[3] + 8
+        self.cstream.seek(nbytes, 1) # Skip to start of Cell 3 (field contents)
+
+        # Field IDs are 0-indexed
+        while  self.cstream.tell() < byte_end_ptr[0]:
+            # Read the next 8 bytes
+            self.cread_full_tag(&mdtype, &byte_count)
+            if mdtype != miMATRIX:
+                raise TypeError('Expecting matrix here')
+            self.field_content_pos.append(self.cstream.tell()-8)
+            self.cstream.seek(byte_count, 1)
+
+    cdef initialize_subsystem(self):
+
+        cdef:
+            cnp.uint32_t unknown_flag, fc_len
+            cnp.uint32_t offsets[8]
+            cnp.uint64_t total_byte_count
+
+        self.cstream.seek(136, 1) # Skip to object metadata
+        self.cread_full_tag(&unknown_flag, &fc_len)
+        if unknown_flag != miMATRIX:
+            raise TypeError('Expecting matrix here')
+        total_byte_count = self.cstream.tell() + fc_len
+
+        self.cstream.seek(96, 1) # Skip to cell 1 contents in array
+        self.cread_full_tag(&unknown_flag, &fc_len)
+        if unknown_flag != 0x00000004:
+            raise ValueError('Unknown flag in Subsystem Table of Contents'
+             'Expecting 4, got %d' % unknown_flag)
+
+        self.read_int32_blocks(offsets, 8)
+        self.cread_names(&fc_len, offsets)
+        self.cread_class_names(offsets)
+        self.cread_object_ids(offsets)
+        self.extract_field_content_pos(offsets, &total_byte_count)
+    
