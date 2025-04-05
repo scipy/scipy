@@ -1,5 +1,4 @@
 #include "__nnls.h"
-#include <stdio.h>
 
 /* Algorithm NNLS: NONNEGATIVE LEAST SQUARES
 *
@@ -22,39 +21,30 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
 {
     int i = 0, ii = 0, ip = 0, indz = 0, iteration = 0, iz = 0, izmax = 0;
     int j = 0, jj = 0, k = 0, one = 1, tmpint = 0;
-    double tau = 0.0, unorm = 0.0, ztest, tmp, alpha, cc, ss, wmax, T, tmp_work;
-    double pivot = 1.0, pivot2 = 0.0;
+    double tau = 0.0, unorm = 0.0, ztest, alpha, cc, ss, wmax, T, tmp_work;
+    double pivot = 1.0, pivot2 = 0.0, tmp = 0.0;
     *info = 1;
     if (m <= 0 || n <= 0)
     {
         *info = 2;
         return;
     }
-    printf("Initializing vectors\n");
+
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
-    // print indices vector
-    printf("indices = [");
-    for (i = 0; i < n; i++) { printf("%d ", indices[i]); }
-    printf("]\n");
     for (i = 0; i < n; i++) { x[i] = 0.0; }
-    printf("Starting outer loop\n");
+
     // Outer loop
     while (indz < (m < n ? m : n))
     {
-        printf("Outer loop indz = %d\n", indz);
         // Compute the dual vector components in set Z.
+        // Essentially a permuted gemv operation via BLAS ddot, in NumPy notation;
         // w[indices[indz:]] = A[indz:m, indices[indsz:]] @ b[indz:m]
         for (i = indz; i < n; i++)
         {
             j = indices[i];
-            tmp = 0.0;
-            for (k = indz; k < m; k++)
-            {
-                tmp = tmp + a[k + j*m] * b[k];
-                printf("a[%d,%d] = %22.17f, b[%d] = %22.17f, tmp = %22.17f\n", k, j, a[k + j*m], k, b[k], tmp);
-            }
-            w[j] = tmp;
+            tmpint = m - indz;
+            w[j] = ddot_(&tmpint, &a[indz + j*m], &one, &b[indz], &one);
         }
 
         // Find the next linearly independent column that corresponds to the
@@ -97,11 +87,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 a[indz + j*m] = 1.0;
                 dlarf_("L", &tmpint, &one, &a[indz + j*m], &one, &tau, &zz[indz], &tmpint, &tmp_work);
                 // See if ztest is positive.
-                printf("----------\n");
-                printf("pivot = %22.17f\n", pivot);
                 ztest = zz[indz] / pivot;
-                printf("After division ztest = %22.17f\n", ztest);
-                printf("----------\n");
                 if (ztest > 0.0)
                 {
                     break;
@@ -153,11 +139,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 }
             }
             jj = indices[ip];
-            printf("---------\n");
-            printf("a[%d,%d] = %22.17f\n", ip, jj, a[ip + jj*m]);
             zz[ip] = zz[ip] / a[ip + jj*m];
-            printf("After division: zz[%d] = %22.17f\n", ip, zz[ip]);
-            printf("---------\n");
         }
 
         // ****** Inner loop ******
@@ -174,11 +156,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                 k = indices[ip];
                 if (zz[ip] <= 0.0)
                 {
-                    printf("-----------\n");
-                    printf("zz[%d] = %22.17f, x[%d] = %22.17f, zz[%d] - x[%d] = %22.17f\n", ip, zz[ip], k, x[k], ip, k, zz[ip] - x[k]);
                     T = -x[k] / (zz[ip] - x[k]);
-                    printf("After division: T = %22.17f\n", T);
-                    printf("-----------\n");
                     if (alpha > T)
                     {
                         alpha = T;
@@ -261,11 +239,7 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
                     }
                 }
                 jj = indices[ip];
-                printf("---------\n");
-                printf("a[%d,%d] = %22.17f\n", ip, jj, a[ip + jj*m]);
                 zz[ip] = zz[ip] / a[ip + jj*m];
-                printf("After division: zz[%d] = %22.17f\n", ip, zz[ip]);
-                printf("---------\n");
             }
             // ****** end of inner loop ******
         }
