@@ -30,13 +30,19 @@ __nnls(const int m, const int n, double* restrict a, double* restrict b,
         *info = 2;
         return;
     }
+    printf("Initializing vectors\n");
     // Initialize the indices and the solution vector x.
     for (i = 0; i < n; i++) { indices[i] = i; }
+    // print indices vector
+    printf("indices = [");
+    for (i = 0; i < n; i++) { printf("%d ", indices[i]); }
+    printf("]\n");
     for (i = 0; i < n; i++) { x[i] = 0.0; }
-
+    printf("Starting outer loop\n");
     // Outer loop
     while (indz < (m < n ? m : n))
     {
+        printf("Outer loop indz = %d\n", indz);
         // Compute the dual vector components in set Z.
         // w[indices[indz:]] = A[indz:m, indices[indsz:]] @ b[indz:m]
         for (i = indz; i < n; i++)
