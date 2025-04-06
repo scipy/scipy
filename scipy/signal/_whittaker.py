@@ -3,12 +3,9 @@ from scipy.linalg import solveh_banded
 
 
 # TODO:
-# 1) Add parameter `order` for the order of the difference penalty
-# 2) C code for _solve_WH_order2_fast
-# 3) Use sparse/banded arrays for _solve_WH_order_direct
-# 4) GCV for lamb
-# 5) Case weights
-# 6) 2-d, maybe even 3-d WH smoothing
+# 1) C code for _solve_WH_order2_fast
+# 2) GCV for lamb
+# 3) 2-d, maybe even 3-d WH smoothing
 
 def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
     r"""
