@@ -2036,15 +2036,15 @@ def tukey_hsd(*args, equal_var=True):
     else:
         # the denominator Behrens-Fisher statistic with notation $v$
         # calculated by sample variance and sample size
-        # "t-solution rejects H0 if..." [7] p.5
+        # "t-solution rejects H0 if..." [7] p.116
         # the squre root of 2 is considered to calculate the stand_err
-        # "H0 was rejected" [7] p.6
-        stand_err = np.sqrt(
-            ((vars_ / nsamples_treatments)[None].T
-             + (vars_ / nsamples_treatments)) / 2)
+        # "H0 was rejected" [7] p. 117
+        sj2_nj = vars_ / nsamples_treatments
+        si2_ni = sj2_nj[:, np.newaxis]
+        stand_err = np.sqrt(si2_ni + sj2_nj) / 2**0.5
 
         # Welch degree of freedom with notation $\nu$
-        # "and the degree of freedom, v, are given by" [7] p.5
+        # "and the degree of freedom, v, are given by" [7] p. 116
         df = (
                 ((vars_/nsamples_treatments)[None].T + (vars_/nsamples_treatments))**2
                 / ((((vars_/nsamples_treatments)**2)/(nsamples_treatments-1))[None].T
