@@ -216,8 +216,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_PRERELEASE_PYTHONS: True
-          CIBW_FREE_THREADED_SUPPORT: True
+          CIBW_ENABLE: cpython-freethreading cpython-prerelease
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
