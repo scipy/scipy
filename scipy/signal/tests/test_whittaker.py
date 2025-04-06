@@ -47,9 +47,18 @@ def test_whittaker_order_2():
     assert_allclose(x, signal, rtol=1e-4, atol=1e-5)
 
     # In the limit of an infinite penalty, the smoothing results in a linear
-    # interpolation.
+    # interpolation (polynom of degree = order - 1).
     x = whittaker_henderson(y, lamb=1e9)
     assert_allclose(np.diff(x, n=2), 0, atol=1e-6)
     # As the sine is positive fom 0 to pi and negative from pi to 2*pi, we expect
     # a negative slope.
     assert np.diff(x)[0] < 0
+
+
+def test_whittaker_unpenalized():
+    """Test whittaker for lamb=0."""
+    n = 10
+    y = np.sin(2*np.pi * np.linspace(0, 1, n))
+    x = whittaker_henderson(y, lamb=0)
+    assert_allclose(x, y)
+    assert not  np.may_share_memory(x, y)
