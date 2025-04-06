@@ -1673,26 +1673,26 @@ class TestGamesHowell:
             [34., 18., 18., 26.],
             [17., 68., 59.,  7.])
 
-    data_diff_size = ([30.0, 23.0, 51.0],
-                      [-81.0, 71.0, -27.0, 63.0],
-                      [42.0, 11.0, 29.0, 19.0, 50.0],
-                      [23.0, 22.0, 20.0, 18.0, 9.0])
+    data_diff_size = ([30., 23., 51.],
+                      [-81., 71., -27., 63.],
+                      [42., 11., 29., 19., 50.],
+                      [23., 22., 20., 18., 9.])
 
     spss_same_size = """
-            Mean Difference (I-J)  Lower Bound  Upper Bound  Sig
-    0 - 1   8.25                   -16.5493     33.0493      0.559  
-    0 - 2  -5.50                   -63.6702     52.6702      0.941  
-    1 - 2  -13.75                  -74.3174     46.8174      0.683
+            Mean Diff      Lower Bound         Upper Bound         Sig
+    0 - 1   8.25000000    -16.5492749527311    33.0492749527311    0.558733632413559  
+    0 - 2  -5.50000000    -63.6702454316458    52.6702454316458    0.941147750599221
+    1 - 2  -13.7500000    -74.3174374251372    46.8174374251372    0.682983914946841
     """
 
     spss_diff_size = """
-            Mean Difference (I-J)  Lower Bound Upper Bound  Sig
-    0 - 1	28.16667	           -141.9854   198.3187	    0.873
-    0 - 2	4.46667	               -37.2831    46.2164	    0.975
-    0 - 3	16.26667	           -35.0933    67.6266	    0.426
-    1 - 2	-23.70000	           -195.3156   147.9156	    0.915
-    1 - 3	-11.90000	           -188.1055   164.3055	    0.986
-    2 - 3	11.80000	           -16.2895	   39.8895      0.476
+             Mean Diff       Lower Bound        Upper Bound         Sig
+    0 - 1	 28.16666667    -141.985416377670   198.318749711003	0.8727542747886180
+    0 - 2	 4.466666667	-37.2830676783904   46.2164010117237	0.9752628408671710
+    0 - 3	 16.26666667	-35.0933112382470   67.6266445715803	0.4262506151302880
+    1 - 2	-23.70000000	-195.315617201249   147.915617201249	0.9148950609000590
+    1 - 3	-11.90000000	-188.105478728519   164.305478728519	0.9861432250093960
+    2 - 3	 11.80000000	-16.2894857524254	39.8894857524254    0.4755344436335670
     """
 
     @pytest.mark.parametrize("data, res_expect_str",
@@ -1702,39 +1702,42 @@ class TestGamesHowell:
                                  "unequal sample size"])
     def test_compare_spss(self, data, res_expect_str):
         """
-        ONEWAY Value BY Group
-          /MISSING ANALYSIS
-          /CRITERIA=CILEVEL(0.95)
-          /POSTHOC=GH ALPHA(0.05)
+        Enter sample categories as 'Group' column with 'Nominal' type
+        Enter sample values as 'Value' column with 'Scale' type
+        Below are the SPSS syntax commands
+        > DATASET ACTIVATE DataSet0.
+        > ONEWAY Value BY Group
+        >  /MISSING ANALYSIS
+        >  /POSTHOC=GH ALPHA(0.05).
         """
         res_expect = np.asarray(
-            res_expect_str.replace(" - ", " ").split()[8:],
+            res_expect_str.replace(" - ", " ").split()[7:],
             dtype=float).reshape(-1, 6)
         res_games = stats.tukey_hsd(*data, equal_var=False)
         conf = res_games.confidence_interval()
         # loop over the comparisons
         for i, j, s, l, h, p in res_expect:
             i, j = int(i), int(j)
-            assert_allclose(conf.low[i, j], l, atol=1e-4)
-            assert_allclose(res_games.statistic[i, j], s, atol=1e-4)
-            assert_allclose(conf.high[i, j], h, atol=1e-4)
-            assert_allclose(res_games.pvalue[i, j], p, atol=1e-3)
+            assert_allclose(res_games.statistic[i, j], s, atol=1e-8)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-8)
+            assert_allclose(conf.low[i, j], l, atol=1e-6)
+            assert_allclose(conf.high[i, j], h, atol=1e-5)
 
     r_same_size = """
-               q value Pr(>|q|)  
-    1 - 0 == 0   -1.52  0.55873 
-    2 - 0 == 0    0.48  0.94115
-    2 - 1 == 0    1.25  0.68298  
+                  q value             Pr(>|q|)  
+    1 - 0 == 0   -1.5467805948856344  0.55873362851759
+    2 - 0 == 0    0.4726721776628535  0.94114775035993
+    2 - 1 == 0    1.246837541297872   0.68298393799782
     """
 
     r_diff_size = """
-               q value Pr(>|q|)  
-    1 - 0 == 0  -1.059  0.87275  
-    2 - 0 == 0  -0.572  0.97526  
-    3 - 0 == 0  -2.621  0.42625  
-    2 - 1 == 0   0.897  0.91490
-    3 - 1 == 0   0.458  0.98614  
-    3 - 2 == 0  -2.199  0.47553
+                 q value             Pr(>|q|)  
+    1 - 0 == 0  -1.0589317485313876  0.87275427357438
+    2 - 0 == 0  -0.5716222106144833  0.97526284087419
+    3 - 0 == 0  -2.6209678382077000  0.42625067714691
+    2 - 1 == 0   0.8971899898179028  0.91489506061850
+    3 - 1 == 0   0.4579447210555352  0.98614322544695
+    3 - 2 == 0  -2.198800177874794   0.47553444364614
     """
 
     @pytest.mark.parametrize("data, res_expect_str",
@@ -1747,6 +1750,7 @@ class TestGamesHowell:
         games-howell is provided by PMCMRplus package
         https://search.r-project.org/CRAN/refmans/PMCMRplus/html/gamesHowellTest.html
         > library("PMCMRplus")
+        > options(digits=16)
         > table = data.frame(
             values = c(24., 23., 31., 51., 34., 18., 18., 26., 17., 68., 59.,  7.),
             groups = c("0", "0", "0", "0", "1", "1", "1", "1", "2", "2", "2", "2")
@@ -1765,13 +1769,7 @@ class TestGamesHowell:
         # note confidence intervals are not provided by PMCMRplus
         for j, i, _, _, p in res_expect:
             i, j = int(i), int(j)
-            assert_allclose(res_games.pvalue[i, j], p, atol=1e-5)
-
-    @pytest.mark.parametrize("cl", [-.5, 0, 1, 2])
-    def test_conf_level_invalid(self, cl):
-        with assert_raises(ValueError, match="must be between 0 and 1"):
-            r = stats.tukey_hsd([23, 7, 3], [3, 4], [9, 4], equal_var=False)
-            r.confidence_interval(cl)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-7)
 
     # Data validation test has been covered by TestTukeyHSD
     # like empty, 1d, inf, and lack of tretments

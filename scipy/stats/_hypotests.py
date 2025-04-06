@@ -1873,8 +1873,9 @@ def tukey_hsd(*args, equal_var=True):
         The sample measurements for each group. There must be at least
         two arguments.
     equal_var: bool, optional
-        If True (default), perform Tukey-HSD test [6]. If False, perform
-        Games-Howell test, which does not assume equal variances [7]_
+        If True (default) and equal sample size, perform Tukey-HSD test [6].
+        If True and unequal sample size, perform Tukey-Kramer test [4]_
+        If False, perform Games-Howell test, which does not assume equal variances [7]_
 
     Returns
     -------
