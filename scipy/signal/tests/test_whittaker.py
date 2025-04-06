@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import whittaker_henderson
-from scipy.signal._whittaker import _solve_WH_order_direct, _solve_WH_order2_fast
+from scipy.signal._whittaker import _solve_WH_banded, _solve_WH_order2_fast
 
 
 @pytest.mark.parametrize(
@@ -26,13 +26,13 @@ def test_whittaker_small_data():
     whittaker_henderson(np.zeros(5))
 
 
-def test_whittaker_direct_vs_fast_order2():
+@pytest.mark.parametrize("n", [3, 4, 5, 100])
+def test_whittaker_direct_vs_fast_order2(n):
     """Test equivalent results"""
     rng = np.random.default_rng(42)
-    n = 100
     signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
-    x1 = _solve_WH_order_direct(signal, lamb=1/n)
-    x2 = _solve_WH_order2_fast(signal, lamb=1/n)
+    x1 = _solve_WH_banded(signal, lamb=1.23)
+    x2 = _solve_WH_order2_fast(signal, lamb=1.23)
     assert_allclose(x1, x2)
 
 
