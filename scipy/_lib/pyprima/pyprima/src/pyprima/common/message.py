@@ -1,19 +1,25 @@
+'''
+This module provides some functions that print messages to terminal/files.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+
+N.B.:
+1. In case parallelism is desirable (especially during initialization), the functions may
+have to be modified or disabled due to the IO operations.
+2. IPRINT indicates the level of verbosity, which increases with the absolute value of IPRINT.
+IPRINT = +/-3 can be expensive due to high IO operations.
+'''
+
 from .consts import DEBUGGING
 from .infos import FTARGET_ACHIEVED, MAXFUN_REACHED, MAXTR_REACHED, \
     SMALL_TR_RADIUS, TRSUBP_FAILED, NAN_INF_F, NAN_INF_X, NAN_INF_MODEL, DAMAGING_ROUNDING, \
     NO_SPACE_BETWEEN_BOUNDS, ZERO_LINEAR_CONSTRAINT, CALLBACK_TERMINATE
 from .present import present
 import numpy as np
-
-'''
-# This module provides some functions that print messages to terminal/files.
-#
-# N.B.:
-# 1. In case parallelism is desirable (especially during initialization), the functions may
-# have to be modified or disabled due to the IO operations.
-# 2. IPRINT indicates the level of verbosity, which increases with the absolute value of IPRINT.
-# IPRINT = +/-3 can be expensive due to high IO operations.
-'''
 
 spaces = '   '
 
@@ -57,7 +63,7 @@ def retmsg(solver, info, iprint, nf, f, x, cstrv=None, constr=None):
     valid_exit_codes = [FTARGET_ACHIEVED, MAXFUN_REACHED, MAXTR_REACHED,
         SMALL_TR_RADIUS, TRSUBP_FAILED, NAN_INF_F, NAN_INF_X, NAN_INF_MODEL, DAMAGING_ROUNDING,
         NO_SPACE_BETWEEN_BOUNDS, ZERO_LINEAR_CONSTRAINT, CALLBACK_TERMINATE]
-    
+
     # Preconditions
     if DEBUGGING:
         assert info in valid_exit_codes
@@ -86,7 +92,7 @@ def retmsg(solver, info, iprint, nf, f, x, cstrv=None, constr=None):
         cstrv_loc = np.max(np.append(0, -constr))  # N.B.: We assume that the constraint is CONSTR >= 0.
     else:
         cstrv_loc = 0
-    
+
     # Decide the return message.
     ret_message = get_info_string(solver, info)
 

@@ -3,7 +3,9 @@ This module provides subroutines that ensure the returned X is optimal among all
 points in the sense that no other point achieves both lower function value and lower constraint
 violation at the same time. This module is needed only in the constrained case.
 
-Coded by Zaikun ZHANG (www.zhangzk.net).
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
 
 Python implementation by Nickolai Belakovski
 '''
@@ -124,10 +126,10 @@ def savefilt(cstrv, ctol, cweight, f, x, nfilt, cfilt, ffilt, xfilt, constr=None
     if any((isbetter(ffilt_i, cfilt_i, f, cstrv, ctol) for ffilt_i, cfilt_i in zip(ffilt[:nfilt], cfilt[:nfilt]))) or \
         any(np.logical_and(ffilt[:nfilt] <= f, cfilt[:nfilt] <= cstrv)):
         return nfilt, cfilt, ffilt, xfilt, confilt
-    
+
     # Decide which columns of XFILT to keep.
     keep = np.logical_not([isbetter(f, cstrv, ffilt_i, cfilt_i, ctol) for ffilt_i, cfilt_i in zip(ffilt[:nfilt], cfilt[:nfilt])])
-    
+
     # If NFILT == MAXFILT and X is not better than any column of XFILT, then we remove the worst column
     # of XFILT according to the merit function PHI = FFILT + CWEIGHT * MAX(CFILT - CTOL, ZERO).
     if sum(keep) == maxfilt:  # In this case, NFILT = SIZE(KEEP) = COUNT(KEEP) = MAXFILT > 0.
@@ -265,7 +267,7 @@ def selectx(fhist: npt.NDArray, chist: npt.NDArray, cweight: float, ctol: float)
         else:
             phi = np.maximum(fhist, -REALMAX) + cweight * chist_shifted
             # np.maximum(fhist, -REALMAX) makes sure that phi will not contain NaN (unless there is a bug).
-        
+
         # We select X to minimize phi subject to f < fref and cstrv_shift <= cref (see the comments
         # above for the reason of taking "<" and "<=" in these two constraints). In case there are
         # multiple minimizers, we take the one with the least cstrv_shift; if there is more than one

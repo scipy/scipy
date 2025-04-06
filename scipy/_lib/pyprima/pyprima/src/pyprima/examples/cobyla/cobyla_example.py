@@ -1,3 +1,13 @@
+'''
+This is an example to illustrate the usage of the solver.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 import numpy as np
 from pyprima.cobyla.cobyla import cobyla
 
@@ -27,9 +37,9 @@ def calcfc_chebyquad(x):
 
 def calcfc_hexagon(x):
     # Test problem 10 in Powell's original algorithm
-    
+
     assert len(x) == 9
-    
+
     f = -0.5 * (x[0] * x[3] - x[1] * x[2] + x[2] * x[8] - x[4] * x[8] + x[4] * x[7] - x[5] * x[6])
     constr = np.zeros(14)
     constr[0] = -1 + x[2]**2 + x[3]**2
@@ -52,7 +62,7 @@ def calcfc_hexagon(x):
 
 if __name__ == "__main__":
     n_chebyquad = 6
-    
+
     # The following lines illustrates how to call the solver to solve the Chebyquad problem.
     x_chebyquad = np.array([i/(n_chebyquad+1) for i in range(1, n_chebyquad+1)])  # Starting point
     m = 0  # Dimension of constraints. M must be specified correctly, or the program will crash!

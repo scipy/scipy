@@ -1,7 +1,7 @@
 '''
 This module provides subroutines concerning the trust-region calculations of COBYLA.
 
-Coded by Zaikun ZHANG (www.zhangzk.net) based on Powell's code and the COBYLA paper.
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
 
 Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
 
@@ -24,7 +24,7 @@ def trstlp(A, b, delta, g):
     delta, then the second stage uses the resultant freedom in d to minimize the objective function
         G.T @ D
     subject to no increase in any greatest constraint violation.
-    
+
     It is possible but rare that a degeneracy may prevent d from attaining the target length delta.
 
     cviol is the largest constraint violation of the current d: max(max(A.T@D - b), 0)
@@ -70,7 +70,7 @@ def trstlp(A, b, delta, g):
         assert np.size(b) == num_constraints
         assert delta > 0
 
-    
+
     vmultc = np.zeros(num_constraints + 1)
     iact = np.zeros(num_constraints + 1, dtype=int)
     nact = 0
@@ -85,7 +85,7 @@ def trstlp(A, b, delta, g):
     # gradient of a constraint in the second stage.
     A_aug = np.hstack([A, g.reshape((num_vars, 1))])
     b_aug = np.hstack([b, 0])
-    
+
 
     # Scale the problem if A contains large values. Otherwise floating point exceptions may occur.
     # Note that the trust-region step is scale invariant.
@@ -100,7 +100,7 @@ def trstlp(A, b, delta, g):
 
     # Stage 2: minimize the linearized objective without increasing the 1_infinity constraint violation.
     iact, nact, d, vmultc, z = trstlp_sub(iact, nact, 2, A_aug, b_aug, delta, d, vmultc, z)
-    
+
     # ================
     # Calculation ends
     # ================
@@ -161,7 +161,7 @@ def trstlp_sub(iact: npt.NDArray, nact: int, stage, A, b, delta, d, vmultc, z):
         if mcon == 0 or cviol <= 0:
             # Check whether a quick return is possible. Make sure the in-outputs have been initialized.
             return iact, nact, d, vmultc, z
-        
+
         if all(np.isnan(b)):
             return iact, nact, d, vmultc, z
         else:
@@ -172,7 +172,7 @@ def trstlp_sub(iact: npt.NDArray, nact: int, stage, A, b, delta, d, vmultc, z):
         if inprod(d, d) >= delta*delta:
             # Check whether a quick return is possible.
             return iact, nact, d, vmultc, z
-        
+
         iact[mcon-1] = mcon-1
         vmultc[mcon-1] = 0
         num_constraints = mcon - 1
@@ -202,7 +202,7 @@ def trstlp_sub(iact: npt.NDArray, nact: int, stage, A, b, delta, d, vmultc, z):
             optnew = cviol
         else:
             optnew = inprod(d, A[:, mcon-1])
-        
+
         # End the current stage of the calculation if 3 consecutive iterations have either failed to
         # reduce the best calculated value of the objective function or to increase the number of active
         # constraints since the best value was calculated. This strategy prevents cycling, but there is
@@ -270,7 +270,7 @@ def trstlp_sub(iact: npt.NDArray, nact: int, stage, A, b, delta, d, vmultc, z):
             # Zaikun 20211011, 20211111: Is it guaranteed for stage 2 that iact[nact-1] = mcon when
             # iact[nact] != mcon??? If not, then how does the following procedure ensure that mcon is
             # the last of iact[:nact]?
-            if stage == 2 and iact[nact - 1] != (mcon - 1): 
+            if stage == 2 and iact[nact - 1] != (mcon - 1):
                 if nact <= 1:
                     # We must exit, as nact-2 is used as an index below. Powell's code does not have this.
                     break
@@ -437,7 +437,7 @@ def trstlp_sub(iact: npt.NDArray, nact: int, stage, A, b, delta, d, vmultc, z):
         assert np.linalg.norm(d) <= 2 * delta
         assert np.size(z, 0) == num_vars and np.size(z, 1) == num_vars
         assert nact >= 0 and nact <= np.minimum(mcon, num_vars)
-    
+
     return iact, nact, d, vmultc, z
 
 
@@ -453,7 +453,7 @@ def trrad(delta_in, dnorm, eta1, eta2, gamma1, gamma2, ratio):
         assert 0 < gamma1 < 1 < gamma2
         # By the definition of RATIO in ratio.f90, RATIO cannot be NaN unless the
         # actual reduction is NaN, which should NOT happen due to the moderated extreme
-        # barrier. 
+        # barrier.
         assert not np.isnan(ratio)
 
     #====================#

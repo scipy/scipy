@@ -1,3 +1,13 @@
+'''
+This module provides some Powell-style linear algebra procedures.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 import numpy as np
 from .linalg import isminor, planerot, matprod, inprod, hypot
 from .consts import DEBUGGING, EPS
@@ -86,12 +96,12 @@ def qrexc_Rdiag(A, Q, Rdiag, i):  # Used in COBYLA
     assert len(Rdiag) == n
     assert Q.shape[0] == m and Q.shape[1] >= n and Q.shape[1] <= m
     # tol = max(1.0E-8, min(1.0E-1, 1.0E8 * EPS * m + 1))
-    # assert isorth(Q, tol)  # Costly! 
+    # assert isorth(Q, tol)  # Costly!
 
 
     if i < 0 or i >= n:
         return Q, Rdiag
-    
+
     # Let R be the upper triangular matrix in the QR factorization, namely R = Q.T@A.
     # For each k, find the Givens rotation G with G@(R[k:k+2, :]) = [hypt, 0], and update Q[:, k:k+2]
     # to Q[:, k:k+2]@(G.T). Then R = Q.T@A is an upper triangular matrix as long as A[:, [k, k+1]] is

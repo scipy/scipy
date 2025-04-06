@@ -1,3 +1,13 @@
+'''
+This module contains subroutines for initialization.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from ..common.checkbreak import checkbreak_con
 from ..common.consts import DEBUGGING, REALMAX
 from ..common.infos import INFO_DEFAULT
@@ -76,7 +86,7 @@ def initxfc(calcfc, iprint, maxfun, constr0, amat, bvec, ctol, f0, ftarget, rhob
             x[j] += rhobeg
             f, constr = evaluate(calcfc, x, m_nlcon, amat, bvec)
         cstrv = np.max(np.append(0, constr))
-        
+
         # Print a message about the function/constraint evaluation according to IPRINT.
         fmsg(solver, 'Initialization', iprint, k, rhobeg, f, x, cstrv, constr)
 
@@ -133,7 +143,7 @@ def initxfc(calcfc, iprint, maxfun, constr0, amat, bvec, ctol, f0, ftarget, rhob
         assert simi.shape == (num_vars, num_vars), f'SIMI.shape == [N, N] {srname}'
         assert np.isfinite(simi).all(), f'SIMI is finite {srname}'
         assert np.allclose(sim[:, :num_vars] @ simi, np.eye(num_vars), rtol=0.1, atol=0.1) or not all(evaluated), f'SIMI = SIM(:, 1:N)^{-1} {srname}'
-    
+
     return evaluated, conmat, cval, sim, simi, fval, nf, info
 
 

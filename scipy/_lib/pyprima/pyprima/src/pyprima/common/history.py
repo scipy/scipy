@@ -1,3 +1,14 @@
+'''
+This module provides subroutines that handle the X/F/C histories of the solver, taking into
+account that MAXHIST may be smaller than NF.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 def savehist(maxhist, x, xhist, f, fhist, cstrv, chist, constr, conhist):
     '''
     Save the data values to the history lists.

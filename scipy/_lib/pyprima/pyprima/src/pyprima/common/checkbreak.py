@@ -1,3 +1,13 @@
+'''
+This module checks whether to break out of the solver loop.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from .infos import INFO_DEFAULT, NAN_INF_X, NAN_INF_F, FTARGET_ACHIEVED, MAXFUN_REACHED
 
 import numpy as np
@@ -60,7 +70,7 @@ def checkbreak_con(maxfun, nf, cstrv, ctol, f, ftarget, x):
     assert not any(np.isnan(x)), f'X does not contain NaN {srname}'
     # With the moderated extreme barrier, F or CSTRV cannot be NaN/+Inf.
     assert not (np.isnan(f) or np.isposinf(f) or np.isnan(cstrv) or np.isposinf(cstrv)), f'F or CSTRV is not NaN/+Inf {srname}'
-    
+
     #====================#
     # Calculation starts #
     #====================#

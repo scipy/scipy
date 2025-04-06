@@ -265,11 +265,18 @@ large constraint violation even though the starting point is feasible.
 
 ### Improvements
 
-Thanks to the improvements introduced into the new implementation, PRIMA outperforms Powell's
-original code in terms of the **number of function evaluations**, which is the standard performance
-indicator in derivative-free optimization.
+Thanks to the improvements introduced into the new implementation, PRIMA
+generally produces better solutions with less function evaluations compared with Powell's Fortran 77 implementation.
+This makes PRIMA preferable **if function evaluations are expensive**,
+which is typically the case for [derivative-free optimization problems](https://github.com/orgs/libprima/discussions/145).
+However, if function evaluations are not the dominant cost in your application (e.g., a function
+evaluation takes only milliseconds), the Fortran 77
+solvers are likely to be faster, as they are more efficient in terms of memory usage and flops
+thanks to the careful and ingenious (but unmaintained and unmaintainable) implementation by Powell.
+
 Below are the [performance profiles](https://arxiv.org/pdf/cs/0102001.pdf)
-of the PRIMA solvers compared with Powell's implementation, the convergence tolerance being $\tau = 10^{-6}$.
+of the PRIMA solvers compared with Powell's implementation in terms of the **number of function evaluations**,
+the convergence tolerance being $\tau = 10^{-6}$.
 Roughly speaking, performance profiles plot the percentage of test problems solved against the budget,
 which is measured relative to the cost of the most efficient solver in the comparison.
 A **higher** curve indicates a **better** solver.
@@ -337,7 +344,12 @@ support from the optimization community and beyond.
 **Thank you for help, known or unknown to me, explicit or implicit, without which I would not have survived.**
 
 The development of PRIMA would have been a mission impossible without the groundwork laid by the [PDFO](https://www.pdfo.net)
-package of [Tom M. Ragonneau](https://tomragonneau.com/) and Zaikun Zhang.
+package of [Tom M. Ragonneau](https://ragonneau.github.io) and Zaikun Zhang.
+PDFO is Chapter 3 of Ragonneau's [thesis](https://theses.lib.polyu.edu.hk/handle/200/12294) co-supervised by Zaikun Zhang 
+and Professor [Xiaojun Chen](https://www.polyu.edu.hk/ama/staff/xjchen/ChenXJ.htm),
+with financial support from the [Hong Kong Ph.D. Fellowship Scheme](https://cerg1.ugc.edu.hk/hkpfs/index.html) (ref. PF18-24698).
+
+
 
 PRIMA is a long-term project, which would not have been sustainable without the continued funds from the
 [National Natural Science Foundation of China](https://www.nsfc.gov.cn/english/site_1/index.html) (NSFC),
@@ -358,7 +370,8 @@ PRIMA has taken me significant energy and time. I will be delighted if it is use
 [its importance](https://xkcd.com/2347/) and the significant efforts it requires**.
 
 Note that PRIMA contains [bug fixes](#bug-fixes) and [improvements](#improvements) that do not exist in Powell's Fortran 77
-implementation of the solvers. Results produced by PRIMA are surely different from Powell's original solvers. Therefore,
+implementation of the solvers. Results produced by PRIMA are surely different from Powell's original solvers,
+even though the algorithms are essentially the same. Therefore,
 **it is important to point out that you are using PRIMA rather than the original solvers if you want your results to be reproducible**.
 It is wrong to pretend that PRIMA is just Powell's original solvers.
 

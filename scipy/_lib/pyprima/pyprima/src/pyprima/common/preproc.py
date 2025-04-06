@@ -1,3 +1,13 @@
+'''
+This is a module that preprocesses the inputs.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from .consts import DEBUGGING, EPS, IPRINT_DEFAULT, FTARGET_DEFAULT, \
     MIN_MAXFILT, MAXFILT_DEFAULT, MAXHISTMEM, ETA1_DEFAULT, ETA2_DEFAULT, \
     GAMMA1_DEFAULT, GAMMA2_DEFAULT, RHOBEG_DEFAULT, RHOEND_DEFAULT, \
@@ -195,7 +205,7 @@ def preproc(solver, num_vars, iprint, maxfun, maxhist, ftarget, rhobeg, rhoend,
     # least RHOBEG. If HONOUR_X0 == TRUE, revise RHOBEG if needed; otherwise, revise HONOUR_X0 if needed.
     if present(honour_x0):
         if honour_x0:
-            rhobeg_old = rhobeg; 
+            rhobeg_old = rhobeg;
             lbx = np.isfinite(xl) & (x0 - xl <= EPS * np.maximum(1, np.abs(xl))) # X0 essentially equals XL
             ubx = np.isfinite(xu) & (x0 - xu >= -EPS * np.maximum(1, np.abs(xu))) # X0 essentially equals XU
             x0[lbx] = xl[lbx]
@@ -238,9 +248,9 @@ def preproc(solver, num_vars, iprint, maxfun, maxhist, ftarget, rhobeg, rhoend,
             if (is_constrained):
                 warn(f'{solver}: Invalid CWEIGHT; it should be a nonnegative number; it is set to {cweight}')
 
-    #====================!
-    #  Calculation ends  !
-    #====================!
+    #====================#
+    #  Calculation ends  #
+    #====================#
 
     # Postconditions
     if DEBUGGING:

@@ -1,3 +1,13 @@
+'''
+This module performs the major calculations of COBYLA.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 import numpy as np
 from ..common.checkbreak import checkbreak_con
 from ..common.consts import REALMAX, EPS, DEBUGGING, MIN_MAXFILT
@@ -44,7 +54,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
     # 2. There is no need to revise ACTREM and PREREM when CPEN = 0 and F = FVAL(N+1)
     #    as in lines 312--314 of Powell's cobylb.f code. Powell's code revises ACTREM
     #    to CVAL(N + 1) - CSTRV and PREREM to PREREC in this case, which is crucial for
-    #    feasibility problems.  
+    #    feasibility problems.
     cpenmin = EPS
 
     # Sizes
@@ -72,18 +82,18 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
     #====================#
     # Calculation starts #
     #====================#
-    
+
     # Initialize SIM, FVAL, CONMAT, and CVAL, together with the history.
     # After the initialization, SIM[:, NUM_VARS] holds the vertex of the initial
     # simplex with the smallest function value (regardless of the constraint
     # violation), and SIM[:, :NUM_VARS] holds the displacements from the other vertices
     # to SIM[:, NUM_VARS]. FVAL, CONMAT, and CVAL hold the function values, constraint
     # values, and constraint violations on the vertices in the order corresponding to
-    # SIM. 
+    # SIM.
     evaluated, conmat, cval, sim, simi, fval, nf, subinfo = initxfc(calcfc, iprint,
       maxfun, constr, amat, bvec, ctol, f, ftarget, rhobeg, x,
       xhist, fhist, chist, conhist, maxhist)
-    
+
     # Initialize the filter, including xfilt, ffilt, confilt, cfilt, and nfilt.
     # N.B.: The filter is used only when selecting which iterate to return. It does not
     # interfere with the iterations. COBYLA is NOT a filter method but a trust-region
@@ -257,10 +267,10 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
             # are inaccurate.
             x = sim[:, num_vars] + d
             distsq[num_vars] = primasum(primapow2(x - sim[:, num_vars]))
-            distsq[:num_vars] = primasum(primapow2(x.reshape(num_vars, 1) - 
+            distsq[:num_vars] = primasum(primapow2(x.reshape(num_vars, 1) -
                 (sim[:, num_vars].reshape(num_vars, 1) + sim[:, :num_vars])), axis=0)
             j = np.argmin(distsq)
-            if distsq[j] <= primapow2(1e-4 * rhoend): 
+            if distsq[j] <= primapow2(1e-4 * rhoend):
                 f = fval[j]
                 constr = conmat[:, j]
                 cstrv = cval[j]
@@ -288,7 +298,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
             ratio = redrat(actrem, prerem, eta1)
 
             # Update DELTA. After this, DELTA < DNORM may hold.
-            # N.B.: 
+            # N.B.:
             # 1. Powell's code uses RHO as the trust-region radius and updates it as
             #    follows.
             #    Reduce RHO to GAMMA1*RHO if ADEQUATE_GEO is TRUE and either SHORTD is
@@ -341,7 +351,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
                 info = subinfo
                 break
         # End of if SHORTD or TRFAIL. The normal trust-region calculation ends.
-    
+
         # Before the next trust-region iteration, we possibly improve the geometry of the simplex or
         # reduce RHO according to IMPROVE_GEO and REDUCE_RHO. Now we decide these indicators.
         # N.B.: We must ensure that the algorithm does not set IMPROVE_GEO = True at infinitely many
@@ -360,7 +370,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
 
         # COBYLA never sets IMPROVE_GEO and REDUCE_RHO to True simultaneously.
         # assert not (IMPROVE_GEO and REDUCE_RHO), 'IMPROVE_GEO or REDUCE_RHO are not both TRUE, COBYLA'
-    
+
         # If SHORTD or TRFAIL is True, then either IMPROVE_GEO or REDUCE_RHO is True unless ADEQUATE_GEO
         # is True and max(DELTA, DNORM) > RHO.
         # assert not (shortd or trfail) or (improve_geo or reduce_rho or (adequate_geo and max(delta, dnorm) > rho)), \
@@ -416,7 +426,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
 
             # Decide a vertex to drop from the simplex. It will be replaced with SIM[:, NUM_VARS] + D to
             # improve the geometry of the simplex.
-            # N.B.: 
+            # N.B.:
             # 1. COBYLA never sets JDROP_GEO = num_vars.
             # 2. The following JDROP_GEO comes from UOBYQA/NEWUOA/BOBYQA/LINCOA.
             # 3. In Powell's original algorithm, the geometry of the simplex is considered acceptable
@@ -455,7 +465,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
             # rounding. In an experiment with single precision on 20240317, X = SIM(:, N+1) occurred.
             x = sim[:, num_vars] + d
             distsq[num_vars] = primasum(primapow2(x - sim[:, num_vars]))
-            distsq[:num_vars] = primasum(primapow2(x.reshape(num_vars, 1) - 
+            distsq[:num_vars] = primasum(primapow2(x.reshape(num_vars, 1) -
                 (sim[:, num_vars].reshape(num_vars, 1) + sim[:, :num_vars])), axis=0)
             j = np.argmin(distsq)
             if distsq[j] <= primapow2(1e-4 * rhoend):
@@ -547,7 +557,7 @@ def cobylb(calcfc, iprint, maxfilt, maxfun, amat, bvec, ctol, cweight, eta1, eta
     retmsg(solver, info, iprint, nf, f, x, cstrv, constr)
     return x, f, constr, cstrv, nf, xhist, fhist, chist, conhist, info
 
-        
+
 
 def getcpen(amat, bvec, conmat, cpen, cval, delta, fval, rho, sim, simi):
     '''

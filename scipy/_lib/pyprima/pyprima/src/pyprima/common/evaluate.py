@@ -1,3 +1,13 @@
+'''
+This is a module evaluating the objective/constraint function with Nan/Inf handling.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 import numpy as np
 from .consts import FUNCMAX, CONSTRMAX, REALMAX, DEBUGGING
 from .linalg import matprod, primasum
@@ -50,7 +60,7 @@ def evaluate(calcfc, x, m_nlcon, amat, bvec):
     if DEBUGGING:
         # X should not contain NaN if the initial X does not contain NaN and the
         # subroutines generating # trust-region/geometry steps work properly so that
-        # they never produce a step containing NaN/Inf. 
+        # they never produce a step containing NaN/Inf.
         assert not any(np.isnan(x))
 
     #====================#
@@ -68,7 +78,7 @@ def evaluate(calcfc, x, m_nlcon, amat, bvec):
         constr = np.ones(m_nlcon) * f
     else:
         f, constr[m_lcon:] = calcfc(moderatex(x))
-        
+
         # Moderated extreme barrier: replace NaN/huge objective or constraint values
         # with a large but finite value. This is naive, and better approaches surely
         # exist.

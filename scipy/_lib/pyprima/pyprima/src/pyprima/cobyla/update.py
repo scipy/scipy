@@ -1,3 +1,13 @@
+'''
+This module contains subroutines concerning the update of the interpolation set.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from ..common.consts import DEBUGGING
 from ..common.infos import DAMAGING_ROUNDING, INFO_DEFAULT
 from ..common.linalg import isinv, matprod, outprod, inprod, inv, primasum
@@ -35,7 +45,7 @@ def updatexfc(jdrop, constr, cpen, cstrv, d, f, conmat, cval, fval, sim, simi):
         assert np.size(simi, 0) == num_vars and np.size(simi, 1) == num_vars
         assert np.isfinite(simi).all()
         assert isinv(sim[:, :num_vars], simi, itol)
-    
+
     #====================#
     # Calculation starts #
     #====================#
@@ -44,7 +54,7 @@ def updatexfc(jdrop, constr, cpen, cstrv, d, f, conmat, cval, fval, sim, simi):
     # Do nothing when JDROP is None. This can only happen after a trust-region step.
     if jdrop is None:  # JDROP is None is impossible if the input is correct.
         return conmat, cval, fval, sim, simi, INFO_DEFAULT
-    
+
     sim_old = sim
     simi_old = simi
     if jdrop < num_vars:
@@ -99,7 +109,7 @@ def updatexfc(jdrop, constr, cpen, cstrv, d, f, conmat, cval, fval, sim, simi):
         assert np.size(simi, 0) == num_vars and np.size(simi, 1) == num_vars
         assert np.isfinite(simi).all()
         assert isinv(sim[:, :num_vars], simi, itol) or info == DAMAGING_ROUNDING
-    
+
     return sim, simi, fval, conmat, cval, info
 
 def findpole(cpen, cval, fval):

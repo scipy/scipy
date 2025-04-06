@@ -1,6 +1,11 @@
-
 '''
 This is a module defining exit flags.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
 '''
 
 INFO_DEFAULT = 0
@@ -23,5 +28,3 @@ INVALID_INPUT = 100
 ASSERTION_FAILS = 101
 VALIDATION_FAILS = 102
 MEMORY_ALLOCATION_FAILS = 103
-
-

@@ -1,3 +1,13 @@
+'''
+This module provides some basic linear algebra procedures.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 import numpy as np
 from .consts import DEBUGGING, EPS, REALMAX, REALMIN
 from .present import present
@@ -158,7 +168,7 @@ def inv(A):
         InvP[P] = np.linspace(0, n-1, n)
         B = B[:, InvP].T
     return B
-    
+
 
 def qr(A):
     m = A.shape[0]

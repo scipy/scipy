@@ -1,3 +1,13 @@
+'''
+This module calculates the reduction ratio for trust-region methods.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from .consts import DEBUGGING, REALMAX
 import numpy as np
 

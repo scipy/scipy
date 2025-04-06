@@ -1,3 +1,11 @@
+'''
+This module provides the _project function that attempts to project the initial guess
+onto the feasible set.
+
+Adapted from the corresponding function in the PDFO package (https://www.pdfo.net) by
+Tom M. Ragonneau (https://ragonneau.github.io) and Zaikun Zhang (https://www.zhangzk.net).
+'''
+
 import numpy as np
 from ._linear_constraints import LinearConstraint
 from scipy.optimize import OptimizeResult

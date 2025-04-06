@@ -1,3 +1,13 @@
+'''
+This module contains subroutines concerning the geometry-improving of the interpolation set.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+'''
+
 from ..common.consts import DEBUGGING
 from ..common.linalg import isinv, matprod, inprod, norm, primasum, primapow2
 import numpy as np
@@ -43,7 +53,7 @@ def setdrop_tr(ximproved, d, delta, rho, sim, simi):
     # ! JDROP = 0 by default. It cannot be removed, as JDROP may not be set below in some cases (e.g.,
     # ! when XIMPROVED == FALSE, MAXVAL(ABS(SIMID)) <= 1, and MAXVAL(VETA) <= EDGMAX).
     # jdrop = 0
-    # 
+    #
     # ! SIMID(J) is the value of the J-th Lagrange function at D. It is the counterpart of VLAG in UOBYQA
     # ! and DEN in NEWUOA/BOBYQA/LINCOA, but it excludes the value of the (N+1)-th Lagrange function.
     # simid = matprod(simi, d)
@@ -51,7 +61,7 @@ def setdrop_tr(ximproved, d, delta, rho, sim, simi):
     #     jdrop = int(maxloc(abs(simid), mask=(.not. is_nan(simid)), dim=1), kind(jdrop))
     #     !!MATLAB: [~, jdrop] = max(simid, [], 'omitnan');
     # end if
-    # 
+    #
     # ! VETA(J) is the distance from the J-th vertex of the simplex to the best vertex, taking the trial
     # ! point SIM(:, N+1) + D into account.
     # if (ximproved) then
@@ -60,18 +70,18 @@ def setdrop_tr(ximproved, d, delta, rho, sim, simi):
     # else
     #     veta = sqrt(sum(sim(:, 1:n)**2, dim=1))
     # end if
-    # 
+    #
     # ! VSIG(J) (J=1, .., N) is the Euclidean distance from vertex J to the opposite face of the simplex.
     # vsig = ONE / sqrt(sum(simi**2, dim=2))
     # sigbar = abs(simid) * vsig
-    # 
+    #
     # ! The following JDROP will overwrite the previous one if its premise holds.
     # mask = (veta > factor_delta * delta .and. (sigbar >= factor_alpha * delta .or. sigbar >= vsig))
     # if (any(mask)) then
     #     jdrop = int(maxloc(veta, mask=mask, dim=1), kind(jdrop))
     #     !!MATLAB: etamax = max(veta(mask)); jdrop = find(mask & ~(veta < etamax), 1, 'first');
     # end if
-    # 
+    #
     # ! Powell's code does not include the following instructions. With Powell's code, if SIMID consists
     # ! of only NaN, then JDROP can be 0 even when XIMPROVED == TRUE (i.e., D reduces the merit function).
     # ! With the following code, JDROP cannot be 0 when XIMPROVED == TRUE, unless VETA is all NaN, which
@@ -124,7 +134,7 @@ def setdrop_tr(ximproved, d, delta, rho, sim, simi):
     # score[j] is NaN implies SIMID[j] is NaN, but we want abs(SIMID) to be big. So we
     # exclude such j.
     score[np.isnan(score)] = -1
-    
+
     jdrop = None
     # The following if statement works a bit better than
     # `if any(score > 1) or (any(score > 0) and ximproved)` from Powell's UOBYQA and

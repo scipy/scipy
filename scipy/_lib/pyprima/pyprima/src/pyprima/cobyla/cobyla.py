@@ -1,3 +1,29 @@
+'''
+This module provides Powell's COBYLA algorithm.
+
+Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+
+Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
+
+Python implementation by Nickolai Belakovski
+
+N.B.:
+
+1. The modern-Fortran reference implementation in PRIMA contains bug fixes and improvements over the
+original Fortran 77 implementation by Powell. Consequently, the PRIMA implementation behaves differently
+from the original Fortran 77 implementation by Powell. Therefore, it is important to point out that
+you are using PRIMA rather than the original solvers if you want your results to be reproducible.
+
+2. Compared to Powell's Fortran 77 implementation, the modern-Fortran implementation and hence any
+faithful translation like this one generally produce better solutions with less function evaluations,
+making them preferable for applications with expensive function evaluations. However, if function
+evaluations are not the dominant cost in your application, the Fortran 77 solvers are likely to be
+faster, as they are more efficient in terms of memory usage and flops thanks to the careful and
+ingenious (but unmaintained and unmaintainable) implementation by Powell.
+
+See the PRIMA documentation (www.libprima.net) for more information.
+'''
+
 from ..common.evaluate import evaluate, moderatex, moderatef, moderatec
 from ..common.consts import (EPS, RHOBEG_DEFAULT, RHOEND_DEFAULT, CTOL_DEFAULT,
                                    CWEIGHT_DEFAULT, FTARGET_DEFAULT, IPRINT_DEFAULT,
@@ -51,7 +77,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
     ####################################################################################
     # IMPORTANT NOTICE: The user must set M_NLCON correctly to the number of nonlinear
     # constraints, namely the size of NLCONSTR introduced below. Set it to 0 if there
-    # is no nonlinear constraint. 
+    # is no nonlinear constraint.
     ####################################################################################
 
     See examples/cobyla/cobyla_example.py for a concrete example.
@@ -83,7 +109,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
       1. Why don't we define M_NLCON as optional and default it to 0 when it is absent?
       This is because we need to allocate memory for CONSTR_LOC using M_NLCON. To
       ensure that the size of CONSTR_LOC is correct, we require the user to specify
-      M_NLCON explicitly. 
+      M_NLCON explicitly.
 
     X
       Input, vector.
@@ -131,7 +157,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
       feasible point with a function value <= FTARGET is found.
 
     CTOL
-      Input, scalar, default: sqrt(machine epsilon). 
+      Input, scalar, default: sqrt(machine epsilon).
       CTOL is the tolerance of constraint violation. X is considered feasible if
       CSTRV(X) <= CTOL.
       N.B.:
@@ -157,12 +183,12 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
          of variables found and its objective function value;
       2: in addition to 1, each new value of RHO is printed to the screen, with the
          best vector of variables so far and its objective function value; each new
-         value of CPEN is also printed; 
+         value of CPEN is also printed;
       3: in addition to 2, each function evaluation with its variables will be printed
          to the screen; -1, -2, -3: the same information as 1, 2, 3 will be printed,
          not to the screen but to a file named COBYLA_output.txt; the file will be
          created if it does not exist; the new output will be appended to the end of
-         this file if it already exists. 
+         this file if it already exists.
       Note that IPRINT = +/-3 can be costly in terms of time and/or space.
 
     ETA1, ETA2, GAMMA1, GAMMA2
@@ -173,7 +199,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
       reduction ratio is below ETA1, and enlarged by a factor of GAMMA2 when the
       reduction ratio is above ETA2. It is required that 0 < ETA1 <= ETA2 < 1 and
       0 < GAMMA1 < 1 < GAMMA2. Normally, ETA1 <= 0.25. It is NOT advised to set
-      ETA1 >= 0.5. 
+      ETA1 >= 0.5.
 
     MAXFILT
       Input, scalar.
@@ -185,7 +211,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
     CALLBACK
       Input, function to report progress and optionally request termination.
 
-    
+
     ####################################################################################
     # OUTPUTS
     ####################################################################################
@@ -199,7 +225,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
     F
       Output, scalar.
       F will be set to the objective function value of X at exit.
-    
+
     CONSTR
       Output, vector.
       CONSTR will be set to the constraint value of X at exit.
@@ -208,7 +234,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
       Output, scalar.
       CSTRV will be set to the constraint violation of X at exit, i.e.,
       max([0, XL - X, X - XU, Aineq*X - Bineq, ABS(Aeq*X -Beq), NLCONSTR(X)]).
-    
+
     NF
       Output, scalar.
       NF will be set to the number of calls of CALCFC at exit.
@@ -278,12 +304,12 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
             f'{srname} Aineq and Bineq are both present or both absent'
         if (present(Aineq)):
             assert Aineq.shape == (mineq, num_vars), f'{srname} SIZE(Aineq) == [Mineq, N]'
-        
+
         assert present(Aeq) == present(beq), \
             f'{srname} Aeq and Beq are both present or both absent'
         if (present(Aeq)):
             assert Aeq.shape == (meq, num_vars), f'{srname} SIZE(Aeq) == [Meq, N]'
-        
+
         if (present(xl)):
             assert len(xl) == num_vars, f'{srname} SIZE(XL) == N'
         if (present(xu)):
@@ -349,7 +375,7 @@ def cobyla(calcfc, m_nlcon, x, Aineq=None, bineq=None, Aeq=None, beq=None,
     # If RHOBEG is present, use it; otherwise, RHOBEG takes the default value for
     # RHOBEG, taking the value of RHOEND into account. Note that RHOEND is considered
     # only if it is present and it is VALID (i.e., finite and positive). The other
-    # inputs are read similarly. 
+    # inputs are read similarly.
     if present(rhobeg):
         rhobeg = rhobeg
     elif present(rhoend) and np.isfinite(rhoend) and rhoend > 0:
@@ -462,9 +488,9 @@ def get_lincon(Aeq=None, Aineq=None, beq=None, bineq=None, xl=None, xu=None):
     """
     This subroutine wraps the linear and bound constraints into a single constraint:
         AMAT*X <= BVEC.
-    
+
     N.B.:
-    
+
     LINCOA normalizes the linear constraints so that each constraint has a gradient
     of norm 1. However, COBYLA does not do this.
     """
@@ -486,7 +512,7 @@ def get_lincon(Aeq=None, Aineq=None, beq=None, bineq=None, xl=None, xu=None):
         assert Aineq is None or Aineq.shape == (len(bineq), num_vars)
         assert Aeq is None or Aeq.shape == (len(beq), num_vars)
         assert (xl is None or xu is None) or len(xl) == len(xu) == num_vars
-        
+
     #====================#
     # Calculation starts #
     #====================#
