@@ -1,5 +1,6 @@
 """Base class for sparse matrices"""
 
+from functools import reduce
 import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
@@ -423,8 +424,10 @@ class _spbase(SparseABC):
         if self.shape == (1, 1):
             return self.nnz != 0
         else:
-            raise ValueError("The truth value of an array with more than one "
-                             "element is ambiguous. Use a.any() or a.all().")
+            raise ValueError(
+                "The truth value of an array with more than one "
+                f"element is ambiguous. Use a.any() or a.all() for {self}."
+            )
     __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,
@@ -1389,6 +1392,22 @@ class _spbase(SparseABC):
 
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
+    
+    def __array_namespace__(self, *, api_version: str | None = None):
+        from . import _array_api
+        return _array_api
+
+    def __int__(self):
+        if reduce((lambda x, y: x * y), self.shape) == 1:
+            return int(self.todense()[0])
+        else:
+            raise TypeError("only size-1 arrays can be converted to Python scalars")
+    
+    def __float__(self):
+        if reduce((lambda x, y: x * y), self.shape) == 1:
+            return float(self.todense()[0])
+        else:
+            raise TypeError("only size-1 arrays can be converted to Python scalars")
 
     @classmethod
     def __class_getitem__(cls, arg, /):
