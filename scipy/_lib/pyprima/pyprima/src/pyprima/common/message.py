@@ -1,11 +1,11 @@
 '''
 This module provides some functions that print messages to terminal/files.
 
-Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+Translated from Zaikun Zhang's modern-Fortran reference implementation in PRIMA.
 
 Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
 
-Python implementation by Nickolai Belakovski
+Python translation by Nickolai Belakovski.
 
 N.B.:
 1. In case parallelism is desirable (especially during initialization), the functions may

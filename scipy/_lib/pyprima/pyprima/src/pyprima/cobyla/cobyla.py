@@ -1,11 +1,11 @@
 '''
 This module provides Powell's COBYLA algorithm.
 
-Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+Translated from Zaikun Zhang's modern-Fortran reference implementation in PRIMA.
 
 Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
 
-Python implementation by Nickolai Belakovski
+Python translation by Nickolai Belakovski.
 
 N.B.:
 
@@ -15,7 +15,7 @@ from the original Fortran 77 implementation by Powell. Therefore, it is importan
 you are using PRIMA rather than the original solvers if you want your results to be reproducible.
 
 2. Compared to Powell's Fortran 77 implementation, the modern-Fortran implementation and hence any
-faithful translation like this one generally produce better solutions with less function evaluations,
+faithful translation like this one generally produce better solutions with fewer function evaluations,
 making them preferable for applications with expensive function evaluations. However, if function
 evaluations are not the dominant cost in your application, the Fortran 77 solvers are likely to be
 faster, as they are more efficient in terms of memory usage and flops thanks to the careful and

@@ -3,11 +3,11 @@ This module provides subroutines that ensure the returned X is optimal among all
 points in the sense that no other point achieves both lower function value and lower constraint
 violation at the same time. This module is needed only in the constrained case.
 
-Translated from the modern-Fortran reference implementation in PRIMA by Zaikun ZHANG (www.zhangzk.net).
+Translated from Zaikun Zhang's modern-Fortran reference implementation in PRIMA.
 
 Dedicated to late Professor M. J. D. Powell FRS (1936--2015).
 
-Python implementation by Nickolai Belakovski
+Python translation by Nickolai Belakovski.
 '''
 
 import numpy as np

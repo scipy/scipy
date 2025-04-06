@@ -266,7 +266,7 @@ large constraint violation even though the starting point is feasible.
 ### Improvements
 
 Thanks to the improvements introduced into the new implementation, PRIMA
-generally produces better solutions with less function evaluations compared with Powell's Fortran 77 implementation.
+generally produces better solutions with fewer function evaluations compared with Powell's Fortran 77 implementation.
 This makes PRIMA preferable **if function evaluations are expensive**,
 which is typically the case for [derivative-free optimization problems](https://github.com/orgs/libprima/discussions/145).
 However, if function evaluations are not the dominant cost in your application (e.g., a function
@@ -345,7 +345,7 @@ support from the optimization community and beyond.
 
 The development of PRIMA would have been a mission impossible without the groundwork laid by the [PDFO](https://www.pdfo.net)
 package of [Tom M. Ragonneau](https://ragonneau.github.io) and Zaikun Zhang.
-PDFO is Chapter 3 of Ragonneau's [thesis](https://theses.lib.polyu.edu.hk/handle/200/12294) co-supervised by Zaikun Zhang 
+PDFO is Chapter 3 of Ragonneau's [thesis](https://theses.lib.polyu.edu.hk/handle/200/12294) co-supervised by Zaikun Zhang
 and Professor [Xiaojun Chen](https://www.polyu.edu.hk/ama/staff/xjchen/ChenXJ.htm),
 with financial support from the [Hong Kong Ph.D. Fellowship Scheme](https://cerg1.ugc.edu.hk/hkpfs/index.html) (ref. PF18-24698).
 

@@ -1,9 +1,9 @@
 ## About
 
-This is a Python translation of the [modern-Fortran reference implementation](https://github.com/libprima/prima/tree/main/fortran)
+This is a Python translation of [Zaikun Zhang](https://www.zhangzk.net)'s [modern-Fortran reference implementation](https://github.com/libprima/prima/tree/main/fortran)
 for Powell's derivative-free optimization solvers, which is available at `fortran/` under the root directory.
 It is supposed to be a faithful translation, [producing bit-for-bit identical results](https://github.com/scipy/scipy/pull/22350#issue-2795978526).
-as the Fortran reference implementation
+as the modern-Fortran reference implementation.
 If you notice a difference, [raise an issue](https://github.com/libprima/prima/issues/new).
 
 Due to [bug-fixes](https://github.com/libprima/prima#bug-fixes) and [improvements](https://github.com/libprima/prima#improvements),
@@ -13,7 +13,7 @@ even though the algorithms are essentially the same. Therefore, it is important 
 PRIMA rather than the original solvers if you want your results to be reproducible.
 
 Compared to Powell's Fortran 77 implementation, the modern-Fortran implementation and hence any faithful
-translation like this one generally [produce better solutions with less function evaluations](https://github.com/libprima/prima#improvements),
+translation like this one generally [produce better solutions with fewer function evaluations](https://github.com/libprima/prima#improvements),
 making them preferable for [applications with expensive function evaluations](https://github.com/orgs/libprima/discussions/145).
 However, if function evaluations are not the dominant cost in your application, the Fortran 77
 solvers are likely to be faster, as they are more efficient in terms of memory usage and flops
@@ -32,7 +32,7 @@ To develop, `cd` into the `src` directory and run
 
 ```pip install --editable .```
 
-This will install prima locally in an editable fashion. From there you can run the examples/cobyla/cobyla_example.py (from any directory) and go from there.
+This will install PRIMA locally in an editable fashion. From there you can run the examples/cobyla/cobyla_example.py (from any directory) and go from there.
 
 ### Style notes
 
