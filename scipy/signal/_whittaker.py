@@ -10,7 +10,7 @@ from scipy.linalg import solveh_banded
 # 5) Case weights
 # 6) 2-d, maybe even 3-d WH smoothing
 
-def whittaker_henderson(signal, lamb = 1.0):
+def whittaker_henderson(signal, lamb = 1.0, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
@@ -30,6 +30,10 @@ def whittaker_henderson(signal, lamb = 1.0):
     lamb : float, optional
         Smoothing or penalty parameter, default is 0.0.
 
+    weights : ndarray, option
+        A rank-1 array of case weights with the same lenght as `signal`.
+        `None` is equivalent to an array of all ones, i.e. `np.ones_like(signal)`.
+
     Returns
     -------
     x : ndarray
@@ -37,9 +41,9 @@ def whittaker_henderson(signal, lamb = 1.0):
 
     Notes
     -----
-    For the signal :math:`y = (y_1, y_2, \ldots, y_n)`, WH of order :math:`p=2` with
-    smoothing or penalty parameter :math:`\lambda` solves the following optimization
-    problem:
+    For the signal :math:`y = (y_1, y_2, \ldots, y_n)` and weights
+    :math:`w = (w_1, w_2, \ldots, w_n)`, WH of order :math:`p=2` with smoothing or
+    penalty parameter :math:`\lambda` solves the following optimization problem:
 
     .. math::
 
@@ -72,19 +76,25 @@ def whittaker_henderson(signal, lamb = 1.0):
         msg = f"Input signal array must be at least of shape ({p + 1},); got {n}."
         raise ValueError(msg)
 
+    if weights is not None:
+        weights = np.asarray(weights)
+        if weights.shape != signal.shape:
+            # TODO: add test
+            raise ValueError("Weights must have the same shape as the signal array.")
+
     if lamb < 0:
         msg = f"Parameter lamb must be non-negative; got {lamb=}."
         raise ValueError(msg)
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
-        x = _solve_WH_banded(signal, lamb=lamb, order=2)
+        x = _solve_WH_banded(signal, lamb=lamb, order=2, weights=weights)
         # If performance matters and p == 2, think about a C++/Pybind implementation of
         # x = _solve_WH_order2_fast(signal, lamb=lamb)
     return x
 
 
-def _solve_WH_banded(y, lamb, order=2):
+def _solve_WH_banded(y, lamb, order=2, weights=None):
     """Solve the WH optimization problem directly with matrices."""
     n = y.shape[0]  # n >= p + 1 was already checked
     p = order  # order of difference penalty
@@ -109,8 +119,11 @@ def _solve_WH_banded(y, lamb, order=2):
             ab[:, :p+1],
             np.repeat(ab[:, p:p+1], n - (2*p+1), axis=1),
             ab[:, -p:],
-        ])   
-    ab[0, :] += 1.0  # This corresponds to np.eye(n).
+        ])
+    if weights is None:
+        ab[0, :] += 1.0  # This corresponds to np.eye(n).
+    else:
+        ab[0, :] += weights
     x = solveh_banded(ab, y, lower=True)
     return x
 
