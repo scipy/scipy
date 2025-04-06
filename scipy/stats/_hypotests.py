@@ -1814,7 +1814,7 @@ class TukeyHSDResult:
         # determine the critical value of the studentized range using the
         # appropriate confidence level, number of treatments, and degrees
         # of freedom as determined by the number of data less the number of
-        # treatments. ("Confidence limits for Tukey's method")[1] / [2] p.6
+        # treatments. ("Confidence limits for Tukey's method")[1] / [2] p.117
         # "H0 was rejected" for Games Howell. Note that
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
@@ -2046,11 +2046,9 @@ def tukey_hsd(*args, equal_var=True):
 
         # Welch degree of freedom with notation $\nu$
         # "and the degree of freedom, v, are given by" [7] p. 116
-        df = (
-                ((vars_/nsamples_treatments)[None].T + (vars_/nsamples_treatments))**2
-                / ((((vars_/nsamples_treatments)**2)/(nsamples_treatments-1))[None].T
-                   + (((vars_/nsamples_treatments)**2)/(nsamples_treatments-1)))
-        )
+        njm1 = nsamples_treatments - 1
+        nim1 = njm1[:, np.newaxis]
+        df = (si2_ni + sj2_nj)**2 / (sj2_nj**2 / njm1 + si2_ni**2 / nim1)
 
     # the mean difference is the test statistic.
     mean_differences = means[None].T - means
