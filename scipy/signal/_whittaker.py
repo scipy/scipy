@@ -10,7 +10,7 @@ from scipy.linalg import solveh_banded
 # 5) Case weights
 # 6) 2-d, maybe even 3-d WH smoothing
 
-def whittaker_henderson(signal, lamb = 1.0, weights=None):
+def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
@@ -29,6 +29,9 @@ def whittaker_henderson(signal, lamb = 1.0, weights=None):
     
     lamb : float, optional
         Smoothing or penalty parameter, default is 0.0.
+
+    order : int, default: 2
+        The order of the difference penalty, must be at least 1.
 
     weights : ndarray, option
         A rank-1 array of case weights with the same lenght as `signal`.
@@ -64,23 +67,25 @@ def whittaker_henderson(signal, lamb = 1.0, weights=None):
            Computational Statistics and Data Analysis 52:959-74.
            :doi:`10.1016/j.csda.2006.11.038`
     """
-    p = 2  # the order of the penalty
+    if order < 1 or int(order) != order:
+        raise ValueError("Parameter order must be an integer larger equal 1.")
+
     signal = np.asarray(signal)
     if signal.ndim != 1:
         msg = f"Input signal array must be of shape (n,); got {signal.shape}"
         raise ValueError(msg)
 
     n = signal.shape[0]
-    if n < p + 1:
-        # signal must be at least of length 3 (=order+1).
-        msg = f"Input signal array must be at least of shape ({p + 1},); got {n}."
+    if n < order + 1:
+        msg = f"Input signal array must be at least of shape ({order + 1},); got {n}."
         raise ValueError(msg)
 
     if weights is not None:
         weights = np.asarray(weights)
         if weights.shape != signal.shape:
-            # TODO: add test
-            raise ValueError("Weights must have the same shape as the signal array.")
+            msg = "Parameter weights must have the same shape as the signal array."
+            raise ValueError(msg)
+
 
     if lamb < 0:
         msg = f"Parameter lamb must be non-negative; got {lamb=}."
@@ -88,7 +93,7 @@ def whittaker_henderson(signal, lamb = 1.0, weights=None):
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
-        x = _solve_WH_banded(signal, lamb=lamb, order=2, weights=weights)
+        x = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
         # If performance matters and p == 2, think about a C++/Pybind implementation of
         # x = _solve_WH_order2_fast(signal, lamb=lamb)
     return x
