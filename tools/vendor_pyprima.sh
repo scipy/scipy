@@ -6,7 +6,7 @@ set -o nounset
 set -o errexit
 
 REPO_URL="https://github.com/libprima/prima"
-COMMIT_HASH="e7083b9eccbc74d26d13a38ca395e5df6062ab8b"
+COMMIT_HASH="6fbf15d9b4aac20d2e3ee5b3fcb41f0ca17c4330"
 
 # XXX: run this from the repo top level like `./tools/vendor_pyprima.sh`
 ROOT_DIR="scipy/_lib/pyprima"
