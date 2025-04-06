@@ -600,8 +600,9 @@ cdef class VarReader5:
             type_system_name = self.read_int8_string()
             if type_system_name != b'MCOS':
                 raise ValueError('Expecting Type as MATLAB Class Object System')
-            header.class_name = self.read_int8_string()            
-            obj_metadata = self.read_mi_matrix() # object metadata stored as Nx1 uint32 array
+            header.class_name = PyUnicode_FromString(self.read_int8_string())
+            # object metadata stored as a Nx1 uint32 array
+            obj_metadata = self.read_mi_matrix()
             header.n_dims = obj_metadata[1,0]
             if header.n_dims > _MAT_MAXDIMS:
                 raise ValueError('Too many dimensions (%d) for numpy arrays'
@@ -642,7 +643,7 @@ cdef class VarReader5:
             size *= header.dims_ptr[i]
         return size
 
-    cdef read_mi_matrix(self, int process=1):
+    cdef read_mi_matrix(self, int process=1, SubsystemReader5 subsystem=None, int is_subsystem=0):
         ''' Read header with matrix at sub-levels
 
         Combines ``read_header`` and functionality of
@@ -653,6 +654,10 @@ cdef class VarReader5:
         ----------
         process : int, optional
            If not zero, apply post-processing on returned array
+        subsystem : SubsystemReader5, optional
+           If not None, read miMATRIX arrays from subsystem
+        is_subsystem : int, optional
+           If not zero, check if miMATRIX array is an object reference
 
         Returns
         -------
@@ -671,9 +676,9 @@ cdef class VarReader5:
             else:
                 return np.array([[]])
         header = self.read_header(False)
-        return self.array_from_header(header, process)
+        return self.array_from_header(header, process, subsystem, is_subsystem)
 
-    cpdef array_from_header(self, VarHeader5 header, int process=1, SubsystemReader5 subsystem=None):
+    cpdef array_from_header(self, VarHeader5 header, int process=1, SubsystemReader5 subsystem=None, int is_subsystem=0):
         ''' Read array of any class, given matrix `header`
 
         Parameters
@@ -682,6 +687,10 @@ cdef class VarReader5:
            array header object
         process : int, optional
            If not zero, apply post-processing on returned array
+        subsystem : SubsystemReader5, optional
+            If not None, array from subsystem
+        is_subsystem : int, optional
+            If not zero, check if array is an object reference
 
         Returns
         -------
@@ -702,7 +711,7 @@ cdef class VarReader5:
             or mc == mxUINT32_CLASS
             or mc == mxINT64_CLASS
             or mc == mxUINT64_CLASS): # numeric matrix
-            arr = self.read_real_complex(header)
+            arr = self.read_real_complex(header, subsystem, is_subsystem)
             if process and self.mat_dtype: # might need to recast
                 if header.is_logical:
                     mat_dtype = BOOL_DTYPE
@@ -732,7 +741,7 @@ cdef class VarReader5:
             process = 0
         elif mc == mxOPAQUE_CLASS:
             arr = self.read_opaque(header, subsystem)
-            arr = mio5p.MatlabOpaque(arr)
+            # arr = mio5p.MatlabOpaque(arr)
             # to make them more re-writeable - don't squeeze
             process = 0
         # ensure we have read checksum.
@@ -760,7 +769,7 @@ cdef class VarReader5:
             shape = tuple([x for x in shape if x != 1])
         return shape
 
-    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
+    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header, SubsystemReader5 subsystem=None, int is_subsystem=0):
         ''' Read real / complex matrices from stream '''
         cdef:
             cnp.ndarray res, res_j
@@ -777,6 +786,15 @@ cdef class VarReader5:
             res.imag = res_j
         else:
             res = self.read_numeric()
+        if is_subsystem:
+            if self.check_array_object(res):
+                nested_obj_hdr = VarHeader5()
+                nested_obj_hdr.class_name = subsystem.class_names[res[-1]-1]
+                nested_obj_hdr.n_dims = res[1]
+                nested_obj_hdr.dims = [res[2+i] for i in range(nested_obj_hdr.n_dims)]
+                nested_obj_hdr.object_id = res[-2]
+                res = self.read_opaque(nested_obj_hdr, subsystem)
+                return res
         return res.reshape(header.dims[::-1]).T
 
     cdef object read_sparse(self, VarHeader5 header):
@@ -976,27 +994,108 @@ cdef class VarReader5:
                 result[i] = item
         return result.reshape(tupdims).T
 
-    cpdef object read_opaque(self, VarHeader5 hdr, SubsystemReader5 subsystem):
-        ''' Read opaque (function workspace) type
+    cdef int check_array_object(self, cnp.ndarray arr):
+        ''' Checks if numeric array is a MATLAB object reference'''
+        #! Need to add this check within all functions calling miMATRIX, e.g. struct or cell
+        cdef:
+            cnp.uint32_t ref_value, ndims
 
-        Looking at some mat files, the structure of this type seems to
-        be:
+        if not isinstance(arr, cnp.ndarray):
+            return 0
+        if arr.dtype != np.uint32:
+            return 0
 
-        * array flags as usual (already read into `hdr`)
-        * 3 int8 strings
-        * a matrix
+        if arr.shape[0] < 6:
+            return 0
 
-        Then there's a matrix at the end of the mat file that seems have
-        the anonymous founction workspaces - we load it as
-        ``__function_workspace__``
+        ref_value = arr[0]
+        if ref_value != 0xDD000000:
+            return 0
 
-        See the comments at the beginning of ``mio5.py``
-        '''
+        ndims = arr[1]
+        shapes = arr[2:2+ndims]
+        if ndims <= 1 or len(shapes) != ndims:
+            return 0
+
+        return 1
+
+    cdef extract_opaque_from_field(self, int nfields, SubsystemReader5 subsystem, int is_subsystem):
+        ''' Extract opaque class type from field '''
+        cdef:
+            object dt, field_names
+            cnp.uint32_t* field_ids
+            cnp.uint32_t* field_content_ids
+            int process=1
+
+        try:
+            field_ids = <cnp.uint32_t*>calloc(nfields, sizeof(cnp.uint32_t))
+            field_content_ids = <cnp.uint32_t*>calloc(nfields, sizeof(cnp.uint32_t))
+            subsystem.get_field_ids(nfields, field_ids, field_content_ids)
+            field_names = [subsystem.names[field_ids[i]-1] for i in range(nfields)]
+
+            dt = [(field_name, object) for field_name in field_names]
+            rec_res = np.empty(1, dtype=dt)
+
+            # Save current stream (useful for miCOMPRESSED arrays)
+            stream = self.cstream
+            for i in range(nfields):
+                self.set_stream(subsystem.get_field_content_stream(field_content_ids[i]))
+                # MATLAB Datatype object arrays are stored as array of field contents
+                # e.g. MATLAB datetime array is stored as a 1x1 datetime object array
+                # However, the field contents are stored as a MxN array instead
+                rec_res[0][field_names[i]] = self.read_mi_matrix(process, subsystem, is_subsystem)
+                #! Need to fix this np.array structure
+
+        finally:
+            if field_ids is not NULL:
+                free(field_ids)
+            if field_content_ids is not NULL:
+                free(field_content_ids)
+
+        # Restore the original stream
+        self.set_stream(stream)
+
+        return rec_res
+
+    cpdef cnp.ndarray read_opaque(self, VarHeader5 hdr, SubsystemReader5 subsystem):
+        ''' Read opaque class type'''
         # Neither res nor the return value of this function are cdef'd as
         # cnp.ndarray, because that only adds useless checks with current
         # Cython (0.23.4).
-        return None
-        #! Placeholder, replace with parsing methods from metadata
+
+        cdef:
+            int length
+            int class_id, type1_id, type2_id, dependency_id, object_ids
+            int ndeps, nfields
+            object class_name
+            int is_subsystem = 1
+            int index=0
+
+        length = np.prod(hdr.dims)
+        tupdims = tuple(hdr.dims[::-1])
+        object_id = hdr.object_id
+        obj_res = np.empty(length, dtype=object)
+        class_name = hdr.class_name
+
+        for i in range (object_id - length + 1, object_id + 1):
+            dependency_id = subsystem.object_list[object_id-1][3]
+            # For nested objects or object arrays
+            # Dependency ID gives the number of objects used to construct
+            ndeps = dependency_id - hdr.object_id
+
+            class_id, type1_id, type2_id = subsystem.object_list[i-1][:3]
+            nfields = subsystem.get_num_fields(type1_id, type2_id)
+            obj_res[index] = self.extract_opaque_from_field(nfields, subsystem, is_subsystem)
+            #* Add Option to parse class raw data
+            i += ndeps
+            index += 1
+
+        obj_res = obj_res.reshape(tupdims).T
+        res = np.empty(1, dtype=[('class', object), ('properties', object)])
+        res[0]['class'] = class_name
+        res[0]['properties'] = obj_res
+        return res
+
 
 cdef class SubsystemReader5:
     cdef int is_swapped # endian indicator derived from subsystem
@@ -1008,9 +1107,10 @@ cdef class SubsystemReader5:
     cdef cnp.uint64_t type1_pos, type2_pos
 
     def __cinit__(self, mat_stream, is_compressed=True):
+        ''' Initialize SubsystemReader5'''
         self.cstream = _streams.make_stream(mat_stream)
         if is_compressed:
-            self.cstream.seek(8,1)
+            self.cstream.seek(8,1) # Read miMATRIX Tag
         self.cstream.seek(48, 1) # Skip Array Headers
         self.is_swapped = self.read_byte_order()
         self.names = []
@@ -1093,6 +1193,9 @@ cdef class SubsystemReader5:
         # Read and discard first block
         self.cstream.read_into(<void *>u4s, 16)
 
+        # Class names stored as (0, class_index, 0, 0)
+        # class_index points to class name in list obtained in cread_names()
+        # indexing starts from 1
         for i in range(0, n_blocks-1):
             self.cstream.read_into(<void *>u4s, 16)
             if self.is_swapped:
@@ -1101,9 +1204,11 @@ cdef class SubsystemReader5:
                 class_index = u4s[1]
             self.class_names.append(self.names[class_index - 1])
 
+        # Saving this region offset as it contains field IDs for type 1 objects
         self.type1_pos = self.cstream.tell()
 
     cdef cread_object_ids(self, cnp.uint32_t *region_ptr):
+        '''Read object IDs from the stream.'''
         cdef:
             int i
             cnp.uint32_t byte_count
@@ -1111,7 +1216,7 @@ cdef class SubsystemReader5:
             cnp.uint32_t u4s[6]
             int class_id, type1_id, type2_id, dependency_id
 
-        byte_count = region[2] - region[1]
+        byte_count = region_ptr[2] - region_ptr[1]
         self.cstream.seek(byte_count, 1) # Skip to Region 3
 
         # Calculate the number of bytes to read
@@ -1120,6 +1225,7 @@ cdef class SubsystemReader5:
         # Read and discard first block
         self.cstream.read_into(<void *>u4s, 24)
 
+        # Format is (class_id, 0, 0, type1_id, type2_id, dependency_id)
         for i in range(0, n_blocks-1):
             self.cstream.read_into(<void *>u4s, 24)
             if self.is_swapped:
@@ -1136,12 +1242,12 @@ cdef class SubsystemReader5:
                 (class_id, type1_id, type2_id, dependency_id)
             )
 
+        # Saving this region offset as it contains field IDs for type 2 objects
         self.type2_pos = self.cstream.tell()
 
     cdef extract_field_content_pos(self, cnp.uint32_t *region_ptr, cnp.uint64_t *byte_end_ptr):
         '''Extracting field content positions from the stream.'''
         #! Note: Need to check with compressed MAT-files
-        #! Probably will not work
         cdef:
             cnp.uint32_t mdtype, byte_count
             int nbytes
@@ -1150,7 +1256,7 @@ cdef class SubsystemReader5:
         self.cstream.seek(nbytes, 1) # Skip to start of Cell 3 (field contents)
 
         # Field IDs are 0-indexed
-        while  self.cstream.tell() < byte_end_ptr[0]:
+        while self.cstream.tell() < byte_end_ptr[0]:
             # Read the next 8 bytes
             self.cread_full_tag(&mdtype, &byte_count)
             if mdtype != miMATRIX:
@@ -1159,7 +1265,7 @@ cdef class SubsystemReader5:
             self.cstream.seek(byte_count, 1)
 
     cdef initialize_subsystem(self):
-
+        '''Initialize the subsystem reader and extract metadata'''
         cdef:
             cnp.uint32_t unknown_flag, fc_len
             cnp.uint32_t offsets[8]
@@ -1183,3 +1289,67 @@ cdef class SubsystemReader5:
         self.cread_object_ids(offsets)
         self.extract_field_content_pos(offsets, &total_byte_count)
     
+    cdef int get_num_fields(self, int type1_id, int type2_id):
+        '''Get number of fields for object ID'''
+        cdef:
+            int i, mod8
+            int obj_type_id
+            int nfields = 0
+            cnp.uint32_t u4s[3]
+
+        if type1_id != 0 and type2_id == 0:
+            self.cstream.seek(self.type1_pos)
+            obj_type_id = type1_id
+        elif type1_id == 0 and type2_id != 0:
+            self.cstream.seek(self.type2_pos)
+            obj_type_id = type2_id
+        else:
+            raise ValueError('Unknown object dependency type. Feature not supported yet'
+            'Received type1_id = %d, type2_id = %d' % (type1_id, type2_id))
+
+        self.cstream.seek(8, 1) # Skip first 8 bytes
+        # Seek to block corresponding to object_ID
+        while obj_type_id - 1 > 0:
+            self.cstream.read_into(<void *>&nfields, 4)
+            if self.is_swapped:
+                nfields = byteswap_u4(nfields)
+            mod8 = (nfields*12 - 4) % 8
+            self.cstream.seek(nfields*12 + mod8, 1)
+            obj_type_id -= 1
+
+        self.cstream.read_into(<void *>&nfields, 4)
+        if self.is_swapped:
+                nfields = byteswap_u4(nfields)
+        return nfields
+
+    cdef get_field_ids(self, int nfields, cnp.uint32_t *field_ids, cnp.uint32_t *field_content_ids):
+        '''Get field IDs and field content IDs for a given object ID'''
+        cdef:
+            cnp.uint32_t u4s[3]
+            int i = 0
+
+        while nfields > 0:
+            self.cstream.read_into(<void *>u4s, 12)
+            if self.is_swapped:
+                field_ids[i] = byteswap_u4(u4s[0])
+                field_content_ids[i] = byteswap_u4(u4s[2])
+            else:
+                field_ids[i] = u4s[0]
+                field_content_ids[i] = u4s[2]
+            i += 1
+            nfields -= 1
+
+    cdef get_field_content_stream(self, int field_content_id):
+        '''Get field content stream for a given field content ID
+        Used for setting stream when MAT-file is compressed
+        '''
+
+        cdef:
+            cnp.uint32_t byte_count
+            cnp.uint64_t pos
+            cnp.uint32_t u4s[2]
+            object stream
+
+        self.cstream.seek(self.field_content_pos[field_content_id])
+        stream = _streams.make_stream(self.cstream)
+        return stream
