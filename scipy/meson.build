@@ -439,7 +439,7 @@ if use_ilp64
 
   g77_abi_wrappers_ilp64 = static_library(
     'g77_abi_wrappers_ilp64',
-     ['_build_utils/src/wrap_g77_abi_ilp64.c'],
+     ['_build_utils/src/wrap_g77_abi.c'],
      dependencies: [py3_dep, blas_ilp64, np_dep],
      c_args: _args_blas_ilp64,
      gnu_symbol_visibility: 'hidden',
