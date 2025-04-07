@@ -211,6 +211,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/__init__.py',
     'array_api_compat/array_api_compat/torch/_aliases.py',
     'array_api_compat/array_api_compat/torch/_info.py',
+    'array_api_compat/array_api_compat/torch/_typing.py',
     'array_api_compat/array_api_compat/torch/fft.py',
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
