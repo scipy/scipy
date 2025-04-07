@@ -16,6 +16,7 @@ from scipy._lib._util import copy_if_needed
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 from inspect import signature
+from difflib import get_close_matches
 
 
 __all__ = [
@@ -1499,14 +1500,25 @@ class KrylovJacobian(Jacobian):
         ]
 
         for key, value in kw.items():
-            if not key.startswith('inner_'):
+            if not key.startswith("inner_"):
                 raise ValueError(f"Unknown parameter {key}")
             if key[6:] not in valid_inner_params:
+                # Use difflib to find close matches to the invalid key
+                inner_param_suggestions = get_close_matches(key[6:],
+                                                            valid_inner_params,
+                                                            n=1)
+                if inner_param_suggestions:
+                    suggestion_msg = f" Did you mean '{
+                                        inner_param_suggestions[0]}'?"
+                else:
+                    suggestion_msg = ""
+
                 # warn user that the parameter is not valid for the inner method
                 warnings.warn(
                     f"Option '{key}' is invalid for the inner method: {method}."
                     " It will be ignored."
-                    "Please check inner method documentation for valid options.",
+                    "Please check inner method documentation for valid options."
+                    + suggestion_msg,
                     stacklevel=3,
                     category=UserWarning,
                     # using `skip_file_prefixes` would be a good idea
