@@ -1702,13 +1702,25 @@ class TestGamesHowell:
                                  "unequal sample size"])
     def test_compare_spss(self, data, res_expect_str):
         """
-        Enter sample categories as 'Group' column with 'Nominal' type
-        Enter sample values as 'Value' column with 'Scale' type
-        Below are the SPSS syntax commands
-        > DATASET ACTIVATE DataSet0.
-        > ONEWAY Value BY Group
-        >  /MISSING ANALYSIS
-        >  /POSTHOC=GH ALPHA(0.05).
+        DATA LIST LIST /Group (F1.0) Value (F8.2).
+        BEGIN DATA
+        0 24
+        0 23
+        0 31
+        0 51
+        1 34
+        1 18
+        1 18
+        1 26
+        2 17
+        2 68
+        2 59
+        2 7
+        END DATA.
+
+        ONEWAY Value BY Group
+            /MISSING ANALYSIS
+            /POSTHOC=GH ALPHA(0.5).
         """
         res_expect = np.asarray(
             res_expect_str.replace(" - ", " ").split()[7:],
