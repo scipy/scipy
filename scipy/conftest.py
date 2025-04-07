@@ -14,7 +14,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax, is_torch,
+    is_cupy, is_dask, is_jax,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -155,10 +155,8 @@ if SCIPY_ARRAY_API:
     try:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'torch': torch})
+        torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
-            # FIXME don't set this when SCIPY_DEVICE == "cpu"
-            # as a workaround to pytorch/pytorch#150199
-            torch.set_default_device(SCIPY_DEVICE)
             xp_skip_cpu_only_backends.add('torch')
 
         # default to float64 unless explicitly requested
@@ -442,11 +440,6 @@ def devices(xp):
         # verbose to skip the test for each jit-capable function and run it for
         # those that only support eager mode.
         pytest.xfail(reason="jax-ml/jax#26000")
-    if is_torch(xp) and SCIPY_DEVICE != "cpu":
-        # Note workaround when parsing SCIPY_DEVICE above.
-        # Also note that when SCIPY_DEVICE=cpu this test won't run in CI
-        # because CUDA-enabled CI boxes always use SCIPY_DEVICE=cuda.
-        pytest.xfail(reason="pytorch/pytorch#150199")
 
     return xp.__array_namespace_info__().devices() + [None]
 
