@@ -401,14 +401,25 @@ if use_ilp64
        '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
      ]
      c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+
+  elif blas_name == 'scipy-openblas'
+      # scipy_openblas64, a separate library
+      blas_ilp64 = dependency('scipy-openblas64')
+      lapack_ilp64 = blas_ilp64
+
+      if not blas_ilp64.found()
+        error('scipy-openblas64 not found.')
+      endif
+
   else
-    # XXX: ILP64 detection has only been tested for MKL
+    # XXX: ILP64 detection has only been tested for MKL and scipy-openblas64
     if blas_name == 'openblas'
       # We cannot allow plain openblas here, that's already the LP64 library and
       # will lead to problems (there is, as of now, no combined OpenBLAS build
       # with 32 and 64 bit symbols)
       blas_name = ['openblas64', 'openblas_ilp64']
     endif
+
     blas_ilp64 = dependency(blas_name, modules: blas_interface)
     lapack_ilp64 = dependency(lapack_name, modules: ['lapack'] + blas_interface)
   endif
