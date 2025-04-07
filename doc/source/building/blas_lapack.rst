@@ -96,6 +96,44 @@ user wants to override this autodetection mechanism for building against plain
     $ python -m build -C-Duse-g77-abi=true -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 
+64-bit integer (ILP64) BLAS/LAPACK
+----------------------------------
+
+Support for ILP64 BLAS and LAPACK is still experimental; at the time of writing
+(Apr 2025) it is only available for two BLAS/LAPACK configurations: MKL and
+``scipy-openblas``.
+
+SciPy always requires LP64 (32-bit integer size) BLAS/LAPACK. You can build SciPy
+with *additional* ILP64 support. This will result in SciPy requiring both BLAS and
+LAPACK variants, where some extensions link to the ILP64 variant, while other
+extensions link to the LP64 variant. From python, choosing the variant is done
+through the ``get_blas_funcs`` and ``get_lapack_funcs`` functions::
+
+    >>> from scipy.linalg.blas import get_blas_funcs
+    >>> daxpy = get_blas_funcs('axpy', (np.ones(3),), ilp64='preferred')
+    >>> daxpy.int_dtype
+    dtype('int64')
+
+Building with ILP64 support requires several NumPy additions to ``meson``, which have
+not been merged to upstream yet::
+
+    $ pip install git+https://github.com/numpy/meson.git@main-numpymeson
+
+For a development build with MKL, install the library and its development headers, and
+give use the ``ilp64=true`` command line argument
+
+    $ pip install mkl mkl-devel
+    $ python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
+
+For a development build with ``scipy-openblas64``, make sure you have installed both
+``scipy-openblas32`` and ``scipy-openblas64``, and generate the pkg-config file
+for the ILP64 variant::
+
+    >>> python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+    >>> export PKG_CONFIG_PATH=`pwd`
+    >>> python dev.py build --with-scipy-openblas -C-Duse-ilp64=true
+
+
 Work-in-progress
 ----------------
 
