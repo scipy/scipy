@@ -11,7 +11,10 @@ name: BLAS tests (Linux)
 #         Tests MKL installed from PyPI (because easiest/fastest, if broken) in
 #         3 ways: both LP64 and ILP64 via pkg-config, and then using the
 #         Single Dynamic Library (SDL, or `libmkl_rt`).
-
+#
+#    - scipy-openblas64:
+#         Test ILP64-enabled build with scipy-openblas32 and scipy-openblas64.
+#
 
 on:
   pull_request:
@@ -87,6 +90,38 @@ jobs:
       run: |
         pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
         python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
+
+    - name: Test
+      run: python dev.py test -j 2
+
+
+  scipy-openblas-ilp64:
+    runs-on: ubuntu-latest
+    name: "scipy-openblas ILP64"
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        pip install cython numpy pybind11 pythran pytest hypothesis pytest-xdist pooch
+        pip install -r requirements/dev.txt
+        pip install git+https://github.com/numpy/meson.git@main-numpymeson
+        pip install scipy-openblas32 scipy-openblas64
+        # dev.py does this for scipy-openblas32
+        python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
+        export PKG_CONFIG_PATH=`pwd`
+
+    - name: Build with ILP64
+      run: |
+        python dev.py build --with-scipy-openblas -C-Duse-ilp64=true
 
     - name: Test
       run: python dev.py test -j 2
