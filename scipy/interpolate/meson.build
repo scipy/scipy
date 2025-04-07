@@ -152,7 +152,7 @@ py3.extension_module('_dierckx',
 #      others rely on the build flags only. Consider cleaning this up at some point.
 
 
-_fitpack = py3.extension_module('_fitpack',
+py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
   c_args: c_flags_ilp64,
   link_with: [fitpack_lib],
