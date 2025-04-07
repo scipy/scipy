@@ -124,9 +124,10 @@ def _solve_WH_banded(y, lamb, order=2, weights=None):
         ])
     if weights is None:
         ab[0, :] += 1.0  # This corresponds to np.eye(n).
+        x = solveh_banded(ab, y, lower=True)
     else:
         ab[0, :] += weights
-    x = solveh_banded(ab, y, lower=True)
+        x = solveh_banded(ab, weights * y, lower=True)
     return x
 
 
