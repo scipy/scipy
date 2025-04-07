@@ -71,7 +71,6 @@ py3.extension_module('_fblas',
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   link_with: [g77_abi_wrappers],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
