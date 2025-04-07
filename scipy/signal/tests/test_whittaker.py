@@ -98,7 +98,6 @@ def test_whittaker_weights():
     x2 = whittaker_henderson(signal, lamb=1, weights=w)
     assert_allclose(x1, x2)
 
-    # Multiplying signal, penalty and weights by the same number does not change the
-    # result.
-    x3 = whittaker_henderson(3 * signal, lamb=3, weights=3*w)
+    # Multiplying penalty and weights by the same number does not change the result.
+    x3 = whittaker_henderson(signal, lamb=3, weights=3*w)
     assert_allclose(x3, x1)
