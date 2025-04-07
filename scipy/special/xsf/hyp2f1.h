@@ -562,7 +562,7 @@ XSF_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, double c,
         } else {
             max_degree = std::abs(b);
         }
-        if (max_degree <= UINT64_MAX) {
+        if (max_degree <= UINT64_MAX - 1) {
             auto series_generator = detail::HypergeometricSeriesGenerator(a, b, c, z);
             return detail::series_eval_fixed_length(series_generator, std::complex<double>{0.0, 0.0}, max_degree + 1);
         } else {
@@ -583,7 +583,7 @@ XSF_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, double c,
      * (DLMF 15.8.1) */
     if (c_minus_a_neg_int || c_minus_b_neg_int) {
         max_degree = c_minus_b_neg_int ? std::abs(c - b) : std::abs(c - a);
-        if (max_degree <= UINT64_MAX) {
+        if (max_degree <= UINT64_MAX - 2) {
             result = std::pow(1.0 - z, c - a - b);
             auto series_generator = detail::HypergeometricSeriesGenerator(c - a, c - b, c, z);
             result *=
