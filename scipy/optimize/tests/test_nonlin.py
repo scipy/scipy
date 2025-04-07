@@ -233,7 +233,8 @@ class TestNonlin:
 
         # This should raise exactly one warning
         # (`inner_atol` is not valid for `minres`)
-        with pytest.warns(UserWarning, match="Please check inner method documentation for valid options"):
+        with pytest.warns(UserWarning, 
+                          match="Please check inner method documentation"):
             nonlin.newton_krylov(F, F.xin, method="minres", inner_atol=1e-5)
 
         # This should not raise a warning (`minres` without `inner_atol`,
