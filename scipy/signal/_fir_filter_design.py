@@ -451,6 +451,8 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     from .windows import get_window
     win = get_window(window, numtaps, fftbins=False)
     h *= win
+    if not pass_zero:
+        h -= np.mean(h)
 
     # Now handle scaling if desired.
     if scale:
