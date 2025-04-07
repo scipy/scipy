@@ -2558,3 +2558,7 @@ class TestHyp2f1:
 
         assert(np.isnan(hyp2f1(1.0, 10**7, 3.0, 4.0 + 1.0j)))
         assert(np.isnan(hyp2f1(1.0, -10**7, 3.0, 4.0 + 1.0j)))
+
+        # Already correct in main but testing for surety
+        assert(np.isnan(hyp2f1(np.inf, 1.0, 3.0, 4.0)))
+        assert(np.isnan(hyp2f1(1.0, np.inf, 3.0, 4.0)))
