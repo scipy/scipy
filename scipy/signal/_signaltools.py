@@ -2871,6 +2871,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> fg0.subplots_adjust(left=0.08, right=0.97, wspace=0.15)
     >>> plt.show()
     """
+    xp = array_namespace(z)
     if not (-z.ndim <= axis < z.ndim):
         raise ValueError(f"Invalid parameter {axis=} for {z.shape=}!")
     if not (z.shape[axis] > 0):
@@ -2893,12 +2894,12 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
                          f"for n={z.shape[axis]=} and {bp_in=}!")
 
     # moving active axis to end allows to use `...` for indexing:
-    z = np.moveaxis(z, axis, -1)
+    z = xp.moveaxis(z, axis, -1)
 
-    if np.iscomplexobj(z):
+    if xp.isdtype(z.dtype, 'complex floating'):
         Z = sp_fft.fft(z)
     else:  # avoid calculating negative frequency bins for real signals:
-        Z = np.zeros_like(z, dtype=sp_fft.rfft(z.flat[:1]).dtype)
+        Z = xp.zeros_like(z, dtype=sp_fft.rfft(z.flat[:1]).dtype)
         Z[..., :n//2 + 1] = sp_fft.rfft(z)
         if bp.start > 0:  # make signal analytic within bp_in band:
             Z[..., bp] *= 2
@@ -2910,8 +2911,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         bp_shift = slice(bp.start + n//2, bp.stop + n//2)
         z_bb = sp_fft.ifft(sp_fft.fftshift(Z, axes=-1)[..., bp_shift], n=n_out) * fak
 
-    z_env = np.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
-    z_env = np.moveaxis(z_env, -1, axis)
+    z_env = xp.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
+    z_env = xp.moveaxis(z_env, -1, axis)
 
     # Calculate the residual from the input bandpass filter:
     if residual is None:
@@ -2926,13 +2927,14 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         else:
             Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
 
-    if np.iscomplexobj(z):  # resample() accounts for unpaired bins:
+    if xp.isdtype(z.dtype, 'complex floating'):  # resample accounts for unpaired bins:
         z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
     else:  # account for unpaired bin at m//2 before doing irfft():
         if n_out != n and (m := min(n, n_out)) % 2 == 0:
             Z[..., m//2] *= 2 if n_out < n else 0.5
         z_res = fak * sp_fft.irfft(Z, n=n_out)
-    return np.stack((z_env, np.moveaxis(z_res, -1, axis)), axis=0)
+    return xp.stack((z_env, xp.moveaxis(z_res, -1, axis)), axis=0)
+
 
 def _cmplx_sort(p):
     """Sort roots based on magnitude.
@@ -3657,9 +3659,10 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
 
-    x = np.asarray(x)
+    xp = array_namespace(x, t)
+    x = xp.asarray(x)
     if x.ndim > 1:  # moving active axis to end allows to use `...` in indexing:
-        x = np.swapaxes(x, axis, -1)
+        x = xp.moveaxis(x, axis, -1)
     n_x = x.shape[-1]  # number of samples along the time/frequency axis
     s_fac = n_x / num  # scaling factor represents sample interval dilatation
     m = min(num, n_x)  # number of relevant frequency bins
@@ -3669,15 +3672,15 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         W = None
     elif callable(window):
         W = window(sp_fft.fftfreq(n_x))
-    elif isinstance(window, np.ndarray):
+    elif hasattr(window, 'shape'): # must be an array object
         if window.shape != (n_x,):
             raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
                              "is not equal to number of frequency bins!")
-        W = window.copy()  # we do not want not modify the function's parameters
+        W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
         W = sp_fft.fftshift(get_window(window, n_x))
 
-    if domain == 'time' and np.isrealobj(x):  # utilize more efficient one-sided FFT:
+    if domain == 'time' and xp.isdtype(x.dtype, 'real floating'):  # utilize rfft():
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
@@ -3692,7 +3695,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         X = sp_fft.fft(x) if domain == 'time' else x
         if W is not None:
             X = X * W  # writing X *= W could modify parameter x
-        Y = np.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
+        Y = xp.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
         Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
         if m2 < m:  # == m > 2
             Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
@@ -3705,9 +3708,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
     if x_r.ndim > 1:  # moving active axis back to original position:
-        x_r = np.swapaxes(x_r, -1, axis)
+        x_r = xp.moveaxis(x_r, -1, axis)
     if t is not None:
-        return x_r, t[0] + (t[1] - t[0]) * s_fac * np.arange(num)
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * xp.arange(num)
     return x_r
 
 
