@@ -486,6 +486,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         and Software*. PhD thesis, Department of Applied Mathematics, The Hong
         Kong Polytechnic University, Hong Kong, China, 2022. URL:
         https://theses.lib.polyu.edu.hk/handle/200/12294.
+    .. [19] Karush-Kuhn-Tucker conditions,
+        https://en.wikipedia.org/wiki/Karush%E2%80%93Kuhn%E2%80%93Tucker_conditions
 
     Examples
     --------
@@ -548,7 +550,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     returns the multipliers that are used in the solution of the problem. These
     multipliers, when the problem constraints are linear, can be thought of as the
     Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
-    of Lagrange multipliers to inequality-constrained optimization problems.
+    of Lagrange multipliers to inequality-constrained optimization problems ([19]_).
 
     Notice that at the solution, the first constraint is active. Let's evaluate the
     function at solution:
