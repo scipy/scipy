@@ -49,9 +49,8 @@ class spmatrix:
 
     # Restore matrix power
     def __pow__(self, power):
-        from .linalg import matrix_power
-
-        return matrix_power(self, power)
+        import scipy
+        return scipy.sparse.linalg.matrix_power(self, power)
 
     ## Backward compatibility
 
