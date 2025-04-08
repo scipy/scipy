@@ -490,6 +490,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [19] Zhang, Z. "PRIMA: Reference Implementation for Powell's Methods with
         Modernization and Amelioration", https://www.libprima.net,
         :doi:`10.5281/zenodo.8052654`
+    .. [20] Karush-Kuhn-Tucker conditions,
+        https://en.wikipedia.org/wiki/Karush%E2%80%93Kuhn%E2%80%93Tucker_conditions
 
     Examples
     --------
@@ -552,7 +554,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     returns the multipliers that are used in the solution of the problem. These
     multipliers, when the problem constraints are linear, can be thought of as the
     Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
-    of Lagrange multipliers to inequality-constrained optimization problems.
+    of Lagrange multipliers to inequality-constrained optimization problems ([20]_).
 
     Notice that at the solution, the first constraint is active. Let's evaluate the
     function at solution:
