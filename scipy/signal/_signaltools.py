@@ -2926,8 +2926,12 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         else:
             Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
 
-    z_res = fak * (sp_fft.ifft(Z, n=n_out) if np.iscomplexobj(z) else
-                   sp_fft.irfft(Z, n=n_out))
+    if np.iscomplexobj(z):  # resample() accounts for unpaired bins:
+        z_res = resample(Z, n_out, axis=-1, domain='freq')  # ifft() with corrections
+    else:  # account for unpaired bin at m//2 before doing irfft():
+        if n_out != n and (m := min(n, n_out)) % 2 == 0:
+            Z[..., m//2] *= 2 if n_out < n else 0.5
+        z_res = fak * sp_fft.irfft(Z, n=n_out)
     return np.stack((z_env, np.moveaxis(z_res, -1, axis)), axis=0)
 
 def _cmplx_sort(p):
@@ -3500,38 +3504,58 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 
 
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    """
-    Resample `x` to `num` samples using Fourier method along the given axis.
+    """Resample `x` to `num` samples using the Fourier method along the given `axis`.
 
-    The resampled signal starts at the same value as `x` but is sampled
-    with a spacing of ``len(x) / num * (spacing of x)``.  Because a
-    Fourier method is used, the signal is assumed to be periodic.
+    The resampling is performed by shortening or zero-padding the FFT of `x`. This has
+    the advantages of providing an ideal antialiasing filter and allowing arbitrary
+    up- or down-sampling ratios. The main drawback is the requirement of assuming `x`
+    to be a periodic signal.
 
     Parameters
     ----------
     x : array_like
-        The data to be resampled.
+        The input signal made up of equidistant samples. If `x` is a multidimensional
+        array, the parameter `axis` specifies the time/frequency axis. It is assumed
+        here that ``n_x = x.shape[axis]`` specifies the number of samples and ``T`` the
+        sampling interval.
     num : int
-        The number of samples in the resampled signal.
+        The number of samples of the resampled output signal. It may be larger or
+        smaller than ``n_x``.
     t : array_like, optional
-        If `t` is given, it is assumed to be the equally spaced sample
-        positions associated with the signal data in `x`.
+        If `t` is not ``None`` (default), then the timestamps of the resampled signal
+        are also returned. `t` must contain at least the first two timestamps of the
+        input signal `x` (all others are ignored). The timestamps of the output signal
+        are determined by ``t[0] + T * n_x / num * np.arange(num)`` with
+        ``T = t[1] - t[0]``.
     axis : int, optional
-        The axis of `x` that is resampled.  Default is 0.
+        The time/frequency axis of `x` along which the resampling take place.
+        The Default is 0.
     window : array_like, callable, string, float, or tuple, optional
-        Specifies the window applied to the signal in the Fourier
-        domain.  See below for details.
-    domain : string, optional
-        A string indicating the domain of the input `x`:
-        ``time`` Consider the input `x` as time-domain (Default),
-        ``freq`` Consider the input `x` as frequency-domain.
+        If not ``None`` (default), specifies a filter in the Fourier domain, which is
+        applied before resampling. I.e., the FFT ``X`` of `x` is calculated by
+        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a sepctral
+        windowing function ``W(f_X)`` which consumes the frequencies
+        ``f_X = fftfreq(n_x, T)``.
+
+        If `window` is a 1d array of length `n_x` then ``W=window``.
+        If `window` is a function  then ``W = window(f_X)``.
+        Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
+        ``W = fftshift(signal.get_window(window, n_x))``.
+
+    domain : 'time' | 'freq', optional
+        If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
+        (``'freq'``) it is asssmued that an FFT was already applied, i.e.,
+        ``x = fft(x_t, axis=axis)`` with ``x_t`` being the input signal in the time
+        domain.
 
     Returns
     -------
-    resampled_x or (resampled_x, resampled_t)
-        Either the resampled array, or, if `t` was given, a tuple
-        containing the resampled array and the corresponding resampled
-        positions.
+    x_r : ndarray
+        The resampled signal made up of `num` samples and sampling interval
+        ``T * n_x / num``.
+    t_r : ndarray, optional
+        The `num` equidistant timestamps of `x_r`.
+        This is only returned if paramater `t` is not ``None``.
 
     See Also
     --------
@@ -3540,170 +3564,151 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
 
     Notes
     -----
-    The argument `window` controls a Fourier-domain window that tapers
-    the Fourier spectrum before zero-padding to alleviate ringing in
-    the resampled values for sampled signals you didn't intend to be
-    interpreted as band-limited.
+    This function uses the more efficient one-sided FFT, i.e. `~scipy.fft.rfft` /
+    `~scipy.fft.irfft`, if `x` is real-valued and in the time domain.
+    Else, the two-sided FFT, i.e., `~scipy.fft.fft` / `~scipy.fft.ifft`, is used
+    (all FFT functions are taken from the `scipy.fft` module).
 
-    If `window` is a function, then it is called with a vector of inputs
-    indicating the frequency bins (i.e. fftfreq(x.shape[axis]) ).
+    If a `window` is applied to a real-valued `x`, the one-sided spectral windowing
+    function is determined by taking the average of the negative and the positive
+    frequency component. This ensures that real-valued signals and complex signals with
+    zero imaginary part are treated identically. I.e., passing `x` or passing
+    ``x.astype(np.complex128)`` produce the same numeric result.
 
-    If `window` is an array of the same length as `x.shape[axis]` it is
-    assumed to be the window to be applied directly in the Fourier
-    domain (with dc and low-frequency first).
+    If the number of input  or output samples are prime or have few prime factors, this
+    function may be slow due to utilizing FFTs. Consult `~scipy.fft.prev_fast_len` and
+    `~scipy.fft.next_fast_len` for determining efficient signals lengths.
+    Alternatively, utilizing `resample_poly` to calculate an intermediate signal (as
+    illustrated in the example below) can result in significant speed increases.
 
-    For any other type of `window`, the function `scipy.signal.get_window`
-    is called to generate the window.
-
-    The first sample of the returned vector is the same as the first
-    sample of the input vector.  The spacing between samples is changed
-    from ``dx`` to ``dx * len(x) / num``.
-
-    If `t` is not None, then it is used solely to calculate the resampled
-    positions `resampled_t`
-
-    As noted, `resample` uses FFT transformations, which can be very 
-    slow if the number of input or output samples is large and prime; 
-    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
-    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
-    ``n//num`` before using `resample`. Note that this approach changes the 
-    characteristics of the antialiasing filter.
+    `resample` is intended to be used for periodic signals with equidistant sampling
+    intervals. For non-periodic signals, `resample_poly` may be a better choice.
+    Consult the `scipy.interpolate` module for methods of resampling signals with
+    non-constant sampling intervals.
 
     Examples
     --------
-    Note that the end of the resampled data rises to meet the first
-    sample of the next cycle:
+    The following example depicts a signal being up-sampled from 20 samples to 100
+    samples. The ringing at the beginning of the up-sampled signal is due to
+    interpreting the signal being periodic. The red square in the plot illustrates that
+    periodictiy by showing the first sample of the next cycle of the signal.
 
     >>> import numpy as np
-    >>> from scipy import signal
-
-    >>> x = np.linspace(0, 10, 20, endpoint=False)
-    >>> y = np.cos(-x**2/6.0)
-    >>> f = signal.resample(y, 100)
-    >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
-    >>> plt.legend(['data', 'resampled'], loc='best')
+    >>> from scipy.signal import resample
+    ...
+    >>> n0, n1 = 20, 100  # number of samples
+    >>> t0 = np.linspace(0, 10, n0, endpoint=False)  # input time stamps
+    >>> x0 = np.cos(-t0**2/6)  # input signal
+    ...
+    >>> x1 = resample(x0, n1)  # resampled signal
+    >>> t1 = np.linspace(0, 10, n1, endpoint=False)  # timestamps of x1
+    ...
+    >>> fig0, ax0 = plt.subplots(1, 1, tight_layout=True)
+    >>> ax0.set_title(f"Resampling $x(t)$ from {n0} samples to {n1} samples")
+    >>> ax0.set(xlabel="Time $t$", ylabel="Amplitude $x(t)$")
+    >>> ax0.plot(t1, x1, '.-', alpha=.5, label=f"Resampled")
+    >>> ax0.plot(t0, x0, 'o-', alpha=.5, label="Original")
+    >>> ax0.plot(10, x0[0], 'rs', alpha=.5, label="Next Cycle")
+    >>> ax0.legend(loc='best')
+    >>> ax0.grid(True)
     >>> plt.show()
 
-    Consider the following signal  ``y`` where ``len(y)`` is a large  prime number:
 
-    >>> N = 55949
-    >>> freq = 100
-    >>> x = np.linspace(0, 1, N)
-    >>> y = np.cos(2 * np.pi * freq * x)
+    The following example illustrates that `~scipy.fft.rfft` / `~scipy.fft.irfft`
+    combination does not always produce the correct resampling result:
 
-    Due to ``N`` being prime,
+    >>> from scipy.fft import irfft, rfft
+    >>> from scipy.signal import resample
+    ...
+    >>> n0, n1 = 8, 4  # number of samples
+    >>> x0 = irfft([0, 0, 8, 0, 0], n=n0)  # input signal
+    >>> x1 = resample(x0, num=n1)
+    >>> y1 = irfft(rfft(x0), n=n1) * n1/n0
+    >>> for x_, n_ in zip((x0, x1, y1), ('x0', 'x1', 'y1')):
+    ...    print(f"{n_} = {x_}")
+    x0 = [ 2.  0. -2.  0.  2.  0. -2.  0.]
+    x1 = [ 2. -2.  2. -2.]
+    y1 = [ 1. -1.  1. -1.]
 
-    >>> num = 5000
-    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+    It can be easily verified that ``x1`` is correct and ``y1`` is not. To produce
+    correct results, `resample` correctly accounts for unpaired frequency bins. Here,
+    ``fft(x1)`` has the frequency bins ``[0, 1, -2, -1]`` (which can be determined with
+    `~scipy.fft.fftfreq`), where the entry ``-2`` does not have a positive pair ``+2``.
+    For that reason, `resample` scaled this unpaired bin by 1/2.
 
-    runs significantly faster than
+    The following code snippet shows how to use `resample_poly` to speed up the
+    down-sampling:
 
-    >>> f = signal.resample(y, num)
+    >>> import numpy as np
+    >>> from scipy.fft import next_fast_len
+    >>> from scipy.signal import resample, resample_poly
+    ...
+    >>> n0 = 19937 # number of input samples - prime
+    >>> n1 = 128  # number of output samples - fast FFT length
+    >>> x0 = np.random.rand(n0)  # input signal
+    ...
+    >>> y1 = resample(x0, n1)  # slow due to n0 being prime
+    >>> y1_p = resample(resample_poly(x0, 1, n0 // n1), n1)  # This is faster
+
+    Note that the `y1` and `y1_p` are not identical due to the differences in the
+    utilized antialiasing filter.
     """
-
     if domain not in ('time', 'freq'):
-        raise ValueError("Acceptable domain flags are 'time' or"
-                         f" 'freq', not domain={domain}")
+        raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
 
     x = np.asarray(x)
-    Nx = x.shape[axis]
+    if x.ndim > 1:  # moving active axis to end allows to use `...` in indexing:
+        x = np.swapaxes(x, axis, -1)
+    n_x = x.shape[-1]  # number of samples along the time/frequency axis
+    s_fac = n_x / num  # scaling factor represents sample interval dilatation
+    m = min(num, n_x)  # number of relevant frequency bins
+    m2 = m // 2 + 1  # number of relevant frequency bins of a one-sided FFT
 
-    # Check if we can use faster real FFT
-    real_input = np.isrealobj(x)
-
-    if domain == 'time':
-        # Forward transform
-        if real_input:
-            X = sp_fft.rfft(x, axis=axis)
-        else:  # Full complex FFT
-            X = sp_fft.fft(x, axis=axis)
-    else:  # domain == 'freq'
-        X = x
-
-    # Apply window to spectrum
-    if window is not None:
-        if callable(window):
-            W = window(sp_fft.fftfreq(Nx))
-        elif isinstance(window, np.ndarray):
-            if window.shape != (Nx,):
-                raise ValueError('window must have the same length as data')
-            W = window
-        else:
-            W = sp_fft.ifftshift(get_window(window, Nx))
-
-        newshape_W = [1] * x.ndim
-        newshape_W[axis] = X.shape[axis]
-        if real_input:
-            # Fold the window back on itself to mimic complex behavior
-            W_real = W.copy()
-            W_real[1:] += W_real[-1:0:-1]
-            W_real[1:] *= 0.5
-            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
-        else:
-            X *= W.reshape(newshape_W)
-
-    # Copy each half of the original spectrum to the output spectrum, either
-    # truncating high frequencies (downsampling) or zero-padding them
-    # (upsampling)
-
-    # Placeholder array for output spectrum
-    newshape = list(x.shape)
-    if real_input:
-        newshape[axis] = num // 2 + 1
+    if window is None: # Determine spectral windowing function:
+        W = None
+    elif callable(window):
+        W = window(sp_fft.fftfreq(n_x))
+    elif isinstance(window, np.ndarray):
+        if window.shape != (n_x,):
+            raise ValueError(f"{window.shape=} != ({n_x},), i.e., window length " +
+                             "is not equal to number of frequency bins!")
+        W = window.copy()  # we do not want not modify the function's parameters
     else:
-        newshape[axis] = num
-    Y = np.zeros(newshape, X.dtype)
+        W = sp_fft.fftshift(get_window(window, n_x))
 
-    # Copy positive frequency components (and Nyquist, if present)
-    N = min(num, Nx)
-    nyq = N // 2 + 1  # Slice index that includes Nyquist if present
-    sl = [slice(None)] * x.ndim
-    sl[axis] = slice(0, nyq)
-    Y[tuple(sl)] = X[tuple(sl)]
-    if not real_input:
-        # Copy negative frequency components
-        if N > 2:  # (slice expression doesn't collapse to empty array)
-            sl[axis] = slice(nyq - N, None)
-            Y[tuple(sl)] = X[tuple(sl)]
+    if domain == 'time' and np.isrealobj(x):  # utilize more efficient one-sided FFT:
+        X = sp_fft.rfft(x)
+        if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
+            n_X = X.shape[-1]
+            W[1:n_X] += W[:-n_X:-1]
+            W[1:n_X] /= 2
+            X *= W[:n_X]  # apply window
+        X = X[..., :m2]  # extract relevant data
+        if m % 2 == 0 and num != n_x:  # Account for unpaired bin at m//2:
+            X[..., m//2] *= 2 if num < n_x else 0.5
+        x_r = sp_fft.irfft(X / s_fac, n=num, overwrite_x=True)
+    else:  # use standard two-sided FFT:
+        X = sp_fft.fft(x) if domain == 'time' else x
+        if W is not None:
+            X = X * W  # writing X *= W could modify parameter x
+        Y = np.zeros(X.shape[:-1] + (num,), dtype=X.dtype)
+        Y[..., :m2] = X[..., :m2]  # copy part up to Nyquist frequency
+        if m2 < m:  # == m > 2
+            Y[..., m2-m:] = X[..., m2-m:]  # copy negative frequency part
+        if m % 2 == 0:  # Account for unpaired bin at m//2:
+            if num < n_x:  # down-sampling: unite bin pair into one unpaired bin
+                Y[..., -m//2] += X[..., -m//2]
+            elif n_x < num:  # up-sampling: split unpaired bin into bin pair
+                Y[..., m//2] /= 2
+                Y[..., num-m//2] = Y[..., m//2]
+        x_r = sp_fft.ifft(Y / s_fac, n=num, overwrite_x=True)
 
-    # Split/join Nyquist component(s) if present
-    # So far we have set Y[+N/2]=X[+N/2]
-    if N % 2 == 0:
-        if num < Nx:  # downsampling
-            if real_input:
-                sl[axis] = slice(N//2, N//2 + 1)
-                Y[tuple(sl)] *= 2.
-            else:
-                # select the component of Y at frequency +N/2,
-                # add the component of X at -N/2
-                sl[axis] = slice(-N//2, -N//2 + 1)
-                Y[tuple(sl)] += X[tuple(sl)]
-        elif Nx < num:  # upsampling
-            # select the component at frequency +N/2 and halve it
-            sl[axis] = slice(N//2, N//2 + 1)
-            Y[tuple(sl)] *= 0.5
-            if not real_input:
-                temp = Y[tuple(sl)]
-                # set the component at -N/2 equal to the component at +N/2
-                sl[axis] = slice(num-N//2, num-N//2 + 1)
-                Y[tuple(sl)] = temp
-
-    # Inverse transform
-    if real_input:
-        y = sp_fft.irfft(Y, num, axis=axis)
-    else:
-        y = sp_fft.ifft(Y, axis=axis, overwrite_x=True)
-
-    y *= (float(num) / float(Nx))
-
-    if t is None:
-        return y
-    else:
-        new_t = np.arange(0, num) * (t[1] - t[0]) * Nx / float(num) + t[0]
-        return y, new_t
+    if x_r.ndim > 1:  # moving active axis back to original position:
+        x_r = np.swapaxes(x_r, -1, axis)
+    if t is not None:
+        return x_r, t[0] + (t[1] - t[0]) * s_fac * np.arange(num)
+    return x_r
 
 
 def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
@@ -5048,11 +5053,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     Parameters
     ----------
     x : array_like
-        The signal to be downsampled, as an N-dimensional array.
+        The input signal made up of equidistant samples. If `x` is a multidimensional
+        array, the parameter `axis` specifies the time axis.
     q : int
-        The downsampling factor. When using IIR downsampling, it is recommended
-        to call `decimate` multiple times for downsampling factors higher than
-        13.
+        The downsampling factor, which is a postive integer. When using IIR
+        downsampling, it is recommended to call `decimate` multiple times for
+        downsampling factors higher than 13.
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
         8 for 'iir' and 20 times the downsampling factor for 'fir'.
@@ -5081,6 +5087,10 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     Notes
     -----
+    For non-integer downsampling factors, `~scipy.signal.resample` can be used. Consult
+    the `scipy.interpolate` module for methods of resampling signals with non-constant
+    sampling intervals.
+
     The ``zero_phase`` keyword was added in 0.18.0.
     The possibility to use instances of ``dlti`` as ``ftype`` was added in
     0.18.0.
