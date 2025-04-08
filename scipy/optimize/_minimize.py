@@ -548,9 +548,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds, constraints=cons)
 
-    It should converge to the theoretical solution [1.4 ,1.7]. *SLSQP* also
+    It should converge to the theoretical solution ``[1.4 ,1.7]``. *SLSQP* also
     returns the multipliers that are used in the solution of the problem. These
-    multipliers, when the problem constraints are linear can be thought as the
+    multipliers, when the problem constraints are linear, can be thought of as the
     Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
     of Lagrange multipliers to inequality-constrained optimization problems.
 
@@ -560,7 +560,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     >>> cons[0]['fun'](res.x)
     np.float64(1.4901224698604665e-09)
 
-    Also notice that at optimality there is a non-zero multiplier:
+    Also, notice that at optimality there is a non-zero multiplier:
 
     >>> res.multipliers
     array([0.8, 0. , 0. ])
