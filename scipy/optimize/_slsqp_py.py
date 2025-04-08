@@ -268,10 +268,11 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     attribute as a NumPy array. Denoting the dimension of the equality constraints
     with ``meq``, and of inequality constraints with ``mineq``, then the returned
     array slice ``m[:meq]`` contains the multipliers for the equality constraints,
-    ``m[meq:]`` contains the multipliers for the inequality constraints. The
-    multipliers corresponding to bound inequalities are not returned. See [1]_
-    pp. 321 or [2]_ for an explanation of how to interpret these multipliers. The
-    internal QP problem is solved using the methods given in [3]_ Chapter 25.
+    and the remaining ``m[meq:meq + mineq]`` contains the multipliers for the 
+    inequality constraints. The multipliers corresponding to bound inequalities 
+    are not returned. See [1]_ pp. 321 or [2]_ for an explanation of how to interpret
+    these multipliers. The internal QP problem is solved using the methods given
+    in [3]_ Chapter 25.
 
     Note that if new-style `NonlinearConstraint` or `LinearConstraint` were
     used, then ``minimize`` converts them first to old-style constraint dicts.
