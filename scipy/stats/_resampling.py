@@ -360,7 +360,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         interval with `confidence_level` twice as far from 1.0; e.g. the upper
         bound of a 95% ``'less'``  confidence interval is the same as the upper
         bound of a 90% ``'two-sided'`` confidence interval.
-    method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
+    method : {'percentile', 'basic', 'BCa'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
         interval (``'basic'``), or the bias-corrected and accelerated bootstrap
@@ -631,7 +631,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     # Calculate percentile interval
     alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
              else (1 - confidence_level))
-    if method == 'bca':
+    if method == 'BCa':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch)[:2]
         percentile_fun = _percentile_along_axis
