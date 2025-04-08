@@ -253,7 +253,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     Returns
     -------
     res : OptimizeResult
-        The optimization result represented as an ``OptimizeResult`` object.
+        The optimization result represented as an `OptimizeResult` object.
         In this dict-like object the following fields are of particular importance:
         ``x`` the solution array, ``success`` a Boolean flag indicating if the
         optimizer exited successfully, ``message`` which describes the reason for
