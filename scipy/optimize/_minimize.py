@@ -554,7 +554,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
     of Lagrange multipliers to inequality-constrained optimization problems.
 
-    Notice that at solution, the first constraint is active, let's evaluate the
+    Notice that at the solution, the first constraint is active. Let's evaluate the
     function at solution:
 
     >>> cons[0]['fun'](res.x)
