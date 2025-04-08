@@ -4294,10 +4294,7 @@ def _minimize_scalar_linewalker(func, bracket=None, args=(), **options):
 
     Examples
     --------
-    We illustrate the behaviour of the function when `brack` is of
-    size 2 and 3, respectively. In the case where `brack` is of the
-    form (xa,xb), we can see for the given values, the output need
-    not necessarily lie in the range ``(xa, xb)``.
+    We illustrate the behaviour of the function below.
 
     >>> import numpy as np
     >>> from scipy.optimize import linewalker, minimize_scalar
@@ -4306,57 +4303,30 @@ def _minimize_scalar_linewalker(func, bracket=None, args=(), **options):
     ...     return (x-1)**2
 
     >>> res = linewalker(f, brack=(-1, 2))
-    >>> print(f"{res['fun'] = }")
-    >>> print(f"{res['x'] = }")
-    >>> print(f"{res['nit'] = }")
-    >>> print(f"{res['nfev'] = }")
-    >>> print(f"{res['success'] = }")
-    >>> print(f"{res['message'] = }")
-    >>> print(f"{res['f_min_evaluated'] = }")
-    >>> print(f"{res['minimizer_evaluated'] = }")
-    >>> print(f"{res['num_major_iterations'] = }")
-    >>> print(f"{res['num_function_evaluations'] = }")
-    >>> print(f"{res['f_min_predicted'] = }")
-    >>> print(f"{res['ix_arg_min_evaluated'] = }")
-    >>> print(f"{res['grid_size'] = }")
-    >>> print(f"res['fit'] len, mean = {len(res['fit'])}, {np.mean(res['fit'])}")
-    >>> print(f"{res['max_fit'] = }")
-    >>> print(f"{res['min_fit'] = }")
-    >>> print(f"{res['range_fit'] = }")
-    >>> print(f"{res['ix_arg_max_fit'] = }")
-    >>> print(f"{res['ix_arg_min_fit'] = }")
-    >>> print(f"res['ix'] len, mean = {len(res['ix'])}, {np.mean(res['ix'])}")
-    >>> a = len(res['ix_sorted'])
-    >>> b = np.mean(res['ix_sorted'])
-    >>> print(f"res['ix_sorted'] len, mean = {a}, {b}")
-    >>> a = len(res['x_coord'])
-    >>> b = np.mean(res['x_coord'])
-    >>> print(f"res['x_coord'] len, mean = {a}, {b}")
-    >>> print(f"res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}")
-
-    | res['fun'] = np.float64(0.0)
-    | res['x'] = np.float64(1.0)
-    | res['nit'] = 19
-    | res['nfev'] = 30
-    | res['success'] = True
-    | res['message'] = 'success'
-    | res['f_min_evaluated'] = np.float64(0.0)
-    | res['minimizer_evaluated'] = np.float64(1.0)
-    | res['num_major_iterations'] = 19
-    | res['num_function_evaluations'] = 30
-    | res['f_min_predicted'] = np.float64(-5.3577671966469964e-15)
-    | res['ix_arg_min_evaluated'] = np.int64(666)
-    | res['grid_size'] = 1000
-    | res['fit'] len, mean = 1000, 1.0015823438786493
-    | res['max_fit'] = np.float64(3.9999999958493935)
-    | res['min_fit'] = np.float64(-5.3577671966469964e-15)
-    | res['range_fit'] = np.float64(3.999999995849399)
-    | res['ix_arg_max_fit'] = np.int64(0)
-    | res['ix_arg_min_fit'] = np.int64(666)
-    | res['ix'] len, mean = 30, 570.4666666666667
-    | res['ix_sorted'] len, mean = 30, 570.4666666666667
-    | res['x_coord'] len, mean = 1000, 0.5
-    | res['sp'] len, mean = 1000, 0.03
+    >>> del res['fit']
+    >>> del res['ix']
+    >>> del res['ix_sorted']
+    >>> del res['sp']
+    >>> del res['x_coord']
+    >>> pprint.pprint(res)
+    {'f_min_evaluated': np.float64(0.0),
+     'f_min_predicted': np.float64(-5.3577671966469964e-15),
+     'fun': np.float64(0.0),
+     'grid_size': 1000,
+     'ix_arg_max_fit': np.int64(0),
+     'ix_arg_min_evaluated': np.int64(666),
+     'ix_arg_min_fit': np.int64(666),
+     'max_fit': np.float64(3.9999999958493935),
+     'message': 'success',
+     'min_fit': np.float64(-5.3577671966469964e-15),
+     'minimizer_evaluated': np.float64(1.0),
+     'nfev': 30,
+     'nit': 19,
+     'num_function_evaluations': 30,
+     'num_major_iterations': 19,
+     'range_fit': np.float64(3.999999995849399),
+     'success': True,
+     'x': np.float64(1.0)}
 
     """
 
@@ -4516,11 +4486,9 @@ def linewalker(func, brack, **options):
 
     Examples
     --------
-    We illustrate the behaviour of the function when `brack` is of
-    size 2 and 3, respectively. In the case where `brack` is of the
-    form (xa,xb), we can see for the given values, the output need
-    not necessarily lie in the range ``(xa, xb)``.
+    We illustrate the behaviour of the function below.
 
+    >>> import pprint as pprint
     >>> import numpy as np
     >>> from scipy.optimize import linewalker, minimize_scalar
 
@@ -4528,57 +4496,30 @@ def linewalker(func, brack, **options):
     ...     return (x-1)**2
 
     >>> res = linewalker(f, brack=(-1, 2))
-    >>> print(f"{res['fun'] = }")
-    >>> print(f"{res['x'] = }")
-    >>> print(f"{res['nit'] = }")
-    >>> print(f"{res['nfev'] = }")
-    >>> print(f"{res['success'] = }")
-    >>> print(f"{res['message'] = }")
-    >>> print(f"{res['f_min_evaluated'] = }")
-    >>> print(f"{res['minimizer_evaluated'] = }")
-    >>> print(f"{res['num_major_iterations'] = }")
-    >>> print(f"{res['num_function_evaluations'] = }")
-    >>> print(f"{res['f_min_predicted'] = }")
-    >>> print(f"{res['ix_arg_min_evaluated'] = }")
-    >>> print(f"{res['grid_size'] = }")
-    >>> print(f"res['fit'] len, mean = {len(res['fit'])}, {np.mean(res['fit'])}")
-    >>> print(f"{res['max_fit'] = }")
-    >>> print(f"{res['min_fit'] = }")
-    >>> print(f"{res['range_fit'] = }")
-    >>> print(f"{res['ix_arg_max_fit'] = }")
-    >>> print(f"{res['ix_arg_min_fit'] = }")
-    >>> print(f"res['ix'] len, mean = {len(res['ix'])}, {np.mean(res['ix'])}")
-    >>> a = len(res['ix_sorted'])
-    >>> b = np.mean(res['ix_sorted'])
-    >>> print(f"res['ix_sorted'] len, mean = {a}, {b}")
-    >>> a = len(res['x_coord'])
-    >>> b = np.mean(res['x_coord'])
-    >>> print(f"res['x_coord'] len, mean = {a}, {b}")
-    >>> print(f"res['sp'] len, mean = {len(res['sp'])}, {np.mean(res['sp'])}")
-
-    | res['fun'] = np.float64(0.0)
-    | res['x'] = np.float64(1.0)
-    | res['nit'] = 19
-    | res['nfev'] = 30
-    | res['success'] = True
-    | res['message'] = 'success'
-    | res['f_min_evaluated'] = np.float64(0.0)
-    | res['minimizer_evaluated'] = np.float64(1.0)
-    | res['num_major_iterations'] = 19
-    | res['num_function_evaluations'] = 30
-    | res['f_min_predicted'] = np.float64(-5.3577671966469964e-15)
-    | res['ix_arg_min_evaluated'] = np.int64(666)
-    | res['grid_size'] = 1000
-    | res['fit'] len, mean = 1000, 1.0015823438786493
-    | res['max_fit'] = np.float64(3.9999999958493935)
-    | res['min_fit'] = np.float64(-5.3577671966469964e-15)
-    | res['range_fit'] = np.float64(3.999999995849399)
-    | res['ix_arg_max_fit'] = np.int64(0)
-    | res['ix_arg_min_fit'] = np.int64(666)
-    | res['ix'] len, mean = 30, 570.4666666666667
-    | res['ix_sorted'] len, mean = 30, 570.4666666666667
-    | res['x_coord'] len, mean = 1000, 0.5
-    | res['sp'] len, mean = 1000, 0.03
+    >>> del res['fit']
+    >>> del res['ix']
+    >>> del res['ix_sorted']
+    >>> del res['sp']
+    >>> del res['x_coord']
+    >>> pprint.pprint(res)
+    {'f_min_evaluated': np.float64(0.0),
+     'f_min_predicted': np.float64(-5.3577671966469964e-15),
+     'fun': np.float64(0.0),
+     'grid_size': 1000,
+     'ix_arg_max_fit': np.int64(0),
+     'ix_arg_min_evaluated': np.int64(666),
+     'ix_arg_min_fit': np.int64(666),
+     'max_fit': np.float64(3.9999999958493935),
+     'message': 'success',
+     'min_fit': np.float64(-5.3577671966469964e-15),
+     'minimizer_evaluated': np.float64(1.0),
+     'nfev': 30,
+     'nit': 19,
+     'num_function_evaluations': 30,
+     'num_major_iterations': 19,
+     'range_fit': np.float64(3.999999995849399),
+     'success': True,
+     'x': np.float64(1.0)}
 
     """
 

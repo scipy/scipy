@@ -1250,7 +1250,7 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
 Linewalker minimization (``method='linewalker'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Often the function being minimized is convex or can be computationaly 
+In some settings the function being minimized can be non-convex or computationally 
 expensive. The `linewalker` method in :func:`minimize_scalar` constructs
 a smooth surrogate on a set of equally-spaced grid points by evaluating
 the true function at a sparse set of judiciously chosen grid points. At each 
