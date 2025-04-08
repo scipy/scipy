@@ -1508,8 +1508,8 @@ class KrylovJacobian(Jacobian):
                                                             valid_inner_params,
                                                             n=1)
                 if inner_param_suggestions:
-                    suggestion_msg = f" Did you mean '{
-                                        inner_param_suggestions[0]}'?"
+                    suggestion_msg = f" Did you mean '"
+                                     f"{inner_param_suggestions[0]}'?"
                 else:
                     suggestion_msg = ""
 
