@@ -1670,8 +1670,8 @@ class TestTukeyHSD:
 class TestGamesHowell:
     # data with unequal variances
     data_same_size = ([24., 23., 31., 51.],
-            [34., 18., 18., 26.],
-            [17., 68., 59.,  7.])
+                      [34., 18., 18., 26.],
+                      [17., 68., 59.,  7.])
 
     data_diff_size = ([30., 23., 51.],
                       [-81., 71., -27., 63.],
@@ -1680,7 +1680,7 @@ class TestGamesHowell:
 
     spss_same_size = """
             Mean Diff      Lower Bound         Upper Bound         Sig
-    0 - 1   8.25000000    -16.5492749527311    33.0492749527311    0.558733632413559  
+    0 - 1   8.25000000    -16.5492749527311    33.0492749527311    0.558733632413559
     0 - 2  -5.50000000    -63.6702454316458    52.6702454316458    0.941147750599221
     1 - 2  -13.7500000    -74.3174374251372    46.8174374251372    0.682983914946841
     """
@@ -1720,7 +1720,7 @@ class TestGamesHowell:
 
         ONEWAY Value BY Group
             /MISSING ANALYSIS
-            /POSTHOC=GH ALPHA(0.5).
+            /POSTHOC=GH ALPHA(0.05).
         """
         res_expect = np.asarray(
             res_expect_str.replace(" - ", " ").split()[7:],
@@ -1736,14 +1736,14 @@ class TestGamesHowell:
             assert_allclose(conf.high[i, j], h, atol=1e-5)
 
     r_same_size = """
-                  q value             Pr(>|q|)  
+                  q value             Pr(>|q|)
     1 - 0 == 0   -1.5467805948856344  0.55873362851759
     2 - 0 == 0    0.4726721776628535  0.94114775035993
     2 - 1 == 0    1.246837541297872   0.68298393799782
     """
 
     r_diff_size = """
-                 q value             Pr(>|q|)  
+                 q value             Pr(>|q|)
     1 - 0 == 0  -1.0589317485313876  0.87275427357438
     2 - 0 == 0  -0.5716222106144833  0.97526284087419
     3 - 0 == 0  -2.6209678382077000  0.42625067714691

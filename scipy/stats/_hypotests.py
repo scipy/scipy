@@ -1813,11 +1813,9 @@ class TukeyHSDResult:
             raise ValueError("Confidence level must be between 0 and 1.")
         # determine the critical value of the studentized range using the
         # appropriate confidence level, number of treatments, and degrees
-        # of freedom as determined by the number of data less the number of
-        # treatments. ("Confidence limits for Tukey's method")[1] / [2] p.117
-        # "H0 was rejected" for Games Howell. Note that
-        # in the cases of unequal sample sizes there will be a criterion for
-        # each group comparison.
+        # of freedom. See [1] "Confidence limits for Tukey's method" / [2] p.117
+        # "H0 was rejected if...". Note that in the cases of unequal sample sizes,
+        # there will be a criterion for each group comparison.
         params = (confidence_level, self._ntreatments, self._df)
         srd = distributions.studentized_range.ppf(*params)
         # also called maximum critical value, the confidence_radius is the
@@ -1875,7 +1873,7 @@ def tukey_hsd(*args, equal_var=True):
     equal_var: bool, optional
         If True (default) and equal sample size, perform Tukey-HSD test [6].
         If True and unequal sample size, perform Tukey-Kramer test [4]_
-        If False, perform Games-Howell test, which does not assume equal variances [7]_
+        If False, perform Games-Howell test [7]_, which does not assume equal variances.
 
     Returns
     -------
@@ -1909,10 +1907,10 @@ def tukey_hsd(*args, equal_var=True):
     3. The distributions from which the samples are drawn have the same finite
        variance.
 
-    The original formulation of the test was for samples of equal size [6]_.
-    In case of unequal sample sizes, the test uses the Tukey-Kramer method
-    [4]_. In case of unequal variances, the test uses the Games-Howell
-    method [7]_.
+    The original formulation of the test was for samples of equal size drawn from
+    populations assumed to have equal variances [6]_. In case of unequal sample sizes,
+    the test uses the Tukey-Kramer method [4]_. When equal variances are not assumed
+    (``equal_var=False``), the test uses the Games-Howell method [7]_.
 
     References
     ----------
@@ -1970,14 +1968,14 @@ def tukey_hsd(*args, equal_var=True):
 
     >>> res = tukey_hsd(group0, group1, group2)
     >>> print(res)
-    Tukey's HSD Pairwise Group Comparisons (95.0% Confidence Interval)
-    Comparison  Statistic  p-value   Lower CI   Upper CI
-    (0 - 1)     -4.600      0.014     -8.249     -0.951
-    (0 - 2)     -0.260      0.980     -3.909      3.389
-    (1 - 0)      4.600      0.014      0.951      8.249
-    (1 - 2)      4.340      0.020      0.691      7.989
-    (2 - 0)      0.260      0.980     -3.389      3.909
-    (2 - 1)     -4.340      0.020     -7.989     -0.691
+    Pairwise Group Comparisons (95.0% Confidence Interval)
+    Comparison  Statistic  p-value  Lower CI  Upper CI
+     (0 - 1)     -4.600     0.014    -8.249    -0.951
+     (0 - 2)     -0.260     0.980    -3.909     3.389
+     (1 - 0)      4.600     0.014     0.951     8.249
+     (1 - 2)      4.340     0.020     0.691     7.989
+     (2 - 0)      0.260     0.980    -3.389     3.909
+     (2 - 1)     -4.340     0.020    -7.989    -0.691
 
     The null hypothesis is that each group has the same mean. The p-value for
     comparisons between ``group0`` and ``group1`` as well as ``group1`` and
@@ -2035,20 +2033,18 @@ def tukey_hsd(*args, equal_var=True):
         stand_err = np.sqrt(normalize * mse / 2)
         df = nobs - ntreatments
     else:
-        # the denominator Behrens-Fisher statistic with notation $v$
-        # calculated by sample variance and sample size
-        # "t-solution rejects H0 if..." [7] p.116
-        # the squre root of 2 is considered to calculate the stand_err
-        # "H0 was rejected" [7] p. 117
+        # `stand_err` is the denominator of the Behrens-Fisher statistic ($v$)
+        # with a factor of $\sqrt{2}$. Compare [7] p.116 "t-solution rejects H0 if...",
+        # [7] p. 117 "H0 was rejected", and definition of `t_stat` below.
         sj2_nj = vars_ / nsamples_treatments
         si2_ni = sj2_nj[:, np.newaxis]
         stand_err = np.sqrt(si2_ni + sj2_nj) / 2**0.5
 
-        # Welch degree of freedom with notation $\nu$
-        # "and the degree of freedom, v, are given by" [7] p. 116
+        # `df` is the Welch degree of freedom $\nu$.
+        # See [7] p. 116 "and the degrees of freedom, $\nu$, are given by...".
         njm1 = nsamples_treatments - 1
         nim1 = njm1[:, np.newaxis]
-        df = (si2_ni + sj2_nj)**2 / (sj2_nj**2 / njm1 + si2_ni**2 / nim1)
+        df = (si2_ni + sj2_nj)**2 / (si2_ni**2 / nim1 + sj2_nj**2 / njm1)
 
     # the mean difference is the test statistic.
     mean_differences = means[None].T - means
