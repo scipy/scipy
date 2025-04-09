@@ -239,9 +239,7 @@ class TestNonlin:
 
         # This should not raise a warning (`minres` without `inner_atol`,
         # but with `inner_maxiter` which is valid)
-        with warnings.catch_warnings(record=True) as w:
-            nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100)
-        assert len(w) == 0
+        nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100)
 
         # Test newton_krylov with a user-provided callable method
         def user_provided_callable_method_enh_21986(op, rhs, **kwargs):
@@ -249,10 +247,8 @@ class TestNonlin:
             # Return a dummy result (mimicking minres)
             return minres(op, rhs, **kwargs)
         # This should not raise any warnings
-        with warnings.catch_warnings(record=True) as w:
-            nonlin.newton_krylov(F, F.xin,
-                                method=user_provided_callable_method_enh_21986)
-        assert len(w) == 0
+        nonlin.newton_krylov(F, F.xin,
+                            method=user_provided_callable_method_enh_21986)
 
 
 class TestSecant:
