@@ -1,3 +1,4 @@
+import math
 import warnings
 
 from itertools import product
@@ -26,6 +27,9 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
+
+skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
 try:
@@ -1351,43 +1355,50 @@ class TestNormalize:
 
 class TestLp2lp:
 
-    def test_basic(self):
-        b = [1]
-        a = [1, np.sqrt(2), 1]
+    def test_basic(self, xp):
+        b = xp.asarray([1])
+        a = xp.asarray([1, math.sqrt(2), 1])
         b_lp, a_lp = lp2lp(b, a, 0.38574256627112119)
-        assert_array_almost_equal(b_lp, [0.1488], decimal=4)
-        assert_array_almost_equal(a_lp, [1, 0.5455, 0.1488], decimal=4)
+        assert_array_almost_equal(b_lp, xp.asarray([0.1488]), decimal=4)
+        assert_array_almost_equal(a_lp, xp.asarray([1, 0.5455, 0.1488]), decimal=4)
 
 
 class TestLp2hp:
 
-    def test_basic(self):
-        b = [0.25059432325190018]
-        a = [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
-        b_hp, a_hp = lp2hp(b, a, 2*np.pi*5000)
-        xp_assert_close(b_hp, [1.0, 0, 0, 0])
-        xp_assert_close(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
+    def test_basic(self, xp):
+        b = xp.asarray([0.25059432325190018])
+        a = xp.asarray(
+            [1, 0.59724041654134863, 0.92834805757524175, 0.25059432325190018]
+        )
+        b_hp, a_hp = lp2hp(b, a, 2*math.pi*5000)
+        xp_assert_close(b_hp, xp.asarray([1.0, 0, 0, 0]))
+        xp_assert_close(
+            a_hp, xp.asarray([1, 1.1638e5, 2.3522e9, 1.2373e14]), rtol=1e-4
+        )
 
 
 class TestLp2bp:
 
-    def test_basic(self):
-        b = [1]
-        a = [1, 2, 2, 1]
-        b_bp, a_bp = lp2bp(b, a, 2*np.pi*4000, 2*np.pi*2000)
-        xp_assert_close(b_bp, [1.9844e12, 0, 0, 0], rtol=1e-6)
-        xp_assert_close(a_bp, [1, 2.5133e4, 2.2108e9, 3.3735e13,
-                               1.3965e18, 1.0028e22, 2.5202e26], rtol=1e-4)
+    def test_basic(self, xp):
+        b = xp.asarray([1])
+        a = xp.asarray([1, 2, 2, 1])
+        b_bp, a_bp = lp2bp(b, a, 2*math.pi*4000, 2*math.pi*2000)
+        xp_assert_close(b_bp, xp.asarray([1.9844e12, 0, 0, 0]), rtol=1e-6)
+        xp_assert_close(
+            a_bp,
+            xp.asarray([1, 2.5133e4, 2.2108e9, 3.3735e13,
+                        1.3965e18, 1.0028e22, 2.5202e26]), rtol=1e-4
+        )
 
 
 class TestLp2bs:
 
-    def test_basic(self):
-        b = [1]
-        a = [1, 1]
+    def test_basic(self, xp):
+        b = xp.asarray([1])
+        a = xp.asarray([1, 1])
         b_bs, a_bs = lp2bs(b, a, 0.41722257286366754, 0.18460575326152251)
-        assert_array_almost_equal(b_bs, [1, 0, 0.17407], decimal=5)
-        assert_array_almost_equal(a_bs, [1, 0.18461, 0.17407], decimal=5)
+        assert_array_almost_equal(b_bs, xp.asarray([1, 0, 0.17407]), decimal=5)
+        assert_array_almost_equal(a_bs, xp.asarray([1, 0.18461, 0.17407]), decimal=5)
 
 
 class TestBilinear:
