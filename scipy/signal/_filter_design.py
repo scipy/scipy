@@ -4,11 +4,10 @@ import operator
 import warnings
 
 import numpy as np
-from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
+from numpy import (atleast_1d, poly, polyval, roots, asarray,
                    pi, absolute, sqrt, tan, log10,
                    arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones, full, array,
-                   mintypecode)
+                   sinh, concatenate, prod, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 from numpy.polynomial.polynomial import polyvalfromroots
 

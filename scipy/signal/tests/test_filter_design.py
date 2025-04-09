@@ -16,7 +16,7 @@ from scipy._lib._array_api import (
     assert_array_almost_equal,
 )
 
-from numpy import array, spacing, sin, pi, sort, sqrt
+from numpy import array, spacing, sin, pi, sort
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
