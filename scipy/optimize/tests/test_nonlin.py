@@ -227,10 +227,6 @@ class TestNonlin:
         2. No warning for valid inner param
         3. No warning for user-provided callable method
         """
-
-        # catch all warnings
-        warnings.simplefilter("always")
-
         # This should raise exactly one warning
         # (`inner_atol` is not valid for `minres`)
         with pytest.warns(UserWarning, 
