@@ -1,4 +1,5 @@
 import math
+import cmath
 import warnings
 
 from itertools import product
@@ -1491,25 +1492,42 @@ class TestBilinear:
             bilinear(b, a, fs=None)
 
 
+def _sort_cmplx(arr, xp):
+    # xp.sort is undefined for complex dtypes. Here we only need some
+    # consistent way to sort a complex array, including equal magnitude elements.
+    arr = xp.asarray(arr)
+    if xp.isdtype(arr.dtype, 'complex floating'):
+        sorter = abs(arr) + xp.real(arr) + xp.imag(arr)**3
+    else:
+        sorter = arr
+
+    idxs = xp.argsort(sorter)
+    return arr[idxs]
+
+
 class TestLp2lp_zpk:
 
-    def test_basic(self):
-        z = []
-        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+    def test_basic(self, xp):
+        z = xp.asarray([])
+        p = xp.asarray([(-1+1j) / math.sqrt(2), (-1-1j) / math.sqrt(2)])
         k = 1
         z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 5)
-        xp_assert_equal(z_lp, [])
-        xp_assert_close(sort(p_lp), sort(p)*5)
-        xp_assert_close(k_lp, 25.)
+        xp_assert_equal(z_lp, xp.asarray([]))
+        xp_assert_close(_sort_cmplx(p_lp, xp=xp), _sort_cmplx(p, xp=xp) * 5)
+        assert k_lp == 25.
 
         # Pseudo-Chebyshev with both poles and zeros
-        z = [-2j, +2j]
-        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        z = xp.asarray([-2j, +2j])
+        p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
         k = 3
         z_lp, p_lp, k_lp = lp2lp_zpk(z, p, k, 20)
-        xp_assert_close(sort(z_lp), sort([-40j, +40j]))
-        xp_assert_close(sort(p_lp), sort([-15, -10-10j, -10+10j]))
-        xp_assert_close(k_lp, 60.)
+        xp_assert_close(
+            _sort_cmplx(z_lp, xp=xp), _sort_cmplx([-40j, +40j], xp=xp)
+        )
+        xp_assert_close(
+            _sort_cmplx(p_lp, xp=xp), _sort_cmplx([-15, -10-10j, -10+10j], xp=xp)
+        )
+        assert k_lp == 60.
 
     def test_fs_validation(self):
         z = [-2j, +2j]
@@ -1525,23 +1543,27 @@ class TestLp2lp_zpk:
 
 class TestLp2hp_zpk:
 
-    def test_basic(self):
-        z = []
-        p = [(-1+1j)/np.sqrt(2), (-1-1j)/np.sqrt(2)]
+    def test_basic(self, xp):
+        z = xp.asarray([])
+        p = xp.asarray([(-1+1j) / math.sqrt(2), (-1-1j) / math.sqrt(2)])
         k = 1
 
         z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 5)
-        xp_assert_equal(z_hp, np.asarray([0.0, 0.0]))
-        xp_assert_close(sort(p_hp), sort(p)*5)
-        xp_assert_close(k_hp, 1.0)
+        xp_assert_equal(z_hp, xp.asarray([0.0, 0.0]))
+        xp_assert_close(_sort_cmplx(p_hp, xp=xp), _sort_cmplx(p, xp=xp) * 5)
+        assert math.isclose(k_hp, 1.0)
 
-        z = [-2j, +2j]
-        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+        z = xp.asarray([-2j, +2j])
+        p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
         k = 3
         z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 6)
-        xp_assert_close(sort(z_hp), sort([-3j, 0, +3j]))
-        xp_assert_close(sort(p_hp), sort([-8, -6-6j, -6+6j]))
-        xp_assert_close(k_hp, 32.0)
+        xp_assert_close(
+            _sort_cmplx(z_hp, xp=xp), _sort_cmplx([-3j, 0, +3j], xp=xp)
+        )
+        xp_assert_close(
+            _sort_cmplx(p_hp, xp=xp), _sort_cmplx([-8, -6-6j, -6+6j], xp=xp)
+        )
+        assert k_hp == 32.0
 
 
 class TestLp2bp_zpk:
@@ -1563,25 +1585,31 @@ class TestLp2bp_zpk:
 
 class TestLp2bs_zpk:
 
-    def test_basic(self):
-        z = [-2j, +2j]
-        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+    def test_basic(self, xp):
+        z = xp.asarray([-2j, +2j])
+        p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
         k = 3
 
         z_bs, p_bs, k_bs = lp2bs_zpk(z, p, k, 35, 12)
 
-        xp_assert_close(sort(z_bs), sort([+35j, -35j,
-                                          +3j+sqrt(1234)*1j,
-                                          -3j+sqrt(1234)*1j,
-                                          +3j-sqrt(1234)*1j,
-                                          -3j-sqrt(1234)*1j]))
-        xp_assert_close(sort(p_bs), sort([+3j*sqrt(129) - 8,
-                                          -3j*sqrt(129) - 8,
-                                          (-6 + 6j) - sqrt(-1225 - 72j),
-                                          (-6 - 6j) - sqrt(-1225 + 72j),
-                                          (-6 + 6j) + sqrt(-1225 - 72j),
-                                          (-6 - 6j) + sqrt(-1225 + 72j), ]))
-        xp_assert_close(k_bs, 32.0)
+        xp_assert_close(
+            _sort_cmplx(z_bs, xp=xp),
+            _sort_cmplx([+35j, -35j,
+                         +3j + math.sqrt(1234)*1j,
+                         -3j + math.sqrt(1234)*1j,
+                         +3j - math.sqrt(1234)*1j,
+                         -3j - math.sqrt(1234)*1j], xp=xp)
+        )
+        xp_assert_close(
+            _sort_cmplx(p_bs, xp=xp),
+            _sort_cmplx([+3j*math.sqrt(129) - 8,
+                         -3j*math.sqrt(129) - 8,
+                         (-6 + 6j) - cmath.sqrt(-1225 - 72j),
+                         (-6 - 6j) - cmath.sqrt(-1225 + 72j),
+                         (-6 + 6j) + cmath.sqrt(-1225 - 72j),
+                         (-6 - 6j) + cmath.sqrt(-1225 + 72j), ], xp=xp)
+        )
+        assert math.isclose(k_bs, 32.0)
 
 
 class TestBilinear_zpk:

@@ -2794,7 +2794,7 @@ def _relative_degree(z, p):
     """
     Return relative degree of transfer function from zeros and poles
     """
-    degree = len(p) - len(z)
+    degree = p.shape[0] - z.shape[0]
     if degree < 0:
         raise ValueError("Improper transfer function. "
                          "Must have at least as many poles as zeros.")
@@ -2941,8 +2941,12 @@ def lp2lp_zpk(z, p, k, wo=1.0):
     >>> lp2lp_zpk(z, p, k, wo)
     (   array([2.8, 0.8]), array([2. , 5.2]), 0.8)
     """
-    z = atleast_1d(z)
-    p = atleast_1d(p)
+    xp = array_namespace(z, p)
+
+    z, p = map(xp.asarray, (z, p))
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+
     wo = float(wo)  # Avoid int wraparound
 
     degree = _relative_degree(z, p)
@@ -3018,8 +3022,12 @@ def lp2hp_zpk(z, p, k, wo=1.0):
         array([-0.6 , -0.15]),
         8.5)
     """
-    z = atleast_1d(z)
-    p = atleast_1d(p)
+    xp = array_namespace(z, p)
+
+    z, p = map(xp.asarray, (z, p))
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+
     wo = float(wo)
 
     degree = _relative_degree(z, p)
@@ -3030,10 +3038,10 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     p_hp = wo / p
 
     # If lowpass had zeros at infinity, inverting moves them to origin.
-    z_hp = append(z_hp, zeros(degree))
+    z_hp = xp.concat((z_hp, xp.zeros(degree)))
 
     # Cancel out gain change caused by inversion
-    k_hp = k * real(prod(-z) / prod(-p))
+    k_hp = k * xp.real(xp.prod(-z) / xp.prod(-p))
 
     return z_hp, p_hp, k_hp
 
@@ -3104,8 +3112,12 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
         array([1.04996339e+02+0.j, -1.60167736e-03+0.j,  3.66108003e-03+0.j,
                -2.39998398e+02+0.j]), 0.8)
     """
-    z = atleast_1d(z)
-    p = atleast_1d(p)
+    xp = array_namespace(z, p)
+
+    z, p = map(xp.asarray, (z, p))
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+
     wo = float(wo)
     bw = float(bw)
 
@@ -3116,17 +3128,17 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     p_lp = p * bw/2
 
     # Square root needs to produce complex result, not NaN
-    z_lp = z_lp.astype(complex)
-    p_lp = p_lp.astype(complex)
+    z_lp = xp.astype(z_lp, xp.complex128)
+    p_lp = xp.astype(p_lp, xp.complex128)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    z_bp = concatenate((z_lp + sqrt(z_lp**2 - wo**2),
-                        z_lp - sqrt(z_lp**2 - wo**2)))
-    p_bp = concatenate((p_lp + sqrt(p_lp**2 - wo**2),
-                        p_lp - sqrt(p_lp**2 - wo**2)))
+    z_bp = xp.concat((z_lp + xp.sqrt(z_lp**2 - wo**2),
+                      z_lp - xp.sqrt(z_lp**2 - wo**2)))
+    p_bp = xp.concat((p_lp + xp.sqrt(p_lp**2 - wo**2),
+                      p_lp - xp.sqrt(p_lp**2 - wo**2)))
 
     # Move degree zeros to origin, leaving degree zeros at infinity for BPF
-    z_bp = append(z_bp, zeros(degree))
+    z_bp = xp.concat((z_bp, xp.zeros(degree)))
 
     # Cancel out gain change from frequency scaling
     k_bp = k * bw**degree
@@ -3199,8 +3211,12 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
         array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]),
         -12.857142857142858)
     """
-    z = atleast_1d(z)
-    p = atleast_1d(p)
+    xp = array_namespace(z, p)
+
+    z, p = map(xp.asarray, (z, p))
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+
     wo = float(wo)
     bw = float(bw)
 
@@ -3211,21 +3227,21 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     p_hp = (bw/2) / p
 
     # Square root needs to produce complex result, not NaN
-    z_hp = z_hp.astype(complex)
-    p_hp = p_hp.astype(complex)
+    z_hp = xp.astype(z_hp, xp.complex128)
+    p_hp = xp.astype(p_hp, xp.complex128)
 
     # Duplicate poles and zeros and shift from baseband to +wo and -wo
-    z_bs = concatenate((z_hp + sqrt(z_hp**2 - wo**2),
-                        z_hp - sqrt(z_hp**2 - wo**2)))
-    p_bs = concatenate((p_hp + sqrt(p_hp**2 - wo**2),
-                        p_hp - sqrt(p_hp**2 - wo**2)))
+    z_bs = xp.concat((z_hp + xp.sqrt(z_hp**2 - wo**2),
+                      z_hp - xp.sqrt(z_hp**2 - wo**2)))
+    p_bs = xp.concat((p_hp + xp.sqrt(p_hp**2 - wo**2),
+                      p_hp - xp.sqrt(p_hp**2 - wo**2)))
 
     # Move any zeros that were at infinity to the center of the stopband
-    z_bs = append(z_bs, full(degree, +1j*wo))
-    z_bs = append(z_bs, full(degree, -1j*wo))
+    z_bs = xp.concat((z_bs, xp.full(degree, +1j*wo)))
+    z_bs = xp.concat((z_bs, xp.full(degree, -1j*wo)))
 
     # Cancel out gain change caused by inversion
-    k_bs = k * real(prod(-z) / prod(-p))
+    k_bs = k * xp.real(xp.prod(-z) / xp.prod(-p))
 
     return z_bs, p_bs, k_bs
 
