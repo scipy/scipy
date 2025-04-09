@@ -1695,6 +1695,7 @@ class TestGamesHowell:
     2 - 3	 11.80000000	-16.2894857524254	39.8894857524254    0.4755344436335670
     """
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize("data, res_expect_str",
                             ((data_same_size, spss_same_size),
                             (data_diff_size, spss_diff_size)),

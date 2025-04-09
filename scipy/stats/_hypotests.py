@@ -1872,7 +1872,7 @@ def tukey_hsd(*args, equal_var=True):
         two arguments.
     equal_var: bool, optional
         If True (default) and equal sample size, perform Tukey-HSD test [6].
-        If True and unequal sample size, perform Tukey-Kramer test [4]_
+        If True and unequal sample size, perform Tukey-Kramer test [4]_.
         If False, perform Games-Howell test [7]_, which does not assume equal variances.
 
     Returns
