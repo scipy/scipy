@@ -20,6 +20,7 @@ py3.extension_module(
   'extending.pyx',
   install: false,
   cython_args: cython_args,
+  c_args: ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 )
 
 extending_cpp = fs.copyfile('extending.pyx', 'extending_cpp.pyx')
@@ -29,4 +30,5 @@ py3.extension_module(
   install: false,
   override_options : ['cython_language=cpp'],
   cython_args: cython_args,
+  cpp_args: ['-DCYTHON_CCOMPLEX=0']
 )
