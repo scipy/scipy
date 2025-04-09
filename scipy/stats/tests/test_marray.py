@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
-from scipy.stats._stats_py import _xp_mean, _xp_var
+from scipy.stats._stats_py import _xp_mean, _xp_var, _length_nonmasked
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -38,6 +38,7 @@ def get_arrays(n_arrays, *, dtype='float64', xp=np, shape=(7, 8), seed=849121654
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('fun, kwargs', [(stats.gmean, {}),
                                          (stats.hmean, {}),
                                          (stats.pmean, {'p': 2})])
@@ -51,6 +52,7 @@ def test_xmean(fun, kwargs, axis, xp):
 
 @skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
 @skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="marray#99")
 @pytest.mark.parametrize('axis', [0, 1, None])
 @pytest.mark.parametrize('keepdims', [False, True])
 def test_xp_mean(axis, keepdims, xp):
@@ -272,3 +274,16 @@ def test_ttest_ind_from_stats(xp):
     xp_assert_close(res.pvalue.mask, mask)
     assert res.statistic.shape == shape
     assert res.pvalue.shape == shape
+
+def test_length_nonmasked_marray_iterable_axis_raises():
+    xp = marray._get_namespace(np)
+
+    data = [[1.0, 2.0], [3.0, 4.0]]
+    mask = [[False, False], [True, False]]
+    marr = xp.asarray(data, mask=mask)
+
+    # Axis tuples are not currently supported for MArray input.
+    # This test can be removed after support is added.
+    with pytest.raises(NotImplementedError,
+        match="`axis` must be an integer or None for use with `MArray`"):
+        _length_nonmasked(marr, axis=(0, 1), xp=xp)

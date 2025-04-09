@@ -39,12 +39,13 @@ from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
+    'default_xp', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
+    'xp_result_type', 'xp_promote'
 ]
 
 
@@ -420,42 +421,6 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
-    """Returns a list of available devices for the given namespace."""
-    devices: list[str] = []
-    if is_torch(xp):
-        devices += ['cpu']
-        import torch # type: ignore[import]
-        num_cuda = torch.cuda.device_count()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        if torch.backends.mps.is_available():
-            devices += ['mps']
-        return devices
-    elif is_cupy(xp):
-        import cupy # type: ignore[import]
-        num_cuda = cupy.cuda.runtime.getDeviceCount()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        return devices
-    elif is_jax(xp):
-        import jax # type: ignore[import]
-        num_cpu = jax.device_count(backend='cpu')
-        for i in range(0, num_cpu):
-            devices += [f'cpu:{i}']
-        num_gpu = jax.device_count(backend='gpu')
-        for i in range(0, num_gpu):
-            devices += [f'gpu:{i}']
-        num_tpu = jax.device_count(backend='tpu')
-        for i in range(0, num_tpu):
-            devices += [f'tpu:{i}']
-        return devices
-
-    # given namespace is not known to have a list of available devices;
-    # return `[None]` so that one can use this in tests for `device=None`.
-    return [None]
-
-
 def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """Return the `scipy`-like namespace of a non-NumPy backend
 
@@ -513,31 +478,87 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.reshape(x, (-1,))
 
 
-# utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
-    xp = array_namespace(*args) if xp is None else xp
+# utility to find common dtype with option to force floating
+def xp_result_type(*args, force_floating=False, xp):
+    """
+    Returns the dtype that results from applying type promotion rules
+    (see Array API Standard Type Promotion Rules) to the arguments. Augments
+    standard `result_type` in a few ways:
 
-    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
+    - There is a `force_floating` argument that ensures that the result type
+      is floating point, even when all args are integer.     
+    - When a TypeError is raised (e.g. due to an unsupported promotion)
+      and `force_floating=True`, we define a custom rule: use the result type
+      of the default float and any other floats passed. See
+      https://github.com/scipy/scipy/pull/22695/files#r1997905891
+      for rationale.
+    - This function accepts array-like iterables, which are immediately converted
+      to the namespace's arrays before result type calculation. Consequently, the
+      result dtype may be different when an argument is `1.` vs `[1.]`.
+
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
+    if force_floating:
+        args_not_none.append(1.0)
 
-    # determine minimum dtype
-    default_float = xp.asarray(1.).dtype
-    dtypes = [arg.dtype for arg in args_not_none]
-    try:  # follow library's prefered mixed promotion rules
-        dtype = xp.result_type(*dtypes)
-        if force_floating and xp.isdtype(dtype, 'integral'):
-            # If we were to add `default_float` before checking whether the result
-            # type is otherwise integral, we risk promotion from lower float.
-            dtype = xp.result_type(dtype, default_float)
+    if is_numpy(xp) and xp.__version__ < '2.0':
+        # Follow NEP 50 promotion rules anyway
+        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
+                         for arg in args_not_none]
+        return xp.result_type(*args_not_none)
+
+    try:  # follow library's preferred promotion rules
+        return xp.result_type(*args_not_none)
     except TypeError:  # mixed type promotion isn't defined
-        float_dtypes = [dtype for dtype in dtypes
-                        if not xp.isdtype(dtype, 'integral')]
-        if float_dtypes:
-            dtype = xp.result_type(*float_dtypes, default_float)
-        elif force_floating:
-            dtype = default_float
-        else:
-            dtype = xp.result_type(*dtypes)
+        if not force_floating:
+            raise
+        # use `result_type` of default floating point type and any floats present
+        # This can be revisited, but right now, the only backends that get here
+        # are array-api-strict (which is not for production use) and PyTorch
+        # (due to data-apis/array-api-compat#279).
+        float_args = []
+        for arg in args_not_none:
+            arg_array = xp.asarray(arg) if np.isscalar(arg) else arg
+            dtype = getattr(arg_array, 'dtype', arg)
+            if xp.isdtype(dtype, ('real floating', 'complex floating')):
+                float_args.append(arg)
+        return xp.result_type(*float_args, xp_default_dtype(xp))
+
+
+def xp_promote(*args, broadcast=False, force_floating=False, xp):
+    """
+    Promotes elements of *args to result dtype, ignoring `None`s.
+    Includes options for forcing promotion to floating point and
+    broadcasting the arrays, again ignoring `None`s.
+    Type promotion rules follow `xp_result_type` instead of `xp.result_type`.
+
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+
+    This function accepts array-like iterables, which are immediately converted
+    to the namespace's arrays before result type calculation. Consequently, the
+    result dtype may be different when an argument is `1.` vs `[1.]`.
+    
+    See Also
+    --------
+    xp_result_type
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]  # solely to prevent double conversion of iterable to array
+
+    dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
+
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
+            for arg in args]
+
+    if not broadcast:
+        return args[0] if len(args)==1 else tuple(args)
+
+    args_not_none = [arg for arg in args if arg is not None]
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
@@ -561,12 +582,13 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ensure_writeable:
-            arg = xp.astype(arg, dtype, copy=True)
+        # This is much faster than xp.astype(arg, dtype, copy=False)
+        if arg.dtype != dtype:
+            arg = xp.astype(arg, dtype)
+
         out.append(arg)
 
-    return out
+    return out[0] if len(out)==1 else tuple(out)
 
 
 def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
@@ -649,7 +671,7 @@ def _make_capabilities_table(capabilities):
             val += " " * (len('{numpy.}') + len(attr) - 1)
             setattr(backend, attr, val)
 
-    table = f"""                
+    table = f"""
     +---------+-------------+-------------+
     | Library | CPU         | GPU         |
     +=========+=============+=============+
@@ -681,22 +703,19 @@ def _make_capabilities_note(fun_name, capabilities):
     return textwrap.dedent(note)
 
 
-def xp_capabilities(name=None, capabilities_table=None, **kwargs):
+def xp_capabilities(capabilities_table=None, **kwargs):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
     def decorator(f):
-        fun_name = f.__name__
-        table_entry = name or fun_name
-        if table_entry not in capabilities_table:
-            capabilities_table[table_entry] = kwargs
-        capabilities = _make_capabilities(**capabilities_table[table_entry])
-
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        note = _make_capabilities_note(fun_name, capabilities)
+        capabilities_table[wrapper] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[wrapper])
+
+        note = _make_capabilities_note(f.__name__, capabilities)
         doc = FunctionDoc(wrapper)
         doc['Notes'].append(note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
@@ -705,23 +724,30 @@ def xp_capabilities(name=None, capabilities_table=None, **kwargs):
     return decorator
 
 
-def make_skip_xp_backends(fun_name, capabilities_table=None):
+def make_skip_xp_backends(*funs, capabilities_table=None):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
     import pytest
 
-    skip_backends = capabilities_table[fun_name].get('skip_backends', [])
-    cpu_only = capabilities_table[fun_name].get('cpu_only', None)
-    np_only = capabilities_table[fun_name].get('np_only', None)
-    exceptions = capabilities_table[fun_name].get('exceptions', None)
-    reason = capabilities_table[fun_name].get('reason', None)
+    skip_backends = []
+    cpu_only = False
+    cpu_only_reason = set()
+    np_only = False
+    exceptions = []
+
+    for fun in funs:
+        skip_backends += capabilities_table[fun].get('skip_backends', [])
+        cpu_only |= capabilities_table[fun].get('cpu_only', False)
+        # Empty reason causes the decorator to have no effect
+        cpu_only_reason.add(capabilities_table[fun].get('reason', "No reason given."))
+        np_only |= capabilities_table[fun].get('np_only', False)
+        exceptions += capabilities_table[fun].get('exceptions', [])
 
     decorators = []
     if cpu_only:
         kwargs = dict(cpu_only=True, exceptions=exceptions)
-        # if we pass `reason=None`, it doesn't work
-        kwargs |= {'reason': reason} if reason is not None else {}
+        kwargs |= {'reason': "\n".join(cpu_only_reason)}
         decorators.append(pytest.mark.skip_xp_backends(**kwargs))
 
     if np_only:
