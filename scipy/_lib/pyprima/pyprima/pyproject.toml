@@ -1,0 +1,19 @@
+[project]
+name = "pyprima"
+version = "0.0.1"
+dependencies = [
+	"numpy"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]  # ["."] by default
+exclude = ["pyprima.examples*"]  # empty by default
+
+[tools.ruff]
+line-length=88
+select= ["D"]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
