@@ -248,7 +248,7 @@ class TestNonlin:
             return minres(op, rhs, **kwargs)
         # This should not raise any warnings
         nonlin.newton_krylov(F, F.xin,
-                            method=user_provided_callable_method_enh_21986)
+                             method=user_provided_callable_method_enh_21986)
 
 
 class TestSecant:
