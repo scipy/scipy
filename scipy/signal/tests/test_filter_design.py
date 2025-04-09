@@ -1614,19 +1614,25 @@ class TestLp2bs_zpk:
 
 class TestBilinear_zpk:
 
-    def test_basic(self):
-        z = [-2j, +2j]
-        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+    def test_basic(self, xp):
+        z = xp.asarray([-2j, +2j])
+        p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
         k = 3
 
         z_d, p_d, k_d = bilinear_zpk(z, p, k, 10)
 
-        xp_assert_close(sort(z_d), sort([(20-2j)/(20+2j), (20+2j)/(20-2j),
-                                         -1]))
-        xp_assert_close(sort(p_d), sort([77/83,
-                                         (1j/2 + 39/2) / (41/2 - 1j/2),
-                                         (39/2 - 1j/2) / (1j/2 + 41/2), ]))
-        xp_assert_close(k_d, 9696/69803)
+        xp_assert_close(
+            _sort_cmplx(z_d, xp=xp),
+            _sort_cmplx([(20-2j) / (20+2j), (20+2j) / (20-2j), -1], xp=xp)
+        )
+        xp_assert_close(
+            _sort_cmplx(p_d, xp=xp),
+            _sort_cmplx(
+                [77/83, (1j/2 + 39/2) / (41/2 - 1j/2), (39/2 - 1j/2) / (1j/2 + 41/2)],
+                xp=xp
+            )
+        )
+        assert math.isclose(k_d, 9696/69803)
 
 
 class TestPrototypeType:

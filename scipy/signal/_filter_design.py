@@ -2864,8 +2864,11 @@ def bilinear_zpk(z, p, k, fs):
     >>> plt.ylabel('Amplitude [dB]')
     >>> plt.grid(True)
     """
-    z = atleast_1d(z)
-    p = atleast_1d(p)
+    xp = array_namespace(z, p)
+
+    z, p = map(xp.asarray, (z, p))
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -2878,10 +2881,10 @@ def bilinear_zpk(z, p, k, fs):
     p_z = (fs2 + p) / (fs2 - p)
 
     # Any zeros that were at infinity get moved to the Nyquist frequency
-    z_z = append(z_z, -ones(degree))
+    z_z = xp.concat((z_z, -xp.ones(degree)))
 
     # Compensate for gain change
-    k_z = k * real(prod(fs2 - z) / prod(fs2 - p))
+    k_z = k * xp.real(xp.prod(fs2 - z) / xp.prod(fs2 - p))
 
     return z_z, p_z, k_z
 
