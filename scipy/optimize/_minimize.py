@@ -340,7 +340,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Constrained Minimization**
 
-    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
+    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the PRIMA
+    implementation [19]_ of the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
     approximations to the objective function and each constraint.
@@ -487,6 +488,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         and Software*. PhD thesis, Department of Applied Mathematics, The Hong
         Kong Polytechnic University, Hong Kong, China, 2022. URL:
         https://theses.lib.polyu.edu.hk/handle/200/12294.
+    .. [19] Zhang, Z. "PRIMA: Reference Implementation for Powell's Methods with
+        Modernization and Amelioration", https://www.libprima.net,
+        :doi:`10.5281/zenodo.8052654`
 
     Examples
     --------
