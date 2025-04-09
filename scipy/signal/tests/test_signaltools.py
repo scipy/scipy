@@ -1676,6 +1676,8 @@ class TestOrderFilt:
         )
         xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
+    @xfail_xp_backends('dask.array', reason='repeat requires an axis')
+    @xfail_xp_backends('torch', reason='array-api-compat#292')
     def test_medfilt_order_filter(self, xp):
         x = xp.reshape(xp.arange(25), (5, 5))
 
