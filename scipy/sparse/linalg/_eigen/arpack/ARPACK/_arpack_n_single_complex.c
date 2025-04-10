@@ -379,9 +379,9 @@ cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
         V-> tol = ulp;
     }
 
-    if ((V->ishift != 0) || (V->ishift != 1) || (V->ishift != 2))
+    if ((V->shift != 0) && (V->shift != 1) && (V->shift != 2))
     {
-        V->ishift = 1;
+        V->shift = 1;
     }
 
      /*---------------------------------------------*
@@ -788,7 +788,7 @@ LINE20:
         V->ido = 99;
         return;
 
-    } else if ((V->nconv < V->aup2_nev0) && (V->ishift)) {
+    } else if ((V->nconv < V->aup2_nev0) && (V->shift)) {
          /*------------------------------------------------*
          | Do not have all the requested eigenvalues yet.  |
          | To prevent possible stagnation, adjust the size |
@@ -810,7 +810,7 @@ LINE20:
 
     }
 
-    if (V->ishift == 0)
+    if (V->shift == 0)
     {
          /*------------------------------------------------------*
          | User specified shifts: pop back out to get the shifts |
@@ -830,7 +830,7 @@ LINE50:
 
     V->aup2_ushift = 0;
 
-    if (V->ishift != 1)
+    if (V->shift != 1)
     {
          /*---------------------------------*
          | Move the NP shifts from WORKL to |
@@ -1679,7 +1679,7 @@ cngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
 
     csortc(V->which, 1, *kev + *np, ritz, bounds);
 
-    if (V->ishift == 1)
+    if (V->shift == 1)
     {
          /*------------------------------------------------------*
          | Sort the unwanted Ritz values used as shifts so that  |

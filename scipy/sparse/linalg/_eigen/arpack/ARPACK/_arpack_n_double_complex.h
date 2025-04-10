@@ -28,4 +28,19 @@ void ztrevc_(char* side, char* howmny, int* select, int* n, ARPACK_CPLX_TYPE* t,
 void ztrsen_(char* job, char* compq, int* select, int* n, ARPACK_CPLX_TYPE* t, int* ldt, ARPACK_CPLX_TYPE* q, int* ldq, ARPACK_CPLX_TYPE* w, int* m, double* s, double* sep, ARPACK_CPLX_TYPE* work, int* lwork, int* info );
 void zunm2r_(char* side, char* trans, int* m, int* n, int* k, ARPACK_CPLX_TYPE* a, int* lda, ARPACK_CPLX_TYPE* tau, ARPACK_CPLX_TYPE* c, int* ldc, ARPACK_CPLX_TYPE* work, int* info);
 
+#if defined(_MSC_VER)
+    // MSVC definitions
+    #include <complex.h>  // MSVC C++ header
+    typedef _Dcomplex ARPACK_CPLX_TYPE;
+    #define ARPACK_cplx(real, imag) ((_Dcomplex){real, imag})
+
+#else
+    // C99 compliant compilers
+    #include <complex.h>
+    typedef double complex ARPACK_CPLX_TYPE;
+    #define ARPACK_cplx(real, imag) ((real) + (imag)*I)
+
+#endif
+
+
 #endif

@@ -24,5 +24,18 @@ void clascl_(char* mtype, int* kl, int* ku, float* cfrom, float* cto, int* m, in
 void claset_(char* uplo, int* m, int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* beta, ARPACK_CPLXF_TYPE* a, int* lda);
 void ctrevc_(char* side, char* howmny, int* select, int* n, ARPACK_CPLXF_TYPE* t, int* ldt, ARPACK_CPLXF_TYPE* vl, int* ldvl, ARPACK_CPLXF_TYPE* vr, int* ldvr, int* mm, int* m, ARPACK_CPLXF_TYPE* work, float* rwork, int* info);
 
+#if defined(_MSC_VER)
+    // MSVC definitions
+    #include <complex.h>  // MSVC C++ header
+    typedef _Fcomplex ARPACK_CPLXF_TYPE;
+    #define ARPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
+
+#else
+    // C99 compliant compilers
+    #include <complex.h>
+    typedef float complex ARPACK_CPLXF_TYPE;
+    #define ARPACK_cplxf(real, imag) ((real) + (imag)*I)
+
+#endif
 
 #endif
