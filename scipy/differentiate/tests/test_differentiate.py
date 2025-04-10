@@ -600,7 +600,7 @@ class TestJacobian(JacobianHessianTest):
             ref[attr] = xp.squeeze(
                 ref_attr,
                 axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
-            )            
+            )
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 
