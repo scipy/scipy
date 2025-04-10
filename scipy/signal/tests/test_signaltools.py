@@ -485,7 +485,7 @@ class TestConvolve2d:
             )
             xp_assert_close(
                 xp.squeeze(
-                    signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
+                    signal.convolve2d(a[None, :], b[None, :], mode=mode),
                     axis=0
                 ),
                 signal.convolve(a, b, mode=mode)
