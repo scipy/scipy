@@ -1510,6 +1510,7 @@ def _sort_cmplx(arr, xp):
 
 class TestLp2lp_zpk:
 
+    @xfail_xp_backends('dask.array', reason='internal dask error in _sort_cmplx')
     def test_basic(self, xp):
         z = xp.asarray([])
         p = xp.asarray([(-1+1j) / math.sqrt(2), (-1-1j) / math.sqrt(2)])
@@ -1546,6 +1547,7 @@ class TestLp2lp_zpk:
 
 class TestLp2hp_zpk:
 
+    @xfail_xp_backends('dask.array', reason='internal dask error in _sort_cmplx')
     def test_basic(self, xp):
         z = xp.asarray([])
         p = xp.asarray([(-1+1j) / math.sqrt(2), (-1-1j) / math.sqrt(2)])
@@ -1571,23 +1573,31 @@ class TestLp2hp_zpk:
 
 class TestLp2bp_zpk:
 
-    def test_basic(self):
-        z = [-2j, +2j]
-        p = [-0.75, -0.5-0.5j, -0.5+0.5j]
+    @xfail_xp_backends('dask.array', reason='internal dask error in _sort_cmplx')
+    def test_basic(self, xp):
+        z = xp.asarray([-2j, +2j])
+        p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
         k = 3
         z_bp, p_bp, k_bp = lp2bp_zpk(z, p, k, 15, 8)
-        xp_assert_close(sort(z_bp), sort([-25j, -9j, 0, +9j, +25j]))
-        xp_assert_close(sort(p_bp), sort([-3 + 6j*sqrt(6),
-                                          -3 - 6j*sqrt(6),
-                                          +2j+sqrt(-8j-225)-2,
-                                          -2j+sqrt(+8j-225)-2,
-                                          +2j-sqrt(-8j-225)-2,
-                                          -2j-sqrt(+8j-225)-2, ]))
-        xp_assert_close(k_bp, 24.0)
+        xp_assert_close(
+            _sort_cmplx(z_bp, xp=xp),
+            _sort_cmplx([-25j, -9j, 0, +9j, +25j], xp=xp)
+        )
+        xp_assert_close(
+            _sort_cmplx(p_bp, xp=xp),
+            _sort_cmplx(
+                [-3 + 6j*math.sqrt(6), -3 - 6j*math.sqrt(6),
+                 +2j + cmath.sqrt(-8j - 225) - 2, -2j + cmath.sqrt(+8j - 225) - 2,
+                 +2j - cmath.sqrt(-8j - 225) - 2, -2j - cmath.sqrt(+8j - 225) - 2
+                ], xp=xp
+            )
+        )
+        assert math.isclose(k_bp, 24.0)
 
 
 class TestLp2bs_zpk:
 
+    @xfail_xp_backends('dask.array', reason='internal dask error in _sort_cmplx')
     def test_basic(self, xp):
         z = xp.asarray([-2j, +2j])
         p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
@@ -1617,6 +1627,7 @@ class TestLp2bs_zpk:
 
 class TestBilinear_zpk:
 
+    @xfail_xp_backends('dask.array', reason='internal dask error in _sort_cmplx')
     def test_basic(self, xp):
         z = xp.asarray([-2j, +2j])
         p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
