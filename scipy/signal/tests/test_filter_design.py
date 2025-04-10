@@ -1554,9 +1554,9 @@ class TestLp2hp_zpk:
         k = 1
 
         z_hp, p_hp, k_hp = lp2hp_zpk(z, p, k, 5)
-        xp_assert_equal(z_hp, xp.asarray([0.0, 0.0]))
+        xp_assert_equal(z_hp, xp.asarray([0.0, 0.0], dtype=z_hp.dtype))
         xp_assert_close(_sort_cmplx(p_hp, xp=xp), _sort_cmplx(p, xp=xp) * 5)
-        assert math.isclose(k_hp, 1.0)
+        assert math.isclose(k_hp, 1.0, rel_tol=4e-7)
 
         z = xp.asarray([-2j, +2j])
         p = xp.asarray([-0.75, -0.5-0.5j, -0.5+0.5j])
@@ -1581,7 +1581,7 @@ class TestLp2bp_zpk:
         z_bp, p_bp, k_bp = lp2bp_zpk(z, p, k, 15, 8)
         xp_assert_close(
             _sort_cmplx(z_bp, xp=xp),
-            _sort_cmplx([-25j, -9j, 0, +9j, +25j], xp=xp)
+            _sort_cmplx([-25j, -9j, 0, +9j, +25j], xp=xp), check_dtype=False
         )
         xp_assert_close(
             _sort_cmplx(p_bp, xp=xp),
@@ -1590,7 +1590,7 @@ class TestLp2bp_zpk:
                  +2j + cmath.sqrt(-8j - 225) - 2, -2j + cmath.sqrt(+8j - 225) - 2,
                  +2j - cmath.sqrt(-8j - 225) - 2, -2j - cmath.sqrt(+8j - 225) - 2
                 ], xp=xp
-            )
+            ), check_dtype=False
         )
         assert math.isclose(k_bp, 24.0)
 
@@ -1611,7 +1611,7 @@ class TestLp2bs_zpk:
                          +3j + math.sqrt(1234)*1j,
                          -3j + math.sqrt(1234)*1j,
                          +3j - math.sqrt(1234)*1j,
-                         -3j - math.sqrt(1234)*1j], xp=xp)
+                         -3j - math.sqrt(1234)*1j], xp=xp), check_dtype=False
         )
         xp_assert_close(
             _sort_cmplx(p_bs, xp=xp),
@@ -1620,7 +1620,8 @@ class TestLp2bs_zpk:
                          (-6 + 6j) - cmath.sqrt(-1225 - 72j),
                          (-6 - 6j) - cmath.sqrt(-1225 + 72j),
                          (-6 + 6j) + cmath.sqrt(-1225 - 72j),
-                         (-6 - 6j) + cmath.sqrt(-1225 + 72j), ], xp=xp)
+                         (-6 - 6j) + cmath.sqrt(-1225 + 72j), ], xp=xp),
+            check_dtype=False
         )
         assert math.isclose(k_bs, 32.0)
 
@@ -1646,7 +1647,7 @@ class TestBilinear_zpk:
                 xp=xp
             )
         )
-        assert math.isclose(k_d, 9696/69803)
+        assert math.isclose(k_d, 9696/69803, rel_tol=4e-7)
 
 
 class TestPrototypeType:

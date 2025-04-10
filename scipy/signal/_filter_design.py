@@ -2024,7 +2024,7 @@ def lp2hp(b, a, wo=1.0):
     d = a.shape[0]
     n = b.shape[0]
     if wo != 1:
-        pwo = wo ** xp.arange(max((d, n)), dtype=xp.float64)
+        pwo = wo ** xp.arange(max((d, n)), dtype=b.dtype)
     else:
         pwo = xp.ones(max((d, n)), dtype=b.dtype)
     if d >= n:
@@ -3031,6 +3031,7 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     xp = array_namespace(z, p)
 
     z, p = map(xp.asarray, (z, p))
+    # XXX: no xp_promote here since that breaks TestButter
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     p = xpx.atleast_nd(p, ndim=1, xp=xp)
 
@@ -3121,6 +3122,7 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     xp = array_namespace(z, p)
 
     z, p = map(xp.asarray, (z, p))
+    z, p = xp_promote(z, p, force_floating=True, xp=xp)
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     p = xpx.atleast_nd(p, ndim=1, xp=xp)
 
@@ -3220,6 +3222,7 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     xp = array_namespace(z, p)
 
     z, p = map(xp.asarray, (z, p))
+    z, p = xp_promote(z, p, force_floating=True, xp=xp)
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     p = xpx.atleast_nd(p, ndim=1, xp=xp)
 
