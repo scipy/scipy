@@ -19,6 +19,7 @@ from scipy.signal._arraytools import _validate_fs
 
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import array_namespace, xp_promote, xp_size
+from scipy._lib.array_api_compat import numpy as np_compat
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -1716,7 +1717,7 @@ def _align_nums(nums, xp):
         max_width = max(xp_size(num) for num in nums)
 
         # pre-allocate
-        aligned_nums = xp.zeros((nums.shape[0], max_width))
+        aligned_nums = xp.zeros((len(nums), max_width))
 
         # Create numerators with padded zeros
         for index, num in enumerate(nums):
@@ -1801,7 +1802,11 @@ def normalize(b, a):
     Badly conditioned filter coefficients (numerator): the results may be meaningless
 
     """
-    xp = array_namespace(b, a)
+    try:
+        xp = array_namespace(b, a)
+    except TypeError:
+        # object arrays, test_ltisys.py::TestSS2TF::test_simo_round_trip
+        xp = np_compat
 
     den = xp.asarray(a)
     den = xpx.atleast_nd(den, ndim=1, xp=xp)
