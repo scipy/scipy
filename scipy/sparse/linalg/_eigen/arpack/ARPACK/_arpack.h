@@ -63,7 +63,7 @@ enum ARPACK_ido {
     ido_OPX        = 1,  // OP*x needed
     ido_BX         = 2,  // B*x needed
     ido_USER_SHIFT = 3,  // User shifts are needed
-    ido_OPX_V0     = 4,  // A random vector is needed, This option is not in the original ARPACK
+    ido_OPX_V0     = 4,  // A random vector is needed
     ido_DONE       = 99  // Done
 };
 
