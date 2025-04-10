@@ -22,7 +22,7 @@ static void snaitr(struct ARPACK_arnoldi_update_vars_s*,float*,float*,float*,int
 static void snapps(int,int*,int,float*,float*,float*,int,float*,int,float*,float*,int,float*,float*);
 static void sngets(struct ARPACK_arnoldi_update_vars_s*,int*,int*,float*,float*,float*);
 static void ssortc(const enum ARPACK_which w, const int apply, const int n, float* xreal, float* ximag, float* y);
-
+static void sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j, float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd);
 
 enum ARPACK_neupd_type {
     REGULAR,
@@ -178,7 +178,7 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
          *------------------------------------*/
 
         np = V->ncv - V->nev;
-        sngets(V, V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
+        sngets(V, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
 
          /*----------------------------------------------------*
          | Record indices of the converged wanted Ritz values  |
@@ -566,7 +566,7 @@ void
 snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
        int* ipntr, float* workd, float* workl)
 {
-    int bounds, ierr, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
+    int bounds, ierr = 0, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
 
     // perform basic checks
     if (V->n <= 0) {
@@ -725,14 +725,9 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         if (V->ido != ido_DONE) { return; }
         if (V->aup2_rnorm == 0.0)
         {
-             /*------------------------------------------------------*
-             | The initial vector is zero. It is improbable to hit   |
-             | all zeros randomly. Hence regenerate a vector and let |
-             | the rest figure things out for zero eigenvalues.      |
-             *------------------------------------------------------*/
-            generate_random_vector_d(&V->n, resid);
-            V->aup2_rnorm = snrm2_(&V->n, resid, &int1);
-            sscal_(&V->n, &V->aup2_rnorm, resid, &int1);
+            V->info = -9;
+            V->ido = ido_DONE;
+            return;
         }
         V->aup2_getv0 = 0;
         V->ido = ido_FIRST;
@@ -1265,7 +1260,7 @@ void
 snaitr(struct ARPACK_arnoldi_update_vars_s *V,  float* resid, float* rnorm,
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
-    int i, infol, iter, ipj, irj, ivj, jj, n, tmp_int;
+    int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     float smlnum = unfl * ( V->n / ulp);
     // float xtemp[2] = { 0.0 };
     const float sq2o2 = sqrtf(2.0) / 2.0;
@@ -1346,7 +1341,7 @@ LINE20:
     V->ido = ido_FIRST;
 
 LINE30:
-    sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd, &V->aitr_ierr);
+    sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
 
     if (V->aitr_ierr < 0)
@@ -1610,8 +1605,8 @@ LINE90:
          | is required.                              |
          *------------------------------------------*/
         *rnorm = V->aitr_rnorm1;
-        iter += 1;
-        if (iter < 2) { goto LINE80; }
+        V->aitr_iter += 1;
+        if (V->aitr_iter < 2) { goto LINE80; }
 
          /*------------------------------------------------*
          | Otherwise RESID is numerically in the span of V |
@@ -1668,7 +1663,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
        float* workd)
 {
     int cconj;
-    int i, ir, j, jj, int1 = 1, istart, iend, nr, tmp_int;
+    int i, ir, j, jj, int1 = 1, istart, iend = 0, nr, tmp_int;
     int kplusp = *kev + np;
     float smlnum = unfl * ( n / ulp);
     float c, f, g, h11, h21, h12, h22, h32, s, sigmar, sigmai, r, t, tau, tst1;
@@ -2102,7 +2097,7 @@ sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
     if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] -ritzr[*np-1] == 0.0))
     {
         np -= 1;
-        kev += 1;
+        *kev += 1;
     }
 
     if (V->shift == 1)
@@ -2140,10 +2135,13 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
 
          /*----------------------------------------------------*
          | Possibly generate a random starting vector in RESID |
+         | Skip if this the return of ido_RANDOM.              |
          *----------------------------------------------------*/
-        if (!(initv))
+        if (!(initv) || (V->ido != ido_RANDOM))
         {
-            generate_random_vector_d(n, resid);
+            // Request a random vector from the user into resid
+            V->ido = ido_RANDOM;
+            return;
         }
 
          /*---------------------------------------------------------*
@@ -2357,6 +2355,7 @@ ssortc(const enum ARPACK_which w, const int apply, const int n, float* xreal, fl
 }
 
 
+// The void casts are to avoid compiler warnings for unused parameters
 int
 sortc_LM(const float xre, const float xim, const float xreigap, const float ximigap)
 {
@@ -2374,6 +2373,7 @@ sortc_SM(const float xre, const float xim, const float xreigap, const float ximi
 int
 sortc_LR(const float xre, const float xim, const float xreigap, const float ximigap)
 {
+    (void)xim; (void)ximigap;
     return (xre > xreigap);
 }
 
@@ -2381,6 +2381,7 @@ sortc_LR(const float xre, const float xim, const float xreigap, const float ximi
 int
 sortc_SR(const float xre, const float xim, const float xreigap, const float ximigap)
 {
+    (void)xim; (void)ximigap;
     return (xre < xreigap);
 }
 
@@ -2388,6 +2389,7 @@ sortc_SR(const float xre, const float xim, const float xreigap, const float ximi
 int
 sortc_LI(const float xre, const float xim, const float xreigap, const float ximigap)
 {
+    (void)xre; (void)xreigap;
     return (xim > ximigap);
 }
 
@@ -2395,5 +2397,6 @@ sortc_LI(const float xre, const float xim, const float xreigap, const float ximi
 int
 sortc_SI(const float xre, const float xim, const float xreigap, const float ximigap)
 {
+    (void)xre; (void)xreigap;
     return (xim < ximigap);
 }
