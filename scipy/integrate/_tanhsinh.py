@@ -98,10 +98,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
         the result dtype), respectively.  Iteration will stop when
-        ``res.error < atol`` or  ``res.error < res.integral * rtol``. The error
-        estimate is as described in [1]_ Section 5 but with a lower bound of
-        ``eps * res.integral``. While not theoretically rigorous or
-        conservative, it is said to work well in practice. Must be non-negative
+        ``res.error < atol`` or  ``res.error < res.integral * rtol``. As discussed
+        at the end of [1]_ Section 5, the error estimate is the difference between the
+        integral estimates at successive levels, but we set a lower bound of
+        ``eps * res.integral``. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
     preserve_shape : bool, default: False
@@ -204,28 +204,28 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     ...     return np.exp(-x**2)
     >>> res = tanhsinh(f, -np.inf, np.inf)
     >>> res.integral  # true value is np.sqrt(np.pi), 1.7724538509055159
-    1.7724538509055159
+    np.float64(1.7724538509055159)
     >>> res.error  # actual error is 0
-    4.0007963937534104e-16
+    np.float64(3.935638150721656e-16)
 
     The value of the Gaussian function (bell curve) is nearly zero for
     arguments sufficiently far from zero, so the value of the integral
     over a finite interval is nearly the same.
 
     >>> tanhsinh(f, -20, 20).integral
-    1.772453850905518
+    np.float64(1.7724538509055185)
 
     However, with unfavorable integration limits, the integration scheme
     may not be able to find the important region.
 
     >>> tanhsinh(f, -np.inf, 1000).integral
-    4.500490856616431
+    np.float64(4.500490856620352)
 
     In such cases, or when there are singularities within the interval,
     break the integral into parts with endpoints at the important points.
 
     >>> tanhsinh(f, -np.inf, 0).integral + tanhsinh(f, 0, 1000).integral
-    1.772453850905404
+    np.float64(1.7724538509055159)
 
     For integration involving very large or very small magnitudes, use
     log-integration. (For illustrative purposes, the following example shows a
@@ -235,12 +235,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
 
     >>> res = tanhsinh(f, 20, 30, rtol=1e-10)
     >>> res.integral, res.error
-    (4.7819613911309014e-176, 4.670364401645202e-187)
+    (np.float64(4.781961391131032e-176), np.float64(1.3045649245298015e-189))
     >>> def log_f(x):
     ...     return -x**2
     >>> res = tanhsinh(log_f, 20, 30, log=True, rtol=np.log(1e-10))
     >>> np.exp(res.integral), np.exp(res.error)
-    (4.7819613911306924e-176, 4.670364401645093e-187)
+    (np.float64(4.781961391130964e-176), np.float64(2.718230343322627e-189))
 
     The limits of integration and elements of `args` may be broadcastable
     arrays, and integration is performed elementwise.
@@ -267,7 +267,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     >>> c = [1, 10, 30, 100]
     >>> res = tanhsinh(f, 0, 1, args=(c,), minlevel=1)
     >>> shapes
-    [(4,), (4, 34), (4, 32), (3, 64), (2, 128), (1, 256)]
+    [(4,), (4, 34), (4, 32), (4, 64), (3, 128), (2, 256), (1, 512)]
 
     To understand where these shapes are coming from - and to better
     understand how `tanhsinh` computes accurate results - note that
@@ -277,7 +277,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     accuracy:
 
     >>> res.nfev
-    array([ 67, 131, 259, 515], dtype=int32)
+    array([ 131,  259,  515, 1027], dtype=int32)
 
     The initial ``shape``, ``(4,)``, corresponds with evaluating the
     integrand at a single abscissa and all four frequencies; this is used
@@ -313,7 +313,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     >>> a = np.zeros(4)
     >>> res = tanhsinh(f, a, 1, preserve_shape=True)
     >>> shapes
-    [(4,), (4, 66), (4, 64), (4, 128), (4, 256)]
+    [(4,), (4, 66), (4, 64), (4, 128), (4, 256), (4, 512)]
 
     Here, the broadcasted shape of `a` and `b` is ``(4,)``. With
     ``preserve_shape=True``, the function may be called with argument
