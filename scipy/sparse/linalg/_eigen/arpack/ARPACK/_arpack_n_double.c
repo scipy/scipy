@@ -25,13 +25,25 @@ static void dsortc(const enum ARPACK_which w, const int apply, const int n, doub
 
 
 enum ARPACK_neupd_type {
-    REGULAR,
+    REGULAR = 0,
     SHIFTI,
     REALPART,
     IMAGPART
 };
 
-
+/* rvec : bool
+ * howmny: int, {0, 1, 2} possible values
+ * select: int[ncv], bool valued
+ * dr: double[nev + 1], real part of the Ritz values
+ * di: double[nev + 1], imaginary part of the Ritz values
+ * z: double[(nev + 1) * n], the eigenvectors of the matrix
+ * ldz: int, leading dimension of z
+ * sigmar: double, real part of the shift
+ * sigmai: double, imaginary part of the shift
+ * workev: double[3*ncv], workspace
+ * -------------
+ *
+ * */
 void
 dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
        double* dr, double* di, double* z, int ldz, double sigmar, double sigmai,
@@ -67,7 +79,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
     if ((V->mode == 1) || (V->mode == 2)) {
         TYP = REGULAR;
-    } else if ((V->mode == 3) && (sigmai = 0.0)) {
+    } else if ((V->mode == 3) && (sigmai == 0.0)) {
         TYP = SHIFTI;
     } else if (V->mode == 3) {
         TYP = REALPART;
@@ -563,8 +575,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
 
 void
-dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv,
-       int* ipntr, double* workd, double* workl)
+dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl)
 {
     int bounds, ierr, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
 
@@ -643,11 +654,10 @@ dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     ipntr[13]  = iw;
 
 
-    dnaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi],
-           &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
+    dnaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi], &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
 
      /*-------------------------------------------------*
-     | ido .ne. 99 implies use of reverse communication |
+     | ido != DONE implies use of reverse communication |
      | to compute operations involving OP or shifts.    |
      *-------------------------------------------------*/
 
