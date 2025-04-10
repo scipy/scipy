@@ -4154,7 +4154,8 @@ class TestSOSFilt:
 
         # Test simple IIR
         y_r = xp.asarray([0, 2, 4, 6, 8, 10.], dtype=dt)
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
@@ -4163,7 +4164,8 @@ class TestSOSFilt:
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = xp.asarray([1, 0], dtype=dt)
         y_r = xp.asarray([0, 1, 3, 5, 7, 9.], dtype=dt)
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
@@ -4193,12 +4195,13 @@ class TestSOSFilt:
         y_r2_a1 = xp.asarray([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        sos = tf2sos(b, a)
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
@@ -4215,7 +4218,8 @@ class TestSOSFilt:
         a = xp.asarray([0.5, 0.5], dtype=dt)
 
         # Test last axis
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))  # XXX until tf2sos is array api compatible
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x)
         for i in range(x.shape[0]):

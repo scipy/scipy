@@ -2030,7 +2030,6 @@ def lp2hp(b, a, wo=1.0):
         pwo = xp.ones(max((d, n)), dtype=b.dtype)
     if d >= n:
         outa = xp.flip(a) * pwo
-        outb = xp.concat((xp.zeros(n, dtype=b.dtype), ))
         outb = _resize(b, (d,), xp=xp)
         outb[n:] = 0.0
         outb[:n] = xp.flip(b) * pwo[:n]
