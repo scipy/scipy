@@ -1988,7 +1988,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
 
     int nmaxit, jtot, i, ii, j, k, l1, m, tmp_int = 0, l, lsv, lend, lendsv, iscale;
     double anorm = 0.0, rt1 = 0.0, rt2 = 0.0, c = 0.0, s = 0.0, g = 0.0, r = 0.0, p = 0.0;
-    double b, c, f, s, tst;
+    double b, f, tst;
 
     *info = 0;
     if (n == 0){ return; }
@@ -2055,9 +2055,9 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
             dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
         } else if (anorm < ssfmin) {
             iscale = 2;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &d[l], &n, &info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &e[l], &n, &info);
         }
         // Choose between QL and QR iteration
 
@@ -2079,7 +2079,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
                     {
                         tst = pow(fabs(e[m]), 2.0);
                         if (tst <= (eps2*fabs(d[m]))*fabs(d[m+1]) + safmin) { break; }
-                        if (m == lend-1) { m = lend;}
+                        if (m == lend-1) { m = lend; }  // No break
                     }
                     // 50
                     // 60
@@ -2241,7 +2241,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
             tmp_int = lendsv-lsv+1;
             dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
         }
         // Check for no convergence to an eigenvalue after a total of n*maxit iterations
         if (jtot >= nmaxit)
