@@ -16,7 +16,7 @@ void strmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, fl
 void sgeqr2_(int* m, int* n, float* a, int* lda, float* tau, float* work, int* info);
 void slacpy_(char* uplo, int* m, int* n, float* a, int* lda, float* b, int* ldb);
 void slaev2_(float* a, float* b, float* c, float* rt1, float* rt2, float* cs1, float* sn1);
-float slanst_(float* norm, int* n, float* d, float* e);
+float slanst_(char* norm, int* n, float* d, float* e);
 void slartg_(float* f, float* g, float* c, float* s, float* r);
 void slascl_(char* mtype, int* kl, int* ku, float* cfrom, float* cto, int* m, int* n, float* a, int* lda, int* info);
 void slasr_(char* side, char* pivot, char* direct, int* m, int* n, float* c, float* s, float* a, int* lda);
