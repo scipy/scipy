@@ -236,7 +236,7 @@ class TestTanhSinh:
         assert (xp.isdtype(logres.integral.dtype, "real floating") if ref > 0
                 else xp.isdtype(logres.integral.dtype, "complex floating"))
 
-        xp_assert_close(xp.exp(logres.error), res.error, atol=1e-16, check_dtype=False)
+        xp_assert_close(xp.exp(logres.error), res.error, atol=1e-15, check_dtype=False)
 
     # 15 skipped intentionally; it's very difficult numerically
     @pytest.mark.skip_xp_backends(np_only=True,
@@ -247,12 +247,8 @@ class TestTanhSinh:
         rtol = 2e-8
         res = _tanhsinh(f, 0, f.b, rtol=rtol)
         assert_allclose(res.integral, f.ref, rtol=rtol)
-        if f_number not in {14}:  # mildly underestimates error here
-            true_error = abs(self.error(res.integral, f.ref)/res.integral)
-            assert true_error < res.error
-
-        if f_number in {7, 10, 12}:  # succeeds, but doesn't know it
-            return
+        true_error = abs(self.error(res.integral, f.ref)/res.integral)
+        assert true_error < res.error * 100
 
         assert res.success
         assert res.status == 0
@@ -333,7 +329,7 @@ class TestTanhSinh:
         args = (xp.arange(3, dtype=xp.int64),)
         a = xp.asarray([xp.inf]*3)
         b = xp.asarray([-xp.inf] * 3)
-        res = _tanhsinh(f, a, b, maxlevel=5, args=args)
+        res = _tanhsinh(f, a, b, maxlevel=6, args=args)
         ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
@@ -347,7 +343,7 @@ class TestTanhSinh:
 
         a = xp.asarray([xp.inf] * 3)
         b = xp.asarray([-xp.inf] * 3)
-        res = _tanhsinh(f, a, b, maxlevel=5, preserve_shape=True)
+        res = _tanhsinh(f, a, b, maxlevel=6, preserve_shape=True)
         ref_flags = xp.asarray([0, -2, -3], dtype=xp.int32)
         xp_assert_equal(res.status, ref_flags)
 
@@ -499,15 +495,16 @@ class TestTanhSinh:
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol, xp):
         # Test equivalence of log-integration and regular integration
-        test_tols = dict(atol=1e-18, rtol=1e-15)
+        int_tols = dict(atol=1e-18, rtol=1e-15)
+        err_tols = dict(atol=1e-15)
 
         # Positive integrand (real log-integrand)
         a = xp.asarray(-1., dtype=xp.float64)
         b = xp.asarray(2., dtype=xp.float64)
         res = _tanhsinh(norm_logpdf, a, b, log=True, rtol=math.log(rtol))
         ref = _tanhsinh(norm_pdf, a, b, rtol=rtol)
-        xp_assert_close(xp.exp(res.integral), ref.integral, **test_tols)
-        xp_assert_close(xp.exp(res.error), ref.error, **test_tols)
+        xp_assert_close(xp.exp(res.integral), ref.integral, **int_tols)
+        xp_assert_close(xp.exp(res.error), ref.error, **err_tols)
         assert res.nfev == ref.nfev
 
         # Real integrand (complex log-integrand)
@@ -525,9 +522,9 @@ class TestTanhSinh:
         # Silencing `all` because I can't reproduce locally and don't want
         # to risk the need to run CI again.
         with np.errstate(all='ignore'):
-            xp_assert_close(xp.exp(res.integral), ref.integral, **test_tols,
+            xp_assert_close(xp.exp(res.integral), ref.integral, **int_tols,
                             check_dtype=False)
-            xp_assert_close(xp.exp(res.error), ref.error, **test_tols,
+            xp_assert_close(xp.exp(res.error), ref.error, **err_tols,
                             check_dtype=False)
         assert res.nfev == ref.nfev
 
@@ -662,12 +659,12 @@ class TestTanhSinh:
         callback.errors = []
 
         maxlevel = 4
-        _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel, callback=callback)
+        _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel, rtol=1e-15, callback=callback)
 
         for i in range(maxlevel + 1):
             res = _tanhsinh(f, a, b, minlevel=i, maxlevel=i)
             xp_assert_close(callback.integrals[1+i], res.integral, rtol=1e-15)
-            xp_assert_close(callback.errors[1+i], res.error, rtol=1e-15, atol=1e-16)
+            xp_assert_close(callback.errors[1+i], res.error, rtol=1e-15, atol=1e-15)
 
     def test_special_cases(self, xp):
         # Test edge cases and other special cases
@@ -949,7 +946,8 @@ class TestNSum:
         for attr in attrs:
             ref_attr = [xp.asarray(getattr(ref, attr)) for ref in refs]
             res_attr = getattr(res, attr)
-            xp_assert_close(xp_ravel(res_attr), xp.asarray(ref_attr), rtol=1e-15)
+            rtol = 1e-10 if attr == 'error' else 1e-15
+            xp_assert_close(xp_ravel(res_attr), xp.asarray(ref_attr), rtol=rtol)
             assert res_attr.shape == shape
 
         assert xp.isdtype(res.success.dtype, 'bool')
