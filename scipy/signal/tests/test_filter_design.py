@@ -1366,6 +1366,7 @@ class TestLp2lp:
 
 class TestLp2hp:
 
+    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([0.25059432325190018])
         a = xp.asarray(
@@ -1380,6 +1381,7 @@ class TestLp2hp:
 
 class TestLp2bp:
 
+    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 2, 2, 1])
@@ -1394,6 +1396,7 @@ class TestLp2bp:
 
 class TestLp2bs:
 
+    @skip_xp_backends(eager_only=True, reason="in-place item assignment")
     def test_basic(self, xp):
         b = xp.asarray([1])
         a = xp.asarray([1, 1])
