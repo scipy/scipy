@@ -18,6 +18,7 @@ static void dseigt(double, int, double*, int, double*, double*, double*, int*);
 static void dsaitr(struct ARPACK_arnoldi_update_vars_d*, double*, double*, double*, int, double*, int, int*, double*);
 static void dsapps(int, int*, int, double*, double*, int, double*, int, double*, double* , int, double*);
 static void dsgets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, double*, double*, double*);
+static void dgetv0(struct ARPACK_arnoldi_update_vars_d *, int, int, int, double*, int, double*, double*, int*, double*);
 static void dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, double* x2);
 static void dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a);
 static void dstqrb(int n, double* d, double* e, double* z, double* work, int* info);
@@ -45,7 +46,7 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
     if (V->nconv == 0) { return; }
 
     ierr = 0;
-    enum ARPACK_seupd_type TYP;
+    enum ARPACK_seupd_type TYP = REGULAR;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -495,7 +496,8 @@ dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
        int* ipntr, double* workd, double* workl)
 {
 
-    int bounds, ierr, ih, iq, iw, j, ldh, ldq, nev0, next, ritz;
+    int bounds = 0, ierr = 0, ih = 0, iq = 0, iw = 0, j = 0, ldh = 0, ldq = 0;
+    int nev0 = 0, next = 0, ritz = 0;
 
     if (V->ido == ido_FIRST)
     {
@@ -601,11 +603,12 @@ dsaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
        double* h, int ldh, double* ritz, double* bounds,
        double* q, int ldq, double* workl, int* ipntr, double* workd)
 {
-    enum ARPACK_which temp_which;
-    int ierr, int1 = 1, j, nev0, tmp_int, tmp_int2;
+    int ierr, int1 = 1, j, nev0 = 0, tmp_int, tmp_int2;
     int nevbef, nevd2, nevm2;
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0;
+    // Initialize to silence the compiler warning
+    enum ARPACK_which temp_which = which_LM;
 
     if (V->ido == ido_FIRST)
     {
@@ -661,14 +664,9 @@ dsaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
         if (V->ido != 99) { return; }
         if (V->aup2_rnorm == 0.0)
         {
-             /*------------------------------------------------------*
-             | The initial vector is zero. It is improbable to hit   |
-             | all zeros randomly. Hence regenerate a vector and let |
-             | the rest figure things out for zero eigenvalues.      |
-             *------------------------------------------------------*/
-            generate_random_vector_d(&V->n, resid);
-            V->aup2_rnorm = dnrm2_(&V->n, resid, &int1);
-            dscal_(&V->n, &V->aup2_rnorm, resid, &int1);
+            V->info = -9;
+            V->ido = ido_DONE;
+            return;
         }
         V->aup2_getv0 = 0;
         V->ido = 0;
@@ -1198,7 +1196,7 @@ LINE20:
     V->aitr_restart = 1;
     V->ido = ido_FIRST;
 LINE30:
-    dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd, &V->aitr_ierr);
+    dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
     if (V->aitr_ierr < 0)
     {
@@ -1552,6 +1550,7 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
     double a1, a2, a3, a4, big, c, f, g, r, s, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
 
     itop = 0;
+    iend = 0;
     kplusp = *kev + np;
 
      /*-------------------------------------------*
@@ -1868,6 +1867,180 @@ dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz, 
 
 
 void
+dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
+       double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd)
+{
+    int jj, int1 = 1;
+    char *TRANS = "T";
+    const double sq2o2 = sqrt(2.0) / 2.0;
+    double dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;;
+
+    if (V->ido == ido_FIRST)
+    {
+        V->info = 0;
+        V->getv0_iter = 0;
+        V->getv0_first = 0;
+        V->getv0_orth = 0;
+
+         /*----------------------------------------------------*
+         | Possibly generate a random starting vector in RESID |
+         | Skip if this the return of ido_RANDOM.              |
+         *----------------------------------------------------*/
+        if (!(initv) || (V->ido != ido_RANDOM))
+        {
+            // Request a random vector from the user into resid
+            V->ido = ido_RANDOM;
+            return;
+        }
+
+         /*---------------------------------------------------------*
+         | Force the starting vector into the range of OP to handle |
+         | the generalized problem when B is possibly (singular).   |
+         *---------------------------------------------------------*/
+
+        if (V->getv0_itry == 1)
+        {
+            ipntr[0] = 0;
+            ipntr[1] = n;
+            dcopy_(&n, resid, &int1, workd, &int1);
+            V->ido = ido_OPX;
+            return;
+        } else if ((V->getv0_itry > 1) && (V->bmat == 1))
+        {
+            dcopy_(&n, resid, &int1, &workd[n], &int1);
+        }
+    }
+
+     /*----------------------------------------*
+     | Back from computing OP*(initial-vector) |
+     *----------------------------------------*/
+
+    if (V->getv0_first) { goto LINE20; }
+
+     /*-----------------------------------------------*
+     | Back from computing OP*(orthogonalized-vector) |
+     *-----------------------------------------------*/
+
+    if (V->getv0_orth) { goto LINE40; }
+
+     /*-----------------------------------------------------*
+     | Starting vector is now in the range of OP; r = OP*r; |
+     | Compute B-norm of starting vector.                   |
+     *-----------------------------------------------------*/
+
+    V->getv0_first = 1;
+    if (V->getv0_itry == 1)
+    {
+        dcopy_(&n, &workd[n], &int1, resid, &int1);
+    }
+    if (V->bmat)
+    {
+        ipntr[0] = n;
+        ipntr[1] = 0;
+        V->ido = ido_BX;
+        return;
+    }
+
+LINE20:
+
+    V->getv0_first = 0;
+    if (V->bmat)
+    {
+        V->getv0_rnorm0 = ddot_(&n, resid, &int1, workd, &int1);
+        V->getv0_rnorm0 = sqrt(fabs(V->getv0_rnorm0));
+    } else {
+        V->getv0_rnorm0 = dnrm2_(&n, resid, &int1);
+    }
+    *rnorm = V->getv0_rnorm0;
+
+     /*--------------------------------------------%
+     | Exit if this is the very first Arnoldi step |
+     *--------------------------------------------*/
+
+    if (j == 0)
+    {
+        V->ido = ido_DONE;
+        return;
+    }
+
+     /*--------------------------------------------------------------*
+     | Otherwise need to B-orthogonalize the starting vector against |
+     | the current Arnoldi basis using Gram-Schmidt with iter. ref.  |
+     | This is the case where an invariant subspace is encountered   |
+     | in the middle of the Arnoldi factorization.                   |
+     |                                                               |
+     |       s = V^{T}*B*r;   r = r - V*s;                           |
+     |                                                               |
+     | Stopping criteria used for iter. ref. is discussed in         |
+     | Parlett's book, page 107 and in Gragg & Reichel TOMS paper.   |
+     *--------------------------------------------------------------*/
+
+    V->getv0_orth = 1;
+
+LINE30:
+    dgemv_(TRANS, &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
+    TRANS = "N";
+    dgemv_(TRANS, &n, &j, &dblm1, v, &ldv, workd, &int1, &dbl1, &workd[n], &int1);
+
+     /*---------------------------------------------------------*
+     | Compute the B-norm of the orthogonalized starting vector |
+     *---------------------------------------------------------*/
+
+    if (V->bmat)
+    {
+        dcopy_(&n, resid, &int1, &workd[n], &int1);
+        ipntr[0] = n;
+        ipntr[1] = 0;
+        V->ido = ido_BX;
+        return;
+    } else {
+        dcopy_(&n, resid, &int1, workd, &int1);
+    }
+
+LINE40:
+    if (V->bmat)
+    {
+        *rnorm = ddot_(&n, resid, &int1, workd, &int1);
+        *rnorm = sqrt(fabs(*rnorm));
+    } else {
+        *rnorm = dnrm2_(&n, resid, &int1);
+    }
+
+     /*-------------------------------------*
+     | Check for further orthogonalization. |
+     *-------------------------------------*/
+
+    if (*rnorm > sq2o2*V->getv0_rnorm0)
+    {
+        V->ido = ido_DONE;
+        return;
+    }
+
+    V->getv0_iter += 1;
+    if (V->getv0_iter < 5)
+    {
+         /*----------------------------------*
+         | Perform iterative refinement step |
+         *----------------------------------*/
+        V->getv0_rnorm0 = *rnorm;
+        goto LINE30;
+    } else {
+         /*-----------------------------------*
+         | Iterative refinement step "failed" |
+         *-----------------------------------*/
+
+        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0; }
+        *rnorm = 0.0;
+        V->info = -1;
+    }
+
+    V->ido = ido_DONE;
+
+    return;
+}
+
+
+void
 dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, double* x2)
 {
     int i, igap, j;
@@ -1978,17 +2151,17 @@ dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int n
 void
 dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
 {
-    const int itwo = 2, ione = 1, izero = 0;
-    const double dzero = 0.0, done = 1.0;
-    const double eps2 = pow(ulp, 2.0);
-    const double safmin = unfl;
-    const double safmax = (1.0 / safmin);
-    const double ssfmax = sqrt(safmax) / 3.0;
-    const double ssfmin = sqrt(safmin) / eps2;
+    int ione = 1, izero = 0;
+    double done = 1.0;
+    double eps2 = pow(ulp, 2.0);
+    double safmin = unfl;
+    double safmax = (1.0 / safmin);
+    double ssfmax = sqrt(safmax) / 3.0;
+    double ssfmin = sqrt(safmin) / eps2;
 
-    int nmaxit, jtot, i, ii, j, k, l1, m, tmp_int = 0, l, lsv, lend, lendsv, iscale;
+    int nmaxit, jtot, i, ii, j, k, l1, m = 0, tmp_int = 0, l, lsv, lend, lendsv, iscale;
     double anorm = 0.0, rt1 = 0.0, rt2 = 0.0, c = 0.0, s = 0.0, g = 0.0, r = 0.0, p = 0.0;
-    double b, c, f, s, tst;
+    double b, f, tst;
 
     *info = 0;
     if (n == 0){ return; }
@@ -2050,14 +2223,14 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
         if (anorm > ssfmax)
         {
             iscale = 1;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, info);
         } else if (anorm < ssfmin) {
             iscale = 2;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &d[l], &n, info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
+            dlascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &e[l], &n, info);
         }
         // Choose between QL and QR iteration
 
@@ -2079,7 +2252,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
                     {
                         tst = pow(fabs(e[m]), 2.0);
                         if (tst <= (eps2*fabs(d[m]))*fabs(d[m+1]) + safmin) { break; }
-                        if (m == lend-1) { m = lend;}
+                        if (m == lend-1) { m = lend; }  // No break
                     }
                     // 50
                     // 60
@@ -2234,14 +2407,14 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
         if (iscale == 1)
         {
             tmp_int = lendsv-lsv+1;
-            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
         } else if (iscale == 2) {
             tmp_int = lendsv-lsv+1;
-            dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
             tmp_int -= 1;
-            dlascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            dlascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
         }
         // Check for no convergence to an eigenvalue after a total of n*maxit iterations
         if (jtot >= nmaxit)

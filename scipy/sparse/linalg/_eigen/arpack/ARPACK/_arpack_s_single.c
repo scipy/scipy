@@ -18,6 +18,7 @@ static void sseigt(float, int, float*, int, float*, float*, float*, int*);
 static void ssaitr(struct ARPACK_arnoldi_update_vars_s*, float*, float*, float*, int, float*, int, int*, float*);
 static void ssapps(int, int*, int, float*, float*, int, float*, int, float*, float* , int, float*);
 static void ssgets(struct ARPACK_arnoldi_update_vars_s*, int*, int*, float*, float*, float*);
+static void sgetv0(struct ARPACK_arnoldi_update_vars_s *, int, int, int, float*, int, float*, float*, int*, float*);
 static void ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float* x2);
 static void ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a);
 static void sstqrb(int n, float* d, float* e, float* z, float* work, int* info);
@@ -45,7 +46,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
     if (V->nconv == 0) { return; }
 
     ierr = 0;
-    enum ARPACK_seupd_type TYP;
+    enum ARPACK_seupd_type TYP = REGULAR;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -495,7 +496,8 @@ ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
        int* ipntr, float* workd, float* workl)
 {
 
-    int bounds, ierr, ih, iq, iw, j, ldh, ldq, nev0, next, ritz;
+    int bounds = 0, ierr = 0, ih = 0, iq = 0, iw = 0, j = 0, ldh = 0, ldq = 0;
+    int nev0 = 0, next = 0, ritz = 0;
 
     if (V->ido == ido_FIRST)
     {
@@ -601,11 +603,12 @@ ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
        float* h, int ldh, float* ritz, float* bounds,
        float* q, int ldq, float* workl, int* ipntr, float* workd)
 {
-    enum ARPACK_which temp_which;
-    int ierr, int1 = 1, j, nev0, tmp_int, tmp_int2;
+    int ierr, int1 = 1, j, nev0 = 0, tmp_int, tmp_int2;
     int nevbef, nevd2, nevm2;
     const float eps23 = powf(ulp, 2.0 / 3.0);
     float temp = 0.0;
+    // Initize to silence the compiler warning
+    enum ARPACK_which temp_which = which_LM;
 
     if (V->ido == ido_FIRST)
     {
@@ -661,14 +664,9 @@ ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         if (V->ido != 99) { return; }
         if (V->aup2_rnorm == 0.0)
         {
-             /*------------------------------------------------------*
-             | The initial vector is zero. It is improbable to hit   |
-             | all zeros randomly. Hence regenerate a vector and let |
-             | the rest figure things out for zero eigenvalues.      |
-             *------------------------------------------------------*/
-            generate_random_vector_d(&V->n, resid);
-            V->aup2_rnorm = snrm2_(&V->n, resid, &int1);
-            sscal_(&V->n, &V->aup2_rnorm, resid, &int1);
+            V->info = -9;
+            V->ido = ido_DONE;
+            return;
         }
         V->aup2_getv0 = 0;
         V->ido = 0;
@@ -1198,7 +1196,7 @@ LINE20:
     V->aitr_restart = 1;
     V->ido = ido_FIRST;
 LINE30:
-    sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd, &V->aitr_ierr);
+    sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
     if (V->aitr_ierr < 0)
     {
@@ -1552,6 +1550,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
     float a1, a2, a3, a4, big, c, f, g, r, s, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
 
     itop = 0;
+    iend = 0;
     kplusp = *kev + np;
 
      /*-------------------------------------------*
@@ -1868,6 +1867,180 @@ ssgets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np, float* ritz, f
 
 
 void
+sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
+       float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd)
+{
+    int jj, int1 = 1;
+    char *TRANS = "T";
+    const float sq2o2 = sqrtf(2.0) / 2.0;
+    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;;
+
+    if (V->ido == ido_FIRST)
+    {
+        V->info = 0;
+        V->getv0_iter = 0;
+        V->getv0_first = 0;
+        V->getv0_orth = 0;
+
+         /*----------------------------------------------------*
+         | Possibly generate a random starting vector in RESID |
+         | Skip if this the return of ido_RANDOM.              |
+         *----------------------------------------------------*/
+        if (!(initv) || (V->ido != ido_RANDOM))
+        {
+            // Request a random vector from the user into resid
+            V->ido = ido_RANDOM;
+            return;
+        }
+
+         /*---------------------------------------------------------*
+         | Force the starting vector into the range of OP to handle |
+         | the generalized problem when B is possibly (singular).   |
+         *---------------------------------------------------------*/
+
+        if (V->getv0_itry == 1)
+        {
+            ipntr[0] = 0;
+            ipntr[1] = n;
+            scopy_(&n, resid, &int1, workd, &int1);
+            V->ido = -1;
+            return;
+        } else if ((V->getv0_itry > 1) && (V->bmat == 1))
+        {
+            scopy_(&n, resid, &int1, &workd[n], &int1);
+        }
+    }
+
+     /*----------------------------------------*
+     | Back from computing OP*(initial-vector) |
+     *----------------------------------------*/
+
+    if (V->getv0_first) { goto LINE20; }
+
+     /*-----------------------------------------------*
+     | Back from computing OP*(orthogonalized-vector) |
+     *-----------------------------------------------*/
+
+    if (V->getv0_orth) { goto LINE40; }
+
+     /*-----------------------------------------------------*
+     | Starting vector is now in the range of OP; r = OP*r; |
+     | Compute B-norm of starting vector.                   |
+     *-----------------------------------------------------*/
+
+    V->getv0_first = 1;
+    if (V->getv0_itry == 1)
+    {
+        scopy_(&n, &workd[n], &int1, resid, &int1);
+    }
+    if (V->bmat)
+    {
+        ipntr[0] = n;
+        ipntr[1] = 0;
+        V->ido = ido_BX;
+        return;
+    }
+
+LINE20:
+
+    V->getv0_first = 0;
+    if (V->bmat)
+    {
+        V->getv0_rnorm0 = sdot_(&n, resid, &int1, workd, &int1);
+        V->getv0_rnorm0 = sqrtf(fabsf(V->getv0_rnorm0));
+    } else {
+        V->getv0_rnorm0 = snrm2_(&n, resid, &int1);
+    }
+    *rnorm = V->getv0_rnorm0;
+
+     /*--------------------------------------------%
+     | Exit if this is the very first Arnoldi step |
+     *--------------------------------------------*/
+
+    if (j == 0)
+    {
+        V->ido = ido_DONE;
+        return;
+    }
+
+     /*--------------------------------------------------------------*
+     | Otherwise need to B-orthogonalize the starting vector against |
+     | the current Arnoldi basis using Gram-Schmidt with iter. ref.  |
+     | This is the case where an invariant subspace is encountered   |
+     | in the middle of the Arnoldi factorization.                   |
+     |                                                               |
+     |       s = V^{T}*B*r;   r = r - V*s;                           |
+     |                                                               |
+     | Stopping criteria used for iter. ref. is discussed in         |
+     | Parlett's book, page 107 and in Gragg & Reichel TOMS paper.   |
+     *--------------------------------------------------------------*/
+
+    V->getv0_orth = 1;
+
+LINE30:
+    sgemv_(TRANS, &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
+    TRANS = "N";
+    sgemv_(TRANS, &n, &j, &dblm1, v, &ldv, workd, &int1, &dbl1, &workd[n], &int1);
+
+     /*---------------------------------------------------------*
+     | Compute the B-norm of the orthogonalized starting vector |
+     *---------------------------------------------------------*/
+
+    if (V->bmat)
+    {
+        scopy_(&n, resid, &int1, &workd[n], &int1);
+        ipntr[0] = n;
+        ipntr[1] = 0;
+        V->ido = ido_BX;
+        return;
+    } else {
+        scopy_(&n, resid, &int1, workd, &int1);
+    }
+
+LINE40:
+    if (V->bmat)
+    {
+        *rnorm = sdot_(&n, resid, &int1, workd, &int1);
+        *rnorm = sqrtf(fabsf(*rnorm));
+    } else {
+        *rnorm = snrm2_(&n, resid, &int1);
+    }
+
+     /*-------------------------------------*
+     | Check for further orthogonalization. |
+     *-------------------------------------*/
+
+    if (*rnorm > sq2o2*V->getv0_rnorm0)
+    {
+        V->ido = ido_DONE;
+        return;
+    }
+
+    V->getv0_iter += 1;
+    if (V->getv0_iter < 5)
+    {
+         /*----------------------------------*
+         | Perform iterative refinement step |
+         *----------------------------------*/
+        V->getv0_rnorm0 = *rnorm;
+        goto LINE30;
+    } else {
+         /*-----------------------------------*
+         | Iterative refinement step "failed" |
+         *-----------------------------------*/
+
+        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0; }
+        *rnorm = 0.0;
+        V->info = -1;
+    }
+
+    V->ido = ido_DONE;
+
+    return;
+}
+
+
+void
 ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float* x2)
 {
     int i, igap, j;
@@ -1978,17 +2151,17 @@ ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na
 void
 sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
 {
-    const int itwo = 2, ione = 1, izero = 0;
-    const float dzero = 0.0, done = 1.0;
-    const float eps2 = powf(ulp, 2.0);
-    const float safmin = unfl;
-    const float safmax = (1.0 / safmin);
-    const float ssfmax = sqrtf(safmax) / 3.0;
-    const float ssfmin = sqrtf(safmin) / eps2;
+    int ione = 1, izero = 0;
+    float done = 1.0;
+    float eps2 = powf(ulp, 2.0);
+    float safmin = unfl;
+    float safmax = (1.0 / safmin);
+    float ssfmax = sqrtf(safmax) / 3.0;
+    float ssfmin = sqrtf(safmin) / eps2;
 
-    int nmaxit, jtot, i, ii, j, k, l1, m, tmp_int = 0, l, lsv, lend, lendsv, iscale;
+    int nmaxit, jtot, i, ii, j, k, l1, m = 0, tmp_int = 0, l, lsv, lend, lendsv, iscale;
     float anorm = 0.0, rt1 = 0.0, rt2 = 0.0, c = 0.0, s = 0.0, g = 0.0, r = 0.0, p = 0.0;
-    float b, c, f, s, tst;
+    float b, f, tst;
 
     *info = 0;
     if (n == 0){ return; }
@@ -2050,14 +2223,14 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
         if (anorm > ssfmax)
         {
             iscale = 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, &info);
+            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
+            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, info);
         } else if (anorm < ssfmin) {
             iscale = 2;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, &info);
+            slascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &d[l], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, &info);
+            slascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &e[l], &n, info);
         }
         // Choose between QL and QR iteration
 
@@ -2079,7 +2252,7 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                     {
                         tst = powf(fabsf(e[m]), 2.0);
                         if (tst <= (eps2*fabsf(d[m]))*fabsf(d[m+1]) + safmin) { break; }
-                        if (m == lend-1) { m = lend;}
+                        if (m == lend-1) { m = lend;}  // No break
                     }
                     // 50
                     // 60
@@ -2130,7 +2303,7 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 {
                     f = s * e[i];
                     b = c * e[i];
-                    dlartg_(&g, &f, &c, &s, &r);
+                    slartg_(&g, &f, &c, &s, &r);
                     if (i != m - 1) { e[i+1] = r; }
                     g = d[i+1] - p;
                     r = (d[i] - g)*s + 2.0*c*b;
@@ -2207,7 +2380,7 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 {
                     f = s * e[i];
                     b = c * e[i];
-                    dlartg_(&g, &f, &c, &s, &r);
+                    slartg_(&g, &f, &c, &s, &r);
                     if (i != m) { e[i-1] = r; }
                     g = d[i] - p;
                     r = (d[i+1] - g)*s + 2.0*c*b;
@@ -2234,14 +2407,14 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
         if (iscale == 1)
         {
             tmp_int = lendsv-lsv+1;
-            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
+            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
         } else if (iscale == 2) {
             tmp_int = lendsv-lsv+1;
-            slascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, &info);
+            slascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, &info);
+            slascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
         }
         // Check for no convergence to an eigenvalue after a total of n*maxit iterations
         if (jtot >= nmaxit)

@@ -16,7 +16,7 @@ void dtrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, do
 void dgeqr2_(int* m, int* n, double* a, int* lda, double* tau, double* work, int* info);
 void dlacpy_(char* uplo, int* m, int* n, double* a, int* lda, double* b, int* ldb);
 void dlaev2_(double* a, double* b, double* c, double* rt1, double* rt2, double* cs1, double* sn1);
-double dlanst_(double* norm, int* n, double* d, double* e);
+double dlanst_(char* norm, int* n, double* d, double* e);
 void dlartg_(double* f, double* g, double* c, double* s, double* r);
 void dlascl_(char* mtype, int* kl, int* ku, double* cfrom, double* cto, int* m, int* n, double* a, int* lda, int* info);
 void dlasr_(char* side, char* pivot, char* direct, int* m, int* n, double* c, double* s, double* a, int* lda);
