@@ -246,6 +246,13 @@ class TestNonlin:
         nonlin.newton_krylov(F, F.xin,
                              method=user_provided_callable_method_enh_21986)
 
+    def test_non_inner_prefix(self):
+        with pytest.raises(ValueError,
+                           match="Unknown parameter"
+                           ):
+            # Pass a parameter without 'inner_' prefix
+            nonlin.newton_krylov(F, F.xin, method="minres", invalid_param=1e-5)
+
 
 class TestSecant:
     """Check that some Jacobian approximations satisfy the secant condition"""
