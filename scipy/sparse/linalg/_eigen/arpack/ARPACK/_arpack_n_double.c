@@ -22,16 +22,28 @@ static void dnaitr(struct ARPACK_arnoldi_update_vars_d*,double*,double*,double*,
 static void dnapps(int,int*,int,double*,double*,double*,int,double*,int,double*,double*,int,double*,double*);
 static void dngets(struct ARPACK_arnoldi_update_vars_d*,int*,int*,double*,double*,double*);
 static void dsortc(const enum ARPACK_which w, const int apply, const int n, double* xreal, double* ximag, double* y);
-
+static void dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j, double* v, int ldv, double* resid, double* rnorm, int* ipntr, double* workd);
 
 enum ARPACK_neupd_type {
-    REGULAR,
+    REGULAR = 0,
     SHIFTI,
     REALPART,
     IMAGPART
 };
 
-
+/* rvec : bool
+ * howmny: int, {0, 1, 2} possible values
+ * select: int[ncv], bool valued
+ * dr: double[nev + 1], real part of the Ritz values
+ * di: double[nev + 1], imaginary part of the Ritz values
+ * z: double[(nev + 1) * n], the eigenvectors of the matrix
+ * ldz: int, leading dimension of z
+ * sigmar: double, real part of the shift
+ * sigmai: double, imaginary part of the shift
+ * workev: double[3*ncv], workspace
+ * -------------
+ *
+ * */
 void
 dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
        double* dr, double* di, double* z, int ldz, double sigmar, double sigmai,
@@ -67,7 +79,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
     if ((V->mode == 1) || (V->mode == 2)) {
         TYP = REGULAR;
-    } else if ((V->mode == 3) && (sigmai = 0.0)) {
+    } else if ((V->mode == 3) && (sigmai == 0.0)) {
         TYP = SHIFTI;
     } else if (V->mode == 3) {
         TYP = REALPART;
@@ -563,10 +575,9 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
 
 void
-dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv,
-       int* ipntr, double* workd, double* workl)
+dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl)
 {
-    int bounds, ierr, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
+    int bounds, ierr = 0, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
 
     // perform basic checks
     if (V->n <= 0) {
@@ -643,11 +654,10 @@ dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     ipntr[13]  = iw;
 
 
-    dnaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi],
-           &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
+    dnaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi], &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
 
      /*-------------------------------------------------*
-     | ido .ne. 99 implies use of reverse communication |
+     | ido != DONE implies use of reverse communication |
      | to compute operations involving OP or shifts.    |
      *-------------------------------------------------*/
 
@@ -725,14 +735,9 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
         if (V->ido != ido_DONE) { return; }
         if (V->aup2_rnorm == 0.0)
         {
-             /*------------------------------------------------------*
-             | The initial vector is zero. It is improbable to hit   |
-             | all zeros randomly. Hence regenerate a vector and let |
-             | the rest figure things out for zero eigenvalues.      |
-             *------------------------------------------------------*/
-            generate_random_vector_d(&V->n, resid);
-            V->aup2_rnorm = dnrm2_(&V->n, resid, &int1);
-            dscal_(&V->n, &V->aup2_rnorm, resid, &int1);
+            V->info = -9;
+            V->ido = ido_DONE;
+            return;
         }
         V->aup2_getv0 = 0;
         V->ido = ido_FIRST;
@@ -1265,7 +1270,7 @@ void
 dnaitr(struct ARPACK_arnoldi_update_vars_d *V,  double* resid, double* rnorm,
        double* v, int ldv, double* h, int ldh, int* ipntr, double* workd)
 {
-    int i, infol, iter, ipj, irj, ivj, jj, n, tmp_int;
+    int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     double smlnum = unfl * ( V->n / ulp);
     // double xtemp[2] = { 0.0 };
     const double sq2o2 = sqrt(2.0) / 2.0;
@@ -1346,7 +1351,7 @@ LINE20:
     V->ido = ido_FIRST;
 
 LINE30:
-    dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd, &V->aitr_ierr);
+    dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
 
     if (V->aitr_ierr < 0)
@@ -1610,8 +1615,8 @@ LINE90:
          | is required.                              |
          *------------------------------------------*/
         *rnorm = V->aitr_rnorm1;
-        iter += 1;
-        if (iter < 2) { goto LINE80; }
+        V->aitr_iter += 1;
+        if (V->aitr_iter < 2) { goto LINE80; }
 
          /*------------------------------------------------*
          | Otherwise RESID is numerically in the span of V |
@@ -1668,7 +1673,7 @@ dnapps(int n, int* kev, int np, double* shiftr, double* shifti, double* v,
        double* workd)
 {
     int cconj;
-    int i, ir, j, jj, int1 = 1, istart, iend, nr, tmp_int;
+    int i, ir, j, jj, int1 = 1, istart, iend = 0, nr, tmp_int;
     int kplusp = *kev + np;
     double smlnum = unfl * ( n / ulp);
     double c, f, g, h11, h21, h12, h22, h32, s, sigmar, sigmai, r, t, tau, tst1;
@@ -2102,7 +2107,7 @@ dngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
     if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] -ritzr[*np-1] == 0.0))
     {
         np -= 1;
-        kev += 1;
+        *kev += 1;
     }
 
     if (V->shift == 1)
@@ -2140,10 +2145,13 @@ dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
 
          /*----------------------------------------------------*
          | Possibly generate a random starting vector in RESID |
+         | Skip if this the return of ido_RANDOM.              |
          *----------------------------------------------------*/
-        if (!(initv))
+        if (!(initv) || (V->ido != ido_RANDOM))
         {
-            generate_random_vector_d(n, resid);
+            // Request a random vector from the user into resid
+            V->ido = ido_RANDOM;
+            return;
         }
 
          /*---------------------------------------------------------*
@@ -2156,7 +2164,7 @@ dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
             ipntr[0] = 0;
             ipntr[1] = n;
             dcopy_(&n, resid, &int1, workd, &int1);
-            V->ido = -1;
+            V->ido = ido_OPX;
             return;
         } else if ((V->getv0_itry > 1) && (V->bmat == 1))
         {
@@ -2357,6 +2365,7 @@ dsortc(const enum ARPACK_which w, const int apply, const int n, double* xreal, d
 }
 
 
+// The void casts are to avoid compiler warnings for unused parameters
 int
 sortc_LM(const double xre, const double xim, const double xreigap, const double ximigap)
 {
@@ -2374,6 +2383,7 @@ sortc_SM(const double xre, const double xim, const double xreigap, const double 
 int
 sortc_LR(const double xre, const double xim, const double xreigap, const double ximigap)
 {
+    (void)xim; (void)ximigap;
     return (xre > xreigap);
 }
 
@@ -2381,6 +2391,7 @@ sortc_LR(const double xre, const double xim, const double xreigap, const double 
 int
 sortc_SR(const double xre, const double xim, const double xreigap, const double ximigap)
 {
+    (void)xim; (void)ximigap;
     return (xre < xreigap);
 }
 
@@ -2388,6 +2399,7 @@ sortc_SR(const double xre, const double xim, const double xreigap, const double 
 int
 sortc_LI(const double xre, const double xim, const double xreigap, const double ximigap)
 {
+    (void)xre; (void)xreigap;
     return (xim > ximigap);
 }
 
@@ -2395,5 +2407,6 @@ sortc_LI(const double xre, const double xim, const double xreigap, const double 
 int
 sortc_SI(const double xre, const double xim, const double xreigap, const double ximigap)
 {
+    (void)xre; (void)xreigap;
     return (xim < ximigap);
 }
