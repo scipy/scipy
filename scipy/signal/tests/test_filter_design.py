@@ -21,12 +21,12 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           firwin, freqs_zpk, freqs, freqz, freqz_zpk,
                           gammatone, group_delay, iircomb, iirdesign, iirfilter,
                           iirnotch, iirpeak, lp2bp, lp2bs, lp2hp, lp2lp, normalize,
-                          medfilt, order_filter,
                           sos2tf, sos2zpk, sosfreqz, freqz_sos, tf2sos, tf2zpk, zpk2sos,
                           zpk2tf, bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
+
 
 try:
     import mpmath
@@ -4493,86 +4493,3 @@ class TestGammatone:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             gammatone(440, 'iir', fs=np.array([10, 20]))
-
-
-class TestOrderFilter:
-    def test_doc_example(self):
-        x = np.arange(25).reshape(5, 5)
-        domain = np.identity(3)
-
-        # minimum of elements 1,3,9 (zero-padded) on phone pad
-        # 7,5,3 on numpad
-        expected = np.array(
-            [[0., 0., 0., 0., 0.],
-             [0., 0., 1., 2., 0.],
-             [0., 5., 6., 7., 0.],
-             [0., 10., 11., 12., 0.],
-             [0., 0., 0., 0., 0.]],
-        )
-        xp_assert_close(order_filter(x, domain, 0), expected, check_dtype=False)
-
-        # maximum of elements 1,3,9 (zero-padded) on phone pad
-        # 7,5,3 on numpad
-        expected = np.array(
-            [[6., 7., 8., 9., 4.],
-             [11., 12., 13., 14., 9.],
-             [16., 17., 18., 19., 14.],
-             [21., 22., 23., 24., 19.],
-             [20., 21., 22., 23., 24.]],
-        )
-        xp_assert_close(order_filter(x, domain, 2), expected, check_dtype=False)
-
-        # and, just to complete the set, median of zero-padded elements
-        expected = np.array(
-            [[0, 1, 2, 3, 0],
-             [5, 6, 7, 8, 3],
-             [10, 11, 12, 13, 8],
-             [15, 16, 17, 18, 13],
-             [0, 15, 16, 17, 18]],
-        )
-        xp_assert_close(order_filter(x, domain, 1), expected)
-
-    def test_medfilt_order_filter(self):
-        x = np.arange(25).reshape(5, 5)
-
-        # median of zero-padded elements 1,5,9 on phone pad
-        # 7,5,3 on numpad
-        expected = np.array(
-            [[0, 1, 2, 3, 0],
-             [1, 6, 7, 8, 4],
-             [6, 11, 12, 13, 9],
-             [11, 16, 17, 18, 14],
-             [0, 16, 17, 18, 0]],
-        )
-        xp_assert_close(medfilt(x, 3), expected)
-
-        xp_assert_close(
-            order_filter(x, np.ones((3, 3)), 4),
-            expected
-        )
-
-    def test_order_filter_asymmetric(self):
-        x = np.arange(25).reshape(5, 5)
-        domain = np.array(
-            [[1, 1, 0],
-             [0, 1, 0],
-             [0, 0, 0]],
-        )
-
-        expected = np.array(
-            [[0, 0, 0, 0, 0],
-             [0, 0, 1, 2, 3],
-             [0, 5, 6, 7, 8],
-             [0, 10, 11, 12, 13],
-             [0, 15, 16, 17, 18]]
-        )
-        xp_assert_close(order_filter(x, domain, 0), expected)
-
-        expected = np.array(
-            [[0, 0, 0, 0, 0],
-             [0, 1, 2, 3, 4],
-             [5, 6, 7, 8, 9],
-             [10, 11, 12, 13, 14],
-             [15, 16, 17, 18, 19]]
-        )
-        xp_assert_close(order_filter(x, domain, 1), expected)
