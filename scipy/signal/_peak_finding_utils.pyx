@@ -352,7 +352,8 @@ def _peak_widths(const np.float64_t[::1] x not None,
             left_ip = <np.float64_t>i
             if x[i] < height:
                 # Interpolate if true intersection height is between samples
-                left_ip += (height - x[i]) / (x[i + 1] - x[i])
+                if x[i + 1] != x[i]:
+                    left_ip += (height - x[i]) / (x[i + 1] - x[i])
 
             # Find intersection point on right side
             i = peak
@@ -361,7 +362,8 @@ def _peak_widths(const np.float64_t[::1] x not None,
             right_ip = <np.float64_t>i
             if  x[i] < height:
                 # Interpolate if true intersection height is between samples
-                right_ip -= (height - x[i]) / (x[i - 1] - x[i])
+                if x[i - 1] != x[i]:
+                    right_ip -= (height - x[i]) / (x[i - 1] - x[i])
 
             widths[p] = right_ip - left_ip
             if widths[p] == 0:
