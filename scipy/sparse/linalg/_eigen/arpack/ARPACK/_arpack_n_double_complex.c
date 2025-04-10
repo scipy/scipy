@@ -4,23 +4,23 @@
 typedef int ARPACK_compare_cfunc(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 typedef int ARPACK_compare_rfunc(const double, const double);
 
+static const double unfl = 2.2250738585072014e-308;
+// static const double ovfl = 1.0 / 2.2250738585072014e-308;
+static const double ulp = 2.220446049250313e-16;
+
+static void zgetv0(struct ARPACK_arnoldi_update_vars_d*, int, int, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*, ARPACK_CPLX_TYPE*);
+static void znaup2(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE* , ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int*, ARPACK_CPLX_TYPE*, double*);
+static void znaitr(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE*, double*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, int*, ARPACK_CPLX_TYPE*);
+static void znapps(int, int*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
+static void zneigh(double*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*);
+static void zngets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
+static void zsortc(const enum ARPACK_which, const int, const int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
 static int sortc_LM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_SM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_LR(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_SR(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_LI(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_SI(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
-
-
-static const double unfl = 2.2250738585072014e-308;
-// static const double ovfl = 1.0 / 2.2250738585072014e-308;
-static const double ulp = 2.220446049250313e-16;
-
-static void znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
-    ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* ritz,
-    ARPACK_CPLX_TYPE* bounds, ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl,
-    int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* rwork
-);
 
 
 enum ARPACK_neupd_type {
@@ -30,6 +30,7 @@ enum ARPACK_neupd_type {
     IMAGPART
 };
 
+
 void
 zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
        ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, double sigma,
@@ -37,16 +38,15 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
        int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork)
 {
     const double eps23 = pow(ulp, 2.0 / 3.0);
-    int ibd, iconj, ih, iheig, ihbds, iuptri, invsub, iq, irz, iwev, j, jj;
-    int bounds, k, ldh, ldq, np, numcnv, reord, ritz, wr;
-    int iwork[1] = { 0 };
-    int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0, outncv;
-    double conds, sep, temp1, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
+    int ibd, ih, iheig, ihbds, iuptri, invsub, iq, irz, iwev, j, jj;
+    int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz, wr;
+    int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0;
+    double conds, sep, temp1, rtemp;
     ARPACK_CPLX_TYPE rnorm, temp;
     ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
     ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cdblm1 = ARPACK_cplx(-1.0, 0.0);
-    ARPACK_CPLX_TYPE vl[1] = { 0.0 };
+    ARPACK_CPLX_TYPE vl[1] = { cdbl0 };
     enum ARPACK_neupd_type TYP;
 
     if (V->nconv <= 0) {
@@ -169,7 +169,7 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
          *------------------------------------*/
 
         np = V->ncv - V->nev;
-        zngets(V, V->nev, &np, &workl[irz], &workl[bounds]);
+        zngets(V, &V->nev, &np, &workl[irz], &workl[bounds]);
 
          /*----------------------------------------------------*
          | Record indices of the converged wanted Ritz values  |
@@ -225,6 +225,9 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
         if (reord)
         {
+             /*----------------------------------------------*
+             | Reorder the computed upper triangular matrix. |
+             *----------------------------------------------*/
             ztrsen_("N", "V", select, &V->ncv, &workl[iuptri], &ldh, &workl[invsub], &ldq,
                     &workl[iheig], &nconv2, &conds, &sep, workev, &V->ncv, &ierr);
 
@@ -233,6 +236,126 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
                 V->info = 1;
                 return;
             }
+        }
+
+         /*--------------------------------------------*
+         | Copy the last row of the Schur basis matrix |
+         | to workl(ihbds).  This vector will be used  |
+         | to compute the Ritz estimates of converged  |
+         | Ritz values.                                |
+         *--------------------------------------------*/
+        zcopy_(&V->ncv, &workl[invsub + V->ncv - 1], &ldq, &workl[ihbds], &int1);
+
+         /*-------------------------------------------*
+         | Place the computed eigenvalues of H into D |
+         | if a spectral transformation was not used. |
+         *-------------------------------------------*/
+        if (TYP == REGULAR)
+        {
+            zcopy_(&V->nconv, &workl[iheig], &int1, d, &int1);
+        }
+
+         /*---------------------------------------------------------*
+         | Compute the QR factorization of the matrix representing  |
+         | the wanted invariant subspace located in the first NCONV |
+         | columns of workl(invsub,ldq).                            |
+         *---------------------------------------------------------*/
+
+        zgeqr2_(&V->ncv, &V->nconv, &workl[invsub], &ldq, workev, &workev[V->ncv], &ierr);
+
+         /*-------------------------------------------------------*
+         | * Postmultiply V by Q using zunm2r.                    |
+         | * Copy the first NCONV columns of VQ into Z.           |
+         | * Postmultiply Z by R.                                 |
+         | The N by NCONV matrix Z is now a matrix representation |
+         | of the approximate invariant subspace associated with  |
+         | the Ritz values in workl(iheig). The first NCONV       |
+         | columns of V are now approximate Schur vectors         |
+         | associated with the upper triangular matrix of order   |
+         | NCONV in workl(iuptri).                                |
+         *-------------------------------------------------------*/
+
+        zunm2r_("R", "N", &V->n, &V->ncv, &V->nconv, &workl[invsub], &ldq, workev, v, &ldv, &workd[V->n], &ierr);
+        zlacpy_("A", &V->n, &V->nconv, v, &ldv, z, &ldz);
+
+        for (int j = 0; j < V->nconv; j++)
+        {
+             /*--------------------------------------------------*
+             | Perform both a column and row scaling if the      |
+             | diagonal element of workl(invsub,ldq) is negative |
+             | I'm lazy and don't take advantage of the upper    |
+             | triangular form of workl(iuptri,ldq).             |
+             | Note that since Q is orthogonal, R is a diagonal  |
+             | matrix consisting of plus or minus ones.          |
+             *--------------------------------------------------*/
+            if (creal(workl[invsub + j*ldq + j]) < 0.0)
+            {
+                zscal_(&V->nconv, &cdblm1, &workl[iuptri + j], &ldq);
+                zscal_(&V->nconv, &cdblm1, &workl[iuptri + j*ldq], &int1);
+            }
+        }
+        // 20
+
+        if (howmny == 0)
+        {
+             /*-------------------------------------------*
+             | Compute the NCONV wanted eigenvectors of T |
+             | located in workl(iuptri,ldq).              |
+             *-------------------------------------------*/
+
+            for (int j = 0; j < V->ncv; j++)
+            {
+                if (j <= V->nconv - 1)
+                {
+                    select[j] = 1;
+                } else {
+                    select[j] = 0;
+                }
+            }
+            // 30
+
+            ztrevc_("R", "S", select, &V->ncv, &workl[iuptri], &ldq, vl, &int1, &workl[invsub], &ldq, &V->ncv, &outncv, workev, rwork, &ierr);
+            if (ierr != 0)
+            {
+                V->info = -9;
+                return;
+            }
+
+             /*-----------------------------------------------*
+             | Scale the returning eigenvectors so that their |
+             | Euclidean norms are all one. LAPACK subroutine |
+             | ztrevc returns each eigenvector normalized so  |
+             | that the element of largest magnitude has      |
+             | magnitude 1.                                   |
+             *-----------------------------------------------*/
+            for (j = 1; j <= V->nconv; j++)
+            {
+                rtemp = 1.0 / dznrm2_(&V->ncv, &workl[invsub + (j-1)*ldq], &int1);
+                zdscal_(&V->ncv, &rtemp, &workl[invsub + (j-1)*ldq], &int1);
+
+                 /*-----------------------------------------*
+                 | Ritz estimates can be obtained by taking |
+                 | the inner product of the last row of the |
+                 | Schur basis of H with eigenvectors of T. |
+                 | Note that the eigenvector matrix of T is |
+                 | upper triangular, thus the length of the |
+                 | inner product can be set to j.           |
+                 *-----------------------------------------*/
+
+                workev[j] = zdotc_(&j, &workl[ihbds], &int1, &workl[invsub + (j-1)*ldq], &int1);
+            }
+            // 40
+
+             /*--------------------------------------*
+             | Copy Ritz estimates into workl(ihbds) |
+             *--------------------------------------*/
+            zcopy_(&V->nconv, workev, &int1, &workl[ihbds], &int1);
+
+             /*-------------------------------------------------------*
+             | The eigenvector mactirx Q of T is triangular. Form Z*Q |
+             *-------------------------------------------------------*/
+            ztrmm_("R", "U", "N", "N", &V->n, &V->nconv, &cdbl1, &workl[invsub], &ldq, z, &ldz);
+
         }
 
     } else {
@@ -348,7 +471,7 @@ znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd,
        ARPACK_CPLX_TYPE* workl, double* rwork)
 {
-    int bounds, ierr, ih, iq, iw, ldh, ldq, nev0, next, iritz;
+    int bounds, ierr = 0, ih, iq, iw, ldh, ldq, nev0, next, iritz;
 
     // perform basic checks
     if (V->n <= 0) {
@@ -379,9 +502,9 @@ znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
         V-> tol = ulp;
     }
 
-    if ((V->ishift != 0) || (V->ishift != 1) || (V->ishift != 2))
+    if ((V->shift != 0) && (V->shift != 1) && (V->shift != 2))
     {
-        V->ishift = 1;
+        V->shift = 1;
     }
 
      /*---------------------------------------------*
@@ -455,7 +578,7 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh,
        ARPACK_CPLX_TYPE* ritz, ARPACK_CPLX_TYPE* bounds,
        ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl, int* ipntr,
-       ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* rwork)
+       ARPACK_CPLX_TYPE* workd, double* rwork)
 {
     enum ARPACK_which temp_which;
     int i, int1 = 1, j;
@@ -511,14 +634,9 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
         if (V->ido != 99) { return; }
         if (V->aup2_rnorm == 0.0)
         {
-             /*------------------------------------------------------*
-             | The initial vector is zero. It is improbable to hit   |
-             | all zeros randomly. Hence regenerate a vector and let |
-             | the rest figure things out for zero eigenvalues.      |
-             *------------------------------------------------------*/
-            generate_random_vector_z(&V->n, resid);
-            V->aup2_rnorm = dznrm2_(&V->n, resid, &int1);
-            zdscal_(&V->n, &V->aup2_rnorm, resid, &int1);
+            V->info = -9;
+            V->ido = 99;
+            return;
         }
         V->aup2_getv0 = 0;
         V->ido = 0;
@@ -545,7 +663,7 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
      | Compute the first NEV steps of the Arnoldi factorization |
      *---------------------------------------------------------*/
 
-    znaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd, &V->info);
+    znaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
      /*--------------------------------------------------*
      | ido .ne. 99 implies use of reverse communication  |
@@ -607,8 +725,7 @@ LINE20:
      | of the current upper Hessenberg matrix.                |
      *-------------------------------------------------------*/
 
-    zneigh(&V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritz, bounds,
-           q, ldq, workl, rwork, &V->info);
+    zneigh(&V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritz, bounds, q, ldq, workl, rwork, &V->info);
 
     if (V->info != 0)
     {
@@ -788,7 +905,7 @@ LINE20:
         V->ido = 99;
         return;
 
-    } else if ((V->nconv < V->aup2_nev0) && (V->ishift)) {
+    } else if ((V->nconv < V->aup2_nev0) && (V->shift)) {
          /*------------------------------------------------*
          | Do not have all the requested eigenvalues yet.  |
          | To prevent possible stagnation, adjust the size |
@@ -810,7 +927,7 @@ LINE20:
 
     }
 
-    if (V->ishift == 0)
+    if (V->shift == 0)
     {
          /*------------------------------------------------------*
          | User specified shifts: pop back out to get the shifts |
@@ -830,7 +947,7 @@ LINE50:
 
     V->aup2_ushift = 0;
 
-    if (V->ishift != 1)
+    if (V->shift != 1)
     {
          /*---------------------------------*
          | Move the NP shifts from WORKL to |
@@ -895,19 +1012,19 @@ LINE100:
 }
 
 
-void
+static void
 znaitr(struct ARPACK_arnoldi_update_vars_d *V,  ARPACK_CPLX_TYPE* resid, double* rnorm,
        ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh, int* ipntr,
        ARPACK_CPLX_TYPE* workd)
 {
-    int i, infol, iter, ipj, irj, ivj, jj, n, tmp_int;
+    int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     double smlnum = unfl * ( V->n / ulp);
     // double xtemp[2] = { 0.0 };
     const double sq2o2 = sqrt(2.0) / 2.0;
 
     char *MTYPE = "G", *TRANS = "T", *NORM = "1";
     int int1 = 1;
-    double dbl1 = 1.0, dbl0 = 0.0, temp1, tmp_dbl, tst1;
+    double dbl1 = 1.0, temp1, tmp_dbl, tst1;
     ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cdblm1 = ARPACK_cplx(-1.0, 0.0);
     ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
@@ -984,7 +1101,7 @@ LINE20:
     V->ido = 0;
 
 LINE30:
-    dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd, &V->aitr_ierr);
+    zgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != 99) { return; }
 
     if (V->aitr_ierr < 0)
@@ -1099,7 +1216,7 @@ LINE60:
      | Compute the j Fourier coefficients w_{j} |
      | WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.  |
      *-----------------------------------------*/
-    zgemv_(TRANS, &n, &V->aitr_j, &cdbl1, v, &ldv, &workd[ipj], &int1, &dbl0, &h[ldh*V->aitr_j], &int1);
+    zgemv_(TRANS, &n, &V->aitr_j, &cdbl1, v, &ldv, &workd[ipj], &int1, &cdbl0, &h[ldh*V->aitr_j], &int1);
 
      /*-------------------------------------*
      | Orthogonalize r_{j} against V_{j}.   |
@@ -1244,8 +1361,8 @@ LINE90:
          | is required.                              |
          *------------------------------------------*/
         *rnorm = V->aitr_rnorm1;
-        iter += 1;
-        if (iter < 2) { goto LINE80; }
+        V->aitr_iter += 1;
+        if (V->aitr_iter < 2) { goto LINE80; }
 
          /*------------------------------------------------*
          | Otherwise RESID is numerically in the span of V |
@@ -1298,21 +1415,26 @@ LINE100:
 }
 
 
-void
+static void
 znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
        int ldv, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl,
        ARPACK_CPLX_TYPE* workd)
 {
     int cconj;
-    int i, j, jj, int1 = 1, istart, iend, tmp_int;
+    int i, j, jj, int1 = 1, istart, iend = 0, tmp_int;
     int kplusp = *kev + np;
 
     double smlnum = unfl * ( n / ulp);
     double c, tst1;
-    double tmp_dbl, dbl1 = 1.0, dbl0 = 0.0;
+    double tmp_dbl;
     // double u[3] = { 0.0 };
-    ARPACK_CPLX_TYPE f, g, h11, h21, sigma, s, r, t, tmp_cplx, tmp_cplx2;
+    ARPACK_CPLX_TYPE f, g, h11, h21, sigma, s, r, t, tmp_cplx;
+
+#if defined(_MSC_VER)
+    ARPACK_CPLX_TYPE tmp_cplx2;
+#endif
+
     ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
     char *NORM = "1", *TRANS = "N";
@@ -1565,7 +1687,7 @@ LINE20:
      | Compute column 1 to kev of (V*Q) in backward order       |
      | taking advantage of the upper Hessenberg structure of Q. |
      *---------------------------------------------------------*/
-    for (i = 0; i < kev; i++)
+    for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
         zgemv_(TRANS, &n, &tmp_int, &cdbl1, v, &ldv, &q[(*kev-i)*ldq], &int1, &cdbl0, workd, &int1);
@@ -1606,14 +1728,14 @@ LINE20:
 
 
 
-void
+static void
 zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* ritz,
        ARPACK_CPLX_TYPE* bounds, ARPACK_CPLX_TYPE* q, int ldq, ARPACK_CPLX_TYPE* workl,
        double* rwork, int* ierr)
 {
     int select[1] = { 0 };
     int int1 = 1, j;
-    double dbl1 = 1.0, temp;
+    double temp;
     ARPACK_CPLX_TYPE vl[1] = { 0.0 };
     ARPACK_CPLX_TYPE c1 = ARPACK_cplx(1.0, 0.0), c0 = ARPACK_cplx(0.0, 0.0);
     char *UPLO = "A", *SIDE = "R", *HOWMNY = "B";
@@ -1679,7 +1801,7 @@ zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
 
     zsortc(V->which, 1, *kev + *np, ritz, bounds);
 
-    if (V->ishift == 1)
+    if (V->shift == 1)
     {
          /*------------------------------------------------------*
          | Sort the unwanted Ritz values used as shifts so that  |
@@ -1696,12 +1818,12 @@ zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
 }
 
 
-void
+static void
 zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
        ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* resid, double* rnorm,
        int* ipntr, ARPACK_CPLX_TYPE* workd)
 {
-    int jj, int1 = 1, int0 = 0, intm1 = -1;
+    int jj, int1 = 1;
     char *TRANS = "C";
     const double sq2o2 = sqrt(2.0) / 2.0;
     ARPACK_CPLX_TYPE cnorm;
@@ -1718,10 +1840,13 @@ zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
 
          /*----------------------------------------------------*
          | Possibly generate a random starting vector in RESID |
+         | Skip if this the return of ido_RANDOM.              |
          *----------------------------------------------------*/
-        if (!(initv))
+        if (!(initv) || (V->ido != ido_RANDOM))
         {
-            generate_random_vector_z(n, resid);
+            // Request a random vector from the user into resid
+            V->ido = ido_RANDOM;
+            return;
         }
 
          /*---------------------------------------------------------*
@@ -1870,8 +1995,8 @@ LINE40:
 }
 
 
-void
-zsortc(const enum ARPACK_which w, const int apply, const int n,  ARPACK_CPLX_TYPE *x,  ARPACK_CPLX_TYPE *y)
+static void
+zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE* x, ARPACK_CPLX_TYPE* y)
 {
     int i, igap, j;
     ARPACK_CPLX_TYPE temp;
@@ -1931,9 +2056,9 @@ zsortc(const enum ARPACK_which w, const int apply, const int n,  ARPACK_CPLX_TYP
 }
 
 
-int sortc_LM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
-int sortc_SM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
-int sortc_LR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) > creal(y)); }
-int sortc_SR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) < creal(y)); }
-int sortc_LI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
-int sortc_SI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
+static int sortc_LM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
+static int sortc_SM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
+static int sortc_LR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) > creal(y)); }
+static int sortc_SR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) < creal(y)); }
+static int sortc_LI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
+static int sortc_SI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
