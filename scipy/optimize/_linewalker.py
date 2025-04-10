@@ -128,7 +128,7 @@ class _Surrogate:
     # Function value at the grid index at ix_arg_min_evaluated
     f_min_evaluated: float = 1e15
 
-    # Index of the minimum evaluated function value\
+    # Index of the minimum evaluated function value
     ix_arg_min_evaluated: int = None
 
     # Indices of local maxima
@@ -242,8 +242,8 @@ class _Surrogate:
             self.f_min_evaluated = fnc_val
 
     def update_fit(self) -> None:
-        """ Update the fit (the discrete approximation of the true underlying function,
-        which we only observe via samples). """
+        """ Update the fit (the discrete approximation of the true underlying
+        function, which we only observe via samples). """
         self.fit = self.penta(
             self.fit.size, self.d1, self.d2,
             self.d3+self.sp, self.d4, self.d5, self.func)
@@ -253,8 +253,9 @@ class _Surrogate:
         """Find the largest unexplored interval and bisect it (assumes no prior)
 
         Returns:
-            np.ndarray: a numpy array containing a single element - an int corresponding
-            to the grid index at which the largest unexplored interval is bisected
+            np.ndarray: a numpy array containing a single element - an int 
+            corresponding to the grid index at which the largest unexplored
+            interval is bisected
         """
         num_unexplored_points_per_interval_vector = \
             self.ix_sorted[1:] - self.ix_sorted[:-1]

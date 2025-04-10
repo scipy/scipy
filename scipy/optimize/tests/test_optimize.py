@@ -1892,9 +1892,9 @@ class TestOptimizeScalar:
             optimize.golden(self.fun, brack=(0, -1, 1))
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    @pytest.mark.parametrize('acceleration', [None,'CYTHON_PENTA', 'NUMPY_ONLY_PENTA'])
-    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1), (10000, 1e-2)])
-    def test_linewalker(self, acceleration, grid_and_tol):
+    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1),
+                                              (10000, 1e-2)])
+    def test_linewalker(self, grid_and_tol):
 
         grid_size = grid_and_tol[0]
         atol = grid_and_tol[1]
@@ -1903,11 +1903,9 @@ class TestOptimizeScalar:
         }
         if grid_size:
             options['grid_size'] = grid_size
-        if acceleration:
-            options['acceleration'] = acceleration
-        x = optimize.minimize_scalar(self.fun, 
-                                     bracket=(-15, 15), 
-                                     args=(1.5, ), 
+        x = optimize.minimize_scalar(self.fun,
+                                     bracket=(-15, 15),
+                                     args=(1.5, ),
                                      options = options,
                                      method='linewalker').x
         assert_allclose(x, self.solution, atol=atol)
@@ -1918,11 +1916,9 @@ class TestOptimizeScalar:
         }
         if grid_size:
             options['grid_size'] = grid_size
-        if acceleration:
-            options['acceleration'] = acceleration
-        x = optimize.minimize_scalar(self.fun, 
-                                     bracket=(-15, 15), 
-                                     args=(1.5, ), 
+        x = optimize.minimize_scalar(self.fun,
+                                     bracket=(-15, 15),
+                                     args=(1.5, ),
                                      options = options,
                                      method='linewalker').x
         assert_allclose(x, self.solution, atol=atol)
@@ -1935,11 +1931,9 @@ class TestOptimizeScalar:
         }
         if grid_size:
             options['grid_size'] = grid_size
-        if acceleration:
-            options['acceleration'] = acceleration
-        x = optimize.minimize_scalar(self.fun, 
-                                     bracket=(-15, 15), 
-                                     args=(1.5, ), 
+        x = optimize.minimize_scalar(self.fun,
+                                     bracket=(-15, 15),
+                                     args=(1.5, ),
                                      options = options,
                                      method='linewalker').x
         assert_allclose(x, self.solution, atol=atol)
@@ -2094,7 +2088,8 @@ class TestOptimizeScalar:
         if method == 'linewalker':
             # linewalker does not search for bracket, must be explicitly provided
             kwargs = {}
-            result = optimize.minimize_scalar(self.fun, bracket=(-15, 15), method=method, **kwargs)
+            result = optimize.minimize_scalar(self.fun, bracket=(-15, 15), 
+                                              method=method, **kwargs)
         else:
             kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}
             result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
@@ -2178,7 +2173,8 @@ class TestOptimizeScalar:
             return np.array(x**4).reshape(fshape)
 
         if method == 'linewalker':
-            # linewalker is scalar only and does not result in the same tolerances w/ modifing grid_size
+            # linewalker is scalar only and does not result in the same
+            # tolerances w/ modifing grid_size
             return
 
         a, b = -0.1, 0.2
