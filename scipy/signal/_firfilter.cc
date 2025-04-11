@@ -29,7 +29,18 @@ typedef void (OneMultAddFunction) (char *, char *, int64_t, char **, int64_t);
 #define MAKE_ONEMULTADD(fname, type) \
 static void fname ## _onemultadd(char *sum, char *term1, int64_t str, char **pvals, int64_t n) { \
         type dsum = *(type*)sum; \
-        for (int64_t k=0; k < n; k++) { \
+        int64_t k = 0; \
+        for (; k <= n - 4; k += 4) { \
+          type tmp0 = *(type*)(term1 + (k + 0) * str); \
+          type tmp1 = *(type*)(term1 + (k + 1) * str); \
+          type tmp2 = *(type*)(term1 + (k + 2) * str); \
+          type tmp3 = *(type*)(term1 + (k + 3) * str); \
+          dsum += tmp0 * *(type*)pvals[k + 0] + \
+                  tmp1 * *(type*)pvals[k + 1] + \
+                  tmp2 * *(type*)pvals[k + 2] + \
+                  tmp3 * *(type*)pvals[k + 3]; \
+        } \
+        for (; k < n; k++) { \
           type tmp = *(type*)(term1 + k * str); \
           dsum += tmp * *(type*)pvals[k]; \
         } \
