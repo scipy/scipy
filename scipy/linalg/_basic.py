@@ -17,6 +17,7 @@ from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
                                       ishermitian)
+from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1116,7 +1117,6 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 
 # matrix inversion
-@_apply_over_batch(('a', 2))
 def inv(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
@@ -1158,37 +1158,41 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
 
-    # accommodate empty square matrices
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected square matrix, got {a1.shape=}")
+
+    # accommodate empty matrices
     if a1.size == 0:
         dt = inv(np.eye(2, dtype=a1.dtype)).dtype
         return np.empty_like(a1, dtype=dt)
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
-                                                  'getri_lwork'),
-                                                 (a1,))
-    lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
-    if info == 0:
-        lwork = _compute_lwork(getri_lwork, a1.shape[0])
+    # dtypes
+    if issubclass(a1.dtype.type, np.integer):
+        # XXX float16, longdouble, check backwards compat
+        overwrite_a = False
+        a1 = a1.astype(np.float64)            
+    elif not issubclass(a1.dtype.type, np.number):
+        raise ValueError(f"Expected a numeric array, got f{a1.dtype=}")
+    else:
+        if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+            overwrite_a = False
+            a1 = a1.copy()
 
-        # XXX: the following line fixes curious SEGFAULT when
-        # benchmarking 500x500 matrix inverse. This seems to
-        # be a bug in LAPACK ?getri routine because if lwork is
-        # minimal (when using lwork[0] instead of lwork[1]) then
-        # all tests pass. Further investigation is required if
-        # more such SEGFAULTs occur.
-        lwork = int(1.01 * lwork)
-        inv_a, info = getri(lu, piv, lwork=lwork, overwrite_lu=1)
-    if info > 0:
-        raise LinAlgError("singular matrix")
-    if info < 0:
-        raise ValueError(
-            f'illegal value in {-info}-th argument of internal getrf|getri'
-        )
-    return inv_a
+    if a1.ndim == 2:
+        a1 = a1[None, ...]
+        extradim = True
+    else:
+        # batched arrays always copy
+        overwrite_a = overwrite_a and a1.flags["F_CONTIGUOUS"] and (a1.ndim < 3) 
+        extradim = False
+
+    # by now, we have at least a 3D well behaved array of a BLAS-compatible dtype
+    inv_a = _batched_linalg.inv(a1, overwrite_a)
+
+    return inv_a[0, ...] if extradim else inv_a
 
 
 # Determinant
