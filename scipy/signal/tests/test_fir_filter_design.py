@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_warns
+from numpy.testing import assert_warns, assert_allclose
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal,
     assert_almost_equal, assert_array_almost_equal,
@@ -128,6 +128,22 @@ class TestFirwin:
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firwin(51, .5, fs=np.array([10, 20]))
+
+    @pytest.mark.parametrize("numtaps, cutoff, pass_zero, expected", [
+        (3, 0.1, False, 0),
+        (3, 0.1, True, 1),
+        (7, 0.1, False, 0),
+        (7, 0.1, True, 1),
+        (1001, 0.1, False, 0),
+    ])
+    def test_gh_19291(self, numtaps, cutoff, pass_zero, expected):
+        actual = firwin(numtaps, cutoff, pass_zero=pass_zero)
+        assert_allclose(actual.sum(), expected, atol=1e-15)
+        if not pass_zero:
+            # manual check via lowpass filter swap
+            kernel = -firwin(numtaps, cutoff)
+            kernel[int(kernel.size / 2)] += 1
+            assert_allclose(actual, kernel)
 
 
 class TestFirWinMore:
