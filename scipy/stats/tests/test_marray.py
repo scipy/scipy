@@ -276,6 +276,7 @@ def test_ttest_ind_from_stats(xp):
     assert res.statistic.shape == shape
     assert res.pvalue.shape == shape
 
+
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 
@@ -288,3 +289,19 @@ def test_length_nonmasked_marray_iterable_axis_raises():
     with pytest.raises(NotImplementedError,
         match="`axis` must be an integer or None for use with `MArray`"):
         _length_nonmasked(marr, axis=(0, 1), xp=xp)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")  # mdhaber/marray#120
+def test_directional_stats(xp):
+    mxp, marrays, narrays = get_arrays(1, shape=(100, 3), xp=xp)
+    res = stats.directional_stats(*marrays)
+    narrays[0] = narrays[0][~np.any(np.isnan(narrays[0]), axis=1)]
+    ref = stats.directional_stats(*narrays)
+    xp_assert_close(res.mean_direction.data, xp.asarray(ref.mean_direction))
+    xp_assert_close(res.mean_resultant_length.data,
+                    xp.asarray(ref.mean_resultant_length))
+    assert not xp.any(res.mean_direction.mask)
+    assert not xp.any(res.mean_resultant_length.mask)
