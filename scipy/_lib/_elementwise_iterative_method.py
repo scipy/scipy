@@ -314,7 +314,7 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
     if mask is not None:
         if preserve_shape:
             active_mask = xp.zeros_like(mask)
-            active_mask = xpx.at(active_mask)[active].set(1)
+            active_mask = xpx.at(active_mask)[active].set(True)
             active_mask = active_mask & mask
             for key, val in update_dict.items():
                 try:
