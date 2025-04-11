@@ -11,7 +11,8 @@ def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
-    This implements WH of order 2, see [1] and [2]. WH can be seen as a P-Spline
+    This implements WH smoothing with a difference penalty of the specified `order` and
+    penalty strength `lamb`, see [1] and [2]. WH can be seen as a P-Spline
     (penalized B-Spline) of degree zero for equidistant knots (at the signal
     positions).
 
@@ -37,7 +38,7 @@ def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
     Returns
     -------
     x : ndarray
-        WH smoothed signal.
+        The WH smoothed signal.
 
     Notes
     -----
@@ -101,9 +102,10 @@ def _solve_WH_banded(y, lamb, order=2, weights=None):
     n = y.shape[0]  # n >= p + 1 was already checked
     p = order  # order of difference penalty
     # Construct penalty matrix M of shape (n-p, n) as if n = 2p+1 (to save memory).
-    M_raw = np.diff(np.eye(2*p + 1), n=p, axis=0)  # shape (p+1, 2p+1)
     if n < 2*p + 1:
-        M_raw = M_raw[:n-p, :n]
+        M_raw = np.diff(np.eye(n), n=p, axis=0)  # shape (n-p, n)
+    else:
+        M_raw = np.diff(np.eye(2*p + 1), n=p, axis=0)  # shape (p+1, 2p+1)
     MTM_raw = M_raw.T @ M_raw  # shape (2p+1, 2p+1) if n>=2p+1 else (n, n)
     # Because our matrix A = np.eye(n, dtype=np.float64) + lamb * (M.T @ M) is
     # symmetric and banded with u = l = p, we construct it in the lower "ab"-format
