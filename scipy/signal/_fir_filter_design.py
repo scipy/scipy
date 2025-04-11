@@ -656,11 +656,9 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming',
 
     # Adjust the phases of the coefficients so that the first `ntaps` of the
     # inverse FFT are the desired filter coefficients.
-    dt = xp.complex64 if xp_default_dtype(xp) == xp.float32 else xp.complex128
-    I = xp.asarray(1j, dtype=dt)
-    shift = xp.exp(-(numtaps - 1) / 2. * I * xp.pi * x / nyq)
+    shift = xp.exp(-(numtaps - 1) / 2. * 1j * xp.pi * x / nyq)
     if ftype > 2:
-        shift *= I
+        shift *= 1j
 
     fx2 = fx * shift
 
@@ -1267,7 +1265,6 @@ def minimum_phase(h,
     n_half = h.shape[0] // 2
 
     if not xp.any(xp.flip(h[-n_half:]) - h[:n_half] <= 1e-8 + 1e-6*abs(h[:n_half])):
-   # if not np.allclose(h[-n_half:][::-1], h[:n_half]):
         warnings.warn('h does not appear to by symmetric, conversion may fail',
                       RuntimeWarning, stacklevel=2)
     if not isinstance(method, str) or method not in \

@@ -50,11 +50,8 @@ class TestFirwin:
         N = h.shape[0]
         alpha = 0.5 * (N-1)
         m = xp.arange(0, N) - alpha   # time indices of taps
-        Ipi = xp.asarray(
-            1j*xp.pi, dtype=xp.complex128 if m.dtype == xp.float64 else xp.complex64
-        )
         for freq, expected in expected_response:
-            actual = abs(xp.sum(h*xp.exp(-Ipi*m*freq)))
+            actual = abs(xp.sum(h * xp.exp(-1j * xp.pi * m * freq)))
             mse = abs(actual - expected)**2
             assert mse < tol, f'response not as expected, mse={mse:g} > {tol:g}'
 
@@ -322,7 +319,6 @@ class TestFirWinMore:
             firwin2(51, .5, 1, fs=np.array([10, 20]))
 
 
-@skip_xp_backends("dask.array", reason="XXX something in dask")
 @skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp")
 class TestFirwin2:
 
@@ -454,7 +450,7 @@ class TestFirwin2:
         dec = {'decimal': 4.5} if xp_default_dtype(xp) == xp.float32 else {}
         assert_array_almost_equal(taps[: ntaps // 2], flip(-taps[ntaps // 2:]), **dec)
 
-        freqs, response = freqz(taps, worN=2048)
+        freqs, response = freqz(np.asarray(taps), worN=2048)    # XXX convert freqz
         assert_array_almost_equal(abs(xp.asarray(response)),
                                   xp.asarray(freqs / np.pi), decimal=4)
 
@@ -474,9 +470,11 @@ class TestFirwin2:
                                   flip(-taps[ntaps // 2 + 1:]), **dec
         )
 
-        freqs, response1 = freqz(taps, worN=2048)
+        freqs, response1 = freqz(np.asarray(taps), worN=2048)  # XXX convert freqz
         response1 = xp.asarray(response1)
-        response2 = xp.asarray(np.interp(freqs / np.pi, freq, gain))
+        response2 = xp.asarray(
+            np.interp(np.asarray(freqs) / np.pi, np.asarray(freq), np.asarray(gain))
+        )
         assert_array_almost_equal(abs(response1), response2, decimal=3)
 
     def test_fs_nyq(self, xp):
@@ -565,7 +563,7 @@ class TestRemez:
             remez(11, .1, 1, fs=np.array([10, 20]))
 
 
-@skip_xp_backends("dask.array", reason="XXX something in dask")
+
 @skip_xp_backends(cpu_only=True, reason="lstsq")
 class TestFirls:
 
@@ -589,6 +587,7 @@ class TestFirls:
         # negative weight
         assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], weight=[-1])
 
+    @skip_xp_backends("dask.array", reason="dask fancy indexing shape=(nan,)")
     def test_firls(self, xp):
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
@@ -614,7 +613,7 @@ class TestFirls:
         assert_array_almost_equal(hodd, xp.zeros_like(hodd))
 
         # now check the frequency response
-        w, H = freqz(h, 1)
+        w, H = freqz(np.asarray(h), 1)
         w, H = xp.asarray(w), xp.asarray(H)
         f = w/2/np.pi
         Hmag = xp.abs(H)
@@ -668,8 +667,8 @@ class TestFirls:
     def test_rank_deficient(self, xp):
         # solve() runs but warns (only sometimes, so here we don't use match)
         x = firls(21, xp.asarray([0, 0.1, 0.9, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(x, fs=2.)
-        h = xp.asarray(h)
+        w, h = freqz(np.asarray(x), fs=2.)
+        w, h = map(xp.asarray, (w, h))   # XXX convert freqz
         absh2 = xp.abs(h[:2])
         xp_assert_close(absh2, xp.ones_like(absh2), atol=1e-5)
         absh2 = xp.abs(h[-2:])
@@ -678,7 +677,8 @@ class TestFirls:
         # filters, but using shorter ones is faster computationally and
         # the idea is the same)
         x = firls(101, xp.asarray([0, 0.01, 0.99, 1]), xp.asarray([1, 1, 0, 0]))
-        w, h = freqz(x, fs=2.)
+        w, h = freqz(np.asarray(x), fs=2.)
+        w, h = map(xp.asarray, (w, h))   # XXX convert freqz
         mask = xp.asarray(w < 0.01)
         h = xp.asarray(h)
         assert xp.sum(xp.astype(mask, xp.int64)) > 3
