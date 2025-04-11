@@ -3535,12 +3535,12 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     window : array_like, callable, string, float, or tuple, optional
         If not ``None`` (default), specifies a filter in the Fourier domain, which is
         applied before resampling. I.e., the FFT ``X`` of `x` is calculated by
-        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a sepctral
+        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral
         windowing function ``W(f_X)`` which consumes the frequencies
         ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length `n_x` then ``W=window``.
-        If `window` is a function  then ``W = window(f_X)``.
+        If `window` is a callable  then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``.
 
@@ -3618,7 +3618,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
 
 
     The following example illustrates that `~scipy.fft.rfft` / `~scipy.fft.irfft`
-    combination does not always produce the correct resampling result:
+    combination does not always produce the correct resampling result, while `resample` does:
 
     >>> from scipy.fft import irfft, rfft
     >>> from scipy.signal import resample
