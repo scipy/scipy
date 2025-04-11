@@ -867,7 +867,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         # Possible loss of precision for int types
         res = xp_promote(res, force_floating=True, xp=xp)
         res = xp.where(invalid, xp.nan, res)
-    
+
     return res[()] if res.ndim == 0 else res
 
 
@@ -4415,7 +4415,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         Axis along which to perform the calculation. Default is 0.
         If None, ravel both arrays before performing the calculation.
 
-        .. versionadded:: 1.14.0
+        .. versionadded:: 1.9.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
