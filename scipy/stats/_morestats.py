@@ -17,6 +17,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
+    is_marray,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -1081,7 +1082,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     Notes
     -----
     The Box-Cox transform is given by:
-    
+
     .. math::
 
         y =
@@ -4386,6 +4387,12 @@ def directional_stats(samples, *, axis=0, normalize=True):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")
     samples = xp.moveaxis(samples, axis, 0)
+
+    if is_marray(xp):
+        _xp = array_namespace(samples.mask)
+        mask = _xp.any(samples.mask, axis=-1, keepdims=True)
+        samples = xp.asarray(samples.data, mask=mask)
+
     if normalize:
         vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
