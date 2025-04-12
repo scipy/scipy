@@ -1,7 +1,6 @@
 import warnings
 import numpy as np
 
-from scipy._lib._util import _get_nan
 from scipy._lib._array_api import array_namespace
 import scipy._lib.array_api_extra as xpx
 

@@ -319,3 +319,26 @@ def test_bartlett(axis, xp):
     ref = stats.bartlett(*narrays, nan_policy='omit', axis=axis)
     xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
     xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('f', [stats.pearsonr, stats.pointbiserialr])
+def test_pearsonr(f, xp):
+    mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
+    res = f(*marrays)
+
+    x, y = narrays
+    mask = np.isnan(x) | np.isnan(y)
+    ref = f(x[~mask], y[~mask])
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+    if f == stats.pearsonr:
+        res_ci_low, res_ci_high = res.confidence_interval()
+        ref_ci_low, ref_ci_high = ref.confidence_interval()
+        xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
+        xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))

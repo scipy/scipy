@@ -867,7 +867,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         # Possible loss of precision for int types
         res = xp_promote(res, force_floating=True, xp=xp)
         res = xp.where(invalid, xp.nan, res)
-    
+
     return res[()] if res.ndim == 0 else res
 
 
@@ -4236,33 +4236,35 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     """
     xp = array_namespace(r)
 
-    with np.errstate(divide='ignore'):
-        zr = xp.atanh(r)
-
     ones = xp.ones_like(r)
     n = xp.asarray(n, dtype=r.dtype)
     confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
-    if n > 3:
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        zr = xp.atanh(r)
         se = xp.sqrt(1 / (n - 3))
-        if alternative == "two-sided":
-            h = special.ndtri(0.5 + confidence_level/2)
-            zlo = zr - h*se
-            zhi = zr + h*se
-            rlo = xp.tanh(zlo)
-            rhi = xp.tanh(zhi)
-        elif alternative == "less":
-            h = special.ndtri(confidence_level)
-            zhi = zr + h*se
-            rhi = xp.tanh(zhi)
-            rlo = -ones
-        else:
-            # alternative == "greater":
-            h = special.ndtri(confidence_level)
-            zlo = zr - h*se
-            rlo = xp.tanh(zlo)
-            rhi = ones
+
+    if alternative == "two-sided":
+        h = special.ndtri(0.5 + confidence_level/2)
+        zlo = zr - h*se
+        zhi = zr + h*se
+        rlo = xp.tanh(zlo)
+        rhi = xp.tanh(zhi)
+    elif alternative == "less":
+        h = special.ndtri(confidence_level)
+        zhi = zr + h*se
+        rhi = xp.tanh(zhi)
+        rlo = -ones
     else:
-        rlo, rhi = -ones, ones
+        # alternative == "greater":
+        h = special.ndtri(confidence_level)
+        zlo = zr - h*se
+        rlo = xp.tanh(zlo)
+        rhi = ones
+
+    mask = (n <= 3)
+    rlo = xpx.at(rlo)[mask].set(-1)
+    rhi = xpx.at(rhi)[mask].set(1)
 
     rlo = rlo[()] if rlo.ndim == 0 else rlo
     rhi = rhi[()] if rhi.ndim == 0 else rhi
@@ -4677,12 +4679,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
-    n = x.shape[axis]
-    if n != y.shape[axis]:
+    if x.shape[axis] != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
-    if n < 2:
+    if x.shape[axis] < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
+
+    x, y = _share_masks(x, y, xp=xp)
+    n = xp.asarray(_length_nonmasked(x, axis=axis), dtype=x.dtype)
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -4776,18 +4780,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.clip(r, -1., 1.)
     r = xpx.at(r, const_xy).set(xp.nan)
 
-    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
-    # in the docs.
-    if n == 2:
-        r = xp.round(r)
-        one = xp.asarray(1, dtype=dtype)
-        pvalue = xp.where(xp.asarray(xp.isnan(r)), xp.nan*one, one)
-    else:
-        # As explained in the docstring, the distribution of `r` under the null
-        # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-        ab = xp.asarray(n/2 - 1)
-        dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+    # As explained in the docstring, the distribution of `r` under the null
+    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+    ab = xp.asarray(n/2 - 1)
+    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+
+    mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
+    def special_case(r): return xp.where(xp.isnan(r), xp.nan, xp.ones_like(r))
+    r = xpx.apply_where(mask, (r,), xp.round, fill_value=r)
+    pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
