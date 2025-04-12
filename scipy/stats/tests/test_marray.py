@@ -83,6 +83,7 @@ def test_xp_mean(axis, keepdims, xp):
      (stats.circvar, {}),
      (stats.circstd, {}),
      (stats.gstd, {}),
+     (stats.variation, {}),
      (_xp_var, {}),
      (stats.tmean, {'limits': (0.1, 0.9)}),
      (stats.tvar, {'limits': (0.1, 0.9)}),
