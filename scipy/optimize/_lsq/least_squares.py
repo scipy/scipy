@@ -387,15 +387,16 @@ def least_squares(
         along any of the scaled variables has a similar effect on the cost
         function. If set to 'jac', the scale is iteratively updated using the
         inverse norms of the columns of the Jacobian matrix (as described in
-        [JJMore]_). The default scaling for each method is as follows:
+        [JJMore]_). The default scaling for each method (i.e.
+        if ``x_scale is None``) is as follows:
 
-        * For 'trf' : ``x_scale == 1``
-        * For 'trf' : ``x_scale == 1``
-        * For 'jac' : ``x_scale == 'jac'``
+        * For 'trf'    : ``x_scale == 1``
+        * For 'dogbox' : ``x_scale == 1``
+        * For 'jac'    : ``x_scale == 'jac'``
 
         .. versionchanged:: 1.16.0
-            The default value is changed from 1 to None to indicate the default
-            approach to scaling.
+            The default value is changed from 1 to None to indicate that a
+            default approach to scaling is used.
             For the 'lm' method the default scaling is changed from 1 to 'jac'.
             This has been found to give better performance, and is the same
             scaling performed by ``leastsq``.
