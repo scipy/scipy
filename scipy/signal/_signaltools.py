@@ -3524,25 +3524,24 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         The number of samples of the resampled output signal. It may be larger or
         smaller than ``n_x``.
     t : array_like, optional
-        If `t` is not ``None`` (default), then the timestamps of the resampled signal
-        are also returned. `t` must contain at least the first two timestamps of the
-        input signal `x` (all others are ignored). The timestamps of the output signal
-        are determined by ``t[0] + T * n_x / num * np.arange(num)`` with
-        ``T = t[1] - t[0]``.
+        If `t` is not ``None``, then the timestamps of the resampled signal are also
+        returned. `t` must contain at least the first two timestamps of the input
+        signal `x` (all others are ignored). The timestamps of the output signal are
+        determined by ``t[0] + T * n_x / num * np.arange(num)`` with
+        ``T = t[1] - t[0]``. Default is ``None``.
     axis : int, optional
         The time/frequency axis of `x` along which the resampling take place.
         The Default is 0.
     window : array_like, callable, string, float, or tuple, optional
-        If not ``None`` (default), specifies a filter in the Fourier domain, which is
-        applied before resampling. I.e., the FFT ``X`` of `x` is calculated by
-        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral
-        windowing function ``W(f_X)`` which consumes the frequencies
-        ``f_X = fftfreq(n_x, T)``.
+        If not ``None``, it specifies a filter in the Fourier domain, which is applied
+        before resampling. I.e., the FFT ``X`` of `x` is calculated by
+        ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
+        function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
         If `window` is a 1d array of length `n_x` then ``W=window``.
         If `window` is a callable  then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
-        ``W = fftshift(signal.get_window(window, n_x))``.
+        ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
 
     domain : 'time' | 'freq', optional
         If set to ``'time'`` (default) then an FFT is applied to `x`, otherwise
@@ -3561,8 +3560,10 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
 
     See Also
     --------
-    decimate : Downsample the signal after applying an FIR or IIR filter.
-    resample_poly : Resample using polyphase filtering and an FIR filter.
+    decimate : Downsample a (periodic/non-periodic) signal after applying an FIR
+               or IIR filter.
+    resample_poly : Resample a (periodic/non-periodic) signal using polyphase filtering
+                    and an FIR filter.
 
     Notes
     -----
@@ -3617,33 +3618,46 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.show()
 
 
-    The following example illustrates that `~scipy.fft.rfft` / `~scipy.fft.irfft`
-    combination does not always produce the correct resampling result, while `resample` does:
+    The following example illustrates that a `~scipy.fft.rfft` / `~scipy.fft.irfft`
+    combination does not always produce the correct resampling result, while
+    `resample` does:
 
-    >>> from scipy.fft import irfft, rfft
+    >>> import numpy as np
+    >>> from scipy.fft import irfft, fft, fftfreq, rfft
     >>> from scipy.signal import resample
     ...
     >>> n0, n1 = 8, 4  # number of samples
-    >>> x0 = irfft([0, 0, 8, 0, 0], n=n0)  # input signal
-    >>> x1 = resample(x0, num=n1)
-    >>> y1 = irfft(rfft(x0), n=n1) * n1/n0
-    >>> for x_, n_ in zip((x0, x1, y1), ('x0', 'x1', 'y1')):
-    ...    print(f"{n_} = {x_}")
-    x0 = [ 2.  0. -2.  0.  2.  0. -2.  0.]
-    x1 = [ 2. -2.  2. -2.]
-    y1 = [ 1. -1.  1. -1.]
+    >>> t0, t1 = (np.linspace(0, 2, n_, endpoint=False) for n_ in (n0, n1))  # in s
+    >>> x0, x1 = (np.cos(2*np.pi*t_) for t_ in (t0, t1))  # 1 Hz cosine signal
+    >>> y1_r = resample(x0, num=n1)
+    >>> np.allclose(y1_r, x1)  # correct result, as expected
+    True
+    >>> y1_f = irfft(rfft(x0), n=n1) * n1/n0
+    >>> np.allclose(y1_f, x1)  # wrong result
+    False
+    >>> # Compare FFTs:
+    >>> fftfreq(n0, t0[1]-t0[0])  #  frequencies of fft(x0)
+    array([ 0. ,  0.5,  1. ,  1.5, -2. , -1.5, -1. , -0.5])
+    >>> np.round(fft(x0), 3)  # FFT of x0
+    array([-0.-0.j, -0.+0.j,  4.-0.j,  0.+0.j,  0.-0.j,  0.-0.j,  4.+0.j, -0.-0.j])
+    >>> fftfreq(n1, t1[1]-t1[0])  # frequencies of fft(x1) and fft(y1_f)
+    array([ 0. ,  0.5, -1. , -0.5])
+    >>> np.round(fft(x1), 3)  # reference FFT
+    array([0.+0.j, 0.+0.j, 4.+0.j, 0.+0.j])
+    >>> np.round(fft(y1_f), 3)  # irfft/rfft off by factor 2 in the Nyuist frequency
+    array([0.+0.j, 0.+0.j, 2.+0.j, 0.+0.j])
 
-    It can be easily verified that ``x1`` is correct and ``y1`` is not. To produce
-    correct results, `resample` correctly accounts for unpaired frequency bins. Here,
-    ``fft(x1)`` has the frequency bins ``[0, 1, -2, -1]`` (which can be determined with
-    `~scipy.fft.fftfreq`), where the entry ``-2`` does not have a positive pair ``+2``.
-    For that reason, `resample` scaled this unpaired bin by 1/2.
+    The reason for the different results lies in `resample` correctly treating unpaired
+    frequency bins. I.e., the input `x1` has a bin pair ±1 Hz, whereas the output has
+    only one unpaired bin at -1 Hz, which demands rescaling of that bin. Special
+    treatment is required if ``n_x != num`` and ``min(n_x, num)`` is even. If the bin
+    values at `±m` are zero, the, obviously, no special treatment is needed. Consult
+    the source code of `resample` for details.
 
     The following code snippet shows how to use `resample_poly` to speed up the
     down-sampling:
 
     >>> import numpy as np
-    >>> from scipy.fft import next_fast_len
     >>> from scipy.signal import resample, resample_poly
     ...
     >>> n0 = 19937 # number of input samples - prime
@@ -3651,10 +3665,14 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> x0 = np.random.rand(n0)  # input signal
     ...
     >>> y1 = resample(x0, n1)  # slow due to n0 being prime
-    >>> y1_p = resample(resample_poly(x0, 1, n0 // n1), n1)  # This is faster
+    >>> # This is faster:
+    >>> y1_p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)
 
     Note that the `y1` and `y1_p` are not identical due to the differences in the
-    utilized antialiasing filter.
+    utilized antialiasing filter in each function. In both functions the antialiasing
+    filter can be customized by modifying the `window` parameter, though `resample`
+    interprets it as a spectral window function, whereas `resample_poly` assumes it to
+    be some form of impulse response.
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
@@ -3680,7 +3698,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     else:
         W = sp_fft.fftshift(get_window(window, n_x))
 
-    if domain == 'time' and xp.isdtype(x.dtype, 'real floating'):  # utilize rfft():
+    if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
