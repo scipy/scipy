@@ -305,3 +305,16 @@ def test_directional_stats(xp):
                     xp.asarray(ref.mean_resultant_length))
     assert not xp.any(res.mean_direction.mask)
     assert not xp.any(res.mean_resultant_length.mask)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_bartlett(axis, xp):
+    mxp, marrays, narrays = get_arrays(3, xp=xp)
+    res = stats.bartlett(*marrays, axis=axis)
+    ref = stats.bartlett(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
