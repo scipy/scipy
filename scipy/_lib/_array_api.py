@@ -7,6 +7,7 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
+import operator
 import dataclasses
 import functools
 import textwrap
@@ -40,7 +41,7 @@ from scipy._lib._docscrape import FunctionDoc
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
     'default_xp', 'is_lazy_array', 'is_marray',
-    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
+    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
@@ -246,7 +247,7 @@ _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
 @contextmanager
 def default_xp(xp: ModuleType) -> Generator[None, None, None]:
     """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
-    context manager, test by default that the array namespace is 
+    context manager, test by default that the array namespace is
     the provided across all arrays, unless one explicitly passes the ``xp=``
     parameter or ``check_namespace=False``.
 
@@ -270,7 +271,7 @@ def _strict_check(actual, desired, xp, *,
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
- 
+
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
 
@@ -486,7 +487,7 @@ def xp_result_type(*args, force_floating=False, xp):
     standard `result_type` in a few ways:
 
     - There is a `force_floating` argument that ensures that the result type
-      is floating point, even when all args are integer.     
+      is floating point, even when all args are integer.
     - When a TypeError is raised (e.g. due to an unsupported promotion)
       and `force_floating=True`, we define a custom rule: use the result type
       of the default float and any other floats passed. See
@@ -542,7 +543,7 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     This function accepts array-like iterables, which are immediately converted
     to the namespace's arrays before result type calculation. Consequently, the
     result dtype may be different when an argument is `1.` vs `[1.]`.
-    
+
     See Also
     --------
     xp_result_type
@@ -616,11 +617,31 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
+### MArray Helpers ###
 def is_marray(xp):
     """Returns True if `xp` is an MArray namespace; False otherwise."""
     return "marray" in xp.__name__
 
 
+def _length_nonmasked(x, axis, keepdims=False, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_marray(xp):
+        if np.iterable(axis):
+            message = '`axis` must be an integer or None for use with `MArray`.'
+            raise NotImplementedError(message)
+        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+    return (xp_size(x) if axis is None else
+            # compact way to deal with axis tuples or ints
+            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
+
+
+def _share_masks(*args, xp):
+    if is_marray(xp):
+        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+        args = [xp.asarray(arg.data, mask=mask) for arg in args]
+    return args[0] if len(args) == 1 else args
+
+### End MArray Helpers ###
 
 def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
                        exceptions=None, reason=None):

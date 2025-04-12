@@ -1,10 +1,9 @@
 import warnings
 import numpy as np
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, _length_nonmasked
 import scipy._lib.array_api_extra as xpx
 
-from ._stats_py import _length_nonmasked
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 

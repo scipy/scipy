@@ -20,13 +20,14 @@ from scipy._lib._array_api import (
     xp_promote,
     is_marray,
     xp_ravel,
+    _length_nonmasked,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic

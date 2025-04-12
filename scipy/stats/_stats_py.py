@@ -26,7 +26,6 @@ References
    York. 2000.
 
 """
-import functools
 import math
 import operator
 import warnings
@@ -75,12 +74,13 @@ from scipy._lib._array_api import (
     array_namespace,
     is_lazy_array,
     is_numpy,
-    is_marray,
     xp_size,
     xp_vector_norm,
     xp_promote,
     xp_capabilities,
     xp_ravel,
+    _length_nonmasked,
+    _share_masks,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1239,25 +1239,6 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
         n = _length_nonmasked(x, axis, xp=xp)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
-
-
-def _length_nonmasked(x, axis, keepdims=False, xp=None):
-    xp = array_namespace(x) if xp is None else xp
-    if is_marray(xp):
-        if np.iterable(axis):
-            message = '`axis` must be an integer or None for use with `MArray`.'
-            raise NotImplementedError(message)
-        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
-    return (xp_size(x) if axis is None else
-            # compact way to deal with axis tuples or ints
-            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
-
-
-def _share_masks(*args, xp):
-    if is_marray(xp):
-        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
-        args = [xp.asarray(arg.data, mask=mask) for arg in args]
-    return args[0] if len(args) == 1 else args
 
 
 @xp_capabilities()

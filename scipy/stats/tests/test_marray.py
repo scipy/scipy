@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
-from scipy.stats._stats_py import _xp_mean, _xp_var, _length_nonmasked
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
+from scipy.stats._stats_py import _xp_mean, _xp_var
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -342,3 +342,13 @@ def test_pearsonr(f, xp):
         ref_ci_low, ref_ci_high = ref.confidence_interval()
         xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
         xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('qk', [False, True])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_entropy(qk, axis, xp):
+    mxp, marrays, narrays = get_arrays(2 if qk else 1, xp=xp)
+    res = stats.entropy(*marrays, axis=axis)
+    ref = stats.entropy(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.data, xp.asarray(ref))
