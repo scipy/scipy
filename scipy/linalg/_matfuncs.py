@@ -160,6 +160,7 @@ def logm(A, disp=_NoValue):
     disp : bool, optional
         Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
             removed in SciPy 1.18.0. The previously returned error estimate
@@ -425,12 +426,14 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
             removed in SciPy 1.18.0. The previously returned error estimate
             can be computed as ``norm(X @ X - A, 'fro')**2 / norm(A, 'fro')``
 
     blocksize : integer, optional
+
         .. deprecated:: 1.16.0
             The `blocksize` argument is deprecated as it is unused by the algorithm
             and will be removed in SciPy 1.18.0.
@@ -901,6 +904,7 @@ def signm(A, disp=_NoValue):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+
         .. deprecated:: 1.16.0
             The `disp` argument is deprecated and will be
             removed in SciPy 1.18.0. The previously returned error estimate
