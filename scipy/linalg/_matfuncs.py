@@ -146,7 +146,7 @@ def fractional_matrix_power(A, t):
 
 
 @_apply_over_batch(('A', 2))
-def logm(A, disp=True):
+def logm(A, disp=_NoValue):
     """
     Compute matrix logarithm.
 
@@ -160,6 +160,10 @@ def logm(A, disp=True):
     disp : bool, optional
         Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(expm(logm(A)) - A, 1) / norm(A, 1)``.
 
     Returns
     -------
@@ -201,6 +205,12 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
     A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
