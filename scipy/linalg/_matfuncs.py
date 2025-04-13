@@ -423,14 +423,17 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     A : ndarray
         Input with last two dimensions are square ``(..., n, n)``.
     disp : bool, optional
-        Deprecated keyword. It will be removed in 1.20.0.
-
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
         .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(X @ X - A, 'fro')**2 / norm(A, 'fro')``
 
     blocksize : integer, optional
-        Deprecated keyword. It has no effect and will be removed in 1.18.0.
-
         .. deprecated:: 1.16.0
+            The `blocksize` argument is deprecated as it is unused by the algorithm
+            and will be removed in SciPy 1.18.0.
 
     Returns
     -------
@@ -481,6 +484,17 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated and will be removed in SciPy "
+                      "1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+    if blocksize is not _NoValue:
+        warnings.warn("The `blocksize` argument is deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     a = np.asarray(A)
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
