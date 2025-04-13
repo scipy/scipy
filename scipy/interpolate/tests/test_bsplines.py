@@ -2377,6 +2377,11 @@ class TestNdBSpline:
         xp_assert_close(bspl2(xi),
                         target, atol=1e-14)
 
+        # test that a nan in -> nan out
+        xi = np.asarray(xi)
+        xi[0, 1] = np.nan
+        xp_assert_equal(np.isnan(bspl2(xi)), np.asarray([True, False, False]))
+
         # now check on a multidim xi
         rng = np.random.default_rng(12345)
         xi = rng.uniform(size=(4, 3, 2)) * 5
@@ -2827,6 +2832,15 @@ class TestMakeND:
         values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
         bspl = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
         xp_assert_close(bspl(xi), values.ravel(), atol=1e-15)
+
+    def test_2D_nans(self):
+        x = np.arange(6)
+        y = np.arange(6) + 0.5
+        y[-1] = np.nan
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+
+        with assert_raises(ValueError):
+            make_ndbspl((x, y), values, k=1)
 
     def _get_sample_2d_data(self):
         # from test_rgi.py::TestIntepN

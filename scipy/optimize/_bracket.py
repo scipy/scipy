@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel, xp_default_dtype
+from scipy._lib._array_api import array_namespace, xp_ravel, xp_promote
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -14,13 +14,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not np.iterable(args):
         args = (args,)
 
-    xp = array_namespace(xl0)
-    xl0 = xp.asarray(xl0)[()]
-    if (not xp.isdtype(xl0.dtype, "numeric")
-        or xp.isdtype(xl0.dtype, "complex floating")):
-        raise ValueError('`xl0` must be numeric and real.')
-    if not xp.isdtype(xl0.dtype, "real floating"):
-        xl0 = xp.asarray(xl0, dtype=xp_default_dtype(xp))
+    xp = array_namespace(xl0, xr0, xmin, xmax, factor, *args)
 
     # If xr0 is not supplied, fill with a dummy value for the sake of
     # broadcasting. We need to wait until xmax has been validated to
@@ -33,8 +27,11 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    xl0, xr0, xmin, xmax, factor = xp.broadcast_arrays(
-        xl0, xp.asarray(xr0), xp.asarray(xmin), xp.asarray(xmax), xp.asarray(factor))
+    xl0, xr0, xmin, xmax, factor = xp_promote(
+        xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
+
+    if not xp.isdtype(xl0.dtype, ('integral', 'real floating')):
+        raise ValueError('`xl0` must be numeric and real.')
 
     if (not xp.isdtype(xr0.dtype, "numeric")
         or xp.isdtype(xr0.dtype, "complex floating")):
@@ -57,7 +54,7 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # Calculate the default value of xr0 if a value has not been supplied.
     # Be careful to ensure xr0 is not larger than xmax.
     if xr0_not_supplied:
-        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.asarray(1.0))
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, 1.0)
         xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
@@ -425,13 +422,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not np.iterable(args):
         args = (args,)
 
-    xp = array_namespace(xm0)
-    xm0 = xp.asarray(xm0)[()]
-    if (not xp.isdtype(xm0.dtype, "numeric")
-        or xp.isdtype(xm0.dtype, "complex floating")):
-        raise ValueError('`xm0` must be numeric and real.')
-    if not xp.isdtype(xm0.dtype, "real floating"):
-        xm0 = xp.asarray(xm0, dtype=xp_default_dtype(xp))
+    xp = array_namespace(xm0, xl0, xr0, xmin, xmax, factor, *args)
 
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
@@ -450,10 +441,12 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
         xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
-    xl0, xm0, xr0, xmin, xmax, factor = xp.broadcast_arrays(
-        xp.asarray(xl0), xm0, xp.asarray(xr0), xp.asarray(xmin),
-        xp.asarray(xmax), xp.asarray(factor)
-    )
+
+    xm0, xl0, xr0, xmin, xmax, factor = xp_promote(
+        xm0, xl0, xr0, xmin, xmax, factor, broadcast=True, force_floating=True, xp=xp)
+
+    if not xp.isdtype(xm0.dtype, ('integral', 'real floating')):
+        raise ValueError('`xm0` must be numeric and real.')
 
     if (not xp.isdtype(xl0.dtype, "numeric")
         or xp.isdtype(xl0.dtype, "complex floating")):
@@ -481,10 +474,10 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # by the user. We need to be careful to ensure xl0 and xr0 are not outside
     # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5))
+        xl0 = xm0 - xp.minimum((xm0 - xmin)/16, 0.5)
         xl0 = xp.astype(xl0, xm0.dtype, copy=False)
     if xr0_not_supplied:
-        xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5))
+        xr0 = xm0 + xp.minimum((xmax - xm0)/16, 0.5)
         xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)

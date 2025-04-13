@@ -7,6 +7,9 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import os
+import dataclasses
+import functools
+import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
 from contextlib import contextmanager
@@ -32,16 +35,17 @@ from scipy._lib.array_api_compat import (
     is_array_api_strict_namespace as is_array_api_strict
 )
 from scipy._lib._sparse import issparse
+from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
+    'default_xp', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
-    'xp_copy', 'xp_copysign', 'xp_device',
-    'xp_moveaxis_to_end', 'xp_ravel', 'xp_real', 'xp_sign', 'xp_size',
-    'xp_take_along_axis', 'xp_unsupported_param_msg', 'xp_vector_norm',
+    'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
+    'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
+    'xp_result_type', 'xp_promote'
 ]
 
 
@@ -417,42 +421,6 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
-    """Returns a list of available devices for the given namespace."""
-    devices: list[str] = []
-    if is_torch(xp):
-        devices += ['cpu']
-        import torch # type: ignore[import]
-        num_cuda = torch.cuda.device_count()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        if torch.backends.mps.is_available():
-            devices += ['mps']
-        return devices
-    elif is_cupy(xp):
-        import cupy # type: ignore[import]
-        num_cuda = cupy.cuda.runtime.getDeviceCount()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        return devices
-    elif is_jax(xp):
-        import jax # type: ignore[import]
-        num_cpu = jax.device_count(backend='cpu')
-        for i in range(0, num_cpu):
-            devices += [f'cpu:{i}']
-        num_gpu = jax.device_count(backend='gpu')
-        for i in range(0, num_gpu):
-            devices += [f'gpu:{i}']
-        num_tpu = jax.device_count(backend='tpu')
-        for i in range(0, num_tpu):
-            devices += [f'tpu:{i}']
-        return devices
-
-    # given namespace is not known to have a list of available devices;
-    # return `[None]` so that one can use this in tests for `device=None`.
-    return [None]
-
-
 def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """Return the `scipy`-like namespace of a non-NumPy backend
 
@@ -474,42 +442,6 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
 
     return None
 
-
-# temporary substitute for xp.moveaxis, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_moveaxis_to_end(
-        x: Array,
-        source: int,
-        /, *,
-        xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(xp) if xp is None else xp
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
-
-
-# temporary substitute for xp.copysign, which is not yet in all backends
-# or covered by array_api_compat.
-def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # no attempt to account for special cases
-    xp = array_namespace(x1, x2) if xp is None else xp
-    abs_x1 = xp.abs(x1)
-    return xp.where(x2 >= 0, abs_x1, -abs_x1)
-
-
-# partial substitute for xp.sign, which does not cover the NaN special case
-# that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    xp = array_namespace(x) if xp is None else xp
-    if is_numpy(xp):  # only NumPy implements the special cases correctly
-        return xp.sign(x)
-    sign = xp.zeros_like(x)
-    one = xp.asarray(1, dtype=x.dtype)
-    sign = xp.where(x > 0, one, sign)
-    sign = xp.where(x < 0, -one, sign)
-    sign = xp.where(xp.isnan(x), xp.nan*one, sign)
-    return sign
 
 # maybe use `scipy.linalg` if/when array API support is added
 def xp_vector_norm(x: Array, /, *,
@@ -546,53 +478,87 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.reshape(x, (-1,))
 
 
-def xp_real(x: Array, /, *, xp: ModuleType | None = None) -> Array:
-    # Convenience wrapper of xp.real that allows non-complex input;
-    # see data-apis/array-api#824
-    xp = array_namespace(x) if xp is None else xp
-    return xp.real(x) if xp.isdtype(x.dtype, 'complex floating') else x
+# utility to find common dtype with option to force floating
+def xp_result_type(*args, force_floating=False, xp):
+    """
+    Returns the dtype that results from applying type promotion rules
+    (see Array API Standard Type Promotion Rules) to the arguments. Augments
+    standard `result_type` in a few ways:
 
+    - There is a `force_floating` argument that ensures that the result type
+      is floating point, even when all args are integer.     
+    - When a TypeError is raised (e.g. due to an unsupported promotion)
+      and `force_floating=True`, we define a custom rule: use the result type
+      of the default float and any other floats passed. See
+      https://github.com/scipy/scipy/pull/22695/files#r1997905891
+      for rationale.
+    - This function accepts array-like iterables, which are immediately converted
+      to the namespace's arrays before result type calculation. Consequently, the
+      result dtype may be different when an argument is `1.` vs `[1.]`.
 
-def xp_take_along_axis(arr: Array,
-                       indices: Array, /, *,
-                       axis: int = -1,
-                       xp: ModuleType | None = None) -> Array:
-    # Dispatcher for np.take_along_axis for backends that support it;
-    # see data-apis/array-api/pull#816
-    xp = array_namespace(arr) if xp is None else xp
-    if is_torch(xp):
-        return xp.take_along_dim(arr, indices, dim=axis)
-    elif is_array_api_strict(xp):
-        raise NotImplementedError("Array API standard does not define take_along_axis")
-    else:
-        return xp.take_along_axis(arr, indices, axis=axis)
-
-
-# utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
-    xp = array_namespace(*args) if xp is None else xp
-
-    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
+    if force_floating:
+        args_not_none.append(1.0)
 
-    # determine minimum dtype
-    default_float = xp.asarray(1.).dtype
-    dtypes = [arg.dtype for arg in args_not_none]
-    try:  # follow library's prefered mixed promotion rules
-        dtype = xp.result_type(*dtypes)
-        if force_floating and xp.isdtype(dtype, 'integral'):
-            # If we were to add `default_float` before checking whether the result
-            # type is otherwise integral, we risk promotion from lower float.
-            dtype = xp.result_type(dtype, default_float)
+    if is_numpy(xp) and xp.__version__ < '2.0':
+        # Follow NEP 50 promotion rules anyway
+        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
+                         for arg in args_not_none]
+        return xp.result_type(*args_not_none)
+
+    try:  # follow library's preferred promotion rules
+        return xp.result_type(*args_not_none)
     except TypeError:  # mixed type promotion isn't defined
-        float_dtypes = [dtype for dtype in dtypes
-                        if not xp.isdtype(dtype, 'integral')]
-        if float_dtypes:
-            dtype = xp.result_type(*float_dtypes, default_float)
-        elif force_floating:
-            dtype = default_float
-        else:
-            dtype = xp.result_type(*dtypes)
+        if not force_floating:
+            raise
+        # use `result_type` of default floating point type and any floats present
+        # This can be revisited, but right now, the only backends that get here
+        # are array-api-strict (which is not for production use) and PyTorch
+        # (due to data-apis/array-api-compat#279).
+        float_args = []
+        for arg in args_not_none:
+            arg_array = xp.asarray(arg) if np.isscalar(arg) else arg
+            dtype = getattr(arg_array, 'dtype', arg)
+            if xp.isdtype(dtype, ('real floating', 'complex floating')):
+                float_args.append(arg)
+        return xp.result_type(*float_args, xp_default_dtype(xp))
+
+
+def xp_promote(*args, broadcast=False, force_floating=False, xp):
+    """
+    Promotes elements of *args to result dtype, ignoring `None`s.
+    Includes options for forcing promotion to floating point and
+    broadcasting the arrays, again ignoring `None`s.
+    Type promotion rules follow `xp_result_type` instead of `xp.result_type`.
+
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+
+    This function accepts array-like iterables, which are immediately converted
+    to the namespace's arrays before result type calculation. Consequently, the
+    result dtype may be different when an argument is `1.` vs `[1.]`.
+    
+    See Also
+    --------
+    xp_result_type
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]  # solely to prevent double conversion of iterable to array
+
+    dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
+
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
+            for arg in args]
+
+    if not broadcast:
+        return args[0] if len(args)==1 else tuple(args)
+
+    args_not_none = [arg for arg in args if arg is not None]
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
@@ -616,12 +582,13 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ensure_writeable:
-            arg = xp.astype(arg, dtype, copy=True)
+        # This is much faster than xp.astype(arg, dtype, copy=False)
+        if arg.dtype != dtype:
+            arg = xp.astype(arg, dtype)
+
         out.append(arg)
 
-    return out
+    return out[0] if len(out)==1 else tuple(out)
 
 
 def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
@@ -652,3 +619,147 @@ def xp_default_dtype(xp):
 def is_marray(xp):
     """Returns True if `xp` is an MArray namespace; False otherwise."""
     return "marray" in xp.__name__
+
+
+
+def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
+                       exceptions=None, reason=None):
+    skip_backends = [] if skip_backends is None else skip_backends
+    exceptions = [] if exceptions is None else exceptions
+
+    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
+
+    # Default capabilities
+    numpy = capabilities(cpu=True, gpu=False)
+    strict = capabilities(cpu=True, gpu=False)
+    cupy = capabilities(cpu=False, gpu=True)
+    torch = capabilities(cpu=True, gpu=True)
+    jax = capabilities(cpu=True, gpu=True)
+    dask = capabilities(cpu=True, gpu=True)
+
+    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
+                        torch=torch, jax=jax, dask=dask)
+
+    for backend, _ in skip_backends:  # ignoring the reason
+        setattr(capabilities[backend], 'cpu', False)
+        setattr(capabilities[backend], 'gpu', False)
+
+    other_backends = {'cupy', 'torch', 'jax', 'dask'}
+
+    if cpu_only:
+        for backend in other_backends - set(exceptions):
+            setattr(capabilities[backend], 'gpu', False)
+
+    if np_only:
+        for backend in other_backends:
+            setattr(capabilities[backend], 'cpu', False)
+            setattr(capabilities[backend], 'gpu', False)
+
+    return capabilities
+
+
+def _make_capabilities_table(capabilities):
+    numpy = capabilities['numpy']
+    cupy = capabilities['cupy']
+    torch = capabilities['torch']
+    jax = capabilities['jax']
+    dask = capabilities['dask']
+
+    for backend in [numpy, cupy, torch, jax, dask]:
+        for attr in ['cpu', 'gpu']:
+            val = "✓" if getattr(backend, attr) else "✗"
+            val += " " * (len('{numpy.}') + len(attr) - 1)
+            setattr(backend, attr, val)
+
+    table = f"""
+    +---------+-------------+-------------+
+    | Library | CPU         | GPU         |
+    +=========+=============+=============+
+    | NumPy   | {numpy.cpu} | n/a         |
+    +---------+-------------+-------------+
+    | CuPy    | n/a         | {cupy.gpu } |
+    +---------+-------------+-------------+
+    | PyTorch | {torch.cpu} | {torch.gpu} |
+    +---------+-------------+-------------+
+    | JAX     | {jax.cpu  } | {jax.gpu  } |
+    +---------+-------------+-------------+
+    | Dask    | {dask.cpu } | {dask.gpu } |
+    +---------+-------------+-------------+
+    """
+    return table
+
+
+def _make_capabilities_note(fun_name, capabilities):
+    table = _make_capabilities_table(capabilities)
+    note = f"""
+    `{fun_name}` has experimental support for Python Array API Standard compatible
+    backends in addition to NumPy. Please consider testing these features
+    by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
+    CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
+    combinations of backend and device (or other capability) are supported.
+    {table}
+    See :ref:`dev-arrayapi` for more information.
+    """
+    return textwrap.dedent(note)
+
+
+def xp_capabilities(capabilities_table=None, **kwargs):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        capabilities_table[wrapper] = kwargs
+        capabilities = _make_capabilities(**capabilities_table[wrapper])
+
+        note = _make_capabilities_note(f.__name__, capabilities)
+        doc = FunctionDoc(wrapper)
+        doc['Notes'].append(note)
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator
+
+
+def make_skip_xp_backends(*funs, capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+
+    import pytest
+
+    skip_backends = []
+    cpu_only = False
+    cpu_only_reason = set()
+    np_only = False
+    exceptions = []
+
+    for fun in funs:
+        skip_backends += capabilities_table[fun].get('skip_backends', [])
+        cpu_only |= capabilities_table[fun].get('cpu_only', False)
+        # Empty reason causes the decorator to have no effect
+        cpu_only_reason.add(capabilities_table[fun].get('reason', "No reason given."))
+        np_only |= capabilities_table[fun].get('np_only', False)
+        exceptions += capabilities_table[fun].get('exceptions', [])
+
+    decorators = []
+    if cpu_only:
+        kwargs = dict(cpu_only=True, exceptions=exceptions)
+        kwargs |= {'reason': "\n".join(cpu_only_reason)}
+        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
+
+    if np_only:
+        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
+
+    for backend, reason in skip_backends:
+        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
+        backend = backends.get(backend, backend)
+        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
+
+    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
+
+
+# Is it OK to have a dictionary that is mutated (once upon import) in many places?
+xp_capabilities_table = {}  # type: ignore[var-annotated]

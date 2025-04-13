@@ -323,11 +323,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         If `jac is None` the absolute step size used for numerical
         approximation of the jacobian via forward differences.
     maxfun : int
-        Maximum number of function evaluations. Note that this function
-        may violate the limit because of evaluating gradients by numerical
-        differentiation.
+        Maximum number of function evaluations before minimization terminates.
+        Note that this function may violate the limit if the gradients
+        are evaluated by numerical differentiation.
     maxiter : int
-        Maximum number of iterations.
+        Maximum number of algorithm iterations.
     iprint : int, optional
         Deprecated option that previously controlled the text printed on the
         screen during the problem solution. Now the code does not emit any
@@ -359,6 +359,11 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     relationship between the two is ``ftol = factr * numpy.finfo(float).eps``.
     I.e., `factr` multiplies the default machine floating-point precision to
     arrive at `ftol`.
+    If the minimization is slow to converge the optimizer may halt if the
+    total number of function evaluations exceeds `maxfun`, or the number of
+    algorithm iterations has reached `maxiter` (whichever comes first). If
+    this is the case then ``result.success=False``, and an appropriate
+    error message is contained in ``result.message``.
 
     """
     _check_unknown_options(unknown_options)
@@ -563,6 +568,43 @@ class LbfgsInvHessProduct(LinearOperator):
 
         return r
 
+    def _matmat(self, X):
+        """Efficient matrix-matrix multiply with the BFGS matrices.
+
+        This calculation is described in Section (4) of [1].
+
+        Parameters
+        ----------
+        X : ndarray
+            An array with shape (n,m)
+
+        Returns
+        -------
+        Y : ndarray
+            The matrix-matrix product
+
+        Notes
+        -----
+        This implementation is written starting from _matvec and broadcasting
+        all expressions along the second axis of X.
+
+        """
+        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
+        Q = np.array(X, dtype=self.dtype, copy=True)
+
+        alpha = np.empty((n_corrs, Q.shape[1]))
+
+        for i in range(n_corrs-1, -1, -1):
+            alpha[i] = rho[i] * np.dot(s[i], Q)
+            Q -= alpha[i]*y[i][:, np.newaxis]
+
+        R = Q
+        for i in range(n_corrs):
+            beta = rho[i] * np.dot(y[i], R)
+            R += s[i][:, np.newaxis] * (alpha[i] - beta)
+
+        return R
+
     def todense(self):
         """Return a dense array representation of this operator.
 
@@ -573,14 +615,5 @@ class LbfgsInvHessProduct(LinearOperator):
             the same data represented by this `LinearOperator`.
 
         """
-        s, y, n_corrs, rho = self.sk, self.yk, self.n_corrs, self.rho
         I_arr = np.eye(*self.shape, dtype=self.dtype)
-        Hk = I_arr
-
-        for i in range(n_corrs):
-            A1 = I_arr - s[i][:, np.newaxis] * y[i][np.newaxis, :] * rho[i]
-            A2 = I_arr - y[i][:, np.newaxis] * s[i][np.newaxis, :] * rho[i]
-
-            Hk = np.dot(A1, np.dot(Hk, A2)) + (rho[i] * s[i][:, np.newaxis] *
-                                                        s[i][np.newaxis, :])
-        return Hk
+        return self._matmat(I_arr)

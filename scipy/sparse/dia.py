@@ -6,16 +6,9 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'check_shape',
     'dia_matrix',
-    'dia_matvec',
-    'get_sum_dtype',
-    'getdtype',
-    'isshape',
     'isspmatrix_dia',
     'spmatrix',
-    'upcast_char',
-    'validateaxis',
 ]
 
 

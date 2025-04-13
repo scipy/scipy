@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
 from scipy._lib import array_api_extra as xpx
 
 
@@ -338,6 +338,7 @@ def _check_clip_x(x, bounds):
     return x
 
 
+@xp_capabilities()
 def rosen(x):
     """
     The Rosenbrock function.
@@ -381,14 +382,13 @@ def rosen(x):
     >>> plt.show()
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
+    x = xp_promote(x, force_floating=True, xp=xp)
     r = xp.sum(100.0 * (x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0,
                axis=0, dtype=x.dtype)
     return r
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -417,9 +417,7 @@ def rosen_der(x):
 
     """
     xp = array_namespace(x)
-    x = xp.asarray(x)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
+    x = xp_promote(x, force_floating=True, xp=xp)
     xm = x[1:-1]
     xm_m1 = x[:-2]
     xm_p1 = x[2:]
@@ -431,6 +429,7 @@ def rosen_der(x):
     return der
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -462,9 +461,8 @@ def rosen_hess(x):
 
     """
     xp = array_namespace(x)
-    x = xpx.atleast_nd(x, ndim=1, xp=xp)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
+    x = xp_promote(x, force_floating=True, xp=xp)
+
     H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
@@ -474,6 +472,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
+@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -506,9 +505,8 @@ def rosen_hess_prod(x, p):
 
     """
     xp = array_namespace(x, p)
+    x = xp_promote(x, force_floating=True, xp=xp)
     x = xpx.atleast_nd(x, ndim=1, xp=xp)
-    if xp.isdtype(x.dtype, 'integral'):
-        x = xp.astype(x, xp.asarray(1.).dtype)
     p = xp.asarray(p, dtype=x.dtype)
     Hp = xp.zeros(x.shape[0], dtype=x.dtype)
     Hp[0] = (1200 * x[0]**2 - 400 * x[1] + 2) * p[0] - 400 * x[0] * p[1]

@@ -15,8 +15,8 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
+    xp_promote,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -864,8 +864,7 @@ def _log_var(logx, xp):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx)
     # get complex dtype with component dtypes same as `logx` dtype;
-    # see data-apis/array-api#841
-    dtype = xp.result_type(logx.dtype, xp.complex64)
+    dtype = xp.result_type(logx.dtype, 1j)
     pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
     logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
     res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
@@ -897,14 +896,17 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -954,15 +956,11 @@ def boxcox_llf(lmb, data):
 
     """
     xp = array_namespace(data)
-    data = xp.asarray(data)
+    data = xp_promote(data, force_floating=True, xp=xp)
+
     N = data.shape[0]
     if N == 0:
         return xp.nan
-
-    dt = data.dtype
-    if xp.isdtype(dt, 'integral'):
-        data = xp.asarray(data, dtype=xp.float64)
-        dt = xp.float64
 
     logdata = xp.log(data)
 
@@ -978,7 +976,7 @@ def boxcox_llf(lmb, data):
         logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
-    res = xp.astype(res, dt)
+    res = xp.astype(res, data.dtype, copy=False)
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -1082,10 +1080,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
+    
+    .. math::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1097,9 +1100,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1538,12 +1541,24 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for } x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for } x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for } x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for } x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
@@ -1651,15 +1666,18 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
@@ -2884,7 +2902,7 @@ def bartlett(*samples, axis=0):
         raise ValueError("Must enter at least two input sample vectors.")
 
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -2893,14 +2911,13 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    # sum dtype can be removed when 2023.12 rules kick in
     dtype = Ni.dtype
-    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    Ntot = xp.sum(Ni, axis=0)
     spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
     numer = ((Ntot - k) * xp.log(spsq)
              - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
     denom = (1 + 1/(3*(k - 1))
-             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
+             * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
@@ -3933,9 +3950,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
-    if xp.isdtype(samples.dtype, 'integral'):
-        dtype = xp.asarray(1.).dtype  # get default float type
-        samples = xp.asarray(samples, dtype=dtype)
+    samples = xp_promote(samples, force_floating=True, xp=xp)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine

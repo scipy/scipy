@@ -2358,13 +2358,19 @@ def lfiltic(b, a, y, x=None):
         if x is not None:
             _reject_objects(x, 'lfiltic')
 
-    a = xp.asarray(a)
-    b = xp.asarray(b)
-
-    N = xp_size(a) - 1
-    M = xp_size(b) - 1
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
+    b = xpx.atleast_nd(xp.asarray(b), ndim=1, xp=xp)
+    if a.ndim > 1:
+        raise ValueError('Filter coefficients `a` must be 1-D.')
+    if b.ndim > 1:
+        raise ValueError('Filter coefficients `b` must be 1-D.')
+    N = a.shape[0] - 1
+    M = b.shape[0] - 1
     K = max(M, N)
     y = xp.asarray(y)
+
+    if N < 0:
+        raise ValueError("There must be at least one `a` coefficient.")
 
     if x is None:
         result_type = xp.result_type(b, a, y)
@@ -2379,24 +2385,27 @@ def lfiltic(b, a, y, x=None):
             result_type = xp.float64
         x = xp.astype(x, result_type)
 
-        concat = array_namespace(a).concat
-
         L = xp_size(x)
         if L < M:
-            x = concat((x, xp.zeros(M - L)))
+            x = xp.concat((x, xp.zeros(M - L)))
 
     y = xp.astype(y, result_type)
     zi = xp.zeros(K, dtype=result_type)
 
     L = xp_size(y)
     if L < N:
-        y = xp.concat((y, np.zeros(N - L)))
+        y = xp.concat((y, xp.zeros(N - L)))
 
     for m in range(M):
         zi[m] = xp.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
         zi[m] -= xp.sum(a[m + 1:] * y[:N - m], axis=0)
+
+    if a[0] != 1.:
+        if a[0] == 0.:
+            raise ValueError("First `a` filter coefficient must be non-zero.")
+        zi /= a[0]
 
     return zi
 
@@ -3856,7 +3865,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        if np.issubdtype(x.dtype, np.floating):
+        if np.issubdtype(x.dtype, np.complexfloating):
+            h = firwin(2 * half_len + 1, f_c,
+                       window=window).astype(x.dtype)  # match dtype of x
+        elif np.issubdtype(x.dtype, np.floating):
             h = firwin(2 * half_len + 1, f_c,
                        window=window).astype(x.dtype)  # match dtype of x
         else:

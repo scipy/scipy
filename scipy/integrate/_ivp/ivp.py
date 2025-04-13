@@ -694,8 +694,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             g = g_new
 
         if t_eval is None:
-            ts.append(t)
-            ys.append(y)
+            donot_append = (len(ts) > 1 and
+                            ts[-1] == t and
+                            dense_output)
+            if not donot_append:
+                ts.append(t)
+                ys.append(y)
+            else:
+                if len(interpolants) > 0:
+                    interpolants.pop()
         else:
             # The value in t_eval equal to t will be included.
             if solver.direction > 0:

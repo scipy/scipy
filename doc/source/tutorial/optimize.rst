@@ -536,10 +536,10 @@ Constrained minimization
 
 The :func:`minimize` function provides several algorithms for constrained minimization,
 namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
-to be defined using slightly different structures. The methods ``'trust-constr'`` and ``'COBYQA'`` require
+to be defined using slightly different structures. The methods ``'trust-constr'``, ``'COBYQA'``, and ``'COBYLA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
-require constraints to be defined as a sequence of dictionaries, with keys
+:func:`NonlinearConstraint`. Method ``'SLSQP'``, on the other hand,
+requires constraints to be defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
 As an example let us consider the constrained minimization of the Rosenbrock function:
@@ -873,6 +873,12 @@ meet your needs (e.g. execution time, objective function value).
      -
      -
    * - COBYLA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - COBYQA
      - ✓
      - ✓
      -

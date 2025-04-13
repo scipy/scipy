@@ -36,6 +36,15 @@ def fun_rosenbrock(x):
     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
 
+class Fun_Rosenbrock:
+    def __init__(self):
+        self.nfev = 0
+
+    def __call__(self, x, a=0):
+        self.nfev += 1
+        return fun_rosenbrock(x)
+
+
 def jac_rosenbrock(x):
     return np.array([
         [-20 * x[0], 10],
@@ -235,19 +244,13 @@ class BaseMixin:
                       2.0, x_scale=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
-        # res1 and res2 should be equivalent.
-        # res2 and res3 should be different.
         res1 = least_squares(fun_trivial, 2.0, diff_step=1e-1,
-                             method=self.method)
-        res2 = least_squares(fun_trivial, 2.0, diff_step=-1e-1,
                              method=self.method)
         res3 = least_squares(fun_trivial, 2.0,
                              diff_step=None, method=self.method)
         assert_allclose(res1.x, 0, atol=1e-4)
-        assert_allclose(res2.x, 0, atol=1e-4)
         assert_allclose(res3.x, 0, atol=1e-4)
-        assert_equal(res1.x, res2.x)
-        assert_equal(res1.nfev, res2.nfev)
+
 
     def test_incorrect_options_usage(self):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
@@ -267,7 +270,6 @@ class BaseMixin:
         assert_allclose(res.optimality, 0, atol=1e-2)
         assert_equal(res.active_mask, 0)
         if self.method == 'lm':
-            assert_(res.nfev < 30)
             assert_(res.njev is None)
         else:
             assert_(res.nfev < 10)
@@ -294,6 +296,17 @@ class BaseMixin:
         assert_equal(res.njev, 1)
         assert_equal(res.status, 0)
         assert_equal(res.success, 0)
+
+    def test_nfev(self):
+        # checks that the true number of nfev are being consumed
+        for i in range(1, 3):
+            rng = np.random.default_rng(128908)
+            x0 = rng.uniform(size=2) * 10
+            ftrivial = Fun_Rosenbrock()
+            res = least_squares(
+               ftrivial, x0, jac=jac_rosenbrock, method=self.method, max_nfev=i
+            )
+            assert res.nfev == ftrivial.nfev
 
     def test_rosenbrock(self):
         x0 = [-2, 1]

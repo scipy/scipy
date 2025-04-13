@@ -19,7 +19,7 @@
 
 # SciPy imports.
 from scipy import linalg, special
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, np_vecdot
 
 from numpy import (asarray, atleast_2d, reshape, zeros, newaxis, exp, pi,
                    sqrt, ravel, power, atleast_1d, squeeze, sum, transpose,
@@ -232,7 +232,7 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be one-dimensional.")
             if len(self._weights) != self.n:
                 raise ValueError("`weights` input should be of length n")
-            self._neff = 1/sum(self._weights**2)
+            self._neff = 1/np_vecdot(self._weights, self._weights)
 
         # This can be converted to a warning once gh-10205 is resolved
         if self.d > self.n:
@@ -346,8 +346,8 @@ class gaussian_kde:
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
 
-        energies = sum(diff * tdiff, axis=0) / 2.0
-        result = sum(exp(-energies)*self.weights, axis=0) / norm_const
+        energies = np_vecdot(diff, tdiff, axis=0) / 2.0
+        result = np_vecdot(exp(-energies), self.weights, axis=0) / norm_const
 
         return result
 
@@ -381,12 +381,11 @@ class gaussian_kde:
         normalized_low = ravel((low - self.dataset) / stdev)
         normalized_high = ravel((high - self.dataset) / stdev)
 
-        value = np.sum(self.weights*(
-                        special.ndtr(normalized_high) -
-                        special.ndtr(normalized_low)))
+        delta = special.ndtr(normalized_high) - special.ndtr(normalized_low)
+        value = np_vecdot(self.weights, delta)
         return value
 
-    def integrate_box(self, low_bounds, high_bounds, maxpts=None):
+    def integrate_box(self, low_bounds, high_bounds, maxpts=None, *, rng=None):
         """Computes the integral of a pdf over a rectangular interval.
 
         Parameters
@@ -397,6 +396,11 @@ class gaussian_kde:
             A 1-D array containing the upper bounds of integration.
         maxpts : int, optional
             The maximum number of points to use for integration.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            generator is created using entropy from the operating system. Types
+            other than `numpy.random.Generator` are passed to
+            `numpy.random.default_rng` to instantiate a ``Generator``.
 
         Returns
         -------
@@ -406,10 +410,10 @@ class gaussian_kde:
         """
         low, high = low_bounds - self.dataset.T, high_bounds - self.dataset.T
         values = multivariate_normal.cdf(
-            high, lower_limit=low, cov=self.covariance, maxpts=maxpts
+            high, lower_limit=low, cov=self.covariance, maxpts=maxpts,
+            rng=rng
         )
-        # XXX: xp.linalg.vecdot is much faster than (a*b).sum(axis=-1)
-        return (values * self.weights).sum(axis=-1)
+        return np_vecdot(values, self.weights, axis=-1)
 
     def integrate_kde(self, other):
         """
@@ -451,8 +455,8 @@ class gaussian_kde:
             diff = large.dataset - mean
             tdiff = linalg.cho_solve(sum_cov_chol, diff)
 
-            energies = sum(diff * tdiff, axis=0) / 2.0
-            result += sum(exp(-energies)*large.weights, axis=0)*small.weights[i]
+            energies = np_vecdot(diff, tdiff, axis=0) / 2.0
+            result += np_vecdot(exp(-energies), large.weights, axis=0)*small.weights[i]
 
         sqrt_det = np.prod(np.diagonal(sum_cov_chol[0]))
         norm_const = power(2 * pi, sum_cov.shape[0] / 2.0) * sqrt_det
@@ -715,7 +719,7 @@ class gaussian_kde:
         try:
             return self._neff
         except AttributeError:
-            self._neff = 1/sum(self.weights**2)
+            self._neff = 1/np_vecdot(self.weights, self.weights)
             return self._neff
 
 
