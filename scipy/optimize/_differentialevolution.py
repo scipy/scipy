@@ -5,14 +5,15 @@ Added by Andrew Nelson 2014
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize._optimize import _status_message, _wrap_callback
-from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
-                              rng_integers)
 
+from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
                                          NonlinearConstraint, LinearConstraint)
-from scipy.sparse import issparse
+from scipy.optimize._optimize import _status_message, _wrap_callback
+from scipy._lib._util import (check_random_state, MapWrapper, _FunctionWrapper,
+                              rng_integers, _transition_to_rng)
+from scipy._lib._sparse import issparse
+
 
 __all__ = ['differential_evolution']
 
@@ -20,9 +21,10 @@ __all__ = ['differential_evolution']
 _MACHEPS = np.finfo(np.float64).eps
 
 
+@_transition_to_rng("seed", position_num=9)
 def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
-                           mutation=(0.5, 1), recombination=0.7, seed=None,
+                           mutation=(0.5, 1), recombination=0.7, rng=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
@@ -124,14 +126,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
@@ -167,6 +166,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         being studied then the `trust-constr` method is used instead. For large
         problems with many constraints, polishing can take a long time due to
         the Jacobian computations.
+
+        .. versionchanged:: 1.15.0
+            If `workers` is specified then the map-like callable that wraps
+            `func` is supplied to `minimize` instead of it using `func`
+            directly. This allows the caller to control how and where the
+            invocations actually run.
+
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
@@ -417,7 +423,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     >>> bounds = Bounds([0., 0.], [2., 2.])
     >>> result = differential_evolution(rosen, bounds, constraints=lc,
-    ...                                 seed=1)
+    ...                                 rng=1)
     >>> result.x, result.fun
     (array([0.96632622, 0.93367155]), 0.0011352416852625719)
 
@@ -429,7 +435,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
-    >>> result = differential_evolution(ackley, bounds, seed=1)
+    >>> result = differential_evolution(ackley, bounds, rng=1)
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
 
@@ -438,7 +444,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     function evaluations.
 
     >>> result = differential_evolution(
-    ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
+    ...     ackley, bounds, vectorized=True, updating='deferred', rng=1
     ... )
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
@@ -484,7 +490,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      popsize=popsize, tol=tol,
                                      mutation=mutation,
                                      recombination=recombination,
-                                     seed=seed, polish=polish,
+                                     rng=rng, polish=polish,
                                      callback=callback,
                                      disp=disp, init=init, atol=atol,
                                      updating=updating,
@@ -587,14 +593,33 @@ class DifferentialEvolutionSolver:
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations.
+
+    rng : {None, int, `numpy.random.Generator`}, optional
+        
+        ..versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `seed` to `rng`.
+            For an interim period both keywords will continue to work (only specify
+            one of them). After the interim period using the `seed` keyword will emit
+            warnings. The behavior of the `seed` and `rng` keywords is outlined below.
+
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+        If `rng` is already a `Generator` instance, then the provided instance is
+        used.
+        
+        If this argument is passed by position or `seed` is passed by keyword, the
+        behavior is:
+        
+        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `seed` is an int, a new `RandomState` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a `Generator` or `RandomState` instance then
+          that instance is used.
+        
+        Specify `seed`/`rng` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
     callback : callable, optional
@@ -738,7 +763,7 @@ class DifferentialEvolutionSolver:
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
-                 tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
+                 tol=0.01, mutation=(0.5, 1), recombination=0.7, rng=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
@@ -857,7 +882,7 @@ class DifferentialEvolutionSolver:
 
         self.parameter_count = np.size(self.limits, 1)
 
-        self.random_number_generator = check_random_state(seed)
+        self.random_number_generator = check_random_state(rng)
 
         # Which parameters are going to be integers?
         if np.any(integrality):
@@ -1220,7 +1245,8 @@ class DifferentialEvolutionSolver:
                                   UserWarning, stacklevel=2)
             if self.disp:
                 print(f"Polishing solution with '{polish_method}'")
-            result = minimize(self.func,
+            result = minimize(lambda x:
+                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
                               np.copy(DE_result.x),
                               method=polish_method,
                               bounds=self.limits.T,

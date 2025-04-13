@@ -73,13 +73,46 @@ Real ibeta_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betainc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    /* In limiting cases, SciPy treats `betainc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betainc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
+    if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
+	 */
+        return NAN;
+    }
+
+    if ((a == 0) || std::isinf(b)) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. The same is true in the limit b -> inf for fixed a.
+	 */
+	return x > 0 ? 1 : 0;
+    }
+
+    if ((b == 0) || std::isinf(a)) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 1. The same is true in the limit a -> inf for fixed b.
+	 */
+	return x < 1 ? 0 : 1;
+    }
+
     try {
         y = boost::math::ibeta(a, b, x, SpecialPolicy());
     } catch (const std::domain_error& e) {
@@ -117,13 +150,46 @@ Real ibetac_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
-    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+
+    if ((a < 0) || (b < 0) || (x < 0) || (x > 1)) {
         sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
+
+    /* In limiting cases, SciPy treats `betaincc` as a two parameter family
+     * of functions of a single variable `x`, rather than as a function of
+     * three variables `a`, `b`, `x`. The limit ``(a, b) -> (a0, b0)`` of
+     * ``betaincc(a, b, x)`` is treated as the pointwise limit in `x`.
+     */
+
+    if (((a == 0) && (b == 0)) || (std::isinf(a) && std::isinf(b))) {
+	/* In the limit (a, b) -> (0+, 0+), the Beta distribution converges
+	 * to a Bernoulli(p) distribution, where p depends on the path in
+	 * which (a, b) approaches (0+, 0+).
+	 * e.g. if a = t*b then the limiting distribution will be
+	 * Bernoulli(t / (t + 1)). The a = 0, b = 0 case is thus indeterminate.
+	 * A similar statement can be made for the limit (a, b) -> (inf, inf).
+	 */
+        return NAN;
+    }
+
+    if ((a == 0) || std::isinf(b)) {
+	/* Distribution in the limit a -> 0+, b > 0 is a point distribution
+	 * at x = 0. The same is true in the limit b -> inf for fixed a.
+	 */
+	return x > 0 ? 0 : 1;
+    }
+
+    if ((b == 0) || std::isinf(a)) {
+	/* Distribution in the limit b -> 0+, a > 0 is a point distribution
+	 * at x = 1.  The same is true in the limit a -> inf for fixed b.
+	 */
+	return x < 1 ? 1 : 0;
+    }
+
     try {
         y = boost::math::ibetac(a, b, x);
     } catch (const std::domain_error& e) {
@@ -161,7 +227,7 @@ Real ibeta_inv_wrap(Real a, Real b, Real p, const Policy& policy_)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(p)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
@@ -205,7 +271,7 @@ Real ibetac_inv_wrap(Real a, Real b, Real p)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(p)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(p)) {
         return NAN;
     }
     if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
@@ -423,7 +489,7 @@ Real hyp1f1_wrap(Real a, Real b, Real x)
 {
     Real y;
 
-    if (isnan(a) || isnan(b) || isnan(x)) {
+    if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return NAN;
     }
     if (b <= 0 && std::trunc(b) == b) {
@@ -814,7 +880,7 @@ ncf_ppf_wrap(const Real v1, const Real v2, const Real l, const Real x)
 	return NAN;
     }
     if ((v1 <= 0) || (v2 <= 0) || (l < 0) || (x < 0) || (x > 1)) {
-	sf_error("ncfdtr", SF_ERROR_DOMAIN, NULL);
+	sf_error("ncfdtri", SF_ERROR_DOMAIN, NULL);
 	return NAN;
     }
     Real y;
@@ -951,26 +1017,46 @@ ncf_kurtosis_excess_double(double v1, double v2, double l)
 
 template<typename Real>
 Real
-nct_cdf_wrap(const Real x, const Real v, const Real l)
+nct_cdf_wrap(const Real v, const Real l, const Real x)
 {
-    if (std::isfinite(x)) {
-        return boost::math::cdf(
-            boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
+	return NAN;
     }
-    // -inf => 0, inf => 1
-    return 1.0 - std::signbit(x);
+    if (v <= 0) {
+	sf_error("nctdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("nctdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nct_cdf_float(float x, float v, float l)
+nct_cdf_float(float v, float l, float x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 double
-nct_cdf_double(double x, double v, double l)
+nct_cdf_double(double v, double l, double x)
 {
-    return nct_cdf_wrap(x, v, l);
+    return nct_cdf_wrap(v, l, x);
 }
 
 template<typename Real>
@@ -998,22 +1084,47 @@ nct_pdf_double(double x, double v, double l)
 
 template<typename Real>
 Real
-nct_ppf_wrap(const Real x, const Real v, const Real l)
+nct_ppf_wrap(const Real v, const Real l, const Real x)
 {
-    return boost::math::quantile(
-        boost::math::non_central_t_distribution<Real, StatsPolicy>(v, l), x);
+    if (std::isnan(x) || std::isnan(v) || std::isnan(l)) {
+        return NAN;
+    }
+    if (v <= 0 || x < 0 || x > 1) {
+        sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+	y = boost::math::quantile(
+        boost::math::non_central_t_distribution<Real, SpecialPolicy>(v, l), x);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("nctdtrit", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("nctdtrit", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("nctdtrit", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("nctdtrit", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float
-nct_ppf_float(float x, float v, float l)
+nct_ppf_float(float v, float l, float x)
 {
-    return nct_ppf_wrap(x, v, l);
+    return nct_ppf_wrap(v, l, x);
 }
 
 double
-nct_ppf_double(double x, double v, double l)
+nct_ppf_double(double v, double l, double x)
 {
-    return nct_ppf_wrap(x, v, l);
+    return nct_ppf_wrap(v, l, x);
 }
 
 template<typename Real>
@@ -1541,8 +1652,6 @@ hypergeom_skewness_double(double n, double N, double M)
     return boost::math::skewness(boost::math::hypergeometric_distribution<double, StatsPolicy>(n, N, M));
 }
 
-#endif
-
 template<typename Real>
 Real
 landau_pdf_wrap(const Real x, const Real loc, const Real scale)
@@ -1657,3 +1766,5 @@ landau_isf_double(double p, double loc, double scale)
 {
     return landau_isf_wrap(p, loc, scale);
 }
+
+#endif

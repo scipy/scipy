@@ -21,10 +21,11 @@ import warnings
 import operator
 import numpy as np
 
-from scipy.interpolate._bsplines import (
+from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
-from scipy.interpolate._bspl import _qr_reduce, _fpback, _fpknot
+from . import _dierckx      # type: ignore[attr-defined]
+
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -81,7 +82,7 @@ def add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    new_knot = _fpknot(x, t, k, residuals)
+    new_knot = _dierckx.fpknot(x, t, k, residuals)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
@@ -138,7 +139,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric):
 
 
 def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-    """Replicate FITPACK's constructing the knot vector.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
 
     Parameters
     ----------
@@ -355,6 +356,9 @@ def disc(t, k):
     disc : ndarray, shape(n-2*k-1, k+2)
         The jumps of the k-th derivatives of b-splines at internal knots,
         ``t[k+1], ...., t[n-k-1]``.
+    offset : ndarray, shape(2-2*k-1,)
+        Offsets
+    nc : int
 
     Notes
     -----
@@ -401,7 +405,7 @@ def disc(t, k):
     matr *= (delta/ nrint)**k
 
     # make it packed
-    offset = np.array([i for i in range(nrint-1)])
+    offset = np.array([i for i in range(nrint-1)], dtype=np.int64)
     nc = n - k - 1
     return matr, offset, nc
 
@@ -475,7 +479,7 @@ class F:
         AA[:nc, :nz] = R[:nc, :]
         # AA[nc:, :] = b.a / p  # done in __call__(self, p)
         self.AA  = AA
-        self.offset = np.r_[np.arange(nc, dtype=np.intp), b_offset]
+        self.offset = np.r_[np.arange(nc, dtype=np.int64), b_offset]
 
         self.nc = nc
         self.b = b
@@ -494,10 +498,10 @@ class F:
         QY = self.YY.copy()
 
         # heavy lifting happens here, in-place
-        _qr_reduce(AB, offset, nc, QY, startrow=nc)
+        _dierckx.qr_reduce(AB, offset, nc, QY, startrow=nc)
 
         # solve for the coefficients
-        c = _fpback(AB, nc, QY)
+        c = _dierckx.fpback(AB, nc, QY)
 
         spl = BSpline(self.t, c, self.k)
         residuals = _compute_residuals(self.w**2, spl(self.x), self.y)
@@ -708,7 +712,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
-    r"""Find the B-spline representation of a 1D function.
+    r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
@@ -732,7 +736,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
         especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
-        satisfying the conditions::
+        satisfying the LSQ (least-squares) constraint::
 
             sum((w * (g(x)  - y))**2 ) <= s
 
@@ -786,22 +790,22 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     minimize the sum of jumps, :math:`D_j`, of the ``k``-th derivative at the
     internal knots (:math:`x_b < t_i < x_e`), where
 
-        .. math::
+    .. math::
 
-            D_i = g^{(k)}(t_i + 0) - g^{(k)}(t_i - 0)
+        D_i = g^{(k)}(t_i + 0) - g^{(k)}(t_i - 0)
 
     Specifically, the routine constructs the spline function :math:`g(x)` which
     minimizes
 
-        .. math::
+    .. math::
 
-                \sum_i | D_i |^2 \to \mathrm{min}
+            \sum_i | D_i |^2 \to \mathrm{min}
 
     provided that
 
-        .. math::
+    .. math::
 
-               \sum_{j=1}^m (w_j \times (g(x_j) - y_j))^2 \leqslant s ,
+           \sum_{j=1}^m (w_j \times (g(x_j) - y_j))^2 \leqslant s ,
 
     where :math:`s > 0` is the input parameter.
 
@@ -818,14 +822,14 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     routine does not consider smoothness and simply solves a least-squares
     problem
 
-        .. math::
+    .. math::
 
-            \sum w_j \times (g(x_j) - y_j)^2 \to \mathrm{min}
+        \sum w_j \times (g(x_j) - y_j)^2 \to \mathrm{min}
 
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """
+    """  # noqa:E501
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
@@ -842,7 +846,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=None):
     r"""
-    Find a smoothed B-spline representation of a parametric N-D curve.
+    Create a smoothing parametric B-spline curve with bounded error, minimizing derivative jumps.
 
     Given a list of N 1D arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
@@ -923,22 +927,22 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     :math:`a=1, ..., D`, to minimize the sum of jumps, :math:`D_{i; a}`, of the
     ``k``-th derivative at the internal knots (:math:`u_b < t_i < u_e`), where
 
-        .. math::
+    .. math::
 
-            D_{i; a} = g_a^{(k)}(t_i + 0) - g_a^{(k)}(t_i - 0)
+        D_{i; a} = g_a^{(k)}(t_i + 0) - g_a^{(k)}(t_i - 0)
 
     Specifically, the routine constructs the spline function :math:`g(u)` which
     minimizes
 
-        .. math::
+    .. math::
 
-                \sum_i \sum_{a=1}^D | D_{i; a} |^2 \to \mathrm{min}
+            \sum_i \sum_{a=1}^D | D_{i; a} |^2 \to \mathrm{min}
 
     provided that
 
-        .. math::
+    .. math::
 
-            \sum_{j=1}^m \sum_{a=1}^D (w_j \times (g_a(u_j) - x_{j; a}))^2 \leqslant s
+        \sum_{j=1}^m \sum_{a=1}^D (w_j \times (g_a(u_j) - x_{j; a}))^2 \leqslant s
 
     where :math:`u_j` is the value of the parameter corresponding to the data point
     :math:`(x_{j; 1}, ..., x_{j; D})`, and :math:`s > 0` is the input parameter.
@@ -961,7 +965,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """
+    """  # noqa:E501
     x = np.stack(x, axis=1)
 
     # construct the default parametrization of the curve

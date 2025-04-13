@@ -6,10 +6,8 @@ import math
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_copy, xp_assert_close
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 SQRT_2 = math.sqrt(2)
@@ -43,7 +41,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
 
 
 @skip_xp_backends(np_only=True,
-                  reasons=['`overwrite_x` only supported for NumPy backend.'])
+                  reason='`overwrite_x` only supported for NumPy backend.')
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
@@ -52,7 +50,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("overwrite_x", [True, False])
 def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
-                               overwrite_x):
+                               overwrite_x, xp):
     # Test the identity f^-1(f(x)) == x
     x = np.random.rand(7, 8).astype(dtype)
     x_orig = x.copy()
@@ -116,7 +114,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
 
 
 @skip_xp_backends(np_only=True,
-                   reasons=['`overwrite_x` only supported for NumPy backend.'])
+                  reason='`overwrite_x` only supported for NumPy backend.')
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
@@ -130,7 +128,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("overwrite_x", [False, True])
 def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
-                               norm, overwrite_x):
+                               norm, overwrite_x, xp):
     # Test the identity f^-1(f(x)) == x
 
     x = np.random.random(shape).astype(dtype)
@@ -193,8 +191,8 @@ def test_orthogonalize_noop(func, type, norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
@@ -212,8 +210,8 @@ def test_orthogonalize_dct1(norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm, xp):
@@ -226,8 +224,8 @@ def test_orthogonalize_dcst2(func, norm, xp):
 
 
 @skip_xp_backends('jax.numpy',
-                  reasons=['jax arrays do not support item assignment'],
-                  cpu_only=True)
+                  reason='jax arrays do not support item assignment')
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):
@@ -240,7 +238,7 @@ def test_orthogonalize_dcst3(func, norm, xp):
     xp_assert_close(y1, y2)
 
 @skip_xp_backends(np_only=True,
-                  reasons=['array-likes only supported for NumPy backend'])
+                  reason='array-likes only supported for NumPy backend')
 @pytest.mark.parametrize("func", [dct, idct, dctn, idctn, dst, idst, dstn, idstn])
 def test_array_like(xp, func):
     x = [[[1.0, 1.0], [1.0, 1.0]],

@@ -1,0 +1,125 @@
+==========================
+SciPy 1.16.0 Release Notes
+==========================
+
+.. note:: SciPy 1.16.0 is not released yet!
+
+.. contents::
+
+SciPy 1.16.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and better
+documentation. There have been a number of deprecations and API changes
+in this release, which are documented below. All users are encouraged to
+upgrade to this release, as there are a large number of bug-fixes and
+optimizations. Before upgrading, we recommend that users check that
+their own code does not use deprecated SciPy functionality (to do so,
+run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
+Our development attention will now shift to bug-fix releases on the
+1.16.x branch, and on adding new features on the main branch.
+
+This release requires Python 3.11-3.13 and NumPy 1.26.4 or greater.
+
+
+**************************
+Highlights of this release
+**************************
+
+
+************
+New features
+************
+
+``scipy.cluster`` improvements
+==============================
+
+
+``scipy.differentiate`` improvements
+====================================
+
+
+``scipy.interpolate`` improvements
+==================================
+
+
+``scipy.linalg`` improvements
+=============================
+
+
+``scipy.ndimage`` improvements
+==============================
+
+
+``scipy.optimize`` improvements
+===============================
+- COBYLA was updated to use the new Python implementation from the
+  `PRIMA <https://www.libprima.net>`_ package
+  (Z. Zhang, Python implementation by N. Belakovski).
+  As compared to the old Powell implementation, the new one results in fewer function
+  evaluations on average, but it depends on the problem and for some
+  problems it can result in more function evaluations or a less optimal
+  result. For those cases the user can try modifying the initial and final
+  trust region radii given by `rhobeg` and `tol` respectively. A larger `rhobeg`
+  can help the algorithm take bigger steps initially, while a smaller `tol`
+  can help it for keep going and find a better solution.
+
+
+``scipy.signal`` improvements
+=============================
+
+
+``scipy.sparse`` improvements
+=============================
+
+
+``scipy.spatial`` improvements
+==============================
+
+
+``scipy.special`` improvements
+==============================
+
+
+``scipy.stats`` improvements
+============================
+
+
+
+*******************
+Deprecated features
+*******************
+
+``scipy.linalg`` deprecations
+=============================
+
+
+``scipy.spatial`` deprecations
+==============================
+
+
+
+******************************
+Backwards incompatible changes
+******************************
+
+*************
+Other changes
+*************
+
+
+
+*******
+Authors
+*******
+
+
+
+************************
+Issues closed for 1.16.0
+************************
+
+
+************************
+Pull requests for 1.16.0
+************************
+
+

@@ -5,8 +5,8 @@ Convenience interface to N-D interpolation
 
 """
 import numpy as np
-from .interpnd import LinearNDInterpolator, NDInterpolatorBase, \
-     CloughTocher2DInterpolator, _ndim_coords_from_arrays
+from ._interpnd import (LinearNDInterpolator, NDInterpolatorBase,
+     CloughTocher2DInterpolator, _ndim_coords_from_arrays)
 from scipy.spatial import cKDTree
 
 __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
@@ -18,11 +18,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 
 
 class NearestNDInterpolator(NDInterpolatorBase):
-    """NearestNDInterpolator(x, y).
-
-    Nearest-neighbor interpolator in N > 1 dimensions.
-
-    .. versionadded:: 0.9
+    """Nearest-neighbor interpolator in N > 1 dimensions.
 
     Methods
     -------
@@ -174,7 +170,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 def griddata(points, values, xi, method='linear', fill_value=np.nan,
              rescale=False):
     """
-    Interpolate unstructured D-D data.
+    Convenience function for interpolating unstructured data in multiple dimensions.
 
     Parameters
     ----------
@@ -328,5 +324,6 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
                                         rescale=rescale)
         return ip(xi)
     else:
-        raise ValueError("Unknown interpolation method %r for "
-                         "%d dimensional data" % (method, ndim))
+        raise ValueError(
+            f"Unknown interpolation method {method!r} for {ndim} dimensional data"
+        )

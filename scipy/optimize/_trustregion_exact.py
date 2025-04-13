@@ -29,7 +29,6 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
         Gradient norm must be less than ``gtol`` before successful
         termination.
     """
-
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
@@ -55,7 +54,7 @@ def estimate_smallest_singular_value(U):
     s_min : float
         Estimated smallest singular value of the provided matrix.
     z_min : ndarray
-        Estimatied right singular vector.
+        Estimated right singular vector.
 
     Notes
     -----
@@ -172,7 +171,7 @@ def singular_leading_submatrix(A, U, k):
 
     n = len(A)
 
-    # Inicialize v
+    # Initialize v
     v = np.zeros(n)
     v[k-1] = 1
 
@@ -246,7 +245,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.hess_fro = norm(self.hess, 'fro')
 
         # A constant such that for vectors smaller than that
-        # backward substituition is not reliable. It was stabilished
+        # backward substitution is not reliable. It was established
         # based on Golub, G. H., Van Loan, C. F. (2013).
         # "Matrix computations". Forth Edition. JHU press., p.165.
         self.CLOSE_TO_ZERO = self.dimension * self.EPS * self.hess_inf
@@ -350,7 +349,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         p += step_len * z_min
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_ub = lambda_current
                     lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
@@ -367,7 +366,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         lambda_current = lambda_new
                         already_factorized = True
                     else:  # Unsuccessful factorization
-                        # Update uncertanty bounds
+                        # Update uncertainty bounds
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
@@ -382,7 +381,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     if relative_error <= self.k_easy:
                         break
 
-                    # Update uncertanty bounds
+                    # Update uncertainty bounds
                     lambda_lb = lambda_current
 
                     # Update damping factor
@@ -406,7 +405,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     p = step_len * z_min
                     break
 
-                # Update uncertanty bounds
+                # Update uncertainty bounds
                 lambda_ub = lambda_current
                 lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
@@ -422,7 +421,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 delta, v = singular_leading_submatrix(H, U, info)
                 v_norm = norm(v)
 
-                # Update uncertanty interval
+                # Update uncertainty interval
                 lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
 
                 # Update damping factor

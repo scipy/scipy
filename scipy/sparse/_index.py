@@ -100,10 +100,23 @@ class IndexMixin:
                 else:
                     res = self._get_arrayXarray(row, col)
 
+        # handle spmatrix (must be 2d, dont let 1d new_shape start reshape)
+        if not isinstance(self, sparray):
+            if new_shape == () or (len(new_shape) == 1 and res.ndim != 0):
+                # res handles cases not inflated by None
+                return res
+            if len(new_shape) == 1:
+                # shape inflated to 1D by None in index. Make 2D
+                new_shape = (1,) + new_shape
+            # reshape if needed (when None changes shape, e.g. A[1,:,None])
+            return res if new_shape == res.shape else res.reshape(new_shape)
+
         # package the result and return
-        if isinstance(self, sparray) and res.shape != new_shape:
+        if res.shape != new_shape:
             # handle formats that support indexing but not 1D (lil for now)
             if self.format == "lil" and len(new_shape) != 2:
+                if res.shape == ():
+                    return self._coo_container([res], shape = new_shape)
                 return res.tocoo().reshape(new_shape)
             return res.reshape(new_shape)
         return res
@@ -206,20 +219,48 @@ class IndexMixin:
             key = [key]
 
         ellps_pos = None
-        idx_shape = []
-        index = []
-        index_ndim = 0
-        array_indices = []
+        index_1st = []
+        prelim_ndim = 0
         for i, idx in enumerate(key):
             if idx is Ellipsis:
                 if ellps_pos is not None:
                     raise IndexError('an index can only have a single ellipsis')
                 ellps_pos = i
             elif idx is None:
+                index_1st.append(idx)
+            elif isinstance(idx, slice) or isintlike(idx):
+                index_1st.append(idx)
+                prelim_ndim += 1
+            elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+                index_1st.append(ix)
+                prelim_ndim += ix.ndim
+            elif issparse(idx):
+                # TODO: make sparse matrix indexing work for sparray
+                raise IndexError(
+                    'Indexing with sparse matrices is not supported '
+                    'except boolean indexing where matrix and index '
+                    'are equal shapes.')
+            else:  # dense array
+                index_1st.append(np.asarray(idx))
+                prelim_ndim += 1
+        ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
+        if ellip_slices:
+            if ellps_pos is None:
+                index_1st.extend(ellip_slices)
+            else:
+                index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
+
+        # second pass (have processed ellipsis and preprocessed arrays)
+        idx_shape = []
+        index_ndim = 0
+        index = []
+        array_indices = []
+        for i, idx in enumerate(index_1st):
+            if idx is None:
                 idx_shape.append(1)
             elif isinstance(idx, slice):
                 index.append(idx)
-                Ms = self._shape[index_ndim] if ellps_pos is None else self._shape[-1]
+                Ms = self._shape[index_ndim]
                 len_slice = len(range(*idx.indices(Ms)))
                 idx_shape.append(len_slice)
                 index_ndim += 1
@@ -230,7 +271,9 @@ class IndexMixin:
                 idx = int(idx + N if idx < 0 else idx)
                 index.append(idx)
                 index_ndim += 1
-            elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+            # bool array (checked in first pass)
+            elif idx.dtype.kind == 'b':
+                ix = idx
                 tmp_ndim = index_ndim + ix.ndim
                 mid_shape = self._shape[index_ndim:tmp_ndim]
                 if ix.shape != mid_shape:
@@ -240,15 +283,8 @@ class IndexMixin:
                 index.extend(ix.nonzero())
                 array_indices.extend(range(index_ndim, tmp_ndim))
                 index_ndim = tmp_ndim
-            elif issparse(idx):
-                # TODO: make sparse matrix indexing work for sparray
-                raise IndexError(
-                    'Indexing with sparse matrices is not supported '
-                    'except boolean indexing where matrix and index '
-                    'are equal shapes.')
             else:  # dense array
                 N = self._shape[index_ndim]
-                idx = np.array(idx)
                 idx = self._asindices(idx, N)
                 index.append(idx)
                 array_indices.append(index_ndim)
@@ -260,22 +296,16 @@ class IndexMixin:
         if len(array_indices) > 1:
             idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
             if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
-                raise IndexError('array indices after broadcast differ in shape')
+                shapes = " ".join(str(ix.shape) for ix in idx_arrays)
+                msg = (f'shape mismatch: indexing arrays could not be broadcast '
+                       f'together with shapes {shapes}')
+                raise IndexError(msg)
+            # TODO: handle this for nD (adjacent arrays stay, separated move to start)
             idx_shape = list(idx_arrays[0].shape) + idx_shape
         elif len(array_indices) == 1:
             arr_index = array_indices[0]
             arr_shape = list(index[arr_index].shape)
             idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
-
-        # add slice(None) (which is colon) to fill out full index
-        nslice = self.ndim - index_ndim
-        if nslice > 0:
-            if ellps_pos is None:
-                ellps_pos = index_ndim
-            index = index[:ellps_pos] + [slice(None)] * nslice + index[ellps_pos:]
-            mid_shape = list(self.shape[ellps_pos : ellps_pos + nslice])
-            idx_shape = idx_shape[:ellps_pos] + mid_shape + idx_shape[ellps_pos:]
-
         if (ndim := len(idx_shape)) > 2:
             raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
         return tuple(index), tuple(idx_shape)
@@ -299,12 +329,12 @@ class IndexMixin:
         # Check bounds
         max_indx = x.max()
         if max_indx >= length:
-            raise IndexError('index (%d) out of range' % max_indx)
+            raise IndexError(f'index ({max_indx}) out of range')
 
         min_indx = x.min()
         if min_indx < 0:
             if min_indx < -length:
-                raise IndexError('index (%d) out of range' % min_indx)
+                raise IndexError(f'index ({min_indx}) out of range')
             if x is idx or not x.flags.owndata:
                 x = x.copy()
             x[x < 0] += length
@@ -316,7 +346,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -M or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += M
         return self._get_intXslice(i, slice(None))
@@ -327,7 +357,7 @@ class IndexMixin:
         M, N = self.shape
         i = int(i)
         if i < -N or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         if i < 0:
             i += N
         return self._get_sliceXint(slice(None), i)

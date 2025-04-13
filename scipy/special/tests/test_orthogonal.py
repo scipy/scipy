@@ -1,8 +1,10 @@
+import pytest
+from pytest import raises as assert_raises
+
 import numpy as np
 from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
-from pytest import raises as assert_raises
 
 from scipy import integrate
 import scipy.special as sc
@@ -92,6 +94,22 @@ class TestGegenbauer:
                                                0,3*a*(a+1)])/6.0,11)
         assert_array_almost_equal(Ca5.c,array([4*sc.poch(a,5),0,-20*sc.poch(a,4),
                                                0,15*sc.poch(a,3),0])/15.0,11)
+
+    @pytest.mark.parametrize('a', [0, 1])
+    def test_n_zero_gh8888(self, a):
+        # gh-8888 reported that gegenbauer(0, 0) returns NaN polynomial
+        Cn0 = orth.gegenbauer(0, a)
+        assert_equal(Cn0.c, np.asarray([1.]))
+
+    def test_valid_alpha(self):
+        # Check input validation of `alpha`
+        message = '`alpha` must be a finite number greater...'
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(0, np.nan)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(1, -0.5)
+        with pytest.raises(ValueError, match=message):
+            orth.gegenbauer(2, -np.inf)
 
 
 class TestHermite:
@@ -240,24 +258,23 @@ class TestCall:
         poly = []
         for n in range(5):
             poly.extend([x.strip() for x in
-                ("""
-                orth.jacobi(%(n)d,0.3,0.9)
-                orth.sh_jacobi(%(n)d,0.3,0.9)
-                orth.genlaguerre(%(n)d,0.3)
-                orth.laguerre(%(n)d)
-                orth.hermite(%(n)d)
-                orth.hermitenorm(%(n)d)
-                orth.gegenbauer(%(n)d,0.3)
-                orth.chebyt(%(n)d)
-                orth.chebyu(%(n)d)
-                orth.chebyc(%(n)d)
-                orth.chebys(%(n)d)
-                orth.sh_chebyt(%(n)d)
-                orth.sh_chebyu(%(n)d)
-                orth.legendre(%(n)d)
-                orth.sh_legendre(%(n)d)
-                """ % dict(n=n)).split()
-            ])
+                (f"""
+                orth.jacobi({n},0.3,0.9)
+                orth.sh_jacobi({n},0.3,0.9)
+                orth.genlaguerre({n},0.3)
+                orth.laguerre({n})
+                orth.hermite({n})
+                orth.hermitenorm({n})
+                orth.gegenbauer({n},0.3)
+                orth.chebyt({n})
+                orth.chebyu({n})
+                orth.chebyc({n})
+                orth.chebys({n})
+                orth.sh_chebyt({n})
+                orth.sh_chebyu({n})
+                orth.legendre({n})
+                orth.sh_legendre({n})
+                """).split()])
         with np.errstate(all='ignore'):
             for pstr in poly:
                 p = eval(pstr)

@@ -352,7 +352,7 @@ virtual environments:
         ::
 
           python -m venv venv
-          .\venv\Scripts\activate
+          venv\Scripts\Activate.ps1
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
@@ -417,6 +417,16 @@ interface is self-documenting, so please see ``python dev.py --help`` and
 
     See the meson-python_ documentation on editable installs for more details
     on how things work under the hood.
+
+
+Installing static type stubs
+----------------------------
+
+If you would like to install static type stubs to aid your development of SciPy,
+you can include the ``scipy-stubs`` package in your development environment.
+It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
+
+.. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
 
 
 Customizing builds

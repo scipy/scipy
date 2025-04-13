@@ -10,6 +10,7 @@ Functions
 __all__ = ['minimize', 'minimize_scalar']
 
 
+import inspect
 from warnings import warn
 
 import numpy as np
@@ -46,7 +47,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov', 'cobyqa']
+                           'trust-exact', 'trust-krylov', 'cobyqa', 'cobyla']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -65,6 +66,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
         where ``n`` is the number of independent variables.
@@ -159,8 +167,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' and 'cobyqa' are defined as a single object
-        or a list of objects specifying constraints to the optimization problem.
+        Constraints for 'trust-constr', 'cobyqa', and 'cobyla' are defined as a single
+        object or a list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
         - `LinearConstraint`
@@ -203,7 +211,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     callback : callable, optional
         A callable called after each iteration.
 
-        All methods except TNC, SLSQP, and COBYLA support a callable with
+        All methods except TNC and SLSQP support a callable with
         the signature::
 
             callback(intermediate_result: OptimizeResult)
@@ -334,10 +342,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
-    approximations to the objective function and each constraint. The
-    method wraps a FORTRAN implementation of the algorithm. The
-    constraints functions 'fun' may return either a single number
-    or an array or list of numbers.
+    approximations to the objective function and each constraint.
 
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
@@ -474,7 +479,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
         An interior point algorithm for large-scale nonlinear  programming.
         SIAM Journal on Optimization 9.4: 877-900.
-    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. 1998. On the
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
     .. [18] Ragonneau, T. M. *Model-Based Derivative-Free Optimization Methods
@@ -694,25 +699,37 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 x_fixed = (bounds.lb)[i_fixed]
                 x0 = x0[~i_fixed]
                 bounds = _remove_from_bounds(bounds, i_fixed)
-                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                fun = _Remove_From_Func(fun, i_fixed, x_fixed)
+
                 if callable(callback):
-                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                    sig = inspect.signature(callback)
+                    if set(sig.parameters) == {'intermediate_result'}:
+                        # callback(intermediate_result)
+                        print(callback)
+                        callback = _Patch_Callback_Equal_Variables(
+                            callback, i_fixed, x_fixed
+                        )
+                    else:
+                        # callback(x)
+                        callback = _Remove_From_Func(callback, i_fixed, x_fixed)
+
                 if callable(jac):
-                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                    jac = _Remove_From_Func(jac, i_fixed, x_fixed, remove=1)
 
                 # make a copy of the constraints so the user's version doesn't
                 # get changed. (Shallow copy is ok)
                 constraints = [con.copy() for con in constraints]
                 for con in constraints:  # yes, guaranteed to be a list
-                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                    con['fun'] = _Remove_From_Func(con['fun'], i_fixed,
                                                    x_fixed, min_dim=1,
                                                    remove=0)
                     if callable(con.get('jac', None)):
-                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                        con['jac'] = _Remove_From_Func(con['jac'], i_fixed,
                                                        x_fixed, min_dim=2,
                                                        remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
+    # selects whether to use callback(x) or callback(intermediate_result)
     callback = _wrap_callback(callback, meth)
 
     if meth == 'nelder-mead':
@@ -784,6 +801,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     fun : callable
         Objective function.
         Scalar function, must return a scalar.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
+
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
         interval and is required.
@@ -985,27 +1010,49 @@ def _remove_from_bounds(bounds, i_fixed):
     return Bounds(lb, ub)  # don't mutate original Bounds object
 
 
-def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+class _Patch_Callback_Equal_Variables:
+    # Patches a callback that accepts an intermediate_result
+    def __init__(self, callback, i_fixed, x_fixed):
+        self.callback = callback
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+
+    def __call__(self, intermediate_result):
+        x_in = intermediate_result.x
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        intermediate_result.x = x_out
+        return self.callback(intermediate_result)
+
+
+class _Remove_From_Func:
     """Wraps a function such that fixed variables need not be passed in"""
-    def fun_out(x_in, *args, **kwargs):
-        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
-        x_out[i_fixed] = x_fixed
-        x_out[~i_fixed] = x_in
-        y_out = fun_in(x_out, *args, **kwargs)
+    def __init__(self, fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+        self.fun_in = fun_in
+        self.i_fixed = i_fixed
+        self.x_fixed = x_fixed
+        self.min_dim = min_dim
+        self.remove = remove
+
+    def __call__(self, x_in, *args, **kwargs):
+        x_out = np.zeros_like(self.i_fixed, dtype=x_in.dtype)
+        x_out[self.i_fixed] = self.x_fixed
+        x_out[~self.i_fixed] = x_in
+        y_out = self.fun_in(x_out, *args, **kwargs)
         y_out = np.array(y_out)
 
-        if min_dim == 1:
+        if self.min_dim == 1:
             y_out = np.atleast_1d(y_out)
-        elif min_dim == 2:
+        elif self.min_dim == 2:
             y_out = np.atleast_2d(y_out)
 
-        if remove == 1:
-            y_out = y_out[..., ~i_fixed]
-        elif remove == 2:
-            y_out = y_out[~i_fixed, ~i_fixed]
+        if self.remove == 1:
+            y_out = y_out[..., ~self.i_fixed]
+        elif self.remove == 2:
+            y_out = y_out[~self.i_fixed, ~self.i_fixed]
 
         return y_out
-    return fun_out
 
 
 def _add_to_array(x_in, i_fixed, x_fixed):
@@ -1059,7 +1106,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'cobyqa', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new', 'cobyla']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

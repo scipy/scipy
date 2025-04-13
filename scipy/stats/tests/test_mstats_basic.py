@@ -1034,7 +1034,7 @@ def test_siegelslopes():
     y[:4] = 1000
     assert_equal(mstats.siegelslopes(y, x), (5.0, -3.0))
 
-    # if there are no outliers, results should be comparble to linregress
+    # if there are no outliers, results should be comparable to linregress
     x = np.arange(10)
     y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
     slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
@@ -1567,9 +1567,9 @@ class TestCompareWithStats:
     def generate_xy_sample(self, n):
         # This routine generates numpy arrays and corresponding masked arrays
         # with the same data, but additional masked values
-        np.random.seed(1234567)
-        x = np.random.randn(n)
-        y = x + np.random.randn(n)
+        rng = np.random.RandomState(1234567)
+        x = rng.randn(n)
+        y = x + rng.randn(n)
         xm = np.full(len(x) + 5, 1e16)
         ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x

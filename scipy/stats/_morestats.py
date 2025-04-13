@@ -1,6 +1,6 @@
-from __future__ import annotations
 import math
 import warnings
+import threading
 from collections import namedtuple
 
 import numpy as np
@@ -15,15 +15,15 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
+    xp_promote,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2)
+                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -309,7 +309,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -375,7 +375,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -866,8 +866,7 @@ def _log_var(logx, xp, axis):
     # compute log of variance of x from log(x)
     logmean = _log_mean(logx, axis=axis)
     # get complex dtype with component dtypes same as `logx` dtype;
-    # see data-apis/array-api#841
-    dtype = xp.result_type(logx.dtype, xp.complex64)
+    dtype = xp.result_type(logx.dtype, 1j)
     pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
     logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
     return (
@@ -900,14 +899,17 @@ def boxcox_llf(lmb, data, *, axis=0):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -957,16 +959,11 @@ def boxcox_llf(lmb, data, *, axis=0):
 
     """
     xp = array_namespace(data)
-    data = xp.asarray(data)
+    data = xp_promote(data, force_floating=True, xp=xp)
     N = data.shape[axis]
     if N == 0:
         return xp.nan
 
-    dt = data.dtype
-    if xp.isdtype(dt, 'integral'):
-        data = xp.asarray(data, dtype=xp.float64)
-        dt = xp.float64
-    
     logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
@@ -981,7 +978,7 @@ def boxcox_llf(lmb, data, *, axis=0):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, dt)
+    res = xp.astype(res, data.dtype)
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -1085,10 +1082,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
+    
+    .. math::
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1100,9 +1102,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1477,7 +1479,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Box-Cox transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -1541,12 +1543,24 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for } x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for } x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for } x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for } x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
@@ -1654,15 +1668,18 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
@@ -1852,7 +1869,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
     lmbdas : ndarray
         The ``lmbda`` values for which a Yeo-Johnson transform was done.
     ppcc : ndarray
-        Probability Plot Correlelation Coefficient, as obtained from `probplot`
+        Probability Plot Correlation Coefficient, as obtained from `probplot`
         when fitting the Box-Cox transformed input `x` against a normal
         distribution.
 
@@ -2150,7 +2167,7 @@ def anderson(x, dist='norm'):
 
     For `weibull_min`, maximum likelihood estimation is known to be
     challenging. If the test returns successfully, then the first order
-    conditions for a maximum likehood estimate have been verified and
+    conditions for a maximum likelihood estimate have been verified and
     the critical values correspond relatively well to the significance levels,
     provided that the sample is sufficiently large (>10 observations [7]).
     However, for some data - especially data with no left tail - `anderson`
@@ -2632,7 +2649,9 @@ class _ABW:
 
 
 # Maintain state for faster repeat calls to ansari w/ method='exact'
-_abw_state = _ABW()
+# _ABW() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside ansari().
+_abw_state = threading.local()
 
 
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
@@ -2743,6 +2762,10 @@ def ansari(x, y, alternative='two-sided'):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+
+    if not hasattr(_abw_state, 'a'):
+        _abw_state.a = _ABW()
+
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2763,14 +2786,14 @@ def ansari(x, y, alternative='two-sided'):
         warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
-                                    _abw_state.sf(AB, n, m))
+            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
+                                    _abw_state.a.sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.cdf(AB, n, m)
+            pval = _abw_state.a.cdf(AB, n, m)
         else:
-            pval = _abw_state.sf(AB, n, m)
+            pval = _abw_state.a.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2881,7 +2904,7 @@ def bartlett(*samples, axis=0):
         raise ValueError("Must enter at least two input sample vectors.")
 
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
@@ -2890,14 +2913,13 @@ def bartlett(*samples, axis=0):
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
     ssq = xp.concat(ssq, axis=0)
-    # sum dtype can be removed when 2023.12 rules kick in
     dtype = Ni.dtype
-    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    Ntot = xp.sum(Ni, axis=0)
     spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
     numer = ((Ntot - k) * xp.log(spsq)
              - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
     denom = (1 + 1/(3*(k - 1))
-             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
+             * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
     chi2 = _SimpleChi2(xp.asarray(k-1))
@@ -3462,7 +3484,7 @@ def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
 
 def wilcoxon_outputs(kwds):
     method = kwds.get('method', 'auto')
-    if method == 'approx':
+    if method == 'asymptotic':
         return 3
     return 2
 
@@ -3532,7 +3554,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         * 'greater': the distribution underlying ``d`` is stochastically
           greater than a distribution symmetric about zero.
 
-    method : {"auto", "exact", "approx"} or `PermutationMethod` instance, optional
+    method : {"auto", "exact", "asymptotic"} or `PermutationMethod` instance, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
     axis : int or None, default: 0
@@ -3552,14 +3574,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
     zstatistic : array_like
-        When ``method = 'approx'``, this is the normalized z-statistic::
+        When ``method = 'asymptotic'``, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-        When ``method != 'approx'``, this attribute is not available.
+        When ``method != 'asymptotic'``, this attribute is not available.
 
     See Also
     --------
@@ -3574,26 +3596,40 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     - When ``len(d)`` is sufficiently large, the null distribution of the
       normalized test statistic (`zstatistic` above) is approximately normal,
-      and ``method = 'approx'`` can be used to compute the p-value.
+      and ``method = 'asymptotic'`` can be used to compute the p-value.
 
     - When ``len(d)`` is small, the normal approximation may not be accurate,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
 
-    - The default, ``method='auto'``, selects between the two: when
-      ``len(d) <= 50`` and there are no zeros, the exact method is used;
-      otherwise, the approximate method is used.
+    - The default, ``method='auto'``, selects between the two:
+      ``method='exact'`` is used when ``len(d) <= 50``, and
+      ``method='asymptotic'`` is used otherwise.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
     of the test statistic, and ``method='exact'`` no longer calculates
-    the exact p-value. If ``method='approx'``, the z-statistic is adjusted
+    the exact p-value. If ``method='asymptotic'``, the z-statistic is adjusted
     for more accurate comparison against the standard normal, but still,
     for finite sample sizes, the standard normal is only an approximation of
     the true null distribution of the z-statistic. For such situations, the
-    `method` parameter also accepts instances `PermutationMethod`. In this
+    `method` parameter also accepts instances of `PermutationMethod`. In this
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
+
+    The presence of ties and zeros affects the resolution of ``method='auto'``
+    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    and the asymptotic method is used otherwise. Note that they asymptotic
+    method may not be very accurate even for ``len(d) > 14``; the threshold
+    was chosen as a compromise between execution time and accuracy under the
+    constraint that the results must be deterministic. Consider providing an
+    instance of `PermutationMethod` method manually, choosing the
+    ``n_resamples`` parameter to balance time constraints and accuracy
+    requirements.
+
+    Please also note that in the edge case that all elements of ``d`` are zero,
+    the p-value relying on the normal approximaton cannot be computed (NaN)
+    if ``zero_method='wilcox'`` or ``zero_method='pratt'``.
 
     References
     ----------
@@ -3639,7 +3675,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the median is greater than zero. The p-values above are exact. Using the
     normal approximation gives very similar values:
 
-    >>> res = wilcoxon(d, method='approx')
+    >>> res = wilcoxon(d, method='asymptotic')
     >>> res.statistic, res.pvalue
     (24.0, 0.04088813291185591)
 
@@ -3665,7 +3701,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     >>> d = [-0.025, 0.05, 0.05, -0.05]
     >>> ref = wilcoxon(d, alternative='greater')
     >>> ref
-    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+    WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     The substantial difference is due to roundoff error in the results of
     ``x-y``:
@@ -3682,9 +3718,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     >>> d2 = np.around(x - y, decimals=3)
     >>> wilcoxon(d2, alternative='greater')
-    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+    WilcoxonResult(statistic=6.0, pvalue=0.5)
 
     """
+    # replace approx by asymptotic to ensure backwards compatability
+    if method == "approx":
+        method = "asymptotic"
     return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
                                   method, axis)
 
@@ -3850,16 +3889,15 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(f"Sample {k + 1} is empty. All samples must "
+                             f"contain at least one value.")
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
+                             f"All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
-    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'propagate':
+    contains_nan = _contains_nan(cdata, nan_policy)
+    if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
@@ -3900,10 +3938,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
-            raise ValueError(msg)
+            raise ValueError(
+                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                f"median ({grand_median!r}), so they are ignored, resulting in an "
+                f"empty sample."
+            )
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
@@ -3913,9 +3952,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
-    if xp.isdtype(samples.dtype, 'integral'):
-        dtype = xp.asarray(1.).dtype  # get default float type
-        samples = xp.asarray(samples, dtype=dtype)
+    samples = xp_promote(samples, force_floating=True, xp=xp)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
@@ -4346,7 +4383,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
     """
     xp = array_namespace(samples)
     samples = xp.asarray(samples)
-    
+
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")

@@ -11,6 +11,7 @@ typedef enum {
     SF_ERROR_DOMAIN,    /* out of domain */
     SF_ERROR_ARG,       /* invalid input parameter */
     SF_ERROR_OTHER,     /* unclassified error */
+    SF_ERROR_MEMORY,    /* memory allocation failed */
     SF_ERROR__LAST
 } sf_error_t;
 

@@ -22,13 +22,13 @@ class TestSphHarm:
 
         assert_allclose(y, p * np.exp(1j * m * phi))
 
-        assert_allclose(y_jac[0], p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_jac[1], 1j * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 0], p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_jac[..., 1], 1j * m * p * np.exp(1j * m * phi))
 
-        assert_allclose(y_hess[0, 0], p_hess * np.exp(1j * m * phi))
-        assert_allclose(y_hess[0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
-        assert_allclose(y_hess[1, 0], y_hess[0, 1])
-        assert_allclose(y_hess[1, 1], -m * m * p * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 0], p_hess * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 0, 1], 1j * m * p_jac * np.exp(1j * m * phi))
+        assert_allclose(y_hess[..., 1, 0], y_hess[..., 0, 1])
+        assert_allclose(y_hess[..., 1, 1], -m * m * p * np.exp(1j * m * phi))
 
     @pytest.mark.parametrize("n_max", [7, 10, 50])
     @pytest.mark.parametrize("m_max", [1, 4, 5, 9, 14])
@@ -47,11 +47,15 @@ class TestSphHarm:
 
         np.testing.assert_allclose(y_actual, y_desired, rtol=1e-05)
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_first_harmonics():
     # Test against explicit representations of the first four
     # spherical harmonics which use `theta` as the azimuthal angle,
     # `phi` as the polar angle, and include the Condon-Shortley
     # phase.
+
+    # sph_harm is deprecated and is implemented as a shim around sph_harm_y.
+    # This test is maintained to verify the correctness of the shim.
 
     # Notation is Ymn
     def Y00(theta, phi):

@@ -4,12 +4,12 @@ Created on Fri Apr  2 09:06:05 2021
 @author: matth
 """
 
-from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
-from scipy._lib._array_api import array_namespace, xp_moveaxis_to_end
+from scipy._lib._array_api import array_namespace, xp_promote
+from scipy._lib import array_api_extra as xpx
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -318,10 +318,8 @@ def differential_entropy(
 
     """
     xp = array_namespace(values)
-    values = xp.asarray(values)
-    if xp.isdtype(values.dtype, "integral"):  # type: ignore[union-attr]
-        values = xp.astype(values, xp.asarray(1.).dtype)
-    values = xp_moveaxis_to_end(values, axis, xp=xp)
+    values = xp_promote(values, force_floating=True, xp=xp)
+    values = xp.moveaxis(values, axis, -1)
     n = values.shape[-1]  # type: ignore[union-attr]
 
     if window_length is None:
@@ -404,9 +402,9 @@ def _ebrahimi_entropy(X, m, *, xp):
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
     i = xp.arange(1, n+1, dtype=X.dtype)
-    ci = xp.ones_like(i)*2
-    ci[i <= m] = 1 + (i[i <= m] - 1)/m
-    ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
+    ci = xp.where(i <= m, 1 + (i - 1)/m, 2.)
+    cond = i >= n - m + 1
+    ci = xpx.at(ci, cond).set(1 + (n - i[cond])/m)
 
     logs = xp.log(n * differences / (ci * m))
     return xp.mean(logs, axis=-1)

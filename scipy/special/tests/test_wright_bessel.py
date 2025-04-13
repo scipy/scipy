@@ -121,7 +121,7 @@ def test_wright_data_grid_less_accurate(a, b, x, phi, accuracy):
 @pytest.mark.parametrize(
     'a, b, x',
     list(
-        product([0, 0.1, 0.5, 1.5, 5, 10], [1, 2], [1e-3, 1, 5, 10])
+        product([0, 0.1, 0.5, 1.5, 5, 10], [1, 2], [1e-3, 1, 1.5, 5, 10])
     )
 )
 def test_log_wright_bessel_same_as_wright_bessel(a, b, x):

@@ -26,7 +26,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if not isinstance(g, (tuple, list)):
+        if not isinstance(g, tuple | list):
             g = (g,)
         else:
             pass
@@ -472,7 +472,7 @@ class TestShgoSimplicialTestFunctions:
 
     @pytest.mark.fail_slow(10)
     def test_f5_3_cons_symmetry(self):
-        """Assymmetrically constrained test function"""
+        """Asymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
                    'disp': True}
 
@@ -856,6 +856,14 @@ class TestShgoArguments:
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, atol=1e-15)
 
+        # Testing the passing of jac via options dict
+        res = shgo(func, bounds=bounds, sampling_method="sobol",
+                   minimizer_kwargs={'method': 'SLSQP'},
+                   options={'jac': True})
+        assert res.success
+        assert_allclose(res.fun, ref.fun)
+        assert_allclose(res.x, ref.x, atol=1e-15)
+
     @pytest.mark.parametrize('derivative', ['jac', 'hess', 'hessp'])
     def test_21_2_derivative_options(self, derivative):
         """shgo used to raise an error when passing `options` with 'jac'
@@ -1007,6 +1015,7 @@ class TestShgoFailures:
 
         np.testing.assert_equal(False, res.success)
 
+    @pytest.mark.thread_unsafe
     def test_6_1_lower_known_f_min(self):
         """Test Global mode limiting local evaluations with f* too high"""
         options = {  # Specify known function value

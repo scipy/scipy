@@ -89,10 +89,10 @@ class _dia_base(_data_matrix):
             raise ValueError('data array must have rank 2')
 
         if self.data.shape[0] != len(self.offsets):
-            raise ValueError('number of diagonals (%d) '
-                    'does not match the number of offsets (%d)'
-                    % (self.data.shape[0], len(self.offsets)))
-
+            raise ValueError(
+                f'number of diagonals ({self.data.shape[0]}) does not match the number '
+                f'of offsets ({len(self.offsets)})'
+            )
         if len(np.unique(self.offsets)) != len(self.offsets):
             raise ValueError('offset array contains duplicate values')
 
@@ -173,9 +173,6 @@ class _dia_base(_data_matrix):
                 return row_sums.sum(dtype=dtype, out=out)
 
             ret = self._ascontainer(row_sums.sum(axis=axis))
-
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
 
         return ret.sum(axis=(), dtype=dtype, out=out)
 

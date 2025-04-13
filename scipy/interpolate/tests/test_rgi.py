@@ -4,6 +4,8 @@ import pytest
 import numpy as np
 
 from numpy.testing import assert_warns
+from numpy.exceptions import ComplexWarning
+
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, assert_array_almost_equal
 )
@@ -16,7 +18,6 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
                                NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
-from scipy._lib._util import ComplexWarning
 from scipy._lib._testutils import _run_concurrent_barrier
 
 
@@ -696,6 +697,7 @@ class TestRegularGridInterpolator:
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         points, values = self._get_sample_4d()
         sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
@@ -966,6 +968,7 @@ class TestInterpN:
 
         xp_assert_close(v1, v2)
 
+    @pytest.mark.thread_unsafe
     def test_complex_pchip(self):
         # Complex-valued data deprecated for pchip
         x, y, values = self._sample_2d_data()
@@ -977,6 +980,7 @@ class TestInterpN:
         with pytest.raises(ValueError, match='real'):
             interpn(points, values, sample, method='pchip')
 
+    @pytest.mark.thread_unsafe
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
         x, y, values = self._sample_2d_data()

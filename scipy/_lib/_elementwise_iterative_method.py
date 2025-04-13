@@ -9,12 +9,13 @@
 # `scipy.optimize._differentiate._differentiate for numerical differentiation,
 # `scipy.optimize._bracket._bracket_root for finding rootfinding brackets,
 # `scipy.optimize._bracket._bracket_minimize for finding minimization brackets,
-# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
+# `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature,
+# `scipy.differentiate.derivative` for finite difference based differentiation.
 
 import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
-from ._array_api import array_namespace, xp_size
+from ._array_api import array_namespace, xp_size, xp_result_type
 
 _ESIGNERR = -1
 _ECONVERR = -2
@@ -81,9 +82,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None, xp=None):
     # and cause failure.
     # There might be benefit to combining the `xs` into a single array and
     # calling `func` once on the combined array. For now, keep them separate.
+    xat = xp_result_type(*xs, force_floating=True, xp=xp)
     xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
-    xat = xp.result_type(*[xa.dtype for xa in xas])
-    xat = xp.asarray(1.).dtype if xp.isdtype(xat, "integral") else xat
     xs, args = xas[:nx], xas[nx:]
     xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
     fs = [xp.asarray(func(x, *args)) for x in xs]
@@ -133,7 +133,10 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     ----------
     work : _RichResult
         All variables that need to be retained between iterations. Must
-        contain attributes `nit`, `nfev`, and `success`
+        contain attributes `nit`, `nfev`, and `success`. All arrays are
+        subject to being "compressed" if `preserve_shape is False`; nest
+        arrays that should not be compressed inside another object (e.g.
+        `dict` or `_RichResult`).
     callback : callable
         User-specified callback function
     shape : tuple of ints
@@ -174,6 +177,9 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
         copied to the appropriate indices of `res` when appropriate. The order
         determines the order in which _RichResult attributes will be
         pretty-printed.
+    preserve_shape : bool, default: False
+        Whether to compress the attributes of `work` (to avoid unnecessary
+        computation on elements that have already converged).
 
     Returns
     -------

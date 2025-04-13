@@ -50,10 +50,14 @@ def binary_dilation_signature(
 binary_erosion_signature = binary_dilation_signature
 
 
-def binary_fill_holes_signature(input, structure=None, output=None, origin=0):
+def binary_fill_holes_signature(
+    input, structure=None, output=None, origin=0, *args, **kwargs
+):
     return array_namespace(input, structure, _skip_if_dtype(output))
 
-label_signature = binary_fill_holes_signature
+
+def label_signature(input, structure=None, output=None, origin=0):
+    return array_namespace(input, structure, _skip_if_dtype(output))
 
 
 def binary_hit_or_miss_signature(
@@ -282,6 +286,12 @@ def uniform_filter_signature(input, size=3, output=None, *args, **kwds):
 
 def value_indices_signature(arr, *args, **kwds):
     return array_namespace(arr)
+
+
+def vectorized_filter_signature(
+    input, function, size=None, footprint=None, output=None, *args, **kwds
+):
+    return array_namespace(input, footprint, _skip_if_dtype(output))
 
 
 def watershed_ift_signature(input, markers, structure=None, output=None):
