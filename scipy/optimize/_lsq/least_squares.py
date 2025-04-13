@@ -395,8 +395,8 @@ def least_squares(
         * For 'jac'    : ``x_scale == 'jac'``
 
         .. versionchanged:: 1.16.0
-            The default value is changed from 1 to None to indicate that a
-            default approach to scaling is used.
+            The default keyword value is changed from 1 to None to indicate that
+            a default approach to scaling is used.
             For the 'lm' method the default scaling is changed from 1 to 'jac'.
             This has been found to give better performance, and is the same
             scaling performed by ``leastsq``.
