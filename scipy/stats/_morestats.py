@@ -875,7 +875,7 @@ def _log_var(logx, xp, axis):
     )
 
 
-def boxcox_llf(lmb, data, *, axis=0):
+def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     r"""The boxcox log-likelihood function.
 
     Parameters
@@ -886,6 +886,26 @@ def boxcox_llf(lmb, data, *, axis=0):
         Data to calculate Box-Cox log-likelihood for.  If `data` is
         multi-dimensional, the log-likelihood is calculated along the first
         axis.
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -958,11 +978,23 @@ def boxcox_llf(lmb, data, *, axis=0):
     >>> plt.show()
 
     """
+    # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
+    kwargs = {}
+    if keepdims != False:
+        kwargs[keepdims] = keepdims
+    if nan_policy != 'propagate':
+        kwargs[nan_policy] = nan_policy
+    return _boxcox_llf(data, lmb=lmb, axis=axis, **kwargs)
+
+
+@_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
+                          result_to_tuple=lambda x: (x,))
+def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
     data = xp_promote(data, force_floating=True, xp=xp)
     N = data.shape[axis]
     if N == 0:
-        return xp.nan
+        return _get_nan(data, xp=xp)
 
     logdata = xp.log(data)
 
@@ -1083,7 +1115,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     Notes
     -----
     The Box-Cox transform is given by:
-    
+
     .. math::
 
         y =
