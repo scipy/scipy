@@ -381,7 +381,10 @@ def laplacian(
         csgraph = csgraph.astype(np.float64)
 
     if use_abs:
-        csgraph.data = np.abs(csgraph.data)
+        if issparse(csgraph):
+            csgraph.data = np.abs(csgraph.data)
+        else:
+            csgraph = np.abs(csgraph)
 
     if form == "array":
         create_lap = (
