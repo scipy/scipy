@@ -65,7 +65,7 @@ class TestSignM:
 
     def test_defective1(self):
         a = array([[0.0,1,0,0],[1,0,1,0],[0,0,0,1],[0,0,1,0]])
-        signm(a, disp=False)
+        signm(a)
         #XXX: what would be the correct result?
 
     def test_defective2(self):
@@ -75,7 +75,7 @@ class TestSignM:
             [-10.0,6.0,-20.0,-18.0,-2.0],
             [-9.6,9.6,-25.5,-15.4,-2.0],
             [9.8,-4.8,18.0,18.2,2.0]))
-        signm(a, disp=False)
+        signm(a)
         #XXX: what would be the correct result?
 
     def test_defective3(self):
@@ -86,7 +86,7 @@ class TestSignM:
                    [0., 0., 0., 0., 3., 10., 0.],
                    [0., 0., 0., 0., 0., -2., 25.],
                    [0., 0., 0., 0., 0., 0., -3.]])
-        signm(a, disp=False)
+        signm(a)
         #XXX: what would be the correct result?
 
 

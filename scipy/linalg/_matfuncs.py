@@ -874,7 +874,7 @@ def funm(A, func, disp=True):
 
 
 @_apply_over_batch(('A', 2))
-def signm(A, disp=True):
+def signm(A, disp=_NoValue):
     """
     Matrix sign function.
 
@@ -887,6 +887,10 @@ def signm(A, disp=True):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(signm @ signm - signm, 1)``.
 
     Returns
     -------
@@ -907,6 +911,13 @@ def signm(A, disp=True):
     array([-1.+0.j,  1.+0.j,  1.+0.j])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     A = _asarray_square(A)
 
     def rounded_sign(x):
