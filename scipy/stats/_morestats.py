@@ -980,7 +980,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     """
     # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
     kwargs = {}
-    if keepdims != False:
+    if keepdims is not False:
         kwargs[keepdims] = keepdims
     if nan_policy != 'propagate':
         kwargs[nan_policy] = nan_policy
