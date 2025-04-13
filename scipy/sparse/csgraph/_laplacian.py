@@ -20,6 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
+    use_abs=False,
 ):
     """
     Return the Laplacian of a directed graph.
@@ -69,6 +70,11 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
+    use_abs : bool, optional
+        If True, use the absolute values of edge weights to compute vertex degrees.
+        This is useful for signed graphs to prevent positive and negative weights
+        from cancelling out during degree computation.
+        Default: False.
 
     Returns
     -------
@@ -271,6 +277,36 @@ def laplacian(
            [-1.,  2., -1.],
            [-1., -1.,  2.]])
 
+    The signed graph, where edge weights can cancel each other out:
+
+    >>> G = np.array([[0, 1, -1],
+    ...               [1, 0,  1],
+    ...               [-1, 1, 0]])
+    >>> G
+    array([[ 0,  1, -1],
+           [ 1,  0,  1],
+           [-1,  1,  0]])
+
+    By default, positive and negative edge weights cancel during degree computation:
+
+    >>> L_signed, d_signed = csgraph.laplacian(G, return_diag=True)
+    >>> L_signed
+    array([[ 0, -1,  1],
+           [-1,  2, -1],
+           [ 1, -1,  0]])
+    >>> d_signed
+    array([0, 2, 0])
+
+    Setting use_abs=True prevents cancellation by summing absolute edge weights:
+
+    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, use_abs=True)
+    >>> L_abs
+    array([[ 2, -1, -1],
+           [-1,  2, -1],
+           [-1, -1,  2]])
+    >>> d_abs
+    array([2, 2, 2])
+
     The Laplacian matrix is used for
     spectral data clustering and embedding
     as well as for spectral graph partitioning.
@@ -343,6 +379,9 @@ def laplacian(
         or np.issubdtype(csgraph.dtype, np.uint)
     ):
         csgraph = csgraph.astype(np.float64)
+
+    if use_abs:
+        csgraph.data = np.abs(csgraph.data)
 
     if form == "array":
         create_lap = (

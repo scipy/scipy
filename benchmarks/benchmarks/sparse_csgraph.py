@@ -12,9 +12,10 @@ class Laplacian(Benchmark):
     params = [
         [30, 300, 900],
         ['dense', 'coo', 'csc', 'csr', 'dia'],
-        [True, False]
+        [True, False],
+        [True, False],
     ]
-    param_names = ['n', 'format', 'normed']
+    param_names = ['n', 'format', 'normed', 'use_abs']
 
     def setup(self, n, format, normed):
         data = scipy.sparse.rand(9, n, density=0.5, random_state=42).toarray()
@@ -26,5 +27,5 @@ class Laplacian(Benchmark):
         else:
             self.A = A.asformat(format)
 
-    def time_laplacian(self, n, format, normed):
-        laplacian(self.A, normed=normed)
+    def time_laplacian(self, n, format, normed, use_abs):
+        laplacian(self.A, normed=normed, use_abs=use_abs)
