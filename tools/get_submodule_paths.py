@@ -14,6 +14,8 @@ def get_submodule_paths():
                         datum.startswith('\tpath = ')]
         submodule_paths = [os.path.join(root_directory, path) for path in
                            submodule_paths]
+    # vendored with a script rather than via gitmodules
+    submodule_paths.append(os.path.join(root_directory, 'scipy/_lib/pyprima'))
     return submodule_paths
 
 
