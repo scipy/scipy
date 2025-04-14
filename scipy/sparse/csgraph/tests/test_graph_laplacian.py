@@ -28,11 +28,12 @@ def _explicit_laplacian(x, normed=False, use_abs=False):
     if sparse.issparse(x):
         x = x.toarray()
     x = np.asarray(x)
-    if use_abs:
-        x = np.abs(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
+        if use_abs:
+            y[j,j] = np.abs(x[j,j+1:]).sum() + np.abs(x[j,:j]).sum()
+        else:
+            y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -187,39 +188,67 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 def test_asymmetric_laplacian(use_out_degree, normed,
                               copy, dtype, arr_type, use_abs):
     # adjacency matrix
-    A = [[0, 1, 0],
-         [4, 2, 0],
-         [0, 0, 0]]
+    A = [[0, 2, -2],
+         [2, 0, 2],
+         [-2, 2, 0]]
     A = arr_type(np.array(A), dtype=dtype)
     A_copy = A.copy()
 
-    if not normed and use_out_degree:
+    if not normed and use_out_degree and not use_abs:
         # Laplacian matrix using out-degree
-        L = [[1, -1, 0],
-             [-4, 4, 0],
-             [0, 0, 0]]
-        d = [1, 4, 0]
+        L = [[0, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 0]]
+        d = [0, 4, 0]
 
-    if normed and use_out_degree:
+    if normed and use_out_degree and not use_abs:
         # normalized Laplacian matrix using out-degree
-        L = [[1, -0.5, 0],
-             [-2, 1, 0],
-             [0, 0, 0]]
+        L = [[0, -1, 2],
+             [-1, 1, -1],
+             [2, -1, 0]]
         d = [1, 2, 1]
 
-    if not normed and not use_out_degree:
+    if not normed and not use_out_degree and not use_abs:
         # Laplacian matrix using in-degree
-        L = [[4, -1, 0],
-             [-4, 1, 0],
-             [0, 0, 0]]
-        d = [4, 1, 0]
+        L = [[0, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 0]]
+        d = [0, 4, 0]
 
-    if normed and not use_out_degree:
+    if normed and not use_out_degree and not use_abs:
         # normalized Laplacian matrix using in-degree
-        L = [[1, -0.5, 0],
-             [-2, 1, 0],
-             [0, 0, 0]]
-        d = [2, 1, 1]
+        L = [[0, -1, 2],
+             [-1, 1, -1],
+             [2, -1, 0]]
+        d = [1, 2, 1]
+
+    if not normed and use_out_degree and use_abs:
+        # Laplacian matrix using out-degree with abs
+        L = [[4, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 4]]
+        d = [4, 4, 4]
+
+    if normed and use_out_degree and use_abs:
+        # normalized Laplacian matrix using out-degree with abs
+        L = [[1, -0.5, 0.5],
+             [-0.5, 1, -0.5],
+             [0.5, -0.5, 1]]
+        d = [2, 2, 2]
+
+    if not normed and not use_out_degree and use_abs:
+        # Laplacian matrix using in-degree with abs
+        L = [[4, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 4]]
+        d = [4, 4, 4]
+
+    if normed and not use_out_degree and use_abs:
+        # normalized Laplacian matrix using in-degree with abs
+        L = [[1, -0.5, 0.5],
+             [-0.5, 1, -0.5],
+             [0.5, -0.5, 1]]
+        d = [2, 2, 2]
 
     _check_laplacian_dtype_none(
         A,
