@@ -5,7 +5,7 @@ from numpy import inf
 
 from scipy import special
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, DiscreteDistribution, _RealDomain, _IntegerDomain,
+    ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
     _RealParameter, _Parameterization, _combine_docs)
 
 __all__ = ['Normal', 'Uniform', 'Binomial']
@@ -25,9 +25,9 @@ class Normal(ContinuousDistribution):
     # `ShiftedScaledDistribution` allows this to be generated automatically from
     # an instance of `StandardNormal`, but the normal distribution is so frequently
     # used that it's worth a bit of code duplication to get better performance.
-    _mu_domain = _RealDomain(endpoints=(-inf, inf))
-    _sigma_domain = _RealDomain(endpoints=(0, inf))
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _mu_domain = _RealInterval(endpoints=(-inf, inf))
+    _sigma_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
 
     _mu_param = _RealParameter('mu',  symbol=r'\mu', domain=_mu_domain,
                                typical=(-1, 1))
@@ -132,7 +132,7 @@ class StandardNormal(Normal):
         f(x) = \frac{1}{\sqrt{2 \pi}} \exp \left( -\frac{1}{2} x^2 \right)
 
     """
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
     _variable = _x_param
     _parameterizations = []
@@ -217,11 +217,11 @@ class _LogUniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(0, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _log_a_domain = _RealDomain(endpoints=(-inf, inf))
-    _log_b_domain = _RealDomain(endpoints=('log_a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _log_a_domain = _RealInterval(endpoints=(-inf, inf))
+    _log_b_domain = _RealInterval(endpoints=('log_a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -279,9 +279,9 @@ class Uniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(-inf, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
+    _a_domain = _RealInterval(endpoints=(-inf, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -354,8 +354,8 @@ class Uniform(ContinuousDistribution):
 
 class _Gamma(ContinuousDistribution):
     # Gamma distribution for testing only
-    _a_domain = _RealDomain(endpoints=(0, inf))
-    _x_support = _RealDomain(endpoints=(0, inf), inclusive=(False, False))
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(0, inf), inclusive=(False, False))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(0.1, 10))
     _x_param = _RealParameter('x', domain=_x_support, typical=(0.1, 10))
@@ -377,9 +377,9 @@ class Binomial(DiscreteDistribution):
         f(x) = {n \choose x} p^x (1 - p)^{n-x}
 
     """
-    _n_domain = _IntegerDomain(endpoints=(0, inf), inclusive=(True, False))
-    _p_domain = _RealDomain(endpoints=(0, 1), inclusive=(True, True))
-    _x_support = _IntegerDomain(endpoints=(0, 'n'), inclusive=(True, True))
+    _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(True, False))
+    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(True, True))
+    _x_support = _IntegerInterval(endpoints=(0, 'n'), inclusive=(True, True))
 
     _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
     _p_param = _RealParameter('p', domain=_p_domain, typical=(0.25, 0.75))

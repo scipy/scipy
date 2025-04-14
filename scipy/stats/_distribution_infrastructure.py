@@ -235,8 +235,8 @@ class _Domain(ABC):
         raise NotImplementedError()
 
 
-class _SimpleDomain(_Domain):
-    r""" Representation of a simply-connected domain defined by two endpoints.
+class _Interval(_Domain):
+    r""" Representation of an interval defined by two endpoints.
 
     Each endpoint may be a finite scalar, positive or negative infinity, or
     be given by a single parameter. The domain may include the endpoints or
@@ -406,7 +406,7 @@ class _SimpleDomain(_Domain):
         rng = np.random.default_rng(rng)
 
         def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
-        uniform = rng.uniform if isinstance(self, _RealDomain) else ints
+        uniform = rng.uniform if isinstance(self, _RealInterval) else ints
 
         # get copies of min and max with no nans so that uniform doesn't fail
         min_nn, max_nn = min.copy(), max.copy()
@@ -438,11 +438,11 @@ class _SimpleDomain(_Domain):
         return z
 
 
-class _RealDomain(_SimpleDomain):
+class _RealInterval(_Interval):
     r""" Represents a simply-connected subset of the real line; i.e., an interval
 
-    Completes the implementation of the `_SimpleDomain` class for simple
-    domains on the real line.
+    Completes the implementation of the `_Interval` class for intervals
+    on the real line.
 
     Methods
     -------
@@ -480,10 +480,10 @@ class _RealDomain(_SimpleDomain):
         return self.symbols.get(endpoint, f"{endpoint}")
 
 
-class _IntegerDomain(_SimpleDomain):
+class _IntegerInterval(_Interval):
     r""" Represents an interval of integers
 
-    Completes the implementation of the `_SimpleDomain` class for simple
+    Completes the implementation of the `_Interval` class for simple
     domains on the integers.
 
     Methods
@@ -503,7 +503,6 @@ class _IntegerDomain(_SimpleDomain):
         Returns a string representation of the domain, e.g. "{a, a+1, ..., b-1, b}".
 
     """
-
     def contains(self, item, parameter_values=None):
         super_contains = super().contains(item, parameter_values)
         integral = (item == np.round(item))
@@ -4030,7 +4029,7 @@ def _make_distribution_rv_generic(dist):
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
     for shape_info in dist._shape_info():
-        domain = _RealDomain(endpoints=shape_info.endpoints,
+        domain = _RealInterval(endpoints=shape_info.endpoints,
                              inclusive=shape_info.inclusive)
         param = _RealParameter(shape_info.name, domain=domain)
         parameters.append(param)
@@ -4059,7 +4058,7 @@ def _make_distribution_rv_generic(dist):
     else:
         endpoints = support
 
-    _x_support = _RealDomain(endpoints=endpoints, inclusive=(True, True))
+    _x_support = _RealInterval(endpoints=endpoints, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     class CustomDistribution(new_class):
@@ -4173,15 +4172,16 @@ def _make_distribution_custom(dist):
         # the infrastructure.
         parameters = []
 
-        for name, info in parameterization.items():
-            domain_info, typical = _get_domain_info(info)
-            domain = _RealDomain(**domain_info)
-            param = _RealParameter(name, domain=domain, typical=typical)
-            parameters.append(param)
-        parameterizations.append(_Parameterization(*parameters) if parameters else [])
+    for name, info in dist.parameters.items():
+        domain = _RealInterval(endpoints=info['endpoints'],
+                               inclusive=info['inclusive'])
+        param = _RealParameter(name, domain=domain)
+        parameters.append(param)
 
-    domain_info, _ = _get_domain_info(dist.support)
-    _x_support = _RealDomain(**domain_info)
+    endpoints = dist.support["endpoints"]
+    inclusive = dist.support.get("inclusive", (True, True))
+
+    _x_support = _RealInterval(endpoints=endpoints, inclusive=inclusive)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
@@ -4370,11 +4370,11 @@ class TruncatedDistribution(TransformedDistribution):
     # - if the mode of `_dist` is within the support, it's still the mode
     # - rejection sampling might be more efficient than inverse transform
 
-    _lb_domain = _RealDomain(endpoints=(-inf, 'ub'), inclusive=(True, False))
+    _lb_domain = _RealInterval(endpoints=(-inf, 'ub'), inclusive=(True, False))
     _lb_param = _RealParameter('lb', symbol=r'b_l',
                                 domain=_lb_domain, typical=(0.1, 0.2))
 
-    _ub_domain = _RealDomain(endpoints=('lb', inf), inclusive=(False, True))
+    _ub_domain = _RealInterval(endpoints=('lb', inf), inclusive=(False, True))
     _ub_param = _RealParameter('ub', symbol=r'b_u',
                                   domain=_ub_domain, typical=(0.8, 0.9))
 
@@ -4516,11 +4516,11 @@ def truncate(X, lb=-np.inf, ub=np.inf):
 class ShiftedScaledDistribution(TransformedDistribution):
     """Distribution with a standard shift/scale transformation."""
     # Unclear whether infinite loc/scale will work reasonably in all cases
-    _loc_domain = _RealDomain(endpoints=(-inf, inf), inclusive=(True, True))
+    _loc_domain = _RealInterval(endpoints=(-inf, inf), inclusive=(True, True))
     _loc_param = _RealParameter('loc', symbol=r'\mu',
                                 domain=_loc_domain, typical=(1, 2))
 
-    _scale_domain = _RealDomain(endpoints=(-inf, inf), inclusive=(True, True))
+    _scale_domain = _RealInterval(endpoints=(-inf, inf), inclusive=(True, True))
     _scale_param = _RealParameter('scale', symbol=r'\sigma',
                                   domain=_scale_domain, typical=(0.1, 10))
 
@@ -4797,12 +4797,12 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     """
 
-    # These can be restricted to _IntegerDomain/_IntegerParameter in a separate
+    # These can be restricted to _IntegerInterval/_IntegerParameter in a separate
     # PR if desired.
-    _r_domain = _RealDomain(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_domain = _RealInterval(endpoints=(1, 'n'), inclusive=(True, True))
     _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
 
-    _n_domain = _RealDomain(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_domain = _RealInterval(endpoints=(1, np.inf), inclusive=(True, True))
     _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
 
     _r_domain.define_parameters(_n_param)

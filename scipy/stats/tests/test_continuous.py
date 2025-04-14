@@ -17,18 +17,18 @@ from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
 from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
-    _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
+    _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
 from scipy.stats import Normal, Uniform
 
 
-class Test_RealDomain:
+class Test_RealInterval:
     rng = np.random.default_rng(349849812549824)
 
     def test_iv(self):
-        domain = _RealDomain(endpoints=('a', 'b'))
+        domain = _RealInterval(endpoints=('a', 'b'))
         message = "The endpoints of the distribution are defined..."
         with pytest.raises(TypeError, match=message):
             domain.get_numerical_endpoints(dict)
@@ -39,7 +39,7 @@ class Test_RealDomain:
     def test_contains_simple(self, x):
         # Test `contains` when endpoints are defined by constants
         a, b = -np.inf, np.pi
-        domain = _RealDomain(endpoints=(a, b), inclusive=(False, True))
+        domain = _RealInterval(endpoints=(a, b), inclusive=(False, True))
         assert_equal(domain.contains(x), (a < x) & (x <= b))
 
     @pytest.mark.slow
@@ -70,10 +70,10 @@ class Test_RealDomain:
                             np.linspace(a, b, 10),
                             np.linspace(b, b+d, 10)])
         # Domain is defined by two parameters, 'a' and 'b'
-        domain = _RealDomain(endpoints=('a', 'b'),
+        domain = _RealInterval(endpoints=('a', 'b'),
                              inclusive=(inclusive_a, inclusive_b))
-        domain.define_parameters(_RealParameter('a', domain=_RealDomain()),
-                                 _RealParameter('b', domain=_RealDomain()))
+        domain.define_parameters(_RealParameter('a', domain=_RealInterval()),
+                                 _RealParameter('b', domain=_RealInterval()))
         # Check that domain and string evaluation give the same result
         res = domain.contains(x, dict(a=a, b=b))
 
@@ -93,7 +93,7 @@ class Test_RealDomain:
     def test_contains_function_endpoints(self, inclusive, a, b):
         # Test `contains` when endpoints are defined by functions.
         endpoints = (lambda a, b: (a - b) / 2, lambda a, b: (a + b) / 2)
-        domain = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+        domain = _RealInterval(endpoints=endpoints, inclusive=inclusive)
         x = np.asarray([(a - 2*b)/2, (a - b)/2, a/2, (a + b)/2, (a + 2*b)/2])
         res = domain.contains(x, dict(a=a, b=b))
 
@@ -112,7 +112,7 @@ class Test_RealDomain:
         ('a', 5, True, False, "[a, 5)")
     ])
     def test_str(self, case):
-        domain = _RealDomain(endpoints=case[:2], inclusive=case[2:4])
+        domain = _RealInterval(endpoints=case[:2], inclusive=case[2:4])
         assert str(domain) == case[4]
 
     @pytest.mark.slow
@@ -135,7 +135,7 @@ class Test_RealDomain:
         b = _Domain.symbols.get(b, b)
         left_bracket = '[' if inclusive_a else '('
         right_bracket = ']' if inclusive_b else ')'
-        domain = _RealDomain(endpoints=(a, b),
+        domain = _RealInterval(endpoints=(a, b),
                              inclusive=(inclusive_a, inclusive_b))
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
@@ -143,8 +143,8 @@ class Test_RealDomain:
     def test_symbols_gh22137(self):
         # `symbols` was accidentally shared between instances originally
         # Check that this is no longer the case
-        domain1 = _RealDomain(endpoints=(0, 1))
-        domain2 = _RealDomain(endpoints=(0, 1))
+        domain1 = _RealInterval(endpoints=(0, 1))
+        domain2 = _RealInterval(endpoints=(0, 1))
         assert domain1.symbols is not domain2.symbols
 
 
@@ -176,7 +176,7 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     y = dist._variable.draw(y_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     xy_result_shape = np.broadcast_shapes(y_shape, x_result_shape)
-    p_domain = _RealDomain((0, 1), (True, True))
+    p_domain = _RealInterval((0, 1), (True, True))
     p_var = _RealParameter('p', domain=p_domain)
     p = p_var.draw(x_shape, proportions=proportions, rng=rng)
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -552,9 +552,9 @@ def check_nans_and_edges(dist, fname, arg, res):
 
     valid_parameters = get_valid_parameters(dist)
     if fname in {'icdf', 'iccdf'}:
-        arg_domain = _RealDomain(endpoints=(0, 1), inclusive=(True, True))
+        arg_domain = _RealInterval(endpoints=(0, 1), inclusive=(True, True))
     elif fname in {'ilogcdf', 'ilogccdf'}:
-        arg_domain = _RealDomain(endpoints=(-inf, 0), inclusive=(True, True))
+        arg_domain = _RealInterval(endpoints=(-inf, 0), inclusive=(True, True))
     else:
         arg_domain = dist._variable.domain
 
@@ -853,7 +853,7 @@ def classify_arg(dist, arg, arg_domain):
 
 def test_input_validation():
     class Test(ContinuousDistribution):
-        _variable = _RealParameter('x', domain=_RealDomain())
+        _variable = _RealParameter('x', domain=_RealInterval())
 
     message = ("The `Test` distribution family does not accept parameters, "
                "but parameters `{'a'}` were provided.")
@@ -882,10 +882,10 @@ def test_input_validation():
         Test().moment(2, kind='coconut')
 
     class Test2(ContinuousDistribution):
-        _p1 = _RealParameter('c', domain=_RealDomain())
-        _p2 = _RealParameter('d', domain=_RealDomain())
+        _p1 = _RealParameter('c', domain=_RealInterval())
+        _p2 = _RealParameter('d', domain=_RealInterval())
         _parameterizations = [_Parameterization(_p1, _p2)]
-        _variable = _RealParameter('x', domain=_RealDomain())
+        _variable = _RealParameter('x', domain=_RealInterval())
 
     message = ("The provided parameters `{a}` do not match a supported "
                "parameterization of the `Test2` distribution family.")
@@ -1872,7 +1872,7 @@ class TestFullCoverage:
                               [(np.float16, np.float16),
                                (np.int16, np.float64)])
     def test_RealParameter_uncommon_dtypes(self, dtype_in, dtype_out):
-        domain = _RealDomain((-1, 1))
+        domain = _RealInterval((-1, 1))
         parameter = _RealParameter('x', domain=domain)
 
         x = np.asarray([0.5, 2.5], dtype=dtype_in)
@@ -1887,7 +1887,7 @@ class TestFullCoverage:
         # to return the right shape and dytpe, but this would need to be
         # configurable.
         class TestDist(ContinuousDistribution):
-            _variable = _RealParameter('x', domain=_RealDomain(endpoints=(0., 1.)))
+            _variable = _RealParameter('x', domain=_RealInterval(endpoints=(0., 1.)))
             def _logpdf_formula(self, x, *args, **kwargs):
                 return 0
 
@@ -2014,7 +2014,7 @@ class TestReprs:
 
 
 class MixedDist(ContinuousDistribution):
-    _variable = _RealParameter('x', domain=_RealDomain(endpoints=(-np.inf, np.inf)))
+    _variable = _RealParameter('x', domain=_RealInterval(endpoints=(-np.inf, np.inf)))
     def _pdf_formula(self, x, *args, **kwargs):
         return (0.4 * 1/(1.1 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x+0.25)/1.1)**2)
                 + 0.6 * 1/(0.9 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x-0.5)/0.9)**2))
