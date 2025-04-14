@@ -210,7 +210,24 @@ class _minmax_mixin:
         if out is not None:
             raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
-        axis = validateaxis(axis, ndim=self.ndim)
+        if axis == ():
+            return self.copy()
+
+        validateaxis(axis)
+
+        if isinstance(axis, tuple):
+            if len(axis) == 1:
+                axis = axis[0]
+            elif self.ndim == len(axis):
+                axis = [ax if ax >= 0 else ax + self.ndim for ax in axis]
+                if len(axis) != len(set(axis)):
+                    raise ValueError("duplicate value in 'axis'")
+                axis = None
+
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is None:
             if 0 in self.shape:

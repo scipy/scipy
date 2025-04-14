@@ -142,7 +142,13 @@ class _dia_base(_data_matrix):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
-        axis = validateaxis(axis)
+        validateaxis(axis)
+
+        if axis is not None:
+            if isinstance(axis, tuple):
+                axis = tuple(ax if ax >= 0 else ax + 2 for ax in axis)
+            elif axis < 0:
+                axis += 2
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
@@ -179,6 +185,9 @@ class _dia_base(_data_matrix):
         # If other is not DIA format, let them handle us instead.
         if not isinstance(other, _dia_base):
             return other._add_sparse(self)
+
+        if self.shape != other.shape:
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
 
         # Fast path for exact equality of the sparsity structure.
         if np.array_equal(self.offsets, other.offsets):

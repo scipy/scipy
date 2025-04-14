@@ -272,7 +272,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif self.format != other.format:
                 other = other.asformat(self.format)
             res = self._binopt(other, '_ne_')
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
@@ -340,8 +340,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             warn("Comparing sparse matrices using >= and <= is inefficient, "
                  "using <, >, or !=, instead.",
                  SparseEfficiencyWarning, stacklevel=3)
-            all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
+
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
+            all_true = self.__class__(np.ones(res.shape, dtype=np.bool_))
             return all_true - res
         else:
             return NotImplemented
