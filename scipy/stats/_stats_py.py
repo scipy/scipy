@@ -4367,7 +4367,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+@xp_capabilities(skip_backends = [('dask', 'data-apis/array-api-extra#196')],
+                 cpu_only=True, exceptions=['cupy'])
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
