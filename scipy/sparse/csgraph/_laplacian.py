@@ -20,7 +20,6 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    *,
     use_abs=False,
 ):
     """

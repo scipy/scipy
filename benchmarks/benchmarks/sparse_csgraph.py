@@ -17,7 +17,7 @@ class Laplacian(Benchmark):
     ]
     param_names = ['n', 'format', 'normed', 'use_abs']
 
-    def setup(self, n, format, normed):
+    def setup(self, n, format, normed, use_abs):
         data = scipy.sparse.rand(9, n, density=0.5, random_state=42).toarray()
         data = np.vstack((data, data))
         diags = list(range(-9, 0)) + list(range(1, 10))
