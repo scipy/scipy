@@ -111,14 +111,8 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
             return fixed_dtype
     elif random:
         rng = np.random.default_rng(1234)
-        if random is not True:  # assume a list to accumulate counts in first entry
-            counter = random
-            def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
-                counter[0] = counter[0] + 1
-                return (np.int32, np.int64)[rng.integers(2)]
-        else:
-            def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
-                return (np.int32, np.int64)[rng.integers(2)]
+        def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+            return (np.int32, np.int64)[rng.integers(2)]
     else:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
             dtype = np.int32
