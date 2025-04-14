@@ -8,9 +8,7 @@ from scipy.stats import special_ortho_group
 from itertools import permutations
 from scipy._lib._array_api import (
     xp_assert_equal,
-    is_numpy,
     is_array_api_strict,
-    is_torch,
     is_jax,
     is_lazy_array,
     xp_vector_norm,
@@ -207,11 +205,11 @@ def test_from_quat_wrong_shape(xp):
 
 def test_zero_norms_from_quat(xp):
     x = xp.asarray([[3, 4, 0, 0], [0, 0, 0, 0], [5, 0, 12, 0]])
-    if is_numpy(xp):
+    if is_lazy_array(x):
+        assert xp.all(xp.isnan(Rotation.from_quat(x).as_quat()[1, ...]))
+    else:
         with pytest.raises(ValueError):
             Rotation.from_quat(x)
-    else:
-        assert xp.all(xp.isnan(Rotation.from_quat(x).as_quat()[1, ...]))
 
 
 def test_as_matrix_single_1d_quaternion(xp):
@@ -332,31 +330,18 @@ def test_from_matrix_normalize(xp):
 def test_from_matrix_non_positive_determinant(xp):
     mat = xp.eye(3)
     mat = xpx.at(mat)[0, 0].set(0)
-    # TODO: Unify the error response for all backends
-    if is_numpy(xp):
+    if is_lazy_array(mat):
+        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
+    else:
         with pytest.raises(ValueError, match="Non-positive determinant"):
             Rotation.from_matrix(mat)
-    elif is_array_api_strict(xp):
-        with pytest.raises(ValueError, match="SVD did not converge"):
-            Rotation.from_matrix(mat)
-    elif is_torch(xp):
-        with pytest.raises(Exception, match="linalg.svd: "):
-            Rotation.from_matrix(mat)
-    else:
-        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
 
     mat = xpx.at(mat)[0, 0].set(-1)
-    if is_numpy(xp):
+    if is_lazy_array(mat):
+        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
+    else:
         with pytest.raises(ValueError, match="Non-positive determinant"):
             Rotation.from_matrix(mat)
-    elif is_array_api_strict(xp):
-        with pytest.raises(ValueError, match="SVD did not converge"):
-            Rotation.from_matrix(mat)
-    elif is_torch(xp):
-        with pytest.raises(Exception, match="linalg.svd: "):
-            Rotation.from_matrix(mat)
-    else:
-        assert xp.all(xp.isnan(Rotation.from_matrix(mat).as_matrix()))
 
 
 def test_from_matrix_jax_compile():
@@ -895,12 +880,12 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We cannot warn on non-NumPy backends because we'd need to condition on traced booleans
-    if is_numpy(xp):
+    # We can only warn on non-lazy backends because we'd need to condition on traced booleans
+    if is_lazy_array(mat_expected):
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    else:
         with pytest.warns(UserWarning, match="Gimbal lock"):
             angle_estimates = rotation.as_euler(seq, degrees=True)
-    else:
-        angle_estimates = rotation.as_euler(seq, degrees=True)
 
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
@@ -924,12 +909,12 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We cannot warn on non-NumPy backends because we'd need to condition on traced booleans
-    if is_numpy(xp):
+    # We can only warn on non-lazy backends because we'd need to condition on traced booleans
+    if is_lazy_array(mat_expected):
+        angle_estimates = rotation.as_euler(seq, degrees=True)
+    else:
         with pytest.warns(UserWarning, match="Gimbal lock"):
             angle_estimates = rotation.as_euler(seq, degrees=True)
-    else:
-        angle_estimates = rotation.as_euler(seq, degrees=True)
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     assert_array_almost_equal(mat_expected, mat_estimated)
@@ -1110,10 +1095,8 @@ def test_approx_equal_single_rotation(xp):
     assert not p.approx_equal(q[3], atol=1e-10)
     assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
 
-    # DECISION: Remove warning for degrees=True and atol=None
-    if is_numpy(xp):
-        with pytest.warns(UserWarning, match="atol must be set"):
-            assert p.approx_equal(q[3], degrees=True)
+    with pytest.warns(UserWarning, match="atol must be set"):
+        assert p.approx_equal(q[3], degrees=True)
 
 
 def test_approx_equal_jax_compile():
@@ -1147,22 +1130,13 @@ def test_weighted_mean(xp):
 
 
 def test_mean_invalid_weights(xp):
-    # TOOD: Unify error messages and behavior
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="non-negative"):
-            r = Rotation.from_quat(xp.eye(4))
-            r.mean(weights=-xp.ones(4))
+    r = Rotation.from_quat(xp.eye(4))
+    if is_lazy_array(r.as_quat()):
+        m = r.mean(weights=-xp.ones(4))
+        assert all(xp.isnan(m._quat))
     else:
-        r = Rotation.from_quat(xp.eye(4))
-        if is_array_api_strict(xp):
-            with pytest.raises(ValueError, match="Eigenvalues did not converge"):
-                m = r.mean(weights=-xp.ones(4))
-        elif is_torch(xp):
-            with pytest.raises(RuntimeError, match="The algorithm failed to converge"):
-                m = r.mean(weights=-xp.ones(4))
-        else:
-            m = r.mean(weights=-xp.ones(4))
-            assert all(xp.isnan(m._quat))
+        with pytest.raises(ValueError, match="non-negative"):
+            r.mean(weights=-xp.ones(4))
 
 
 def test_mean_jax_compile():
@@ -1526,59 +1500,53 @@ def test_align_vectors_invalid_input(xp):
 
     a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
     weights = xp.asarray([-1])
-    if is_numpy(xp):
+    if is_lazy_array(weights):
+        r, rssd = Rotation.align_vectors(a, b, weights)
+        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
+        assert xp.isnan(rssd), "RSSD should be nan"
+    else:
         with pytest.raises(
             ValueError, match="`weights` may not contain negative values"
         ):
             Rotation.align_vectors(a, b, weights)
-    else:
-        r, rssd = Rotation.align_vectors(a, b, weights)
-        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
-        assert xp.isnan(rssd), "RSSD should be nan"
 
     a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
     weights = xp.asarray([np.inf, np.inf])
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
-            Rotation.align_vectors(a, b, weights)
-    # elif is_array_api_strict(xp):
-    #     with pytest.raises(ValueError, match="SVD did not converge"):
-    #         Rotation.align_vectors(a, b, weights)
-    # elif is_torch(xp):
-    #     with pytest.raises(Exception, match="linalg.svd: "):
-    #         Rotation.align_vectors(a, b, weights)
-    else:
+    if is_lazy_array(weights):
         r, rssd = Rotation.align_vectors(a, b, weights)
         assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
         assert xp.isnan(rssd), "RSSD should be nan"
+    else:
+        with pytest.raises(ValueError, match="Only one infinite weight is allowed"):
+            Rotation.align_vectors(a, b, weights)
 
     a, b = xp.asarray([[0, 0, 0]]), xp.asarray([[1, 2, 3]])
-    if is_numpy(xp):
+    if is_lazy_array(a):
+        r, rssd = Rotation.align_vectors(a, b)
+        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
+        assert xp.isnan(rssd), "RSSD should be nan"
+    else:
         with pytest.raises(
             ValueError, match="Cannot align zero length primary vectors"
         ):
             Rotation.align_vectors(a, b)
-    else:
-        r, rssd = Rotation.align_vectors(a, b)
-        assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
-        assert xp.isnan(rssd), "RSSD should be nan"
 
-    a, b = (xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]]))
+    a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
     weights = xp.asarray([np.inf, 1])
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-            Rotation.align_vectors(a, b, weights, return_sensitivity=True)
-    else:
+    if is_lazy_array(a):
         r, rssd, sens = Rotation.align_vectors(a, b, weights, return_sensitivity=True)
         assert xp.all(xp.isnan(sens)), "Sensitivity matrix should be nan"
+    else:
+        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
+            Rotation.align_vectors(a, b, weights, return_sensitivity=True)
 
     a, b = xp.asarray([[1, 2, 3]]), xp.asarray([[1, 2, 3]])
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
-            Rotation.align_vectors(a, b, return_sensitivity=True)
-    else:
+    if is_lazy_array(a):
         r, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
         assert xp.all(xp.isnan(sens)), "Sensitivity matrix should be nan"
+    else:
+        with pytest.raises(ValueError, match="Cannot return sensitivity matrix"):
+            Rotation.align_vectors(a, b, return_sensitivity=True)
 
 
 def test_align_vectors_align_constrain(xp):
@@ -1914,7 +1882,7 @@ def test_slerp_call_time_out_of_range(xp):
     s = Slerp(t, r)
 
     times = xp.asarray([0, 1, 2])
-    # DECISION: Lazy error handling deviates from eager implementations
+    # Lazy error handling deviates from eager implementations
     if is_lazy_array(times):
         # Check that lazy frameworks return nan for out of range times
         q = s(times).as_quat()
@@ -2166,19 +2134,23 @@ def test_from_davenport_invalid_input(xp):
     ey = [0, 1, 0]
     ezy = [0, 1, 1]
 
-    # DECISION: We cannot raise in Array API frameworks, so we return NaN.
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="must be orthogonal"):
-            Rotation.from_davenport(xp.asarray([ez, ezy]), "e", [0, 0])
-    else:
-        q = Rotation.from_davenport(xp.asarray([ez, ezy]), "e", [0, 0]).as_quat()
+    # We can only raise in non-lazy frameworks.
+    axes = xp.asarray([ez, ezy])
+    if is_lazy_array(axes):
+        q = Rotation.from_davenport(axes, "e", [0, 0]).as_quat()
         assert xp.all(xp.isnan(q))
-    if is_numpy(xp):
-        with pytest.raises(ValueError, match="must be orthogonal"):
-            Rotation.from_davenport(xp.asarray([ez, ey, ezy]), "e", [0, 0, 0])
     else:
-        q = Rotation.from_davenport(xp.asarray([ez, ey, ezy]), "e", [0, 0, 0]).as_quat()
+        with pytest.raises(ValueError, match="must be orthogonal"):
+            Rotation.from_davenport(axes, "e", [0, 0])
+
+    axes = xp.asarray([ez, ey, ezy])
+    if is_lazy_array(axes):
+        q = Rotation.from_davenport(axes, "e", [0, 0, 0]).as_quat()
         assert xp.all(xp.isnan(q))
+    else:
+        with pytest.raises(ValueError, match="must be orthogonal"):
+            Rotation.from_davenport(axes, "e", [0, 0, 0])
+
     with pytest.raises(ValueError, match="order should be"):
         Rotation.from_davenport(xp.asarray([ez]), "xyz", [0])
     with pytest.raises(ValueError, match="Expected `angles`"):
@@ -2245,11 +2217,11 @@ def test_as_davenport_degenerate(xp):
         for order in ["extrinsic", "intrinsic"]:
             ax = ax_lamb if order == "intrinsic" else xp.flip(ax_lamb, axis=0)
             rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
-            if is_numpy(xp):
+            if is_lazy_array(rot.as_quat()):
+                angles_dav = rot.as_davenport(xp.asarray(ax), order)
+            else:  # We can only warn in non-lazy frameworks.
                 with pytest.warns(UserWarning, match="Gimbal lock"):
                     angles_dav = rot.as_davenport(xp.asarray(ax), order)
-            else:  # We cannot warn in Array API frameworks.
-                angles_dav = rot.as_davenport(xp.asarray(ax), order)
             mat_expected = rot.as_matrix()
             mat_estimated = Rotation.from_davenport(
                 xp.asarray(ax), order, angles_dav

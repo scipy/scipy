@@ -7,6 +7,7 @@ with any Array API-compatible backend.
 # Parts of the implementation are adapted from the cython backend and
 # https://github.com/jax-ml/jax/blob/d695aa4c63ffcebefce52794427c46bad576680c/jax/_src/scipy/spatial/transform.py.
 import re
+import warnings
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -44,9 +45,15 @@ def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     # Promote is not guaranteed to copy, but we want to ensure we don't modify the original array.
     matrix = xp.asarray(xp_promote(matrix, force_floating=True, xp=xp), copy=True)
-    # DECISION: Left-handed case results in NaNs instead of raising an error. This is a deviation
-    # from the cython implementation, which raises an error.
+    # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
+    if not is_lazy_array(mask) and xp.any(mask):
+        ind = int(xp.nonzero(xpx.atleast_nd(mask, ndim=1, xp=xp))[0][0])
+        raise ValueError(
+            "Non-positive determinant (left-handed or null "
+            f"coordinate frame) in rotation matrix {ind}: "
+            f"{matrix[ind, ...]}."
+        )
     mask = xp.broadcast_to(mask[..., None, None], mask.shape + (3, 3))
     matrix = xp.where(mask, xp.asarray(xp.nan, device=device(matrix)), matrix)
 
@@ -228,6 +235,8 @@ def from_davenport(
                 axes_not_orthogonal[..., 0],
             )
         )
+    if not is_lazy_array(axes_not_orthogonal) and xp.any(axes_not_orthogonal):
+        raise ValueError("Consecutive axes must be orthogonal.")
 
     axes = xp.where(axes_not_orthogonal, xp.asarray(xp.nan, device=device(axes)), axes)
     angles, single = _format_angles(angles, degrees, num_axes)
@@ -415,6 +424,15 @@ def approx_equal(
     quat: Array, other: Array, atol: float | None = None, degrees: bool = False
 ) -> Array:
     xp = array_namespace(quat)
+    if atol is None:
+        if degrees:
+            warnings.warn(
+                "atol must be set to use the degrees flag, defaulting to 1e-8 radians."
+            )
+        atol = 1e-8
+    elif degrees:
+        atol = _deg2rad(atol)
+    atol = xp.asarray(atol, device=device(quat))
 
     if not broadcastable(quat.shape, other.shape):
         raise ValueError(
@@ -423,14 +441,6 @@ def approx_equal(
             f"got {quat.shape[0]} rotations in first and {other.shape[0]} rotations in "
             "second object."
         )
-
-    # DECISION: We cannot warn conditioned on the value of `degrees`. However, we should not need
-    # to warn in the first place. If the user has set the degree flag and atol is None, the function
-    # is still working as expected.
-    atol = 1e-8 if atol is None else atol  # Value in radians
-    atol = xp.asarray(atol, device=device(quat))
-    degrees = xp.asarray(degrees, device=device(quat))
-    atol = xp.where(degrees, _deg2rad(atol), atol)
 
     quat_result = compose_quat(other, inv(quat))
     angles = magnitude(quat_result)
@@ -450,6 +460,9 @@ def mean(quat: Array, weights: Array | None = None) -> Array:
         weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
     else:
         weights = xp.asarray(xp_promote(weights, force_floating=True, xp=xp), copy=True)
+    if not is_lazy_array(weights) and xp.any(weights < 0):
+        raise ValueError("`weights` must be non-negative.")
+
     # TODO: Missing full broadcasting support. We should relax this and only check if broadcasting
     # is possible.
     if weights.ndim != 1:
@@ -626,15 +639,30 @@ def align_vectors(
                 "equal to number of input vectors, got "
                 "{} values and {} vectors.".format(weights.shape[0], N)
             )
-        # DECISION: We cannot check for negative weights because jit code needs to be non-branching.
-        # We return NaN instead
-        weights = xp.where(weights < 0, xp.asarray(xp.nan, device=device(a)), weights)
+        # We can only check for negative weights in eager execution models. Lazy backends will
+        # return NaNs instead.
+        negative_weights = weights < 0
+        if not is_lazy_array(negative_weights) and xp.any(negative_weights):
+            raise ValueError("`weights` may not contain negative values")
+        weights = xp.where(
+            negative_weights, xp.asarray(xp.nan, device=device(a)), weights
+        )
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
     weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
-    # DECISION: We cannot error out on multiple infinite weights. We return NaN instead.
     n_inf = xp.sum(xp.astype(weight_is_inf, a.dtype))
+    # We can only error out on multiple infinite weights or sensitivity return with infinite weights
+    # in eager execution models. Lazy backends will return NaNs instead.
+    if not is_lazy_array(n_inf):
+        if n_inf > 1:
+            raise ValueError("Only one infinite weight is allowed")
+        if n_inf == 1 and return_sensitivity:
+            raise ValueError(
+                "Cannot return sensitivity matrix with an "
+                "infinite weight or one vector pair"
+            )
+
     weights = xp.where(n_inf > 1, xp.asarray(xp.nan, device=device(a)), weights)
 
     inf_branch = xp.any(weight_is_inf, axis=-1)
@@ -724,6 +752,9 @@ def _align_vectors_fixed(
     b_pri = b_sorted[0, ...][None, ...]
     a_pri_norm = xp_vector_norm(a_pri, axis=-1, keepdims=True)
     b_pri_norm = xp_vector_norm(b_pri, axis=-1, keepdims=True)
+    if not is_lazy_array(a_pri_norm):
+        if xp.any(a_pri_norm == 0) or xp.any(b_pri_norm == 0):
+            raise ValueError("Cannot align zero length primary vectors")
 
     # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
     # zero and mark the result as invalid.
@@ -855,6 +886,8 @@ def pow(quat: Array, n: float) -> Array:
 def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True)
+    if not is_lazy_array(quat_norm) and xp.any(quat_norm == 0):
+        raise ValueError("Found zero norm quaternions in `quat`.")
     quat = xp.where(quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat)
     return quat / quat_norm
 
@@ -1028,6 +1061,13 @@ def _get_angles(
     case1 = xp.abs(angles[..., 1]) <= eps
     case2 = xp.abs(angles[..., 1] - np.pi) <= eps
     case0 = ~(case1 | case2)
+    if not is_lazy_array(case0) and xp.any(~case0):
+        warnings.warn(
+            "Gimbal lock detected. Setting third angle to zero "
+            "since it is not possible to uniquely determine "
+            "all angles.",
+            stacklevel=3,
+        )
 
     one = xp.asarray(1, dtype=angles.dtype, device=_device)
     a0 = xp.where(case1, 2 * half_sum, 2 * half_diff * xp.where(extrinsic, -one, one))
