@@ -2693,10 +2693,6 @@ def comb(N, k, *, exact=False, repetition=False):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly.
-
-        .. deprecated:: 1.14.0
-            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
-            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
