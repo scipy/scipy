@@ -515,7 +515,7 @@ class gaussian_kde:
         `set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
-        """Compute the estimator bandwidth with given method.
+        """Compute the bandwidth factor with given method.
 
         The new bandwidth calculated after a call to `set_bandwidth` is used
         for subsequent evaluations of the estimated density.
@@ -523,7 +523,7 @@ class gaussian_kde:
         Parameters
         ----------
         bw_method : str, scalar or callable, optional
-            The method used to calculate the estimator bandwidth.  This can be
+            The method used to calculate the bandwidth factor.  This can be
             'scott', 'silverman', a scalar constant or a callable.  If a
             scalar, this will be used directly as `factor`.  If a callable,
             it should take a `gaussian_kde` instance as only parameter and
