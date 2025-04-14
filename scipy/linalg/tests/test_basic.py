@@ -1103,6 +1103,61 @@ class TestInv:
         assert a_inv.size == 0
         assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
 
+        a = np.ones((3, 0, 2, 2), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 0, 2, 2)
+
+        a = np.ones((3, 1, 0, 0), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 1, 0, 0)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_batch_core_1x1(self, dt):
+        a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, 1.)
+
+    def test_batch_zero_stride(self):
+        a = np.arange(3*2*2, dtype=float).reshape(3, 2, 2)
+        aa = a[None, ...]
+        a_inv = inv(aa)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+        aa = a[:, None, ...]
+        a_inv = inv(aa)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+    def test_batch_negative_stride(self):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    def test_core_negative_stride(self):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    def test_core_non_contiguous(self):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        a_inv = inv(a)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    def test_batch_non_contiguous(self):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        a_inv = inv(a)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
+
 
 class TestDet:
     def setup_method(self):
