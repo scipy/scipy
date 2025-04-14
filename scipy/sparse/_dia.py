@@ -142,13 +142,7 @@ class _dia_base(_data_matrix):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
-        validateaxis(axis)
-
-        if axis is not None:
-            if isinstance(axis, tuple):
-                axis = tuple(ax if ax >= 0 else ax + 2 for ax in axis)
-            elif axis < 0:
-                axis += 2
+        axis = validateaxis(axis)
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
