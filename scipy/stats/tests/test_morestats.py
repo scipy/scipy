@@ -2051,8 +2051,8 @@ class TestBoxcox_llf:
         llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
         data_axes_swapped = xp.moveaxis(data, 0, -1)
         llf_0 = xp.asarray([
-                stats.boxcox_llf(1, data_axes_swapped[0, :]),
-                stats.boxcox_llf(1, data_axes_swapped[1, :]),
+            stats.boxcox_llf(1, data[:, 0]),
+            stats.boxcox_llf(1, data[:, 1]),
         ])
         xp_assert_close(llf_axis_0, llf_0)
         llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
