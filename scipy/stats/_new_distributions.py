@@ -392,7 +392,28 @@ class Binomial(DiscreteDistribution):
         super().__init__(n=n, p=p, **kwargs)
 
     def _pmf_formula(self, x, *, n, p, **kwargs):
-        return special.binom(n, x) * p**x * (1 - p)**(n - x)
+        return special._ufuncs._binom_pmf(x, n, p)
+
+    def _logpmf_formula(self, x, *, n, p, **kwargs):
+        # This implementation is from the ``scipy.stats.binom`` and could be improved
+        # by using a more numerically sound implementation of the absolute value of
+        # the binomial coefficient.
+        combiln = (
+            special.gammaln(n+1) - (special.gammaln(x+1) + special.gammaln(n-x+1))
+        )
+        return combiln + special.xlogy(x, p) + special.xlog1py(n-x, -p)
+
+    def _cdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_cdf(x, n, p)
+
+    def _ccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_sf(x, n, p)
+
+    def _icdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_ppf(x, n, p)
+
+    def _iccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_isf(x, n, p)
 
 
 # Distribution classes need only define the summary and beginning of the extended
