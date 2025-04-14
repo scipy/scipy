@@ -301,9 +301,9 @@ def laplacian(
 
     >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, use_abs=True)
     >>> L_abs
-    array([[ 2, -1, -1],
+    array([[ 2, -1, 1],
            [-1,  2, -1],
-           [-1, -1,  2]])
+           [1, -1,  2]])
     >>> d_abs
     array([2, 2, 2])
 
@@ -380,12 +380,6 @@ def laplacian(
     ):
         csgraph = csgraph.astype(np.float64)
 
-    if use_abs:
-        if issparse(csgraph):
-            csgraph.data = np.abs(csgraph.data)
-        else:
-            csgraph = np.abs(csgraph)
-
     if form == "array":
         create_lap = (
             _laplacian_sparse if issparse(csgraph) else _laplacian_dense
@@ -407,6 +401,7 @@ def laplacian(
         form=form,
         dtype=dtype,
         symmetrized=symmetrized,
+        use_abs=use_abs,
     )
     if is_pydata_sparse:
         lap = pydata_sparse_cls.from_scipy_sparse(lap)
@@ -446,7 +441,7 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
     # The keyword argument `copy` is unused and has no effect here.
     del copy
 
@@ -459,6 +454,14 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
     if symmetrized:
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
         diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if use_abs:
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        if symmetrized:
+            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
+                    - np.abs(graph_diagonal)
 
     if normed:
         isolated_node_mask = diag == 0
@@ -488,7 +491,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
     # The keyword argument `form` is unused and has no effect here.
     del form
 
@@ -503,10 +506,21 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         if copy:
             needs_copy = True
 
+    # Normalization affects only the diagonal (degree) computation, not the rest.
+    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    if use_abs:
+        w = np.asarray(np.abs(m).sum(axis=axis)).ravel() - np.abs(m.diagonal())
+    else:
+        w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+
     if symmetrized:
+        if use_abs:
+            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel() \
+                 - np.abs(m.diagonal())
+        else:
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
         m += m.T.conj()
 
-    w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
@@ -526,7 +540,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
 
     if copy:
         m = np.array(graph)
@@ -542,6 +556,14 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
     if symmetrized:
         graph_sum += m.sum(axis=1 - axis)
         diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if use_abs:
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        if symmetrized:
+            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
+                    - np.abs(graph_diagonal)
 
     if normed:
         isolated_node_mask = diag == 0
@@ -571,7 +593,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
 
     if form != "array":
         raise ValueError(f'{form!r} must be "array"')
@@ -587,10 +609,22 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
-    if symmetrized:
-        m += m.T.conj()
     np.fill_diagonal(m, 0)
-    w = m.sum(axis=axis)
+
+    # Normalization affects only the diagonal (degree) computation, not the rest.
+    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    if use_abs:
+        w = np.asarray(np.abs(m).sum(axis=axis)).ravel()
+    else:
+        w = np.asarray(m.sum(axis=axis)).ravel()
+
+    if symmetrized:
+        if use_abs:
+            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel()
+        else:
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
+        m += m.T.conj()
+
     if normed:
         isolated_node_mask = (w == 0)
         w = np.where(isolated_node_mask, 1, np.sqrt(w))
