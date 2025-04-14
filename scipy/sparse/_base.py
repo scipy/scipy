@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
-                       get_sum_dtype, isdense, isscalarlike,
+                       get_sum_dtype, isdense, isscalarlike, _todata,
                        matrix, validateaxis, getdtype, isintlike)
 from scipy._lib._sparse import SparseABC, issparse
 
@@ -1148,25 +1148,39 @@ class _spbase(SparseABC):
         # Mimic numpy's casting.
         res_dtype = get_sum_dtype(self.dtype)
 
-        # Note: all valid 1D axis values are canonically `None` so use this code.
+        # Note: all valid 1D axis values are canonically `None`.
         if axis is None:
-            ones = self._ascontainer(np.ones((self.shape[-1], 1), dtype=res_dtype))
-            return (self @ ones).sum(dtype=dtype, out=out)
+            if self.nnz == 0:
+                return np.sum(self._ascontainer([0]), dtype=dtype or res_dtype, out=out)
+            return np.sum(self._ascontainer(_todata(self)), dtype=dtype, out=out)
+        elif isspmatrix(self):
+            # Ensure spmatrix sums stay 2D
+            new_shape = (1, self.shape[1]) if axis == (0,) else (self.shape[0], 1)
+        else:
+            new_shape = tuple(self.shape[i] for i in range(self.ndim) if i not in axis)
 
-        # We use multiplication by a matrix of ones to achieve this.
+        if out is None:
+            # create out array with desired dtype
+            out = np.zeros(new_shape, dtype=dtype or res_dtype)
+        else:
+            if out.shape != new_shape:
+                raise ValueError("out dimensions do not match shape")
+
+        if self.ndim > 2:
+            return self._sum_nd(axis, res_dtype, out)
+
+        # We use multiplication by a matrix of ones to sum.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
-        if axis == 0:
-            # sum over columns
+        if axis == (0,):
             ones = self._ascontainer(np.ones((1, self.shape[0]), dtype=res_dtype))
-            ret = ones @ self
-        else:  # axis == 1:
-            # sum over rows
+            # sets dtype while loading into out
+            out[...] = (ones @ self).reshape(new_shape)
+        else:  # axis == (1,)
             ones = self._ascontainer(np.ones((self.shape[1], 1), dtype=res_dtype))
-            ret = self @ ones
-
-        # This doesn't sum anything. It handles dtype and out.
-        return ret.sum(axis=axis, dtype=dtype, out=out)
+            # sets dtype while loading into out
+            out[...] = (self @ ones).reshape(new_shape)
+        return out
 
     def mean(self, axis=None, dtype=None, out=None):
         """
@@ -1207,32 +1221,21 @@ class _spbase(SparseABC):
         """
         axis = validateaxis(axis, ndim=self.ndim)
 
-        res_dtype = self.dtype.type
         integral = (np.issubdtype(self.dtype, np.integer) or
                     np.issubdtype(self.dtype, np.bool_))
 
-        # output dtype
-        if dtype is None:
-            if integral:
-                res_dtype = np.float64
-        else:
-            res_dtype = np.dtype(dtype).type
-
         # intermediate dtype for summation
-        inter_dtype = np.float64 if integral else res_dtype
+        inter_dtype = np.float64 if integral else self.dtype
         inter_self = self.astype(inter_dtype)
 
         if axis is None:
             denom = math.prod(self.shape)
-        elif isintlike(axis):
-            denom = self.shape[axis]
         else:
             denom = math.prod(self.shape[ax] for ax in axis)
-        res = (inter_self * (1.0 / denom)).sum(axis=axis, dtype=inter_dtype)
-        if out is None:
-            return res.sum(axis=(), dtype=dtype)
-        # out is handled differently by matrix and ndarray so use as_container
-        return self._ascontainer(res).sum(axis=(), dtype=dtype, out=out)
+        res = (inter_self * (1.0 / denom)).sum(axis=axis, dtype=inter_dtype, out=out)
+        if dtype is not None and out is None:
+            return res.astype(dtype, copy=False)
+        return res
 
 
     def diagonal(self, k=0):
