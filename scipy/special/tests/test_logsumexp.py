@@ -12,16 +12,9 @@ from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
 
-from scipy._lib.array_api_extra.testing import lazy_xp_function
-
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
 integral_dtypes = ['int32', 'int64']
-
-lazy_xp_function(_wrap_radians, static_argnames="xp")
-lazy_xp_function(logsumexp, static_argnames=("axis", "keepdims", "return_sign"))
-lazy_xp_function(softmax, static_argnames="axis")
-lazy_xp_function(log_softmax, static_argnames="axis")
 
 
 def test_wrap_radians(xp):
