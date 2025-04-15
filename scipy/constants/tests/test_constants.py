@@ -4,7 +4,7 @@ import scipy.constants as sc
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy._lib._array_api import make_skip_xp_backends
 
-skip_xp_backends = pytest.mark.skip_xp_backends
+lazy_xp_modules = [sc]
 
 
 @make_skip_xp_backends(sc.convert_temperature)

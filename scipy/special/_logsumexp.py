@@ -12,7 +12,7 @@ from scipy._lib import array_api_extra as xpx
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
-@xp_capabilities()
+@xp_capabilities(static_argnames=("axis", "keepdims", "return_sign"))
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -249,7 +249,7 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     return out, sgn
 
 
-@xp_capabilities()
+@xp_capabilities(static_argnames="axis")
 def softmax(x, axis=None):
     r"""Compute the softmax function.
 
@@ -348,7 +348,7 @@ def softmax(x, axis=None):
     return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
-@xp_capabilities()
+@xp_capabilities(static_argnames="axis")
 def log_softmax(x, axis=None):
     r"""Compute the logarithm of the softmax function.
 
