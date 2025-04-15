@@ -103,7 +103,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
         # This is an edge case where shortTimeFFT returns one more time slice
         # than the Scipy stft() shorten to remove last time slice:
         if n % 2 == 1 and nperseg % 2 == 1 and noverlap % 2 == 1:
-            x = x[..., :axis - 1]
+            x = x[..., : -1]
 
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
@@ -124,22 +124,14 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     k_off = nperseg // 2
     p0 = 0  # ST.lower_border_end[1] + 1
     nn = x.shape[axis] if padded else n+k_off+1
-    p1 = ST.upper_border_begin(nn)[1]  # ST.p_max(n) + 1
-
-    # This is bad hack to pass the test test_roundtrip_boundary_extension():
-    if padded is True and nperseg - noverlap == 1:
-        p1 -= nperseg // 2 - 1  # the reasoning behind this is not clear to me
+    # number of frames akin to legacy stft computation
+    p1 = (x.shape[axis] - nperseg) // nstep + 1 
 
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
     t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
     if x.dtype in (np.float32, np.complex64):
         Sxx = Sxx.astype(np.complex64)
-
-    # workaround for test_average_all_segments() - seems to be buggy behavior:
-    if boundary is None and padded is False:
-        t, Sxx = t[1:-1], Sxx[..., :-2]
-        t -= k_off / fs
 
     return ST.f, t, Sxx
 
