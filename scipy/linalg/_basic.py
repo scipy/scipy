@@ -10,7 +10,7 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork
+from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
@@ -22,17 +22,6 @@ from . import _batched_linalg
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
-
-
-# The numpy facilities for type-casting checks are too slow for small sized
-# arrays and eat away the time budget for the checkups. Here we set a
-# precomputed dict container of the numpy.can_cast() table.
-
-# It can be used to determine quickly what a dtype can be cast to LAPACK
-# compatible types, i.e., 'float32, float64, complex64, complex128'.
-# Then it can be checked via "casting_dict[arr.dtype.char]"
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 
 # Linear equations
@@ -1245,17 +1234,12 @@ def inv(a, overwrite_a=False, check_finite=True):
         dt = inv(np.eye(2, dtype=a1.dtype)).dtype
         return np.empty_like(a1, dtype=dt)
 
-    # dtypes
-    if issubclass(a1.dtype.type, np.integer):
-        # XXX float16, longdouble, check backwards compat
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
         overwrite_a = False
-        a1 = a1.astype(np.float64)            
-    elif not issubclass(a1.dtype.type, np.number):
-        raise ValueError(f"Expected a numeric array, got f{a1.dtype=}")
-    else:
-        if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-            overwrite_a = False
-            a1 = a1.copy()
+        a1 = a1.copy()
 
     if a1.ndim == 2:
         a1 = a1[None, ...]
@@ -1344,14 +1328,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype "{a1.dtype.name}" cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:

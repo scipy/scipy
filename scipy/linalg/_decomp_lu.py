@@ -10,11 +10,9 @@ from scipy._lib._util import _apply_over_batch
 
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _normalize_lapack_dtype
 from ._decomp_lu_cython import lu_dispatcher
 
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
@@ -311,14 +309,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
         raise ValueError('The input array must be at least two-dimensional.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype {a1.dtype} cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     *nd, m, n = a1.shape
     k = min(m, n)
