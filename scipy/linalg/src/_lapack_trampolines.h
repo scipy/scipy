@@ -1,82 +1,84 @@
 /*
  * LAPACK declarations and call trampolines.
+ *
+ * For each LAPACK function, `?FUNC`,
+ *     1. declare the LAPACK prototypes
+ *     2. declare the struct to hold the arguments. In a constructor, give arguments
+ *        "default" values. E.g. set LDA to N; pointer to arrays, set to NULL.
+ *        For a LAPACK function ?FUNC, the struct is `func_data_t`.
+ *     3. declare/define the `call_func` overloads to map from C array types
+ *        (float, double, npy_cfloat, npy_cdouble) to LAPACK prefixes, "sdcz".
  */
 #pragma once
 #include "Python.h"
-#include <complex>
 #include "numpy/npy_math.h"
 #include "npy_cblas.h"
 
 typedef CBLAS_INT fortran_int;
 
+/*
+ * declare LAPACK prototypes
+ */
+
 
 /* ?GESV */
-extern "C" fortran_int
-BLAS_FUNC(sgesv)(fortran_int *n, fortran_int *nrhs,
-                 float a[], fortran_int *lda,
-                 fortran_int ipiv[],
-                 float b[], fortran_int *ldb,
-                 fortran_int *info
+extern "C" {
+fortran_int
+BLAS_FUNC(sgesv)(fortran_int *n, fortran_int *nrhs, float a[], fortran_int *lda,
+                 fortran_int ipiv[], float b[], fortran_int *ldb, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(dgesv)(fortran_int *n, fortran_int *nrhs,
-                 double a[], fortran_int *lda,
-                 fortran_int ipiv[],
-                 double b[], fortran_int *ldb,
-                 fortran_int *info
+fortran_int
+BLAS_FUNC(dgesv)(fortran_int *n, fortran_int *nrhs, double a[], fortran_int *lda,
+                 fortran_int ipiv[], double b[], fortran_int *ldb, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(cgesv)(fortran_int *n, fortran_int *nrhs,
-                 npy_cfloat a[], fortran_int *lda,
-                 fortran_int ipiv[],
-                 npy_cfloat b[], fortran_int *ldb,
-                 fortran_int *info
+fortran_int
+BLAS_FUNC(cgesv)(fortran_int *n, fortran_int *nrhs, npy_cfloat a[], fortran_int *lda,
+                 fortran_int ipiv[], npy_cfloat b[], fortran_int *ldb, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(zgesv)(fortran_int *n, fortran_int *nrhs,
-                 npy_cdouble a[], fortran_int *lda,
-                 fortran_int ipiv[],
-                 npy_cdouble b[], fortran_int *ldb,
-                 fortran_int *info
+fortran_int
+BLAS_FUNC(zgesv)(fortran_int *n, fortran_int *nrhs, npy_cdouble a[], fortran_int *lda,
+                 fortran_int ipiv[], npy_cdouble b[], fortran_int *ldb, fortran_int *info
 );
 
 /* ?GETRF */
-extern "C" fortran_int
+fortran_int
 BLAS_FUNC(sgetrf)(fortran_int *m, fortran_int *n, float a[], fortran_int *lda,
                   fortran_int ipiv[], fortran_int *info
 );
-extern "C" fortran_int
+fortran_int
 BLAS_FUNC(dgetrf)(fortran_int *m, fortran_int *n, double a[], fortran_int *lda,
                   fortran_int ipiv[], fortran_int *info
 );
-extern "C" fortran_int
+fortran_int
 BLAS_FUNC(cgetrf)(fortran_int *m, fortran_int *n, npy_cfloat a[], fortran_int *lda,
                   fortran_int ipiv[], fortran_int *info
 );
-extern "C" fortran_int
+fortran_int
 BLAS_FUNC(zgetrf)(fortran_int *m, fortran_int *n, npy_cdouble a[], fortran_int *lda,
                   fortran_int ipiv[], fortran_int *info
 );
 
 
 /* ?GETRI */
-extern "C" fortran_int
-BLAS_FUNC(sgetri)(fortran_int *n, float a[], fortran_int *lda,
-                  fortran_int ipiv[], float work[], fortran_int *lwork, fortran_int *info
+fortran_int
+BLAS_FUNC(sgetri)(fortran_int *n, float a[], fortran_int *lda, fortran_int ipiv[],
+                  float work[], fortran_int *lwork, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(dgetri)(fortran_int *n, double a[], fortran_int *lda,
-                  fortran_int ipiv[], double work[], fortran_int *lwork, fortran_int *info
+fortran_int
+BLAS_FUNC(dgetri)(fortran_int *n, double a[], fortran_int *lda, fortran_int ipiv[],
+                  double work[], fortran_int *lwork, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(cgetri)(fortran_int *n, npy_cfloat a[], fortran_int *lda,
-                  fortran_int ipiv[], npy_cfloat work[], fortran_int *lwork, fortran_int *info
+fortran_int
+BLAS_FUNC(cgetri)(fortran_int *n, npy_cfloat a[], fortran_int *lda, fortran_int ipiv[],
+                  npy_cfloat work[], fortran_int *lwork, fortran_int *info
 );
-extern "C" fortran_int
-BLAS_FUNC(zgetri)(fortran_int *n, npy_cdouble a[], fortran_int *lda,
-                  fortran_int ipiv[], npy_cdouble work[], fortran_int *lwork, fortran_int *info
+fortran_int
+BLAS_FUNC(zgetri)(fortran_int *n, npy_cdouble a[], fortran_int *lda, fortran_int ipiv[],
+                  npy_cdouble work[], fortran_int *lwork, fortran_int *info
 );
 
+
+} // extern "C"
 
 
 /*
@@ -117,60 +119,35 @@ struct gesv_data_t {
  * Trampoline from a C type to the BLAS prefix (sdcz)
  */
 inline void call_gesv(gesv_data_t<float>& gesv_data) {
-    BLAS_FUNC(sgesv)(
-        &gesv_data.n,
-        &gesv_data.nrhs,
-        gesv_data.a,
-        &gesv_data.lda,
-        gesv_data.ipiv,
-        gesv_data.b,
-        &gesv_data.ldb,
-        &gesv_data.info
+    BLAS_FUNC(sgesv)(&gesv_data.n, &gesv_data.nrhs, gesv_data.a, &gesv_data.lda,
+                     gesv_data.ipiv, gesv_data.b, &gesv_data.ldb, &gesv_data.info
     );
 }
 
 inline void call_gesv(gesv_data_t<double>& gesv_data) {
-    BLAS_FUNC(dgesv)(
-        &gesv_data.n,
-        &gesv_data.nrhs,
-        gesv_data.a,
-        &gesv_data.lda,
-        gesv_data.ipiv,
-        gesv_data.b,
-        &gesv_data.ldb,
-        &gesv_data.info
+    BLAS_FUNC(dgesv)(&gesv_data.n, &gesv_data.nrhs, gesv_data.a, &gesv_data.lda,
+                     gesv_data.ipiv, gesv_data.b, &gesv_data.ldb, &gesv_data.info
     );
 }
 
 inline void call_gesv(gesv_data_t<npy_cfloat>& gesv_data) {
-    BLAS_FUNC(cgesv)(
-        &gesv_data.n,
-        &gesv_data.nrhs,
-        gesv_data.a,
-        &gesv_data.lda,
-        gesv_data.ipiv,
-        gesv_data.b,
-        &gesv_data.ldb,
-        &gesv_data.info
+    BLAS_FUNC(cgesv)(&gesv_data.n, &gesv_data.nrhs, gesv_data.a, &gesv_data.lda,
+                     gesv_data.ipiv, gesv_data.b, &gesv_data.ldb, &gesv_data.info
     );
 }
 
 inline void call_gesv(gesv_data_t<npy_cdouble>& gesv_data) {
-    BLAS_FUNC(zgesv)(
-        &gesv_data.n,
-        &gesv_data.nrhs,
-        gesv_data.a,
-        &gesv_data.lda,
-        gesv_data.ipiv,
-        gesv_data.b,
-        &gesv_data.ldb,
-        &gesv_data.info
+    BLAS_FUNC(zgesv)(&gesv_data.n, &gesv_data.nrhs, gesv_data.a, &gesv_data.lda,
+                     gesv_data.ipiv, gesv_data.b, &gesv_data.ldb, &gesv_data.info
     );
 }
 
 
 /*
- * Hold the GETRF related variables, handle allocation/deallocation.
+ * Hold the GETRF related variables.
+ *
+ * No allocations/deallocations, initialize all array pointers to NULL and all other
+ * out variables to sentinels (-101 etc).
  */
 template<typename T>
 struct getrf_data_t {
@@ -182,23 +159,9 @@ struct getrf_data_t {
     fortran_int info;
 
     getrf_data_t(fortran_int m_, fortran_int n_) :
-        m(m_), n(n_), lda(n_), info(-101)
-    {
-        a = (T *)malloc(m*n*sizeof(T));
-        ipiv = (fortran_int *)malloc(n*sizeof(fortran_int));
-        if ((a == NULL) || (ipiv == NULL)) {
-            PyErr_NoMemory();
-            info = -1;
-        }
-        info = 0;
-    };
-
-    ~getrf_data_t() {
-        free(a);
-        free(ipiv);
-    };
+        m(m_), n(n_), a(NULL), lda(n_), ipiv(NULL), info(-101)
+    {};
 };
-
 inline void
 call_getrf(getrf_data_t<float>& data) {
     BLAS_FUNC(sgetrf)(&data.m, &data.n, data.a, &data.lda, data.ipiv, &data.info);
@@ -217,16 +180,6 @@ call_getrf(getrf_data_t<npy_cdouble>& data) {
 }
 
 
-/* 
- * Grab a real part of a possibly complex array.
- * This is for the work queries.
- * There must be a better way, I'm sure.
- * XXX: move together with numeric_limits etc
- */
-inline float real_part(float value){ return value; }
-inline double real_part(double value){ return value; }
-inline float real_part(npy_cfloat value){ return npy_crealf(value); }
-inline double real_part(npy_cdouble value){return npy_creal(value); }
 
 
 /*
@@ -244,43 +197,9 @@ struct getri_data_t {
     fortran_int lwork;
     fortran_int info;
 
-    getri_data_t(getrf_data_t<T>& data) {
-        assert(data.m == data.n);
-        n = data.n;
-        a = data.a;
-        lda = data.lda;
-        ipiv = data.ipiv;
-
-        /*
-         * Workspace query.
-         */
-        lwork = -1;
-        work = (T *)malloc(10*sizeof(T));
-        if (work == NULL) {
-            PyErr_NoMemory();
-        }
-
-        call_getri(*this);
-        if (info != 0) {
-            PyErr_SetString(PyExc_ValueError, "?getri: lwork allocation failed.");
-        }
-
-        // Grab the value of `lwork`. The factor of 1.01 is from
-        // https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
-        lwork = (fortran_int)(1.01 * real_part(work[0]));
-        free(work);
-
-        // Finally, allocate
-        work = (T *)malloc(lwork*sizeof(T));
-        if (work == NULL) {
-            PyErr_NoMemory();
-            info = -101;
-        }
-    }
-
-    ~getri_data_t() {
-        free(work);
-    };
+    getri_data_t(getrf_data_t<T>& data) :
+        n(data.n), a(data.a), lda(data.lda), ipiv(data.ipiv), work(NULL), lwork(-1), info(-101)
+    {};
 };
 
 

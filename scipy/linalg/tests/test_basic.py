@@ -1054,6 +1054,10 @@ class TestSolveTriangular:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
 
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+)
+
 class TestInv:
     def setup_method(self):
         np.random.seed(1234)
@@ -1111,6 +1115,17 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.shape == (3, 1, 0, 0)
 
+    def test_overwrite_a(self):
+        a = np.arange(1, 5).reshape(2, 2)
+        a_inv = inv(a, overwrite_a=True)
+        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
+        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: work inplace 
+        a = a.astype(float).copy(order='F')
+        a_inv = inv(a, overwrite_a=True)
+        assert np.shares_memory(a, a_inv)
+
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_batch_core_1x1(self, dt):
         a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
@@ -1118,43 +1133,48 @@ class TestInv:
         assert a_inv.shape == a.shape
         assert_allclose(a @ a_inv, 1.)
 
-    def test_batch_zero_stride(self):
+    @parametrize_overwrite_arg
+    def test_batch_zero_stride(self, overwrite_kw):
         a = np.arange(3*2*2, dtype=float).reshape(3, 2, 2)
         aa = a[None, ...]
-        a_inv = inv(aa)
+        a_inv = inv(aa, **overwrite_kw)
         assert a_inv.shape == aa.shape
         assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
 
         aa = a[:, None, ...]
-        a_inv = inv(aa)
+        a_inv = inv(aa, **overwrite_kw)
         assert a_inv.shape == aa.shape
         assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
 
-    def test_batch_negative_stride(self):
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
         a = np.arange(3*8).reshape(2, 3, 2, 2)
         a = a[:, ::-1, :, :]
-        a_inv = inv(a)
+        a_inv = inv(a, **overwrite_kw)
         assert a_inv.shape == a.shape
         assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
 
-    def test_core_negative_stride(self):
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
         a = np.arange(3*8).reshape(2, 3, 2, 2)
         a = a[:, :, ::-1, :]
-        a_inv = inv(a)
+        a_inv = inv(a, **overwrite_kw)
         assert a_inv.shape == a.shape
         assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
 
-    def test_core_non_contiguous(self):
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
         a = np.arange(3*8*2).reshape(2, 3, 2, 4)
         a = a[..., ::2]
-        a_inv = inv(a)
+        a_inv = inv(a, **overwrite_kw)
         assert a_inv.shape == (2, 3, 2, 2)
         assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
 
-    def test_batch_non_contiguous(self):
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
         a = np.arange(3*8*2).reshape(2, 6, 2, 2)
         a = a[:, ::2, ...]
-        a_inv = inv(a)
+        a_inv = inv(a, **overwrite_kw)
         assert a_inv.shape == (2, 3, 2, 2)
         assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
 

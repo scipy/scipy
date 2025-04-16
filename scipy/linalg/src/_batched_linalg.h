@@ -6,72 +6,14 @@
 #include "numpy/arrayobject.h"
 #include "npy_cblas.h"
 #include "_lapack_trampolines.h"
+#include "_npymath.h"
 
 
-template<typename T> struct numeric_limits {};
-
-template<>
-struct numeric_limits<float>{
-    static constexpr double one = 1.0f;
-    static constexpr float nan = std::numeric_limits<float>::quiet_NaN();
-};
-
-template<>
-struct numeric_limits<double>{
-    static constexpr double one = 1.0;
-    static constexpr double nan = std::numeric_limits<double>::quiet_NaN();
-};
-
-
-template<>
-struct numeric_limits<npy_cfloat>{
-    static constexpr npy_cfloat one = {1.0f, 0.0f};
-    static constexpr npy_cfloat nan = {std::numeric_limits<float>::quiet_NaN(),
-                                       std::numeric_limits<float>::quiet_NaN()};
-};
-
-template<>
-struct numeric_limits<npy_cdouble>{
-    static constexpr npy_cdouble one = {1.0, 0.0};
-    static constexpr npy_cdouble nan = {std::numeric_limits<double>::quiet_NaN(),
-                                        std::numeric_limits<double>::quiet_NaN()};
-};
-
-
-/* 
- * Helpers for filling/rearranging matrices
- */
-
-
-/* identity square matrix generation */
-template<typename typ>
-static inline void
-identity_matrix(typ *matrix, Py_ssize_t n)
-{
-    Py_ssize_t i;
-    /* in IEEE floating point, zeroes are represented as bitwise 0 */
-    memset((void *)matrix, 0, n*n*sizeof(typ));
-
-    for (i = 0; i < n; ++i)
-    {
-        *matrix = numeric_limits<typ>::one;
-        matrix += n+1;
-    }
-}
-
-
-/* m-by-n matrix full of nans */
-template<typename typ>
-static inline void
-nan_matrix(typ *matrix, Py_ssize_t m, Py_ssize_t n)
-{
-    for (Py_ssize_t i=0; i < m*n; i++) {
-        *(matrix + i) = numeric_limits<typ>::nan;
-    }
-}
+using namespace _numpymath;
 
 
 // parroted from sqrtm
+// XXX can probably be replaced by ?copy from BLAS
 template<typename T>
 inline void
 swap_cf(T* src, T* dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
@@ -140,8 +82,11 @@ struct iter_data_t
         }
     }
 
+    /*
+     * Copy the slice number `idx` into the `buffer`.
+     */
     template<typename T>
-    void get_slice(const npy_intp idx, T *buffer) {
+    void copy_slice(const npy_intp idx, T *buffer) {
 
         assert((0 <= idx) && (idx < outer_size));
 
@@ -165,102 +110,196 @@ struct iter_data_t
 };
 
 
+/***********************************
+ *   Inversion via GETRF / GETRI
+ ***********************************/
 
+/*
+ * Invert a 2D slice:
+ *   - Input slice is in `getrf_data.a`.
+ *   - The result is in `getri_data.a`.
+ *
+ * Return is 0 on success; on failure, return the failing operation's
+ * `info` variable.
+ *
+ */
 template<typename T>
-inline void inv_loop2(PyArrayObject *a, PyArrayObject *a_inv)
-{
-    /*
-     * Prepate the data for looping over the batch dimensions.
-     */
-    iter_data_t iter_data(a);
-    npy_intp n = iter_data.n;    // core dimensions are (n, n)
+int
+invert_slice(getrf_data_t<T>& getrf_data, getri_data_t<T>& getri_data) {
 
-    gesv_data_t<T> gesv_data((fortran_int)n);
-    T *ret_data = (T *)PyArray_DATA(a_inv);
+    // factorize
+    call_getrf(getrf_data);
 
-    /*
-     * Main NxN slice loop
-     */
-    for(npy_intp idx=0; idx < iter_data.outer_size; idx++) {
-        T *buffer = gesv_data.a;
-        iter_data.get_slice(idx, buffer);   // fill the buffer with the current slice
-
-        /* Call LAPACK  */
-        identity_matrix(gesv_data.b, n);
-        call_gesv(gesv_data);
-
-        if (gesv_data.info != 0) {
-            // XXX raise or quietly fill with nans
-            for(npy_intp i=0; i < n*n; i++) {
-                gesv_data.b[i] = std::numeric_limits<T>::quiet_NaN();
-            }
-        }
-
-        // copy to the output buffer, swap CF; XXX: can use dcopy from BLAS?
-        swap_cf(gesv_data.b, ret_data + idx*n*n, n, n, n);
-    }
-};
-
-
-
-template<typename T>
-inline int inv_loop(PyArrayObject *a, PyArrayObject *a_inv)
-{
-    /*
-     * Prepate the data for looping over the batch dimensions.
-     */
-    iter_data_t iter_data(a);
-    npy_intp n = iter_data.n;    // core dimensions are (n, n)
-
-    getrf_data_t<T> getrf_data((fortran_int)n, (fortran_int)n);
-    if(getrf_data.info != 0) {
+    if (getrf_data.info != 0) {
         return getrf_data.info;
     }
 
+    // prepare the data for the GETRI call; other getri_data members do not change
+    // between iterations.
+    getri_data.a = getrf_data.a;
+    getri_data.ipiv = getrf_data.ipiv;
+
+    // compute the inverse
+    call_getri(getri_data);
+
+    return getri_data.info;
+}
+
+
+/*
+ * The main batched-inv routine, to be called from the python API layer.
+ *
+ * This is a computational routine, and it assumes that the caller has done all input
+ * validation before calling it.
+ * In particular:
+ *
+ * For the input array `arr`:
+ *
+ * - The caller must check that the dtype is LAPACK-compatible before calling this routine.
+ * - The array is at least 3D (for a single 2D matrix, the caller must
+     insert an axis, e.g. `arr[None, ...]`).
+ * - There are no restriction on the input array strides, this routine will handle
+ *   them correctly.
+ *
+ * For the output array, `arr_inv`, there are two options:
+ * 
+ *   1. It is a C-ordered array of the same shape and dtype as `arr`. Then it is filled
+ *      with the inverse of `arr`.
+ *   2. It coincides with `arr`. Then the inversion will be made in-place. 
+ *
+ * Currently, the latter behavior (a.k.a. `overwrite_a=True`) is only available for
+ * 2D arrays. Again, the caller is responsible for checking that it is F-ordered.
+ *
+ * Return value is:
+ *  - 0 on success;
+ *  - -101 on a memory error;
+ *  - LAPACK info variable on a LAPACK error
+ */
+template<typename T>
+inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
+{
+    /*
+     * Check if we're reusing the memory. The caller has already checked that
+     * the `arr` array has compatible strides, so we are not checking it here again.
+     * In particular, the core dimensions *must* be F-ordered.
+     *
+     */
+    bool overwrite_a = (arr == arr_inv);
+
+    int status;
+    T *ret_data = (T *)PyArray_DATA(arr_inv);
+
+    /*
+     * Prepare the data for looping over the batch dimensions.
+     */
+    iter_data_t iter_data(arr);
+    npy_intp n = iter_data.n;    // core dimensions are (n, n)
+
+    /*
+     * Prepare the data for calling LAPACK.
+     */
+    getrf_data_t<T> getrf_data((fortran_int)n, (fortran_int)n);
     getri_data_t<T> getri_data(getrf_data);
-    if(getri_data.info != 0) {
-        return getri_data.info;
+
+    /* 
+     * Workspace query. GETRI calculates this by passing LWORK = -1.
+     * As query is meant to get optimal work size and not for actual decomposition,
+     * no need to pass matrices.
+     */
+    T wrk;
+    getri_data.work = &wrk;
+    call_getri(getri_data);
+
+    /*
+     * The factor of 1.01 here mirrors 
+     * https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
+     *
+     * It was added in commit
+     * https://github.com/scipy/scipy/commit/dfb543c147c
+     * to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
+     */
+    fortran_int lwork = (fortran_int)(1.01 * real_part(wrk));
+
+    // Finally, allocate work and other arrays.
+    T *a = NULL;
+    if (overwrite_a) {
+        a = (T *)PyArray_DATA(arr_inv);
+    } else {
+        a = (T *)malloc(n*n*sizeof(T));
+    }
+    fortran_int *ipiv = (fortran_int *)malloc(n*sizeof(fortran_int));  
+    T *work = (T *)malloc(lwork*sizeof(T));
+
+    if ((a == NULL) || (ipiv == NULL) || (work == NULL)) {
+        PyErr_NoMemory();
+        status = -101;
+        goto done;
     }
 
-    T *ret_data = (T *)PyArray_DATA(a_inv);
+    /*
+     * Finish setting up the LAPACK call helpers, `getrf_data` and `getri_data`.
+     */
+    getrf_data.a = a;
+    getrf_data.ipiv = ipiv;
+
+    getri_data.a = a;
+    getri_data.ipiv = ipiv;
+    getri_data.work = work;   
+    getri_data.lwork = lwork; 
+
+    /* Finally, proceed to inverting the input matrix */
+
+    /*
+     * `overwrite_a=True` : 2D only, no looping, no copying.
+     */
+    if(overwrite_a){
+
+        status = invert_slice(getrf_data, getri_data);
+
+        if(status != 0) {
+            // XXX python C API 101: do we INCREF `arr` if we return with an error?
+            // XXX raise a LinalgError, not ValueError
+            PyErr_SetString(PyExc_ValueError, "Singular matrix.");
+            goto done;
+        }
+        Py_INCREF(arr);
+        goto done;
+    }
 
     /*
      * Main NxN slice loop
      */
     for(npy_intp idx=0; idx < iter_data.outer_size; idx++) {
-        T *buffer = getrf_data.a;
-        iter_data.get_slice(idx, buffer);   // fill the buffer with the current slice
 
-        // factorize the current slice 
-        call_getrf(getrf_data);
+        // fill the buffer with the current slice
+        iter_data.copy_slice(idx, getrf_data.a);
 
-        if (getrf_data.info != 0) {
-            // LAPACK error.
-            // XXX raise or quietly fill with nans
+        // call LAPACK on the current slice
+        status = invert_slice(getrf_data, getri_data);
+
+        if (status != 0){
+            // Either GETRF or GETRI failed.
+            // XXX: give a more specific error message?
             std::cout << "problem at idx=" << idx << "\n";
 
-            nan_matrix(ret_data + idx*n*n, getri_data.n, getri_data.n);
-            continue; 
-        }
-
-        // prepare the data for the GETRI call
-        // (other getri_data members do not change between iterations
-        getri_data.a = getrf_data.a;
-        getri_data.ipiv = getrf_data.ipiv;
-        call_getri(getri_data);
-
-        if (getri_data.info != 0) {
-            // LAPACK error.
-            // XXX raise or quietly fill with nans
-            std::cout << "GETRI info = " << getri_data.info << "\n";
-
-            nan_matrix(ret_data + idx*n*n, getri_data.n, getri_data.n);
-            continue;
+            nan_matrix(ret_data + idx*n*n, n, n);
         }
 
         // copy to the output buffer, swap CF; XXX: can use dcopy from BLAS?
         swap_cf(getri_data.a, ret_data + idx*n*n, n, n, n);
     }
-    return 0;
+
+    // XXX collect the statuses from iterations, make it talk to np.errstate?
+    status = 0;
+
+
+ done:
+    if (!overwrite_a) {
+        free(a);
+    }
+    free(ipiv);
+    free(work);
+    return status;
+
 };
 

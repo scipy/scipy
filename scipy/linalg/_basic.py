@@ -1237,17 +1237,18 @@ def inv(a, overwrite_a=False, check_finite=True):
     # Also check if dtype is LAPACK compatible
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
+    # XXX move flags/strides check to C
     if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
-        overwrite_a = False
+        overwrite_a = True
         a1 = a1.copy()
 
+    # batched arrays always copy
+    overwrite_a = overwrite_a and a1.flags["F_CONTIGUOUS"] and a1.ndim == 2
+
+    extradim = False
     if a1.ndim == 2:
         a1 = a1[None, ...]
         extradim = True
-    else:
-        # batched arrays always copy
-        overwrite_a = overwrite_a and a1.flags["F_CONTIGUOUS"] and (a1.ndim < 3) 
-        extradim = False
 
     # by now, we have at least a 3D well behaved array of a BLAS-compatible dtype
     inv_a = _batched_linalg.inv(a1, overwrite_a)

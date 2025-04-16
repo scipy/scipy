@@ -118,7 +118,8 @@ py3.extension_module('_batched_linalg',
   [
     'src/_batched_linalg_module.cc',
     'src/_batched_linalg.h',
-    'src/_lapack_trampolines.h'
+    'src/_lapack_trampolines.h',
+    'src/_npymath.h'
   ],
   dependencies: [np_dep, lapack_dep, blas_dep],
   include_directories: ['../_build_utils/src'],
