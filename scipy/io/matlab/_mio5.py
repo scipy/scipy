@@ -90,7 +90,7 @@ from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       MatReadError, MatReadWarning, MatWriteWarning)
 
 # Reader object for matlab 5 format variables
-from ._mio5_utils import VarReader5
+from ._mio5_utils import VarReader5, SubsystemReader5
 
 # Constants and helper objects
 from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
@@ -219,10 +219,11 @@ class MatFile5Reader(MatFileReader):
         hdr_dtype = MDTYPES[self.byte_order]['dtypes']['file_header']
         hdr = read_dtype(self.mat_stream, hdr_dtype)
         hdict['__header__'] = hdr['description'].item().strip(b' \t\n\000')
+        ss_offset = hdr['subsystem_offset']
         v_major = hdr['version'] >> 8
         v_minor = hdr['version'] & 0xFF
         hdict['__version__'] = f'{v_major}.{v_minor}'
-        return hdict
+        return hdict, ss_offset
 
     def initialize_read(self):
         ''' Run when beginning read of variables
@@ -235,6 +236,84 @@ class MatFile5Reader(MatFileReader):
         self._file_reader = VarReader5(self)
         # reader for matrix streams
         self._matrix_reader = VarReader5(self)
+
+    def get_subsystem_stream(self, ss_offset):
+        '''Get the subsystem stream from the file object.
+        1. Subsystem data is stored in the MAT-file as normal uint8 variable
+        2. Read it is a normal variable, and convert to bytestream
+        '''
+
+        self.mat_stream.seek(ss_offset)
+        hdr, _ = self.read_var_header()
+        name = 'None' if hdr.name is None else hdr.name.decode('latin1')
+        if name != '':
+            raise ValueError("Expected subsystem data"
+                             "Received normal variable instead")
+        process = False
+        try:
+            ss_mat_data = self.read_var_array(hdr, process)
+        except MatReadError as err:
+            warnings.warn(
+                f'Unreadable variable "{name}", because "{err}"',
+                Warning, stacklevel=2)
+            ss_mat_data = f"Read error: {err}"
+
+        # Check the header from the subsystem data
+        # First 4 bytes is the verion, endian indicator as in the MAT-file header
+        maj_ind = int(ss_mat_data[0,2] == b'I'[0])
+        byte_order = '<' if maj_ind else '>'
+        if byte_order != self.byte_order:
+            raise ValueError("Byte order mismatch between subsystem and MAT-file:"
+                             "{self.byte_order} != {byte_order}")
+        
+        maj_val = ss_mat_data[0, maj_ind]
+        if maj_val not in (1, 2):
+            raise ValueError('Unknown subsystem data type')
+        
+        # Convert subsystem data to bytestream for reading
+        ss_stream = BytesIO(ss_mat_data)
+        return ss_stream
+
+    def initialize_subsystem(self, ss_offset):
+        """Read and load subsystem data"""
+        
+        # Check if subsystem is present
+        if ss_offset <= 0:
+            return None
+        
+        ss_stream = self.get_subsystem_stream(ss_offset)
+        
+        # Read the subsystem data as a MAT-file
+        ss_stream.seek(8)
+        subsystem_reader = VarReader5(self)
+        subsystem_reader.set_stream(ss_stream)
+        
+        mdtype, byte_count = subsystem_reader.read_full_tag()
+        if not byte_count > 0:
+            raise ValueError("Did not read any bytes")
+        if mdtype != miMATRIX:
+            raise TypeError(f'Expecting miMATRIX type here, got {mdtype}')
+        header = subsystem_reader.read_header(check_stream_limit=False)
+
+        ss_data = SubsystemReader5(self.byte_order, raw_data = True)
+        try:
+            res = subsystem_reader.array_from_header(header, 
+                                                     process=False, 
+                                                     subsystem=ss_data)
+        except MatReadError as err:
+            warnings.warn(
+                f'Unreadable subsystem data, because "{err}"',
+                Warning, stacklevel=2)
+            res = f"Read error: {err}"
+        
+        ss_data.set_fields(res) 
+        # Caches object fields contents inside subsystem instance for later assignment
+        
+        # Set back main stream position
+        var_pos = MDTYPES[self.byte_order]['dtypes']['file_header'].itemsize
+        self.mat_stream.seek(var_pos)
+
+        return ss_data
 
     def read_var_header(self):
         ''' Read header, return header, next position
@@ -271,7 +350,7 @@ class MatFile5Reader(MatFileReader):
         header = self._matrix_reader.read_header(check_stream_limit)
         return header, next_pos
 
-    def read_var_array(self, header, process=True):
+    def read_var_array(self, header, process=True, ss_reader=None):
         ''' Read array, given `header`
 
         Parameters
@@ -288,7 +367,7 @@ class MatFile5Reader(MatFileReader):
            array with post-processing applied or not according to
            `process`.
         '''
-        return self._matrix_reader.array_from_header(header, process)
+        return self._matrix_reader.array_from_header(header, process, ss_reader)
 
     def get_variables(self, variable_names=None):
         ''' get variables from stream as dictionary
@@ -305,8 +384,12 @@ class MatFile5Reader(MatFileReader):
         self.mat_stream.seek(0)
         # Here we pass all the parameters in self to the reading objects
         self.initialize_read()
-        mdict = self.read_file_header()
+        mdict, ss_offset = self.read_file_header()
         mdict['__globals__'] = []
+
+        # Initialize subsystem
+        ss_reader = self.initialize_subsystem(ss_offset)
+
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
@@ -320,17 +403,15 @@ class MatFile5Reader(MatFileReader):
                 warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
-                name = '__function_workspace__'
-                # We want to keep this raw because mat_dtype processing
-                # will break the format (uint8 as mxDOUBLE_CLASS)
-                process = False
+                self.mat_stream.seek(next_position)
+                continue
             else:
                 process = True
             if variable_names is not None and name not in variable_names:
                 self.mat_stream.seek(next_position)
                 continue
             try:
-                res = self.read_var_array(hdr, process)
+                res = self.read_var_array(hdr, process, ss_reader)
             except MatReadError as err:
                 warnings.warn(
                     f'Unreadable variable "{name}", because "{err}"',
