@@ -360,19 +360,20 @@ def pmindist(
         Minimum distance.
         
     """
-    if metric == 'euclidean':
-        p = 2
-        distance_fun = distance.euclidean
-    elif metric == 'cityblock':
-        p = 1
-        distance_fun = distance.cityblock
-    elif metric == 'chebyshev':
-        p = np.inf
-        distance_fun = distance.chebyshev
-    else:
-        # Slow path for metrics unsupported by KDTree.
-        distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
-        return distances.min()
+    match metric:
+        case 'euclidean':
+            p = 2
+            distance_fun = distance.euclidean
+        case 'cityblock':
+            p = 1
+            distance_fun = distance.cityblock
+        case 'chebyshev':
+            p = np.inf
+            distance_fun = distance.chebyshev
+        case _:
+            # Slow path for metrics unsupported by KDTree.
+            distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+            return distances.min()
 
     distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
     tree = KDTree(sample)
