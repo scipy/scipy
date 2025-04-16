@@ -373,7 +373,7 @@ def pmindist(
             return distances.min()
 
     distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
-    if np.isclose(distance_upper_bound, 0.0):
+    if np.allclose(distance_upper_bound, 0.0):
         return 0.0
     tree = KDTree(sample)
     d, _ = tree.query(sample,
@@ -493,7 +493,10 @@ def geometric_discrepancy(
         raise ValueError("Sample must contain at least two points")
     
     if method == "mindist":
-        return pmindist(sample, metric=metric, workers=workers)
+        min_d = pmindist(sample, metric=metric, workers=workers)
+        if np.allclose(min_d, 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
+        return min_d
     elif method == "mst":
         distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
         if np.any(distances == 0.0):
