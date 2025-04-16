@@ -154,7 +154,8 @@ def entropy(pk: np.typing.ArrayLike,
         vec = special.entr(pk)
     else:
         if is_marray(xp):  # compensate for mdhaber/marray#97
-            vec = xp.asarray(special.rel_entr(pk.data, qk.data), mask=pk.mask)
+            vec = special.rel_entr(pk.data, qk.data)  # type: ignore[union-attr]
+            vec = xp.asarray(vec, mask=pk.mask)  #  type: ignore[union-attr]
         else:
             vec = special.rel_entr(pk, qk)
 
