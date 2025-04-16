@@ -2935,6 +2935,8 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
+        if halfspaces.ndim > 2:
+            raise ValueError("`halfspaces` should be provided as a 2D array")
         # We check for non-feasibility of incremental additions
         # in a manner similar to `qh_sethalfspace`
         halfspaces = np.atleast_2d(halfspaces)
@@ -2942,7 +2944,7 @@ class HalfspaceIntersection(_QhullUser):
         # HalfspaceIntersection uses closed half spaces so
         # the feasible point also cannot be directly on the boundary
         viols = dists >= 0
-        if viols.sum() > 0:
+        if viols.any():
             # error out with an indication of the first violating
             # half space discovered
             first_viol = np.nonzero(viols)[0].min()

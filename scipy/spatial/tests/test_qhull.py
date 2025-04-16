@@ -1261,6 +1261,31 @@ class Test_HalfspaceIntersection:
             incremental_intersector.add_halfspaces(halfspaces)
 
 
+    def test_2d_add_halfspace_input(self):
+        # incrementally added halfspaces should respect the 2D
+        # array shape requirement
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        with pytest.raises(ValueError, match="2D array"):
+            incremental_intersector.add_halfspaces(np.ones((4, 4, 4)))
+
+    def test_1d_add_halfspace_input(self):
+        # we do allow 1D `halfspaces` input to add_halfspaces()
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        assert_allclose(incremental_intersector.dual_vertices, np.arange(4))
+        incremental_intersector.add_halfspaces(np.array([2, 2, -1]))
+        assert_allclose(incremental_intersector.dual_vertices, np.arange(5))
+
+
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
     rng = np.random.default_rng(123)
