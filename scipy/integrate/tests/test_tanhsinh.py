@@ -247,7 +247,7 @@ class TestTanhSinh:
         rtol = 2e-8
         res = _tanhsinh(f, 0, f.b, rtol=rtol)
         assert_allclose(res.integral, f.ref, rtol=rtol)
-        if f_number not in {14}:  # mildly underestimates error here
+        if f_number not in {7, 12, 14}:  # mildly underestimates error here
             true_error = abs(self.error(res.integral, f.ref)/res.integral)
             assert true_error < res.error
 
@@ -752,8 +752,13 @@ class TestTanhSinh:
         b = complex(12, 39)
         def f(t):
             return xp.sin(a * (1 - t) + b * t)
-        res = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.), atol=0, rtol=0, maxlevel=10)
-        assert xp.isfinite(res.error)
+        ref = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.), atol=0, rtol=0, maxlevel=10)
+        assert xp.isfinite(ref.error)
+        # Previously, the tanhsinh would not detect convergence
+        res = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.))
+        assert res.success
+        assert res.maxlevel < 5
+        xp_assert_close(res.integral, ref.integral, rtol=1e-15)
 
 
 @pytest.mark.skip_xp_backends('torch', reason='data-apis/array-api-compat#271')

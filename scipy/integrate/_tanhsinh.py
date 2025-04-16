@@ -772,7 +772,7 @@ def _estimate_error(work, xp):
         d5 = log_e1 + xp.real(work.Sn)
         temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
         ds = xp.stack([temp, 2 * d1, d3, d4, d5])
-        aerr = xp.max(ds, axis=0)
+        aerr = xp.minimum(d1, xp.max(ds, axis=0))
         rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
@@ -783,7 +783,7 @@ def _estimate_error(work, xp):
         d5 = e1 * xp.abs(work.Sn)
         temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
         ds = xp.stack([temp, d1**2, d3, d4, d5])
-        aerr = xp.max(ds, axis=0)
+        aerr = xp.minimum(d1, xp.max(ds, axis=0))
         rerr = aerr/xp.abs(work.Sn)
 
     return rerr, aerr
