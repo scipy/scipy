@@ -100,7 +100,7 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         the result dtype), respectively. Must be non-negative and finite if
         `log` is False, and must be expressed as the log of a non-negative and
         finite number if `log` is True. Iteration will stop when
-        ``res.error < atol`` or  ``res.error < res.integral * rtol`.
+        ``res.error < atol`` or  ``res.error < res.integral * rtol``.
     preserve_shape : bool, default: False
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape

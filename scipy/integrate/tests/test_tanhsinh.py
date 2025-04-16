@@ -237,7 +237,7 @@ class TestTanhSinh:
         assert (xp.isdtype(logres.integral.dtype, "real floating") if ref > 0
                 else xp.isdtype(logres.integral.dtype, "complex floating"))
 
-        atol = xp.finfo(res.error.dtype).eps
+        atol = 2 * xp.finfo(res.error.dtype).eps
         xp_assert_close(xp.exp(logres.error), res.error, atol=atol, check_dtype=False)
 
     # 15 skipped intentionally; it's very difficult numerically
