@@ -16,6 +16,7 @@ import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
 from ._array_api import array_namespace, xp_size, xp_result_type
+import scipy._lib.array_api_extra as xpx
 
 _ESIGNERR = -1
 _ECONVERR = -2
@@ -263,7 +264,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
 
         post_termination_check(work)
 
-    work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
+    work.status = xpx.at(work.status)[:].set(_ECALLBACK if cb_terminate else _ECONVERR)
     return _prepare_result(work, res, res_work_pairs, active, shape,
                            customize_result, preserve_shape, xp)
 
@@ -313,20 +314,20 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
     if mask is not None:
         if preserve_shape:
             active_mask = xp.zeros_like(mask)
-            active_mask[active] = 1
+            active_mask = xpx.at(active_mask)[active].set(True)
             active_mask = active_mask & mask
             for key, val in update_dict.items():
                 try:
-                    res[key][active_mask] = val[active_mask]
+                    res[key] = xpx.at(res[key])[active_mask].set(val[active_mask])
                 except (IndexError, TypeError, KeyError):
-                    res[key][active_mask] = val
+                    res[key] = xpx.at(res[key])[active_mask].set(val)
         else:
             active_mask = active[mask]
             for key, val in update_dict.items():
                 try:
-                    res[key][active_mask] = val[mask]
+                    res[key] = xpx.at(res[key])[active_mask].set(val[mask])
                 except (IndexError, TypeError, KeyError):
-                    res[key][active_mask] = val
+                    res[key] = xpx.at(res[key])[active_mask].set(val)
     else:
         for key, val in update_dict.items():
             if preserve_shape:
@@ -334,7 +335,7 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
                     val = val[active]
                 except (IndexError, TypeError, KeyError):
                     pass
-            res[key][active] = val
+            res[key] = xpx.at(res[key])[active].set(val)
 
 
 def _prepare_result(work, res, res_work_pairs, active, shape, customize_result,
