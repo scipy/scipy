@@ -2544,6 +2544,8 @@ class TestHyp2f1:
             for case in mark.args[1]
         ]
 
+class TestHyp2f1ExtremeInputs:
+
     @pytest.mark.parametrize("a", [1.0, 2.0, 3.0, -np.inf, np.inf])
     @pytest.mark.parametrize("b", [3.0, 4.0, 5.0, -np.inf, np.inf])
     @pytest.mark.parametrize("c", [3.0, 5.0, 6.0, 7.0])
