@@ -765,18 +765,24 @@ def _estimate_error(work, xp):
         # complex values have imaginary part in increments of pi*j, which just
         # carries sign information of the original integral, so use of
         # `xp.real` here is equivalent to absolute value in real scale.
-        ones = xp.ones_like(work.Sn)
-        d1 = xp.real(special.logsumexp(xp.stack([work.Sn, Snm1]),
-                                       b=xp.stack([ones, -ones]), axis=0))
+        d1 = xp.real(special.logsumexp(xp.stack([work.Sn, Snm1 + work.pi*1j]), axis=0))
+        d2 = xp.real(special.logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0))
+        d3 = log_e1 + xp.max(xp.real(work.fjwj), axis=-1)
+        d4 = work.d4
         d5 = log_e1 + xp.real(work.Sn)
-        ds = xp.stack([d1, d5])
+        temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
+        ds = xp.stack([temp, 2 * d1, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
         rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
         d1 = xp.abs(work.Sn - Snm1)
+        d2 = xp.abs(work.Sn - Snm2)
+        d3 = e1 * xp.max(xp.abs(work.fjwj), axis=-1)
+        d4 = work.d4
         d5 = e1 * xp.abs(work.Sn)
-        ds = xp.stack([d1, d5])
+        temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
+        ds = xp.stack([temp, d1**2, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
         rerr = aerr/xp.abs(work.Sn)
 
