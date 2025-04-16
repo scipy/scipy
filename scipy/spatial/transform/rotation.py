@@ -9,9 +9,9 @@ from typing import Iterable
 import numpy as np
 
 from scipy._lib.deprecation import _sub_module_deprecation
-import scipy.spatial.transform._cython_backend as cython_backend
+import scipy.spatial.transform._rotation_cy as cython_backend
 from scipy.spatial.transform._rotation_groups import create_group
-import scipy.spatial.transform._array_api_backend as array_api_backend
+import scipy.spatial.transform._rotation_xp as array_api_backend
 from scipy._lib._array_api import (
     array_namespace,
     Array,

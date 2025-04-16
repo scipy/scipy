@@ -1,5 +1,5 @@
-py3.extension_module('_cython_backend',
-  [cython_gen.process('_cython_backend.pyx')],
+py3.extension_module('_rotation_cy',
+  [cython_gen.process('_rotation_cy.pyx')],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -20,7 +20,9 @@ py3.install_sources([
     '__init__.py',
     '_rotation_groups.py',
     '_rotation_spline.py',
-    '_array_api_backend.py',
+    '_rotation_xp.py',
+    '_rigid_transform.py',
+    '_rigid_transform_xp.py',
     'rotation.py'
   ],
   subdir: 'scipy/spatial/transform'
