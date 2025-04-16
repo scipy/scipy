@@ -374,9 +374,9 @@ def pmindist(
         distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
         return distances.min()
 
-    distance_upper_bound = distance_fun(x[0,...], x[1,...])
-    tree = KDTree(x)
-    d, _ = tree.query(x,
+    distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
+    tree = KDTree(sample)
+    d, _ = tree.query(sample,
                       k=[2], p = p,
                       workers=workers,
                       distance_upper_bound=distance_upper_bound)
