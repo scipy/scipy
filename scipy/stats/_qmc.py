@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
-from scipy.spatial import distance, Voronoi
+from scipy.spatial import distance, Voronoi, KDTree
 from scipy.special import gammainc
 from ._sobol import (
     _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
@@ -336,10 +336,57 @@ def discrepancy(
                          f" {set(methods)!r}")
 
 
+def pmindist(
+        sample: "npt.ArrayLike",
+        metric: str = "euclidean",
+        workers: IntNumber = 1) -> float:
+    """Mininum distance between points in the given sample.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the minimum distance from.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
+
+    Returns
+    -------
+    distance : float
+        Minimum distance.
+        
+    """
+    if metric == 'euclidean':
+        p = 2
+        distance_fun = distance.euclidean
+    elif metric == 'cityblock':
+        p = 1
+        distance_fun = distance.cityblock
+    elif metric == 'chebyshev':
+        p = np.inf
+        distance_fun = distance.chebyshev
+    else:
+        # Slow path for metrics unsupported by KDTree.
+        distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+        return distances.min()
+
+    distance_upper_bound = distance_fun(x[0,...], x[1,...])
+    tree = KDTree(x)
+    d, _ = tree.query(x,
+                      k=[2], p = p,
+                      workers=workers,
+                      distance_upper_bound=distance_upper_bound)
+    return d.min()
+
 def geometric_discrepancy(
         sample: "npt.ArrayLike",
         method: Literal["mindist", "mst"] = "mindist",
-        metric: str = "euclidean") -> float:
+        metric: str = "euclidean",
+        workers: IntNumber = 1) -> float:
     """Discrepancy of a given sample based on its geometric properties.
 
     Parameters
@@ -353,6 +400,9 @@ def geometric_discrepancy(
         The distance metric to use. See the documentation
         for `scipy.spatial.distance.pdist` for the available metrics and
         the default.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -441,15 +491,13 @@ def geometric_discrepancy(
     sample = _ensure_in_unit_hypercube(sample)
     if sample.shape[0] < 2:
         raise ValueError("Sample must contain at least two points")
-
-    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
-
-    if np.any(distances == 0.0):
-        warnings.warn("Sample contains duplicate points.", stacklevel=2)
-
+    
     if method == "mindist":
-        return np.min(distances[distances.nonzero()])
+        return pmindist(sample, metric=metric, workers=workers)
     elif method == "mst":
+        distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+        if np.any(distances == 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
         fully_connected_graph = distance.squareform(distances)
         mst = minimum_spanning_tree(fully_connected_graph)
         distances = mst[mst.nonzero()]
