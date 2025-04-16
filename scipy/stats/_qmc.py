@@ -403,7 +403,11 @@ def geometric_discrepancy(
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is given all
         CPU threads are used. Default is 1.
-
+        
+        .. versionadded:: 1.16.0
+            Parallel processing is only available when ``method="mindist"`` and
+            ``metric="euclidean"`` or ``metric="cityblock"``.
+            
     Returns
     -------
     discrepancy : float
