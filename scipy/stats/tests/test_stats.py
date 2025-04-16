@@ -2964,6 +2964,26 @@ class TestZmap:
         with pytest.raises(ValueError, match='input contains nan'):
             stats.zmap(scores, compare, nan_policy='raise')
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    def test_degenerate_input(self, xp):
+        scores = xp.arange(3)
+        compare = xp.ones(3)
+        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(scores)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
+            res = stats.zmap(scores, compare)
+        xp_assert_equal(res, ref)
+
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    def test_complex_gh22404(self, xp):
+        res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
+        ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
+        xp_assert_close(res, ref)
+
 
 @make_skip_xp_backends(stats.zscore)
 class TestZscore:
@@ -3124,25 +3144,6 @@ class TestZscore:
         z = stats.zscore(x)
         xp_assert_equal(z, x)
 
-    def test_gzscore_normal_array(self, xp):
-        x = np.asarray([1, 2, 3, 4])
-        z = stats.gzscore(xp.asarray(x))
-        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
-        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
-
-    @skip_xp_invalid_arg
-    def test_gzscore_masked_array(self, xp):
-        x = np.array([1, 2, -1, 3, 4])
-        mask = [0, 0, 1, 0, 0]
-        mx = np.ma.masked_array(x, mask=mask)
-        z = stats.gzscore(mx)
-        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
-                    1.136670895503])
-        desired = np.ma.masked_array(desired, mask=mask)
-        assert_allclose(z.compressed(), desired.compressed())
-        assert_allclose(z.mask, desired.mask)
-        assert isinstance(z, np.ma.MaskedArray)
-
     @skip_xp_invalid_arg
     def test_zscore_masked_element_0_gh19039(self, xp):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
@@ -3167,25 +3168,27 @@ class TestZscore:
             res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
 
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    def test_degenerate_input(self, xp):
-        scores = xp.arange(3)
-        compare = xp.ones(3)
-        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(scores)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with warn_ctx:
-            res = stats.zmap(scores, compare)
-        xp_assert_equal(res, ref)
+@make_skip_xp_backends(stats.gzscore)
+class TestGZscore:
+    def test_gzscore_normal_array(self, xp):
+        x = np.asarray([1, 2, 3, 4])
+        z = stats.gzscore(xp.asarray(x))
+        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
+        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
 
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    def test_complex_gh22404(self, xp):
-        res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
-        ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
-        xp_assert_close(res, ref)
+    @skip_xp_invalid_arg
+    def test_gzscore_masked_array(self):
+        x = np.array([1, 2, -1, 3, 4])
+        mask = [0, 0, 1, 0, 0]
+        mx = np.ma.masked_array(x, mask=mask)
+        z = stats.gzscore(mx)
+        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
+                    1.136670895503])
+        desired = np.ma.masked_array(desired, mask=mask)
+        assert_allclose(z.compressed(), desired.compressed())
+        assert_allclose(z.mask, desired.mask)
+        assert isinstance(z, np.ma.MaskedArray)
 
 
 class TestMedianAbsDeviation:
