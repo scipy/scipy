@@ -367,18 +367,17 @@ def pmindist(
         case 'cityblock':
             p = 1
             distance_fun = distance.cityblock
-        case 'chebyshev':
-            p = np.inf
-            distance_fun = distance.chebyshev
         case _:
             # Slow path for metrics unsupported by KDTree.
             distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
             return distances.min()
 
     distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
+    if np.isclose(distance_upper_bound, 0.0):
+        return 0.0
     tree = KDTree(sample)
     d, _ = tree.query(sample,
-                      k=[2], p = p,
+                      k=[2], p=p,
                       workers=workers,
                       distance_upper_bound=distance_upper_bound)
     return d.min()
