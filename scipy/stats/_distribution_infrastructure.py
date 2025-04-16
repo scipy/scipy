@@ -30,7 +30,7 @@ def _isnull(x):
     return type(x) is object or x is None
 
 __all__ = ['make_distribution', 'Mixture', 'order_statistic',
-           'truncate', 'abs', 'exp', 'log', 'ContinuousDistribution']
+           'truncate', 'abs', 'exp', 'log']
 
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much

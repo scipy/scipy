@@ -12,8 +12,20 @@ import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
 from sphinx.util import inspect as sphinx_inspect
+from sphinx.util import logging as sphinx_logging
 from sphinx.ext.autosummary import Autosummary
-from sphinx.ext.autosummary.generate import generate_autosummary_docs
+from sphinx.ext.autosummary.generate import (
+    generate_autosummary_docs,
+    AutosummaryRenderer,
+    find_autosummary_in_files,
+    generate_autosummary_content
+)
+from sphinx.util.osutil import ensuredir
+from sphinx.ext.autosummary import (
+    import_by_name, import_ivar_by_name, ImportExceptionGroup
+)
+import importlib
+import logging
 
 import scipy
 from scipy._lib._util import _rng_html_rewrite
@@ -22,6 +34,7 @@ from scipy._lib._util import _rng_html_rewrite
 import scipy._lib.uarray as ua
 from scipy.stats._distn_infrastructure import rv_generic
 from scipy.stats._multivariate import multi_rv_generic
+from pathlib import Path
 
 # We will patch the generate_autosummary_docs function to ensure that stats
 # inherited methods are not included in the autosummary stubs, but link to
@@ -32,6 +45,7 @@ original_generate_autosummary_docs = generate_autosummary_docs
 old_isdesc = sphinx_inspect.isdescriptor
 sphinx_inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
+logger = sphinx_logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -201,6 +215,7 @@ warnings.filterwarnings(
 suppress_warnings = [
     'autosummary.import_cycle',
 ]
+
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -594,34 +609,35 @@ class InheritanceAwareAutosummary(Autosummary):
 
     Used in `scipy.stats`.
     """
+
     def get_table(self, items):
         """Override to modify the autosummary table."""
-
         new_items = []
-        for name, signature, summary, real_name in items:
-            if "scipy.stats.Normal" in real_name or "scipy.stats.Uniform" in real_name:
-                try:
-                    # Extract the class and method name
-                    module_name, class_name, method_name = self._parse_name(real_name)
-                    if module_name and class_name and method_name:
+        for name, signature, summary, orig_name in items:
+            real_name = orig_name
+            newdist = importlib.import_module("scipy.stats._new_distributions")
+            try:
+                # Extract the class and method name
+                module_name, class_name, obj_name = self._parse_name(orig_name)
+                if class_name in newdist.__all__:
+                    if module_name and class_name and obj_name:
                         module = __import__(module_name, fromlist=[class_name])
                         cls = getattr(module, class_name)
                         # Find where the method is actually defined
                         # Skip the first class (self)
                         for parent in inspect.getmro(cls)[1:]:
-                            if method_name in parent.__dict__:
+                            if obj_name in parent.__dict__:
                                 # Found in parent, change target to parent's method
                                 real_name = (f"{parent.__module__}."
-                                             f"{parent.__name__}.{method_name}")
+                                             f"{parent.__name__}.{obj_name}")
                                 break
-                except (ImportError, AttributeError, ValueError):
-                    # If anything goes wrong, keep the original target
-                    pass
+            except (ImportError, AttributeError, ValueError):
+                # If anything goes wrong, keep the original target
+                pass
 
             new_items.append((name, signature, summary, real_name))
 
         return super().get_table(new_items)
-
 
     def _parse_name(self, name):
         """Helper to parse a fully qualified method name."""
@@ -634,28 +650,158 @@ class InheritanceAwareAutosummary(Autosummary):
         return None, None, None
 
 
-def custom_generate_autosummary_docs(*args, **kwargs):
-    """Filter out inherited methods before generating links to stub pages."""
-    names = args[0]
-    filtered_names = []
+def custom_generate_autosummary_docs(
+    sources,
+    output_dir=None,
+    suffix=".rst",
+    base_path=None,
+    imported_members=False,
+    app=None,
+    overwrite=True,
+    encoding="utf-8",
+    removed=[],  # noqa: B006
+):
+    """Generate autosummary documentation for the given sources.
 
-    for name in names:
+    Custom version of `sphinx.ext.autosummary.generate.generate_autosummary_docs`
+    that handles the case of inherited methods in `scipy.stats`.
+    """
+    assert app is not None, "app is required"
+
+    showed_sources = sorted(sources)
+    if len(showed_sources) > 20:
+        showed_sources = showed_sources[:10] + ["..."] + showed_sources[-10:]
+    logger.info(
+        "[autosummary] generating autosummary for: %s", ", ".join(showed_sources)
+    )
+
+    if output_dir:
+        logger.info("[autosummary] writing to %s", output_dir)
+
+    if base_path is not None:
+        base_path = Path(base_path)
+        source_paths = [base_path / filename for filename in sources]
+    else:
+        source_paths = list(map(Path, sources))
+
+    template = AutosummaryRenderer(app)
+
+    # read
+    items = find_autosummary_in_files(source_paths)
+
+    # keep track of new files
+    new_files: list[Path] = []
+    all_files: list[Path] = []
+
+    filename_map = app.config.autosummary_filename_map
+
+    # write
+    for entry in sorted(set(items), key=str):
+        if entry.path is None:
+            # The corresponding autosummary:: directive did not have
+            # a :toctree: option
+            continue
+
+        path = output_dir or os.path.abspath(entry.path)
+        ensuredir(path)
+
         try:
-            if "scipy.stats.Normal" in name or "scipy.stats.Uniform" in name:
-                module_name, class_name, method_name = name.rsplit(".", 2)
-                module = __import__(module_name, fromlist=[class_name])
-                cls = getattr(module, class_name)
+            name, obj, parent, modname = import_by_name(entry.name)
+            qualname = name.replace(modname + ".", "")
+        except ImportExceptionGroup as exc:
+            try:
+                # try to import as an instance attribute
+                name, obj, parent, modname = import_ivar_by_name(entry.name)
+                qualname = name.replace(modname + ".", "")
+            except ImportError as exc2:
+                if exc2.__cause__:
+                    exceptions: list[BaseException] = [*exc.exceptions, exc2.__cause__]
+                else:
+                    exceptions = [*exc.exceptions, exc2]
 
-                print(f"{cls=}, {method_name=}")
-                # Only keep methods that are inherited
-                if method_name in cls.__dict__:
-                    filtered_names.append(name)
-            else:
-                filtered_names.append(name)
-        except (ImportError, AttributeError):
-            filtered_names.append(name)
+                errors = list({f"* {type(e).__name__}: {e}" for e in exceptions})
+                logger.warning(
+                    "[autosummary] failed to import %s.\nPossible hints:\n%s",
+                    entry.name,
+                    "\n".join(errors),
+                )
+                continue
 
-    return original_generate_autosummary_docs(filtered_names, *args[1:], **kwargs)
+        # Custom autosummary for scipy.stats
+        newdist = importlib.import_module("scipy.stats._new_distributions")
+        orig_name = name.replace(modname + ".", "")
+        if inspect.isfunction(obj):
+            # Extract the class and method name
+            if orig_name.split(".")[0] in newdist.__all__:
+                if obj.__qualname__ != orig_name:
+                    # This is an inherited object; do not generate a stub file for it
+                    app.config.autosummary_filename_map[f"{name}"] = (
+                        f"scipy.stats._distribution_infrastructure.{obj.__qualname__}"
+                    )
+
+        filename_map = app.config.autosummary_filename_map
+
+        context: dict = {**app.config.autosummary_context}
+
+        content = generate_autosummary_content(
+            name,
+            obj,
+            parent,
+            template,
+            entry.template,
+            imported_members,
+            app,
+            entry.recursive,
+            context,
+            modname,
+            qualname,
+        )
+
+        file_path = Path(path, filename_map.get(name, name) + suffix)
+        all_files.append(file_path)
+        if file_path.is_file():
+            with file_path.open(encoding=encoding) as f:
+                old_content = f.read()
+
+            if content == old_content:
+                continue
+            if overwrite:  # content has changed
+                with file_path.open("w", encoding=encoding) as f:
+                    f.write(content)
+                new_files.append(file_path)
+        else:
+            with open(file_path, "w", encoding=encoding) as f:
+                f.write(content)
+            new_files.append(file_path)
+
+    # descend recursively to new files
+    if new_files:
+        all_files.extend(
+            custom_generate_autosummary_docs(
+                [str(f) for f in new_files],
+                output_dir=output_dir,
+                suffix=suffix,
+                base_path=base_path,
+                imported_members=imported_members,
+                app=app,
+                overwrite=overwrite,
+            )
+        )
+
+    return all_files
+
+class InfoFilter(logging.Filter):
+    """Filter 'document is referenced in multiple toctrees' messages.
+    """
+
+    def __init__(self, app):
+        self.app = app
+        super().__init__()
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        filter_out = "document is referenced in multiple toctrees"
+        return filter_out not in msg
 
 
 def setup(app):
@@ -669,3 +815,10 @@ def setup(app):
     sphinx.ext.autosummary.generate.generate_autosummary_docs = (
         custom_generate_autosummary_docs
     )
+
+    logger = logging.getLogger("sphinx")
+    info_handler, *_ = [
+        h for h in logger.handlers if isinstance(h, logging.StreamHandler)
+    ]
+    info_handler.addFilter(InfoFilter(app))
+    logger.addHandler(info_handler)
