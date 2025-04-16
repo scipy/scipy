@@ -480,7 +480,7 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         il, ic, ir = work.il, work.ic, work.ir
         x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
         x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
-        x_eval = xpx.at(x_eval)[il].set( work.x[il][:, xp.newaxis] - hr[il])
+        x_eval = xpx.at(x_eval)[il].set(work.x[il][:, xp.newaxis] - hr[il])
         return x_eval
 
     def post_func_eval(x, f, work):
