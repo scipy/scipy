@@ -97,13 +97,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively.  Iteration will stop when
-        ``res.error < atol`` or  ``res.error < res.integral * rtol``. The error
-        estimate is as described in [1]_ Section 5 but with a lower bound of
-        ``eps * res.integral``. While not theoretically rigorous or
-        conservative, it is said to work well in practice. Must be non-negative
-        and finite if `log` is False, and must be expressed as the log of a
-        non-negative and finite number if `log` is True.
+        the result dtype), respectively. Must be non-negative and finite if
+        `log` is False, and must be expressed as the log of a non-negative and
+        finite number if `log` is True. Iteration will stop when
+        ``res.error < atol`` or  ``res.error < res.integral * rtol`.
     preserve_shape : bool, default: False
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
@@ -174,6 +171,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     Implements the algorithm as described in [1]_ with minor adaptations for
     finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
+
+    Two error estimation schemes are described in [1]_ Section 5: one attempts to
+    detect and exploit quadratic convergence; the other simply compares the integral
+    estimates at successive levels. While neither is theoretically rigorous or
+    conservative, both work well in practice. Our error estimate uses the minimum of
+    these two schemes with a lower bound of ``eps * res.integral``.
 
     Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval during iterations, but the values returned by
@@ -771,8 +774,8 @@ def _estimate_error(work, xp):
         d4 = work.d4
         d5 = log_e1 + xp.real(work.Sn)
         temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
-        ds = xp.stack([temp, 2 * d1, d3, d4, d5])
-        aerr = xp.minimum(d1, xp.max(ds, axis=0))
+        ds = xp.stack([temp, 2 * d1, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
         rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
@@ -782,8 +785,8 @@ def _estimate_error(work, xp):
         d4 = work.d4
         d5 = e1 * xp.abs(work.Sn)
         temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
-        ds = xp.stack([temp, d1**2, d3, d4, d5])
-        aerr = xp.minimum(d1, xp.max(ds, axis=0))
+        ds = xp.stack([temp, d1**2, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
         rerr = aerr/xp.abs(work.Sn)
 
     return rerr, aerr

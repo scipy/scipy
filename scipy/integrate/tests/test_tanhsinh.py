@@ -19,6 +19,7 @@ def norm_pdf(x, xp=None):
     xp = array_namespace(x) if xp is None else xp
     return 1/(2*xp.pi)**0.5 * xp.exp(-x**2/2)
 
+
 def norm_logpdf(x, xp=None):
     xp = array_namespace(x) if xp is None else xp
     return -0.5*math.log(2*xp.pi) - x**2/2
@@ -236,7 +237,8 @@ class TestTanhSinh:
         assert (xp.isdtype(logres.integral.dtype, "real floating") if ref > 0
                 else xp.isdtype(logres.integral.dtype, "complex floating"))
 
-        xp_assert_close(xp.exp(logres.error), res.error, atol=1e-16, check_dtype=False)
+        atol = xp.finfo(res.error.dtype).eps
+        xp_assert_close(xp.exp(logres.error), res.error, atol=atol, check_dtype=False)
 
     # 15 skipped intentionally; it's very difficult numerically
     @pytest.mark.skip_xp_backends(np_only=True,
@@ -748,14 +750,15 @@ class TestTanhSinh:
     def test_gh_22681_finite_error(self, xp):
         # gh-22681 noted a case in which the error was NaN on some platforms;
         # check that this does in fact fail in CI.
-        a = complex(12, -10)
-        b = complex(12, 39)
+        c1 = complex(12, -10)
+        c2 = complex(12, 39)
         def f(t):
-            return xp.sin(a * (1 - t) + b * t)
-        ref = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.), atol=0, rtol=0, maxlevel=10)
+            return xp.sin(c1 * (1 - t) + c2 * t)
+        a, b = xp.asarray(0., dtype=xp.float64), xp.asarray(1., dtype=xp.float64)
+        ref = _tanhsinh(f, a, b, atol=0, rtol=0, maxlevel=10)
         assert xp.isfinite(ref.error)
-        # Previously, the tanhsinh would not detect convergence
-        res = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.))
+        # Previously, tanhsinh would not detect convergence
+        res = _tanhsinh(f, a, b, rtol=1e-14)
         assert res.success
         assert res.maxlevel < 5
         xp_assert_close(res.integral, ref.integral, rtol=1e-15)
