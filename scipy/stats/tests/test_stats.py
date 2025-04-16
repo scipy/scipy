@@ -48,7 +48,6 @@ import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -554,7 +553,7 @@ class TestPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
             [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),
              ('less', 0.8370999312316, -1, 0.985600937290653, 1),
@@ -4016,7 +4015,7 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -4049,7 +4048,7 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason='Too slow.')
+    @skip_xp_backends(np_only=True, reason='Too slow.')
     @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
@@ -5676,8 +5675,7 @@ class Test_ttest_ind_permutations:
         with pytest.raises(ValueError, match=message):
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
-    @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reason='Uses NumPy for pvalue, CI')
+    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
     def test_permutation_not_implement_for_xp(self, xp):
         a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
 
@@ -5904,8 +5902,7 @@ class Test_ttest_trim:
                 stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
                                 random_state=2)
 
-    @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reason='Uses NumPy for pvalue, CI')
+    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
     def test_permutation_not_implement_for_xp(self, xp):
         message = "Use of `trim` is compatible only with NumPy arrays."
         a, b = xp.arange(10), xp.arange(10)+1
@@ -5969,7 +5966,7 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -6282,6 +6279,7 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 @pytest.mark.slow
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@make_skip_xp_backends(stats.ttest_1samp)
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
@@ -6342,8 +6340,7 @@ def test_ttest_1samp_new(xp):
         xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
 
-@pytest.mark.skip_xp_backends(np_only=True,
-                              reason="Only NumPy has nan_policy='omit' for now")
+@skip_xp_backends(np_only=True, reason="Only NumPy has nan_policy='omit' for now")
 def test_ttest_1samp_new_omit(xp):
     n1, n2, n3 = (5, 10, 15)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
@@ -7027,7 +7024,7 @@ class TestHMean:
         desired = np.array([0.0, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -7156,7 +7153,7 @@ class TestGMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -7272,7 +7269,7 @@ class TestPMean:
         desired = TestPMean.wpmean_reference(np.array(a), p, weights)
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -9744,8 +9741,7 @@ def test_chk_asarray(xp):
     assert_equal(axis_out, axis)
 
 
-@pytest.mark.skip_xp_backends('numpy',
-                              reason='These parameters *are* compatible with NumPy')
+@skip_xp_backends('numpy', reason='These parameters *are* compatible with NumPy')
 def test_axis_nan_policy_keepdims_nanpolicy(xp):
     # this test does not need to be repeated for every function
     # using the _axis_nan_policy decorator. The test is here
