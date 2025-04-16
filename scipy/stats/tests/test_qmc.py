@@ -224,7 +224,7 @@ class TestUtils:
         assert_allclose(
             qmc.geometric_discrepancy(sample, method='mst'), 0.19704396643366182
         )
-        
+
     @pytest.mark.thread_unsafe
     def test_geometric_discrepancy_parallel(self):
         sample = np.array([[0, 0], [1, 1]])
@@ -240,7 +240,11 @@ class TestUtils:
         rng = np.random.default_rng(191468432622931918890291693003068437394)
         sample = qmc.LatinHypercube(d=3, rng=rng).random(50)
         assert_allclose(qmc.geometric_discrepancy(sample, workers=8), 0.05106012076093356)
-        
+
+    @pytest.mark.xfail(
+            reason="minimum_spanning_tree ignores zero distances (#18892)",
+            strict=True,
+    )
     @pytest.mark.thread_unsafe
     def test_geometric_discrepancy_mst_with_zero_distances(self):
         sample = np.array([[0, 0], [0, 0], [0, 1]])
