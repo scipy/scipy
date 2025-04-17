@@ -485,7 +485,7 @@ class TestConvolve2d:
             )
             xp_assert_close(
                 xp.squeeze(
-                    signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode),
+                    signal.convolve2d(a[None, :], b[None, :], mode=mode),
                     axis=0
                 ),
                 signal.convolve(a, b, mode=mode)
@@ -1637,6 +1637,91 @@ class TestOrderFilt:
         actual = signal.order_filter(xp.asarray([1, 2, 3]), xp.asarray([1, 0, 1]), 1)
         expect = xp.asarray([2, 3, 2])
         xp_assert_equal(actual, expect)
+
+    def test_doc_example(self, xp):
+        x = xp.reshape(xp.arange(25, dtype=xp_default_dtype(xp)), (5, 5))
+        domain = xp.eye(3, dtype=xp_default_dtype(xp))
+
+        # minimum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = xp.asarray(
+            [[0., 0., 0., 0., 0.],
+             [0., 0., 1., 2., 0.],
+             [0., 5., 6., 7., 0.],
+             [0., 10., 11., 12., 0.],
+             [0., 0., 0., 0., 0.]],
+            dtype=xp_default_dtype(xp)
+        )
+        xp_assert_close(signal.order_filter(x, domain, 0), expected)
+
+        # maximum of elements 1,3,9 (zero-padded) on phone pad
+        # 7,5,3 on numpad
+        expected = xp.asarray(
+            [[6., 7., 8., 9., 4.],
+             [11., 12., 13., 14., 9.],
+             [16., 17., 18., 19., 14.],
+             [21., 22., 23., 24., 19.],
+             [20., 21., 22., 23., 24.]],
+        )
+        xp_assert_close(signal.order_filter(x, domain, 2), expected)
+
+        # and, just to complete the set, median of zero-padded elements
+        expected = xp.asarray(
+            [[0, 1, 2, 3, 0],
+             [5, 6, 7, 8, 3],
+             [10, 11, 12, 13, 8],
+             [15, 16, 17, 18, 13],
+             [0, 15, 16, 17, 18]],
+            dtype=xp_default_dtype(xp)
+        )
+        xp_assert_close(signal.order_filter(x, domain, 1), expected)
+
+    @xfail_xp_backends('dask.array', reason='repeat requires an axis')
+    @xfail_xp_backends('torch', reason='array-api-compat#292')
+    def test_medfilt_order_filter(self, xp):
+        x = xp.reshape(xp.arange(25), (5, 5))
+
+        # median of zero-padded elements 1,5,9 on phone pad
+        # 7,5,3 on numpad
+        expected = xp.asarray(
+            [[0, 1, 2, 3, 0],
+             [1, 6, 7, 8, 4],
+             [6, 11, 12, 13, 9],
+             [11, 16, 17, 18, 14],
+             [0, 16, 17, 18, 0]],
+        )
+        xp_assert_close(signal.medfilt(x, 3), expected)
+
+        xp_assert_close(
+            signal.order_filter(x, xp.ones((3, 3)), 4),
+            expected
+        )
+
+    def test_order_filter_asymmetric(self, xp):
+        x = xp.reshape(xp.arange(25), (5, 5))
+        domain = xp.asarray(
+            [[1, 1, 0],
+             [0, 1, 0],
+             [0, 0, 0]],
+        )
+
+        expected = xp.asarray(
+            [[0, 0, 0, 0, 0],
+             [0, 0, 1, 2, 3],
+             [0, 5, 6, 7, 8],
+             [0, 10, 11, 12, 13],
+             [0, 15, 16, 17, 18]]
+        )
+        xp_assert_close(signal.order_filter(x, domain, 0), expected)
+
+        expected = xp.asarray(
+            [[0, 0, 0, 0, 0],
+             [0, 1, 2, 3, 4],
+             [5, 6, 7, 8, 9],
+             [10, 11, 12, 13, 14],
+             [15, 16, 17, 18, 19]]
+        )
+        xp_assert_close(signal.order_filter(x, domain, 1), expected)
 
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
@@ -4069,7 +4154,8 @@ class TestSOSFilt:
 
         # Test simple IIR
         y_r = xp.asarray([0, 2, 4, 6, 8, 10.], dtype=dt)
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
@@ -4078,7 +4164,8 @@ class TestSOSFilt:
         # NOTE: This was changed (rel. to TestLinear...) to add a pole @zero:
         a = xp.asarray([1, 0], dtype=dt)
         y_r = xp.asarray([0, 1, 3, 5, 7, 9.], dtype=dt)
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX while tf2sos is numpy only
         assert_array_almost_equal(sosfilt(sos, x), y_r)
 
@@ -4108,12 +4195,13 @@ class TestSOSFilt:
         y_r2_a1 = xp.asarray([[0, 2, 0], [6, -4, 6], [12, -10, 12],
                             [18, -16, 18]], dtype=dt)
 
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=0)
         assert_array_almost_equal(y_r2_a0, y)
 
-        sos = tf2sos(b, a)
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x, axis=1)
         assert_array_almost_equal(y_r2_a1, y)
@@ -4130,7 +4218,8 @@ class TestSOSFilt:
         a = xp.asarray([0.5, 0.5], dtype=dt)
 
         # Test last axis
-        sos = tf2sos(b, a)
+        bb, aa = map(np.asarray, (b, a))  # XXX until tf2sos is array api compatible
+        sos = tf2sos(bb, aa)
         sos = xp.asarray(sos)   # XXX
         y = sosfilt(sos, x)
         for i in range(x.shape[0]):

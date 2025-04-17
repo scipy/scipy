@@ -36,6 +36,7 @@ import operator
 import math
 
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace, is_cupy, xp_size
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
@@ -53,8 +54,10 @@ __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
 
 def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, origin,
                           axes, batch_memory):
+    xp = array_namespace(input, footprint, output)
+
     # vectorized_filter input validation and standardization
-    input = np.asarray(input)
+    input = xp.asarray(input)
 
     if not callable(function):
         raise ValueError("`function` must be a callable.")
@@ -71,12 +74,12 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
         size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
-        valid = [np.issubdtype(np.asarray(i).dtype, np.integer) and i > 0 for i in size]
+        valid = [xp.isdtype(xp.asarray(i).dtype, 'integral') and i > 0 for i in size]
         if not all(valid):
             raise ValueError("All elements of `size` must be positive integers.")
     else:
         # If provided, `footprint` must be array-like
-        footprint = np.asarray(footprint, dtype=bool)
+        footprint = xp.asarray(footprint, dtype=xp.bool)
         size = footprint.shape
         def footprinted_function(input, *args, axis=-1, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
@@ -108,7 +111,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         origin = (0,) * n_axes
     else:
         origin = (origin,)*n_axes if np.isscalar(origin) else tuple(origin)
-        integral = [np.issubdtype(np.asarray(i).dtype, np.integer) for i in origin]
+        integral = [xp.isdtype(xp.asarray(i).dtype, 'integral') for i in origin]
         if not all(integral):
             raise ValueError("All elements of `origin` must be integers.")
         if not len(origin) == n_axes:
@@ -117,7 +120,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             raise ValueError(message)
 
     # mode must be one of the allowed strings, and we should convert it to the
-    # value required by `np.pad` here.
+    # value required by `np.pad`/`cp.pad` here.
     valid_modes = {'reflect', 'constant', 'nearest', 'mirror', 'wrap',
                    'grid-mirror', 'grid-constant', 'grid-wrap', 'valid'}
     if mode not in valid_modes:
@@ -136,20 +139,20 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         raise ValueError("Use of `cval` is compatible only with `mode='constant'`.")
 
     # `cval` must be a scalar or "broadcastable" to a tuple with the same
-    # dimensionality of `input`. (Full input validation done by `np.pad`.)
-    if not np.issubdtype(np.asarray(cval).dtype, np.number):
+    # dimensionality of `input`. (Full input validation done by `np.pad`/`cp.pad`.)
+    if not xp.isdtype(xp.asarray(cval).dtype, 'numeric'):
         raise ValueError("`cval` must include only numbers.")
 
     # `batch_memory` must be a positive number.
-    temp = np.asarray(batch_memory)
-    if temp.ndim != 0 or (not np.issubdtype(temp.dtype, np.number)) or temp <= 0:
+    temp = xp.asarray(batch_memory)
+    if temp.ndim != 0 or (not xp.isdtype(temp.dtype, 'numeric')) or temp <= 0:
         raise ValueError("`batch_memory` must be positive number.")
 
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
     if axes is not None:
-        input = np.moveaxis(input, axes, working_axes)
-        output = (np.moveaxis(output, axes, working_axes)
+        input = xp.moveaxis(input, axes, working_axes)
+        output = (xp.moveaxis(output, axes, working_axes)
                   if output is not None else output)
 
     # Wrap the function to limit maximum memory usage, deal with `footprint`,
@@ -159,7 +162,7 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         kwargs = {'axis': working_axes}
 
         if working_axes == ():
-            return footprinted_function(view, **kwargs)
+            return footprinted_function(xp.asarray(view), **kwargs)
 
         # for now, assume we only have to iterate over zeroth axis
         chunk_size = math.prod(view.shape[1:]) * view.dtype.itemsize
@@ -169,9 +172,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
         elif slices_per_batch == view.shape[0]:
             if output is None:
-                return footprinted_function(view, **kwargs)
+                return footprinted_function(xp.asarray(view), **kwargs)
             else:
-                output[...] = footprinted_function(view, **kwargs)
+                output[...] = footprinted_function(xp.asarray(view), **kwargs)
                 return output
 
         for i in range(0, view.shape[0], slices_per_batch):
@@ -179,15 +182,16 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
             if output is None:
                 # Look at the dtype before allocating the array. (In a follow-up, we
                 # can also look at the shape to support non-scalar elements.)
-                temp = footprinted_function(view[i:i2], **kwargs)
-                output = np.empty(view.shape[:-n_axes], dtype=temp.dtype)
-                output[i:i2] = temp
+                temp = footprinted_function(xp.asarray(view[i:i2]), **kwargs)
+                output = xp.empty(view.shape[:-n_axes], dtype=temp.dtype)
+                output[i:i2, ...] = temp
             else:
-                output[i:i2] = footprinted_function(view[i:i2], **kwargs)
+                output[i:i2, ...] = footprinted_function(xp.asarray(view[i:i2]),
+                                                         **kwargs)
         return output
 
     return (input, wrapped_function, size, mode, cval,
-            origin, working_axes, n_axes, n_batch)
+            origin, working_axes, n_axes, n_batch, xp)
 
 
 @_ni_docstrings.docfiller
@@ -405,39 +409,53 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """  # noqa: E501
 
-    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch
+    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch, xp
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, axes, batch_memory)
 
-    # `np.pad` raises with these sorts of cases, but the best result is probably
-    # to return the original array. It could be argued that we should call the
-    # function on the empty array with `axis=None` just to determine the output
+    # `np.pad`/`cp.pad` raises with these sorts of cases, but the best result is
+    # probably to return the original array. It could be argued that we should call
+    # the function on the empty array with `axis=None` just to determine the output
     # dtype, but I can also see rationale against that.
-    if input.size == 0:
-        return input
+    if xp_size(input) == 0:
+        return xp.asarray(input)
 
     # This seems to be defined.
     if input.ndim == 0 and size == ():
-        return np.asarray(function(input) if footprint is None
+        return xp.asarray(function(input) if footprint is None
                           else function(input[footprint]))
 
-    # Border the image according to `mode` and `offset`. `np.pad` does the work,
-    # but it uses different names; adjust `mode` accordingly.
-    # Move this to input validation.
+    if is_cupy(xp):
+        # CuPy is the only GPU backend that has `pad` (with all modes)
+        # and `sliding_window_view`. An enhancement would be to use
+        # no-copy conversion to CuPy whenever the data is on the GPU.
+        cp = xp  # let there be no ambiguity!
+        swv = cp.lib.stride_tricks.sliding_window_view
+        pad = cp.pad
+    else:
+        # Try to perform no-copy conversion to NumPy for padding and
+        # `sliding_window_view`. (If that fails, fine - for now, the only
+        # GPU backend we support is CuPy.)
+        swv = np.lib.stride_tricks.sliding_window_view
+        pad = np.pad
+        input = np.asarray(input)
+        cval = np.asarray(cval)[()] if mode == 'constant' else None
+
+    # Border the image according to `mode` and `offset`.
     if mode != 'valid':
         kwargs = {'constant_values': cval} if mode == 'constant' else {}
         borders = tuple((i//2 + j, (i-1)//2 - j) for i, j in zip(size, origin))
-        bordered_input = np.pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
+        bordered_input = pad(input, ((0, 0),)*n_batch + borders, mode=mode, **kwargs)
     else:
         bordered_input = input
 
     # Evaluate function with sliding window view. Function is already wrapped to
     # manage memory, deal with `footprint`, populate `output`, etc.
-    view = np.lib.stride_tricks.sliding_window_view(bordered_input, size, working_axes)
+    view = swv(bordered_input, size, working_axes)
     res = function(view)
 
     # move working_axes back to original positions
-    return np.moveaxis(res, working_axes, axes) if axes is not None else res
+    return xp.moveaxis(res, working_axes, axes) if axes is not None else res
 
 
 def _invalid_origin(origin, lenw):
@@ -1860,6 +1878,8 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     -----
     A sequence of modes (one per axis) is only supported when the footprint is
     separable. Otherwise, a single mode string must be provided.
+
+    %(nan)s
 
     Examples
     --------

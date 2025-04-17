@@ -48,7 +48,6 @@ import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-boolean_index_skip_reason = 'JAX/Dask arrays do not support boolean assignment.'
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -82,13 +81,6 @@ lazy_xp_function(stats.tstd, static_argnames=("inclusive", "axis", "ddof"))
 lazy_xp_function(stats.tsem, static_argnames=("inclusive", "axis", "ddof"))
 lazy_xp_function(stats.tmin, static_argnames=("inclusive", "axis"))
 lazy_xp_function(stats.tmax, static_argnames=("inclusive", "axis"))
-
-
-def eager_warns(x, warning_type, match=None):
-    """pytest.warns context manager, but only if x is not a lazy array."""
-    if is_lazy_array(x):
-        return contextlib.nullcontext()
-    return pytest.warns(warning_type, match=match)
 
 
 class TestTrimmedStats:
@@ -561,7 +553,7 @@ class TestPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
             [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),
              ('less', 0.8370999312316, -1, 0.985600937290653, 1),
@@ -2972,6 +2964,26 @@ class TestZmap:
         with pytest.raises(ValueError, match='input contains nan'):
             stats.zmap(scores, compare, nan_policy='raise')
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    def test_degenerate_input(self, xp):
+        scores = xp.arange(3)
+        compare = xp.ones(3)
+        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(scores)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
+            res = stats.zmap(scores, compare)
+        xp_assert_equal(res, ref)
+
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+    def test_complex_gh22404(self, xp):
+        res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
+        ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
+        xp_assert_close(res, ref)
+
 
 @make_skip_xp_backends(stats.zscore)
 class TestZscore:
@@ -3050,7 +3062,11 @@ class TestZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
@@ -3061,12 +3077,16 @@ class TestZscore:
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:        
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -3075,7 +3095,7 @@ class TestZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with eager_warns(y, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
 
@@ -3086,14 +3106,17 @@ class TestZscore:
                         [10.0, 12.0, xp.nan, 10.0]])
         s = (3/2)**0.5
         s2 = 2**0.5
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with warn_ctx:
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -3121,25 +3144,6 @@ class TestZscore:
         z = stats.zscore(x)
         xp_assert_equal(z, x)
 
-    def test_gzscore_normal_array(self, xp):
-        x = np.asarray([1, 2, 3, 4])
-        z = stats.gzscore(xp.asarray(x))
-        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
-        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
-
-    @skip_xp_invalid_arg
-    def test_gzscore_masked_array(self, xp):
-        x = np.array([1, 2, -1, 3, 4])
-        mask = [0, 0, 1, 0, 0]
-        mx = np.ma.masked_array(x, mask=mask)
-        z = stats.gzscore(mx)
-        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
-                    1.136670895503])
-        desired = np.ma.masked_array(desired, mask=mask)
-        assert_allclose(z.compressed(), desired.compressed())
-        assert_allclose(z.mask, desired.mask)
-        assert isinstance(z, np.ma.MaskedArray)
-
     @skip_xp_invalid_arg
     def test_zscore_masked_element_0_gh19039(self, xp):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
@@ -3164,21 +3168,27 @@ class TestZscore:
             res = stats.zscore(y, axis=None)
         assert_equal(res[1:], np.nan)
 
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    def test_degenerate_input(self, xp):
-        scores = xp.arange(3)
-        compare = xp.ones(3)
-        ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        with eager_warns(scores, RuntimeWarning, match="Precision loss occurred..."):
-            res = stats.zmap(scores, compare)
-        xp_assert_equal(res, ref)
 
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
-    def test_complex_gh22404(self, xp):
-        res = stats.zmap(xp.asarray([1, 2, 3, 4]), xp.asarray([1, 1j, -1, -1j]))
-        ref = xp.asarray([1.+0.j, 2.+0.j, 3.+0.j, 4.+0.j])
-        xp_assert_close(res, ref)
+@make_skip_xp_backends(stats.gzscore)
+class TestGZscore:
+    def test_gzscore_normal_array(self, xp):
+        x = np.asarray([1, 2, 3, 4])
+        z = stats.gzscore(xp.asarray(x))
+        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
+        xp_assert_close(z, xp.asarray(desired, dtype=xp.asarray(1.).dtype))
+
+    @skip_xp_invalid_arg
+    def test_gzscore_masked_array(self):
+        x = np.array([1, 2, -1, 3, 4])
+        mask = [0, 0, 1, 0, 0]
+        mx = np.ma.masked_array(x, mask=mask)
+        z = stats.gzscore(mx)
+        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
+                    1.136670895503])
+        desired = np.ma.masked_array(desired, mask=mask)
+        assert_allclose(z.compressed(), desired.compressed())
+        assert_allclose(z.mask, desired.mask)
+        assert isinstance(z, np.ma.MaskedArray)
 
 
 class TestMedianAbsDeviation:
@@ -3724,17 +3734,25 @@ class TestSkew(SkewKurtosisTest):
     def test_skew_constant_value(self, xp):
         # Skewness of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(a)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
+        with warn_ctx:
             xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
 
-            # # similarly, from gh-11086:
-            a = xp.asarray([14.3]*7)
+        # # similarly, from gh-11086:
+        a = xp.asarray([14.3]*7)
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
-            a = 1. + xp.arange(-3., 4)*1e-16
+        a = 1. + xp.arange(-3., 4)*1e-16
+        with warn_ctx:
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
     @skip_xp_backends(eager_only=True)
@@ -3836,10 +3854,17 @@ class TestKurtosis(SkewKurtosisTest):
     def test_kurtosis_constant_value(self, xp):
         # Kurtosis of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(a)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a, fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -3993,7 +4018,7 @@ class TestStudentTest:
         xp_assert_close(p, xp.asarray(self.P1_1_g))
         xp_assert_close(t, xp.asarray(self.T1_1))
 
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -4026,7 +4051,7 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
-    @pytest.mark.skip_xp_backends(np_only=True, reason='Too slow.')
+    @skip_xp_backends(np_only=True, reason='Too slow.')
     @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
@@ -5653,8 +5678,7 @@ class Test_ttest_ind_permutations:
         with pytest.raises(ValueError, match=message):
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
-    @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reason='Uses NumPy for pvalue, CI')
+    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
     def test_permutation_not_implement_for_xp(self, xp):
         a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
 
@@ -5881,8 +5905,7 @@ class Test_ttest_trim:
                 stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
                                 random_state=2)
 
-    @pytest.mark.skip_xp_backends(cpu_only=True,
-                                  reason='Uses NumPy for pvalue, CI')
+    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
     def test_permutation_not_implement_for_xp(self, xp):
         message = "Use of `trim` is compatible only with NumPy arrays."
         a, b = xp.arange(10), xp.arange(10)+1
@@ -5946,7 +5969,7 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
-    @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -6087,8 +6110,11 @@ class TestTTestInd:
         # test zero division problem
         x = xp.zeros(3)
         y = xp.ones(3)
+        warn_ctx = (
+            contextlib.nullcontext() if is_lazy_array(x)
+            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred"):
+        with warn_ctx:
             t, p = stats.ttest_ind(x, y, equal_var=False)
 
         xp_assert_equal(t, xp.asarray(-xp.inf))
@@ -6256,6 +6282,7 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 @pytest.mark.slow
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@make_skip_xp_backends(stats.ttest_1samp)
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
@@ -6316,8 +6343,7 @@ def test_ttest_1samp_new(xp):
         xp_assert_equal(res.pvalue, xp.asarray([1., xp.nan]))
 
 
-@pytest.mark.skip_xp_backends(np_only=True,
-                              reason="Only NumPy has nan_policy='omit' for now")
+@skip_xp_backends(np_only=True, reason="Only NumPy has nan_policy='omit' for now")
 def test_ttest_1samp_new_omit(xp):
     n1, n2, n3 = (5, 10, 15)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
@@ -7001,7 +7027,7 @@ class TestHMean:
         desired = np.array([0.0, 63.03939962, 103.80078637])
         check_equal_hmean(a, desired, axis=1, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -7130,7 +7156,7 @@ class TestGMean:
         with np.errstate(invalid='ignore'):
             check_equal_gmean(a, desired, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -7246,7 +7272,7 @@ class TestPMean:
         desired = TestPMean.wpmean_reference(np.array(a), p, weights)
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5, xp=xp)
 
-    @pytest.mark.skip_xp_backends(
+    @skip_xp_backends(
         np_only=True,
         reason='array-likes only supported for NumPy backend',
     )
@@ -9718,8 +9744,7 @@ def test_chk_asarray(xp):
     assert_equal(axis_out, axis)
 
 
-@pytest.mark.skip_xp_backends('numpy',
-                              reason='These parameters *are* compatible with NumPy')
+@skip_xp_backends('numpy', reason='These parameters *are* compatible with NumPy')
 def test_axis_nan_policy_keepdims_nanpolicy(xp):
     # this test does not need to be repeated for every function
     # using the _axis_nan_policy decorator. The test is here

@@ -5,6 +5,7 @@
 import math
 import warnings
 import sys
+import contextlib
 from functools import partial
 
 import numpy as np
@@ -2024,7 +2025,11 @@ class TestBoxcox_llf:
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
     def test_empty(self, xp):
-        assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
+        message = "One or more sample arguments is too small..."
+        context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
+                   else contextlib.nullcontext())
+        with context:
+            assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
         # Regression test for gh-6873.
@@ -2040,6 +2045,21 @@ class TestBoxcox_llf:
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
         xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
+
+    def test_axis(self, xp):
+        data = xp.asarray([[100, 200], [300, 400]])
+        llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
+        llf_0 = xp.asarray([
+            stats.boxcox_llf(1, data[:, 0]),
+            stats.boxcox_llf(1, data[:, 1]),
+        ])
+        xp_assert_close(llf_axis_0, llf_0)
+        llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
+        llf_1 = xp.asarray([
+            stats.boxcox_llf(1, data[0, :]),
+            stats.boxcox_llf(1, data[1, :]),
+        ])
+        xp_assert_close(llf_axis_1, llf_1)
 
 
 # This is the data from GitHub user Qukaiyi, given as an example

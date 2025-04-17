@@ -1,6 +1,8 @@
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace,
+    xp_capabilities,
+    xp_device,
     xp_size,
     xp_promote,
     xp_float_to_complex,
@@ -10,6 +12,7 @@ from scipy._lib import array_api_extra as xpx
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
+@xp_capabilities()
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -57,7 +60,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     See Also
     --------
-    numpy.logaddexp, numpy.logaddexp2
+    :data:`numpy.logaddexp`
+    :data:`numpy.logaddexp2`
 
     Notes
     -----
@@ -132,7 +136,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     else:
         shape = np.asarray(a.shape)  # NumPy is convenient for shape manipulation
         shape[axis] = 1
-        out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype)
+        out = xp.full(tuple(shape), -xp.inf, dtype=a.dtype, device=xp_device(a))
         sgn = xp.sign(out)
 
     if xp.isdtype(out.dtype, 'complex floating'):
@@ -181,7 +185,7 @@ def _elements_and_indices_with_max_real(a, *, axis=-1, xp):
         # Of those, choose one arbitrarily. This is a reasonably
         # simple, array-API compatible way of doing so that doesn't
         # have a problem with `axis` being a tuple or None.
-        i = xp.reshape(xp.arange(xp_size(a)), a.shape)
+        i = xp.reshape(xp.arange(xp_size(a), device=xp_device(a)), a.shape)
         i = xpx.at(i, ~mask).set(-1)
         max_i = xp.max(i, axis=axis, keepdims=True)
         mask = i == max_i
@@ -245,6 +249,7 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     return out, sgn
 
 
+@xp_capabilities()
 def softmax(x, axis=None):
     r"""Compute the softmax function.
 
@@ -343,6 +348,7 @@ def softmax(x, axis=None):
     return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
+@xp_capabilities()
 def log_softmax(x, axis=None):
     r"""Compute the logarithm of the softmax function.
 

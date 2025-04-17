@@ -463,12 +463,12 @@ def rosen_hess(x):
     xp = array_namespace(x)
     x = xp_promote(x, force_floating=True, xp=xp)
 
-    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp)
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
-    diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
-    diagonal[-1] = 200
-    diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
+    diagonal = xpx.at(diagonal)[0].set(1200 * x[0]**2 - 400 * x[1] + 2)
+    diagonal = xpx.at(diagonal)[-1].set(200)
+    diagonal = xpx.at(diagonal)[1:-1].set(202 + 1200 * x[1:-1]**2 - 400 * x[2:])
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
