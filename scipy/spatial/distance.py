@@ -2294,7 +2294,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.ndim}).')
+        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
