@@ -1,6 +1,5 @@
 #include "xsf_wrappers.h"
 #include "xsf/airy.h"
-#include "xsf/alg.h"
 #include "xsf/amos.h"
 #include "xsf/bessel.h"
 #include "xsf/beta.h"
@@ -61,7 +60,7 @@ npy_cdouble to_ccomplex(complex<double> z) { return {z.real(), z.imag()}; }
 
 } // namespace
 
-npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::chyp1f1(a, b, to_complex(z))); }
+npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) { return to_ccomplex(xsf::hyp1f1(a, b, to_complex(z))); }
 
 double hypU_wrap(double a, double b, double x) { return xsf::hypu(a, b, x); }
 
@@ -310,17 +309,17 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
     return xsf::cephes::ellpj(u, m, sn, cn, dn, ph);
 }
 
-int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, si, ci); }
+int xsf_sici(double x, double *si, double *ci) { return xsf::sici(x, *si, *ci); }
 
-int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, si, ci); }
+int xsf_shichi(double x, double *si, double *ci) { return xsf::shichi(x, *si, *ci); }
 
 int xsf_csici(npy_cdouble x, npy_cdouble *si, npy_cdouble *ci) {
-    return xsf::sici(to_complex(x), reinterpret_cast<complex<double> *>(si), reinterpret_cast<complex<double> *>(ci));
+    return xsf::sici(to_complex(x), *reinterpret_cast<complex<double> *>(si), *reinterpret_cast<complex<double> *>(ci));
 }
 
 int xsf_cshichi(npy_cdouble x, npy_cdouble *shi, npy_cdouble *chi) {
-    return xsf::shichi(to_complex(x), reinterpret_cast<complex<double> *>(shi),
-                       reinterpret_cast<complex<double> *>(chi));
+    return xsf::shichi(to_complex(x), *reinterpret_cast<complex<double> *>(shi),
+                       *reinterpret_cast<complex<double> *>(chi));
 }
 
 double cephes__struve_asymp_large_z(double v, double z, Py_ssize_t is_h, double *err) {
@@ -352,7 +351,7 @@ double xsf_beta(double a, double b) { return xsf::beta(a, b); }
 
 double xsf_betaln(double a, double b) { return xsf::betaln(a, b); }
 
-double xsf_cbrt(double x) { return xsf::cbrt(x); }
+double xsf_cbrt(double x) { return xsf::cephes::cbrt(x); }
 
 double xsf_gamma(double x) { return xsf::gamma(x); }
 
