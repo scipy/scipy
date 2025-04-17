@@ -17,6 +17,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_device,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
@@ -2934,7 +2935,8 @@ def bartlett(*samples, axis=0):
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
     samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype, device=xp_device(sample))
+          for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
