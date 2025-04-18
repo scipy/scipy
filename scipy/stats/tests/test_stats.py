@@ -2591,6 +2591,7 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
+@make_skip_xp_backends(stats.mode)
 class TestMode:
 
     def test_empty(self):
@@ -2604,11 +2605,11 @@ class TestMode:
         assert_equal(vals, np.array([4.]))
         assert_equal(counts, np.array([1]))
 
-    def test_basic(self):
-        data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+    def test_basic(self, xp):
+        data1 = xp.asarray([3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6])
         vals = stats.mode(data1)
-        assert_equal(vals[0], 6)
-        assert_equal(vals[1], 3)
+        xp_assert_equal(vals[0], xp.asarray(6))
+        xp_assert_equal(vals[1], xp.asarray(3))
 
     def test_axes(self):
         data1 = [10, 10, 30, 40]
@@ -3081,7 +3082,7 @@ class TestZscore:
             contextlib.nullcontext() if is_lazy_array(x)
             else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with warn_ctx:        
+        with warn_ctx:
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))

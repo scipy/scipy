@@ -81,6 +81,7 @@ from scipy._lib._array_api import (
     xp_promote,
     xp_capabilities,
     xp_ravel,
+    xp_device,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -491,6 +492,8 @@ def _mode_result(mode, count):
     return ModeResult(mode, count)
 
 
+@xp_capabilities(skip_backends=[('dask', "can't compute chunk size"),
+                                ('cupy', "data-apis/array-api-compat#312")])
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -555,40 +558,47 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     ModeResult(mode=3, count=5)
 
     """
+    xp = array_namespace(a)
+
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
-    if not np.issubdtype(a.dtype, np.number):
+    if not xp.isdtype(a.dtype, 'numeric'):
         message = ("Argument `a` is not recognized as numeric. "
                    "Support for input that cannot be coerced to a numeric "
                    "array was deprecated in SciPy 1.9.0 and removed in SciPy "
                    "1.11.0. Please consider `np.unique`.")
         raise TypeError(message)
 
-    if a.size == 0:
-        NaN = _get_nan(a)
-        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
+    if xp_size(a) == 0:
+        NaN = _get_nan(a, xp=xp)
+        return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
 
-    if a.ndim == 1:
-        vals, cnts = np.unique(a, return_counts=True)
-        modes, counts = vals[cnts.argmax()], cnts.max()
-        return ModeResult(modes[()], counts[()])
+    # if a.ndim == 1:
+    #     # vals, cnts = xp.unique(a, return_counts=True)  # desired NaN behavior
+    #     vals, cnts = xp.unique_counts(a)  # array API
+    #     modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
+    #     modes = modes[()] if modes.ndim == 0 else modes
+    #     counts = counts[()] if counts.ndim == 0 else counts
+    #     return ModeResult(modes, counts)
 
     # `axis` is always -1 after the `_axis_nan_policy` decorator
-    y = np.sort(a, axis=-1)
+    y = xp.sort(a, axis=-1)
     # Get boolean array of elements that are different from the previous element
-    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=bool),
-                        (y[..., :-1] != y[..., 1:]) & ~np.isnan(y[..., :-1])], axis=-1)
+    i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
+                  (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
     # Get linear integer indices of these elements in a raveled array
-    indices = np.arange(y.size)[i.ravel()]
+    indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
     # The difference between integer indices is the number of repeats
-    counts = np.diff(indices, append=y.size)
+    counts = xp.diff(indices, append=xp.asarray(xp_size(y), dtype=indices.dtype))
     # Now we form an array of `counts` corresponding with each element of `y`...
-    counts = np.reshape(np.repeat(counts, counts), y.shape)
+    counts = xp.reshape(xp.repeat(counts, counts), y.shape)
     # ... so we can get the argmax of *each slice* separately.
-    k = np.argmax(counts, axis=-1, keepdims=True)
+    k = xp.argmax(counts, axis=-1, keepdims=True)
     # Extract the corresponding element/count, and eliminate the reduced dimension
-    modes = np.take_along_axis(y, k, axis=-1)[..., 0]
-    counts = np.take_along_axis(counts, k, axis=-1)[..., 0]
-    return ModeResult(modes[()], counts[()])
+    modes = xp.take_along_axis(y, k, axis=-1)[..., 0]
+    counts = xp.take_along_axis(counts, k, axis=-1)[..., 0]
+    modes = modes[()] if modes.ndim == 0 else modes
+    counts = counts[()] if counts.ndim == 0 else counts
+    return ModeResult(modes, counts)
 
 
 def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
@@ -867,7 +877,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
         # Possible loss of precision for int types
         res = xp_promote(res, force_floating=True, xp=xp)
         res = xp.where(invalid, xp.nan, res)
-    
+
     return res[()] if res.ndim == 0 else res
 
 
