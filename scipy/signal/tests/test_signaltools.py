@@ -1406,8 +1406,7 @@ class TestResample:
                       padtype='mean', cval=10)
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2, 1))
-        sig2 = xp.asarray(sig2, dtype=xp.float64)
+        sig2 = xp.tile(xp.arange(160, dtype=xp.float64), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert win.shape == (160,)
 
