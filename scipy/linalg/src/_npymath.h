@@ -2,6 +2,7 @@
  * Helpers for dealing with npy_cdouble/npy_cfloat types.
  */
 #pragma once
+#include <iostream>
 #include "numpy/npy_math.h"
 
 namespace _numpymath{
@@ -51,6 +52,18 @@ inline double real_part(double value){ return value; }
 inline float real_part(npy_cfloat value){ return npy_crealf(value); }
 inline double real_part(npy_cdouble value){return npy_creal(value); }
 
+
+/*
+ * Debug helper: print out an npy_{cfloat,cdouble} value
+ */
+std::ostream& operator<<(std::ostream& os, npy_cfloat x) {
+    os << "(" << npy_crealf(x) << ", " << npy_cimagf(x) << ")";
+    return os;
+}
+std::ostream& operator<<(std::ostream& os, npy_cdouble x) {
+    os << "(" << npy_creal(x) << ", " << npy_cimag(x) << ")";
+    return os;
+}
 
 
 /* 

@@ -1,9 +1,35 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <iostream>
-#include <limits>
+#include <climits>
 #include <cassert>
 #include "_batched_linalg.h"
+
+
+/*
+ * Basic checks: make sure `obj` is a LAPACK-compatible array
+ */
+static PyArrayObject*
+ensure_array(PyObject *obj)
+{
+    if (!PyArray_CheckExact(obj)){
+        return NULL;
+    }
+
+    PyArrayObject *arr = (PyArrayObject *)obj;
+    int typenum = PyArray_TYPE(arr);
+
+    bool dtype_ok = (typenum == NPY_FLOAT)
+                     || (typenum == NPY_DOUBLE)
+                     || (typenum == NPY_CFLOAT)
+                     || (typenum == NPY_CDOUBLE);
+    if(!dtype_ok || !PyArray_ISBEHAVED(arr)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
+        return NULL;
+    }
+
+    return arr;
+}
 
 
 static PyObject*
@@ -15,35 +41,26 @@ py_inv(PyObject *self, PyObject *args)
     if(!PyArg_ParseTuple(args, "O|p", &py_a, &overwrite_a)) {
         return NULL;
     }
-    if (!PyArray_CheckExact(py_a)){
+
+    PyArrayObject *a = ensure_array(py_a);
+    if(a == NULL) {
         return NULL;
     }
-    // XXX: check NDIM, dtypes
 
+    overwrite_a = overwrite_a
+                  && PyArray_ISWRITEABLE(a)
+                  && (PyArray_NDIM(a) == 2) && (PyArray_IS_F_CONTIGUOUS(a));
 
-    PyArrayObject *a = (PyArrayObject *)py_a;
     PyArrayObject *a_inv;
 
     /*
         8. check LAPACK info, bail out : raise or warn or quiet (currently, the latter)
-        9. checks/asserts: m, n > 0, lda >= n etc
-       10. overwrite_a related checks: flags etc, move from Python to here.
        11. Error handling. Make it talk to np.errstate?
-
      */
 
     npy_intp ndim = PyArray_NDIM(a);
     npy_intp *shape = PyArray_SHAPE(a);
     int typenum = PyArray_TYPE(a);
-
-    bool dtype_ok = ((typenum == NPY_FLOAT)
-                      || (typenum == NPY_DOUBLE)
-                      || (typenum == NPY_CFLOAT)
-                      || (typenum == NPY_CDOUBLE));
-    if(!dtype_ok){
-        PyErr_SetString(PyExc_TypeError, "Incompatible dtype.");
-        return NULL;
-    }
 
     if(!overwrite_a) {
         /* Allocate the result */
@@ -53,11 +70,12 @@ py_inv(PyObject *self, PyObject *args)
             return NULL;
         };
     } else {
-        // XXX: check flags/strides
+        /* Reuse py_a's memory buffer. */
         a_inv = a;
+        Py_INCREF(py_a);
     }
 
-    int status = -1;
+    long long status = -1;
     switch(typenum) {
     case(NPY_FLOAT) : status=inv_loop<float>(a, a_inv); break;
     case(NPY_DOUBLE) : status=inv_loop<double>(a, a_inv); break;
@@ -68,21 +86,22 @@ py_inv(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (status == -101){
-        // memory error
-        if(!overwrite_a) {
-            // hey garbage collector
-            Py_DECREF(a_inv);
-        }
-        else {
-            // XXX: LinalgError
-            PyErr_Format(PyExc_ValueError, "A singular matrix. LAPACK error code is %d", status);
-        }
-        return NULL;
+    if (status == 0) {
+        return (PyObject *)a_inv;
     }
 
-    return (PyObject *)a_inv;
+    // some error occured
+    if ((status == LLONG_MIN) && overwrite_a){
+        // memory error; inverse was not computed
+        Py_DECREF(py_a);
+    }
+    else {
+        // XXX: LinalgError
+        PyErr_Format(PyExc_ValueError,
+                     "A singular matrix. LAPACK error code is %ll", status);
+     }
 
+     return NULL;
 }
 
 

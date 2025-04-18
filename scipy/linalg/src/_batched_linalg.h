@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include <limits>
+#include <climits>
 #include <cassert>
 #include "numpy/arrayobject.h"
 #include "npy_cblas.h"
@@ -93,7 +94,7 @@ struct iter_data_t
         /* parroted from sqrtm*/
         npy_intp offset = 0;
         npy_intp temp_idx = idx;
-        for (int i = ndim - 3; i >= 0; i--) {
+        for (npy_intp i = ndim - 3; i >= 0; i--) {
             offset += (temp_idx % shape[i]) * strides[i];
             temp_idx /= shape[i];
         }
@@ -172,7 +173,7 @@ invert_slice(getrf_data_t<T>& getrf_data, getri_data_t<T>& getri_data) {
  *
  * Return value is:
  *  - 0 on success;
- *  - -101 on a memory error;
+ *  - LLONG_MIN on a memory error;
  *  - LAPACK info variable on a LAPACK error
  */
 template<typename T>
@@ -186,7 +187,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      */
     bool overwrite_a = (arr == arr_inv);
 
-    int status;
+    long long status;
     T *ret_data = (T *)PyArray_DATA(arr_inv);
 
     /*
@@ -232,7 +233,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
 
     if ((a == NULL) || (ipiv == NULL) || (work == NULL)) {
         PyErr_NoMemory();
-        status = -101;
+        status = LLONG_MIN;
         goto done;
     }
 
@@ -253,16 +254,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      * `overwrite_a=True` : 2D only, no looping, no copying.
      */
     if(overwrite_a){
-
         status = invert_slice(getrf_data, getri_data);
-
-        if(status != 0) {
-            // XXX python C API 101: do we INCREF `arr` if we return with an error?
-            // XXX raise a LinalgError, not ValueError
-            PyErr_SetString(PyExc_ValueError, "Singular matrix.");
-            goto done;
-        }
-        Py_INCREF(arr);
         goto done;
     }
 
@@ -279,9 +271,6 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
 
         if (status != 0){
             // Either GETRF or GETRI failed.
-            // XXX: give a more specific error message?
-            std::cout << "problem at idx=" << idx << "\n";
-
             nan_matrix(ret_data + idx*n*n, n, n);
         }
 
