@@ -115,9 +115,7 @@ struct iter_data_t
  ***********************************/
 
 /*
- * Invert a 2D slice:
- *   - Input slice is in `getrf_data.a`.
- *   - The result is in `getri_data.a`.
+ * Invert a 2D slice.
  *
  * Return is 0 on success; on failure, return the failing operation's
  * `info` variable.
@@ -125,24 +123,18 @@ struct iter_data_t
  */
 template<typename T>
 int
-invert_slice(getrf_data_t<T>& getrf_data, getri_data_t<T>& getri_data) {
+invert_slice(CBLAS_INT N, T *A, CBLAS_INT lda, CBLAS_INT *ipiv, T *work, CBLAS_INT lwork) {
+    CBLAS_INT info;
 
     // factorize
-    call_getrf(getrf_data);
-
-    if (getrf_data.info != 0) {
-        return getrf_data.info;
+    GETRF(&N, &N, A, &lda, ipiv, &info);
+    if (info != 0) {
+        return info;
     }
 
-    // prepare the data for the GETRI call; other getri_data members do not change
-    // between iterations.
-    getri_data.a = getrf_data.a;
-    getri_data.ipiv = getrf_data.ipiv;
-
     // compute the inverse
-    call_getri(getri_data);
-
-    return getri_data.info;
+    GETRI(&N, A, &lda, ipiv, work, &lwork, &info);
+    return info;
 }
 
 
@@ -183,6 +175,8 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      *
      */
     bool overwrite_a = (arr == arr_inv);
+
+    // looping/output variables
     bool all_failed=true;
     long long status=0, is_ok;
     T *ret_data = (T *)PyArray_DATA(arr_inv);
@@ -193,20 +187,16 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
     iter_data_t iter_data(arr);
     npy_intp n = iter_data.n;    // core dimensions are (n, n)
 
-    /*
-     * Prepare the data for calling LAPACK.
-     */
-    getrf_data_t<T> getrf_data((fortran_int)n, (fortran_int)n);
-    getri_data_t<T> getri_data(getrf_data);
-
     /* 
      * Workspace query. GETRI calculates this by passing LWORK = -1.
      * As query is meant to get optimal work size and not for actual decomposition,
      * no need to pass matrices.
      */
+    CBLAS_INT N=(CBLAS_INT)n, lda=N, lwork=-1;
+    CBLAS_INT info;
     T wrk;
-    getri_data.work = &wrk;
-    call_getri(getri_data);
+
+    GETRI(&N, NULL, &lda, NULL, &wrk, &lwork, &info);
 
     /*
      * The factor of 1.01 here mirrors 
@@ -216,34 +206,23 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      * https://github.com/scipy/scipy/commit/dfb543c147c
      * to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
      */
-    fortran_int lwork = (fortran_int)(1.01 * real_part(wrk));
+    lwork = (CBLAS_INT)(1.01 * real_part(wrk));
 
-    // Finally, allocate work and other arrays.
-    T *a = NULL;
+    // Allocate work and other arrays.
+    T *A;
     if (overwrite_a) {
-        a = (T *)PyArray_DATA(arr_inv);
+        A = (T *)PyArray_DATA(arr_inv);
     } else {
-        a = (T *)malloc(n*n*sizeof(T));
+        A = (T *)malloc(n*n*sizeof(T));
     }
-    fortran_int *ipiv = (fortran_int *)malloc(n*sizeof(fortran_int));  
+    CBLAS_INT *ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));  
     T *work = (T *)malloc(lwork*sizeof(T));
 
-    if ((a == NULL) || (ipiv == NULL) || (work == NULL)) {
+    if ((A == NULL) || (ipiv == NULL) || (work == NULL)) {
         PyErr_NoMemory();
         status = LLONG_MIN;
         goto done;
     }
-
-    /*
-     * Finish setting up the LAPACK call helpers, `getrf_data` and `getri_data`.
-     */
-    getrf_data.a = a;
-    getrf_data.ipiv = ipiv;
-
-    getri_data.a = a;
-    getri_data.ipiv = ipiv;
-    getri_data.work = work;   
-    getri_data.lwork = lwork; 
 
     /* Finally, proceed to inverting the input matrix */
 
@@ -251,7 +230,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      * `overwrite_a=True` : 2D only, no looping, no copying.
      */
     if(overwrite_a){
-        status = invert_slice(getrf_data, getri_data);
+        status = invert_slice(N, A, lda, ipiv, work, lwork);
         goto done;
     }
 
@@ -261,15 +240,15 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
     for(npy_intp idx=0; idx < iter_data.outer_size; idx++) {
 
         // fill the buffer with the current slice
-        iter_data.copy_slice(idx, getrf_data.a);
+        iter_data.copy_slice(idx, A);
 
         // call LAPACK on the current slice
-        is_ok = invert_slice(getrf_data, getri_data);
+        is_ok = invert_slice(N, A, lda, ipiv, work, lwork);
 
         all_failed &= (is_ok != 0);
         if(is_ok == 0) {
             // copy to the output buffer, swap CF
-            swap_cf(getri_data.a, ret_data + idx*n*n, n, n, n);
+            swap_cf(A, ret_data + idx*n*n, n, n, n);
         }
         else {
             // Either GETRF or GETRI failed.
@@ -282,7 +261,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
 
  done:
     if (!overwrite_a) {
-        free(a);
+        free(A);
     }
     free(ipiv);
     free(work);

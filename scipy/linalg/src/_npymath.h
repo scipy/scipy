@@ -2,6 +2,7 @@
  * Helpers for dealing with npy_cdouble/npy_cfloat types.
  */
 #pragma once
+#include "Python.h"
 #include <iostream>
 #include "numpy/npy_math.h"
 
