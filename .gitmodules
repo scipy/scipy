@@ -35,4 +35,3 @@
 [submodule "subprojects/xsf"]
 	path = subprojects/xsf
 	url = https://github.com/scipy/xsf.git
-	shallow = true
