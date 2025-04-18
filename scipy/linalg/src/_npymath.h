@@ -15,12 +15,14 @@ template<typename T> struct numeric_limits {};
 
 template<>
 struct numeric_limits<float>{
+    static constexpr double zero = 0.0f;
     static constexpr double one = 1.0f;
     static constexpr float nan = std::numeric_limits<float>::quiet_NaN();
 };
 
 template<>
 struct numeric_limits<double>{
+    static constexpr double zero = 0.0;
     static constexpr double one = 1.0;
     static constexpr double nan = std::numeric_limits<double>::quiet_NaN();
 };
@@ -28,6 +30,7 @@ struct numeric_limits<double>{
 
 template<>
 struct numeric_limits<npy_cfloat>{
+    static constexpr npy_cfloat zero = {0.0f, 0.0f};
     static constexpr npy_cfloat one = {1.0f, 0.0f};
     static constexpr npy_cfloat nan = {std::numeric_limits<float>::quiet_NaN(),
                                        std::numeric_limits<float>::quiet_NaN()};
@@ -35,6 +38,7 @@ struct numeric_limits<npy_cfloat>{
 
 template<>
 struct numeric_limits<npy_cdouble>{
+    static constexpr npy_cdouble zero = {0.0, 0.0};
     static constexpr npy_cdouble one = {1.0, 0.0};
     static constexpr npy_cdouble nan = {std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN()};
@@ -77,11 +81,12 @@ static inline void
 identity_matrix(typ *matrix, ptrdiff_t n)
 {
     ptrdiff_t i;
-    /* in IEEE floating point, zeroes are represented as bitwise 0 */
-    memset((void *)matrix, 0, n*n*sizeof(typ));
 
-    for (i = 0; i < n; ++i)
-    {
+    for(i=0; i < n*n; ++i) {
+        *(matrix + i) = numeric_limits<typ>::zero;
+    }
+
+    for (i = 0; i < n; ++i) {
         *matrix = numeric_limits<typ>::one;
         matrix += n+1;
     }
