@@ -1178,6 +1178,28 @@ class TestInv:
         assert a_inv.shape == (2, 3, 2, 2)
         assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
 
+    @parametrize_overwrite_arg
+    def test_singular(self, overwrite_kw):
+        # 2D case: A singular matrix: raise
+
+        with assert_raises(LinAlgError):
+            inv(np.ones((2, 2)))
+
+        # batched case: If all slices are singlar, raise
+        with assert_raises(LinAlgError):
+            inv(np.ones((3, 2, 2)))
+
+        # if some of the slices are singular and some are not: 
+        # - singular slices are filled with nans
+        # - non-singular slices are inverted
+        # - there is no error
+        # XXX: shall we make this behavior configurable somehow?
+        a = np.stack((np.ones((2, 2), dtype=complex), np.arange(4).reshape(2, 2)))
+        a_inv = inv(a)
+
+        assert np.isnan(a_inv[0, ...]).all()
+        assert_allclose(a_inv[1, ...] @ a[1, ...],  np.eye(2), atol=1e-14)
+
 
 class TestDet:
     def setup_method(self):

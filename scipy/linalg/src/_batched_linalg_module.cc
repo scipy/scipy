@@ -98,7 +98,7 @@ py_inv(PyObject *self, PyObject *args)
     else {
         // XXX: LinalgError
         PyErr_Format(PyExc_ValueError,
-                     "A singular matrix. LAPACK error code is %ll", status);
+                     "A singular matrix. getri/getrf error code is %lld", status);
      }
 
      return NULL;

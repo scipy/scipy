@@ -1242,7 +1242,12 @@ def inv(a, overwrite_a=False, check_finite=True):
         a1 = a1.copy()
 
     # a1 is well behaved, invert it.
-    inv_a = _batched_linalg.inv(a1, overwrite_a)
+    try:
+        inv_a = _batched_linalg.inv(a1, overwrite_a)
+    except ValueError as e:
+        # reraise a LinAlgError. It'd be best to raise it in a first place, from C
+        raise LinAlgError(*e.args)
+
     return inv_a
 
 

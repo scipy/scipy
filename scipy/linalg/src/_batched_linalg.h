@@ -183,8 +183,8 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
      *
      */
     bool overwrite_a = (arr == arr_inv);
-
-    long long status;
+    bool all_failed=true;
+    long long status=0, is_ok;
     T *ret_data = (T *)PyArray_DATA(arr_inv);
 
     /*
@@ -264,20 +264,21 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
         iter_data.copy_slice(idx, getrf_data.a);
 
         // call LAPACK on the current slice
-        status = invert_slice(getrf_data, getri_data);
+        is_ok = invert_slice(getrf_data, getri_data);
 
-        if (status != 0){
+        all_failed &= (is_ok != 0);
+        if(is_ok == 0) {
+            // copy to the output buffer, swap CF
+            swap_cf(getri_data.a, ret_data + idx*n*n, n, n, n);
+        }
+        else {
             // Either GETRF or GETRI failed.
             nan_matrix(ret_data + idx*n*n, n, n);
+            status = is_ok;
         }
-
-        // copy to the output buffer, swap CF; XXX: can use dcopy from BLAS?
-        swap_cf(getri_data.a, ret_data + idx*n*n, n, n, n);
     }
 
-    // XXX collect the statuses from iterations, make it talk to np.errstate?
-    status = 0;
-
+    // XXX make it talk to np.errstate?
 
  done:
     if (!overwrite_a) {
@@ -285,7 +286,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
     }
     free(ipiv);
     free(work);
-    return status;
+    return all_failed ? status : 0;
 
 };
 
