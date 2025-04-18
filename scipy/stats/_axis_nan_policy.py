@@ -508,7 +508,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
             # Extract the things we need here
             try:  # if something is missing
-                atleast_1d = np.atleast_1d  if is_numpy(xp) else lambda x: x
+                atleast_1d = (np.atleast_1d if is_numpy(xp)
+                              else lambda x: xpx.atleast_nd(xp.asarray(x), ndim=1))
                 samples = [atleast_1d(kwds.pop(param))
                            for param in (params[:n_samp] + kwd_samp)]
             except KeyError:  # let the function raise the right error
@@ -554,7 +555,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             axis = -1  # work over the last axis
 
             if not is_numpy(xp):
-                res = hypotest_fun_in(*samples, **kwds)
+                res = hypotest_fun_out(*samples, axis=axis, **kwds)
                 res = result_to_tuple(res, n_out)
                 res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)

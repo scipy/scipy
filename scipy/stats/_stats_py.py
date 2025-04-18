@@ -630,9 +630,9 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
-        mask |= (a < lower_limit) if lower_include else a <= lower_limit
+        mask = mask | ((a < lower_limit) if lower_include else a <= lower_limit)
     if upper_limit is not None:
-        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+        mask = mask | ((a > upper_limit) if upper_include else a >= upper_limit)
     lazy = is_lazy_array(mask)
     if not lazy and xp.all(mask):
         raise ValueError("No array values within given limits")
@@ -1018,7 +1018,8 @@ def _moment_outputs(kwds, default_order=1):
 def _moment_result_object(*args):
     if len(args) == 1:
         return args[0]
-    return np.asarray(args)
+    xp = array_namespace(*args)
+    return xp.stack(args)
 
 
 # When `order` is array-like with size > 1, moment produces an *array*
@@ -1026,7 +1027,7 @@ def _moment_result_object(*args):
 # separate outputs. It is important to make the distinction between
 # separate outputs when adding the reduced axes back (`keepdims=True`).
 def _moment_tuple(x, n_out):
-    return tuple(x) if n_out > 1 else (x,)
+    return tuple(x[i, ...] for i in range(x.shape[0])) if n_out > 1 else (x,)
 
 
 @xp_capabilities()

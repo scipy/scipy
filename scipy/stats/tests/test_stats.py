@@ -4018,7 +4018,7 @@ class TestStudentTest:
         # check nan policy
         if not is_numpy(xp):
             x = xp.asarray([1., 2., 3., xp.nan])
-            message = "Use of `nan_policy` and `keepdims`..."
+            message = "Use of `nan_policy`..."
             with pytest.raises(NotImplementedError, match=message):
                 stats.ttest_1samp(x, 1., nan_policy='omit')
             return
@@ -8330,9 +8330,7 @@ class TestCombinePvalues:
         xp_assert_equal(res.pvalue, res[1])
 
     @pytest.mark.parametrize("method", methods)
-    # axis=None is currently broken for array API; will be handled when
-    # axis_nan_policy decorator is updated
-    @pytest.mark.parametrize("axis", [0, 1])
+    @pytest.mark.parametrize("axis", [0, 1, None])
     def test_axis(self, method, axis, xp):
         rng = np.random.default_rng(234892349810482)
         x = xp.asarray(rng.random(size=(2, 10)))
@@ -9775,14 +9773,12 @@ def test_chk_asarray(xp):
 
 
 @skip_xp_backends('numpy', reason='These parameters *are* compatible with NumPy')
-def test_axis_nan_policy_keepdims_nanpolicy(xp):
+def test_axis_nan_policy_nanpolicy(xp):
     # this test does not need to be repeated for every function
     # using the _axis_nan_policy decorator. The test is here
     # rather than in `test_axis_nanpolicy.py` because there is
     # no reason to run those tests on an array API CI job.
     x = xp.asarray([1, 2, 3, 4])
-    message = "Use of `nan_policy` and `keepdims`..."
+    message = "Use of `nan_policy`..."
     with pytest.raises(NotImplementedError, match=message):
         stats.skew(x, nan_policy='omit')
-    with pytest.raises(NotImplementedError, match=message):
-        stats.skew(x, keepdims=True)
