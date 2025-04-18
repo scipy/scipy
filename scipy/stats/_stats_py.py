@@ -484,16 +484,18 @@ def _mode_result(mode, count):
     # When a slice is empty, `_axis_nan_policy` automatically produces
     # NaN for `mode` and `count`. This is a reasonable convention for `mode`,
     # but `count` should not be NaN; it should be zero.
-    i = np.isnan(count)
+    xp = array_namespace(mode, count)
+    i = xp.isnan(count)
     if i.shape == ():
-        count = np.asarray(0, dtype=count.dtype)[()] if i else count
+        count = xp.asarray(0, dtype=count.dtype)[()] if i else count
     else:
-        count[i] = 0
+        count = xpx.at(count)[i].set(0)
     return ModeResult(mode, count)
 
 
 @xp_capabilities(skip_backends=[('dask', "can't compute chunk size"),
-                                ('cupy', "data-apis/array-api-compat#312")])
+                                ('cupy', "data-apis/array-api-compat#312"),
+                                ('torch', "data-apis/array-api-compat#292")])
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -588,7 +590,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     # Get linear integer indices of these elements in a raveled array
     indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
     # The difference between integer indices is the number of repeats
-    counts = xp.diff(indices, append=xp.asarray(xp_size(y), dtype=indices.dtype))
+    append = xp.full(indices.shape[:-1] + (1,), xp_size(y), dtype=indices.dtype)
+    counts = xp.diff(indices, append=append)
     # Now we form an array of `counts` corresponding with each element of `y`...
     counts = xp.reshape(xp.repeat(counts, counts), y.shape)
     # ... so we can get the argmax of *each slice* separately.

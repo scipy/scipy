@@ -1045,6 +1045,7 @@ def test_masked_dtype():
     assert stats.gmean(a).dtype == np.float32
 
 
+@skip_xp_invalid_arg
 def test_masked_stat_1d():
     # basic test of _axis_nan_policy_factory with 1D masked sample
     males = [19, 22, 16, 29, 24]

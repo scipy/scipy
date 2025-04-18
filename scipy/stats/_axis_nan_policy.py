@@ -4,12 +4,15 @@
 # that support `axis` and `nan_policy`, including a decorator that
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
+import math
 import warnings
 import numpy as np
 from functools import wraps
+from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import array_namespace, is_numpy
+import scipy._lib.array_api_extra as xpx
 
 import inspect
 
@@ -268,12 +271,12 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
-def _add_reduced_axes(res, reduced_axes, keepdims):
+def _add_reduced_axes(res, reduced_axes, keepdims, xp=np):
     """
     Add reduced axes back to all the arrays in the result object
     if keepdims = True.
     """
-    return ([np.expand_dims(output, reduced_axes) 
+    return ([xpx.expand_dims(output, axis=reduced_axes)
              if not isinstance(output, int) else output for output in res]
             if keepdims else res)
 
@@ -438,12 +441,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             else:
                 temp = args[0]
 
-            if not is_numpy(array_namespace(temp)):
-                msg = ("Use of `nan_policy` and `keepdims` "
-                       "is incompatible with non-NumPy arrays.")
-                if 'nan_policy' in kwds or 'keepdims' in kwds:
-                    raise NotImplementedError(msg)
-                return hypotest_fun_in(*args, **kwds)
+            xp = array_namespace(temp)
+            if not is_numpy(xp) and 'nan_policy' in kwds:
+                msg = ("Use of `nan_policy` is incompatible with non-NumPy arrays.")
+                raise NotImplementedError(msg)
 
             # We need to be flexible about whether position or keyword
             # arguments are used, but we need to make sure users don't pass
@@ -507,7 +508,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
             # Extract the things we need here
             try:  # if something is missing
-                samples = [np.atleast_1d(kwds.pop(param))
+                atleast_1d = np.atleast_1d  if is_numpy(xp) else lambda x: x
+                samples = [atleast_1d(kwds.pop(param))
                            for param in (params[:n_samp] + kwd_samp)]
             except KeyError:  # let the function raise the right error
                 # might need to revisit this if required arg is not a "sample"
@@ -520,7 +522,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             del args  # avoid the possibility of passing both `args` and `kwds`
 
             # convert masked arrays to regular arrays with sentinel values
-            samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
+            if is_numpy(xp):
+                samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
             # standardize to always work along last axis
             reduced_axes = axis
@@ -528,26 +531,34 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 if samples:
                     # when axis=None, take the maximum of all dimensions since
                     # all the dimensions are reduced.
-                    n_dims = np.max([sample.ndim for sample in samples])
+                    n_dims = int(np.max([xp.asarray(sample).ndim
+                                         for sample in samples]))
                     reduced_axes = tuple(range(n_dims))
-                samples = [np.asarray(sample.ravel()) for sample in samples]
+                samples = [xp_ravel(sample) for sample in samples]
             else:
                 # don't ignore any axes when broadcasting if paired
                 samples = _broadcast_arrays(samples, axis=axis if not paired else None)
-                axis = np.atleast_1d(axis)
+                axis = (axis,) if np.isscalar(axis) else axis
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
-                samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
+                samples = [xp.moveaxis(sample, axis, tuple(range(-len(axis), 0)))
                            for sample in samples]
                 shapes = [sample.shape for sample in samples]
                 # New shape is unchanged for all axes _not_ in `axis`
                 # At the end, we append the product of the shapes of the axes
                 # in `axis`. Appending -1 doesn't work for zero-size arrays!
-                new_shapes = [shape[:-n_axes] + (np.prod(shape[-n_axes:]),)
+                new_shapes = [shape[:-n_axes] + (math.prod(shape[-n_axes:]),)
                               for shape in shapes]
-                samples = [sample.reshape(new_shape)
+                samples = [xp.reshape(sample, new_shape)
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
+
+            if not is_numpy(xp):
+                res = hypotest_fun_in(*samples, **kwds)
+                res = result_to_tuple(res, n_out)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
+                return tuple_to_result(*res)
+
             NaN = _get_nan(*samples) if samples else np.nan
 
             # if axis is not needed, just handle nan_policy and return
