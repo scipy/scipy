@@ -6182,10 +6182,7 @@ class TestTTestInd:
         assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901),
                         atol=1e-15)
 
-    # internal dask warning we can't do anything about
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
+    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_empty_1d_returns_nan(self, xp):
         # Two empty inputs should return a TtestResult containing nan
         # for both values.
@@ -6199,10 +6196,7 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    # internal dask warning we can't do anything about
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
+    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     @pytest.mark.parametrize('b, expected_shape',
                             [(np.empty((1, 5, 0)), (3, 5)),
                             (np.empty((1, 0, 0)), (3, 0))])
@@ -6221,6 +6215,7 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, expected_value)
         xp_assert_equal(res.pvalue, expected_value)
 
+    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_nonaxis_size_zero(self, xp):
         # In this test, the length of the axis dimension is nonzero,
         # but one of the nonaxis dimensions has length 0.  Check that
@@ -6233,6 +6228,7 @@ class TestTTestInd:
         assert res.statistic.shape ==(5, 0)
         assert res.pvalue.shape == (5, 0)
 
+    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_nonaxis_size_zero_different_lengths(self, xp):
         # In this test, the length of the axis dimension is nonzero,
         # and that size is different in the two inputs,
