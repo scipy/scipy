@@ -55,7 +55,7 @@ def from_matrix(matrix: Array) -> Array:
             f"{matrix[ind, ...]}."
         )
     mask = xp.broadcast_to(mask[..., None, None], mask.shape + (3, 3))
-    matrix = xp.where(mask, xp.asarray(xp.nan, device=device(matrix)), matrix)
+    matrix = xp.where(mask, xp.nan, matrix)
 
     gramians = matrix @ xp.matrix_transpose(matrix)
     # TODO: We need to orthogonalize only the non-orthogonal matrices, but jax does not support
@@ -238,7 +238,7 @@ def from_davenport(
     if not is_lazy_array(axes_not_orthogonal) and xp.any(axes_not_orthogonal):
         raise ValueError("Consecutive axes must be orthogonal.")
 
-    axes = xp.where(axes_not_orthogonal, xp.asarray(xp.nan, device=device(axes)), axes)
+    axes = xp.where(axes_not_orthogonal, xp.nan, axes)
     angles, single = _format_angles(angles, degrees, num_axes)
 
     dim_q = (4) if single else (angles.shape[0], 4)
@@ -480,7 +480,7 @@ def mean(quat: Array, weights: Array | None = None) -> Array:
         )
     # DECISION: We cannot check for negative weights because jit code needs to be non-branching. We
     # return NaN instead
-    weights = xp.where(weights < 0, xp.asarray(xp.nan, device=device(quat)), weights)
+    weights = xp.where(weights < 0, xp.nan, weights)
 
     # Make sure we can transpose quat
     quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
@@ -644,9 +644,7 @@ def align_vectors(
         negative_weights = weights < 0
         if not is_lazy_array(negative_weights) and xp.any(negative_weights):
             raise ValueError("`weights` may not contain negative values")
-        weights = xp.where(
-            negative_weights, xp.asarray(xp.nan, device=device(a)), weights
-        )
+        weights = xp.where(negative_weights, xp.nan, weights)
 
     # For the special case of a single vector pair, we use the infinite
     # weight code path
@@ -663,7 +661,7 @@ def align_vectors(
                 "infinite weight or one vector pair"
             )
 
-    weights = xp.where(n_inf > 1, xp.asarray(xp.nan, device=device(a)), weights)
+    weights = xp.where(n_inf > 1, xp.nan, weights)
 
     inf_branch = xp.any(weight_is_inf, axis=-1)
     # DECISION: We cannot compute both branches for all frameworks. There are two main reasons:
@@ -758,12 +756,8 @@ def _align_vectors_fixed(
 
     # We cannot error out on zero length vectors. We set the norm to NaN to avoid division by
     # zero and mark the result as invalid.
-    a_pri_norm = xp.where(
-        a_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), a_pri_norm
-    )
-    b_pri_norm = xp.where(
-        b_pri_norm == 0, xp.asarray(xp.nan, device=device(a)), b_pri_norm
-    )
+    a_pri_norm = xp.where(a_pri_norm == 0, xp.nan, a_pri_norm)
+    b_pri_norm = xp.where(b_pri_norm == 0, xp.nan, b_pri_norm)
 
     a_pri = a_pri / a_pri_norm
     b_pri = b_pri / b_pri_norm
@@ -861,7 +855,7 @@ def _align_vectors_fixed(
     rssd = xp.sqrt(xp.sum(weights_inf_zero @ (a - a_est) ** 2))
 
     mask = xp.any(xp.isnan(weights), axis=-1)
-    q_opt = xp.where(mask, xp.asarray(xp.nan, device=device(q_opt)), q_opt)
+    q_opt = xp.where(mask, xp.nan, q_opt)
     return q_opt, rssd, xp.asarray(xp.nan, device=device(q_opt))
 
 
@@ -888,7 +882,7 @@ def _normalize_quaternion(quat: Array) -> Array:
     quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True)
     if not is_lazy_array(quat_norm) and xp.any(quat_norm == 0):
         raise ValueError("Found zero norm quaternions in `quat`.")
-    quat = xp.where(quat_norm == 0, xp.asarray([xp.nan], device=device(quat)), quat)
+    quat = xp.where(quat_norm == 0, xp.nan, quat)
     return quat / quat_norm
 
 

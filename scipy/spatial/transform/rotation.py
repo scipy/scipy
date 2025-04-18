@@ -2430,11 +2430,6 @@ class Rotation:
         frameworks that may not support double precision (e.g. jax by default).
         """
         xp = array_namespace(quat)
-        quat = xp.asarray(quat)
-        # TODO: Remove this once we properly support broadcasting
-        if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
-            raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
-
         # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
         # implementation, but it might make more sense to preserve float32 if passed in by the user.
         # This would make the behavior more consistent with the Array API backend, but requires
@@ -2443,7 +2438,11 @@ class Rotation:
             dtype = xp.float64
         else:
             dtype = xp_result_type(quat, force_floating=True, xp=xp)
-        return xp.asarray(quat, dtype=dtype)
+        quat = xp.asarray(quat, dtype=dtype)
+        # TODO: Remove this once we properly support broadcasting
+        if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
+            raise ValueError(f"Expected `quat` to have shape (N, 4), got {quat.shape}.")
+        return quat
 
     def __repr__(self):
         m = f"{np.asarray(self.as_matrix())!r}".splitlines()
