@@ -615,15 +615,15 @@ class TestFirls:
         # now check the frequency response
         w, H = freqz(np.asarray(h), 1)
         w, H = xp.asarray(w), xp.asarray(H)
-        f = w/2/np.pi
+        f = w/2/xp.pi
         Hmag = xp.abs(H)
 
         # check that the pass band is close to unity
-        idx = (f > 0) & (f < a)
+        idx = xp.logical_and(f > 0, f < a)
         assert_array_almost_equal(Hmag[idx], xp.ones_like(Hmag[idx]), decimal=3)
 
         # check that the stop band is close to zero
-        idx = (f > 0.5 - a) & (f < 0.5)
+        idx = xp.logical_and(f > 0.5 - a, f < 0.5)
         assert_array_almost_equal(Hmag[idx], xp.zeros_like(Hmag[idx]), decimal=3)
 
     def test_compare(self, xp):

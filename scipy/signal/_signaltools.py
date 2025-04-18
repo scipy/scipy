@@ -2903,7 +2903,7 @@ def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
     if xp.isdtype(z.dtype, 'complex floating'):
         Z = sp_fft.fft(z)
     else:  # avoid calculating negative frequency bins for real signals:
-        dt = sp_fft.rfft(xp.reshape(z, (-1,))[:1]).dtype
+        dt = sp_fft.rfft(z[..., :1]).dtype
         Z = xp.zeros_like(z, dtype=dt)
         Z[..., :n//2 + 1] = sp_fft.rfft(z)
         if bp.start > 0:  # make signal analytic within bp_in band:
