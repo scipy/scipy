@@ -14,7 +14,6 @@ using namespace _numpymath;
 
 
 // parroted from sqrtm
-// XXX can probably be replaced by ?copy from BLAS
 template<typename T>
 inline void
 swap_cf(T* src, T* dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t n)
@@ -157,8 +156,6 @@ invert_slice(getrf_data_t<T>& getrf_data, getri_data_t<T>& getri_data) {
  * For the input array `arr`:
  *
  * - The caller must check that the dtype is LAPACK-compatible before calling this routine.
- * - The array is at least 3D (for a single 2D matrix, the caller must
-     insert an axis, e.g. `arr[None, ...]`).
  * - There are no restriction on the input array strides, this routine will handle
  *   them correctly.
  *
