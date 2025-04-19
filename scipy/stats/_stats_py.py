@@ -5617,8 +5617,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
       tau_c = 2 (P - Q) / (n**2 * (m - 1) / m)
 
     where P is the number of concordant pairs, Q the number of discordant
-    pairs, T the number of ties only in `x`, and U the number of ties only in
-    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
+    pairs, T the number of tied pairs only in `x`, and U the number of tied pairs only
+    in `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U. n is the total number of samples, and m is the
     number of unique values in either `x` or `y`, whichever is smaller.
 
