@@ -11,7 +11,8 @@ from functools import wraps
 from scipy._lib._array_api import xp_ravel
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import (array_namespace, is_numpy, xp_size, xp_copy,
+                                   xp_promote)
 import scipy._lib.array_api_extra as xpx
 
 import inspect
@@ -167,18 +168,18 @@ def _broadcast_concatenate(arrays, axis, paired=False):
     return res
 
 
-# TODO: add support for `axis` tuples
-def _remove_nans(samples, paired):
+def _remove_nans(samples, paired, xp=None):
     "Remove nans from paired or unpaired 1D samples"
     # potential optimization: don't copy arrays that don't contain nans
+    xp = array_namespace(*samples)
     if not paired:
-        return [sample[~np.isnan(sample)] for sample in samples]
+        return [sample[~xp.isnan(sample)] for sample in samples]
 
     # for paired samples, we need to remove the whole pair when any part
     # has a nan
-    nans = np.isnan(samples[0])
+    nans = xp.isnan(samples[0])
     for sample in samples[1:]:
-        nans = nans | np.isnan(sample)
+        nans = nans | xp.isnan(sample)
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
 
@@ -257,17 +258,18 @@ def _masked_arrays_2_sentinel_arrays(samples):
     return out_samples, sentinel
 
 
-def _check_empty_inputs(samples, axis):
+def _check_empty_inputs(samples, axis, xp=None):
     """
     Check for empty sample; return appropriate output for a vectorized hypotest
     """
+    xp = array_namespace(*samples)
     # if none of the samples are empty, we need to perform the test
-    if not any(sample.size == 0 for sample in samples):
+    if not any(xp_size(sample) == 0 for sample in samples):
         return None
     # otherwise, the statistic and p-value will be either empty arrays or
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
-    output = np.ones(output_shape) * _get_nan(*samples)
+    output = xp.full(output_shape, _get_nan(*samples))
     return output
 
 
@@ -433,19 +435,6 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
-            # For now, skip the decorator entirely if using array API. In the future,
-            # we'll probably want to use it for `keepdims`, `axis` tuples, etc.
-            if len(args) == 0:  # extract sample from `kwds` if there are no `args`
-                used_kwd_samples = list(set(kwds).intersection(set(kwd_samples)))
-                temp = used_kwd_samples[:1]
-            else:
-                temp = args[0]
-
-            xp = array_namespace(temp)
-            if not is_numpy(xp) and 'nan_policy' in kwds:
-                msg = ("Use of `nan_policy` is incompatible with non-NumPy arrays.")
-                raise NotImplementedError(msg)
-
             # We need to be flexible about whether position or keyword
             # arguments are used, but we need to make sure users don't pass
             # both for the same parameter. To complicate matters, some
@@ -508,10 +497,13 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
             # Extract the things we need here
             try:  # if something is missing
+                samples = [kwds.pop(param) for param in (params[:n_samp] + kwd_samp)]
+                xp = array_namespace(*samples)
+                samples = xp_promote(*samples, xp=xp)
+                samples = (samples,) if not isinstance(samples, tuple) else samples
                 atleast_1d = (np.atleast_1d if is_numpy(xp)
-                              else lambda x: xpx.atleast_nd(xp.asarray(x), ndim=1))
-                samples = [atleast_1d(kwds.pop(param))
-                           for param in (params[:n_samp] + kwd_samp)]
+                              else lambda x: xpx.atleast_nd(x, ndim=1))
+                samples = [atleast_1d(sample) for sample in samples]
             except KeyError:  # let the function raise the right error
                 # might need to revisit this if required arg is not a "sample"
                 hypotest_fun_in(*args, **kwds)
@@ -523,6 +515,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             del args  # avoid the possibility of passing both `args` and `kwds`
 
             # convert masked arrays to regular arrays with sentinel values
+            sentinel = None
             if is_numpy(xp):
                 samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
@@ -554,16 +547,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
 
-            if not is_numpy(xp):
-                res = hypotest_fun_out(*samples, axis=axis, **kwds)
-                res = result_to_tuple(res, n_out)
-                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
-                return tuple_to_result(*res)
-
-            NaN = _get_nan(*samples) if samples else np.nan
+            NaN = _get_nan(*samples) if samples else xp.nan
 
             # if axis is not needed, just handle nan_policy and return
-            ndims = np.array([sample.ndim for sample in samples])
+            ndims = np.array([sample.ndim for sample in samples])  # NumPy OK for ndims
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
                 if nan_policy != 'propagate' or override['nan_propagation']:
@@ -576,7 +563,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
                                           and override['nan_propagation']):
-                    res = np.full(n_out, NaN)
+                    res = xp.full(n_out, NaN)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -592,7 +579,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = np.full(n_out, NaN)
+                    res = xp.full(n_out, NaN)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -606,13 +593,24 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # only return empty output if zero sized input is too small.
             if (
                 empty_output is not None
-                and (is_too_small(samples, kwds) or empty_output.size == 0)
+                and (is_too_small(samples, kwds) or xp_size(empty_output) == 0)
             ):
-                if is_too_small(samples, kwds) and empty_output.size != 0:
+                if is_too_small(samples, kwds) and xp_size(empty_output) != 0:
                     warnings.warn(too_small_nd_not_omit, SmallSampleWarning,
                                   stacklevel=2)
-                res = [empty_output.copy() for i in range(n_out)]
+                res = [xp_copy(empty_output) for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return tuple_to_result(*res)
+
+            if not is_numpy(xp) and 'nan_policy' in kwds:
+                msg = ("Use of `nan_policy` is incompatible with multidimensional "
+                       "non-NumPy arrays.")
+                raise NotImplementedError(msg)
+
+            if not is_numpy(xp):
+                res = hypotest_fun_out(*samples, axis=axis, **kwds)
+                res = result_to_tuple(res, n_out)
+                res = _add_reduced_axes(res, reduced_axes, keepdims, xp=xp)
                 return tuple_to_result(*res)
 
             # otherwise, concatenate all samples along axis, remembering where
