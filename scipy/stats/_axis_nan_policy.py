@@ -269,7 +269,8 @@ def _check_empty_inputs(samples, axis, xp=None):
     # otherwise, the statistic and p-value will be either empty arrays or
     # arrays with NaNs. Produce the appropriate array and return it.
     output_shape = _broadcast_array_shapes_remove_axis(samples, axis)
-    output = xp.full(output_shape, _get_nan(*samples))
+    NaN = _get_nan(*samples)
+    output = xp.full(output_shape, xp.nan, dtype=NaN.dtype)
     return output
 
 
@@ -563,7 +564,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
                                           and override['nan_propagation']):
-                    res = xp.full(n_out, NaN)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -579,7 +580,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    res = xp.full(n_out, NaN)
+                    res = xp.full(n_out, xp.nan, dtype=NaN.dtype)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -641,7 +642,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if is_too_small(samples, kwds):
                         warnings.warn(too_small_nd_omit, SmallSampleWarning,
                                       stacklevel=4)
-                        return np.full(n_out, NaN)
+                        return np.full(n_out, xp.nan, dtype=NaN.dtype)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds), n_out)
 
             # Addresses nan_policy == "propagate"

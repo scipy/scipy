@@ -2851,6 +2851,13 @@ class TestMode:
             def __array__(self, dtype=None, copy=None):
                 return self._x.astype(object)
 
+            def __iter__(self):
+                # I don't know of a canonical way to determine whether an object should be
+                # coerced to a NumPy array or not. Currently, `xp_promote` checks whether
+                # they are iterable, and if so uses `_asarray` with whatever `xp` is. So
+                # for this to get coerced, it needs to be iterable.
+                return iter(self._x)
+
         with pytest.raises(TypeError, match=message):
             stats.mode(ArrLike(np.arange(3)))
         with pytest.raises(TypeError, match=message):
@@ -4000,6 +4007,7 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_2))
         xp_assert_close(p, xp.asarray(self.P1_2))
 
+    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     def test_onesample_nan_policy_propagate(self, xp):
         x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
@@ -4041,6 +4049,7 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_1))
 
     @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_1samp_ci_1d(self, xp, alternative):
         # test confidence interval method against reference values
@@ -5992,6 +6001,7 @@ class Test_ttest_CI:
     @pytest.mark.parametrize('equal_var', [False, True])
     @pytest.mark.parametrize('trim', [0, 0.2])
     @skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+    @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
     def test_confidence_interval(self, alternative, equal_var, trim, xp):
         if equal_var and trim:
             pytest.xfail('Discrepancy in `main`; needs further investigation.')
@@ -6382,6 +6392,7 @@ def test_ttest_1samp_new_omit(xp):
 
 @make_skip_xp_backends(stats.ttest_1samp)
 @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
+@skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
 def test_ttest_1samp_popmean_array(xp):
     # when popmean.shape[axis] != 1, raise an error
     # if the user wants to test multiple null hypotheses simultaneously,

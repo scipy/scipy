@@ -574,13 +574,17 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         NaN = _get_nan(a, xp=xp)
         return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
 
-    # if a.ndim == 1:
-    #     # vals, cnts = xp.unique(a, return_counts=True)  # desired NaN behavior
-    #     vals, cnts = xp.unique_counts(a)  # array API
-    #     modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
-    #     modes = modes[()] if modes.ndim == 0 else modes
-    #     counts = counts[()] if counts.ndim == 0 else counts
-    #     return ModeResult(modes, counts)
+    if a.ndim == 1:
+        vals, cnts = xp.unique_counts(a)
+        # in contrast with np.unique, `unique_counts` treats all NaNs as distinct,
+        # but we have always grouped them. Replace `cnts` corresponding with NaNs
+        # with the number of NaNs.
+        mask = xp.isnan(vals)
+        cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
+        modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
+        modes = modes[()] if modes.ndim == 0 else modes
+        counts = counts[()] if counts.ndim == 0 else counts
+        return ModeResult(modes, counts)
 
     # `axis` is always -1 after the `_axis_nan_policy` decorator
     y = xp.sort(a, axis=-1)
@@ -6030,9 +6034,10 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique non-NaN value
-    alternative = np.atleast_1d(alternative)  # can't index 0D object
-    alternative = alternative[np.isfinite(alternative)]
-    alternative = alternative[0] if alternative.size else np.nan
+    xp = array_namespace(statistic, pvalue)
+    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
+    alternative = alternative[xp.isfinite(alternative)]
+    alternative = alternative[0] if xp_size(alternative) else xp.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 
