@@ -510,11 +510,42 @@ class _IntegerInterval(_Interval):
 
     def __str__(self):
         a, b = self.endpoints
-        a = self.symbols.get(a, f"{a}")
-        b = self.symbols.get(b, f"{b}")
-        ap1 = f"{a} + 1" if isinstance(a, str) else f"{a + 1}"
-        bm1 = f"{b} - 1" if isinstance(b, str) else f"{b - 1}"
-        return f"{{{a}, {ap1}, ..., {bm1}, {b}}}"
+        a = self.symbols.get(a, a)
+        b = self.symbols.get(b, b)
+
+        a_str, b_str = isinstance(a, str), isinstance(b, str)
+        a_inf = a == r"-\infty" if a_str else np.isinf(a)
+        b_inf = b == r"\infty" if b_str else np.isinf(b)
+
+        # This doesn't work well for cases where ``a`` is floating point
+        # number large enough that ``nextafter(a, inf) > a + 1``, and
+        # similarly for ``b`` and nextafter(b, -inf). There may not be any
+        # distributions fit for SciPy where we would actually need to handle these
+        # cases though.
+        ap1 = f"{a} + 1" if a_str else f"{a + 1}"
+        bm1 = f"{b} - 1" if b_str else f"{b - 1}"
+
+        if not a_str and not b_str:
+            gap = b - a
+            if gap == 3:
+                return f"\\{{{a}, {ap1}, {bm1}, {b}\\}}"
+            if gap == 2:
+                return f"\\{{{a}, {ap1}, {b}\\}}"
+            if gap == 1:
+                return f"\\{{{a}, {b}\\}}"
+            if gap == 0:
+                return f"\\{{{a}\\}}"
+
+        if not a_inf and b_inf:
+            ap2 = f"{a} + 2" if a_str else f"{a + 2}"
+            return f"\\{{{a}, {ap1}, {ap2}, ...\\}}"
+        if a_inf and not b_inf:
+            bm2 = f"{b} - 2" if b_str else f"{b - 2}"
+            return f"\\{{{b}, {bm1}, {bm2}, ...\\}}"
+        if a_inf and b_inf:
+            return "\\{..., -2, -1, 0, 1, 2, ...\\}"
+
+        return f"\\{{{a}, {ap1}, ..., {bm1}, {b}\\}}"
 
 
 class _Parameter(ABC):
