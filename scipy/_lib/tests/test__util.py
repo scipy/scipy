@@ -352,7 +352,7 @@ class TestContainsNaN:
         # Integer arrays cannot contain NaN
         assert not _contains_nan(np.array([1, 2, 3]))
         assert not _contains_nan(np.array([[1, 2], [3, 4]]))
-        
+
         assert not _contains_nan(np.array([1., 2., 3.]))
         assert not _contains_nan(np.array([1., 2.j, 3.]))
         assert _contains_nan(np.array([1., 2.j, np.nan]))
@@ -384,14 +384,12 @@ class TestContainsNaN:
         x = xp.asarray(x0)
         assert not _contains_nan(x, nan_policy)
 
-        x = xpx.at(x)[1, 2, 1].set(np.nan)
+        x = xpx.at(x)[1, 2, 1].set(xp.nan)
 
         if nan_policy == 'raise':
             with pytest.raises(ValueError, match="The input contains nan values"):
                 _contains_nan(x, nan_policy)
-        elif nan_policy == 'omit' and not is_numpy(xp):
-            with pytest.raises(ValueError, match="nan_policy='omit' is incompatible"):
-                _contains_nan(x, nan_policy)
+        elif nan_policy == 'omit':
             assert _contains_nan(x, nan_policy, xp_omit_okay=True)
         elif nan_policy == 'propagate':
             assert _contains_nan(x, nan_policy)

@@ -45,7 +45,6 @@ from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
                                    make_skip_xp_backends, xp_ravel)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -75,7 +74,8 @@ TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 lazy_xp_modules = [stats]
-# Oops - I ruined the ability to do lazy execution
+# Oops - I ruined this. Fix later.
+# from scipy._lib.array_api_extra.testing import lazy_xp_function
 # lazy_xp_function(stats.tmean, static_argnames=("inclusive", "axis"))
 # lazy_xp_function(stats.tvar, static_argnames=("inclusive", "axis", "ddof"))
 # lazy_xp_function(stats.tstd, static_argnames=("inclusive", "axis", "ddof"))
@@ -2595,11 +2595,11 @@ class TestScoreatpercentile:
 @make_skip_xp_backends(stats.mode)
 class TestMode:
 
-    def test_empty(self):
+    def test_empty(self, xp):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            vals, counts = stats.mode([])
-        assert_equal(vals, np.array([]))
-        assert_equal(counts, np.array([]))
+            vals, counts = stats.mode(xp.asarray([]))
+        xp_assert_equal(vals, xp.asarray(xp.nan))
+        xp_assert_equal(counts, xp.asarray(0.))
 
     def test_scalar(self):
         vals, counts = stats.mode(4.)
@@ -2677,26 +2677,29 @@ class TestMode:
         xp_assert_equal(actual[0], xp.asarray(6, dtype=data1.dtype))
         xp_assert_equal(actual[1], xp.asarray(3))
 
-    def test_nan_omit(self):
-        data1 = [3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
-        actual = stats.mode(data1, nan_policy='omit')
-        assert_equal(actual, (6, 3))
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'raise'.")
+    def test_nan_omit(self, xp):
+        data1 = xp.asarray([3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6])
+        res = stats.mode(data1, nan_policy='omit')
+        xp_assert_equal(res.mode, xp.asarray(6.))
+        xp_assert_equal(res.count, xp.asarray(3))
         assert_raises(ValueError, stats.mode, data1, nan_policy='raise')
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
 
+    @skip_xp_backends(eager_only=True, reason="lazy arrays don't do 'omit'.")
     @pytest.mark.parametrize("data", [
-        [3, 5, 1, 1, 3],
+        [3, 5, 1, 1, 3.],
         [3, np.nan, 5, 1, 1, 3],
-        [3, 5, 1],
+        [3, 5, 1.],
         [3, np.nan, 5, 1],
     ])
     @pytest.mark.parametrize('keepdims', [False, True])
-    def test_smallest_equal(self, data, keepdims):
-        result = stats.mode(data, nan_policy='omit', keepdims=keepdims)
+    def test_smallest_equal(self, data, keepdims, xp):
+        result = stats.mode(xp.asarray(data), nan_policy='omit', keepdims=keepdims)
         if keepdims:
-            assert_equal(result[0][0], 1)
+            xp_assert_equal(result[0][0], xp.asarray(1.))
         else:
-            assert_equal(result[0], 1)
+            xp_assert_equal(result[0], xp.asarray(1.))
 
     @pytest.mark.parametrize('axis', range(-3, 3))
     def test_mode_shape_gh_9955(self, axis, xp):
@@ -2715,9 +2718,9 @@ class TestMode:
         res = stats.mode(a)
         assert xp.isnan(res.mode) and res.count == 2
 
-    def test_keepdims_empty(self):
+    def test_keepdims_empty(self, xp):
         # test empty arrays
-        a = np.zeros((1, 2, 3, 0))
+        a = xp.zeros((1, 2, 3, 0))
 
         res = stats.mode(a, axis=1, keepdims=False)
         assert res.mode.shape == res.count.shape == (1, 3, 0)
@@ -2827,13 +2830,14 @@ class TestMode:
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
     @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])
-    def test_gh17214(self, z):
+    def test_gh17214(self, z, xp):
+        z = xp.asarray(z)
         if z.size == 0:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.mode(z, axis=None, keepdims=True)
         else:
             res = stats.mode(z, axis=None, keepdims=True)
-        ref = np.mean(z, axis=None, keepdims=True)
+        ref = xp.mean(z, axis=None, keepdims=True)
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
     def test_raise_non_numeric_gh18254(self):

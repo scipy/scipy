@@ -5,7 +5,6 @@
 import math
 import warnings
 import sys
-import contextlib
 from functools import partial
 
 import numpy as np
@@ -26,7 +25,6 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
