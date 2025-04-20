@@ -1,19 +1,13 @@
-from scipy._lib._array_api import (
-    array_namespace,
-    Array,
-    ArrayLike,
-    is_lazy_array,
-    xp_promote,
-    xp_result_type,
-    xp_vector_norm,
-)
+from scipy._lib._array_api import array_namespace, Array, is_lazy_array, xp_vector_norm
 import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
     as_matrix as quat_as_matrix,
     from_matrix as quat_from_matrix,
+    from_rotvec as quat_from_rotvec,
+    as_rotvec as quat_as_rotvec,
+    broadcastable,
 )
 from scipy._lib.array_api_compat import device
-from scipy.spatial.transform._rotation_xp import broadcastable
 
 
 def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Array:
@@ -80,15 +74,128 @@ def from_components(translation: Array, quat: Array) -> Array:
     return compose_transforms(translation_matrix, from_rotation(quat))
 
 
+def from_exp_coords(exp_coords: Array) -> Array:
+    rot_vec = exp_coords[..., :3]
+    rot_matrix = quat_as_matrix(quat_from_rotvec(rot_vec))
+    translation_transform = _compute_se3_exp_translation_transform(rot_vec)
+    translations = (translation_transform @ exp_coords[..., 3:, None])[..., 0]
+    return _create_transformation_matrix(translations, rot_matrix)
+
+
+def as_exp_coords(matrix: Array) -> Array:
+    xp = array_namespace(matrix)
+    rot_vec = quat_as_rotvec(quat_from_matrix(matrix[..., :3, :3]))
+    translation_transform = _compute_se3_log_translation_transform(rot_vec)
+    translations = (translation_transform @ matrix[..., :3, 3][..., None])[..., 0]
+    exp_coords = xp.concat([rot_vec, translations], axis=-1)
+    return exp_coords
+
+
 def compose_transforms(tf_matrix: Array, other_tf_matrix: Array) -> Array:
     if not broadcastable(tf_matrix.shape, other_tf_matrix.shape):
         len_a = tf_matrix.shape[0] if tf_matrix.ndim == 3 else 1
         len_b = other_tf_matrix.shape[0] if other_tf_matrix.ndim == 3 else 1
-        if not (len_a == 1 or len_b == 1 or len_a == len_b):
-            raise ValueError(
-                "Expected equal number of transforms in both or a "
-                "single transform in either object, got "
-                f"{len_a} transforms in first and {len_b}"
-                "transforms in second object."
-            )
+        raise ValueError(
+            "Expected equal number of transforms in both or a "
+            "single transform in either object, got "
+            f"{len_a} transforms in first and {len_b}"
+            "transforms in second object."
+        )
     return tf_matrix @ other_tf_matrix
+
+
+def inv(matrix: Array) -> Array:
+    xp = array_namespace(matrix)
+    r_inv = xp.matrix_transpose(matrix[..., :3, :3])
+    # Matrix multiplication of r_inv and translation vector
+    t_inv = -(r_inv @ matrix[..., :3, 3][..., None])[..., 0]
+    matrix = xp.zeros((*matrix.shape[:-2], 4, 4), dtype=matrix.dtype)
+    matrix = xpx.at(matrix)[..., :3, :3].set(r_inv)
+    matrix = xpx.at(matrix)[..., :3, 3].set(t_inv)
+    matrix = xpx.at(matrix)[..., 3, 3].set(1)
+    return matrix
+
+
+def _create_transformation_matrix(
+    translations: Array, rotation_matrices: Array
+) -> Array:
+    if not translations.shape[:-1] == rotation_matrices.shape[:-2]:
+        print(translations.shape, rotation_matrices.shape)
+        raise ValueError(
+            "The number of rotation matrices and translations must be the same."
+        )
+    xp = array_namespace(translations)
+    matrix = xp.empty(
+        (*translations.shape[:-1], 4, 4),
+        dtype=translations.dtype,
+        device=device(translations),
+    )
+    matrix = xpx.at(matrix)[..., :3, :3].set(rotation_matrices)
+    matrix = xpx.at(matrix)[..., :3, 3].set(translations)
+    matrix = xpx.at(matrix)[..., 3, :3].set(0)
+    matrix = xpx.at(matrix)[..., 3, 3].set(1)
+    return matrix
+
+
+def _compute_se3_exp_translation_transform(rot_vec: Array) -> Array:
+    """Compute the transformation matrix from the se3 translation part to SE3
+    translation.
+
+    The transformation matrix depends on the rotation vector.
+    """
+    xp = array_namespace(rot_vec)
+    _device = device(rot_vec)
+
+    angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
+    small_scale = angle < 1e-3
+
+    k1_small = 0.5 - angle**2 / 24 + angle**4 / 720
+    # Avoid division by zero for non-branching computations. The value will get discarded in the
+    # xp.where selection.
+    safe_angle = angle + xp.asarray(small_scale, dtype=angle.dtype, device=_device)
+    k1 = (1.0 - xp.cos(angle)) / safe_angle**2
+    k1 = xp.where(small_scale, k1_small, k1)
+
+    k2_small = 1 / 6 - angle**2 / 120 + angle**4 / 5040
+    # Again, avoid division by zero by adding one to all near-zero angles.
+    safe_angle = angle + xp.asarray(small_scale, dtype=angle.dtype, device=_device)
+    k2 = (angle - xp.sin(angle)) / safe_angle**3
+    k2 = xp.where(small_scale, k2_small, k2)
+
+    s = _create_skew_matrix(rot_vec)
+
+    return xp.eye(3) + k1[..., None] * s + k2[..., None] * s @ s
+
+
+def _compute_se3_log_translation_transform(rot_vec: Array) -> Array:
+    """Compute the transformation matrix from SE3 translation to the se3
+    translation part.
+
+    It is the inverse of `_compute_se3_exp_translation_transform` in a closed
+    analytical form.
+    """
+    xp = array_namespace(rot_vec)
+    angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
+    mask = angle < 1e-3
+
+    k_small = 1 / 12 + angle**2 / 720 + angle**4 / 30240
+    safe_angle = angle + xp.asarray(mask, dtype=angle.dtype, device=device(angle))
+    k = (1 - 0.5 * angle / xp.tan(0.5 * safe_angle)) / safe_angle**2
+    k = xp.where(mask, k_small, k)
+
+    s = _create_skew_matrix(rot_vec)
+
+    return xp.eye(3) - 0.5 * s + k[..., None] * s @ s
+
+
+def _create_skew_matrix(vec: Array) -> Array:
+    """Create skew-symmetric (aka cross-product) matrix for stack of vectors."""
+    xp = array_namespace(vec)
+    result = xp.zeros((*vec.shape[:-1], 3, 3), dtype=vec.dtype, device=device(vec))
+    result = xpx.at(result)[..., 0, 1].set(-vec[..., 2])
+    result = xpx.at(result)[..., 0, 2].set(vec[..., 1])
+    result = xpx.at(result)[..., 1, 0].set(vec[..., 2])
+    result = xpx.at(result)[..., 1, 2].set(-vec[..., 0])
+    result = xpx.at(result)[..., 2, 0].set(-vec[..., 1])
+    result = xpx.at(result)[..., 2, 1].set(vec[..., 0])
+    return result

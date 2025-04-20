@@ -140,7 +140,7 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     degrees = xp.asarray(degrees, device=device(rotvec))
     rotvec = xp.where(degrees, _deg2rad(rotvec), rotvec)
 
-    angle = xp_vector_norm(rotvec, axis=-1, keepdims=True)
+    angle = xp_vector_norm(rotvec, axis=-1, keepdims=True, xp=xp)
     small_angle = angle <= 1e-3
     angle2 = angle**2
     small_scale = 0.5 - angle2 / 48 + angle2**2 / 3840
@@ -219,7 +219,7 @@ def from_davenport(
     if num_axes < 1 or num_axes > 3:
         raise ValueError("Expected up to 3 axes, got {}".format(num_axes))
 
-    axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True)
+    axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
 
     # Check if axes are orthogonal. Checks are shape dependant and can therefore be jitted.
     axes_not_orthogonal = xp.zeros((*axes.shape[:-1], 1), dtype=xp.bool)
@@ -302,7 +302,7 @@ def as_matrix(quat: Array) -> Array:
 def as_rotvec(quat: Array, degrees: bool = False) -> Array:
     xp = array_namespace(quat)
     quat = _quat_canonical(quat)
-    ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True)
+    ax_norm = xp_vector_norm(quat[..., :3], axis=-1, keepdims=True, xp=xp)
     angle = 2 * xp.atan2(ax_norm, quat[..., 3][..., None])
     small_angle = angle <= 1e-3
     angle2 = angle**2
@@ -392,7 +392,7 @@ def as_davenport(
         raise ValueError("Axes must be vectors of length 3.")
 
     # normalize axes
-    axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True)
+    axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
     if xp.vecdot(axes[0, ...], axes[1, ...]) >= 1e-7:
         raise ValueError("Consecutive axes must be orthogonal.")
     if xp.vecdot(axes[1, ...], axes[2, ...]) >= 1e-7:
@@ -414,7 +414,7 @@ def inv(quat: Array) -> Array:
 
 def magnitude(quat: Array) -> Array:
     xp = array_namespace(quat)
-    sin_q = xp_vector_norm(quat[..., :3], axis=-1)
+    sin_q = xp_vector_norm(quat[..., :3], axis=-1, xp=xp)
     cos_q = xp.abs(quat[..., 3])
     angles = 2 * xp.atan2(sin_q, cos_q)
     return angles
@@ -748,8 +748,8 @@ def _align_vectors_fixed(
 
     a_pri = a_sorted[0, ...][None, ...]  # Effectively [[0], ...]
     b_pri = b_sorted[0, ...][None, ...]
-    a_pri_norm = xp_vector_norm(a_pri, axis=-1, keepdims=True)
-    b_pri_norm = xp_vector_norm(b_pri, axis=-1, keepdims=True)
+    a_pri_norm = xp_vector_norm(a_pri, axis=-1, keepdims=True, xp=xp)
+    b_pri_norm = xp_vector_norm(b_pri, axis=-1, keepdims=True, xp=xp)
     if not is_lazy_array(a_pri_norm):
         if xp.any(a_pri_norm == 0) or xp.any(b_pri_norm == 0):
             raise ValueError("Cannot align zero length primary vectors")
@@ -765,7 +765,7 @@ def _align_vectors_fixed(
     # We first find the minimum angle rotation between the primary
     # vectors.
     cross = xp.linalg.cross(b_pri[..., 0, :], a_pri[..., 0, :])
-    cross_norm = xp_vector_norm(cross, axis=-1)
+    cross_norm = xp_vector_norm(cross, axis=-1, xp=xp)
     theta = xp.atan2(cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1))
     tolerance = 1e-3  # tolerance for small angle approximation (rad)
     q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0])
@@ -790,7 +790,7 @@ def _align_vectors_fixed(
     )
     r = xp.where(cross_norm == 0, r_components, cross)
 
-    q_flip = xp.where(flip, from_rotvec(r / xp_vector_norm(r) * np.pi), q_flip)
+    q_flip = xp.where(flip, from_rotvec(r / xp_vector_norm(r, xp=xp) * np.pi), q_flip)
     theta = xp.where(flip, np.pi - theta, theta)
     cross = xp.where(flip, -cross, cross)
 
@@ -879,7 +879,7 @@ def pow(quat: Array, n: float) -> Array:
 
 def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
-    quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True)
+    quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True, xp=xp)
     if not is_lazy_array(quat_norm) and xp.any(quat_norm == 0):
         raise ValueError("Found zero norm quaternions in `quat`.")
     quat = xp.where(quat_norm == 0, xp.nan, quat)

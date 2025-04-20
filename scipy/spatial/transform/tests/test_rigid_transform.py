@@ -248,7 +248,7 @@ def test_as_components_jax_compile():
 def test_from_exp_coords(xp):
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
-    angle1 = np.deg2rad(30.0)
+    angle1 = xp.asarray(30.0 / 180 * np.pi)  # deg2rad is not implemented in Array API
     tf1 = RigidTransform.from_matrix(
         xp.asarray(
             [
@@ -259,7 +259,7 @@ def test_from_exp_coords(xp):
             ]
         )
     )
-    angle2 = np.deg2rad(60.0)
+    angle2 = xp.asarray(60.0 / 180 * np.pi)
     tf2 = RigidTransform.from_matrix(
         xp.asarray(
             [
@@ -271,8 +271,9 @@ def test_from_exp_coords(xp):
         )
     )
     expected = tf2 * tf1.inv()
+    angle = xp.asarray(30.0 / 180 * np.pi)
     actual = RigidTransform.from_exp_coords(
-        np.deg2rad(30.0) * xp.asarray([0.0, 0.0, 1.0, 3.37, -3.37, 0.0])
+        angle * xp.asarray([0.0, 0.0, 1.0, 3.37, -3.37, 0.0])
     )
     assert_allclose(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
 
@@ -312,11 +313,11 @@ def test_from_exp_coords(xp):
 
     # identity
     assert_allclose(
-        RigidTransform.from_exp_coords(np.zeros(6)).as_matrix(), np.eye(4), atol=1e-12
+        RigidTransform.from_exp_coords(xp.zeros(6)).as_matrix(), xp.eye(4), atol=1e-12
     )
 
     # only translation
-    expected_matrix = np.array(
+    expected_matrix = xp.asarray(
         [
             [
                 [1.0, 0.0, 0.0, 3.0],
@@ -333,43 +334,69 @@ def test_from_exp_coords(xp):
         ]
     )
     actual = RigidTransform.from_exp_coords(
-        [
-            [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
-            [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
-        ]
+        xp.asarray(
+            [
+                [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
+                [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
+            ]
+        )
     )
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # only rotation
-    rot = Rotation.from_euler("zyx", [[34, -12, 0.5], [-102, -55, 30]], degrees=True)
+    rot = Rotation.from_euler(
+        "zyx", xp.asarray([[34, -12, 0.5], [-102, -55, 30]]), degrees=True
+    )
     rotvec = rot.as_rotvec()
-    expected_matrix = np.array([np.eye(4), np.eye(4)])
-    expected_matrix[:, :3, :3] = rot.as_matrix()
-    actual = RigidTransform.from_exp_coords(np.hstack((rotvec, np.zeros((2, 3)))))
+    expected_matrix = xp.zeros((2, 4, 4))
+    expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(rot.as_matrix())
+    expected_matrix = xpx.at(expected_matrix)[..., 3, 3].set(1)
+    exp_coords = xp.concat((rotvec, xp.zeros((2, 3))), axis=-1)
+    actual = RigidTransform.from_exp_coords(exp_coords)
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
 
-def test_as_exp_coords():
+def test_from_exp_coords_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    exp_coords = jp.asarray([0.0, 0.0, 0.0, 3.0, -5.4, 100.2])
+    from_exp_coords = jax.jit(RigidTransform.from_exp_coords)
+    jax.block_until_ready(from_exp_coords(exp_coords))
+
+
+def test_as_exp_coords(xp):
     # identity
-    expected = np.zeros(6)
+    expected = xp.zeros(6)
     actual = RigidTransform.from_exp_coords(expected).as_exp_coords()
     assert_allclose(actual, expected, atol=1e-12)
 
     rng = np.random.default_rng(10)
 
     # pure rotation
-    rot_vec = rng.normal(scale=0.1, size=(1000, 3))
+    rot_vec = xp.asarray(rng.normal(scale=0.1, size=(1000, 3)))
     tf = RigidTransform.from_rotation(Rotation.from_rotvec(rot_vec))
     exp_coords = tf.as_exp_coords()
     assert_allclose(exp_coords[:, :3], rot_vec, rtol=1e-13)
     assert_allclose(exp_coords[:, 3:], 0.0, atol=1e-16)
 
     # pure translation
-    translation = rng.normal(scale=100.0, size=(1000, 3))
+    translation = xp.asarray(rng.normal(scale=100.0, size=(1000, 3)))
     tf = RigidTransform.from_translation(translation)
     exp_coords = tf.as_exp_coords()
     assert_allclose(exp_coords[:, :3], 0.0, atol=1e-16)
     assert_allclose(exp_coords[:, 3:], translation, rtol=1e-15)
+
+
+def test_as_exp_coords_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    tf = RigidTransform.from_translation(jp.asarray([1, 2, 3]))
+    as_exp_coords = jax.jit(RigidTransform.as_exp_coords)
+    jax.block_until_ready(as_exp_coords(tf))
 
 
 def test_from_dual_quat():
@@ -845,18 +872,19 @@ def test_pow_equivalence_with_rotation():
         assert_allclose((p**n).rotation.as_matrix(), (r**n).as_matrix(), atol=atol)
 
 
-def test_inverse():
+def test_inverse(xp):
     atol = 1e-12
 
     # Test inverse transform
     r = Rotation.from_euler("z", 90, degrees=True)
-    t = np.array([1, 2, 3])
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    t = xp.asarray([1, 2, 3])
     tf = RigidTransform.from_components(t, r)
 
     # Test that tf * tf.inv() equals identity
     tf_inv = tf.inv()
     composed = tf * tf_inv
-    assert_allclose(composed.as_matrix(), np.eye(4), atol=atol)
+    assert_allclose(composed.as_matrix(), xp.eye(4), atol=atol)
 
     n = 10
     rng = np.random.default_rng(1000)
@@ -865,15 +893,19 @@ def test_inverse():
     tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
-    assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * n), atol=atol)
+    expected = xp.zeros((n, 4, 4))
+    expected = xpx.at(expected)[...].set(xp.eye(4))
+    assert_allclose(composed.as_matrix(), expected, atol=atol)
 
     # Test multiple transforms
-    r = Rotation.from_euler("zyx", [[90, 0, 0], [0, 90, 0]], degrees=True)
-    t = np.array([[1, 2, 3], [4, 5, 6]])
+    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    t = xp.asarray([[1, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
     composed = tf * tf_inv
-    assert_allclose(composed.as_matrix(), np.array([np.eye(4)] * 2), atol=atol)
+    expected = xp.zeros((2, 4, 4))
+    expected = xpx.at(expected)[...].set(xp.eye(4))
+    assert_allclose(composed.as_matrix(), expected, atol=atol)
 
 
 def test_properties():

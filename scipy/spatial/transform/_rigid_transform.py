@@ -14,7 +14,6 @@ from scipy._lib._array_api import (
 )
 from scipy.spatial.transform.rotation import Rotation
 
-# import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as array_api_backend
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy._lib.array_api_extra as xpx
@@ -522,10 +521,7 @@ class RigidTransform:
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
         matrix = backend_registry.get(xp, array_api_backend).from_rotation(quat)
-        if rotation.single:
-            matrix = matrix[0, ...]
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
@@ -756,8 +752,16 @@ class RigidTransform:
         array([0.5, 0.3, 0.1, 3.64305882, -1.25879559, 4.46109265])
         """
         xp = array_namespace(exp_coords)
+        dtype = xp_result_type(exp_coords, force_floating=True, xp=xp)
+        _device = device(exp_coords)
+        exp_coords = xp.asarray(exp_coords, dtype=dtype, device=_device)
+        if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
+            raise ValueError(
+                "Expected `exp_coords` to have shape (6,), or (N, 6), "
+                f"got {exp_coords.shape}."
+            )
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_from_exp_coords(exp_coords)
+        matrix = backend.from_exp_coords(exp_coords)
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
@@ -811,9 +815,7 @@ class RigidTransform:
         """
         xp = array_namespace(dual_quat)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_from_dual_quat(
-            dual_quat, scalar_first=scalar_first
-        )
+        matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
@@ -1072,7 +1074,10 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.rigid_transform_as_exp_coords(self._matrix)
+        exp_coords = backend.as_exp_coords(self._matrix)
+        if self._single:
+            exp_coords = exp_coords[0, ...]
+        return exp_coords
 
     def as_dual_quat(self, *, scalar_first: bool = False) -> Array:
         """Return the dual quaternion representation of the transform.
@@ -1112,9 +1117,7 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.rigid_transform_as_dual_quat(
-            self._matrix, scalar_first=scalar_first
-        )
+        return backend.as_dual_quat(self._matrix, scalar_first=scalar_first)
 
     def __len__(self) -> int:
         """Return the number of transforms in this object.
@@ -1315,7 +1318,9 @@ class RigidTransform:
 
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_compose(self._matrix, other._matrix)
+        matrix = backend.compose_transforms(self._matrix, other._matrix)
+        if self._single and other._single:
+            matrix = matrix[0]
         return RigidTransform(matrix, normalize=False, copy=False)
 
     def __pow__(self, n: float) -> RigidTransform:
@@ -1418,7 +1423,7 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_pow(self._matrix, n)
+        matrix = backend.pow(self._matrix, n)
         return RigidTransform(matrix, normalize=False, copy=False)
 
     def inv(self) -> RigidTransform:
@@ -1481,7 +1486,9 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_inv(self._matrix)
+        matrix = backend.inv(self._matrix)
+        if self._single:
+            matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=False, copy=False)
 
     def apply(self, vectors: ArrayLike, inverse: bool = False) -> Array:
@@ -1574,7 +1581,7 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.rigid_transform_apply(self._matrix, vectors, inverse)
+        return backend.apply(self._matrix, vectors, inverse)
 
     @property
     def rotation(self) -> Rotation:
@@ -1605,7 +1612,7 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        rotation_matrix = backend.rigid_transform_rotation(self._matrix)
+        rotation_matrix = backend.rotation(self._matrix)
         return Rotation.from_matrix(rotation_matrix)
 
     @property
@@ -1637,7 +1644,7 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.rigid_transform_translation(self._matrix)
+        return backend.translation(self._matrix)
 
     @property
     def single(self) -> bool:
