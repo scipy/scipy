@@ -145,6 +145,11 @@ jmp_buf *superlu_python_jmpbuf(void);
     SuperLUStat_t *h, int *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
 
+void sgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
+void dgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
+void cgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
+void zgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
+
 #define Create_Dense_Matrix_ARGS                               \
     SuperMatrix *a, int b, int c, void *d, int e,              \
     Stype_t f, Dtype_t g, Mtype_t h
