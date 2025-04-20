@@ -1392,18 +1392,29 @@ class TestResample:
         num = 256
         win = signal.get_window(('kaiser', 8.0), 160)
         assert_raises(ValueError, signal.resample, sig, num, window=win)
+        assert_raises(ValueError, signal.resample, sig, num, domain='INVALID')
 
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+        assert_raises(ValueError, signal.resample_poly, sig, 1.3, 2)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1.3)
         assert_raises(ValueError, signal.resample_poly, sig, 2, 1, padtype='')
         assert_raises(ValueError, signal.resample_poly, sig, 2, 1,
                       padtype='mean', cval=10)
+        assert_raises(ValueError, signal.resample_poly, sig, 2, 1, window=np.eye(2))
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
         sig2 = np.tile(np.arange(160), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert win.shape == (160,)
+
+        # Ensure coverage for parameter cval=None and cval != None:
+        x_ref = signal.resample_poly(sig, 2, 1)
+        x0 = signal.resample_poly(sig, 2, 1, padtype='constant')
+        x1 = signal.resample_poly(sig, 2, 1, padtype='constant', cval=0)
+        xp_assert_equal(x1, x_ref)
+        xp_assert_equal(x0, x_ref)
 
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
@@ -1547,6 +1558,53 @@ class TestResample:
             y2_test = signal.resample(x2, 2)  # downsampling a real array
             y2_true = np.array([1., 0.])
             xp_assert_close(y2_test, y2_true, atol=1e-12)
+
+
+    @pytest.mark.parametrize("n_in", (8, 9))
+    @pytest.mark.parametrize("n_out", (3, 4))
+    def test_resample_win_func(self, n_in, n_out):
+        """Test callable window function. """
+        x_in = np.ones(n_in)
+
+        def win(freqs):
+            """Scale input by 1/2"""
+            return 0.5 * np.ones_like(freqs)
+
+        y0 = signal.resample(x_in, n_out)
+        y1 = signal.resample(x_in, n_out, window=win)
+
+        xp_assert_close(2*y1, y0, atol=1e-12)
+
+    @pytest.mark.parametrize("n_in", (6, 12))
+    @pytest.mark.parametrize("n_out", (3, 4))
+    def test__resample_param_t(self, n_in, n_out):
+        """Verify behavior for parameter `t`.
+
+        Note that only `t[0]` and `t[1]` are utilized.
+        """
+        t0, dt = 10, 2
+        x_in = np.ones(n_in)
+
+        y0 = signal.resample(x_in, n_out)
+        y1, t1 = signal.resample(x_in, n_out, t=[t0, t0+dt])
+        t_ref = 10 + np.arange(len(y0)) * dt * n_in / n_out
+
+        xp_assert_equal(y1, y0)  # no influence of `t`
+        xp_assert_close(t1, t_ref, atol=1e-12)
+
+    @pytest.mark.parametrize("n1", (2, 3, 7, 8))
+    @pytest.mark.parametrize("n0", (2, 3, 7, 8))
+    def test_resample_nyquist(self, n0, n1):
+        """Test behavior at Nyquist frequency to ensure issue #14569 is fixed. """
+        f_ny = min(n0, n1) // 2
+        tt = (np.arange(n_) / n_ for n_ in (n0, n1))
+        x0, x1 = (np.cos(2 * np.pi * f_ny * t_) for t_ in tt)
+
+        y1_r = signal.resample(x0, n1)
+        y1_c = signal.resample(x0 + 0j, n1)
+
+        xp_assert_close(y1_r, x1, atol=1e-12)
+        xp_assert_close(y1_c.real, x1, atol=1e-12)
 
     def test_poly_vs_filtfilt(self, xp):
         # Check that up=1.0 gives same answer as filtfilt + slicing
@@ -3583,6 +3641,25 @@ class TestEnvelope:
         e_env = envelope(x, (None, None), residual=None)
         self.assert_close(e_hil, e_env, msg="Hilbert-Envelope comparison error")
 
+    def test_nyquist(self):
+        """Test behavior when input is a cosine at the Nyquist frequency.
+
+        Resampling even length signals, requires accounting for unpaired bins at the
+        Nyquist frequency (consults the source code of `resample`).
+
+        Since `envelope` excludes the Nyquist frequency from the envelope calculation,
+        only the residues need to be investigated.
+        """
+        x4 = sp_fft.irfft([0, 0, 8])  # = [2, -2, 2, -2]
+        x6 = signal.resample(x4, num=6)  # = [2, -1, -1, 2, -1, -1]
+        y6, y6_res = envelope(x4, n_out=6, residual='all')  # real-valued case
+        z6, z6_res = envelope(x4 + 0j, n_out=6, residual='all')  # complex-valued case
+
+        xp_assert_close(y6, np.zeros(6), atol=1e-12)
+        xp_assert_close(y6_res, x6, atol=1e-12)
+
+        xp_assert_close(z6, np.zeros(6, dtype=z6.dtype), atol=1e-12)
+        xp_assert_close(z6_res, x6.astype(z6.dtype), atol=1e-12)
 
 @skip_xp_backends(np_only=True)
 class TestPartialFractionExpansion:
