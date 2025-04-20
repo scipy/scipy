@@ -3,7 +3,6 @@ Test cdflib functions versus mpmath, if available.
 
 The following functions still need tests:
 
-- ncfdtri
 - ncfdtridfn
 - ncfdtridfd
 - ncfdtrinc
@@ -491,7 +490,7 @@ def test_bdtrik_nbdtrik_inf():
 
 
 @pytest.mark.parametrize(
-    "dfn,dfd,nc,f,expected",
+    "dfn,dfd,nc,f,expected_cdf",
     [[100.0, 0.1, 0.1, 100.0, 0.29787396410092676],
      [100.0, 100.0, 0.01, 0.1, 4.4344737598690424e-26],
      [100.0, 0.01, 0.1, 0.01, 0.002848616633080384],
@@ -505,7 +504,7 @@ def test_bdtrik_nbdtrik_inf():
      [100.0, 100.0, 0.1, 10.0, 1.0],
      [1.0, 0.1, 100.0, 10.0, 0.02926064279680897]]
 )
-def test_ncfdtr(dfn, dfd, nc, f, expected):
+def test_ncfdtr_ncfdtri(dfn, dfd, nc, f, expected_cdf):
     # Reference values computed with mpmath with the following script
     #
     # import numpy as np
@@ -548,8 +547,11 @@ def test_ncfdtr(dfn, dfd, nc, f, expected):
     # rng = np.random.default_rng(1234)
     # sample_idx = rng.choice(len(re), replace=False, size=12)
     # cases = np.array(cases)[sample_idx].tolist()
-    assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected, rtol=1e-13, atol=0)
-
+    assert_allclose(sp.ncfdtr(dfn, dfd, nc, f), expected_cdf, rtol=1e-13, atol=0)
+    # testing tails where the CDF reaches 0 or 1 does not make sense for inverses
+    # of a CDF as they are not bijective in these regions
+    if 0 < expected_cdf < 1:
+        assert_allclose(sp.ncfdtri(dfn, dfd, nc, expected_cdf), f, rtol=5e-11)
 
 @pytest.mark.parametrize(
     "args",
