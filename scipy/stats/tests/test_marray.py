@@ -2,8 +2,8 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
-from scipy.stats._stats_py import _xp_mean, _xp_var, _length_nonmasked
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, _length_nonmasked
+from scipy.stats._stats_py import _xp_mean, _xp_var
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -82,6 +82,8 @@ def test_xp_mean(axis, keepdims, xp):
      (stats.circmean, {}),
      (stats.circvar, {}),
      (stats.circstd, {}),
+     (stats.gstd, {}),
+     (stats.variation, {}),
      (_xp_var, {}),
      (stats.tmean, {'limits': (0.1, 0.9)}),
      (stats.tvar, {'limits': (0.1, 0.9)}),
@@ -275,6 +277,7 @@ def test_ttest_ind_from_stats(xp):
     assert res.statistic.shape == shape
     assert res.pvalue.shape == shape
 
+
 def test_length_nonmasked_marray_iterable_axis_raises():
     xp = marray._get_namespace(np)
 
@@ -287,3 +290,65 @@ def test_length_nonmasked_marray_iterable_axis_raises():
     with pytest.raises(NotImplementedError,
         match="`axis` must be an integer or None for use with `MArray`"):
         _length_nonmasked(marr, axis=(0, 1), xp=xp)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")  # mdhaber/marray#120
+def test_directional_stats(xp):
+    mxp, marrays, narrays = get_arrays(1, shape=(100, 3), xp=xp)
+    res = stats.directional_stats(*marrays)
+    narrays[0] = narrays[0][~np.any(np.isnan(narrays[0]), axis=1)]
+    ref = stats.directional_stats(*narrays)
+    xp_assert_close(res.mean_direction.data, xp.asarray(ref.mean_direction))
+    xp_assert_close(res.mean_resultant_length.data,
+                    xp.asarray(ref.mean_resultant_length))
+    assert not xp.any(res.mean_direction.mask)
+    assert not xp.any(res.mean_resultant_length.mask)
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_bartlett(axis, xp):
+    mxp, marrays, narrays = get_arrays(3, xp=xp)
+    res = stats.bartlett(*marrays, axis=axis)
+    ref = stats.bartlett(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@skip_backend('torch', reason="array-api-compat#242")
+@skip_backend('cupy', reason="special functions won't work")
+@pytest.mark.parametrize('f', [stats.pearsonr, stats.pointbiserialr])
+def test_pearsonr(f, xp):
+    mxp, marrays, narrays = get_arrays(2, shape=(25,), xp=xp)
+    res = f(*marrays)
+
+    x, y = narrays
+    mask = np.isnan(x) | np.isnan(y)
+    ref = f(x[~mask], y[~mask])
+
+    xp_assert_close(res.statistic.data, xp.asarray(ref.statistic))
+    xp_assert_close(res.pvalue.data, xp.asarray(ref.pvalue))
+
+    if f == stats.pearsonr:
+        res_ci_low, res_ci_high = res.confidence_interval()
+        ref_ci_low, ref_ci_high = ref.confidence_interval()
+        xp_assert_close(res_ci_low.data, xp.asarray(ref_ci_low))
+        xp_assert_close(res_ci_high.data, xp.asarray(ref_ci_high))
+
+@skip_backend('dask.array', reason='Arrays need `device` attribute: dask/dask#11711')
+@skip_backend('jax.numpy', reason="JAX doesn't allow item assignment.")
+@pytest.mark.parametrize('qk', [False, True])
+@pytest.mark.parametrize('axis', [0, 1, None])
+def test_entropy(qk, axis, xp):
+    mxp, marrays, narrays = get_arrays(2 if qk else 1, xp=xp)
+    res = stats.entropy(*marrays, axis=axis)
+    ref = stats.entropy(*narrays, nan_policy='omit', axis=axis)
+    xp_assert_close(res.data, xp.asarray(ref))
