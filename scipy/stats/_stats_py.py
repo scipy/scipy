@@ -582,6 +582,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         mask = xp.isnan(vals)
         cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
         modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
+        default_int = xp.asarray(1).dtype  # fail slow CI job failed - incorrect dtype
+        counts = xp.astype(counts, default_int, copy=False)
         modes = modes[()] if modes.ndim == 0 else modes
         counts = counts[()] if counts.ndim == 0 else counts
         return ModeResult(modes, counts)
