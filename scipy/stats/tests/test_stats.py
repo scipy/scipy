@@ -48,7 +48,6 @@ import scipy._lib.array_api_extra as xpx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
-
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
     considered to be essential functionality.  True testing and
@@ -4008,7 +4007,7 @@ class TestStudentTest:
     def test_onesample_nan_policy_propagate(self, xp):
         x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=xp_default_dtype(xp))
 
         res = stats.ttest_1samp(x, 5.0)
         xp_assert_equal(res.statistic, xp.asarray(xp.nan))
@@ -4018,7 +4017,7 @@ class TestStudentTest:
     def test_onesample_nan_policy_omit_raise(self, xp):
         x = stats.norm.rvs(loc=5, scale=10, size=51, random_state=7654567)
         x[50] = np.nan
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=xp_default_dtype(xp))
 
         res = stats.ttest_1samp(x, 5.0, nan_policy='omit')
         xp_assert_close(res.statistic, xp.asarray(-1.6412624074367159))
@@ -6201,7 +6200,7 @@ class TestTTestInd:
         # The results should be arrays containing nan with shape
         # given by the broadcast nonaxis dimensions.
         a = xp.empty((3, 1, 0))
-        b = xp.asarray(b)
+        b = xp.asarray(b, dtype=xp_default_dtype(xp))
         with np.testing.suppress_warnings() as sup:
             # first case should warn, second shouldn't?
             sup.filter(SmallSampleWarning, too_small_nd_not_omit)
