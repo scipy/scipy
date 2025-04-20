@@ -110,16 +110,25 @@ import warnings
 import dataclasses
 from collections.abc import Callable
 from functools import partial
+from typing import (
+    ClassVar,
+    Literal,
+    overload,
+    TYPE_CHECKING,
+)
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 import numpy as np
 
 from scipy._lib._array_api import _asarray
-from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib._util import _asarray_validated, _transition_to_rng, IntNumber
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
 from scipy.linalg import norm
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
+from ._kdtree import KDTree
 
 
 def _copy_array_if_base_present(a):
@@ -2306,6 +2315,52 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
                           as_numpy=True, metric=metric, **kwargs)
 
+
+def _pmindist(
+        sample: "npt.ArrayLike",
+        metric: str = "euclidean",
+        workers: IntNumber = 1) -> float:
+    """Mininum distance between points in the given sample.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the minimum distance from.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
+
+    Returns
+    -------
+    distance : float
+        Minimum distance.
+
+    """
+    match metric:
+        case 'euclidean':
+            p = 2
+            distance_fun = euclidean
+        case 'cityblock':
+            p = 1
+            distance_fun = cityblock
+        case _:
+            # Slow path for metrics unsupported by KDTree.
+            distances = pdist(sample, metric=metric)  # type: ignore[call-overload]
+            return distances.min()
+
+    distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
+    if np.allclose(distance_upper_bound, 0.0):
+        return 0.0
+    tree = KDTree(sample)
+    d, _ = tree.query(sample,
+                      k=[2], p=p,
+                      workers=workers,
+                      distance_upper_bound=distance_upper_bound)
+    return d.min()
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
 
