@@ -198,6 +198,42 @@ def inv(matrix: double[:, :, :]) -> double[:, :, :]:
     return matrix
 
 
+@cython.embedsignature(True)
+def apply(matrix: double[:, :, :], vector: double[:] | double[:, :], inverse: bool = False) -> double[:] | double[:, :]:
+    vector = np.asarray(vector, dtype=float)
+    if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
+        raise ValueError("Expected vector to have shape (N, 3), or (3,), "
+                            f"got {vector.shape}.")
+
+    if vector.ndim == 1:
+        vector = vector[None, :]
+
+    vector = np.hstack([vector, np.ones((vector.shape[0], 1))])
+
+    if inverse:
+        m = inv(matrix)
+    else:
+        m = matrix
+
+    # This einsum performs matrix multiplication of each of the (4, 4)
+    # matrices in `m` with the (4,) vectors in `vector`, with proper
+    # broadcasting for different dimensions of `m` and `vector`.
+    res = np.einsum('ijk,ik->ij', m, vector)[:, :3]
+    return res
+
+
+@cython.embedsignature(True)
+def pow(matrix: double[:, :, :], float n) -> double[:, :, :]:
+    # Exact short-cuts
+    if n == 0:
+        return np.tile(np.eye(4, dtype=float)[None, ...], (matrix.shape[0], 1, 1))
+    elif n == -1:
+        return inv(matrix)
+    elif n == 1:
+        return matrix
+    return from_exp_coords(as_exp_coords(matrix) * n)
+
+
 def _create_transformation_matrix(
     translations: double[:] | double[:, :],
     rotation_matrices: double[:, :] | double[:, :, :],

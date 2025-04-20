@@ -661,7 +661,7 @@ class RigidTransform:
         if not isinstance(rotation, Rotation):
             raise TypeError("`rotation` must be a Rotation instance.")
         quat = rotation.as_quat()
-        xp = array_namespace(quat)
+        xp = array_namespace(translation, quat)
         backend = backend_registry.get(xp, array_api_backend)
         dtype = xp_result_type(translation, force_floating=True, xp=xp)
         _device = device(translation)
@@ -1319,7 +1319,7 @@ class RigidTransform:
         if not isinstance(other, RigidTransform):
             return NotImplemented
 
-        xp = array_namespace(self._matrix)
+        xp = array_namespace(self._matrix, other._matrix)
         backend = backend_registry.get(xp, array_api_backend)
         matrix = backend.compose_transforms(self._matrix, other._matrix)
         if self._single and other._single:
@@ -1427,6 +1427,8 @@ class RigidTransform:
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
         matrix = backend.pow(self._matrix, n)
+        if self._single:
+            matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=False, copy=False)
 
     def inv(self) -> RigidTransform:
@@ -1582,9 +1584,15 @@ class RigidTransform:
         >>> tf.apply([1, 0, 0], inverse=True)
         array([-1.73205081, -1.        , -3.        ])
         """
-        xp = array_namespace(self._matrix)
+        xp = array_namespace(self._matrix, vectors)
+        vectors = xp.asarray(
+            vectors, dtype=self._matrix.dtype, device=device(self._matrix)
+        )
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.apply(self._matrix, vectors, inverse)
+        result = backend.apply(self._matrix, vectors, inverse)
+        if self._single and vectors.ndim == 1:
+            result = result[0, ...]
+        return result
 
     @property
     def rotation(self) -> Rotation:
@@ -1613,10 +1621,10 @@ class RigidTransform:
         >>> np.allclose(tf.rotation.as_matrix(), r.as_matrix())
         True
         """
-        xp = array_namespace(self._matrix)
-        backend = backend_registry.get(xp, array_api_backend)
-        rotation_matrix = backend.rotation(self._matrix)
-        return Rotation.from_matrix(rotation_matrix)
+        matrix = self._matrix
+        if self._single:
+            matrix = matrix[0, ...]
+        return Rotation.from_matrix(matrix[..., :3, :3])
 
     @property
     def translation(self) -> Array:
@@ -1645,9 +1653,10 @@ class RigidTransform:
         >>> np.allclose(tf.translation, t)
         True
         """
-        xp = array_namespace(self._matrix)
-        backend = backend_registry.get(xp, array_api_backend)
-        return backend.translation(self._matrix)
+        matrix = self._matrix
+        if self._single:
+            matrix = matrix[0, ...]
+        return matrix[..., :3, 3]
 
     @property
     def single(self) -> bool:

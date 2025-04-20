@@ -166,6 +166,47 @@ def inv(matrix: Array) -> Array:
     return matrix
 
 
+def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
+    xp = array_namespace(matrix)
+    if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
+        raise ValueError(
+            f"Expected vector to have shape (N, 3), or (3,), got {vector.shape}."
+        )
+    vec = xp.empty((*vector.shape[:-1], 4), dtype=vector.dtype, device=device(vector))
+    vec = xpx.at(vec)[..., :3].set(vector)
+    vec = xpx.at(vec)[..., 3].set(1)
+
+    if inverse:
+        matrix = inv(matrix)
+
+    # This einsum performs matrix multiplication of each of the (..., 4, 4) matrices in `matrix`
+    # with the (..., 4) vectors in `vec`, with proper broadcasting for different dimensions.
+    return (matrix @ vec[..., None])[..., :3, 0]
+
+
+def pow(matrix: Array, n: float) -> Array:
+    # Check if execution is eager. If so, we can branch and avoid computing all special cases
+    xp = array_namespace(matrix)
+    if not is_lazy_array(matrix):
+        if n == 0:
+            identity = xp.eye(4, dtype=matrix.dtype, device=device(matrix))
+            identity = xpx.atleast_nd(identity, ndim=matrix.ndim, xp=xp)
+            return xp.tile(identity, (*matrix.shape[:-2], 1, 1))
+        elif n == -1:
+            return inv(matrix)
+        elif n == 1:
+            return matrix
+        return from_exp_coords(as_exp_coords(matrix) * n)
+    # Lazy execution. We compute all special cases and the general case and combine them using
+    # xp.where.
+    result = from_exp_coords(as_exp_coords(matrix) * n)
+    identity = xp.eye(4, dtype=matrix.dtype, device=device(matrix))
+    result = xp.where(n == 0, identity, result)
+    result = xp.where(n == -1, inv(matrix), result)
+    result = xp.where(n == 1, matrix, result)
+    return result
+
+
 def _create_transformation_matrix(
     translations: Array, rotation_matrices: Array
 ) -> Array:

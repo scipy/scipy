@@ -4,13 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RigidTransform
 from scipy.spatial.transform._rigid_transform import normalize_dual_quaternion
-from scipy._lib._array_api import (
-    xp_assert_equal,
-    is_array_api_strict,
-    is_jax,
-    is_lazy_array,
-    xp_vector_norm,
-)
+from scipy._lib._array_api import is_lazy_array, xp_vector_norm
 import scipy._lib.array_api_extra as xpx
 
 
@@ -688,12 +682,13 @@ def test_as_dual_quat_jax_compile():
     jax.block_until_ready(as_dual_quat(tf))
 
 
-def test_from_as_internal_consistency():
+def test_from_as_internal_consistency(xp):
     atol = 1e-12
     n = 1000
     rng = np.random.default_rng(10)
-    t = rng.normal(size=(n, 3))
+    t = xp.asarray(rng.normal(size=(n, 3)))
     r = Rotation.random(n, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     tf0 = RigidTransform.from_components(t, r)
 
     tf1 = RigidTransform.from_components(*tf0.as_components())
@@ -712,15 +707,15 @@ def test_from_as_internal_consistency():
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
     # exp_coords small rotation
-    tf0 = RigidTransform.from_components(
-        rng.normal(scale=1000.0, size=(1000, 3)),
-        Rotation.from_rotvec(rng.normal(scale=1e-10, size=(1000, 3))),
-    )
+    t = xp.asarray(rng.normal(scale=1000.0, size=(1000, 3)))
+    rot_vec = xp.asarray(rng.normal(scale=1e-10, size=(1000, 3)))
+    tf0 = RigidTransform.from_components(t, Rotation.from_rotvec(rot_vec))
     tf1 = RigidTransform.from_exp_coords(tf0.as_exp_coords())
     assert_allclose(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
 
 def test_identity():
+    # We do not use xp here because identity always returns numpy arrays
     atol = 1e-12
 
     # Test single identity
@@ -732,93 +727,108 @@ def test_identity():
     assert_allclose(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
 
 
-def test_apply():
+def test_apply(xp):
     atol = 1e-12
 
     ## Single transform
     r = Rotation.from_euler("z", 90, degrees=True)
-    t = np.array([2, 3, 4])
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    t = xp.asarray([2.0, 3, 4])
     tf = RigidTransform.from_components(t, r)
 
     # Single vector, single transform
-    vec = np.array([1, 0, 0])
+    vec = xp.asarray([1.0, 0, 0])
     expected = t + r.apply(vec)
     res = tf.apply(vec)
     assert_allclose(res, expected, atol=atol)
 
     # Multiple vectors, single transform
-    vecs = np.array([[1, 0, 0], [0, 1, 0]])
+    vecs = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
     expected = t + r.apply(vecs)
     assert_allclose(tf.apply(vecs), expected, atol=atol)
 
     ## Multiple transforms
-    r = Rotation.from_euler("z", [90, 0], degrees=True)
-    t = np.array([[2, 3, 4], [5, 6, 7]])
+    r = Rotation.from_euler("z", xp.asarray([90, 0]), degrees=True)
+    t = xp.asarray([[2.0, 3, 4], [5, 6, 7]])
     tf = RigidTransform.from_components(t, r)
 
     # Single vector, multiple transforms
-    vec = np.array([1, 0, 0])
+    vec = xp.asarray([1.0, 0, 0])
     expected = t + r.apply(vec)
     assert_allclose(tf.apply(vec), expected, atol=atol)
 
     # Multiple vectors, multiple transforms
-    vecs = np.array([[1, 0, 0], [0, 1, 0]])
+    vecs = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
     expected = t + r.apply(vecs)
     assert_allclose(tf.apply(vecs), expected, atol=atol)
 
 
-def test_inverse_apply():
+def test_apply_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    tf = RigidTransform.from_matrix(jp.eye(4))
+    apply = jax.jit(RigidTransform.apply)
+    jax.block_until_ready(apply(tf, jp.array([1, 0, 0])))
+
+
+def test_inverse_apply(xp):
     atol = 1e-12
 
     # Test applying inverse transform
-    t = np.array([1, 2, 3])
+    t = xp.asarray([1, 2, 3])
     r = Rotation.from_euler("z", 90, degrees=True)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     tf = RigidTransform.from_components(t, r)
 
     # Test single vector
-    vec = np.array([1, 0, 0])
+    vec = xp.asarray([1, 0, 0])
     expected = tf.inv().apply(vec)
     assert_allclose(tf.apply(vec, inverse=True), expected, atol=atol)
 
     # Test multiple vectors
-    vecs = np.array([[1, 0, 0], [0, 1, 0]])
+    vecs = xp.asarray([[1, 0, 0], [0, 1, 0]])
     expected = tf.inv().apply(vecs)
     assert_allclose(tf.apply(vecs, inverse=True), expected, atol=atol)
 
 
-def test_rotation_alone():
+def test_rotation_alone(xp):
     atol = 1e-12
 
     r = Rotation.from_euler("z", 90, degrees=True)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     tf = RigidTransform.from_rotation(r)
-    vec = np.array([1, 0, 0])
+    vec = xp.asarray([1, 0, 0])
     expected = r.apply(vec)
     assert_allclose(tf.apply(vec), expected, atol=atol)
 
 
-def test_translation_alone():
+def test_translation_alone(xp):
     atol = 1e-12
-    t = np.array([1, 2, 3])
+    t = xp.asarray([1.0, 2, 3])
     tf = RigidTransform.from_translation(t)
-    vec = np.array([5, 6, 7])
+    vec = xp.asarray([5.0, 6, 7])
     expected = t + vec
     assert_allclose(tf.apply(vec), expected, atol=atol)
 
 
-def test_composition():
+def test_composition(xp):
     atol = 1e-12
 
     # Test composing single transforms
-    t1 = np.array([1, 0, 0])
+    t1 = xp.asarray([1.0, 0, 0])
     r1 = Rotation.from_euler("z", 90, degrees=True)
+    r1 = Rotation.from_quat(xp.asarray(r1.as_quat()))
     tf1 = RigidTransform.from_components(t1, r1)
 
-    t2 = np.array([0, 1, 0])
+    t2 = xp.asarray([0.0, 1, 0])
     r2 = Rotation.from_euler("x", 90, degrees=True)
+    r2 = Rotation.from_quat(xp.asarray(r2.as_quat()))
     tf2 = RigidTransform.from_components(t2, r2)
 
     composed = tf2 * tf1
-    vec = np.array([1, 0, 0])
+    vec = xp.asarray([1.0, 0, 0])
     expected = tf2.apply(tf1.apply(vec))
     assert_allclose(composed.apply(vec), expected, atol=atol)
     assert composed.single
@@ -827,7 +837,7 @@ def test_composition():
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
     # Multiple transforms with single transform
-    t2 = np.array([[1, 2, 3], [4, 5, 6]])
+    t2 = xp.asarray([[1.0, 2, 3], [4, 5, 6]])
     tf2 = RigidTransform.from_components(t2, r2)
 
     composed = tf2 * tf1
@@ -839,7 +849,7 @@ def test_composition():
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
     # Multiple transforms with multiple transforms
-    t1 = np.array([[1, 0, 0], [0, -1, 1]])
+    t1 = xp.asarray([[1.0, 0, 0], [0, -1, 1]])
     tf1 = RigidTransform.from_components(t1, r1)
 
     composed = tf2 * tf1
@@ -851,12 +861,13 @@ def test_composition():
     assert_allclose(composed.apply(vec), expected, atol=atol)
 
 
-def test_pow():
+def test_pow(xp):
     atol = 1e-12
     num = 10
     rng = np.random.default_rng(100)
-    t = rng.normal(size=(num, 3))
+    t = xp.asarray(rng.normal(size=(num, 3)))
     r = Rotation.random(num, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     p = RigidTransform.from_components(t, r)
     p_inv = p.inv()
 
@@ -864,6 +875,7 @@ def test_pow():
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         q = p**n
         r = RigidTransform.identity(num)
+        r = RigidTransform.from_matrix(xp.asarray(r.as_matrix()))
         for _ in range(abs(n)):
             if n > 0:
                 r = r * p
@@ -872,9 +884,9 @@ def test_pow():
         assert_allclose(q.as_matrix(), r.as_matrix(), atol=atol)
 
         # Test shape preservation
-        r = RigidTransform.from_rotation(Rotation.from_quat([0, 0, 0, 1]))
+        r = RigidTransform.from_rotation(Rotation.from_quat(xp.asarray([0, 0, 0, 1])))
         assert (r**n).as_matrix().shape == (4, 4)
-        r = RigidTransform.from_rotation(Rotation.from_quat([[0, 0, 0, 1]]))
+        r = RigidTransform.from_rotation(Rotation.from_quat(xp.asarray([[0, 0, 0, 1]])))
         assert (r**n).as_matrix().shape == (1, 4, 4)
 
     # Test fractional powers
@@ -888,15 +900,27 @@ def test_pow():
     assert_allclose((q * q).as_matrix(), (p**-3).as_matrix(), atol=atol)
 
     # pow function
-    tf = pow(RigidTransform.identity(), 2)
-    assert_allclose(tf.as_matrix(), np.eye(4), atol=atol)
+    identity = RigidTransform.from_matrix(xp.eye(4))
+    tf = pow(identity, 2)
+    assert_allclose(tf.as_matrix(), xp.eye(4), atol=atol)
 
 
-def test_pow_equivalence_with_rotation():
+def test_pow_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    identity = RigidTransform.from_matrix(jp.eye(4))
+    pow = jax.jit(RigidTransform.__pow__)
+    jax.block_until_ready(pow(identity, 2))
+
+
+def test_pow_equivalence_with_rotation(xp):
     atol = 1e-12
     num = 10
     rng = np.random.default_rng(100)
     r = Rotation.random(num, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     p = RigidTransform.from_rotation(r)
     for n in [-5, -2, -1.5, -1, -0.5, 0.0, 0.5, 1, 1.5, 2, 5]:
         assert_allclose((p**n).rotation.as_matrix(), (r**n).as_matrix(), atol=atol)
@@ -938,12 +962,13 @@ def test_inverse(xp):
     assert_allclose(composed.as_matrix(), expected, atol=atol)
 
 
-def test_properties():
+def test_properties(xp):
     atol = 1e-12
 
     # Test rotation and translation properties for single transform
     r = Rotation.from_euler("z", 90, degrees=True)
-    t = np.array([1, 2, 3])
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    t = xp.asarray([1, 2, 3])
     tf = RigidTransform.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
@@ -951,8 +976,8 @@ def test_properties():
     assert_allclose(tf.translation, t, atol=atol)
 
     # Test rotation and translation properties for multiple transforms
-    r = Rotation.from_euler("zyx", [[90, 0, 0], [0, 90, 0]], degrees=True)
-    t = np.array([[1, 2, 3], [4, 5, 6]])
+    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    t = xp.asarray([[1, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
 
     assert_allclose(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
