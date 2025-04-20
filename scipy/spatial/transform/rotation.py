@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+from types import EllipsisType
 
 import numpy as np
 
@@ -899,7 +900,7 @@ class Rotation:
         quat = backend.from_davenport(axes, order, angles, degrees)
         return cls(quat, normalize=False, copy=False)
 
-    def as_quat(self, canonical=False, *, scalar_first=False) -> Array:
+    def as_quat(self, canonical: bool = False, *, scalar_first: bool = False) -> Array:
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
@@ -1673,7 +1674,7 @@ class Rotation:
             return rot, left_idx, right_idx
         return rot
 
-    def apply(self, points: Array, inverse: bool = False) -> Array:
+    def apply(self, points: ArrayLike, inverse: bool = False) -> Array:
         """Apply this rotation to a set of vectors.
 
         If the original frame rotates to the final frame by this rotation, then
@@ -2114,7 +2115,7 @@ class Rotation:
         )
         return cls(quats, normalize=False)
 
-    def __getitem__(self, indexer) -> Rotation:
+    def __getitem__(self, indexer: int | slice | EllipsisType | None) -> Rotation:
         """Extract rotation(s) at given index(es) from object.
 
         Create a new `Rotation` instance containing a subset of rotations
@@ -2196,7 +2197,7 @@ class Rotation:
             return Rotation(self._quat[indexer, all_ind], normalize=False)
         return Rotation(self._quat[indexer, ...], normalize=False)
 
-    def __setitem__(self, indexer, value: Rotation):
+    def __setitem__(self, indexer: int | slice | EllipsisType | None, value: Rotation):
         """Set rotation(s) at given index(es) from object.
 
         Parameters
@@ -2225,10 +2226,10 @@ class Rotation:
 
         self._quat = self._backend.setitem(self._quat, value.as_quat(), indexer)
 
-    def __getstate__(self):
+    def __getstate__(self) -> tuple[Array, bool]:
         return (self._quat, self._single)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
         self._backend = backend_registry.get(xp, array_api_backend)
@@ -2236,20 +2237,20 @@ class Rotation:
         self._single = single
 
     @property
-    def single(self):
+    def single(self) -> bool:
         """Whether this instance represents a single rotation."""
         # TODO: Remove this once we properly support broadcasting with arbitrary
         # number of rotations
         return self._single or self._quat.ndim == 1
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """Comply with Python convention for objects to be True.
 
         Required because `Rotation.__len__()` is defined and not always truthy.
         """
         return True
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of rotations contained in this object.
 
         Multiple rotations can be stored in a single instance.
@@ -2268,7 +2269,7 @@ class Rotation:
             raise TypeError("Single rotation has no len().")
         return self._quat.shape[0]
 
-    def __mul__(self, other):
+    def __mul__(self, other: Rotation) -> Rotation:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
