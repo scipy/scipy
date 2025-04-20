@@ -153,4 +153,12 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
+fs = import('fs')
+if not fs.exists('subprojects/xsf/README.md')
+  error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
+endif
+
+xsf = subproject('xsf')
+xsf_dep = xsf.get_variable('xsf_dep')
+
 subdir('scipy')
