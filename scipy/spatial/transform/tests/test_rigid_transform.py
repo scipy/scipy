@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, RigidTransform
 from scipy.spatial.transform._rigid_transform import normalize_dual_quaternion
-from scipy._lib._array_api import is_lazy_array, xp_vector_norm
+from scipy._lib._array_api import is_lazy_array, xp_vector_norm, is_numpy, is_jax
 import scipy._lib.array_api_extra as xpx
 
 
@@ -985,48 +985,54 @@ def test_properties(xp):
     assert_allclose(tf.translation, t, atol=atol)
 
 
-def test_indexing():
+def test_indexing(xp):
     atol = 1e-12
 
     # Test indexing for multiple transforms
-    r = Rotation.from_euler("zyx", [[90, 0, 0], [0, 90, 0]], degrees=True)
-    t = np.array([[1, 2, 3], [4, 5, 6]])
+    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    t = xp.asarray([[1, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
 
     # Test single index
     assert_allclose(tf[0].as_matrix()[:3, :3], r[0].as_matrix(), atol=atol)
-    assert_allclose(tf[0].as_matrix()[:3, 3], t[0], atol=atol)
+    assert_allclose(tf[0].as_matrix()[:3, 3], t[0, ...], atol=atol)
 
     # Test slice
     tf_slice = tf[0:2]
     assert_allclose(tf_slice.as_matrix()[:, :3, :3], r[0:2].as_matrix(), atol=atol)
-    assert_allclose(tf_slice.as_matrix()[:, :3, 3], t[0:2], atol=atol)
+    assert_allclose(tf_slice.as_matrix()[:, :3, 3], t[0:2, ...], atol=atol)
 
     # Test boolean indexing
-    tf_masked = tf[[True, True]]
+    tf_masked = tf[xp.asarray([True, True])]
     assert_allclose(tf_masked.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
     assert_allclose(tf_masked.as_matrix()[:, :3, 3], t, atol=atol)
 
-    tf_masked = tf[[False, True]]
+    tf_masked = tf[xp.asarray([False, True])]
     assert_allclose(
-        tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(), atol=atol
+        tf_masked.as_matrix()[:, :3, :3],
+        r[xp.asarray([False, True])].as_matrix(),
+        atol=atol,
     )
-    assert_allclose(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
+    assert_allclose(
+        tf_masked.as_matrix()[:, :3, 3], t[xp.asarray([False, True])], atol=atol
+    )
 
-    tf_masked = tf[[False, False]]
+    tf_masked = tf[xp.asarray([False, False])]
     assert len(tf_masked) == 0
 
 
-def test_concatenate():
+def test_concatenate(xp):
     atol = 1e-12
 
     # Test concatenation of transforms
-    t1 = np.array([1, 0, 0])
+    t1 = xp.asarray([1, 0, 0])
     r1 = Rotation.from_euler("z", 90, degrees=True)
+    r1 = Rotation.from_quat(xp.asarray(r1.as_quat()))
     tf1 = RigidTransform.from_components(t1, r1)
 
-    t2 = np.array([0, 1, 0])
+    t2 = xp.asarray([0, 1, 0])
     r2 = Rotation.from_euler("x", 90, degrees=True)
+    r2 = Rotation.from_quat(xp.asarray(r2.as_quat()))
     tf2 = RigidTransform.from_components(t2, r2)
 
     # Concatenate single transforms
@@ -1041,66 +1047,91 @@ def test_concatenate():
     assert_allclose(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
 
-def test_input_validation():
+def test_concatenate_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    tf = RigidTransform.from_translation([1, 0, 0])
+    concatenate = jax.jit(RigidTransform.concatenate)
+    result = jax.block_until_ready(concatenate([tf, tf]))
+    assert isinstance(result, RigidTransform)
+
+
+def test_input_validation(xp):
     # Test invalid matrix shapes
-    inputs = [np.eye(3), np.zeros((4, 3)), [], np.zeros((1, 1, 4, 4))]
+    inputs = [xp.eye(3), xp.zeros((4, 3)), [], xp.zeros((1, 1, 4, 4))]
     for input in inputs:
         with pytest.raises(ValueError, match="Expected `matrix` to have shape"):
             RigidTransform.from_matrix(input)
 
     # Test invalid last row
-    with pytest.raises(ValueError, match="last row of transformation matrix 0"):
-        matrix = np.eye(4)
-        matrix[3, :] = [1, 0, 0, 1]
-        RigidTransform.from_matrix(matrix)
+    matrix = xp.eye(4)
+    matrix = xpx.at(matrix)[3, 0].set(1)
+    if is_lazy_array(matrix):
+        matrix = RigidTransform.from_matrix(matrix).as_matrix()
+        assert xp.all(xp.isnan(matrix))
+    else:
+        with pytest.raises(ValueError, match="last row of transformation matrix 0"):
+            RigidTransform.from_matrix(matrix)
 
     # Test invalid last row for multiple transforms
-    with pytest.raises(ValueError, match="last row of transformation matrix 1"):
-        matrix = np.array([np.eye(4)] * 2)
-        matrix[1, 3, :] = [1, 0, 0, 1]
-        RigidTransform.from_matrix(matrix)
+    matrix = xp.zeros((2, 4, 4))
+    matrix = xpx.at(matrix)[...].set(xp.eye(4))
+    matrix = xpx.at(matrix)[1, 3, 0].set(1)
+    if is_lazy_array(matrix):
+        matrix = RigidTransform.from_matrix(matrix).as_matrix()
+        assert not xp.any(xp.isnan(matrix[0, ...]))
+        assert xp.all(xp.isnan(matrix[1, ...]))
+    else:
+        with pytest.raises(ValueError, match="last row of transformation matrix 1"):
+            RigidTransform.from_matrix(matrix)
 
     # Test left handed rotation matrix
-    with pytest.raises(ValueError, match="Non-positive determinant"):
-        matrix = np.eye(4)
-        matrix[0, 0] = -1
-        RigidTransform(matrix, normalize=True)
+    matrix = xp.eye(4)
+    matrix = xpx.at(matrix)[0, 0].set(-1)
+    if is_lazy_array(matrix):
+        matrix = RigidTransform.from_matrix(matrix).as_matrix()
+        assert xp.all(xp.isnan(matrix[..., :3, :3]))
+    else:
+        with pytest.raises(ValueError, match="Non-positive determinant"):
+            RigidTransform(matrix, normalize=True)
 
     # Test non-Rotation input
     with pytest.raises(
         ValueError, match="Expected `rotation` to be a `Rotation` instance"
     ):
-        RigidTransform.from_rotation(np.eye(3))
+        RigidTransform.from_rotation(xp.eye(3))
 
 
-def test_translation_validation():
+def test_translation_validation(xp):
     # Test invalid translation shapes
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransform.from_translation([1, 2])
+        RigidTransform.from_translation(xp.asarray([1, 2]))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransform.from_translation(np.zeros((2, 2)))
+        RigidTransform.from_translation(xp.zeros((2, 2)))
 
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
-        RigidTransform.from_translation(np.zeros((1, 1, 3)))
+        RigidTransform.from_translation(xp.zeros((1, 1, 3)))
 
 
-def test_vector_validation():
+def test_vector_validation(xp):
     tf = RigidTransform.identity(2)
+    tf = RigidTransform.from_matrix(xp.asarray(tf.as_matrix()))
 
     # Test invalid vector shapes
     with pytest.raises(ValueError, match="Expected vector to have shape"):
-        tf.apply([1, 2])
+        tf.apply(xp.asarray([1, 2]))
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
-        tf.apply(np.zeros((2, 2)))
+        tf.apply(xp.zeros((2, 2)))
 
     with pytest.raises(ValueError, match="Expected vector to have shape"):
-        tf.apply(np.zeros((1, 1, 3)))
+        tf.apply(xp.zeros((1, 1, 3)))
 
 
-def test_indexing_validation():
-    tf = RigidTransform.identity()
+def test_indexing_validation(xp):
+    tf = RigidTransform.from_matrix(xp.eye(4))
 
     # Test indexing on single transform
     with pytest.raises(TypeError, match="Single transform is not subscriptable"):
@@ -1114,26 +1145,26 @@ def test_indexing_validation():
         len(tf)
 
 
-def test_composition_validation():
-    tf2 = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6]])
-    tf3 = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+def test_composition_validation(xp):
+    tf2 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
+    tf3 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
 
     # Test incompatible shapes
     with pytest.raises(ValueError, match="Expected equal number of transforms"):
         tf2 * tf3
 
 
-def test_concatenate_validation():
-    tf = RigidTransform.identity()
+def test_concatenate_validation(xp):
+    tf = RigidTransform.from_matrix(xp.eye(4))
 
     # Test invalid inputs
     with pytest.raises(TypeError, match="input must contain RigidTransform objects"):
-        RigidTransform.concatenate([tf, np.eye(4)])
+        RigidTransform.concatenate([tf, xp.eye(4)])
 
 
-def test_setitem_validation():
-    tf = RigidTransform.from_translation([[1, 2, 3], [4, 5, 6]])
-    single = RigidTransform.identity()
+def test_setitem_validation(xp):
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
+    single = RigidTransform.from_matrix(xp.eye(4))
 
     # Test setting item on single transform
     with pytest.raises(TypeError, match="Single transform is not subscriptable"):
@@ -1141,59 +1172,70 @@ def test_setitem_validation():
 
     # Test invalid value type
     with pytest.raises(TypeError, match="value must be a RigidTransform"):
-        tf[0] = np.eye(4)
+        tf[0] = xp.eye(4)
 
 
-def test_copy_flag():
+def test_copy_flag(xp):
     # Test that copy=True creates new memory
-    matrix = np.eye(4)
+    matrix = xp.eye(4)
     tf = RigidTransform(matrix, normalize=False, copy=True)
-    matrix[0, 0] = 2
+    matrix = xpx.at(matrix)[0, 0].set(2)
     assert tf.as_matrix()[0, 0] == 1
 
-    # Test that copy=False shares memory
-    matrix = np.eye(4)
+    # Test that copy=False shares memory. Does not work with lazy arrays.
+    if is_lazy_array(matrix):
+        pytest.skip("Lazy arrays do not support inplace operations")
+
+    matrix = xp.eye(4)
     tf = RigidTransform(matrix, normalize=False, copy=False)
-    matrix[0, 0] = 2
+    matrix = xpx.at(matrix)[0, 0].set(2)
     assert tf.as_matrix()[0, 0] == 2
 
 
-def test_normalize_dual_quaternion():
-    dual_quat = normalize_dual_quaternion(np.zeros((1, 8)))
-    assert_allclose(np.linalg.norm(dual_quat[0, :4]), 1.0, atol=1e-12)
+def test_normalize_dual_quaternion(xp):
+    dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
+    assert_allclose(xp_vector_norm(dual_quat[0, :4], axis=-1), 1.0, atol=1e-12)
     assert_allclose(dual_quat[0, :4] @ dual_quat[0, 4:], 0.0, atol=1e-12)
 
     rng = np.random.default_rng(103213650)
-    dual_quat = rng.normal(size=(1000, 8))
+    dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
     dual_quat = normalize_dual_quaternion(dual_quat)
-    assert_allclose(np.linalg.norm(dual_quat[:, :4], axis=1), 1.0, atol=1e-12)
-    assert_allclose(
-        np.einsum("ij,ij->i", dual_quat[:, :4], dual_quat[:, 4:]), 0.0, atol=1e-12
-    )
+    assert_allclose(xp_vector_norm(dual_quat[:, :4], axis=-1), 1.0, atol=1e-12)
+    assert_allclose(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), 0.0, atol=1e-12)
 
 
-def test_empty_transform_construction():
-    tf = RigidTransform.from_matrix(np.empty((0, 4, 4)))
+def test_normalize_dual_quaternion_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    dual_quat = jax.numpy.zeros((1, 8))
+    jit_normalize_dual_quaternion = jax.jit(normalize_dual_quaternion)
+    jax.block_until_ready(jit_normalize_dual_quaternion(dual_quat))
+
+
+def test_empty_transform_construction(xp):
+    tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_rotation(Rotation.random(0))
+    empty_rot = Rotation.from_quat(xp.empty((0, 4)))
+    tf = RigidTransform.from_rotation(empty_rot)
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_translation(np.empty((0, 3)))
+    tf = RigidTransform.from_translation(xp.empty((0, 3)))
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_components(np.empty((0, 3)), Rotation.random(0))
+    tf = RigidTransform.from_components(xp.empty((0, 3)), empty_rot)
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_exp_coords(np.empty((0, 6)))
+    tf = RigidTransform.from_exp_coords(xp.empty((0, 6)))
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_dual_quat(np.empty((0, 8)))
+    tf = RigidTransform.from_dual_quat(xp.empty((0, 8)))
     assert len(tf) == 0
     assert not tf.single
 
@@ -1202,8 +1244,8 @@ def test_empty_transform_construction():
     assert not tf.single
 
 
-def test_empty_transform_representation():
-    tf = RigidTransform.identity(0)
+def test_empty_transform_representation(xp):
+    tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
     assert len(tf.rotation) == 0
     assert tf.translation.shape == (0, 3)
@@ -1217,20 +1259,21 @@ def test_empty_transform_representation():
     assert tf.as_dual_quat().shape == (0, 8)
 
 
-def test_empty_transform_application():
-    tf = RigidTransform.identity(0)
+def test_empty_transform_application(xp):
+    tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
-    assert tf.apply(np.zeros((3,))).shape == (0, 3)
-    assert tf.apply(np.empty((0, 3))).shape == (0, 3)
+    assert tf.apply(xp.zeros((3,))).shape == (0, 3)
+    assert tf.apply(xp.empty((0, 3))).shape == (0, 3)
 
     with pytest.raises(ValueError, match="operands could not be broadcast together"):
-        tf.apply(np.zeros((2, 3)))
+        tf.apply(xp.zeros((2, 3)))
 
 
-def test_empty_transform_composition():
-    tf_empty = RigidTransform.identity(0)
-    tf_single = RigidTransform.identity()
+def test_empty_transform_composition(xp):
+    tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
+    tf_single = RigidTransform.from_matrix(xp.eye(4))
     tf_many = RigidTransform.identity(3)
+    tf_many = RigidTransform.from_matrix(xp.asarray(tf_many.as_matrix()))
 
     assert len(tf_empty * tf_empty) == 0
     assert len(tf_empty * tf_single) == 0
@@ -1243,10 +1286,11 @@ def test_empty_transform_composition():
         tf_empty * tf_many
 
 
-def test_empty_transform_concatenation():
-    tf_empty = RigidTransform.identity(0)
-    tf_single = RigidTransform.identity()
+def test_empty_transform_concatenation(xp):
+    tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
+    tf_single = RigidTransform.from_matrix(xp.eye(4))
     tf_many = RigidTransform.identity(2)
+    tf_many = RigidTransform.from_matrix(xp.asarray(tf_many.as_matrix()))
 
     assert len(RigidTransform.concatenate([tf_empty, tf_empty])) == 0
     assert len(RigidTransform.concatenate([tf_empty, tf_single])) == 1
@@ -1256,8 +1300,8 @@ def test_empty_transform_concatenation():
     assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
 
 
-def test_empty_transform_inv_and_pow():
-    tf = RigidTransform.identity(0)
+def test_empty_transform_inv_and_pow(xp):
+    tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf.inv()) == 0
     assert len(tf**0) == 0
     assert len(tf**1) == 0
@@ -1265,19 +1309,26 @@ def test_empty_transform_inv_and_pow():
     assert len(tf**0.5) == 0
 
 
-def test_empty_transform_indexing():
+def test_empty_transform_indexing(xp):
     tf_many = RigidTransform.identity(3)
-    tf_zero = tf_many[[]]
+    tf_many = RigidTransform.from_matrix(xp.asarray(tf_many.as_matrix()))
+    tf_zero = tf_many[xp.asarray([], dtype=xp.int64)]
     assert len(tf_zero) == 0
 
-    assert len(tf_zero[[]]) == 0
-    assert len(tf_zero[:5]) == 0  # Slices can go out of bounds.
+    assert len(tf_zero[xp.asarray([], dtype=xp.int64)]) == 0
+    # Array API does not specify out-of-bounds indexing. Only check for numpy.
+    if is_numpy(xp):
+        assert len(tf_zero[:5]) == 0  # Slices can go out of bounds.
 
     with pytest.raises(IndexError):
         tf_zero[0]
 
-    with pytest.raises(IndexError):
-        tf_zero[[0, 2]]
+    if is_jax(xp):  # DECISION: Should we manually check and raise for jax here?
+        with pytest.raises(TypeError, match="Slice size at index 0 in gather op"):
+            tf_zero[xp.asarray([0, 2])]
+    else:
+        with pytest.raises(IndexError):
+            tf_zero[xp.asarray([0, 2])]
 
     with pytest.raises(IndexError):
         tf_zero[[False, True]]

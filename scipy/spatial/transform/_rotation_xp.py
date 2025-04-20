@@ -8,6 +8,7 @@ with any Array API-compatible backend.
 # https://github.com/jax-ml/jax/blob/d695aa4c63ffcebefce52794427c46bad576680c/jax/_src/scipy/spatial/transform.py.
 import re
 import warnings
+from types import EllipsisType
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -588,7 +589,9 @@ def apply(quat: Array, points: Array, inverse: bool = False) -> Array:
     return xp.where(inverse, mat.mT @ points, mat @ points)[..., 0]
 
 
-def setitem(quat: Array, value: Array, indexer) -> Array:
+def setitem(
+    quat: Array, value: Array, indexer: int | slice | EllipsisType | None
+) -> Array:
     quat = xpx.at(quat)[indexer, ...].set(value)
     return quat
 

@@ -889,16 +889,16 @@ class RigidTransform:
         if num is None:
             matrix = np.eye(4)
         else:
-            if not isinstance(num, int) or num < 1:
-                raise ValueError("Expected a positive number, got {}".format(num))
             matrix = np.tile(np.eye(4), (num, 1, 1))
-
         # No need for a backend call here since identity is easy to construct
         # We're using NumPy directly here since this is a simple operation
         # The array will be handled by the class init which will get the appropriate backend
         return cls(matrix, normalize=False, copy=False)
 
-    def concatenate(self, transforms: Iterable[RigidTransform]) -> RigidTransform:
+    @classmethod
+    def concatenate(
+        cls, transforms: RigidTransform | Iterable[RigidTransform]
+    ) -> RigidTransform:
         """
         Concatenate a sequence of `RigidTransform` objects into a
         single object.
@@ -924,6 +924,16 @@ class RigidTransform:
                [2., 0., 0.],
                [3., 0., 0.]])
         """
+        if isinstance(transforms, RigidTransform):
+            return cls(transforms.as_matrix(), normalize=False, copy=True)
+        if not all(isinstance(x, RigidTransform) for x in transforms):
+            raise TypeError("input must contain RigidTransform objects only")
+
+        xp = array_namespace(transforms[0].as_matrix())
+        matrix = xp.concat(
+            [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
+        )
+        return cls(matrix, normalize=False)
 
     def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
@@ -1151,7 +1161,7 @@ class RigidTransform:
         TypeError: Single transform has no len().
         """
         if self.single:
-            return 1
+            raise TypeError("Single transform has no len")
         return self._matrix.shape[0]
 
     def __getitem__(self, indexer: int | slice | EllipsisType | None) -> RigidTransform:
@@ -1205,6 +1215,27 @@ class RigidTransform:
         array([[0., 0., 0.],
                [2., 0., 0.]])
         """
+        if self.single:
+            raise TypeError("Single transform is not subscriptable.")
+
+        is_array = isinstance(indexer, type(self._matrix))
+        # Masking is only specified in the Array API when the array is the sole index
+        # TODO: Getting xp on every call may be expensive. Check if we can make access to xp more
+        # efficient. Should we store a self._xp attribute?
+        # TODO: This special case handling is mainly a result of Array API limitations. Ideally we
+        # would get rid of them altogether and converge to [indexer, ...] indexing.
+        xp = array_namespace(self._matrix)
+        if is_array and indexer.dtype == xp.bool:
+            return RigidTransform(self._matrix[indexer], normalize=False)
+        if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
+            # Array API limitation: Integer index arrays are only allowed with integer indices
+            all_ind = xp.arange(4)
+            indexer = xp.reshape(indexer, (indexer.shape[0], 1, 1))
+            return RigidTransform(
+                self._matrix[indexer, all_ind[None, :, None], all_ind[None, None, :]],
+                normalize=False,
+            )
+        return RigidTransform(self._matrix[indexer, ...], normalize=False)
 
     def __setitem__(
         self, indexer: int | slice | EllipsisType | None, value: RigidTransform
@@ -1239,6 +1270,13 @@ class RigidTransform:
                [1., 0., 0.],
                [2., 0., 0.]])
         """
+        if self.single:
+            raise TypeError("Single transform is not subscriptable.")
+
+        if not isinstance(value, RigidTransform):
+            raise TypeError("value must be a RigidTransform object")
+
+        self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
     def __mul__(self, other: RigidTransform) -> RigidTransform:
         """Compose this transform with the other.

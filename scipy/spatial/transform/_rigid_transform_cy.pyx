@@ -234,6 +234,15 @@ def pow(matrix: double[:, :, :], float n) -> double[:, :, :]:
     return from_exp_coords(as_exp_coords(matrix) * n)
 
 
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def setitem(matrix: double[:, :, :], indexer, value: double[:, :, :]) -> double[:, :, :]:
+    arr = np.asarray(matrix)
+    arr[indexer] = value
+    return arr
+
+
 def _create_transformation_matrix(
     translations: double[:] | double[:, :],
     rotation_matrices: double[:, :] | double[:, :, :],
@@ -325,6 +334,14 @@ cdef _create_skew_matrix(vec):
     result[:, 2, 0] = -vec[:, 1]
     result[:, 2, 1] = vec[:, 0]
     return result
+
+
+@cython.embedsignature(True)
+def normalize_dual_quaternion(dual_quat: double[:, :]) -> double[:, :]:
+    """Normalize dual quaternion."""
+    real, dual = _normalize_dual_quaternion(
+        dual_quat[..., :4], dual_quat[..., 4:])
+    return np.concatenate((real, dual), axis=-1)
 
 
 cdef _normalize_dual_quaternion(real_part, dual_part):

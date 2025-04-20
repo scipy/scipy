@@ -2074,6 +2074,17 @@ def test_concatenate_wrong_type(xp):
         Rotation.concatenate([rot, 1, None])
 
 
+def test_concatenate_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+
+    rotation = Rotation.random(10, rng=0)
+    rotation = Rotation.from_quat(jax.numpy.asarray(rotation.as_quat()))
+    concatenate = jax.jit(Rotation.concatenate)
+    result = jax.block_until_ready(concatenate([rotation, rotation]))
+    assert isinstance(result, Rotation)
+
+
 # Regression test for gh-16663
 def test_len_and_bool(xp):
     rotation_multi_one = Rotation(xp.asarray([[0, 0, 0, 1]]))

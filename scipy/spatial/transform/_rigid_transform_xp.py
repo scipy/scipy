@@ -1,3 +1,5 @@
+from types import EllipsisType
+
 from scipy._lib._array_api import array_namespace, Array, is_lazy_array, xp_vector_norm
 import scipy._lib.array_api_extra as xpx
 from scipy.spatial.transform._rotation_xp import (
@@ -19,13 +21,13 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     if normalize or copy:
         matrix = xp.asarray(matrix, copy=True)
 
-    last_row_ok = xp.all(matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0]))
+    last_row_ok = xp.all(matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0]), axis=-1)
     if is_lazy_array(matrix):
-        matrix = xp.where(last_row_ok, matrix, xp.nan)
+        matrix = xp.where(last_row_ok[..., None, None], matrix, xp.nan)
     elif xp.any(~last_row_ok):
         last_row_ok = xpx.atleast_nd(last_row_ok, ndim=1, xp=xp)
         matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
-        ind = xp.nonzero(~last_row_ok)[0][0]
+        ind = int(xp.nonzero(~last_row_ok)[0][0])
         raise ValueError(
             f"Expected last row of transformation matrix {ind} to be "
             f"exactly [0, 0, 0, 1], got {matrix[ind, 3, xp.arange(4)]}."
@@ -175,13 +177,20 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
     vec = xp.empty((*vector.shape[:-1], 4), dtype=vector.dtype, device=device(vector))
     vec = xpx.at(vec)[..., :3].set(vector)
     vec = xpx.at(vec)[..., 3].set(1)
+    vec = vec[..., None]
 
     if inverse:
         matrix = inv(matrix)
 
+    # TODO: We raise a ValueError manually here because letting the function run its course would
+    # raise heterogeneous error types and messages for different frameworks. However, the error only
+    # mimics numpy's error message and does not provide the same amount of context.
+    if not broadcastable(matrix.shape, vec.shape):
+        raise ValueError("operands could not be broadcast together")
+
     # This einsum performs matrix multiplication of each of the (..., 4, 4) matrices in `matrix`
     # with the (..., 4) vectors in `vec`, with proper broadcasting for different dimensions.
-    return (matrix @ vec[..., None])[..., :3, 0]
+    return (matrix @ vec)[..., :3, 0]
 
 
 def pow(matrix: Array, n: float) -> Array:
@@ -205,6 +214,19 @@ def pow(matrix: Array, n: float) -> Array:
     result = xp.where(n == -1, inv(matrix), result)
     result = xp.where(n == 1, matrix, result)
     return result
+
+
+def setitem(
+    matrix: Array, indexer: int | slice | EllipsisType | None, value: Array
+) -> Array:
+    return xpx.at(matrix)[indexer].set(value)
+
+
+def normalize_dual_quaternion(dual_quat: Array) -> Array:
+    """Normalize dual quaternion."""
+    xp = array_namespace(dual_quat)
+    real, dual = _normalize_dual_quaternion(dual_quat[..., :4], dual_quat[..., 4:])
+    return xp.concat((real, dual), axis=-1)
 
 
 def _create_transformation_matrix(
@@ -292,7 +314,9 @@ def _create_skew_matrix(vec: Array) -> Array:
     return result
 
 
-def _normalize_dual_quaternion(real_part, dual_part):
+def _normalize_dual_quaternion(
+    real_part: Array, dual_part: Array
+) -> tuple[Array, Array]:
     """Ensure that unit norm of the dual quaternion.
 
     The norm is a dual number and must be 1 + 0 * epsilon, which means that
