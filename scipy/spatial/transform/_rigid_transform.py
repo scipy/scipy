@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+from typing import Iterable
+
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, is_numpy, ArrayLike
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    ArrayLike,
+    xp_result_type,
+    Array,
+)
 from scipy.spatial.transform.rotation import Rotation
 
 # import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy.spatial.transform._rigid_transform_xp as array_api_backend
+import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy._lib.array_api_extra as xpx
 
 
 __all__ = ["RigidTransform"]
 
-cython_backend = None  # TODO: Add cython backend
 backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
@@ -450,7 +458,7 @@ class RigidTransform:
         return cls(matrix, normalize=True, copy=True)
 
     @classmethod
-    def from_rotation(cls, rotation):
+    def from_rotation(cls, rotation: Rotation) -> RigidTransform:
         """Initialize from a rotation, without a translation.
 
         When applying this transform to a vector ``v``, the result is the
@@ -504,13 +512,18 @@ class RigidTransform:
         >>> len(tf)
         2
         """
+        # TODO: Should this not raise a TypeError?
         if not isinstance(rotation, Rotation):
-            raise TypeError("`rotation` must be a Rotation instance.")
-
-        rot_matrix = rotation.as_matrix()
-        xp = array_namespace(rot_matrix)
-        backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_from_rotation(rot_matrix)
+            raise ValueError(
+                "Expected `rotation` to be a `Rotation` instance, "
+                f"got {type(rotation)}."
+            )
+        quat = rotation.as_quat()
+        xp = array_namespace(quat)
+        quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
+        matrix = backend_registry.get(xp, array_api_backend).from_rotation(quat)
+        if rotation.single:
+            matrix = matrix[0, ...]
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
@@ -578,7 +591,7 @@ class RigidTransform:
         """
         xp = array_namespace(translation)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_from_translation(translation)
+        matrix = backend.from_translation(translation)
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
@@ -951,7 +964,11 @@ class RigidTransform:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        return self._matrix.copy()
+        xp = array_namespace(self._matrix)  # TODO: Maybe reduce overhead by storing xp?
+        matrix = xp.asarray(self._matrix, copy=True)
+        if self._single:
+            return matrix[0, ...]
+        return matrix
 
     def as_components(self):
         """Return the translation and rotation components of the transform,
@@ -1624,10 +1641,54 @@ class RigidTransform:
             True if this instance represents a single transform, False
             otherwise.
         """
-        return self._single
+        return self._single or self._matrix.ndim == 2
+
+    def _to_array(self, matrix: ArrayLike) -> Array:
+        xp = array_namespace(matrix)
+        # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
+        # implementation, but it might make more sense to preserve float32 if passed in by the user.
+        # This would make the behavior more consistent with the Array API backend, but requires
+        # changes in the cython backend.
+        if is_numpy(xp):
+            dtype = xp.float64
+        else:
+            dtype = xp_result_type(matrix, force_floating=True, xp=xp)
+        matrix = xp.asarray(matrix, dtype=dtype)
+        # TODO: Remove this once we properly support broadcasting
+        if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
+            raise ValueError(
+                "Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
+                f"got {matrix.shape}."
+            )
+        return matrix
 
     def __repr__(self):
-        m = f"{self.as_matrix()!r}".splitlines()
+        m = f"{np.asarray(self.as_matrix())!r}".splitlines()
         # bump indent (+27 characters)
         m[1:] = [" " * 27 + m[i] for i in range(1, len(m))]
         return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
+
+
+# Register as pytree node for JAX if available to make RigidTransform compatible as input argument
+# and return type for jit-compiled functions
+try:
+    from jax.tree_util import register_pytree_node
+
+    def transform_unflatten(_, c):
+        # Optimization: We do not want to call __init__ here to avoid any overhead. Init would call
+        # the non-jitted Array API backend and therefore incur a significant performance hit
+        tf = RigidTransform.__new__(RigidTransform)
+        # Someone could have registered a different backend for jax, so we attempt to fetch the
+        # updated backend here. If not, we fall back to the Array API backend.
+        tf._backend = backend_registry.get(array_namespace(c[0]), array_api_backend)
+        tf._matrix = c[0]
+        # We set _single to False for jax because the Array API backend supports broadcasting by
+        # default and hence returns the correct shape without the _single workaround
+        tf._single = False
+        return tf
+
+    register_pytree_node(
+        RigidTransform, lambda v: ((v._matrix,), None), transform_unflatten
+    )
+except ImportError:
+    pass
