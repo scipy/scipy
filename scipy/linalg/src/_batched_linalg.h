@@ -59,7 +59,7 @@ struct iter_data_t
     npy_intp ndim;
     npy_intp *shape;
     npy_intp *strides;
-    void *data_ptr;
+    char *data_ptr;
 
     npy_intp outer_size;  // math.prod(a.shape[:-2])
     npy_intp m, n;        // core dimensions
@@ -68,7 +68,7 @@ struct iter_data_t
         ndim = PyArray_NDIM(arr);
         shape = PyArray_SHAPE(arr);
         strides = PyArray_STRIDES(arr);
-        data_ptr = PyArray_DATA(arr);
+        data_ptr = (char *)PyArray_DATA(arr);
 
         m = shape[ndim - 2];
         n = shape[ndim - 1];
@@ -81,33 +81,43 @@ struct iter_data_t
             }
         }
     }
+};
 
-    /*
-     * Copy the slice number `idx` into the `buffer`.
-     */
-    template<typename T>
-    void copy_slice(const npy_intp idx, T *buffer) {
 
-        assert((0 <= idx) && (idx < outer_size));
+/*
+ * Copy the slice number `idx` into the `buffer`.
+ */
+template<typename T>
+void copy_slice(const iter_data_t *iter_data, const npy_intp idx, T *buffer) {
 
-        /* parroted from sqrtm*/
-        npy_intp offset = 0;
-        npy_intp temp_idx = idx;
-        for (npy_intp i = ndim - 3; i >= 0; i--) {
-            offset += (temp_idx % shape[i]) * strides[i];
-            temp_idx /= shape[i];
-        }
+    assert((0 <= idx) && (idx < iter_data->outer_size));
 
-        T *slice_ptr = (T *)(data_ptr) + offset/sizeof(T);
+    // compute the offset for the current slice
+    npy_intp offset = 0;
+    npy_intp temp_idx = idx;
+    for (npy_intp i = iter_data->ndim - 3; i >= 0; i--) {
+        offset += (temp_idx % iter_data->shape[i]) * iter_data->strides[i];
+        temp_idx /= iter_data->shape[i];
+    }
 
-        // copy the current n-x-n slice into the temp storage *in the Fortran order*
-        for(npy_intp i=0; i < m; i++) {
-            for(npy_intp j=0; j < n; j++) {
-                buffer[i + j*m] = *(slice_ptr + (i*strides[ndim - 2]/sizeof(T)) + (j*strides[ndim - 1]/sizeof(T)));
-            }
+    char *slice_ptr = iter_data->data_ptr + offset;
+
+    // core shape is (m, n)
+    npy_intp m = iter_data->m;
+    npy_intp n = iter_data->n;
+
+    // core strides are (s2, s1)
+    npy_intp s2 = iter_data->strides[iter_data->ndim - 2];
+    npy_intp s1 = iter_data->strides[iter_data->ndim - 1];
+
+    // copy the current m-by-n slice into the temp storage *in the Fortran order*
+    for(npy_intp i=0; i < m; i++) {
+        for(npy_intp j=0; j < n; j++) {
+            buffer[i + j*iter_data->m] = *(T *)(slice_ptr + i*s2 + j*s1);
         }
     }
-};
+}
+
 
 
 /***********************************
@@ -240,7 +250,7 @@ inline int inv_loop(PyArrayObject *arr, PyArrayObject *arr_inv)
     for(npy_intp idx=0; idx < iter_data.outer_size; idx++) {
 
         // fill the buffer with the current slice
-        iter_data.copy_slice(idx, A);
+        copy_slice(&iter_data, idx, A);
 
         // call LAPACK on the current slice
         is_ok = invert_slice(N, A, lda, ipiv, work, lwork);
