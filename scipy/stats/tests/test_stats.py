@@ -2852,10 +2852,10 @@ class TestMode:
                 return self._x.astype(object)
 
             def __iter__(self):
-                # I don't know of a canonical way to determine whether an object should be
-                # coerced to a NumPy array or not. Currently, `xp_promote` checks whether
-                # they are iterable, and if so uses `_asarray` with whatever `xp` is. So
-                # for this to get coerced, it needs to be iterable.
+                # I don't know of a canonical way to determine whether an object should
+                # be coerced to a NumPy array or not. Currently, `xp_promote` checks
+                # whether they are iterable, and if so uses `_asarray` with whatever
+                # `xp` is. So for this to get coerced, it needs to be iterable.
                 return iter(self._x)
 
         with pytest.raises(TypeError, match=message):

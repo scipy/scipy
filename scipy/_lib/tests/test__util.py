@@ -11,7 +11,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.conftest import skip_xp_invalid_arg
 
-from scipy._lib._array_api import xp_assert_equal, is_numpy
+from scipy._lib._array_api import xp_assert_equal
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
