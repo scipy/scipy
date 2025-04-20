@@ -33,6 +33,9 @@ def get_test_cases():
     cases = []
     for ufunc, header, routine in cases_source:
         preamble = f"#include <xsf/{header}>"
+        if not hasattr(ufunc, 'types'):
+            # The ufunc may have been replaced in _support_alternative_backends.
+            continue
         for signature in ufunc.types:
             cases.append((signature, preamble, routine))
     return cases
