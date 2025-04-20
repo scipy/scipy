@@ -3110,9 +3110,6 @@ class TestZscore:
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
@@ -3137,7 +3134,7 @@ class TestZscore:
         y = xp.ones((3, 6))
         with warn_ctx:
             z = stats.zscore(y, axis=None)
-        xp_assert_equal(z, xp.full(y.shape, xp.asarray(xp.nan)))
+        xp_assert_equal(z, xp.full_like(y, xp.nan))
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_zscore_constant_input_2d_nan_policy_omit(self, xp):
