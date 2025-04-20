@@ -24,13 +24,16 @@ def test_laplacian_value_error():
             assert_raises(ValueError, csgraph.laplacian, A)
 
 
-def _explicit_laplacian(x, normed=False):
+def _explicit_laplacian(x, normed=False, use_abs=False):
     if sparse.issparse(x):
         x = x.toarray()
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
+        if use_abs:
+            y[j,j] = np.abs(x[j,j+1:]).sum() + np.abs(x[j,:j]).sum()
+        else:
+            y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -39,7 +42,7 @@ def _explicit_laplacian(x, normed=False):
     return y
 
 
-def _check_symmetric_graph_laplacian(mat, normed, copy=True):
+def _check_symmetric_graph_laplacian(mat, normed, copy=True, use_abs=False):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -53,10 +56,12 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
     sp_mat_copy = sparse.csr_array(sp_mat, copy=True)
 
     n_nodes = mat.shape[0]
-    explicit_laplacian = _explicit_laplacian(mat, normed=normed)
-    laplacian = csgraph.laplacian(mat, normed=normed, copy=copy)
+    explicit_laplacian = _explicit_laplacian(mat, normed=normed, 
+                                             use_abs=use_abs)
+    laplacian = csgraph.laplacian(mat, normed=normed, copy=copy,
+                                   use_abs=use_abs)
     sp_laplacian = csgraph.laplacian(sp_mat, normed=normed,
-                                     copy=copy)
+                                     copy=copy, use_abs=use_abs)
 
     if copy:
         assert_allclose(mat, mat_copy)
@@ -89,7 +94,8 @@ def test_symmetric_graph_laplacian():
     for mat in symmetric_mats:
         for normed in True, False:
             for copy in True, False:
-                _check_symmetric_graph_laplacian(mat, normed, copy)
+                for use_abs in True, False:
+                    _check_symmetric_graph_laplacian(mat, normed, copy, use_abs)
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -102,7 +108,7 @@ def _assert_allclose_sparse(a, b, **kwargs):
 
 
 def _check_laplacian_dtype_none(
-    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
+    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type, use_abs
 ):
     mat = arr_type(A, dtype=dtype)
     L, d = csgraph.laplacian(
@@ -112,6 +118,7 @@ def _check_laplacian_dtype_none(
         use_out_degree=use_out_degree,
         copy=copy,
         dtype=None,
+        use_abs=use_abs,
     )
     if normed and check_int_type(mat):
         assert L.dtype == np.float64
@@ -135,7 +142,7 @@ def _check_laplacian_dtype_none(
 
 
 def _check_laplacian_dtype(
-    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
+    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type, use_abs
 ):
     mat = arr_type(A, dtype=dtype)
     L, d = csgraph.laplacian(
@@ -145,6 +152,7 @@ def _check_laplacian_dtype(
         use_out_degree=use_out_degree,
         copy=copy,
         dtype=dtype,
+        use_abs=use_abs,
     )
     assert L.dtype == dtype
     assert d.dtype == dtype
@@ -176,42 +184,71 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
+@pytest.mark.parametrize("use_abs", [True, False])
 def test_asymmetric_laplacian(use_out_degree, normed,
-                              copy, dtype, arr_type):
+                              copy, dtype, arr_type, use_abs):
     # adjacency matrix
-    A = [[0, 1, 0],
-         [4, 2, 0],
-         [0, 0, 0]]
+    A = [[0, 2, -2],
+         [2, 0, 2],
+         [-2, 2, 0]]
     A = arr_type(np.array(A), dtype=dtype)
     A_copy = A.copy()
 
-    if not normed and use_out_degree:
+    if not normed and use_out_degree and not use_abs:
         # Laplacian matrix using out-degree
-        L = [[1, -1, 0],
-             [-4, 4, 0],
-             [0, 0, 0]]
-        d = [1, 4, 0]
+        L = [[0, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 0]]
+        d = [0, 4, 0]
 
-    if normed and use_out_degree:
+    if normed and use_out_degree and not use_abs:
         # normalized Laplacian matrix using out-degree
-        L = [[1, -0.5, 0],
-             [-2, 1, 0],
-             [0, 0, 0]]
+        L = [[0, -1, 2],
+             [-1, 1, -1],
+             [2, -1, 0]]
         d = [1, 2, 1]
 
-    if not normed and not use_out_degree:
+    if not normed and not use_out_degree and not use_abs:
         # Laplacian matrix using in-degree
-        L = [[4, -1, 0],
-             [-4, 1, 0],
-             [0, 0, 0]]
-        d = [4, 1, 0]
+        L = [[0, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 0]]
+        d = [0, 4, 0]
 
-    if normed and not use_out_degree:
+    if normed and not use_out_degree and not use_abs:
         # normalized Laplacian matrix using in-degree
-        L = [[1, -0.5, 0],
-             [-2, 1, 0],
-             [0, 0, 0]]
-        d = [2, 1, 1]
+        L = [[0, -1, 2],
+             [-1, 1, -1],
+             [2, -1, 0]]
+        d = [1, 2, 1]
+
+    if not normed and use_out_degree and use_abs:
+        # Laplacian matrix using out-degree with abs
+        L = [[4, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 4]]
+        d = [4, 4, 4]
+
+    if normed and use_out_degree and use_abs:
+        # normalized Laplacian matrix using out-degree with abs
+        L = [[1, -0.5, 0.5],
+             [-0.5, 1, -0.5],
+             [0.5, -0.5, 1]]
+        d = [2, 2, 2]
+
+    if not normed and not use_out_degree and use_abs:
+        # Laplacian matrix using in-degree with abs
+        L = [[4, -2, 2],
+             [-2, 4, -2],
+             [2, -2, 4]]
+        d = [4, 4, 4]
+
+    if normed and not use_out_degree and use_abs:
+        # normalized Laplacian matrix using in-degree with abs
+        L = [[1, -0.5, 0.5],
+             [-0.5, 1, -0.5],
+             [0.5, -0.5, 1]]
+        d = [2, 2, 2]
 
     _check_laplacian_dtype_none(
         A,
@@ -222,6 +259,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
+        use_abs=use_abs,
     )
 
     _check_laplacian_dtype(
@@ -233,6 +271,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
+        use_abs=use_abs,
     )
 
 
@@ -240,9 +279,10 @@ def test_asymmetric_laplacian(use_out_degree, normed,
                                  'dok', 'dia', 'bsr'])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("copy", [True, False])
-def test_sparse_formats(fmt, normed, copy):
+@pytest.mark.parametrize("use_abs", [True, False])
+def test_sparse_formats(fmt, normed, copy, use_abs):
     mat = sparse.diags_array([1, 1], offsets=[-1, 1], shape=(4, 4), format=fmt)
-    _check_symmetric_graph_laplacian(mat, normed, copy)
+    _check_symmetric_graph_laplacian(mat, normed, copy, use_abs)
 
 
 @pytest.mark.parametrize(
@@ -318,7 +358,8 @@ def test_laplacian_symmetrized(arr_type, form):
 @pytest.mark.parametrize("symmetrized", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
-def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
+@pytest.mark.parametrize("use_abs", [True, False])
+def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form, use_abs):
     n = 3
     mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
     mat = arr_type(np.array(mat), dtype=dtype)
@@ -329,6 +370,7 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
         symmetrized=symmetrized,
         use_out_degree=use_out_degree,
         dtype=dtype,
+        use_abs=use_abs,
     )
     La, da = csgraph.laplacian(
         mat,
@@ -338,6 +380,7 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
         use_out_degree=use_out_degree,
         dtype=dtype,
         form="array",
+        use_abs=use_abs,
     )
     assert_allclose(do, da)
     _assert_allclose_sparse(Lo, La)
@@ -350,6 +393,7 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
         use_out_degree=use_out_degree,
         dtype=dtype,
         form=form,
+        use_abs=use_abs,
     )
     assert_allclose(d, do)
     assert d.dtype == dtype
