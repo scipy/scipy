@@ -218,22 +218,30 @@ endif
 # 2. targets with #include's (due to no `depend_files` - see feature request
 #    at meson#8295)
 f2py_gen = generator(generate_f2pymod,
-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'] + f2py_freethreading_arg,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@', '@EXTRA_ARGS@'] + f2py_freethreading_arg,
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 )
 
 
-# TODO: 64-bit BLAS and LAPACK
-#
-# Note that this works as long as BLAS and LAPACK are detected properly via
-# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
-# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
-# BLAS and LAPACK).
-# For MKL and for auto-detecting one of multiple libs, we'll need a custom
-# dependency in Meson (like is done for scalapack) - see
-# https://github.com/mesonbuild/meson/issues/2835
+# Start of BLAS/LAPACK detection
+
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+blas_symbol_suffix = get_option('blas-symbol-suffix')
+use_ilp64 = get_option('use-ilp64')
+
+# MKL-specific options
+_threading_opt = get_option('mkl-threading')
+if _threading_opt == 'auto'
+  # Switch default to iomp once conda-forge missing openmp.pc issue is fixed
+  mkl_opts = ['threading: seq']
+else
+  mkl_opts = ['threading: ' + _threading_opt]
+endif
+blas_opts = {'mkl': mkl_opts}
+mkl_version_req = '>=2023.0'  # see gh-24824
+mkl_may_use_sdl = not use_ilp64 and _threading_opt in ['auto', 'iomp']
+
 
 macOS13_3_or_later = false
 if host_machine.system() == 'darwin'
@@ -268,6 +276,7 @@ if blas_name == 'openblas' or blas_name == 'auto'
   endif
 endif
 
+# Try any other openblas 
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
@@ -275,10 +284,7 @@ if blas_name == 'openblas'
 elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
-blas_dep = declare_dependency(
-  dependencies: blas,
-  compile_args: _args_blas_lapack
-)
+
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
   # ABI wrappers, so detect it and error out if we cannot find it.
@@ -290,6 +296,30 @@ else
   cblas = []
 endif
 
+if blas_name == 'mkl'
+  blas = dependency('mkl',
+    modules: ['interface: lp64'] + mkl_opts,
+    required: false,  # may be required, but we need to emit a custom error message
+    version: mkl_version_req,
+  )
+  # Insert a second try with MKL, because we may be rejecting older versions
+  # or missing it because no pkg-config installed. If so, we need to retry
+  # with MKL SDL, and drop the version constraint (this always worked).
+  if not blas.found() and mkl_may_use_sdl
+    blas = dependency('mkl', modules: ['sdl: true'], required: false)
+  endif
+endif
+
+# fallback BLAS detection
+blas_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: _args_blas_lapack
+)
+
+if not blas.found()
+  error('No BLAS library detected! SciPy needs one, please install it.')
+endif
+
 if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
@@ -299,6 +329,11 @@ elif lapack_name == 'openblas'
 else
   lapack = dependency(lapack_name)
 endif
+
+if not lapack.found()
+  error('No LAPACK library detected! SciPy needs one, please install it.')
+endif
+
 lapack_dep = declare_dependency(
   dependencies: lapack,
   compile_args: _args_blas_lapack
@@ -310,12 +345,11 @@ dependency_map = {
   'PYBIND11': pybind11_dep,
 }
 
-# FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
-#        This needs work on gh-16200 to make MKL robust. We should be
-#        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
-#        in general to enable the ILP64 interface (also for OpenBLAS).
-uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
-uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
+# NB: from this point on blas_name is e.g. 'mkl-lp64-dynamic-seq'
+blas_name = blas.name()
+lapack_name = lapack.name()
+uses_mkl = blas_name.to_lower().startswith('mkl')
+uses_accelerate = blas_name.to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
   g77_abi_wrappers = static_library(
@@ -332,6 +366,104 @@ else
     gnu_symbol_visibility: 'hidden',
   )
 endif
+
+# Reuse the names, so we ensure we don't lose the arguments wrapped in with
+# declare_dependency. Also, avoids changing `dependencies: blas` to blas_dep in other files.
+# XXX: unused, remove?
+#blas = blas_dep
+#lapack = lapack_dep
+
+# Run ILP64 BLAS detection, if asked
+if use_ilp64
+  # Okay, we need ILP64 BLAS and LAPACK *in addition to LP64*. So we need to
+  # detect the ILP64 variants of the found LP64 libraries now.
+  _args_blas_ilp64 = ['-DHAVE_BLAS_ILP64']
+  c_flags_ilp64 = ['-DHAVE_BLAS_ILP64']
+  blas_interface = ['interface: ilp64']
+
+  if 'openblas' in blas_name
+    _args_blas_ilp64 += ['-DOPENBLAS_ILP64_NAMING_SCHEME']
+  endif
+
+  # Run the detection
+  if uses_mkl
+    mkl_uses_sdl = false   # FIXME, why
+    if mkl_uses_sdl
+      mkl_opts = ['sdl: true']
+    endif
+    blas_ilp64 = dependency('mkl', modules: ['interface: ilp64'] + mkl_opts)
+    lapack_ilp64 = blas_ilp64
+
+    _args_blas_ilp64 += [
+       '-DBLAS_SYMBOL_SUFFIX=_64',
+       '-DFIX_MKL_2025_ILP64_MISSING_SYMBOL'
+     ]
+     c_flags_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=_64']
+
+  elif blas_name == 'scipy-openblas'
+      # scipy_openblas64, a separate library
+      blas_ilp64 = dependency('scipy-openblas64')
+      lapack_ilp64 = blas_ilp64
+
+      if not blas_ilp64.found()
+        error('scipy-openblas64 not found.')
+      endif
+
+  else
+    # XXX: ILP64 detection has only been tested for MKL and scipy-openblas64
+    if blas_name == 'openblas'
+      # We cannot allow plain openblas here, that's already the LP64 library and
+      # will lead to problems (there is, as of now, no combined OpenBLAS build
+      # with 32 and 64 bit symbols)
+      blas_name = ['openblas64', 'openblas_ilp64']
+    endif
+
+    blas_ilp64 = dependency(blas_name, modules: blas_interface)
+    lapack_ilp64 = dependency(lapack_name, modules: ['lapack'] + blas_interface)
+  endif
+
+  # Pick up the symbol suffix, it may be auto-detected by Meson and different from LP64
+  if blas_symbol_suffix == 'auto'
+    if blas_name == 'scipy-openblas'
+      blas_symbol_suffix = '64_'
+    else
+      blas_symbol_suffix = blas_ilp64.get_variable('symbol_suffix', default_value: '')
+    endif
+    message(f'BLAS symbol suffix (ILP64): @blas_symbol_suffix@')
+  endif
+  _blas_incdir = []
+  if blas_symbol_suffix != ''
+    _args_blas_ilp64 += ['-DBLAS_SYMBOL_SUFFIX=' + blas_symbol_suffix]
+    _blas_incdir = ['.']
+  endif
+  # Declare the ILP64 dependencies
+  message('BLAS / LAPACK ILP64 detected: ', blas_ilp64.name(), ', ', lapack_ilp64.name())
+
+  blas_ilp64 = declare_dependency(
+    dependencies: [blas_ilp64],
+    compile_args: _args_blas_ilp64,
+    include_directories: _blas_incdir,
+  )
+  lapack_ilp64 = declare_dependency(dependencies: [lapack_ilp64, blas_ilp64])
+
+  g77_abi_wrappers_ilp64 = static_library(
+    'g77_abi_wrappers_ilp64',
+     ['_build_utils/src/wrap_g77_abi.c'],
+     dependencies: [py3_dep, blas_ilp64, np_dep],
+     c_args: _args_blas_ilp64,
+     gnu_symbol_visibility: 'hidden',
+   )
+else
+  # we're not using ILP64; user code will link to the always-available LP64 blas/lapack
+  # (all users must use preprocessor macros BLAS_NAME to handle the two options)
+  blas_ilp64 = blas
+  lapack_ilp64 = lapack
+  c_flags_ilp64 = []
+  message('LAPACK ILP64 not requested / not detected.')
+endif
+
+# End of BLAS/LAPACK handling
+
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
@@ -502,13 +634,51 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
-_fflag_fpp = []
-if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
-  if is_windows
-    _fflag_fpp = ff.get_supported_arguments('/fpp')
+
+# Gfortran does run the preprocessor for .F files, and PROPACK is the only
+# component which needs the preprocessor (unless we need symbol renaming for
+# blas_symbol_suffix).
+_fflag_preprocess = []
+_gfortran_preprocess = ['-cpp', '-ffree-line-length-none', '-ffixed-line-length-none']
+if ff.has_multi_arguments(_gfortran_preprocess)
+  _fflag_preprocess = _gfortran_preprocess
+else
+  _fflag_preprocess = ff.first_supported_argument(['-fpp', '/fpp', 'cpp'])
+endif
+
+_fflag_lp64 = []
+_fflag_ilp64 = []
+f2py_ilp64_opts = []
+if use_ilp64
+  # Gfortran and Clang use `-fdefault-integer-8` to switch to 64-bit integers by
+  # default, all other known compilers use `-i8`
+  _fflag_ilp64 = ff.first_supported_argument(['-fdefault-integer-8', '-i8'])
+
+  # Write out a mapping file for f2py for defaulting to ILP64
+  conf_data = configuration_data()
+  if cc.sizeof('long') == 8
+    conf_data.set('int64_name', 'long')
+  elif cc.sizeof('long long') == 8
+    conf_data.set('int64_name', 'long long')
   else
-    _fflag_fpp = ff.get_supported_arguments('-fpp')
+    error('Neither `long` nor `long long` is 64-bit, giving up.')
   endif
+  int64_f2cmap = configure_file(
+    input: '_build_utils/int64.f2cmap.in',
+    output: 'int64.f2cmap',
+    configuration: conf_data,
+    install: false,
+  )
+  f2py_ilp64_opts = ['--f2cmap', int64_f2cmap]
+endif
+
+if blas_symbol_suffix != ''
+  # We need to patch source files that use BLAS/LAPACK symbols.
+  # In addition, we now need to enable the Fortran preprocessor on all targets
+  # that depend on BLAS/LAPACK
+  # Note: this came from `scipy/build_utils/_fortran.py` in the distutils build.
+  _fflag_lp64 += _fflag_preprocess  # TODO: propagate _fflag_lp64
+  _fflag_ilp64 += _fflag_preprocess
 endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
@@ -647,6 +817,17 @@ lapack_dep = declare_dependency(
   dependencies: lapack_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
 )
+
+if use_ilp64
+  blas_ilp64 = declare_dependency(
+    dependencies: blas_ilp64,
+    link_with: [g77_abi_wrappers_ilp64]
+  )
+  lapack_ilp64 = declare_dependency(
+    dependencies: lapack_ilp64,
+    link_with: [g77_abi_wrappers_ilp64]
+  )
+endif
 
 subdir('_lib')
 subdir('special')
