@@ -44,6 +44,7 @@ The `minimize_scalar` function supports the following methods:
    optimize.minimize_scalar-brent
    optimize.minimize_scalar-bounded
    optimize.minimize_scalar-golden
+   optimize.minimize_scalar-linewalker
 
 Local (multivariate) optimization
 ---------------------------------
@@ -374,6 +375,7 @@ Univariate (scalar) minimization methods:
    fminbound - Bounded minimization of a scalar function.
    brent - 1-D function minimization using Brent method.
    golden - 1-D function minimization using Golden Section method.
+   linewalker - 1-D function minimization using Linewalker method.
 
 Least-squares
 -------------
