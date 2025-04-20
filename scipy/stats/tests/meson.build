@@ -11,6 +11,7 @@ py3.install_sources([
     'test_continuous_fit_censored.py',
     'test_correlation.py',
     'test_crosstab.py',
+    'test_device_dtype.py',
     'test_discrete_basic.py',
     'test_discrete_distns.py',
     'test_distributions.py',
