@@ -389,6 +389,11 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
 
     if derphi0 is None:
         derphi0 = derphi(0.)
+    if derphi0 == 0.0:
+        alpha_star = 0.0
+        phi_star = phi0
+        derphi_star = derphi0
+        return alpha_star, phi_star, phi0, derphi_star
 
     alpha0 = 0
     if old_phi0 is not None and derphi0 != 0:
@@ -430,9 +435,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             warn(msg, LineSearchWarning, stacklevel=2)
             break
 
-        not_first_iteration = i > 0
-        if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
-           ((phi_a1 >= phi_a0) and not_first_iteration):
+        if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or (phi_a1 >= phi_a0):
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
@@ -447,7 +450,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 derphi_star = derphi_a1
                 break
 
-        if (derphi_a1 >= 0):
+        if derphi_a1 > 0:
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
