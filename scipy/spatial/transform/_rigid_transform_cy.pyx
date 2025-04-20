@@ -55,7 +55,7 @@ def from_rotation(quat: double[:, :]) -> double[:, :, :]:
 
 
 @cython.embedsignature(True)
-def from_translation(translation: double[:, :, :]) -> double[:, :, :]:
+def from_translation(translation) -> double[:, :, :]:
     translation = np.asarray(translation, dtype=float)
 
     if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
@@ -76,3 +76,29 @@ def from_translation(translation: double[:, :, :]) -> double[:, :, :]:
     if single:
         matrix = matrix[0]
     return matrix
+
+
+@cython.embedsignature(True)
+def from_components(translation, quat) -> double[:, :, :]:
+    translation_matrix = from_translation(translation)
+    single = translation.ndim == 1 and quat.ndim == 1
+    if quat.ndim == 1:
+        quat = quat[None, :]
+    if translation_matrix.ndim == 2:
+        translation_matrix = translation_matrix[None, :, :]
+    tf = compose_transforms(translation_matrix, from_rotation(quat))
+    if single:
+        return tf[0]
+    return tf
+
+
+@cython.embedsignature(True)
+def compose_transforms(tf_matrix: double[:, :, :], other_tf_matrix: double[:, :, :]) -> double[:, :, :]:
+    len_self = len(tf_matrix)
+    len_other = len(other_tf_matrix)
+    if not(len_self == 1 or len_other == 1 or len_self == len_other):
+        raise ValueError("Expected equal number of transforms in both or a "
+                            "single transform in either object, got "
+                            f"{len_self} transforms in first and {len_other}"
+                            "transforms in second object.")
+    return np.matmul(tf_matrix, other_tf_matrix)

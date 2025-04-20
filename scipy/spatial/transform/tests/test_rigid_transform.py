@@ -175,24 +175,25 @@ def test_from_components(xp):
     tf = RigidTransform.from_components(t, r)
 
     expected = xp.zeros((4, 4))
-    expected[:3, :3] = r.as_matrix()
-    expected[:3, 3] = t
-    expected[3, 3] = 1
+    expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix())
+    expected = xpx.at(expected)[..., :3, 3].set(t)
+    expected = xpx.at(expected)[..., 3, 3].set(1)
     assert_allclose(tf.as_matrix(), expected, atol=atol)
     assert tf.single
 
     # Test single rotation and multiple translations
     t = xp.asarray([[1, 2, 3], [4, 5, 6]])
     r = Rotation.from_euler("z", 90, degrees=True)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
-    for i in range(len(t)):
+    for i in range(t.shape[0]):
         expected = xp.zeros((4, 4))
-        expected[:3, :3] = r.as_matrix()
-        expected[:3, 3] = t[i]
-        expected[3, 3] = 1
-        assert_allclose(tf.as_matrix()[i], expected, atol=atol)
+        expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix())
+        expected = xpx.at(expected)[..., :3, 3].set(t[i, ...])
+        expected = xpx.at(expected)[..., 3, 3].set(1)
+        assert_allclose(tf.as_matrix()[i, ...], expected, atol=atol)
 
     # Test multiple rotations and translations
     t = xp.asarray([[1, 2, 3], [4, 5, 6]])
@@ -200,12 +201,23 @@ def test_from_components(xp):
     tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
-    for i in range(len(t)):
+    for i in range(t.shape[0]):
         expected = xp.zeros((4, 4))
-        expected[:3, :3] = r[i].as_matrix()
-        expected[:3, 3] = t[i]
-        expected[3, 3] = 1
-        assert_allclose(tf.as_matrix()[i], expected, atol=atol)
+        expected = xpx.at(expected)[..., :3, :3].set(r.as_matrix()[i, ...])
+        expected = xpx.at(expected)[..., :3, 3].set(t[i, ...])
+        expected = xpx.at(expected)[..., 3, 3].set(1)
+        assert_allclose(tf.as_matrix()[i, ...], expected, atol=atol)
+
+
+def test_from_components_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    t = jp.asarray([1, 2, 3])
+    r = Rotation.from_euler("zyx", jp.asarray([90, 0, 0]), degrees=True)
+    from_components = jax.jit(RigidTransform.from_components)
+    jax.block_until_ready(from_components(t, r))
 
 
 def test_as_components(xp):
@@ -214,10 +226,23 @@ def test_as_components(xp):
     rng = np.random.default_rng(123)
     t = xp.asarray(rng.normal(size=(n, 3)))
     r = Rotation.random(n, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     tf = RigidTransform.from_components(t, r)
     new_t, new_r = tf.as_components()
     assert all(new_r.approx_equal(r, atol=atol))
     assert_allclose(new_t, t, atol=atol)
+
+
+def test_as_components_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    t = jp.asarray([1, 2, 3])
+    r = Rotation.from_euler("zyx", jp.asarray([90, 0, 0]), degrees=True)
+    tf = RigidTransform.from_components(t, r)
+    as_components = jax.jit(RigidTransform.as_components)
+    jax.block_until_ready(as_components(tf))
 
 
 def test_from_exp_coords(xp):

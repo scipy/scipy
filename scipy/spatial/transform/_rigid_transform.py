@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Iterable
+from types import EllipsisType
 
 import numpy as np
 
@@ -17,6 +18,7 @@ from scipy.spatial.transform.rotation import Rotation
 import scipy.spatial.transform._rigid_transform_xp as array_api_backend
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_compat import device
 
 
 __all__ = ["RigidTransform"]
@@ -380,7 +382,7 @@ class RigidTransform:
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     @classmethod
-    def from_matrix(cls, matrix):
+    def from_matrix(cls, matrix: ArrayLike) -> RigidTransform:
         """Initialize from a 4x4 transformation matrix.
 
         Parameters
@@ -527,7 +529,7 @@ class RigidTransform:
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
-    def from_translation(cls, translation):
+    def from_translation(cls, translation: ArrayLike) -> RigidTransform:
         """Initialize from a translation numpy array, without a rotation.
 
         When applying this transform to a vector ``v``, the result is the same
@@ -595,7 +597,9 @@ class RigidTransform:
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
-    def from_components(cls, translation, rotation):
+    def from_components(
+        cls, translation: ArrayLike, rotation: Rotation
+    ) -> RigidTransform:
         """Initialize a rigid transform from translation and rotation
         components.
 
@@ -660,15 +664,17 @@ class RigidTransform:
         """
         if not isinstance(rotation, Rotation):
             raise TypeError("`rotation` must be a Rotation instance.")
-
-        rot_matrix = rotation.as_matrix()
-        xp = array_namespace(rot_matrix)
+        quat = rotation.as_quat()
+        xp = array_namespace(quat)
         backend = backend_registry.get(xp, array_api_backend)
-        matrix = backend.rigid_transform_from_components(translation, rot_matrix)
+        dtype = xp_result_type(translation, force_floating=True, xp=xp)
+        _device = device(translation)
+        translation = xp.asarray(translation, dtype=dtype, device=_device)
+        matrix = backend.from_components(translation, quat)
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
-    def from_exp_coords(cls, exp_coords):
+    def from_exp_coords(cls, exp_coords: ArrayLike) -> RigidTransform:
         r"""Initialize from exponential coordinates of transform.
 
         This implements the exponential map that converts 6-dimensional real
@@ -755,7 +761,9 @@ class RigidTransform:
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
-    def from_dual_quat(cls, dual_quat, *, scalar_first=False):
+    def from_dual_quat(
+        cls, dual_quat: ArrayLike, *, scalar_first: bool = False
+    ) -> RigidTransform:
         """Initialize from a unit dual quaternion.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -809,7 +817,7 @@ class RigidTransform:
         return cls(matrix, normalize=False, copy=False)
 
     @classmethod
-    def identity(cls, num=None):
+    def identity(cls, num: int | None = None) -> RigidTransform:
         """Initialize an identity transform.
 
         Composition with the identity transform has no effect, and
@@ -915,7 +923,7 @@ class RigidTransform:
                [3., 0., 0.]])
         """
 
-    def as_matrix(self):
+    def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
         4x4 rigid transformation matrices are of the form:
@@ -970,7 +978,7 @@ class RigidTransform:
             return matrix[0, ...]
         return matrix
 
-    def as_components(self):
+    def as_components(self) -> tuple[Array, Rotation]:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
 
@@ -1029,14 +1037,14 @@ class RigidTransform:
         >>> tf.apply([1, 0, 0])
         array([2., 4., 4.])
         """
-        xp = array_namespace(self._matrix)
-        backend = backend_registry.get(xp, array_api_backend)
-        translation, rotation_matrix = backend.rigid_transform_as_components(
-            self._matrix
-        )
+        translation = self._matrix[..., :3, 3]
+        rotation_matrix = self._matrix[..., :3, :3]
+        if self._single:
+            translation = translation[0, ...]
+            rotation_matrix = rotation_matrix[0, ...]
         return translation, Rotation.from_matrix(rotation_matrix)
 
-    def as_exp_coords(self):
+    def as_exp_coords(self) -> Array:
         """Return the exponential coordinates of the transform.
 
         This implements the logarithmic map that converts SE(3) to 6-dimensional
@@ -1066,7 +1074,7 @@ class RigidTransform:
         backend = backend_registry.get(xp, array_api_backend)
         return backend.rigid_transform_as_exp_coords(self._matrix)
 
-    def as_dual_quat(self, *, scalar_first=False):
+    def as_dual_quat(self, *, scalar_first: bool = False) -> Array:
         """Return the dual quaternion representation of the transform.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -1108,7 +1116,7 @@ class RigidTransform:
             self._matrix, scalar_first=scalar_first
         )
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of transforms in this object.
 
         Multiple transforms can be stored in a single instance.
@@ -1140,7 +1148,7 @@ class RigidTransform:
             return 1
         return self._matrix.shape[0]
 
-    def __getitem__(self, indexer):
+    def __getitem__(self, indexer: int | slice | EllipsisType | None) -> RigidTransform:
         """Extract transform(s) at given index(es) from this object.
 
         Creates a new `RigidTransform` instance containing a subset of
@@ -1192,7 +1200,9 @@ class RigidTransform:
                [2., 0., 0.]])
         """
 
-    def __setitem__(self, indexer, value):
+    def __setitem__(
+        self, indexer: int | slice | EllipsisType | None, value: RigidTransform
+    ):
         """Set transform(s) at given index(es) in this object.
 
         Parameters
@@ -1224,7 +1234,7 @@ class RigidTransform:
                [2., 0., 0.]])
         """
 
-    def __mul__(self, other):
+    def __mul__(self, other: RigidTransform) -> RigidTransform:
         """Compose this transform with the other.
 
         If `p` and `q` are two transforms, then the composition of 'q followed
@@ -1308,7 +1318,7 @@ class RigidTransform:
         matrix = backend.rigid_transform_compose(self._matrix, other._matrix)
         return RigidTransform(matrix, normalize=False, copy=False)
 
-    def __pow__(self, n):
+    def __pow__(self, n: float) -> RigidTransform:
         """Compose this transform with itself `n` times.
 
         A rigid transform `p` when raised to non-integer powers can be thought
@@ -1411,7 +1421,7 @@ class RigidTransform:
         matrix = backend.rigid_transform_pow(self._matrix, n)
         return RigidTransform(matrix, normalize=False, copy=False)
 
-    def inv(self):
+    def inv(self) -> RigidTransform:
         """Invert this transform.
 
         Composition of a transform with its inverse results in an identity
@@ -1474,7 +1484,7 @@ class RigidTransform:
         matrix = backend.rigid_transform_inv(self._matrix)
         return RigidTransform(matrix, normalize=False, copy=False)
 
-    def apply(self, vectors, inverse=False):
+    def apply(self, vectors: ArrayLike, inverse: bool = False) -> Array:
         """Apply the transform to a vector.
 
         If the original frame transforms to the final frame by this transform,
@@ -1567,7 +1577,7 @@ class RigidTransform:
         return backend.rigid_transform_apply(self._matrix, vectors, inverse)
 
     @property
-    def rotation(self):
+    def rotation(self) -> Rotation:
         """Return the rotation component of the transform.
 
         A transform is a composition of a rotation and a translation, such that
@@ -1599,7 +1609,7 @@ class RigidTransform:
         return Rotation.from_matrix(rotation_matrix)
 
     @property
-    def translation(self):
+    def translation(self) -> Array:
         """Return the translation component of the transform.
 
         A transform is a composition of a rotation and a translation, such that
@@ -1630,7 +1640,7 @@ class RigidTransform:
         return backend.rigid_transform_translation(self._matrix)
 
     @property
-    def single(self):
+    def single(self) -> bool:
         """Whether this instance represents a single transform.
 
         Single transforms are not subscriptable, and do not have a length.

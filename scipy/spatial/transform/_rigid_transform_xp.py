@@ -13,6 +13,7 @@ from scipy.spatial.transform._rotation_xp import (
     from_matrix as quat_from_matrix,
 )
 from scipy._lib.array_api_compat import device
+from scipy.spatial.transform._rotation_xp import broadcastable
 
 
 def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Array:
@@ -46,8 +47,7 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
 def from_rotation(quat: Array) -> Array:
     xp = array_namespace(quat)
     rotmat = quat_as_matrix(quat)
-    num_transforms = rotmat.shape[0]
-    matrix = xp.zeros((num_transforms, 4, 4), dtype=quat.dtype)
+    matrix = xp.zeros((*rotmat.shape[:-2], 4, 4), dtype=quat.dtype)
     matrix = xpx.at(matrix)[..., :3, :3].set(rotmat)
     matrix = xpx.at(matrix)[..., 3, 3].set(1)
     return matrix
@@ -73,3 +73,22 @@ def from_translation(translation: Array) -> Array:
     matrix = xpx.at(matrix)[...].set(xp.eye(4, dtype=translation.dtype, device=_device))
     matrix = xpx.at(matrix)[..., :3, 3].set(translation)
     return matrix
+
+
+def from_components(translation: Array, quat: Array) -> Array:
+    translation_matrix = from_translation(translation)
+    return compose_transforms(translation_matrix, from_rotation(quat))
+
+
+def compose_transforms(tf_matrix: Array, other_tf_matrix: Array) -> Array:
+    if not broadcastable(tf_matrix.shape, other_tf_matrix.shape):
+        len_a = tf_matrix.shape[0] if tf_matrix.ndim == 3 else 1
+        len_b = other_tf_matrix.shape[0] if other_tf_matrix.ndim == 3 else 1
+        if not (len_a == 1 or len_b == 1 or len_a == len_b):
+            raise ValueError(
+                "Expected equal number of transforms in both or a "
+                "single transform in either object, got "
+                f"{len_a} transforms in first and {len_b}"
+                "transforms in second object."
+            )
+    return tf_matrix @ other_tf_matrix
