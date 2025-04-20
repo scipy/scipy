@@ -144,7 +144,6 @@ class TestSparseUtils:
         for axis, canonical_axis in convert_axis_4d.items():
             sputils.validateaxis(axis, ndim=4) == canonical_axis
 
-
     @pytest.mark.parametrize("container", [csr_array, bsr_array])
     def test_safely_cast_index_compressed(self, container):
         # This is slow to test completely as nnz > imax is big
