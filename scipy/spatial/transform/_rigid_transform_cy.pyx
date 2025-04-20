@@ -1,8 +1,8 @@
 # cython: cpow=True
 
 import numpy as np
-from ._rotation_cy import from_rotvec, as_rotvec
-from ._rotation_cy import from_matrix as quat_from_matrix, as_matrix as quat_as_matrix
+from ._rotation_cy import from_rotvec, as_rotvec, compose_quat, from_quat
+from ._rotation_cy import from_matrix as quat_from_matrix, as_matrix as quat_as_matrix, inv as quat_inv
 
 cimport numpy as np
 cimport cython
@@ -99,18 +99,6 @@ def from_components(translation: double[:] | double[:, :], quat: double[:] | dou
 
 
 @cython.embedsignature(True)
-def compose_transforms(tf_matrix: double[:, :, :], other_tf_matrix: double[:, :, :]) -> double[:, :, :]:
-    len_self = len(tf_matrix)
-    len_other = len(other_tf_matrix)
-    if not(len_self == 1 or len_other == 1 or len_self == len_other):
-        raise ValueError("Expected equal number of transforms in both or a "
-                            "single transform in either object, got "
-                            f"{len_self} transforms in first and {len_other}"
-                            "transforms in second object.")
-    return np.matmul(tf_matrix, other_tf_matrix)
-
-
-@cython.embedsignature(True)
 def from_exp_coords(exp_coords: double[:] | double[:, :]) -> double[:, :] | double[:, :, :]:
     exp_coords = np.asarray(exp_coords, dtype=float)
     single = exp_coords.ndim == 1
@@ -129,6 +117,37 @@ def from_exp_coords(exp_coords: double[:] | double[:, :]) -> double[:, :] | doub
 
 
 @cython.embedsignature(True)
+def from_dual_quat(dual_quat: double[:] | double[:, :], *, scalar_first: bool = False) -> double[:, :] | double[:, :, :]:
+    dual_quat = np.asarray(dual_quat, dtype=float)
+
+    if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
+        raise ValueError(
+            "Expected `dual_quat` to have shape (8,), or (N, 8), "
+            f"got {dual_quat.shape}.")
+
+    single = dual_quat.ndim == 1
+    dual_quat = np.atleast_2d(dual_quat)
+
+    real_part = dual_quat[:, :4]
+    dual_part = dual_quat[:, 4:]
+    if scalar_first:
+        real_part = np.roll(real_part, -1, axis=1)
+        dual_part = np.roll(dual_part, -1, axis=1)
+
+    real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
+
+    rot_quat = from_quat(real_part)
+
+    translation = 2.0 * np.asarray(
+        compose_quat(dual_part, quat_inv(rot_quat)))[:, :3]
+    matrix = _create_transformation_matrix(translation, quat_as_matrix(rot_quat),
+                                            single)
+
+    return matrix
+
+
+
+@cython.embedsignature(True)
 def as_exp_coords(matrix: double[:, :, :]) -> double[:, :]:
     exp_coords = np.empty((matrix.shape[0], 6), dtype=float)
     rot_vec = as_rotvec(quat_from_matrix(matrix[:, :3, :3]))
@@ -137,6 +156,37 @@ def as_exp_coords(matrix: double[:, :, :]) -> double[:, :]:
                                     _compute_se3_log_translation_transform(rot_vec),
                                     matrix[:, :3, 3])
     return exp_coords
+
+
+@cython.embedsignature(True)
+def as_dual_quat(matrix: double[:, :, :], *, scalar_first: bool = False) -> double[:, :]:
+    real_parts = quat_from_matrix(matrix[:, :3, :3])
+
+    pure_translation_quats = np.empty((len(matrix), 4), dtype=float)
+    pure_translation_quats[:, :3] = matrix[:, :3, 3]
+    pure_translation_quats[:, 3] = 0.0
+
+    dual_parts = 0.5 * np.asarray(
+        compose_quat(pure_translation_quats, real_parts))
+
+    if scalar_first:
+        real_parts = np.roll(real_parts, 1, axis=1)
+        dual_parts = np.roll(dual_parts, 1, axis=1)
+
+    dual_quats = np.hstack((real_parts, dual_parts))
+    return dual_quats
+
+
+@cython.embedsignature(True)
+def compose_transforms(tf_matrix: double[:, :, :], other_tf_matrix: double[:, :, :]) -> double[:, :, :]:
+    len_self = len(tf_matrix)
+    len_other = len(other_tf_matrix)
+    if not(len_self == 1 or len_other == 1 or len_self == len_other):
+        raise ValueError("Expected equal number of transforms in both or a "
+                            "single transform in either object, got "
+                            f"{len_self} transforms in first and {len_other}"
+                            "transforms in second object.")
+    return np.matmul(tf_matrix, other_tf_matrix)
 
 
 @cython.embedsignature(True)
@@ -239,3 +289,30 @@ cdef _create_skew_matrix(vec):
     result[:, 2, 0] = -vec[:, 1]
     result[:, 2, 1] = vec[:, 0]
     return result
+
+
+cdef _normalize_dual_quaternion(real_part, dual_part):
+    """Ensure that unit norm of the dual quaternion.
+
+    The norm is a dual number and must be 1 + 0 * epsilon, which means that
+    the real quaternion must have unit norm and the dual quaternion must be
+    orthogonal to the real quaternion.
+    """
+    real_part = np.copy(real_part)
+    dual_part = np.copy(dual_part)
+
+    real_norm = np.linalg.norm(real_part, axis=1)
+
+    # special case: real quaternion is 0, we set it to identity
+    zero_real_mask = real_norm == 0.0
+    real_part[zero_real_mask, :4] = [0., 0., 0., 1.]
+    real_norm[zero_real_mask] = 1.0
+
+    # 1. ensure unit real quaternion
+    real_part /= real_norm[:, np.newaxis]
+    dual_part /= real_norm[:, np.newaxis]
+
+    # 2. ensure orthogonality of real and dual quaternion
+    dual_part -= np.sum(real_part * dual_part, axis=1)[:, np.newaxis] * real_part
+
+    return real_part, dual_part

@@ -399,80 +399,84 @@ def test_as_exp_coords_jax_compile():
     jax.block_until_ready(as_exp_coords(tf))
 
 
-def test_from_dual_quat():
+def test_from_dual_quat(xp):
     # identity
     assert_allclose(
         RigidTransform.from_dual_quat(
-            np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+            xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
         ).as_matrix(),
-        np.eye(4),
+        xp.eye(4),
         atol=1e-12,
     )
     assert_allclose(
         RigidTransform.from_dual_quat(
-            np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), scalar_first=True
+            xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), scalar_first=True
         ).as_matrix(),
-        np.eye(4),
+        xp.eye(4),
         atol=1e-12,
     )
 
     # only translation
-    actual = RigidTransform.from_dual_quat([0, 0, 0, 1, 0.25, 0.15, -0.7, 0])
-    expected_matrix = np.array(
+    actual = RigidTransform.from_dual_quat(
+        xp.asarray([0, 0, 0, 1, 0.25, 0.15, -0.7, 0])
+    )
+    expected_matrix = xp.asarray(
         [[1, 0, 0, 0.5], [0, 1, 0, 0.3], [0, 0, 1, -1.4], [0, 0, 0, 1]]
     )
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
     actual = RigidTransform.from_dual_quat(
-        [1, 0, 0, 0, 0, 0.25, 0.15, -0.7], scalar_first=True
+        xp.asarray([1, 0, 0, 0, 0, 0.25, 0.15, -0.7]), scalar_first=True
     )
-    expected_matrix = np.array(
+    expected_matrix = xp.asarray(
         [[1, 0, 0, 0.5], [0, 1, 0, 0.3], [0, 0, 1, -1.4], [0, 0, 0, 1]]
     )
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # only rotation
-    actual_rot = Rotation.from_euler("xyz", [65, -13, 90], degrees=True)
+    actual_rot = Rotation.from_euler("xyz", xp.asarray([65, -13, 90]), degrees=True)
     actual = RigidTransform.from_dual_quat(
-        np.hstack((actual_rot.as_quat(), np.zeros(4)))
+        xp.concat((actual_rot.as_quat(), xp.zeros(4)), axis=-1)
     )
-    expected_matrix = np.eye(4)
-    expected_matrix[:3, :3] = actual_rot.as_matrix()
+    expected_matrix = xp.eye(4)
+    expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     actual = RigidTransform.from_dual_quat(
-        np.hstack((actual_rot.as_quat(scalar_first=True), np.zeros(4))),
+        xp.concat((actual_rot.as_quat(scalar_first=True), xp.zeros(4)), axis=-1),
         scalar_first=True,
     )
-    expected_matrix = np.eye(4)
-    expected_matrix[:3, :3] = actual_rot.as_matrix()
+    expected_matrix = xp.eye(4)
+    expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # rotation and translation
     actual = RigidTransform.from_dual_quat(
-        [
+        xp.asarray(
             [
-                0.0617101,
-                -0.06483886,
-                0.31432811,
-                0.94508498,
-                0.04985168,
-                -0.26119618,
-                0.1691491,
-                -0.07743254,
-            ],
-            [
-                0.19507259,
-                0.49404931,
-                -0.06091285,
-                0.8450749,
-                0.65049656,
-                -0.30782513,
-                0.16566752,
-                0.04174544,
-            ],
-        ]
+                [
+                    0.0617101,
+                    -0.06483886,
+                    0.31432811,
+                    0.94508498,
+                    0.04985168,
+                    -0.26119618,
+                    0.1691491,
+                    -0.07743254,
+                ],
+                [
+                    0.19507259,
+                    0.49404931,
+                    -0.06091285,
+                    0.8450749,
+                    0.65049656,
+                    -0.30782513,
+                    0.16566752,
+                    0.04174544,
+                ],
+            ]
+        )
     )
-    expected_matrix = np.array(
+    expected_matrix = xp.asarray(
         [
             [
                 [0.79398752, -0.60213598, -0.08376202, 0.24605262],
@@ -491,28 +495,30 @@ def test_from_dual_quat():
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     actual = RigidTransform.from_dual_quat(
-        [
+        xp.asarray(
             [
-                0.94508498,
-                0.0617101,
-                -0.06483886,
-                0.31432811,
-                -0.07743254,
-                0.04985168,
-                -0.26119618,
-                0.1691491,
-            ],
-            [
-                0.8450749,
-                0.19507259,
-                0.49404931,
-                -0.06091285,
-                0.04174544,
-                0.65049656,
-                -0.30782513,
-                0.16566752,
-            ],
-        ],
+                [
+                    0.94508498,
+                    0.0617101,
+                    -0.06483886,
+                    0.31432811,
+                    -0.07743254,
+                    0.04985168,
+                    -0.26119618,
+                    0.1691491,
+                ],
+                [
+                    0.8450749,
+                    0.19507259,
+                    0.49404931,
+                    -0.06091285,
+                    0.04174544,
+                    0.65049656,
+                    -0.30782513,
+                    0.16566752,
+                ],
+            ]
+        ),
         scalar_first=True,
     )
     assert_allclose(actual.as_matrix(), expected_matrix, atol=1e-12)
@@ -520,11 +526,11 @@ def test_from_dual_quat():
     # unnormalized dual quaternions
 
     # invalid real quaternion with norm 0
-    actual = RigidTransform.from_dual_quat(np.zeros(8))
-    assert_allclose(actual.as_matrix(), np.eye(4), atol=1e-12)
+    actual = RigidTransform.from_dual_quat(xp.zeros(8))
+    assert_allclose(actual.as_matrix(), xp.eye(4), atol=1e-12)
 
     # real quaternion with norm != 1
-    unnormalized_dual_quat = np.array(
+    unnormalized_dual_quat = xp.asarray(
         [
             -0.2547655,
             1.23506123,
@@ -536,19 +542,18 @@ def test_from_dual_quat():
             -0.1582222,
         ]  # orthogonal
     )
-    assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.3
-    assert (
-        pytest.approx(
-            np.dot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]), abs=8
-        )
-        == 0.0
+    assert_allclose(xp_vector_norm(unnormalized_dual_quat[:4]), 1.3, atol=1e-12)
+    assert_allclose(
+        xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]),
+        0.0,
+        atol=1e-8,
     )
     dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
-    assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
-    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+    assert_allclose(xp_vector_norm(dual_quat[:4]), 1.0, atol=1e-12)
+    assert_allclose(xp.vecdot(dual_quat[:4], dual_quat[4:]), 0.0, atol=1e-12)
 
     # real and dual quaternion are not orthogonal
-    unnormalized_dual_quat = np.array(
+    unnormalized_dual_quat = xp.asarray(
         [
             0.20824458,
             0.75098079,
@@ -560,102 +565,127 @@ def test_from_dual_quat():
             0.20596935,
         ]  # not orthogonal
     )
-    assert pytest.approx(np.linalg.norm(unnormalized_dual_quat[:4])) == 1.0
-    assert np.dot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
+    assert_allclose(xp_vector_norm(unnormalized_dual_quat[:4]), 1.0, atol=1e-12)
+    assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
+
     dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
-    assert pytest.approx(np.linalg.norm(dual_quat[:4])) == 1.0
-    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+    assert_allclose(xp_vector_norm(dual_quat[:4]), 1.0, atol=1e-12)
+    assert_allclose(xp.vecdot(dual_quat[:4], dual_quat[4:]), 0.0, atol=1e-12)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
-    unnormalized_dual_quat = np.array(
+    unnormalized_dual_quat = xp.asarray(
         [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935]
     )
-    assert np.dot(np.array([0.0, 0.0, 0.0, 1.0]), unnormalized_dual_quat[4:]) != 0.0
+    assert (
+        xp.vecdot(xp.asarray([0.0, 0.0, 0.0, 1.0]), unnormalized_dual_quat[4:]) != 0.0
+    )
     dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
-    assert_allclose(dual_quat[:4], np.array([0, 0, 0, 1]), atol=1e-12)
-    assert pytest.approx(np.dot(dual_quat[:4], dual_quat[4:])) == 0.0
+    assert_allclose(dual_quat[:4], xp.asarray([0, 0, 0, 1]), atol=1e-12)
+    assert_allclose(xp.vecdot(dual_quat[:4], dual_quat[4:]), 0.0, atol=1e-12)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
-    t = rng.normal(size=(3,))
+    t = xp.asarray(rng.normal(size=(3,)))
     r = Rotation.random(10, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    random_dual_quats[:, :4] = random_dual_quats[:, :4].round(2)
-    assert not np.any(
-        np.isclose(np.linalg.norm(random_dual_quats[:, :4], axis=1), 1.0, atol=0.0001)
+    random_dual_quats = xpx.at(random_dual_quats)[:, :4].set(
+        random_dual_quats[:, :4] + 0.01
     )
+    q_norm = xp_vector_norm(random_dual_quats[:, :4], axis=1)
+    assert not xp.any(xp.abs(q_norm - 1.0) < 0.0001)
     dual_quat_norm = RigidTransform.from_dual_quat(random_dual_quats).as_dual_quat()
-    assert_allclose(np.linalg.norm(dual_quat_norm[:, :4], axis=1), 1.0, atol=1e-12)
+    assert_allclose(xp_vector_norm(dual_quat_norm[:, :4], axis=1), 1.0, atol=1e-12)
 
     # compensation for precision loss in dual quaternion, results in violation
     # of orthogonality constraint
-    t = rng.normal(size=(10, 3))
+    t = xp.asarray(rng.normal(size=(10, 3)))
     r = Rotation.random(10, rng=rng)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    random_dual_quats[:, 4:] = random_dual_quats[:, 4:].round(2)
-    assert not np.any(
-        np.isclose(
-            np.einsum("ij,ij->i", random_dual_quats[:, :4], random_dual_quats[:, 4:]),
-            0.0,
-            atol=0.0001,
-        )
+    random_dual_quats = xpx.at(random_dual_quats)[:, 4:].set(
+        random_dual_quats[:, 4:] + 0.01
     )
+    q_norm = xp.vecdot(random_dual_quats[:, :4], random_dual_quats[:, 4:])
+    assert not xp.any(xp.abs(q_norm) < 0.0001)
     dual_quat_norm = RigidTransform.from_dual_quat(random_dual_quats).as_dual_quat()
     assert_allclose(
-        np.einsum("ij,ij->i", dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
+        xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
         0.0,
         atol=1e-12,
     )
     assert_allclose(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
 
 
-def test_as_dual_quat():
+def test_from_dual_quat_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    q = jp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+    from_dual_quat = jax.jit(RigidTransform.from_dual_quat)
+    jax.block_until_ready(from_dual_quat(q))
+
+
+def test_as_dual_quat(xp):
     # identity
-    expected = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
+    expected = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
     actual = RigidTransform.identity().as_dual_quat()
+    actual = xp.asarray(actual)
     assert_allclose(actual, expected, atol=1e-12)
 
-    expected = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+    expected = xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     actual = RigidTransform.identity().as_dual_quat(scalar_first=True)
+    actual = xp.asarray(actual)
     assert_allclose(actual, expected, atol=1e-12)
 
     rng = np.random.default_rng(10)
 
     # only rotation
     for _ in range(10):
-        real_part = Rotation.random(rng=rng).as_quat()
-        dual_part = np.zeros(4)
-        expected = np.hstack((real_part, dual_part))
-        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
+        real_part = xp.asarray(Rotation.random(rng=rng).as_quat())
+        dual_part = xp.zeros(4)
+        expected = xp.concat((real_part, dual_part), axis=-1)
+        actual = xp.asarray(RigidTransform.from_dual_quat(expected).as_dual_quat())
         # because of double cover:
-        if np.sign(expected[0]) != np.sign(actual[0]):
-            actual *= -1.0
+        if xp.sign(expected[0]) != xp.sign(actual[0]):
+            actual = -actual
         assert_allclose(actual, expected, atol=1e-12)
 
     # only translation
     for _ in range(10):
-        tf = rng.normal(size=3)
-        expected = np.hstack(([0, 0, 0, 1], 0.5 * tf, [0]))
-        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
+        tf = xp.asarray(rng.normal(size=3))
+        expected = xp.asarray([0.0, 0, 0, 1, *(0.5 * tf), 0])
+        actual = xp.asarray(RigidTransform.from_dual_quat(expected).as_dual_quat())
         # because of double cover:
-        if np.sign(expected[0]) != np.sign(actual[0]):
-            actual *= -1.0
+        if xp.sign(expected[0]) != xp.sign(actual[0]):
+            actual = -actual
         assert_allclose(actual, expected, atol=1e-12)
 
     # rotation and translation
     for _ in range(10):
-        t = rng.normal(size=3)
-        r = Rotation.random(rng=rng)
+        t = xp.asarray(rng.normal(size=3))
+        r = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
         expected = RigidTransform.from_components(t, r).as_dual_quat()
-        actual = RigidTransform.from_dual_quat(expected).as_dual_quat()
+        actual = xp.asarray(RigidTransform.from_dual_quat(expected).as_dual_quat())
         # because of double cover:
-        if np.sign(expected[0]) != np.sign(actual[0]):
-            actual *= -1.0
+        if xp.sign(expected[0]) != xp.sign(actual[0]):
+            actual = -actual
         assert_allclose(actual, expected, atol=1e-12)
+
+
+def test_as_dual_quat_jax_compile():
+    pytest.importorskip("jax")
+    import jax
+    import jax.numpy as jp
+
+    tf = RigidTransform.from_matrix(jp.eye(4))
+    as_dual_quat = jax.jit(RigidTransform.as_dual_quat)
+    jax.block_until_ready(as_dual_quat(tf))
 
 
 def test_from_as_internal_consistency():

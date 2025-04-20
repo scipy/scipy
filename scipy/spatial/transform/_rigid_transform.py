@@ -1117,7 +1117,10 @@ class RigidTransform:
         """
         xp = array_namespace(self._matrix)
         backend = backend_registry.get(xp, array_api_backend)
-        return backend.as_dual_quat(self._matrix, scalar_first=scalar_first)
+        dual_quat = backend.as_dual_quat(self._matrix, scalar_first=scalar_first)
+        if self._single:
+            dual_quat = dual_quat[0]
+        return dual_quat
 
     def __len__(self) -> int:
         """Return the number of transforms in this object.

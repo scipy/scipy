@@ -6,6 +6,9 @@ from scipy.spatial.transform._rotation_xp import (
     from_rotvec as quat_from_rotvec,
     as_rotvec as quat_as_rotvec,
     broadcastable,
+    compose_quat,
+    from_quat,
+    inv as quat_inv,
 )
 from scipy._lib.array_api_compat import device
 
@@ -82,6 +85,31 @@ def from_exp_coords(exp_coords: Array) -> Array:
     return _create_transformation_matrix(translations, rot_matrix)
 
 
+def from_dual_quat(dual_quat: Array, *, scalar_first: bool = False) -> Array:
+    xp = array_namespace(dual_quat)
+
+    if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
+        raise ValueError(
+            "Expected `dual_quat` to have shape (8,), or (N, 8), "
+            f"got {dual_quat.shape}."
+        )
+
+    real_part = dual_quat[..., :4]
+    dual_part = dual_quat[..., 4:]
+    if scalar_first:
+        real_part = xp.roll(real_part, -1, axis=-1)
+        dual_part = xp.roll(dual_part, -1, axis=-1)
+
+    real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
+
+    rot_quat = from_quat(real_part)
+
+    translation = 2.0 * compose_quat(dual_part, quat_inv(rot_quat))[..., :3]
+    matrix = _create_transformation_matrix(translation, quat_as_matrix(rot_quat))
+
+    return matrix
+
+
 def as_exp_coords(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     rot_vec = quat_as_rotvec(quat_from_matrix(matrix[..., :3, :3]))
@@ -89,6 +117,28 @@ def as_exp_coords(matrix: Array) -> Array:
     translations = (translation_transform @ matrix[..., :3, 3][..., None])[..., 0]
     exp_coords = xp.concat([rot_vec, translations], axis=-1)
     return exp_coords
+
+
+def as_dual_quat(matrix: Array, *, scalar_first: bool = False) -> Array:
+    xp = array_namespace(matrix)
+    real_parts = quat_from_matrix(matrix[..., :3, :3])
+
+    pure_translation_quats = xp.empty(
+        (*matrix.shape[:-2], 4), dtype=matrix.dtype, device=device(matrix)
+    )
+    pure_translation_quats = xpx.at(pure_translation_quats)[..., :3].set(
+        matrix[..., :3, 3]
+    )
+    pure_translation_quats = xpx.at(pure_translation_quats)[..., 3].set(0.0)
+
+    dual_parts = 0.5 * compose_quat(pure_translation_quats, real_parts)
+
+    if scalar_first:
+        real_parts = xp.roll(real_parts, 1, axis=-1)
+        dual_parts = xp.roll(dual_parts, 1, axis=-1)
+
+    dual_quats = xp.concat([real_parts, dual_parts], axis=-1)
+    return dual_quats
 
 
 def compose_transforms(tf_matrix: Array, other_tf_matrix: Array) -> Array:
@@ -199,3 +249,32 @@ def _create_skew_matrix(vec: Array) -> Array:
     result = xpx.at(result)[..., 2, 0].set(-vec[..., 1])
     result = xpx.at(result)[..., 2, 1].set(vec[..., 0])
     return result
+
+
+def _normalize_dual_quaternion(real_part, dual_part):
+    """Ensure that unit norm of the dual quaternion.
+
+    The norm is a dual number and must be 1 + 0 * epsilon, which means that
+    the real quaternion must have unit norm and the dual quaternion must be
+    orthogonal to the real quaternion.
+    """
+    xp = array_namespace(real_part)
+
+    real_norm = xp_vector_norm(real_part, axis=-1, keepdims=True, xp=xp)
+
+    # special case: real quaternion is 0, we set it to identity
+    zero_real_mask = real_norm == 0.0
+    unit_quat = xp.asarray(
+        [0.0, 0.0, 0.0, 1.0], dtype=real_part.dtype, device=device(real_part)
+    )
+    real_part = xp.where(zero_real_mask, unit_quat, real_part)
+    real_norm = xp.where(zero_real_mask, 1.0, real_norm)
+
+    # 1. ensure unit real quaternion
+    real_part = real_part / real_norm
+    dual_part = dual_part / real_norm
+
+    # 2. ensure orthogonality of real and dual quaternion
+    dual_part -= xp.sum(real_part * dual_part, axis=-1, keepdims=True) * real_part
+
+    return real_part, dual_part
