@@ -40,9 +40,9 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
-                                   is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API,
-                                   make_skip_xp_backends)
+from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
+                                   is_numpy, is_torch, xp_default_dtype, xp_size,
+                                   SCIPY_ARRAY_API, make_skip_xp_backends)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_extra.testing import lazy_xp_function
@@ -81,13 +81,6 @@ lazy_xp_function(stats.tstd, static_argnames=("inclusive", "axis", "ddof"))
 lazy_xp_function(stats.tsem, static_argnames=("inclusive", "axis", "ddof"))
 lazy_xp_function(stats.tmin, static_argnames=("inclusive", "axis"))
 lazy_xp_function(stats.tmax, static_argnames=("inclusive", "axis"))
-
-
-def eager_warns(x, warning_type, match=None):
-    """pytest.warns context manager, but only if x is not a lazy array."""
-    if is_lazy_array(x):
-        return contextlib.nullcontext()
-    return pytest.warns(warning_type, match=match)
 
 
 class TestTrimmedStats:
@@ -2977,11 +2970,7 @@ class TestZmap:
         scores = xp.arange(3)
         compare = xp.ones(3)
         ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(scores)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
-
-        with warn_ctx:
+        with eager_warns(scores, RuntimeWarning, match="Precision loss occurred..."):
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
