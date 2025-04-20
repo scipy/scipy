@@ -19,6 +19,9 @@
 
 #include "dual.h"
 #include "error.h"
+// Force defining the parenthesis operator even when compiling with a compiler
+// defaulting to C++ >= 23.
+#define MDSPAN_USE_PAREN_OPERATOR 1
 #include "third_party/kokkos/mdspan.hpp"
 
 /* PyUFunc_getfperr gets bits for current floating point error (fpe) status codes so we

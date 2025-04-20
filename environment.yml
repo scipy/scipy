@@ -47,7 +47,7 @@ dependencies:
   - sphinx-design
   - jupytext
   - myst-nb
-  - jupyterlite-sphinx>=0.16.5
+  - jupyterlite-sphinx>=0.19.1
   - jupyterlite-pyodide-kernel
   # Some optional test dependencies
   - mpmath

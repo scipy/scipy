@@ -15,12 +15,20 @@ np.import_array()
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
+    if n == 0:
+        return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
@@ -448,7 +456,8 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef Py_ssize_t n = q.shape[0] if p.shape[0] == 1 else p.shape[0]
+         
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
@@ -832,8 +841,7 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if (quat.ndim not in [1, 2]
-            or quat.shape[len(quat.shape) - 1] != 4
-            or quat.shape[0] == 0):
+            or quat.shape[len(quat.shape) - 1] != 4):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
@@ -2938,6 +2946,9 @@ cdef class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
+        if self._quat.shape[0] == 0:
+            raise ValueError("Mean of an empty rotation set is undefined.")
+            
         if weights is None:
             weights = np.ones(len(self))
         else:
@@ -3734,7 +3745,7 @@ class Slerp:
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
 
-        if rotations.single or len(rotations) == 1:
+        if rotations.single or len(rotations) <= 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         times = np.asarray(times)

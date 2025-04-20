@@ -1057,14 +1057,14 @@ def iddr_rid(A: LinearOperator, int krank, *, rng):
 
 
 def iddr_rsvd(A: LinearOperator, int krank, *, rng):
-    cdef int n = A.shape[1], j
+    cdef int m = A.shape[0], n = A.shape[1], j
     cdef cnp.ndarray[cnp.int64_t, mode='c', ndim=1] perms
     cdef cnp.ndarray[cnp.float64_t, ndim=2] proj
     cdef cnp.ndarray[cnp.float64_t, mode='c', ndim=2] col
 
     perms, proj = iddr_rid(A, krank, rng=rng)
     # idd_getcols
-    col = cnp.PyArray_EMPTY(2, [n, krank], cnp.NPY_FLOAT64, 0)
+    col = cnp.PyArray_EMPTY(2, [m, krank], cnp.NPY_FLOAT64, 0)
     x = cnp.PyArray_ZEROS(1, [n], cnp.NPY_FLOAT64, 0)
     for j in range(krank):
         x[perms[j]] = 1.

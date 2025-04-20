@@ -1843,8 +1843,8 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
                 inter1 = _FCmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _FCmulcr(Am[2*n2 + n*i + j], b[4]);
                 inter3 = _FCmulcr(Am[3*n2 + n*i + j], b[6]);
-                Am[4*n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
-                                            cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
+                Am[n2 + n*i + j] = CPLX_C(crealf(inter1) + crealf(inter2) + crealf(inter3),
+                                          cimagf(inter1) + cimagf(inter2) + cimagf(inter3));
                 if (i == j) { Am[n2 + n*i + j]  = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
 #else
                 Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];
@@ -2032,7 +2032,7 @@ pade_UV_calc_c(EXPM_C* Am, const Py_ssize_t size_n, const int m, int* info)
     csscal_(&n2, &two, &Am[2*n2], &int1);
 
 #if defined(_MSC_VER)
-    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] = CPLX_C(crealf(Am[n2 + n*i + j]) + b[0], cimagf(Am[n2 + n*i + j])); }
+    for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] = CPLX_C(crealf(Am[2*n2 + n*i + i]) + 1.0f, cimagf(Am[2*n2 + n*i + i])); }
 #else
     for (i = 0; i < n; i++) { Am[2*n2 + n*i + i] += cdbl1; }
 #endif
@@ -2179,8 +2179,8 @@ pade_UV_calc_z(EXPM_Z* Am, const Py_ssize_t size_n, const int m, int* info)
                 inter1 = _Cmulcr(Am[n2 + n*i + j], b[2]);
                 inter2 = _Cmulcr(Am[2*n2 + n*i + j], b[4]);
                 inter3 = _Cmulcr(Am[3*n2 + n*i + j], b[6]);
-                Am[4*n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
-                                            cimag(inter1) + cimag(inter2) + cimag(inter3));
+                Am[n2 + n*i + j] = CPLX_Z(creal(inter1) + creal(inter2) + creal(inter3),
+                                          cimag(inter1) + cimag(inter2) + cimag(inter3));
                 if (i == j) { Am[n2 + n*i + j]  = CPLX_Z(creal(Am[n2 + n*i + j]) + b[0], cimag(Am[n2 + n*i + j])); }
 #else
                 Am[n2 + n*i + j] = b[6]*Am[3*n2 + n*i + j] + b[4]*Am[2*n2 + n*i + j] + b[2]*Am[n2 + n*i + j];

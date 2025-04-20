@@ -4,7 +4,7 @@ import pytest
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, _asarray, xp_copy, xp_assert_equal, is_numpy,
-    np_compat,
+    np_compat, xp_default_dtype
 )
 from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 
@@ -185,3 +185,7 @@ class TestArrayAPI:
         # scalars-vs-0d passes (if values match) also with regular python objects
         xp_assert_equal_no_0d(0., xp.asarray(0.))
         xp_assert_equal_no_0d(42, xp.asarray(42))
+
+    @array_api_compatible
+    def test_default_dtype(self, xp):
+        assert xp_default_dtype(xp) == xp.asarray(1.).dtype

@@ -1,7 +1,7 @@
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_ravel
+from scipy._lib._array_api import array_namespace, xp_ravel, xp_default_dtype
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -19,8 +19,17 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if (not xp.isdtype(xl0.dtype, "numeric")
         or xp.isdtype(xl0.dtype, "complex floating")):
         raise ValueError('`xl0` must be numeric and real.')
+    if not xp.isdtype(xl0.dtype, "real floating"):
+        xl0 = xp.asarray(xl0, dtype=xp_default_dtype(xp))
 
-    xr0 = xl0 + 1 if xr0 is None else xr0
+    # If xr0 is not supplied, fill with a dummy value for the sake of
+    # broadcasting. We need to wait until xmax has been validated to
+    # compute the default value.
+    xr0_not_supplied = False
+    if xr0 is None:
+        xr0 = xp.nan
+        xr0_not_supplied = True
+
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
@@ -44,6 +53,12 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
         raise ValueError('`factor` must be numeric and real.')
     if not xp.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
+
+    # Calculate the default value of xr0 if a value has not been supplied.
+    # Be careful to ensure xr0 is not larger than xmax.
+    if xr0_not_supplied:
+        xr0 = xl0 + xp.minimum((xmax - xl0)/ 8, xp.asarray(1.0))
+        xr0 = xp.astype(xr0, xl0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
@@ -281,14 +296,22 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         # `work.status`.
         # Get the integer indices of the elements that can also stop
         also_stop = (work.active[i] + work.n) % (2*work.n)
-        # Check whether they are still active.
-        # To start, we need to find out where in `work.active` they would
-        # appear if they are indeed there.
+        # Check whether they are still active. We want to find the indices
+        # in work.active where the associated values in work.active are
+        # contained in also_stop. xp.searchsorted let's us take advantage
+        # of work.active being sorted, but requires some hackery because
+        # searchsorted solves the separate but related problem of finding
+        # the indices where the values in also_stop should be added to
+        # maintain sorted order.
         j = xp.searchsorted(work.active, also_stop)
         # If the location exceeds the length of the `work.active`, they are
-        # not there.
-        j = j[j < work.active.shape[0]]
-        # Check whether they are still there.
+        # not there. This happens when a value in also_stop is larger than
+        # the greatest value in work.active. This case needs special handling
+        # because we cannot simply check that also_stop == work.active[j].
+        mask = j < work.active.shape[0]
+        # Note that we also have to use the mask to filter also_stop to ensure
+        # that also_stop and j will still have the same shape.
+        j, also_stop = j[mask], also_stop[mask]
         j = j[also_stop == work.active[j]]
         # Now convert these to boolean indices to use with `work.status`.
         i = xp.zeros_like(stop)
@@ -407,6 +430,8 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if (not xp.isdtype(xm0.dtype, "numeric")
         or xp.isdtype(xm0.dtype, "complex floating")):
         raise ValueError('`xm0` must be numeric and real.')
+    if not xp.isdtype(xm0.dtype, "real floating"):
+        xm0 = xp.asarray(xm0, dtype=xp_default_dtype(xp))
 
     xmin = -xp.inf if xmin is None else xmin
     xmax = xp.inf if xmax is None else xmax
@@ -457,8 +482,10 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # of (xmin, xmax).
     if xl0_not_supplied:
         xl0 = xm0 - xp.minimum((xm0 - xmin)/16, xp.asarray(0.5))
+        xl0 = xp.astype(xl0, xm0.dtype, copy=False)
     if xr0_not_supplied:
         xr0 = xm0 + xp.minimum((xmax - xm0)/16, xp.asarray(0.5))
+        xr0 = xp.astype(xr0, xm0.dtype, copy=False)
 
     maxiter = xp.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'

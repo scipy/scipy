@@ -322,6 +322,10 @@ class LinearOperator:
         """Default implementation of _rmatvec; defers to adjoint."""
         if type(self)._adjoint == LinearOperator._adjoint:
             # _adjoint not overridden, prevent infinite recursion
+            if (hasattr(self, "_rmatmat")
+                    and type(self)._rmatmat != LinearOperator._rmatmat):
+                # Try to use _rmatmat as a fallback
+                return self._rmatmat(x.reshape(-1, 1)).reshape(-1)
             raise NotImplementedError
         else:
             return self.H.matvec(x)
@@ -822,22 +826,22 @@ class MatrixLinearOperator(LinearOperator):
 
     def _adjoint(self):
         if self.__adj is None:
-            self.__adj = _AdjointMatrixOperator(self)
+            self.__adj = _AdjointMatrixOperator(self.A)
         return self.__adj
 
+
 class _AdjointMatrixOperator(MatrixLinearOperator):
-    def __init__(self, adjoint):
-        self.A = adjoint.A.T.conj()
-        self.__adjoint = adjoint
-        self.args = (adjoint,)
-        self.shape = adjoint.shape[1], adjoint.shape[0]
+    def __init__(self, adjoint_array):
+        self.A = adjoint_array.T.conj()
+        self.args = (adjoint_array,)
+        self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
 
     @property
     def dtype(self):
-        return self.__adjoint.dtype
+        return self.args[0].dtype
 
     def _adjoint(self):
-        return self.__adjoint
+        return MatrixLinearOperator(self.args[0])
 
 
 class IdentityOperator(LinearOperator):

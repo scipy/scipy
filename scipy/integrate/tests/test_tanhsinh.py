@@ -753,6 +753,16 @@ class TestTanhSinh:
         x[-1] = 1000
         _tanhsinh(np.sin, 1, x)
 
+    def test_gh_22681_finite_error(self, xp):
+        # gh-22681 noted a case in which the error was NaN on some platforms;
+        # check that this does in fact fail in CI.
+        a = complex(12, -10)
+        b = complex(12, 39)
+        def f(t):
+            return xp.sin(a * (1 - t) + b * t)
+        res = _tanhsinh(f, xp.asarray(0.), xp.asarray(1.), atol=0, rtol=0, maxlevel=10)
+        assert xp.isfinite(res.error)
+
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")

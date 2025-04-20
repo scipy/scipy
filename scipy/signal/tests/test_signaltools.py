@@ -3926,3 +3926,8 @@ class TestUniqueRoots:
         unique, multiplicity = unique_roots(p, 2)
         assert_almost_equal(unique, [np.min(p)], decimal=15)
         assert_equal(multiplicity, [100])
+
+
+def test_gh_22684():
+    actual = signal.resample_poly(np.arange(2000, dtype=np.complex64), 6, 4)
+    assert actual.dtype == np.complex64

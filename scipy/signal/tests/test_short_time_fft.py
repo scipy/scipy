@@ -332,7 +332,11 @@ def test_border_values():
     assert SFT.p_max(10) == 4
     assert SFT.k_max(10) == 16
     assert SFT.upper_border_begin(10) == (4, 2)
-
+    # Raise exceptions:
+    with pytest.raises(ValueError, match="^Parameter n must be"):
+        SFT.upper_border_begin(3)
+    with pytest.raises(ValueError, match="^Parameter n must be"):
+        SFT._post_padding(3)
 
 def test_border_values_exotic():
     """Ensure that the border calculations are correct for windows with
@@ -342,7 +346,11 @@ def test_border_values_exotic():
     assert SFT.lower_border_end == (0, 0)
 
     SFT = ShortTimeFFT(np.flip(w), hop=20, fs=1)
-    assert SFT.upper_border_begin(4) == (0, 0)
+    assert SFT.upper_border_begin(4) == (16, 1)
+    assert SFT.upper_border_begin(5) == (16, 1)
+    assert SFT.upper_border_begin(23) == (36, 2)
+    assert SFT.upper_border_begin(24) == (36, 2)
+    assert SFT.upper_border_begin(25) == (36, 2)
 
     SFT._hop = -1  # provoke unreachable line
     with pytest.raises(RuntimeError):

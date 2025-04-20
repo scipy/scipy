@@ -1141,13 +1141,8 @@ class _spbase:
         if self.ndim == 1:
             if axis not in (None, -1, 0):
                 raise ValueError("axis must be None, -1 or 0")
-            ret = (self @ np.ones(self.shape, dtype=res_dtype)).astype(dtype)
-
-            if out is not None:
-                if any(dim != 1 for dim in out.shape):
-                    raise ValueError("dimensions do not match")
-                out[...] = ret
-            return ret
+            res = self @ np.ones(self.shape, dtype=res_dtype)
+            return res.sum(dtype=dtype, out=out)
 
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
@@ -1174,14 +1169,6 @@ class _spbase:
             ret = self @ self._ascontainer(
                 np.ones((N, 1), dtype=res_dtype)
             )
-
-        if out is not None:
-            if isinstance(self, sparray):
-                ret_shape = ret.shape[:axis] + ret.shape[axis + 1:]
-            else:
-                ret_shape = ret.shape
-            if out.shape != ret_shape:
-                raise ValueError("dimensions do not match")
 
         return ret.sum(axis=axis, dtype=dtype, out=out)
 

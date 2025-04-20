@@ -174,9 +174,6 @@ class _dia_base(_data_matrix):
 
             ret = self._ascontainer(row_sums.sum(axis=axis))
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
-
         return ret.sum(axis=(), dtype=dtype, out=out)
 
     sum.__doc__ = _spbase.sum.__doc__
