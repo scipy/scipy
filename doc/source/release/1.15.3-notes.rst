@@ -12,12 +12,76 @@ compared to 1.15.2.
 Authors
 =======
 * Name (commits)
+* Florian Bourgey (1) +
+* Jake Bowhay (1)
+* Dietrich Brunn (2)
+* Evgeni Burovski (1)
+* Lucas Colley (1)
+* Saarthak Gupta (1) +
+* Matt Haberland (3)
+* Chengyu Han (1) +
+* Lukas Huber (1) +
+* Nick ODell (2)
+* Ilhan Polat (4)
+* Tyler Reddy (30)
+* rsbowen (1) +
+* Neil Schemenauer (1) +
+* Dan Schult (1)
+* sildater (1) +
+* Albert Steppi (2)
+* David Varela (1) +
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (3)
+
+A total of 19 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 
 Issues closed for 1.15.3
 ------------------------
 
+* `#10634 <https://github.com/scipy/scipy/issues/10634>`__: BUG: optimize: ``least_squares`` with ``'trf'`` and ``'trf_sover=lsmr'``...
+* `#18146 <https://github.com/scipy/scipy/issues/18146>`__: BUG: scipy.sparse.linalg.expm_multiply fails with sparse matrices
+* `#19418 <https://github.com/scipy/scipy/issues/19418>`__: BUG: integrate.solve_ivp fails for some step sizes if dense_output=True...
+* `#20988 <https://github.com/scipy/scipy/issues/20988>`__: BUG: special.hyp2f1: wrong result for extreme inputs
+* `#22236 <https://github.com/scipy/scipy/issues/22236>`__: BUG: scipy v1.15 breaking for pytest when assert-rewrite is on
+* `#22400 <https://github.com/scipy/scipy/issues/22400>`__: BUG: stats.genextreme.stats: Spurious warning from ``genextreme.stats(0.0,``...
+* `#22451 <https://github.com/scipy/scipy/issues/22451>`__: BUG: interpolative svd broken for non-square linear operators
+* `#22547 <https://github.com/scipy/scipy/issues/22547>`__: BUG: _lib: Data race reported by TSAN in ``ccallback`` mechanism
+* `#22558 <https://github.com/scipy/scipy/issues/22558>`__: BUG: linalg.expm: bug on Windows / conda
+* `#22589 <https://github.com/scipy/scipy/issues/22589>`__: BUG: spatial: ``Rotation`` no longer supports zero-length collections
+* `#22599 <https://github.com/scipy/scipy/issues/22599>`__: DOC: sparse.linalg.ArpackError: entire default ``infodict`` displayed
+* `#22637 <https://github.com/scipy/scipy/issues/22637>`__: BUG: Transposed LinearOperator fails on vector multiplication
+* `#22655 <https://github.com/scipy/scipy/issues/22655>`__: BUG: optimize.linprog: 40x slower in v1.15 compared to v1.14
+* `#22681 <https://github.com/scipy/scipy/issues/22681>`__: DOC: integrate.tanhsinh: documentation refers to non-existent...
+* `#22684 <https://github.com/scipy/scipy/issues/22684>`__: BUG: signal.resample_poly: dtype not preserved
 
 
 Pull requests for 1.15.3
 ------------------------
+
+* `#22502 <https://github.com/scipy/scipy/pull/22502>`__: BUG: special: Fix typo in specfun::chgu
+* `#22532 <https://github.com/scipy/scipy/pull/22532>`__: BUG: Remove warning for genextreme.stats(0.0, moments='mvsk')
+* `#22543 <https://github.com/scipy/scipy/pull/22543>`__: REL, MAINT: prep for 1.15.3
+* `#22555 <https://github.com/scipy/scipy/pull/22555>`__: BUG: ``scipy.sparse.linalg``\ : Fix ``expm_multiply`` if both...
+* `#22561 <https://github.com/scipy/scipy/pull/22561>`__: BUG: _lib: Fix data race found by TSAN, use SCIPY_TLS.
+* `#22567 <https://github.com/scipy/scipy/pull/22567>`__: BUG: optimize: Fix ``bracket_root`` termination check and default...
+* `#22582 <https://github.com/scipy/scipy/pull/22582>`__: BUG: ``integrate.solve_ivp``\ : Avoid duplicate time stamps in...
+* `#22587 <https://github.com/scipy/scipy/pull/22587>`__: BUG: Pin jupyterlite-sphinx to >= 0.19.1
+* `#22588 <https://github.com/scipy/scipy/pull/22588>`__: BUG/BLD: xsf: force defining the mdspan parenthesis operator...
+* `#22600 <https://github.com/scipy/scipy/pull/22600>`__: BUG: Fix ArpackError default argument
+* `#22642 <https://github.com/scipy/scipy/pull/22642>`__: BUG: sparse: sparse sum/mean out parameter shape not enforced...
+* `#22643 <https://github.com/scipy/scipy/pull/22643>`__: BUG: spatial.transform.Rotation: support 0-length rotations
+* `#22660 <https://github.com/scipy/scipy/pull/22660>`__: BUG: optimize: avoid expensive access of ``basis.col_status``...
+* `#22689 <https://github.com/scipy/scipy/pull/22689>`__: BUG: signal.resample_poly: fix dtype preservation
+* `#22690 <https://github.com/scipy/scipy/pull/22690>`__: MAINT/DOC: integrate.tanhsinh: lightly refactor error estimate...
+* `#22693 <https://github.com/scipy/scipy/pull/22693>`__: BUG: spatial.HalfspaceIntersection: fix ``add_halfspaces`` batch...
+* `#22763 <https://github.com/scipy/scipy/pull/22763>`__: BUG: sparse: Remove reference cycle to improve memory use
+* `#22772 <https://github.com/scipy/scipy/pull/22772>`__: BUG: sparse.linalg: Transposed ``LinearOperator`` multiplication...
+* `#22784 <https://github.com/scipy/scipy/pull/22784>`__: BUG: signal._short_time_fft: incorrect index computation in ``upper_border_begin``...
+* `#22792 <https://github.com/scipy/scipy/pull/22792>`__: BUG: signal.ShortTimeFFT.upper_border_begin: Document parameter...
+* `#22801 <https://github.com/scipy/scipy/pull/22801>`__: BUG: ``signal.windows._windows.kaiser_bessel_derived``\ : use...
+* `#22810 <https://github.com/scipy/scipy/pull/22810>`__: BUG: special.hyp2f1: fix for extreme inputs
+* `#22822 <https://github.com/scipy/scipy/pull/22822>`__: BUG: linalg.expm: Fix noncompliant compiler branch typos in C...
+* `#22828 <https://github.com/scipy/scipy/pull/22828>`__: BUG: add workaround for pytest assertion rewriting overreach
+* `#22834 <https://github.com/scipy/scipy/pull/22834>`__: BUG: linalg: Fix shape mismatch in interpolative.svd
