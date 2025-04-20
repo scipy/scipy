@@ -230,6 +230,21 @@ else
 endif
 
 
+py3.extension_module('_umath_linalg',
+    ['_umath_linalg.cpp'],
+    dependencies: [np_dep, npymath_lib, lapack_dep, blas_dep],
+    install: true,
+    subdir: 'scipy/linalg'
+)
+
+
+py3.extension_module('_batched_lapack',
+    ['_batched_lapack.cc'],
+    dependencies: [np_dep, npymath_lib, lapack_dep, blas_dep],
+    install: true,
+    subdir: 'scipy/linalg'
+)
+
 python_sources = [
   '__init__.py',
   '__init__.pxd',
