@@ -30,7 +30,7 @@ def _isnull(x):
     return type(x) is object or x is None
 
 __all__ = ['make_distribution', 'Mixture', 'order_statistic',
-           'truncate', 'abs', 'exp', 'log']
+           'truncate', 'abs', 'exp', 'log', 'ContinuousDistribution']
 
 # Could add other policies for broadcasting and edge/out-of-bounds case handling
 # For instance, when edge case handling is known not to be needed, it's much
@@ -1237,7 +1237,6 @@ def _combine_docs(dist_family, *, include_examples=True):
     fields.remove('index')
     if not include_examples:
         fields.remove('Examples')
-
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(ContinuousDistribution)
     for field in fields:
