@@ -38,7 +38,7 @@ from scipy._lib._array_api_no_0d import xp_assert_equal
 from scipy._lib._array_api import make_skip_xp_backends
 from scipy._lib._util import MapWrapper
 
-skip_xp_backends = pytest.mark.skip_xp_backends
+lazy_xp_modules = [optimize]
 
 
 def test_check_grad():
