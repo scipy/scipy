@@ -326,7 +326,7 @@ class TestDistributions:
         # Safe subtraction is needed in special cases
         x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
         y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
-        p0 = X.pdf(0)*(y-x)
+        p0 = np.where(x > y, 0.0, X.pdf(0)*(y-x))[()]
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
         assert_equal(p2, 0)
@@ -504,7 +504,7 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 or dist._overrides('_logccdf_formula')):
             methods.add('log/exp')
 
-    ref = dist.cdf(y) - dist.cdf(x)
+    ref = np.where(x > y, 0.0, dist.cdf(y) - dist.cdf(x))[()]
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
@@ -532,7 +532,7 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
         methods.add('formula')
 
-    ref = dist.cdf(x) + dist.ccdf(y)
+    ref = np.where(x > y, 1.0, dist.cdf(x) + dist.ccdf(y))[()]
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
