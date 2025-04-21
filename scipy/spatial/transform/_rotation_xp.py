@@ -460,16 +460,17 @@ def approx_equal(
 
 def mean(quat: Array, weights: Array | None = None) -> Array:
     xp = array_namespace(quat)
+    _device = device(quat)
     _dtype = fast_xp_result_type(quat, xp=xp)
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
 
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
-        weights = xp.ones(quat.shape[:-1], dtype=_dtype)
+        weights = xp.ones(quat.shape[:-1], dtype=_dtype, device=_device)
         weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
     else:
-        weights = xp.asarray(weights, dtype=_dtype, copy=True)
+        weights = xp.asarray(weights, dtype=_dtype, copy=True, device=_device)
     if not is_lazy_array(weights) and xp.any(weights < 0):
         raise ValueError("`weights` must be non-negative.")
 
@@ -988,7 +989,8 @@ def _compute_davenport_from_quat(
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
     xp = array_namespace(quat)
-    mask = xp.asarray(extrinsic, device=device(quat))
+    _device = device(quat)
+    mask = xp.asarray(extrinsic, device=_device)
     _n1 = xp.where(mask, n1, n3)
     _n3 = xp.where(mask, n3, n1)
     n1, n3 = _n1, _n3
@@ -997,13 +999,13 @@ def _compute_davenport_from_quat(
     lamb = xp.atan2(xp.vecdot(n3, n_cross), xp.vecdot(n3, n1))
 
     # alternative set of angles compatible with as_euler implementation
-    mask = xp.asarray(lamb < 0, device=device(quat))
+    mask = xp.asarray(lamb < 0, device=_device)
     n2 = xp.where(mask, -n2, n2)
     lamb = xp.where(mask, -lamb, lamb)
     n_cross = xp.where(mask, -n_cross, n_cross)
-    correct_set = xp.where(mask, xp.asarray(True), xp.asarray(False))
+    correct_set = mask
 
-    quat_lamb = xp.asarray([*(xp.sin(lamb / 2) * n2), xp.cos(lamb / 2)])
+    quat_lamb = xp.asarray([*(xp.sin(lamb / 2) * n2), xp.cos(lamb / 2)], device=_device)
 
     q_trans = compose_quat(quat_lamb, quat)
     a = q_trans[..., 3]
