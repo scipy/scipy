@@ -802,7 +802,7 @@ def as_davenport(quat: double[:, :], axes, order: str, degrees: cython.bint = Fa
 
     axes = np.asarray(axes)
 
-    if axes.shape[1] != 3:
+    if axes.ndim != 2 or axes.shape[1] != 3:
         raise ValueError("Axes must be vectors of length 3.")
 
     n1, n2, n3 = axes

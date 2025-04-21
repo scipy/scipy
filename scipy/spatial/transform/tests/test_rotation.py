@@ -2297,10 +2297,10 @@ def test_as_davenport_jax_compile():
 
     axes = jax.numpy.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
     order = "e"
-    angles = jax.numpy.array([0.0, 0.0, 0.0])
-    from_davenport = jax.jit(Rotation.from_davenport, static_argnums=(1,))
-    r = jax.block_until_ready(from_davenport(axes, order, angles))
-    assert isinstance(r, Rotation)
+    r = Rotation.from_matrix(jax.numpy.eye(3))
+    as_davenport = jax.jit(Rotation.as_davenport, static_argnums=(2,))
+    angles = jax.block_until_ready(as_davenport(r, axes, order))
+    assert isinstance(angles, type(jax.numpy.array(0)))
 
 
 def test_compare_from_davenport_from_euler(xp):

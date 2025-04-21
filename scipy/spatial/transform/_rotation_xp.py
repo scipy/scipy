@@ -353,7 +353,6 @@ def as_euler(quat: Array, seq: str, degrees: bool = False) -> Array:
     symmetric = i == k
     k = 3 - i - j if symmetric else k
 
-    extrinsic = xp.asarray(extrinsic, device=_device)
     symmetric = xp.asarray(symmetric, device=_device)
     sign = xp.asarray(
         (i - j) * (j - k) * (k - i) // 2, dtype=quat.dtype, device=_device
@@ -394,10 +393,16 @@ def as_davenport(
 
     # normalize axes
     axes = axes / xp_vector_norm(axes, axis=-1, keepdims=True, xp=xp)
-    if xp.vecdot(axes[0, ...], axes[1, ...]) >= 1e-7:
-        raise ValueError("Consecutive axes must be orthogonal.")
-    if xp.vecdot(axes[1, ...], axes[2, ...]) >= 1e-7:
-        raise ValueError("Consecutive axes must be orthogonal.")
+    vdot_ax0_ax1 = xp.vecdot(axes[0, ...], axes[1, ...])
+    vdot_ax1_ax2 = xp.vecdot(axes[1, ...], axes[2, ...])
+    if is_lazy_array(axes):
+        axes = xp.where(vdot_ax0_ax1 < 1e-7, axes, xp.nan)
+        axes = xp.where(vdot_ax1_ax2 < 1e-7, axes, xp.nan)
+    else:
+        if vdot_ax0_ax1 >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
+        if vdot_ax1_ax2 >= 1e-7:
+            raise ValueError("Consecutive axes must be orthogonal.")
 
     angles = _compute_davenport_from_quat(
         quat, axes[0, ...], axes[1, ...], axes[2, ...], extrinsic
