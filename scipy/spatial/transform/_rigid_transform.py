@@ -1720,7 +1720,8 @@ class RigidTransform:
             dtype = xp.float64
         else:
             dtype = xp_result_type(matrix, force_floating=True, xp=xp)
-        matrix = xp.asarray(matrix, dtype=dtype)
+        if not isinstance(matrix, type(xp.empty(0))) or matrix.dtype != dtype:
+            matrix = xp.asarray(matrix, dtype=dtype)
         # TODO: Remove this once we properly support broadcasting
         if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
             raise ValueError(

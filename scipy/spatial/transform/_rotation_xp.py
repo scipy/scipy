@@ -534,29 +534,39 @@ def reduce(
     rs, rv = _split_rotation(right, xp)
 
     # Compute each term without einsum (not accessible in the Array API)
-    # First term: ls * ps * rs
-    term1 = ls * ps * rs
-    # Second term: ls * dot(pv, rv)
-    term2 = ls * xp.sum(pv * rv, axis=-1)
-    # Third term: ps * dot(lv, rv)
-    term3 = ps * xp.sum(lv * rv, axis=-1)
-    # Fourth term: rs * dot(lv, pv)
-    term4 = rs * xp.sum(lv * pv, axis=-1)
-    # Fifth term: dot(cross(lv, pv), rv)
-    lv_cross_pv = xp.linalg.cross(lv, pv)
-    term5 = xp.sum(lv_cross_pv * rv, axis=-1)
+    # First term: np.einsum("i,j,k", ls, ps, rs)
+    term1 = ls[..., :, None, None] * ps[..., None, :, None] * rs[..., None, None, :]
+    # Second term: np.einsum('i,jx,kx', ls, pv, rv)
+    prv = xp.sum(pv[..., :, None, :] * rv[..., None, :, :], axis=-1)
+    term2 = ls[..., :, None, None] * prv[..., None, :, :]
+    # Third term: np.einsum('ix,j,kx', lv, ps, rv)
+    lrv = xp.sum(lv[..., :, None, :] * rv[..., None, :, :], axis=-1)
+    term3 = ps[..., None, :, None] * lrv[..., :, None, :]
+    # Fourth term: np.einsum('ix,jx,k', lv, pv, rs)
+    lpv = xp.sum(lv[..., :, None, :] * pv[..., None, :, :], axis=-1)
+    term4 = rs[..., None, None, :] * lpv[..., :, :, None]
+    # Fifth term: np.einsum('xyz,ix,jy,kz', e, lv, pv, rv)
+    lv_exp = lv[..., :, None, None, :, None, None]
+    pv_exp = pv[..., None, :, None, None, :, None]
+    rv_exp = rv[..., None, None, :, None, None, :]
+    e_exp = e[None, None, None, :, :, :]
+    # Multiply all terms together and sum over x,y,z axes
+    term5 = xp.sum(e_exp * lv_exp * pv_exp * rv_exp, axis=(-3, -2, -1))
 
     qs = xp.abs(term1 - term2 - term3 - term4 - term5)
+    qs = xp.reshape(xp.moveaxis(qs, 1, 0), (qs.shape[1], -1))
 
     # Find best indices from scalar components
     max_ind = xp.argmax(xp.reshape(qs, (qs.shape[0], -1)), axis=1)
     left_best = max_ind // rv.shape[0]
     right_best = max_ind % rv.shape[0]
     # Array API limitation: Integer index arrays are only allowed with integer indices
-    # TODO: Can we somehow avoid this? Equivalent to x[left_best[0], :]
-    all_idx = xp.arange(left.shape[-1])
-    left = left[left_best[0], all_idx]
-    right = right[right_best[0], all_idx]
+    # TODO: Can we somehow avoid this?
+    all_idx = xp.reshape(xp.arange(left.shape[-1]), (1, -1))
+    left_idx = xp.reshape(left_best, (-1, 1))
+    left = left[left_idx, all_idx]
+    right_idx = xp.reshape(right_best, (-1, 1))
+    right = right[right_idx, all_idx]
 
     # Reduce the rotation using the best indices
     reduced = compose_quat(left, compose_quat(p, right))
