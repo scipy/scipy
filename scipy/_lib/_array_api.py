@@ -633,24 +633,27 @@ def is_marray(xp):
     return "marray" in xp.__name__
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(repr=False)
 class _XPSphinxCapability:
-    label: str
     cpu: bool | None  # None if not applicable
     gpu: bool | None
     warnings: str | None = None
-    hidden: bool = False  # Do not render in documentation
 
-    def render(self, name):
-        """Render the 'cpu' or the 'gpu' column in Sphinx"""
-        value = getattr(self, name)
+    def _render(self, value):
         if value is None:
             return "n/a"
         if not value:
             return "⛔"
         if self.warnings:
-            return f"⚠️ {self.warnings}"
+            res = f"⚠️ {self.warnings}"
+            assert len(res) <= 20
+            return res
         return "✅"
+
+    def __str__(self):
+        cpu = self._render(self.cpu)
+        gpu = self._render(self.gpu)
+        return f"{cpu:20}  {gpu:20}"
 
 
 def _make_sphinx_capabilities(
@@ -667,16 +670,14 @@ def _make_sphinx_capabilities(
 
     # Default capabilities
     capabilities = {
-        "numpy": _XPSphinxCapability("NumPy", cpu=True, gpu=None),
-        "array_api_strict": _XPSphinxCapability(
-            "array-api-strict", cpu=True, gpu=None, hidden=True),
-        "cupy": _XPSphinxCapability("CuPy", cpu=None, gpu=True),
-        "torch": _XPSphinxCapability("PyTorch", cpu=True, gpu=True),
-        "jax.numpy": _XPSphinxCapability(
-            "JAX", cpu=True, gpu=True, warnings=None if jax_jit else "no JIT"),
+        "numpy": _XPSphinxCapability(cpu=True, gpu=None),
+        "array_api_strict": _XPSphinxCapability(cpu=True, gpu=None),
+        "cupy": _XPSphinxCapability(cpu=None, gpu=True),
+        "torch": _XPSphinxCapability(cpu=True, gpu=True),
+        "jax.numpy": _XPSphinxCapability(cpu=True, gpu=True,
+            warnings=None if jax_jit else "no JIT"),
         # Note: Dask+CuPy is currently untested and unsupported
-        "dask.array": _XPSphinxCapability(
-            "Dask", cpu=True, gpu=None,
+        "dask.array": _XPSphinxCapability(cpu=True, gpu=None,
             warnings="computes graph" if allow_dask_compute else None),
     }
 
@@ -700,34 +701,25 @@ def _make_sphinx_capabilities(
     return capabilities
 
 
-def _make_capabilities_table(capabilities):
-    table = """
-    .. list-table::
-       :header-rows: 1
-                            
-       * - Library
-         - CPU
-         - GPU
-    """.rstrip() + "\n"
-    for capability in capabilities.values():
-        if not capability.hidden:
-            table += textwrap.indent(textwrap.dedent(f"""
-            * - {capability.label}
-              - {capability.render('cpu')}
-              - {capability.render('gpu')}
-            """).lstrip(), "       ")
-    return table
-
-
 def _make_capabilities_note(fun_name, capabilities):
-    table = _make_capabilities_table(capabilities)
+    # Note: deliberately not documenting array-api-strict
     note = f"""
     `{fun_name}` has experimental support for Python Array API Standard compatible
     backends in addition to NumPy. Please consider testing these features
     by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
     CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
     combinations of backend and device (or other capability) are supported.
-    {table}
+
+    ====================  ====================  ====================
+    Library               CPU                   GPU
+    ====================  ====================  ====================
+    NumPy                 {capabilities['numpy']                   }
+    CuPy                  {capabilities['cupy']                    }
+    PyTorch               {capabilities['torch']                   }
+    JAX                   {capabilities['jax.numpy']               }
+    Dask                  {capabilities['dask.array']              }
+    ====================  ====================  ====================
+
     See :ref:`dev-arrayapi` for more information.
     """
     return textwrap.dedent(note)
