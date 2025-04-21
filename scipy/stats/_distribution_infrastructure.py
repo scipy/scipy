@@ -1186,14 +1186,21 @@ def _cdf2_input_validation(f):
         # transform the result later.
         i_swap = y < x
         x[i_swap], y[i_swap] = y[i_swap], x[i_swap]
-        i = x < low
-        x[i] = low[i]
-        i = y < low
-        y[i] = low[i]
-        i = x > high
-        x[i] = high[i]
-        i = y > high
-        y[i] = high[i]
+
+        x_below = (x < low)
+        y_below = (y < low)
+        x_above = (x > high)
+        y_above = (y > high)
+        x[x_below] = low[x_below]
+        y[y_below] = low[y_below]
+        x[x_above] = high[x_above]
+        y[y_above] = high[y_above]
+
+        # If x and y are both less than low (greater than high)
+        # than cdf2(x, y) should be 0 and replacing out-of-domain
+        # arguments with endpoints will give the wrong result.
+        both_beyond = (x_below & y_below) | (x_above & y_above)
+        degenerate = i_swap | both_beyond
 
         res = f(self, x, y, *args, **kwargs)
 
@@ -1206,17 +1213,13 @@ def _cdf2_input_validation(f):
         # Transform the result to account for swapped argument order
         res = np.asarray(res)
         if func_name == '_cdf2':
-            res[i_swap] *= -1.
+            res[degenerate] = 0
         elif func_name == '_ccdf2':
-            res[i_swap] *= -1
-            res[i_swap] += 2.
+            res[degenerate] = 1
         elif func_name == '_logcdf2':
-            res = np.asarray(res + 0j) if np.any(i_swap) else res
-            res[i_swap] = res[i_swap] + np.pi*1j
-        else:
-            # res[i_swap] is always positive and less than 1, so it's
-            # safe to ensure that the result is real
-            res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
+            res[degenerate] = -np.inf
+        elif func_name == '_logccdf2':
+            res[degenerate] = 0
         return res[()]
 
     return wrapped
