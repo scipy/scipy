@@ -32,13 +32,13 @@ def from_quat(
     scalar_first: bool = False,
 ) -> Array:
     xp = array_namespace(quat)
-    _device = device(quat)
-    normalize = xp.asarray(normalize, device=_device)
-    copy = xp.asarray(copy, device=_device)
-    scalar_first = xp.asarray(scalar_first, device=_device)
-    quat = xp.where(scalar_first, xp.roll(quat, -1, axis=-1), quat)
-    quat = xp.where(normalize | copy, xp.asarray(quat, copy=True), quat)
-    quat = xp.where(normalize, _normalize_quaternion(quat), quat)
+    if scalar_first:
+        quat = xp.roll(quat, -1, axis=-1)
+    # Normalize will always copy, so we avoid the extra copy if we normalize
+    if copy and not normalize:
+        quat = xp.asarray(quat, copy=True)
+    if normalize:
+        quat = _normalize_quaternion(quat)
     return quat
 
 
@@ -891,9 +891,12 @@ def pow(quat: Array, n: float) -> Array:
 def _normalize_quaternion(quat: Array) -> Array:
     xp = array_namespace(quat)
     quat_norm = xp_vector_norm(quat, axis=-1, keepdims=True, xp=xp)
-    if not is_lazy_array(quat_norm) and xp.any(quat_norm == 0):
-        raise ValueError("Found zero norm quaternions in `quat`.")
-    quat = xp.where(quat_norm == 0, xp.nan, quat)
+    zero_norm = quat_norm == 0
+    if not is_lazy_array(quat_norm):
+        if xp.any(zero_norm):
+            raise ValueError("Found zero norm quaternions in `quat`.")
+    else:
+        quat = xp.where(zero_norm, xp.nan, quat)
     return quat / quat_norm
 
 

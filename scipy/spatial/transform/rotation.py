@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from typing import Iterable
-from types import EllipsisType
+from types import EllipsisType, ModuleType
 
 import numpy as np
 
@@ -320,8 +320,8 @@ class Rotation:
         copy: bool = True,
         scalar_first: bool = False,
     ):
-        quat = self._to_array(quat)
         xp = array_namespace(quat)
+        quat = self._to_array(quat, xp)
         # Legacy behavior for cython backend: Differentiate between single quat and batched quats
         # We only use this for the cython backend. The Array API backend uses broadcasting by
         # default and hence returns the correct shape without additional logic
@@ -2418,7 +2418,7 @@ class Rotation:
             quat = quat[0]
         return Rotation(quat, normalize=False, copy=False)
 
-    def _to_array(self, quat: ArrayLike) -> Array:
+    def _to_array(self, quat: ArrayLike, xp: ModuleType) -> Array:
         """Convert the quaternion to an array.
 
         The return array dtype follows the following rules:
@@ -2430,7 +2430,6 @@ class Rotation:
         The second rule is necessary to promote non-floating arrays to the correct type in
         frameworks that may not support double precision (e.g. jax by default).
         """
-        xp = array_namespace(quat)
         # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
         # implementation, but it might make more sense to preserve float32 if passed in by the user.
         # This would make the behavior more consistent with the Array API backend, but requires
@@ -2438,7 +2437,14 @@ class Rotation:
         if is_numpy(xp):
             dtype = xp.float64
         else:
-            dtype = xp_result_type(quat, force_floating=True, xp=xp)
+            # xp.result_type is significantly faster than xp_result_type (1e5x faster). For large
+            # arrays, this dominates performance. Therefore, we use xp.result_type. This lacks the
+            # option to force floating point types, so we catch promotion errors from integer types
+            # and use the result type of float32 and float64 in this case.
+            try:
+                dtype = xp.result_type(quat.dtype, xp.float64)
+            except TypeError:
+                dtype = xp.result_type(xp.float32, xp.float64)
         quat = xp.asarray(quat, dtype=dtype)
         # TODO: Remove this once we properly support broadcasting
         if quat.ndim not in (1, 2) or quat.shape[-1] != 4:
