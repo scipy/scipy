@@ -997,8 +997,11 @@ def _set_invalid_nan(f):
                             else np.any(mask_endpoint))
 
         # Check for non-integral arguments to PMF method
+        # or PDF of a discrete distribution.
         any_non_integral = False
-        if method_name in replace_non_integral:
+        if (
+                method_name in replace_non_integral
+                or discrete and method_name in {"pdf", "logpdf"}):
             mask_non_integral = (x != np.floor(x)) & ~np.isnan(x)
             any_non_integral = (mask_non_integral if mask_non_integral.shape == ()
                                 else np.any(mask_non_integral))
@@ -1028,7 +1031,7 @@ def _set_invalid_nan(f):
 
         # For non-integral arguments to PMF, replace with zero
         if any_non_integral:
-            zero = -np.inf if method_name == 'logpmf' else 0
+            zero = -np.inf if method_name in {'logpmf', 'logpdf'} else 0
             res[mask_non_integral] = zero
 
         # For arguments outside the function domain, replace results
