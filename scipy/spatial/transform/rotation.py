@@ -2430,21 +2430,7 @@ class Rotation:
         The second rule is necessary to promote non-floating arrays to the correct type in
         frameworks that may not support double precision (e.g. jax by default).
         """
-        # TODO: Do we always want to promote to float64 for NumPy? This is consistent with the old
-        # implementation, but it might make more sense to preserve float32 if passed in by the user.
-        # This would make the behavior more consistent with the Array API backend, but requires
-        # changes in the cython backend.
-        if is_numpy(xp):
-            dtype = xp.float64
-        else:
-            # xp.result_type is significantly faster than xp_result_type (1e5x faster). For large
-            # arrays, this dominates performance. Therefore, we use xp.result_type. This lacks the
-            # option to force floating point types, so we catch promotion errors from integer types
-            # and use the result type of float32 and float64 in this case.
-            try:
-                dtype = xp.result_type(quat.dtype, xp.float64)
-            except TypeError:
-                dtype = xp.result_type(xp.float32, xp.float64)
+        dtype = array_api_backend.fast_xp_result_type(quat, xp=xp)
         quat = xp.asarray(quat, dtype=dtype)
         # TODO: Remove this once we properly support broadcasting
         if quat.ndim not in (1, 2) or quat.shape[-1] != 4:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Iterable
-from types import EllipsisType
+from types import EllipsisType, ModuleType
 
 import numpy as np
 
@@ -9,13 +9,13 @@ from scipy._lib._array_api import (
     array_namespace,
     is_numpy,
     ArrayLike,
-    xp_result_type,
     Array,
 )
 from scipy.spatial.transform.rotation import Rotation
 
 import scipy.spatial.transform._rigid_transform_xp as array_api_backend
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
+from scipy.spatial.transform._rotation_xp import fast_xp_result_type
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_compat import device
 
@@ -369,7 +369,7 @@ class RigidTransform:
         transform : `RigidTransform` instance
         """
         xp = array_namespace(matrix)
-        matrix = self._to_array(matrix)
+        matrix = self._to_array(matrix, xp)
         # Legacy behavior for cython backend: Differentiate between single matrix and batched
         # matrices. We only use this for the cython backend. The Array API backend uses broadcasting
         # by default and hence returns the correct shape without additional logic
@@ -663,7 +663,7 @@ class RigidTransform:
         quat = rotation.as_quat()
         xp = array_namespace(translation, quat)
         backend = backend_registry.get(xp, array_api_backend)
-        dtype = xp_result_type(translation, force_floating=True, xp=xp)
+        dtype = fast_xp_result_type(translation, xp=xp)
         _device = device(translation)
         translation = xp.asarray(translation, dtype=dtype, device=_device)
         matrix = backend.from_components(translation, quat)
@@ -752,7 +752,7 @@ class RigidTransform:
         array([0.5, 0.3, 0.1, 3.64305882, -1.25879559, 4.46109265])
         """
         xp = array_namespace(exp_coords)
-        dtype = xp_result_type(exp_coords, force_floating=True, xp=xp)
+        dtype = fast_xp_result_type(exp_coords, xp=xp)
         _device = device(exp_coords)
         exp_coords = xp.asarray(exp_coords, dtype=dtype, device=_device)
         if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
@@ -1710,19 +1710,9 @@ class RigidTransform:
         """
         return self._single or self._matrix.ndim == 2
 
-    def _to_array(self, matrix: ArrayLike) -> Array:
+    def _to_array(self, matrix: ArrayLike, xp: ModuleType) -> Array:
         xp = array_namespace(matrix)
-        if is_numpy(xp):
-            dtype = xp.float64
-        else:
-            # xp.result_type is significantly faster than xp_result_type (1e5x faster). For large
-            # arrays, this dominates performance. Therefore, we use xp.result_type. This lacks the
-            # option to force floating point types, so we catch promotion errors from integer types
-            # and use the result type of float32 and float64 in this case.
-            try:
-                dtype = xp.result_type(matrix.dtype, xp.float64)
-            except TypeError:
-                dtype = xp.result_type(xp.float32, xp.float64)
+        dtype = fast_xp_result_type(matrix, xp=xp)
         if not isinstance(matrix, type(xp.empty(0))) or matrix.dtype != dtype:
             matrix = xp.asarray(matrix, dtype=dtype)
         # TODO: Remove this once we properly support broadcasting
