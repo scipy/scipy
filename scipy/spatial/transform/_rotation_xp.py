@@ -518,15 +518,6 @@ def reduce(
     elif left is None:
         left = xp.asarray([[0.0, 0.0, 0.0, 1.0]])
 
-    # Levi-Civita tensor for triple product computations
-    e = xp.zeros((3, 3, 3), dtype=xp_result_type(quat, force_floating=True, xp=xp))
-    e = xpx.at(e)[0, 1, 2].set(1)
-    e = xpx.at(e)[1, 2, 0].set(1)
-    e = xpx.at(e)[2, 0, 1].set(1)
-    e = xpx.at(e)[0, 2, 1].set(-1)
-    e = xpx.at(e)[2, 1, 0].set(-1)
-    e = xpx.at(e)[1, 0, 2].set(-1)
-
     # We want to calculate the real components of q = l * p * r. It can
     # be shown that:
     #     qs = ls * ps * rs - ls * dot(pv, rv) - ps * dot(lv, rv)
@@ -550,14 +541,16 @@ def reduce(
     # Fourth term: np.einsum('ix,jx,k', lv, pv, rs)
     lpv = xp.sum(lv[..., :, None, :] * pv[..., None, :, :], axis=-1)
     term4 = rs[..., None, None, :] * lpv[..., :, :, None]
-    # Fifth term: np.einsum('xyz,ix,jy,kz', e, lv, pv, rv)
-    lv_exp = lv[..., :, None, None, :, None, None]
-    pv_exp = pv[..., None, :, None, None, :, None]
-    rv_exp = rv[..., None, None, :, None, None, :]
-    e_exp = e[None, None, None, :, :, :]
-    # Multiply all terms together and sum over x,y,z axes
-    term5 = xp.sum(e_exp * lv_exp * pv_exp * rv_exp, axis=(-3, -2, -1))
-
+    # Fifth term: np.einsum('xyz,ix,jy,kz', e, lv, pv, rv). We want to avoid expanding the einsum
+    # into a 6D tensor to avoid excessive memory usage. Instead, we compute the cross product
+    # between lv and pv and then compute the dot product with rv.
+    # First compute cross products between lv and pv
+    lv_expanded = lv[..., :, None, :]
+    pv_expanded = pv[..., None, :, :]
+    cross_lp = xp.linalg.cross(lv_expanded, pv_expanded)
+    # Then compute dot product with rv
+    term5 = xp.sum(cross_lp[..., :, :, None, :] * rv[..., None, None, :, :], axis=-1)
+    # Combine all terms with proper shape alignment
     qs = xp.abs(term1 - term2 - term3 - term4 - term5)
     qs = xp.reshape(xp.moveaxis(qs, 1, 0), (qs.shape[1], -1))
 
