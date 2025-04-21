@@ -886,7 +886,7 @@ def _contains_nan(
     a: Array,
     nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
     *,
-    xp_omit_okay: bool = False, 
+    xp_omit_okay: bool = False,
     xp: ModuleType | None = None,
 ) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
@@ -938,9 +938,6 @@ def _contains_nan(
         if is_lazy_array(a):
             msg = "nan_policy='omit' is not supported for lazy arrays."
             raise TypeError(msg)
-        if contains_nan:
-            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
-            raise ValueError(msg)
 
     return contains_nan
 
