@@ -919,7 +919,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             o_new_shape = other.shape[:-2] + other.shape[-1:]
             reorder_dims = (o_ndim - 2, *range(o_ndim - 2), o_ndim - 1)
-            o_reorg = np.permute_dims(other, reorder_dims)
+            o_reorg = np.transpose(other, reorder_dims)
             other_2d = o_reorg.reshape((other.shape[-2], math.prod(o_new_shape)))
 
         prod = self_2d @ other_2d  # routes via 2-D CSR
