@@ -33,6 +33,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
+from scipy._lib import array_api_extra as xpx
 
 from scipy import special
 from . import _ni_support
@@ -533,6 +534,35 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     affine_transform : ndarray
         The transformed input.
 
+    Examples
+    --------
+    Use `affine_transform` to stretch an image::
+
+    >>> from scipy.ndimage import affine_transform
+    >>> from scipy.datasets import face
+    >>> from matplotlib import pyplot as plt
+    >>> import numpy as np
+    >>> im = face(gray=True)
+    >>> matrix = (0.5, 2)
+    >>> im2 = affine_transform(im, matrix)
+    >>> plt.imshow(im2)
+    >>> plt.show()
+
+    Rotate an image by 90 degrees and project it onto an expanded canvas::
+
+    >>> matrix = ((0, 1), (1, 0))
+    >>> im3 = affine_transform(im, matrix, output_shape=(1024, 1024))
+    >>> plt.imshow(im3)
+    >>> plt.show()
+
+    Offset the rotation so that the image is centred::
+
+    >>> output_shape = (1200, 1200)
+    >>> offset = (np.array(im.shape) - output_shape) / 2
+    >>> im4 = affine_transform(im, matrix, offset=offset, output_shape=output_shape)
+    >>> plt.imshow(im4)
+    >>> plt.show()
+
     Notes
     -----
     The given matrix and offset are used to find for each point in the
@@ -616,12 +646,6 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     if not offset.flags.contiguous:
         offset = offset.copy()
     if matrix.ndim == 1:
-        warnings.warn(
-            "The behavior of affine_transform with a 1-D "
-            "array supplied for the matrix parameter has changed in "
-            "SciPy 0.18.0.",
-            stacklevel=2
-        )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval, npad, False)
     else:
@@ -818,6 +842,12 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     complex_output = np.iscomplexobj(input)
     output = _ni_support._get_output(output, input, shape=output_shape,
                                      complex_output=complex_output)
+    if all(z == 1 for z in zoom) and prefilter:  # early exit for gh-20999
+        # zoom 1 means "return original image". If `prefilter=False`,
+        # `input` is *not* the original image; processing is still needed
+        # to undo the filter. So we only early exit if `prefilter`.
+        output = xpx.at(output)[...].set(input)
+        return output
     if complex_output:
         # import under different name to avoid confusion with zoom parameter
         from scipy.ndimage._interpolation import zoom as _zoom

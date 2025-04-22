@@ -1,18 +1,18 @@
+import itertools as it
 import math
 import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype
+from scipy._lib._array_api import (is_array_api_strict, make_skip_xp_backends,
+                                   xp_default_dtype, xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
 from scipy.special import log_softmax, logsumexp, softmax
 from scipy.special._logsumexp import _wrap_radians
+
 from scipy._lib.array_api_extra.testing import lazy_xp_function
-
-
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 dtypes = ['float32', 'float64', 'int32', 'int64', 'complex64', 'complex128']
@@ -29,15 +29,18 @@ def test_wrap_radians(xp):
                     0, 1e-300, 1, math.pi, math.pi+1])
     ref = xp.asarray([math.pi-1, math.pi, -1, -1e-300,
                     0, 1e-300, 1, math.pi, -math.pi+1])
-    res = _wrap_radians(x, xp)
+    res = _wrap_radians(x, xp=xp)
     xp_assert_close(res, ref, atol=0)
 
 
+# numpy warning filters don't work for dask (dask/dask#3245)
+# (also we should not expect the numpy warning filter to work for any Array API
+# library)
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
+@make_skip_xp_backends(logsumexp)
 class TestLogSumExp:
-    # numpy warning filters don't work for dask (dask/dask#3245)
-    # (also we should not expect the numpy warning filter to work for any Array API
-    # library)
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered in log")
     def test_logsumexp(self, xp):
         # Test with zero-size array
         a = xp.asarray([])
@@ -117,8 +120,6 @@ class TestLogSumExp:
         xp_assert_close(r, xp.asarray(1.))
         xp_assert_equal(s, xp.asarray(-1.))
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_logsumexp_sign_zero(self, xp):
         a = xp.asarray([1, 1])
         b = xp.asarray([1, -1])
@@ -182,7 +183,6 @@ class TestLogSumExp:
         desired = np.asarray(1000.0 + math.log(2.0))
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype', dtypes)
     def test_dtypes_a(self, dtype, xp):
         dtype = getattr(xp, dtype)
@@ -192,7 +192,6 @@ class TestLogSumExp:
         desired = xp.asarray(1000.0 + math.log(2.0), dtype=desired_dtype)
         xp_assert_close(logsumexp(a), desired)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.parametrize('dtype_a', dtypes)
     @pytest.mark.parametrize('dtype_b', dtypes)
     def test_dtypes_ab(self, dtype_a, dtype_b, xp):
@@ -223,7 +222,6 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
-    @skip_xp_backends('array_api_strict', reason='data-apis/array-api-strict#131')
     @pytest.mark.filterwarnings(
         "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
     )
@@ -266,6 +264,55 @@ class TestLogSumExp:
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
 
+    @pytest.mark.parametrize('x,y', it.product(
+        [
+            -np.inf,
+            np.inf,
+            complex(-np.inf, 0.),
+            complex(-np.inf, -0.),
+            complex(-np.inf, np.inf),
+            complex(-np.inf, -np.inf),
+            complex(np.inf, 0.),
+            complex(np.inf, -0.),
+            complex(np.inf, np.inf),
+            complex(np.inf, -np.inf),
+            # Phase in each quadrant.
+            complex(-np.inf, 0.7533),
+            complex(-np.inf, 2.3562),
+            complex(-np.inf, 3.9270),
+            complex(-np.inf, 5.4978),
+            complex(np.inf, 0.7533),
+            complex(np.inf, 2.3562),
+            complex(np.inf, 3.9270),
+            complex(np.inf, 5.4978),
+        ], repeat=2)
+    )
+    def test_gh22601_infinite_elements(self, x, y, xp):
+        # Test that `logsumexp` does reasonable things in the presence of
+        # real and complex infinities.
+        res = logsumexp(xp.asarray([x, y]))
+        ref = xp.log(xp.sum(xp.exp(xp.asarray([x, y]))))
+        xp_assert_equal(res, ref)
+
+    def test_no_writeback(self, xp):
+        """Test that logsumexp doesn't accidentally write back to its parameters."""
+        a = xp.asarray([5., 4.])
+        b = xp.asarray([3., 2.])
+        logsumexp(a)
+        logsumexp(a, b=b)
+        xp_assert_equal(a, xp.asarray([5., 4.]))
+        xp_assert_equal(b, xp.asarray([3., 2.]))
+
+    @pytest.mark.parametrize("x_raw", [1.0, 1.0j, []])
+    def test_device(self, x_raw, xp, devices):
+        """Test input device propagation to output."""
+        for d in devices:
+            x = xp.asarray(x_raw, device=d)
+            assert xp_device(logsumexp(x)) == xp_device(x)
+            assert xp_device(logsumexp(x, b=x)) == xp_device(x)
+
+
+@make_skip_xp_backends(softmax)
 class TestSoftmax:
     def test_softmax_fixtures(self, xp):
         xp_assert_close(softmax(xp.asarray([1000., 0., 0., 0.])),
@@ -334,6 +381,7 @@ class TestSoftmax:
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
 
 
+@make_skip_xp_backends(log_softmax)
 class TestLogSoftmax:
     def test_log_softmax_basic(self, xp):
         xp_assert_close(log_softmax(xp.asarray([1000., 1.])),

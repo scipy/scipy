@@ -33,13 +33,13 @@ jobs:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Python packages
       run: |
-        python -m pip install ruff cython-lint packaging spin
+        python -m pip install ruff cython-lint packaging tach spin
 
     - name: Lint
       run: |
@@ -50,3 +50,7 @@ jobs:
       shell: bash
       run: |
         python tools/check_python_h_first.py
+
+    - name: Check module interdependencies
+      run: |
+        tach check --exact

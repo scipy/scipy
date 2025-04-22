@@ -5165,8 +5165,8 @@ class TestBetaPrime:
         # Testing for gh-18634 revealed that `betaprime` raised a
         # NotImplementedError for higher moments. Check that this is
         # resolved. Parameters are arbitrary but lie on either side of the
-        # moment order (5) to test both branches of `_lazywhere`. Reference
-        # values produced with Mathematica, e.g.
+        # moment order (5) to test both branches of `xpx.apply_where`.
+        # Reference values produced with Mathematica, e.g.
         # `Moment[BetaPrimeDistribution[2,7],5]`
         ref = [np.inf, 0.867096912929055]
         res = stats.betaprime(2, [4.2, 7.1]).moment(5)

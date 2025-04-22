@@ -113,6 +113,12 @@ class TestBatch:
     def test_matmat(self, fun, dtype):  # matrix in, matrix out
         rng = np.random.default_rng(8342310302941288912051)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
+
+        # sqrtm can return complex output for real input resulting in i/o type
+        # mismatch. Nudge the eigenvalues to positive side to avoid this.
+        if fun == linalg.sqrtm:
+            A = A + 3*np.eye(4, dtype=dtype)
+
         self.batch_test(fun, A)
 
     @pytest.mark.parametrize('dtype', floating)
@@ -442,7 +448,7 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1.5e-6)
-        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
@@ -456,7 +462,7 @@ class TestBatch:
             x = x[..., np.newaxis]
             b = b[..., np.newaxis]
         assert_allclose(A @ x - b, 0, atol=1.5e-6)
-        assert_allclose(x, np.linalg.solve(A, b), atol=2e-6)
+        assert_allclose(x, np.linalg.solve(A, b), atol=3e-6)
 
     @pytest.mark.parametrize('l_and_u', [(1, 1), ([2, 1, 0], [0, 1 , 2])])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])

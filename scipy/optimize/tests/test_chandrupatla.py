@@ -282,7 +282,7 @@ class TestChandrupatlaMinimize:
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
         p = xp.asarray(rng.random(size=3))
-        bracket = (xp.asarray(-5), xp.asarray(0), xp.asarray(5))
+        bracket = (xp.asarray(-5, dtype=xp.float64), xp.asarray(0), xp.asarray(5))
         args = (p,)
         kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
 
@@ -550,8 +550,6 @@ class TestChandrupatlaMinimize:
                               reason='Currently uses fancy indexing assignment.')
 @pytest.mark.skip_xp_backends('jax.numpy',
                               reason='JAX arrays do not support item assignment.')
-@pytest.mark.skip_xp_backends('cupy',
-                              reason='cupy/cupy#8391')
 class TestFindRoot:
 
     def f(self, q, p):
@@ -584,7 +582,8 @@ class TestFindRoot:
             return self.f(*args, **kwargs)
         f.f_evals = 0
 
-        res = find_root(f, (xp.asarray(-5.), xp.asarray(5.)), args=args_xp)
+        bracket = xp.asarray(-5., dtype=xp.float64), xp.asarray(5., dtype=xp.float64)
+        res = find_root(f, bracket, args=args_xp)
         refs = find_root_single(p).ravel()
 
         ref_x = [ref.x for ref in refs]
