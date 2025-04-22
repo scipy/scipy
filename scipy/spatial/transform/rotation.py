@@ -19,7 +19,6 @@ from scipy._lib._array_api import (
     is_numpy,
     ArrayLike,
     is_lazy_array,
-    xp_result_type,
 )
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
@@ -1793,11 +1792,7 @@ class Rotation:
 
         """
         xp = array_namespace(self._quat)
-        points = xp.asarray(
-            points,
-            device=device(self._quat),
-            dtype=xp_result_type(self._quat, force_floating=True, xp=xp),
-        )
+        points = xp.asarray(points, device=device(self._quat), dtype=self._quat.dtype)
         result = self._backend.apply(self._quat, points, inverse=inverse)
         if self._single and points.ndim == 1:
             return result[0, ...]
