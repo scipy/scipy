@@ -1377,6 +1377,8 @@ class Rotation:
         >>> r.as_davenport([ez, ex, ey], 'extrinsic', degrees=True).shape
         (2, 3)
         """
+        xp = array_namespace(self._quat)
+        axes = xp.asarray(axes, dtype=self._quat.dtype, device=device(self._quat))
         davenport = self._backend.as_davenport(self._quat, axes, order, degrees)
         if self._single:
             return davenport[0, ...]
