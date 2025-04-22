@@ -500,15 +500,14 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
 
 def print_iteration_header():
-    print("{:^15}{:^15}{:^15}{:^15}{:^15}".format(
-        "Iteration", "Max residual", "Max BC residual", "Total nodes",
-        "Nodes added"))
+    print(f"{'Iteration':^15}{'Max residual':^15}{'Max BC residual':^15}"
+          f"{'Total nodes':^15}{'Nodes added':^15}")
 
 
 def print_iteration_progress(iteration, residual, bc_residual, total_nodes,
                              nodes_added):
-    print("{:^15}{:^15.2e}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, bc_residual, total_nodes, nodes_added))
+    print(f"{iteration:^15}{residual:^15.2e}{bc_residual:^15.2e}"
+          f"{total_nodes:^15}{nodes_added:^15}")
 
 
 class BVPResult(OptimizeResult):
@@ -717,7 +716,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         dy / dx = f(x, y, p) + S * y / (x - a), a <= x <= b
         bc(y(a), y(b), p) = 0
 
-    Here x is a 1-D independent variable, y(x) is an N-D
+    Here x is a 1-D independent variable, y(x) is an n-D
     vector-valued function and p is a k-D vector of unknown
     parameters which is to be found along with y(x). For the problem to be
     determined, there must be n + k boundary conditions, i.e., bc must be an

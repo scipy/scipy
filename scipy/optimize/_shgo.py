@@ -46,12 +46,12 @@ def shgo(
         Any additional fixed parameters needed to completely specify the
         objective function.
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
+        Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
         See the tutorial [5]_ for further details on specifying constraints.
 
         .. note::
 
-           Only COBYLA, SLSQP, and trust-constr local minimize methods
+           Only COBYLA, COBYQA, SLSQP, and trust-constr local minimize methods
            currently support constraint arguments. If the ``constraints``
            sequence used in the local optimization problem is not defined in
            ``minimizer_kwargs`` and a constrained method is used then the
@@ -70,9 +70,9 @@ def shgo(
     n : int, optional
         Number of sampling points used in the construction of the simplicial
         complex. For the default ``simplicial`` sampling method 2**dim + 1
-        sampling points are generated instead of the default `n=100`. For all
+        sampling points are generated instead of the default ``n=100``. For all
         other specified values `n` sampling points are generated. For
-        ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
+        ``sobol``, ``halton`` and other arbitrary `sampling_methods` ``n=100`` or
         another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
@@ -82,49 +82,49 @@ def shgo(
         current parameter vector.
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
-        ``scipy.optimize.minimize`` Some important options could be:
+        ``scipy.optimize.minimize``. Some important options could be:
 
-            * method : str
-                The minimization method. If not given, chosen to be one of
-                BFGS, L-BFGS-B, SLSQP, depending on whether or not the
-                problem has constraints or bounds.
-            * args : tuple
-                Extra arguments passed to the objective function (``func``) and
-                its derivatives (Jacobian, Hessian).
-            * options : dict, optional
-                Note that by default the tolerance is specified as
-                ``{ftol: 1e-12}``
+        method : str
+            The minimization method. If not given, chosen to be one of
+            BFGS, L-BFGS-B, SLSQP, depending on whether or not the
+            problem has constraints or bounds.
+        args : tuple
+            Extra arguments passed to the objective function (``func``) and
+            its derivatives (Jacobian, Hessian).
+        options : dict, optional
+            Note that by default the tolerance is specified as
+            ``{ftol: 1e-12}``
 
     options : dict, optional
         A dictionary of solver options. Many of the options specified for the
-        global routine are also passed to the scipy.optimize.minimize routine.
-        The options that are also passed to the local routine are marked with
-        "(L)".
+        global routine are also passed to the ``scipy.optimize.minimize``
+        routine. The options that are also passed to the local routine are
+        marked with "(L)".
 
         Stopping criteria, the algorithm will terminate if any of the specified
         criteria are met. However, the default algorithm does not require any
         to be specified:
 
-        * maxfev : int (L)
+        maxfev : int (L)
             Maximum number of function evaluations in the feasible domain.
             (Note only methods that support this option will terminate
             the routine at precisely exact specified value. Otherwise the
             criterion will only terminate during a global iteration)
-        * f_min
+        f_min : float
             Specify the minimum objective function value, if it is known.
-        * f_tol : float
+        f_tol : float
             Precision goal for the value of f in the stopping
             criterion. Note that the global routine will also
             terminate if a sampling point in the global routine is
             within this tolerance.
-        * maxiter : int
+        maxiter : int
             Maximum number of iterations to perform.
-        * maxev : int
+        maxev : int
             Maximum number of sampling evaluations to perform (includes
             searching in infeasible points).
-        * maxtime : float
+        maxtime : float
             Maximum processing runtime allowed
-        * minhgrd : int
+        minhgrd : int
             Minimum homology group rank differential. The homology group of the
             objective function is calculated (approximately) during every
             iteration. The rank of this group has a one-to-one correspondence
@@ -136,7 +136,7 @@ def shgo(
 
         Objective function knowledge:
 
-        * symmetry : list or bool
+        symmetry : list or bool
             Specify if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by up to
             O(n!) times in the fully symmetric case. If `True` is specified
@@ -147,17 +147,17 @@ def shgo(
             E.g.  f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
 
             In this equation x_2 and x_3 are symmetric to x_1, while x_5 and
-            x_6 are symmetric to x_4, this can be specified to the solver as:
+            x_6 are symmetric to x_4, this can be specified to the solver as::
 
-            symmetry = [0,  # Variable 1
-                        0,  # symmetric to variable 1
-                        0,  # symmetric to variable 1
-                        3,  # Variable 4
-                        3,  # symmetric to variable 4
-                        3,  # symmetric to variable 4
-                        ]
+                symmetry = [0,  # Variable 1
+                            0,  # symmetric to variable 1
+                            0,  # symmetric to variable 1
+                            3,  # Variable 4
+                            3,  # symmetric to variable 4
+                            3,  # symmetric to variable 4
+                            ]
 
-        * jac : bool or callable, optional
+        jac : bool or callable, optional
             Jacobian (gradient) of objective function. Only for CG, BFGS,
             Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If ``jac`` is a
             boolean and is True, ``fun`` is assumed to return the gradient
@@ -167,7 +167,7 @@ def shgo(
             arguments as ``fun``. (Passed to `scipy.optimize.minimize`
             automatically)
 
-        * hess, hessp : callable, optional
+        hess, hessp : callable, optional
             Hessian (matrix of second-order derivatives) of objective function
             or Hessian of objective function times an arbitrary vector p.
             Only for Newton-CG, dogleg, trust-ncg. Only one of ``hessp`` or
@@ -180,15 +180,17 @@ def shgo(
 
         Algorithm settings:
 
-        * minimize_every_iter : bool
+        minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
             local minimization routine every iteration. If True then only the
             final minimizer pool will be run. Defaults to True.
-        * local_iter : int
+
+        local_iter : int
             Only evaluate a few of the best minimizer pool candidates every
             iteration. If False all potential points are passed to the local
             minimization routine.
-        * infty_constraints : bool
+
+        infty_constraints : bool
             If True then any sampling points generated which are outside will
             the feasible domain will be saved and given an objective function
             value of ``inf``. If False then these points will be discarded.
@@ -199,7 +201,7 @@ def shgo(
 
         Feedback:
 
-        * disp : bool (L)
+        disp : bool (L)
             Set to True to print convergence messages.
 
     sampling_method : str or function, optional
@@ -273,8 +275,9 @@ def shgo(
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is passed on to ``scipy.optimize.minimize``. By default,
     the ``SLSQP`` method is used. In general, it is recommended to use the
-    ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
-    are defined for the problem since the other methods do not use constraints.
+    ``SLSQP``, ``COBYLA``, or ``COBYQA`` local minimization if inequality
+    constraints are defined for the problem since the other methods do not use
+    constraints.
 
     The ``halton`` and ``sobol`` method points are generated using
     `scipy.stats.qmc`. Any other QMC method could be used.
@@ -493,6 +496,12 @@ class SHGO:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
+        if options is not None and options.get('jac', None) is True:
+            if minimizer_kwargs is None:
+                minimizer_kwargs = {}
+            minimizer_kwargs['jac'] = True
+            options.pop('jac')
+
         # Split obj func if given with Jac
         try:
             if ((minimizer_kwargs['jac'] is True) and
@@ -524,8 +533,8 @@ class SHGO:
         # Check if bounds are correctly specified
         bnderr = abound[:, 0] > abound[:, 1]
         if bnderr.any():
-            raise ValueError('Error: lb > ub in bounds {}.'
-                             .format(', '.join(str(b) for b in bnderr)))
+            raise ValueError("Error: lb > ub in bounds "
+                             f"{', '.join(str(b) for b in bnderr)}.")
 
         self.bounds = abound
 
@@ -541,7 +550,7 @@ class SHGO:
             # self.constraints is used to create Complex, so need
             # to be stored internally in old-style.
             # `minimize` takes care of normalising these constraints
-            # for slsqp/cobyla/trust-constr.
+            # for slsqp/cobyla/cobyqa/trust-constr.
             self.constraints = standardize_constraints(
                 constraints,
                 np.empty(self.dim, float),
@@ -576,6 +585,7 @@ class SHGO:
 
         if (
             self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla',
+                                                        'cobyqa',
                                                         'trust-constr')
             and (
                 minimizer_kwargs is not None and
@@ -626,6 +636,7 @@ class SHGO:
             'l-bfgs-b': ['jac', 'bounds'],
             'tnc': ['jac', 'bounds'],
             'cobyla': ['constraints', 'catol'],
+            'cobyqa': ['bounds', 'constraints', 'feasibility_tol'],
             'slsqp': ['jac', 'bounds', 'constraints'],
             'dogleg': ['jac', 'hess'],
             'trust-ncg': ['jac', 'hess', 'hessp'],

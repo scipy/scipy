@@ -1,7 +1,7 @@
 # Copyright Anne M. Archibald 2008
 # Released under the scipy license
 import numpy as np
-from ._ckdtree import cKDTree, cKDTreeNode
+from ._ckdtree import cKDTree, cKDTreeNode  # type: ignore[import-not-found]
 
 __all__ = ['minkowski_distance_p', 'minkowski_distance',
            'distance_matrix',
@@ -36,7 +36,7 @@ def minkowski_distance_p(x, y, p=2):
     --------
     >>> from scipy.spatial import minkowski_distance_p
     >>> minkowski_distance_p([[0, 0], [0, 0]], [[1, 1], [0, 1]])
-    array([2, 1])
+    array([2., 1.])
 
     """
     x = np.asarray(x)
@@ -107,7 +107,7 @@ class Rectangle:
         self.m, = self.maxes.shape
 
     def __repr__(self):
-        return "<Rectangle %s>" % list(zip(self.mins, self.maxes))
+        return f"<Rectangle {list(zip(self.mins, self.maxes))}>"
 
     def volume(self):
         """Total volume."""
@@ -267,7 +267,7 @@ class KDTree(cKDTree):
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.

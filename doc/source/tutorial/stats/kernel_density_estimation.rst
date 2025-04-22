@@ -22,6 +22,7 @@ at the bottom of the figure (this is called a rug plot):
 .. plot::
     :alt: " "
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 

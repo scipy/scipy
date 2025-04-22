@@ -19,6 +19,8 @@ from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
 
+import threading
+
 
 class TestDualAnnealing:
 
@@ -35,9 +37,9 @@ class TestDualAnnealing:
         self.low_temperature = 0.1
         self.qv = 2.62
         self.seed = 1234
-        self.rs = check_random_state(self.seed)
-        self.nb_fun_call = 0
-        self.ngev = 0
+        self.rng = check_random_state(self.seed)
+        self.nb_fun_call = threading.local()
+        self.ngev = threading.local()
 
     def callback(self, x, f, context):
         # For testing callback mechanism. Should stop for e <= 1 as
@@ -53,11 +55,15 @@ class TestDualAnnealing:
             shift = 0
         y = np.sum((x - shift) ** 2 - 10 * np.cos(2 * np.pi * (
             x - shift))) + 10 * np.size(x) + shift
-        self.nb_fun_call += 1
+        if not hasattr(self.nb_fun_call, 'c'):
+            self.nb_fun_call.c = 0
+        self.nb_fun_call.c += 1
         return y
 
     def rosen_der_wrapper(self, x, args=()):
-        self.ngev += 1
+        if not hasattr(self.ngev, 'c'):
+            self.ngev.c = 0
+        self.ngev.c += 1
         return rosen_der(x, *args)
 
     # FIXME: there are some discontinuities in behaviour as a function of `qv`,
@@ -68,7 +74,7 @@ class TestDualAnnealing:
         lower = np.array(lu[0])
         upper = np.array(lu[1])
         dim = lower.size
-        vd = VisitingDistribution(lower, upper, qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rng)
         values = np.zeros(dim)
         x_step_low = vd.visiting(values, 0, self.high_temperature)
         # Make sure that only the first component is changed
@@ -83,7 +89,7 @@ class TestDualAnnealing:
         lu = list(zip(*self.ld_bounds))
         lower = np.array(lu[0])
         upper = np.array(lu[1])
-        vd = VisitingDistribution(lower, upper, qv, self.rs)
+        vd = VisitingDistribution(lower, upper, qv, self.rng)
         # values = np.zeros(self.nbtestvalues)
         # for i in np.arange(self.nbtestvalues):
         #     values[i] = vd.visit_fn(self.high_temperature)
@@ -106,12 +112,13 @@ class TestDualAnnealing:
 
     def test_low_dim(self):
         ret = dual_annealing(
-            self.func, self.ld_bounds, seed=self.seed)
+            self.func, self.ld_bounds, rng=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
         assert ret.success
 
+    @pytest.mark.fail_slow(10)
     def test_high_dim(self):
-        ret = dual_annealing(self.func, self.hd_bounds, seed=self.seed)
+        ret = dual_annealing(self.func, self.hd_bounds, rng=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
         assert ret.success
 
@@ -120,28 +127,32 @@ class TestDualAnnealing:
                              no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
+    @pytest.mark.fail_slow(10)
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
-                             no_local_search=True, seed=self.seed)
-        assert_allclose(ret.fun, 0., atol=1e-4)
+                             no_local_search=True, rng=self.seed)
+        assert_allclose(ret.fun, 0., atol=1.2e-4)
 
     def test_nb_fun_call(self):
-        ret = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
-        assert_equal(self.nb_fun_call, ret.nfev)
+        self.nb_fun_call.c = 0
+        ret = dual_annealing(self.func, self.ld_bounds, rng=self.seed)
+        assert_equal(self.nb_fun_call.c, ret.nfev)
 
     def test_nb_fun_call_no_ls(self):
+        self.nb_fun_call.c = 0
         ret = dual_annealing(self.func, self.ld_bounds,
-                             no_local_search=True, seed=self.seed)
-        assert_equal(self.nb_fun_call, ret.nfev)
+                             no_local_search=True, rng=self.seed)
+        assert_equal(self.nb_fun_call.c, ret.nfev)
 
     def test_max_reinit(self):
         assert_raises(ValueError, dual_annealing, self.weirdfunc,
                       self.ld_bounds)
 
+    @pytest.mark.fail_slow(10)
     def test_reproduce(self):
-        res1 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
-        res2 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
-        res3 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
+        res1 = dual_annealing(self.func, self.ld_bounds, rng=self.seed)
+        res2 = dual_annealing(self.func, self.ld_bounds, rng=self.seed)
+        res3 = dual_annealing(self.func, self.ld_bounds, rng=self.seed)
         # If we have reproducible results, x components found has to
         # be exactly the same, which is not the case with no seeding
         assert_equal(res1.x, res2.x)
@@ -152,10 +163,10 @@ class TestDualAnnealing:
         # obtain a np.random.Generator object
         rng = np.random.default_rng(1)
 
-        res1 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        res1 = dual_annealing(self.func, self.ld_bounds, rng=rng)
         # seed again
         rng = np.random.default_rng(1)
-        res2 = dual_annealing(self.func, self.ld_bounds, seed=rng)
+        res2 = dual_annealing(self.func, self.ld_bounds, rng=rng)
         # If we have reproducible results, x components found has to
         # be exactly the same, which is not the case with no seeding
         assert_equal(res1.x, res2.x)
@@ -176,6 +187,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.func,
                       invalid_bounds)
 
+    @pytest.mark.thread_unsafe
     def test_deprecated_local_search_options_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -188,6 +200,7 @@ class TestDualAnnealing:
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
 
+    @pytest.mark.thread_unsafe
     def test_minimizer_kwargs_bounds(self):
         def func(x):
             return np.sum((x - 5) * (x - 1))
@@ -206,7 +219,7 @@ class TestDualAnnealing:
 
     def test_max_fun_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxfun=100,
-                             seed=self.seed)
+                             rng=self.seed)
 
         ls_max_iter = min(max(
             len(self.ld_bounds) * LocalSearchWrapper.LS_MAXITER_RATIO,
@@ -217,33 +230,33 @@ class TestDualAnnealing:
 
     def test_max_fun_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             no_local_search=True, maxfun=500, seed=self.seed)
+                             no_local_search=True, maxfun=500, rng=self.seed)
         assert ret.nfev <= 500
         assert not ret.success
 
     def test_maxiter(self):
         ret = dual_annealing(self.func, self.ld_bounds, maxiter=700,
-                             seed=self.seed)
+                             rng=self.seed)
         assert ret.nit <= 700
 
     # Testing that args are passed correctly for dual_annealing
     def test_fun_args_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
-                             args=((3.14159,)), seed=self.seed)
+                             args=((3.14159,)), rng=self.seed)
         assert_allclose(ret.fun, 3.14159, atol=1e-6)
 
     # Testing that args are passed correctly for pure simulated annealing
     def test_fun_args_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
                              args=((3.14159, )), no_local_search=True,
-                             seed=self.seed)
+                             rng=self.seed)
         assert_allclose(ret.fun, 3.14159, atol=1e-4)
 
     def test_callback_stop(self):
         # Testing that callback make the algorithm stop for
         # fun value <= 1.0 (see callback method)
         ret = dual_annealing(self.func, self.ld_bounds,
-                             callback=self.callback, seed=self.seed)
+                             callback=self.callback, rng=self.seed)
         assert ret.fun <= 1.0
         assert 'stop early' in ret.message[0]
         assert not ret.success
@@ -251,6 +264,7 @@ class TestDualAnnealing:
     @pytest.mark.parametrize('method, atol', [
         ('Nelder-Mead', 2e-5),
         ('COBYLA', 1e-5),
+        ('COBYQA', 1e-8),
         ('Powell', 1e-8),
         ('CG', 1e-8),
         ('BFGS', 1e-8),
@@ -260,7 +274,7 @@ class TestDualAnnealing:
     def test_multi_ls_minimizer(self, method, atol):
         ret = dual_annealing(self.func, self.ld_bounds,
                              minimizer_kwargs=dict(method=method),
-                             seed=self.seed)
+                             rng=self.seed)
         assert_allclose(ret.fun, 0., atol=atol)
 
     def test_wrong_restart_temp(self):
@@ -275,15 +289,16 @@ class TestDualAnnealing:
         }
         ret = dual_annealing(rosen, self.ld_bounds,
                              minimizer_kwargs=minimizer_opts,
-                             seed=self.seed)
-        assert ret.njev == self.ngev
+                             rng=self.seed)
+        assert ret.njev == self.ngev.c
 
+    @pytest.mark.fail_slow(10)
     def test_from_docstring(self):
         def func(x):
             return np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
         lw = [-5.12] * 10
         up = [5.12] * 10
-        ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
+        ret = dual_annealing(func, bounds=list(zip(lw, up)), rng=1234)
         assert_allclose(ret.x,
                         [-4.26437714e-09, -3.91699361e-09, -1.86149218e-09,
                          -3.97165720e-09, -6.29151648e-09, -6.53145322e-09,
@@ -333,6 +348,7 @@ class TestDualAnnealing:
 
         assert_allclose(rate, accept_rate)
 
+    @pytest.mark.fail_slow(10)
     def test_bounds_class(self):
         # test that result does not depend on the bounds type
         def func(x):
@@ -350,10 +366,10 @@ class TestDualAnnealing:
 
         # run optimizations
         bounds = Bounds(lw, up)
-        ret_bounds_class = dual_annealing(func, bounds=bounds, seed=1234)
+        ret_bounds_class = dual_annealing(func, bounds=bounds, rng=1234)
 
         bounds_old = list(zip(lw, up))
-        ret_bounds_list = dual_annealing(func, bounds=bounds_old, seed=1234)
+        ret_bounds_list = dual_annealing(func, bounds=bounds_old, rng=1234)
 
         # test that found minima, function evaluations and iterations match
         assert_allclose(ret_bounds_class.x, ret_bounds_list.x, atol=1e-8)
@@ -361,9 +377,12 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
 
-    def test_callable_jac_with_args_gh11052(self):
+    @pytest.mark.fail_slow(10)
+    def test_callable_jac_hess_with_args_gh11052(self):
         # dual_annealing used to fail when `jac` was callable and `args` were
         # used; check that this is resolved. Example is from gh-11052.
+
+        # extended to hess as part of closing gh20614
         rng = np.random.default_rng(94253637693657847462)
         def f(x, power):
             return np.sum(np.exp(x ** power))
@@ -371,9 +390,27 @@ class TestDualAnnealing:
         def jac(x, power):
             return np.exp(x ** power) * power * x ** (power - 1)
 
-        res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+        def hess(x, power):
+            # calculated using WolframAlpha as d^2/dx^2 e^(x^p)
+            return np.diag(
+                power * np.exp(x ** power) * x ** (power - 2) *
+                (power * x ** power + power - 1)
+            )
+
+        def hessp(x, p, power):
+            return hess(x, power) @ p
+
+        res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], rng=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B'))
-        res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+        res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], rng=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B',
                                                     jac=jac))
+        res3 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], rng=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hess=hess))
+        res4 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], rng=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hessp=hessp))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res3.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res4.fun, res2.fun, rtol=1e-6)

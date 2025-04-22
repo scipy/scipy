@@ -11,7 +11,7 @@ In general, it's not a good idea to remove something without warning users about
 that removal first.  Therefore, this is what should be done before removing
 something from the public API:
 
-#. Propose to deprecate the functionality on the scipy-dev mailing list and get
+#. Propose to deprecate the functionality on the scipy-dev forum and get
    agreement that that's OK.
 #. Add a ``DeprecationWarning`` for it, which states that the functionality was
    deprecated, and in which release. For Cython APIs, see
@@ -27,4 +27,4 @@ when running the test suite so they don't pollute the output.
 
 It's possible that there is reason to want to ignore this deprecation policy
 for a particular deprecation; this can always be discussed on the scipy-dev
-mailing list.
+forum.

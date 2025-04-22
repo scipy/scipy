@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.spatial._qhull as qhull
-from scipy.spatial import cKDTree as KDTree
+from scipy.spatial import cKDTree as KDTree  # type: ignore[attr-defined]
 from scipy.spatial import Voronoi
 
 import itertools
@@ -111,7 +111,7 @@ def _add_inc_data(name, chunksize):
     for j in range(nmin, len(points), chunksize):
         chunks.append(points[j:j+chunksize])
 
-    new_name = "%s-chunk-%d" % (name, chunksize)
+    new_name = f"{name}-chunk-{chunksize}"
     assert new_name not in INCREMENTAL_DATASETS
     INCREMENTAL_DATASETS[new_name] = (chunks, opts)
 
@@ -327,6 +327,7 @@ class TestUtilities:
             ok = (j != -1) | at_boundary
             assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
+    @pytest.mark.fail_slow(10)
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -345,7 +346,7 @@ class TestUtilities:
         self._check_barycentric_transforms(tri)
 
     @pytest.mark.slow
-    @pytest.mark.fail_slow(10)
+    @pytest.mark.fail_slow(20)
     # OK per https://github.com/scipy/scipy/pull/20487#discussion_r1572684869
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
@@ -361,7 +362,7 @@ class TestUtilities:
                 list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))
             ].T
 
-            err_msg = "ndim=%d" % ndim
+            err_msg = f"ndim={ndim}"
 
             # Check using regular grid
             tri = qhull.Delaunay(grid)
@@ -427,6 +428,10 @@ class TestDelaunay:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Delaunay, masked_array)
 
+    # Shouldn't be inherently unsafe; retry with cpython 3.14 once traceback
+    # thread safety issues are fixed (also goes for other test with same name
+    # further down)
+    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.Delaunay, points_with_nan)
@@ -606,6 +611,7 @@ class TestConvexHull:
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
+    @pytest.mark.thread_unsafe
     def test_array_with_nans_fails(self):
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
@@ -961,6 +967,7 @@ class TestVoronoi:
         vor = Voronoi(points,furthest_site=True)
         assert_equal(vor.furthest_site,True)
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
     def test_incremental(self, name):
         # Test incremental construction of the triangulation
@@ -1179,6 +1186,39 @@ class Test_HalfspaceIntersection:
 
         assert_allclose(hs.dual_points, qhalf_points)
 
+    @pytest.mark.parametrize("k", range(1,4))
+    def test_halfspace_batch(self, k):
+        # Test that we can add halfspaces a few at a time
+        big_square = np.array([[ 1.,  0., -2.],
+                               [-1.,  0., -2.],
+                               [ 0.,  1., -2.],
+                               [ 0., -1., -2.]])
+
+        small_square = np.array([[ 1.,  0., -1.],
+                                 [-1.,  0., -1.],
+                                 [ 0.,  1., -1.],
+                                 [ 0., -1., -1.]])
+
+        hs = qhull.HalfspaceIntersection(big_square,
+                                         np.array([0.3141, 0.2718]),
+                                         incremental=True)
+
+        hs.add_halfspaces(small_square[0:k,:])
+        hs.add_halfspaces(small_square[k:4,:])
+        hs.close()
+
+        # Check the intersections are correct (they are the corners of the small square)
+        expected_intersections = np.array([[1., 1.],
+                                           [1., -1.],
+                                           [-1., 1.],
+                                           [-1., -1.]])
+        actual_intersections = hs.intersections
+        # They may be in any order, so just check that under some permutation 
+        # expected=actual.
+
+        ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))
+        ind2 = np.lexsort((expected_intersections[:, 1], expected_intersections[:, 0]))
+        assert_allclose(actual_intersections[ind1], expected_intersections[ind2])
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
@@ -1186,3 +1226,22 @@ def test_gh_20623(diagram_type):
     invalid_data = rng.random((4, 10, 3))
     with pytest.raises(ValueError, match="dimensions"):
         diagram_type(invalid_data)
+
+
+def test_gh_21286():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    # verify absence of segfault reported in ticket:
+    with pytest.raises(IndexError):
+        tri.find_simplex(1)
+    with pytest.raises(IndexError):
+        # strikingly, Delaunay object has shape
+        # () just like np.asanyarray(1) above
+        tri.find_simplex(tri)
+
+
+def test_find_simplex_ndim_err():
+    generators = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
+    tri = qhull.Delaunay(generators)
+    with pytest.raises(ValueError):
+        tri.find_simplex([2, 2, 2])

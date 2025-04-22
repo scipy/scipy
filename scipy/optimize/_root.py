@@ -31,6 +31,13 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ----------
     fun : callable
         A vector function to find a root of.
+
+        Suppose the callable has signature ``f0(x, *my_args, **my_kwargs)``, where
+        ``my_args`` and ``my_kwargs`` are required positional and keyword arguments.
+        Rather than passing ``f0`` as the callable, wrap it to accept
+        only ``x``; e.g., pass ``fun=lambda x: f0(x, *my_args, **my_kwargs)`` as the
+        callable, where ``my_args`` (tuple) and ``my_kwargs`` (dict) have been
+        gathered before invoking this function.
     x0 : ndarray
         Initial guess.
     args : tuple, optional
@@ -38,16 +45,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     method : str, optional
         Type of solver. Should be one of
 
-            - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
-            - 'lm'               :ref:`(see here) <optimize.root-lm>`
-            - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
-            - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
-            - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
-            - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
-            - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
-            - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
-            - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
-            - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
+        - 'hybr'             :ref:`(see here) <optimize.root-hybr>`
+        - 'lm'               :ref:`(see here) <optimize.root-lm>`
+        - 'broyden1'         :ref:`(see here) <optimize.root-broyden1>`
+        - 'broyden2'         :ref:`(see here) <optimize.root-broyden2>`
+        - 'anderson'         :ref:`(see here) <optimize.root-anderson>`
+        - 'linearmixing'     :ref:`(see here) <optimize.root-linearmixing>`
+        - 'diagbroyden'      :ref:`(see here) <optimize.root-diagbroyden>`
+        - 'excitingmixing'   :ref:`(see here) <optimize.root-excitingmixing>`
+        - 'krylov'           :ref:`(see here) <optimize.root-krylov>`
+        - 'df-sane'          :ref:`(see here) <optimize.root-dfsane>`
 
     jac : bool or callable, optional
         If `jac` is a Boolean and is True, `fun` is assumed to return the
@@ -217,7 +224,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         options = {}
 
     if callback is not None and meth in ('hybr', 'lm'):
-        warn('Method %s does not accept callback.' % method,
+        warn(f'Method {method} does not accept callback.',
              RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
@@ -257,7 +264,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
                                  _method=meth, _callback=callback,
                                  **options)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     sol.nfev = _wrapped_fun.nfev
     return sol
@@ -404,36 +411,28 @@ def _root_broyden1_doc():
         'armijo'.
     jac_options : dict, optional
         Options for the respective Jacobian approximation.
-            alpha : float, optional
-                Initial guess for the Jacobian is (-1/alpha).
-            reduction_method : str or tuple, optional
-                Method used in ensuring that the rank of the Broyden
-                matrix stays low. Can either be a string giving the
-                name of the method, or a tuple of the form ``(method,
-                param1, param2, ...)`` that gives the name of the
-                method and values for additional parameters.
 
-                Methods available:
+        alpha : float, optional
+            Initial guess for the Jacobian is (-1/alpha).
+        reduction_method : str or tuple, optional
+            Method used in ensuring that the rank of the Broyden
+            matrix stays low. Can either be a string giving the
+            name of the method, or a tuple of the form ``(method,
+            param1, param2, ...)`` that gives the name of the
+            method and values for additional parameters.
 
-                    - ``restart``
-                        Drop all matrix columns. Has no
-                        extra parameters.
-                    - ``simple``
-                        Drop oldest matrix column. Has no
-                        extra parameters.
-                    - ``svd``
-                        Keep only the most significant SVD
-                        components.
+            Methods available:
 
-                        Extra parameters:
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
-                            - ``to_retain``
-                                Number of SVD components to
-                                retain when rank reduction is done.
-                                Default is ``max_rank - 2``.
-            max_rank : int, optional
-                Maximum rank for the Broyden matrix.
-                Default is infinity (i.e., no rank reduction).
+        max_rank : int, optional
+            Maximum rank for the Broyden matrix.
+            Default is infinity (i.e., no rank reduction).
 
     Examples
     --------
@@ -450,6 +449,7 @@ def _root_broyden1_doc():
 
     """
     pass
+
 
 def _root_broyden2_doc():
     """
@@ -493,27 +493,19 @@ def _root_broyden2_doc():
 
             Methods available:
 
-                - ``restart``
-                    Drop all matrix columns. Has no
-                    extra parameters.
-                - ``simple``
-                    Drop oldest matrix column. Has no
-                    extra parameters.
-                - ``svd``
-                    Keep only the most significant SVD
-                    components.
+            - ``restart``: drop all matrix columns. Has no extra parameters.
+            - ``simple``: drop oldest matrix column. Has no extra parameters.
+            - ``svd``: keep only the most significant SVD components.
+              Takes an extra parameter, ``to_retain``, which determines the
+              number of SVD components to retain when rank reduction is done.
+              Default is ``max_rank - 2``.
 
-                    Extra parameters:
-
-                        - ``to_retain``
-                            Number of SVD components to
-                            retain when rank reduction is done.
-                            Default is ``max_rank - 2``.
         max_rank : int, optional
             Maximum rank for the Broyden matrix.
             Default is infinity (i.e., no rank reduction).
     """
     pass
+
 
 def _root_anderson_doc():
     """
@@ -720,9 +712,17 @@ def _root_krylov_doc():
             be called as ``update(x, f)`` after each nonlinear step,
             with ``x`` giving the current point, and ``f`` the current
             function value.
-        inner_tol, inner_maxiter, ...
+        inner_rtol, inner_atol, inner_callback, ...
             Parameters to pass on to the "inner" Krylov solver.
-            See `scipy.sparse.linalg.gmres` for details.
+
+            For a full list of options, see the documentation for the
+            solver you are using. By default this is `scipy.sparse.linalg.lgmres`.
+            If the solver has been overridden through `method`, see the documentation
+            for that solver instead.
+            To use an option for that solver, prepend ``inner_`` to it.
+            For example, to control the ``rtol`` argument to the solver,
+            set the `inner_rtol` option here.
+
         outer_k : int, optional
             Size of the subspace kept across LGMRES nonlinear
             iterations.

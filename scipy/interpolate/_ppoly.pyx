@@ -104,9 +104,9 @@ def evaluate(const double_or_complex[:,:,::1] c,
 @cython.cdivision(True)
 def evaluate_nd(const double_or_complex[:,:,::1] c,
                 tuple xs,
-                int[:] ks,
-                double[:,:] xp,
-                int[:] dx,
+                const int[:] ks,
+                const double[:,:] xp,
+                const int[:] dx,
                 int extrapolate,
                 double_or_complex[:,::1] out):
     """
@@ -256,7 +256,7 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def fix_continuity(double_or_complex[:,:,::1] c,
-                   double[::1] x,
+                   const double[::1] x,
                    int order):
     """
     Make a piecewise polynomial continuously differentiable to given order.

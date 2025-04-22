@@ -4,9 +4,11 @@ import numpy as np
 from numpy.linalg import norm
 
 from scipy.sparse.linalg import LinearOperator
-from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
+from ..sparse import issparse, isspmatrix, find, csc_array, csr_array, csr_matrix
 from ._group_columns import group_dense, group_sparse
-from scipy._lib._array_api import atleast_nd, array_namespace
+from scipy._lib._array_api import array_namespace
+from scipy._lib._util import MapWrapper
+from scipy._lib import array_api_extra as xpx
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -220,7 +222,7 @@ def group_columns(A, order=0):
 
     Parameters
     ----------
-    A : array_like or sparse matrix, shape (m, n)
+    A : array_like or sparse array, shape (m, n)
         Matrix of which to group columns.
     order : int, iterable of int with shape (n,) or None
         Permutation array which defines the order of columns enumeration.
@@ -243,7 +245,7 @@ def group_columns(A, order=0):
            and its Applications, 13 (1974), pp. 117-120.
     """
     if issparse(A):
-        A = csc_matrix(A)
+        A = csc_array(A)
     else:
         A = np.atleast_2d(A)
         A = (A != 0).astype(np.int32)
@@ -275,7 +277,8 @@ def group_columns(A, order=0):
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                       f0=None, bounds=(-np.inf, np.inf), sparsity=None,
-                      as_linear_operator=False, args=(), kwargs={}):
+                      as_linear_operator=False, args=(), kwargs=None,
+                      full_output=False, workers=None):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -324,20 +327,20 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation. Bounds checking is not implemented
         when `as_linear_operator` is True.
-    sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
+    sparsity : {None, array_like, sparse array, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
         it's possible to estimate its several columns by a single function
         evaluation [3]_. To perform such economic computations two ingredients
         are required:
 
-        * structure : array_like or sparse matrix of shape (m, n). A zero
+        * structure : array_like or sparse array of shape (m, n). A zero
           element means that a corresponding element of the Jacobian
           identically equals to zero.
         * groups : array_like of shape (n,). A column grouping for a given
           sparsity structure, use `group_columns` to obtain it.
 
-        A single array or a sparse matrix is interpreted as a sparsity
+        A single array or a sparse array is interpreted as a sparsity
         structure, and groups are computed inside the function. A tuple is
         interpreted as (structure, groups). If None (default), a standard
         dense differencing will be used.
@@ -346,7 +349,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         matrices where each row contains few non-zero elements.
     as_linear_operator : bool, optional
         When True the function returns an `scipy.sparse.linalg.LinearOperator`.
-        Otherwise it returns a dense array or a sparse matrix depending on
+        Otherwise it returns a dense array or a sparse array depending on
         `sparsity`. The linear operator provides an efficient way of computing
         ``J.dot(p)`` for any vector ``p`` of shape (n,), but does not allow
         direct access to individual elements of the matrix. By default
@@ -354,19 +357,43 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
+    full_output : bool, optional
+        If True then the function also returns a dictionary with extra information
+        about the calculation.
+    workers : int or map-like callable, optional
+        Supply a map-like callable, such as
+        `multiprocessing.Pool.map` for evaluating the population in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+        Alternatively, if `workers` is an int the task is subdivided into `workers`
+        sections and the fun evaluated in parallel
+        (uses `multiprocessing.Pool <multiprocessing>`).
+        Supply -1 to use all available CPU cores.
+        It is recommended that a map-like be used instead of int, as repeated
+        calls to `approx_derivative` will incur large overhead from setting up
+        new processes.
 
     Returns
     -------
-    J : {ndarray, sparse matrix, LinearOperator}
+    J : {ndarray, sparse array, LinearOperator}
         Finite difference approximation of the Jacobian matrix.
         If `as_linear_operator` is True returns a LinearOperator
         with shape (m, n). Otherwise it returns a dense array or sparse
-        matrix depending on how `sparsity` is defined. If `sparsity`
+        array depending on how `sparsity` is defined. If `sparsity`
         is None then a ndarray with shape (m, n) is returned. If
-        `sparsity` is not None returns a csr_matrix with shape (m, n).
-        For sparse matrices and linear operators it is always returned as
-        a 2-D structure, for ndarrays, if m=1 it is returned
+        `sparsity` is not None returns a csr_array or csr_matrix with
+        shape (m, n) following the array/matrix type of the incoming structure.
+        For sparse arrays and linear operators it is always returned as
+        a 2-D structure. For ndarrays, if m=1 it is returned
         as a 1-D gradient array with shape (n,).
+
+    info_dict : dict
+        Dictionary containing extra information about the calculation. The
+        keys include:
+
+        - `nfev`, number of function evaluations. If `as_linear_operator` is True
+           then `fun` is expected to track the number of evaluations itself.
+           This is because multiple calls may be made to the linear operator which
+           are not trackable here.
 
     See Also
     --------
@@ -435,12 +462,53 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     array([ 1.])
     >>> approx_derivative(g, x0, bounds=(1.0, np.inf))
     array([ 2.])
+
+    We can also parallelize the derivative calculation using the workers
+    keyword.
+
+    >>> from multiprocessing import Pool
+    >>> import time
+    >>> def fun2(x):       # import from an external file for use with multiprocessing
+    ...     time.sleep(0.002)
+    ...     return rosen(x)
+
+    >>> rng = np.random.default_rng()
+    >>> x0 = rng.uniform(high=10, size=(2000,))
+    >>> f0 = rosen(x0)
+
+    >>> %timeit approx_derivative(fun2, x0, f0=f0)     # may vary
+    10.5 s ± 5.91 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+
+    >>> elapsed = []
+    >>> with Pool() as workers:
+    ...     for i in range(10):
+    ...         t = time.perf_counter()
+    ...         approx_derivative(fun2, x0, workers=workers.map, f0=f0)
+    ...         et = time.perf_counter()
+    ...         elapsed.append(et - t)
+    >>> np.mean(elapsed)    # may vary
+    np.float64(1.442545195999901)
+
+    Create a map-like vectorized version. `x` is a generator, so first of all
+    a 2-D array, `xx`, is reconstituted. Here `xx` has shape `(Y, N)` where `Y`
+    is the number of function evaluations to perform and `N` is the dimensionality
+    of the objective function. The underlying objective function is `rosen`, which
+    requires `xx` to have shape `(N, Y)`, so a transpose is required.
+
+    >>> def fun(f, x, *args, **kwds):
+    ...     xx = np.r_[[xs for xs in x]]
+    ...     return f(xx.T)
+    >>> %timeit approx_derivative(fun2, x0, workers=fun, f0=f0)    # may vary
+    91.8 ms ± 755 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
     """
     if method not in ['2-point', '3-point', 'cs']:
-        raise ValueError("Unknown method '%s'. " % method)
+        raise ValueError(f"Unknown method '{method}'. ")
+
+    info_dict = {'nfev': None}
 
     xp = array_namespace(x0)
-    _x = atleast_nd(x0, ndim=1, xp=xp)
+    _x = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
     _dtype = xp.float64
     if xp.isdtype(_x.dtype, "real floating"):
         _dtype = _x.dtype
@@ -461,20 +529,23 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError("Bounds not supported when "
                          "`as_linear_operator` is True.")
 
-    def fun_wrapped(x):
-        # send user function same fp type as x0. (but only if cs is not being
-        # used
-        if xp.isdtype(x.dtype, "real floating"):
-            x = xp.astype(x, x0.dtype)
+    if kwargs is None:
+        kwargs = {}
 
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError("`fun` return value has "
-                               "more than 1 dimension.")
-        return f
+    fun_wrapped = _Fun_Wrapper(fun, x0, args, kwargs)
+
+    # Record how function evaluations are consumed by `approx_derivative`.
+    # Historically this was done by upstream functions wrapping `fun`.
+    # However, with parallelization via workers it was going to be impossible to
+    # keep that counter updated across Processes. Counter synchronisation can
+    # be achieved via multiprocessing.Value and a Pool. However, workers can be
+    # any map-like, not necessarily a Pool, so initialization of the Value would
+    # be difficult.
+    nfev = _nfev = 0
 
     if f0 is None:
         f0 = fun_wrapped(x0)
+        nfev = 1
     else:
         f0 = np.atleast_1d(f0)
         if f0.ndim > 1:
@@ -487,7 +558,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         if rel_step is None:
             rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
 
-        return _linear_operator_difference(fun_wrapped, x0,
+        J, _ = _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
     else:
         # by default we use rel_step
@@ -515,25 +586,35 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         elif method == 'cs':
             use_one_sided = False
 
-        if sparsity is None:
-            return _dense_difference(fun_wrapped, x0, f0, h,
-                                     use_one_sided, method)
-        else:
-            if not issparse(sparsity) and len(sparsity) == 2:
-                structure, groups = sparsity
+        # normalize workers
+        workers = workers or map
+        with MapWrapper(workers) as mf:
+            if sparsity is None:
+                J, _nfev = _dense_difference(fun_wrapped, x0, f0, h,
+                                         use_one_sided, method,
+                                         mf)
             else:
-                structure = sparsity
-                groups = group_columns(sparsity)
+                if not issparse(sparsity) and len(sparsity) == 2:
+                    structure, groups = sparsity
+                else:
+                    structure = sparsity
+                    groups = group_columns(sparsity)
 
-            if issparse(structure):
-                structure = csc_matrix(structure)
-            else:
-                structure = np.atleast_2d(structure)
+                if issparse(structure):
+                    structure = structure.tocsc()
+                else:
+                    structure = np.atleast_2d(structure)
+                groups = np.atleast_1d(groups)
+                J, _nfev = _sparse_difference(fun_wrapped, x0, f0, h,
+                                             use_one_sided, structure,
+                                             groups, method, mf)
 
-            groups = np.atleast_1d(groups)
-            return _sparse_difference(fun_wrapped, x0, f0, h,
-                                      use_one_sided, structure,
-                                      groups, method)
+    if full_output:
+        nfev += _nfev
+        info_dict["nfev"] = nfev
+        return J, info_dict
+    else:
+        return J
 
 
 def _linear_operator_difference(fun, x0, f0, h, method):
@@ -541,6 +622,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     n = x0.size
 
     if method == '2-point':
+        # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -550,6 +632,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             return df / dx
 
     elif method == '3-point':
+        # nfev = 2
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -562,6 +645,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             return df / dx
 
     elif method == 'cs':
+        # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -570,55 +654,97 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             f1 = fun(x)
             df = f1.imag
             return df / dx
-
     else:
         raise RuntimeError("Never be here.")
 
-    return LinearOperator((m, n), matvec)
+    return LinearOperator((m, n), matvec), 0
 
 
-def _dense_difference(fun, x0, f0, h, use_one_sided, method):
+def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):
     m = f0.size
     n = x0.size
     J_transposed = np.empty((n, m))
-    h_vecs = np.diag(h)
+    nfev = 0
 
-    for i in range(h.size):
-        if method == '2-point':
-            x = x0 + h_vecs[i]
-            dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
-            df = fun(x) - f0
-        elif method == '3-point' and use_one_sided[i]:
-            x1 = x0 + h_vecs[i]
-            x2 = x0 + 2 * h_vecs[i]
-            dx = x2[i] - x0[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = -3.0 * f0 + 4 * f1 - f2
-        elif method == '3-point' and not use_one_sided[i]:
-            x1 = x0 - h_vecs[i]
-            x2 = x0 + h_vecs[i]
-            dx = x2[i] - x1[i]
-            f1 = fun(x1)
-            f2 = fun(x2)
-            df = f2 - f1
-        elif method == 'cs':
-            f1 = fun(x0 + h_vecs[i]*1.j)
-            df = f1.imag
-            dx = h_vecs[i, i]
-        else:
-            raise RuntimeError("Never be here.")
+    if method == '2-point':
+        def x_generator2(x0, h):
+            for i in range(n):
+                # If copying isn't done then it's possible for different workers
+                # to see the same values of x1. (At least that's what happened
+                # when I used `multiprocessing.dummy.Pool`).
+                # I also considered creating all the vectors at once, but that
+                # means assembling a very large N x N array. It's therefore a
+                # trade-off between N array copies or creating an NxN array.
+                x1 = np.copy(x0)
+                x1[i] = x0[i] + h[i]
+                yield x1
 
-        J_transposed[i] = df / dx
+        # only f_evals (numerator) needs parallelization, the denominator
+        # (the step size) is fast to calculate.
+        f_evals = workers(fun, x_generator2(x0, h))
+        dx = [(x0[i] + h[i]) - x0[i] for i in range(n)]
+        df = [f_eval - f0 for f_eval in f_evals]
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+        nfev += len(df_dx)
+
+    elif method == '3-point':
+        def x_generator3(x0, h, use_one_sided):
+            for i, one_sided in enumerate(use_one_sided):
+                x1 = np.copy(x0)
+                x2 = np.copy(x0)
+                if one_sided:
+                    x1[i] = x0[i] + h[i]
+                    x2[i] = x0[i] + 2*h[i]
+                else:
+                    x1[i] = x0[i] - h[i]
+                    x2[i] = x0[i] + h[i]
+                yield x1
+                yield x2
+
+        # workers may return something like a list that needs to be turned
+        # into an iterable (can't call `next` on a list)
+        f_evals = iter(workers(fun, x_generator3(x0, h, use_one_sided)))
+        gen = x_generator3(x0, h, use_one_sided)
+        dx = list()
+        df = list()
+        for i, one_sided in enumerate(use_one_sided):
+            l = next(gen)
+            u = next(gen)
+
+            f1 = next(f_evals)
+            f2 = next(f_evals)
+            if one_sided:
+                dx.append(u[i] - x0[i])
+                df.append(-3.0 * f0 + 4 * f1 - f2)
+            else:
+                dx.append(u[i] - l[i])
+                df.append(f2 - f1)
+        df_dx = [delf / delx for delf, delx in zip(df, dx)]
+        nfev += 2 * len(df_dx)
+    elif method == 'cs':
+        def x_generator_cs(x0, h):
+            for i in range(n):
+                xc = x0.astype(complex, copy=True)
+                xc[i] += h[i] * 1.j
+                yield xc
+
+        f_evals = iter(workers(fun, x_generator_cs(x0, h)))
+        df_dx = [f1.imag / hi for f1, hi in zip(f_evals, h)]
+        nfev += len(df_dx)
+    else:
+        raise RuntimeError("Never be here.")
+
+    for i, v in enumerate(df_dx):
+        J_transposed[i] = v
 
     if m == 1:
         J_transposed = np.ravel(J_transposed)
 
-    return J_transposed.T
+    return J_transposed.T, nfev
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
-                       structure, groups, method):
+                       structure, groups, method, workers):
     m = f0.size
     n = x0.size
     row_indices = []
@@ -626,24 +752,24 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     fractions = []
 
     n_groups = np.max(groups) + 1
-    for group in range(n_groups):
+    nfev = 0
+
+    def e_generator():
         # Perturb variables which are in the same group simultaneously.
-        e = np.equal(group, groups)
-        h_vec = h * e
-        if method == '2-point':
+        for group in range(n_groups):
+            yield np.equal(group, groups)
+
+    def x_generator2():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x = x0 + h_vec
-            dx = x - x0
-            df = fun(x) - f0
-            # The result is  written to columns which correspond to perturbed
-            # variables.
-            cols, = np.nonzero(e)
-            # Find all non-zero elements in selected columns of Jacobian.
-            i, j, _ = find(structure[:, cols])
-            # Restore column indices in the full array.
-            j = cols[j]
-        elif method == '3-point':
-            # Here we do conceptually the same but separate one-sided
-            # and two-sided schemes.
+            yield x
+
+    def x_generator3():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
             x1 = x0.copy()
             x2 = x0.copy()
 
@@ -654,17 +780,54 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             mask_2 = ~use_one_sided & e
             x1[mask_2] -= h_vec[mask_2]
             x2[mask_2] += h_vec[mask_2]
+            yield x1
+            yield x2
+
+    def x_generator_cs():
+        e_gen = e_generator()
+        for e in e_gen:
+            h_vec = h * e
+            yield x0 + h_vec * 1.j
+
+    # evaluate the function for each of the groups
+    if method == '2-point':
+        f_evals = iter(workers(fun, x_generator2()))
+        xs = x_generator2()
+    elif method == '3-point':
+        f_evals = iter(workers(fun, x_generator3()))
+        xs = x_generator3()
+    elif method == 'cs':
+        f_evals = iter(workers(fun, x_generator_cs()))
+
+    for e in e_generator():
+        # The result is written to columns which correspond to perturbed
+        # variables.
+        cols, = np.nonzero(e)
+        # Find all non-zero elements in selected columns of Jacobian.
+        i, j, _ = find(structure[:, cols])
+        # Restore column indices in the full array.
+        j = cols[j]
+
+        if method == '2-point':
+            dx = next(xs) - x0
+            df = next(f_evals) - f0
+            nfev += 1
+        elif method == '3-point':
+            # Here we do conceptually the same but separate one-sided
+            # and two-sided schemes.
+            x1 = next(xs)
+            x2 = next(xs)
+
+            mask_1 = use_one_sided & e
+            mask_2 = ~use_one_sided & e
 
             dx = np.zeros(n)
             dx[mask_1] = x2[mask_1] - x0[mask_1]
             dx[mask_2] = x2[mask_2] - x1[mask_2]
 
-            f1 = fun(x1)
-            f2 = fun(x2)
-
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            f1 = next(f_evals)
+            f2 = next(f_evals)
+            nfev += 2
 
             mask = use_one_sided[j]
             df = np.empty(m)
@@ -675,17 +838,15 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
             rows = i[~mask]
             df[rows] = f2[rows] - f1[rows]
         elif method == 'cs':
-            f1 = fun(x0 + h_vec*1.j)
+            f1 = next(f_evals)
+            nfev += 1
             df = f1.imag
-            dx = h_vec
-            cols, = np.nonzero(e)
-            i, j, _ = find(structure[:, cols])
-            j = cols[j]
+            dx = h * e
         else:
             raise ValueError("Never be here.")
 
         # All that's left is to compute the fraction. We store i, j and
-        # fractions as separate arrays and later construct coo_matrix.
+        # fractions as separate arrays and later construct csr_array.
         row_indices.append(i)
         col_indices.append(j)
         fractions.append(df[i] / dx[j])
@@ -693,12 +854,37 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     row_indices = np.hstack(row_indices)
     col_indices = np.hstack(col_indices)
     fractions = np.hstack(fractions)
-    J = coo_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
-    return csr_matrix(J)
+
+    if isspmatrix(structure):
+        return csr_matrix((fractions, (row_indices, col_indices)), shape=(m, n)), nfev
+    return csr_array((fractions, (row_indices, col_indices)), shape=(m, n)), nfev
+
+
+class _Fun_Wrapper:
+    # Permits pickling of a wrapped function
+    def __init__(self, fun, x0, args, kwargs):
+        self.fun = fun
+        self.x0 = x0
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
+        xp = array_namespace(self.x0)
+
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, self.x0.dtype)
+
+        f = np.atleast_1d(self.fun(x, *self.args, **self.kwargs))
+        if f.ndim > 1:
+            raise RuntimeError("`fun` return value has "
+                               "more than 1 dimension.")
+        return f
 
 
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
-                     kwargs={}):
+                     kwargs=None):
     """Check correctness of a function computing derivatives (Jacobian or
     gradient) by comparison with a finite difference approximation.
 
@@ -711,7 +897,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     jac : callable
         Function which computes Jacobian matrix of `fun`. It must work with
         argument x the same way as `fun`. The return value must be array_like
-        or sparse matrix with an appropriate shape.
+        or sparse array with an appropriate shape.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
         to 1-D array.
@@ -758,11 +944,13 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     >>> check_derivative(f, jac, x0, args=(1, 2))
     2.4492935982947064e-16
     """
+    if kwargs is None:
+        kwargs = {}
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
                                    args=args, kwargs=kwargs)
-        J_to_test = csr_matrix(J_to_test)
+        J_to_test = csr_array(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
         J_diff_data = np.asarray(J_diff[i, j]).ravel()

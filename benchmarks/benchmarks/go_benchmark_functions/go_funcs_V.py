@@ -68,6 +68,7 @@ class Vincent(Benchmark):
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
     """
+    change_dimensionality = True
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
@@ -76,7 +77,6 @@ class Vincent(Benchmark):
 
         self.global_optimum = [[7.70628098 for _ in range(self.N)]]
         self.fglob = -float(self.N)
-        self.change_dimensionality = True
 
     def fun(self, x, *args):
         self.nfev += 1

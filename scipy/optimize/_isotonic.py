@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,9 +13,9 @@ __all__ = ["isotonic_regression"]
 
 
 def isotonic_regression(
-    y: npt.ArrayLike,
+    y: "npt.ArrayLike",
     *,
-    weights: npt.ArrayLike | None = None,
+    weights: "npt.ArrayLike | None" = None,
     increasing: bool = True,
 ) -> OptimizeResult:
     r"""Nonparametric isotonic regression.
@@ -121,11 +120,13 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    yarr = np.asarray(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
+    yarr = np.atleast_1d(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
+    order = slice(None) if increasing else slice(None, None, -1)
+    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
     if weights is None:
-        warr = np.ones_like(yarr)
+        wx = np.ones_like(yarr, dtype=np.float64)
     else:
-        warr = np.asarray(weights)
+        warr = np.atleast_1d(weights)
 
         if not (yarr.ndim == warr.ndim == 1 and yarr.shape[0] == warr.shape[0]):
             raise ValueError(
@@ -134,9 +135,7 @@ def isotonic_regression(
         if np.any(warr <= 0):
             raise ValueError("Weights w must be strictly positive.")
 
-    order = slice(None) if increasing else slice(None, None, -1)
-    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
-    wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
+        wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
     x, wx, r, b = pava(x, wx, r)
@@ -145,7 +144,7 @@ def isotonic_regression(
     # As information: Due to the pava implementation, after the last block
     # index, there might be smaller numbers appended to r, e.g.
     # r = [0, 10, 8, 7] which in the end should be r = [0, 10].
-    r = r[:b + 1]
+    r = r[:b + 1]  # type: ignore[assignment]
     wx = wx[:b]
     if not increasing:
         x = x[::-1]

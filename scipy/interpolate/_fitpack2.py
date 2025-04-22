@@ -20,15 +20,17 @@ __all__ = [
 
 
 import warnings
+from threading import Lock
 
-from numpy import zeros, concatenate, ravel, diff, array, ones  # noqa:F401
+from numpy import zeros, concatenate, ravel, diff, array
 import numpy as np
 
 from . import _fitpack_impl
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
+FITPACK_LOCK = Lock()
 
 
 # ############### Univariate spline ####################
@@ -71,6 +73,10 @@ _extrap_modes = {0: 0, 'extrapolate': 0,
 class UnivariateSpline:
     """
     1-D smoothing spline fit to a given set of data points.
+
+    .. legacy:: class
+
+        Specifically, we recommend using `make_splrep` instead.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `s`
     specifies the number of knots by specifying a smoothing condition.
@@ -233,8 +239,9 @@ class UnivariateSpline:
                                                       check_finite)
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
-                                xe=bbox[1], s=s)
+        with FITPACK_LOCK:
+            data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
+                                    xe=bbox[1], s=s)
         if data[-1] == 1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
@@ -272,7 +279,7 @@ class UnivariateSpline:
         try:
             ext = _extrap_modes[ext]
         except KeyError as e:
-            raise ValueError("Unknown extrapolation mode %s." % ext) from e
+            raise ValueError(f"Unknown extrapolation mode {ext}.") from e
 
         return x, y, w, bbox, ext
 
@@ -309,7 +316,7 @@ class UnivariateSpline:
             # error
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
-            message = _curfit_messages.get(ier, 'ier=%s' % (ier))
+            message = _curfit_messages.get(ier, f'ier={ier}')
             warnings.warn(message, stacklevel=3)
 
     def _set_class(self, cls):
@@ -333,7 +340,8 @@ class UnivariateSpline:
                                [8, 9, 11, 12])
 
         args = data[:8] + (t, c, n, fpint, nrdata, data[13])
-        data = dfitpack.fpcurf1(*args)
+        with FITPACK_LOCK:
+            data = dfitpack.fpcurf1(*args)
         return data
 
     def set_smoothing_factor(self, s):
@@ -350,7 +358,8 @@ class UnivariateSpline:
                           stacklevel=2)
             return
         args = data[:6] + (s,) + data[7:]
-        data = dfitpack.fpcurf1(*args)
+        with FITPACK_LOCK:
+            data = dfitpack.fpcurf1(*args)
         if data[-1] == 1:
             # nest too small, setting to maximum bound
             data = self._reset_nest(data)
@@ -392,8 +401,9 @@ class UnivariateSpline:
             try:
                 ext = _extrap_modes[ext]
             except KeyError as e:
-                raise ValueError("Unknown extrapolation mode %s." % ext) from e
-        return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
+                raise ValueError(f"Unknown extrapolation mode {ext}.") from e
+        with FITPACK_LOCK:
+            return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of interior knots of the spline.
@@ -457,7 +467,8 @@ class UnivariateSpline:
         0.0
 
         """
-        return _fitpack_impl.splint(a, b, self._eval_args)
+        with FITPACK_LOCK:
+            return _fitpack_impl.splint(a, b, self._eval_args)
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
@@ -483,7 +494,8 @@ class UnivariateSpline:
         array([2.25, 3.0, 2.0, 0])
 
         """
-        return _fitpack_impl.spalde(x, self._eval_args)
+        with FITPACK_LOCK:
+            return _fitpack_impl.spalde(x, self._eval_args)
 
     def roots(self):
         """ Return the zeros of the spline.
@@ -530,7 +542,8 @@ class UnivariateSpline:
         if k == 3:
             t = self._eval_args[0]
             mest = 3 * (len(t) - 7)
-            return _fitpack_impl.sproot(self._eval_args, mest=mest)
+            with FITPACK_LOCK:
+                return _fitpack_impl.sproot(self._eval_args, mest=mest)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 
@@ -579,7 +592,8 @@ class UnivariateSpline:
         :math:`\\cos(x) = \\sin'(x)`.
 
         """
-        tck = _fitpack_impl.splder(self._eval_args, n)
+        with FITPACK_LOCK:
+            tck = _fitpack_impl.splder(self._eval_args, n)
         # if self.ext is 'const', derivative.ext will be 'zeros'
         ext = 1 if self.ext == 3 else self.ext
         return UnivariateSpline._from_tck(tck, ext=ext)
@@ -636,13 +650,18 @@ class UnivariateSpline:
         2.2572053268208538
 
         """
-        tck = _fitpack_impl.splantider(self._eval_args, n)
+        with FITPACK_LOCK:
+            tck = _fitpack_impl.splantider(self._eval_args, n)
         return UnivariateSpline._from_tck(tck, self.ext)
 
 
 class InterpolatedUnivariateSpline(UnivariateSpline):
     """
     1-D interpolating spline for a given set of data points.
+
+    .. legacy:: class
+
+        Specifically, we recommend using `make_interp_spline` instead.
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
     Spline function passes through all provided points. Equivalent to
@@ -737,8 +756,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
             raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
-        self._data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
-                                      xe=bbox[1], s=0)
+        with FITPACK_LOCK:
+            self._data = dfitpack.fpcurf0(x, y, k, w=w, xb=bbox[0],
+                                          xe=bbox[1], s=0)
         self._reset_class()
 
 
@@ -760,6 +780,11 @@ This means that at least one of the following conditions is violated:
 class LSQUnivariateSpline(UnivariateSpline):
     """
     1-D spline with explicit internal knots.
+
+    .. legacy:: class
+
+        Specifically, we recommend using `make_lsq_spline` instead.
+
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.  `t`
     specifies the internal knots of the spline
@@ -890,9 +915,10 @@ class LSQUnivariateSpline(UnivariateSpline):
         if not np.all(t[k+1:n-k]-t[k:n-k-1] > 0, axis=0):
             raise ValueError('Interior knots t must satisfy '
                              'Schoenberg-Whitney conditions')
-        if not dfitpack.fpchec(x, t, k) == 0:
-            raise ValueError(_fpchec_error_string)
-        data = dfitpack.fpcurfm1(x, y, k, t, w=w, xb=xb, xe=xe)
+        with FITPACK_LOCK:
+            if not dfitpack.fpchec(x, t, k) == 0:
+                raise ValueError(_fpchec_error_string)
+            data = dfitpack.fpcurfm1(x, y, k, t, w=w, xb=xb, xe=xe)
         self._data = data[:-3] + (None, None, data[-1])
         self._reset_class()
 
@@ -1032,13 +1058,15 @@ class _BivariateSplineBase:
                 raise ValueError("y must be strictly increasing when `grid` is True")
 
             if dx or dy:
-                z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
+                with FITPACK_LOCK:
+                    z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by parder: %s" % ier)
+                    raise ValueError(f"Error code returned by parder: {ier}")
             else:
-                z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
+                with FITPACK_LOCK:
+                    z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by bispev: %s" % ier)
+                    raise ValueError(f"Error code returned by bispev: {ier}")
         else:
             # standard Numpy broadcasting
             if x.shape != y.shape:
@@ -1052,13 +1080,15 @@ class _BivariateSplineBase:
                 return np.zeros(shape, dtype=self.tck[2].dtype)
 
             if dx or dy:
-                z, ier = dfitpack.pardeu(tx, ty, c, kx, ky, dx, dy, x, y)
+                with FITPACK_LOCK:
+                    z, ier = dfitpack.pardeu(tx, ty, c, kx, ky, dx, dy, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by pardeu: %s" % ier)
+                    raise ValueError(f"Error code returned by pardeu: {ier}")
             else:
-                z, ier = dfitpack.bispeu(tx, ty, c, kx, ky, x, y)
+                with FITPACK_LOCK:
+                    z, ier = dfitpack.bispeu(tx, ty, c, kx, ky, x, y)
                 if not ier == 0:
-                    raise ValueError("Error code returned by bispeu: %s" % ier)
+                    raise ValueError(f"Error code returned by bispeu: {ier}")
 
             z = z.reshape(shape)
         return z
@@ -1097,11 +1127,11 @@ class _BivariateSplineBase:
                 raise ValueError("order of derivative must be less than"
                                  " degree of spline")
             tx, ty, c = self.tck[:3]
-            newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
+            with FITPACK_LOCK:
+                newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
             if ier != 0:
                 # This should not happen under normal conditions.
-                raise ValueError("Unexpected error code returned by"
-                                 " pardtc: %d" % ier)
+                raise ValueError(f"Unexpected error code returned by pardtc: {ier}")
             nx = len(tx)
             ny = len(ty)
             newtx = tx[dx:nx - dx]
@@ -1127,7 +1157,8 @@ Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
 the maximal number of iterations maxit (set to 20 by the program)
 allowed for finding a smoothing spline with fp=s has been reached:
 s too small.
-Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.""",
+Weighted sum of squared residuals does not satisfy abs(fp-s)/s < tol.
+Try increasing maxit by passing it as a keyword argument.""",
                     4: """
 No more knots can be added because the number of b-spline coefficients
 (nx-kx-1)*(ny-ky-1) already exceeds the number of data points m:
@@ -1271,7 +1302,8 @@ class BivariateSpline(_BivariateSplineBase):
         """
         tx, ty, c = self.tck[:3]
         kx, ky = self.degrees
-        return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
+        with FITPACK_LOCK:
+            return dfitpack.dblint(tx, ty, c, kx, ky, xa, xb, ya, yb)
 
     @staticmethod
     def _validate_input(x, y, z, w, kx, ky, eps):
@@ -1314,10 +1346,10 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
 
     @property
     def fp(self):
-        raise AttributeError("attribute \"fp\" %s" % self._invalid_why)
+        raise AttributeError(f"attribute \"fp\" {self._invalid_why}")
 
     def get_residual(self):
-        raise AttributeError("method \"get_residual\" %s" % self._invalid_why)
+        raise AttributeError(f"method \"get_residual\" {self._invalid_why}")
 
 
 class SmoothBivariateSpline(BivariateSpline):
@@ -1401,22 +1433,17 @@ class SmoothBivariateSpline(BivariateSpline):
             raise ValueError("s should be s >= 0.0")
 
         xb, xe, yb, ye = bbox
-        nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
-                                                                xb, xe, yb,
-                                                                ye, kx, ky,
-                                                                s=s, eps=eps,
-                                                                lwrk2=1)
-        if ier > 10:          # lwrk2 was to small, re-run
-            nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(x, y, z, w,
-                                                                    xb, xe, yb,
-                                                                    ye, kx, ky,
-                                                                    s=s,
-                                                                    eps=eps,
-                                                                    lwrk2=ier)
+        with FITPACK_LOCK:
+            nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(
+                x, y, z, w, xb, xe, yb, ye, kx, ky, s=s, eps=eps, lwrk2=1)
+            if ier > 10:          # lwrk2 was to small, re-run
+                nx, tx, ny, ty, c, fp, wrk1, ier = dfitpack.surfit_smth(
+                    x, y, z, w, xb, xe, yb, ye, kx, ky, s=s, eps=eps,
+                    lwrk2=ier)
         if ier in [0, -1, -2]:  # normal return
             pass
         else:
-            message = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            message = _surfit_messages.get(ier, f'ier={ier}')
             warnings.warn(message, stacklevel=2)
 
         self.fp = fp
@@ -1501,14 +1528,15 @@ class LSQBivariateSpline(BivariateSpline):
         ty1[ky+1:ny-ky-1] = ty
 
         xb, xe, yb, ye = bbox
-        tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, nx, tx1, ny, ty1,
-                                                   w, xb, xe, yb, ye,
-                                                   kx, ky, eps, lwrk2=1)
-        if ier > 10:
-            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z,
-                                                       nx, tx1, ny, ty1, w,
-                                                       xb, xe, yb, ye,
-                                                       kx, ky, eps, lwrk2=ier)
+        with FITPACK_LOCK:
+            tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z, nx, tx1, ny, ty1,
+                                                    w, xb, xe, yb, ye,
+                                                    kx, ky, eps, lwrk2=1)
+            if ier > 10:
+                tx1, ty1, c, fp, ier = dfitpack.surfit_lsq(x, y, z,
+                                                        nx, tx1, ny, ty1, w,
+                                                        xb, xe, yb, ye,
+                                                        kx, ky, eps, lwrk2=ier)
         if ier in [0, -1, -2]:  # normal return
             pass
         else:
@@ -1516,7 +1544,7 @@ class LSQBivariateSpline(BivariateSpline):
                 deficiency = (nx-kx-1)*(ny-ky-1)+ier
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
-                message = _surfit_messages.get(ier, 'ier=%s' % (ier))
+                message = _surfit_messages.get(ier, f'ier={ier}')
             warnings.warn(message, stacklevel=2)
         self.fp = fp
         self.tck = tx1[:nx], ty1[:ny], c
@@ -1547,6 +1575,9 @@ class RectBivariateSpline(BivariateSpline):
         Positive smoothing factor defined for estimation condition:
         ``sum((z[i]-f(x[i], y[i]))**2, axis=0) <= s`` where f is a spline
         function. Default is ``s=0``, which is for interpolation.
+    maxit : int, optional
+        The maximal number of iterations maxit allowed for finding a
+        smoothing spline with fp=s. Default is ``maxit=20``.
 
     See Also
     --------
@@ -1579,7 +1610,7 @@ class RectBivariateSpline(BivariateSpline):
 
     """
 
-    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
+    def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0, maxit=20):
         x, y, bbox = ravel(x), ravel(y), ravel(bbox)
         z = np.asarray(z)
         if not np.all(diff(x) > 0.0):
@@ -1599,11 +1630,12 @@ class RectBivariateSpline(BivariateSpline):
 
         z = ravel(z)
         xb, xe, yb, ye = bbox
-        nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
-                                                          ye, kx, ky, s)
+        with FITPACK_LOCK:
+            nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
+                                                            ye, kx, ky, s, maxit)
 
         if ier not in [0, -1, -2]:
-            msg = _surfit_messages.get(ier, 'ier=%s' % (ier))
+            msg = _surfit_messages.get(ier, f'ier={ier}')
             raise ValueError(msg)
 
         self.fp = fp
@@ -1920,11 +1952,12 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
-                                                                r, w=w, s=s,
-                                                                eps=eps)
+        with FITPACK_LOCK:
+            nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
+                                                                    r, w=w, s=s,
+                                                                    eps=eps)
         if ier not in [0, -1, -2]:
-            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, f'ier={ier}')
             raise ValueError(message)
 
         self.fp = fp
@@ -2075,10 +2108,11 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
         tt_[4:-4], tp_[4:-4] = tt, tp
         tt_[-4:], tp_[-4:] = np.pi, 2. * np.pi
-        tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
-                                                     w=w, eps=eps)
+        with FITPACK_LOCK:
+            tt_, tp_, c, fp, ier = dfitpack.spherfit_lsq(theta, phi, r, tt_, tp_,
+                                                        w=w, eps=eps)
         if ier > 0:
-            message = _spherefit_messages.get(ier, 'ier=%s' % (ier))
+            message = _spherefit_messages.get(ier, f'ier={ier}')
             raise ValueError(message)
 
         self.fp = fp
@@ -2282,7 +2316,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         ider = np.array([-1, 0, -1, 0], dtype=dfitpack_int)
         if pole_values is None:
             pole_values = (None, None)
-        elif isinstance(pole_values, (float, np.float32, np.float64)):
+        elif isinstance(pole_values, float | np.float32 | np.float64):
             pole_values = (pole_values, pole_values)
         if isinstance(pole_continuity, bool):
             pole_continuity = (pole_continuity, pole_continuity)
@@ -2338,14 +2372,15 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
             raise ValueError('s should be positive')
 
         r = np.ravel(r)
-        nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
-                                                                u.copy(),
-                                                                v.copy(),
-                                                                r.copy(),
-                                                                r0, r1, s)
+        with FITPACK_LOCK:
+            nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,
+                                                                    u.copy(),
+                                                                    v.copy(),
+                                                                    r.copy(),
+                                                                    r0, r1, s)
 
         if ier not in [0, -1, -2]:
-            msg = _spfit_messages.get(ier, 'ier=%s' % (ier))
+            msg = _spfit_messages.get(ier, f'ier={ier}')
             raise ValueError(msg)
 
         self.fp = fp

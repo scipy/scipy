@@ -74,7 +74,7 @@ cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n) noexcept
             cs[i] += 1
 
 
-def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
+def cluster_dist(const double[:, :] Z, int[:] T, double cutoff, int n):
     """
     Form flat clusters by distance criterion.
 
@@ -84,7 +84,7 @@ def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
         The linkage matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when distances are less than or equal to `cutoff`.
     n : int
@@ -95,7 +95,7 @@ def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
     cluster_monocrit(Z, max_dists, T, cutoff, n)
 
 
-def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
+def cluster_in(const double[:, :] Z, const double[:, :] R, int[:] T, double cutoff, int n):
     """
     Form flat clusters by inconsistent criterion.
 
@@ -107,7 +107,7 @@ def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
         The inconsistent matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when the inconsistent values are less than or
         or equal to `cutoff`.
@@ -119,7 +119,7 @@ def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
     cluster_monocrit(Z, max_inconsists, T, cutoff, n)
 
 
-def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
+def cluster_maxclust_dist(const double[:, :] Z, int[:] T, int n, int mc):
     """
     Form flat clusters by maxclust criterion.
 
@@ -129,19 +129,19 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
         The linkage matrix.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     n : int
         The number of observations.
     mc : int
         The maximum number of clusters.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
+    cdef double[:] max_dists = np.ndarray(n - 1, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     # should use an O(n) algorithm
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
 
 
-cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+cpdef void cluster_maxclust_monocrit(const double[:, :] Z, const double[:] MC, int[:] T,
                                      int n, int max_nc) noexcept:
     """
     Form flat clusters by maxclust_monocrit criterion.
@@ -154,13 +154,19 @@ cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
         The monotonic criterion array.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     n : int
         The number of observations.
     max_nc : int
         The maximum number of clusters.
     """
-    cdef int i, k, i_lc, i_rc, root, nc, lower_idx, upper_idx
+    cdef int i
+    if max_nc >= n:
+        for i in range(n):
+            T[i] = i + 1
+        return
+
+    cdef int k, i_lc, i_rc, root, nc, lower_idx, upper_idx
     cdef double thresh
     cdef int[:] curr_node = np.ndarray(n, dtype=np.intc)
 
@@ -169,7 +175,8 @@ cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     if not visited:
         raise MemoryError
 
-    lower_idx = 0
+    # This index corresponds to "-INFINITY". `MC` is never evaluated at this index.
+    lower_idx = -1
     upper_idx = n - 1
     while upper_idx - lower_idx > 1:
         i = (lower_idx + upper_idx) >> 1
@@ -227,7 +234,7 @@ cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     cluster_monocrit(Z, MC, T, MC[upper_idx], n)
 
 
-cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+cpdef void cluster_monocrit(const double[:, :] Z, const double[:] MC, int[:] T,
                             double cutoff, int n) noexcept:
     """
     Form flat clusters by monocrit criterion.
@@ -240,7 +247,7 @@ cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
         The monotonic criterion array.
     T : ndarray
         The array to store the cluster numbers. The i'th observation belongs to
-        cluster `T[i]`.
+        cluster ``T[i]``.
     cutoff : double
         Clusters are formed when the MC values are less than or equal to
         `cutoff`.
@@ -296,7 +303,7 @@ cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     PyMem_Free(visited)
 
 
-def cophenetic_distances(double[:, :] Z, double[:] d, int n):
+def cophenetic_distances(const double[:, :] Z, double[:] d, int n):
     """
     Calculate the cophenetic distances between each observation
 
@@ -358,6 +365,10 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
         # back to the root of current subtree
         dist = Z[root, 2]
         right_start = left_start[k] + n_lc
+        # NOTE: an invalid linkage matrix (gh-22183)
+        # can cause an out of bounds memory access
+        # of `j` on `members` memoryview below, if not
+        # caught ahead of time by `is_valid_linkage`
         for i in range(left_start[k], right_start):
             for j in range(right_start, right_start + n_rc):
                 d[condensed_index(n, members[i], members[j])] = dist
@@ -367,7 +378,7 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
     PyMem_Free(visited)
 
 
-cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
+cpdef void get_max_Rfield_for_each_cluster(const double[:, :] Z, const double[:, :] R,
                                            double[:] max_rfs, int n, int rf) noexcept:
     """
     Get the maximum statistic for each non-singleton cluster. For the i'th
@@ -432,7 +443,7 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     PyMem_Free(visited)
 
 
-cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
+cpdef get_max_dist_for_each_cluster(const double[:, :] Z, double[:] MD, int n):
     """
     Get the maximum inconsistency coefficient for each non-singleton cluster.
 
@@ -491,7 +502,7 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
     PyMem_Free(visited)
 
 
-def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
+def inconsistent(const double[:, :] Z, double[:, :] R, int n, int d):
     """
     Calculate the inconsistency statistics.
 
@@ -574,7 +585,7 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
     PyMem_Free(visited)
 
 
-def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
+def leaders(const double[:, :] Z, const int[:] T, int[:] L, int[:] M, int nc, int n):
     """
     Find the leader (root) of each flat cluster.
 
@@ -769,10 +780,16 @@ cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
             current_min = dist
             y = i
 
+    if y == -1:
+        raise ValueError(
+            "find_min_dist cannot find any neighbors closer than inf away. "
+            "Check that distances contain no negative/infinite/NaN entries. "
+        )
+
     return Pair(y, current_min)
 
 
-def fast_linkage(double[:] dists, int n, int method):
+def fast_linkage(const double[:] dists, int n, int method):
     """Perform hierarchy clustering.
 
     It implements "Generic Clustering Algorithm" from [1]. The worst case
@@ -904,7 +921,7 @@ def fast_linkage(double[:] dists, int n, int method):
     return Z.base
 
 
-def nn_chain(double[:] dists, int n, int method):
+def nn_chain(const double[:] dists, int n, int method):
     """Perform hierarchy clustering using nearest-neighbor chain algorithm.
 
     Parameters
@@ -1012,7 +1029,7 @@ def nn_chain(double[:] dists, int n, int method):
     return Z_arr
 
 
-def mst_single_linkage(double[:] dists, int n):
+def mst_single_linkage(const double[:] dists, int n):
     """Perform hierarchy clustering using MST algorithm for single linkage.
 
     Parameters
@@ -1116,7 +1133,7 @@ cdef label(double[:, :] Z, int n):
         Z[i, 3] = uf.merge(x_root, y_root)
 
 
-def prelist(double[:, :] Z, int[:] members, int n):
+def prelist(const double[:, :] Z, int[:] members, int n):
     """
     Perform a pre-order traversal on the linkage tree and get a list of ids
     of the leaves.

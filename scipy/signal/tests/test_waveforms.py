@@ -1,7 +1,8 @@
 import numpy as np
-from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_, assert_allclose, assert_array_equal)
 from pytest import raises as assert_raises
+from scipy._lib._array_api import (
+    assert_almost_equal, xp_assert_equal, xp_assert_close
+)
 
 import scipy.signal._waveforms as waveforms
 
@@ -59,7 +60,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_linear_freq_02(self):
         method = 'linear'
@@ -70,7 +71,29 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_linear(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
+
+    def test_linear_complex_power(self):
+        method = 'linear'
+        f0 = 1.0
+        f1 = 2.0
+        t1 = 1.0
+        t = np.linspace(0, t1, 100)
+        w_real = waveforms.chirp(t, f0, t1, f1, method, complex=False)
+        w_complex = waveforms.chirp(t, f0, t1, f1, method, complex=True)
+        w_pwr_r = np.var(w_real)
+        w_pwr_c = np.var(w_complex)
+
+        # Making sure that power of the real part is not affected with
+        # complex conversion operation
+        err = w_pwr_r - np.real(w_pwr_c)
+
+        assert(err < 1e-6)
+
+    def test_linear_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-10.0, f1=1.0, t1=1.0, method='linear',
+                            complex=True)
+        xp_assert_close(w, 1.0+0.0j)  # dtype must match
 
     def test_quadratic_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
@@ -81,6 +104,11 @@ class TestChirp:
                             vertex_zero=False)
         assert_almost_equal(w, 1.0)
 
+    def test_quadratic_complex_at_zero(self):
+        w = waveforms.chirp(t=0, f0=-1.0, f1=2.0, t1=1.0, method='quadratic',
+                            complex=True)
+        xp_assert_close(w, 1.0+0j)
+
     def test_quadratic_freq_01(self):
         method = 'quadratic'
         f0 = 1.0
@@ -90,7 +118,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_quadratic_freq_02(self):
         method = 'quadratic'
@@ -101,7 +129,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_quadratic(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_logarithmic_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='logarithmic')
@@ -116,7 +144,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_logarithmic_freq_02(self):
         method = 'logarithmic'
@@ -127,7 +155,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_logarithmic_freq_03(self):
         method = 'logarithmic'
@@ -138,7 +166,7 @@ class TestChirp:
         phase = waveforms._chirp_phase(t, f0, t1, f1, method)
         tf, f = compute_frequency(t, phase)
         abserr = np.max(np.abs(f - chirp_geometric(tf, f0, f1, t1)))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_hyperbolic_at_zero(self):
         w = waveforms.chirp(t=0, f0=10.0, f1=1.0, t1=1.0, method='hyperbolic')
@@ -157,7 +185,7 @@ class TestChirp:
             phase = waveforms._chirp_phase(t, f0, t1, f1, method)
             tf, f = compute_frequency(t, phase)
             expected = chirp_hyperbolic(tf, f0, f1, t1)
-            assert_allclose(f, expected)
+            xp_assert_close(f, expected, atol=1e-7)
 
     def test_hyperbolic_zero_freq(self):
         # f0=0 or f1=0 must raise a ValueError.
@@ -184,7 +212,7 @@ class TestChirp:
         t1 = 3
         int_result = waveforms.chirp(t, f0, t1, f1)
         err_msg = "Integer input 't1=3' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_f0(self):
         f1 = 20.0
@@ -195,7 +223,7 @@ class TestChirp:
         f0 = 10
         int_result = waveforms.chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_f1(self):
         f0 = 10.0
@@ -206,7 +234,7 @@ class TestChirp:
         f1 = 20
         int_result = waveforms.chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f1=20' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_all(self):
         f0 = 10
@@ -216,7 +244,7 @@ class TestChirp:
         float_result = waveforms.chirp(t, float(f0), float(t1), float(f1))
         int_result = waveforms.chirp(t, f0, t1, f1)
         err_msg = "Integer input 'f0=10, t1=3, f1=20' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
 
 class TestSweepPoly:
@@ -228,7 +256,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = p(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_const(self):
         p = np.poly1d(2.0)
@@ -237,7 +265,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = p(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_linear(self):
         p = np.poly1d([-1.0, 10.0])
@@ -246,7 +274,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = p(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_quad2(self):
         p = np.poly1d([1.0, 0.0, -2.0])
@@ -255,7 +283,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = p(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_cubic(self):
         p = np.poly1d([2.0, 1.0, 0.0, -2.0])
@@ -264,7 +292,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = p(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_cubic2(self):
         """Use an array of coefficients instead of a poly1d."""
@@ -274,7 +302,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = np.poly1d(p)(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
     def test_sweep_poly_cubic3(self):
         """Use a list of coefficients instead of a poly1d."""
@@ -284,7 +312,7 @@ class TestSweepPoly:
         tf, f = compute_frequency(t, phase)
         expected = np.poly1d(p)(tf)
         abserr = np.max(np.abs(f - expected))
-        assert_(abserr < 1e-6)
+        assert abserr < 1e-6
 
 
 class TestGaussPulse:
@@ -293,59 +321,80 @@ class TestGaussPulse:
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
         int_result = waveforms.gausspulse('cutoff', fc=1000)
         err_msg = "Integer input 'fc=1000' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bw(self):
         float_result = waveforms.gausspulse('cutoff', bw=1.0)
         int_result = waveforms.gausspulse('cutoff', bw=1)
         err_msg = "Integer input 'bw=1' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_bwr(self):
         float_result = waveforms.gausspulse('cutoff', bwr=-6.0)
         int_result = waveforms.gausspulse('cutoff', bwr=-6)
         err_msg = "Integer input 'bwr=-6' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
     def test_integer_tpr(self):
         float_result = waveforms.gausspulse('cutoff', tpr=-60.0)
         int_result = waveforms.gausspulse('cutoff', tpr=-60)
         err_msg = "Integer input 'tpr=-60' gives wrong result"
-        assert_equal(int_result, float_result, err_msg=err_msg)
+        xp_assert_equal(int_result, float_result, err_msg=err_msg)
 
 
 class TestUnitImpulse:
 
     def test_no_index(self):
-        assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(waveforms.unit_impulse((3, 3)),
-                           [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+        xp_assert_equal(waveforms.unit_impulse(7),
+                        np.asarray([1.0, 0, 0, 0, 0, 0, 0]))
+        xp_assert_equal(waveforms.unit_impulse((3, 3)),
+                        np.asarray([[1.0, 0, 0], [0, 0, 0], [0, 0, 0]]))
 
     def test_index(self):
-        assert_array_equal(waveforms.unit_impulse(10, 3),
-                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
-        assert_array_equal(waveforms.unit_impulse((3, 3), (1, 1)),
-                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+        xp_assert_equal(waveforms.unit_impulse(10, 3),
+                        np.asarray([0.0, 0, 0, 1, 0, 0, 0, 0, 0, 0]))
+        xp_assert_equal(waveforms.unit_impulse((3, 3), (1, 1)),
+                        np.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]]))
 
         # Broadcasting
         imp = waveforms.unit_impulse((4, 4), 2)
-        assert_array_equal(imp, np.array([[0, 0, 0, 0],
-                                          [0, 0, 0, 0],
-                                          [0, 0, 1, 0],
-                                          [0, 0, 0, 0]]))
+        xp_assert_equal(imp, np.asarray([[0.0, 0, 0, 0],
+                                         [0.0, 0, 0, 0],
+                                         [0.0, 0, 1, 0],
+                                         [0.0, 0, 0, 0]]))
 
     def test_mid(self):
-        assert_array_equal(waveforms.unit_impulse((3, 3), 'mid'),
-                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
-        assert_array_equal(waveforms.unit_impulse(9, 'mid'),
-                           [0, 0, 0, 0, 1, 0, 0, 0, 0])
+        xp_assert_equal(waveforms.unit_impulse((3, 3), 'mid'),
+                        np.asarray([[0.0, 0, 0], [0, 1, 0], [0, 0, 0]]))
+        xp_assert_equal(waveforms.unit_impulse(9, 'mid'),
+                        np.asarray([0.0, 0, 0, 0, 1, 0, 0, 0, 0]))
 
     def test_dtype(self):
         imp = waveforms.unit_impulse(7)
-        assert_(np.issubdtype(imp.dtype, np.floating))
+        assert np.issubdtype(imp.dtype, np.floating)
 
         imp = waveforms.unit_impulse(5, 3, dtype=int)
-        assert_(np.issubdtype(imp.dtype, np.integer))
+        assert np.issubdtype(imp.dtype, np.integer)
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
-        assert_(np.issubdtype(imp.dtype, np.complexfloating))
+        assert np.issubdtype(imp.dtype, np.complexfloating)
+
+
+class TestSawtoothWaveform:
+    def test_dtype(self):
+        waveform = waveforms.sawtooth(
+            np.array(1, dtype=np.float32), width=np.float32(1)
+        )
+        assert waveform.dtype == np.float64
+
+        waveform = waveforms.sawtooth(1)
+        assert waveform.dtype == np.float64
+
+
+class TestSquareWaveform:
+    def test_dtype(self):
+        waveform = waveforms.square(np.array(1, dtype=np.float32), duty=np.float32(0.5))
+        assert waveform.dtype == np.float64
+
+        waveform = waveforms.square(1)
+        assert waveform.dtype == np.float64

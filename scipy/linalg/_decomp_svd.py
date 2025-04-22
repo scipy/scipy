@@ -2,14 +2,18 @@
 import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
+
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
+@_apply_over_batch(('a', 2))
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         check_finite=True, lapack_driver='gesdd'):
     """
@@ -43,8 +47,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         (``'gesdd'``) or general rectangular approach (``'gesvd'``)
         to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
         Default is ``'gesdd'``.
-
-        .. versionadded:: 0.18
 
     Returns
     -------
@@ -136,21 +138,25 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
         raise ValueError(message)
 
-    if lapack_driver == 'gesdd' and compute_uv:
+    if compute_uv:
         # XXX: revisit int32 when ILP64 lapack becomes a thing
         max_mn, min_mn = (m, n) if m > n else (n, m)
         if full_matrices:
             if max_mn*max_mn > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
-                                  " would incur integer overflow in LAPACK.")
+                                  "would incur integer overflow in LAPACK. "
+                                  "Try using numpy.linalg.svd instead.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if max(m * min_mn, n * min_mn) > np.iinfo(np.int32).max:
                 raise ValueError(f"Indexing a matrix of {sz} elements would "
-                                  "incur an in integer overflow in LAPACK.")
+                                  "incur an in integer overflow in LAPACK. "
+                                  "Try using numpy.linalg.svd instead.")
 
     funcs = (lapack_driver, lapack_driver + '_lwork')
-    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
+    # XXX: As of 1.14.1 it isn't possible to build SciPy with ILP64,
+    # so the following line always yields a LP64 (32-bit pointer size) variant
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64="preferred")
 
     # compute optimal lwork
     lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
@@ -163,14 +169,17 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
-        raise ValueError('illegal value in %dth argument of internal gesdd'
-                         % -info)
+        if lapack_driver == "gesdd" and info == -4:
+            msg = "A has a NaN entry"
+            raise ValueError(msg)
+        raise ValueError(f'illegal value in {-info}th argument of internal gesdd')
     if compute_uv:
         return u, s, v
     else:
         return s
 
 
+@_apply_over_batch(('a', 2))
 def svdvals(a, overwrite_a=False, check_finite=True):
     """
     Compute singular values of a matrix.
@@ -247,6 +256,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
                check_finite=check_finite)
 
 
+@_apply_over_batch(('s', 1))
 def diagsvd(s, M, N):
     """
     Construct the sigma matrix in SVD from singular values and size M, N.
@@ -299,6 +309,7 @@ def diagsvd(s, M, N):
 
 # Orthonormal decomposition
 
+@_apply_over_batch(('A', 2))
 def orth(A, rcond=None):
     """
     Construct an orthonormal basis for the range of A using SVD
@@ -347,7 +358,9 @@ def orth(A, rcond=None):
     return Q
 
 
-def null_space(A, rcond=None):
+@_apply_over_batch(('A', 2))
+def null_space(A, rcond=None, *, overwrite_a=False, check_finite=True,
+               lapack_driver='gesdd'):
     """
     Construct an orthonormal basis for the null space of A using SVD
 
@@ -359,6 +372,18 @@ def null_space(A, rcond=None):
         Relative condition number. Singular values ``s`` smaller than
         ``rcond * max(s)`` are considered zero.
         Default: floating point eps * max(M,N).
+    overwrite_a : bool, optional
+        Whether to overwrite `a`; may improve performance.
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    lapack_driver : {'gesdd', 'gesvd'}, optional
+        Whether to use the more efficient divide-and-conquer approach
+        (``'gesdd'``) or general rectangular approach (``'gesvd'``)
+        to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
+        Default is ``'gesdd'``.
 
     Returns
     -------
@@ -401,7 +426,8 @@ def null_space(A, rcond=None):
            [  6.92087741e-17,   1.00000000e+00]])
 
     """
-    u, s, vh = svd(A, full_matrices=True)
+    u, s, vh = svd(A, full_matrices=True, overwrite_a=overwrite_a,
+                   check_finite=check_finite, lapack_driver=lapack_driver)
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = np.finfo(s.dtype).eps * max(M, N)
@@ -411,6 +437,7 @@ def null_space(A, rcond=None):
     return Q
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def subspace_angles(A, B):
     r"""
     Compute the subspace angles between two matrices.

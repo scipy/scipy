@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite
+from scipy._lib._util import _apply_over_batch
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
@@ -142,6 +143,7 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     return result, gges.typecode
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
        overwrite_b=False, check_finite=True):
     """
@@ -317,6 +319,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     return result[0], result[1], result[-4], result[-3]
 
 
+@_apply_over_batch(('A', 2), ('B', 2))
 def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """QZ decomposition for a pair of matrices with reordering.

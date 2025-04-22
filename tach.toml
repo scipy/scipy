@@ -1,0 +1,222 @@
+interfaces = []
+exclude = [
+    "**/*__pycache__",
+    "**/*egg-info",
+    "**/docs",
+    "**/tests",
+    "**/venv",
+    "benchmarks",
+    "build*",
+    "doc",
+    "dev.py",
+    "subprojects",
+    "tools",
+    "scipy/_build_utils",
+    "scipy/_lib/cobyqa/doc",
+    "scipy/_lib/cobyqa/examples",
+    "scipy/_lib/cobyqa/pyproject.toml",
+    "scipy/conftest.py",
+    "scipy/special/_precompute/*",
+]
+source_roots = [
+    ".",
+]
+
+[[modules]]
+path = "scipy"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy._lib"
+depends_on = ["scipy"]
+
+[[modules]]
+path = "scipy._lib.cobyqa"
+unchecked = true
+
+[[modules]]
+path = "scipy._lib.pyprima"
+unchecked = true
+
+[[modules]]
+path = "scipy.cluster"
+depends_on = ["scipy.cluster.vq", "scipy.cluster.hierarchy", "scipy._lib"]
+
+[[modules]]
+path = "scipy.cluster.hierarchy"
+depends_on = ["scipy._lib", "scipy.spatial.distance", "scipy.cluster"]
+
+[[modules]]
+path = "scipy.cluster.vq"
+depends_on = ["scipy.cluster", "scipy._lib", "scipy.spatial.distance"]
+
+[[modules]]
+path = "scipy.constants"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.datasets"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.differentiate"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.fft"
+depends_on = ["scipy.special", "scipy._lib"]
+
+[[modules]]
+path = "scipy.fftpack"
+depends_on = ["scipy._lib", "scipy.fft"]
+
+[[modules]]
+path = "scipy.integrate"
+depends_on = ["scipy._lib", "scipy.interpolate", "scipy.sparse", "scipy.stats", "scipy.sparse.linalg", "scipy.special", "scipy.linalg", "scipy.optimize"]
+
+[[modules]]
+path = "scipy.interpolate"
+depends_on = ["scipy._lib", "scipy.special", "scipy.spatial.distance", "scipy.linalg", "scipy.optimize", "scipy.spatial", "scipy.linalg.lapack", "scipy.sparse.linalg", "scipy.sparse", "scipy"]
+
+[[modules]]
+path = "scipy.io"
+depends_on = ["scipy.sparse", "scipy.io.wavfile", "scipy.io.arff", "scipy.io.matlab", "scipy._lib"]
+
+[[modules]]
+path = "scipy.io.arff"
+depends_on = ["scipy._lib"]
+
+[[modules]]
+path = "scipy.io.matlab"
+depends_on = ["scipy.sparse", "scipy._lib"]
+
+[[modules]]
+path = "scipy.io.wavfile"
+depends_on = []
+
+[[modules]]
+path = "scipy.linalg"
+depends_on = ["scipy._lib", "scipy.sparse", "scipy.special", "scipy.sparse.linalg", "scipy.linalg.blas", "scipy.linalg.lapack", "scipy.fft"]
+
+[[modules]]
+path = "scipy.linalg.blas"
+depends_on = ["scipy.linalg"]
+
+[[modules]]
+path = "scipy.linalg.interpolative"
+depends_on = ["scipy.linalg", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.linalg.lapack"
+depends_on = ["scipy.linalg", "scipy.linalg.blas"]
+
+[[modules]]
+path = "scipy.misc"
+depends_on = []
+
+[[modules]]
+path = "scipy.ndimage"
+depends_on = ["scipy.special", "scipy._lib"]
+
+[[modules]]
+path = "scipy.odr"
+depends_on = ["scipy.linalg", "scipy._lib"]
+
+[[modules]]
+path = "scipy.optimize"
+depends_on = ["scipy.linalg", "scipy.spatial", "scipy._lib", "scipy.sparse", "scipy.sparse.linalg", "scipy.stats.qmc", "scipy.linalg.blas", "scipy.special", "scipy.linalg.interpolative", "scipy"]
+
+[[modules]]
+path = "scipy.signal"
+depends_on = ["scipy.interpolate", "scipy.fft", "scipy.signal.windows", "scipy.ndimage", "scipy.special", "scipy.optimize", "scipy._lib", "scipy.stats", "scipy.spatial", "scipy.linalg"]
+
+[[modules]]
+path = "scipy.signal.windows"
+depends_on = ["scipy.linalg", "scipy.special", "scipy._lib", "scipy.fft"]
+
+[[modules]]
+path = "scipy.sparse"
+depends_on = ["scipy", "scipy._lib", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.sparse.csgraph"
+depends_on = ["scipy._lib", "scipy.sparse", "scipy.sparse.linalg"]
+
+[[modules]]
+path = "scipy.sparse.linalg"
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.sparse"]
+
+[[modules]]
+path = "scipy.spatial"
+depends_on = ["scipy._lib", "scipy.linalg", "scipy.spatial.transform", "scipy", "scipy.spatial.distance"]
+
+[[modules]]
+path = "scipy.spatial.distance"
+depends_on = ["scipy.spatial", "scipy._lib", "scipy.linalg", "scipy.special"]
+
+[[modules]]
+path = "scipy.spatial.transform"
+depends_on = ["scipy.constants", "scipy.linalg", "scipy._lib", "scipy.interpolate"]
+
+[[modules]]
+path = "scipy.special"
+depends_on = ["scipy.optimize", "scipy.linalg", "scipy._lib"]
+
+[[modules]]
+path = "scipy.stats"
+depends_on = [
+    "scipy.linalg.blas",
+    "scipy.stats.distributions",
+    "scipy.fft",
+    "scipy.spatial.distance",
+    "scipy.stats.contingency",
+    "scipy.special",
+    "scipy._lib",
+    "scipy.sparse.csgraph",
+    "scipy.spatial",
+    "scipy.linalg",
+    "scipy.stats.qmc",
+    "scipy.integrate",
+    "scipy.optimize",
+    "scipy.stats.mstats",
+    "scipy.ndimage",
+    "scipy.interpolate",
+    "scipy.sparse",
+]
+
+[[modules]]
+path = "scipy.stats.contingency"
+depends_on = ["scipy.stats", "scipy._lib"]
+
+[[modules]]
+path = "scipy.stats.distributions"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.mstats"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.qmc"
+depends_on = ["scipy.stats"]
+
+[[modules]]
+path = "scipy.stats.sampling"
+depends_on = ["scipy.stats"]
+
+
+# Optional dependencies don't seem to be handled by tach yet
+[external]
+exclude = [
+    "array-api-compat",
+    "array-api-extra",
+    "cupy",
+    "cupyx",
+    "dask",
+    "jax",
+    "matplotlib",
+    "ndonnx",
+    "sparse",
+    "torch",
+    "uarray",
+]

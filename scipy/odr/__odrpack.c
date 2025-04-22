@@ -50,8 +50,6 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
   PyArrayObject *pyXplusD;
   void *beta_dst;
 
-  arg01 = PyTuple_New(2);
-
   if (*m != 1)
     {
       npy_intp dim2[2];
@@ -68,21 +66,18 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
       memcpy(PyArray_DATA(pyXplusD), (void *)xplusd, (*n) * sizeof(double));
     }
 
-  PyTuple_SetItem(arg01, 0, odr_global.pyBeta);
-  Py_INCREF(odr_global.pyBeta);
-  PyTuple_SetItem(arg01, 1, (PyObject *) pyXplusD);
-  Py_INCREF((PyObject *) pyXplusD);
+  arg01 = PyTuple_Pack(2, odr_global.pyBeta, (PyObject *) pyXplusD);
+  Py_DECREF(pyXplusD);
+  if (arg01 == NULL) {
+    return;
+  }
 
   if (odr_global.extra_args != NULL)
-    {
       arglist = PySequence_Concat(arg01, odr_global.extra_args);
-    }
   else
-    {
       arglist = PySequence_Tuple(arg01);        /* make a copy */
-    }
-
   Py_DECREF(arg01);
+
   *istop = 0;
 
   beta_dst = (PyArray_DATA((PyArrayObject *) odr_global.pyBeta));
@@ -255,14 +250,12 @@ void fcn_callback(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *l
 
   Py_DECREF(result);
   Py_DECREF(arglist);
-  Py_DECREF(pyXplusD);
 
   return;
 
 fail:
   Py_XDECREF(result);
   Py_XDECREF(arglist);
-  Py_XDECREF(pyXplusD);
   *istop = -1;
   return;
 }
@@ -1296,8 +1289,17 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit___odrpack(void)
 {
-    PyObject *m;
+    PyObject *module;
+
     import_array();
-    m = PyModule_Create(&moduledef);
-    return m;
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

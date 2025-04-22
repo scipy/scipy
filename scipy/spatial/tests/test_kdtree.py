@@ -426,6 +426,7 @@ def test_random_ball_vectorized(kdtree_type):
     assert_(isinstance(r[0, 0], list))
 
 
+@pytest.mark.fail_slow(5)
 def test_query_ball_point_multithreading(kdtree_type):
     np.random.seed(0)
     n = 5000
@@ -971,6 +972,7 @@ def test_kdtree_list_k(kdtree_type):
     assert_equal(dd, np.ravel(dd1))
     assert_equal(ii, np.ravel(ii1))
 
+@pytest.mark.fail_slow(10)
 def test_kdtree_box(kdtree_type):
     # check ckdtree periodic boundary
     n = 2000
@@ -1145,6 +1147,7 @@ def test_kdtree_weights(kdtree_type):
         assert_raises(ValueError, tree1.count_neighbors,
             tree2, np.linspace(0, 10, 100), weights=w1)
 
+@pytest.mark.fail_slow(10)
 def test_kdtree_count_neighbous_multiple_r(kdtree_type):
     n = 2000
     m = 2
@@ -1166,9 +1169,9 @@ def test_kdtree_count_neighbous_multiple_r(kdtree_type):
 def test_len0_arrays(kdtree_type):
     # make sure len-0 arrays are handled correctly
     # in range queries (gh-5639)
-    np.random.seed(1234)
-    X = np.random.rand(10, 2)
-    Y = np.random.rand(10, 2)
+    rng = np.random.RandomState(1234)
+    X = rng.rand(10, 2)
+    Y = rng.rand(10, 2)
     tree = kdtree_type(X)
     # query_ball_point (single)
     d, i = tree.query([.5, .5], k=1)
@@ -1450,14 +1453,14 @@ def test_kdtree_attributes():
 
 @pytest.mark.parametrize("kdtree_class", [KDTree, cKDTree])
 def test_kdtree_count_neighbors_weighted(kdtree_class):
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     r = np.arange(0.05, 1, 0.05)
 
-    A = np.random.random(21).reshape((7,3))
-    B = np.random.random(45).reshape((15,3))
+    A = rng.random(21).reshape((7,3))
+    B = rng.random(45).reshape((15,3))
 
-    wA = np.random.random(7)
-    wB = np.random.random(15)
+    wA = rng.random(7)
+    wB = rng.random(15)
 
     kdA = kdtree_class(A)
     kdB = kdtree_class(B)

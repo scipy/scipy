@@ -3,6 +3,7 @@ class spmatrix:
 
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
+    _allow_nd = (2,)
 
     @property
     def _bsr_container(self):
@@ -111,3 +112,58 @@ class spmatrix:
         matrix (row vector).
         """
         return self._getrow(i)
+
+    def todense(self, order=None, out=None):
+        """
+        Return a dense representation of this sparse matrix.
+
+        Parameters
+        ----------
+        order : {'C', 'F'}, optional
+            Whether to store multi-dimensional data in C (row-major)
+            or Fortran (column-major) order in memory. The default
+            is 'None', which provides no ordering guarantees.
+            Cannot be specified in conjunction with the `out`
+            argument.
+
+        out : ndarray, 2-D, optional
+            If specified, uses this array (or `numpy.matrix`) as the
+            output buffer instead of allocating a new array to
+            return. The provided array must have the same shape and
+            dtype as the sparse matrix on which you are calling the
+            method.
+
+        Returns
+        -------
+        arr : numpy.matrix, 2-D
+            A NumPy matrix object with the same shape and containing
+            the same data represented by the sparse matrix, with the
+            requested memory order. If `out` was passed and was an
+            array (rather than a `numpy.matrix`), it will be filled
+            with the appropriate values and returned wrapped in a
+            `numpy.matrix` object that shares the same memory.
+        """
+        return super().todense(order, out)
+
+    @classmethod
+    def __class_getitem__(cls, arg, /):
+        """
+        Return a parametrized wrapper around the `~scipy.sparse.spmatrix` type.
+
+        .. versionadded:: 1.16.0
+
+        Returns
+        -------
+        alias : types.GenericAlias
+            A parametrized `~scipy.sparse.spmatrix` type.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.sparse import coo_matrix
+
+        >>> coo_matrix[np.int8]
+        scipy.sparse._coo.coo_matrix[numpy.int8]
+        """
+        from types import GenericAlias
+        return GenericAlias(cls, arg)

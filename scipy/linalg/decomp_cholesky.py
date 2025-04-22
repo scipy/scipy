@@ -7,8 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
-    'cho_solve_banded', 'asarray_chkfinite', 'atleast_2d',
-    'LinAlgError', 'get_lapack_funcs'
+    'cho_solve_banded', 'LinAlgError', 'get_lapack_funcs'
 ]
 
 

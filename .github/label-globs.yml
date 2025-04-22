@@ -11,6 +11,11 @@ scipy.constants:
   - any-glob-to-any-file:
     - scipy/constants/**
 
+scipy.differentiate:
+- changed-files:
+  - any-glob-to-any-file:
+    - scipy/differentiate/**
+
 scipy.fft:
 - changed-files:
   - any-glob-to-any-file:
@@ -46,11 +51,6 @@ scipy.linalg:
   - any-glob-to-any-file:
     - scipy/linalg/**
 
-scipy.misc:
-- changed-files:
-  - any-glob-to-any-file:
-    - scipy/misc/**
-
 scipy.ndimage:
 - changed-files:
   - any-glob-to-any-file:
@@ -73,8 +73,11 @@ scipy.signal:
 
 scipy.sparse:
 - changed-files:
-  - any-glob-to-any-file:
+  - all-globs-to-any-file:
     - scipy/sparse/**
+    # don't match the `csgraph` or `linalg` submodules
+    - '!scipy/sparse/csgraph/**'
+    - '!scipy/sparse/linalg/**'
 
 scipy.sparse.csgraph:
 - changed-files:
@@ -153,7 +156,6 @@ CI:
     - .circleci/**
     - .github/workflows/**
     - ci/**
-    - .cirrus.star
 
 DX:
 - changed-files:

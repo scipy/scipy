@@ -1,4 +1,6 @@
 """Docstring components common to several ndimage functions."""
+from typing import Final
+
 from scipy._lib import doccer
 
 __all__ = ['docfiller']
@@ -15,6 +17,9 @@ _output_doc = (
     The array in which to place the output, or the dtype of the
     returned array. By default an array of the same dtype as input
     will be created.""")
+_nan_doc = (
+"""The behavior of this function with NaN elements is undefined. To control
+behavior in the presence of NaNs, consider using `vectorized_filter`.""")
 _size_foot_doc = (
 """size : scalar or tuple, optional
     See footprint, below. Ignored if footprint is given.
@@ -183,9 +188,9 @@ _prefilter_doc = (
 """prefilter : bool, optional
     Determines if the input array is prefiltered with `spline_filter`
     before interpolation. The default is True, which will create a
-    temporary `float64` array of filtered values if `order > 1`. If
+    temporary `float64` array of filtered values if ``order > 1``. If
     setting this to False, the output will be slightly blurred if
-    `order > 1`, unless the input is prefiltered, i.e. it is the result
+    ``order > 1``, unless the input is prefiltered, i.e. it is the result
     of calling `spline_filter` on the original input.""")
 
 docdict = {
@@ -202,7 +207,8 @@ docdict = {
     'origin_multiple': _origin_multiple_doc,
     'extra_arguments': _extra_arguments_doc,
     'extra_keywords': _extra_keywords_doc,
-    'prefilter': _prefilter_doc
+    'prefilter': _prefilter_doc,
+    'nan': _nan_doc,
     }
 
-docfiller = doccer.filldoc(docdict)
+docfiller: Final = doccer.filldoc(docdict)

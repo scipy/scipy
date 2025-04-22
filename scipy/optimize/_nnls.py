@@ -1,11 +1,14 @@
 import numpy as np
-from scipy.linalg import solve, LinAlgWarning
-import warnings
+from ._slsqplib import nnls as _nnls
+from scipy._lib.deprecation import _deprecate_positional_args, _NoValue
+
 
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None, *, atol=None):
+@_deprecate_positional_args(version='1.18.0',
+                            deprecated_args={'atol'})
+def nnls(A, b, *, maxiter=None, atol=_NoValue):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
 
@@ -22,13 +25,10 @@ def nnls(A, b, maxiter=None, *, atol=None):
         Right-hand side vector.
     maxiter: int, optional
         Maximum number of iterations, optional. Default value is ``3 * n``.
-    atol: float
-        Tolerance value used in the algorithm to assess closeness to zero in
-        the projected residual ``(A.T @ (A x - b)`` entries. Increasing this
-        value relaxes the solution constraints. A typical relaxation value can
-        be selected as ``max(m, n) * np.linalg.norm(a, 1) * np.spacing(1.)``.
-        This value is not set as default since the norm operation becomes
-        expensive for large problems hence can be used only when necessary.
+    atol : float, optional
+        .. deprecated:: 1.18.0
+            This parameter is deprecated and will be removed in SciPy 1.18.0.
+            It is not used in the implementation.
 
     Returns
     -------
@@ -43,17 +43,14 @@ def nnls(A, b, maxiter=None, *, atol=None):
 
     Notes
     -----
-    The code is based on [2]_ which is an improved version of the classical
-    algorithm of [1]_. It utilizes an active set method and solves the KKT
-    (Karush-Kuhn-Tucker) conditions for the non-negative least squares problem.
+    The code is based on the classical algorithm of [1]_. It utilizes an active
+    set method and solves the KKK (Karush-Kuhn-Tucker) conditions for the
+    non-negative least squares problem.
 
     References
     ----------
     .. [1] : Lawson C., Hanson R.J., "Solving Least Squares Problems", SIAM,
        1995, :doi:`10.1137/1.9781611971217`
-    .. [2] : Bro, Rasmus and de Jong, Sijmen, "A Fast Non-Negativity-
-       Constrained Least Squares Algorithm", Journal Of Chemometrics, 1997,
-       :doi:`10.1002/(SICI)1099-128X(199709/10)11:5<393::AID-CEM483>3.0.CO;2-L`
 
      Examples
     --------
@@ -71,15 +68,17 @@ def nnls(A, b, maxiter=None, *, atol=None):
 
     """
 
-    A = np.asarray_chkfinite(A)
-    b = np.asarray_chkfinite(b)
+    A = np.asarray_chkfinite(A, dtype=np.float64, order='C')
+    b = np.asarray_chkfinite(b, dtype=np.float64)
 
     if len(A.shape) != 2:
-        raise ValueError("Expected a two-dimensional array (matrix)" +
-                         f", but the shape of A is {A.shape}")
-    if len(b.shape) != 1:
-        raise ValueError("Expected a one-dimensional array (vector)" +
-                         f", but the shape of b is {b.shape}")
+        raise ValueError(f"Expected a 2D array, but the shape of A is {A.shape}")
+
+    if (b.ndim > 2) or ((b.ndim == 2) and (b.shape[1] != 1)):
+        raise ValueError("Expected a 1D array,(or 2D with one column), but the,"
+                         f" shape of b is {b.shape}")
+    elif (b.ndim == 2) and (b.shape[1] == 1):
+        b = b.ravel()
 
     m, n = A.shape
 
@@ -88,77 +87,10 @@ def nnls(A, b, maxiter=None, *, atol=None):
                 "Incompatible dimensions. The first dimension of " +
                 f"A is {m}, while the shape of b is {(b.shape[0], )}")
 
-    x, rnorm, mode = _nnls(A, b, maxiter, tol=atol)
-    if mode != 1:
+    if not maxiter:
+        maxiter = 3*n
+    x, rnorm, info = _nnls(A, b, maxiter)
+    if info == 3:
         raise RuntimeError("Maximum number of iterations reached.")
 
     return x, rnorm
-
-
-def _nnls(A, b, maxiter=None, tol=None):
-    """
-    This is a single RHS algorithm from ref [2] above. For multiple RHS
-    support, the algorithm is given in  :doi:`10.1002/cem.889`
-    """
-    m, n = A.shape
-
-    AtA = A.T @ A
-    Atb = b @ A  # Result is 1D - let NumPy figure it out
-
-    if not maxiter:
-        maxiter = 3*n
-    if tol is None:
-        tol = 10 * max(m, n) * np.spacing(1.)
-
-    # Initialize vars
-    x = np.zeros(n, dtype=np.float64)
-    s = np.zeros(n, dtype=np.float64)
-    # Inactive constraint switches
-    P = np.zeros(n, dtype=bool)
-
-    # Projected residual
-    w = Atb.copy().astype(np.float64)  # x=0. Skip (-AtA @ x) term
-
-    # Overall iteration counter
-    # Outer loop is not counted, inner iter is counted across outer spins
-    iter = 0
-
-    while (not P.all()) and (w[~P] > tol).any():  # B
-        # Get the "most" active coeff index and move to inactive set
-        k = np.argmax(w * (~P))  # B.2
-        P[k] = True  # B.3
-
-        # Iteration solution
-        s[:] = 0.
-        # B.4
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='Ill-conditioned matrix',
-                                    category=LinAlgWarning)
-            s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym', check_finite=False)
-
-        # Inner loop
-        while (iter < maxiter) and (s[P].min() < 0):  # C.1
-            iter += 1
-            inds = P * (s < 0)
-            alpha = (x[inds] / (x[inds] - s[inds])).min()  # C.2
-            x *= (1 - alpha)
-            x += alpha*s
-            P[x <= tol] = False
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', message='Ill-conditioned matrix',
-                                        category=LinAlgWarning)
-                s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym',
-                             check_finite=False)
-            s[~P] = 0  # C.6
-
-        x[:] = s[:]
-        w[:] = Atb - AtA @ x
-
-        if iter == maxiter:
-            # Typically following line should return
-            # return x, np.linalg.norm(A@x - b), -1
-            # however at the top level, -1 raises an exception wasting norm
-            # Instead return dummy number 0.
-            return x, 0., -1
-
-    return x, np.linalg.norm(A@x - b), 1

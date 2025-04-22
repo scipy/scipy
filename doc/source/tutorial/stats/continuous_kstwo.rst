@@ -35,6 +35,7 @@ with asymptotic estimates of Li-Chien, Pelz and Good to compute the CDF with 5-1
 Examples
 --------
 
+>>> import numpy as np
 >>> from scipy.stats import kstwo
 
 Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
@@ -50,17 +51,17 @@ a target N(0, 1) CDF.
 >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
 >>> x = np.sort(gendist.rvs(size=n, random_state=np.random.default_rng()))
 >>> x
-array([-1.59113056, -0.66335147,  0.54791569,  0.78009321,  1.27641365])
+array([-1.59113056, -0.66335147,  0.54791569,  0.78009321,  1.27641365])  # may vary
 >>> target = norm(0, 1)
 >>> cdfs = target.cdf(x)
 >>> cdfs
-array([0.0557901 , 0.25355274, 0.7081251 , 0.78233199, 0.89909533])
-# Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
+array([0.0557901 , 0.25355274, 0.7081251 , 0.78233199, 0.89909533])   # may vary
+>>> # Construct the Empirical CDF and the K-S statistics (Dn+, Dn-, Dn)
 >>> ecdfs = np.arange(n+1, dtype=float)/n
 >>> cols = np.column_stack([x, ecdfs[1:], cdfs, cdfs - ecdfs[:n], ecdfs[1:] - cdfs])
 >>> np.set_printoptions(precision=3)
 >>> cols
-array([[-1.591,  0.2  ,  0.056,  0.056,  0.144],
+array([[-1.591,  0.2  ,  0.056,  0.056,  0.144],     # may vary
        [-0.663,  0.4  ,  0.254,  0.054,  0.146],
        [ 0.548,  0.6  ,  0.708,  0.308, -0.108],
        [ 0.78 ,  0.8  ,  0.782,  0.182,  0.018],
@@ -70,17 +71,17 @@ array([[-1.591,  0.2  ,  0.056,  0.056,  0.144],
 >>> Dn = np.max(Dnpm)
 >>> iminus, iplus = np.argmax(gaps, axis=0)
 >>> print('Dn- = %f (at x=%.2f)' % (Dnpm[0], x[iminus]))
-Dn- = 0.308125 (at x=0.55)
+Dn- = 0.246201 (at x=-0.14)
 >>> print('Dn+ = %f (at x=%.2f)' % (Dnpm[1], x[iplus]))
-Dn+ = 0.146447 (at x=-0.66)
+Dn+ = 0.224726 (at x=0.19)
 >>> print('Dn  = %f' % (Dn))
-Dn  = 0.308125
+Dn  = 0.246201
 
 >>> probs = kstwo.sf(Dn, n)
 >>> print(chr(10).join(['For a sample of size %d drawn from a N(0, 1) distribution:' % n,
 ...      ' Kolmogorov-Smirnov 2-sided n=%d: Prob(Dn >= %f) = %.4f' % (n, Dn, probs)]))
 For a sample of size 5 drawn from a N(0, 1) distribution:
- Kolmogorov-Smirnov 2-sided n=5: Prob(Dn >= 0.308125) = 0.6319
+ Kolmogorov-Smirnov 2-sided n=5: Prob(Dn >= 0.246201) = 0.8562
 
 Plot the Empirical CDF against the target N(0, 1) CDF
 

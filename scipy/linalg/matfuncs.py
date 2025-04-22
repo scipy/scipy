@@ -9,9 +9,7 @@ __all__ = [  # noqa: F822
     'expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm',
     'tanhm', 'logm', 'funm', 'signm', 'sqrtm',
     'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-    'khatri_rao', 'prod', 'logical_not', 'ravel', 'transpose',
-    'conjugate', 'absolute', 'amax', 'sign', 'isfinite', 'single',
-    'norm', 'solve', 'inv', 'triu', 'svd', 'schur', 'rsf2csf', 'eps', 'feps'
+    'khatri_rao', 'norm', 'solve', 'inv', 'svd', 'schur', 'rsf2csf'
 ]
 
 

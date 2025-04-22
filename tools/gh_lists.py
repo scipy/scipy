@@ -46,17 +46,53 @@ def main():
         print("-"*len(title))
         print()
 
+        def backtick_repl(matchobj):
+            """repl to add an escaped space following a code block if needed"""
+            if matchobj.group(2) != ' ':
+                post = r'\ ' + matchobj.group(2)
+            else:
+                post = matchobj.group(2)
+            return '``' + matchobj.group(1) + '``' + post
+        
+        def asterisk_repl(matchobj):
+            """repl to un-escape asterisks in code blocks"""
+            code = matchobj.group(1).replace("\\*", "*")
+            return '``' + code + '``'
+
         for issue in items:
             msg = "* `#{0} <{1}>`__: {2}"
-            # sanitize whitespace, `, and *
+            # sanitize whitespace
             title = re.sub("\\s+", " ", issue.title.strip())
-            title = title.replace('`', '\\`').replace('*', '\\*')
+
+            # substitute any single backtick not adjacent to a backtick
+            # for a double backtick
+            title = re.sub("(?P<pre>(?:^|(?<=[^`])))`(?P<post>(?=[^`]|$))",
+                           r"\g<pre>``\g<post>",
+                           title)
+            # add an escaped space if code block is not followed by a space
+            title = re.sub("``(.*?)``(.)", backtick_repl, title)
+
+            # sanitize asterisks
+            title = title.replace('*', '\\*')
+            # except those in code blocks
+            title = re.sub("``(.*?)``", asterisk_repl, title)
+
             if len(title) > 60:
                 remainder = re.sub("\\s.*$", "...", title[60:])
                 if len(remainder) > 20:
-                    remainder = title[:80] + "..."
+                    # just use the first 80 characters, with ellipses.
+                    # note: this was previously bugged,
+                    # assigning to `remainder` rather than `title`
+                    title = title[:80] + "..."
                 else:
+                    # use the first 60 characters and the next word
                     title = title[:60] + remainder
+
+                if title.count('`') % 4 != 0:
+                    # ellipses have cut in the middle of a code block,
+                    # so finish the code block before the ellipses
+                    title = title[:-3] + '``...'
+
             msg = msg.format(issue.id, issue.url, title)
             print(msg)
         print()

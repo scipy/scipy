@@ -35,12 +35,10 @@
 import numpy as np
 
 from scipy.fft import fft, ifft
-from scipy.special import gammaincinv, ndtr, ndtri
+from scipy.special import ndtr as phi, ndtri as phinv
 from scipy.stats._qmc import primes_from_2_to
 
-
-phi = ndtr
-phinv = ndtri
+from ._qmvnt_cy import _qmvn_inner, _qmvt_inner
 
 
 def _factorize_int(n):
@@ -101,7 +99,7 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     -------
     q : float array : shape=(n_dim,)
         The lattice generator vector. All values are in the open interval
-        `(0, 1)`.
+        ``(0, 1)``.
     actual_n_qmc_samples : int
         The prime number of QMC samples that must be used with this lattice,
         no more, no less.
@@ -145,9 +143,6 @@ def _cbc_lattice(n_dim, n_qmc_samples):
     return q, n_qmc_samples
 
 
-# Note: this function is not currently used or tested by any SciPy code. It is
-# included in this file to facilitate the development of a parameter for users
-# to set the desired CDF accuracy, but must be reviewed and tested before use.
 def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     """Automatically rerun the integration to get the required error bound.
 
@@ -180,7 +175,7 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     n = len(covar)
     n_samples = 0
     if n == 1:
-        prob = phi(high) - phi(low)
+        prob = phi(high / covar**0.5) - phi(low / covar**0.5)
         # More or less
         est_error = 1e-15
     else:
@@ -198,9 +193,6 @@ def _qauto(func, covar, low, high, rng, error=1e-3, limit=10_000, **kwds):
     return prob, est_error, n_samples
 
 
-# Note: this function is not currently used or tested by any SciPy code. It is
-# included in this file to facilitate the resolution of gh-8367, gh-16142, and
-# possibly gh-14286, but must be reviewed and tested before use.
 def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
     """Multivariate normal integration over box bounds.
 
@@ -229,42 +221,17 @@ def _qmvn(m, covar, low, high, rng, lattice='cbc', n_batches=10):
         3 times the standard error of the batch estimates.
     """
     cho, lo, hi = _permuted_cholesky(covar, low, high)
+    if not cho.flags.c_contiguous:
+        # qmvn_inner expects contiguous buffers
+        cho = cho.copy()
+
     n = cho.shape[0]
-    ct = cho[0, 0]
-    c = phi(lo[0] / ct)
-    d = phi(hi[0] / ct)
-    ci = c
-    dci = d - ci
-    prob = 0.0
-    error_var = 0.0
     q, n_qmc_samples = _cbc_lattice(n - 1, max(m // n_batches, 1))
-    y = np.zeros((n - 1, n_qmc_samples))
-    i_samples = np.arange(n_qmc_samples) + 1
-    for j in range(n_batches):
-        c = np.full(n_qmc_samples, ci)
-        dc = np.full(n_qmc_samples, dci)
-        pv = dc.copy()
-        for i in range(1, n):
-            # Pseudorandomly-shifted lattice coordinate.
-            z = q[i - 1] * i_samples + rng.random()
-            # Fast remainder(z, 1.0)
-            z -= z.astype(int)
-            # Tent periodization transform.
-            x = abs(2 * z - 1)
-            y[i - 1, :] = phinv(c + x * dc)
-            s = cho[i, :i] @ y[:i, :]
-            ct = cho[i, i]
-            c = phi((lo[i] - s) / ct)
-            d = phi((hi[i] - s) / ct)
-            dc = d - c
-            pv = pv * dc
-        # Accumulate the mean and error variances with online formulations.
-        d = (pv.mean() - prob) / (j + 1)
-        prob += d
-        error_var = (j - 1) * error_var / (j + 1) + d * d
-    # Error bounds are 3 times the standard error of the estimates.
-    est_error = 3 * np.sqrt(error_var)
-    n_samples = n_qmc_samples * n_batches
+    rndm = rng.random(size=(n_batches, n))
+
+    prob, est_error, n_samples = _qmvn_inner(
+        q, rndm, int(n_qmc_samples), int(n_batches), cho, lo, hi
+    )
     return prob, est_error, n_samples
 
 
@@ -371,57 +338,11 @@ def _qmvt(m, nu, covar, low, high, rng, lattice='cbc', n_batches=10):
     high = np.asarray(high, dtype=np.float64)
     cho, lo, hi = _permuted_cholesky(covar, low / sn, high / sn)
     n = cho.shape[0]
-    prob = 0.0
-    error_var = 0.0
     q, n_qmc_samples = _cbc_lattice(n, max(m // n_batches, 1))
-    i_samples = np.arange(n_qmc_samples) + 1
-    for j in range(n_batches):
-        pv = np.ones(n_qmc_samples)
-        s = np.zeros((n, n_qmc_samples))
-        for i in range(n):
-            # Pseudorandomly-shifted lattice coordinate.
-            z = q[i] * i_samples + rng.random()
-            # Fast remainder(z, 1.0)
-            z -= z.astype(int)
-            # Tent periodization transform.
-            x = abs(2 * z - 1)
-            # FIXME: Lift the i==0 case out of the loop to make the logic
-            # easier to follow.
-            if i == 0:
-                # We'll use one of the QR variates to pull out the
-                # t-distribution scaling.
-                if nu > 0:
-                    r = np.sqrt(2 * gammaincinv(nu / 2, x))
-                else:
-                    r = np.ones_like(x)
-            else:
-                y = phinv(c + x * dc)  # noqa: F821
-                with np.errstate(invalid='ignore'):
-                    s[i:, :] += cho[i:, i - 1][:, np.newaxis] * y
-            si = s[i, :]
-
-            c = np.ones(n_qmc_samples)
-            d = np.ones(n_qmc_samples)
-            with np.errstate(invalid='ignore'):
-                lois = lo[i] * r - si
-                hiis = hi[i] * r - si
-            c[lois < -9] = 0.0
-            d[hiis < -9] = 0.0
-            lo_mask = abs(lois) < 9
-            hi_mask = abs(hiis) < 9
-            c[lo_mask] = phi(lois[lo_mask])
-            d[hi_mask] = phi(hiis[hi_mask])
-
-            dc = d - c
-            pv *= dc
-
-        # Accumulate the mean and error variances with online formulations.
-        d = (pv.mean() - prob) / (j + 1)
-        prob += d
-        error_var = (j - 1) * error_var / (j + 1) + d * d
-    # Error bounds are 3 times the standard error of the estimates.
-    est_error = 3 * np.sqrt(error_var)
-    n_samples = n_qmc_samples * n_batches
+    rndm = rng.random(size=(n_batches, n))
+    prob, est_error, n_samples = _qmvt_inner(
+        q, rndm, int(n_qmc_samples), int(n_batches), cho, lo, hi, float(nu)
+    )
     return prob, est_error, n_samples
 
 

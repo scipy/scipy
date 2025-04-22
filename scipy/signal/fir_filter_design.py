@@ -7,8 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'kaiser_beta', 'kaiser_atten', 'kaiserord',
     'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase',
-    'ceil', 'log', 'irfft', 'fft', 'ifft', 'sinc', 'toeplitz',
-    'hankel', 'solve', 'LinAlgError', 'LinAlgWarning', 'lstsq'
+    'firwin_2d',
 ]
 
 

@@ -25,7 +25,7 @@ from . import _mstats_basic as mstats
 from scipy.stats.distributions import norm, beta, t, binom
 
 
-def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
+def hdquantiles(data, prob=(.25, .5, .75), axis=None, var=False,):
     """
     Computes quantile estimates with the Harrell-Davis method.
 
@@ -114,8 +114,8 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         result = _hd_1D(data, p, var)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hd_1D, axis, data, p, var)
 
     return ma.fix_invalid(result, copy=False)
@@ -147,7 +147,7 @@ def hdmedian(data, axis=-1, var=False):
     return result.squeeze()
 
 
-def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
+def hdquantiles_sd(data, prob=(.25, .5, .75), axis=None):
     """
     The standard error of the Harrell-Davis quantile estimates by jackknife.
 
@@ -203,8 +203,8 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         result = _hdsd_1D(data, p)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_hdsd_1D, axis, data, p)
 
     return ma.fix_invalid(result, copy=False).ravel()
@@ -261,7 +261,7 @@ def trimmed_mean_ci(data, limits=(0.2,0.2), inclusive=(True,True),
     return np.array((tmean - tppf*tstde, tmean+tppf*tstde))
 
 
-def mjci(data, prob=[0.25,0.5,0.75], axis=None):
+def mjci(data, prob=(0.25, 0.5, 0.75), axis=None):
     """
     Returns the Maritz-Jarrett estimators of the standard error of selected
     experimental quantiles of the data.
@@ -295,8 +295,8 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
 
     data = ma.array(data, copy=False)
     if data.ndim > 2:
-        raise ValueError("Array 'data' must be at most two dimensional, "
-                         "but got data.ndim = %d" % data.ndim)
+        raise ValueError(f"Array 'data' must be at most two dimensional, "
+                         f"but got data.ndim = {data.ndim}")
 
     p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
@@ -306,7 +306,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         return ma.apply_along_axis(_mjci_1D, axis, data, p)
 
 
-def mquantiles_cimj(data, prob=[0.25,0.50,0.75], alpha=0.05, axis=None):
+def mquantiles_cimj(data, prob=(0.25, 0.50, 0.75), alpha=0.05, axis=None):
     """
     Computes the alpha confidence interval for the selected quantiles of the
     data, with Maritz-Jarrett estimators.
@@ -384,8 +384,8 @@ def median_cihs(data, alpha=0.05, axis=None):
         result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
-            raise ValueError("Array 'data' must be at most two dimensional, "
-                             "but got data.ndim = %d" % data.ndim)
+            raise ValueError(f"Array 'data' must be at most two dimensional, "
+                             f"but got data.ndim = {data.ndim}")
         result = ma.apply_along_axis(_cihs_1D, axis, data, alpha)
 
     return result

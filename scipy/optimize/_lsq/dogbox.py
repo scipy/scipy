@@ -45,6 +45,8 @@ from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy._lib._util import _call_callback_maybe_halt
+
 
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,
@@ -147,7 +149,7 @@ def dogleg_step(x, newton_step, g, a, b, tr_bounds, lb, ub):
 
 
 def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
-           loss_function, tr_solver, tr_options, verbose):
+           loss_function, tr_solver, tr_options, verbose, callback=None):
     f = f0
     f_true = f.copy()
     nfev = 1
@@ -306,7 +308,7 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
 
             cost = cost_new
 
-            J = jac(x, f)
+            J = jac(x)
             njev += 1
 
             if loss_function is not None:
@@ -322,6 +324,18 @@ def dogbox(fun, jac, x0, f0, J0, lb, ub, ftol, xtol, gtol, max_nfev, x_scale,
             actual_reduction = 0
 
         iteration += 1
+        
+        # Call callback function and possibly stop optimization
+        if callback is not None:
+            intermediate_result = OptimizeResult(
+                x=x, fun=f, nit=iteration, nfev=nfev)
+            intermediate_result["cost"] = cost_new
+
+            if _call_callback_maybe_halt(
+                callback, intermediate_result
+            ):
+                termination_status = -2
+                break
 
     if termination_status is None:
         termination_status = 0

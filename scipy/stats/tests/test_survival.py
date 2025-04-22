@@ -382,13 +382,9 @@ class TestSurvival:
             import matplotlib.pyplot as plt  # noqa: F401
             res.sf.plot()  # no other errors occur
         except (ModuleNotFoundError, ImportError):
-            # Avoid trying to call MPL with numpy 2.0-dev, because that fails
-            # too often due to ABI mismatches and is hard to avoid. This test
-            # will work fine again once MPL has done a 2.0-compatible release.
-            if not np.__version__.startswith('2.0.0.dev0'):
-                message = r"matplotlib must be installed to use method `plot`."
-                with pytest.raises(ModuleNotFoundError, match=message):
-                    res.sf.plot()
+            message = r"matplotlib must be installed to use method `plot`."
+            with pytest.raises(ModuleNotFoundError, match=message):
+                res.sf.plot()
 
 
 class TestLogRank:

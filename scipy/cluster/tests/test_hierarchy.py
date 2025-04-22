@@ -32,7 +32,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
+from numpy.testing import (assert_allclose, assert_equal, assert_array_equal, assert_,
+                           assert_warns)
 import pytest
 from pytest import raises as assert_raises
 
@@ -40,15 +41,18 @@ import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
     ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
     num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
-    is_isomorphic, single, leaders,
+    is_isomorphic, single, ward, leaders,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
-    _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
+    _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
+import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_extra.testing import lazy_xp_function
+
+from threading import Lock
 
 from . import hierarchy_test_data
 
@@ -65,28 +69,62 @@ try:
 except Exception:
     have_matplotlib = False
 
-
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+use_linkage = skip_xp_backends(cpu_only=True, exceptions=["jax.numpy"],
+                               reason="linkage() invokes Cython code")
+
+lazy_xp_function(single)
+lazy_xp_function(ward)
+lazy_xp_function(linkage, static_argnames=('method', 'metric', 'optimal_ordering'))
+lazy_xp_function(cut_tree, static_argnames=('n_clusters', 'height'))
+lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=999,
+                 static_argnames=('rd', ))
+lazy_xp_function(optimal_leaf_ordering, static_argnames=('metric',))
+lazy_xp_function(cophenet, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(inconsistent, jax_jit=False, allow_dask_compute=2,
+                 static_argnames=('d',))
+lazy_xp_function(from_mlab_linkage, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(to_mlab_linkage, jax_jit=False, allow_dask_compute=1)
+lazy_xp_function(is_monotonic)
+
+# Note: these functions materialize lazy arrays when warning=True or throw=True
+lazy_xp_function(is_valid_im, static_argnames=("warning", "throw", "name")) 
+lazy_xp_function(is_valid_linkage, static_argnames=("warning", "throw", "name"))
+
+lazy_xp_function(num_obs_linkage)
+lazy_xp_function(correspond)
+lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=999, 
+                 static_argnames=('criterion', 'depth'))
+lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=999,
+                 static_argnames=('criterion', 'metric', 'depth', 'method'))
+lazy_xp_function(leaves_list, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(is_isomorphic, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=999,
+                 static_argnames=('i',))
+
+# Returns data-dependent shape
+lazy_xp_function(leaders, jax_jit=False)
 
 
+@use_linkage
 class TestLinkage:
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends("jax.numpy", reason="Can't raise inside jax.pure_callback")
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
         # Exception expected.
-        y = xp.zeros((6,))
-        y[0] = xp.nan
+        y = xp.asarray([xp.nan] + [0.0]*5)
         assert_raises(ValueError, linkage, y)
 
-    @skip_xp_backends(cpu_only=True)
     def test_linkage_empty_distance_matrix(self, xp):
         # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
         y = xp.zeros((0,))
         assert_raises(ValueError, linkage, y)
 
-    @skip_xp_backends(cpu_only=True)
     def test_linkage_tdist(self, xp):
         for method in ['single', 'complete', 'average', 'weighted']:
             self.check_linkage_tdist(method, xp)
@@ -97,7 +135,6 @@ class TestLinkage:
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
         xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
-    @skip_xp_backends(cpu_only=True)
     def test_linkage_X(self, xp):
         for method in ['centroid', 'median', 'ward']:
             self.check_linkage_q(method, xp)
@@ -108,12 +145,11 @@ class TestLinkage:
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
         xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
-        y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
-                                         metric="euclidean")
-        Z = linkage(xp.asarray(y), method)
+        X = xp.asarray(hierarchy_test_data.X)
+        y = pdist(X, metric="euclidean")
+        Z = linkage(y, method)
         xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
-    @skip_xp_backends(cpu_only=True)
     def test_compare_with_trivial(self, xp):
         rng = np.random.RandomState(0)
         n = 20
@@ -125,14 +161,13 @@ class TestLinkage:
             Z = linkage(xp.asarray(d), method)
             xp_assert_close(Z, xp.asarray(Z_trivial), rtol=1e-14, atol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
     def test_optimal_leaf_ordering(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), optimal_ordering=True)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
         xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
 
-@skip_xp_backends(cpu_only=True)
+@use_linkage
 class TestLinkageTies:
 
     _expectations = {
@@ -197,6 +232,25 @@ class TestCopheneticDistance:
         expectedc = xp.asarray(0.639931296433393415057366837573, dtype=xp.float64)[()]
         xp_assert_close(c, expectedc, atol=1e-10)
         xp_assert_close(M, expectedM, atol=1e-10)
+
+    def test_gh_22183(self, xp):
+        # check for lack of segfault
+        # (out of bounds memory access)
+        # and correct interception of
+        # invalid linkage matrix
+        arr=[[0.0, 1.0, 1.0, 2.0],
+             [2.0, 12.0, 1.0, 3.0],
+             [3.0, 4.0, 1.0, 2.0],
+             [5.0, 14.0, 1.0, 3.0],
+             [6.0, 7.0, 1.0, 2.0],
+             [8.0, 16.0, 1.0, 3.0],
+             [9.0, 10.0, 1.0, 2.0],
+             [11.0, 18.0, 1.0, 3.0],
+             [13.0, 15.0, 2.0, 6.0],
+             [17.0, 20.0, 2.0, 32.0],
+             [19.0, 21.0, 2.0, 12.0]]
+        with pytest.raises(ValueError, match="excessive observations"):
+            cophenet(xp.asarray(arr))
 
 
 class TestMLabLinkageConversion:
@@ -284,15 +338,26 @@ class TestFcluster:
         T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
 
+    def test_fcluster_maxclust_gh_12651(self, xp):
+        y = xp.asarray([[1], [4], [5]])
+        Z = single(y)
+        assert_array_equal(fcluster(Z, t=1, criterion="maxclust"),
+                           xp.asarray([1, 1, 1]))
+        assert_array_equal(fcluster(Z, t=2, criterion="maxclust"),
+                           xp.asarray([2, 1, 1]))
+        assert_array_equal(fcluster(Z, t=3, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+        assert_array_equal(fcluster(Z, t=5, criterion="maxclust"),
+                           xp.asarray([1, 2, 3]))
+
 
 @skip_xp_backends(cpu_only=True)
 class TestLeaders:
 
     def test_leaders_single(self, xp):
         # Tests leaders using a flat clustering generated by single linkage.
-        X = hierarchy_test_data.Q_X
+        X = xp.asarray(hierarchy_test_data.Q_X)
         Y = pdist(X)
-        Y = xp.asarray(Y)
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=3)
         Lright = (xp.asarray([53, 55, 56]), xp.asarray([2, 3, 1]))
@@ -302,11 +367,9 @@ class TestLeaders:
 
 
 @skip_xp_backends(np_only=True,
-                   reasons=['`is_isomorphic` only supports NumPy backend'])
+                  reason='`is_isomorphic` only supports NumPy backend')
 class TestIsIsomorphic:
 
-    @skip_xp_backends(np_only=True,
-                       reasons=['array-likes only supported for NumPy backend'])
     def test_array_like(self, xp):
         assert is_isomorphic([1, 1, 1], [2, 2, 2])
         assert is_isomorphic([], [])
@@ -344,8 +407,8 @@ class TestIsIsomorphic:
         # (3 flat clusters, different labelings, nonisomorphic)
         a = xp.asarray([1, 2, 3, 3])
         b = xp.asarray([1, 3, 2, 3])
-        assert is_isomorphic(a, b) is False
-        assert is_isomorphic(b, a) is False
+        assert not is_isomorphic(a, b)
+        assert not is_isomorphic(b, a)
 
     def test_is_isomorphic_4C(self, xp):
         # Tests is_isomorphic on test case #4C
@@ -386,26 +449,20 @@ class TestIsIsomorphic:
                 Q = np.random.permutation(nobs)
                 b[Q[0:nerrors]] += 1
                 b[Q[0:nerrors]] %= nclusters
-            a = xp.asarray(a)
-            b = xp.asarray(b)
             assert is_isomorphic(a, b) == (not noniso)
             assert is_isomorphic(b, a) == (not noniso)
 
 
-@skip_xp_backends(cpu_only=True)
 class TestIsValidLinkage:
 
-    def test_is_valid_linkage_various_size(self, xp):
-        for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
-                                  (1, 4, True), (2, 4, True)]:
-            self.check_is_valid_linkage_various_size(nrow, ncol, valid, xp)
-
-    def check_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
+    @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
+                                                  (1, 4, True), (2, 4, True)])
+    def test_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
         # Tests is_valid_linkage(Z) with linkage matrices of various sizes
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         Z = Z[:nrow, :ncol]
-        assert_(is_valid_linkage(Z) == valid)
+        xp_assert_equal(is_valid_linkage(Z), valid, check_namespace=False)
         if not valid:
             assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
@@ -413,15 +470,16 @@ class TestIsValidLinkage:
         # Tests is_valid_linkage(Z) with integer type.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        assert_(is_valid_linkage(Z) is False)
+        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
     def test_is_valid_linkage_empty(self, xp):
         # Tests is_valid_linkage(Z) with empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
-        assert_(is_valid_linkage(Z) is False)
+        xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
         assert_raises(ValueError, is_valid_linkage, Z, throw=True)
 
+    @use_linkage
     def test_is_valid_linkage_4_and_up(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3).
@@ -429,8 +487,9 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            assert_(is_valid_linkage(Z) is True)
+            xp_assert_equal(is_valid_linkage(Z), True, check_namespace=False)
 
+    @use_linkage
     def test_is_valid_linkage_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (left).
@@ -438,10 +497,14 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,0] = -2
-            assert_(is_valid_linkage(Z) is False)
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            Z = xpx.at(Z)[i//2, 0].set(-2)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            # Use fully-qualified function name to bypass lazy_xp_function(),
+            # because `is_valid_*` materializes.
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
+    @use_linkage
     def test_is_valid_linkage_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative indices (right).
@@ -449,10 +512,13 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,1] = -2
-            assert_(is_valid_linkage(Z) is False)
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            Z = xpx.at(Z)[i//2, 1].set(-2)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
+
+    @use_linkage
     def test_is_valid_linkage_4_and_up_neg_dist(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative distances.
@@ -460,10 +526,12 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,2] = -0.5
-            assert_(is_valid_linkage(Z) is False)
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            Z = xpx.at(Z)[i//2, 2].set(-0.5)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
+    @use_linkage
     def test_is_valid_linkage_4_and_up_neg_counts(self, xp):
         # Tests is_valid_linkage(Z) on linkage on observation sets between
         # sizes 4 and 15 (step size 3) with negative counts.
@@ -471,41 +539,39 @@ class TestIsValidLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            Z[i//2,3] = -2
-            assert_(is_valid_linkage(Z) is False)
-            assert_raises(ValueError, is_valid_linkage, Z, throw=True)
+            Z = xpx.at(Z)[i//2, 3].set(-2)
+            xp_assert_equal(is_valid_linkage(Z), False, check_namespace=False)
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_linkage(Z, throw=True)
 
 
-@skip_xp_backends(cpu_only=True)
 class TestIsValidInconsistent:
 
     def test_is_valid_im_int_type(self, xp):
         # Tests is_valid_im(R) with integer type.
         R = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.int64)
-        assert_(is_valid_im(R) is False)
+        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
-    def test_is_valid_im_various_size(self, xp):
-        for nrow, ncol, valid in [(2, 5, False), (2, 3, False),
-                                  (1, 4, True), (2, 4, True)]:
-            self.check_is_valid_im_various_size(nrow, ncol, valid, xp)
-
-    def check_is_valid_im_various_size(self, nrow, ncol, valid, xp):
+    @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
+                                                  (1, 4, True), (2, 4, True)])
+    def test_is_valid_im_various_size(self, nrow, ncol, valid, xp):
         # Tests is_valid_im(R) with linkage matrices of various sizes
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         R = R[:nrow, :ncol]
-        assert_(is_valid_im(R) == valid)
+        xp_assert_equal(is_valid_im(R), valid, check_namespace=False)
         if not valid:
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
     def test_is_valid_im_empty(self, xp):
         # Tests is_valid_im(R) with empty inconsistency matrix.
         R = xp.zeros((0, 4), dtype=xp.float64)
-        assert_(is_valid_im(R) is False)
+        xp_assert_equal(is_valid_im(R), False, check_namespace=False)
         assert_raises(ValueError, is_valid_im, R, throw=True)
 
+    @use_linkage
     def test_is_valid_im_4_and_up(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3).
@@ -514,8 +580,9 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            assert_(is_valid_im(R) is True)
+            xp_assert_equal(is_valid_im(R), True, check_namespace=False)
 
+    @use_linkage
     def test_is_valid_im_4_and_up_neg_index_left(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height means.
@@ -524,10 +591,14 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,0] = -2.0
-            assert_(is_valid_im(R) is False)
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            R = xpx.at(R)[i//2 , 0].set(-2.0)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            # Use fully-qualified function name to bypass lazy_xp_function(),
+            # because `is_valid_*`materializes.
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
+    @use_linkage
     def test_is_valid_im_4_and_up_neg_index_right(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link height standard deviations.
@@ -536,10 +607,12 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,1] = -2.0
-            assert_(is_valid_im(R) is False)
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            R = xpx.at(R)[i//2 , 1].set(-2.0)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
+    @use_linkage
     def test_is_valid_im_4_and_up_neg_dist(self, xp):
         # Tests is_valid_im(R) on im on observation sets between sizes 4 and 15
         # (step size 3) with negative link counts.
@@ -548,14 +621,14 @@ class TestIsValidInconsistent:
             y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
-            R[i//2,2] = -0.5
-            assert_(is_valid_im(R) is False)
-            assert_raises(ValueError, is_valid_im, R, throw=True)
+            R = xpx.at(R)[i//2, 2].set(-0.5)
+            xp_assert_equal(is_valid_im(R), False, check_namespace=False)
+            with pytest.raises(ValueError):
+                scipy.cluster.hierarchy.is_valid_im(R, throw=True)
 
 
 class TestNumObsLinkage:
 
-    @skip_xp_backends(cpu_only=True)
     def test_num_obs_linkage_empty(self, xp):
         # Tests num_obs_linkage(Z) with empty linkage.
         Z = xp.zeros((0, 4), dtype=xp.float64)
@@ -564,15 +637,15 @@ class TestNumObsLinkage:
     def test_num_obs_linkage_1x4(self, xp):
         # Tests num_obs_linkage(Z) on linkage over 2 observations.
         Z = xp.asarray([[0, 1, 3.0, 2]], dtype=xp.float64)
-        assert_equal(num_obs_linkage(Z), 2)
+        assert num_obs_linkage(Z) == 2
 
     def test_num_obs_linkage_2x4(self, xp):
         # Tests num_obs_linkage(Z) on linkage over 3 observations.
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.float64)
-        assert_equal(num_obs_linkage(Z), 3)
+        assert num_obs_linkage(Z) == 3
 
-    @skip_xp_backends(cpu_only=True)
+    @use_linkage
     def test_num_obs_linkage_4_and_up(self, xp):
         # Tests num_obs_linkage(Z) on linkage on observation sets between sizes
         # 4 and 15 (step size 3).
@@ -580,7 +653,16 @@ class TestNumObsLinkage:
             y = np.random.rand(i*(i-1)//2)
             y = xp.asarray(y)
             Z = linkage(y)
-            assert_equal(num_obs_linkage(Z), i)
+            assert num_obs_linkage(Z) == i
+
+    @use_linkage
+    def test_num_obs_linkage_multi_matrix(self, xp):
+        # Tests num_obs_linkage with observation matrices of multiple sizes.
+        for n in range(2, 10):
+            X = xp.asarray(np.random.rand(n, 4))
+            Y = pdist(X)
+            Z = linkage(Y)
+            assert num_obs_linkage(Z) == n
 
 
 @skip_xp_backends(cpu_only=True)
@@ -621,7 +703,6 @@ class TestLeavesList:
                         rtol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
 class TestCorrespond:
 
     def test_correspond_empty(self, xp):
@@ -630,6 +711,7 @@ class TestCorrespond:
         Z = xp.zeros((0,4), dtype=xp.float64)
         assert_raises(ValueError, correspond, Z, y)
 
+    @use_linkage
     def test_correspond_2_and_up(self, xp):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
         # different sizes.
@@ -644,6 +726,7 @@ class TestCorrespond:
             Z = linkage(y)
             assert_(correspond(Z, y))
 
+    @use_linkage
     def test_correspond_4_and_up(self, xp):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
         # different sizes. Correspondence should be false.
@@ -658,6 +741,7 @@ class TestCorrespond:
             assert not correspond(Z, y2)
             assert not correspond(Z2, y)
 
+    @use_linkage
     def test_correspond_4_and_up_2(self, xp):
         # Tests correspond(Z, y) on linkage and CDMs over observation sets of
         # different sizes. Correspondence should be false.
@@ -672,17 +756,7 @@ class TestCorrespond:
             assert not correspond(Z, y2)
             assert not correspond(Z2, y)
 
-    def test_num_obs_linkage_multi_matrix(self, xp):
-        # Tests num_obs_linkage with observation matrices of multiple sizes.
-        for n in range(2, 10):
-            X = np.random.rand(n, 4)
-            Y = pdist(X)
-            Y = xp.asarray(Y)
-            Z = linkage(Y)
-            assert_equal(num_obs_linkage(Z), n)
 
-
-@skip_xp_backends(cpu_only=True)
 class TestIsMonotonic:
 
     def test_is_monotonic_empty(self, xp):
@@ -735,19 +809,22 @@ class TestIsMonotonic:
                         [4, 5, 0.2, 4]], dtype=xp.float64)
         assert not is_monotonic(Z)
 
+    @use_linkage
     def test_is_monotonic_tdist_linkage1(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Expecting True.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         assert is_monotonic(Z)
 
+    @use_linkage
     def test_is_monotonic_tdist_linkage2(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Perturbing. Expecting False.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        Z[2,2] = 0.0
+        Z = xpx.at(Z)[2, 2].set(0.0)
         assert not is_monotonic(Z)
 
+    @use_linkage
     def test_is_monotonic_Q_linkage(self, xp):
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # Q data set. Expecting True.
@@ -801,7 +878,7 @@ class TestMaxInconsts:
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -810,7 +887,7 @@ class TestMaxInconsts:
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxinconsts_Q_linkage(method, xp)
@@ -863,7 +940,7 @@ class TestMaxRStat:
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
             self.check_maxRstat_one_cluster_linkage(i, xp)
@@ -876,7 +953,7 @@ class TestMaxRStat:
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, reason="implicit device->host transfer")
     def test_maxRstat_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
@@ -909,9 +986,9 @@ class TestDendrogram:
     def test_labels_as_array_or_list(self, xp):
         # test for gh-12418
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        labels = xp.asarray([1, 3, 2, 6, 4, 5])
-        result1 = dendrogram(Z, labels=labels, no_plot=True)
-        result2 = dendrogram(Z, labels=list(labels), no_plot=True)
+        labels = [1, 3, 2, 6, 4, 5]
+        result1 = dendrogram(Z, labels=xp.asarray(labels), no_plot=True)
+        result2 = dendrogram(Z, labels=labels, no_plot=True)
         assert result1 == result2
 
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
@@ -934,6 +1011,13 @@ class TestDendrogram:
 
         plt.close()
 
+    @skip_xp_backends('torch',
+         reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
+                ' and NumPy 2.0'
+    )
+    @skip_xp_backends('dask.array',
+         reason='dask.array has bad interaction with matplotlib'
+    )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self, xp):
         for orientation in ['top', 'bottom', 'left', 'right']:
@@ -1001,6 +1085,13 @@ class TestDendrogram:
         R2['dcoord'] = np.asarray(R2['dcoord'])
         assert_equal(R2, expected)
 
+    @skip_xp_backends('torch',
+          reason='MPL 3.9.2 & torch DeprecationWarning from __array_wrap__'
+                 ' and NumPy 2.0'
+     )
+    @skip_xp_backends('dask.array',
+         reason='dask.array has bad interaction with matplotlib'
+    )
     @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_truncate_mode(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
@@ -1033,20 +1124,26 @@ class TestDendrogram:
                          'leaves_color_list': ['C1', 'C1', 'C0', 'C0', 'C0'],
                          })
 
-    def test_dendrogram_colors(self, xp):
+    @pytest.fixture
+    def dendrogram_lock(self):
+        return Lock()
+
+    def test_dendrogram_colors(self, xp, dendrogram_lock):
         # Tests dendrogram plots with alternate colors
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
 
-        set_link_color_palette(['c', 'm', 'y', 'k'])
-        R = dendrogram(Z, no_plot=True,
-                       above_threshold_color='g', color_threshold=250)
-        set_link_color_palette(['g', 'r', 'c', 'm', 'y', 'k'])
+        with dendrogram_lock:
+            # Global color palette might be changed concurrently
+            set_link_color_palette(['c', 'm', 'y', 'k'])
+            R = dendrogram(Z, no_plot=True,
+                        above_threshold_color='g', color_threshold=250)
+            set_link_color_palette(['g', 'r', 'c', 'm', 'y', 'k'])
 
-        color_list = R['color_list']
-        assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
+            color_list = R['color_list']
+            assert_equal(color_list, ['c', 'm', 'g', 'g', 'g'])
 
-        # reset color palette (global list)
-        set_link_color_palette(None)
+            # reset color palette (global list)
+            set_link_color_palette(None)
 
     def test_dendrogram_leaf_colors_zero_dist(self, xp):
         # tests that the colors of leafs are correct for tree
@@ -1083,17 +1180,18 @@ def calculate_maximum_distances(Z, xp):
     # Used for testing correctness of maxdists.
     n = Z.shape[0] + 1
     B = xp.zeros((n-1,), dtype=Z.dtype)
-    q = xp.zeros((3,))
     for i in range(0, n - 1):
-        q[:] = 0.0
+        q = xp.zeros((3,))
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
+            b_left = B[xp.asarray(left, dtype=xp.int64) - n]
+            q = xpx.at(q, 0).set(b_left)
         if right >= n:
-            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
-        q[2] = Z[i, 2]
-        B[i] = xp.max(q)
+            b_right = B[xp.asarray(right, dtype=xp.int64) - n]
+            q = xpx.at(q, 1).set(b_right)
+        q = xpx.at(q, 2).set(Z[i, 2])
+        B = xpx.at(B, i).set(xp.max(q))
     return B
 
 
@@ -1102,32 +1200,35 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     n = Z.shape[0] + 1
     dtype = xp.result_type(Z, R)
     B = xp.zeros((n-1,), dtype=dtype)
-    q = xp.zeros((3,))
     for i in range(0, n - 1):
-        q[:] = 0.0
+        q = xp.zeros((3,))
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
+            b_left = B[xp.asarray(left, dtype=xp.int64) - n]
+            q = xpx.at(q, 0).set(b_left)
         if right >= n:
-            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
-        q[2] = R[i, k]
-        B[i] = xp.max(q)
+            b_right = B[xp.asarray(right, dtype=xp.int64) - n]
+            q = xpx.at(q, 1).set(b_right)
+        q = xpx.at(q, 2).set(R[i, k])
+        B = xpx.at(B, i).set(xp.max(q))
     return B
 
 
-@skip_xp_backends(cpu_only=True)
+@pytest.mark.thread_unsafe
+@use_linkage
+@skip_xp_backends(eager_only=True)
 def test_unsupported_uncondensed_distance_matrix_linkage_warning(xp):
     assert_warns(ClusterWarning, linkage, xp.asarray([[0, 1], [1, 0]]))
 
 
 def test_euclidean_linkage_value_error(xp):
-    for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
+    for method in _EUCLIDEAN_METHODS:
         assert_raises(ValueError, linkage, xp.asarray([[1, 1], [1, 1]]),
                       method=method, metric='cityblock')
 
 
-@skip_xp_backends(cpu_only=True)
+@use_linkage
 def test_2x2_linkage(xp):
     Z1 = linkage(xp.asarray([1]), method='single', metric='euclidean')
     Z2 = linkage(xp.asarray([[0, 1], [0, 0]]), method='single', metric='euclidean')
@@ -1140,7 +1241,7 @@ def test_node_compare(xp):
     nobs = 50
     X = np.random.randn(nobs, 4)
     X = xp.asarray(X)
-    Z = scipy.cluster.hierarchy.ward(X)
+    Z = ward(X)
     tree = to_tree(Z)
     assert_(tree > tree.get_left())
     assert_(tree.get_right() > tree.get_left())
@@ -1148,13 +1249,13 @@ def test_node_compare(xp):
     assert_(tree.get_right() != tree.get_left())
 
 
-@skip_xp_backends(np_only=True, reasons=['`cut_tree` uses non-standard indexing'])
+@skip_xp_backends(np_only=True, reason='`cut_tree` uses non-standard indexing')
 def test_cut_tree(xp):
     np.random.seed(23)
     nobs = 50
     X = np.random.randn(nobs, 4)
     X = xp.asarray(X)
-    Z = scipy.cluster.hierarchy.ward(X)
+    Z = ward(X)
     cutree = cut_tree(Z)
 
     # cutree.dtype varies between int32 and int64 over platforms
@@ -1192,7 +1293,7 @@ def test_optimal_leaf_ordering(xp):
     xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
-@skip_xp_backends(np_only=True, reasons=['`Heap` only supports NumPy backend'])
+@skip_xp_backends(np_only=True, reason='`Heap` only supports NumPy backend')
 def test_Heap(xp):
     values = xp.asarray([2, -1, 0, -1.5, 3])
     heap = Heap(values)
@@ -1223,3 +1324,13 @@ def test_Heap(xp):
     pair = heap.get_min()
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
+
+
+@use_linkage
+@skip_xp_backends("jax.numpy", reason="Can't raise inside jax.pure_callback")
+def test_centroid_neg_distance(xp):
+    # gh-21011
+    values = xp.asarray([0, 0, -1])
+    with pytest.raises(ValueError):
+        # This is just checking that this doesn't crash
+        linkage(values, method='centroid')

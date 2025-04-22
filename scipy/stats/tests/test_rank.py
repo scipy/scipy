@@ -222,8 +222,6 @@ class TestRankData:
 
     @array_api_compatible
     def test_large_int(self, xp):
-        ref = xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp))
-
         if hasattr(xp, 'uint64'):
             data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
             r = rankdata(data)

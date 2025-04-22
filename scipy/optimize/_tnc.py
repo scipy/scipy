@@ -36,7 +36,8 @@ from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from scipy._lib._array_api import atleast_nd, array_namespace
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
 
 from numpy import inf, array, zeros
 
@@ -90,7 +91,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
              messages=MSG_ALL, maxCGit=-1, maxfun=None, eta=-1,
              stepmx=0, accuracy=0, fmin=0, ftol=-1, xtol=-1, pgtol=-1,
              rescale=-1, disp=None, callback=None):
-    """
+    r"""
     Minimize a function with variables subject to bounds, using
     gradient information in a truncated Newton algorithm. This
     method wraps a C implementation of the algorithm.
@@ -223,17 +224,17 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
     associated with the variable of largest index whose
     constraint is no longer active.
 
-    Return codes are defined as follows::
+    Return codes are defined as follows:
 
-        -1 : Infeasible (lower bound > upper bound)
-         0 : Local minimum reached (|pg| ~= 0)
-         1 : Converged (|f_n-f_(n-1)| ~= 0)
-         2 : Converged (|x_n-x_(n-1)| ~= 0)
-         3 : Max. number of function evaluations reached
-         4 : Linear search failed
-         5 : All lower bounds are equal to the upper bounds
-         6 : Unable to progress
-         7 : User requested end of minimization
+    - ``-1`` : Infeasible (lower bound > upper bound)
+    - ``0`` : Local minimum reached (:math:`|pg| \approx 0`)
+    - ``1`` : Converged (:math:`|f_n-f_(n-1)| \approx 0`)
+    - ``2`` : Converged (:math:`|x_n-x_(n-1)| \approx 0`)
+    - ``3`` : Max. number of function evaluations reached
+    - ``4`` : Linear search failed
+    - ``5`` : All lower bounds are equal to the upper bounds
+    - ``6`` : Unable to progress
+    - ``7`` : User requested end of minimization
 
     References
     ----------
@@ -286,6 +287,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   maxCGit=-1, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
                   callback=None, finite_diff_rel_step=None, maxfun=None,
+                  workers=None,
                   **unknown_options):
     """
     Minimize a scalar function of one or more variables using a truncated
@@ -341,7 +343,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         rescaling.  If 0, rescale at each iteration.  If a large
         value, never rescale.  If < 0, rescale is set to 1.3.
     finite_diff_rel_step : None or array_like, optional
-        If `jac in ['2-point', '3-point', 'cs']` the relative step size to
+        If ``jac in ['2-point', '3-point', 'cs']`` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
@@ -350,13 +352,19 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     maxfun : int
         Maximum number of function evaluations. If None, `maxfun` is
         set to max(100, 10*len(x0)). Defaults to None.
+    workers : int, map-like callable, optional
+        A map-like callable, such as `multiprocessing.Pool.map` for evaluating
+        any numerical differentiation in parallel.
+        This evaluation is carried out as ``workers(fun, iterable)``.
+
+        .. versionadded:: 1.16.0
     """
     _check_unknown_options(unknown_options)
     fmin = minfev
     pgtol = gtol
 
     xp = array_namespace(x0)
-    x0 = atleast_nd(x0, ndim=1, xp=xp)
+    x0 = xpx.atleast_nd(xp.asarray(x0), ndim=1, xp=xp)
     dtype = xp.float64
     if xp.isdtype(x0.dtype, "real floating"):
         dtype = x0.dtype
@@ -380,7 +388,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
 
     sf = _prepare_scalar_function(fun, x0, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
-                                  bounds=new_bounds)
+                                  bounds=new_bounds, workers=workers)
     func_and_grad = sf.fun_and_grad
 
     """

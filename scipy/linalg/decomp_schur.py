@@ -6,8 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'schur', 'rsf2csf', 'asarray_chkfinite', 'single', 'array', 'norm',
-    'LinAlgError', 'get_lapack_funcs', 'eigvals', 'eps', 'feps'
+    'schur', 'rsf2csf', 'norm', 'LinAlgError', 'get_lapack_funcs', 'eigvals',
 ]
 
 

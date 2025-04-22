@@ -35,6 +35,9 @@ and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation 
 
 ..   :caption: One-dimensional interpolation using `numpy.interp`
 
+One limitation of `numpy.interp` is that it does not allow controlling the
+extrapolation. See the :ref:`interpolation with B-Splines section <tutorial-interpolate_bsplines>`
+section for alternative routines which provide this kind of functionality.
 
 Cubic splines
 =============
@@ -109,6 +112,8 @@ data with an outlier:
     >>> plt.show()
 
 
+.. _tutorial-interpolate_bsplines:
+
 Interpolation with B-splines
 ============================
 
@@ -135,7 +140,7 @@ B-splines form an alternative (if formally equivalent) representation of piecewi
     >>> xx = np.linspace(0, 3/2, 51)
     >>> plt.plot(xx, bspl(xx), '--', label=r'$\sin(\pi x)$ approx')
     >>> plt.plot(x, y, 'o', label='data')
-    >>> plt.plot(xx, der(xx)/np.pi, '--', label='$d \sin(\pi x)/dx / \pi$ approx')
+    >>> plt.plot(xx, der(xx)/np.pi, '--', label=r'$d \sin(\pi x)/dx / \pi$ approx')
     >>> plt.legend()
     >>> plt.show()
 
@@ -157,6 +162,81 @@ constructor. By default, both use the 'not-a-knot' boundary
 condition.
 
 
+.. _tutorial-interpolate_linear_spline:
+
+Non-cubic splines
+-----------------
+
+One use of ``make_interp_spline`` is constructing a linear interpolant with
+linear extrapolation since ``make_interp_spline`` extrapolates by default. Consider
+
+    >>> from scipy.interpolate import make_interp_spline
+    >>> x = np.linspace(0, 5, 11)
+    >>> y = 2*x
+    >>> spl = make_interp_spline(x, y, k=1)  # k=1: linear
+    >>> spl([-1, 6])
+    [-2., 12.]
+    >>> np.interp([-1, 6], x, y)
+    [0., 10.]
+
+See :ref:`the extrapolation section <tutorial-extrapolation>` for more details
+and discussion.
+
+.. _tutorial-interpolate_batching:
+
+Batches of ``y``
+================
+
+Univariate interpolators accept not only one-dimensional ``y`` arrays, but also
+``y.ndim > 1``. The interpretation is that ``y`` is a *batch* of 1D data arrays: by
+default, the zeroth dimension of ``y`` is the interpolation axis, and the trailing 
+dimensions are batch dimensions.
+Consider a collection (a *batch*) of functions :math:`f_j` sampled at the points
+:math:`x_i`. We can instantiate a single interpolator for all of these functions by 
+providing a two-dimensional array ``y`` such that ``y[i, j]`` records :math:`f_j(x_i)`.
+
+To illustrate:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import make_interp_spline
+    >>> n = 11
+    >>> x = 2 * np.pi * np.arange(n) / n
+    >>> x.shape
+    (11,)
+    >>> y = np.stack((np.sin(x)**2, np.cos(x)), axis=1)
+    >>> y.shape
+    (11, 2)
+    >>> spl = make_interp_spline(x, y)
+    >>> xv = np.linspace(0, 2*np.pi, 51)
+    >>> plt.plot(x, y, 'o')
+    >>> plt.plot(xv, spl(xv), '-')
+    >>> plt.show()
+
+Several notes are in order. First and foremost, the behavior here looks similar to
+NumPy's broadcasting, but differs in two respects:
+
+1. The ``x`` array is expected to be 1D even if the ``y`` array is not: ``x.ndim == 1``
+   while ``y.ndim >= 1``. There is no broadcasting of ``x`` vs ``y``.
+
+2. By default, the *trailing* dimensions are used as batch dimensions, in contrast 
+   to the NumPy convention of using the *leading* dimensions as batch dimensions.
+
+Second, the interpolation axis can be controlled by an optional ``axis`` argument. The
+example above uses the default value of ``axis=0``. For a non-default values, the
+following is true:
+
+- ``y.shape[axis] == x.size`` (otherwise en error is raised)
+- the shape of ``spl(xv)`` is ``y.shape[axis:] + xv.shape + y.shape[:axis]``
+
+
+While we demonstrated the batching behavior with `make_interp_spline`, in fact the
+majority of univariate interpolators support this functionality: `PchipInterpolator` and
+`Akima1DInterpolator`, `CubicSpline`; low-level polynomial representation classes,
+`PPoly`, `BPoly` and `BSpline`; as well as :ref:`least-squares fit and spline smoothing
+functions<tutorial-interpolate_fitpack>`, `make_lsq_spline` and `make_smoothing_spline`.
+
+
 .. _tutorial-interpolate_parametric:
 
 Parametric spline curves
@@ -172,9 +252,10 @@ this construction readily generalizes to higher dimensions where
 :math:`\mathbf{p}_j` are points in an N-dimensional space.
 
 Spline curves can be easily constructed using the fact that interpolation
-functions handle multidimensional data arrays. The values of the parameter
-``u``, corresponding to the data points, need to be separately supplied
-by the user.
+functions handle multidimensional data arrays, as discussed in
+:ref:`the previous section <tutorial-interpolate_batching>`.
+The values of the parameter, ``u``, corresponding to the data points, need to be
+separately supplied by the user.
 
 The choice of parametrization is problem-dependent and different parametrizations
 may produce vastly different curves. As an example, we consider three
@@ -241,6 +322,20 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
 
 
 
+Missing data
+============
+
+We note that `scipy.interpolate` does *not* support interpolation with missing
+data. Two popular ways of representing missing data are using masked arrays of
+the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``.
+
+Neither of these two approaches is directly supported in `scipy.interpolate`.
+Individual routines may offer partial support, and/or workarounds, but in
+general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+means *not-a-number*, i.e. a result of an illegal mathematical operation
+(e.g., division by zero), not *missing*.
+
+
 .. _tutorial-interpolate_interp1d:
 
 Legacy interface for 1-D interpolation (:class:`interp1d`)
@@ -248,7 +343,7 @@ Legacy interface for 1-D interpolation (:class:`interp1d`)
 
 .. note::
     `interp1d` is considered legacy API and is not recommended for use in new
-    code. Consider using more specific interpolators instead. 
+    code. Consider using :ref:`more specific interpolators instead <tutorial-interpolate_interp1d_replacements>`.
 
 The `interp1d` class in `scipy.interpolate` is a convenient method to
 create a function based on fixed data points, which can be evaluated
@@ -315,17 +410,48 @@ same data as in the previous example:
 ..             `next`.
 
 
+.. _tutorial-interpolate_interp1d_replacements:
 
-Missing data
-============
+Recommended replacements for `interp1d` modes
+---------------------------------------------
 
-We note that `scipy.interpolate` does *not* support interpolation with missing
-data. Two popular ways of representing missing data are using masked arrays of
-the `numpy.ma` library, and encoding missing values as not-a-number, ``NaN``. 
+As mentioned, `interp1d` class is *legacy*: we have no plans to remove it; we
+are going to keep supporting its existing usages; however
+we believe there are better alternatives which we recommend using in new code.
 
-Neither of these two approaches is directly supported in `scipy.interpolate`.
-Individual routines may offer partial support, and/or workarounds, but in
-general, the library firmly adheres to the IEEE 754 semantics where a ``NaN``
-means *not-a-number*, i.e. a result of an illegal mathematical operation
-(think a division by zero), not *missing*.
+Here we list specific recommendations, depending on the interpolation ``kind``.
 
+**Linear interpolation,** ``kind="linear"``
+
+The default recommendation is to use `numpy.interp` function. Alternatively,
+you can use linear splines, ``make_interp_spline(x, y, k=1)``, see
+:ref:`this section for a discussion<tutorial-interpolate_linear_spline>`.
+
+
+**Spline interpolators,** ``kind="quadratic"`` or ``"cubic"``
+
+Under the hood, `interp1d` delegates to `make_interp_spline`, so we recommend
+using the latter directly.
+
+
+**Piecewise constant modes,** ``kind="nearest", "previous", "next"``
+
+First, we note that ``interp1d(x, y, kind='previous')`` is equivalent to
+``make_interp_spline(x, y, k=0)``.
+
+More generally however, all these piecewise constant interpolation modes are
+based on `numpy.searchsorted`. For example, the ``"nearest"`` mode is nothing but
+
+   >>> x = np.arange(8)
+   >>> y = x**2
+   >>> x_new = np.linspace(0, 7, 101)    # input points
+   >>> x_bds = x[:-1] / 2.0 + x[1:] / 2.0   # halfway points
+   >>> idx = np.searchsorted(x_bds, x_new, side='left')
+   >>> idx = np.clip(idx, 0, len(x) - 1)  # clip the indices so that they are within the range of x indices.
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(x, y, 'o')
+   >>> plt.plot(x_new, y[idx], '--')
+   >>> plt.show()
+
+Other variants are similar, see the ``interp1d`` `source code <https://github.com/scipy/scipy/blob/v1.14.1/scipy/interpolate/_interpolate.py#L486>`_
+for details.

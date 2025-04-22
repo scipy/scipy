@@ -5,7 +5,8 @@ py3.install_sources([
     'rel_breitwigner_pdf_sample_data_ROOT.npy',
     'studentized_range_mpmath_ref.json'
   ],
-  subdir: 'scipy/stats/tests/data'
+  subdir: 'scipy/stats/tests/data',
+  install_tag: 'tests'
 )
 
 subdir('levy_stable')

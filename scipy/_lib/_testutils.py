@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import threading
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
@@ -94,11 +95,12 @@ class PytestTester:
 
         pytest_args = ['--showlocals', '--tb=short']
 
-        if doctests:
-            raise ValueError("Doctests not supported")
-
-        if extra_argv:
-            pytest_args += list(extra_argv)
+        if extra_argv is None:
+            extra_argv = []
+        pytest_args += extra_argv
+        if any(arg == "-m" or arg == "--markers" for arg in extra_argv):
+            # Likely conflict with default --mode=fast
+            raise ValueError("Must specify -m before --")
 
         if verbose and int(verbose) > 1:
             pytest_args += ["-" + "v"*(int(verbose)-1)]
@@ -280,20 +282,39 @@ def _test_cython_extension(tmp_path, srcdir):
     Helper function to test building and importing Cython modules that
     make use of the Cython APIs for BLAS, LAPACK, optimize, and special.
     """
+    import pytest
+    try:
+        subprocess.check_call(["meson", "--version"])
+    except FileNotFoundError:
+        pytest.skip("No usable 'meson' found")
+
+    # Make safe for being called by multiple threads within one test
+    tmp_path = tmp_path / str(threading.get_ident())
+
     # build the examples in a temporary directory
     mod_name = os.path.split(srcdir)[1]
     shutil.copytree(srcdir, tmp_path / mod_name)
     build_dir = tmp_path / mod_name / 'tests' / '_cython_examples'
     target_dir = build_dir / 'build'
     os.makedirs(target_dir, exist_ok=True)
+
+    # Ensure we use the correct Python interpreter even when `meson` is
+    # installed in a different Python environment (see numpy#24956)
+    native_file = str(build_dir / 'interpreter-native-file.ini')
+    with open(native_file, 'w') as f:
+        f.write("[binaries]\n")
+        f.write(f"python = '{sys.executable}'")
+
     if sys.platform == "win32":
         subprocess.check_call(["meson", "setup",
                                "--buildtype=release",
+                               "--native-file", native_file,
                                "--vsenv", str(build_dir)],
                               cwd=target_dir,
                               )
     else:
-        subprocess.check_call(["meson", "setup", str(build_dir)],
+        subprocess.check_call(["meson", "setup",
+                               "--native-file", native_file, str(build_dir)],
                               cwd=target_dir
                               )
     subprocess.check_call(["meson", "compile", "-vv"], cwd=target_dir)
@@ -310,3 +331,43 @@ def _test_cython_extension(tmp_path, srcdir):
 
     # test that the module can be imported
     return load("extending"), load("extending_cpp")
+
+
+def _run_concurrent_barrier(n_workers, fn, *args, **kwargs):
+    """
+    Run a given function concurrently across a given number of threads.
+
+    This is equivalent to using a ThreadPoolExecutor, but using the threading
+    primitives instead. This function ensures that the closure passed by
+    parameter gets called concurrently by setting up a barrier before it gets
+    called before any of the threads.
+
+    Arguments
+    ---------
+    n_workers: int
+        Number of concurrent threads to spawn.
+    fn: callable
+        Function closure to execute concurrently. Its first argument will
+        be the thread id.
+    *args: tuple
+        Variable number of positional arguments to pass to the function.
+    **kwargs: dict
+        Keyword arguments to pass to the function.
+    """
+    barrier = threading.Barrier(n_workers)
+
+    def closure(i, *args, **kwargs):
+        barrier.wait()
+        fn(i, *args, **kwargs)
+
+    workers = []
+    for i in range(0, n_workers):
+        workers.append(threading.Thread(
+            target=closure,
+            args=(i,) + args, kwargs=kwargs))
+
+    for worker in workers:
+        worker.start()
+
+    for worker in workers:
+        worker.join()

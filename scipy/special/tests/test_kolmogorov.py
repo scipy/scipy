@@ -1,6 +1,4 @@
 import itertools
-import sys
-import pytest
 
 import numpy as np
 from numpy.testing import assert_
@@ -117,7 +115,7 @@ class TestSmirnov:
         x = 0.4
         pvals = np.array([smirnov(n, x) for n in range(400, 1100, 20)])
         dfs = np.diff(pvals)
-        assert_(np.all(dfs <= 0), msg='Not all diffs negative %s' % dfs)
+        assert_(np.all(dfs <= 0), msg=f'Not all diffs negative {dfs}')
 
 
 class TestSmirnovi:
@@ -303,8 +301,6 @@ class TestSmirnovp:
             _smirnovp, dataset0, (0, 1), 2, rtol=_rtol
         ).check(dtypes=[int, float, float])
 
-    @pytest.mark.xfail(sys.maxsize <= 2**32,
-                       reason="requires 64-bit platform")
     def test_oneovernclose(self):
         # Check derivative at x=1/n
         # (Discontinuous at x=1/n, test on either side: x=1/n +/- 2epsilon)

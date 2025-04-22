@@ -32,7 +32,7 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -117,9 +117,10 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         for i in range(idim):
             if x[i][0] != x[i][-1]:
                 if not quiet:
-                    warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
-                                                 (i, m, i)),
-                                  stacklevel=2)
+                    warnings.warn(
+                        RuntimeWarning(f'Setting x[{i}][{m}]=x[{i}][0]'), 
+                        stacklevel=2
+                    )
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -141,7 +142,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     else:
         _parcur_cache['u'] = zeros(m, float)
     if not (1 <= k <= 5):
-        raise TypeError('1 <= k= %d <=5 must hold' % k)
+        raise TypeError(f'1 <= k= {k} <=5 must hold')
     if not (-1 <= task <= 1):
         raise TypeError('task must be -1, 0 or 1')
     if (not len(w) == m) or (ipar == 1 and (not len(u) == m)):
@@ -187,10 +188,12 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     c.shape = idim, n - k - 1
     tcku = [t, list(c), k], u
     if ier <= 0 and not quiet:
-        warnings.warn(RuntimeWarning(_iermess[ier][0] +
-                                     "\tk=%d n=%d m=%d fp=%f s=%f" %
-                                     (k, len(t), m, fp, s)),
-                      stacklevel=2)
+        warnings.warn(
+            RuntimeWarning(
+                _iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}"
+            ), 
+            stacklevel=2
+        )
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
             warnings.warn(RuntimeWarning(_iermess[ier][0]), stacklevel=2)
@@ -228,13 +231,14 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         if s is None:
             s = m - sqrt(2*m)
     if not len(w) == m:
-        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
+        raise TypeError(f'len(w)={len(w)} is not equal to m={m}')
     if (m != len(y)) or (m != len(w)):
         raise TypeError('Lengths of the first three arguments (x,y,w) must '
                         'be equal')
     if not (1 <= k <= 5):
-        raise TypeError('Given degree of the spline (k=%d) is not supported. '
-                        '(1<=k<=5)' % k)
+        raise TypeError(
+            f'Given degree of the spline (k={k}) is not supported. (1<=k<=5)'
+        )
     if m <= k:
         raise TypeError('m > k must hold')
     if xb is None:
@@ -279,8 +283,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         n, c, fp, ier = dfitpack.percur(task, x, y, w, t, wrk, iwrk, k, s)
     tck = (t[:n], c[:n], k)
     if ier <= 0 and not quiet:
-        _mess = (_iermess[ier][0] + "\tk=%d n=%d m=%d fp=%f s=%f" %
-                 (k, len(t), m, fp, s))
+        _mess = (_iermess[ier][0] + f"\tk={k} n={len(t)} m={m} fp={fp} s={s}")
         warnings.warn(RuntimeWarning(_mess), stacklevel=2)
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
@@ -312,9 +315,9 @@ def splev(x, tck, der=0, ext=0):
                         splev(x, [t, c, k], der, ext), c))
     else:
         if not (0 <= der <= k):
-            raise ValueError("0<=der=%d<=k=%d must hold" % (der, k))
+            raise ValueError(f"0<=der={der}<=k={k} must hold")
         if ext not in (0, 1, 2, 3):
-            raise ValueError("ext = %s not in (0, 1, 2, 3) " % ext)
+            raise ValueError(f"ext = {ext} not in (0, 1, 2, 3) ")
 
         x = asarray(x)
         shape = x.shape
@@ -368,7 +371,7 @@ def sproot(tck, mest=10):
                         sproot([t, c, k], mest), c))
     else:
         if len(t) < 8:
-            raise TypeError("The number of knots %d>=8" % len(t))
+            raise TypeError(f"The number of knots {len(t)}>=8")
         z, m, ier = dfitpack.sproot(t, c, mest)
         if ier == 10:
             raise TypeError("Invalid input data. "
@@ -516,7 +519,7 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     else:
         w = atleast_1d(w)
     if not len(w) == m:
-        raise TypeError('len(w)=%d is not equal to m=%d' % (len(w), m))
+        raise TypeError(f'len(w)={len(w)} is not equal to m={m}')
     if xb is None:
         xb = x.min()
     if xe is None:
@@ -544,8 +547,9 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     if task == -1 and ny < 2*ky+2:
         raise TypeError('There must be at least 2*ky+2 knots_x for task=-1')
     if not ((1 <= kx <= 5) and (1 <= ky <= 5)):
-        raise TypeError('Given degree of the spline (kx,ky=%d,%d) is not '
-                        'supported. (1<=k<=5)' % (kx, ky))
+        raise TypeError(
+            f'Given degree of the spline (kx,ky={kx},{ky}) is not supported. (1<=k<=5)'
+        )
     if m < (kx + 1)*(ky + 1):
         raise TypeError('m >= (kx+1)(ky+1) must hold')
     if nxest is None:
@@ -586,14 +590,16 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
 
     ierm = min(11, max(-3, ier))
     if ierm <= 0 and not quiet:
-        _mess = (_iermess2[ierm][0] +
-                 "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
-                 (kx, ky, len(tx), len(ty), m, fp, s))
+        _mess = (
+            _iermess2[ierm][0] + 
+            f"\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}"
+        )
         warnings.warn(RuntimeWarning(_mess), stacklevel=2)
     if ierm > 0 and not full_output:
         if ier in [1, 2, 3, 4, 5]:
-            _mess = ("\n\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
-                     (kx, ky, len(tx), len(ty), m, fp, s))
+            _mess = (
+                f"\n\tkx,ky={kx},{ky} nx,ny={len(tx)},{len(ty)} m={m} fp={fp} s={s}"
+            )
             warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess), stacklevel=2)
         else:
             try:
@@ -663,9 +669,9 @@ def bisplev(x, y, tck, dx=0, dy=0):
     """
     tx, ty, c, kx, ky = tck
     if not (0 <= dx < kx):
-        raise ValueError("0 <= dx = %d < kx = %d must hold" % (dx, kx))
+        raise ValueError(f"0 <= dx = {dx} < kx = {kx} must hold")
     if not (0 <= dy < ky):
-        raise ValueError("0 <= dy = %d < ky = %d must hold" % (dy, ky))
+        raise ValueError(f"0 <= dy = {dy} < ky = {ky} must hold")
     x, y = map(atleast_1d, [x, y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
@@ -771,8 +777,8 @@ def splder(tck, n=1):
                 t = t[1:-1]
                 k -= 1
         except FloatingPointError as e:
-            raise ValueError(("The spline has internal repeated knots "
-                              "and is not differentiable %d times") % n) from e
+            raise ValueError("The spline has internal repeated knots "
+                              f"and is not differentiable {n} times") from e
 
     return t, c, k
 

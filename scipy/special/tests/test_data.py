@@ -13,7 +13,7 @@ from scipy.special import (
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
-    bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
+    bdtrik, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
     nbdtrik, pdtrik, owens_t,
     mathieu_a, mathieu_b, mathieu_cem, mathieu_sem, mathieu_modcem1,
     mathieu_modsem1, mathieu_modcem2, mathieu_modsem2,
@@ -56,6 +56,15 @@ def data_local(func, dataname, *a, **kw):
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
 
 
+# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
+# and sph_harm_y respectively. The deprecated functions listed above are
+# implemented as shims around their respective replacements. The replacements
+# are tested separately, but tests for the deprecated functions remain to
+# verify the correctness of the shims.
+
+
 def ellipk_(k):
     return ellipk(k*k)
 
@@ -84,13 +93,17 @@ def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
 def lpn_(n, x):
-    return lpn(n.astype('l'), x)[0][-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpn(n.astype('l'), x)[0][-1]
 
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
 
 def legendre_p_via_lpmn(n, x):
-    return lpmn(0, n, x)[0][0,-1]
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        return lpmn(0, n, x)[0][0,-1]
 
 def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
@@ -144,9 +157,6 @@ def eval_genlaguerre_ddd(n, a, x):
 def bdtrik_comp(y, n, p):
     return bdtrik(1-y, n, p)
 
-def btdtri_comp(a, b, p):
-    return btdtri(a, b, 1-p)
-
 def btdtria_comp(p, b, x):
     return btdtria(1-p, b, x)
 
@@ -190,7 +200,9 @@ def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
 
 def sph_harm_(m, n, theta, phi):
-    y = sph_harm(m, n, theta, phi)
+    with suppress_warnings() as sup:
+        sup.filter(category=DeprecationWarning)
+        y = sph_harm(m, n, theta, phi)
     return (y.real, y.imag)
 
 def cexpm1(x, y):
@@ -213,7 +225,7 @@ BOOST_TESTS = [
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=9.6e-14, vectorized=False),
+             (0,1), 2, rtol=3e-13, vectorized=False),
         data(lpn_, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(lpn_, 'legendre_p_large_ipp-legendre_p_large',
@@ -255,20 +267,6 @@ BOOST_TESTS = [
         data(betaincinv, 'ibeta_inv_data_ipp-ibeta_inv_data',
              (0,1,2), 3, rtol=1e-5),
 
-        data(btdtr, 'ibeta_small_data_ipp-ibeta_small_data',
-             (0,1,2), 5, rtol=6e-15),
-        data(btdtr, 'ibeta_data_ipp-ibeta_data',
-             (0,1,2), 5, rtol=4e-13),
-        data(btdtr, 'ibeta_int_data_ipp-ibeta_int_data',
-             (0,1,2), 5, rtol=2e-14),
-        data(btdtr, 'ibeta_large_data_ipp-ibeta_large_data',
-             (0,1,2), 5, rtol=4e-10),
-
-        data(btdtri, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 3, rtol=1e-5),
-        data(btdtri_comp, 'ibeta_inv_data_ipp-ibeta_inv_data',
-             (0,1,2), 4, rtol=8e-7),
-
         data(btdtria, 'ibeta_inva_data_ipp-ibeta_inva_data',
              (2,0,1), 3, rtol=5e-9),
         data(btdtria_comp, 'ibeta_inva_data_ipp-ibeta_inva_data',
@@ -297,7 +295,7 @@ BOOST_TESTS = [
 
         data(pdtrik, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 2, rtol=3e-9),
-        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data', 
+        data(pdtrik_comp, 'poisson_quantile_ipp-poisson_quantile_data',
              (1,0), 3, rtol=4e-9),
 
         data(cbrt, 'cbrt_data_ipp-cbrt_data', 1, 0),
@@ -663,14 +661,10 @@ BOOST_TESTS = [
 ]
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    # Filter deprecation warnings of any deprecated functions.
-    if test.func in [btdtr, btdtri, btdtri_comp]:
-        with pytest.deprecated_call():
-            _test_factory(test)
-    else:
-        _test_factory(test)
+     _test_factory(test)
 
 
 GSL_TESTS = [

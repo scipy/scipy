@@ -213,7 +213,7 @@ Spherical Bessel functions, ``sph_in``, ``sph_jn``, ``sph_kn``, ``sph_yn``,
 ``spherical_in``.
 
 The following functions in `scipy.constants` are deprecated: ``C2K``, ``K2C``,
-``C2F``, ``F2C``, ``F2K`` and ``K2F``.  They are superceded by a new function
+``C2F``, ``F2C``, ``F2K`` and ``K2F``.  They are superseded by a new function
 `scipy.constants.convert_temperature` that can perform all those conversions
 plus to/from the Rankine temperature scale.
 
@@ -231,7 +231,7 @@ works the same as ``numpy.allclose``.
 `scipy.ndimage`
 ---------------
 
-The offset in ``ndimage.iterpolation.affine_transform``
+The offset in ``ndimage.interpolation.affine_transform``
 is now consistently added after the matrix is applied,
 independent of if the matrix is specified using a one-dimensional
 or a two-dimensional array.

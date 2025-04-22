@@ -7,6 +7,11 @@ from . import _odepack
 from copy import copy
 import warnings
 
+from threading import Lock
+
+
+ODE_LOCK = Lock()
+
 
 class ODEintWarning(Warning):
     """Warning raised during the execution of `odeint`."""
@@ -59,6 +64,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Computes the derivative of y at t.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        `func` must not modify the data in `y`, as it is a
+        view of the data used internally by the ODE solver.
     y0 : array
         Initial condition on y (can be a vector).
     t : array
@@ -72,6 +79,8 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         Gradient (Jacobian) of `func`.
         If the signature is ``callable(t, y, ...)``, then the argument
         `tfirst` must be set ``True``.
+        `Dfun` must not modify the data in `y`, as it is a
+        view of the data used internally by the ODE solver.
     col_deriv : bool, optional
         True if `Dfun` defines derivatives down columns (faster),
         otherwise `Dfun` should define derivatives across rows.
@@ -240,10 +249,12 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
 
     t = copy(t)
     y0 = copy(y0)
-    output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
-                             full_output, rtol, atol, tcrit, h0, hmax, hmin,
-                             ixpr, mxstep, mxhnil, mxordn, mxords,
-                             int(bool(tfirst)))
+
+    with ODE_LOCK:
+        output = _odepack.odeint(func, y0, t, args, Dfun, col_deriv, ml, mu,
+                                full_output, rtol, atol, tcrit, h0, hmax, hmin,
+                                ixpr, mxstep, mxhnil, mxordn, mxords,
+                                int(bool(tfirst)))
     if output[-1] < 0:
         warning_msg = (f"{_msgs[output[-1]]} Run with full_output = 1 to "
                        f"get quantitative information.")
