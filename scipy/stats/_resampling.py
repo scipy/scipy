@@ -7,7 +7,7 @@ import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
+from scipy._lib._array_api import array_namespace, is_numpy, xp_result_type
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -698,6 +698,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in signature
 
     xp = array_namespace(*data)
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
 
     if not vectorized:
         if is_numpy(xp):
@@ -713,7 +714,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -731,10 +732,6 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     alternative = alternative.lower()
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
-
-    # Infer the desired p-value dtype based on the input types
-    min_float = getattr(xp, 'float16', xp.float32)
-    dtype = xp.result_type(*data_iv, min_float)
 
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int, dtype, xp)

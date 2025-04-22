@@ -190,8 +190,28 @@ extern const char *yv_doc;
 extern const char *yve_doc;
 extern const char *zetac_doc;
 
+
+// Control error handling policy state
+static PyObject* _set_action(PyObject* self, PyObject* args) {
+    sf_error_t code;
+    sf_action_t action;
+
+    if (!PyArg_ParseTuple(args, "ii", &code, &action)) {
+	return NULL;
+    }
+
+    sf_error_set_action(code, action);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef _methods[] = {
+    {"_set_action", _set_action, METH_VARARGS, NULL},
+    {NULL, NULL, 0, NULL}
+};
+
+
 static PyModuleDef _special_ufuncs_def = {
-    PyModuleDef_HEAD_INIT, "_special_ufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
+    PyModuleDef_HEAD_INIT, "_special_ufuncs", NULL, -1, _methods, NULL, NULL, NULL, NULL};
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
     import_array();

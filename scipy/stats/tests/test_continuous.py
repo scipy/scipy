@@ -1,3 +1,4 @@
+import itertools as it
 import os
 import pickle
 from copy import deepcopy
@@ -9,6 +10,7 @@ from numpy.testing import assert_allclose, assert_equal
 from hypothesis import strategies, given, reproduce_failure, settings  # noqa: F401
 import hypothesis.extra.numpy as npst
 
+from scipy import special
 from scipy import stats
 from scipy.stats._fit import _kolmogorov_smirnov
 from scipy.stats._ksstats import kolmogn
@@ -85,6 +87,25 @@ class Test_RealDomain:
         right_comparison = '<=' if inclusive_b else '<'
         ref = eval(f'(a {left_comparison} x) & (x {right_comparison} b)')
         assert_equal(res, ref)
+
+    @pytest.mark.parametrize("inclusive", list(it.product([True, False], repeat=2)))
+    @pytest.mark.parametrize("a,b", [(0, 1), (3, 1)])
+    def test_contains_function_endpoints(self, inclusive, a, b):
+        # Test `contains` when endpoints are defined by functions.
+        endpoints = (lambda a, b: (a - b) / 2, lambda a, b: (a + b) / 2)
+        domain = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+        x = np.asarray([(a - 2*b)/2, (a - b)/2, a/2, (a + b)/2, (a + 2*b)/2])
+        res = domain.contains(x, dict(a=a, b=b))
+
+        numerical_endpoints = ((a - b) / 2, (a + b) / 2)
+        assert numerical_endpoints == domain.get_numerical_endpoints(dict(a=a, b=b))
+        alpha, beta = numerical_endpoints
+
+        above_left = alpha <= x if inclusive[0] else alpha < x
+        below_right = x <= beta if inclusive[1] else x < beta
+        ref = above_left & below_right
+        assert_equal(res, ref)
+
 
     @pytest.mark.parametrize('case', [
         (-np.inf, np.pi, False, True, r"(-\infty, \pi]"),
@@ -1041,8 +1062,9 @@ class TestMakeDistribution:
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
-                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
+                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
+                'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
+                'vonmises_line'}
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1174,6 +1196,7 @@ class TestMakeDistribution:
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
+    @pytest.mark.slow
     @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     @pytest.mark.parametrize("c", [-1, 0, 1, np.asarray([-2.1, -1., 0., 1., 2.1])])
     def test_custom_variable_support(self, c):
@@ -1251,6 +1274,71 @@ class TestMakeDistribution:
         assert_allclose(X1.ccdf(x), X2.ccdf(x))
         assert_allclose(X1.icdf(p), X2.icdf(p))
         assert_allclose(X1.iccdf(p), X2.iccdf(p))
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("a", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
+    @pytest.mark.parametrize("b", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
+    def test_custom_multiple_parameterizations(self, a, b):
+        rng = np.random.default_rng(7548723590230982)
+        class MyBeta:
+            @property
+            def __make_distribution_version__(self):
+                return "1.16.0"
+
+            @property
+            def parameters(self):
+                return (
+                    {"a": (0, np.inf), "b": (0, np.inf)},
+                    {"mu": (0, 1), "nu": (0, np.inf)},
+                )
+
+            def process_parameters(self, a=None, b=None, mu=None, nu=None):
+                if a is not None and b is not None and mu is None and nu is None:
+                    nu = a + b
+                    mu = a / nu
+                else:
+                    a = mu * nu
+                    b = nu - a
+                return {"a": a, "b": b, "mu": mu, "nu": nu}
+
+            @property
+            def support(self):
+                return {'endpoints': (0, 1)}
+
+            def pdf(self, x, a, b, mu, nu):
+                return special._ufuncs._beta_pdf(x, a, b)
+
+            def cdf(self, x, a, b, mu, nu):
+                return special.betainc(a, b, x)
+
+        Beta = stats.make_distribution(stats.beta)
+        MyBeta = stats.make_distribution(MyBeta())
+
+        mu = a / (a + b)
+        nu = a + b
+
+        X = MyBeta(a=a, b=b)
+        Y = MyBeta(mu=mu, nu=nu)
+        Z = Beta(a=a, b=b)
+
+        x = Z.sample(shape=10, rng=rng)
+        p = Z.cdf(x)
+
+        assert_allclose(X.support(), Z.support())
+        assert_allclose(X.median(), Z.median())
+        assert_allclose(X.pdf(x), Z.pdf(x))
+        assert_allclose(X.cdf(x), Z.cdf(x))
+        assert_allclose(X.ccdf(x), Z.ccdf(x))
+        assert_allclose(X.icdf(p), Z.icdf(p))
+        assert_allclose(X.iccdf(p), Z.iccdf(p))
+
+        assert_allclose(Y.support(), Z.support())
+        assert_allclose(Y.median(), Z.median())
+        assert_allclose(Y.pdf(x), Z.pdf(x))
+        assert_allclose(Y.cdf(x), Z.cdf(x))
+        assert_allclose(Y.ccdf(x), Z.ccdf(x))
+        assert_allclose(Y.icdf(p), Z.icdf(p))
+        assert_allclose(Y.iccdf(p), Z.iccdf(p))
 
     def test_input_validation(self):
         message = '`levy_stable` is not supported.'

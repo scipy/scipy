@@ -49,9 +49,9 @@ class gaussian_kde:
         Datapoints to estimate from. In case of univariate data this is a 1-D
         array, otherwise a 2-D array with shape (# of dims, # of data).
     bw_method : str, scalar or callable, optional
-        The method used to calculate the estimator bandwidth.  This can be
+        The method used to calculate the bandwidth factor.  This can be
         'scott', 'silverman', a scalar constant or a callable.  If a scalar,
-        this will be used directly as `kde.factor`.  If a callable, it should
+        this will be used directly as `factor`.  If a callable, it should
         take a `gaussian_kde` instance as only parameter and return a scalar.
         If None (default), 'scott' is used.  See Notes for more details.
     weights : array_like, optional
@@ -71,12 +71,11 @@ class gaussian_kde:
 
         .. versionadded:: 1.2.0
     factor : float
-        The bandwidth factor, obtained from `kde.covariance_factor`. The square
-        of `kde.factor` multiplies the covariance matrix of the data in the kde
-        estimation.
+        The bandwidth factor obtained from `covariance_factor`.
     covariance : ndarray
-        The covariance matrix of `dataset`, scaled by the calculated bandwidth
-        (`kde.factor`).
+        The kernel covariance matrix; this is the data covariance matrix
+        multiplied by the square of the bandwidth factor, e.g.
+        ``np.cov(dataset) * factor**2``.
     inv_cov : ndarray
         The inverse of `covariance`.
 
@@ -195,6 +194,16 @@ class gaussian_kde:
     >>> ax.set_ylim([ymin, ymax])
     >>> plt.show()
 
+    Compare against manual KDE at a point:
+
+    >>> point = [1, 2]
+    >>> mean = values.T
+    >>> cov = kernel.factor**2 * np.cov(values)
+    >>> X = stats.multivariate_normal(cov=cov)
+    >>> res = kernel.pdf(point)
+    >>> ref = X.pdf(point - mean).sum() / len(mean)
+    >>> np.allclose(res, ref)
+    True
     """
     def __init__(self, dataset, bw_method=None, weights=None):
         self.dataset = atleast_2d(asarray(dataset))
@@ -500,14 +509,13 @@ class gaussian_kde:
 
     #  Default method to calculate bandwidth, can be overwritten by subclass
     covariance_factor = scotts_factor
-    covariance_factor.__doc__ = """Computes the coefficient (`kde.factor`) that
-        multiplies the data covariance matrix to obtain the kernel covariance
-        matrix. The default is `scotts_factor`.  A subclass can overwrite this
+    covariance_factor.__doc__ = """Computes the bandwidth factor `factor`.
+        The default is `scotts_factor`.  A subclass can overwrite this
         method to provide a different method, or set it through a call to
-        `kde.set_bandwidth`."""
+        `set_bandwidth`."""
 
     def set_bandwidth(self, bw_method=None):
-        """Compute the estimator bandwidth with given method.
+        """Compute the bandwidth factor with given method.
 
         The new bandwidth calculated after a call to `set_bandwidth` is used
         for subsequent evaluations of the estimated density.
@@ -515,12 +523,12 @@ class gaussian_kde:
         Parameters
         ----------
         bw_method : str, scalar or callable, optional
-            The method used to calculate the estimator bandwidth.  This can be
+            The method used to calculate the bandwidth factor.  This can be
             'scott', 'silverman', a scalar constant or a callable.  If a
-            scalar, this will be used directly as `kde.factor`.  If a callable,
+            scalar, this will be used directly as `factor`.  If a callable,
             it should take a `gaussian_kde` instance as only parameter and
             return a scalar.  If None (default), nothing happens; the current
-            `kde.covariance_factor` method is kept.
+            `covariance_factor` method is kept.
 
         Notes
         -----

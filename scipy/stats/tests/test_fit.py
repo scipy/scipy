@@ -42,7 +42,8 @@ mle_failing_fits = [
 
 # these pass but are XSLOW (>1s)
 mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
-                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
+                  'jf_skew_t', 'nct', 'recipinvgauss', 'rel_breitwigner',
+                  'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.

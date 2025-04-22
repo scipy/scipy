@@ -142,10 +142,7 @@ class _dia_base(_data_matrix):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
-        validateaxis(axis)
-
-        if axis is not None and axis < 0:
-            axis += 2
+        axis = validateaxis(axis)
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
@@ -173,9 +170,6 @@ class _dia_base(_data_matrix):
                 return row_sums.sum(dtype=dtype, out=out)
 
             ret = self._ascontainer(row_sums.sum(axis=axis))
-
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
 
         return ret.sum(axis=(), dtype=dtype, out=out)
 
