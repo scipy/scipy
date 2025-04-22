@@ -5,7 +5,7 @@ import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
-                       matrix, validateaxis, getdtype, isintlike)
+                       matrix, validateaxis, getdtype)
 from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
