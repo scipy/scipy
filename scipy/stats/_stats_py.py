@@ -81,6 +81,7 @@ from scipy._lib._array_api import (
     xp_promote,
     xp_capabilities,
     xp_ravel,
+    xp_swapaxes,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -10293,7 +10294,7 @@ def _order_ranks(ranks, j, *, xp):
     # ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
     # xp_put_along_axis(ordered_ranks, j, ranks, axis=-1, xp=xp)
     j_inv = xp.argsort(j, axis=-1)
-    ordered_ranks = xp_take_along_axis(ranks, j_inv, axis=-1)
+    ordered_ranks = xp.take_along_axis(ranks, j_inv, axis=-1)
     return ordered_ranks
 
 
@@ -10312,7 +10313,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
         return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties
 
     # Sort array
-    y = xp_take_along_axis(x, j, axis=-1)
+    y = xp.take_along_axis(x, j, axis=-1)
     # Logical indices of unique elements
     i = xp.concat([xp.ones(shape[:-1] + (1,), dtype=xp.bool),
                    y[..., :-1] != y[..., 1:]], axis=-1)
@@ -10320,7 +10321,7 @@ def _rankdata(x, method, return_ties=False, xp=None):
     # Integer indices of unique elements
     indices = xp.arange(xp_size(y))[xp.reshape(i, (-1,))]  # i gets raveled
     # Counts of unique elements
-    counts = xp_diff(indices, append=xp_size(y))
+    counts = xp.diff(indices, append=xp.asarray([xp_size(y)], dtype=indices.dtype))
 
     # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
     if method == 'min':
@@ -10331,9 +10332,9 @@ def _rankdata(x, method, return_ties=False, xp=None):
         # array API doesn't promote integers to floats
         ranks = ordinal_ranks[i] + (xp.asarray(counts, dtype=dtype) - 1)/2
     elif method == 'dense':
-        ranks = xp.cumsum(i, axis=-1)[i]  # should be cumulative_sum; not available yet
+        ranks = xp.cumulative_sum(xp.astype(i, dtype), axis=-1)[i]
 
-    ranks = xp.reshape(xp_repeat_1d(ranks, counts, xp=xp), shape)
+    ranks = xp.reshape(xp.repeat(ranks, counts), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
 
     if return_ties:

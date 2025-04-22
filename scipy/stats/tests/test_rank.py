@@ -2,9 +2,8 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
 
-from scipy.conftest import skip_xp_invalid_arg, array_api_compatible
+from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._util import np_long
 from scipy._lib._array_api import xp_assert_equal, is_numpy
 
 class TestTieCorrect:
@@ -115,6 +114,7 @@ _rankdata_cases = (
 )
 
 
+@pytest.mark.skip_xp_backends('torch', reason='no repeat')
 class TestRankData:
 
     def desired_dtype(self, method='average', has_nans=False, *, xp):
@@ -122,7 +122,6 @@ class TestRankData:
             return xp.asarray(1.).dtype
         return xp.asarray(1.).dtype if method=='average' else xp.asarray(1).dtype
 
-    @array_api_compatible
     def test_empty(self, xp):
         """stats.rankdata of empty array should return an empty array."""
         a = xp.asarray([], dtype=xp.int64)
@@ -132,7 +131,6 @@ class TestRankData:
             r = rankdata([])
             assert_array_equal(r, np.array([], self.desired_dtype(xp=xp)))
 
-    @array_api_compatible
     @pytest.mark.parametrize("shape", [(0, 1, 2)])
     @pytest.mark.parametrize("axis", [None, *range(3)])
     def test_empty_multidim(self, shape, axis, xp):
@@ -141,7 +139,6 @@ class TestRankData:
         expected_shape = (0,) if axis is None else shape
         xp_assert_equal(r, xp.empty(expected_shape, dtype=self.desired_dtype(xp=xp)))
 
-    @array_api_compatible
     def test_one(self, xp):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
@@ -149,7 +146,6 @@ class TestRankData:
         r = rankdata(a)
         xp_assert_equal(r, xp.asarray([1.0], dtype=self.desired_dtype(xp=xp)))
 
-    @array_api_compatible
     def test_basic(self, xp):
         """Basic tests of stats.rankdata."""
         desired_dtype = self.desired_dtype(xp=xp)
@@ -220,7 +216,6 @@ class TestRankData:
         val = np.array([0, 1, 2, 2.718, 3, 3.141], dtype='object')
         check_ranks(np.random.choice(val, 200).astype('object'))
 
-    @array_api_compatible
     def test_large_int(self, xp):
         if hasattr(xp, 'uint64'):
             data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
@@ -236,7 +231,6 @@ class TestRankData:
         xp_assert_equal(r, xp.asarray([2.0, 1.0], dtype=self.desired_dtype(xp=xp)))
 
     @pytest.mark.parametrize('n', [10000, 100000, 1000000])
-    @array_api_compatible
     def test_big_tie(self, n, xp):
         data = xp.ones(n)
         r = rankdata(data)
@@ -244,7 +238,6 @@ class TestRankData:
         ref = xp.asarray(expected_rank * data, dtype=self.desired_dtype(xp=xp))
         xp_assert_equal(r, ref)
 
-    @array_api_compatible
     def test_axis(self, xp):
         data = xp.asarray([[0, 2, 1], [4, 2, 2]])
 
@@ -258,7 +251,6 @@ class TestRankData:
 
     methods= ["average", "min", "max", "dense", "ordinal"]
 
-    @array_api_compatible
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method", methods)
     def test_size_0_axis(self, axis, method, xp):
@@ -349,10 +341,6 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
-    @pytest.mark.skip_xp_backends('array_api_strict',
-                                  reasons=["Doesn't implement cumulative_sum yet."])
-    @pytest.mark.usefixtures("skip_xp_backends")
-    @array_api_compatible
     @pytest.mark.parametrize('case', _rankdata_cases)
     def test_cases(self, case, xp):
         values, method, expected = case
