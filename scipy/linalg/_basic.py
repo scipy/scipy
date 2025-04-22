@@ -10,28 +10,18 @@ from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from scipy._lib._util import _apply_over_batch
-from .lapack import get_lapack_funcs, _compute_lwork
+from .lapack import get_lapack_funcs, _compute_lwork, _normalize_lapack_dtype
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import (find_det_from_lu, bandwidth, issymmetric,
                                       ishermitian)
+from . import _batched_linalg
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
-
-
-# The numpy facilities for type-casting checks are too slow for small sized
-# arrays and eat away the time budget for the checkups. Here we set a
-# precomputed dict container of the numpy.can_cast() table.
-
-# It can be used to determine quickly what a dtype can be cast to LAPACK
-# compatible types, i.e., 'float32, float64, complex64, complex128'.
-# Then it can be checked via "casting_dict[arr.dtype.char]"
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 
 # Linear equations
@@ -1117,7 +1107,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
 # matrix inversion
 @_apply_over_batch(('a', 2))
-def inv(a, overwrite_a=False, check_finite=True):
+def inv0(a, overwrite_a=False, check_finite=True):
     """
     Compute the inverse of a matrix.
 
@@ -1188,6 +1178,110 @@ def inv(a, overwrite_a=False, check_finite=True):
         raise ValueError(
             f'illegal value in {-info}-th argument of internal getrf|getri'
         )
+    return inv_a
+
+
+def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
+    """
+    Compute the inverse of a matrix.
+
+    Parameters
+    ----------
+    a : array_like
+        Square matrix to be inverted.
+    overwrite_a : bool, optional
+        Discard data in `a` (may improve performance). Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    assume_a : str, optional
+        Valid entries are described below.
+        If omitted or ``None``, checks are performed to identify structure so the
+        appropriate solver can be called.
+
+    Returns
+    -------
+    ainv : ndarray
+        Inverse of the matrix `a`.
+    Raises
+    ------
+    LinAlgError
+        If `a` is singular.
+    ValueError
+        If `a` is not square, or not 2D.
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import linalg
+    >>> a = np.array([[1., 2.], [3., 4.]])
+    >>> linalg.inv(a)
+    array([[-2. ,  1. ],
+           [ 1.5, -0.5]])
+    >>> np.dot(a, linalg.inv(a))
+    array([[ 1.,  0.],
+           [ 0.,  1.]])
+
+    Notes
+    -----
+
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    =============================  ================================
+     general                        'general' (or 'gen')
+     upper triangular               'upper triangular'
+     lower triangular               'lower triangular'
+     symmetric positive definite    'pos def', 'pos def upper', 'pos def lower'
+    =============================  ================================
+
+    For the 'pos def upper' and 'pos def lower' options, only the specified
+    triangle of the input matrix is used, and the other triangle is not referenced.
+
+    """
+    a1 = _asarray_validated(a, check_finite=check_finite)
+
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected square matrix, got {a1.shape=}")
+
+    # accommodate empty matrices
+    if a1.size == 0:
+        dt = inv(np.eye(2, dtype=a1.dtype)).dtype
+        return np.empty_like(a1, dtype=dt)
+
+    # Also check if dtype is LAPACK compatible
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
+
+    # keep the numbers in sync with C
+    structure = {
+        None: -1,
+        'general': 0,
+        # 'diagonal': 11,
+        'upper triangular': 21,
+        'lower triangular': 22,
+        'pos def' : 101,
+        'pos def upper': 111,     # the "other" triangle is not referenced
+        'pos def lower': 112,
+    }[assume_a]
+
+    # a1 is well behaved, invert it.
+    result = _batched_linalg._inv(a1, structure, overwrite_a)
+    inv_a, is_ill_cond, is_singular, info = result
+
+    if info < 0:
+        raise ValueError("Internal LAPACK error.")
+    if is_singular:
+        raise LinAlgError("A singular matrix detected")
+    if is_ill_cond:
+        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+
     return inv_a
 
 
@@ -1264,14 +1358,7 @@ def det(a, overwrite_a=False, check_finite=True):
                          f' but received shape {a1.shape}.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype "{a1.dtype.name}" cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
