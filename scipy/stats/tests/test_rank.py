@@ -2,9 +2,10 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
 
+from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import xp_assert_equal, is_numpy
+from scipy._lib._array_api import xp_assert_equal, make_skip_xp_backends
 
 class TestTieCorrect:
 
@@ -72,49 +73,7 @@ class TestTieCorrect:
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
-_rankdata_cases = (
-    # values, method, expected
-    ([], 'average', []),
-    ([], 'min', []),
-    ([], 'max', []),
-    ([], 'dense', []),
-    ([], 'ordinal', []),
-    #
-    ([100], 'average', [1.0]),
-    ([100], 'min', [1.0]),
-    ([100], 'max', [1.0]),
-    ([100], 'dense', [1.0]),
-    ([100], 'ordinal', [1.0]),
-    #
-    ([100, 100, 100], 'average', [2.0, 2.0, 2.0]),
-    ([100, 100, 100], 'min', [1.0, 1.0, 1.0]),
-    ([100, 100, 100], 'max', [3.0, 3.0, 3.0]),
-    ([100, 100, 100], 'dense', [1.0, 1.0, 1.0]),
-    ([100, 100, 100], 'ordinal', [1.0, 2.0, 3.0]),
-    #
-    ([100, 300, 200], 'average', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'min', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'max', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'dense', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'ordinal', [1.0, 3.0, 2.0]),
-    #
-    ([100, 200, 300, 200], 'average', [1.0, 2.5, 4.0, 2.5]),
-    ([100, 200, 300, 200], 'min', [1.0, 2.0, 4.0, 2.0]),
-    ([100, 200, 300, 200], 'max', [1.0, 3.0, 4.0, 3.0]),
-    ([100, 200, 300, 200], 'dense', [1.0, 2.0, 3.0, 2.0]),
-    ([100, 200, 300, 200], 'ordinal', [1.0, 2.0, 4.0, 3.0]),
-    #
-    ([100, 200, 300, 200, 100], 'average', [1.5, 3.5, 5.0, 3.5, 1.5]),
-    ([100, 200, 300, 200, 100], 'min', [1.0, 3.0, 5.0, 3.0, 1.0]),
-    ([100, 200, 300, 200, 100], 'max', [2.0, 4.0, 5.0, 4.0, 2.0]),
-    ([100, 200, 300, 200, 100], 'dense', [1.0, 2.0, 3.0, 2.0, 1.0]),
-    ([100, 200, 300, 200, 100], 'ordinal', [1.0, 3.0, 5.0, 4.0, 2.0]),
-    #
-    ([10] * 30, 'ordinal', np.arange(1.0, 31.0)),
-)
-
-
-@pytest.mark.skip_xp_backends('torch', reason='no repeat')
+@make_skip_xp_backends(stats.rankdata)
 class TestRankData:
 
     def desired_dtype(self, method='average', has_nans=False, *, xp):
@@ -127,9 +86,14 @@ class TestRankData:
         a = xp.asarray([], dtype=xp.int64)
         r = rankdata(a)
         xp_assert_equal(r, xp.asarray([], dtype=self.desired_dtype(xp=xp)))
-        if is_numpy(xp):
-            r = rankdata([])
-            assert_array_equal(r, np.array([], self.desired_dtype(xp=xp)))
+
+    def test_list(self):
+        # test that NumPy still accepts lists
+        r = rankdata([])
+        assert_array_equal(r, np.array([]))
+
+        r = rankdata([40, 10, 30, 10, 50])
+        assert_array_equal(r, [4.0, 1.5, 3.0, 1.5, 5.0])
 
     @pytest.mark.parametrize("shape", [(0, 1, 2)])
     @pytest.mark.parametrize("axis", [None, *range(3)])
@@ -155,27 +119,18 @@ class TestRankData:
         a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
         xp_assert_equal(r, expected)
-        if is_numpy(xp):
-            r = rankdata(data)
-            xp_assert_equal(r, expected)
 
         data = [40, 10, 30, 10, 50]
         expected = xp.asarray([4.0, 1.5, 3.0, 1.5, 5.0], dtype=desired_dtype)
         a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
         xp_assert_equal(r, expected)
-        if is_numpy(xp):
-            r = rankdata(data)
-            xp_assert_equal(r, expected)
 
         data = [20, 20, 20, 10, 10, 10]
         expected = xp.asarray([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=desired_dtype)
         a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
         xp_assert_equal(r, expected)
-        if is_numpy(xp):
-            r = rankdata(data)
-            xp_assert_equal(r, expected)
 
         # # The docstring states explicitly that the argument is flattened.
         a2d = xp.reshape(a, (2, 3))
@@ -340,6 +295,47 @@ class TestRankData:
                            [[np.nan, np.nan, np.nan],
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
+
+    _rankdata_cases = (
+        # values, method, expected
+        ([], 'average', []),
+        ([], 'min', []),
+        ([], 'max', []),
+        ([], 'dense', []),
+        ([], 'ordinal', []),
+        #
+        ([100], 'average', [1.0]),
+        ([100], 'min', [1.0]),
+        ([100], 'max', [1.0]),
+        ([100], 'dense', [1.0]),
+        ([100], 'ordinal', [1.0]),
+        #
+        ([100, 100, 100], 'average', [2.0, 2.0, 2.0]),
+        ([100, 100, 100], 'min', [1.0, 1.0, 1.0]),
+        ([100, 100, 100], 'max', [3.0, 3.0, 3.0]),
+        ([100, 100, 100], 'dense', [1.0, 1.0, 1.0]),
+        ([100, 100, 100], 'ordinal', [1.0, 2.0, 3.0]),
+        #
+        ([100, 300, 200], 'average', [1.0, 3.0, 2.0]),
+        ([100, 300, 200], 'min', [1.0, 3.0, 2.0]),
+        ([100, 300, 200], 'max', [1.0, 3.0, 2.0]),
+        ([100, 300, 200], 'dense', [1.0, 3.0, 2.0]),
+        ([100, 300, 200], 'ordinal', [1.0, 3.0, 2.0]),
+        #
+        ([100, 200, 300, 200], 'average', [1.0, 2.5, 4.0, 2.5]),
+        ([100, 200, 300, 200], 'min', [1.0, 2.0, 4.0, 2.0]),
+        ([100, 200, 300, 200], 'max', [1.0, 3.0, 4.0, 3.0]),
+        ([100, 200, 300, 200], 'dense', [1.0, 2.0, 3.0, 2.0]),
+        ([100, 200, 300, 200], 'ordinal', [1.0, 2.0, 4.0, 3.0]),
+        #
+        ([100, 200, 300, 200, 100], 'average', [1.5, 3.5, 5.0, 3.5, 1.5]),
+        ([100, 200, 300, 200, 100], 'min', [1.0, 3.0, 5.0, 3.0, 1.0]),
+        ([100, 200, 300, 200, 100], 'max', [2.0, 4.0, 5.0, 4.0, 2.0]),
+        ([100, 200, 300, 200, 100], 'dense', [1.0, 2.0, 3.0, 2.0, 1.0]),
+        ([100, 200, 300, 200, 100], 'ordinal', [1.0, 3.0, 5.0, 4.0, 2.0]),
+        #
+        ([10] * 30, 'ordinal', np.arange(1.0, 31.0)),
+    )
 
     @pytest.mark.parametrize('case', _rankdata_cases)
     def test_cases(self, case, xp):
