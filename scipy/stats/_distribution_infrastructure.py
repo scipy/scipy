@@ -3701,16 +3701,28 @@ class DiscreteDistribution(UnivariateDistribution):
 
     def _mode_optimization(self, **params):
         # If `x` is the true mode of a unimodal continuous function, we can find
-        # the mode among the integers by rounding in each direction and checking
-        # which is better. I think `xatol` should be able to be 1 if the documented
-        # convergence criterion were implemented, but the actual convergence
-        # criterion is different, and I'm not sure if it controls the total width
-        # of the bracket. `xatol=0.1` might not be safe as-implemented.
-        x = super()._mode_optimization(xatol=0.1, **params)
+        # the mode among integers by rounding in each direction and checking
+        # which is better. If the difference between `x` and the nearest integer
+        # is less than `xatol`, the computed value of `x` may end up on the wrong
+        # side of the nearest integer. Setting `xatol=0.5` guarantees that at most
+        # three integers need to be checked, the two nearest integers, ``floor(x)``
+        # and ``round(x)`` and the nearest integer other than these.
+        x = super()._mode_optimization(xatol=0.5, **params)
+        low, high = self.support()
         xl, xr = np.floor(x), np.ceil(x)
-        fl, fr = self._pmf_dispatch(xl, **params), self._pmf_dispatch(xr, **params)
+        nearest = np.round(x)
+        # Clip to stay within support. There will be redundant calculation
+        # when clipping since `xo` will be one of `xl` or `xr`, but let's
+        # keep the implementation simple for now.
+        xo = np.clip(nearest + np.copysign(1, nearest - x), low, high)
+        fl = self._pmf_dispatch(xl, **params)
+        fr = self._pmf_dispatch(xr, **params)
+        fo = self._pmf_dispatch(xo, **params)
         mode = np.asarray(xl)
-        mode[fr > fl] = xr
+        comp1 = (fr > fl)
+        comp2 = (fo > fr)
+        mode[comp1 & ~comp2] = xr
+        mode[comp1 & comp2] = xo
         return mode
 
     def _logentropy_quadrature(self, **params):
