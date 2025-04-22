@@ -7823,7 +7823,7 @@ class ncx2_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (x, df, nc), sc.chndtr(x, df, nc),
+            return xpx.apply_where(nc != 0, (x, df, nc), sc.chndtr,
                                    lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
