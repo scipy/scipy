@@ -707,6 +707,7 @@ def align_vectors(
 
 def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
+    _device = device(a)
     B = (weights[:, None] * a).mT @ b
     u, s, vh = xp.linalg.svd(B)
 
@@ -720,7 +721,7 @@ def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Ar
     # DECISION: We cannot branch on the condition because jit code needs to be non-branching. Hence,
     # we omit the check for uniqueness (s[1] + s[2] < 1e-16 * s[0])
     ssd = xp.sum(weights * xp.sum(b**2 + a**2, axis=1)) - 2 * xp.sum(s)
-    rssd = xp.sqrt(xp.maximum(ssd, xp.zeros(1)))
+    rssd = xp.sqrt(xp.maximum(ssd, xp.zeros(1, device=_device)))
 
     # TODO: We currently need to always compute the sensitivity matrix because jit code needs to be
     # non-branching. We should check if compilers can optimize the where statement (e.g. in jax)
@@ -728,7 +729,7 @@ def _align_vectors(a: Array, b: Array, weights: Array) -> tuple[Array, Array, Ar
     # See xpx.apply_where, issue: https://github.com/data-apis/array-api-extra/pull/141
     zeta = (s[..., 0] + s[..., 1]) * (s[..., 1] + s[..., 2]) * (s[..., 2] + s[..., 0])
     kappa = s[..., 0] * s[..., 1] + s[..., 1] * s[..., 2] + s[..., 2] * s[..., 0]
-    eye = xp.eye(3, dtype=a.dtype, device=device(a))
+    eye = xp.eye(3, dtype=a.dtype, device=_device)
     sensitivity = xp.mean(weights) / zeta * (kappa * eye + B @ B.mT)
     q_opt = from_matrix(C)
     return q_opt, rssd, sensitivity
@@ -738,8 +739,9 @@ def _align_vectors_fixed(
     a: Array, b: Array, weights: Array
 ) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
+    _device = device(a)
     N = a.shape[0]
-    weight_is_inf = xp.asarray([True]) if N == 1 else weights == xp.inf
+    weight_is_inf = xp.asarray([True], device=_device) if N == 1 else weights == xp.inf
     # We cannot use boolean masks for indexing because of jax. For the same reason, we also cannot
     # use dynamic slices. As a workaround, we roll the array so that the infinitely weighted vector
     # is at index 0. We then use static slices to get the primary and secondary vectors.
@@ -785,7 +787,7 @@ def _align_vectors_fixed(
     cross_norm = xp_vector_norm(cross, axis=-1, xp=xp)
     theta = xp.atan2(cross_norm, xp.sum(a_pri[..., 0, :] * b_pri[..., 0, :], axis=-1))
     tolerance = 1e-3  # tolerance for small angle approximation (rad)
-    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0])
+    q_flip = xp.asarray([0.0, 0.0, 0.0, 1.0], device=_device)
 
     # Near pi radians, the Taylor series approximation of x/sin(x) diverges, so for numerical
     # stability we flip pi and then rotate back by the small angle pi - theta
@@ -862,7 +864,7 @@ def _align_vectors_fixed(
     # exactly.
     weights_inf_zero = xp.asarray(weights, copy=True)
 
-    multiple_vectors = xp.asarray(N > 1, device=device(weights))
+    multiple_vectors = xp.asarray(N > 1, device=_device)
     mask = xp.logical_or(multiple_vectors, weights[0] == xp.inf)
     mask = xp.logical_and(mask, weight_is_inf)
     # Skip non-infinite weight single vectors pairs, we used the
@@ -873,23 +875,22 @@ def _align_vectors_fixed(
 
     mask = xp.any(xp.isnan(weights), axis=-1)
     q_opt = xp.where(mask, xp.nan, q_opt)
-    return q_opt, rssd, xp.asarray(xp.nan, device=device(q_opt))
+    return q_opt, rssd, xp.asarray(xp.nan, device=_device)
 
 
 def pow(quat: Array, n: float) -> Array:
     xp = array_namespace(quat)
+    _device = device(quat)
     # general scaling of rotation angle
     result = from_rotvec(n * as_rotvec(quat))
     # Special cases 0 -> identity, -1 -> inv, 1 -> copy
-    identity = xp.zeros(
-        (*quat.shape[:-1], 4), dtype=result.dtype, device=device(result)
-    )
+    identity = xp.zeros((*quat.shape[:-1], 4), dtype=result.dtype, device=_device)
     identity = xpx.at(identity)[..., 3].set(1)
-    mask = xp.asarray(n == 0, device=device(quat))
+    mask = xp.asarray(n == 0, device=_device)
     result = xp.where(mask, identity, result)
-    mask = xp.asarray(n == -1, device=device(quat))
+    mask = xp.asarray(n == -1, device=_device)
     result = xp.where(mask, inv(quat), result)
-    mask = xp.asarray(n == 1, device=device(quat))
+    mask = xp.asarray(n == 1, device=_device)
     result = xp.where(mask, quat, result)
     return result
 
