@@ -23,10 +23,7 @@ from ._highspy._core import(
     HighsDebugLevel,
     ObjSense,
     HighsModelStatus,
-)
-from ._highspy._core.simplex_constants import (
-    SimplexStrategy,
-    SimplexEdgeWeightStrategy,
+    simplex_constants as s_c,
 )
 from scipy.sparse import csc_array, vstack, issparse
 
@@ -293,13 +290,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
         choices={'dantzig': \
-                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
                  'devex': \
-                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
                  'steepest-devex': \
-                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
                  'steepest': \
-                 SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
                  None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
@@ -334,7 +331,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': SimplexStrategy.kSimplexStrategyDual,
+        'simplex_strategy': s_c.SimplexStrategy.kSimplexStrategyDual,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
