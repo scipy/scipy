@@ -23,10 +23,13 @@ from ._highspy._core import(
     HighsDebugLevel,
     ObjSense,
     HighsModelStatus,
-    simplex_constants as s_c,
+    simplex_constants as s_c,  # [1]
 )
 from scipy.sparse import csc_array, vstack, issparse
 
+# [1]: Directly importing from "._highspy._core.simplex_constants"
+# causes problems when reloading.
+# See https://github.com/scipy/scipy/pull/22869 for details.
 
 def _highs_to_scipy_status_message(highs_status, highs_message):
     """Converts HiGHS status number/message to SciPy status number/message"""
