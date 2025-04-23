@@ -21,7 +21,9 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
     if normalize or copy:
         matrix = xp.asarray(matrix, copy=True)
 
-    last_row_ok = xp.all(matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0]), axis=-1)
+    last_row_ok = xp.all(
+        matrix[..., 3, :] == xp.asarray([0, 0, 0, 1.0], device=device(matrix)), axis=-1
+    )
     if is_lazy_array(matrix):
         matrix = xp.where(last_row_ok[..., None, None], matrix, xp.nan)
     elif xp.any(~last_row_ok):
@@ -46,7 +48,7 @@ def from_matrix(matrix: Array, normalize: bool = True, copy: bool = True) -> Arr
 def from_rotation(quat: Array) -> Array:
     xp = array_namespace(quat)
     rotmat = quat_as_matrix(quat)
-    matrix = xp.zeros((*rotmat.shape[:-2], 4, 4), dtype=quat.dtype)
+    matrix = xp.zeros((*rotmat.shape[:-2], 4, 4), dtype=quat.dtype, device=device(quat))
     matrix = xpx.at(matrix)[..., :3, :3].set(rotmat)
     matrix = xpx.at(matrix)[..., 3, 3].set(1)
     return matrix
@@ -60,10 +62,10 @@ def from_translation(translation: Array) -> Array:
             "Expected `translation` to have shape (3,), or (N, 3), "
             f"got {translation.shape}."
         )
-    matrix = xpx.atleast_nd(
-        xp.eye(4, dtype=translation.dtype), ndim=translation.ndim + 1, xp=xp
-    )
     _device = device(translation)
+    eye = xp.eye(4, dtype=translation.dtype, device=_device)
+
+    matrix = xpx.atleast_nd(eye, ndim=translation.ndim + 1, xp=xp)
     matrix = xp.zeros(
         (*translation.shape[:-1], 4, 4),
         dtype=translation.dtype,
@@ -75,8 +77,7 @@ def from_translation(translation: Array) -> Array:
 
 
 def from_components(translation: Array, quat: Array) -> Array:
-    translation_matrix = from_translation(translation)
-    return compose_transforms(translation_matrix, from_rotation(quat))
+    return compose_transforms(from_translation(translation), from_rotation(quat))
 
 
 def from_exp_coords(exp_coords: Array) -> Array:
@@ -196,9 +197,10 @@ def apply(matrix: Array, vector: Array, inverse: bool = False) -> Array:
 def pow(matrix: Array, n: float) -> Array:
     # Check if execution is eager. If so, we can branch and avoid computing all special cases
     xp = array_namespace(matrix)
+    _device = device(matrix)
     if not is_lazy_array(matrix):
         if n == 0:
-            identity = xp.eye(4, dtype=matrix.dtype, device=device(matrix))
+            identity = xp.eye(4, dtype=matrix.dtype, device=_device)
             identity = xpx.atleast_nd(identity, ndim=matrix.ndim, xp=xp)
             return xp.tile(identity, (*matrix.shape[:-2], 1, 1))
         elif n == -1:
@@ -209,7 +211,7 @@ def pow(matrix: Array, n: float) -> Array:
     # Lazy execution. We compute all special cases and the general case and combine them using
     # xp.where.
     result = from_exp_coords(as_exp_coords(matrix) * n)
-    identity = xp.eye(4, dtype=matrix.dtype, device=device(matrix))
+    identity = xp.eye(4, dtype=matrix.dtype, device=_device)
     result = xp.where(n == 0, identity, result)
     result = xp.where(n == -1, inv(matrix), result)
     result = xp.where(n == 1, matrix, result)
@@ -258,26 +260,27 @@ def _compute_se3_exp_translation_transform(rot_vec: Array) -> Array:
     """
     xp = array_namespace(rot_vec)
     _device = device(rot_vec)
-
+    _dtype = rot_vec.dtype
     angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
     small_scale = angle < 1e-3
 
     k1_small = 0.5 - angle**2 / 24 + angle**4 / 720
     # Avoid division by zero for non-branching computations. The value will get discarded in the
     # xp.where selection.
-    safe_angle = angle + xp.asarray(small_scale, dtype=angle.dtype, device=_device)
+    safe_angle = angle + xp.asarray(small_scale, dtype=_dtype, device=_device)
     k1 = (1.0 - xp.cos(angle)) / safe_angle**2
     k1 = xp.where(small_scale, k1_small, k1)
 
     k2_small = 1 / 6 - angle**2 / 120 + angle**4 / 5040
     # Again, avoid division by zero by adding one to all near-zero angles.
-    safe_angle = angle + xp.asarray(small_scale, dtype=angle.dtype, device=_device)
+    safe_angle = angle + xp.asarray(small_scale, dtype=_dtype, device=_device)
     k2 = (angle - xp.sin(angle)) / safe_angle**3
     k2 = xp.where(small_scale, k2_small, k2)
 
     s = _create_skew_matrix(rot_vec)
+    eye = xp.eye(3, dtype=_dtype, device=_device)
 
-    return xp.eye(3) + k1[..., None] * s + k2[..., None] * s @ s
+    return eye + k1[..., None] * s + k2[..., None] * s @ s
 
 
 def _compute_se3_log_translation_transform(rot_vec: Array) -> Array:
@@ -288,17 +291,19 @@ def _compute_se3_log_translation_transform(rot_vec: Array) -> Array:
     analytical form.
     """
     xp = array_namespace(rot_vec)
+    _dtype = rot_vec.dtype
+    _device = device(rot_vec)
     angle = xp_vector_norm(rot_vec, axis=-1, keepdims=True, xp=xp)
     mask = angle < 1e-3
 
     k_small = 1 / 12 + angle**2 / 720 + angle**4 / 30240
-    safe_angle = angle + xp.asarray(mask, dtype=angle.dtype, device=device(angle))
+    safe_angle = angle + xp.asarray(mask, dtype=_dtype, device=_device)
     k = (1 - 0.5 * angle / xp.tan(0.5 * safe_angle)) / safe_angle**2
     k = xp.where(mask, k_small, k)
 
     s = _create_skew_matrix(rot_vec)
 
-    return xp.eye(3) - 0.5 * s + k[..., None] * s @ s
+    return xp.eye(3, dtype=_dtype, device=_device) - 0.5 * s + k[..., None] * s @ s
 
 
 def _create_skew_matrix(vec: Array) -> Array:
