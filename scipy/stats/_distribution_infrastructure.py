@@ -321,7 +321,6 @@ class _Interval(_Domain):
             Numerical values of the endpoints
 
         """
-        # TODO: ensure outputs are floats
         a, b = self.endpoints
         # If `a` (`b`) is a string - the name of the parameter that defines
         # the endpoint of the domain - then corresponding numerical values
@@ -345,7 +344,9 @@ class _Interval(_Domain):
                        "all required distribution parameters as keyword "
                        "arguments.")
             raise TypeError(message) from e
-        return a, b
+        # Floating point types are used for even integer parameters.
+        # Convert to float here to ensure consistency throughout framework.
+        return a.astype(np.float64), b.astype(np.float64)
 
     def contains(self, item, parameter_values=None):
         r"""Determine whether the argument is contained within the domain.
@@ -3264,6 +3265,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if standard_moment is None:
             return None
         var = self._moment_central_dispatch(2, methods=self._moment_methods, **params)
+        if np.any(var == 0):
+            # In degenerate cases where var == 0, ``method='normalize'`` will
+            # not work. To keep things simple for now, don't use this method at all
+            # even if only one entry from an array valued ``var`` is zero.
+            return None
         return standard_moment*var**(order/2)
 
     def _moment_central_general(self, order, **params):
@@ -3618,12 +3624,28 @@ class DiscreteDistribution(UnivariateDistribution):
             return True
         return super()._overrides(method_name)
 
-    # These should probably check whether pmf = 0
     def _logpdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        logpmf = self.logpmf(x)
+        out_of_support = np.isneginf(logpmf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan,
+                        np.where(out_of_support, -np.inf, np.inf))[()]
 
     def _pdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        logpmf = self.logpmf(x)
+        out_of_support = np.isneginf(logpmf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan,
+                        np.where(out_of_support, 0.0, np.inf))[()]
+
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pmf_dispatch(x, method=method, **params)
@@ -3721,8 +3743,8 @@ class DiscreteDistribution(UnivariateDistribution):
         mode = np.asarray(xl)
         comp1 = (fr > fl)
         comp2 = (fo > fr)
-        mode[comp1 & ~comp2] = xr
-        mode[comp1 & comp2] = xo
+        mode[comp1 & ~comp2] = xr[comp1 & ~comp2]
+        mode[comp1 & comp2] = xo[comp1 & comp2]
         return mode
 
     def _logentropy_quadrature(self, **params):
@@ -3733,7 +3755,7 @@ class DiscreteDistribution(UnivariateDistribution):
             # so logpmf is always negative, and so log(logpmf) = log(-logpmf) + pi*j.
             # The two imaginary components "cancel" each other out (which we would
             # expect because each term of the entropy summand is positive).
-            return logpmf + np.log(-logpmf)
+            return np.where(np.isfinite(logpmf), logpmf + np.log(-logpmf), -np.inf)
         return self._quadrature(logintegrand, params=params, log=True)
 
 

@@ -21,7 +21,8 @@ from scipy.stats._distribution_infrastructure import (
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
-from scipy.stats import Normal, Uniform
+from scipy.stats._new_distributions import DiscreteDistribution
+from scipy.stats import Normal, Uniform, Binomial
 
 
 class Test_RealInterval:
@@ -185,18 +186,24 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     return dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape
 
 
-families = [
+continuous_families = [
     StandardNormal,
     Normal,
     Uniform,
     _LogUniform
 ]
 
+discrete_families = [
+    Binomial,
+]
+
+families = continuous_families + discrete_families
+
 
 class TestDistributions:
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
-    @pytest.mark.parametrize('family', families)
+    @pytest.mark.parametrize('family', discrete_families)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
     @pytest.mark.thread_unsafe
     def test_support_moments_sample(self, family, data, seed):
@@ -411,7 +418,11 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
 
         sample1 = sample_method(sample_shape, method=method, rng=42)
         sample2 = sample_method(sample_shape, method=method, rng=42)
-        assert not np.any(np.equal(res, sample1))
+        if not isinstance(dist, DiscreteDistribution):
+            # The idea is that it's very unlikely that the random sample
+            # for a randomly chosen seed will match that for seed 42,
+            # but it is not so unlikely if `dist` is a discrete distribution.
+            assert not np.any(np.equal(res, sample1))
         assert_equal(sample1, sample2)
 
 
@@ -581,13 +592,15 @@ def check_nans_and_edges(dist, fname, arg, res):
     if fname in {'logpdf'}:
         assert_equal(res[outside_arg_minus], -np.inf)
         assert_equal(res[outside_arg_plus], -np.inf)
-        assert_equal(res[endpoint_arg_minus & ~valid_arg], -np.inf)
-        assert_equal(res[endpoint_arg_plus & ~valid_arg], -np.inf)
+        ref = -np.inf if not isinstance(dist, DiscreteDistribution) else np.inf
+        assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
+        assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
     elif fname in {'pdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus & ~valid_arg], 0)
-        assert_equal(res[endpoint_arg_plus & ~valid_arg], 0)
+        ref = 0 if not isinstance(dist, DiscreteDistribution) else np.inf
+        assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
+        assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
     elif fname in {'logcdf'}:
         assert_equal(res[outside_arg_minus], -inf)
         assert_equal(res[outside_arg_plus], 0)
@@ -619,7 +632,11 @@ def check_nans_and_edges(dist, fname, arg, res):
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], a[endpoint_arg == 1])
 
-    if fname not in {'logmean', 'mean', 'logskewness', 'skewness', 'support'}:
+    exclude = {'logmean', 'mean', 'logskewness', 'skewness', 'support'}
+    if isinstance(dist, DiscreteDistribution):
+        exclude.update({'pdf', 'logpdf'})
+
+    if fname not in exclude:
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -648,7 +665,6 @@ def check_moment_funcs(dist, result_shape):
         formula = getattr(dist, formula_name)
         orders = getattr(formula, 'orders', set(range(6)))
         return order in orders
-
 
     dist.reset_cache()
 
@@ -702,6 +718,7 @@ def check_moment_funcs(dist, result_shape):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
 
+    variance = dist.variance()
     dist.reset_cache()
 
     # If we have standard moment formulas, or if there are
@@ -712,9 +729,9 @@ def check_moment_funcs(dist, result_shape):
     for i in range(3, 6):
         ref = dist.moment(i, 'central', method='quadrature')
         check(i, 'central', 'normalize', ref,
-              success=has_formula(i, 'standardized'))
+              success=has_formula(i, 'standardized') and not np.any(variance == 0))
         dist.moment(i, 'standardized')  # build up the cache
-        check(i, 'central', 'normalize', ref)
+        check(i, 'central', 'normalize', ref, success=not np.any(variance == 0))
 
     ### Check Standardized Moments ###
 
@@ -727,7 +744,13 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        check(i, 'standardized', 'general', ref, success=i <= 2)
+        if not (
+                isinstance(dist, Binomial)
+                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
+        ):
+            # This test will fail for degenerate case where binomial distribution
+            # is a point distribution.
+            check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
     if isinstance(dist, ShiftedScaledDistribution):
