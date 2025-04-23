@@ -587,46 +587,48 @@ def check_nans_and_edges(dist, fname, arg, res):
     outside_arg_plus = (outside_arg == 1) & valid_parameters
     endpoint_arg_minus = (endpoint_arg == -1) & valid_parameters
     endpoint_arg_plus = (endpoint_arg == 1) & valid_parameters
+
+    is_discrete = isinstance(dist, DiscreteDistribution)
     # Writing this independently of how the are set in the distribution
     # infrastructure. That is very compact; this is very verbose.
     if fname in {'logpdf'}:
         assert_equal(res[outside_arg_minus], -np.inf)
         assert_equal(res[outside_arg_plus], -np.inf)
-        ref = -np.inf if not isinstance(dist, DiscreteDistribution) else np.inf
+        ref = -np.inf if not is_discrete else np.inf
         assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
         assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
     elif fname in {'pdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 0)
-        ref = 0 if not isinstance(dist, DiscreteDistribution) else np.inf
+        ref = 0 if not is_discrete else np.inf
         assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
         assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
-    elif fname in {'logcdf'}:
+    elif fname in {'logcdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], -inf)
         assert_equal(res[outside_arg_plus], 0)
         assert_equal(res[endpoint_arg_minus], -inf)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'cdf'}:
+    elif fname in {'cdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 1)
         assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], 1)
-    elif fname in {'logccdf'}:
+    elif fname in {'logccdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], -inf)
         assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], -inf)
-    elif fname in {'ccdf'}:
+    elif fname in {'ccdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 1)
         assert_equal(res[outside_arg_plus], 0)
         assert_equal(res[endpoint_arg_minus], 1)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'ilogcdf', 'icdf'}:
+    elif fname in {'ilogcdf', 'icdf'} and not is_discrete:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], a[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], b[endpoint_arg == 1])
-    elif fname in {'ilogccdf', 'iccdf'}:
+    elif fname in {'ilogccdf', 'iccdf'} and not is_discrete:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
