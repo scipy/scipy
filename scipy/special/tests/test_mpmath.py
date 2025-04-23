@@ -321,6 +321,7 @@ def test_lpmv():
 # beta
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow
 @check_version(mpmath, '0.15')
 def test_beta():
     np.random.seed(1234)
