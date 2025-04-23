@@ -639,7 +639,14 @@ def check_nans_and_edges(dist, fname, arg, res):
     if isinstance(dist, DiscreteDistribution):
         exclude.update({'pdf', 'logpdf'})
 
-    if fname not in exclude:
+    if (
+            fname not in exclude
+            and not (isinstance(dist, Binomial)
+                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
+        # This can fail in degenerate case where Binomial distribution is a point
+        # distribution. Further on, we could factor out an is_degenerate function
+        # for the tests, or think about storing info about degeneracy in the
+        # instances.
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
