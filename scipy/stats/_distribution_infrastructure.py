@@ -2677,7 +2677,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
         cdf_max = np.maximum(cdf_x, cdf_y)
         ccdf_max = np.maximum(ccdf_x, ccdf_y)
         spacing = np.spacing(np.where(i, ccdf_max, cdf_max))
-        mask = np.abs(tol * out) < spacing
+        mask = (np.abs(tol * out) < spacing) & (out != 0)
 
         if np.any(mask):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
