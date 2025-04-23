@@ -50,11 +50,18 @@ python module zvode__user__routines
 end python module zvode__user__routines
 
 python module _vode
+  usercode '''
+#ifdef HAVE_BLAS_ILP64
+typedef npy_int64 F_INT;
+#else
+typedef int F_INT;
+#endif
+'''
     interface
        subroutine dvode(f,jac,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,mf,rpar,ipar)
          ! y1,t,istate = dvode(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
          callstatement (*f2py_func)(cb_f_in_dvode__user__routines,&neq,y,&t,&tout,&itol,rtol,atol,&itask,&istate,&iopt,rwork,&lrw,iwork,&liw,cb_jac_in_dvode__user__routines,&mf,&rpar,&ipar)
-         callprotoargument void*,int*,double*,double*,double*,int*,double*,double*,int*,int*,int*,double*,int*,int*,int*,void*,int*,double*,int*
+         callprotoargument void*,F_INT*,double*,double*,double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*,double*,F_INT*,F_INT*,F_INT*,void*,F_INT*,double*,F_INT*
          use dvode__user__routines
          external f
          external jac
@@ -85,7 +92,7 @@ python module _vode
        subroutine zvode(f,jac,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,mf,rpar,ipar)
          ! y1,t,istate = zvode(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
          callstatement (*f2py_func)(cb_f_in_zvode__user__routines,&neq,y,&t,&tout,&itol,rtol,atol,&itask,&istate,&iopt,zwork,&lzw,rwork,&lrw,iwork,&liw,cb_jac_in_zvode__user__routines,&mf,&rpar,&ipar)
-         callprotoargument void*,int*,complex_double*,double*,double*,int*,double*,double*,int*,int*,int*,complex_double*,int*,double*,int*,int*,int*,void*,int*,double*,int*
+         callprotoargument void*,F_INT*,complex_double*,double*,double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*,complex_double*,F_INT*,double*,F_INT*,F_INT*,F_INT*,void*,F_INT*,double*,F_INT*
          use zvode__user__routines
          external f
          external jac
