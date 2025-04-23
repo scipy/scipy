@@ -9,16 +9,18 @@ cimport cython
 
 np.import_array()
 
-@cython.embedsignature(True)
-def from_matrix(matrix: double[:, :, :], normalize: bool = True, copy: bool = True) -> double[:, :, :]:
-    matrix = np.asarray(matrix, dtype=float)
 
-    if matrix.shape[-1] != 4 or matrix.shape[-2] != 4:
+@cython.embedsignature(True)
+@cython.boundscheck(False)
+def from_matrix(double[:, :, :] matrix, bint normalize=True, bint copy=True):
+    mat = np.asarray(matrix, dtype=float)
+
+    if mat.shape[-1] != 4 or mat.shape[-2] != 4:
         raise ValueError("Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
-                         f"got {matrix.shape}.")
+                         f"got {mat.shape}.")
 
     if normalize or copy:
-        matrix = matrix.copy()
+        mat = mat.copy()
 
     # Rigid transforms have the following matrix representation:
     # [R | t]
@@ -28,11 +30,11 @@ def from_matrix(matrix: double[:, :, :], normalize: bool = True, copy: bool = Tr
 
     # Check the last row. Exact match is required, as this last row should
     # not accumulate floating point error during composition.
-    last_row_ok = np.all(matrix[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
+    last_row_ok = np.all(mat[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
     if np.any(~last_row_ok):
         ind = np.where(~last_row_ok)[0][0]
         raise ValueError(f"Expected last row of transformation matrix {ind} to be "
-                            f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
+                            f"exactly [0, 0, 0, 1], got {mat[ind, 3, :]}.")
 
     # The quat_from_matrix() method orthogonalizes the rotation
     # component of the transformation matrix. While this does have some
@@ -40,13 +42,15 @@ def from_matrix(matrix: double[:, :, :], normalize: bool = True, copy: bool = Tr
     # allows for skipping singular value decomposition for near-orthogonal
     # matrices, which is a computationally expensive operation.
     if normalize:
-        matrix[:, :3, :3] = quat_as_matrix(quat_from_matrix(matrix[:, :3, :3]))
+        mat[:, :3, :3] = quat_as_matrix(quat_from_matrix(mat[:, :3, :3]))
 
-    return matrix
+    return mat
 
 
 @cython.embedsignature(True)
-def from_rotation(quat: double[:] | double[:, :]) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def from_rotation(quat):
     single = quat.ndim == 1
     if quat.ndim == 1:
         quat = quat[None, :]
@@ -61,7 +65,8 @@ def from_rotation(quat: double[:] | double[:, :]) -> double[:, :] | double[:, :,
 
 
 @cython.embedsignature(True)
-def from_translation(translation) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+def from_translation(translation):
     translation = np.asarray(translation, dtype=float)
 
     if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
@@ -85,7 +90,9 @@ def from_translation(translation) -> double[:, :] | double[:, :, :]:
 
 
 @cython.embedsignature(True)
-def from_components(translation: double[:] | double[:, :], quat: double[:] | double[:, :]) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def from_components(translation, quat):
     translation_matrix = from_translation(translation)
     single = translation.ndim == 1 and quat.ndim == 1
     if quat.ndim == 1:
@@ -99,7 +106,9 @@ def from_components(translation: double[:] | double[:, :], quat: double[:] | dou
 
 
 @cython.embedsignature(True)
-def from_exp_coords(exp_coords: double[:] | double[:, :]) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def from_exp_coords(exp_coords):
     exp_coords = np.asarray(exp_coords, dtype=float)
     single = exp_coords.ndim == 1
 
@@ -117,7 +126,8 @@ def from_exp_coords(exp_coords: double[:] | double[:, :]) -> double[:, :] | doub
 
 
 @cython.embedsignature(True)
-def from_dual_quat(dual_quat: double[:] | double[:, :], *, scalar_first: bool = False) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+def from_dual_quat(dual_quat, *, bint scalar_first=False):
     dual_quat = np.asarray(dual_quat, dtype=float)
 
     if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
@@ -148,7 +158,9 @@ def from_dual_quat(dual_quat: double[:] | double[:, :], *, scalar_first: bool = 
 
 
 @cython.embedsignature(True)
-def as_exp_coords(matrix: double[:, :, :]) -> double[:, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_exp_coords(double[:, :, :] matrix):
     exp_coords = np.empty((matrix.shape[0], 6), dtype=float)
     rot_vec = as_rotvec(quat_from_matrix(matrix[:, :3, :3]))
     exp_coords[:, :3] = rot_vec
@@ -159,7 +171,9 @@ def as_exp_coords(matrix: double[:, :, :]) -> double[:, :]:
 
 
 @cython.embedsignature(True)
-def as_dual_quat(matrix: double[:, :, :], *, scalar_first: bool = False) -> double[:, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def as_dual_quat(double[:, :, :] matrix, *, bint scalar_first=False):
     real_parts = quat_from_matrix(matrix[:, :3, :3])
 
     pure_translation_quats = np.empty((len(matrix), 4), dtype=float)
@@ -178,7 +192,9 @@ def as_dual_quat(matrix: double[:, :, :], *, scalar_first: bool = False) -> doub
 
 
 @cython.embedsignature(True)
-def compose_transforms(tf_matrix: double[:, :, :], other_tf_matrix: double[:, :, :]) -> double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def compose_transforms(double[:, :, :] tf_matrix, double[:, :, :] other_tf_matrix):
     len_self = len(tf_matrix)
     len_other = len(other_tf_matrix)
     if not(len_self == 1 or len_other == 1 or len_self == len_other):
@@ -190,7 +206,9 @@ def compose_transforms(tf_matrix: double[:, :, :], other_tf_matrix: double[:, :,
 
 
 @cython.embedsignature(True)
-def inv(matrix: double[:, :, :]) -> double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def inv(double[:, :, :] matrix):
     r_inv = np.swapaxes(matrix[:, :3, :3], 1, 2)  # Transpose to invert
     # This einsum performs element-wise matrix multiplication
     t_inv = -np.einsum('ijk,ik->ij', r_inv, matrix[:, :3, 3])
@@ -199,7 +217,8 @@ def inv(matrix: double[:, :, :]) -> double[:, :, :]:
 
 
 @cython.embedsignature(True)
-def apply(matrix: double[:, :, :], vector: double[:] | double[:, :], inverse: bool = False) -> double[:] | double[:, :]:
+@cython.boundscheck(False)
+def apply(double[:, :, :] matrix, vector, bint inverse=False):
     vector = np.asarray(vector, dtype=float)
     if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
         raise ValueError("Expected vector to have shape (N, 3), or (3,), "
@@ -223,7 +242,9 @@ def apply(matrix: double[:, :, :], vector: double[:] | double[:, :], inverse: bo
 
 
 @cython.embedsignature(True)
-def pow(matrix: double[:, :, :], float n) -> double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def pow(double[:, :, :] matrix, float n):
     # Exact short-cuts
     if n == 0:
         return np.tile(np.eye(4, dtype=float)[None, ...], (matrix.shape[0], 1, 1))
@@ -237,17 +258,15 @@ def pow(matrix: double[:, :, :], float n) -> double[:, :, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def setitem(matrix: double[:, :, :], indexer, value: double[:, :, :]) -> double[:, :, :]:
+def setitem(double[:, :, :] matrix, indexer, value):
     arr = np.asarray(matrix)
     arr[indexer] = value
     return arr
 
 
-def _create_transformation_matrix(
-    translations: double[:] | double[:, :],
-    rotation_matrices: double[:, :] | double[:, :, :],
-    single: bool,
-) -> double[:, :] | double[:, :, :]:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _create_transformation_matrix(translations, rotation_matrices, bint single):
     """Create a matrix from translations and rotation matrices.
 
     Parameters
@@ -284,7 +303,9 @@ def _create_transformation_matrix(
         return matrix
 
 
-cdef _compute_se3_exp_translation_transform(rot_vec):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _compute_se3_exp_translation_transform(np.ndarray[double, ndim=2] rot_vec):
     """Compute the transformation matrix from the se3 translation part to SE3
     translation.
 
@@ -305,7 +326,9 @@ cdef _compute_se3_exp_translation_transform(rot_vec):
     return np.identity(3) + k1[:, None, None] * s + k2[:, None, None] * s @ s
 
 
-cdef _compute_se3_log_translation_transform(rot_vec: double[:, :]):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _compute_se3_log_translation_transform(np.ndarray[double, ndim=2] rot_vec):
     """Compute the transformation matrix from SE3 translation to the se3
     translation part.
 
@@ -324,7 +347,9 @@ cdef _compute_se3_log_translation_transform(rot_vec: double[:, :]):
     return np.identity(3) - 0.5 * s + k[:, None, None] * s @ s
 
 
-cdef _create_skew_matrix(vec):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _create_skew_matrix(np.ndarray[double, ndim=2] vec):
     """Create skew-symmetric (aka cross-product) matrix for stack of vectors."""
     result = np.zeros((len(vec), 3, 3))
     result[:, 0, 1] = -vec[:, 2]
@@ -337,14 +362,18 @@ cdef _create_skew_matrix(vec):
 
 
 @cython.embedsignature(True)
-def normalize_dual_quaternion(dual_quat: double[:, :]) -> double[:, :]:
+@cython.wraparound(False)
+def normalize_dual_quaternion(double[:, :] dual_quat):
     """Normalize dual quaternion."""
+    q = np.asarray(dual_quat, dtype=float)
     real, dual = _normalize_dual_quaternion(
-        dual_quat[..., :4], dual_quat[..., 4:])
+        q[..., :4], q[..., 4:])
     return np.concatenate((real, dual), axis=-1)
 
 
-cdef _normalize_dual_quaternion(real_part, dual_part):
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _normalize_dual_quaternion(np.ndarray[double, ndim=2] real_part, np.ndarray[double, ndim=2] dual_part):
     """Ensure that unit norm of the dual quaternion.
 
     The norm is a dual number and must be 1 + 0 * epsilon, which means that
