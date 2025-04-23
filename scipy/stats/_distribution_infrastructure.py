@@ -1030,10 +1030,11 @@ def _set_invalid_nan(f):
         if res_needs_copy:
             res = np.array(res, dtype=dtype, copy=True)
 
-        # For non-integral arguments to PMF, replace with zero
+        # For non-integral arguments to PMF (and PDF of discrete distribution)
+        # replace with zero.
         if any_non_integral:
             zero = -np.inf if method_name in {'logpmf', 'logpdf'} else 0
-            res[mask_non_integral] = zero
+            res[mask_non_integral & ~np.isnan(res)] = zero
 
         # For arguments outside the function domain, replace results
         if any_invalid:
