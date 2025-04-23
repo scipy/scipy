@@ -2682,7 +2682,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._cdf2_quadrature(x[mask], y[mask], *params_mask)
+            out[mask] = self._cdf2_quadrature(x[mask], y[mask], **params_mask)
         return out[()]
 
     def _cdf2_quadrature(self, x, y, **params):
