@@ -3683,9 +3683,21 @@ class DiscreteDistribution(UnivariateDistribution):
         pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
         return cdf_ymx + pmf_x
 
+    def _cdf2_subtraction_safe(self, x, y, **params):
+        x_, y_ = np.floor(x), np.floor(y)
+        cdf_ymx = super()._cdf2_subtraction_safe(x_, y_, **params)
+        pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
+        return cdf_ymx + pmf_x
+
     def _logcdf2_subtraction(self, x, y, **params):
         x_, y_ = np.floor(x), np.floor(y)
         logcdf_ymx = super()._logcdf2_subtraction(x_, y_, **params)
+        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
+        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+
+    def _logcdf2_subtraction_safe(self, x, y, **params):
+        x_, y_ = np.floor(x), np.floor(y)
+        logcdf_ymx = super()._logcdf2_subtraction_safe(x_, y_, **params)
         logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
         return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
 
