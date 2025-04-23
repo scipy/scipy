@@ -515,7 +515,7 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 or dist._overrides('_logccdf_formula')):
             methods.add('log/exp')
 
-    ref = np.where(x > y, 0.0, dist.cdf(y) - dist.cdf(x))[()]
+    ref = np.where(x > y, 0.0, dist.cdf(y) - dist.cdf(x) + dist.pmf(x))[()]
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
@@ -543,7 +543,8 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
         methods.add('formula')
 
-    ref = np.where(x > y, 1.0, dist.cdf(x) + dist.ccdf(y))[()]
+    ref = np.where(x > y, 1.0,
+                   dist.cdf(x) + dist.ccdf(y) - dist.pmf(x) - dist.pmf(y))[()]
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
