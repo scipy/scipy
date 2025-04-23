@@ -2101,7 +2101,11 @@ class UnivariateDistribution(_ProbabilityDistribution):
         else:
             res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
             res = np.asarray(res)
-            res[a > b] = -np.inf if log else 0  # fix in nsum?
+            res[(a > b)] = -np.inf if log else 0  # fix in nsum?
+            # The result should be nan when parameters are nan, so need to special
+            # case this.
+            cond = np.isnan(next(iter(params.values()))) if params else np.True_
+            res[cond] = np.nan
             return res[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
