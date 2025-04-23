@@ -2105,6 +2105,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             # The result should be nan when parameters are nan, so need to special
             # case this.
             cond = np.isnan(next(iter(params.values()))) if params else np.True_
+            cond = np.broadcast_to(cond, a.shape)
             res[cond] = np.nan
             return res[()]
 
