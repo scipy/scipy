@@ -544,7 +544,7 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
         methods.add('formula')
 
     ref = np.where(x > y, 1.0,
-                   dist.cdf(x) + dist.ccdf(y) - dist.pmf(x) - dist.pmf(y))[()]
+                   dist.cdf(x) + dist.ccdf(y) - dist.pmf(x))[()]
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
