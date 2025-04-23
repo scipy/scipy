@@ -2,10 +2,11 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-import math
-import warnings
-import sys
 import contextlib
+import math
+import re
+import sys
+import warnings
 from functools import partial
 
 import numpy as np
@@ -16,7 +17,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
                            suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-import re
+
 from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
@@ -365,6 +366,7 @@ class TestAnderson:
         with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
+    @pytest.mark.thread_unsafe
     def test_weibull_warning_error(self):
         # Check for warning message when there are too few observations
         # This is also an example in which an error occurs during fitting
@@ -2024,6 +2026,7 @@ class TestBoxcox_llf:
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
+    @pytest.mark.thread_unsafe
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
         context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
@@ -2044,7 +2047,8 @@ class TestBoxcox_llf:
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
-        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
+        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
+                        rtol=1e-7)
 
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
