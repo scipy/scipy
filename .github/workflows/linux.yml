@@ -428,8 +428,11 @@ jobs:
           sudo apt install -y python3-dev python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
 
       - name: Setup Python build deps
+        # for packaging upgrade see:
+        # https://github.com/scipy/scipy/pull/22840#issuecomment-2817494211
         run: |
           python3.11 -m pip install build pythran pybind11 cython numpy meson-python
+          python3.11 -m pip install -U packaging
 
       - name: Build wheel and install
         run: |
