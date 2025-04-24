@@ -1784,9 +1784,9 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     gfk = myfprime(x0)
 
     amin,amax=(1e-100,1e100)
-    if float(np.finfo(x.dtype).tiny) > amin:
+    if float(np.finfo(x0.dtype).tiny) > amin:
         amin=1e-30
-    if float(np.finfo(x.dtype).max) < amax:
+    if float(np.finfo(x0.dtype).max) < amax:
         amax=1e30
 
     k = 0
