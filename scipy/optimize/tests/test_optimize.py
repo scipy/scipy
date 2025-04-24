@@ -197,6 +197,16 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert sol.success
             assert_allclose(sol.x, [0.5], rtol=1e-5)
 
+    def test_cg_dtype(self):
+        def f(x):
+            return(np.sin(x)-x+x**2/1000)
+        def g(x):
+            return(np.cos(x)-1+x/500)
+
+        for x0 in np.linspace(-1., 1, 113, dtype=np.float32):
+            sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
+            assert sol.x.dtype == x0.dtype
+
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
         if self.use_wrapper:
