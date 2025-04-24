@@ -643,6 +643,7 @@ class TestPearsonr:
             assert_equal(res2.statistic, res.statistic)
             assert_equal(res2.pvalue, res.pvalue)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(2462935790378923)
