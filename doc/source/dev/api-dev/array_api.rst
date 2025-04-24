@@ -92,7 +92,7 @@ More strict array input validation will reject ``np.matrix`` and
 Currently supported functionality
 `````````````````````````````````
 
-The following modules provide array API standard support when the environment
+The following modules provide Array API Standard support when the environment
 variable is set:
 
 - `scipy.cluster`
@@ -101,8 +101,14 @@ variable is set:
 - `scipy.fft`
 - `scipy.io`
 - `scipy.ndimage`
+- `scipy.stats`
 
-Support is provided in `scipy.special` for the following functions:
+Individual functions in the above modules provide a capability table in the
+documentation like the one below. If the table is absent, the function does not
+yet support backends other than NumPy.
+
+Additionally, support is provided in `scipy.special` for the following functions, even
+if they do not have a capability table in the documentation:
 `scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
 `scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
 `scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
@@ -111,38 +117,31 @@ Support is provided in `scipy.special` for the following functions:
 `scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
 and `scipy.special.chdtrc`.
 
-Support is provided in `scipy.stats` for the following functions:
-`scipy.stats.describe`, `scipy.stats.moment`, `scipy.stats.skew`,
-`scipy.stats.kurtosis`, `scipy.stats.kstat`, `scipy.stats.kstatvar`,
-`scipy.stats.circmean`, `scipy.stats.circvar`, `scipy.stats.circstd`,
-`scipy.stats.entropy`, `scipy.stats.variation` , `scipy.stats.sem`,
-`scipy.stats.ttest_1samp`, `scipy.stats.pearsonr`, `scipy.stats.chisquare`,
-`scipy.stats.skewtest`, `scipy.stats.kurtosistest`, `scipy.stats.normaltest`,
-`scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
-and `scipy.stats.monte_carlo_test`.
+Example capabilities table
+--------------------------
 
-Some features provide a capability table in the documentation like this:
-
-+---------+-------------+-------------+
-| Library | CPU         | GPU         |
-+=========+=============+=============+
-| NumPy   | ✓           | n/a         |
-+---------+-------------+-------------+
-| CuPy    | n/a         | ✓           |
-+---------+-------------+-------------+
-| PyTorch | ✓           | ✗           |
-+---------+-------------+-------------+
-| JAX     | ✓           | ✓           |
-+---------+-------------+-------------+
-| Dask    | ✗           | ✗           |
-+---------+-------------+-------------+
+=========  =========  =========
+Library    CPU        GPU
+=========  =========  =========
+NumPy      ✅         n/a
+CuPy       n/a        ✅
+PyTorch    ✅         ✅
+JAX        ⚠️ no JIT  ⛔
+Dask       ⛔         n/a
+=========  =========  =========
 
 In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
 arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
 support multiple devices (CPU and GPU), but SciPy support for such arrays may be
-limited; for instance, this SciPy feature is only expected to work with PyTorch arrays
-located on the CPU. While the elements of the table marked with "n/a" are inherently
-out of scope, we are continually working on filling in the rest.
+limited; for instance, this SciPy feature is only expected to work with JAX arrays
+located on the CPU. Additionally, some backends can have major caveats; in the example
+the function will fail when running inside ``jax.jit``.
+Additional caveats may be listed in the docstring of the function.
+
+While the elements of the table marked with "n/a" are inherently out of scope, we are
+continually working on filling in the rest.
+Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
+but it may change in the future.
 
 Please see `the tracker issue`_ for updates.
 

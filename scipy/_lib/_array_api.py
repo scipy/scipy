@@ -726,15 +726,37 @@ def _make_capabilities_note(fun_name, capabilities):
 
 
 def xp_capabilities(
+    *,
+    # Alternative capabilities table.
+    # Used only for testing this decorator.
     capabilities_table=None,
+    # Generate pytest.mark.skip/xfail_xp_backends.
+    # See documentation in conftest.py.
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
-    # @pytest.mark.skip/xfail_xp_backends kwargs
     cpu_only=False, np_only=False, reason=None, exceptions=(),
-    # xpx.lazy_xp_backends kwargs
+    # xpx.testing.lazy_xp_function kwargs.
+    # Refer to array-api-extra documentation.
     allow_dask_compute=0, jax_jit=True,
     static_argnums=None, static_argnames=None,
 ):
+    """Decorator for a function that states its support among various
+    Array API compatible backends.
+
+    This decorator has two effects:
+    1. It allows tagging tests with ``@make_skip_xp_backends`` or
+       ``make_xp_pytest_param`` (see below) to automatically generate
+       SKIP/XFAIL markers and perform additional backend-specific
+       testing, such as extra validation for Dask and JAX;
+    2. It automatically adds a note to the function's docstring, containing
+       a table matching what has been tested.    
+
+    See Also
+    --------
+    make_skip_xp_backends
+    make_xp_pytest_param
+    array_api_extra.testing.lazy_xp_function
+    """
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
 
@@ -784,7 +806,7 @@ def _make_xp_pytest_marks(*funcs, capabilities_table=None):
                 cpu_only=True, exceptions=exceptions, reason=reason))
         if capabilities['np_only']:
             marks.append(pytest.mark.skip_xp_backends(
-                cpu_only=True, exceptions=exceptions, reason=reason))
+                np_only=True, exceptions=exceptions, reason=reason))
 
         for mod_name, reason in capabilities['skip_backends']:
             marks.append(pytest.mark.skip_xp_backends(mod_name, reason=reason))
@@ -805,19 +827,26 @@ def make_skip_xp_backends(*funcs, capabilities_table=None):
     """Generate pytest decorator for a test function that tests functionality
     of one or more Array API compatible functions.
 
-    Read the parameters of the @xp_capabilities decorator applied to the
+    Read the parameters of the ``@xp_capabilities`` decorator applied to the
     listed functions and:
 
-    - Generate the @pytest.mark.skip_xp_backends and
-      @pytest.mark.xfail_xp_backends decorators for the decorated test function
-    - Tag the function with `xpx.lazy_xp_function`
+    - Generate the ``@pytest.mark.skip_xp_backends`` and
+      ``@pytest.mark.xfail_xp_backends`` decorators
+      for the decorated test function
+    - Tag the function with `xpx.testing.lazy_xp_function`
+
+    See Also
+    --------
+    xp_capabilities
+    make_xp_pytest_param
+    array_api_extra.testing.lazy_xp_function
     """
     marks = _make_xp_pytest_marks(*funcs, capabilities_table=capabilities_table)
     return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
 
 
 def make_xp_pytest_param(func, capabilities_table=None):
-    """Variant of make_skip_xp_backends that returns a pytest.param for a function,
+    """Variant of ``make_skip_xp_backends`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
     
         @pytest.mark.parametrize(
@@ -839,6 +868,11 @@ def make_xp_pytest_param(func, capabilities_table=None):
         def test(func, xp):
             ...
 
+    See Also
+    --------
+    xp_capabilities
+    make_skip_xp_backends
+    array_api_extra.testing.lazy_xp_function
     """
     import pytest
 
