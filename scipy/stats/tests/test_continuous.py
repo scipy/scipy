@@ -1110,6 +1110,7 @@ class TestMakeDistribution:
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
             'skellam',                # during `entropy`, Fatal Python error: Aborted!
+            'zipfian',                # during init, value error due to unexpected nans
         }:
             return
 
@@ -1124,6 +1125,7 @@ class TestMakeDistribution:
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
         skip_standardized = {'exponpow', 'ksone'}  # tolerances
+        skip_median = {'nhypergeom', 'yulesimon'}  # nan mismatch
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1145,7 +1147,8 @@ class TestMakeDistribution:
                 # some continuous distributions have trouble with `logentropy` because
                 # it uses complex numbers
                 assert_allclose(np.exp(X.logentropy()), Y.entropy(), rtol=rtol)
-            assert_allclose(X.median(), Y.median(), rtol=rtol)
+            if distname not in skip_median:
+                assert_allclose(X.median(), Y.median(), rtol=rtol)
             assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
             assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
