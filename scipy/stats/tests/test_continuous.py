@@ -203,7 +203,7 @@ families = continuous_families + discrete_families
 class TestDistributions:
     @pytest.mark.fail_slow(60)  # need to break up check_moment_funcs
     @settings(max_examples=20)
-    @pytest.mark.parametrize('family', discrete_families)
+    @pytest.mark.parametrize('family', families)
     @given(data=strategies.data(), seed=strategies.integers(min_value=0))
     @pytest.mark.thread_unsafe
     def test_support_moments_sample(self, family, data, seed):
