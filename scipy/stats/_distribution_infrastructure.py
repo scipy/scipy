@@ -3716,26 +3716,36 @@ class DiscreteDistribution(UnivariateDistribution):
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
     def _icdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        # For discrete distributions, icdf(p) is defined as the minimum x
+        # such that cdf(x) >= p.
+        # np.nextafter(xatol
+        res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=0.9)
+        # If f(x) >= 0, then icdf(p) must be less than x, otherwise greater.
+        res = np.where(res.fun >= 0, np.floor(res.x), np.ceil(res.x))
+        # If cdf(res) < 0, then the true result must be one greater.
+        res = np.where(self.cdf(res) >= 0, res, res + 1.0)
         res[np.isnan(x)] = np.nan
         return res
 
     def _ilogcdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
+        # follows same logic as _icdf_inversion
+        res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=0.9)
+        res = np.where(res.fun >= 0, np.floor(res.x), np.ceil(res.x))
+        res = np.where(self.cdf(res), res, res + 1.0)
         res[np.isnan(x)] = np.nan
         return res
 
     def _iccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=0.9)
+        res = np.where(res.fun >= 0, np.ceil(res.x), np.floor(res.x))
+        res = np.where(self.cdf(res), res, res - 1.0)
         res[np.isnan(x)] = np.nan
         return res
 
     def _ilogccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
+        res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=0.9)
+        res = np.where(res.fun >= 0, np.ceil(res.x), np.floor(res.x))
+        res = np.where(self.cdf(res), res, res - 1.0)
         res[np.isnan(x)] = np.nan
         return res
 
