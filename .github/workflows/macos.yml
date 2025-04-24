@@ -114,7 +114,7 @@ jobs:
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
-        pip install git+https://github.com/scientific-python/spin.git@main
+        pip install spin==0.14
 
         CC="ccache $CC" spin build
 
@@ -170,7 +170,7 @@ jobs:
 
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
         pip install -r requirements/openblas.txt
-        pip install git+https://github.com/scientific-python/spin.git@main
+        pip install spin==0.14
         spin build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
@@ -215,7 +215,7 @@ jobs:
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        pip install git+https://github.com/scientific-python/spin.git@main
+        pip install spin==0.14
         spin build --with-accelerate
 
         pip install pooch pytest hypothesis
