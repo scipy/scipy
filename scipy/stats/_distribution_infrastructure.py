@@ -3815,26 +3815,46 @@ def make_distribution(dist):
             is defined. The preferred interface may change in future SciPy versions,
             in which case support for an old interface version may be deprecated
             and eventually removed.
-        parameters : dict
-            A dictionary describing the parameters of the distribution.
-            Each key is the name of a parameter,
-            and the corresponding value is itself a dictionary with the following items.
+        parameters : dict or tuple
+            If a dictionary, each key is the name of a parameter,
+            and the corresponding value is either a dictionary or tuple.
+            If the value is a dictionary, it may have the following items, with default
+            values used for entries which aren't present.
 
-            endpoints : tuple
+            endpoints : tuple, default: (-inf, inf)
                 A tuple defining the lower and upper endpoints of the domain of the
                 parameter; allowable values are floats, the name (string) of another
                 parameter, or a callable taking parameters as keyword only
                 arguments and returning the numerical value of an endpoint for
                 given parameter values.
 
-            inclusive : tuple of bool
+            inclusive : tuple of bool, default: (False, False)
                 A tuple specifying whether the endpoints are included within the domain
                 of the parameter.
 
-        support : dict
-            A dictionary describing the support of the distribution. It has items
-            "endpoints" and "inclusive" with the same structure as the matching
-            items in the values of the parameters dict described above.
+            typical : tuple, default: ``endpoints``
+                Defining endpoints of a typical range of values of a parameter. Can be
+                used for sampling parameter values for testing. Behaves like the
+                ``endpoints`` tuple above, and should define a subinterval of the
+                domain given by ``endpoints``.
+
+            A tuple value ``(a, b)`` associated to a key in the ``parameters``
+            dictionary is equivalent to ``{endpoints: (a, b)}``.
+
+            Custom distributions with multiple parameterizations can be defined by
+            having the ``parameters`` attribute be a tuple of dictionaries with
+            the structure described above. In this case, ``dist``\'s class must also
+            define a method ``process_parameters`` to map between the different
+            parameterizations. It must take all parameters from all parameterizations
+            as optional keyword arguments and return a dictionary mapping parameters to
+            values, filling in values from other parameterizations using values from
+            the supplied parameterization. See example.
+
+        support : dict or tuple
+            A dictionary describing the support of the distribution or a tuple
+            describing the endpoints of the support. This behaves identically to
+            the values of the parameters dict described above, except that the key
+            ``typical`` is ignored.
 
         The class **must** also define a ``pdf`` method and **may** define methods
         ``logentropy``, ``entropy``, ``median``, ``mode``, ``logpdf``,
@@ -3843,7 +3863,9 @@ def make_distribution(dist):
         ``moment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`. The ``moment`` method
+        the corresponding method of `ContinuousDistribution`. 
+        When multiple parameterizations are defined, these methods must accept
+        all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
         may return ``None`` if a formula is not available for the arguments; in this
         case, the infrastructure will fall back to a default implementation. The
@@ -3872,6 +3894,7 @@ def make_distribution(dist):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
+    >>> from scipy import special
 
     Create a `ContinuousDistribution` from `scipy.stats.loguniform`.
 
@@ -3909,6 +3932,80 @@ def make_distribution(dist):
     >>> MyLogUniform = stats.make_distribution(MyLogUniform())
     >>> Y = MyLogUniform(a=1.0, b=3.0)
     >>> np.isclose(Y.cdf(2.), X.cdf(2.))
+    np.True_
+
+    Create a custom distribution with variable support.
+
+    >>> class MyUniformCube:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return {"a": (-np.inf, np.inf), 
+    ...                 "b": {'endpoints':('a', np.inf), 'inclusive':(True, False)}}
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         def left(*, a, b):
+    ...             return a**3
+    ...
+    ...         def right(*, a, b):
+    ...             return b**3
+    ...         return (left, right)
+    ...
+    ...     def pdf(self, x, *, a, b):
+    ...         return 1 / (3*(b - a)*np.cbrt(x)**2)
+    ...
+    ...     def cdf(self, x, *, a, b):
+    ...         return (np.cbrt(x) - a) / (b - a)
+    >>>
+    >>> MyUniformCube = stats.make_distribution(MyUniformCube())
+    >>> X = MyUniformCube(a=-2, b=2)
+    >>> Y = stats.Uniform(a=-2, b=2)**3
+    >>> X.support()
+    (-8.0, 8.0)
+    >>> np.isclose(X.cdf(2.1), Y.cdf(2.1))
+    np.True_
+
+    Create a custom distribution with multiple parameterizations. Here we create a
+    custom version of the beta distribution that has an alternative parameterization
+    in terms of the mean ``mu`` and a dispersion parameter ``nu``.
+
+    >>> class MyBeta:
+    ...     @property
+    ...     def __make_distribution_version__(self):
+    ...         return "1.16.0"
+    ...
+    ...     @property
+    ...     def parameters(self):
+    ...         return ({"a": (0, np.inf), "b": (0, np.inf)},
+    ...                 {"mu": (0, 1), "nu": (0, np.inf)})
+    ...
+    ...     def process_parameters(self, a=None, b=None, mu=None, nu=None):
+    ...         if a is not None and b is not None:
+    ...             nu = a + b
+    ...             mu = a / nu
+    ...         else:
+    ...             a = mu * nu
+    ...             b = nu - a
+    ...         return dict(a=a, b=b, mu=mu, nu=nu)
+    ...
+    ...     @property
+    ...     def support(self):
+    ...         return {'endpoints': (0, 1)}
+    ...
+    ...     def pdf(self, x, a, b, mu, nu):
+    ...         return special._ufuncs._beta_pdf(x, a, b)
+    ...
+    ...     def cdf(self, x, a, b, mu, nu):
+    ...         return special.betainc(a, b, x)
+    >>>
+    >>> MyBeta = stats.make_distribution(MyBeta())
+    >>> X = MyBeta(a=2.0, b=2.0)
+    >>> Y = MyBeta(mu=0.5, nu=4.0)
+    >>> np.isclose(X.pdf(0.3), Y.pdf(0.3))
     np.True_
 
     """
@@ -4056,25 +4153,39 @@ def _make_distribution_rv_generic(dist):
     return CustomDistribution
 
 
+def _get_domain_info(info):
+    domain_info = {"endpoints": info} if isinstance(info, tuple) else info
+    typical = domain_info.pop("typical", None)
+    return domain_info, typical
+
+
 def _make_distribution_custom(dist):
-    parameters = []
+    dist_parameters = (
+        dist.parameters if isinstance(dist.parameters, tuple) else (dist.parameters, )
+    )
+    parameterizations = []
+    for parameterization in dist_parameters:
+        # The attribute name ``parameters`` appears reasonable from a user facing
+        # perspective, but there is a little tension here with the internal. It's
+        # important to keep in mind that the ``parameters`` attribute in a
+        # user-created custom distribution specifies ``_parameterizations`` within
+        # the infrastructure.
+        parameters = []
 
-    for name, info in dist.parameters.items():
-        domain = _RealDomain(endpoints=info['endpoints'],
-                             inclusive=info['inclusive'])
-        param = _RealParameter(name, domain=domain)
-        parameters.append(param)
+        for name, info in parameterization.items():
+            domain_info, typical = _get_domain_info(info)
+            domain = _RealDomain(**domain_info)
+            param = _RealParameter(name, domain=domain, typical=typical)
+            parameters.append(param)
+        parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    endpoints = dist.support["endpoints"]
-    inclusive = dist.support.get("inclusive", (True, True))
-
-    _x_support = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+    domain_info, _ = _get_domain_info(dist.support)
+    _x_support = _RealDomain(**domain_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
     class CustomDistribution(ContinuousDistribution):
-        _parameterizations = ([_Parameterization(*parameters)] if parameters
-                              else [])
+        _parameterizations = parameterizations
         _variable = _x_param
 
         def __repr__(self):
@@ -4110,6 +4221,13 @@ def _make_distribution_custom(dist):
         CustomDistribution._moment_raw_formula = _moment_raw_formula
         CustomDistribution._moment_central_formula = _moment_central_formula
         CustomDistribution._moment_standardized_formula = _moment_standardized_formula
+
+    if hasattr(dist, 'process_parameters'):
+        setattr(
+            CustomDistribution,
+            "_process_parameters",
+            getattr(dist, "process_parameters")
+        )
 
     support_etc = _combine_docs(CustomDistribution, include_examples=False).lstrip()
     docs = [

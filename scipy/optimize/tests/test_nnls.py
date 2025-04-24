@@ -433,6 +433,37 @@ class TestNNLS:
         """Test that using atol parameter triggers deprecation warning"""
         a = np.array([[1, 0], [1, 0], [0, 1]])
         b = np.array([2, 1, 1])
-        
+
         with pytest.warns(DeprecationWarning, match="{'atol'}"):
             nnls(a, b, atol=1e-8)
+
+    def test_2D_singleton_RHS_input(self):
+        # Test that a 2D singleton RHS input is accepted
+        A = np.array([[1.0, 0.5, -1.],
+                      [1.0, 0.5, 0.0],
+                      [-1., 0.0, 1.0]])
+        b = np.array([[-1.0, 2.0, 2.0]]).T
+        x, r = nnls(A, b)
+        assert_allclose(x, np.array([1.0, 2.0, 3.0]))
+        assert_allclose(r, 0.0)
+
+    def test_2D_not_singleton_RHS_input_2(self):
+        # Test that a 2D but not a column vector RHS input is rejected
+        A = np.array([[1.0, 0.5, -1.],
+                      [1.0, 0.5, 0.0],
+                      [1.0, 0.5, 0.0],
+                      [0.0, 0.0, 1.0]])
+        b = np.ones(shape=[4, 2], dtype=np.float64)
+        with pytest.raises(ValueError, match="Expected a 1D array"):
+            nnls(A, b)
+
+    def test_gh_22791_32bit(self):
+        # Scikit-learn got hit by this problem on 32-bit arch.
+        desired = [0, 0, 1.05617285, 0, 0, 0, 0, 0.23123048, 0, 0, 0, 0.26128651]
+        rng = np.random.RandomState(42)
+        n_samples, n_features = 5, 12
+        X = rng.randn(n_samples, n_features)
+        X[:2, :] = 0
+        y = rng.randn(n_samples)
+        coef, _ = nnls(X, y)
+        assert_allclose(coef, desired)

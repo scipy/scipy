@@ -5,7 +5,7 @@ from numpy.testing import assert_equal, assert_array_almost_equal
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation, Slerp
 from scipy.stats import special_ortho_group
-from itertools import permutations
+from itertools import permutations, product
 
 import pickle
 import copy
@@ -167,10 +167,6 @@ def test_from_quat_wrong_shape():
             [[1, 2, 3, 4]],
             [[4, 5, 6, 7]]
             ]))
-
-    # 0-length 2d array
-    with pytest.raises(ValueError, match='Expected `quat` to have shape'):
-        Rotation.from_quat(np.array([]).reshape((0, 4)))
 
 
 def test_zero_norms_from_quat():
@@ -1210,6 +1206,23 @@ def test_apply_multiple_rotations_multiple_points():
     v_inverse = np.array([[2, -1, 3], [4, 6, -5]])
     assert_allclose(r.apply(v, inverse=True), v_inverse)
 
+def test_apply_shapes():
+    vector0 = np.array([1.0, 2.0, 3.0])
+    vector1 = np.array([vector0])
+    vector2 = np.array([vector0, vector0])
+    matrix0 = np.identity(3)
+    matrix1 = np.array([matrix0])
+    matrix2 = np.array([matrix0, matrix0])
+
+    for m, v in product([matrix0, matrix1, matrix2], [vector0, vector1, vector2]):
+        r = Rotation.from_matrix(m)
+        shape = v.shape
+        if not r.single and (v.shape == (3,) or v.shape == (1, 3)):
+            shape = (len(r), 3)
+        x = r.apply(v)
+        assert x.shape == shape
+        x = r.apply(v, inverse=True)
+        assert x.shape == shape
 
 def test_getitem():
     mat = np.empty((2, 3, 3))
@@ -1635,18 +1648,23 @@ def test_slerp_rot_is_rotation():
         t = np.array([0, 1])
         Slerp(t, r)
 
+SLERP_EXCEPTION_MESSAGE = "must be a sequence of at least 2 rotations"
 
 def test_slerp_single_rot():
-    msg = "must be a sequence of at least 2 rotations"
-    with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([1, 2, 3, 4])
+    r = Rotation.from_quat([1, 2, 3, 4])
+    with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
         Slerp([1], r)
 
 
+def test_slerp_rot_len0():
+    r = Rotation.random()
+    with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
+        Slerp([], r)
+
+
 def test_slerp_rot_len1():
-    msg = "must be a sequence of at least 2 rotations"
-    with pytest.raises(ValueError, match=msg):
-        r = Rotation.from_quat([[1, 2, 3, 4]])
+    r = Rotation.random(1)
+    with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
         Slerp([1], r)
 
 
@@ -2039,3 +2057,173 @@ def test_compare_as_davenport_as_euler():
             eul = rot.as_euler(seq)
             dav = rot.as_davenport(ax, order)
             assert_allclose(eul, dav, rtol=1e-12)
+
+
+def test_zero_rotation_construction():
+    r = Rotation.random(num=0)
+    assert len(r) == 0
+
+    r_ide = Rotation.identity(num=0)
+    assert len(r_ide) == 0
+
+    r_get = Rotation.random(num=3)[[]]
+    assert len(r_get) == 0
+
+    r_quat = Rotation.from_quat(np.zeros((0, 4)))
+    assert len(r_quat) == 0
+
+    r_matrix = Rotation.from_matrix(np.zeros((0, 3, 3)))
+    assert len(r_matrix) == 0
+
+    r_euler = Rotation.from_euler("xyz", np.zeros((0, 3)))
+    assert len(r_euler) == 0
+
+    r_vec = Rotation.from_rotvec(np.zeros((0, 3)))
+    assert len(r_vec) == 0
+
+    r_dav = Rotation.from_davenport(np.eye(3), "extrinsic", np.zeros((0, 3)))
+    assert len(r_dav) == 0
+
+    r_mrp = Rotation.from_mrp(np.zeros((0, 3)))
+    assert len(r_mrp) == 0
+
+
+def test_zero_rotation_representation():
+    r = Rotation.random(num=0)
+    assert r.as_quat().shape == (0, 4)
+    assert r.as_matrix().shape == (0, 3, 3)
+    assert r.as_euler("xyz").shape == (0, 3)
+    assert r.as_rotvec().shape == (0, 3)
+    assert r.as_mrp().shape == (0, 3)
+    assert r.as_davenport(np.eye(3), "extrinsic").shape == (0, 3)
+
+
+def test_zero_rotation_array_rotation():
+    r = Rotation.random(num=0)
+
+    v = np.array([1, 2, 3])
+    v_rotated = r.apply(v)
+    assert v_rotated.shape == (0, 3)
+
+    v0 = np.zeros((0, 3))
+    v0_rot = r.apply(v0)
+    assert v0_rot.shape == (0, 3)
+
+    v2 = np.ones((2, 3))
+    with pytest.raises(
+        ValueError, match="Expected equal numbers of rotations and vectors"):
+        r.apply(v2)
+
+
+def test_zero_rotation_multiplication():
+    r = Rotation.random(num=0)
+
+    r_single = Rotation.random()
+    r_mult_left = r * r_single
+    assert len(r_mult_left) == 0
+
+    r_mult_right = r_single * r
+    assert len(r_mult_right) == 0
+
+    r0 = Rotation.random(0)
+    r_mult = r * r0
+    assert len(r_mult) == 0
+
+    msg_rotation_error = "Expected equal number of rotations"
+    r2 = Rotation.random(2)
+    with pytest.raises(ValueError, match=msg_rotation_error):
+        r0 * r2
+
+    with pytest.raises(ValueError, match=msg_rotation_error):
+        r2 * r0
+
+
+def test_zero_rotation_concatentation():
+    r = Rotation.random(num=0)
+
+    r0 = Rotation.concatenate([r, r])
+    assert len(r0) == 0
+
+    r1 = r.concatenate([Rotation.random(), r])
+    assert len(r1) == 1
+
+    r3 = r.concatenate([Rotation.random(3), r])
+    assert len(r3) == 3
+
+    r4 = r.concatenate([r, Rotation.random(4)])
+    assert len(r4) == 4
+
+
+def test_zero_rotation_power():
+    r = Rotation.random(num=0)
+    for pp in [-1.5, -1, 0, 1, 1.5]:
+        pow0 = r**pp
+        assert len(pow0) == 0
+
+
+def test_zero_rotation_inverse():
+    r = Rotation.random(num=0)
+    r_inv = r.inv()
+    assert len(r_inv) == 0
+
+
+def test_zero_rotation_magnitude():
+    r = Rotation.random(num=0)
+    magnitude = r.magnitude()
+    assert magnitude.shape == (0,)
+
+
+def test_zero_rotation_mean():
+    r = Rotation.random(num=0)
+    with pytest.raises(ValueError, match="Mean of an empty rotation set is undefined."):
+        r.mean()
+
+
+def test_zero_rotation_approx_equal():
+    r = Rotation.random(0)
+    assert r.approx_equal(Rotation.random(0)).shape == (0,)
+    assert r.approx_equal(Rotation.random()).shape == (0,)
+    assert Rotation.random().approx_equal(r).shape == (0,)
+
+    approx_msg = "Expected equal number of rotations"
+    r3 = Rotation.random(2)
+    with pytest.raises(ValueError, match=approx_msg):
+        r.approx_equal(r3)
+
+    with pytest.raises(ValueError, match=approx_msg):
+        r3.approx_equal(r)
+
+
+def test_zero_rotation_get_set():
+    r = Rotation.random(0)
+
+    r_get = r[[]]
+    assert len(r_get) == 0
+
+    r_slice = r[:0]
+    assert len(r_slice) == 0
+
+    with pytest.raises(IndexError):
+        r[[0]]
+
+    with pytest.raises(IndexError):
+        r[[True]]
+
+    with pytest.raises(IndexError):
+        r[0] = Rotation.random()
+
+
+def test_boolean_indexes():
+    r = Rotation.random(3)
+
+    r0 = r[[False, False, False]]
+    assert len(r0) == 0
+
+    r1 = r[[False, True, False]]
+    assert len(r1) == 1
+
+    r3 = r[[True, True, True]]
+    assert len(r3) == 3
+
+    with pytest.raises(IndexError):
+        r[[True, True]]

@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import xp_assert_close, is_cupy
+from scipy._lib._array_api import is_cupy, xp_assert_close, xp_default_dtype
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
@@ -190,7 +190,6 @@ class TestSymIIR:
             0.19982875, 0.20355805, 0.47378628, 0.57232247, 0.51597393,
             0.25935107, 0.31438554, 0.41096728, 0.4190693 , 0.25812255,
             0.33671467], dtype=res.dtype)
-        assert res.dtype == dtype
         atol = {xp.float64: 1e-15, xp.float32: 1e-7}[dtype]
         xp_assert_close(res, exp_res, atol=atol)
 
@@ -332,10 +331,10 @@ class TestSymIIR:
     def test_symiir2(self, dtype, precision, xp):
         dtype = getattr(xp, dtype)
 
-        r = xp.asarray(0.5, dtype=dtype)
-        omega = xp.asarray(xp.pi / 3.0, dtype=dtype)
-        cs = 1 - 2 * r * xp.cos(omega) + r * r
-        a2 = 2 * r * xp.cos(omega)
+        r = 0.5
+        omega = math.pi / 3.0
+        cs = 1 - 2 * r * math.cos(omega) + r * r
+        a2 = 2 * r * math.cos(omega)
         a3 = -r * r
 
         n = 100
@@ -367,13 +366,15 @@ class TestSymIIR:
         out = symiirorder2(signal, r, omega, precision)
         xp_assert_close(out, exp, atol=4e-6, rtol=6e-7)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="C internals")
     @pytest.mark.parametrize('dtyp', ['float32', 'float64'])
     def test_symiir2_values(self, dtyp, xp):
         rng = np.random.RandomState(1234)
         s = rng.uniform(size=16).astype(dtyp)
         s = xp.asarray(s)
-        dtyp = getattr(xp, dtyp)
+
+        # cupy returns f64 for f32 inputs
+        dtype = xp.float64 if is_cupy(xp) else getattr(xp, dtyp)
 
         res = symiirorder2(s, 0.1, 0.1, precision=1e-10)
 
@@ -382,12 +383,8 @@ class TestSymIIR:
             [0.26572609, 0.53408018, 0.51032696, 0.72115829, 0.69486885,
              0.3649055 , 0.37349478, 0.74165032, 0.89718521, 0.80582483,
              0.46758053, 0.51898709, 0.65025605, 0.65394321, 0.45273595,
-             0.53539183], dtype=dtyp
+             0.53539183], dtype=dtype
         )
-
-        if not is_cupy(xp):
-            # cupy returns f64 for f32 inputs
-            assert res.dtype == dtyp
 
         # The values in SciPy 1.14 agree with those in SciPy 1.9.1 to this
         # accuracy only. Implementation differences are twofold:
@@ -397,7 +394,7 @@ class TestSymIIR:
         # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
         # due to a different way roundoff errors accumulate in the filter.
         # In that respect, sosfilt is likely doing a better job.
-        xp_assert_close(res, exp_res, atol=2e-6, check_dtype=False)
+        xp_assert_close(res, exp_res, atol=2e-6)
 
         I1 = xp.asarray(1 + 1j, dtype=xp.result_type(s, xp.complex64))
         s = s * I1
@@ -405,7 +402,7 @@ class TestSymIIR:
         with pytest.raises((TypeError, ValueError)):
             res = symiirorder2(s, 0.5, 0.1)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="C internals")
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir1_integer_input(self, xp):
         s = xp.where(
@@ -413,11 +410,11 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder1(xp.astype(s, xp.float64), 0.5, 0.5)
+        expected = symiirorder1(xp.astype(s, xp_default_dtype(xp)), 0.5, 0.5)
         out = symiirorder1(s, 0.5, 0.5)
         xp_assert_close(out, expected)
 
-    @skip_xp_backends(cpu_only=True)
+    @skip_xp_backends(cpu_only=True, exceptions=["cupy"], reason="C internals")
     @xfail_xp_backends("cupy", reason="cupy does not accept integer arrays")
     def test_symiir2_integer_input(self, xp):
         s = xp.where(
@@ -425,6 +422,6 @@ class TestSymIIR:
             xp.asarray(-1),
             xp.asarray(1),
         )
-        expected = symiirorder2(xp.astype(s, xp.float64), 0.5, xp.pi / 3.0)
+        expected = symiirorder2(xp.astype(s, xp_default_dtype(xp)), 0.5, xp.pi / 3.0)
         out = symiirorder2(s, 0.5, xp.pi / 3.0)
         xp_assert_close(out, expected)

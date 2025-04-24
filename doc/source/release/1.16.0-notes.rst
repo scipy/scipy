@@ -24,6 +24,11 @@ This release requires Python 3.11-3.13 and NumPy 1.26.4 or greater.
 Highlights of this release
 **************************
 
+- ``scipy.optimize`` now uses the new Python implementation from the
+  `PRIMA <https://www.libprima.net>`_ package for COBYLA.
+  The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_
+  in the old Fortran 77 implementation with
+  `a better performance on average <https://github.com/libprima/prima#improvements>`_.
 
 ************
 New features
@@ -51,6 +56,18 @@ New features
 
 ``scipy.optimize`` improvements
 ===============================
+- COBYLA was updated to use the new Python implementation from the
+  `PRIMA <https://www.libprima.net>`_ package.
+  The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_
+  in the old Fortran 77 implementation. In addition, it results in
+  `fewer function evaluations on average <https://github.com/libprima/prima#improvements>`_,
+  but it depends on the problem and for some
+  problems it can result in more function evaluations or a less optimal
+  result. For those cases the user can try modifying the initial and final
+  trust region radii given by `rhobeg` and `tol` respectively. A larger `rhobeg`
+  can help the algorithm take bigger steps initially, while a smaller `tol`
+  can help it for keep going and find a better solution.
+  For more information, see the `PRIMA documentation <https://www.libprima.net>`_.
 
 
 ``scipy.signal`` improvements
@@ -111,5 +128,3 @@ Issues closed for 1.16.0
 ************************
 Pull requests for 1.16.0
 ************************
-
-

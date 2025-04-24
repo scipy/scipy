@@ -1,10 +1,11 @@
 from collections import namedtuple
+
 import numpy as np
 import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_copy
 from scipy._lib import array_api_extra as xpx
 from scipy._lib._util import _ScalarFunctionWrapper
 
@@ -12,7 +13,7 @@ from scipy._lib._util import _ScalarFunctionWrapper
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class _GradWrapper:
+class _ScalarGradWrapper:
     """
     Wrapper class for gradient calculation
     """
@@ -49,7 +50,7 @@ class _GradWrapper:
         return g
 
 
-class _HessWrapper:
+class _ScalarHessWrapper:
     """
     Wrapper class for hess calculation via finite differences
     """
@@ -205,8 +206,8 @@ class ScalarFunction:
            will be set. However, a subsequent call with a different argument
            of *any* of the methods may overwrite the attribute.
     """
-    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step,
-                 finite_diff_bounds, epsilon=None, workers=None):
+    def __init__(self, fun, x0, args, grad, hess, finite_diff_rel_step=None,
+                 finite_diff_bounds=(-np.inf, np.inf), epsilon=None, workers=None):
 
         if not callable(grad) and grad not in FD_METHODS:
             raise ValueError(
@@ -273,7 +274,7 @@ class ScalarFunction:
         self._update_fun()
 
         # Initial gradient evaluation
-        self._wrapped_grad = _GradWrapper(
+        self._wrapped_grad = _ScalarGradWrapper(
             grad,
             fun=self._wrapped_fun,
             args=args,
@@ -292,7 +293,7 @@ class ScalarFunction:
             self._wrapped_hess = _FakeCounter(ngev=0, nhev=0)
         else:
             if callable(hess):
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
@@ -301,7 +302,7 @@ class ScalarFunction:
                 self.H = self._wrapped_hess.H
                 self.H_updated = True
             elif hess in FD_METHODS:
-                self._wrapped_hess = _HessWrapper(
+                self._wrapped_hess = _ScalarHessWrapper(
                     hess,
                     x0=x0,
                     args=args,
@@ -404,6 +405,114 @@ class ScalarFunction:
         return self.f, self.g
 
 
+class _VectorFunWrapper:
+    def __init__(self, fun):
+        self.fun = fun
+        self.nfev = 0
+
+    def __call__(self, x):
+        self.nfev += 1
+        return np.atleast_1d(self.fun(x))
+
+
+class _VectorJacWrapper:
+    """
+    Wrapper class for Jacobian calculation
+    """
+    def __init__(
+            self,
+            jac,
+            fun=None,
+            finite_diff_options=None,
+            sparse_jacobian=None
+    ):
+        self.fun = fun
+        self.jac = jac
+        self.finite_diff_options = finite_diff_options
+        self.sparse_jacobian = sparse_jacobian
+
+        self.njev = 0
+        # number of function evaluations consumed by finite difference
+        self.nfev = 0
+
+    def __call__(self, x, f0=None, **kwds):
+        # Send a copy because the user may overwrite it.
+        # The user of this class might want `x` to remain unchanged.
+        if callable(self.jac):
+            J = self.jac(x)
+            self.njev += 1
+        elif self.jac in FD_METHODS:
+            J, dct = approx_derivative(
+                self.fun,
+                x,
+                f0=f0,
+                **self.finite_diff_options,
+            )
+            self.nfev += dct['nfev']
+
+        if self.sparse_jacobian:
+            return sps.csr_array(J)
+        elif sps.issparse(J):
+            return J.toarray()
+        elif isinstance(J, LinearOperator):
+            return J
+        else:
+            return np.atleast_2d(J)
+
+
+class _VectorHessWrapper:
+    """
+    Wrapper class for Jacobian calculation
+    """
+    def __init__(
+            self,
+            hess,
+            jac=None,
+            finite_diff_options=None,
+    ):
+        self.jac = jac
+        self.hess = hess
+        self.finite_diff_options = finite_diff_options
+        self.nhev = 0
+        # number of jac evaluations consumed by finite difference
+        self.njev = 0
+
+    def __call__(self, x, v, J0=None, **kwds):
+        # Send a copy because the user may overwrite it.
+        # The user of this class might want `x` to remain unchanged.
+        if callable(self.hess):
+            self.nhev += 1
+            return self._callable_hess(x, v)
+        elif self.hess in FD_METHODS:
+            return self._fd_hess(x, v, J0=J0)
+
+    def _fd_hess(self, x, v, J0=None):
+        if J0 is None:
+            J0 = self.jac(x)
+            self.njev += 1
+
+        # H will be a LinearOperator
+        H = approx_derivative(self.jac_dot_v, x,
+                              f0=J0.T.dot(v),
+                              args=(v,),
+                              **self.finite_diff_options)
+        return H
+
+    def jac_dot_v(self, x, v):
+        self.njev += 1
+        return self.jac(x).T.dot(v)
+
+    def _callable_hess(self, x, v):
+        H = self.hess(x, v)
+
+        if sps.issparse(H):
+            return sps.csr_array(H)
+        elif isinstance(H, LinearOperator):
+            return H
+        else:
+            return np.atleast_2d(np.asarray(H))
+
+
 class VectorFunction:
     """Vector function and its derivatives.
 
@@ -422,8 +531,9 @@ class VectorFunction:
            of *any* of the methods may overwrite the attribute.
     """
     def __init__(self, fun, x0, jac, hess,
-                 finite_diff_rel_step, finite_diff_jac_sparsity,
-                 finite_diff_bounds, sparse_jacobian):
+                 finite_diff_rel_step=None, finite_diff_jac_sparsity=None,
+                 finite_diff_bounds=(-np.inf, np.inf), sparse_jacobian=None,
+                 workers=None):
         if not callable(jac) and jac not in FD_METHODS:
             raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
@@ -444,17 +554,25 @@ class VectorFunction:
         if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to floating
+        # store original functions
+        self._orig_fun = fun
+        self._orig_jac = jac
+        self._orig_hess = hess
+
+        # promotes to floating, ensures that it's a copy
         self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
 
         self.n = self.x.size
-        self.nfev = 0
-        self.njev = 0
-        self.nhev = 0
+        self._nfev = 0
+        self._njev = 0
+        self._nhev = 0
         self.f_updated = False
         self.J_updated = False
         self.H_updated = False
+
+        # normalize workers
+        workers = workers or map
 
         finite_diff_options = {}
         if jac in FD_METHODS:
@@ -465,11 +583,17 @@ class VectorFunction:
                 finite_diff_options["sparsity"] = (finite_diff_jac_sparsity,
                                                    sparsity_groups)
             finite_diff_options["bounds"] = finite_diff_bounds
+            finite_diff_options["workers"] = workers
+            finite_diff_options["full_output"] = True
             self.x_diff = np.copy(self.x)
         if hess in FD_METHODS:
             finite_diff_options["method"] = hess
             finite_diff_options["rel_step"] = finite_diff_rel_step
             finite_diff_options["as_linear_operator"] = True
+            # workers is not useful for evaluation of the LinearOperator
+            # produced by approx_derivative. Only two/three function
+            # evaluations are used, and the LinearOperator may persist
+            # outside the scope that workers is valid in.
             self.x_diff = np.copy(self.x)
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "
@@ -477,122 +601,55 @@ class VectorFunction:
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
 
-        # Function evaluation
-        def fun_wrapped(x):
-            self.nfev += 1
-            return np.atleast_1d(fun(x))
-
-        def update_fun():
-            self.f = fun_wrapped(self.x)
-
-        self._update_fun_impl = update_fun
-        update_fun()
+        self.fun_wrapped = _VectorFunWrapper(fun)
+        self._update_fun()
 
         self.v = np.zeros_like(self.f)
         self.m = self.v.size
 
-        # Jacobian Evaluation
+        # Initial Jacobian Evaluation
         if callable(jac):
-            self.J = jac(self.x)
+            self.J = jac(xp_copy(self.x))
             self.J_updated = True
-            self.njev += 1
-
-            if (sparse_jacobian or
-                    sparse_jacobian is None and sps.issparse(self.J)):
-                def jac_wrapped(x):
-                    self.njev += 1
-                    return sps.csr_array(jac(x))
-                self.J = sps.csr_array(self.J)
-                self.sparse_jacobian = True
-
-            elif sps.issparse(self.J):
-                def jac_wrapped(x):
-                    self.njev += 1
-                    return jac(x).toarray()
-                self.J = self.J.toarray()
-                self.sparse_jacobian = False
-
-            else:
-                def jac_wrapped(x):
-                    self.njev += 1
-                    return np.atleast_2d(jac(x))
-                self.J = np.atleast_2d(self.J)
-                self.sparse_jacobian = False
-
-            def update_jac():
-                self.J = jac_wrapped(self.x)
-
+            self._njev += 1
         elif jac in FD_METHODS:
-            self.J = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                       **finite_diff_options)
+            self.J, dct = approx_derivative(
+                self.fun_wrapped, self.x, f0=self.f, **finite_diff_options
+            )
             self.J_updated = True
+            self._nfev += dct['nfev']
 
-            if (sparse_jacobian or
-                    sparse_jacobian is None and sps.issparse(self.J)):
-                def update_jac():
-                    self._update_fun()
-                    self.J = sps.csr_array(
-                        approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                          **finite_diff_options))
-                self.J = sps.csr_array(self.J)
-                self.sparse_jacobian = True
+        self.sparse_jacobian = False
+        if (sparse_jacobian or
+                sparse_jacobian is None and sps.issparse(self.J)):
+            # something truthy was specified for sparse_jacobian,
+            # or it turns out that the Jacobian was sparse.
+            self.J = sps.csr_array(self.J)
+            self.sparse_jacobian = True
+        elif sps.issparse(self.J):
+            self.J = self.J.toarray()
+        elif isinstance(self.J, LinearOperator):
+            pass
+        else:
+            self.J = np.atleast_2d(self.J)
 
-            elif sps.issparse(self.J):
-                def update_jac():
-                    self._update_fun()
-                    self.J = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                               **finite_diff_options).toarray()
-                self.J = self.J.toarray()
-                self.sparse_jacobian = False
+        self.jac_wrapped = _VectorJacWrapper(
+            jac,
+            fun=self.fun_wrapped,
+            finite_diff_options=finite_diff_options,
+            sparse_jacobian=self.sparse_jacobian
+        )
 
-            else:
-                def update_jac():
-                    self._update_fun()
-                    self.J = np.atleast_2d(
-                        approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                          **finite_diff_options))
-                self.J = np.atleast_2d(self.J)
-                self.sparse_jacobian = False
-
-        self._update_jac_impl = update_jac
+        self.hess_wrapped = _VectorHessWrapper(
+            hess, jac=self.jac_wrapped, finite_diff_options=finite_diff_options
+        )
 
         # Define Hessian
-        if callable(hess):
-            self.H = hess(self.x, self.v)
+        if callable(hess) or hess in FD_METHODS:
+            self.H = self.hess_wrapped(xp_copy(self.x), self.v, J0=self.J)
             self.H_updated = True
-            self.nhev += 1
-
-            if sps.issparse(self.H):
-                def hess_wrapped(x, v):
-                    self.nhev += 1
-                    return sps.csr_array(hess(x, v))
-                self.H = sps.csr_array(self.H)
-
-            elif isinstance(self.H, LinearOperator):
-                def hess_wrapped(x, v):
-                    self.nhev += 1
-                    return hess(x, v)
-
-            else:
-                def hess_wrapped(x, v):
-                    self.nhev += 1
-                    return np.atleast_2d(np.asarray(hess(x, v)))
-                self.H = np.atleast_2d(np.asarray(self.H))
-
-            def update_hess():
-                self.H = hess_wrapped(self.x, self.v)
-        elif hess in FD_METHODS:
-            def jac_dot_v(x, v):
-                return jac_wrapped(x).T.dot(v)
-
-            def update_hess():
-                self._update_jac()
-                self.H = approx_derivative(jac_dot_v, self.x,
-                                           f0=self.J.T.dot(self.v),
-                                           args=(self.v,),
-                                           **finite_diff_options)
-            update_hess()
-            self.H_updated = True
+            if callable(hess):
+                self._nhev += 1
         elif isinstance(hess, HessianUpdateStrategy):
             self.H = hess
             self.H.initialize(self.n, 'hess')
@@ -600,19 +657,26 @@ class VectorFunction:
             self.x_prev = None
             self.J_prev = None
 
-            def update_hess():
-                self._update_jac()
-                # When v is updated before x was updated, then x_prev and
-                # J_prev are None and we need this check.
-                if self.x_prev is not None and self.J_prev is not None:
-                    delta_x = self.x - self.x_prev
-                    delta_g = self.J.T.dot(self.v) - self.J_prev.T.dot(self.v)
-                    self.H.update(delta_x, delta_g)
+    @property
+    def nfev(self):
+        return self._nfev + self.jac_wrapped.nfev
 
-        self._update_hess_impl = update_hess
+    @property
+    def njev(self):
+        return self._njev + self.hess_wrapped.njev
 
-        if isinstance(hess, HessianUpdateStrategy):
-            def update_x(x):
+    @property
+    def nhev(self):
+        return self._nhev
+
+    def _update_v(self, v):
+        if not np.array_equal(v, self.v):
+            self.v = v
+            self.H_updated = False
+
+    def _update_x(self, x):
+        if not np.array_equal(x, self.x):
+            if isinstance(self._orig_hess, HessianUpdateStrategy):
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
@@ -622,48 +686,63 @@ class VectorFunction:
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
-        else:
-            def update_x(x):
+            else:
                 _x = xpx.atleast_nd(self.xp.asarray(x), ndim=1, xp=self.xp)
                 self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
 
-        self._update_x_impl = update_x
-
-    def _update_v(self, v):
-        if not np.array_equal(v, self.v):
-            self.v = v
-            self.H_updated = False
-
-    def _update_x(self, x):
-        if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
-
     def _update_fun(self):
         if not self.f_updated:
-            self._update_fun_impl()
+            self.f = self.fun_wrapped(xp_copy(self.x))
+            self._nfev += 1
             self.f_updated = True
 
     def _update_jac(self):
         if not self.J_updated:
-            self._update_jac_impl()
+            if self._orig_jac in FD_METHODS:
+                # need to update fun to get f0
+                self._update_fun()
+            else:
+                self._njev += 1
+
+            self.J = self.jac_wrapped(xp_copy(self.x), f0=self.f)
             self.J_updated = True
 
     def _update_hess(self):
         if not self.H_updated:
-            self._update_hess_impl()
+            if callable(self._orig_hess):
+                self.H = self.hess_wrapped(xp_copy(self.x), self.v)
+                self._nhev += 1
+            elif self._orig_hess in FD_METHODS:
+                self._update_jac()
+                self.H = self.hess_wrapped(xp_copy(self.x), self.v, J0=self.J)
+            elif isinstance(self._orig_hess, HessianUpdateStrategy):
+                self._update_jac()
+                # When v is updated before x was updated, then x_prev and
+                # J_prev are None and we need this check.
+                if self.x_prev is not None and self.J_prev is not None:
+                    delta_x = self.x - self.x_prev
+                    delta_g = self.J.T.dot(self.v) - self.J_prev.T.dot(self.v)
+                    self.H.update(delta_x, delta_g)
+
             self.H_updated = True
 
     def fun(self, x):
         self._update_x(x)
         self._update_fun()
-        return self.f
+        # returns a copy so that downstream can't overwrite the
+        # internal attribute
+        return xp_copy(self.f)
 
     def jac(self, x):
         self._update_x(x)
         self._update_jac()
+        if hasattr(self.J, "astype"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy a LinearOperator
+            return self.J.astype(self.J.dtype)
         return self.J
 
     def hess(self, x, v):
@@ -671,6 +750,10 @@ class VectorFunction:
         self._update_v(v)
         self._update_x(x)
         self._update_hess()
+        if hasattr(self.H, "astype"):
+            # returns a copy so that downstream can't overwrite the
+            # internal attribute. But one can't copy non-arrays
+            return self.H.astype(self.H.dtype)
         return self.H
 
 

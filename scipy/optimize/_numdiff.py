@@ -390,7 +390,10 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         Dictionary containing extra information about the calculation. The
         keys include:
 
-        - `nfev`, number of function evaluations.
+        - `nfev`, number of function evaluations. If `as_linear_operator` is True
+           then `fun` is expected to track the number of evaluations itself.
+           This is because multiple calls may be made to the linear operator which
+           are not trackable here.
 
     See Also
     --------
@@ -555,8 +558,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         if rel_step is None:
             rel_step = _eps_for_method(x0.dtype, f0.dtype, method)
 
-        J, _nfev = _linear_operator_difference(fun_wrapped, x0,
-                                               f0, rel_step, method)
+        J, _ = _linear_operator_difference(fun_wrapped, x0,
+                                           f0, rel_step, method)
     else:
         # by default we use rel_step
         if abs_step is None:
@@ -619,7 +622,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
     n = x0.size
 
     if method == '2-point':
-        nfev = 1
+        # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -629,7 +632,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             return df / dx
 
     elif method == '3-point':
-        nfev = 2
+        # nfev = 2
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -642,7 +645,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             return df / dx
 
     elif method == 'cs':
-        nfev = 1
+        # nfev = 1
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
@@ -651,11 +654,10 @@ def _linear_operator_difference(fun, x0, f0, h, method):
             f1 = fun(x)
             df = f1.imag
             return df / dx
-
     else:
         raise RuntimeError("Never be here.")
 
-    return LinearOperator((m, n), matvec), nfev
+    return LinearOperator((m, n), matvec), 0
 
 
 def _dense_difference(fun, x0, f0, h, use_one_sided, method, workers):

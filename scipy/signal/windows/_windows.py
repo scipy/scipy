@@ -1379,7 +1379,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True, xp=None, device=None):
             "shapes"
         )
     elif M < 1:
-        return xp.array([])
+        return xp.asarray([])
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
@@ -2319,8 +2319,8 @@ def _fftautocorr(x):
     x_fft = sp_fft.rfft(x, use_N, axis=-1)
     cxy = sp_fft.irfft(x_fft * x_fft.conj(), n=use_N)[:, :N]
     # Or equivalently (but in most cases slower):
-    # cxy = xp.array([xp.convolve(xx, yy[::-1], mode='full')
-    #                 for xx, yy in zip(x, x)])[:, N-1:2*N-1]
+    # cxy = xp.asarray([xp.convolve(xx, yy[::-1], mode='full')
+    #                   for xx, yy in zip(x, x)])[:, N-1:2*N-1]
     return cxy
 
 

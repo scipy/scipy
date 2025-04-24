@@ -14,6 +14,7 @@ from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_om
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
 class TestVariation:
     """
     Test class for scipy.stats.variation
@@ -171,9 +172,9 @@ class TestVariation:
                       reason='`nan_policy` only supports NumPy backend')
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
     def test_combined_edge_cases(self, nan_policy, xp):
-        x = xp.array([[0, 10, xp.nan, 1],
-                      [0, -5, xp.nan, 2],
-                      [0, -5, xp.nan, 3]])
+        x = xp.asarray([[0, 10, xp.nan, 1],
+                        [0, -5, xp.nan, 2],
+                        [0, -5, xp.nan, 3]])
         if nan_policy == 'omit':
             with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
                 y = variation(x, axis=0, nan_policy=nan_policy)

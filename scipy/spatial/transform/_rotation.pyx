@@ -15,12 +15,20 @@ np.import_array()
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
+    if n == 0:
+        return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
@@ -448,7 +456,8 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef Py_ssize_t n = q.shape[0] if p.shape[0] == 1 else p.shape[0]
+         
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
@@ -837,8 +846,7 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if (quat.ndim not in [1, 2]
-            or quat.shape[len(quat.shape) - 1] != 4
-            or quat.shape[0] == 0):
+            or quat.shape[len(quat.shape) - 1] != 4):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
@@ -2572,17 +2580,9 @@ cdef class Rotation:
             raise ValueError("Expected input of shape (3,) or (P, 3), "
                              "got {}.".format(vectors.shape))
 
-        single_vector = False
-        if vectors.shape == (3,):
-            single_vector = True
-            vectors = vectors[None, :]
-
-        matrix = self.as_matrix()
-        if self._single:
-            matrix = matrix[None, :, :]
-
-        n_vectors = vectors.shape[0]
-        n_rotations = len(self._quat)
+        cdef bint single_vector = vectors.ndim == 1
+        cdef Py_ssize_t n_vectors = 1 if single_vector else len(vectors)
+        cdef Py_ssize_t n_rotations = 1 if self.single else len(self)
 
         if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
             raise ValueError("Expected equal numbers of rotations and vectors "
@@ -2590,15 +2590,25 @@ cdef class Rotation:
                              "{} rotations and {} vectors.".format(
                                 n_rotations, n_vectors))
 
-        if inverse:
-            result = np.einsum('ikj,ik->ij', matrix, vectors)
-        else:
-            result = np.einsum('ijk,ik->ij', matrix, vectors)
+        cdef np.ndarray matrix = self.as_matrix()
 
-        if self._single and single_vector:
-            return result[0]
-        else:
-            return result
+        if inverse:
+            matrix = np.swapaxes(matrix, -1, -2)
+
+        if single_vector:
+            return np.matmul(matrix, vectors)
+
+        if self.single:
+            matrix = matrix[None, :, :]
+
+        if n_rotations == 1:
+            # Single rotation/many vectors, use matmul for speed: The axes argument
+            # is such that the input arguments don't need to be transposed and the
+            # output argument is contineous in memory.
+            return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
+
+        # for stacks of matrices einsum is faster
+        return np.einsum('ijk,ik->ij', matrix, vectors)
 
     @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):
@@ -2945,6 +2955,9 @@ cdef class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
+        if self._quat.shape[0] == 0:
+            raise ValueError("Mean of an empty rotation set is undefined.")
+            
         if weights is None:
             weights = np.ones(len(self))
         else:
@@ -3747,7 +3760,7 @@ class Slerp:
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
 
-        if rotations.single or len(rotations) == 1:
+        if rotations.single or len(rotations) <= 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         times = np.asarray(times)

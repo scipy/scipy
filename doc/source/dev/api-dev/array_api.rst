@@ -121,6 +121,29 @@ Support is provided in `scipy.stats` for the following functions:
 `scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
 and `scipy.stats.monte_carlo_test`.
 
+Some features provide a capability table in the documentation like this:
+
++---------+-------------+-------------+
+| Library | CPU         | GPU         |
++=========+=============+=============+
+| NumPy   | ✓           | n/a         |
++---------+-------------+-------------+
+| CuPy    | n/a         | ✓           |
++---------+-------------+-------------+
+| PyTorch | ✓           | ✗           |
++---------+-------------+-------------+
+| JAX     | ✓           | ✓           |
++---------+-------------+-------------+
+| Dask    | ✗           | ✗           |
++---------+-------------+-------------+
+
+In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
+arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
+support multiple devices (CPU and GPU), but SciPy support for such arrays may be
+limited; for instance, this SciPy feature is only expected to work with PyTorch arrays
+located on the CPU. While the elements of the table marked with "n/a" are inherently
+out of scope, we are continually working on filling in the rest.
+
 Please see `the tracker issue`_ for updates.
 
 

@@ -10,7 +10,8 @@ from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy import special
-from scipy._lib._util import check_random_state, _lazywhere
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
@@ -3586,20 +3587,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    This class is wrapping the random_rot code from the MDP Toolkit,
-    https://github.com/mdp-toolkit/mdp-toolkit
+    The ``rvs`` method returns a random rotation matrix drawn from the Haar
+    distribution, the only uniform distribution on SO(N). The algorithm generates
+    a Haar-distributed orthogonal matrix in O(N) using the ``rvs`` method of
+    `ortho_group`, then adjusts the matrix to ensure that the determinant is +1.
 
-    Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(N)).
-    The algorithm is described in the paper
-    Stewart, G.W., "The efficient generation of random orthogonal
-    matrices with an application to condition estimators", SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
-
-    See also the similar `ortho_group`. For a random rotation in three
-    dimensions, see `scipy.spatial.transform.Rotation.random`.
+    For a random rotation in three dimensions, see
+    `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
@@ -3865,6 +3859,7 @@ class random_correlation_gen(multi_rv_generic):
     r"""A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
+    The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
@@ -3877,7 +3872,8 @@ class random_correlation_gen(multi_rv_generic):
     Parameters
     ----------
     eigs : 1d ndarray
-        Eigenvalues of correlation matrix
+        Eigenvalues of correlation matrix. All eigenvalues need to be non-negative and
+        need to sum to the number of eigenvalues.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -4636,7 +4632,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
-        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
+        return xpx.apply_where(df >= threshold, (dim, df), asymptotic, regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate

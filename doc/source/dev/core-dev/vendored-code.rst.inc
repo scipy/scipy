@@ -20,6 +20,7 @@ Currently, this includes the following parts of the codebase:
 - QHull_, at ``scipy/spatial/qhull_src``
 - trlib_, at ``scipy/optimize/_trlib``
 - UNU.RAN_, at ``scipy/stats/_unuran``
+- PRIMA_, at ``scipy/_lib/pyprima``
 
 .. _ARPACK: https://github.com/opencollab/arpack-ng
 .. _SuperLU: https://github.com/xiaoyeli/superlu
@@ -27,3 +28,4 @@ Currently, this includes the following parts of the codebase:
 .. _trlib: https://github.com/felixlen/trlib
 .. _UNU.RAN: https://statmath.wu.ac.at/unuran/
 .. _DIRECT: https://github.com/stevengj/nlopt/tree/master/src/algs/direct
+.. _PRIMA: https://github.com/libprima/prima

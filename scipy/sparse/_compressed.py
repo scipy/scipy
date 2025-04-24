@@ -13,7 +13,10 @@ from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_sample_values, csr_row_index, csr_row_slice,
-                           csr_column_index1, csr_column_index2)
+                           csr_column_index1, csr_column_index2, csr_diagonal,
+                           expandptr, csr_has_canonical_format, csr_eliminate_zeros,
+                           csr_sum_duplicates, csr_has_sorted_indices, csr_sort_indices,
+                           csr_matmat_maxnnz, csr_matmat)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,
@@ -560,39 +563,40 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_shape += (N,)
         faux_shape = (M if self.ndim == 2 else 1, N if o_ndim == 2 else 1)
 
-        major_dim = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format
+        index_arrays = (self.indptr, self.indices, other.indptr, other.indices)
 
-        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices))
+        M, N = self._swap((M, N))
+        s, o = self._swap((self, other))
 
-        fn = getattr(_sparsetools, self.format + '_matmat_maxnnz')
-        nnz = fn(M, N,
-                 np.asarray(self.indptr, dtype=idx_dtype),
-                 np.asarray(self.indices, dtype=idx_dtype),
-                 np.asarray(other.indptr, dtype=idx_dtype),
-                 np.asarray(other.indices, dtype=idx_dtype))
+        idx_dtype = self._get_index_dtype(index_arrays)
+        s_indptr = np.asarray(s.indptr, dtype=idx_dtype)
+        s_indices = np.asarray(s.indices, dtype=idx_dtype)
+        o_indptr = np.asarray(o.indptr, dtype=idx_dtype)
+        o_indices = np.asarray(o.indices, dtype=idx_dtype)
+
+        nnz = csr_matmat_maxnnz(M, N, s_indptr, s_indices, o_indptr, o_indices)
         if nnz == 0:
             if new_shape == ():
                 return np.array(0, dtype=upcast(self.dtype, other.dtype))
             return self.__class__(new_shape, dtype=upcast(self.dtype, other.dtype))
 
-        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=nnz)
+        new_idx_dtype = self._get_index_dtype(index_arrays, maxval=nnz)
+        if new_idx_dtype != idx_dtype:
+            idx_dtype = new_idx_dtype
+            s_indptr = np.asarray(s.indptr, dtype=idx_dtype)
+            s_indices = np.asarray(s.indices, dtype=idx_dtype)
+            o_indptr = np.asarray(o.indptr, dtype=idx_dtype)
+            o_indices = np.asarray(o.indices, dtype=idx_dtype)
 
-        indptr = np.empty(major_dim + 1, dtype=idx_dtype)
+        indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
-        fn = getattr(_sparsetools, self.format + '_matmat')
-        fn(M, N, np.asarray(self.indptr, dtype=idx_dtype),
-           np.asarray(self.indices, dtype=idx_dtype),
-           self.data,
-           np.asarray(other.indptr, dtype=idx_dtype),
-           np.asarray(other.indices, dtype=idx_dtype),
-           other.data,
-           indptr, indices, data)
+        csr_matmat(M, N,
+                   s_indptr, s_indices, s.data,
+                   o_indptr, o_indices, o.data,
+                   indptr, indices, data)
 
         if new_shape == ():
             return np.array(data[0])
@@ -604,14 +608,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return res
 
     def diagonal(self, k=0):
-        rows, cols = self.shape
-        if k <= -rows or k >= cols:
+        M, N = self._swap(self.shape)
+        k, _ = self._swap((k, -k))
+
+        if k <= -M or k >= N:
             return np.empty(0, dtype=self.data.dtype)
-        fn = getattr(_sparsetools, self.format + "_diagonal")
-        y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
-                     dtype=upcast(self.dtype))
-        fn(k, self.shape[0], self.shape[1], self.indptr, self.indices,
-           self.data, y)
+        y = np.empty(min(M + min(k, 0), N - max(k, 0)), dtype=upcast(self.dtype))
+        csr_diagonal(k, M, N, self.indptr, self.indices, self.data, y)
         return y
 
     diagonal.__doc__ = _spbase.diagonal.__doc__
@@ -663,8 +666,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Sum the array/matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
-        # The _spbase base class already does axis=0 and axis=1 efficiently
-        # so we only do the case axis=None here
+        # The _spbase base class already does axis=None and major axis efficiently
+        # so we only do the case axis= minor axis
         if (self.ndim == 2 and not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
@@ -677,12 +680,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if axis % 2 == 1:
                 ret = ret.T
 
-            if out is not None and out.shape != ret.shape:
-                raise ValueError('dimensions do not match')
-
             return ret.sum(axis=(), dtype=dtype, out=out)
         else:
-            # _spbase handles the situations when axis is in {None, -2, -1, 0, 1}
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
     sum.__doc__ = _spbase.sum.__doc__
@@ -1155,7 +1154,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
-        _sparsetools.expandptr(major_dim, self.indptr, major_indices)
+        expandptr(major_dim, self.indptr, major_indices)
         coords = self._swap((major_indices, minor_indices))
 
         return self._coo_container(
@@ -1193,7 +1192,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         This is an *in place* operation.
         """
         M, N = self._swap(self._shape_as_2d)
-        _sparsetools.csr_eliminate_zeros(M, N, self.indptr, self.indices, self.data)
+        csr_eliminate_zeros(M, N, self.indptr, self.indices, self.data)
         self.prune()  # nnz may have changed
 
     @property
@@ -1213,10 +1212,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # not sorted => not canonical
             self._has_canonical_format = False
         elif not hasattr(self, '_has_canonical_format'):
+            M = len(self.indptr) - 1
             self.has_canonical_format = bool(
-                _sparsetools.csr_has_canonical_format(
-                    len(self.indptr) - 1, self.indptr, self.indices)
-                )
+                csr_has_canonical_format(M, self.indptr, self.indices)
+            )
         return self._has_canonical_format
 
     @has_canonical_format.setter
@@ -1235,7 +1234,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.sort_indices()
 
         M, N = self._swap(self._shape_as_2d)
-        _sparsetools.csr_sum_duplicates(M, N, self.indptr, self.indices, self.data)
+        csr_sum_duplicates(M, N, self.indptr, self.indices, self.data)
 
         self.prune()  # nnz may have changed
         self.has_canonical_format = True
@@ -1250,10 +1249,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """
         # first check to see if result was cached
         if not hasattr(self, '_has_sorted_indices'):
+            M = len(self.indptr) - 1
             self._has_sorted_indices = bool(
-                _sparsetools.csr_has_sorted_indices(
-                    len(self.indptr) - 1, self.indptr, self.indices)
-                )
+                csr_has_sorted_indices(M, self.indptr, self.indices)
+            )
         return self._has_sorted_indices
 
     @has_sorted_indices.setter
@@ -1275,10 +1274,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def sort_indices(self):
         """Sort the indices of this array/matrix *in place*
         """
-
         if not self.has_sorted_indices:
-            _sparsetools.csr_sort_indices(len(self.indptr) - 1, self.indptr,
-                                          self.indices, self.data)
+            M = len(self.indptr) - 1
+            csr_sort_indices(M, self.indptr, self.indices, self.data)
             self.has_sorted_indices = True
 
     def prune(self):
@@ -1357,7 +1355,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         other = self.__class__(other)
 
         # e.g. csr_plus_csr, csr_minus_csr, etc.
-        fn = getattr(_sparsetools, self.format + op + self.format)
+        fn = getattr(_sparsetools, "csr" + op + "csr")
 
         maxnnz = self.nnz + other.nnz
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
@@ -1372,7 +1370,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         else:
             data = np.empty(maxnnz, dtype=upcast(self.dtype, other.dtype))
 
-        M, N = self._shape_as_2d
+        M, N = self._swap(self._shape_as_2d)
         fn(M, N,
            np.asarray(self.indptr, dtype=idx_dtype),
            np.asarray(self.indices, dtype=idx_dtype),
