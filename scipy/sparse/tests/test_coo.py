@@ -958,8 +958,11 @@ def test_sum(shape, axis, out):
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
     res = a.sum(axis=axis, out=out)
-    exp = np.sum(a.toarray(), axis=axis, out=out)
+    exp = np.sum(a.toarray(), axis=axis)
     assert_equal(res, exp)
+    if out is not None:
+        assert_equal(out, exp)
+        assert id(res) == id(out)
 
 
 @pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
@@ -968,8 +971,11 @@ def test_mean(shape, axis, out):
     a = random_array(shape, density=0.6, random_state=rng, dtype=int)
 
     res = a.mean(axis=axis, out=out)
-    exp = np.mean(a.toarray(), axis=axis, out=out)
+    exp = np.mean(a.toarray(), axis=axis)
     assert_allclose(res, exp)
+    if out is not None:
+        assert id(res) == id(out)
+        assert_allclose(out, exp)
 
 
 def test_pow_abs_round():
