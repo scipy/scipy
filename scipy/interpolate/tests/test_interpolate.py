@@ -993,6 +993,42 @@ class TestAkima1DInterpolator:
         # Testing extrapoation to actual function.
         xp_assert_close(y_ext, ak_true(x_ext), atol=1e-15)
 
+    def test_large_dynamic_rannge(self):
+        # check a large step does not change non-overlapping subsplines
+        x = 1.*np.arange(1, 12)                    # grid of spline points
+        x_sample = np.linspace(1., 7., 21)         # grid of points to sample splines at
+        y1 = np.heaviside(x - 3, 0.5)              # small step function
+        y2 = y1 + 1.e9 * np.heaviside(x - 9, 0.5)  # increase of at least ~1e9
+
+        ak1 = Akima1DInterpolator(x, y1, method='akima')
+        y_eval1 = ak1(x_sample)
+
+        ak2 = Akima1DInterpolator(x, y2, method='akima')
+        y_eval2 = ak2(x_sample)
+
+        ak3 = Akima1DInterpolator(x, y1, method='makima')
+        y_eval3 = ak3(x_sample)
+
+        ak4 = Akima1DInterpolator(x, y2, method='makima')
+        y_eval4 = ak4(x_sample)
+
+        xp_assert_equal(y_eval1, y_eval2)
+        xp_assert_equal(y_eval3, y_eval4)
+
+    def test_no_overflow(self):
+        # check a large jump does not cause a float overflow
+        x = np.arange(1, 10)
+        y = 1.e160*np.heaviside(x-4, 0.5)
+
+        ak1 = Akima1DInterpolator(x, y, method='makima')
+        ak2 = Akima1DInterpolator(x, y, method='akima')
+
+        y_eval1 = ak1(x)
+        y_eval2 = ak2(x)
+
+        assert np.isfinite(y_eval1).all()
+        assert np.isfinite(y_eval2).all()
+
 
 @pytest.mark.parametrize("method", [Akima1DInterpolator, PchipInterpolator])
 def test_complex(method):
