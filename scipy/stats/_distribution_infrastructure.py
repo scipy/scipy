@@ -7,7 +7,8 @@ import math
 import numpy as np
 from numpy import inf
 
-from scipy._lib._util import _rng_spawn, _RichResult, _lazywhere
+from scipy._lib.array_api_extra import apply_where
+from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
 from scipy.special._ufuncs import _log1mexp
@@ -324,7 +325,7 @@ class _SimpleDomain(_Domain):
         a, b = self.endpoints
         # If `a` (`b`) is a string - the name of the parameter that defines
         # the endpoint of the domain - then corresponding numerical values
-        # will be found in the `parameter_values` dictionary. 
+        # will be found in the `parameter_values` dictionary.
         # If a callable, it will be executed with `parameter_values` passed as
         # keyword arguments, and it will return the numerical values.
         # Otherwise, it is itself the array of numerical values of the endpoint.
@@ -1396,7 +1397,7 @@ def _generate_example(dist_family):
     >>> x = {x}
     >>> X.pdf(x), X.pmf(x)
     {X.pdf(x), X.pmf(x)}
-    
+
     The cumulative distribution function, its complement, and the logarithm
     of these functions are evaluated similarly.
 
@@ -3628,14 +3629,14 @@ class DiscreteDistribution(UnivariateDistribution):
         a, _ = self._support(**params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
-        cdf_xm1 = _lazywhere(x - 1 >= a, [x - 1] + args, _cdf, fillvalue=0)
+        cdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _cdf, fillvalue=0)
         return ccdf_y + cdf_xm1
 
     def _logccdf2_addition(self, x, y, **params):
         a, _ = self._support(**params)
         logccdf_y = self._logccdf_dispatch(y, **params)
         _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        logcdf_xm1 = _lazywhere(x - 1 >= a, [x - 1] + args, _logcdf, fillvalue=-np.inf)
+        logcdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _logcdf, fillvalue=-np.inf)
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
     def _icdf_inversion(self, x, **params):
@@ -3863,7 +3864,7 @@ def make_distribution(dist):
         ``moment``, and ``sample``.
         If defined, these methods must accept the parameters of the distribution as
         keyword arguments and also accept any positional-only arguments accepted by
-        the corresponding method of `ContinuousDistribution`. 
+        the corresponding method of `ContinuousDistribution`.
         When multiple parameterizations are defined, these methods must accept
         all parameters from all parameterizations. The ``moment`` method
         must accept the ``order`` and ``kind`` arguments by position or keyword, but
@@ -3943,7 +3944,7 @@ def make_distribution(dist):
     ...
     ...     @property
     ...     def parameters(self):
-    ...         return {"a": (-np.inf, np.inf), 
+    ...         return {"a": (-np.inf, np.inf),
     ...                 "b": {'endpoints':('a', np.inf), 'inclusive':(True, False)}}
     ...
     ...     @property
@@ -5493,7 +5494,7 @@ class FoldedDistribution(TransformedDistribution):
         a, b = self._dist._support(**params)
         xl = np.maximum(-x, a)
         xr = np.minimum(x, b)
-        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method, 
+        return self._dist._logccdf2_dispatch(xl, xr, *args, method=method,
                                              **params).real
 
     def _ccdf_dispatch(self, x, *args, method=None, **params):
