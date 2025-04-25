@@ -51,6 +51,21 @@ def polyval(p, x, *, xp):
 # ### New-style routines ###
 
 
+# https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L845-L894
+def npp_polyval(x, c, *, xp, tensor=True):
+    c = xp.asarray(c, copy=None)
+    c = xpx.atleast_nd(c, ndim=1, xp=xp)
+    if isinstance(x, tuple | list):
+        x = xp.asarray(x)
+    if tensor:
+        c = xp.reshape(c, (c.shape + (1,)*x.ndim))
+
+    c0 = c[-1, ...]
+    for i in range(2, c.shape[0] + 1):
+        c0 = c[-i, ...] + c0*x
+    return c0
+
+
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L758-L842
 def npp_polyvalfromroots(x, r, *, xp, tensor=True):
     r = xp.asarray(r, copy=None)
@@ -58,8 +73,8 @@ def npp_polyvalfromroots(x, r, *, xp, tensor=True):
     # if r.dtype.char in '?bBhHiIlLqQpP':
     #    r = r.astype(np.double)
 
-    if isinstance(x, (tuple, list)):
-        x = np.asarray(x)
+    if isinstance(x, tuple | list):
+        x = xp.asarray(x)
 
     if tensor:
         r = xp.reshape(r, r.shape + (1,) * x.ndim)

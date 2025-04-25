@@ -4,12 +4,11 @@ import operator
 import warnings
 
 import numpy as np
-from numpy import (atleast_1d, poly, polyval, roots, asarray,
+from numpy import (atleast_1d, poly, roots, asarray,
                    pi, absolute, sqrt, tan, log10,
                    arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    sinh, concatenate, prod, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
-from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
@@ -63,16 +62,16 @@ def _is_int_type(x):
 
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
 def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
-    if not isinstance(base, (float, int)) and xp.asarray(base).ndim > 0:
+    if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
         # If base is non-scalar, broadcast it with the others, since it
         # may influence how axis is interpreted.
-        start, stop, step = map(xp.asarray, (start, stop, step))
+        start, stop, base = map(xp.asarray, (start, stop, base))
         ndmax = xp.broadcast_arrays(start, stop, base).ndim
         start, stop, base = (
             xpx.atleast_nd(a, ndim=ndmax)
             for a in (start, stop, base)
         )
-        base = xp.expand_dims(base, axis=axis)
+        base = xp.expand_dims(base)
     y = xp.linspace(start, stop, num=num, endpoint=endpoint)
 
     yp = xp.pow(base, y)
@@ -481,8 +480,14 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     (2, 1024)
 
     """
-    b = atleast_1d(b)
-    a = atleast_1d(a)
+    xp = array_namespace(b, a)
+
+    b, a = map(xp.asarray, (b, a))
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, xp_default_dtype(xp))
+
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -500,40 +505,48 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
-        w = np.linspace(0, lastpoint, N,
+        w = xp.linspace(0, lastpoint, N,
                         endpoint=include_nyquist and not whole)
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
-        if (a.size == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
+        if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
                 and n_fft > 0):  # TODO: review threshold acc. to benchmark?
-            if np.isrealobj(b) and np.isrealobj(a):
+ 
+            if (xp.isdtype(b.dtype, "real floating") and
+                xp.isdtype(a.dtype, "real floating")
+            ):
                 fft_func = sp_fft.rfft
             else:
                 fft_func = sp_fft.fft
-            h = fft_func(b, n=n_fft, axis=0)[:N]
+
+            h = fft_func(b, n=n_fft, axis=0)
+            h = h[:min(N, h.shape[0]), ...]
             h /= a
+
             if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
-                stop = -1 if n_fft % 2 == 1 else -2
-                h_flip = slice(stop, 0, -1)
-                h = np.concatenate((h, h[h_flip].conj()))
+                stop = None if n_fft % 2 == 1 else -1
+                h_flipped = xp.flip(h[1:stop, ...], axis=0)
+                h = xp.concat((h, xp.conj(h_flipped)))
             if b.ndim > 1:
                 # Last axis of h has length 1, so drop it.
                 h = h[..., 0]
                 # Move the first axis of h to the end.
-                h = np.moveaxis(h, 0, -1)
+                h = xp.moveaxis(h, 0, -1)
     else:
-        w = atleast_1d(worN)
+        w = xpx.atleast_nd(xp.asarray(worN), ndim=1, xp=xp)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
         del worN
-        w = 2*pi*w/fs
+        w = 2 * pi * w / fs
 
     if h is None:  # still need to compute using freqs w
-        zm1 = exp(-1j * w)
-        h = (npp_polyval(zm1, b, tensor=False) /
-             npp_polyval(zm1, a, tensor=False))
+        zm1 = xp.exp(-1j * w)
+        h = (_pu.npp_polyval(zm1, b, tensor=False, xp=xp) /
+             _pu.npp_polyval(zm1, a, tensor=False, xp=xp))
 
-    w = w*(fs/(2*pi))
+    w = w * (fs / (2 * pi))
 
     if plot is not None:
         plot(w, h)
@@ -625,6 +638,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     """
     xp = array_namespace(z, p)
+    z, p = map(xp.asarray, (z, p))
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     p = xpx.atleast_nd(p, ndim=1, xp=xp)
@@ -642,11 +656,15 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     elif _is_int_type(worN):
         w = xp.linspace(0, lastpoint, worN, endpoint=False)
     else:
-        w = xpx.atleast_nd(worN, ndim=1, xp=xp)
-        w = 2*pi*w/fs
+        w = xp.asarray(worN)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
+        w = xpx.atleast_nd(w, ndim=1, xp=xp)
+        w = 2 * pi * w / fs
 
-    zm1 = exp(1j * w)
-    h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
+    zm1 = xp.exp(1j * w)
+    func = _pu.npp_polyvalfromroots
+    h = xp.asarray(k) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
 
     w = w*(fs/(2*pi))
 
