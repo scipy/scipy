@@ -360,7 +360,7 @@ def geometric_discrepancy(
         
         .. versionadded:: 1.16.0
             Parallel processing is only available when ``method="mindist"`` and
-            ``metric="euclidean"`` or ``metric="cityblock"``.
+            ``metric in ["euclidean", "cityblock", "chebyshev"]``.
             
     Returns
     -------
