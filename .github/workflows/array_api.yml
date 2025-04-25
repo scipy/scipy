@@ -60,8 +60,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict
-        python -m pip install spin==0.14
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click pooch hypothesis array-api-strict spin
 
     - name: Install PyTorch CPU
       run: |
