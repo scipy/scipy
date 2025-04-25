@@ -2332,7 +2332,8 @@ def _pmindist(
         the default.
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is given all
-        CPU threads are used. Default is 1.
+        CPU threads are used. Default is 1. Parallel processing is only
+        available when ``metric in ["euclidean","cityblock","chebyshev"]``.
 
     Returns
     -------
@@ -2347,6 +2348,9 @@ def _pmindist(
         case 'cityblock':
             p = 1
             distance_fun = cityblock
+        case 'chebyshev':
+            p = np.inf
+            distance_fun = chebyshev
         case _:
             # Slow path for metrics unsupported by KDTree.
             distances = pdist(sample, metric=metric)  # type: ignore[call-overload]
@@ -2360,7 +2364,10 @@ def _pmindist(
                       k=[2], p=p,
                       workers=workers,
                       distance_upper_bound=distance_upper_bound)
-    return d.min()
+    d = d.min()
+    if np.isinf(d):
+        return distance_upper_bound
+    return d
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
 
