@@ -28,6 +28,7 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
                           lp2bs_zpk)
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
+from scipy.signal._filter_design import _logspace
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -548,49 +549,51 @@ class TestZpk2Sos:
 
 class TestFreqs:
 
-    def test_basic(self):
-        _, h = freqs([1.0], [1.0], worN=8)
-        assert_array_almost_equal(h, np.ones(8))
+    def test_basic(self, xp):
+        _, h = freqs(xp.asarray([1.0]), xp.asarray([1.0]), worN=8)
+        assert_array_almost_equal(h, xp.ones(8))
 
-    def test_output(self):
+    def test_output(self, xp):
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
-        w = [0.1, 1, 10, 100]
-        num = [1]
-        den = [1, 1]
+        w = xp.asarray([0.1, 1, 10, 100])
+        num = xp.asarray([1.])
+        den = xp.asarray([1, 1.])
         w, H = freqs(num, den, worN=w)
         s = w * 1j
         expected = 1 / (s + 1)
-        assert_array_almost_equal(H.real, expected.real)
-        assert_array_almost_equal(H.imag, expected.imag)
+        assert_array_almost_equal(xp.real(H), xp.real(expected))
+        assert_array_almost_equal(xp.imag(H), xp.imag(expected))
 
-    def test_freq_range(self):
+    def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         # Expected range is from 0.01 to 10.
-        num = [1]
-        den = [1, 1]
+        num = xp.asarray([1.])
+        den = xp.asarray([1, 1.])
         n = 10
-        expected_w = np.logspace(-2, 1, n)
+        expected_w = _logspace(-2, 1, n, xp=xp)
         w, H = freqs(num, den, worN=n)
         assert_array_almost_equal(w, expected_w)
 
-    def test_plot(self):
+    def test_plot(self, xp):
 
         def plot(w, h):
-            assert_array_almost_equal(h, np.ones(8))
+            assert_array_almost_equal(h, xp.ones(8))
 
-        assert_raises(ZeroDivisionError, freqs, [1.0], [1.0], worN=8,
-                      plot=lambda w, h: 1 / 0)
-        freqs([1.0], [1.0], worN=8, plot=plot)
+        with assert_raises(ZeroDivisionError):
+            freqs([1.0], [1.0], worN=8, plot=lambda w, h: 1 / 0)
 
-    def test_backward_compat(self):
+        freqs(xp.asarray([1.0]), xp.asarray([1.0]), worN=8, plot=plot)
+
+    def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
-        w1, h1 = freqs([1.0], [1.0])
-        w2, h2 = freqs([1.0], [1.0], None)
+        w1, h1 = freqs(xp.asarray([1.0]), xp.asarray([1.0]))
+        w2, h2 = freqs(xp.asarray([1.0]), xp.asarray([1.0]), None)
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    def test_w_or_N_types(self):
+    @skip_xp_backends(np_only=True, reason="numpy scalars")
+    def test_w_or_N_types(self, xp):
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
@@ -607,51 +610,59 @@ class TestFreqs:
 
 class TestFreqs_zpk:
 
-    def test_basic(self):
-        _, h = freqs_zpk([1.0], [1.0], [1.0], worN=8)
-        assert_array_almost_equal(h, np.ones(8))
+    def test_basic(self, xp):
+        _, h = freqs_zpk(
+            xp.asarray([1.0]), xp.asarray([1.0]), xp.asarray([1.0]), worN=8
+        )
+        assert_array_almost_equal(h, xp.ones(8))
 
-    def test_output(self):
+    def test_output(self, xp):
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
-        w = [0.1, 1, 10, 100]
-        z = []
-        p = [-1]
+        w = xp.asarray([0.1, 1, 10, 100])
+        z = xp.asarray([])
+        p = xp.asarray([-1.0])
         k = 1
         w, H = freqs_zpk(z, p, k, worN=w)
         s = w * 1j
         expected = 1 / (s + 1)
-        assert_array_almost_equal(H.real, expected.real)
-        assert_array_almost_equal(H.imag, expected.imag)
+        assert_array_almost_equal(xp.real(H), xp.real(expected))
+        assert_array_almost_equal(xp.imag(H), xp.imag(expected))
 
-    def test_freq_range(self):
+    def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         # Expected range is from 0.01 to 10.
-        z = []
-        p = [-1]
+        z = xp.asarray([])
+        p = xp.asarray([-1.])
         k = 1
         n = 10
-        expected_w = np.logspace(-2, 1, n)
+        expected_w = _logspace(-2, 1, n, xp=xp)
         w, H = freqs_zpk(z, p, k, worN=n)
         assert_array_almost_equal(w, expected_w)
 
-    def test_vs_freqs(self):
+    def test_vs_freqs(self, xp):
         b, a = cheby1(4, 5, 100, analog=True, output='ba')
         z, p, k = cheby1(4, 5, 100, analog=True, output='zpk')
+
+        b, a = map(xp.asarray, (b, a))    # XXX convert cheby1
+        z, p = map(xp.asarray, (z, p))
 
         w1, h1 = freqs(b, a)
         w2, h2 = freqs_zpk(z, p, k)
         xp_assert_close(w1, w2)
         xp_assert_close(h1, h2, rtol=1e-6)
 
-    def test_backward_compat(self):
+    def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default
-        w1, h1 = freqs_zpk([1.0], [1.0], [1.0])
-        w2, h2 = freqs_zpk([1.0], [1.0], [1.0], None)
+        # Also, keep testing `k` a length-one list: it is documented as a scalar,
+        # but the implementation was allowing for a one-element array-likes
+        w1, h1 = freqs_zpk(xp.asarray([1.0]), xp.asarray([1.0]), [1.0])
+        w2, h2 = freqs_zpk(xp.asarray([1.0]), xp.asarray([1.0]), [1.0], None)
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    def test_w_or_N_types(self):
+    @skip_xp_backends(np_only=True, reason="numpy scalars")
+    def test_w_or_N_types(self, xp):
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
