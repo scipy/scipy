@@ -65,18 +65,16 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.11'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
-        python -m pip install spin==0.14
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson pooch hypothesis spin
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.13-dev' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3" meson
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout spin pooch hypothesis "setuptools<67.3" meson
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         # Disable Meson master testing until upstream option handling is fixed, see scipy#22534
         # python -m pip install git+https://github.com/mesonbuild/meson.git
-        python -m pip install spin==0.14
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -192,7 +190,6 @@ jobs:
         # build isolation here.
         python -m pip install numpy pybind11 pythran cython pytest ninja hypothesis
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
-        python -m pip install spin==0.14
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
@@ -262,7 +259,6 @@ jobs:
       - name: Setup Python build deps
         run: |
           pip install build meson-python ninja pythran pybind11 cython numpy
-          pip install spin==0.14
 
       - name: Build wheel and install
         run: |
@@ -325,12 +321,11 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
+        python -m pip install cython pythran ninja meson-python pybind11 spin
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis matplotlib
         python -m pip install -r requirements/openblas.txt
         # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-        pip install spin==0.14
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -394,9 +389,8 @@ jobs:
         uname -a && \
         python3.11 -m venv test && \
         source test/bin/activate && \
-        python -m pip install doit click rich_click pydevtool meson ninja && \
+        python -m pip install spin meson ninja && \
         python -m pip install -r requirements/openblas.txt && \
-        python -m pip install spin==0.14 && \
         # Ensure that scipy-openblas is picked up by the numpy<1.26 build
         cat > \$HOME/.numpy-site.cfg <<EOL
         [openblas]
@@ -407,7 +401,6 @@ jobs:
         symbol_prefix = scipy_
         EOL
         python -m pip install numpy==1.25.2 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
-        python -m pip install spin==0.14 && \
         python -c 'import numpy as np; np.show_config()' && \
         spin build --with-scipy-openblas && \
         spin test"
@@ -439,7 +432,6 @@ jobs:
       - name: Setup Python build deps
         run: |
           python3.11 -m pip install build pythran pybind11 cython numpy meson-python
-          python3.11 -m pip install spin==0.14
 
       - name: Build wheel and install
         run: |
@@ -490,8 +482,7 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        pip install numpy ninja meson-python pybind11 click rich_click pydevtool pytest pytest-xdist threadpoolctl pooch hypothesis
-        pip install spin==0.14
+        pip install numpy ninja meson-python pybind11 spin pytest pytest-xdist threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
 
     - name: Install Pythran master

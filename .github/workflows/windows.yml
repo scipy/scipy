@@ -21,8 +21,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  fast_dev_py:
-    name: fast, py3.12/npAny, dev.py
+  fast_spin:
+    name: fast, py3.12/npAny, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -49,9 +49,8 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
           python -m pip install -r requirements/openblas.txt
-          pip install spin==0.14
 
       - name: Build
         run: |
@@ -65,8 +64,8 @@ jobs:
 
 
   #############################################################################
-  full_dev_py_min_numpy:
-    name: full, py3.11/npMin, dev.py
+  full_spin_min_numpy:
+    name: full, py3.11/npMin, spin
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -92,8 +91,7 @@ jobs:
       - name: pip-packages
         run: |
           # 1.25.2 is currently our oldest supported NumPy version
-          python -m pip install numpy==1.25.2 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
-          pip install spin==0.14
+          python -m pip install numpy==1.25.2 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch spin hypothesis
           python -m pip install -r requirements/openblas.txt
 
       - name: Build
@@ -145,7 +143,6 @@ jobs:
       - name: pip-packages
         run: |
           python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
-          pip install spin==0.14
           python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Build

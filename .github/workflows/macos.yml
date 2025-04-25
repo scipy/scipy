@@ -114,7 +114,6 @@ jobs:
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
-        pip install spin==0.14
 
         CC="ccache $CC" spin build
 
@@ -132,7 +131,7 @@ jobs:
 
 
   test_scipy_openblas:
-    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
+    name: M1 & OpenBLAS, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -168,9 +167,8 @@ jobs:
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+        pip install meson cython pythran pybind11 ninja numpy spin
         pip install -r requirements/openblas.txt
-        pip install spin==0.14
         spin build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
@@ -178,7 +176,7 @@ jobs:
 
 
   test_meson_accelerate:
-    name: Accelerate, fast, py3.11/npAny, dev.py
+    name: Accelerate, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -214,8 +212,7 @@ jobs:
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        pip install spin==0.14
+        pip install meson cython pythran pybind11 ninja numpy spin
         spin build --with-accelerate
 
         pip install pooch pytest hypothesis
