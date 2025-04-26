@@ -564,6 +564,7 @@ class TestFreqs:
         assert_array_almost_equal(xp.real(H), xp.real(expected))
         assert_array_almost_equal(xp.imag(H), xp.imag(expected))
 
+    @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
     def test_freq_range(self, xp):
         # Test that freqresp() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
@@ -640,6 +641,7 @@ class TestFreqs_zpk:
         w, H = freqs_zpk(z, p, k, worN=n)
         assert_array_almost_equal(w, expected_w)
 
+    @skip_xp_backends("jax.numpy", reason="eigvals not available on CUDA")
     def test_vs_freqs(self, xp):
         b, a = cheby1(4, 5, 100, analog=True, output='ba')
         z, p, k = cheby1(4, 5, 100, analog=True, output='zpk')

@@ -797,8 +797,11 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     return w, gd
 
 
-def _validate_sos(sos, xp):
+def _validate_sos(sos, xp=None):
     """Helper to validate a SOS input"""
+    if xp is None:
+        xp = np    # backcompat, cf sosfilt, sosfiltfilt
+
     sos = xp.asarray(sos)
     sos = xpx.atleast_nd(sos, ndim=2, xp=xp)
     if sos.ndim != 2:
