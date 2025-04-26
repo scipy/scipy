@@ -20,7 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    use_abs=False,
+    variant="default",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -70,11 +70,12 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
-    use_abs : bool, optional
-        If True, use the absolute values of edge weights to compute vertex degrees.
-        This is useful for signed graphs to prevent positive and negative weights
-        from cancelling out during degree computation.
-        Default: False.
+    variant : 'default', or 'use_abs'
+        Specifies the method used to compute vertex degrees:
+        - 'default': standard degree calculation using edge weights.
+        - 'use_abs': use absolute values of edge weights to prevent cancellation
+          in signed graphs.
+        Default: 'default'.
 
     Returns
     -------
@@ -297,9 +298,9 @@ def laplacian(
     >>> d_signed
     array([0, 2, 0])
 
-    Setting use_abs=True prevents cancellation by summing absolute edge weights:
+    Setting variant="use_abs" prevents cancellation by summing absolute edge weights:
 
-    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, use_abs=True)
+    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, variant="use_abs")
     >>> L_abs
     array([[ 2, -1, 1],
            [-1,  2, -1],
@@ -401,7 +402,7 @@ def laplacian(
         form=form,
         dtype=dtype,
         symmetrized=symmetrized,
-        use_abs=use_abs,
+        variant=variant,
     )
     if is_pydata_sparse:
         lap = pydata_sparse_cls.from_scipy_sparse(lap)
@@ -441,7 +442,7 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
+def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, variant):
     # The keyword argument `copy` is unused and has no effect here.
     del copy
 
@@ -455,7 +456,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, u
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
         diag = graph_sum - graph_diagonal - graph_diagonal
 
-    if use_abs:
+    if variant == "use_abs":
         # Normalization affects only the diagonal (degree) computation, not the rest.
         # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
         diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
@@ -491,7 +492,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, u
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
+def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, variant):
     # The keyword argument `form` is unused and has no effect here.
     del form
 
@@ -508,17 +509,21 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, use_a
 
     # Normalization affects only the diagonal (degree) computation, not the rest.
     # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-    if use_abs:
+    if variant == "default":
+        w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+    elif variant == "use_abs":
         w = np.asarray(np.abs(m).sum(axis=axis)).ravel() - np.abs(m.diagonal())
     else:
-        w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+        raise ValueError(f"Invalid variant: {variant!r}")
 
     if symmetrized:
-        if use_abs:
+        if variant == "default":
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
+        elif variant == "use_abs":
             w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel() \
                  - np.abs(m.diagonal())
         else:
-            w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
+            raise ValueError(f"Invalid variant: {variant!r}")
         m += m.T.conj()
 
     if normed:
@@ -540,7 +545,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, use_a
     return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
+def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, variant):
 
     if copy:
         m = np.array(graph)
@@ -557,7 +562,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, us
         graph_sum += m.sum(axis=1 - axis)
         diag = graph_sum - graph_diagonal - graph_diagonal
 
-    if use_abs:
+    if variant == "use_abs":
         # Normalization affects only the diagonal (degree) computation, not the rest.
         # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
         diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
@@ -593,7 +598,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, us
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, use_abs):
+def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, variant):
 
     if form != "array":
         raise ValueError(f'{form!r} must be "array"')
@@ -613,16 +618,20 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, use_ab
 
     # Normalization affects only the diagonal (degree) computation, not the rest.
     # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-    if use_abs:
+    if variant == "default":
+        w = np.asarray(m.sum(axis=axis)).ravel()
+    elif variant == "use_abs":
         w = np.asarray(np.abs(m).sum(axis=axis)).ravel()
     else:
-        w = np.asarray(m.sum(axis=axis)).ravel()
+        raise ValueError(f"Invalid variant: {variant!r}")
 
     if symmetrized:
-        if use_abs:
+        if variant == "default":
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
+        elif variant == "use_abs":
             w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel()
         else:
-            w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
+            raise ValueError(f"Invalid variant: {variant!r}")
         m += m.T.conj()
 
     if normed:
