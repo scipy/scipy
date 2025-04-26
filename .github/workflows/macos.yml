@@ -121,6 +121,10 @@ jobs:
         export BOOST_LIBRARYDIR=${{ env.CONDA }}/envs/scipy-dev/lib
         rm -rf subprojects/boost_math  # so will fail if system boost doesn't work
 
+        # configure system qhull
+        mamba install qhull=2020.2
+        rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
+
         CC="ccache $CC" spin build
 
     - name: Test SciPy

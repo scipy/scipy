@@ -1,7 +1,4 @@
-The directory ./qhull_src/src ships unmodified Qhull 2019.1 "_r"
-version source code.
-
-The file scipy/spatial/qhull_misc.c additionally contains a function
+The file scipy/spatial/qhull_misc.c contains a function
 "qh_new_qhull_scipy" derived from Qhull sources, via the following
 patch:
 

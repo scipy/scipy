@@ -167,5 +167,10 @@ boost_math_dep = dependency(
   fallback : ['boost_math', 'boost_math_dep'],
 )
 
+qhull_r_dep = dependency(
+  'qhull_r',
+  version : '8.0.2',
+  fallback : ['qhull_r', 'qhull_r_dep']
+)
 
 subdir('scipy')
