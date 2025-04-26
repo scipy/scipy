@@ -1975,6 +1975,20 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     ----------
     Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
 
+    Examples
+    --------
+    `fmin_ncg` minimizes the function using the Newton-CG optimization method.
+
+    >>> import numpy as np
+    >>> from scipy.optimize import fmin_ncg
+
+    >>> def exp_func(x):
+    ...     return np.exp(-x[0]) + (x[0] - 2)**2
+    >>> def exp_func_grad(x):
+    ...     return np.array([-np.exp(-x[0]) + 2 * (x[0] - 2)])
+    >>> x0 = np.array([1.0])
+    >>> fmin_ncg(exp_func, x0, exp_func_grad)
+    [2.06350407]
     """
     opts = {'xtol': avextol,
             'eps': epsilon,
