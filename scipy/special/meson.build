@@ -163,10 +163,9 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
-  include_directories: ['..', '../_lib/boost_math/include', '../_lib',
-                        '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [xsf_dep, np_dep, ellint_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special',
 )

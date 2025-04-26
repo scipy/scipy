@@ -161,4 +161,11 @@ endif
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
+boost_math_dep = dependency(
+  'boost',
+  version : '1.88.0',
+  fallback : ['boost_math', 'boost_math_dep'],
+)
+
+
 subdir('scipy')

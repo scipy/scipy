@@ -1224,6 +1224,13 @@ def test_svd_gesdd_nofegfault():
         svd(df)
 
 
+def test_gesdd_nan_error_message():
+    A = np.eye(2)
+    A[0, 0] = np.nan
+    with pytest.raises(ValueError, match="NaN"):
+        svd(A, check_finite=False)
+
+
 class TestSVDVals:
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
