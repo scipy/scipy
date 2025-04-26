@@ -72,9 +72,11 @@ def laplacian(
         Default: False, for backward compatibility.
     variant : 'default', or 'use_abs'
         Specifies the method used to compute vertex degrees:
-        - 'default': standard degree calculation using edge weights.
-        - 'use_abs': use absolute values of edge weights to prevent cancellation
+
+        * 'default' is standard degree calculation using edge weights;
+        * 'use_abs' use absolute values of edge weights to prevent cancellation
           in signed graphs.
+
         Default: 'default'.
 
     Returns
