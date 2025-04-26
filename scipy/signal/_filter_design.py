@@ -18,7 +18,7 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, xp_default_dtype
+    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax
 )
 from scipy._lib.array_api_compat import numpy as np_compat
 
@@ -149,8 +149,9 @@ def findfreqs(num, den, N, kind='ba'):
         xp.log10(xp.max(3*xp.abs(xp.real(ez) + integ) + 1.5*xp.imag(ez))) + 0.5
     )
 
+    fudge = 1e-14 if is_jax(xp) else 0
     lfreq = xp.round(
-        xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5
+        xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
     )
 
     w = _logspace(lfreq, hfreq, N, xp=xp)
