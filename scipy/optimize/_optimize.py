@@ -1988,7 +1988,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
     ...     return np.array([-np.exp(-x[0]) + 2 * (x[0] - 2)])
     >>> x0 = np.array([1.0])
     >>> fmin_ncg(exp_func, x0, exp_func_grad)
-    [2.06350407]
+    [2.06350407] # may vary
     """
     opts = {'xtol': avextol,
             'eps': epsilon,
