@@ -797,16 +797,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     return w, gd
 
 
-def _validate_sos(sos):
+def _validate_sos(sos, xp):
     """Helper to validate a SOS input"""
-    sos = np.asarray(sos)
-    sos = np.atleast_2d(sos)
+    sos = xp.asarray(sos)
+    sos = xpx.atleast_nd(sos, ndim=2, xp=xp)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')
     n_sections, m = sos.shape
     if m != 6:
         raise ValueError('sos array must be shape (n_sections, 6)')
-    if not (sos[:, 3] == 1).all():
+    if not xp.all(sos[:, 3] == 1):
         raise ValueError('sos[:, 3] should be all ones')
     return sos, n_sections
 
@@ -925,13 +925,16 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos)
+
     fs = _validate_fs(fs, allow_none=False)
 
-    sos, n_sections = _validate_sos(sos)
+    sos, n_sections = _validate_sos(sos, xp)
     if n_sections == 0:
         raise ValueError('Cannot compute frequencies with no sections')
     h = 1.
-    for row in sos:
+    for j in range(sos.shape[0]):
+        row = sos[j, :]
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
