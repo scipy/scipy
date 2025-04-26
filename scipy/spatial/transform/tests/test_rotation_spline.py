@@ -1,6 +1,7 @@
 from itertools import product
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 from pytest import raises
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
@@ -160,3 +161,17 @@ def test_error_handling():
     raises(ValueError, s, 10, -1)
 
     raises(ValueError, s, np.arange(10).reshape(5, 2))
+
+
+@pytest.mark.skip_xp_backends("numpy")
+def test_xp_errors(xp):
+    times = xp.asarray([0, 10])
+    r = Rotation.random(2)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    raises(
+        TypeError,
+        RotationSpline,
+        times,
+        r,
+        match="RotationSpline does not support other Array API",
+    )
