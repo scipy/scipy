@@ -197,3 +197,15 @@ class TestQuantile:
         res = stats.quantile(xp.asarray(x), xp.asarray(p), method=method)
         ref = np.quantile(x, p, method=method)
         xp_assert_equal(res, xp.asarray(ref, dtype=xp.float64))
+
+    def test_quantile_weighted_basic():
+        x = np.array([1, 2, 3, 4, 5])
+        w = np.array([1, 2, 1, 1, 5])
+        q = stats.quantile(x, 0.5, method='inverted_cdf', weights=w)
+        np.testing.assert_allclose(q, 4.5)
+
+    def test_quantile_weighted_wrong_method():
+        x = np.array([1, 2, 3, 4, 5])
+        w = np.array([1, 2, 1, 1, 5])
+        with pytest.raises(NotImplementedError):
+            stats.quantile(x, 0.5, method='linear', weights=w)
