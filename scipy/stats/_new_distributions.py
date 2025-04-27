@@ -423,8 +423,6 @@ class Binomial(DiscreteDistribution):
 
     def _moment_raw_formula(self, order, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
-        if order == 0:
-            return np.ones_like(n)
         if order == 1:
             return n*p
         if order == 2:
@@ -434,8 +432,6 @@ class Binomial(DiscreteDistribution):
 
     def _moment_central_formula(self, order, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
-        if order == 0:
-            return np.ones_like(n)
         if order == 1:
             return np.zeros_like(n)
         if order == 2:
