@@ -72,7 +72,12 @@ def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
             for a in (start, stop, base)
         )
         base = xp.expand_dims(base)
-    y = xp.linspace(start, stop, num=num, endpoint=endpoint)
+    try:
+        result_dt = xp.result_type(start, stop, base)
+    except ValueError:
+        # all of start, stop and base are python scalars
+        result_dt = xp_default_dtype(xp)
+    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
 
     yp = xp.pow(base, y)
     if dtype is None:
@@ -486,6 +491,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     b, a = map(xp.asarray, (b, a))
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.astype(a, xp_default_dtype(xp))
+    res_dtype = xp.result_type(b, a)
 
     b = xpx.atleast_nd(b, ndim=1, xp=xp)
     a = xpx.atleast_nd(a, ndim=1, xp=xp)
@@ -507,7 +513,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         # if include_nyquist is true and whole is false, w should
         # include end point
         w = xp.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole)
+                        endpoint=include_nyquist and not whole, dtype=res_dtype)
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
         if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
@@ -536,7 +542,10 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
                 # Move the first axis of h to the end.
                 h = xp.moveaxis(h, 0, -1)
     else:
-        w = xpx.atleast_nd(xp.asarray(worN), ndim=1, xp=xp)
+        if isinstance(worN, complex):
+            # backwards compat
+            worN = worN.real
+        w = xpx.atleast_nd(xp.asarray(worN, dtype=res_dtype), ndim=1, xp=xp)
         if xp.isdtype(w.dtype, 'integral'):
             w = xp.astype(w, xp_default_dtype(xp))
         del worN
@@ -643,6 +652,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     z = xpx.atleast_nd(z, ndim=1, xp=xp)
     p = xpx.atleast_nd(p, ndim=1, xp=xp)
+    res_dtype = xp.result_type(z, p)
+    res_dtype = xp.float64 if res_dtype in (xp.float64, xp.complex128) else xp.float32
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -653,9 +664,9 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = xp.linspace(0, lastpoint, 512, endpoint=False)
+        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype)
     elif _is_int_type(worN):
-        w = xp.linspace(0, lastpoint, worN, endpoint=False)
+        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype)
     else:
         w = xp.asarray(worN)
         if xp.isdtype(w.dtype, 'integral'):
@@ -665,7 +676,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     zm1 = xp.exp(1j * w)
     func = _pu.npp_polyvalfromroots
-    h = xp.asarray(k) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
+    h = xp.asarray(k, dtype=res_dtype) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
 
     w = w*(fs/(2*pi))
 

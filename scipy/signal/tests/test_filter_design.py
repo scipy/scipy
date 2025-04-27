@@ -13,7 +13,7 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal,
-    assert_array_almost_equal, xp_size
+    assert_array_almost_equal, xp_size, xp_default_dtype,
 )
 
 from numpy import array, spacing, sin, pi, sort
@@ -702,7 +702,8 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            assert h.dtype == xp.complex128
+            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            assert h.dtype == hdt
 
     def test_basic2(self, xp):
         t = xp.linspace(0, 1, 4, endpoint=False)
@@ -819,7 +820,7 @@ class TestFreqz:
                     assert_array_almost_equal(w, expected_w)
                     w, h = freqz(b, a, worN=ii, whole=True)
                     assert_array_almost_equal(w, expected_w)
-                    assert_array_almost_equal(h, expected_h)
+                    assert_array_almost_equal(h, expected_h, decimal=4)
 
                     # half
                     expected_w = xp.linspace(0, xp.pi, ii, endpoint=False)
@@ -827,7 +828,7 @@ class TestFreqz:
                     assert_array_almost_equal(w, expected_w)
                     w, h = freqz(b, a, worN=ii, whole=False)
                     assert_array_almost_equal(w, expected_w)
-                    assert_array_almost_equal(h, expected_h)
+                    assert_array_almost_equal(h, expected_h, decimal=4)
 
     def test_broadcasting1(self, xp):
         # Test broadcasting with worN an integer or a 1-D array,
@@ -983,7 +984,8 @@ class TestFreqz:
             w, h = freqz(xp.ones(2), a, worN=0, include_nyquist=True)
             assert w.shape == (0,)
             assert h.shape == (0,)
-            assert h.dtype == xp.complex128
+            hdt = xp.complex128 if xp_default_dtype(xp) == xp.float64 else xp.complex64
+            assert h.dtype == hdt
 
         w1, h1 = freqz(xp.asarray([1.0]), worN=8, whole = True, include_nyquist=True)
         w2, h2 = freqz(xp.asarray([1.0]), worN=8, whole = True, include_nyquist=False)
@@ -1016,7 +1018,7 @@ class TestFreqz:
             freqz([1.0], fs=None)
 
 
-class Testfreqz_sos:
+class TestFreqz_sos:
 
     def test_freqz_sos_basic(self, xp):
         # Compare the results of freqz and freqz_sos for a low order
@@ -1066,16 +1068,19 @@ class Testfreqz_sos:
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         sos = cheby2(N, 60, Wn, 'stop', output='sos')
         sos = xp.asarray(sos)  # XXX
+        zero = xp.asarray(0., dtype=xp.float64)
 
         w, h = freqz_sos(sos)
         h = xp.abs(h)
         w = w / xp.pi
-        xp_assert_close(20 * xp.log10(h[w <= 0.1]), xp.asarray(0.), atol=3.01,
+        xp_assert_close(20 * xp.log10(h[w <= 0.1]),
+                        zero, atol=3.01,
                         check_shape=False)
-        xp_assert_close(20 * xp.log10(h[w >= 0.6]), xp.asarray(0.), atol=3.01,
+        xp_assert_close(20 * xp.log10(h[w >= 0.6]),
+                        zero, atol=3.01,
                         check_shape=False)
         xp_assert_close(h[(w >= 0.2) & (w <= 0.5)],
-                        xp.asarray(0.), atol=1e-3,
+                        zero, atol=1e-3,
                         check_shape=False)  # <= -60 dB
 
         N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
@@ -1085,8 +1090,8 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w = w / xp.pi
-        xp_assert_close(dB[w <= 0.1], xp.asarray(0.0), atol=3.01, check_shape=False)
-        xp_assert_close(dB[w >= 0.6], xp.asarray(0.0), atol=3.01, check_shape=False)
+        xp_assert_close(dB[w <= 0.1], zero, atol=3.01, check_shape=False)
+        xp_assert_close(dB[w >= 0.6], zero, atol=3.01, check_shape=False)
         assert xp.all(dB[(w >= 0.2) & (w <= 0.5)] < -149.9)
 
         # from cheb1ord
@@ -1097,9 +1102,9 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = xp.abs(h)
         w = w / xp.pi
-        xp_assert_close(20 * xp.log10(h[w <= 0.2]), xp.asarray(0.0), atol=3.01,
+        xp_assert_close(20 * xp.log10(h[w <= 0.2]), zero, atol=3.01,
                         check_shape=False)
-        xp_assert_close(h[w >= 0.3], xp.asarray(0.0), atol=1e-2,
+        xp_assert_close(h[w >= 0.3], zero, atol=1e-2,
                         check_shape=False)  # <= -40 dB
 
         N, Wn = cheb1ord(0.2, 0.3, 1, 150)
@@ -1109,7 +1114,7 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         dB = 20*xp.log10(xp.abs(h))
         w /= np.pi
-        xp_assert_close(dB[w <= 0.2], xp.asarray(0.0), atol=1.01, check_shape=False)
+        xp_assert_close(dB[w <= 0.2], zero, atol=1.01, check_shape=False)
         assert xp.all(dB[w >= 0.3] < -149.9)
 
         # adapted from ellipord
@@ -1120,9 +1125,9 @@ class Testfreqz_sos:
         w, h = freqz_sos(sos)
         h = xp.abs(h)
         w = w / xp.pi
-        xp_assert_close(20 * xp.log10(h[w >= 0.3]), xp.asarray(0.0), atol=3.01,
+        xp_assert_close(20 * xp.log10(h[w >= 0.3]), zero, atol=3.01,
                         check_shape=False)
-        xp_assert_close(h[w <= 0.1], xp.asarray(0.0), atol=1.5e-3,
+        xp_assert_close(h[w <= 0.1], zero, atol=1.5e-3,
                         check_shape=False)  # <= -60 dB (approx)
 
         # adapted from buttord
@@ -1194,11 +1199,11 @@ class Testfreqz_sos:
         with mpmath.workdps(80):
             z_mp, p_mp, k_mp = mpsig.butter_lp(order, Wn)
             w_mp, h_mp = mpsig.zpkfreqz(z_mp, p_mp, k_mp, N)
-        w_mp = xp.asarray([float(x) for x in w_mp])
-        h_mp = xp.asarray([complex(x) for x in h_mp])
+        w_mp = xp.asarray([float(x) for x in w_mp], dtype=xp.float64)
+        h_mp = xp.asarray([complex(x) for x in h_mp], dtype=xp.complex128)
 
         sos = butter(order, Wn, output='sos')
-        sos = xp.asarray(sos)
+        sos = xp.asarray(sos, dtype=xp.float64)
         w, h = freqz_sos(sos, worN=N)
         xp_assert_close(w, w_mp, rtol=1e-12, atol=1e-14)
         xp_assert_close(h, h_mp, rtol=1e-12, atol=1e-14)

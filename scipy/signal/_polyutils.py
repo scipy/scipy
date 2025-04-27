@@ -21,7 +21,7 @@ def polyroots(coef, *, xp):
 
     # companion matrix
     n = coef.shape[0]
-    a = xp.eye(n - 1, n - 1, k=-1)
+    a = xp.eye(n - 1, n - 1, k=-1, dtype=coef.dtype)
     a[:, -1] = -xp.flip(coef[1:]) / coef[0]
 
     # non-symmetric eigenvalue problem is not in the spec but is available on e.g. torch
