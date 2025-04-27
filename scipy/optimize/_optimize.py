@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote, xp_result_type
 from scipy._lib import array_api_extra as xpx
 
 
@@ -1783,11 +1783,12 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
-    amin,amax=(1e-100,1e100)
-    if float(np.finfo(x0.dtype).tiny) > amin:
-        amin=1e-30
-    if float(np.finfo(x0.dtype).max) < amax:
-        amax=1e30
+    dtype=xp_result_type(x0, force_floating=True, xp=array_namespace(x0))
+    for amin,amax in ((1e-100,1e100),(1e-30,1e30)):
+        if float(np.finfo(dtype).tiny) < amin and amax < float(np.finfo(dtype).max):
+            break
+    else:
+        raise ValueError(f'No good step bracket for {dtype}')
 
     k = 0
     xk = x0

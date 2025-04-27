@@ -34,7 +34,7 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
-from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy._lib._array_api import make_skip_xp_backends
 from scipy._lib._util import MapWrapper
 
@@ -203,9 +203,10 @@ class CheckOptimizeParameterized(CheckOptimize):
         def g(x):
             return(np.cos(x)-1+x/500)
 
-        for x0 in np.linspace(-1., 1, 113, dtype=np.float32):
-            sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
-            assert sol.x.dtype == x0.dtype
+        for dtype in (np.float64, np.float32):
+            for x0 in np.linspace(-1., 1, 113, dtype=dtype):
+                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
+                assert sol.x.dtype == dtype
 
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
