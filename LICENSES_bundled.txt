@@ -257,9 +257,9 @@ License: MIT
   For details, see scipy/optimize/_highs/LICENCE
 
 Name: Boost
-Files: scipy/_lib/boost_math/*
+Files: subprojects/boost_math/math/*
 License: Boost Software License - Version 1.0
-  For details, see scipy/_lib/boost_math/LICENSE.txt
+  For details, see subprojects/boost_math/math/LICENSE
 
 Name: Biasedurn
 Files: scipy/stats/biasedurn/*
@@ -278,9 +278,9 @@ License 3-Clause BSD
   and scipy/stats/_rcont/logfactorial.c
 
 Name: array-api-compat
-Files: scipy/_lib/array-api-compat/*
+Files: scipy/_lib/array_api_compat/*
 License: MIT
-  For details, see scipy/_lib/array-api-compat/LICENCE
+  For details, see scipy/_lib/array_api_compat/LICENCE
 
 Name: Tempita
 Files: scipy/_build_utils/tempita/*
