@@ -3631,27 +3631,20 @@ class DiscreteDistribution(UnivariateDistribution):
         return super()._overrides(method_name)
 
     def _logpdf_formula(self, x, **params):
-        logpmf = self.logpmf(x)
-        out_of_support = np.isneginf(logpmf)
         if params:
             p = next(iter(params.values()))
             nan_result = np.isnan(x) | np.isnan(p)
         else:
             nan_result = np.isnan(x)
-        return np.where(nan_result, np.nan,
-                        np.where(out_of_support, -np.inf, np.inf))[()]
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pdf_formula(self, x, **params):
-        logpmf = self.logpmf(x)
-        out_of_support = np.isneginf(logpmf)
         if params:
             p = next(iter(params.values()))
             nan_result = np.isnan(x) | np.isnan(p)
         else:
             nan_result = np.isnan(x)
-        return np.where(nan_result, np.nan,
-                        np.where(out_of_support, 0.0, np.inf))[()]
-
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pmf_dispatch(x, method=method, **params)
