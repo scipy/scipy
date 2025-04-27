@@ -1438,8 +1438,8 @@ def sos2zpk(sos):
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
-        z[2*section:2*section + zpk[0].shape[0]] = zpk[0]
-        p[2*section:2*section + zpk[1].shape[0]] = zpk[1]
+        z = xpx.at(z, slice(2*section, 2*section + zpk[0].shape[0])).set(zpk[0])
+        p = xpx.at(p, slice(2*section, 2*section + zpk[1].shape[0])).set(zpk[1])
         k *= zpk[2]
     return z, p, k
 
