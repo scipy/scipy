@@ -3,7 +3,6 @@ __all__ = []
 
 from warnings import warn
 import itertools
-import operator
 
 import numpy as np
 from scipy._lib._util import _prune_array, copy_if_needed
@@ -18,10 +17,9 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_sum_duplicates, csr_has_sorted_indices, csr_sort_indices,
                            csr_matmat_maxnnz, csr_matmat)
 from ._index import IndexMixin
-from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
+from ._sputils import (upcast, upcast_char, to_native, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,
-                       get_sum_dtype, check_shape, get_index_dtype, broadcast_shapes,
-                       is_pydata_spmatrix)
+                       get_sum_dtype, check_shape, get_index_dtype, broadcast_shapes)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
