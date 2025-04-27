@@ -263,7 +263,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._binopt(other, '_minus_')
 
     def multiply(self, other):
-        """Point-wise multiplication by array/matrix, vector, or scalar."""
+        """Element-wise multiplication by array/matrix, vector, or scalar."""
         # Scalar multiplication.
         if isscalarlike(other):
             return self._mul_scalar(other)
