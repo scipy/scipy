@@ -178,6 +178,9 @@ class TestCplxReal:
 
 class TestTf2zpk:
 
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+    )
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     @pytest.mark.parametrize('dt', ('float64', 'complex128'))
     def test_simple(self, dt, xp):
@@ -232,6 +235,7 @@ class TestZpk2Tf:
             assert isinstance(a, np.ndarray)
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
     def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
         z = xp.asarray([1j, -1j, 2j, -2j])
@@ -255,6 +259,9 @@ class TestZpk2Tf:
         assert xp.isdtype(ap.dtype, 'real floating')
 
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+    )
     def test_complexk(self, xp):
         # regression: z, p real, k complex k gave real b, a
         b, a = xp.asarray([1j, 1j]), xp.asarray([1.0, 2])
@@ -327,6 +334,9 @@ class TestSos2Zpk:
         assert p.shape[0] == 24
 
 
+@skip_xp_backends(
+    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+)
 class TestSos2Tf:
 
     def test_basic(self, xp):
@@ -338,6 +348,7 @@ class TestSos2Tf:
         assert_array_almost_equal(a, xp.asarray([1.0, 10, 0, -10, -1]))
 
 
+@skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
 class TestTf2Sos:
 
     def test_basic(self, xp):
@@ -372,6 +383,9 @@ class TestTf2Sos:
         assert_array_almost_equal(sos, sos2, decimal=4)
 
 
+@skip_xp_backends(
+    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+)
 class TestZpk2Sos:
 
 #    @pytest.mark.parametrize('dt', 'fdgFDG')
