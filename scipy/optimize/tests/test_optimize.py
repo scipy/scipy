@@ -208,6 +208,18 @@ class CheckOptimizeParameterized(CheckOptimize):
                 sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
                 assert sol.x.dtype == dtype
 
+    def test_cg_accuracy(self):
+        def f(x):
+            return(x**4-x)
+        def g(x):
+            return(4*x**3-1)
+
+        for dtype in (np.float64, np.float32):
+            xx = np.array([2.], dtype=dtype)**(-2/3)
+            for x0 in np.linspace(-1., 1, 113, dtype=dtype):
+                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g, tol=1e-3)
+                xp_assert_close(f(sol.x), f(xx), rtol=1e-5)
+
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
         if self.use_wrapper:
