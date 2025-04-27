@@ -1,7 +1,9 @@
 """Base class for sparse matrices"""
 
+from warnings import warn
 import math
 import numpy as np
+import operator
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
@@ -62,6 +64,18 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 
 
 MAXPRINT = 50
+
+
+# helper dicts to manipulate comparison operators
+# We negate operators (with warning) when all implicit values would be True
+op_neg = {operator.eq: operator.ne, operator.ne: operator.eq,
+          operator.lt: operator.ge, operator.ge: operator.lt,
+          operator.gt: operator.le, operator.le: operator.gt}
+
+
+# We use symbolic version of operators in warning messages.
+op_sym = {operator.eq: '==', operator.ge: '>=', operator.le: '<=',
+          operator.ne: '!=', operator.gt: '>', operator.lt: '<'}
 
 
 # `_spbase` is a subclass of `SparseABC`.
@@ -143,7 +157,7 @@ class _spbase(SparseABC):
 
         Parameters
         ----------
-        shape : length-2 tuple of ints
+        shape : tuple of ints
             The new shape should be compatible with the original shape.
         order : {'C', 'F'}, optional
             Read the elements using this index order. 'C' means to read and
@@ -516,23 +530,86 @@ class _spbase(SparseABC):
         else:
             return self.tocsr()._broadcast_to(shape, copy)
 
+    def _comparison(self, other, op):
+        # We convert to CSR format and use methods _binopt or _scalar_binopt
+        # If ndim>2 we reshape to 2D, compare and then reshape back to nD
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if isscalarlike(other):
+            if not op(0, other):
+                if np.isnan(other):  # op is not `ne`, so results are all False.
+                    return self.__class__(self.shape, dtype=np.bool_)
+                else:
+                    csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                    res = csr_ready._scalar_binopt(other, op)
+                    return res if self.ndim < 3 else res.tocoo().reshape(self.shape)
+            else:
+                warn(f"Comparing a sparse matrix with {other} using {op_sym[op]} "
+                     "is inefficient. Try using {op_sym[op_neg[op]]} instead.",
+                     SparseEfficiencyWarning, stacklevel=3)
+                if np.isnan(other):
+                    # op is `ne` cuz op(0, other) and isnan(other). Return all True.
+                    return self.__class__(np.ones(self.shape, dtype=np.bool_))
+
+                # op is eq, le, or ge. Use negated op and then negate.
+                csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                inv = csr_ready._scalar_binopt(other, op_neg[op])
+                all_true = csr_ready.__class__(np.ones(self.shape, dtype=np.bool_))
+                result = all_true - inv
+                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+
+        elif isdense(other):
+            return op(self.todense(), other)
+
+        elif issparse(other):
+            # TODO sparse broadcasting
+            if self.shape != other.shape:
+                if op in (operator.eq, operator.ne):
+                    return op == eq
+                raise ValueError("inconsistent shape")
+
+            csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+            csr_other = (other if other.ndim < 3 else other.reshape(1, -1)).tocsr()
+            if not op(0, 0):
+                result = csr_ready._binopt(csr_other, f'_{op.__name__}_')
+                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+            else:
+                # result will not be sparse. Use negated op and then negate.
+                warn(f"Comparing two sparse matrices using {op_sym[op]} "
+                     "is inefficient. Try using {op_sym[op_neg[op]]} instead.",
+                     SparseEfficiencyWarning, stacklevel=3)
+                inv = csr_ready._binopt(csr_other, f'_{op_neg[op].__name__}_')
+                all_true = csr_ready.__class__(np.ones(self.shape, dtype=np.bool_))
+                result = all_true - inv
+                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+        else:
+            return NotImplemented
+
     def __eq__(self, other):
-        return self.tocsr().__eq__(other)
+        return self._comparison(other, operator.eq)
 
     def __ne__(self, other):
-        return self.tocsr().__ne__(other)
+        return self._comparison(other, operator.ne)
 
     def __lt__(self, other):
-        return self.tocsr().__lt__(other)
+        return self._comparison(other, operator.lt)
 
     def __gt__(self, other):
-        return self.tocsr().__gt__(other)
+        return self._comparison(other, operator.gt)
 
     def __le__(self, other):
-        return self.tocsr().__le__(other)
+        return self._comparison(other, operator.le)
 
     def __ge__(self, other):
-        return self.tocsr().__ge__(other)
+        return self._comparison(other, operator.ge)
 
     def __abs__(self):
         return abs(self.tocsr())
