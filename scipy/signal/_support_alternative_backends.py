@@ -25,6 +25,9 @@ CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap']
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
 CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
 
+# freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
+CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
+
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
