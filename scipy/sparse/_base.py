@@ -7,7 +7,7 @@ import operator
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike, _todata,
-                       matrix, validateaxis, getdtype)
+                       matrix, validateaxis, getdtype, is_pydata_spmatrix)
 from scipy._lib._sparse import SparseABC, issparse
 
 from ._matrix import spmatrix
@@ -601,6 +601,8 @@ class _spbase(SparseABC):
         # We convert to CSR format and use methods _binopt or _scalar_binopt
         # If ndim>2 we reshape to 2D, compare and then reshape back to nD
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            if is_pydata_spmatrix(other):
+                return NotImplemented
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
@@ -640,7 +642,7 @@ class _spbase(SparseABC):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 if op in (operator.eq, operator.ne):
-                    return op == eq
+                    return op == operator.eq
                 raise ValueError("inconsistent shape")
 
             csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
