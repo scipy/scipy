@@ -1067,3 +1067,53 @@ def test_divide_with_scalar():
     res = a / 7
     exp = a.toarray() / 7
     assert_allclose(res.toarray(), exp)
+
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_maximum(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        res = a.maximum(b)
+        exp = np.maximum(a.toarray(), b.toarray())
+        assert_equal(res.toarray(), exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_minimum(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        res = a.minimum(b)
+        exp = np.minimum(a.toarray(), b.toarray())
+        assert_equal(res.toarray(), exp)
+
+
+def test_maximum_with_scalar():
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = coo_array([0,1,6])
+    b = coo_array([[15, 0], [14, 5], [0, -12]])
+    c = coo_array([[[[3,0], [2,4]], [[8,9], [-3,12]]],
+                   [[[5,2], [3,0]], [[0,7], [0,-6]]]])
+    with sup:
+        assert_equal(a.maximum(5).toarray(), np.maximum(a.toarray(), 5))
+        assert_equal(b.maximum(9).toarray(), np.maximum(b.toarray(), 9))
+        assert_equal(c.maximum(5).toarray(), np.maximum(c.toarray(), 5))
+
+def test_minimum_with_scalar():
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = coo_array([0,1,6])
+    b = coo_array([[15, 0], [14, 5], [0, -12]])
+    c = coo_array([[[[3,0], [2,4]], [[8,9], [-3,12]]],
+                   [[[5,2], [3,0]], [[0,7], [0,-6]]]])
+    with sup:
+        assert_equal(a.minimum(5).toarray(), np.minimum(a.toarray(), 5))
+        assert_equal(b.minimum(9).toarray(), np.minimum(b.toarray(), 9))
+        assert_equal(c.minimum(5).toarray(), np.minimum(c.toarray(), 5))
