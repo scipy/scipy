@@ -1,8 +1,9 @@
+import math
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose, suppress_warnings
 import pytest
 from scipy.linalg import block_diag
-from scipy.sparse import coo_array, random_array
+from scipy.sparse import coo_array, random_array, SparseEfficiencyWarning
 from .._coo import _block_diag, _extract_block_diag
 
 
@@ -985,3 +986,84 @@ def test_pow_abs_round():
     assert_allclose((a**7).toarray(), np.power(a.toarray(), 7))
     assert_allclose(round(a).toarray(), np.round(a.toarray()))
     assert_allclose(abs(a).toarray(), np.abs(a.toarray()))
+
+
+#bitwise_op_and_compare_broadcast_shapes = [
+#    ((3,4), (3,4)), ((1,4), (2,1)), ((3,5), (1,)), ((1,), (7,8)),
+#    ((3,4,6), (3,4,6)), ((4,3), (2,1,3)), ((2,1,3), (4,3)),
+#    ((3,5,4), (1,)), ((1,), (7,8,4)), ((16,1,6), (2,6)), ((3,7,5), (3,7,5)),
+#    ((16,2,6), (1,2,6)), ((7,8), (5,7,8)), ((4,5,1), (5,1)),
+#    ((6,8,3), (4,1,1,3)), ((1,1,1), (3,4,2)), ((3,4,2), (1,1,1,1,1)),
+bitwise_op_and_compare_shapes = [
+    ((3,4), (3,4)), ((3,4,6), (3,4,6)), ((3,7,5), (3,7,5)),
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_boolean_comparisons(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    with sup:
+        assert_equal((a==b).toarray(), a.toarray()==b.toarray())
+        assert_equal((a!=b).toarray(), a.toarray()!=b.toarray())
+        assert_equal((a>=b).toarray(), a.toarray()>=b.toarray())
+        assert_equal((a<=b).toarray(), a.toarray()<=b.toarray())
+        assert_equal((a>b).toarray(), a.toarray()>b.toarray())
+        assert_equal((a<b).toarray(), a.toarray()<b.toarray())
+        assert_equal((a==b).toarray(), np.bitwise_not((a!=b).toarray()))
+        assert_equal((a>=b).toarray(), np.bitwise_not((a<b).toarray()))
+        assert_equal((a<=b).toarray(), np.bitwise_not((a>b).toarray()))
+
+
+def test_boolean_comparisons_with_scalar():
+    rng = np.random.default_rng(23409823)
+    sup = suppress_warnings()
+    sup.filter(SparseEfficiencyWarning)
+    a = random_array((5,4,8,7), density=0.6, random_state=rng, dtype=int)
+    with sup:
+        assert_equal((a==0).toarray(), a.toarray()==0)
+        assert_equal((a!=0).toarray(), a.toarray()!=0)
+        assert_equal((a>=1).toarray(), a.toarray()>=1)
+        assert_equal((a<=1).toarray(), a.toarray()<=1)
+        assert_equal((a>0).toarray(), a.toarray()>0)
+        assert_equal((a<0).toarray(), a.toarray()<0)
+
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_multiply(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+    res = a * b
+    exp = np.multiply(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+
+
+def test_multiply_with_scalar():
+    rng = np.random.default_rng(23409823)
+    a = random_array((3,5,4), density=0.6, random_state=rng, dtype=int)
+    res = a * 7
+    exp = np.multiply(a.toarray(), 7)
+    assert_equal(res.toarray(), exp)
+
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
+def test_divide(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = np.arange(1, 1 + math.prod(b_shape)).reshape(b_shape)
+    res = a / b
+    exp = a.toarray() / b
+    assert_allclose(res.toarray(), exp)
+
+    res = a / b
+    assert_allclose(res.toarray(), exp)
+
+
+def test_divide_with_scalar():
+    rng = np.random.default_rng(23409823)
+    a = random_array((3,5,4), density=0.6, random_state=rng, dtype=int)
+    res = a / 7
+    exp = a.toarray() / 7
+    assert_allclose(res.toarray(), exp)

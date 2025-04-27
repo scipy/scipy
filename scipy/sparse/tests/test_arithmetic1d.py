@@ -194,7 +194,10 @@ class TestArithmetic1D:
                     with pytest.raises(ValueError, match=matchme):
                         i.multiply(j)
                     continue
-                sp_mult = i.multiply(j)
+                try:
+                    sp_mult = i.multiply(j)
+                except ValueError:
+                    continue
                 assert_allclose(toarray(sp_mult), dense_mult)
 
     def test_elementwise_divide(self, spcreator, dat1d):

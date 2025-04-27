@@ -489,10 +489,42 @@ class _spbase(SparseABC):
     ####################################################################
 
     def multiply(self, other):
-        """Point-wise multiplication by another array/matrix."""
+        """Element-wise multiplication by another array/matrix."""
         if isscalarlike(other):
             return self._mul_scalar(other)
-        return self.tocsr().multiply(other)
+
+        if not (issparse(other) or isdense(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if self.ndim < 3 and other.ndim < 3:
+            return self.tocsr().multiply(other)
+
+        if self.shape != other.shape:
+            raise ValueError("inconsistent shapes: >2D multiply() does not yet "
+                             "support broadcasting")
+
+        # self is >2D so much be COO
+        if isdense(other):
+            data = np.multiply(self.data, other[self.coords])
+            result = self.copy()
+            result.data = data.view(np.ndarray).ravel()
+            return result
+
+        elif issparse(other):
+            csr_ready = self.reshape(1, -1).tocsr()
+            other_ready = other.reshape(1, -1).tocsr()
+            result = csr_ready.multiply(other_ready).reshape(self.shape)
+            return result
+
+        else:
+            return NotImplemented
 
     def maximum(self, other):
         """Element-wise maximum between this and another array/matrix."""
@@ -562,7 +594,7 @@ class _spbase(SparseABC):
                 # op is eq, le, or ge. Use negated op and then negate.
                 csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
                 inv = csr_ready._scalar_binopt(other, op_neg[op])
-                all_true = csr_ready.__class__(np.ones(self.shape, dtype=np.bool_))
+                all_true = csr_ready.__class__(np.ones(csr_ready.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
 
@@ -587,7 +619,7 @@ class _spbase(SparseABC):
                      "is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
                 inv = csr_ready._binopt(csr_other, f'_{op_neg[op].__name__}_')
-                all_true = csr_ready.__class__(np.ones(self.shape, dtype=np.bool_))
+                all_true = csr_ready.__class__(np.ones(csr_ready.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         else:
@@ -864,11 +896,17 @@ class _spbase(SparseABC):
             if rdivide:
                 return other._divide(self, true_divide, rdivide=False)
 
-            self_csr = self.tocsr()
-            if true_divide and np.can_cast(self.dtype, np.float64):
-                return self_csr.astype(np.float64)._divide_sparse(other)
+            if self.ndim < 3:
+                self_csr = self.tocsr()
+                other_ready = other
             else:
-                return self_csr._divide_sparse(other)
+                self_csr = self.reshape(1, -1).tocsr()
+                other_ready = other.reshape(1, -1)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                result = self_csr.astype(np.float64)._divide_sparse(other_ready)
+            else:
+                result = self_csr._divide_sparse(other_ready)
+            return result if self.ndim < 3 else result.reshape(self.shape)
         else:
             return NotImplemented
 
