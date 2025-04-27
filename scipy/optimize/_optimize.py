@@ -1784,7 +1784,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     gfk = myfprime(x0)
 
     dtype=xp_result_type(x0, force_floating=True, xp=array_namespace(x0))
-    for amin,amax in ((1e-100,1e100),(1e-30,1e30)):
+    for amin,amax in ((1e-100,1e100),(1e-30,1e30),(1e-4,1e4)):
         if float(np.finfo(dtype).tiny) < amin and amax < float(np.finfo(dtype).max):
             break
     else:
@@ -1813,7 +1813,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             if gfkp1 is None:
                 gfkp1 = myfprime(xkp1)
             yk = gfkp1 - gfk
-            beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            if deltak != 0:
+                beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            else:
+                beta_k = 1.            
             pkp1 = -gfkp1 + beta_k * pk
             gnorm = vecnorm(gfkp1, ord=norm)
             return (alpha, xkp1, pkp1, gfkp1, gnorm)

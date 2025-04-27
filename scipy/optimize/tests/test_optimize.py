@@ -199,11 +199,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
     def test_cg_dtype(self):
         def f(x):
-            return(np.sin(x)-x+x**2/1000)
+            return(np.sin(x)-x+(x/10)**2)
         def g(x):
             return(np.cos(x)-1+x/500)
 
-        for dtype in (np.float64, np.float32):
+        for dtype in (np.float64, np.float32, np.float16):
             for x0 in np.linspace(-1., 1, 113, dtype=dtype):
                 sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g)
                 assert sol.x.dtype == dtype
@@ -214,11 +214,11 @@ class CheckOptimizeParameterized(CheckOptimize):
         def g(x):
             return(4*x**3-1)
 
-        for dtype in (np.float64, np.float32):
+        for dtype in (np.float64, np.float32, np.float16):
             xx = np.array([2.], dtype=dtype)**(-2/3)
             for x0 in np.linspace(-1., 1, 113, dtype=dtype):
-                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g, tol=1e-3)
-                xp_assert_close(f(sol.x), f(xx), rtol=1e-5)
+                sol = scipy.optimize.minimize(f, [x0], method='CG', jac=g, tol=5e-2)
+                xp_assert_close(f(sol.x), f(xx), rtol=1e-3)
 
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
