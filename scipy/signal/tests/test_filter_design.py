@@ -272,6 +272,7 @@ class TestZpk2Tf:
         xp_assert_close(a, ap)
 
 
+@skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
 class TestSos2Zpk:
 
     @skip_xp_backends("dask.array", reason="it https://github.com/dask/dask/issues/11883")
