@@ -526,13 +526,48 @@ class _spbase(SparseABC):
         else:
             return NotImplemented
 
+    def _maximum_minimum(self, other, np_op):
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
+        if isscalarlike(other):
+            if np_op(0, other):
+                pos_neg = 'positive' if np_op == np.maximum else 'negative'
+                warn(f"Taking {np_op.__name__} with a {pos_neg} number results in a"
+                     " dense matrix.", SparseEfficiencyWarning, stacklevel=3)
+                return self.__class__(np_op(self.toarray(), other))
+            else:
+                csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                result = csr_ready._scalar_binopt(other, np_op)
+                return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
+        elif isdense(other):
+            return np_op(self.todense(), other)
+        elif issparse(other):
+            if self.shape != other.shape:
+                raise ValueError(f"inconsistent shapes {self.shape=} {other.shape=}")
+            if self.ndim < 3:  # shape is same so other.ndim < 3
+                return self.tocsr()._binopt(other, f'_{np_op.__name__}_')
+            csr_ready = self.reshape(1, -1).tocsr()
+            csr_other = other.reshape(1, -1).tocsr()
+            result = csr_ready._binopt(csr_other, f'_{np_op.__name__}_')
+            return result.tocoo().reshape(self.shape)
+        else:
+            raise ValueError("Operands not compatible.")
+
     def maximum(self, other):
         """Element-wise maximum between this and another array/matrix."""
-        return self.tocsr().maximum(other)
+        return self._maximum_minimum(other, np.maximum)
 
     def minimum(self, other):
         """Element-wise minimum between this and another array/matrix."""
-        return self.tocsr().minimum(other)
+        return self._maximum_minimum(other, np.minimum)
 
     def dot(self, other):
         """Ordinary dot product
