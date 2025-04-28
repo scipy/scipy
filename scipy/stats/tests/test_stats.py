@@ -6138,7 +6138,7 @@ class TestTTestInd:
         # The results should be arrays containing nan with shape
         # given by the broadcast nonaxis dimensions.
         a = xp.empty((3, 1, 0))
-        b = xp.asarray(b)
+        b = xp.asarray(b, dtype=a.dtype)
         with np.testing.suppress_warnings() as sup:
             # first case should warn, second shouldn't?
             sup.filter(SmallSampleWarning, too_small_nd_not_omit)
