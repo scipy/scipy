@@ -201,7 +201,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         def f(x):
             return(np.sin(x)-x+(x/10)**2)
         def g(x):
-            return(np.cos(x)-1+x/500)
+            return((np.cos(x)-1+x/500).astype(dtype))
 
         for dtype in (np.float64, np.float32, np.float16):
             for x0 in np.linspace(-1., 1, 113, dtype=dtype):
