@@ -614,7 +614,7 @@ def _kpp(data, k, rng, xp):
             cumprobs = probs.cumsum()
             r = rng.uniform()
             cumprobs = np.asarray(cumprobs)
-            data_idx = np.searchsorted(cumprobs, r)
+            data_idx = int(np.searchsorted(cumprobs, r))
 
         init = xpx.at(init)[i, :].set(data[data_idx, :])
 
