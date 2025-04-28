@@ -504,7 +504,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
 @meson.build_dir_option
 @click.pass_context
 def refguide_check(ctx, build_dir=None, *args, **kwargs):
-    """:wrench: Run refguide check."""
+    """🔧 Run refguide check."""
     click.secho(
             "Invoking `build` prior to running refguide-check:",
             bold=True, fg="bright_green"
@@ -604,7 +604,7 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
     help="Do not run cython-lint.")
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
-    """:dash: Run linter on modified files and check for
+    """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
     root = Path(__file__).parent.parent
 
@@ -725,7 +725,7 @@ def _dirty_git_working_dir():
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
           commits, build_dir=None, *args, **kwargs):
-    """:wrench: Run benchmarks.
+    """🔧 Run benchmarks.
 
     \b
     ```python
