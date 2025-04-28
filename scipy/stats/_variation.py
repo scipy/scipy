@@ -110,8 +110,9 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         # The return values, if any, are all nan.
         shp = list(a.shape)
         shp.pop(axis)
-        result = xp.full(shp, fill_value=NaN)
-        return result[()] if result.ndim == 0 else result
+        if shp:
+            return xp.asarray(xp.broadcast_to(NaN, tuple(shp)), copy=True)
+        return NaN
 
     mean_a = xp.mean(a, axis=axis)
 
