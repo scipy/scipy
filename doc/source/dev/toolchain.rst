@@ -81,9 +81,10 @@ needs to be written using what is common in all of those 4 `NumPy releases`_.
 
 .. dropdown:: Python and NumPy version support per SciPy version
 
-    The table shows the NumPy versions suitable for each major Python version.
-    This table does not distinguish SciPy patch versions (e.g. when a new Python
-    version is released, SciPy will generally issue a compatible patch version).
+    The table shows the NumPy and Python versions suitable for each minor SciPy
+    version. Note that not all patch versions for a particular minor version of
+    SciPy support all listed versions of Python. Only the most recent patch version
+    within each minor version is guaranteed to support all listed Python versions.
 
     =================  ========================    =======================
      SciPy version      Python versions             NumPy versions
