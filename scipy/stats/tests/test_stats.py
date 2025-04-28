@@ -3719,7 +3719,7 @@ class TestSkew(SkewKurtosisTest):
 
     def test_skew_constant_value(self, xp):
         # Skewness of a constant input should be NaN (gh-16061)
-        a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
+        a = xp.repeat(xp.asarray([-0.27829495]), 10)
 
         with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
