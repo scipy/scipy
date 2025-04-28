@@ -6762,8 +6762,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         raise NotImplementedError(message)
 
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
-    NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
-    NaN = NaN[()] if NaN.ndim == 0 else NaN
+    NaN = _get_nan(a, b, shape=result_shape, xp=xp)
     if xp_size(a) == 0 or xp_size(b) == 0:
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)
