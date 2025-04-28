@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_device
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
@@ -110,7 +110,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         # The return values, if any, are all nan.
         shp = list(a.shape)
         shp.pop(axis)
-        result = xp.full(shp, fill_value=NaN)
+        result = xp.full(shp, fill_value=NaN, device=xp_device(a))
         return result[()] if result.ndim == 0 else result
 
     mean_a = xp.mean(a, axis=axis)
