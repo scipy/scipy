@@ -55,6 +55,7 @@ dependencies:
   - gmpy2
   - threadpoolctl
   # For CLI
+  - spin
   - rich-click
   - click
   - doit>=0.36.0
