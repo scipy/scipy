@@ -1473,7 +1473,7 @@ class TestFreqz_zpk:
 
 class TestNormalize:
 
-    def test_allclose(self):
+    def test_allclose(self, xp):
         """Test for false positive on allclose in normalize() in
         filter_design.py"""
         # Test to make sure the allclose call within signal.normalize does not
@@ -1486,39 +1486,41 @@ class TestNormalize:
         # coefficient, so it makes sense to test for errors on the order of
         # 1e-13 (this can always be relaxed if different platforms have
         # different rounding errors)
-        b_matlab = np.array([2.150733144728282e-11, 1.720586515782626e-10,
-                             6.022052805239190e-10, 1.204410561047838e-09,
-                             1.505513201309798e-09, 1.204410561047838e-09,
-                             6.022052805239190e-10, 1.720586515782626e-10,
-                             2.150733144728282e-11])
-        a_matlab = np.array([1.000000000000000e+00, -7.782402035027959e+00,
-                             2.654354569747454e+01, -5.182182531666387e+01,
-                             6.334127355102684e+01, -4.963358186631157e+01,
-                             2.434862182949389e+01, -6.836925348604676e+00,
-                             8.412934944449140e-01])
+        b_matlab = xp.asarray([2.150733144728282e-11, 1.720586515782626e-10,
+                               6.022052805239190e-10, 1.204410561047838e-09,
+                               1.505513201309798e-09, 1.204410561047838e-09,
+                               6.022052805239190e-10, 1.720586515782626e-10,
+                               2.150733144728282e-11])
+        a_matlab = xp.asarray([1.000000000000000e+00, -7.782402035027959e+00,
+                               2.654354569747454e+01, -5.182182531666387e+01,
+                               6.334127355102684e+01, -4.963358186631157e+01,
+                               2.434862182949389e+01, -6.836925348604676e+00,
+                               8.412934944449140e-01])
 
         # This is the input to signal.normalize after passing through the
         # equivalent steps in signal.iirfilter as was done for MATLAB
-        b_norm_in = np.array([1.5543135865293012e-06, 1.2434508692234413e-05,
-                              4.3520780422820447e-05, 8.7041560845640893e-05,
-                              1.0880195105705122e-04, 8.7041560845640975e-05,
-                              4.3520780422820447e-05, 1.2434508692234413e-05,
-                              1.5543135865293012e-06])
-        a_norm_in = np.array([7.2269025909127173e+04, -5.6242661430467968e+05,
-                              1.9182761917308895e+06, -3.7451128364682454e+06,
-                              4.5776121393762771e+06, -3.5869706138592605e+06,
-                              1.7596511818472347e+06, -4.9409793515707983e+05,
-                              6.0799461347219651e+04])
+        b_norm_in = xp.asarray([1.5543135865293012e-06, 1.2434508692234413e-05,
+                                4.3520780422820447e-05, 8.7041560845640893e-05,
+                                1.0880195105705122e-04, 8.7041560845640975e-05,
+                                4.3520780422820447e-05, 1.2434508692234413e-05,
+                                1.5543135865293012e-06])
+        a_norm_in = xp.asarray([7.2269025909127173e+04, -5.6242661430467968e+05,
+                                1.9182761917308895e+06, -3.7451128364682454e+06,
+                                4.5776121393762771e+06, -3.5869706138592605e+06,
+                                1.7596511818472347e+06, -4.9409793515707983e+05,
+                                6.0799461347219651e+04])
 
         b_output, a_output = normalize(b_norm_in, a_norm_in)
 
         # The test on b works for decimal=14 but the one for a does not. For
         # the sake of consistency, both of these are decimal=13. If something
         # breaks on another platform, it is probably fine to relax this lower.
-        assert_array_almost_equal(b_matlab, b_output, decimal=13)
-        assert_array_almost_equal(a_matlab, a_output, decimal=13)
+        decimal = 13 if xp_default_dtype(xp) == xp.float64 else 5
+        assert_array_almost_equal(b_matlab, b_output, decimal=decimal)
+        assert_array_almost_equal(a_matlab, a_output, decimal=decimal)
 
-    def test_errors(self):
+    @skip_xp_backends(np_only=True)
+    def test_errors(self, xp):
         """Test the error cases."""
         # all zero denominator
         assert_raises(ValueError, normalize, [1, 2], 0)
