@@ -1042,7 +1042,7 @@ def _moment_tuple(x, n_out):
 # with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
 @xp_capabilities(static_argnames=("axis", "nan_policy"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=_moment_tuple,
@@ -1481,7 +1481,7 @@ DescribeResult = namedtuple('DescribeResult',
 
 
 @xp_capabilities(static_argnames=("axis", "ddof", "bias", "nan_policy"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     """Compute several descriptive statistics of the passed array.
 
@@ -1606,7 +1606,7 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(static_argnames=("axis", "nan_policy", "alternative"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1717,7 +1717,7 @@ KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(static_argnames=("axis", "nan_policy", "alternative"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(KurtosistestResult, n_samples=1, too_small=4)
 def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether a dataset has normal kurtosis.
@@ -1832,7 +1832,7 @@ NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
 
 @xp_capabilities(static_argnames=("axis", "nan_policy"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(NormaltestResult, n_samples=1, too_small=7)
 def normaltest(a, axis=0, nan_policy='propagate'):
     r"""Test whether a sample differs from a normal distribution.
@@ -1910,7 +1910,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(statistic, pvalue)
 
 
-@xp_capabilities(static_argnames="axis", jax_jit=False, allow_dask_compute=999)
+@xp_capabilities(static_argnames="axis", jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     r"""Perform the Jarque-Bera goodness of fit test on sample data.
@@ -4395,7 +4395,7 @@ class PearsonRResult(PearsonRResultBase):
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy'],
                  static_argnames=("alternative", "method", "axis"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -6040,7 +6040,7 @@ def unpack_TtestResult(res):
 
 
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
@@ -7071,7 +7071,7 @@ def _get_len(a, axis, msg):
 
 
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
@@ -7198,7 +7198,7 @@ def _pd_nsamples(kwargs):
 
 
 @xp_capabilities(static_argnames=("ddof", "axis", "lambda_"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
@@ -7440,7 +7440,7 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
 
 @xp_capabilities(static_argnames=("ddof, axis", "sum_check"),
-                 jax_jit=False, allow_dask_compute=999)
+                 jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(Power_divergenceResult, paired=True, n_samples=_pd_nsamples,
                           too_small=-1)
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0, *, sum_check=True):
@@ -8930,7 +8930,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
     reason=('Delegation for `special.stdtr` only implemented for CuPy and JAX.'),
-    static_argnames=("method", "axis"), jax_jit=False, allow_dask_compute=999)
+    static_argnames=("method", "axis"), jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
     """

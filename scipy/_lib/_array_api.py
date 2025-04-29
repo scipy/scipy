@@ -676,7 +676,7 @@ def _make_sphinx_capabilities(
     # @pytest.mark.skip/xfail_xp_backends kwargs
     cpu_only=False, np_only=False, exceptions=(),
     # xpx.lazy_xp_backends kwargs
-    allow_dask_compute=0, jax_jit=True,
+    allow_dask_compute=False, jax_jit=True,
     # unused in documentation
     reason=None, static_argnums=None, static_argnames=None,
 ):
@@ -751,7 +751,7 @@ def xp_capabilities(
     cpu_only=False, np_only=False, reason=None, exceptions=(),
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
-    allow_dask_compute=0, jax_jit=True,
+    allow_dask_compute=False, jax_jit=True,
     static_argnums=None, static_argnames=None,
 ):
     """Decorator for a function that states its support among various
