@@ -92,7 +92,7 @@ More strict array input validation will reject ``np.matrix`` and
 Currently supported functionality
 `````````````````````````````````
 
-The following modules provide Array API Standard support when the environment
+The following modules provide array API standard support when the environment
 variable is set:
 
 - `scipy.cluster`
