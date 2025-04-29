@@ -311,6 +311,20 @@ class TestLogSumExp:
             assert xp_device(logsumexp(x)) == xp_device(x)
             assert xp_device(logsumexp(x, b=x)) == xp_device(x)
 
+    def test_gh22903(self, xp):
+        # gh-22903 reported that `logsumexp` produced NaN where the weight associated
+        # with the max magnitude element was negative and `return_sign=False`, even if
+        # the net result should be the log of a positive number.
+
+        # result is log of positive number
+        a = xp.asarray([3.06409428, 0.37251854, 3.87471931])
+        b = xp.asarray([1.88190708, 2.84174795, -0.85016884])
+        xp_assert_close(logsumexp(a, b=b), logsumexp(a, b=b, return_sign=True)[0])
+
+        # result is log of negative number
+        b = xp.asarray([1.88190708, 2.84174795, -3.85016884])
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(xp.nan))
+
 
 @make_skip_xp_backends(softmax)
 class TestSoftmax:
