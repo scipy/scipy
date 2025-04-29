@@ -29,9 +29,9 @@
     qh-mem_r.htm and mem_r.h
     global_r.c (qh_initbuffers) for an example of using mem_r.c
 
-  Copyright (c) 1993-2019 The Geometry Center.
-  $Id: //main/2019/qhull/src/libqhull_r/mem_r.c#6 $$Change: 2711 $
-  $DateTime: 2019/06/27 22:34:56 $$Author: bbarber $
+  Copyright (c) 1993-2020 The Geometry Center.
+  $Id: //main/2019/qhull/src/libqhull_r/mem_r.c#7 $$Change: 2953 $
+  $DateTime: 2020/05/21 22:05:32 $$Author: bbarber $
 */
 
 #include "libqhull_r.h"  /* includes user_r.h and mem_r.h */
