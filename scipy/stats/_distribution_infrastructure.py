@@ -937,8 +937,7 @@ def _set_invalid_nan(f):
     clip = {'_cdf1', '_ccdf1'}
     clip_log = {'_logcdf1', '_logccdf1'}
     # relevant to discrete distributions only
-    replace_non_integral = {'pmf', 'logpmf'}
-
+    replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -1000,10 +999,8 @@ def _set_invalid_nan(f):
         # Check for non-integral arguments to PMF method
         # or PDF of a discrete distribution.
         any_non_integral = False
-        if (
-                method_name in replace_non_integral
-                or discrete and method_name in {"pdf", "logpdf"}):
-            mask_non_integral = (x != np.floor(x)) & ~np.isnan(x)
+        if discrete and method_name in replace_non_integral:
+            mask_non_integral = (x != np.floor(x))
             any_non_integral = (mask_non_integral if mask_non_integral.shape == ()
                                 else np.any(mask_non_integral))
 
@@ -1186,27 +1183,6 @@ def _cdf2_input_validation(f):
         # yes, copy to avoid modifying input arrays
         x, y = x.astype(dtype, copy=True), y.astype(dtype, copy=True)
 
-        # Swap arguments to ensure that x < y, and replace
-        # out-of domain arguments with domain endpoints. We'll
-        # transform the result later.
-        i_swap = y < x
-        x[i_swap], y[i_swap] = y[i_swap], x[i_swap]
-
-        x_below = (x < low)
-        y_below = (y < low)
-        x_above = (x > high)
-        y_above = (y > high)
-        x[x_below] = low[x_below]
-        y[y_below] = low[y_below]
-        x[x_above] = high[x_above]
-        y[y_above] = high[y_above]
-
-        # If x and y are both less than low (greater than high)
-        # than cdf2(x, y) should be 0 and replacing out-of-domain
-        # arguments with endpoints will give the wrong result.
-        both_beyond = (x_below & y_below) | (x_above & y_above)
-        degenerate = i_swap | both_beyond
-
         res = f(self, x, y, *args, **kwargs)
 
         # Clipping probability to [0, 1]
@@ -1214,18 +1190,7 @@ def _cdf2_input_validation(f):
             res = np.clip(res, 0., 1.)
         else:
             res = np.clip(res, None, 0.)  # exp(res) < 1
-
-        # Transform the result to account for swapped argument order
-        res = np.asarray(res)
-        if func_name == '_cdf2':
-            res[degenerate] = 0
-        elif func_name == '_ccdf2':
-            res[degenerate] = 1
-        elif func_name == '_logcdf2':
-            res[degenerate] = -np.inf
-        elif func_name == '_logccdf2':
-            res[degenerate] = 0
-        return res[()]
+        return np.asarray(res)[()]
 
     return wrapped
 
