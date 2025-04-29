@@ -6,9 +6,7 @@ import builtins
 
 import numpy as np
 from numpy import (atleast_1d, asarray,
-                   pi, absolute, sqrt, log10,
-                   arccosh, conjugate,
-                   concatenate, array)
+                   pi, absolute, concatenate, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
 from scipy import special, optimize, fft as sp_fft
@@ -788,7 +786,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
-    c = np.convolve(b, conjugate(a[::-1]))
+    c = np.convolve(b, np.conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
@@ -4072,15 +4070,15 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     if type == 'butter':
         GSTOP = 10 ** (0.1 * abs(gstop))
         GPASS = 10 ** (0.1 * abs(gpass))
-        n = (log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat)))
+        n = (np.log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * np.log10(nat)))
     elif type == 'cheby':
         GSTOP = 10 ** (0.1 * abs(gstop))
         GPASS = 10 ** (0.1 * abs(gpass))
-        n = arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) / arccosh(nat)
+        n = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0))) / np.arccosh(nat)
     elif type == 'ellip':
         GSTOP = 10 ** (0.1 * gstop)
         GPASS = 10 ** (0.1 * gpass)
-        arg1 = sqrt((GPASS - 1.0) / (GSTOP - 1.0))
+        arg1 = np.sqrt((GPASS - 1.0) / (GSTOP - 1.0))
         arg0 = 1.0 / nat
         d0 = special.ellipk([arg0 ** 2, 1 - arg0 ** 2])
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
@@ -4923,9 +4921,9 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     [s, c, d, phi] = special.ellipj(j * capk / N, m * np.ones(jj))
     snew = np.compress(abs(s) > EPSILON, s, axis=-1)
-    z = 1.0 / (sqrt(m) * snew)
+    z = 1.0 / (np.sqrt(m) * snew)
     z = 1j * z
-    z = np.concatenate((z, conjugate(z)))
+    z = np.concatenate((z, np.conjugate(z)))
 
     r = _arc_jac_sc1(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
@@ -4938,9 +4936,9 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
             abs(p.imag) > EPSILON * np.sqrt(np.sum(p * np.conjugate(p), axis=0).real),
             p, axis=-1
         )
-        p = np.concatenate((p, conjugate(newp)))
+        p = np.concatenate((p, np.conjugate(newp)))
     else:
-        p = np.concatenate((p, conjugate(p)))
+        p = np.concatenate((p, np.conjugate(p)))
 
     k = (np.prod(-p, axis=0) / np.prod(-z, axis=0)).real
     if N % 2 == 0:
