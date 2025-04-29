@@ -67,7 +67,6 @@ def cases_64bit(sp_api):
 
     for cls in TEST_CLASSES:
         for method_name in sorted(dir(cls)):
-            name = f'{cls.__name__}-{method_name}'
             method = getattr(cls, method_name)
             if (method_name.startswith('test_') and
                     not getattr(method, 'slow', False)):
@@ -134,7 +133,6 @@ class Test64BitMatrix(RunAll64Bit):
         self._check_resiliency(cls, method_name, assert_32bit=True)
 
 
-#@pytest.mark.slow
 class Test64BitMatrixSameAsArray(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
     # So we define these functions in both Array and Matrix versions.
@@ -156,7 +154,7 @@ class Test64BitMatrixSameAsArray(RunAll64Bit):
         # Resiliency check that sparse deals with varying index data types.
         self._check_resiliency(cls, method_name)
 
-
+# Extra: LIL and DOK classes. no direct get_index_dtype, but convert to classes that do
 @pytest.mark.xslow
 class Test64BitArrayExtra(RunAll64Bit):
     # inheritance of pytest test classes does not separate marks for subclasses.
@@ -180,6 +178,7 @@ class Test64BitArrayExtra(RunAll64Bit):
         self._check_resiliency(cls, method_name)
 
 
+# Extra: LIL and DOK classes. no direct get_index_dtype, but convert to classes that do
 @pytest.mark.xslow
 class Test64BitMatrixExtra(RunAll64Bit):
     # assert_32bit=True only for spmatrix cuz sparray does not check index content
