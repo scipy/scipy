@@ -219,25 +219,29 @@ def _logsumexp(a, b, axis, return_sign, xp):
     s = xp.where(s == 0, s, s/m)
 
     # Separate sign/magnitude information
-    sgn = None
-    if return_sign:
-        # Use the numpy>=2.0 convention for sign.
-        # When all array libraries agree, this can become sng = xp.sign(s).
-        sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+    # Originally, this was only performed if `return_sign=True`.
+    # However, this is also needed if any elements of `m < 0` or `s < -1`.
+    # An improvement would be to perform the calculations only on these entries.
 
-        if xp.isdtype(s.dtype, "real floating"):
-            # The log functions need positive arguments
-            s = xp.where(s < -1, -s - 2, s)
-            m = xp.abs(m)
-        else:
-            # `a_max` can have a sign component for complex input
-            j = xp.asarray(1j, dtype=a_max.dtype)
-            sgn = sgn * xp.exp(xp.imag(a_max) * j)
+    # Use the numpy>=2.0 convention for sign.
+    # When all array libraries agree, this can become sng = xp.sign(s).
+    sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+
+    if xp.isdtype(s.dtype, "real floating"):
+        # The log functions need positive arguments
+        s = xp.where(s < -1, -s - 2, s)
+        m = xp.abs(m)
+    else:
+        # `a_max` can have a sign component for complex input
+        sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
 
-    out = xp_real(out) if return_sign else out
+    if return_sign:
+        out = xp.real(out)
+    elif xp.isdtype(out.dtype, 'real floating'):
+        out[sgn < 0] = xp.nan
 
     return out, sgn
 
