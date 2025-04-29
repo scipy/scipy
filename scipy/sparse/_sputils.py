@@ -403,7 +403,7 @@ def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis, *, ndim=2) -> int | tuple[int, ...]:
+def validateaxis(axis, *, ndim=2) -> tuple[int, ...] | None:
     if axis is None:
         return None
 
