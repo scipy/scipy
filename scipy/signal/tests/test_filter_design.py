@@ -1856,6 +1856,7 @@ def dB(x):
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestButtord:
 
     def test_lowpass(self, xp):
@@ -2009,6 +2010,7 @@ class TestButtord:
             buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb1ord:
 
@@ -2140,6 +2142,7 @@ class TestCheb1ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestCheb2ord:
 
     def test_lowpass(self, xp):
@@ -2271,6 +2274,7 @@ class TestCheb2ord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestEllipord:
 
     def test_lowpass(self, xp):
@@ -2411,6 +2415,7 @@ class TestEllipord:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestBessel:
 
     def test_degenerate(self, xp):
@@ -2915,6 +2920,7 @@ class TestBessel:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestButter:
 
     def test_degenerate(self, xp):
@@ -3186,6 +3192,7 @@ class TestButter:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestCheby1:
 
     def test_degenerate(self, xp):
@@ -3460,6 +3467,7 @@ class TestCheby1:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestCheby2:
 
     def test_degenerate(self, xp):
@@ -3759,6 +3767,7 @@ class TestCheby2:
 
 @pytest.mark.skipif(DEFAULT_F32, reason="XXX needs figuring out")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+@skip_xp_backends(cpu_only=True, reason="convolve on torch is cpu-only")
 class TestEllip:
 
     def test_degenerate(self, xp):
