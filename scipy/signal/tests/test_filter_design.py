@@ -4332,6 +4332,7 @@ class TestIIRPeak:
         assert math.isclose(abs(hp[2]), 1.0, rel_tol=1e-10)
 
 
+@xfail_xp_backends("jax.numpy", reason="wrong answers")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestIIRComb:
     # Test erroneous input cases
@@ -4584,6 +4585,7 @@ class TestIIRDesign:
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
+@skip_xp_backends(cpu_only=True, reason="zpk2sos converts to numpy")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestIIRFilter:
 
@@ -4855,6 +4857,7 @@ class TestGammatone:
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
+    @xfail_xp_backends("jax.numpy", reason="no eig(..) on JAX CUDA")
     def test_iir_symmetry(self, xp):
         b, a = gammatone(440, 'iir', fs=24000, xp=xp)
         z, p, k = tf2zpk(b, a)
