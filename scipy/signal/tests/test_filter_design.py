@@ -4836,6 +4836,7 @@ class TestGammatone:
 
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9117")
     def test_frequency_response(self, xp):
         fs = 16000
         ftypes = ['fir', 'iir']
