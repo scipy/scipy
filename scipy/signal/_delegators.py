@@ -28,7 +28,7 @@ are arrays.
 
 """
 import numpy as np
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, np as np_compat
 from scipy.ndimage._ni_support import _skip_if_int
 
 
@@ -122,20 +122,22 @@ def czt_points_signature(m, w=None, a=(1+0j)):
     return np
 
 
-def gammatone_signature(freq, ftype, order=None, numtaps=None, fs=None):
-    return np
+def gammatone_signature(
+    freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None
+    ):
+    return np_compat if xp is None else xp
 
 
-def iircomb_signature(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
-    return np
+def iircomb_signature(
+    w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None
+):
+    return np_compat if xp is None else xp
 
 
-def iirnotch_signature(w0, Q, fs=2.0):
-    return np
+def iirnotch_signature(w0, Q, fs=2.0, *, xp=None, device=None):
+    return np if xp is None else xp
 
-
-def iirpeak_signature(w0, Q, fs=2.0):
-    return np
+iirpeak_signature = iirnotch_signature
 
 
 def savgol_coeffs_signature(
