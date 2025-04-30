@@ -1502,7 +1502,7 @@ matrix_t_docdict_noparams = {
 }
 
 
-class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
+class matrix_t_gen(multi_rv_generic):
     """
     A matrix t-random variable.
 
@@ -1618,8 +1618,13 @@ class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
             Degrees of freedom
         """
         # Process df
-        if not np.isscalar(df):
-            raise ValueError("Parameter `df` must be a scalar.")
+        if df is not None:
+            if not np.isscalar(df):
+                raise ValueError("Parameter `df` must be a scalar.")
+            if df <= 0:
+                raise ValueError("Parameter `df` must be positive.")
+        else:
+            raise ValueError("Missing required parameter `df`.")
 
         # Process mean
         if mean is not None:
@@ -1742,7 +1747,7 @@ class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
         log_f_mn = (
             scipy.special.multigammaln((df + m + n - 1) / 2, n)
             - scipy.special.multigammaln((df + n - 1) / 2, n)
-            - (m * n / 2) * scipy.stats._multivariate._LOG_PI
+            - (m * n / 2) * _LOG_PI
             - (n / 2) * logdetrowcov
             - (m / 2) * logdetcolcov
         )
@@ -1770,8 +1775,8 @@ class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
             mean, rowcov, colcov, df
         )
         X = self._process_quantiles(X, dims)
-        rowpsd = scipy.stats._multivariate._PSD(rowcov, allow_singular=False)
-        colpsd = scipy.stats._multivariate._PSD(colcov, allow_singular=False)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
         invrowcov = rowpsd.pinv
         invcolcov = colpsd.pinv
         logdetrowcov = rowpsd.log_pdet
@@ -1779,7 +1784,7 @@ class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
         out = self._logpdf(
             dims, X, mean, df, invrowcov, invcolcov, logdetrowcov, logdetcolcov
         )
-        return scipy.stats._multivariate._squeeze_output(out)
+        return _squeeze_output(out)
 
     def pdf(self, X, mean=None, rowcov=1, colcov=1, df=2):
         """Matrix t probability density function.
@@ -1893,8 +1898,8 @@ class matrix_t_gen(scipy.stats._multivariate.multi_rv_generic):
         dims, _, rowcov, colcov, df = self._process_parameters(
             dummy_mean, rowcov, colcov, df
         )
-        rowpsd = scipy.stats._multivariate._PSD(rowcov, allow_singular=False)
-        colpsd = scipy.stats._multivariate._PSD(colcov, allow_singular=False)
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
         return self._entropy(dims, df, rowpsd.log_pdet, colpsd.log_pdet)
 
 
@@ -1904,10 +1909,11 @@ matrix_t = matrix_t_gen()
 class matrix_t_frozen:
     def __init__(self, mean, rowcov, colcov, df, seed=None):
         self._dist = matrix_t_gen(seed)
-        self.dims, self.mean, self.rowcov, self.colcov, self.df = (
+        self.dims, self.mean, self.rowcov, self.colcov, self.df = \
             self._dist._process_parameters(mean, rowcov, colcov, df)
-        )
         self._random_state = np.random.RandomState(seed)
+        self.rowpsd = _PSD(self.rowcov, allow_singular=False)
+        self.colpsd = _PSD(self.colcov, allow_singular=False)
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
@@ -1918,7 +1924,7 @@ class matrix_t_frozen:
         out = self._dist._logpdf(
             self.dims, X, self.mean, self.df, invrowcov, invcolcov, detrowcov, detcolcov
         )
-        return scipy.stats._multivariate._squeeze_output(out)
+        return _squeeze_output(out)
 
     def pdf(self, X):
         return np.exp(self.logpdf(X))
