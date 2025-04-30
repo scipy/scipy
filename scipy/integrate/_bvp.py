@@ -880,6 +880,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
            Boundary Value Problems for Ordinary Differential Equations",
            Philidelphia, PA: Society for Industrial and Applied Mathematics,
            1995.
+           :doi:`10.1137/1.9781611971231`
     .. [4] `Cauchy-Riemann equations
             <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
             Wikipedia.
