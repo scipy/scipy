@@ -5,9 +5,9 @@ import operator
 import warnings
 import builtins
 
+from math import pi
+
 import numpy as np
-from numpy import (atleast_1d, asarray,
-                   pi, absolute, concatenate, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
 from scipy import special, optimize, fft as sp_fft
@@ -41,7 +41,7 @@ class BadCoefficients(UserWarning):
     pass
 
 
-abs = absolute
+abs = np.absolute
 
 
 def _is_int_type(x):
@@ -1035,7 +1035,7 @@ def _cplxreal(z, tol=None):
     [ 1.  3.  4.]
     """
 
-    z = atleast_1d(z)
+    z = np.atleast_1d(z)
     if z.size == 0:
         return z, z
     elif z.ndim != 1:
@@ -1054,7 +1054,7 @@ def _cplxreal(z, tol=None):
 
     if len(zr) == len(z):
         # Input is entirely real
-        return array([]), zr
+        return np.array([]), zr
 
     # Split positive and negative halves of conjugates
     z = z[~real_indices]
@@ -1067,7 +1067,7 @@ def _cplxreal(z, tol=None):
 
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
-    diffs = np.diff(concatenate(([0], same_real, [0])))
+    diffs = np.diff(np.concatenate(([0], same_real, [0])))
     run_starts = np.nonzero(diffs > 0)[0]
     run_stops = np.nonzero(diffs < 0)[0]
 
@@ -1142,7 +1142,7 @@ def _cplxpair(z, tol=None):
       3.+0.j  4.+0.j]
     """
 
-    z = atleast_1d(z)
+    z = np.atleast_1d(z)
     if z.size == 0 or np.isrealobj(z):
         return np.sort(z)
 
@@ -2448,6 +2448,9 @@ def bilinear(b, a, fs=1.0):
     called "frequency warping". [1]_ describes a method called "pre-warping" to
     reduce those deviations.
     """
+    xp = array_namespace(b, a)
+
+    b, a = map(np.asarray, (b, a))
     b, a = np.atleast_1d(b), np.atleast_1d(a)  # convert scalars, if needed
     if not a.ndim == 1:
         raise ValueError(f"Parameter a is not a 1d array since {a.shape=}")
@@ -2466,7 +2469,11 @@ def bilinear(b, a, fs=1.0):
     N = max(len(a), len(b)) - 1
     numerator   = sum(b_ * zp1**(N-q) * zm1**q for q, b_ in enumerate(b[::-1]))
     denominator = sum(a_ * zp1**(N-p) * zm1**p for p, a_ in enumerate(a[::-1]))
-    return normalize(numerator.coef[::-1], denominator.coef[::-1])
+
+    return normalize(
+        xp.asarray(numerator.coef[::-1].copy()),
+        xp.asarray(denominator.coef[::-1].copy())
+    )
 
 
 def _validate_gpass_gstop(gpass, gstop):
@@ -5079,7 +5086,7 @@ def _campos_zeros(n):
     `n` using polynomial fit (Campos-Calderon 2011)
     """
     if n == 1:
-        return asarray([-1+0j])
+        return np.asarray([-1+0j])
 
     s = npp_polyval(n, [0, 0, 2, 0, -3, 1])
     b3 = npp_polyval(n, [16, -8]) / s
@@ -5111,7 +5118,7 @@ def _aberth(f, fp, x0, tol=1e-15, maxiter=50):
 
     N = len(x0)
 
-    x = array(x0, complex)
+    x = np.array(x0, complex)
     beta = np.empty_like(x0)
 
     for iteration in range(maxiter):
@@ -5143,7 +5150,7 @@ def _bessel_zeros(N):
     modified Bessel function of the second kind
     """
     if N == 0:
-        return asarray([])
+        return np.asarray([])
 
     # Generate starting points
     x0 = _campos_zeros(N)

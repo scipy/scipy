@@ -16,6 +16,7 @@ from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, array_namespace,
     assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy
 )
+import scipy._lib.array_api_extra as xpx
 
 from numpy import array, spacing, sin, pi
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
@@ -1585,6 +1586,7 @@ class TestLp2bs:
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
 
+    @skip_xp_backends(np_only=True)
     def test_exceptions(self):
         """Raise all exceptions in `bilinear()`. """
         with pytest.raises(ValueError, match="Parameter a is not .*"):
@@ -1592,48 +1594,60 @@ class TestBilinear:
         with pytest.raises(ValueError, match="Parameter b is not .*"):
             bilinear(np.ones((2,3)), 1. )
 
-    def test_basic(self):
+    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    def test_basic(self, xp):
         # reference output values computed with sympy
         b = [0.14879732743343033]
         a = [1, 0.54552236880522209, 0.14879732743343033]
+        b, a = map(xp.asarray, (b, a))
+
         b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
         a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
+        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, 0.5)
 
+        b_z, a_z = map(np.asarray, (b_z, a_z))
         assert_array_almost_equal_nulp(b_z, b_zref)
         assert_array_almost_equal_nulp(a_z, a_zref)
 
         b = [1, 0, 0.17407467530697837]
         a = [1, 0.18460575326152251, 0.17407467530697837]
+        b, a = map(xp.asarray, (b, a))
+
         b_zref = [0.8641286432189045, -1.2157757001964216, 0.8641286432189045]
         a_zref = [1.0, -1.2157757001964216, 0.7282572864378091]
+        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, 0.5)
 
+        b_z, a_z = map(np.asarray, (b_z, a_z))
         assert_array_almost_equal_nulp(b_z, b_zref)
         assert_array_almost_equal_nulp(a_z, a_zref)
 
-
-    def test_ignore_leading_zeros(self):
+    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    def test_ignore_leading_zeros(self, xp):
         # regression for gh-6606
         # results shouldn't change when leading zeros are added to
         # input numerator or denominator
         b = [0.14879732743343033]
         a = [1, 0.54552236880522209, 0.14879732743343033]
+        b, a = map(xp.asarray, (b, a))
 
         b_zref = [0.08782128175913713, 0.17564256351827426, 0.08782128175913713]
         a_zref = [1.0, -1.0047722097030667, 0.3560573367396151]
+        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
 
         for lzn, lzd in product(range(4), range(4)):
-            b_z, a_z = bilinear(np.pad(b, (lzn, 0)),
-                                np.pad(a, (lzd, 0)),
+            b_z, a_z = bilinear(xpx.pad(b, (lzn, 0), xp=xp),
+                                xpx.pad(a, (lzd, 0), xp=xp),
                                 0.5)
+            b_z, a_z = map(np.asarray, (b_z, a_z))
             assert_array_almost_equal_nulp(b_z, b_zref)
             assert_array_almost_equal_nulp(a_z, a_zref)
 
-
-    def test_complex(self):
+    @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
+    def test_complex(self, xp):
         # reference output values computed with sympy
         # this is an elliptical filter, 5Hz width, centered at +50Hz:
         #     z, p, k = signal.ellip(2, 0.5, 20, 2*np.pi*5/2, output='zpk', analog=True)
@@ -1646,6 +1660,8 @@ class TestBilinear:
         a = [(1+0j),
              (21.09511000343942-628.3185307179587j),
              (-98310.74322875646-6627.2242613473845j)]
+        b, a = map(xp.asarray, (b, a))
+
         # sample frequency
         fs = 1000
         b_zref = [(0.09905575106715676-0.00013441423112828688j),
@@ -1654,14 +1670,16 @@ class TestBilinear:
         a_zref = [(1+0j),
                   (-1.8839476369292854-0.606808151331815j),
                   (0.7954687330018285+0.5717459398142481j)]
+        b_zref, a_zref = map(np.asarray, (b_zref, a_zref))
 
         b_z, a_z = bilinear(b, a, fs)
 
         # the 3 ulp difference determined from testing
+        b_z, a_z = map(np.asarray, (b_z, a_z))
         assert_array_almost_equal_nulp(b_z, b_zref, 3)
         assert_array_almost_equal_nulp(a_z, a_zref, 3)
 
-
+    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         b = [0.14879732743343033]
         a = [1, 0.54552236880522209, 0.14879732743343033]
