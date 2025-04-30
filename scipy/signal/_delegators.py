@@ -362,7 +362,7 @@ def gausspulse_signature(t, *args, **kwds):
 
 
 def group_delay_signature(system, w=512, whole=False, fs=6.283185307179586):
-    return array_namespace(_skip_if_str_or_tuple(system), _skip_if_int(w))
+    return array_namespace(*system, w)
 
 
 def hilbert_signature(x, N=None, axis=-1):
