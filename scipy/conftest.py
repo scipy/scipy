@@ -216,7 +216,7 @@ if SCIPY_ARRAY_API:
 
     # by default, use all available backends
     if (
-        isinstance(SCIPY_ARRAY_API, str) 
+        isinstance(SCIPY_ARRAY_API, str)
         and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
     ):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
@@ -285,7 +285,7 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
 
 def _backends_kwargs_from_request(request, skip_or_xfail):
     """A helper for {skip,xfail}_xp_backends.
-    
+
     Return dict of {backend to skip/xfail: top reason to skip/xfail it}
     """
     markers = list(request.node.iter_markers(f'{skip_or_xfail}_xp_backends'))
@@ -343,7 +343,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 f"Please specify only one backend per marker: {marker.args}"
             )
 
-    return {backend: backend_reasons[0] 
+    return {backend: backend_reasons[0]
             for backend, backend_reasons in reasons.items()
             if backend_reasons}
 
@@ -611,12 +611,25 @@ if HAVE_SCPDT:
         # equivalent to "pytest --ignore=path/to/file"
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
+        "scipy/interpolate/_rbfinterp_pythran.py",
+        "scipy/_build_utils/tempita.py",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
         "scipy/_lib/_uarray",
+        "scipy/linalg/_cython_signature_generator.py",
+        "scipy/linalg/_generate_pyx.py",
+        "scipy/linalg/_linalg_pythran.py",
+        "scipy/linalg/_matfuncs_sqrtm_triu.py",
+        "scipy/ndimage/utils/generate_label_testvectors.py",
+        "scipy/optimize/_group_columns.py",
+        "scipy/optimize/_max_len_seq_inner.py",
+        "scipy/signal/_max_len_seq_inner.py",
+        "scipy/sparse/_generate_sparsetools.py",
+        "scipy/special/_generate_pyx.py",
+        "scipy/stats/_stats_pythran.py",
     ]
 
     dt_config.pytest_extra_xfail = {
