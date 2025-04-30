@@ -260,12 +260,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _sub_sparse(self, other):
         return self._binopt(other, '_minus_')
 
-    def multiply(self, other):
+    def _multiply_2d_with_broadcasting(self, other):
         """Element-wise multiplication by array/matrix, vector, or scalar."""
-        # Scalar multiplication.
-        if isscalarlike(other):
-            return self._mul_scalar(other)
-        # Sparse matrix or vector.
+        # Called after checking that other is not scalarlike and self.ndim <=2
         if issparse(other):
             if self.shape == other.shape:
                 other = self.__class__(other)
