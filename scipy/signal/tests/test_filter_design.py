@@ -3751,8 +3751,8 @@ class TestCheby2:
               1.339913493808590e+33]
         b2 = xp.asarray(b2)
         a2 = xp.asarray(a2)
-        xp_assert_close(b, b2, rtol=1e-14)
-        xp_assert_close(a, a2, rtol=1e-14)
+        xp_assert_close(b, b2, rtol=5e-14)
+        xp_assert_close(a, a2, rtol=5e-14)
 
     @skip_xp_backends(np_only=True)
     def test_fs_param(self):

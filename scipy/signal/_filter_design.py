@@ -4135,12 +4135,11 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
                                  args=(0, passb, stopb, gpass, gstop,
                                        filter_kind),
                                  disp=0)
-        passb[0] = wp0
         wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
                                  args=(1, passb, stopb, gpass, gstop,
                                        filter_kind),
                                  disp=0)
-        passb[1] = wp1
+        passb = [float(wp0), float(wp1)]
         passb, stopb = xp.asarray(passb), xp.asarray(stopb)
         nat = ((stopb * (passb[0] - passb[1])) /
                (stopb ** 2 - passb[0] * passb[1]))
@@ -4275,11 +4274,11 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:  # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = xp.empty(2, dtype=xp_default_dtype(xp))
         discr = xp.sqrt((passb[1] - passb[0]) ** 2 +
                      4 * W0 ** 2 * passb[0] * passb[1])
-        WN[0] = ((passb[1] - passb[0]) + discr) / (2 * W0)
-        WN[1] = ((passb[1] - passb[0]) - discr) / (2 * W0)
+        WN0 = ((passb[1] - passb[0]) + discr) / (2 * W0)
+        WN1 = ((passb[1] - passb[0]) - discr) / (2 * W0)
+        WN = xp.asarray([float(WN0), float(WN1)])
         WN = xp.sort(xp.abs(WN))
 
     elif filter_type == 4:  # pass
@@ -4495,17 +4494,17 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = xp.empty(2, dtype=xp.float64)
-        nat[0] = (new_freq / 2.0 * (passb[0] - passb[1]) +
+        nat0 = (new_freq / 2.0 * (passb[0] - passb[1]) +
                   math.sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
-        nat[1] = passb[1] * passb[0] / nat[0]
+        nat1 = passb[1] * passb[0] / nat0
+        nat = xp.asarray([float(nat0), float(nat1)])
     elif filter_type == 4:
-        nat = xp.empty(2, dtype=xp.float64)
-        nat[0] = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
+        nat0 = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
                   math.sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
-        nat[1] = passb[0] * passb[1] / nat[0]
+        nat1 = passb[0] * passb[1] / nat0
+        nat = xp.asarray([float(nat0), float(nat1)])
 
     wn = _postprocess_wn(nat, analog, fs, xp=xp)
 
