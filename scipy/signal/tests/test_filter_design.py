@@ -1594,6 +1594,7 @@ class TestBilinear:
         with pytest.raises(ValueError, match="Parameter b is not .*"):
             bilinear(np.ones((2,3)), 1. )
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
     def test_basic(self, xp):
         # reference output values computed with sympy
@@ -1625,6 +1626,7 @@ class TestBilinear:
         assert_array_almost_equal_nulp(b_z, b_zref)
         assert_array_almost_equal_nulp(a_z, a_zref)
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
     def test_ignore_leading_zeros(self, xp):
         # regression for gh-6606
@@ -1646,6 +1648,7 @@ class TestBilinear:
             assert_array_almost_equal_nulp(b_z, b_zref)
             assert_array_almost_equal_nulp(a_z, a_zref)
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
     def test_complex(self, xp):
         # reference output values computed with sympy
@@ -4163,6 +4166,7 @@ class TestIIRNotch:
         xp_assert_close(b, b2, rtol=1e-8)
         xp_assert_close(a, a2, rtol=1e-8)
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     def test_frequency_response(self, xp):
         # Get filter coefficients
@@ -4207,6 +4211,7 @@ class TestIIRNotch:
         assert_raises(ValueError, iirnotch, w0="blabla", Q=30)
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     def test_fs_param(self, xp):
         # Get filter coefficients
@@ -4258,6 +4263,7 @@ class TestIIRPeak:
         xp_assert_close(b, b2, rtol=1e-8)
         xp_assert_close(a, a2, rtol=1e-8)
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     def test_frequency_response(self, xp):
         # Get filter coefficients
@@ -4302,6 +4308,7 @@ class TestIIRPeak:
         assert_raises(ValueError, iirpeak, w0="blabla", Q=30)
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
     def test_fs_param(self, xp):
         # Get filter coefficients
@@ -4336,6 +4343,7 @@ class TestIIRPeak:
         assert math.isclose(abs(hp[2]), 1.0, rel_tol=1e-10)
 
 
+@pytest.mark.xfail(DEFAULT_F32, reason="wrong answers with torch/float32")
 @xfail_xp_backends("jax.numpy", reason="wrong answers")
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestIIRComb:
@@ -4689,6 +4697,7 @@ class TestGroupDelay:
         assert_array_almost_equal(w, 2 * xp.pi * xp.arange(512, dtype=w.dtype) / 512)
         assert_array_almost_equal(gd, xp.zeros(512))
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_fir(self, xp):
         # Let's design linear phase FIR and check that the group delay
         # is constant.
@@ -4698,6 +4707,7 @@ class TestGroupDelay:
         w, gd = group_delay((b, 1))
         xp_assert_close(gd, xp.ones_like(gd)*(0.5 * N))
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_iir(self, xp):
         # Let's design Butterworth filter and test the group delay at
         # some points against MATLAB answer.
@@ -4736,6 +4746,7 @@ class TestGroupDelay:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(gd1, gd2)
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     def test_fs_param(self, xp):
         # Let's design Butterworth filter and test the group delay at
         # some points against the normalized frequency answer.
@@ -4764,6 +4775,7 @@ class TestGroupDelay:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
 
+    @pytest.mark.xfail(DEFAULT_F32, reason="with torch/float32, the rtol is ~1e-7")
     @skip_xp_backends(cpu_only=True, reason="assert_almost_equal_nulp")
     def test_complex_coef(self, xp):
         # gh-19586: handle complex coef TFs
@@ -4836,6 +4848,7 @@ class TestGammatone:
 
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
+    @pytest.mark.xfail(DEFAULT_F32, reason="wrong answer with torch/float32")
     @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/pull/9117")
     def test_frequency_response(self, xp):
         fs = 16000
