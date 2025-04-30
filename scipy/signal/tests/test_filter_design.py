@@ -4129,25 +4129,26 @@ def test_sos_consistency():
 
 class TestIIRNotch:
 
-    def test_ba_output(self):
+    def test_ba_output(self, xp):
         # Compare coefficients with Matlab ones
         # for the equivalent input:
-        b, a = iirnotch(0.06, 30)
-        b2 = [
+        b, a = iirnotch(0.06, 30, xp=xp)
+        b2 = xp.asarray([
              9.9686824e-01, -1.9584219e+00,
              9.9686824e-01
-             ]
-        a2 = [
+             ])
+        a2 = xp.asarray([
              1.0000000e+00, -1.9584219e+00,
              9.9373647e-01
-             ]
+             ])
 
         xp_assert_close(b, b2, rtol=1e-8)
         xp_assert_close(a, a2, rtol=1e-8)
 
-    def test_frequency_response(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_frequency_response(self, xp):
         # Get filter coefficients
-        b, a = iirnotch(0.3, 30)
+        b, a = iirnotch(0.3, 30, xp=xp)
 
         # Get frequency response
         w, h = freqz(b, a, 1000)
@@ -4160,24 +4161,25 @@ class TestIIRNotch:
              400]  # w0 = 0.400
 
         # Get frequency response correspondent to each of those points
-        hp = h[p]
+        hp = h[xp.asarray(p)]
 
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 1
-        xp_assert_close(abs(hp[0]), np.asarray(1.), rtol=1e-2, check_0d=False)
-        xp_assert_close(abs(hp[4]), np.asarray(1.), rtol=1e-2, check_0d=False)
+        assert math.isclose(xp.abs(hp[0]), 1., rel_tol=1e-2)
+        assert math.isclose(xp.abs(hp[4]), 1., rel_tol=1e-2)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to -3dB
-        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        assert math.isclose(xp.abs(hp[1]), 1 / math.sqrt(2), rel_tol=1e-2)
+        assert math.isclose(xp.abs(hp[3]), 1 / math.sqrt(2), rel_tol=1e-2)
 
         # hp[2] correspond to the frequency that should be removed
         # the frequency response should be very close to 0
-        xp_assert_close(abs(hp[2]), np.asarray(0.0), atol=1e-10, check_0d=False)
+        assert math.isclose(xp.abs(hp[2]), 0.0, abs_tol=1e-10)
 
-    def test_errors(self):
+    @skip_xp_backends(np_only=True)
+    def test_errors(self, xp):
         # Exception should be raised if w0 > 1 or w0 <0
         assert_raises(ValueError, iirnotch, w0=2, Q=30)
         assert_raises(ValueError, iirnotch, w0=-1, Q=30)
@@ -4187,9 +4189,10 @@ class TestIIRNotch:
         assert_raises(ValueError, iirnotch, w0="blabla", Q=30)
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
-    def test_fs_param(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_fs_param(self, xp):
         # Get filter coefficients
-        b, a = iirnotch(1500, 30, fs=10000)
+        b, a = iirnotch(1500, 30, fs=10000, xp=xp)
 
         # Get frequency response
         w, h = freqz(b, a, 1000, fs=10000)
@@ -4202,46 +4205,45 @@ class TestIIRNotch:
              400]  # w0 = 2000
 
         # Get frequency response correspondent to each of those points
-        hp = h[p]
+        hp = h[xp.asarray(p)]
 
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1500 and should be close to 1
-        xp_assert_close(abs(hp[0]), np.ones_like(abs(hp[0])), rtol=1e-2,
-                        check_0d=False)
-        xp_assert_close(abs(hp[4]), np.ones_like(abs(hp[4])), rtol=1e-2,
-                        check_0d=False)
+        assert math.isclose(xp.abs(hp[0]), 1.0, rel_tol=1e-2)
+        assert math.isclose(xp.abs(hp[4]), 1.0, rel_tol=1e-2)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to -3dB
-        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        assert math.isclose(xp.abs(hp[1]), 1 / math.sqrt(2), rel_tol=1e-2)
+        assert math.isclose(xp.abs(hp[3]), 1 / math.sqrt(2), rel_tol=1e-2)
 
         # hp[2] correspond to the frequency that should be removed
         # the frequency response should be very close to 0
-        xp_assert_close(abs(hp[2]), np.asarray(0.0), atol=1e-10, check_0d=False)
+        assert math.isclose(xp.abs(hp[2]), 0.0, abs_tol=1e-10)
 
 
 class TestIIRPeak:
 
-    def test_ba_output(self):
+    def test_ba_output(self, xp):
         # Compare coefficients with Matlab ones
         # for the equivalent input:
-        b, a = iirpeak(0.06, 30)
-        b2 = [
+        b, a = iirpeak(0.06, 30, xp=xp)
+        b2 = xp.asarray([
              3.131764229e-03, 0,
              -3.131764229e-03
-             ]
-        a2 = [
+             ])
+        a2 = xp.asarray([
              1.0000000e+00, -1.958421917e+00,
              9.9373647e-01
-             ]
+             ])
         xp_assert_close(b, b2, rtol=1e-8)
         xp_assert_close(a, a2, rtol=1e-8)
 
-    def test_frequency_response(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_frequency_response(self, xp):
         # Get filter coefficients
-        b, a = iirpeak(0.3, 30)
+        b, a = iirpeak(0.3, 30, xp=xp)
 
         # Get frequency response
         w, h = freqz(b, a, 1000)
@@ -4254,25 +4256,24 @@ class TestIIRPeak:
              800]  # w0 = 0.800
 
         # Get frequency response correspondent to each of those points
-        hp = h[p]
+        hp = h[xp.asarray(p)]
 
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 0.3 and should be close to 0
-        xp_assert_close(abs(hp[0]),
-                        np.zeros_like(abs(hp[0])), atol=1e-2, check_0d=False)
-        xp_assert_close(abs(hp[4]),
-                        np.zeros_like(abs(hp[4])), atol=1e-2, check_0d=False)
+        assert math.isclose(xp.abs(hp[0]), 0., abs_tol=1e-2)
+        assert math.isclose(xp.abs(hp[4]), 0., abs_tol=1e-2)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to 10**(-3/20)
-        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        assert math.isclose(xp.abs(hp[1]), 1 / math.sqrt(2), rel_tol=1e-2)
+        assert math.isclose(xp.abs(hp[3]), 1 / math.sqrt(2), rel_tol=1e-2)
 
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
-        xp_assert_close(abs(hp[2]), np.asarray(1.0), rtol=1e-10, check_0d=False)
+        assert math.isclose(xp.abs(hp[2]), 1.0, rel_tol=1e-10)
 
+    @skip_xp_backends(np_only=True)
     def test_errors(self):
         # Exception should be raised if w0 > 1 or w0 <0
         assert_raises(ValueError, iirpeak, w0=2, Q=30)
@@ -4283,9 +4284,10 @@ class TestIIRPeak:
         assert_raises(ValueError, iirpeak, w0="blabla", Q=30)
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
-    def test_fs_param(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    def test_fs_param(self, xp):
         # Get filter coefficients
-        b, a = iirpeak(1200, 30, fs=8000)
+        b, a = iirpeak(1200, 30, fs=8000, xp=xp)
 
         # Get frequency response
         w, h = freqz(b, a, 1000, fs=8000)
@@ -4298,29 +4300,28 @@ class TestIIRPeak:
              800]  # w0 = 3200
 
         # Get frequency response correspondent to each of those points
-        hp = h[p]
+        hp = h[xp.asarray(p)]
 
         # Check if the frequency response fulfill the specifications:
         # hp[0] and hp[4]  correspond to frequencies distant from
         # w0 = 1200 and should be close to 0
-        xp_assert_close(abs(hp[0]),
-                        np.zeros_like(abs(hp[0])), atol=1e-2, check_0d=False)
-        xp_assert_close(abs(hp[4]),
-                        np.zeros_like(abs(hp[4])), atol=1e-2, check_0d=False)
+        assert math.isclose(abs(hp[0]), 0.0, abs_tol=1e-2)
+        assert math.isclose(abs(hp[4]), 0.0, abs_tol=1e-2)
 
         # hp[1] and hp[3] correspond to frequencies approximately
         # on the edges of the passband and should be close to 10**(-3/20)
-        xp_assert_close(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
-        xp_assert_close(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+        assert math.isclose(abs(hp[1]), 1 / math.sqrt(2), rel_tol=1e-2)
+        assert math.isclose(abs(hp[3]), 1 / math.sqrt(2), rel_tol=1e-2)
 
         # hp[2] correspond to the frequency that should be retained and
         # the frequency response should be very close to 1
-        xp_assert_close(abs(hp[2]),
-                        np.ones_like(abs(hp[2])), rtol=1e-10, check_0d=False)
+        assert math.isclose(abs(hp[2]), 1.0, rel_tol=1e-10)
 
 
+@skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestIIRComb:
     # Test erroneous input cases
+    @skip_xp_backends(np_only=True)
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
@@ -4349,20 +4350,22 @@ class TestIIRComb:
 
     # Verify that the filter's frequency response contains a
     # notch at the cutoff frequency
+    @skip_xp_backends(cpu_only=True, reason='XXX convert argrelextrema')
     @pytest.mark.parametrize('ftype', ('notch', 'peak'))
-    def test_frequency_response(self, ftype):
+    def test_frequency_response(self, ftype, xp):
         # Create a notching or peaking comb filter at 1000 Hz
-        b, a = iircomb(1000, 30, ftype=ftype, fs=10000)
+        b, a = iircomb(1000, 30, ftype=ftype, fs=10000, xp=xp)
 
         # Compute the frequency response
         freqs, response = freqz(b, a, 1000, fs=10000)
 
         # Find the notch using argrelextrema
-        comb_points = argrelextrema(abs(response), np.less)[0]
+        comb_points = argrelextrema(abs(np.asarray(response)), np.less)[0]
+        comb_points = xp.asarray(comb_points)
 
         # Verify that the first notch sits at 1000 Hz
         comb1 = comb_points[0]
-        xp_assert_close(freqs[comb1], np.asarray(1000.), check_0d=False)
+        xp_assert_close(freqs[comb1], xp.asarray(1000.), check_0d=False)
 
     # Verify pass_zero parameter
     @pytest.mark.parametrize('ftype,pass_zero,peak,notch',
@@ -4372,61 +4375,70 @@ class TestIIRComb:
                               ('notch', None, 61.725, 123.45),
                               ('notch', True, 123.45, 61.725),
                               ('notch', False, 61.725, 123.45)])
-    def test_pass_zero(self, ftype, pass_zero, peak, notch):
+    def test_pass_zero(self, ftype, pass_zero, peak, notch, xp):
         # Create a notching or peaking comb filter
-        b, a = iircomb(123.45, 30, ftype=ftype, fs=1234.5, pass_zero=pass_zero)
+        b, a = iircomb(123.45, 30, ftype=ftype, fs=1234.5, pass_zero=pass_zero, xp=xp)
 
         # Compute the frequency response
-        freqs, response = freqz(b, a, [peak, notch], fs=1234.5)
+        freqs, response = freqz(b, a, xp.asarray([peak, notch]), fs=1234.5)
 
         # Verify that expected notches are notches and peaks are peaks
-        assert abs(response[0]) > 0.99
-        assert abs(response[1]) < 1e-10
+        assert xp.abs(response[0]) > 0.99
+        assert xp.abs(response[1]) < 1e-10
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
-    def test_iir_symmetry(self):
-        b, a = iircomb(400, 30, fs=24000)
+    def test_iir_symmetry(self, xp):
+        b, a = iircomb(400, 30, fs=24000, xp=xp)
         z, p, k = tf2zpk(b, a)
-        xp_assert_equal(sorted(z), sorted(z.conj()))
-        xp_assert_equal(sorted(p), sorted(p.conj()))
-        xp_assert_equal(k, np.real(k))
+        xp_assert_equal(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
+        xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
+        xp_assert_equal(k, xp.real(k))
 
-        assert issubclass(b.dtype.type, np.floating)
-        assert issubclass(a.dtype.type, np.floating)
+        if is_numpy(xp):
+            assert issubclass(b.dtype.type, np.floating)
+            assert issubclass(a.dtype.type, np.floating)
+        else:
+            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
+            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify filter coefficients with MATLAB's iircomb function
-    def test_ba_output(self):
-        b_notch, a_notch = iircomb(60, 35, ftype='notch', fs=600)
+    def test_ba_output(self, xp):
+        b_notch, a_notch = iircomb(60, 35, ftype='notch', fs=600, xp=xp)
         b_notch2 = [0.957020174408697, 0.0, 0.0, 0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 0.0, -0.957020174408697]
         a_notch2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                     0.0, 0.0, 0.0, 0.0, -0.914040348817395]
+        b_notch2 = xp.asarray(b_notch2)
+        a_notch2 = xp.asarray(a_notch2)
         xp_assert_close(b_notch, b_notch2)
         xp_assert_close(a_notch, a_notch2)
 
-        b_peak, a_peak = iircomb(60, 35, ftype='peak', fs=600)
+        b_peak, a_peak = iircomb(60, 35, ftype='peak', fs=600, xp=xp)
         b_peak2 = [0.0429798255913026, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, -0.0429798255913026]
         a_peak2 = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.914040348817395]
+        b_peak2 = xp.asarray(b_peak2)
+        a_peak2 = xp.asarray(a_peak2)
         xp_assert_close(b_peak, b_peak2)
         xp_assert_close(a_peak, a_peak2)
 
     # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
-    def test_nearest_divisor(self):
+    def test_nearest_divisor(self, xp):
         # Create a notching comb filter
-        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch')
+        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch', xp=xp)
 
         # Compute the frequency response at an upper harmonic of 50
         freqs, response = freqz(b, a, [22000], fs=44100)
 
         # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
-        assert abs(response[0]) < 1e-10
+        assert xp.abs(response[0]) < 1e-10
 
+    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             iircomb(1000, 30, fs=np.array([10, 20]))
@@ -4437,7 +4449,8 @@ class TestIIRComb:
 
 class TestIIRDesign:
 
-    def test_exceptions(self):
+    @skip_xp_backends(np_only=True)
+    def test_exceptions(self, xp):
         with pytest.raises(ValueError, match="the same shape"):
             iirdesign(0.2, [0.1, 0.3], 1, 40)
         with pytest.raises(ValueError, match="the same shape"):
@@ -4551,46 +4564,51 @@ class TestIIRDesign:
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
 
-    def test_fs_validation(self):
+    @skip_xp_backends(np_only=True)
+    def test_fs_validation(self, xp):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
+@skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestIIRFilter:
 
-    def test_symmetry(self):
+    def test_symmetry(self, xp):
         # All built-in IIR filters are real, so should have perfectly
         # symmetrical poles and zeros. Then ba representation (using
         # numpy.poly) will be purely real instead of having negligible
         # imaginary parts.
-        for N in np.arange(1, 26):
+        for N in range(1, 26):
             for ftype in ('butter', 'bessel', 'cheby1', 'cheby2', 'ellip'):
-                z, p, k = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
+                z, p, k = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
                                     ftype=ftype, output='zpk')
-                xp_assert_equal(sorted(z),
-                                sorted(z.conj()))
-                xp_assert_equal(sorted(p),
-                                sorted(p.conj()))
-                xp_assert_equal(k, np.real(k))
+                xp_assert_close(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
+                xp_assert_close(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
+                assert complex(k).imag == 0
 
-                b, a = iirfilter(N, 1.1, 1, 20, 'low', analog=True,
+                b, a = iirfilter(N, xp.asarray(1.1), 1, 20, 'low', analog=True,
                                  ftype=ftype, output='ba')
-                assert issubclass(b.dtype.type, np.floating)
-                assert issubclass(a.dtype.type, np.floating)
+                if is_numpy(xp):
+                    assert issubclass(b.dtype.type, np.floating)
+                    assert issubclass(a.dtype.type, np.floating)
+                else:
+                    assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
+                    assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
 
-    def test_int_inputs(self):
+    def test_int_inputs(self, xp):
         # Using integer frequency arguments and large N should not produce
         # numpy integers that wraparound to negative numbers
-        k = iirfilter(24, 100, btype='low', analog=True, ftype='bessel',
+        k = iirfilter(24, xp.asarray(100), btype='low', analog=True, ftype='bessel',
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
-        xp_assert_close(np.asarray(k),  np.asarray(k2))
+        assert math.isclose(k,  k2)
         # if fs is specified then the normalization of Wn to have
         # 0 <= Wn <= 1 should not cause an integer overflow
         # the following line should not raise an exception
-        iirfilter(20, [1000000000, 1100000000], btype='bp',
+        iirfilter(20, xp.asarray([1000000000, 1100000000]), btype='bp',
                       analog=False, fs=6250000000)
 
+    @skip_xp_backends(np_only=True)
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
         assert_raises(ValueError, iirfilter, 1, [0.1, 0.9], btype='low')
@@ -4598,6 +4616,7 @@ class TestIIRFilter:
         assert_raises(ValueError, iirfilter, 1, 0.2, btype='bp')
         assert_raises(ValueError, iirfilter, 1, 400, btype='bs', analog=True)
 
+    @skip_xp_backends(np_only=True)
     def test_invalid_wn_range(self):
         # For digital filters, 0 <= Wn <= 1
         assert_raises(ValueError, iirfilter, 1, 2, btype='low')
@@ -4621,12 +4640,13 @@ class TestIIRFilter:
         with pytest.raises(ValueError, match="must be greater than 0"):
             iirfilter(2, [10, -1], analog=True)
 
-    def test_analog_sos(self):
+    def test_analog_sos(self, xp):
         # first order Butterworth filter with Wn = 1 has tf 1/(s+1)
-        sos = [[0., 0., 1., 0., 1., 1.]]
-        sos2 = iirfilter(N=1, Wn=1, btype='low', analog=True, output='sos')
+        sos = xp.asarray([[0., 0., 1., 0., 1., 1.]])
+        sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='low', analog=True, output='sos')
         assert_array_almost_equal(sos, sos2)
 
+    @skip_xp_backends(np_only=True)
     def test_wn1_ge_wn0(self):
         # gh-15773: should raise error if Wn[0] >= Wn[1]
         with pytest.raises(ValueError,
@@ -4760,9 +4780,11 @@ class TestGroupDelay:
             group_delay((1, 1), fs=None)
 
 
+@skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestGammatone:
     # Test erroneous input cases.
-    def test_invalid_input(self):
+    @skip_xp_backends(np_only=True)
+    def test_invalid_input(self, xp):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
         for args in [(-fs, 'iir'), (0, 'fir'), (fs / 2, 'iir'), (fs, 'fir')]:
@@ -4783,45 +4805,49 @@ class TestGammatone:
 
     # Verify that the filter's frequency response is approximately
     # 1 at the cutoff frequency.
-    def test_frequency_response(self):
+    def test_frequency_response(self, xp):
         fs = 16000
         ftypes = ['fir', 'iir']
         for ftype in ftypes:
             # Create a gammatone filter centered at 1000 Hz.
-            b, a = gammatone(1000, ftype, fs=fs)
+            b, a = gammatone(1000, ftype, fs=fs, xp=xp)
 
             # Calculate the frequency response.
             freqs, response = freqz(b, a)
 
             # Determine peak magnitude of the response
             # and corresponding frequency.
-            response_max = np.max(np.abs(response))
-            freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
+            response_max = xp.max(xp.abs(response))
+            freq_hz = freqs[xp.argmax(xp.abs(response))] / ((2 * xp.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
             xp_assert_close(response_max,
-                            np.ones_like(response_max), rtol=1e-2, check_0d=False)
+                            xp.ones_like(response_max), rtol=1e-2, check_0d=False)
             xp_assert_close(freq_hz,
-                            1000*np.ones_like(freq_hz), rtol=1e-2, check_0d=False)
+                            1000*xp.ones_like(freq_hz), rtol=1e-2, check_0d=False)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
     # numpy.poly) will be purely real instead of having negligible
     # imaginary parts.
-    def test_iir_symmetry(self):
-        b, a = gammatone(440, 'iir', fs=24000)
+    def test_iir_symmetry(self, xp):
+        b, a = gammatone(440, 'iir', fs=24000, xp=xp)
         z, p, k = tf2zpk(b, a)
-        xp_assert_equal(sorted(z), sorted(z.conj()))
-        xp_assert_equal(sorted(p), sorted(p.conj()))
-        xp_assert_equal(k, np.real(k))
+        xp_assert_equal(_sort_cmplx(z, xp=xp), _sort_cmplx(xp.conj(z), xp=xp))
+        xp_assert_equal(_sort_cmplx(p, xp=xp), _sort_cmplx(xp.conj(p), xp=xp))
+        xp_assert_equal(k, xp.real(k))
 
-        assert issubclass(b.dtype.type, np.floating)
-        assert issubclass(a.dtype.type, np.floating)
+        if is_numpy(xp):
+            assert issubclass(b.dtype.type, np.floating)
+            assert issubclass(a.dtype.type, np.floating)
+        else:
+            assert xp.isdtype(b.dtype, ('real floating', 'complex floating'))
+            assert xp.isdtype(a.dtype, ('real floating', 'complex floating'))
 
     # Verify FIR filter coefficients with the paper's
     # Mathematica implementation
-    def test_fir_ba_output(self):
-        b, _ = gammatone(15, 'fir', fs=1000)
+    def test_fir_ba_output(self, xp):
+        b, _ = gammatone(15, 'fir', fs=1000, xp=xp)
         b2 = [0.0, 2.2608075649884e-04,
               1.5077903981357e-03, 4.2033687753998e-03,
               8.1508962726503e-03, 1.2890059089154e-02,
@@ -4830,11 +4856,12 @@ class TestGammatone:
               2.9293319149544e-02, 2.852976858014e-02,
               2.6176557156294e-02, 2.2371510270395e-02,
               1.7332485267759e-02]
+        b2 = xp.asarray(b2)
         xp_assert_close(b, b2)
 
     # Verify IIR filter coefficients with the paper's MATLAB implementation
-    def test_iir_ba_output(self):
-        b, a = gammatone(440, 'iir', fs=16000)
+    def test_iir_ba_output(self, xp):
+        b, a = gammatone(440, 'iir', fs=16000, xp=xp)
         b2 = [1.31494461367464e-06, -5.03391196645395e-06,
               7.00649426000897e-06, -4.18951968419854e-06,
               9.02614910412011e-07]
@@ -4843,9 +4870,11 @@ class TestGammatone:
               60.2667361289181, -46.9399590980486,
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
+        b2, a2 = map(xp.asarray, (b2, a2))
         xp_assert_close(b, b2)
         xp_assert_close(a, a2)
 
-    def test_fs_validation(self):
+    @skip_xp_backends(np_only=True)
+    def test_fs_validation(self, xp):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
-            gammatone(440, 'iir', fs=np.array([10, 20]))
+            gammatone(440, 'iir', fs=xp.asarray([10, 20]))
