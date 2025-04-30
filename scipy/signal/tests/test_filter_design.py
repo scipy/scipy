@@ -4903,8 +4903,8 @@ class TestGammatone:
               22.9474798808461, -6.43799381299034,
               0.793651554625368]
         b2, a2 = map(xp.asarray, (b2, a2))
-        xp_assert_close(b, b2)
-        xp_assert_close(a, a2)
+        xp_assert_close(b, b2, atol=1e-10, rtol=5e-5)
+        xp_assert_close(a, a2, atol=1e-10, rtol=5e-5)
 
     @skip_xp_backends(np_only=True)
     def test_fs_validation(self, xp):

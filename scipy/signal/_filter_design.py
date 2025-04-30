@@ -5913,7 +5913,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device
         scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
         b = b * scale_factor
-        a = [1.0]
+        a = xp.asarray([1.0])
 
     # Calculate IIR gammatone filter
     elif ftype == 'iir':
