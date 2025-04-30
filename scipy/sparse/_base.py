@@ -510,7 +510,7 @@ class _spbase(SparseABC):
             raise ValueError("inconsistent shapes: >2D multiply() does not yet "
                              "support broadcasting")
 
-        # self is >2D so much be COO
+        # self is >2D so must be COO
         if isdense(other):
             data = np.multiply(self.data, other[self.coords])
             result = self.copy()
@@ -622,7 +622,7 @@ class _spbase(SparseABC):
                     return res if self.ndim < 3 else res.tocoo().reshape(self.shape)
             else:
                 warn(f"Comparing a sparse matrix with {other} using {op_sym[op]} "
-                     "is inefficient. Try using {op_sym[op_neg[op]]} instead.",
+                     f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
                 if np.isnan(other):
                     # op is `ne` cuz op(0, other) and isnan(other). Return all True.
@@ -653,7 +653,7 @@ class _spbase(SparseABC):
             else:
                 # result will not be sparse. Use negated op and then negate.
                 warn(f"Comparing two sparse matrices using {op_sym[op]} "
-                     "is inefficient. Try using {op_sym[op_neg[op]]} instead.",
+                     f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
                 inv = csr_ready._binopt(csr_other, f'_{op_neg[op].__name__}_')
                 all_true = csr_ready.__class__(np.ones(csr_ready.shape, dtype=np.bool_))
