@@ -1,5 +1,5 @@
 """
-Test functions for multivariate normal distributions.
+Test functions for multivariate normal, t, and related distributions.
 
 """
 import pickle
@@ -27,7 +27,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
                          random_table, uniform_direction, vonmises_fisher,
-                         dirichlet_multinomial, vonmises)
+                         dirichlet_multinomial, vonmises, matrix_t)
 
 from scipy.stats import _covariance, Covariance
 from scipy.stats._continuous_distns import _norm_pdf as norm_pdf
@@ -431,15 +431,15 @@ class MVNProblem:
 class SingularMVNProblem:
     """Instantiate a multivariate normal integration problem with a special singular
     covariance structure.
-    
+
     When covariance matrix is a correlation matrix where the off-diagonal entries
     ``covar[i, j] == -lambdas[i]*lambdas[j]`` for ``i != j``, and
     ``sum(lambdas**2 / (1+lambdas**2)) == 1``, then the matrix is singular, and
-    the multidimensional integral reduces to a simpler univariate integral that 
+    the multidimensional integral reduces to a simpler univariate integral that
     can be numerically integrated fairly easily.
-    
+
     The lower bound must be infinite, though the upper bounds can be general.
-    
+
     References
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
@@ -453,7 +453,7 @@ class SingularMVNProblem:
     covar : np.ndarray
     target_val : float
     target_err : float
-    
+
     def __init__(self, ndim, high, lambdas):
         self.ndim = ndim
         self.high = high
@@ -479,7 +479,7 @@ class SingularMVNProblem:
             lambdas=lambdas,
         )
         return self
-    
+
     def find_target(self, **kwds):
         d = dict(
             a=-9.0,
@@ -505,7 +505,7 @@ class SingularMVNProblem:
     def univariate_func(self, t):
         t = np.atleast_1d(t)
         return (norm_pdf(t) * self._univariate_term(t)).squeeze()
-    
+
     def plot_integrand(self):
         """Plot the univariate integrand and its component terms for understanding.
         """
@@ -1089,7 +1089,7 @@ class TestMultivariateNormal:
     @pytest.mark.parametrize("ndim", range(4, 11))
     @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e4])
     def test_cdf_vs_univariate_singular(self, seed, ndim):
-        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds. 
+        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds.
         # No idea why.
         rng = np.random.default_rng(seed)
         case = SingularMVNProblem.generate_semiinfinite(ndim=ndim, rng=rng)
@@ -1427,6 +1427,58 @@ class TestMatrixNormal:
               [2.59428444080606, 5.79987854490876]]]
         )
         assert_allclose(actual, expected)
+
+
+class TestMatrixT:
+
+    def test_bad_input(self):
+        # Check that bad inputs raise errors
+        num_rows = 4
+        num_cols = 3
+        df = 5
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+
+        # Missing degrees-of-freedom parameter
+        assert_raises(ValueError, matrix_t, np.zeros((num_rows, num_cols)))
+
+        # Incorrect dimensions
+        assert_raises(ValueError, matrix_t, np.zeros((5,4,3)), df)
+        assert_raises(ValueError, matrix_t, M, np.zeros(10), V, df)
+        assert_raises(ValueError, matrix_t, M, U, np.zeros(10), df)
+        assert_raises(ValueError, matrix_t, M, U, U, df)
+        assert_raises(ValueError, matrix_t, M, V, V, df)
+        assert_raises(ValueError, matrix_t, M.T, U, V, df)
+
+        e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_t.rvs, M, U, np.ones((num_cols, num_cols)), df)
+        assert_raises(e, matrix_t.rvs, M, np.ones((num_rows, num_rows)), V, df)
+        # Singular covariance for a frozen instance
+        assert_raises(e, matrix_t, M, U, np.ones((num_cols, num_cols)), df)
+        assert_raises(e, matrix_t, M, np.ones((num_rows, num_rows)), V, df)
+
+    def test_default_inputs(self):
+        pass
+
+    def test_covariance_expansion(self):
+        pass
+
+    def test_frozen_matrix_t(self):
+        pass
+
+    def test_array_input(self):
+        pass
+
+    def test_moments(self):
+        pass
+
+    def test_samples_rowwise(self):
+        pass
+
+    def test_samples_colwise(self):
+        pass
 
 
 class TestDirichlet:
