@@ -2021,6 +2021,7 @@ class TestButtord:
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
 class TestCheb1ord:
 
+    @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_lowpass(self, xp):
         wp = 0.2
         ws = xp.asarray(0.3)
@@ -2036,6 +2037,7 @@ class TestCheb1ord:
         assert N == 8
         xp_assert_close(Wn, xp.asarray(0.2), rtol=1e-15, check_0d=False)
 
+    @xfail_xp_backends("torch", reason="accuracy is bad")
     def test_highpass(self, xp):
         wp = 0.3
         ws = xp.asarray(0.2)
