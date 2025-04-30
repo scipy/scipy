@@ -6,9 +6,10 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
-import os
+import contextlib
 import dataclasses
 import functools
+import os
 import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
@@ -39,12 +40,13 @@ from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'get_xp_devices', 'default_xp', 'is_lazy_array', 'is_marray',
-    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
+    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
+    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
     'xp_unsupported_param_msg', 'xp_vector_norm', 'xp_capabilities',
+    'xp_result_type', 'xp_promote'
 ]
 
 
@@ -245,7 +247,7 @@ _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
 @contextmanager
 def default_xp(xp: ModuleType) -> Generator[None, None, None]:
     """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
-    context manager, test by default that the array namespace is 
+    context manager, test by default that the array namespace is
     the provided across all arrays, unless one explicitly passes the ``xp=``
     parameter or ``check_namespace=False``.
 
@@ -259,6 +261,17 @@ def default_xp(xp: ModuleType) -> Generator[None, None, None]:
         _default_xp_ctxvar.reset(token)
 
 
+def eager_warns(x, warning_type, match=None):
+    """pytest.warns context manager, but only if x is not a lazy array."""
+    import pytest
+    # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
+    # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
+    __thread_safe__ = False  # noqa: F841
+    if is_lazy_array(x):
+        return contextlib.nullcontext()
+    return pytest.warns(warning_type, match=match)
+
+
 def _strict_check(actual, desired, xp, *,
                   check_namespace=True, check_dtype=True, check_shape=True,
                   check_0d=True):
@@ -269,7 +282,7 @@ def _strict_check(actual, desired, xp, *,
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
- 
+
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
 
@@ -420,42 +433,6 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
-    """Returns a list of available devices for the given namespace."""
-    devices: list[str] = []
-    if is_torch(xp):
-        devices += ['cpu']
-        import torch # type: ignore[import]
-        num_cuda = torch.cuda.device_count()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        if torch.backends.mps.is_available():
-            devices += ['mps']
-        return devices
-    elif is_cupy(xp):
-        import cupy # type: ignore[import]
-        num_cuda = cupy.cuda.runtime.getDeviceCount()
-        for i in range(0, num_cuda):
-            devices += [f'cuda:{i}']
-        return devices
-    elif is_jax(xp):
-        import jax # type: ignore[import]
-        num_cpu = jax.device_count(backend='cpu')
-        for i in range(0, num_cpu):
-            devices += [f'cpu:{i}']
-        num_gpu = jax.device_count(backend='gpu')
-        for i in range(0, num_gpu):
-            devices += [f'gpu:{i}']
-        num_tpu = jax.device_count(backend='tpu')
-        for i in range(0, num_tpu):
-            devices += [f'tpu:{i}']
-        return devices
-
-    # given namespace is not known to have a list of available devices;
-    # return `[None]` so that one can use this in tests for `device=None`.
-    return [None]
-
-
 def scipy_namespace_for(xp: ModuleType) -> ModuleType | None:
     """Return the `scipy`-like namespace of a non-NumPy backend
 
@@ -513,31 +490,87 @@ def xp_ravel(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return xp.reshape(x, (-1,))
 
 
-# utility to broadcast arrays and promote to common dtype
-def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp=None):
-    xp = array_namespace(*args) if xp is None else xp
+# utility to find common dtype with option to force floating
+def xp_result_type(*args, force_floating=False, xp):
+    """
+    Returns the dtype that results from applying type promotion rules
+    (see Array API Standard Type Promotion Rules) to the arguments. Augments
+    standard `result_type` in a few ways:
 
-    args = [(_asarray(arg, subok=True) if arg is not None else arg) for arg in args]
+    - There is a `force_floating` argument that ensures that the result type
+      is floating point, even when all args are integer.
+    - When a TypeError is raised (e.g. due to an unsupported promotion)
+      and `force_floating=True`, we define a custom rule: use the result type
+      of the default float and any other floats passed. See
+      https://github.com/scipy/scipy/pull/22695/files#r1997905891
+      for rationale.
+    - This function accepts array-like iterables, which are immediately converted
+      to the namespace's arrays before result type calculation. Consequently, the
+      result dtype may be different when an argument is `1.` vs `[1.]`.
+
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
+    if force_floating:
+        args_not_none.append(1.0)
 
-    # determine minimum dtype
-    default_float = xp.asarray(1.).dtype
-    dtypes = [arg.dtype for arg in args_not_none]
-    try:  # follow library's prefered mixed promotion rules
-        dtype = xp.result_type(*dtypes)
-        if force_floating and xp.isdtype(dtype, 'integral'):
-            # If we were to add `default_float` before checking whether the result
-            # type is otherwise integral, we risk promotion from lower float.
-            dtype = xp.result_type(dtype, default_float)
+    if is_numpy(xp) and xp.__version__ < '2.0':
+        # Follow NEP 50 promotion rules anyway
+        args_not_none = [arg.dtype if getattr(arg, 'size', 0) == 1 else arg
+                         for arg in args_not_none]
+        return xp.result_type(*args_not_none)
+
+    try:  # follow library's preferred promotion rules
+        return xp.result_type(*args_not_none)
     except TypeError:  # mixed type promotion isn't defined
-        float_dtypes = [dtype for dtype in dtypes
-                        if not xp.isdtype(dtype, 'integral')]
-        if float_dtypes:
-            dtype = xp.result_type(*float_dtypes, default_float)
-        elif force_floating:
-            dtype = default_float
-        else:
-            dtype = xp.result_type(*dtypes)
+        if not force_floating:
+            raise
+        # use `result_type` of default floating point type and any floats present
+        # This can be revisited, but right now, the only backends that get here
+        # are array-api-strict (which is not for production use) and PyTorch
+        # (due to data-apis/array-api-compat#279).
+        float_args = []
+        for arg in args_not_none:
+            arg_array = xp.asarray(arg) if np.isscalar(arg) else arg
+            dtype = getattr(arg_array, 'dtype', arg)
+            if xp.isdtype(dtype, ('real floating', 'complex floating')):
+                float_args.append(arg)
+        return xp.result_type(*float_args, xp_default_dtype(xp))
+
+
+def xp_promote(*args, broadcast=False, force_floating=False, xp):
+    """
+    Promotes elements of *args to result dtype, ignoring `None`s.
+    Includes options for forcing promotion to floating point and
+    broadcasting the arrays, again ignoring `None`s.
+    Type promotion rules follow `xp_result_type` instead of `xp.result_type`.
+
+    Typically, this function will be called shortly after `array_namespace`
+    on a subset of the arguments passed to `array_namespace`.
+
+    This function accepts array-like iterables, which are immediately converted
+    to the namespace's arrays before result type calculation. Consequently, the
+    result dtype may be different when an argument is `1.` vs `[1.]`.
+
+    See Also
+    --------
+    xp_result_type
+    """
+    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+            for arg in args]  # solely to prevent double conversion of iterable to array
+
+    dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
+
+    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
+            for arg in args]
+
+    if not broadcast:
+        return args[0] if len(args)==1 else tuple(args)
+
+    args_not_none = [arg for arg in args if arg is not None]
 
     # determine result shape
     shapes = {arg.shape for arg in args_not_none}
@@ -561,12 +594,13 @@ def xp_broadcast_promote(*args, ensure_writeable=False, force_floating=False, xp
             kwargs = {'subok': True} if is_numpy(xp) else {}
             arg = xp.broadcast_to(arg, shape, **kwargs)
 
-        # convert dtype/copy only if needed
-        if (arg.dtype != dtype) or ensure_writeable:
-            arg = xp.astype(arg, dtype, copy=True)
+        # This is much faster than xp.astype(arg, dtype, copy=False)
+        if arg.dtype != dtype:
+            arg = xp.astype(arg, dtype)
+
         out.append(arg)
 
-    return out
+    return out[0] if len(out)==1 else tuple(out)
 
 
 def xp_float_to_complex(arr: Array, xp: ModuleType | None = None) -> Array:
@@ -592,6 +626,20 @@ def xp_default_dtype(xp):
     else:
         # we default to float64
         return xp.float64
+
+
+def xp_result_device(*args):
+    """Return the device of an array in `args`, for the purpose of
+    input-output device propagation.
+    If there are multiple devices, return an arbitrary one.
+    If there are no arrays, return None (this typically happens only on NumPy).
+    """
+    for arg in args:
+        # Do not do a duck-type test for the .device attribute, as many backends today
+        # don't have it yet. See workarouunds in array_api_compat.device().
+        if is_array_api_obj(arg):
+            return xp_device(arg)
+    return None
 
 
 def is_marray(xp):

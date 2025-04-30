@@ -133,10 +133,6 @@ class TestVariation:
         y = variation(x)
         xp_assert_equal(y, xp.asarray(xp.nan, dtype=x.dtype))
 
-    # internal dask warning we can't do anything about
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
     @pytest.mark.parametrize('axis, expected',
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
@@ -172,9 +168,9 @@ class TestVariation:
                       reason='`nan_policy` only supports NumPy backend')
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
     def test_combined_edge_cases(self, nan_policy, xp):
-        x = xp.array([[0, 10, xp.nan, 1],
-                      [0, -5, xp.nan, 2],
-                      [0, -5, xp.nan, 3]])
+        x = xp.asarray([[0, 10, xp.nan, 1],
+                        [0, -5, xp.nan, 2],
+                        [0, -5, xp.nan, 3]])
         if nan_policy == 'omit':
             with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
                 y = variation(x, axis=0, nan_policy=nan_policy)

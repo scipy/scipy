@@ -120,6 +120,7 @@ py3.install_sources([
     '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
+    '_finite_differences.py',
     '_fit.py',
     '_hypotests.py',
     '_kde.py',

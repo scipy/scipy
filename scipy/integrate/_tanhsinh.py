@@ -4,7 +4,8 @@ import numpy as np
 from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_copy, xp_ravel
+from scipy._lib._array_api import (array_namespace, xp_copy, xp_ravel,
+                                   xp_promote)
 
 
 __all__ = ['nsum']
@@ -96,12 +97,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively.  Iteration will stop when
-        ``res.error < atol + rtol * abs(res.df)``. The error estimate is as
-        described in [1]_ Section 5. While not theoretically rigorous or
-        conservative, it is said to work well in practice. Must be non-negative
-        and finite if `log` is False, and must be expressed as the log of a
-        non-negative and finite number if `log` is True.
+        the result dtype), respectively. Must be non-negative and finite if
+        `log` is False, and must be expressed as the log of a non-negative and
+        finite number if `log` is True. Iteration will stop when
+        ``res.error < atol`` or  ``res.error < res.integral * rtol``.
     preserve_shape : bool, default: False
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
@@ -172,6 +171,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     Implements the algorithm as described in [1]_ with minor adaptations for
     finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
+
+    Two error estimation schemes are described in [1]_ Section 5: one attempts to
+    detect and exploit quadratic convergence; the other simply compares the integral
+    estimates at successive levels. While neither is theoretically rigorous or
+    conservative, both work well in practice. Our error estimate uses the minimum of
+    these two schemes with a lower bound of ``eps * res.integral``.
 
     Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval during iterations, but the values returned by
@@ -443,9 +448,9 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
             stop[i] = True
         else:
             # Terminate if convergence criterion is met
-            work.rerr, work.aerr = _estimate_error(work, xp)
-            i = ((work.rerr < rtol) | (work.rerr + xp.real(work.Sn) < atol) if log
-                 else (work.rerr < rtol) | (work.rerr * xp.abs(work.Sn) < atol))
+            rerr, aerr = _estimate_error(work, xp)
+            i = (rerr < rtol) | (aerr < atol)
+            work.aerr =  xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
             work.status[i] = eim._ECONVERGED
             stop[i] = True
 
@@ -767,22 +772,23 @@ def _estimate_error(work, xp):
         d2 = xp.real(special.logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0))
         d3 = log_e1 + xp.max(xp.real(work.fjwj), axis=-1)
         d4 = work.d4
-        ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4])
-        aerr = xp.max(ds, axis=0)
-        rerr = xp.maximum(log_e1, aerr - xp.real(work.Sn))
+        d5 = log_e1 + xp.real(work.Sn)
+        temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
+        ds = xp.stack([temp, 2 * d1, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
+        rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
         d1 = xp.abs(work.Sn - Snm1)
         d2 = xp.abs(work.Sn - Snm2)
         d3 = e1 * xp.max(xp.abs(work.fjwj), axis=-1)
         d4 = work.d4
-        # If `d1` is 0, no need to warn. This does the right thing.
-        # with np.errstate(divide='ignore'):
-        ds = xp.stack([d1**(xp.log(d1)/xp.log(d2)), d1**2, d3, d4])
-        aerr = xp.max(ds, axis=0)
-        rerr = xp.maximum(e1, aerr/xp.abs(work.Sn))
+        d5 = e1 * xp.abs(work.Sn)
+        temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
+        ds = xp.stack([temp, d1**2, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
+        rerr = aerr/xp.abs(work.Sn)
 
-    aerr = xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
     return rerr, aerr
 
 
@@ -818,14 +824,13 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     # Input validation and standardization
 
     xp = array_namespace(a, b)
+    a, b = xp_promote(a, b, broadcast=True, force_floating=True, xp=xp)
 
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a` and `b` must be real numbers.'
-    a, b = xp.asarray(a), xp.asarray(b)
-    a, b = xp.broadcast_arrays(a, b)
     if (xp.isdtype(a.dtype, 'complex floating')
             or xp.isdtype(b.dtype, 'complex floating')):
         raise ValueError(message)
@@ -894,16 +899,15 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
 def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     # Input validation and standardization
 
-    xp = array_namespace(a, b)
+    xp = array_namespace(a, b, step)
+    a, b, step = xp_promote(a, b, step, broadcast=True, force_floating=True, xp=xp)
 
     message = '`f` must be callable.'
     if not callable(f):
         raise ValueError(message)
 
     message = 'All elements of `a`, `b`, and `step` must be real numbers.'
-    a, b, step = xp.broadcast_arrays(xp.asarray(a), xp.asarray(b), xp.asarray(step))
-    dtype = xp.result_type(a.dtype, b.dtype, step.dtype)
-    if not xp.isdtype(dtype, 'numeric') or xp.isdtype(dtype, 'complex floating'):
+    if not xp.isdtype(a.dtype, ('integral', 'real floating')):
         raise ValueError(message)
 
     valid_b = b >= a  # NaNs will be False

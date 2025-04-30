@@ -1,7 +1,4 @@
 fs = import('fs')
-if not fs.exists('boost_math/README.md')
-  error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -120,7 +117,6 @@ python_sources = [
   '_disjoint_set.py',
   '_docscrape.py',
   '_elementwise_iterative_method.py',
-  '_finite_differences.py',
   '_gcutils.py',
   '_pep440.py',
   '_sparse.py',
@@ -209,6 +205,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/__init__.py',
     'array_api_compat/array_api_compat/torch/_aliases.py',
     'array_api_compat/array_api_compat/torch/_info.py',
+    'array_api_compat/array_api_compat/torch/_typing.py',
     'array_api_compat/array_api_compat/torch/fft.py',
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
@@ -280,6 +277,50 @@ py3.install_sources(
     'cobyqa/cobyqa/utils/versions.py',
   ],
   subdir: 'scipy/_lib/cobyqa/utils',
+)
+
+py3.install_sources(
+  [
+    'pyprima/pyprima/src/pyprima/__init__.py',
+  ],
+  subdir: 'scipy/_lib/pyprima'
+)
+
+py3.install_sources(
+  [
+    'pyprima/pyprima/src/pyprima/common/__init__.py',
+    'pyprima/pyprima/src/pyprima/common/_bounds.py',
+    'pyprima/pyprima/src/pyprima/common/_linear_constraints.py',
+    'pyprima/pyprima/src/pyprima/common/_nonlinear_constraints.py',
+    'pyprima/pyprima/src/pyprima/common/_project.py',
+    'pyprima/pyprima/src/pyprima/common/checkbreak.py',
+    'pyprima/pyprima/src/pyprima/common/consts.py',
+    'pyprima/pyprima/src/pyprima/common/evaluate.py',
+    'pyprima/pyprima/src/pyprima/common/history.py',
+    'pyprima/pyprima/src/pyprima/common/infos.py',
+    'pyprima/pyprima/src/pyprima/common/linalg.py',
+    'pyprima/pyprima/src/pyprima/common/message.py',
+    'pyprima/pyprima/src/pyprima/common/powalg.py',
+    'pyprima/pyprima/src/pyprima/common/preproc.py',
+    'pyprima/pyprima/src/pyprima/common/present.py',
+    'pyprima/pyprima/src/pyprima/common/ratio.py',
+    'pyprima/pyprima/src/pyprima/common/redrho.py',
+    'pyprima/pyprima/src/pyprima/common/selectx.py',
+  ],
+  subdir: 'scipy/_lib/pyprima/common'
+)
+
+py3.install_sources(
+  [
+    'pyprima/pyprima/src/pyprima/cobyla/__init__.py',
+    'pyprima/pyprima/src/pyprima/cobyla/cobyla.py',
+    'pyprima/pyprima/src/pyprima/cobyla/cobylb.py',
+    'pyprima/pyprima/src/pyprima/cobyla/geometry.py',
+    'pyprima/pyprima/src/pyprima/cobyla/initialize.py',
+    'pyprima/pyprima/src/pyprima/cobyla/trustregion.py',
+    'pyprima/pyprima/src/pyprima/cobyla/update.py',
+  ],
+  subdir: 'scipy/_lib/pyprima/cobyla'
 )
 
 subdir('_uarray')

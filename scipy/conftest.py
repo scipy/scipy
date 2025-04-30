@@ -13,7 +13,8 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp
+    SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
+    is_cupy, is_dask, is_jax,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -154,7 +155,6 @@ if SCIPY_ARRAY_API:
     try:
         import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'torch': torch})
-        # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
@@ -216,7 +216,7 @@ if SCIPY_ARRAY_API:
 
     # by default, use all available backends
     if (
-        isinstance(SCIPY_ARRAY_API, str) 
+        isinstance(SCIPY_ARRAY_API, str)
         and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
     ):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
@@ -285,7 +285,7 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
 
 def _backends_kwargs_from_request(request, skip_or_xfail):
     """A helper for {skip,xfail}_xp_backends.
-    
+
     Return dict of {backend to skip/xfail: top reason to skip/xfail it}
     """
     markers = list(request.node.iter_markers(f'{skip_or_xfail}_xp_backends'))
@@ -343,7 +343,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 f"Please specify only one backend per marker: {marker.args}"
             )
 
-    return {backend: backend_reasons[0] 
+    return {backend: backend_reasons[0]
             for backend, backend_reasons in reasons.items()
             if backend_reasons}
 
@@ -407,6 +407,41 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
     reason = skip_xfail_reasons.get(xp.__name__)
     if reason:
         skip_or_xfail(reason=reason)
+
+
+@pytest.fixture
+def devices(xp):
+    """Fixture that returns a list of all devices for the backend, plus None.
+    Used to test input->output device propagation.
+
+    Usage
+    -----
+    from scipy._lib._array_api import xp_device
+
+    def test_device(xp, devices):
+        for d in devices:
+            x = xp.asarray(..., device=d)
+            y = f(x)
+            assert xp_device(y) == xp_device(x)
+    """
+    if is_cupy(xp):
+        # CuPy does not support devices other than the current one
+        # data-apis/array-api-compat#293
+        pytest.xfail(reason="data-apis/array-api-compat#293")
+    if is_dask(xp):
+        # Skip dummy DASK_DEVICE from array-api-compat, which does not propagate
+        return ["cpu", None]
+    if is_jax(xp):
+        # The .device attribute is not accessible inside jax.jit; the consequence
+        # (downstream of array-api-compat hacks) is that a non-default device in
+        # input is not guaranteed to propagate to the output even if the scipy code
+        # states `device=xp_device(arg)`` in all array creation functions.
+        # While this issue is specific to jax.jit, it would be unnecessarily
+        # verbose to skip the test for each jit-capable function and run it for
+        # those that only support eager mode.
+        pytest.xfail(reason="jax-ml/jax#26000")
+
+    return xp.__array_namespace_info__().devices() + [None]
 
 
 # Following the approach of NumPy's conftest.py...
@@ -576,12 +611,25 @@ if HAVE_SCPDT:
         # equivalent to "pytest --ignore=path/to/file"
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
+        "scipy/interpolate/_rbfinterp_pythran.py",
+        "scipy/_build_utils/tempita.py",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
         "scipy/_lib/_uarray",
+        "scipy/linalg/_cython_signature_generator.py",
+        "scipy/linalg/_generate_pyx.py",
+        "scipy/linalg/_linalg_pythran.py",
+        "scipy/linalg/_matfuncs_sqrtm_triu.py",
+        "scipy/ndimage/utils/generate_label_testvectors.py",
+        "scipy/optimize/_group_columns.py",
+        "scipy/optimize/_max_len_seq_inner.py",
+        "scipy/signal/_max_len_seq_inner.py",
+        "scipy/sparse/_generate_sparsetools.py",
+        "scipy/special/_generate_pyx.py",
+        "scipy/stats/_stats_pythran.py",
     ]
 
     dt_config.pytest_extra_xfail = {
