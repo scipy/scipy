@@ -1,5 +1,6 @@
 """Filter design."""
 import math
+import cmath
 import operator
 import warnings
 import builtins
@@ -2599,6 +2600,9 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     >>> ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     try:
         ordfunc = filter_dict[ftype][1]
     except KeyError as e:
@@ -2609,8 +2613,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
 
     _validate_gpass_gstop(gpass, gstop)
 
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
+    wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
+    ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=True)
 
@@ -2618,14 +2622,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
         raise ValueError("wp and ws must have one or two elements each, and "
                          f"the same shape, got {wp.shape} and {ws.shape}")
 
-    if any(wp <= 0) or any(ws <= 0):
+    if xp.any(wp <= 0) or xp.any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
 
     if not analog:
         if fs is None:
-            if any(wp >= 1) or any(ws >= 1):
+            if xp.any(wp >= 1) or xp.any(ws >= 1):
                 raise ValueError("Values for wp, ws must be less than 1")
-        elif any(wp >= fs/2) or any(ws >= fs/2):
+        elif xp.any(wp >= fs/2) or xp.any(ws >= fs/2):
             raise ValueError("Values for wp, ws must be less than fs/2 "
                              f"(fs={fs} -> fs/2={fs/2})")
 
@@ -2635,7 +2639,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             raise ValueError("Passband must lie strictly inside stopband "
                              "or vice versa")
 
-    band_type = 2 * (len(wp) - 1)
+    band_type = 2 * (wp.shape[0] - 1)
     band_type += 1
     if wp[0] >= ws[0]:
         band_type += 1
@@ -5310,7 +5314,7 @@ def besselap(N, norm='phase', *, xp=None, device=None):
             float(k))
 
 
-def iirnotch(w0, Q, fs=2.0):
+def iirnotch(w0, Q, fs=2.0, *, xp=None, device=None):
     """
     Design second-order IIR notch digital filter.
 
@@ -5388,10 +5392,10 @@ def iirnotch(w0, Q, fs=2.0):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "notch", fs)
+    return _design_notch_peak_filter(w0, Q, "notch", fs, xp=xp, device=device)
 
 
-def iirpeak(w0, Q, fs=2.0):
+def iirpeak(w0, Q, fs=2.0, *, xp=None, device=None):
     """
     Design second-order IIR peak (resonant) digital filter.
 
@@ -5469,10 +5473,10 @@ def iirpeak(w0, Q, fs=2.0):
     >>> plt.show()
     """
 
-    return _design_notch_peak_filter(w0, Q, "peak", fs)
+    return _design_notch_peak_filter(w0, Q, "peak", fs, xp=xp, device=device)
 
 
-def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
+def _design_notch_peak_filter(w0, Q, ftype, fs=2.0, *, xp=None, device=None):
     """
     Design notch or peak digital filter.
 
@@ -5503,12 +5507,15 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
         Numerator (``b``) and denominator (``a``) polynomials
         of the IIR filter.
     """
+    if xp is None:
+        xp = np_compat
+
     fs = _validate_fs(fs, allow_none=False)
 
     # Guarantee that the inputs are floats
     w0 = float(w0)
     Q = float(Q)
-    w0 = 2*w0/fs
+    w0 = 2 * w0 / fs
 
     # Checks if w0 is within the range
     if w0 > 1.0 or w0 < 0.0:
@@ -5518,8 +5525,8 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = w0/Q
 
     # Normalize inputs
-    bw = bw*np.pi
-    w0 = w0*np.pi
+    bw = bw * xp.pi
+    w0 = w0 * xp.pi
 
     if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
@@ -5529,24 +5536,24 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     # gb = 1 / np.sqrt(2), the following terms simplify to:
     #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
     #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
-    beta = np.tan(bw/2.0)
+    beta = math.tan(bw / 2.0)
 
     # Compute gain: formula 11.3.6 (p.575) from reference [1]
-    gain = 1.0/(1.0+beta)
+    gain = 1.0 / (1.0 + beta)
 
     # Compute numerator b and denominator a
     # formulas 11.3.7 (p.575) and 11.3.21 (p.579)
     # from reference [1]
     if ftype == "notch":
-        b = gain*np.array([1.0, -2.0*np.cos(w0), 1.0])
+        b = gain * xp.asarray([1.0, -2.0*math.cos(w0), 1.0], device=device)
     else:
-        b = (1.0-gain)*np.array([1.0, 0.0, -1.0])
-    a = np.array([1.0, -2.0*gain*np.cos(w0), (2.0*gain-1.0)])
+        b = (1.0 - gain) * xp.asarray([1.0, 0.0, -1.0], device=device)
+    a = xp.asarray([1.0, -2.0 * gain * math.cos(w0), (2.0*gain - 1.0)])
 
     return b, a
 
 
-def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
+def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=None):
     """
     Design IIR notching or peaking digital comb filter.
 
@@ -5681,6 +5688,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     >>> ax[1].grid(True)
     >>> plt.show()
     """
+    if xp is None:
+        xp = np_compat
 
     # Convert w0, Q, and fs to float
     w0 = float(w0)
@@ -5704,7 +5713,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
 
     # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
-    w0 = (2 * np.pi * w0) / fs
+    w0 = (2 * xp.pi * w0) / fs
     w_delta = w0 / Q
 
     # Define base gain values depending on notch or peak filter
@@ -5719,7 +5728,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # assuming a -3 dB attenuation value, i.e, assuming GB = 1 / np.sqrt(2),
     # the following term simplifies to:
     #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
-    beta = np.tan(N * w_delta / 4)
+    beta = math.tan(N * w_delta / 4)
 
     # Compute filter coefficients
     # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]
@@ -5735,22 +5744,17 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Compute numerator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # b - cz^-N or b + cz^-N
-    b = np.zeros(N + 1)
-    b[0] = bx
-    if negative_coef:
-        b[-1] = -cx
-    else:
-        b[-1] = +cx
+    b = xp.zeros(N + 1, device=device)
+    sgn = -1. if negative_coef else 1
+    xpx.at(b, 0).set(bx)
+    xpx.at(b, -1).set(sgn * cx)
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
-    a = np.zeros(N + 1)
-    a[0] = 1
-    if negative_coef:
-        a[-1] = -ax
-    else:
-        a[-1] = +ax
+    a = xp.zeros(N + 1, device=device)
+    xpx.at(a, 0).set(1.)
+    xpx.at(a, -1).set(sgn * ax)
 
     return b, a
 
@@ -5766,7 +5770,7 @@ def _hz_to_erb(hz):
     return hz / EarQ + minBW
 
 
-def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
+def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device=None):
     """
     Gammatone filter design.
 
@@ -5848,6 +5852,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     >>> plt.axvline(fc, color='green') # cutoff frequency
     >>> plt.show()
     """
+    if xp is None:
+        xp = np_compat
+
     # Converts freq to float
     freq = float(freq)
 
@@ -5881,18 +5888,18 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
             raise ValueError("Invalid order: order must be > 0 and <= 24.")
 
         # Gammatone impulse response settings
-        t = np.arange(numtaps) / fs
+        t = xp.arange(numtaps, device=device, dtype=xp.float64) / fs
         bw = 1.019 * _hz_to_erb(freq)
 
         # Calculate the FIR gammatone filter
-        b = (t ** (order - 1)) * np.exp(-2 * np.pi * bw * t)
-        b *= np.cos(2 * np.pi * freq * t)
+        b = (t ** (order - 1)) * xp.exp(-2 * xp.pi * bw * t)
+        b = b * xp.cos(2 * xp.pi * freq * t)
 
         # Scale the FIR filter so the frequency response is 1 at cutoff
-        scale_factor = 2 * (2 * np.pi * bw) ** (order)
+        scale_factor = 2 * (2 * xp.pi * bw) ** (order)
         scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
-        b *= scale_factor
+        b = b * scale_factor
         a = [1.0]
 
     # Calculate IIR gammatone filter
@@ -5905,50 +5912,50 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
         # Gammatone impulse response settings
         T = 1./fs
-        bw = 2 * np.pi * 1.019 * _hz_to_erb(freq)
-        fr = 2 * freq * np.pi * T
+        bw = 2 * math.pi * 1.019 * _hz_to_erb(freq)
+        fr = 2 * freq * math.pi * T
         bwT = bw * T
 
         # Calculate the gain to normalize the volume at the center frequency
-        g1 = -2 * np.exp(2j * fr) * T
-        g2 = 2 * np.exp(-(bwT) + 1j * fr) * T
-        g3 = np.sqrt(3 + 2 ** (3 / 2)) * np.sin(fr)
-        g4 = np.sqrt(3 - 2 ** (3 / 2)) * np.sin(fr)
-        g5 = np.exp(2j * fr)
+        g1 = -2 * cmath.exp(2j * fr) * T
+        g2 = 2 * cmath.exp(-(bwT) + 1j * fr) * T
+        g3 = math.sqrt(3 + 2 ** (3 / 2)) * math.sin(fr)
+        g4 = math.sqrt(3 - 2 ** (3 / 2)) * math.sin(fr)
+        g5 = cmath.exp(2j * fr)
 
-        g = g1 + g2 * (np.cos(fr) - g4)
-        g *= (g1 + g2 * (np.cos(fr) + g4))
-        g *= (g1 + g2 * (np.cos(fr) - g3))
-        g *= (g1 + g2 * (np.cos(fr) + g3))
-        g /= ((-2 / np.exp(2 * bwT) - 2 * g5 + 2 * (1 + g5) / np.exp(bwT)) ** 4)
-        g = np.abs(g)
+        g = g1 + g2 * (math.cos(fr) - g4)
+        g *= (g1 + g2 * (math.cos(fr) + g4))
+        g *= (g1 + g2 * (math.cos(fr) - g3))
+        g *= (g1 + g2 * (math.cos(fr) + g3))
+        g /= ((-2 / math.exp(2 * bwT) - 2 * g5 + 2 * (1 + g5) / math.exp(bwT)) ** 4)
+        g = math.hypot(g.real, g.imag)
 
         # Create empty filter coefficient lists
-        b = np.empty(5)
-        a = np.empty(9)
+        b = [None] * 5  #np.empty(5)
+        a = [None] * 9  # np.empty(9)
 
         # Calculate the numerator coefficients
         b[0] = (T ** 4) / g
-        b[1] = -4 * T ** 4 * np.cos(fr) / np.exp(bw * T) / g
-        b[2] = 6 * T ** 4 * np.cos(2 * fr) / np.exp(2 * bw * T) / g
-        b[3] = -4 * T ** 4 * np.cos(3 * fr) / np.exp(3 * bw * T) / g
-        b[4] = T ** 4 * np.cos(4 * fr) / np.exp(4 * bw * T) / g
+        b[1] = -4 * T ** 4 * math.cos(fr) / math.exp(bw * T) / g
+        b[2] = 6 * T ** 4 * math.cos(2 * fr) / math.exp(2 * bw * T) / g
+        b[3] = -4 * T ** 4 * math.cos(3 * fr) / math.exp(3 * bw * T) / g
+        b[4] = T ** 4 * math.cos(4 * fr) / math.exp(4 * bw * T) / g
 
         # Calculate the denominator coefficients
         a[0] = 1
-        a[1] = -8 * np.cos(fr) / np.exp(bw * T)
-        a[2] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(2 * bw * T)
-        a[3] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
-        a[3] /= np.exp(3 * bw * T)
-        a[4] = 2 * (18 + 16 * np.cos(2 * fr) + np.cos(4 * fr))
-        a[4] /= np.exp(4 * bw * T)
-        a[5] = -8 * (6 * np.cos(fr) + np.cos(3 * fr))
-        a[5] /= np.exp(5 * bw * T)
-        a[6] = 4 * (4 + 3 * np.cos(2 * fr)) / np.exp(6 * bw * T)
-        a[7] = -8 * np.cos(fr) / np.exp(7 * bw * T)
-        a[8] = np.exp(-8 * bw * T)
+        a[1] = -8 * math.cos(fr) / math.exp(bw * T)
+        a[2] = 4 * (4 + 3 * math.cos(2 * fr)) / math.exp(2 * bw * T)
+        a[3] = -8 * (6 * math.cos(fr) + math.cos(3 * fr))
+        a[3] /= math.exp(3 * bw * T)
+        a[4] = 2 * (18 + 16 * math.cos(2 * fr) + math.cos(4 * fr))
+        a[4] /= math.exp(4 * bw * T)
+        a[5] = -8 * (6 * math.cos(fr) + math.cos(3 * fr))
+        a[5] /= math.exp(5 * bw * T)
+        a[6] = 4 * (4 + 3 * math.cos(2 * fr)) / math.exp(6 * bw * T)
+        a[7] = -8 * math.cos(fr) / math.exp(7 * bw * T)
+        a[8] = math.exp(-8 * bw * T)
 
-    return b, a
+    return xp.asarray(b, device=device), xp.asarray(a, device=device)
 
 
 filter_dict = {'butter': [buttap, buttord],
