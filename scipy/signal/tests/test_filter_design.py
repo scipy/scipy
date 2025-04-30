@@ -2097,6 +2097,7 @@ class TestCheb1ord:
 
         assert cheb1ord(1, 1.2, 1, 80, analog=True)[0] == 17
 
+    @xfail_xp_backends("torch", reason="accuracy issues")
     def test_fs_param(self, xp):
         wp = 4800
         ws = xp.asarray(7200.)
