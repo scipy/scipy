@@ -498,6 +498,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
+            # Allow further processing if has `shape`
             try:
                 other.shape
             except AttributeError:
@@ -518,10 +519,9 @@ class _spbase(SparseABC):
             return result
 
         elif issparse(other):
-            csr_ready = self.reshape(1, -1).tocsr()
-            other_ready = other.reshape(1, -1).tocsr()
-            result = csr_ready.multiply(other_ready).reshape(self.shape)
-            return result
+            csr_self = self.reshape(1, -1).tocsr()
+            csr_other = other.reshape(1, -1).tocsr()
+            return csr_self._binopt(csr_other, '_elmul_').reshape(self.shape)
 
         else:
             return NotImplemented
@@ -532,6 +532,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
+            # Allow further processing if has `shape`
             try:
                 other.shape
             except AttributeError:
@@ -544,8 +545,8 @@ class _spbase(SparseABC):
                      " dense matrix.", SparseEfficiencyWarning, stacklevel=3)
                 return self.__class__(np_op(self.toarray(), other))
             else:
-                csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-                result = csr_ready._scalar_binopt(other, np_op)
+                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                result = csr_self._scalar_binopt(other, np_op)
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         elif isdense(other):
             return np_op(self.todense(), other)
@@ -554,9 +555,9 @@ class _spbase(SparseABC):
                 raise ValueError(f"inconsistent shapes {self.shape=} {other.shape=}")
             if self.ndim < 3:  # shape is same so other.ndim < 3
                 return self.tocsr()._binopt(other, f'_{np_op.__name__}_')
-            csr_ready = self.reshape(1, -1).tocsr()
+            csr_self = self.reshape(1, -1).tocsr()
             csr_other = other.reshape(1, -1).tocsr()
-            result = csr_ready._binopt(csr_other, f'_{np_op.__name__}_')
+            result = csr_self._binopt(csr_other, f'_{np_op.__name__}_')
             return result.tocoo().reshape(self.shape)
         else:
             raise ValueError("Operands not compatible.")
@@ -607,6 +608,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
+            # Allow further processing if has `shape`
             try:
                 other.shape
             except AttributeError:
@@ -617,8 +619,8 @@ class _spbase(SparseABC):
                 if np.isnan(other):  # op is not `ne`, so results are all False.
                     return self.__class__(self.shape, dtype=np.bool_)
                 else:
-                    csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-                    res = csr_ready._scalar_binopt(other, op)
+                    csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                    res = csr_self._scalar_binopt(other, op)
                     return res if self.ndim < 3 else res.tocoo().reshape(self.shape)
             else:
                 warn(f"Comparing a sparse matrix with {other} using {op_sym[op]} "
@@ -629,9 +631,9 @@ class _spbase(SparseABC):
                     return self.__class__(np.ones(self.shape, dtype=np.bool_))
 
                 # op is eq, le, or ge. Use negated op and then negate.
-                csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
-                inv = csr_ready._scalar_binopt(other, op_neg[op])
-                all_true = csr_ready.__class__(np.ones(csr_ready.shape, dtype=np.bool_))
+                csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+                inv = csr_self._scalar_binopt(other, op_neg[op])
+                all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
 
@@ -645,18 +647,18 @@ class _spbase(SparseABC):
                     return op == operator.eq
                 raise ValueError("inconsistent shape")
 
-            csr_ready = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+            csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
             csr_other = (other if other.ndim < 3 else other.reshape(1, -1)).tocsr()
             if not op(0, 0):
-                result = csr_ready._binopt(csr_other, f'_{op.__name__}_')
+                result = csr_self._binopt(csr_other, f'_{op.__name__}_')
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
             else:
                 # result will not be sparse. Use negated op and then negate.
                 warn(f"Comparing two sparse matrices using {op_sym[op]} "
                      f"is inefficient. Try using {op_sym[op_neg[op]]} instead.",
                      SparseEfficiencyWarning, stacklevel=3)
-                inv = csr_ready._binopt(csr_other, f'_{op_neg[op].__name__}_')
-                all_true = csr_ready.__class__(np.ones(csr_ready.shape, dtype=np.bool_))
+                inv = csr_self._binopt(csr_other, f'_{op_neg[op].__name__}_')
+                all_true = csr_self.__class__(np.ones(csr_self.shape, dtype=np.bool_))
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         else:
@@ -793,12 +795,11 @@ class _spbase(SparseABC):
 
         # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
-
         if other_a.ndim == 0 and other_a.dtype == np.object_:
             # Not interpretable as an array; return NotImplemented so that
             # other's __rmatmul__ can kick in if that's implemented.
             return NotImplemented
-
+        # Allow further processing if has `shape`
         try:
             other.shape
         except AttributeError:
@@ -898,6 +899,17 @@ class _spbase(SparseABC):
     ####################
 
     def _divide(self, other, true_divide=False, rdivide=False):
+        if not (issparse(other) or isdense(other) or isscalarlike(other)):
+            # If it's a list or whatever, treat it like an array
+            other_a = np.asanyarray(other)
+            if other_a.ndim == 0 and other_a.dtype == np.object_:
+                return NotImplemented
+            # Allow further processing if has `shape`
+            try:
+                other.shape
+            except AttributeError:
+                other = other_a
+
         if isscalarlike(other):
             if rdivide:
                 if true_divide:
@@ -933,16 +945,12 @@ class _spbase(SparseABC):
             if rdivide:
                 return other._divide(self, true_divide, rdivide=False)
 
-            if self.ndim < 3:
-                self_csr = self.tocsr()
-                other_ready = other
-            else:
-                self_csr = self.reshape(1, -1).tocsr()
-                other_ready = other.reshape(1, -1)
+            csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
+            csr_other = (other if self.ndim < 3 else other.reshape(1, -1)).tocsr()
             if true_divide and np.can_cast(self.dtype, np.float64):
-                result = self_csr.astype(np.float64)._divide_sparse(other_ready)
+                result = csr_self.astype(np.float64)._divide_sparse(csr_other)
             else:
-                result = self_csr._divide_sparse(other_ready)
+                result = csr_self._divide_sparse(csr_other)
             return result if self.ndim < 3 else result.reshape(self.shape)
         else:
             return NotImplemented
