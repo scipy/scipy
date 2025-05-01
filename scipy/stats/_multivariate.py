@@ -1704,7 +1704,7 @@ class matrix_t_gen(multi_rv_generic):
             X = X[np.newaxis, :]
         if X.shape[-2:] != dims:
             raise ValueError(
-                "The shape of array `X` is not comformal with "
+                "The shape of array `X` is not conformal with "
                 "the distribution parameters."
             )
         return X
@@ -1738,6 +1738,9 @@ class matrix_t_gen(multi_rv_generic):
         called directly; use `logpdf` instead.
         """
         m, n = dims
+        X_shape = X.shape
+        if X.ndim > 3:
+            X = X.reshape(-1, m, n)
         X_centered = X - mean[np.newaxis, ...]
         det_arg = np.identity(n) + np.einsum(
             "nij,njk,nkl,nlp->nip",
@@ -1756,7 +1759,10 @@ class matrix_t_gen(multi_rv_generic):
             - (n / 2) * logdetrowcov
             - (m / 2) * logdetcolcov
         )
-        return log_d_mn + log_f_mn
+        retval = log_d_mn + log_f_mn
+        if len(X_shape) > 3:
+            retval = retval.reshape(X_shape[:-2])
+        return retval
 
     def logpdf(self, X, mean=None, rowcov=1, colcov=1, df=1):
         """Log of the matrix normal probability density function.

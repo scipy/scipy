@@ -1553,8 +1553,31 @@ class TestMatrixT:
                 entropy2 = matrix_t.entropy(rowcov=U, colcov=V, df=df)
                 assert_equal(entropy1, entropy2)
 
-    # def test_array_input(self):
-    #     pass
+    def test_array_input(self):
+        # Check array of inputs has the same output as the separate entries.
+        num_rows = 4
+        num_cols = 3
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        df = 1
+        N = 10
+
+        frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+        X1 = frozen.rvs(size=N, random_state=1234)
+        X2 = frozen.rvs(size=N, random_state=4321)
+        X = np.concatenate((X1[np.newaxis,:,:,:],X2[np.newaxis,:,:,:]), axis=0)
+        assert_equal(X.shape, (2, N, num_rows, num_cols))
+
+        array_logpdf = frozen.logpdf(X)
+        logpdf_shape = array_logpdf.shape
+        assert_equal(logpdf_shape, (2, N))
+        for i in range(2):
+            for j in range(N):
+                separate_logpdf = matrix_t.logpdf(X[i,j], mean=M,
+                                                       rowcov=U, colcov=V, 
+                                                       df=df)
+                assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
 
     # def test_moments(self):
     #     pass
