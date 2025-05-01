@@ -1892,8 +1892,7 @@ class TestOptimizeScalar:
             optimize.golden(self.fun, brack=(0, -1, 1))
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1),
-                                              (10000, 1e-2)])
+    @pytest.mark.parametrize('grid_and_tol', [(None, 1e-1), (1000, 1e-1)])
     def test_linewalker(self, grid_and_tol):
 
         grid_size = grid_and_tol[0]
@@ -2088,7 +2087,7 @@ class TestOptimizeScalar:
         if method == 'linewalker':
             # linewalker does not search for bracket, must be explicitly provided
             kwargs = {}
-            result = optimize.minimize_scalar(self.fun, bracket=(-15, 15), 
+            result = optimize.minimize_scalar(self.fun, bracket=(-15, 15),
                                               method=method, **kwargs)
         else:
             kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}

@@ -778,7 +778,7 @@ def _initialize_vector_of_function_evaluations(
         i_sample_counter += 1
         # If the function has already been evaluated at the first grid point
         if grid_index == 0 and not np.isnan(option['f1']):
-            surrogate.func[grid_index] = option.f1
+            surrogate.func[grid_index] = option['f1']
 
         # If the function has already been evaluated at the last grid point
         elif grid_index == option['grid_size'] - 1 and not np.isnan(option['f2']):
