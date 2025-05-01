@@ -1440,8 +1440,9 @@ class TestMatrixT:
         U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
 
-        # Missing degrees-of-freedom parameter
-        assert_raises(ValueError, matrix_t, np.zeros((num_rows, num_cols)))
+        # Nonpositive degrees of freedom
+        assert_raises(ValueError, matrix_t, 0, 1, 1, 0)
+        assert_raises(ValueError, matrix_t, 0, 1, 1, -1)
 
         # Incorrect dimensions
         assert_raises(ValueError, matrix_t, np.zeros((5,4,3)), df)
@@ -1460,25 +1461,109 @@ class TestMatrixT:
         assert_raises(e, matrix_t, M, np.ones((num_rows, num_rows)), V, df)
 
     def test_default_inputs(self):
-        pass
+        # Check that default argument handling works
+        num_rows = 4
+        num_cols = 3
+        df = 5
+        M = np.full((num_rows, num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        Z = np.zeros((num_rows, num_cols))
+        Zr = np.zeros((num_rows, 1))
+        Zc = np.zeros((1, num_cols))
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+        I1 = np.identity(1)
+        dfdefault = 1
+
+        assert_equal(matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(mean=M).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(rowcov=U).shape,
+                     (num_rows, 1))
+        assert_equal(matrix_t.rvs(colcov=V).shape,
+                     (1, num_cols))
+        assert_equal(matrix_t.rvs(mean=M, colcov=V).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(mean=M, rowcov=U).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(rowcov=U, colcov=V).shape,
+                     (num_rows, num_cols))
+
+        assert_equal(matrix_t().df, dfdefault)
+        assert_equal(matrix_t(mean=M).rowcov, Ir)
+        assert_equal(matrix_t(mean=M).colcov, Ic)
+        assert_equal(matrix_t(rowcov=U).mean, Zr)
+        assert_equal(matrix_t(rowcov=U).colcov, I1)
+        assert_equal(matrix_t(colcov=V).mean, Zc)
+        assert_equal(matrix_t(colcov=V).rowcov, I1)
+        assert_equal(matrix_t(mean=M, rowcov=U).colcov, Ic)
+        assert_equal(matrix_t(mean=M, colcov=V).rowcov, Ir)
+        assert_equal(matrix_t(rowcov=U, colcov=V,df=df).mean, Z)
 
     def test_covariance_expansion(self):
-        pass
+        # Check that covariance can be specified with scalar or vector
+        num_rows = 4
+        num_cols = 3
+        M = np.full((num_rows, num_cols), 0.3)
+        Uv = np.full(num_rows, 0.2)
+        Us = 0.2
+        Vv = np.full(num_cols, 0.1)
+        Vs = 0.1
+
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+
+        assert_equal(matrix_t(mean=M, rowcov=Uv, colcov=Vv).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_t(mean=M, rowcov=Uv, colcov=Vv).colcov,
+                     0.1*Ic)
+        assert_equal(matrix_t(mean=M, rowcov=Us, colcov=Vs).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_t(mean=M, rowcov=Us, colcov=Vs).colcov,
+                     0.1*Ic)
 
     def test_frozen_matrix_t(self):
-        pass
+        for i in range(1,5):
+            for j in range(1,5):
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
+                df = i + j
 
-    def test_array_input(self):
-        pass
+                frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
 
-    def test_moments(self):
-        pass
+                rvs1 = frozen.rvs(random_state=1234)
+                rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df, 
+                                         random_state=1234)
+                assert_equal(rvs1, rvs2)
 
-    def test_samples_rowwise(self):
-        pass
+                X = frozen.rvs(random_state=1234)
 
-    def test_samples_colwise(self):
-        pass
+                pdf1 = frozen.pdf(X)
+                pdf2 = matrix_t.pdf(X, mean=M, rowcov=U, colcov=V, df=df)
+                assert_equal(pdf1, pdf2)
+
+                logpdf1 = frozen.logpdf(X)
+                logpdf2 = matrix_t.logpdf(X, mean=M, rowcov=U, colcov=V, df=df)
+                assert_equal(logpdf1, logpdf2)
+
+                entropy1 = frozen.entropy()
+                entropy2 = matrix_t.entropy(rowcov=U, colcov=V, df=df)
+                assert_equal(entropy1, entropy2)
+
+    # def test_array_input(self):
+    #     pass
+
+    # def test_moments(self):
+    #     pass
+
+    # def test_samples_rowwise(self):
+    #     pass
+
+    # def test_samples_colwise(self):
+    #     pass
 
 
 class TestDirichlet:

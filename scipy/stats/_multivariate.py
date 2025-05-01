@@ -1617,14 +1617,6 @@ class matrix_t_gen(multi_rv_generic):
         df : float
             Degrees of freedom
         """
-        # Process df
-        if df is not None:
-            if not np.isscalar(df):
-                raise ValueError("Parameter `df` must be a scalar.")
-            if df <= 0:
-                raise ValueError("Parameter `df` must be positive.")
-        else:
-            raise ValueError("Missing required parameter `df`.")
 
         # Process mean
         if mean is not None:
@@ -1638,6 +1630,8 @@ class matrix_t_gen(multi_rv_generic):
         # Process among-row 2nd moment
         rowcov = np.asarray(rowcov, dtype=float)
         if rowcov.ndim == 0:
+            if np.isnan(rowcov).any():
+                rowcov = np.identity(1)
             if mean is not None:
                 rowcov = rowcov * np.identity(meanshape[0])
             else:
@@ -1652,12 +1646,16 @@ class matrix_t_gen(multi_rv_generic):
         if rowshape[0] == 0:
             raise ValueError("Array `rowcov` has invalid shape.")
         numrows = rowshape[0]
+        if np.isnan(rowcov).any():
+            import pdb; pdb.set_trace()
 
         # Process among-column 2nd moment
         colcov = np.asarray(colcov, dtype=float)
         if colcov.ndim == 0:
+            if np.isnan(colcov).any():
+                colcov = np.identity(1)
             if mean is not None:
-                colcov = colcov * np.identity(meanshape[0])
+                colcov = colcov * np.identity(meanshape[1])
             else:
                 colcov = colcov * np.identity(1)
         elif colcov.ndim == 1:
@@ -1686,6 +1684,13 @@ class matrix_t_gen(multi_rv_generic):
             mean = np.zeros((numrows, numcols))
 
         dims = (numrows, numcols)
+
+        if df is None:
+            df = 1  # default to matrix variate Cauchy
+        elif not np.isscalar(df):
+            raise ValueError("Degrees of freedom must be a scalar.")
+        elif df <= 0:
+            raise ValueError("Degrees of freedom must be positive.")
 
         return dims, mean, rowcov, colcov, df
 
@@ -1753,7 +1758,7 @@ class matrix_t_gen(multi_rv_generic):
         )
         return log_d_mn + log_f_mn
 
-    def logpdf(self, X, mean=None, rowcov=1, colcov=1, df=2):
+    def logpdf(self, X, mean=None, rowcov=1, colcov=1, df=1):
         """Log of the matrix normal probability density function.
 
         Parameters
@@ -1786,7 +1791,7 @@ class matrix_t_gen(multi_rv_generic):
         )
         return _squeeze_output(out)
 
-    def pdf(self, X, mean=None, rowcov=1, colcov=1, df=2):
+    def pdf(self, X, mean=None, rowcov=1, colcov=1, df=1):
         """Matrix t probability density function.
 
         Parameters
@@ -1808,7 +1813,7 @@ class matrix_t_gen(multi_rv_generic):
         return np.exp(self.logpdf(X, mean, rowcov, colcov, df))
 
     def rvs(
-        self, mean=None, rowcov=1, colcov=1, df=2, size=1, random_state=None
+        self, mean=None, rowcov=1, colcov=1, df=1, size=1, random_state=None
     ) -> np.ndarray:
         """Draw random samples from a matrix t distribution.
 
@@ -1873,7 +1878,7 @@ class matrix_t_gen(multi_rv_generic):
         )
         return term1 + term2 + term3 + term4 + term5
 
-    def entropy(self, df, rowcov=1, colcov=1):
+    def entropy(self, df=1, rowcov=1, colcov=1):
         """Differential entropy of the matrix t probability density function.
 
         Parameters
@@ -1917,12 +1922,15 @@ class matrix_t_frozen:
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
-        invrowcov = np.linalg.inv(self.rowcov)
-        invcolcov = np.linalg.inv(self.colcov)
-        detrowcov = np.linalg.det(self.rowcov)
-        detcolcov = np.linalg.det(self.colcov)
+        rowpsd = _PSD(self.rowcov, allow_singular=False)
+        colpsd = _PSD(self.colcov, allow_singular=False)
+        invrowcov = rowpsd.pinv
+        invcolcov = colpsd.pinv
+        logdetrowcov = rowpsd.log_pdet
+        logdetcolcov = colpsd.log_pdet
         out = self._dist._logpdf(
-            self.dims, X, self.mean, self.df, invrowcov, invcolcov, detrowcov, detcolcov
+            self.dims, X, self.mean, self.df, invrowcov, invcolcov, 
+            logdetrowcov, logdetcolcov
         )
         return _squeeze_output(out)
 
@@ -1935,7 +1943,15 @@ class matrix_t_frozen:
         )
 
     def entropy(self):
-        return self._dist._entropy(self.dims)
+        dims, _, rowcov, colcov, df = self._dist._process_parameters(
+            mean=np.zeros((self.rowcov.shape[0], self.colcov.shape[0])), 
+            rowcov=self.rowcov, 
+            colcov=self.colcov, 
+            df=self.df
+        )
+        rowpsd = _PSD(rowcov, allow_singular=False)
+        colpsd = _PSD(colcov, allow_singular=False)
+        return self._dist._entropy(dims, df, rowpsd.log_pdet, colpsd.log_pdet)
 
 
 # Set frozen generator docstrings from corresponding docstrings in
@@ -1986,9 +2002,12 @@ def _cholesky_invwishart_rvs(
         iw_samples = iw_samples[np.newaxis, ...]
     chol_samples = np.empty_like(iw_samples)
     for idx in range(size):
+        # try:
         chol_samples[idx] = scipy.linalg.cholesky(
             iw_samples[idx], lower=True, check_finite=False
-        )
+        ).reshape(iw_samples.shape[1:])
+        # except ValueError:
+        #     import pdb; pdb.set_trace()
     return chol_samples.reshape((size, *scale.shape))
 
 
