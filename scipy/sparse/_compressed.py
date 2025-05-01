@@ -18,7 +18,7 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_matmat_maxnnz, csr_matmat)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isshape,
-                       getdtype, isscalarlike, isintlike, downcast_intp_index,
+                       getdtype, isintlike, downcast_intp_index,
                        get_sum_dtype, check_shape, get_index_dtype, broadcast_shapes)
 
 
@@ -306,7 +306,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if sN == 1 and sM == oM:
                 new_self = _make_diagonal_csr(self.toarray().ravel(), is_array)
                 return new_self._matmul_sparse(other)
-            raise ValueError("inconsistent shapes")
+            raise ValueError(f"inconsistent shapes {self.shape} and {other.shape}")
 
         # Assume other is a dense matrix/array, which produces a single-item
         # object array if other isn't convertible to ndarray.
@@ -342,7 +342,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[1] == self.shape[-1]:  # Dense 2d matrix.
                 data = np.multiply(ret.data, other2d[:, ret.col])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError(f"inconsistent shapes {self.shape} and {other.shape}")
             idx_dtype = self._get_index_dtype(ret.col,
                                               maxval=ret.nnz * other2d.shape[0])
             row = np.repeat(np.arange(other2d.shape[0], dtype=idx_dtype), ret.nnz)
@@ -359,7 +359,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif other2d.shape[0] == self.shape[0]:  # Dense 2d array.
                 data = np.multiply(ret.data[:, None], other2d[ret.row])
             else:
-                raise ValueError("inconsistent shapes")
+                raise ValueError(f"inconsistent shapes {self.shape} and {other.shape}")
             idx_dtype = self._get_index_dtype(ret.row,
                                               maxval=ret.nnz * other2d.shape[1])
             row = np.repeat(ret.row.astype(idx_dtype, copy=False), other2d.shape[1])
@@ -376,7 +376,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif other2d.shape[1] == 1 and self.shape[0] == other2d.shape[0]:
             data = np.multiply(ret.data, other2d[ret.row].ravel())
         else:
-            raise ValueError("inconsistent shapes")
+            raise ValueError(f"inconsistent shapes {self.shape} and {other.shape}")
         ret.data = data.view(np.ndarray).ravel()
         return ret
 
@@ -1217,7 +1217,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         Divide this matrix by a second sparse matrix.
         """
         if other.shape != self.shape:
-            raise ValueError('inconsistent shapes')
+            raise ValueError(f"inconsistent shapes {self.shape} and {other.shape}")
 
         r = self._binopt(other, '_eldiv_')
 
