@@ -501,7 +501,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
-            # Allow further processing if has `shape`
+            # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
             except AttributeError:
@@ -532,7 +532,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
-            # Allow further processing if has `shape`
+            # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
             except AttributeError:
@@ -608,7 +608,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
-            # Allow further processing if has `shape`
+            # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
             except AttributeError:
@@ -799,7 +799,7 @@ class _spbase(SparseABC):
             # Not interpretable as an array; return NotImplemented so that
             # other's __rmatmul__ can kick in if that's implemented.
             return NotImplemented
-        # Allow further processing if has `shape`
+        # Allow custom sparse class indicated by attr sparse gh-6520
         try:
             other.shape
         except AttributeError:
@@ -904,7 +904,7 @@ class _spbase(SparseABC):
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
                 return NotImplemented
-            # Allow further processing if has `shape`
+            # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
             except AttributeError:

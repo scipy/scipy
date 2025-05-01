@@ -685,7 +685,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # Not interpretable as an array; return NotImplemented so that
                 # other's __rmatmul__ can kick in if that's implemented.
                 return NotImplemented
-
+            # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
             except AttributeError:
