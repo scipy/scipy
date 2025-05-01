@@ -65,7 +65,7 @@ Code flags --
   Cannot use '0031' since it would be octal
 
   def counters =  [31/32/33/38, 1067, 2113, 3079, 4097, 5006,
-     6428, 7027/7028/7035/7068/7070/7102, 8163, 9428, 10000, 11034]
+     6429, 7027/7028/7035/7068/7070/7102, 8163, 9428, 10000, 11034]
 
   See: qh_ERR* [libqhull_r.h]
 */
@@ -227,24 +227,24 @@ typedef int countT;
 #if (qh_CLOCKtype == 1)
 
 #if defined(CLOCKS_PER_SECOND)
-#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock */
+#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock, may be converted to approximate double */
 #define qh_SECticks CLOCKS_PER_SECOND
 
 #elif defined(CLOCKS_PER_SEC)
-#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock */
+#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock, may be converted to approximate double */
 #define qh_SECticks CLOCKS_PER_SEC
 
 #elif defined(CLK_TCK)
-#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock */
+#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock, may be converted to approximate double */
 #define qh_SECticks CLK_TCK
 
 #else
-#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock */
+#define qh_CPUclock    ((unsigned long)clock())  /* return CPU clock, may be converted to approximate double */
 #define qh_SECticks 1E6
 #endif
 
 #elif (qh_CLOCKtype == 2)
-#define qh_CPUclock    qh_clock()  /* return CPU clock */
+#define qh_CPUclock    qh_clock()  /* return CPU clock, may be converted to approximate double */
 #define qh_SECticks 100
 
 #else /* qh_CLOCKtype == ? */

@@ -464,12 +464,12 @@ def rosen_hess(x):
     xp = array_namespace(x)
     x = xp_promote(x, force_floating=True, xp=xp)
 
-    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp) 
+    H = (xpx.create_diagonal(-400 * x[:-1], offset=1, xp=xp)
          - xpx.create_diagonal(400 * x[:-1], offset=-1, xp=xp))
     diagonal = xp.zeros(x.shape[0], dtype=x.dtype)
-    diagonal[0] = 1200 * x[0]**2 - 400 * x[1] + 2
-    diagonal[-1] = 200
-    diagonal[1:-1] = 202 + 1200 * x[1:-1]**2 - 400 * x[2:]
+    diagonal = xpx.at(diagonal)[0].set(1200 * x[0]**2 - 400 * x[1] + 2)
+    diagonal = xpx.at(diagonal)[-1].set(200)
+    diagonal = xpx.at(diagonal)[1:-1].set(202 + 1200 * x[1:-1]**2 - 400 * x[2:])
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
@@ -929,15 +929,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
         except _MaxFuncCallError:
             pass
-        finally:
-            ind = np.argsort(fsim)
-            sim = np.take(sim, ind, 0)
-            fsim = np.take(fsim, ind, 0)
-            if retall:
-                allvecs.append(sim[0])
-            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
-            if _call_callback_maybe_halt(callback, intermediate_result):
-                break
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
+        if retall:
+            allvecs.append(sim[0])
+        intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     x = sim[0]
     fval = np.min(fsim)

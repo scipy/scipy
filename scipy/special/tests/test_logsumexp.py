@@ -4,7 +4,8 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import is_array_api_strict, xp_default_dtype, xp_device
+from scipy._lib._array_api import (is_array_api_strict, make_skip_xp_backends,
+                                   xp_default_dtype, xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
 
@@ -38,6 +39,7 @@ def test_wrap_radians(xp):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
+@make_skip_xp_backends(logsumexp)
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
@@ -220,9 +222,6 @@ class TestLogSumExp:
         ref = xp.logaddexp(a[0], a[1])
         xp_assert_close(res, ref)
 
-    @pytest.mark.filterwarnings(
-        "ignore:The `numpy.copyto` function is not implemented:FutureWarning:dask"
-    )
     @pytest.mark.parametrize('dtype', ['complex64', 'complex128'])
     def test_gh21610(self, xp, dtype):
         # gh-21610 noted that `logsumexp` could return imaginary components
@@ -238,7 +237,7 @@ class TestLogSumExp:
 
         res = logsumexp(x, axis=1)
         ref = xp.log(xp.sum(xp.exp(x), axis=1))
-        max = xp.full_like(xp.imag(res), xp.asarray(xp.pi))
+        max = xp.full_like(xp.imag(res), xp.pi)
         xp_assert_less(xp.abs(xp.imag(res)), max)
         xp_assert_close(res, ref)
 
@@ -310,6 +309,7 @@ class TestLogSumExp:
             assert xp_device(logsumexp(x, b=x)) == xp_device(x)
 
 
+@make_skip_xp_backends(softmax)
 class TestSoftmax:
     def test_softmax_fixtures(self, xp):
         xp_assert_close(softmax(xp.asarray([1000., 0., 0., 0.])),
@@ -378,6 +378,7 @@ class TestSoftmax:
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
 
 
+@make_skip_xp_backends(log_softmax)
 class TestLogSoftmax:
     def test_log_softmax_basic(self, xp):
         xp_assert_close(log_softmax(xp.asarray([1000., 1.])),

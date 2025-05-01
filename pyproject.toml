@@ -124,6 +124,9 @@ tracker = "https://github.com/scipy/scipy/issues"
 [tool.doit]
 dodoFile = "dev.py"
 
+[tool.spin]
+package = 'scipy'
+
 [tool.meson-python.args]
 install = ['--skip-subprojects']
 
@@ -166,3 +169,27 @@ repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}
 PKG_CONFIG_PATH = "{project}"
 # do this instead (which will override this setting)
 # set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')
+
+[tool.spin.commands]
+"Build" = [
+  ".spin/cmds.py:build",
+  ".spin/cmds.py:test",
+  ".spin/cmds.py:mypy",
+  ".spin/cmds.py:lint",
+  "spin.cmds.pip.install"
+]
+"Environments" = [
+  "spin.cmds.meson.run",
+  ".spin/cmds.py:python",
+  ".spin/cmds.py:ipython",
+  ".spin/cmds.py:shell",
+  "spin.cmds.meson.gdb",
+  "spin.cmds.meson.lldb"
+]
+"Documentation" = [
+  ".spin/cmds.py:docs",
+  ".spin/cmds.py:smoke_docs",
+  ".spin/cmds.py:refguide_check",
+  ".spin/cmds.py:smoke_tutorials"
+]
+"Metrics" = [".spin/cmds.py:bench"]
