@@ -6,9 +6,10 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
-import os
+import contextlib
 import dataclasses
 import functools
+import os
 import textwrap
 
 from collections.abc import Generator, Iterable, Iterator
@@ -39,8 +40,8 @@ from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
-    'default_xp', 'is_lazy_array', 'is_marray',
-    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch', 
+    'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
+    'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'SCIPY_ARRAY_API', 'SCIPY_DEVICE', 'scipy_namespace_for',
     'xp_assert_close', 'xp_assert_equal', 'xp_assert_less',
     'xp_copy', 'xp_device', 'xp_ravel', 'xp_size',
@@ -246,7 +247,7 @@ _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
 @contextmanager
 def default_xp(xp: ModuleType) -> Generator[None, None, None]:
     """In all ``xp_assert_*`` and ``assert_*`` function calls executed within this
-    context manager, test by default that the array namespace is 
+    context manager, test by default that the array namespace is
     the provided across all arrays, unless one explicitly passes the ``xp=``
     parameter or ``check_namespace=False``.
 
@@ -260,6 +261,17 @@ def default_xp(xp: ModuleType) -> Generator[None, None, None]:
         _default_xp_ctxvar.reset(token)
 
 
+def eager_warns(x, warning_type, match=None):
+    """pytest.warns context manager, but only if x is not a lazy array."""
+    import pytest
+    # This attribute is interpreted by pytest-run-parallel, ensuring that tests that use
+    # `eager_warns` aren't run in parallel (since pytest.warns isn't thread-safe).
+    __thread_safe__ = False  # noqa: F841
+    if is_lazy_array(x):
+        return contextlib.nullcontext()
+    return pytest.warns(warning_type, match=match)
+
+
 def _strict_check(actual, desired, xp, *,
                   check_namespace=True, check_dtype=True, check_shape=True,
                   check_0d=True):
@@ -270,7 +282,7 @@ def _strict_check(actual, desired, xp, *,
             xp = _default_xp_ctxvar.get()
         except LookupError:
             xp = array_namespace(desired)
- 
+
     if check_namespace:
         _assert_matching_namespace(actual, desired, xp)
 
@@ -486,7 +498,7 @@ def xp_result_type(*args, force_floating=False, xp):
     standard `result_type` in a few ways:
 
     - There is a `force_floating` argument that ensures that the result type
-      is floating point, even when all args are integer.     
+      is floating point, even when all args are integer.
     - When a TypeError is raised (e.g. due to an unsupported promotion)
       and `force_floating=True`, we define a custom rule: use the result type
       of the default float and any other floats passed. See
@@ -542,7 +554,7 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     This function accepts array-like iterables, which are immediately converted
     to the namespace's arrays before result type calculation. Consequently, the
     result dtype may be different when an argument is `1.` vs `[1.]`.
-    
+
     See Also
     --------
     xp_result_type
@@ -614,6 +626,20 @@ def xp_default_dtype(xp):
     else:
         # we default to float64
         return xp.float64
+
+
+def xp_result_device(*args):
+    """Return the device of an array in `args`, for the purpose of
+    input-output device propagation.
+    If there are multiple devices, return an arbitrary one.
+    If there are no arrays, return None (this typically happens only on NumPy).
+    """
+    for arg in args:
+        # Do not do a duck-type test for the .device attribute, as many backends today
+        # don't have it yet. See workarouunds in array_api_compat.device().
+        if is_array_api_obj(arg):
+            return xp_device(arg)
+    return None
 
 
 def is_marray(xp):

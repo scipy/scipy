@@ -5617,8 +5617,8 @@ def kendalltau(x, y, *, nan_policy='propagate',
       tau_c = 2 (P - Q) / (n**2 * (m - 1) / m)
 
     where P is the number of concordant pairs, Q the number of discordant
-    pairs, T the number of ties only in `x`, and U the number of ties only in
-    `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
+    pairs, T the number of tied pairs only in `x`, and U the number of tied pairs only
+    in `y`.  If a tie occurs for the same pair in both `x` and `y`, it is not
     added to either T or U. n is the total number of samples, and m is the
     number of unique values in either `x` or `y`, whichever is smaller.
 
@@ -6762,8 +6762,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
         raise NotImplementedError(message)
 
     result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
-    NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
-    NaN = NaN[()] if NaN.ndim == 0 else NaN
+    NaN = _get_nan(a, b, shape=result_shape, xp=xp)
     if xp_size(a) == 0 or xp_size(b) == 0:
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)

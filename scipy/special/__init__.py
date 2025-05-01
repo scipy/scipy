@@ -842,13 +842,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-
-def _get_include():
-    """This function is for development purposes only.
-
-    This function could disappear or its behavior could change at any time.
-    """
-    import os
-    return os.path.dirname(__file__)
-

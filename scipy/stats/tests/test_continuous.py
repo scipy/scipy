@@ -1062,8 +1062,9 @@ class TestMakeDistribution:
         distname = distdata[0]
 
         slow = {'argus', 'exponpow', 'exponweib', 'genexpon', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'powerlognorm',
-                'powernorm', 'recipinvgauss', 'studentized_range', 'vonmises_line'}
+                'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
+                'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
+                'vonmises_line'}
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1195,6 +1196,7 @@ class TestMakeDistribution:
 
     # pdf and cdf formulas below can warn on boundary of support in some cases.
     # See https://github.com/scipy/scipy/pull/22560#discussion_r1962763840.
+    @pytest.mark.slow
     @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     @pytest.mark.parametrize("c", [-1, 0, 1, np.asarray([-2.1, -1., 0., 1., 2.1])])
     def test_custom_variable_support(self, c):
@@ -1273,6 +1275,7 @@ class TestMakeDistribution:
         assert_allclose(X1.icdf(p), X2.icdf(p))
         assert_allclose(X1.iccdf(p), X2.iccdf(p))
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("a", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
     @pytest.mark.parametrize("b", [0.5, np.asarray([0.5, 1.0, 2.0, 4.0, 8.0])])
     def test_custom_multiple_parameterizations(self, a, b):
