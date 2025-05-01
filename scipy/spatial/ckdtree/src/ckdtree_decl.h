@@ -7,9 +7,66 @@
  * */
 #include <numpy/npy_common.h>
 #include <cmath>
-#define CKDTREE_LIKELY(x) NPY_LIKELY(x)
-#define CKDTREE_UNLIKELY(x)  NPY_UNLIKELY(x)
-#define CKDTREE_PREFETCH(x, rw, loc)  NPY_PREFETCH(x, rw, loc)
+#include <new>
+
+#if defined(__cpp_lib_hardware_interference_size)
+    #define CACHE_LINE std::hardware_destructive_interference_size
+#else
+    // 64 is OK for x86 and amd64, not for Apple silicon with 128
+    // On Apple silicon: Use a C++17 library that has  std::size_t hardware_destructive_interference_size
+    // defined or suffer the pain of extra prefetching.
+    #define CACHE_LINE 64
+#endif // __cpp_lib_hardware_interference_size
+
+#if defined(__GNUC__) 
+
+#define CKDTREE_LIKELY(expr)    (__builtin_expect(!!(expr), 1))
+#define CKDTREE_UNLIKELY(expr)  (__builtin_expect(!!(expr), 0))
+
+inline void 
+prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
+{
+    // The data point can live on multiple cache lines
+    // so we must hit all of them
+    char *cur = (char*)x;
+    char *end = (char*)(x+m);    
+    do { 
+        __builtin_prefetch((void*)cur, 0, 3);
+        cur += CACHE_LINE;
+    } while (CKDTREE_UNLIKELY(cur < end));
+}
+  
+#else 
+
+#define CKDTREE_LIKELY(x) NPY_LIKELY(x)     // FIXME: Does not do anything as of May 2025, better replace with C++20 [[likely]]
+#define CKDTREE_UNLIKELY(x) NPY_UNLIKELY(x) // FIXME: Does not do anything as of May 2025, better replace with C++20 [[unlikely]]
+  
+#if defined(_WIN32) 
+  
+#include <xmmintrin.h> 
+  
+inline void 
+prefetch_datapoint(const npy_float64 *x, const npy_intp m) 
+{
+    // The data point can live on multiple cache lines
+    // so we must hit all of them
+    char *cur = (char*)x;
+    char *end = (char*)(x+m);    
+    do { 
+        _mm_prefetch((const char*)cur,_MM_HINT_T0);
+        cur += CACHE_LINE;
+    } while (CKDTREE_UNLIKELY(cur < end));
+}
+
+#else 
+
+#define prefetch_datapoint(x,m)
+
+#endif // _WIN32
+#endif // __GNUC__
+
+// rw is always 0
+#define CKDTREE_PREFETCH(x,rw,m) prefetch_datapoint(x,m)
 
 #define ckdtree_intp_t npy_intp
 #define ckdtree_fmin(x, y)   fmin(x, y)

@@ -157,11 +157,22 @@ struct nodeinfo_pool {
     char *arena;
     char *arena_ptr;
 
+    // A cache line is 64 on x86 and amd64, but 128 on some Apple silicon
+    // This mainly for alignment, 64 will do fine on Apple silicon as well.
+    // CACHE_LINE is defined in ckdtree_decl.h
+
+    // A page is 4096 on x86 and amd64, but 16384 on Apple silicon.
+    // Arena size in full pages prevents new from searching the heap.
+    // The purpose of nodeinfo_pool is to have an O(1) allocator instead of
+    // asking new or malloc to scan the heap for the smallest fitting piece 
+    // of free memory.
+    #define ARENA 16384
+
     nodeinfo_pool(ckdtree_intp_t m) {
         alloc_size = sizeof(nodeinfo) + (3 * m -1)*sizeof(double);
-        alloc_size = 64*(alloc_size/64)+64;
-        arena_size = 4096*((64*alloc_size)/4096)+4096;
-        arena = new char[arena_size];
+        alloc_size = (ckdtree_intp_t) CACHE_LINE*(alloc_size/CACHE_LINE)+CACHE_LINE; 
+        arena_size = ARENA*((CACHE_LINE*alloc_size)/ARENA)+ARENA;
+        arena = new char[arena_size]; // This should not search the heap, but do an sbrk, mmap or similar.
         arena_ptr = arena;
         pool.push_back(arena);
         this->m = m;
@@ -177,7 +188,7 @@ struct nodeinfo_pool {
         ckdtree_intp_t m1 = (ckdtree_intp_t)arena_ptr;
         ckdtree_intp_t m0 = (ckdtree_intp_t)arena;
         if ((arena_size-(ckdtree_intp_t)(m1-m0))<alloc_size) {
-            arena = new char[arena_size];
+            arena = new char[arena_size]; // This should not search the heap, but do an sbrk, mmap or similar.
             arena_ptr = arena;
             pool.push_back(arena);
         }
