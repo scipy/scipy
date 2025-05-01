@@ -428,7 +428,7 @@ class Binomial(DiscreteDistribution):
         if order == 2:
             return n*p*(1 - p + n*p)
         return None
-    _moment_raw_formula.orders = [0, 1, 2]  # type: ignore[attr-defined]
+    _moment_raw_formula.orders = [1, 2]  # type: ignore[attr-defined]
 
     def _moment_central_formula(self, order, *, n, p, **kwargs):
         # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
@@ -441,7 +441,7 @@ class Binomial(DiscreteDistribution):
         if order == 4:
             return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
         return None
-    _moment_central_formula.orders = [0, 1, 2, 3, 4]  # type: ignore[attr-defined]
+    _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
 
 
 # Distribution classes need only define the summary and beginning of the extended
