@@ -2,6 +2,7 @@ The file scipy/spatial/qhull_misc.c contains a function
 "qh_new_qhull_scipy" derived from Qhull sources, via the following
 patch:
 
+TODO: regenerate patch
 --- a/scipy/spatial/qhull_src/src/user_r.c
 +++ b/scipy/spatial/qhull_src/src/user_r.c
 @@ -122,7 +122,7 @@
