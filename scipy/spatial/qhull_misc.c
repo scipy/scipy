@@ -1,4 +1,4 @@
-#include "qhull_ra.h"
+#include <libqhull_r/qhull_ra.h>
 
 /* This is a patched version of qhull_src/src/user_r.c:qh_new_qhull,
    with an additional "feaspoint" argument.

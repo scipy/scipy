@@ -40,5 +40,5 @@ libqhull_r = static_library(
 
 qhull_r_dep = declare_dependency(
     link_with: libqhull_r,
-    include_directories: 'libqhull_r',
+    include_directories: '.',
 )
