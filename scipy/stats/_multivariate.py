@@ -1551,7 +1551,7 @@ class matrix_t_gen(multi_rv_generic):
     --------
 
     >>> import numpy as np
-    >>> from MatrixT import matrix_t
+    >>> from scipy.stats import matrix_t
     >>> M = np.arange(6).reshape(3,2); M
     array([[0, 1],
            [2, 3],
