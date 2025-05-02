@@ -1473,21 +1473,10 @@ zero-dimensional array will be interpreted as this value times the
 identity matrix.
 """
 
-_doc_random_state = """\
-seed : {None, int, np.random.RandomState, np.random.Generator}, optional
-    Used for drawing random variates.
-    If `seed` is `None`, the `~np.random.RandomState` singleton is used.
-    If `seed` is an int, a new ``RandomState`` instance is used, seeded
-    with seed.
-    If `seed` is already a ``RandomState`` or ``Generator`` instance,
-    then that object is used.
-    Default is `None`.
-"""
-
 _matt_doc_frozen_callparams = ""
 
 _matt_doc_frozen_callparams_note = """\
-    See class definition for a detailed description of parameters."""
+See class definition for a detailed description of parameters."""
 
 matrix_t_docdict_params = {
     "_matt_doc_default_callparams": _matt_doc_default_callparams,
@@ -1556,6 +1545,8 @@ class matrix_t_gen(multi_rv_generic):
         :math:`Omega` is the among-column covariance matrix,
         and :math:`\mathrm{df}` is the degrees of freedom.
 
+    .. versionadded:: 1.16.0
+        
     Examples
     -------
 
@@ -1576,7 +1567,9 @@ class matrix_t_gen(multi_rv_generic):
     array([[ 0.1,  1.1],
            [ 2.1,  3.1],
            [ 4.1,  5.1]])
-    >>> matrix_t.pdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=3)
+    >>> df = 3; df
+    3
+    >>> matrix_t.pdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
     0.9972880280135796
 
     Alternatively, the object may be called (as a function) to fix the mean
@@ -1781,6 +1774,31 @@ class matrix_t_gen(multi_rv_generic):
         Notes
         -----
         %(_matt_doc_callparams_note)s
+            
+        Examples
+        -------
+
+        >>> import numpy as np
+        >>> from scipy.stats import matrix_t
+        >>> M = np.arange(6).reshape(3,2); M
+        array([[0, 1],
+            [2, 3],
+            [4, 5]])
+        >>> Sigma = np.diag([1,2,3]); Sigma
+        array([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]])
+        >>> Omega = 0.3*np.identity(2); Omega
+        array([[ 0.3,  0. ],
+            [ 0. ,  0.3]])
+        >>> X = M + 0.1; X
+        array([[ 0.1,  1.1],
+            [ 2.1,  3.1],
+            [ 4.1,  5.1]])
+        >>> df = 3; df
+        3
+        >>> matrix_t.logpdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
+        -0.002715656044664061
         """
         dims, mean, rowcov, colcov, df = self._process_parameters(
             mean, rowcov, colcov, df
@@ -1814,7 +1832,31 @@ class matrix_t_gen(multi_rv_generic):
         Notes
         -----
         %(_matt_doc_callparams_note)s
+            
+        Examples
+        --------
 
+        >>> import numpy as np
+        >>> from scipy.stats import matrix_t
+        >>> M = np.arange(6).reshape(3,2); M
+        array([[0, 1],
+            [2, 3],
+            [4, 5]])
+        >>> Sigma = np.diag([1,2,3]); Sigma
+        array([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]])
+        >>> Omega = 0.3*np.identity(2); Omega
+        array([[ 0.3,  0. ],
+            [ 0. ,  0.3]])
+        >>> X = M + 0.1; X
+        array([[ 0.1,  1.1],
+            [ 2.1,  3.1],
+            [ 4.1,  5.1]])
+        >>> df = 3; df
+        3
+        >>> matrix_t.logpdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
+        0.9972880280135796
         """
         return np.exp(self.logpdf(X, mean, rowcov, colcov, df))
 
@@ -1861,7 +1903,6 @@ class matrix_t_gen(multi_rv_generic):
             t_centered = t_centered.reshape(mean.shape)
         return t_centered
 
-
     def _entropy(self, dims, df, row_cov_logpdet, col_cov_logpdet):
         """
         h(X) = (mn/2)*log(df*pi)
@@ -1903,7 +1944,27 @@ class matrix_t_gen(multi_rv_generic):
 
         Notes
         -----
-        %(_matt_doc_callparams_note)s
+        %(_matt_doc_callparams_note)
+
+        Examples
+        --------
+
+        >>> import numpy as np
+        >>> from scipy.stats import matrix_t
+        >>> Sigma = np.diag([1,2,3]); Sigma
+        array([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]])
+        >>> Omega = 0.3*np.identity(2); Omega
+        array([[ 0.3,  0. ],
+            [ 0. ,  0.3]])
+        >>> X = M + 0.1; X
+        array([[ 0.1,  1.1],
+            [ 2.1,  3.1],
+            [ 4.1,  5.1]])
+        >>> df = 5; df
+        >>> matrix_t.entropy(rowcov=Sigma, colcov=Omega, df=df)
+        10.000960916665203
         """
         dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
         dims, _, rowcov, colcov, df = self._process_parameters(
