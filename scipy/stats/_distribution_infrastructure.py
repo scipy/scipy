@@ -7,6 +7,7 @@ import math
 import numpy as np
 from numpy import inf
 
+from scipy._lib._array_api import xp_promote
 from scipy._lib.array_api_extra import apply_where
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -346,7 +347,8 @@ class _Interval(_Domain):
             raise TypeError(message) from e
         # Floating point types are used for even integer parameters.
         # Convert to float here to ensure consistency throughout framework.
-        return a.astype(np.float64), b.astype(np.float64)
+        a, b = xp_promote(a, b, force_floating=True, xp=np)
+        return a, b
 
     def contains(self, item, parameter_values=None):
         r"""Determine whether the argument is contained within the domain.
