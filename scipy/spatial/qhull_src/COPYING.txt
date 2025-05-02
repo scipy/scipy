@@ -1,4 +1,4 @@
-                    Qhull, Copyright (c) 1993-2019
+                    Qhull, Copyright (c) 1993-2020
                     
                             C.B. Barber
                            Arlington, MA 
@@ -13,9 +13,10 @@
                        email: qhull@qhull.org
 
 This software includes Qhull from C.B. Barber and The Geometry Center.  
-Qhull is copyrighted as noted above.  Qhull is free software and may 
-be obtained via http from www.qhull.org.  It may be freely copied, modified, 
-and redistributed under the following conditions:
+Files derived from Qhull 1.0 are copyrighted by the Geometry Center.  The
+remaining files are copyrighted by C.B. Barber.  Qhull is free software 
+and may be obtained via http from www.qhull.org.  It may be freely copied, 
+modified, and redistributed under the following conditions:
 
 1. All copyright notices must remain intact in all files.
 

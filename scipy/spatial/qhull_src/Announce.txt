@@ -1,5 +1,5 @@
 
- Qhull 2019.1  2019/06/21
+ Qhull 2020.2  2020/08/31  (8.0.2)
 
         http://www.qhull.org
         http://github.com/qhull/qhull/wiki
@@ -17,11 +17,12 @@ input transformations, randomization, tracing, multiple output formats, and
 execution statistics.  The program can be called from within your application.
 You can view the results in 2-d, 3-d and 4-d with Geomview.
 
-To download Qhull:
+Download Qhull:
+
         http://www.qhull.org/download
         git@github.com:qhull/qhull.git
  
-Download qhull-96.ps for:
+Reference:
 
         Barber, C. B., D.P. Dobkin, and H.T. Huhdanpaa, "The
         Quickhull Algorithm for Convex Hulls," ACM Trans. on
