@@ -1527,28 +1527,28 @@ class matrix_t_gen(multi_rv_generic):
     The probability density function for `matrix_t` is
 
     .. math::
-        \mathcal{T}_{m,n} = \frac{\Gamma_n \left( \frac{\mathrm{df} + m + n - 1}{2} \right)}{
-        \Gamma_n \left( \frac{\mathrm{df} + n - 1}{2} \right)\pi^{mn / 2}\left|\Sigma\right|^{n/2}
-        \left|\Omega\right|^{m/2}}\left|I_n + ( X - \mathrm{M} )^T \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}\right|^{
-        -\frac{\mathrm{df} + m + n - 1}{2}}
+        \mathcal{T}_{m,n} = \\frac{\Gamma_n \left( \\frac{\mathrm{df} + m + n - 1}{2} \\right)}{
+        \Gamma_n \left( \\frac{\mathrm{df} + n - 1}{2} \\right)\pi^{mn / 2}\left|\Sigma\\right|^{n/2}
+        \left|\Omega\\right|^{m/2}}\left|I_n + ( X - \mathrm{M} )^T \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}\\right|^{
+        -\\frac{\mathrm{df} + m + n - 1}{2}}
 
     or, alternatively,
 
     .. math::
-        \mathcal{T}_{m,n} = \frac{\Gamma_m \left( \frac{\mathrm{df} + m + n - 1}{2} \right)}{
-        \Gamma_m \left( \frac{\mathrm{df} + n - 1}{2} \right)\pi^{mn / 2}\left|\Sigma\right|^{n/2}
-        \left|\Omega\right|^{m/2}}\left|I_m+ \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}
-        ( X - \mathrm{M} )^T\right|^{-\frac{\mathrm{df} + m + n - 1}{2}}
+        \mathcal{T}_{m,n} = \\frac{\Gamma_m \left( \\frac{\mathrm{df} + m + n - 1}{2} \\right)}{
+        \Gamma_m \left( \\frac{\mathrm{df} + n - 1}{2} \\right)\pi^{mn / 2}\left|\Sigma\\right|^{n/2}
+        \left|\Omega\\right|^{m/2}}\left|I_m+ \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}
+        ( X - \mathrm{M} )^T\\right|^{-\\frac{\mathrm{df} + m + n - 1}{2}}
 
-        where :math:`\mathrm{M}` is the mean,
-        :math:`Sigma` is the among-row covariance matrix,
-        :math:`Omega` is the among-column covariance matrix,
-        and :math:`\mathrm{df}` is the degrees of freedom.
+    where :math:`\mathrm{M}` is the mean,
+    :math:`\Sigma` is the among-row covariance matrix,
+    :math:`\Omega` is the among-column covariance matrix,
+    and :math:`\mathrm{df}` is the degrees of freedom.
 
     .. versionadded:: 1.16.0
         
     Examples
-    -------
+    --------
 
     >>> import numpy as np
     >>> from MatrixT import matrix_t
@@ -1942,13 +1942,8 @@ class matrix_t_gen(multi_rv_generic):
         entropy : float
             Entropy of the distribution
 
-        Notes
-        -----
-        %(_matt_doc_callparams_note)
-
         Examples
         --------
-
         >>> import numpy as np
         >>> from scipy.stats import matrix_t
         >>> Sigma = np.diag([1,2,3]); Sigma
@@ -1966,6 +1961,7 @@ class matrix_t_gen(multi_rv_generic):
         >>> matrix_t.entropy(rowcov=Sigma, colcov=Omega, df=df)
         10.000960916665203
         """
+
         dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
         dims, _, rowcov, colcov, df = self._process_parameters(
             dummy_mean, rowcov, colcov, df
