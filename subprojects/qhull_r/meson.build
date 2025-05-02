@@ -34,7 +34,6 @@ libqhull_r = static_library(
     # Ensure that if we link a static library into a shared library,
     # private symbols don't get re-exported.
     gnu_symbol_visibility: 'inlineshidden',
-    pic: true,
     install: false,
 )
 
