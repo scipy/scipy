@@ -7,9 +7,9 @@
 
    see qh-geom_r.htm and geom_r.h
 
-   Copyright (c) 1993-2019 The Geometry Center.
-   $Id: //main/2019/qhull/src/libqhull_r/geom2_r.c#15 $$Change: 2712 $
-   $DateTime: 2019/06/28 12:57:00 $$Author: bbarber $
+   Copyright (c) 1993-2020 The Geometry Center.
+   $Id: //main/2019/qhull/src/libqhull_r/geom2_r.c#17 $$Change: 3037 $
+   $DateTime: 2020/09/03 17:28:32 $$Author: bbarber $
 
    frequently used code goes into geom_r.c
 */
@@ -27,7 +27,8 @@
   notes:
     qh_free the returned points to avoid a memory leak
 */
-coordT *qh_copypoints(qhT *qh, coordT *points, int numpoints, int dimension) {
+coordT *qh_copypoints(qhT *qh, coordT *points, int numpoints, int dimension)
+{
   int size;
   coordT *newpoints;
 

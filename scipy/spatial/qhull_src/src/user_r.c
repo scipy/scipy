@@ -149,7 +149,7 @@ int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc
   }
   trace1((qh, qh->ferr, 1044, "qh_new_qhull: build new Qhull for %d %d-d points with %s\n", numpoints, dim, qhull_cmd));
   exitcode= setjmp(qh->errexit);
-  if (!exitcode){
+  if (!exitcode) {
     qh->NOerrexit= False;
     qh_initflags(qh, qhull_cmd);
     if (qh->DELAUNAY)
