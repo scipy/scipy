@@ -1219,7 +1219,7 @@ def _kwargs2args(f, args=None, kwargs=None):
     def wrapped(x, *args):
         return f(x, *args[:n_args], **dict(zip(names, args[n_args:])))
 
-    args = list(args) + list(kwargs.values())
+    args = tuple(args) + tuple(kwargs.values())
 
     return wrapped, args
 
@@ -3663,14 +3663,14 @@ class DiscreteDistribution(UnivariateDistribution):
         a, _ = self._support(**params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
-        cdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _cdf, fill_value=0)
+        cdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _cdf, fill_value=0)
         return ccdf_y + cdf_xm1
 
     def _logccdf2_addition(self, x, y, **params):
         a, _ = self._support(**params)
         logccdf_y = self._logccdf_dispatch(y, **params)
         _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        logcdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _logcdf, fill_value=-np.inf)
+        logcdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _logcdf, fill_value=-np.inf)
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
     def _icdf_inversion(self, x, **params):
