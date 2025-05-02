@@ -1665,9 +1665,6 @@ class TestMatrixT:
         assert_allclose(m.T, mT, atol=atol)
 
 
-
-
-
 class TestDirichlet:
 
     def test_frozen_dirichlet(self):
