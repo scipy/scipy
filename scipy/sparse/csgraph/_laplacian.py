@@ -20,7 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    variant="default",
+    variant="degree",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -70,14 +70,14 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
-    variant : 'default', or 'use_abs'
+    variant : 'degree', or 'use_abs'
         Specifies the method used to compute vertex degrees:
 
-        * 'default' is standard degree calculation using edge weights;
+        * 'degree' is standard degree calculation using edge weights;
         * 'use_abs' use absolute values of edge weights to prevent cancellation
           in signed graphs.
 
-        Default: 'default'.
+        Default: 'degree'.
 
     Returns
     -------
@@ -511,7 +511,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
 
     # Normalization affects only the diagonal (degree) computation, not the rest.
     # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-    if variant == "default":
+    if variant == "degree":
         w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     elif variant == "use_abs":
         w = np.asarray(np.abs(m).sum(axis=axis)).ravel() - np.abs(m.diagonal())
@@ -519,7 +519,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
         raise ValueError(f"Invalid variant: {variant!r}")
 
     if symmetrized:
-        if variant == "default":
+        if variant == "degree":
             w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
         elif variant == "use_abs":
             w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel() \
@@ -620,7 +620,7 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
 
     # Normalization affects only the diagonal (degree) computation, not the rest.
     # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-    if variant == "default":
+    if variant == "degree":
         w = np.asarray(m.sum(axis=axis)).ravel()
     elif variant == "use_abs":
         w = np.asarray(np.abs(m).sum(axis=axis)).ravel()
@@ -628,7 +628,7 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
         raise ValueError(f"Invalid variant: {variant!r}")
 
     if symmetrized:
-        if variant == "default":
+        if variant == "degree":
             w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
         elif variant == "use_abs":
             w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel()

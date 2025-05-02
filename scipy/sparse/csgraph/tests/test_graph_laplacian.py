@@ -24,13 +24,13 @@ def test_laplacian_value_error():
             assert_raises(ValueError, csgraph.laplacian, A)
 
 
-def _explicit_laplacian(x, normed=False, variant='default'):
+def _explicit_laplacian(x, normed=False, variant='degree'):
     if sparse.issparse(x):
         x = x.toarray()
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        if variant == 'default':
+        if variant == 'degree':
             y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
         elif variant == 'use_abs':
             y[j,j] = np.abs(x[j,j+1:].sum()) + np.abs(x[j,:j].sum())
@@ -42,7 +42,7 @@ def _explicit_laplacian(x, normed=False, variant='default'):
     return y
 
 
-def _check_symmetric_graph_laplacian(mat, normed, copy=True, variant='default'):
+def _check_symmetric_graph_laplacian(mat, normed, copy=True, variant='degree'):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -94,7 +94,7 @@ def test_symmetric_graph_laplacian():
     for mat in symmetric_mats:
         for normed in True, False:
             for copy in True, False:
-                for variant in 'default', 'use_abs':
+                for variant in 'degree', 'use_abs':
                     _check_symmetric_graph_laplacian(mat, normed, copy, variant)
 
 
@@ -184,7 +184,7 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-@pytest.mark.parametrize("variant", ["default", "use_abs"])
+@pytest.mark.parametrize("variant", ["degree", "use_abs"])
 def test_asymmetric_laplacian(use_out_degree, normed,
                               copy, dtype, arr_type, variant):
     # adjacency matrix
@@ -256,7 +256,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-@pytest.mark.parametrize("variant", ["default", "use_abs"])
+@pytest.mark.parametrize("variant", ["degree", "use_abs"])
 def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
                               copy, dtype, arr_type, variant):
     # adjacency matrix
@@ -266,28 +266,28 @@ def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
     A = arr_type(np.array(A), dtype=dtype)
     A_copy = A.copy()
 
-    if not normed and use_out_degree and variant == 'default':
+    if not normed and use_out_degree and variant == 'degree':
         # Laplacian matrix using out-degree
         L = [[0, -2, 2],
              [-2, 4, -2],
              [2, -2, 0]]
         d = [0, 4, 0]
 
-    if normed and use_out_degree and variant == 'default':
+    if normed and use_out_degree and variant == 'degree':
         # normalized Laplacian matrix using out-degree
         L = [[0, -1, 2],
              [-1, 1, -1],
              [2, -1, 0]]
         d = [1, 2, 1]
 
-    if not normed and not use_out_degree and variant == 'default':
+    if not normed and not use_out_degree and variant == 'degree':
         # Laplacian matrix using in-degree
         L = [[0, -2, 2],
              [-2, 4, -2],
              [2, -2, 0]]
         d = [0, 4, 0]
 
-    if normed and not use_out_degree and variant == 'default':
+    if normed and not use_out_degree and variant == 'degree':
         # normalized Laplacian matrix using in-degree
         L = [[0, -1, 2],
              [-1, 1, -1],
@@ -351,7 +351,7 @@ def test_asymmetric_laplacian_with_negative_edges(use_out_degree, normed,
                                  'dok', 'dia', 'bsr'])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("copy", [True, False])
-@pytest.mark.parametrize("variant", ['default', 'use_abs'])
+@pytest.mark.parametrize("variant", ['degree', 'use_abs'])
 def test_sparse_formats(fmt, normed, copy, variant):
     mat = sparse.diags_array([1, 1], offsets=[-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy, variant)
@@ -430,7 +430,7 @@ def test_laplacian_symmetrized(arr_type, form):
 @pytest.mark.parametrize("symmetrized", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
-@pytest.mark.parametrize("variant", ["default", "use_abs"])
+@pytest.mark.parametrize("variant", ["degree", "use_abs"])
 def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form, variant):
     n = 3
     mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]

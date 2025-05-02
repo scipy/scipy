@@ -13,7 +13,7 @@ class Laplacian(Benchmark):
         [30, 300, 900],
         ['dense', 'coo', 'csc', 'csr', 'dia'],
         [True, False],
-        ['default', 'use_abs'],
+        ['degree', 'use_abs'],
     ]
     param_names = ['n', 'format', 'normed', 'variant']
 
