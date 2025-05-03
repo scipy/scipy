@@ -28,9 +28,9 @@ Parts of the codebase which contain code copied from an upstream include:
 - SuperLU_, at ``scipy/sparse/linalg/_dsolve/SuperLU``
 - trlib_, at ``scipy/optimize/_trlib``
 - UNU.RAN_, at ``scipy/stats/_unuran``
-- Cython/Tempita_, at ``scipy/_build_utils/tempita``
-- fast-matrix-market_, at ``scipy/io/_fast_matrix_market``
-- numpydoc/docscrape_, at ``scipy/_lib/_docscrape.py``
+- `Cython/Tempita`_, at ``scipy/_build_utils/tempita``
+- `fast_matrix_market`_, at ``scipy/io/_fast_matrix_market``
+- `numpydoc/docscrape`_, at ``scipy/_lib/_docscrape.py``
 
 .. _ARPACK: https://github.com/opencollab/arpack-ng
 .. _SuperLU: https://github.com/xiaoyeli/superlu
@@ -38,9 +38,9 @@ Parts of the codebase which contain code copied from an upstream include:
 .. _UNU.RAN: https://statmath.wu.ac.at/unuran/
 .. _DIRECT: https://github.com/stevengj/nlopt/tree/master/src/algs/direct
 .. _PRIMA: https://github.com/libprima/prima
-.. _Cython/Tempita: https://github.com/cython/cython/tree/master/Cython/Tempita
-.. _fast-matrix-market: https://github.com/alugowski/fast_matrix_market
-.. _numpydoc/docscrape: https://github.com/numpy/numpydoc/
+.. _`Cython/Tempita`: https://github.com/cython/cython/tree/master/Cython/Tempita
+.. _`fast_matrix_market`: https://github.com/alugowski/fast_matrix_market
+.. _`numpydoc/docscrape`: https://github.com/numpy/numpydoc/
 
 Please refer to https://github.com/scipy/scipy/issues/21232 for further details and
 tracking of vendored code in the repository.
