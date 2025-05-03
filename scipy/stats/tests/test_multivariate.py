@@ -1446,8 +1446,15 @@ class TestMatrixT:
 
         # Incorrect dimensions
         assert_raises(ValueError, matrix_t, np.zeros((5,4,3)), df)
+        assert_raises(ValueError, matrix_t, np.zeros((4,3,0)), df)
         assert_raises(ValueError, matrix_t, M, np.zeros(10), V, df)
         assert_raises(ValueError, matrix_t, M, U, np.zeros(10), df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,4,3)), V, df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,3)), V, df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,4,0)), V, df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,4)), df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,4)), df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,0)), df)
         assert_raises(ValueError, matrix_t, M, U, U, df)
         assert_raises(ValueError, matrix_t, M, V, V, df)
         assert_raises(ValueError, matrix_t, M.T, U, V, df)
@@ -1536,7 +1543,7 @@ class TestMatrixT:
                 frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
 
                 rvs1 = frozen.rvs(random_state=1234)
-                rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df, 
+                rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df,
                                          random_state=1234)
                 assert_equal(rvs1, rvs2)
 
@@ -1576,7 +1583,7 @@ class TestMatrixT:
         for i in range(2):
             for j in range(N):
                 separate_logpdf = matrix_t.logpdf(X[i,j], mean=M,
-                                                       rowcov=U, colcov=V, 
+                                                       rowcov=U, colcov=V,
                                                        df=df)
                 assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
 
@@ -1586,8 +1593,8 @@ class TestMatrixT:
             numerator = np.linalg.norm(vec1 - vec2) ** 2
             denominator = np.linalg.norm(vec1) ** 2 + np.linalg.norm(vec2) ** 2
             return 2 * numerator / denominator
-        
-        def matrix_divergence(mat_true: np.ndarray, 
+
+        def matrix_divergence(mat_true: np.ndarray,
                               mat_est: np.ndarray) -> float:
             det_true = np.linalg.det(mat_true)
             det_est = np.linalg.det(mat_est)
@@ -1596,16 +1603,16 @@ class TestMatrixT:
             trace_term = np.trace(np.linalg.inv(mat_est) @ mat_true)
             log_detratio = np.log(det_est / det_true)
             return (trace_term + log_detratio - len(mat_true)) / 2
-        
+
         def vec(a_mat: np.ndarray) -> np.ndarray:
             """
             For an (m,n) array `a_mat` the output `vec(a_mat)` is an (m*n, 1)
-            array formed by stacking the columns of `a_mat` in the order in 
+            array formed by stacking the columns of `a_mat` in the order in
             which they occur in `a_mat`.
             """
             assert a_mat.ndim == 2
             return a_mat.T.reshape((a_mat.size,))
-        
+
         df = 5
         num_rows = 4
         num_cols = 3
@@ -1614,14 +1621,14 @@ class TestMatrixT:
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 10**4
         atol = 1e-1
-        
+
         frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
         X = frozen.rvs(size=N, random_state=42)
 
         relerr = relative_error(M, X.mean(axis=0))
         assert_close(relerr, 0, atol=atol)
 
-        # Gupta and Nagar (2000) Theorem 4.3.1 (p.135) 
+        # Gupta and Nagar (2000) Theorem 4.3.1 (p.135)
         # --------------------------------------------
         # The covariance of the vectorized matrix variate t-distribution equals
         #     $$ ( V \otimes U ) / ( \text{df} - 2 ) $$
@@ -1640,14 +1647,14 @@ class TestMatrixT:
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
         N = 10**4
         atol = 1e-1
-        
-        # `rvs` performs Cholesky-inverse-Wishart sampling on the smaller 
+
+        # `rvs` performs Cholesky-inverse-Wishart sampling on the smaller
         # dimension of `mean`
 
         frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
         X = frozen.rvs(size=N, random_state=42)  # column-wise rvs
         m = X.mean(0)
-        
+
         frozenT = matrix_t(mean=M.T, rowcov=V, colcov=U, df=df)
         XT = frozenT.rvs(size=N, random_state=42)  # row-wise rvs
         mT = XT.mean(0)
@@ -1655,8 +1662,8 @@ class TestMatrixT:
         # Gupta and Nagar (2000) Theorem 4.3.3 (p.137)
         # --------------------------------------------
         # If T follows a matrix variate t-distribution with mean M and rowcov U
-        # and colcov V and df degrees of freedom, then its transpose T.T follows 
-        # a matrix variate t-distribution with mean M.T and rowcov V and 
+        # and colcov V and df degrees of freedom, then its transpose T.T follows
+        # a matrix variate t-distribution with mean M.T and rowcov V and
         # colcov U and df degrees of freedom.
 
         assert_allclose(M, m, atol=atol)
