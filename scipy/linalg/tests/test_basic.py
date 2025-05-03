@@ -1228,6 +1228,19 @@ class TestInv:
         y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos def lower")
         assert_allclose(y_inv3, y_inv0, atol=1e-15)
 
+    def test_posdef_not_posdef(self):
+        # the `b` matrix is invertible but not positive definite
+        a = np.arange(9).reshape(3, 3)
+        b = a + a.T + np.eye(3)
+
+        # cholesky solver fails, and the routine falls back to the general inverse
+        b_inv0 = inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-15)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            inv(b, assume_a='pos def')
+
     def test_triangular_1(self):
         x = np.arange(25, dtype=float).reshape(5, 5)
         y = x + x.T
