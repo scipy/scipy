@@ -1205,6 +1205,11 @@ class TestInv:
         # assert np.isnan(a_inv[0, ...]).all()
         # assert_allclose(a_inv[1, ...] @ a[1, ...],  np.eye(2), atol=1e-14)
 
+    def test_ill_cond(self):
+        a = np.diag([1., 1e-20])
+        with pytest.warns(LinAlgWarning):
+            inv(a)
+
     def test_wrong_assume_a(self):
         with assert_raises(KeyError):
             inv(np.eye(2), assume_a="kaboom")
