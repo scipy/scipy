@@ -176,8 +176,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
 
     T *rwork = NULL;
     CBLAS_INT *iwork = NULL;
-    bool is_complex = (numeric_limits<T>::typenum == NPY_CFLOAT)
-                       || (numeric_limits<T>::typenum == NPY_CDOUBLE);
+    bool is_complex = type_traits<T>::is_complex;
     if (is_complex) {
         rwork = (T *)malloc(2*n*sizeof(T));
         if (rwork == NULL) { free(rwork); *info = -102; return; }

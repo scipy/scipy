@@ -16,7 +16,6 @@ template<typename T> struct numeric_limits {};
 
 template<>
 struct numeric_limits<float>{
-    static constexpr int typenum = NPY_FLOAT;
     static constexpr double zero = 0.0f;
     static constexpr double one = 1.0f;
     static constexpr float nan = std::numeric_limits<float>::quiet_NaN();
@@ -25,7 +24,6 @@ struct numeric_limits<float>{
 
 template<>
 struct numeric_limits<double>{
-    static constexpr int typenum = NPY_DOUBLE;
     static constexpr double zero = 0.0;
     static constexpr double one = 1.0;
     static constexpr double nan = std::numeric_limits<double>::quiet_NaN();
@@ -35,7 +33,6 @@ struct numeric_limits<double>{
 
 template<>
 struct numeric_limits<npy_cfloat>{
-    static constexpr int typenum = NPY_CFLOAT;
     static constexpr npy_cfloat zero = {0.0f, 0.0f};
     static constexpr npy_cfloat one = {1.0f, 0.0f};
     static constexpr npy_cfloat nan = {std::numeric_limits<float>::quiet_NaN(),
@@ -44,7 +41,6 @@ struct numeric_limits<npy_cfloat>{
 
 template<>
 struct numeric_limits<npy_cdouble>{
-    static constexpr int typenum = NPY_CDOUBLE;
     static constexpr npy_cdouble zero = {0.0, 0.0};
     static constexpr npy_cdouble one = {1.0, 0.0};
     static constexpr npy_cdouble nan = {std::numeric_limits<double>::quiet_NaN(),
@@ -55,11 +51,31 @@ struct numeric_limits<npy_cdouble>{
  * XXX merge with numeric_limits ?
  */
 template<typename T> struct type_traits {};
-template<> struct type_traits<float> { using real_type = float;  using value_type = float;};
-template<> struct type_traits<double> { using real_type = double; using value_type = double;};
-template<> struct type_traits<npy_cfloat> { using real_type = float; using value_type = std::complex<float>; };
-template<> struct type_traits<npy_cdouble> { using real_type = double; using value_type = std::complex<double>; };
+template<> struct type_traits<float> {
+    using real_type = float;
+    using value_type = float;
+    static constexpr int typenum = NPY_FLOAT;
+    static constexpr bool is_complex = false;
 
+};
+template<> struct type_traits<double> {
+    using real_type = double;
+    using value_type = double;
+    static constexpr int typenum = NPY_DOUBLE;
+    static constexpr bool is_complex = false;
+};
+template<> struct type_traits<npy_cfloat> {
+    using real_type = float;
+    using value_type = std::complex<float>; 
+    static constexpr int typenum = NPY_CFLOAT;
+    static constexpr bool is_complex = true;
+};
+template<> struct type_traits<npy_cdouble> {
+    using real_type = double;
+    using value_type = std::complex<double>;
+    static constexpr int typenum = NPY_CDOUBLE;
+    static constexpr bool is_complex = true;
+};
 
 
 /* 
