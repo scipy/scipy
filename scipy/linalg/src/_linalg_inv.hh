@@ -137,6 +137,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     bool is_symm = false;
     char uplo;
     St slice_structure = St::NONE;
+    bool posdef_fallback = true;
 
     // --------------------------------------------------------------------
     // Input Array Attributes
@@ -191,15 +192,18 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     uplo = 'U';
     if (structure == St::POS_DEF) {
         uplo = 'U';
+        posdef_fallback = false;
     }
     else {
         if (structure == St::POS_DEF_UPPER) {
             structure = St::POS_DEF;
             uplo = 'U';
+            posdef_fallback = false;
         }
         else if (structure == St::POS_DEF_LOWER) {
             structure = St::POS_DEF;
             uplo = 'L';
+            posdef_fallback = false;
         }
     }
     if (structure == St::LOWER_TRIANGULAR) {
@@ -264,16 +268,23 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
                 void *irwork = is_complex ? (void *)rwork : (void *)iwork;
                 *info = invert_slice_cholesky(uplo, intn, data, work, irwork, isIllconditioned, isSingular);
 
-                if ((*info == 0) || (*isSingular == 0)) {
+                if ((*info == 0) || (*isSingular == 0) ) {
                     // success
                     fill_other_triangle(uplo, data, intn);
                     break;
                 }
-                else { // potrf failed, restore
-                    copy_slice(scratch, slice_ptr, n, strides[ndim-2], strides[ndim-1]);
-                    swap_cf(scratch, data, n, n, n);
+                else { // potrf failed
+                    if(posdef_fallback) {
+                        // restore
+                        copy_slice(scratch, slice_ptr, n, strides[ndim-2], strides[ndim-1]);
+                        swap_cf(scratch, data, n, n, n);
 
-                    // no break: fall back to the general solver
+                        // no break: fall back to the general solver
+                    }
+                    else {
+                        // potrf failed but no fallback
+                        break;
+                    }
                 }
             }
             default:
