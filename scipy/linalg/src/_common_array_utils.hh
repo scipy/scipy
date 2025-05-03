@@ -82,13 +82,17 @@ void BLAS_FUNC(dtrtri)(char *uplo, char *diag, CBLAS_INT *n, double* a, CBLAS_IN
 void BLAS_FUNC(ctrtri)(char *uplo, char *diag, CBLAS_INT *n, npy_cfloat* a, CBLAS_INT *lda, CBLAS_INT *info);
 void BLAS_FUNC(ztrtri)(char *uplo, char *diag, CBLAS_INT *n, npy_cdouble* a, CBLAS_INT *lda, CBLAS_INT *info);
 
+/* ?TRCON */
+void BLAS_FUNC(strcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, float *a, CBLAS_INT *lda, float *rcond, float *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(dtrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info);
+void BLAS_FUNC(ctrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_cfloat *a, CBLAS_INT *lda, float *rcond, npy_cfloat *work, float *rwork, CBLAS_INT *info);
+void BLAS_FUNC(ztrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_cdouble *a, CBLAS_INT *lda, double *rcond, npy_cdouble *work, double *rwork, CBLAS_INT *info);
 
 /* ?POTRF */
 void BLAS_FUNC(spotrf)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *info);
 void BLAS_FUNC(dpotrf)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *info);
 void BLAS_FUNC(cpotrf)(char *uplo, CBLAS_INT *n, npy_cfloat *a, CBLAS_INT *lda, CBLAS_INT *info);
 void BLAS_FUNC(zpotrf)(char *uplo, CBLAS_INT *n, npy_cdouble *a, CBLAS_INT *lda, CBLAS_INT *info);
-
 
 /* ?POTRI */
 void BLAS_FUNC(spotri)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *info);
@@ -155,11 +159,23 @@ trtri(char* uplo, char *diag, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* 
     BLAS_FUNC(PREFIX ## trtri)(uplo, diag, n, a, lda, info); \
 };
 
-
 GEN_TRTRI(s, float)
 GEN_TRTRI(d, double)
 GEN_TRTRI(c, npy_cfloat)
 GEN_TRTRI(z, npy_cdouble)
+
+
+#define GEN_TRCON(PREFIX, CTYPE, RTYPE, WTYPE) \
+inline void \
+trcon(char* norm, char *uplo, char *diag, CBLAS_INT *n, CTYPE *a, CBLAS_INT *lda, RTYPE *rcond, CTYPE *work, void *irwork, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## trcon)(norm, uplo, diag, n, a, lda, rcond, work, (WTYPE *)irwork, info); \
+};
+
+GEN_TRCON(s, float, float, CBLAS_INT)
+GEN_TRCON(d, double, double, CBLAS_INT)
+GEN_TRCON(c, npy_cfloat, float, float)
+GEN_TRCON(z, npy_cdouble, double, double)
 
 
 #define GEN_POTRF(PREFIX, TYPE) \
