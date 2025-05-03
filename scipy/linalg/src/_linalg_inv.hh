@@ -131,6 +131,8 @@ inline CBLAS_INT invert_slice_triangular(
 template<typename T>
 void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
 {
+    using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
+
     *isIllconditioned = 0;
     *isSingular = 0;
     npy_intp lower_band = 0, upper_band = 0;
@@ -175,18 +177,17 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) { free(ipiv); *info = -102; return; }
 
-    T *rwork = NULL;
+    real_type *rwork = NULL;
     CBLAS_INT *iwork = NULL;
     bool is_complex = type_traits<T>::is_complex;
     if (is_complex) {
-        rwork = (T *)malloc(2*n*sizeof(T));
+        rwork = (real_type *)malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
         if (rwork == NULL) { free(rwork); *info = -102; return; }
 
     } else {
         iwork = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
         if (iwork == NULL) { free(iwork); *info = -102; return; }
     }
-
 
     // normalize the structure detection inputs
     uplo = 'U';
