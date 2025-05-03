@@ -113,17 +113,25 @@ inline CBLAS_INT invert_slice_cholesky(
 // triangular array inversion with trtri
 template<typename T>
 inline CBLAS_INT invert_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, T *data,
+    char uplo, char diag, CBLAS_INT N, T *data, T *work, void *irwork,
     int* isIllconditioned, int* isSingular
 ) {
+    using real_type = typename type_traits<T>::real_type;
+
     CBLAS_INT info;
+    char norm = '1';
+    real_type rcond;
 
     trtri(&uplo, &diag, &N, data, &N, &info);
     *isSingular  = (info > 0);
 
-    // TODO: Add trcon here to check for condition number and set isIllconditioned
-    *isIllconditioned = 0; 
+    if(info >= 0) {
 
+        trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
+        if (info >= 0) {
+            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+        }
+    }
     return info;
 }
 
@@ -258,7 +266,8 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             case St::LOWER_TRIANGULAR:
             {
                 char diag = 'N';
-                *info = invert_slice_triangular(uplo, diag, intn, data, isIllconditioned, isSingular);
+                void *irwork = is_complex ? (void *)rwork : (void *)iwork;
+                *info = invert_slice_triangular(uplo, diag, intn, data, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info < 0) || (*isSingular )) { goto free_exit;}
                 zero_other_triangle(uplo, data, intn);
