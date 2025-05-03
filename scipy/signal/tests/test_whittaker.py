@@ -30,17 +30,31 @@ def test_whittaker_raises(signal, lamb, order, weights, msg):
 def test_whittaker_small_data():
     """Test that whittaker works on a few data points."""
     # Should work on order + 1 data points. The first 2*order+1 are special.
-    whittaker_henderson(np.zeros(2), order=1)
-    whittaker_henderson(np.zeros(3), order=1)
+    la = 1
+    y = np.arange(2)
+    x = whittaker_henderson(y, order=1, lamb=la)
+    # Analytical solution for order=1 and n=2
+    res = (np.array([[1 + la, la], [la, 1 + la]]) / (1 + 2 * la)) @ y
+    assert_allclose(x, res, atol=1e-15)
+    whittaker_henderson(np.arange(3), order=1, lamb=la)
 
-    whittaker_henderson(np.zeros(3), order=2)
-    whittaker_henderson(np.zeros(4), order=2)
-    whittaker_henderson(np.zeros(5), order=2)
+    y = np.arange(3)
+    x = whittaker_henderson(y, order=2, lamb=la)
+    # Analytical solution for order=2 and n=3
+    res = (
+        np.array([
+            [1 + 5 * la,     2 * la,        -la],
+            [    2 * la, 1 + 2 * la,     2 * la],
+            [       -la,     2 * la, 1 + 5 * la],
+        ]) / (1 + 6 * la)) @ y
+    assert_allclose(x, res, atol=1e-15)
+    whittaker_henderson(np.arange(4), order=2, lamb=la)
+    whittaker_henderson(np.arange(5), order=2, lamb=la)
 
-    whittaker_henderson(np.zeros(4), order=3)
-    whittaker_henderson(np.zeros(5), order=3)
-    whittaker_henderson(np.zeros(6), order=3)
-    whittaker_henderson(np.zeros(7), order=3)
+    whittaker_henderson(np.arange(4), order=3, lamb=la)
+    whittaker_henderson(np.arange(5), order=3, lamb=la)
+    whittaker_henderson(np.arange(6), order=3, lamb=la)
+    whittaker_henderson(np.arange(7), order=3, lamb=la)
 
 
 @pytest.mark.parametrize("n", [3, 4, 5, 100])
