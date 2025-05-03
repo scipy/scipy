@@ -1546,7 +1546,7 @@ class matrix_t_gen(multi_rv_generic):
     and :math:`\mathrm{df}` is the degrees of freedom.
 
     .. versionadded:: 1.16.0
-        
+
     Examples
     --------
 
@@ -1636,11 +1636,9 @@ class matrix_t_gen(multi_rv_generic):
             raise ValueError("Array `rowcov` must be a scalar or a 2D array.")
         if rowshape[0] != rowshape[1]:
             raise ValueError("Array `rowcov` must be square.")
-        if rowshape[0] == 0:
+        if np.any(rowshape == 0):
             raise ValueError("Array `rowcov` has invalid shape.")
         numrows = rowshape[0]
-        if np.isnan(rowcov).any():
-            import pdb; pdb.set_trace()
 
         # Process among-column 2nd moment
         colcov = np.asarray(colcov, dtype=float)
@@ -1658,7 +1656,7 @@ class matrix_t_gen(multi_rv_generic):
             raise ValueError("Array `colcov` must be a scalar or a 2D array.")
         if colshape[0] != colshape[1]:
             raise ValueError("Array `colcov` must be square.")
-        if colshape[0] == 0:
+        if np.any(colshape == 0):
             raise ValueError("Array `colcov` has invalid shape.")
         numcols = colshape[0]
 
@@ -1774,7 +1772,7 @@ class matrix_t_gen(multi_rv_generic):
         Notes
         -----
         %(_matt_doc_callparams_note)s
-            
+
         Examples
         -------
 
@@ -1832,7 +1830,7 @@ class matrix_t_gen(multi_rv_generic):
         Notes
         -----
         %(_matt_doc_callparams_note)s
-            
+
         Examples
         --------
 
@@ -1992,7 +1990,7 @@ class matrix_t_frozen:
         logdetrowcov = rowpsd.log_pdet
         logdetcolcov = colpsd.log_pdet
         out = self._dist._logpdf(
-            self.dims, X, self.mean, self.df, invrowcov, invcolcov, 
+            self.dims, X, self.mean, self.df, invrowcov, invcolcov,
             logdetrowcov, logdetcolcov
         )
         return _squeeze_output(out)
@@ -2007,9 +2005,9 @@ class matrix_t_frozen:
 
     def entropy(self):
         dims, _, rowcov, colcov, df = self._dist._process_parameters(
-            mean=np.zeros((self.rowcov.shape[0], self.colcov.shape[0])), 
-            rowcov=self.rowcov, 
-            colcov=self.colcov, 
+            mean=np.zeros((self.rowcov.shape[0], self.colcov.shape[0])),
+            rowcov=self.rowcov,
+            colcov=self.colcov,
             df=self.df
         )
         rowpsd = _PSD(rowcov, allow_singular=False)
@@ -2065,12 +2063,9 @@ def _cholesky_invwishart_rvs(
         iw_samples = iw_samples[np.newaxis, ...]
     chol_samples = np.empty_like(iw_samples)
     for idx in range(size):
-        # try:
         chol_samples[idx] = scipy.linalg.cholesky(
             iw_samples[idx], lower=True, check_finite=False
         ).reshape(iw_samples.shape[1:])
-        # except ValueError:
-        #     import pdb; pdb.set_trace()
     return chol_samples.reshape((size, *scale.shape))
 
 
