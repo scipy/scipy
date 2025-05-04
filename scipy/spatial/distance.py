@@ -2312,8 +2312,21 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           kwargs.pop('V', None),
                           kwargs.pop('VI', None),
                           # See src/distance_pybind.cpp::pdist
-                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
+
+def _pmindist_slow_path(sample: "npt.ArrayLike",
+                        metric: str = "euclidean") -> float:
+
+    sample = _asarray(sample)
+    n = sample.shape[0]
+    d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
+    if np.allclose(distance_upper_bound, 0.0):
+        return 0.0
+
+    for i in range(2, n):
+        d = min(d, cdist(sample[(i-1):i,...], sample[i:,...], metric=metric).min())
+    return d
 
 
 def _pmindist(
@@ -2353,8 +2366,7 @@ def _pmindist(
             distance_fun = chebyshev
         case _:
             # Slow path for metrics unsupported by KDTree.
-            distances = pdist(sample, metric=metric)  # type: ignore[call-overload]
-            return distances.min()
+            return _pmindist_slow_path(sample, metric=metric)
 
     distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
     if np.allclose(distance_upper_bound, 0.0):
@@ -2368,6 +2380,7 @@ def _pmindist(
     if np.isinf(d):
         return distance_upper_bound
     return d
+
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
 
@@ -2768,7 +2781,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2798,7 +2811,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
