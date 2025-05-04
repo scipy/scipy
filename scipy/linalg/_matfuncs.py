@@ -7,6 +7,8 @@ from itertools import product
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
+from numpy.lib.scimath import sqrt as csqrt
+from numpy.linalg import matrix_power
 
 from scipy._lib._util import _apply_over_batch
 from scipy._lib.deprecation import _NoValue
@@ -320,9 +322,48 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
-    # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
-    # here until we have a more stable implementation.
+    # Explicit formula for 2x2 case (formula (2.2) in [1]).
+    if a.shape[-2:] == (2, 2): 
+        threshold = 700
+        a1, a2, a3, a4 = (a[..., [0], [0]], 
+                       a[..., [0], [1]], 
+                       a[..., [1], [0]], 
+                       a[..., [1], [1]]) 
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+        m = (mu > threshold).reshape(mu.shape[:-1])
+
+        if m.any():
+            norms = np.linalg.norm(a[m], axis=(-2, -1))
+
+            # Round norms to their nearest power of 2 representation
+            norms = np.power(2, np.round(np.log2(norms))).astype(int)
+            a[m] = a[m] / norms
+            a1, a2, a3, a4 = (a[..., [0], [0]], 
+                       a[..., [0], [1]], 
+                       a[..., [1], [0]], 
+                       a[..., [1], [1]]) 
+            norms = norms.reshape(np.prod(norms.shape))
+            mu = csqrt((a1-a4)**2 + 4*a2*a3)/2. 
+
+        eApD2 = np.exp((a1+a4)/2.) 
+        AmD2 = (a1 - a4)/2. 
+        coshMu = np.cosh(mu) 
+        sinchMu = np.ones_like(coshMu) 
+        mask = mu != 0 
+        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask] 
+        eA = np.empty((a.shape), dtype=mu.dtype) 
+        eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu) 
+        eA[..., [0], [1]] = eApD2 * a2 * sinchMu 
+        eA[..., [1], [0]] = eApD2 * a3 * sinchMu 
+        eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu) 
+
+        if m.any():
+            eA[m] = np.array([matrix_power(mat, n) for mat, n in zip(eA[m], norms)])
+
+        if np.isrealobj(a): 
+            return eA.real 
+        return eA
+
 
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
