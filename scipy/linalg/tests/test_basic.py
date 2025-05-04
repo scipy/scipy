@@ -970,6 +970,19 @@ class TestSolve:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
 
+    def test_broadcasted_shapes(self):
+        e = np.eye(2)
+        a = np.arange(1, 4*3*2 + 1).reshape((4, 3, 2, 1, 1)) * e
+
+        b = np.ones(2)
+        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+
+        b = np.ones((2, 1))
+        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+
+        b = np.ones((2, 2)) * [1, 2]
+        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+
 
 class TestSolveTriangular:
 
