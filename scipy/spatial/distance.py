@@ -2315,13 +2315,12 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
 
-def _pmindist_slow_path(sample: "npt.ArrayLike",
-                        metric: str = "euclidean") -> float:
+def _pmindist_slow_path(sample: "npt.ArrayLike", metric: str) -> float:
 
     sample = _asarray(sample)
     n = sample.shape[0]
     d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
-    if np.allclose(distance_upper_bound, 0.0):
+    if np.allclose(d, 0.0):
         return 0.0
 
     for i in range(2, n):
