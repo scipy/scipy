@@ -1,4 +1,4 @@
-#__docformat__ = "restructuredtext en"
+# __docformat__ = "restructuredtext en"
 # ******NOTICE***************
 # optimize.py module by Travis E. Oliphant
 #
@@ -1460,7 +1460,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         yk = gfkp1 - gfk
         gfk = gfkp1
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
         if _call_callback_maybe_halt(callback, intermediate_result):
             break
         gnorm = vecnorm(gfk, ord=norm)
@@ -1846,7 +1846,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfk)
         if _call_callback_maybe_halt(callback, intermediate_result):
             break
 
@@ -2083,6 +2083,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
                                 success=(warnflag == 0), message=msg, x=xk,
                                 nit=k)
+        if fhess is not None:
+            result.hess = A
         if retall:
             result['allvecs'] = allvecs
         return result
@@ -2158,8 +2160,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             dri0 = dri1          # update np.dot(ri,ri) for next time.
         else:
             # curvature keeps increasing, bail out
-            msg = ("Warning: CG iterations didn't converge. The Hessian is not "
-                   "positive definite.")
+            msg = (
+                "Warning: CG iterations didn't converge. The Hessian is not "
+                "positive definite."
+            )
             return terminate(3, msg)
 
         pk = xsupi  # search direction is solution to system.
@@ -2179,7 +2183,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-        intermediate_result = OptimizeResult(x=xk, fun=old_fval)
+        intermediate_result = OptimizeResult(x=xk, fun=old_fval, jac=gfkp1)
+        if fhess is not None:
+            intermediate_result.hess = A
         if _call_callback_maybe_halt(callback, intermediate_result):
             return terminate(5, "")
         update_l1norm = np.linalg.norm(update, ord=1)

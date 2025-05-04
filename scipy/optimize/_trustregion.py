@@ -272,7 +272,9 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             allvecs.append(np.copy(x))
         k += 1
 
-        intermediate_result = OptimizeResult(x=x, fun=m.fun)
+        intermediate_result = OptimizeResult(x=x, fun=m.fun, jac=m.jac)
+        if callable(hess):
+            intermediate_result.hess = m.hess
         if _call_callback_maybe_halt(callback, intermediate_result):
             break
 

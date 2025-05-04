@@ -456,7 +456,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
             # new iteration
             n_iterations += 1
 
-            intermediate_result = OptimizeResult(x=x, fun=f)
+            intermediate_result = OptimizeResult(x=x, fun=f, jac=g)
             if _call_callback_maybe_halt(callback, intermediate_result):
                 task[0] = 5
                 task[1] = 505
