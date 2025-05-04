@@ -185,17 +185,14 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) { free(ipiv); *info = -102; return; }
 
-    real_type *rwork = NULL;
-    CBLAS_INT *iwork = NULL;
-    bool is_complex = type_traits<T>::is_complex;
-    if (is_complex) {
-        rwork = (real_type *)malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
-        if (rwork == NULL) { free(rwork); *info = -102; return; }
-
+    // {ge,po,tr}con need rwork or iwork
+    void *irwork;
+    if (type_traits<T>::is_complex) {
+        irwork = malloc(3*n*sizeof(real_type));   // {po,tr}con need at least 3*n
     } else {
-        iwork = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
-        if (iwork == NULL) { free(iwork); *info = -102; return; }
+        irwork = malloc(n*sizeof(CBLAS_INT));
     }
+    if (irwork == NULL) { free(irwork); *info = -102; return; }
 
     // normalize the structure detection inputs
     uplo = 'U';
@@ -266,7 +263,6 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             case St::LOWER_TRIANGULAR:
             {
                 char diag = 'N';
-                void *irwork = is_complex ? (void *)rwork : (void *)iwork;
                 *info = invert_slice_triangular(uplo, diag, intn, data, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info < 0) || (*isSingular )) { goto free_exit;}
@@ -275,7 +271,6 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             }
             case St::POS_DEF:
             {
-                void *irwork = is_complex ? (void *)rwork : (void *)iwork;
                 *info = invert_slice_cholesky(uplo, intn, data, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info == 0) || (*isSingular == 0) ) {
@@ -300,7 +295,6 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
             default:
             {
                 // general matrix inverse
-                void *irwork = is_complex ? (void *)rwork : (void *)iwork ;
                 *info = invert_slice_general(intn, data, ipiv, irwork, work, lwork, isIllconditioned, isSingular);
             }
         }
@@ -316,10 +310,7 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
 
 free_exit:
     free(buffer);
-    free(rwork);
-    free(iwork);
+    free(irwork);
     free(ipiv);
     return;
 }
-
-
