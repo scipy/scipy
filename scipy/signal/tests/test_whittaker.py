@@ -9,17 +9,23 @@ from scipy.signal._whittaker import _solve_WH_banded, _solve_WH_order2_fast
         ["signal", "lamb", "order", "weights", "msg"],
         [
             ([[1, 2, 3] * 3], 1, 2, None,
-             "Input signal array must be of shape \\(n,\\)"),
-            (np.zeros(2), 1, 2, None, "Input signal array must be at least of shape"),
+             "Input array signal must be of shape \\(n,\\)"),
+            (np.zeros(2), 1, 2, None, "Input array signal must be at least of shape"),
             (np.arange(10), -0.9, 2, None, "Parameter lamb must be non-negative"),
             ([1, 2, 3], 1, 1.5, None,
              "Parameter order must be an integer larger equal 1."),
             ([1, 2, 3], 1, 0, None,
              "Parameter order must be an integer larger equal 1."),
             ([1, 2, 3], 1, 2, [0, 1],
-             "Parameter weights must have the same shape as the signal array."),
+             "Input array weights must have the same shape as the signal array."),
             ([1, 2, 3], 1, 2, [[0]],
-             "Parameter weights must have the same shape as the signal array."),
+             "Input array weights must have the same shape as the signal array."),
+            ([1, 2, np.nan], 1, 2, None,
+             "Input array signal must be finite."),
+            ([1, 2, 3], 1, 2, [1, 2, np.nan],
+             "Input array weights must be finite."),
+            ([1, 2, np.nan], 1, 2, [1, 2, 3],
+             "Input array weights must be zero for all non-finite"),
         ])
 def test_whittaker_raises(signal, lamb, order, weights, msg):
     """Test that whittaker raises errors."""
@@ -115,3 +121,26 @@ def test_whittaker_weights():
     # Multiplying penalty and weights by the same number does not change the result.
     x3 = whittaker_henderson(signal, lamb=3, weights=3*w)
     assert_allclose(x3, x1)
+
+
+def test_whittaker_zero_weight_interpolation():
+    """Test that whittaker interpolates where weights are zero."""
+    n = 100
+    signal = np.sin(2*np.pi * np.linspace(0, 1, n))
+    signal[50:] += 2
+    w = np.ones_like(signal)
+    signal[40:60] = np.nan  # value does not matter, np.nan to check arg validation
+    w[40:60] = 0
+    # Note: interpolation is a polynomial of degree = 2 * order - 1.
+
+    # order = 1 => linear interpolation
+    x = whittaker_henderson(signal, lamb=1, order=1, weights=w)
+    interp = np.interp(np.arange(40, 60), [39, 60], [x[39], x[60]])
+    assert_allclose(x[40:60], interp)
+
+    # order = 2 => cubic interpolation
+    x = whittaker_henderson(signal, lamb=1, order=2, weights=w)
+    poly = np.polynomial.Polynomial.fit(
+        x=[38, 39, 60, 61], y=[x[38], x[39], x[60], x[61]], deg=3
+    )
+    assert_allclose(x[40:60], poly(np.arange(40, 60)))

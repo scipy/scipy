@@ -22,8 +22,8 @@ def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
     Parameters
     ----------
     signal : ndarray
-        A rank-1 array at least of length 3 representing equidistant data points of a
-        signal, e.g. a time series with constant time lag.
+        A rank-1 array at least of length `order + 1` representing equidistant data
+        points of a signal, e.g. a time series with constant time lag.
     
     lamb : float, optional
         Smoothing or penalty parameter, default is 0.0.
@@ -70,20 +70,33 @@ def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
 
     signal = np.asarray(signal)
     if signal.ndim != 1:
-        msg = f"Input signal array must be of shape (n,); got {signal.shape}"
+        msg = f"Input array signal must be of shape (n,); got {signal.shape}"
         raise ValueError(msg)
 
     n = signal.shape[0]
     if n < order + 1:
-        msg = f"Input signal array must be at least of shape ({order + 1},); got {n}."
+        msg = f"Input array signal must be at least of shape ({order + 1},); got {n}."
         raise ValueError(msg)
 
     if weights is not None:
         weights = np.asarray(weights)
         if weights.shape != signal.shape:
-            msg = "Parameter weights must have the same shape as the signal array."
+            msg = "Input array weights must have the same shape as the signal array."
             raise ValueError(msg)
-
+        
+    if weights is None:
+        if not np.isfinite(signal).all():
+            raise ValueError("Input array signal must be finite.")
+    else:
+        if not np.isfinite(weights).all():
+            raise ValueError("Input array weights must be finite.")
+        if (mask := ~np.isfinite(signal)).any():
+            # Only weights * y matter in the end and weights must be 0 for all
+            # non-finite elements of signal.
+            if not (weights[mask] == 0).all():
+                raise ValueError("Input array weights must be zero for all non-finite "
+                                 "elements of signal.")
+            signal = np.nan_to_num(signal)
 
     if lamb < 0:
         msg = f"Parameter lamb must be non-negative; got {lamb=}."
