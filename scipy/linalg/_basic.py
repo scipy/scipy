@@ -63,8 +63,107 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
+
+def solve(a, b, overwrite_a=False,
+          overwrite_b=False, check_finite=True, assume_a=None):
+    '''
+    # Flags for 1-D or N-D right-hand side
+    b_is_1D = False
+
+    # check finite after determining structure
+    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
+    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)
+    n = a1.shape[0]
+
+    overwrite_a = overwrite_a or _datacopied(a1, a)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
+
+    if a1.shape[0] != a1.shape[1]:
+        raise ValueError('Input a needs to be a square matrix.')
+
+    if n != b1.shape[0]:
+        # Last chance to catch 1x1 scalar a and 1-D b arrays
+        if not (n == 1 and b1.size != 0):
+            raise ValueError('Input b has to have same number of rows as '
+                             'input a')
+    '''
+    breakpoint()
+
+    a1 = _asarray_validated(a, check_finite=check_finite)
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
+
+    if a1.ndim < 2:
+        raise ValueError(f"Expected at least ndim=2, got {a1.ndim=}")
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError(f"Expected square matrix, got {a1.shape=}")
+
+    b1 = _asarray_validated(b, check_finite=check_finite)
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
+
+    if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
+        overwrite_a = True
+        a1 = a1.copy()
+
+    if not (b1.flags['ALIGNED'] or b1.dtype.byteorder == '='):
+        overwrite_a = True
+        b1 = b1.copy()
+
+    # align the shape of b with a: 1. make b1 at least 2D
+    b_is_1D = b1.ndim == 1
+    if b_is_1D:
+        b1 = b1[:, None]
+
+    n = a1.shape[-1]
+    if b1.shape[-2] != n:
+        raise ValueError(f"incompatible shapes: {a1.shape=} and {b1.shape=}")
+
+    # 2. broadcast the batch dimensions of b1 and a1
+    batch_shape = np.broadcast_shapes(a1.shape[:-2], b1.shape[:-2])
+    a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
+    b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
+
+    print(f"{a1.shape=} {b1.shape=}  {b1.dtype} \n")
+
+
+    # 3. check a, b dtype, cast if needed  (b does not upcast a?)
+    # 4. check a, b flags, copy if needed
+    # 5. check empty a, b
+    # 6. fast path for a.size == 1
+    # 7. check b no more than 2D, k=0
+
+    # keep the numbers in sync with C
+    structure = {
+        None: -1,
+        'general': 0,
+        # 'diagonal': 11,
+        'upper triangular': 21,
+        'lower triangular': 22,
+        'pos def' : 101,
+        'pos def upper': 111,     # the "other" triangle is not referenced
+        'pos def lower': 112,
+    }[assume_a]
+
+    # heavy lifting
+    result = _batched_linalg._solve(a1, b1, structure)
+    x, is_ill_cond, is_singular, info = result
+
+    if info < 0:
+        raise ValueError("Internal LAPACK error.")
+    if is_singular:
+        raise LinAlgError("A singular matrix detected")
+    if is_ill_cond:
+        warnings.warn("An ill-conditioned matrix detected", LinAlgWarning, stacklevel=2)
+
+    if b_is_1D:
+        x = x[..., 0]
+    return x
+
+
+
+
 @_apply_over_batch(('a', 2), ('b', '1|2'))
-def solve(a, b, lower=False, overwrite_a=False,
+def solve0(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None,
           transposed=False):
     """

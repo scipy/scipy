@@ -66,7 +66,7 @@ template<> struct type_traits<double> {
 };
 template<> struct type_traits<npy_cfloat> {
     using real_type = float;
-    using value_type = std::complex<float>; 
+    using value_type = std::complex<float>;
     static constexpr int typenum = NPY_CFLOAT;
     static constexpr bool is_complex = true;
 };
@@ -78,7 +78,7 @@ template<> struct type_traits<npy_cdouble> {
 };
 
 
-/* 
+/*
  * Grab a real part of a possibly complex array.
  * This is for the work queries.
  */
@@ -92,16 +92,6 @@ inline float conj(float value){ return value; }
 inline double conj(double value){ return value; }
 inline npy_cfloat conj(npy_cfloat value){ return npy_cpackf(npy_crealf(value), -npy_cimagf(value)); }
 inline npy_cdouble conj(npy_cdouble value){return npy_cpack(npy_creal(value), -npy_cimag(value)); }
-
-
-/*
- *  abs : XXX no longer needed
- */
-inline float abs_(float x) {return fabsf(x);}
-inline double abs_(double x) {return fabs(x);}
-inline float abs_(npy_cfloat x) {return sqrtf(npy_crealf(x)*npy_crealf(x) + npy_cimagf(x)*npy_cimagf(x));}
-inline double abs_(npy_cdouble x) {return sqrt(npy_creal(x)*npy_creal(x) + npy_cimag(x)*npy_cimag(x));}
-
 
 
 /*

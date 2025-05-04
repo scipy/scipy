@@ -69,6 +69,13 @@ BLAS_FUNC(zgetri)(CBLAS_INT *n, npy_cdouble a[], CBLAS_INT *lda, CBLAS_INT ipiv[
 );
 
 
+/* ?GETRS */
+void BLAS_FUNC(sgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, CBLAS_INT *ipiv, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zgetrs)(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, CBLAS_INT *ipiv, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
+
 /* ?GECON */
 void BLAS_FUNC(sgecon)(char* norm, CBLAS_INT* n, float* a,       CBLAS_INT* lda, float* anorm,  float* rcond,  float* work,       CBLAS_INT* iwork, CBLAS_INT* info);
 void BLAS_FUNC(dgecon)(char* norm, CBLAS_INT* n, double* a,      CBLAS_INT* lda, double* anorm, double* rcond, double* work,      CBLAS_INT* iwork, CBLAS_INT* info);
@@ -88,6 +95,12 @@ void BLAS_FUNC(dtrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, double 
 void BLAS_FUNC(ctrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_cfloat *a, CBLAS_INT *lda, float *rcond, npy_cfloat *work, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(ztrcon)(char *norm, char *uplo, char *diag, CBLAS_INT *n, npy_cdouble *a, CBLAS_INT *lda, double *rcond, npy_cdouble *work, double *rwork, CBLAS_INT *info);
 
+/* ?TRTRS */
+void BLAS_FUNC(strtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dtrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(ctrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(ztrtrs)(char *uplo, char *trans, char *diag, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
 /* ?POTRF */
 void BLAS_FUNC(spotrf)(char *uplo, CBLAS_INT *n, float *a, CBLAS_INT *lda, CBLAS_INT *info);
 void BLAS_FUNC(dpotrf)(char *uplo, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *info);
@@ -105,6 +118,13 @@ void BLAS_FUNC(spocon)(char *uplo, CBLAS_INT *n, float* a, CBLAS_INT *lda, float
 void BLAS_FUNC(dpocon)(char *uplo, CBLAS_INT *n, double* a, CBLAS_INT *lda, double *anorm, double *rcond, double* work, CBLAS_INT* iwork, CBLAS_INT *info);
 void BLAS_FUNC(cpocon)(char *uplo, CBLAS_INT *n, npy_cfloat* a, CBLAS_INT *lda, float *anorm, float *rcond, npy_cfloat* work, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(zpocon)(char *uplo, CBLAS_INT *n, npy_cdouble* a, CBLAS_INT *lda, double *anorm, double *rcond, npy_cdouble* work, double *rwork, CBLAS_INT *info);
+
+/* ?POSV*/
+void BLAS_FUNC(sposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
 
 } // extern "C"
 
@@ -124,6 +144,20 @@ GEN_GETRF(s,float)
 GEN_GETRF(d,double)
 GEN_GETRF(c,npy_cfloat)
 GEN_GETRF(z,npy_cdouble)
+
+
+#define GEN_GETRS(PREFIX, TYPE) \
+inline void \
+getrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## getrs)(trans, n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_GETRS(s,float)
+GEN_GETRS(d,double)
+GEN_GETRS(c,npy_cfloat)
+GEN_GETRS(z,npy_cdouble)
+
 
 #define GEN_GETRI(PREFIX, TYPE) \
 inline void \
@@ -178,6 +212,19 @@ GEN_TRCON(c, npy_cfloat, float, float)
 GEN_TRCON(z, npy_cdouble, double, double)
 
 
+#define GEN_TRTRS(PREFIX, TYPE) \
+inline void \
+trtrs(char* uplo, char *trans, char *diag, CBLAS_INT* n, CBLAS_INT* nrhs, TYPE* a, CBLAS_INT* lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT *info) \
+{ \
+    BLAS_FUNC(PREFIX ## trtrs)(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info); \
+};
+
+GEN_TRTRS(s, float)
+GEN_TRTRS(d, double)
+GEN_TRTRS(c, npy_cfloat)
+GEN_TRTRS(z, npy_cdouble)
+
+
 #define GEN_POTRF(PREFIX, TYPE) \
 inline void \
 potrf(char* uplo, CBLAS_INT* n, TYPE* a, CBLAS_INT* lda, CBLAS_INT* info) \
@@ -216,6 +263,34 @@ GEN_POCON(s, float, float, CBLAS_INT)
 GEN_POCON(d, double, double, CBLAS_INT)
 GEN_POCON(c, npy_cfloat, float, float)
 GEN_POCON(z, npy_cdouble, double, double)
+
+
+#define GEN_POSV(PREFIX, TYPE) \
+inline void \
+posv(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## posv)(uplo, n, nrhs, a, lda, b, ldb, info); \
+};
+
+GEN_POSV(s, float)
+GEN_POSV(d, double)
+GEN_POSV(c, npy_cfloat)
+GEN_POSV(z, npy_cdouble)
+
+
+#define GEN_GESV(PREFIX, TYPE) \
+inline void \
+gesv(CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## gesv)(n, nrhs, a, lda, ipiv, b, ldb, info); \
+};
+
+GEN_GESV(s, float)
+GEN_GESV(d, double)
+GEN_GESV(c, npy_cfloat)
+GEN_GESV(z, npy_cdouble)
+
+
 
 
 /*
@@ -266,7 +341,7 @@ norm1_sym_herm_upper(T* A, T* work, const npy_intp n)
             temp = std::abs(pA[i*n + j]);
             rwork[j] += temp;
             rwork[i] += temp;
-        } 
+        }
     }
     temp = 0.0;
     for (i = 0; i < n; i++) { if (rwork[i] > temp) { temp = rwork[i]; } }
@@ -309,7 +384,7 @@ norm1_sym_herm(char uplo, T *A, T *work, const npy_intp n) {
     // NB: transpose for the F order
     if (uplo == 'U') {return norm1_sym_herm_lower(A, work, n);}
     else if (uplo == 'L') {return norm1_sym_herm_upper(A, work, n);}
-    else {throw std::runtime_error("uplo at norms");} 
+    else {throw std::runtime_error("uplo at norms");}
 }
 
 
