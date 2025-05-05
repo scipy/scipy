@@ -12,9 +12,8 @@ from scipy._lib._array_api_no_0d import xp_assert_equal as xp_assert_equal_no_0d
 from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 
-lazy_xp_function(_asarray, static_argnames=(
-                 "dtype", "order", "copy", "xp", "check_finite", "subok"))
-lazy_xp_function(xp_copy, static_argnames=("xp", ))
+lazy_xp_function(_asarray)
+lazy_xp_function(xp_copy)
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],

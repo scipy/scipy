@@ -678,7 +678,7 @@ def _make_sphinx_capabilities(
     # xpx.lazy_xp_backends kwargs
     allow_dask_compute=False, jax_jit=True,
     # unused in documentation
-    reason=None, static_argnums=None, static_argnames=None,
+    reason=None,
 ):
     exceptions = set(exceptions)
 
@@ -752,7 +752,6 @@ def xp_capabilities(
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
     allow_dask_compute=False, jax_jit=True,
-    static_argnums=None, static_argnames=None,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -783,8 +782,6 @@ def xp_capabilities(
         exceptions=exceptions,
         allow_dask_compute=allow_dask_compute,
         jax_jit=jax_jit,
-        static_argnums=static_argnums,
-        static_argnames=static_argnames,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
@@ -828,8 +825,7 @@ def _make_xp_pytest_marks(*funcs, capabilities_table=None):
             marks.append(pytest.mark.xfail_xp_backends(mod_name, reason=reason))
 
         lazy_kwargs = {k: capabilities[k]
-                       for k in ('allow_dask_compute', 'jax_jit',
-                                 'static_argnums', 'static_argnames')}
+                       for k in ('allow_dask_compute', 'jax_jit')}
         lazy_xp_function(func, **lazy_kwargs)
 
     return marks
