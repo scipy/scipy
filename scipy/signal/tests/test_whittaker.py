@@ -2,7 +2,32 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import whittaker_henderson
-from scipy.signal._whittaker import _solve_WH_banded, _solve_WH_order2_fast
+from scipy.signal._whittaker import (
+    _solveh_banded, _solve_WH_banded, _solve_WH_order2_fast
+)
+from scipy.stats import special_ortho_group
+
+
+def test_solveh_banded():
+    n = 10
+    # construct positive definite matrix A
+    Q = special_ortho_group(n, seed=1234).rvs()
+    A = Q @ np.diag(1 + np.arange(n)) @ Q.T
+    b = np.arange(n)
+    ab = np.zeros((n, n))
+    ab[0, :] = np.diagonal(A, 0)
+    for i in range(1, n):
+        ab[i, :-i] = np.diagonal(A, i)
+    x, logdet = _solveh_banded(ab, b, calc_logdet=True)
+    assert_allclose(x, np.linalg.solve(A, b))
+    assert_allclose(logdet, np.log(np.linalg.det(A)))
+
+    # tridiagonal case
+    x, logdet = _solveh_banded(ab[:2], b, calc_logdet=True)
+    A_tri = (
+        np.diag(np.diag(A)) + np.diag(np.diag(A, -1), -1) + np.diag(np.diag(A, 1), 1)
+    )
+    assert_allclose(logdet, np.log(np.linalg.det(A_tri)))
 
 
 @pytest.mark.parametrize(
@@ -68,7 +93,7 @@ def test_whittaker_direct_vs_fast_order2(n):
     """Test equivalent results"""
     rng = np.random.default_rng(42)
     signal = np.sin(2 * np.pi * np.linspace(0, 1, n)) + rng.standard_normal(n)
-    x1 = _solve_WH_banded(signal, lamb=1.23, order=2)
+    x1, _ = _solve_WH_banded(signal, lamb=1.23, order=2)
     x2 = _solve_WH_order2_fast(signal, lamb=1.23)
     assert_allclose(x1, x2)
 

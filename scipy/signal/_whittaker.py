@@ -1,13 +1,69 @@
 import numpy as np
-from scipy.linalg import solveh_banded
-
+from scipy.linalg import LinAlgError
+from scipy.linalg.lapack import get_lapack_funcs
 
 # TODO:
 # 1) C code for _solve_WH_order2_fast
 # 2) GCV for lamb
 # 3) 2-d, maybe even 3-d WH smoothing
 
-def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
+
+def _solveh_banded(ab, b, calc_logdet=False):
+    """
+    Solve equation a x = b. a is Hermitian positive-definite banded matrix.
+
+    Same as scipy.linalg.solveh_banded(lower=True, check_finite=False), but:
+    - also returns the log of the determinant
+    - no input validation
+    - only real values, no complex
+    - only `lower = True` code path
+    - always overwrite_XX = False
+    - b only a 1-dim array
+
+    Parameters
+    ----------
+    ab : (``u`` + 1, M) array_like
+        Banded matrix
+    b : (M,) array_like
+        Right-hand side
+
+    Returns
+    -------
+    x : (M,) ndarray
+        The solution to the system ``a x = b``. Shape of return matches shape of `b`.
+    logdet : float
+        Logarithm of the determinant of `ab`.
+    """
+    a1 = ab
+    b1 = b
+    overwrite_b = False
+    overwrite_ab = False
+    logdet = 0
+
+    if a1.shape[0] == 2:
+        ptsv, = get_lapack_funcs(("ptsv",), (a1, b1))
+        # We assume lower=True and real arrays
+        d = a1[0, :]
+        e = a1[1, :-1]
+        # ptsv uses LDL', returnes d=diag(D), du=diag(L, -1)
+        d, du, x, info = ptsv(d, e, b1, overwrite_ab, overwrite_ab, overwrite_b)
+        if calc_logdet:
+            logdet = np.log(d).sum()
+    else:
+        pbsv, = get_lapack_funcs(("pbsv",), (a1, b1))
+        # pbsv uses Cholesky LL', returns c=L in ab-storage format
+        c, x, info = pbsv(a1, b1, lower=True, overwrite_ab=overwrite_ab,
+                          overwrite_b=overwrite_b)
+        if calc_logdet:
+            logdet = 2 * np.log(c[0, :]).sum()
+    if info > 0:
+        raise LinAlgError(f"{info}th leading minor not positive definite")
+    if info < 0:
+        raise ValueError(f"illegal value in {-info}th argument of internal pbsv")
+    return x, logdet
+
+
+def whittaker_henderson(signal, lamb=1.0, order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
@@ -107,10 +163,11 @@ def whittaker_henderson(signal, lamb = 1.0, order=2, weights=None):
         x = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
         # If performance matters and p == 2, think about a C++/Pybind implementation of
         # x = _solve_WH_order2_fast(signal, lamb=lamb)
+        x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
     return x
 
 
-def _solve_WH_banded(y, lamb, order=2, weights=None):
+def _solve_WH_banded(y, lamb, order=2, weights=None, calc_logdet=False):
     """Solve the WH optimization problem directly with matrices."""
     n = y.shape[0]  # n >= p + 1 was already checked
     p = order  # order of difference penalty
@@ -139,11 +196,11 @@ def _solve_WH_banded(y, lamb, order=2, weights=None):
         ])
     if weights is None:
         ab[0, :] += 1.0  # This corresponds to np.eye(n).
-        x = solveh_banded(ab, y, lower=True)
+        x, logdet = _solveh_banded(ab, y, calc_logdet=calc_logdet)
     else:
         ab[0, :] += weights
-        x = solveh_banded(ab, weights * y, lower=True)
-    return x
+        x, logdet = _solveh_banded(ab, weights * y, calc_logdet=calc_logdet)
+    return x, logdet
 
 
 def _solve_WH_order2_fast(y, lamb):
