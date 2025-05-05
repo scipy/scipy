@@ -74,8 +74,10 @@ def laplacian(
         Specifies the method used to compute vertex degrees:
 
         * 'degree' is standard degree calculation using edge weights;
-        * 'use_abs' use absolute values of edge weights to prevent cancellation
-          in signed graphs.
+        * 'use_abs' computes the degree using absolute values of edge weights.
+          This prevents cancellation of positive and negative edge weights in
+          signed graphs, as described in Kunegis et al (2010).
+          https://www.researchgate.net/publication/220906703_Spectral_Analysis_of_Signed_Graphs_for_Clustering_Prediction_and_Visualization
 
         Default: 'degree'.
 
