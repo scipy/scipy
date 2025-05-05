@@ -14,7 +14,7 @@ despite having a maintained upstream. This is usually either because:
 
 2. Code has been copied into SciPy and modified since.
     (It is possible that some of these parts will see patches contributed upstream and
-become git submodules or be moved under ``subprojects`` in the future.)
+    become git submodules or be moved under ``subprojects`` in the future.)
 
 Maintainers should be careful to *not* accept contributions
 (especially trivial changes) into parts of SciPy where the code is actively maintained
