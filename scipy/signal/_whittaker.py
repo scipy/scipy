@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+from scipy.special import binom
 
 # TODO:
 # 1) C code for _solve_WH_order2_fast
@@ -275,3 +276,64 @@ def _solve_WH_order2_fast(y, lamb):
     for i in range(n-3, -1, -1):
         x[i] = b[i] + e[i] * x[i+1] - f[i] * x[i+2]
     return x
+
+
+def _logdet_difference_matrix(order, n):
+    """Logarithm of the determinant of the difference matrix.
+
+    If D is the difference matrix of order=p, then this computes `log det(D @ D.T)`
+    which equals the log of the sum of non-zero eigenvalues of `D.T @ D`.
+    """
+    # product of eigenvalues =
+    # prod(binom(n+i-1, 2i-1), i=1..p) / prod(binom(2i, i), i=1..p-1)
+    # How to derive this formula? Well, ... some magic.
+    p = order
+    if order == 1:
+        return np.log(n)
+    logdet = 0.0
+    for i in range(1, p+1):
+        logdet += np.log(binom(n + i - 1, 2*i - 1) / binom(2*i, i)) 
+    logdet += np.log(binom(2*p, p))
+    return logdet
+
+
+def _reml(lamb, y, order, weights=None):
+    """Calculate the restictricted maximum likelihood (REML).
+    
+    Parameters
+    ----------
+    lamb : penalty
+
+    y : signal
+
+    x : smoothed signal
+
+    order : oder of the difference penalty.
+
+    weights : case weights
+
+    Returns
+    -------
+    reml : REML criterion
+
+    References
+    ----------
+    - Biessy https://arxiv.org/abs/2306.06932
+    - Wood https://doi.org/10.1111/j.1467-9868.2010.00749.x
+    """
+    n = y.shape[0]
+    x, logdet = _solve_WH_banded(
+        y=y, lamb=lamb, order=order, weights=weights, calc_logdet=True
+    )
+    logdet_M = _logdet_difference_matrix(order=order, n=n)
+    # Eq 12 of Biessy, but only terms depending on lambda.
+    residual = y - x
+    if weights is None:
+        reml = residual @ residual
+    else:
+        reml = residual @ (weights * residual)
+    reml += lamb * np.sum(np.diff(x, n=order)**2)  # +theta P theta
+    reml -= (n - order) * np.log(lamb) + logdet_M  # -ln|P|
+    reml += logdet  # +ln|W+P|
+    reml *= -0.5
+    return reml
