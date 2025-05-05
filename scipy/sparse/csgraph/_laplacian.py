@@ -76,8 +76,7 @@ def laplacian(
         * 'degree' is standard degree calculation using edge weights;
         * 'use_abs' computes the degree using absolute values of edge weights.
           This prevents cancellation of positive and negative edge weights in
-          signed graphs, as described in Kunegis et al (2010).
-          https://www.researchgate.net/publication/220906703_Spectral_Analysis_of_Signed_Graphs_for_Clustering_Prediction_and_Visualization
+          signed graphs, as described in [2].
 
         Default: 'degree'.
 
@@ -126,6 +125,10 @@ def laplacian(
     References
     ----------
     .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
+    .. [2] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch and Jürgen Lerner and Ernesto W. De Luca and Sahin Albayrak. (2010).
+           Spectral Analysis of Signed Graphs for Clustering, Prediction and Visualization.
+           In Proceedings of the 2010 SIAM International Conference on Data Mining (SDM), 559-570.
+           https://doi.org/10.1137/1.9781611972801.49
 
     Examples
     --------
