@@ -16,7 +16,8 @@ def polyroots(coef, *, xp):
 
     root_func = getattr(xp, 'roots', None)
     if root_func:
-        # OK on numpy and jax, is broken on cupy
+        # NB: cupy.roots is broken in CuPy 13.x, but CuPy is handled via delegation
+        # so we never hit this code path with xp being cupy
         return root_func(coef)
 
     # companion matrix
@@ -39,8 +40,6 @@ def polyroots(coef, *, xp):
 def polyval(p, x, *, xp):
     """ Old-style polynomial, `np.polyval`
     """
-    p = xp.asarray(p)
-    x = xp.asarray(x)
     y = xp.zeros_like(x)
 
     for pv in p:
@@ -53,7 +52,6 @@ def polyval(p, x, *, xp):
 
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L845-L894
 def npp_polyval(x, c, *, xp, tensor=True):
-    c = xp.asarray(c, copy=None)
     c = xpx.atleast_nd(c, ndim=1, xp=xp)
     if isinstance(x, tuple | list):
         x = xp.asarray(x)
@@ -68,7 +66,6 @@ def npp_polyval(x, c, *, xp, tensor=True):
 
 # https://github.com/numpy/numpy/blob/v2.2.0/numpy/polynomial/polynomial.py#L758-L842
 def npp_polyvalfromroots(x, r, *, xp, tensor=True):
-    r = xp.asarray(r, copy=None)
     r = xpx.atleast_nd(r, ndim=1, xp=xp)
     # if r.dtype.char in '?bBhHiIlLqQpP':
     #    r = r.astype(np.double)

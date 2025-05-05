@@ -18,7 +18,7 @@ from scipy.signal import _polyutils as _pu
 
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
-    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax
+    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
 )
 from scipy._lib.array_api_compat import numpy as np_compat
 
@@ -132,14 +132,8 @@ def findfreqs(num, den, N, kind='ba'):
     else:
         raise ValueError("input must be one of {'ba', 'zp'}")
 
-    # XXX a use case for .astype("complex floating"), finally
-    if xp.isdtype(ep.dtype, 'real floating'):
-        tgt_dtype = xp.complex64 if ep.dtype == xp.float32 else xp.complex128
-        ep = xp.astype(ep, tgt_dtype)
-
-    if xp.isdtype(tz.dtype, 'real floating'):
-        tgt_dtype = xp.complex64 if tz.dtype == xp.float32 else xp.complex128
-        tz = xp.astype(tz, tgt_dtype)
+    ep = xp_float_to_complex(ep, xp=xp)
+    tz = xp_float_to_complex(tz, xp=xp)
 
     if ep.shape[0] == 0:
         ep = xp.asarray([-1000], dtype=ep.dtype)
@@ -154,6 +148,8 @@ def findfreqs(num, den, N, kind='ba'):
         xp.log10(xp.max(3*xp.abs(xp.real(ez) + integ) + 1.5*xp.imag(ez))) + 0.5
     )
 
+    # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
+    # depending on the the floating-point jitter in -1.5
     fudge = 1e-14 if is_jax(xp) else 0
     lfreq = xp.round(
         xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge

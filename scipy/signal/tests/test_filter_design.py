@@ -593,8 +593,7 @@ class TestFreqs:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
-    def test_w_or_N_types(self, xp):
+    def test_w_or_N_types(self):
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
@@ -663,8 +662,7 @@ class TestFreqs_zpk:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
-    def test_w_or_N_types(self, xp):
+    def test_w_or_N_types(self):
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
@@ -727,14 +725,13 @@ class TestFreqz:
             assert_array_almost_equal(w, expected_w)
             assert_array_almost_equal(h, h_whole)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
-    def test_basic3(self, xp):
-        t = xp.linspace(0, 1, 4, endpoint=False)
-        expected_w = xp.linspace(0, 2 * xp.pi, 4, endpoint=False)
+    def test_basic3(self):
+        t = np.linspace(0, 1, 4, endpoint=False)
+        expected_w = np.linspace(0, 2 * np.pi, 4, endpoint=False)
         for b, a, h_whole in zip(
-                (xp.asarray([1., 0, 0, 0]), xp.sin(2 * xp.pi * t)),
-                (xp.asarray([1., 0, 0, 0]), xp.asarray([0.5, 0, 0, 0])),
-                (xp.asarray([1., 1., 1., 1.]), xp.asarray([0, -4j, 0, 4j]))
+                (np.asarray([1., 0, 0, 0]), np.sin(2 * np.pi * t)),
+                (np.asarray([1., 0, 0, 0]), np.asarray([0.5, 0, 0, 0])),
+                (np.asarray([1., 1., 1., 1.]), np.asarray([0, -4j, 0, 4j]))
         ):
 
             w, h = freqz(b, a, worN=np.int32(4), whole=True)
@@ -857,7 +854,7 @@ class TestFreqz:
         b = np.random.rand(3, 5, 1)
         b = xp.asarray(b)
         for whole in [False, True]:
-            for worN in [16, 17, xp.linspace(0, 1, 10)]:   # FIXME
+            for worN in [16, 17, xp.linspace(0, 1, 10)]:
                 w, h = freqz(b, worN=worN, whole=whole)
                 for k in range(b.shape[1]):
                     bk = b[:, k, 0]
@@ -902,8 +899,7 @@ class TestFreqz:
                     xp_assert_close(ww, xp.reshape(worN, (-1,)), rtol=1e-14)
                     xp_assert_close(hh, xp.reshape(h[k, :, :], (-1,)))
 
-    @skip_xp_backends(np_only=True)
-    def test_backward_compat(self, xp):
+    def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default
         w1, h1 = freqz([1.0], 1)
         w2, h2 = freqz([1.0], 1, None)
@@ -949,8 +945,7 @@ class TestFreqz:
             xp_assert_close(h1, h2)
             xp_assert_close(w1, xp.asarray(w), check_dtype=False)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
-    def test_w_or_N_types(self, xp):
+    def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
         for N in (7, np.int8(7), np.int16(7), np.int32(7), np.int64(7),
                   np.array(7),
@@ -968,9 +963,9 @@ class TestFreqz:
         # Measure at frequency 8 Hz
         for w in (8.0, 8.0+0j):
             # Only makes sense when fs is specified
-            w_out, h = freqz(xp.asarray([1.0]), worN=w, fs=100)
-            assert_array_almost_equal(w_out, xp.asarray([8]))
-            assert_array_almost_equal(h, xp.asarray(1.), check_0d=False)
+            w_out, h = freqz(np.asarray([1.0]), worN=w, fs=100)
+            assert_array_almost_equal(w_out, np.asarray([8]))
+            assert_array_almost_equal(h, np.asarray(1.), check_0d=False)
 
     def test_nyquist(self, xp):
         w, h = freqz(xp.asarray([1.0]), worN=8, include_nyquist=True)
@@ -1009,7 +1004,6 @@ class TestFreqz:
         _, Dpoly = freqz(d, worN=w)
         xp_assert_close(Drfft, Dpoly)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             freqz([1.0], fs=np.array([10, 20]))
@@ -1259,7 +1253,6 @@ class TestFreqz_sos:
             xp_assert_close(h1, h2)
             xp_assert_close(w, w1, check_dtype=False)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
     def test_w_or_N_types(self):
         # Measure at 7 (polyval) or 8 (fft) equally-spaced points
         for N in (7, np.int8(7), np.int16(7), np.int32(7), np.int64(7),
@@ -1282,7 +1275,6 @@ class TestFreqz_sos:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         sos = butter(4, 0.2, output='sos')
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
@@ -1382,8 +1374,7 @@ class TestFreqz_zpk:
             xp_assert_close(h1, h2)
             xp_assert_close(w, w1, check_dtype=False)
 
-    @skip_xp_backends(np_only=True, reason="numpy scalars")
-    def test_w_or_N_types(self, xp):
+    def test_w_or_N_types(self):
         # Measure at 8 equally-spaced points
         for N in (8, np.int8(8), np.int16(8), np.int32(8), np.int64(8),
                   np.array(8)):
@@ -1403,7 +1394,6 @@ class TestFreqz_zpk:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             freqz_zpk([1.0], [1.0], [1.0], fs=np.array([10., 20]))
