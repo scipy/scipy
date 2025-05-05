@@ -5,7 +5,6 @@ from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_broadcast_promote,
-    xp_real,
     xp_copy,
     xp_float_to_complex,
 )
