@@ -3238,11 +3238,6 @@ class UnivariateDistribution(_ProbabilityDistribution):
         if standard_moment is None:
             return None
         var = self._moment_central_dispatch(2, methods=self._moment_methods, **params)
-        if np.any(var == 0):
-            # In degenerate cases where var == 0, ``method='normalize'`` will
-            # not work. To keep things simple for now, don't use this method at all
-            # even if only one entry from an array valued ``var`` is zero.
-            return None
         return standard_moment*var**(order/2)
 
     def _moment_central_general(self, order, **params):
