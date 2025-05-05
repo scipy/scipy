@@ -9,10 +9,11 @@ or are placed under the ``subprojects`` directory (or both).
 Other parts are not vendored as git submodules or under the ``subprojects`` directory,
 despite having a maintained upstream. This is usually either because:
 
-#. a subset of the upstream repo is vendored with a script.
-(It is possible that these parts will be moved under ``subprojects`` in the future.)
-#. Code has been copied into SciPy and modified since.
-(It is possible that some of these parts will see patches contributed upstream and
+1. a subset of the upstream repo is vendored with a script.
+    (It is possible that these parts will be moved under ``subprojects`` in the future.)
+
+2. Code has been copied into SciPy and modified since.
+    (It is possible that some of these parts will see patches contributed upstream and
 become git submodules or be moved under ``subprojects`` in the future.)
 
 Maintainers should be careful to *not* accept contributions
