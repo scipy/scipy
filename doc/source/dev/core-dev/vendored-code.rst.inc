@@ -8,6 +8,7 @@ or are placed under the ``subprojects`` directory (or both).
 
 Other parts are not vendored as git submodules or under the ``subprojects`` directory,
 despite having a maintained upstream. This is usually either because:
+
 #. a subset of the upstream repo is vendored with a script.
 (It is possible that these parts will be moved under ``subprojects`` in the future.)
 #. Code has been copied into SciPy and modified since.
@@ -19,6 +20,7 @@ Maintainers should be careful to *not* accept contributions
 upstream. Instead, they should direct contributors to the upstream repo.
 
 Parts of the codebase which are vendored with a script include:
+
 - PRIMA_, at ``scipy/_lib/pyprima``
 
 Parts of the codebase which contain code copied from an upstream include:
