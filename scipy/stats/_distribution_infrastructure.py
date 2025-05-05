@@ -3675,38 +3675,42 @@ class DiscreteDistribution(UnivariateDistribution):
         logcdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _logcdf, fill_value=-np.inf)
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
+    def _base_discrete_inversion(self, p, func, comp, /, **params):
+        # For discrete distributions, icdf(p) is defined as the minimum n
+        # such that cdf(n) >= p. iccdf(p) is defined as the minimum n such
+        # that ccdf(n) <= p, or equivalently as iccdf(p) = icdf(1 - p).
+
+        res = self._solve_bounded(func, p, params=params, xatol=0.9)
+        # First try to find where cdf(x) == p for the continuous extension of the
+        # cdf. res.xl and res.xr will be a bracket for this root. The parameter
+        # xatol in solve_bounded controls the bracket width. We thus know that
+        # know cdf(res.xr) >= p, cdf(res.xl) <= p, and |res.xr - res.xl| <= 0.9.
+        # This means the minimum integer n such that cdf(n) >= p is either floor(x)
+        # or floor(x) + 1.
+        res, fr = np.asarray(np.floor(res.xr)), res.fr
+        # xr is a bracket endpoint, and will usually be a finite value even when
+        # the computed result should be nan. We need to explicitly handle this
+        # case.
+        res[np.isnan(fr)] = np.nan
+        # comp should be <= for ccdf, >= for cdf.
+        res = np.where(comp(func(res, **params), p), res, res + 1.0)
+        return res[()]
+
     def _icdf_inversion(self, x, **params):
-        # For discrete distributions, icdf(p) is defined as the minimum x
-        # such that cdf(x) >= p.
-        # np.nextafter(xatol
-        res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=0.9)
-        res = np.where(res.fun >= 0, np.floor(res.x), np.ceil(res.x))
-        # If cdf(res) < x, then the true result must be one greater.
-        res = np.where(self.cdf(res) >= x, res, res + 1.0)
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._cdf_dispatch,
+                                             np.greater_equal, **params)
 
     def _ilogcdf_inversion(self, x, **params):
-        # follows same logic as _icdf_inversion
-        res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=0.9)
-        res = np.where(res.fun >= 0, np.floor(res.x), np.ceil(res.x))
-        res = np.where(self.logcdf(res) >= x, res, res + 1.0)
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._logcdf_dispatch,
+                                             np.greater_equal, **params)
 
     def _iccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=0.9)
-        res = np.where(res.fun <= 0, np.floor(res.x), np.ceil(res.x))
-        res = np.where(self.ccdf(res) <= x, res, res + 1.0)
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._ccdf_dispatch,
+                                             np.less_equal, **params)
 
     def _ilogccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=0.9)
-        res = np.where(res.fun <= 0, np.floor(res.x), np.ceil(res.x))
-        res = np.where(self.logccdf(res) <= x, res, res + 1.0)
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._logccdf_dispatch,
+                                             np.less_equal, **params)
 
     def _mode_optimization(self, **params):
         # If `x` is the true mode of a unimodal continuous function, we can find
