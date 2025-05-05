@@ -747,7 +747,7 @@ class TestMMIOCoordinate:
     @pytest.mark.parametrize("precision_type", [int, np.int32, np.int64, np.array])
     def test_precision(self, precision_type):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
-        test_precisions = range(1, 15)
+        test_precisions = range(1, 16)
         for value in test_values:
             for precision in test_precisions:
                 # construct sparse matrix with test value at last main diagonal
@@ -762,7 +762,7 @@ class TestMMIOCoordinate:
                 assert_array_equal(A.col, [n-1])
                 assert_allclose(A.data, [float(f'{value:.{precision}g}')])
 
-    @pytest.mark.parametrize("precision", [-1, 0, 16])
+    @pytest.mark.parametrize("precision", [-1, 0, 17])
     def test_invalid_precision_range(self, precision):
         A = scipy.sparse.dok_array((2, 2))
         with pytest.warns(FutureWarning,

@@ -391,7 +391,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         Number of digits to display for real or complex values.
     .. deprecated:: 1.16.0
         From SciPy 1.18.0, an exception will be thrown if the precision
-        input is outside the range of 1 to 15, because these values are
+        input is outside the range of 1 to 16, because these values are
         invalid.
     symmetry : None or str, optional
         Either 'AUTO', 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
