@@ -3728,15 +3728,9 @@ class DiscreteDistribution(UnivariateDistribution):
         # when clipping since `xo` will be one of `xl` or `xr`, but let's
         # keep the implementation simple for now.
         xo = np.clip(nearest + np.copysign(1, nearest - x), low, high)
-        fl = self._pmf_dispatch(xl, **params)
-        fr = self._pmf_dispatch(xr, **params)
-        fo = self._pmf_dispatch(xo, **params)
-        mode = np.asarray(xl)
-        comp1 = (fr > fl)
-        comp2 = (fo > fr)
-        mode[comp1 & ~comp2] = xr[comp1 & ~comp2]
-        mode[comp1 & comp2] = xo[comp1 & comp2]
-        return mode
+        x = np.stack([xl, xo, xr])
+        idx = np.argmax(self._pmf_dispatch(x, **params), axis=0)
+        return np.choose(idx, [xl, xo, xr])
 
     def _logentropy_quadrature(self, **params):
         def logintegrand(x, **params):
