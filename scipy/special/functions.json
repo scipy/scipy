@@ -166,9 +166,10 @@
         "_cdflib_wrappers.pxd": {
             "chndtrinc": "ddd->d"        }
     },
-    "chndtrix": {
-        "_cdflib_wrappers.pxd": {
-            "chndtrix": "ddd->d"        }
+    "chndtrix":{
+        "boost_special_functions.h++": {
+            "ncx2_ppf_float": "fff->f",
+            "ncx2_ppf_double": "ddd->d" }
     },
     "_factorial": {
 	"_factorial.pxd": {
@@ -770,12 +771,6 @@
         "boost_special_functions.h++": {
             "ncx2_pdf_float": "fff->f",
             "ncx2_pdf_double": "ddd->d"
-        }
-    },
-    "_ncx2_ppf": {
-        "boost_special_functions.h++": {
-            "ncx2_ppf_float": "fff->f",
-            "ncx2_ppf_double": "ddd->d"
         }
     },
     "_ncx2_sf": {

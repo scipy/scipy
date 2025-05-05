@@ -780,8 +780,35 @@ template<typename Real>
 Real
 ncx2_ppf_wrap(const Real x, const Real k, const Real l)
 {
-    return boost::math::quantile(
-        boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+    if (std::isnan(x) || std::isnan(k) || std::isnan(l)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || l < 0 || x > 1) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::quantile(
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrix", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrix", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrix", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrix", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
 }
 
 float

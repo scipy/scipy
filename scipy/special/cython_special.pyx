@@ -172,6 +172,7 @@ Available functions
 - :py:func:`~scipy.special.chndtrix`::
 
         double chndtrix(double, double, double)
+        float chndtrix(float, float, float)
 
 - :py:func:`~scipy.special.cosdg`::
 
@@ -1426,6 +1427,15 @@ cpdef df_number_t chndtr(df_number_t x0, df_number_t x1, df_number_t x2) noexcep
     else:
         return NAN
 
+cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtrix"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_ppf_double)(x0, x1, x2)
+    else:
+        return NAN
+
 from ._cdflib_wrappers cimport chndtridf as _func_chndtridf
 ctypedef double _proto_chndtridf_t(double, double, double) noexcept nogil
 cdef _proto_chndtridf_t *_proto_chndtridf_t_var = &_func_chndtridf
@@ -1433,10 +1443,6 @@ cdef _proto_chndtridf_t *_proto_chndtridf_t_var = &_func_chndtridf
 from ._cdflib_wrappers cimport chndtrinc as _func_chndtrinc
 ctypedef double _proto_chndtrinc_t(double, double, double) noexcept nogil
 cdef _proto_chndtrinc_t *_proto_chndtrinc_t_var = &_func_chndtrinc
-
-from ._cdflib_wrappers cimport chndtrix as _func_chndtrix
-ctypedef double _proto_chndtrix_t(double, double, double) noexcept nogil
-cdef _proto_chndtrix_t *_proto_chndtrix_t_var = &_func_chndtrix
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -2031,10 +2037,6 @@ cpdef double chndtridf(double x0, double x1, double x2) noexcept nogil:
 cpdef double chndtrinc(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.chndtrinc"""
     return _func_chndtrinc(x0, x1, x2)
-
-cpdef double chndtrix(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtrix"""
-    return _func_chndtrix(x0, x1, x2)
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""

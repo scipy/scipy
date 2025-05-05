@@ -7828,7 +7828,7 @@ class ncx2_gen(rv_continuous):
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return xpx.apply_where(nc != 0, (q, df, nc), scu._ncx2_ppf,
+            return xpx.apply_where(nc != 0, (q, df, nc), sc.chndtrix,
                                    lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
