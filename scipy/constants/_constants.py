@@ -225,7 +225,7 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
-@xp_capabilities()
+@xp_capabilities(static_argnames=("old_scale", "new_scale"))
 def convert_temperature(
     val: "npt.ArrayLike",
     old_scale: str,
