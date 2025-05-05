@@ -3,7 +3,8 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.signal import whittaker_henderson
 from scipy.signal._whittaker import (
-    _solveh_banded, _solve_WH_banded, _solve_WH_order2_fast
+    _logdet_difference_matrix, _reml, _solveh_banded, _solve_WH_banded,
+    _solve_WH_order2_fast,
 )
 from scipy.stats import special_ortho_group
 
@@ -28,6 +29,23 @@ def test_solveh_banded():
         np.diag(np.diag(A)) + np.diag(np.diag(A, -1), -1) + np.diag(np.diag(A, 1), 1)
     )
     assert_allclose(logdet, np.log(np.linalg.det(A_tri)))
+
+
+@pytest.mark.parametrize(
+        ["order", "n"],
+        [
+            (1, 2), (1, 10),
+            (2, 3), (2, 4), (2, 5), (2, 20),
+            (5, 6), (5, 7), (5, 10), (5, 20),
+            (6, 7), (6, 10), (6, 20),
+        ])
+def test_logdet_difference_matrix(order, n):
+    p = order
+    logdet = _logdet_difference_matrix(order=p, n=n)
+    D = np.diff(np.eye(n), n=p, axis=0)  # shape (n-p, n)
+    assert_allclose(logdet, np.log(np.linalg.det(D @ D.T)))
+    eigvals = np.linalg.eigvals(D.T @ D)
+    assert_allclose(logdet, np.sum(np.log(eigvals[eigvals > 1e-8])))
 
 
 @pytest.mark.parametrize(
@@ -169,3 +187,24 @@ def test_whittaker_zero_weight_interpolation():
         x=[38, 39, 60, 61], y=[x[38], x[39], x[60], x[61]], deg=3
     )
     assert_allclose(x[40:60], poly(np.arange(40, 60)))
+
+
+@pytest.mark.parametrize("order", [1, 2, 3])
+def test_reml_criterion(order):
+    la = 1.2345
+    n = 10
+    y = np.sin(2*np.pi * np.linspace(0, 1, n))
+    D = np.diff(np.eye(n), n=order, axis=0)
+    M = D.T @ D
+
+    def test_reml(la, y):
+        A = np.eye(n) + la * M
+        x = np.linalg.solve(A, y)
+        resid = y - x
+        return -0.5 * (resid @ resid + la * x @ M @ x
+                       - np.log(np.linalg.det(la * D @ D.T))
+                       + np.log(np.linalg.det(A)))
+
+    r1 = _reml(lamb=la, y=y, order=order)
+    r2 = test_reml(la=la, y=y)
+    assert_allclose(r1, r2)
