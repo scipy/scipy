@@ -459,7 +459,6 @@ def test_from_generic_rotvec(xp):
 
 @pytest.mark.array_api_backends
 def test_from_rotvec_small_angle(xp):
-    atol = 1e-7
     rotvec = xp.asarray([
         [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
         [0.2, 0.3, 0.4],
@@ -898,8 +897,8 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
         seq = seq.upper()
     rotation = Rotation.from_euler(seq, angles)
     angles_quat = rotation.as_euler(seq)
-    # TODO: Why are we using _as_euler_from_matrix here? As a sanity check? It is not part of the
-    # public API and should not be used anywhere else
+    # TODO: Why are we using _as_euler_from_matrix here? As a sanity check? It is not
+    # part of the public API and should not be used anywhere else
     angles_mat = rotation._as_euler_from_matrix(seq)
     xp_assert_close(angles, angles_quat, atol=0, rtol=1e-12)
     xp_assert_close(angles, angles_mat, atol=0, rtol=1e-12)
@@ -964,7 +963,8 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We can only warn on non-lazy backends because we'd need to condition on traced booleans
+    # We can only warn on non-lazy backends because we'd need to condition on traced
+    # booleans
     if is_lazy_array(mat_expected):
         angle_estimates = rotation.as_euler(seq, degrees=True)
     else:
@@ -998,7 +998,7 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     rotation = Rotation.from_euler(seq, angles, degrees=True)
     mat_expected = rotation.as_matrix()
 
-    # We can only warn on non-lazy backends because we'd need to condition on traced booleans
+    # We can only warn on non-lazy backends
     if is_lazy_array(mat_expected):
         angle_estimates = rotation.as_euler(seq, degrees=True)
     else:
@@ -1848,7 +1848,8 @@ def test_align_vectors_near_inf(xp):
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
 
-    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    # We jit these tests for JAX because the non-jitted version significantly slows down
+    # the test
     align_vectors = Rotation.align_vectors
     if is_jax(xp):
         import jax  # Must be installed because is_jax succeeds
@@ -1883,13 +1884,6 @@ def test_align_vectors_parallel(xp):
                              [-1, 0, 0],
                              [0, 0, 1]])
     R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
-    # We jit these tests for JAX because the non-jitted version significantly slows down the test
-    align_vectors = Rotation.align_vectors
-    if is_jax(xp):
-        import jax  # Must be installed because is_jax succeeds
-
-        align_vectors = jax.jit(Rotation.align_vectors)
-
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     R, _ = Rotation.align_vectors(a[0, ...], b[0, ...])
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
@@ -1914,7 +1908,8 @@ def test_align_vectors_antiparallel(xp):
                            [[0, 1, 0], [1, 0, 0]],
                            [[0, 0, 1], [0, 1, 0]]])
 
-    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    # We jit these tests for JAX because the non-jitted version significantly slows down
+    # the test
     align_vectors = Rotation.align_vectors
     if is_jax(xp):
         import jax  # Must be installed because is_jax succeeds
@@ -1949,7 +1944,8 @@ def test_align_vectors_primary_only(xp):
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
 
-    # We jit these tests for JAX because the non-jitted version significantly slows down the test
+    # We jit these tests for JAX because the non-jitted version significantly slows down
+    # the test
     align_vectors = Rotation.align_vectors
     if is_jax(xp):
         import jax  # Must be installed because is_jax succeeds
@@ -2184,7 +2180,7 @@ def test_slerp_call_scalar_time(xp):
     s = Slerp([0, 1], r)
 
     r_interpolated = s(0.25)
-    r_interpolated_expected = Rotation.from_euler('X', xp.asarray([20]), degrees=True)[0]
+    r_interpolated_expected = Rotation.from_euler('X', xp.asarray(20), degrees=True)
 
     delta = r_interpolated * r_interpolated_expected.inv()
 
@@ -2207,7 +2203,8 @@ def test_multiplication_stability(xp):
     rs = Rotation.from_quat(xp.asarray(rs.as_quat()))
     for q in qs:
         rs *= q * rs
-        xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), xp.asarray(1.0), check_shape=False)
+        xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), xp.asarray(1.0),
+                        check_shape=False)
 
 
 @pytest.mark.array_api_backends
@@ -2517,7 +2514,8 @@ def test_as_davenport_degenerate(xp):
                 with pytest.warns(UserWarning, match="Gimbal lock"):
                     angles_dav = rot.as_davenport(xp.asarray(ax), order)
             mat_expected = rot.as_matrix()
-            mat_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav).as_matrix()
+            rot_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav)
+            mat_estimated = rot_estimated.as_matrix()
             xp_assert_close(mat_expected, mat_estimated, atol=1e-12)
 
 def test_as_davenport_jax_compile():

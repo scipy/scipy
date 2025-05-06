@@ -7,7 +7,6 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_vector_norm,
     is_numpy,
-    is_jax,
     xp_assert_close,
 )
 import scipy._lib.array_api_extra as xpx
@@ -67,8 +66,10 @@ def test_from_rotation(xp):
     r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     tf = RigidTransform.from_rotation(r)
     xp_assert_close(tf.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
-    xp_assert_close(tf.as_matrix()[:, :3, 3], xp.asarray([[0.0, 0, 0], [0, 0, 0]]), atol=atol)
-    xp_assert_close(tf.as_matrix()[:, 3, :], xp.asarray([[0.0, 0, 0, 1], [0, 0, 0, 1]]), atol=atol)
+    xp_assert_close(tf.as_matrix()[:, :3, 3], xp.asarray([[0.0, 0, 0], [0, 0, 0]]),
+                    atol=atol)
+    xp_assert_close(tf.as_matrix()[:, 3, :], xp.asarray([[0.0, 0, 0, 1], [0, 0, 0, 1]]),
+                    atol=atol)
     assert not tf.single
 
 
@@ -410,8 +411,9 @@ def test_from_dual_quat(xp):
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # rotation and translation
-    # The tolerance is set to 1e-8, because xp_assert_close compares the absolute difference instead
-    # of numpy.testing.assert_allclose which compares to atol + rtol * abs(desired)
+    # The tolerance is set to 1e-8, because xp_assert_close compares the absolute
+    # difference instead of numpy.testing.assert_allclose which compares to
+    # atol + rtol * abs(desired)
     # See https://numpy.org/doc/2.2/reference/generated/numpy.testing.assert_allclose.html
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
@@ -456,7 +458,8 @@ def test_from_dual_quat(xp):
                     xp.asarray(0.0), atol=1e-8, check_0d=False)
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12, check_0d=False)
+    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12,
+                    check_0d=False)
     xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0), atol=1e-8,
                     check_0d=False)
 
@@ -465,24 +468,25 @@ def test_from_dual_quat(xp):
         [0.20824458, 0.75098079, 0.54542913, -0.30849493,  # unit norm
          -0.16051025, 0.10742978, 0.21277201, 0.20596935]  # not orthogonal
     )
-    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False)
+    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0),
+                    atol=1e-12, check_0d=False)
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12, check_0d=False)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0), atol=1e-12,
+    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12,
                     check_0d=False)
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0),
+                    atol=1e-12, check_0d=False)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
     unnormalized_dual_quat = xp.asarray(
         [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935])
-    assert xp.vecdot(xp.asarray([0.0, 0.0, 0.0, 1.0]), unnormalized_dual_quat[4:]) != 0.0
+    assert xp.vecdot(xp.asarray([0.0, 0, 0, 1]), unnormalized_dual_quat[4:]) != 0.0
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0), atol=1e-12,
-                    check_0d=False)
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0),
+                    atol=1e-12, check_0d=False)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
@@ -491,12 +495,14 @@ def test_from_dual_quat(xp):
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    random_dual_quats = xpx.at(random_dual_quats)[:, :4].set(random_dual_quats[:, :4] + 0.01)
-    assert not xp.any(xp.abs(xp_vector_norm(random_dual_quats[:, :4], axis=1) - 1.0) < 0.0001)
+    non_normal_dual_quats = random_dual_quats[:, :4] + 0.01
+    random_dual_quats = xpx.at(random_dual_quats)[:, :4].set(non_normal_dual_quats)
+    assert not xp.any(xp.abs(
+        xp_vector_norm(random_dual_quats[:, :4], axis=1) - 1.0) < 0.0001)
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False, check_shape=False)
+    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), xp.asarray(1.0),
+                    atol=1e-12, check_0d=False, check_shape=False)
 
     # compensation for precision loss in dual quaternion, results in violation
     # of orthogonality constraint
@@ -505,13 +511,14 @@ def test_from_dual_quat(xp):
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    random_dual_quats = xpx.at(random_dual_quats)[:, 4:].set(random_dual_quats[:, 4:] + 0.01)
+    non_normal_dual_quats = random_dual_quats[:, 4:] + 0.01
+    random_dual_quats = xpx.at(random_dual_quats)[:, 4:].set(non_normal_dual_quats)
     q_norm = xp.vecdot(random_dual_quats[:, :4], random_dual_quats[:, 4:])
     assert not xp.any(xp.abs(q_norm) < 0.0001)
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
-    xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]), xp.asarray(0.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
+    xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
+                    xp.asarray(0.0), atol=1e-12, check_0d=False, check_shape=False)
     xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
 
 
@@ -896,9 +903,10 @@ def test_indexing(xp):
     xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t, atol=atol)
 
     tf_masked = tf[xp.asarray([False, True])]
-    xp_assert_close(tf_masked.as_matrix()[:, :3, :3], r[xp.asarray([False, True])].as_matrix(),
+    xp_assert_close(tf_masked.as_matrix()[:, :3, :3],
+                    r[xp.asarray([False, True])].as_matrix(), atol=atol)
+    xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t[xp.asarray([False, True])],
                     atol=atol)
-    xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t[xp.asarray([False, True])], atol=atol)
 
     tf_masked = tf[xp.asarray([False, False])]
     assert len(tf_masked) == 0
@@ -1081,18 +1089,18 @@ def test_copy_flag(xp):
 @pytest.mark.array_api_backends
 def test_normalize_dual_quaternion(xp):
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
-    xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False, check_shape=False)
-    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:]), xp.asarray(0.0), atol=1e-12,
-                    check_0d=False, check_shape=False)
+    xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0),
+                    atol=1e-12, check_0d=False, check_shape=False)
+    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:]), xp.asarray(0.0),
+                    atol=1e-12, check_0d=False, check_shape=False)
 
     rng = np.random.default_rng(103213650)
     dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
     dual_quat = normalize_dual_quaternion(dual_quat)
-    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False, check_shape=False)
-    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), xp.asarray(0.0), atol=1e-12,
-                    check_0d=False, check_shape=False)
+    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), xp.asarray(1.0),
+                    atol=1e-12, check_0d=False, check_shape=False)
+    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), xp.asarray(0.0),
+                    atol=1e-12, check_0d=False, check_shape=False)
 
 
 def test_normalize_dual_quaternion_jax_compile():
@@ -1117,7 +1125,8 @@ def test_empty_transform_construction(xp):
     assert len(tf) == 0
     assert not tf.single
 
-    tf = RigidTransform.from_components(xp.empty((0, 3)), Rotation.from_quat(xp.zeros((0, 4))))
+    empty_rot = Rotation.from_quat(xp.zeros((0, 4)))
+    tf = RigidTransform.from_components(xp.empty((0, 3)), empty_rot)
     assert len(tf) == 0
     assert not tf.single
 
