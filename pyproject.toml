@@ -175,7 +175,8 @@ PKG_CONFIG_PATH = "{project}"
   ".spin/cmds.py:build",
   ".spin/cmds.py:test",
   ".spin/cmds.py:mypy",
-  ".spin/cmds.py:lint"
+  ".spin/cmds.py:lint",
+  "spin.cmds.pip.install"
 ]
 "Environments" = [
   "spin.cmds.meson.run",

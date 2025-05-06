@@ -205,32 +205,41 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     build_dir = os.path.abspath(kwargs['build_dir'])
     site_package_dir = get_site_packages(build_dir)
 
-    if site_package_dir is None and coverage:
-        raise FileNotFoundError(
-            "SciPy build not found, please execute "
-            "``spin build`` before calling ``spin test --coverage``. "
-            "We need it to figure out whether ``lcov`` can be called or not.")
-
-    if site_package_dir is not None:
-        with working_dir(site_package_dir):
-            sys.path.insert(0, site_package_dir)
-            os.environ['PYTHONPATH'] = \
-                os.pathsep.join((site_package_dir, os.environ.get('PYTHONPATH', '')))
-            was_built_with_gcov_flag = len(list(Path(build_dir).rglob("*.gcno"))) > 0
-            if was_built_with_gcov_flag:
-                config = importlib.import_module("scipy.__config__").show(mode='dicts')
-                compilers_config = config['Compilers']
-                cpp = compilers_config['c++']['name']
-                c = compilers_config['c']['name']
-                fortran = compilers_config['fortran']['name']
-                if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
-                    print("SciPy was built with --gcov flag which requires "
-                        "LCOV while running tests.\nFurther, LCOV usage "
-                        "requires GCC for C, C++ and Fortran codes in SciPy.\n"
-                        "Compilers used currently are:\n"
-                        f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
-                        "Therefore, exiting without running tests.")
-                    exit(1) # Exit because tests will give missing symbol error
+    if coverage:
+        if is_editable_install():
+            click.secho(
+                "Error: cannot generate coverage report for editable installs",
+                fg="bright_red",
+            )
+            raise SystemExit(1)
+        elif site_package_dir is None:
+            raise FileNotFoundError(
+                "SciPy build not found, please execute "
+                "``spin build`` before calling ``spin test --coverage``. "
+                "We need it to figure out whether ``lcov`` can be called or not.")
+        else:
+            # Check needed to ensure gcov functions correctly.
+            with working_dir(site_package_dir):
+                sys.path.insert(0, site_package_dir)
+                os.environ['PYTHONPATH'] = os.pathsep.join(
+                        (site_package_dir, os.environ.get('PYTHONPATH', '')))
+                was_built_with_gcov_flag = len(list(
+                    Path(build_dir).rglob("*.gcno"))) > 0
+                if was_built_with_gcov_flag:
+                    config = importlib.import_module(
+                            "scipy.__config__").show(mode='dicts')
+                    compilers_config = config['Compilers']
+                    cpp = compilers_config['c++']['name']
+                    c = compilers_config['c']['name']
+                    fortran = compilers_config['fortran']['name']
+                    if not (c == 'gcc' and cpp == 'gcc' and fortran == 'gcc'):
+                        print("SciPy was built with --gcov flag which requires "
+                            "LCOV while running tests.\nFurther, LCOV usage "
+                            "requires GCC for C, C++ and Fortran codes in SciPy.\n"
+                            "Compilers used currently are:\n"
+                            f"  C: {c}\n  C++: {cpp}\n  Fortran: {fortran}\n"
+                            "Therefore, exiting without running tests.")
+                        exit(1) # Exit because tests will give missing symbol error
 
     if submodule:
         tests = PROJECT_MODULE + "." + submodule
@@ -389,11 +398,18 @@ def working_dir(new_dir):
 def mypy(ctx, build_dir=None):
     """🦆 Run Mypy tests for SciPy
     """
-    click.secho(
-            "Invoking `build` prior to running mypy tests:",
-            bold=True, fg="bright_green"
+    if is_editable_install():
+        click.secho(
+            "Error: Mypy does not work (well) for editable installs",
+            fg="bright_red",
         )
-    ctx.invoke(build)
+        raise SystemExit(1)
+    else:
+        click.secho(
+                "Invoking `build` prior to running mypy tests:",
+                bold=True, fg="bright_green"
+            )
+        ctx.invoke(build)
 
     try:
         import mypy.api
@@ -405,9 +421,9 @@ def mypy(ctx, build_dir=None):
 
     build_dir = os.path.abspath(build_dir)
     root = Path(build_dir).parent
-    install_dir = meson._get_site_packages(build_dir)
     config = os.path.join(root, "mypy.ini")
     check_path = PROJECT_MODULE
+    install_dir = meson._get_site_packages(build_dir)
 
     with working_dir(install_dir):
         os.environ['MYPY_FORCE_COLOR'] = '1'
@@ -488,7 +504,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
 @meson.build_dir_option
 @click.pass_context
 def refguide_check(ctx, build_dir=None, *args, **kwargs):
-    """:wrench: Run refguide check."""
+    """🔧 Run refguide check."""
     click.secho(
             "Invoking `build` prior to running refguide-check:",
             bold=True, fg="bright_green"
@@ -588,12 +604,14 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
     help="Do not run cython-lint.")
 @click.pass_context
 def lint(ctx, fix, diff_against, files, all, no_cython):
-    """:dash: Run linter on modified files and check for
+    """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    root = Path(__file__).parent.parent
+    cmd_prefix = [sys.executable] if sys.platform == "win32" else []
 
-    cmd_lint = [os.path.join(root, 'tools', 'lint.py'),
-           f'--diff-against={diff_against}']
+    cmd_lint = cmd_prefix + [
+        os.path.join('tools', 'lint.py'),
+        f'--diff-against={diff_against}'
+    ]
     if files != "":
         cmd_lint += [f'--files={files}']
     if all:
@@ -604,10 +622,14 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         cmd_lint += ['--fix']
     util.run(cmd_lint)
 
-    cmd_unicode = [os.path.join(root, 'tools', 'check_unicode.py')]
+    cmd_unicode = cmd_prefix + [
+        os.path.join('tools', 'check_unicode.py')
+    ]
     util.run(cmd_unicode)
 
-    cmd_check_test_name = [os.path.join(root, 'tools', 'check_test_name.py')]
+    cmd_check_test_name = cmd_prefix + [
+        os.path.join('tools', 'check_test_name.py')
+    ]
     util.run(cmd_check_test_name)
 
 # From scipy: benchmarks/benchmarks/common.py
@@ -709,7 +731,7 @@ def _dirty_git_working_dir():
 @click.pass_context
 def bench(ctx, tests, submodule, compare, verbose, quick,
           commits, build_dir=None, *args, **kwargs):
-    """:wrench: Run benchmarks.
+    """🔧 Run benchmarks.
 
     \b
     ```python
@@ -1029,7 +1051,16 @@ def cpu_count(only_physical_cores=False):
     return aggregate_cpu_count
 
 def get_site_packages(build_dir):
+    """site-packages directory is path to installed in-tree build.
+
+    Returns None if `scipy` wasn't build at all.
+    Returns an empty string (from spin.meson call) for an editable install.
+    """
     try:
         return meson._get_site_packages(build_dir)
     except FileNotFoundError:
         return None
+
+
+def is_editable_install():
+    return meson._is_editable_install_of_same_source('scipy')
