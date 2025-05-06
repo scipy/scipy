@@ -18,6 +18,10 @@ import scipy._lib.array_api_extra as xpx
 import pickle
 import copy
 
+
+pytestmark = pytest.mark.skip_xp_backends(np_only=True)
+
+
 def basis_vec(axis):
     if axis == 'x':
         return [1, 0, 0]

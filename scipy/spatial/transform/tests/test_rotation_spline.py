@@ -11,6 +11,9 @@ from scipy.spatial.transform._rotation_spline import (
     _create_block_3_diagonal_matrix)
 
 
+pytestmark = pytest.mark.skip_xp_backends(np_only=True)
+
+
 def test_angular_rate_to_rotvec_conversions():
     np.random.seed(0)
     rv = np.random.randn(4, 3)

@@ -12,6 +12,9 @@ from scipy._lib._array_api import (
 import scipy._lib.array_api_extra as xpx
 
 
+pytestmark = pytest.mark.skip_xp_backends(np_only=True)
+
+
 def rotation_to_xp(r: Rotation, xp):
     return Rotation.from_quat(xp.asarray(r.as_quat()))
 
