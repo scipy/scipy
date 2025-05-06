@@ -1184,15 +1184,32 @@ def _cdf2_input_validation(f):
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
         x, y = x.astype(dtype, copy=True), y.astype(dtype, copy=True)
+        all_ood = (x < low) & (y < low) | (x > high) & (y > high)
+        swap = x > y
+
+        x[x < low] = low[x < low]
+        x[x > high] = high[x > high]
+        y[y > high] = high[y > high]
+        y[y < low] = low[y < low]
 
         res = f(self, x, y, *args, **kwargs)
+        if func_name in {'_cdf2', '_logccdf2'}:
+            fill_value = 0.
+        elif func_name == '_ccdf2':
+            fill_value = 1.
+        else:
+            fill_value = -np.inf
+
+        res = np.asarray(res)
+        res[(all_ood | swap) & ~np.isnan(res)] = fill_value
 
         # Clipping probability to [0, 1]
         if func_name in {'_cdf2', '_ccdf2'}:
             res = np.clip(res, 0., 1.)
         else:
             res = np.clip(res, None, 0.)  # exp(res) < 1
-        return np.asarray(res)[()]
+
+        return res
 
     return wrapped
 
