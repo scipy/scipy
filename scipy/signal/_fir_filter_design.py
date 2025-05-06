@@ -1,7 +1,6 @@
 """Functions for FIR filter design."""
 
 from math import ceil, log, log2
-import operator
 import warnings
 from typing import Literal
 
@@ -407,32 +406,29 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         beta = kaiser_beta(atten)
         window = ('kaiser', beta)
 
-    if isinstance(pass_zero, str):
-        if pass_zero in ('bandstop', 'lowpass'):
-            if pass_zero == 'lowpass':
-                if xp_size(cutoff) != 1:
-                    raise ValueError('cutoff must have one element if '
-                                     f'pass_zero=="lowpass", got {cutoff.shape}')
-            elif xp_size(cutoff) <= 1:
-                raise ValueError('cutoff must have at least two elements if '
-                                 f'pass_zero=="bandstop", got {cutoff.shape}')
-            pass_zero = True
-        elif pass_zero in ('bandpass', 'highpass'):
-            if pass_zero == 'highpass':
-                if xp_size(cutoff) != 1:
-                    raise ValueError('cutoff must have one element if '
-                                     f'pass_zero=="highpass", got {cutoff.shape}')
-            elif xp_size(cutoff) <= 1:
-                raise ValueError('cutoff must have at least two elements if '
-                                 f'pass_zero=="bandpass", got {cutoff.shape}')
-            pass_zero = False
-        else:
-            raise ValueError('pass_zero must be True, False, "bandpass", '
-                             '"lowpass", "highpass", or "bandstop", got '
-                             f'{pass_zero}')
-    pass_zero = bool(operator.index(pass_zero))  # ensure bool-like
+    if pass_zero in ('bandstop', 'lowpass'):
+        if pass_zero == 'lowpass':
+            if xp_size(cutoff) != 1:
+                raise ValueError('cutoff must have one element if '
+                                 f'pass_zero=="lowpass", got {cutoff.shape}')
+        elif xp_size(cutoff) <= 1:
+            raise ValueError('cutoff must have at least two elements if '
+                             f'pass_zero=="bandstop", got {cutoff.shape}')
+        pass_zero = True
+    elif pass_zero in ('bandpass', 'highpass'):
+        if pass_zero == 'highpass':
+            if xp_size(cutoff) != 1:
+                raise ValueError('cutoff must have one element if '
+                                 f'pass_zero=="highpass", got {cutoff.shape}')
+        elif xp_size(cutoff) <= 1:
+            raise ValueError('cutoff must have at least two elements if '
+                             f'pass_zero=="bandpass", got {cutoff.shape}')
+        pass_zero = False
+    elif not (pass_zero is True or pass_zero is False):
+        raise ValueError(f"Parameter {pass_zero=} not in (True, False, 'bandpass', " +
+                         "'lowpass', 'highpass', 'bandstop')")
 
-    pass_nyquist = bool(xp_size(cutoff) & 1) ^ pass_zero
+    pass_nyquist = (xp_size(cutoff) % 2 == 0) == pass_zero
     if pass_nyquist and numtaps % 2 == 0:
         raise ValueError("A filter with an even number of coefficients must "
                          "have zero response at the Nyquist frequency.")

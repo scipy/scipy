@@ -302,9 +302,9 @@ class TestFirWinMore:
     @skip_xp_backends(np_only=True)
     def test_bad_pass_zero(self):
         """Test degenerate pass_zero cases."""
-        with assert_raises(ValueError, match='pass_zero must be'):
+        with assert_raises(ValueError, match="^Parameter pass_zero='foo' not in "):
             firwin(41, 0.5, pass_zero='foo')
-        with assert_raises(TypeError, match='cannot be interpreted'):
+        with assert_raises(ValueError, match="^Parameter pass_zero=1.0 not in "):
             firwin(41, 0.5, pass_zero=1.)
         for pass_zero in ('lowpass', 'highpass'):
             with assert_raises(ValueError, match='cutoff must have one'):
