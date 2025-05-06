@@ -411,9 +411,9 @@ def test_from_dual_quat(xp):
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # rotation and translation
-    # The tolerance is set to 1e-8, because xp_assert_close compares the absolute
-    # difference instead of numpy.testing.assert_allclose which compares to
-    # atol + rtol * abs(desired)
+    # The tolerance is set to 1e-8 because xp_assert_close deviates from 
+    # np.testing.assert_allclose in that it does not automatically default to 1e-7 for
+    # floating point inputs.
     # See https://numpy.org/doc/2.2/reference/generated/numpy.testing.assert_allclose.html
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
