@@ -3649,29 +3649,32 @@ class DiscreteDistribution(UnivariateDistribution):
     def _logcdf2_quadrature(self, x, y, **params):
         return super()._logcdf2_quadrature(np.ceil(x), np.floor(y), **params)
 
-    def _cdf2_subtraction(self, x, y, **params):
+    def _cdf2_subtraction_base(self, x, y, func, **params):
         x_, y_ = np.floor(x), np.floor(y)
-        cdf_ymx = super()._cdf2_subtraction(x_, y_, **params)
+        cdf_ymx = func(x_, y_, **params)
         pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
         return cdf_ymx + pmf_x
+
+    def _logcdf2_subtraction_base(self, x, y, func, **params):
+        x_, y_ = np.floor(x), np.floor(y)
+        logcdf_ymx = func(x_, y_, **params)
+        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
+        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+
+    def _cdf2_subtraction(self, x, y, **params):
+        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction, **params)
 
     def _cdf2_subtraction_safe(self, x, y, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        cdf_ymx = super()._cdf2_subtraction_safe(x_, y_, **params)
-        pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
-        return cdf_ymx + pmf_x
+        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction_safe,
+                                           **params)
 
     def _logcdf2_subtraction(self, x, y, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        logcdf_ymx = super()._logcdf2_subtraction(x_, y_, **params)
-        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
-        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
+                                              **params)
 
     def _logcdf2_subtraction_safe(self, x, y, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        logcdf_ymx = super()._logcdf2_subtraction_safe(x_, y_, **params)
-        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
-        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
+                                              **params)
 
     def _ccdf2_addition(self, x, y, **params):
         a, _ = self._support(**params)
