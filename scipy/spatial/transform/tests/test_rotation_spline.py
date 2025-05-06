@@ -2,7 +2,6 @@ from itertools import product
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-from pytest import raises
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
     _angular_rate_to_rotvec_dot_matrix,
@@ -142,25 +141,31 @@ def test_spline_properties():
 
 
 def test_error_handling():
-    raises(ValueError, RotationSpline, [1.0], Rotation.random())
+    with pytest.raises(ValueError):
+        RotationSpline([1.0], Rotation.random())
 
     r = Rotation.random(10)
     t = np.arange(10).reshape(5, 2)
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(9)
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(10)
     t[5] = 0
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(10)
 
     s = RotationSpline(t, r)
-    raises(ValueError, s, 10, -1)
+    with pytest.raises(ValueError):
+        s(10, -1)
 
-    raises(ValueError, s, np.arange(10).reshape(5, 2))
+    with pytest.raises(ValueError):
+        s(np.arange(10).reshape(5, 2))
 
 
 @pytest.mark.skip_xp_backends("numpy")
@@ -168,10 +173,6 @@ def test_xp_errors(xp):
     times = xp.asarray([0, 10])
     r = Rotation.random(2)
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
-    raises(
-        TypeError,
-        RotationSpline,
-        times,
-        r,
-        match="RotationSpline does not support other Array API",
-    )
+    msg = "RotationSpline does not support other Array API"
+    with pytest.raises(TypeError, match=msg):
+        RotationSpline(times, r)
