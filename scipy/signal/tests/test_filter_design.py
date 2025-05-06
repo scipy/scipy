@@ -206,7 +206,6 @@ class TestTf2zpk:
         assert math.isclose(xp.real(k), 1.)
         assert k.dtype == dtyp
 
-    @skip_xp_backends(np_only=True)
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
         # filter coefficients.
@@ -599,7 +598,6 @@ class TestZpk2Sos:
         assert_array_almost_equal(sos_dt, sos2_dt, decimal=4)
         assert_array_almost_equal(xp.flip(sos_dt, axis=0), sos2_ct, decimal=4)
 
-    @skip_xp_backends(np_only=True)
     def test_bad_args(self):
         with pytest.raises(ValueError, match=r'pairing must be one of'):
             zpk2sos([1], [2], 1, pairing='no_such_pairing')
