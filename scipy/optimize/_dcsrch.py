@@ -480,7 +480,7 @@ class DCSRCH:
             self.stmax = stp + xtrapu * (stp - self.stx)
 
         # Force the step to be within the bounds stpmax and stpmin.
-        stp = np.clip(stp, self.stpmin, self.stpmax)
+        stp = max(min(stp, self.stpmax), self.stpmin)
 
         # If further progress is not possible, let stp be the best
         # point obtained during the search.
@@ -650,7 +650,9 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
 
         # The case gamma = 0 only arises if the cubic does not tend
         # to infinity in the direction of the step.
-        gamma = s * np.sqrt(max(0, (theta / s) ** 2 - (dx / s) * (dp / s)))
+        gamma = max(0, (theta / s) ** 2 - (dx / s) * (dp / s))
+        if gamma > 0:
+            gamma = s * np.sqrt(gamma)
         if stp > stx:
             gamma = -gamma
         p = (gamma - dp) + theta
@@ -685,7 +687,7 @@ def dcstep(stx, fx, dx, sty, fy, dy, stp, fp, dp, brackt, stpmin, stpmax):
                 stpf = stpc
             else:
                 stpf = stpq
-            stpf = np.clip(stpf, stpmin, stpmax)
+            stpf = max(min(stpf, stpmax), stpmin)
 
     else:
         # Fourth case: A lower function value, derivatives of the same sign,

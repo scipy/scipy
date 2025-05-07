@@ -41,7 +41,7 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt, _transition_to_rng)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote
+from scipy._lib._array_api import array_namespace, xp_capabilities, xp_promote, xp_result_type
 from scipy._lib import array_api_extra as xpx
 
 
@@ -1782,6 +1782,13 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     old_fval = f(x0)
     gfk = myfprime(x0)
 
+    dtype=xp_result_type(x0, force_floating=True, xp=array_namespace(x0))
+    for amin,amax in ((1e-100,1e100),(1e-30,1e30),(1e-4,1e4)):
+        if float(np.finfo(dtype).tiny) < amin and amax < float(np.finfo(dtype).max):
+            break
+    else:
+        raise ValueError(f'No good step bracket for {dtype}')
+
     k = 0
     xk = x0
     # Sets the initial step guess to dx ~ 1
@@ -1805,7 +1812,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
             if gfkp1 is None:
                 gfkp1 = myfprime(xkp1)
             yk = gfkp1 - gfk
-            beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            if deltak != 0:
+                beta_k = max(0, np.dot(yk, gfkp1) / deltak)
+            else:
+                beta_k = 1.            
             pkp1 = -gfkp1 + beta_k * pk
             gnorm = vecnorm(gfkp1, ord=norm)
             return (alpha, xkp1, pkp1, gfkp1, gnorm)
@@ -1830,8 +1840,8 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c1=c1, c2=c2, amin=1e-100,
-                                          amax=1e100, extra_condition=descent_condition)
+                                          old_old_fval, c1=c1, c2=c2, amin=amin,
+                                          amax=amax, extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
