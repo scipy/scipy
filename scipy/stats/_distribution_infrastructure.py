@@ -4244,10 +4244,10 @@ def _make_distribution_custom(dist):
         # the infrastructure.
         parameters = []
 
-        for name, info in dist.parameters.items():
-            domain = _RealInterval(endpoints=info['endpoints'],
-                                   inclusive=info['inclusive'])
-            param = _RealParameter(name, domain=domain)
+        for name, info in parameterization.items():
+            domain_info, typical = _get_domain_info(info)
+            domain = _RealInterval(**domain_info)
+            param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
         parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
