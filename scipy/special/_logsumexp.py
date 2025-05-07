@@ -7,6 +7,7 @@ from scipy._lib._array_api import (
     xp_broadcast_promote,
     xp_copy,
     xp_float_to_complex,
+    is_complex,
 )
 from scipy._lib import array_api_extra as xpx
 
@@ -232,13 +233,14 @@ def _logsumexp(a, b, axis, return_sign, xp):
         m = xp.abs(m)
     else:
         # `a_max` can have a sign component for complex input
-        sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
+        sgn = sgn * xp.exp(xp.imag(a_max) * xp.asarray(1.0j, dtype=a_max.dtype))
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
 
     if return_sign:
-        out = xp.real(out)
+        if is_complex(out, xp):
+            out = xp.real(out)
     elif xp.isdtype(out.dtype, 'real floating'):
         out[sgn < 0] = xp.nan
 
