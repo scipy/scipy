@@ -3688,7 +3688,8 @@ class DiscreteDistribution(UnivariateDistribution):
         a, _ = self._support(**params)
         logccdf_y = self._logccdf_dispatch(y, **params)
         _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        logcdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _logcdf, fill_value=-np.inf)
+        args = (x - 1,) + args
+        logcdf_xm1 = apply_where(x - 1 >= a, args, _logcdf, fill_value=-np.inf)
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
     def _base_discrete_inversion(self, p, func, comp, /, **params):
