@@ -1,5 +1,7 @@
 import functools
 import operator
+from dataclasses import dataclass
+from types import ModuleType
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -7,21 +9,33 @@ from scipy._lib._array_api import (
     xp_promote, SCIPY_ARRAY_API
 )
 import scipy._lib.array_api_extra as xpx
-from . import _ufuncs
-# These don't really need to be imported, but otherwise IDEs might not realize
-# that these are defined in this file / report an error in __init__.py
+from . import _basic, _spfun_stats, _ufuncs
+# These are imported so that type checkers know the signatures of the exported
+# functions.
+from ._basic import digamma, polygamma, zeta
+from ._spfun_stats import multigammaln
 from ._ufuncs import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit  # noqa: F401
+    beta, betainc, betaincc, betaln, binom, chdtr, chdtrc, entr, erf, erfc, erfinv,
+    expi, expit, expn, gamma, gammainc, gammaincc, gammaln, i0, i0e, i1, i1e, log_ndtr,
+    logit, ndtr, ndtri, rel_entr, stdtr, stdtrit, xlogy
 )
+
+
+__all__ = [
+    'beta', 'betainc', 'betaincc', 'betaln', 'binom', 'chdtr',  # noqa: F822
+    'chdtrc', 'digamma', 'entr', 'erf', 'erfc', 'erfinv', 'expi',  # noqa: F822
+    'expit', 'expn', 'gamma', 'gammainc', 'gammaincc', 'gammaln',  # noqa: F822
+    'i0', 'i0e', 'i1', 'i1e', 'log_ndtr', 'logit', 'multigammaln',  # noqa: F822
+    'ndtr', 'ndtri', 'polygamma', 'rel_entr', 'stdtr', 'stdtrit',  # noqa: F822
+    'xlogy', 'zeta']  # noqa: F822
+
 
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
-def get_array_special_func(f_name, xp):
+def get_array_special_func(f_name, f_module, xp):
     if is_numpy(xp):
-        return getattr(_ufuncs, f_name)
+        return getattr(f_module, f_name)
 
     spx = scipy_namespace_for(xp)
     if spx is not None:
@@ -55,7 +69,7 @@ def get_array_special_func(f_name, xp):
             return xp.map_blocks(functools.partial(_f, **kwargs), *args)
 
         else:
-            _f = getattr(_ufuncs, f_name)
+            _f = getattr(f_module, f_name)
             args = [np.asarray(arg) for arg in args]
             out = _f(*args, **kwargs)
             return xp.asarray(out)
@@ -190,50 +204,69 @@ _generic_implementations = {'rel_entr': _rel_entr,
 
 # functools.wraps doesn't work because:
 # 'numpy.ufunc' object has no attribute '__module__'
-def support_alternative_backends(f_name):
-    func = getattr(_ufuncs, f_name)
+def support_alternative_backends(f_name, f_module):
+    func = getattr(f_module, f_name)
 
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         xp = array_namespace(*args)
-        f = get_array_special_func(f_name, xp)
+        f = get_array_special_func(f_name, f_module, xp)
         return f(*args, **kwargs)
+
+    if hasattr(func, 'types'):
+        # Some tests use the types attribute to generate test cases.
+        wrapped.types = func.types  # type: ignore
 
     return wrapped
 
 
 # function name: number of args (for testing purposes)
+@dataclass
+class FunctionInfo:
+    n_args: int
+    module: ModuleType = _ufuncs
+
+
 array_special_func_map = {
-    'log_ndtr': 1,
-    'ndtr': 1,
-    'ndtri': 1,
-    'erf': 1,
-    'erfc': 1,
-    'i0': 1,
-    'i0e': 1,
-    'i1': 1,
-    'i1e': 1,
-    'gammaln': 1,
-    'gammainc': 2,
-    'gammaincc': 2,
-    'logit': 1,
-    'expit': 1,
-    'entr': 1,
-    'rel_entr': 2,
-    'xlogy': 2,
-    'chdtr': 2,
-    'chdtrc': 2,
-    'betainc': 3,
-    'betaincc': 3,
-    'stdtr': 2,
-    'stdtrit': 2,
+    'logit': FunctionInfo(1),
+    'expit': FunctionInfo(1),
+    'log_ndtr': FunctionInfo(1),
+    'ndtr': FunctionInfo(1),
+    'ndtri': FunctionInfo(1),
+    'digamma': FunctionInfo(1, _basic),
+    'polygamma': FunctionInfo(2, _basic),
+    'multigammaln': FunctionInfo(2, _spfun_stats),
+    'gammaln': FunctionInfo(1),
+    'gamma': FunctionInfo(1),
+    'gammainc': FunctionInfo(2),
+    'gammaincc': FunctionInfo(2),
+    'betaln': FunctionInfo(2),
+    'beta': FunctionInfo(2),
+    'betainc': FunctionInfo(3),
+    'erf': FunctionInfo(1),
+    'erfc': FunctionInfo(1),
+    'erfinv': FunctionInfo(1),
+    'zeta': FunctionInfo(2, _basic),
+    'binom': FunctionInfo(2),
+    'expi': FunctionInfo(1),
+    'expn': FunctionInfo(2),
+    'i0': FunctionInfo(1),
+    'i0e': FunctionInfo(1),
+    'i1': FunctionInfo(1),
+    'i1e': FunctionInfo(1),
+    'entr': FunctionInfo(1),
+    'rel_entr': FunctionInfo(2),
+    'xlogy': FunctionInfo(2),
+    'chdtr': FunctionInfo(2),
+    'chdtrc': FunctionInfo(2),
+    'betaincc': FunctionInfo(3),
+    'stdtr': FunctionInfo(2),
+    'stdtrit': FunctionInfo(2),
 }
 
 globals().update(
-    {f_name: support_alternative_backends(f_name)
+    {f_name: support_alternative_backends(f_name, info.module)
      if SCIPY_ARRAY_API
-     else getattr(_ufuncs, f_name)
-     for f_name in array_special_func_map}
+     else getattr(info.module, f_name)
+     for f_name, info in array_special_func_map.items()}
 )
-
-__all__ = list(array_special_func_map)
