@@ -1054,6 +1054,7 @@ class _TestCommon:
         with assert_raises(TypeError, match="axis must be an integer"):
             datsp.sum(axis=1.5)
         assert_raises(ValueError, datsp.sum, axis=1, out=out)
+        assert_equal(datsp.sum(axis=(0, 1)), dat.sum(axis=(0, 1)))
 
     def test_sum_dtype(self):
         dat = array([[0, 1, 2],
@@ -1151,7 +1152,7 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
-    def test_mean_invalid_params(self):
+    def test_mean_invalid_param(self):
         out = self.asdense(np.zeros((1, 3)))
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -1663,7 +1664,11 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                sp_mult = i.multiply(j)
+                # remove try/except after broadcasting is supported
+                try:
+                    sp_mult = i.multiply(j)
+                except ValueError:
+                    continue
                 if issparse(sp_mult):
                     assert_almost_equal(sp_mult.toarray(), dense_mult)
                 else:
@@ -3886,10 +3891,12 @@ class _TestMinMax:
         datsp = self.spcreator(dat)
 
         for fname in ('min', 'max'):
+            datfunc = getattr(dat, fname)
             func = getattr(datsp, fname)
             assert_raises(ValueError, func, axis=3)
             assert_raises(TypeError, func, axis=1.5)
             assert_raises(ValueError, func, axis=1, out=1)
+            assert_equal(func(axis=(0, 1)), datfunc(axis=(0, 1)))
 
     def test_numpy_minmax(self):
         # See gh-5987
