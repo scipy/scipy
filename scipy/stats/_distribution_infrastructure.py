@@ -4251,10 +4251,8 @@ def _make_distribution_custom(dist):
             parameters.append(param)
         parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    endpoints = dist.support["endpoints"]
-    inclusive = dist.support.get("inclusive", (True, True))
-
-    _x_support = _RealInterval(endpoints=endpoints, inclusive=inclusive)
+    domain_info, _ = _get_domain_info(dist.support)
+    _x_support = _RealInterval(**domain_info)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
