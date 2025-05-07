@@ -1236,7 +1236,7 @@ class _ProbabilityDistribution(ABC):
 
         .. math::
 
-            G(x, y) = 1 - F(x, y) = P(X < x \text{ or } X > y)
+            G(x, y) = 1 - F(x, y) = P(\text{not } x \leq X \leq y)
 
         `ccdf` accepts `x` for :math:`x` and `y` for :math:`y`.
 

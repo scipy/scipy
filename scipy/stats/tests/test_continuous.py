@@ -17,18 +17,19 @@ from scipy.stats._ksstats import kolmogn
 from scipy.stats import qmc
 from scipy.stats._distr_params import distcont, distdiscrete
 from scipy.stats._distribution_infrastructure import (
-    _Domain, _RealDomain, _Parameter, _Parameterization, _RealParameter,
+    _Domain, _RealInterval, _Parameter, _Parameterization, _RealParameter,
     ContinuousDistribution, ShiftedScaledDistribution, _fiinfo,
     _generate_domain_support, Mixture)
 from scipy.stats._new_distributions import StandardNormal, _LogUniform, _Gamma
-from scipy.stats import Normal, Uniform
+from scipy.stats._new_distributions import DiscreteDistribution
+from scipy.stats import Normal, Uniform, Binomial
 
 
-class Test_RealDomain:
+class Test_RealInterval:
     rng = np.random.default_rng(349849812549824)
 
     def test_iv(self):
-        domain = _RealDomain(endpoints=('a', 'b'))
+        domain = _RealInterval(endpoints=('a', 'b'))
         message = "The endpoints of the distribution are defined..."
         with pytest.raises(TypeError, match=message):
             domain.get_numerical_endpoints(dict)
@@ -39,7 +40,7 @@ class Test_RealDomain:
     def test_contains_simple(self, x):
         # Test `contains` when endpoints are defined by constants
         a, b = -np.inf, np.pi
-        domain = _RealDomain(endpoints=(a, b), inclusive=(False, True))
+        domain = _RealInterval(endpoints=(a, b), inclusive=(False, True))
         assert_equal(domain.contains(x), (a < x) & (x <= b))
 
     @pytest.mark.slow
@@ -70,10 +71,10 @@ class Test_RealDomain:
                             np.linspace(a, b, 10),
                             np.linspace(b, b+d, 10)])
         # Domain is defined by two parameters, 'a' and 'b'
-        domain = _RealDomain(endpoints=('a', 'b'),
+        domain = _RealInterval(endpoints=('a', 'b'),
                              inclusive=(inclusive_a, inclusive_b))
-        domain.define_parameters(_RealParameter('a', domain=_RealDomain()),
-                                 _RealParameter('b', domain=_RealDomain()))
+        domain.define_parameters(_RealParameter('a', domain=_RealInterval()),
+                                 _RealParameter('b', domain=_RealInterval()))
         # Check that domain and string evaluation give the same result
         res = domain.contains(x, dict(a=a, b=b))
 
@@ -93,7 +94,7 @@ class Test_RealDomain:
     def test_contains_function_endpoints(self, inclusive, a, b):
         # Test `contains` when endpoints are defined by functions.
         endpoints = (lambda a, b: (a - b) / 2, lambda a, b: (a + b) / 2)
-        domain = _RealDomain(endpoints=endpoints, inclusive=inclusive)
+        domain = _RealInterval(endpoints=endpoints, inclusive=inclusive)
         x = np.asarray([(a - 2*b)/2, (a - b)/2, a/2, (a + b)/2, (a + 2*b)/2])
         res = domain.contains(x, dict(a=a, b=b))
 
@@ -112,7 +113,7 @@ class Test_RealDomain:
         ('a', 5, True, False, "[a, 5)")
     ])
     def test_str(self, case):
-        domain = _RealDomain(endpoints=case[:2], inclusive=case[2:4])
+        domain = _RealInterval(endpoints=case[:2], inclusive=case[2:4])
         assert str(domain) == case[4]
 
     @pytest.mark.slow
@@ -135,7 +136,7 @@ class Test_RealDomain:
         b = _Domain.symbols.get(b, b)
         left_bracket = '[' if inclusive_a else '('
         right_bracket = ']' if inclusive_b else ')'
-        domain = _RealDomain(endpoints=(a, b),
+        domain = _RealInterval(endpoints=(a, b),
                              inclusive=(inclusive_a, inclusive_b))
         ref = f"{left_bracket}{a}, {b}{right_bracket}"
         assert str(domain) == ref
@@ -143,8 +144,8 @@ class Test_RealDomain:
     def test_symbols_gh22137(self):
         # `symbols` was accidentally shared between instances originally
         # Check that this is no longer the case
-        domain1 = _RealDomain(endpoints=(0, 1))
-        domain2 = _RealDomain(endpoints=(0, 1))
+        domain1 = _RealInterval(endpoints=(0, 1))
+        domain2 = _RealInterval(endpoints=(0, 1))
         assert domain1.symbols is not domain2.symbols
 
 
@@ -176,7 +177,7 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     y = dist._variable.draw(y_shape, parameter_values=dist._parameters,
                             proportions=proportions, rng=rng, region='typical')
     xy_result_shape = np.broadcast_shapes(y_shape, x_result_shape)
-    p_domain = _RealDomain((0, 1), (True, True))
+    p_domain = _RealInterval((0, 1), (True, True))
     p_var = _RealParameter('p', domain=p_domain)
     p = p_var.draw(x_shape, proportions=proportions, rng=rng)
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -185,12 +186,18 @@ def draw_distribution_from_family(family, data, rng, proportions, min_side=0):
     return dist, x, y, p, logp, result_shape, x_result_shape, xy_result_shape
 
 
-families = [
+continuous_families = [
     StandardNormal,
     Normal,
     Uniform,
     _LogUniform
 ]
+
+discrete_families = [
+    Binomial,
+]
+
+families = continuous_families + discrete_families
 
 
 class TestDistributions:
@@ -326,7 +333,9 @@ class TestDistributions:
         # Safe subtraction is needed in special cases
         x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
         y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
-        p0 = X.pdf(0)*(y-x)
+        p0 = np.asarray(X.pdf(0)*(y-x))
+        p0[(x > y) & ~np.isnan(p0)] = 0.0
+        p0 = p0[()]
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
         assert_equal(p2, 0)
@@ -411,7 +420,11 @@ def check_sample_shape_NaNs(dist, fname, sample_shape, result_shape, rng):
 
         sample1 = sample_method(sample_shape, method=method, rng=42)
         sample2 = sample_method(sample_shape, method=method, rng=42)
-        assert not np.any(np.equal(res, sample1))
+        if not isinstance(dist, DiscreteDistribution):
+            # The idea is that it's very unlikely that the random sample
+            # for a randomly chosen seed will match that for seed 42,
+            # but it is not so unlikely if `dist` is a discrete distribution.
+            assert not np.any(np.equal(res, sample1))
         assert_equal(sample1, sample2)
 
 
@@ -504,7 +517,10 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 or dist._overrides('_logccdf_formula')):
             methods.add('log/exp')
 
-    ref = dist.cdf(y) - dist.cdf(x)
+    ref = np.asarray(dist.cdf(y) - dist.cdf(x) + dist.pmf(x))
+    ref[~np.isnan(ref) & (x > y)] = 0.0
+    ref = ref[()]
+
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
@@ -532,7 +548,10 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
         methods.add('formula')
 
-    ref = dist.cdf(x) + dist.ccdf(y)
+    ref = np.asarray(dist.cdf(x) + dist.ccdf(y) - dist.pmf(x))
+    ref[~np.isnan(ref) & (x > y)] = 1.0
+    ref = ref[()]
+
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
@@ -552,9 +571,9 @@ def check_nans_and_edges(dist, fname, arg, res):
 
     valid_parameters = get_valid_parameters(dist)
     if fname in {'icdf', 'iccdf'}:
-        arg_domain = _RealDomain(endpoints=(0, 1), inclusive=(True, True))
+        arg_domain = _RealInterval(endpoints=(0, 1), inclusive=(True, True))
     elif fname in {'ilogcdf', 'ilogccdf'}:
-        arg_domain = _RealDomain(endpoints=(-inf, 0), inclusive=(True, True))
+        arg_domain = _RealInterval(endpoints=(-inf, 0), inclusive=(True, True))
     else:
         arg_domain = dist._variable.domain
 
@@ -576,50 +595,65 @@ def check_nans_and_edges(dist, fname, arg, res):
     outside_arg_plus = (outside_arg == 1) & valid_parameters
     endpoint_arg_minus = (endpoint_arg == -1) & valid_parameters
     endpoint_arg_plus = (endpoint_arg == 1) & valid_parameters
+
+    is_discrete = isinstance(dist, DiscreteDistribution)
     # Writing this independently of how the are set in the distribution
     # infrastructure. That is very compact; this is very verbose.
     if fname in {'logpdf'}:
         assert_equal(res[outside_arg_minus], -np.inf)
         assert_equal(res[outside_arg_plus], -np.inf)
-        assert_equal(res[endpoint_arg_minus & ~valid_arg], -np.inf)
-        assert_equal(res[endpoint_arg_plus & ~valid_arg], -np.inf)
+        ref = -np.inf if not is_discrete else np.inf
+        assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
+        assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
     elif fname in {'pdf'}:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 0)
-        assert_equal(res[endpoint_arg_minus & ~valid_arg], 0)
-        assert_equal(res[endpoint_arg_plus & ~valid_arg], 0)
-    elif fname in {'logcdf'}:
+        ref = 0 if not is_discrete else np.inf
+        assert_equal(res[endpoint_arg_minus & ~valid_arg], ref)
+        assert_equal(res[endpoint_arg_plus & ~valid_arg], ref)
+    elif fname in {'logcdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], -inf)
         assert_equal(res[outside_arg_plus], 0)
         assert_equal(res[endpoint_arg_minus], -inf)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'cdf'}:
+    elif fname in {'cdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], 1)
         assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], 1)
-    elif fname in {'logccdf'}:
+    elif fname in {'logccdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 0)
         assert_equal(res[outside_arg_plus], -inf)
         assert_equal(res[endpoint_arg_minus], 0)
         assert_equal(res[endpoint_arg_plus], -inf)
-    elif fname in {'ccdf'}:
+    elif fname in {'ccdf'} and not is_discrete:
         assert_equal(res[outside_arg_minus], 1)
         assert_equal(res[outside_arg_plus], 0)
         assert_equal(res[endpoint_arg_minus], 1)
         assert_equal(res[endpoint_arg_plus], 0)
-    elif fname in {'ilogcdf', 'icdf'}:
+    elif fname in {'ilogcdf', 'icdf'} and not is_discrete:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], a[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], b[endpoint_arg == 1])
-    elif fname in {'ilogccdf', 'iccdf'}:
+    elif fname in {'ilogccdf', 'iccdf'} and not is_discrete:
         assert_equal(res[outside_arg == -1], np.nan)
         assert_equal(res[outside_arg == 1], np.nan)
         assert_equal(res[endpoint_arg == -1], b[endpoint_arg == -1])
         assert_equal(res[endpoint_arg == 1], a[endpoint_arg == 1])
 
-    if fname not in {'logmean', 'mean', 'logskewness', 'skewness', 'support'}:
+    exclude = {'logmean', 'mean', 'logskewness', 'skewness', 'support'}
+    if isinstance(dist, DiscreteDistribution):
+        exclude.update({'pdf', 'logpdf'})
+
+    if (
+            fname not in exclude
+            and not (isinstance(dist, Binomial)
+                     and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1)))):
+        # This can fail in degenerate case where Binomial distribution is a point
+        # distribution. Further on, we could factor out an is_degenerate function
+        # for the tests, or think about storing info about degeneracy in the
+        # instances.
         assert np.isfinite(res[all_valid & (endpoint_arg == 0)]).all()
 
 
@@ -648,7 +682,6 @@ def check_moment_funcs(dist, result_shape):
         formula = getattr(dist, formula_name)
         orders = getattr(formula, 'orders', set(range(6)))
         return order in orders
-
 
     dist.reset_cache()
 
@@ -702,6 +735,7 @@ def check_moment_funcs(dist, result_shape):
             dist.moment(i, 'raw')
             check(i, 'central', 'transform', ref)
 
+    variance = dist.variance()
     dist.reset_cache()
 
     # If we have standard moment formulas, or if there are
@@ -712,9 +746,9 @@ def check_moment_funcs(dist, result_shape):
     for i in range(3, 6):
         ref = dist.moment(i, 'central', method='quadrature')
         check(i, 'central', 'normalize', ref,
-              success=has_formula(i, 'standardized'))
+              success=has_formula(i, 'standardized') and not np.any(variance == 0))
         dist.moment(i, 'standardized')  # build up the cache
-        check(i, 'central', 'normalize', ref)
+        check(i, 'central', 'normalize', ref, success=not np.any(variance == 0))
 
     ### Check Standardized Moments ###
 
@@ -727,7 +761,13 @@ def check_moment_funcs(dist, result_shape):
         assert ref.shape == result_shape
         check(i, 'standardized', 'formula', ref,
               success=has_formula(i, 'standardized'))
-        check(i, 'standardized', 'general', ref, success=i <= 2)
+        if not (
+                isinstance(dist, Binomial)
+                and np.any((dist.n == 0) | (dist.p == 0) | (dist.p == 1))
+        ):
+            # This test will fail for degenerate case where binomial distribution
+            # is a point distribution.
+            check(i, 'standardized', 'general', ref, success=i <= 2)
         check(i, 'standardized', 'normalize', ref)
 
     if isinstance(dist, ShiftedScaledDistribution):
@@ -853,7 +893,7 @@ def classify_arg(dist, arg, arg_domain):
 
 def test_input_validation():
     class Test(ContinuousDistribution):
-        _variable = _RealParameter('x', domain=_RealDomain())
+        _variable = _RealParameter('x', domain=_RealInterval())
 
     message = ("The `Test` distribution family does not accept parameters, "
                "but parameters `{'a'}` were provided.")
@@ -882,10 +922,10 @@ def test_input_validation():
         Test().moment(2, kind='coconut')
 
     class Test2(ContinuousDistribution):
-        _p1 = _RealParameter('c', domain=_RealDomain())
-        _p2 = _RealParameter('d', domain=_RealDomain())
+        _p1 = _RealParameter('c', domain=_RealInterval())
+        _p2 = _RealParameter('d', domain=_RealInterval())
         _parameterizations = [_Parameterization(_p1, _p2)]
-        _variable = _RealParameter('x', domain=_RealDomain())
+        _variable = _RealParameter('x', domain=_RealInterval())
 
     message = ("The provided parameters `{a}` do not match a supported "
                "parameterization of the `Test2` distribution family.")
@@ -1077,6 +1117,7 @@ class TestMakeDistribution:
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
             'skellam',                # during `entropy`, Fatal Python error: Aborted!
+            'zipfian',                # during init, value error due to unexpected nans
         }:
             return
 
@@ -1091,6 +1132,7 @@ class TestMakeDistribution:
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
         skip_standardized = {'exponpow', 'ksone'}  # tolerances
+        skip_median = {'nhypergeom', 'yulesimon'}  # nan mismatch
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1112,7 +1154,8 @@ class TestMakeDistribution:
                 # some continuous distributions have trouble with `logentropy` because
                 # it uses complex numbers
                 assert_allclose(np.exp(X.logentropy()), Y.entropy(), rtol=rtol)
-            assert_allclose(X.median(), Y.median(), rtol=rtol)
+            if distname not in skip_median:
+                assert_allclose(X.median(), Y.median(), rtol=rtol)
             assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
             assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
@@ -1394,7 +1437,7 @@ class TestTransforms:
         X = stats.Binomial(n=10, p=0.5)
         # This is applied at the top level TransformedDistribution,
         # so testing one subclass is enough
-        message = "Transformations are only supported for continuous RVs."
+        message = "Transformations are currently only supported for continuous RVs."
         with pytest.raises(NotImplementedError, match=message):
             stats.exp(X)
 
@@ -1872,7 +1915,7 @@ class TestFullCoverage:
                               [(np.float16, np.float16),
                                (np.int16, np.float64)])
     def test_RealParameter_uncommon_dtypes(self, dtype_in, dtype_out):
-        domain = _RealDomain((-1, 1))
+        domain = _RealInterval((-1, 1))
         parameter = _RealParameter('x', domain=domain)
 
         x = np.asarray([0.5, 2.5], dtype=dtype_in)
@@ -1887,7 +1930,7 @@ class TestFullCoverage:
         # to return the right shape and dytpe, but this would need to be
         # configurable.
         class TestDist(ContinuousDistribution):
-            _variable = _RealParameter('x', domain=_RealDomain(endpoints=(0., 1.)))
+            _variable = _RealParameter('x', domain=_RealInterval(endpoints=(0., 1.)))
             def _logpdf_formula(self, x, *args, **kwargs):
                 return 0
 
@@ -2014,7 +2057,7 @@ class TestReprs:
 
 
 class MixedDist(ContinuousDistribution):
-    _variable = _RealParameter('x', domain=_RealDomain(endpoints=(-np.inf, np.inf)))
+    _variable = _RealParameter('x', domain=_RealInterval(endpoints=(-np.inf, np.inf)))
     def _pdf_formula(self, x, *args, **kwargs):
         return (0.4 * 1/(1.1 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x+0.25)/1.1)**2)
                 + 0.6 * 1/(0.9 * np.sqrt(2*np.pi)) * np.exp(-0.5*((x-0.5)/0.9)**2))

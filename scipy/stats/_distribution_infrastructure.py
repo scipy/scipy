@@ -7,6 +7,7 @@ import math
 import numpy as np
 from numpy import inf
 
+from scipy._lib._array_api import xp_promote
 from scipy._lib.array_api_extra import apply_where
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
@@ -235,8 +236,8 @@ class _Domain(ABC):
         raise NotImplementedError()
 
 
-class _SimpleDomain(_Domain):
-    r""" Representation of a simply-connected domain defined by two endpoints.
+class _Interval(_Domain):
+    r""" Representation of an interval defined by two endpoints.
 
     Each endpoint may be a finite scalar, positive or negative infinity, or
     be given by a single parameter. The domain may include the endpoints or
@@ -321,7 +322,6 @@ class _SimpleDomain(_Domain):
             Numerical values of the endpoints
 
         """
-        # TODO: ensure outputs are floats
         a, b = self.endpoints
         # If `a` (`b`) is a string - the name of the parameter that defines
         # the endpoint of the domain - then corresponding numerical values
@@ -345,6 +345,9 @@ class _SimpleDomain(_Domain):
                        "all required distribution parameters as keyword "
                        "arguments.")
             raise TypeError(message) from e
+        # Floating point types are used for even integer parameters.
+        # Convert to float here to ensure consistency throughout framework.
+        a, b = xp_promote(a, b, force_floating=True, xp=np)
         return a, b
 
     def contains(self, item, parameter_values=None):
@@ -406,7 +409,7 @@ class _SimpleDomain(_Domain):
         rng = np.random.default_rng(rng)
 
         def ints(*args, **kwargs): return rng.integers(*args, **kwargs, endpoint=True)
-        uniform = rng.uniform if isinstance(self, _RealDomain) else ints
+        uniform = rng.uniform if isinstance(self, _RealInterval) else ints
 
         # get copies of min and max with no nans so that uniform doesn't fail
         min_nn, max_nn = min.copy(), max.copy()
@@ -438,11 +441,11 @@ class _SimpleDomain(_Domain):
         return z
 
 
-class _RealDomain(_SimpleDomain):
+class _RealInterval(_Interval):
     r""" Represents a simply-connected subset of the real line; i.e., an interval
 
-    Completes the implementation of the `_SimpleDomain` class for simple
-    domains on the real line.
+    Completes the implementation of the `_Interval` class for intervals
+    on the real line.
 
     Methods
     -------
@@ -480,10 +483,10 @@ class _RealDomain(_SimpleDomain):
         return self.symbols.get(endpoint, f"{endpoint}")
 
 
-class _IntegerDomain(_SimpleDomain):
+class _IntegerInterval(_Interval):
     r""" Represents an interval of integers
 
-    Completes the implementation of the `_SimpleDomain` class for simple
+    Completes the implementation of the `_Interval` class for simple
     domains on the integers.
 
     Methods
@@ -503,7 +506,6 @@ class _IntegerDomain(_SimpleDomain):
         Returns a string representation of the domain, e.g. "{a, a+1, ..., b-1, b}".
 
     """
-
     def contains(self, item, parameter_values=None):
         super_contains = super().contains(item, parameter_values)
         integral = (item == np.round(item))
@@ -511,11 +513,42 @@ class _IntegerDomain(_SimpleDomain):
 
     def __str__(self):
         a, b = self.endpoints
-        a = self.symbols.get(a, f"{a}")
-        b = self.symbols.get(b, f"{b}")
-        ap1 = f"{a} + 1" if isinstance(a, str) else f"{a + 1}"
-        bm1 = f"{b} - 1" if isinstance(b, str) else f"{b - 1}"
-        return f"{{{a}, {ap1}, ..., {bm1}, {b}}}"
+        a = self.symbols.get(a, a)
+        b = self.symbols.get(b, b)
+
+        a_str, b_str = isinstance(a, str), isinstance(b, str)
+        a_inf = a == r"-\infty" if a_str else np.isinf(a)
+        b_inf = b == r"\infty" if b_str else np.isinf(b)
+
+        # This doesn't work well for cases where ``a`` is floating point
+        # number large enough that ``nextafter(a, inf) > a + 1``, and
+        # similarly for ``b`` and nextafter(b, -inf). There may not be any
+        # distributions fit for SciPy where we would actually need to handle these
+        # cases though.
+        ap1 = f"{a} + 1" if a_str else f"{a + 1}"
+        bm1 = f"{b} - 1" if b_str else f"{b - 1}"
+
+        if not a_str and not b_str:
+            gap = b - a
+            if gap == 3:
+                return f"\\{{{a}, {ap1}, {bm1}, {b}\\}}"
+            if gap == 2:
+                return f"\\{{{a}, {ap1}, {b}\\}}"
+            if gap == 1:
+                return f"\\{{{a}, {b}\\}}"
+            if gap == 0:
+                return f"\\{{{a}\\}}"
+
+        if not a_inf and b_inf:
+            ap2 = f"{a} + 2" if a_str else f"{a + 2}"
+            return f"\\{{{a}, {ap1}, {ap2}, ...\\}}"
+        if a_inf and not b_inf:
+            bm2 = f"{b} - 2" if b_str else f"{b - 2}"
+            return f"\\{{{b}, {bm1}, {bm2}, ...\\}}"
+        if a_inf and b_inf:
+            return "\\{..., -2, -1, 0, 1, 2, ...\\}"
+
+        return f"\\{{{a}, {ap1}, ..., {bm1}, {b}\\}}"
 
 
 class _Parameter(ABC):
@@ -906,8 +939,7 @@ def _set_invalid_nan(f):
     clip = {'_cdf1', '_ccdf1'}
     clip_log = {'_logcdf1', '_logccdf1'}
     # relevant to discrete distributions only
-    replace_non_integral = {'pmf', 'logpmf'}
-
+    replace_non_integral = {'pmf', 'logpmf', 'pdf', 'logpdf'}
 
     @functools.wraps(f)
     def filtered(self, x, *args, **kwargs):
@@ -967,9 +999,10 @@ def _set_invalid_nan(f):
                             else np.any(mask_endpoint))
 
         # Check for non-integral arguments to PMF method
+        # or PDF of a discrete distribution.
         any_non_integral = False
-        if method_name in replace_non_integral:
-            mask_non_integral = (x != np.floor(x)) & ~np.isnan(x)
+        if discrete and method_name in replace_non_integral:
+            mask_non_integral = (x != np.floor(x))
             any_non_integral = (mask_non_integral if mask_non_integral.shape == ()
                                 else np.any(mask_non_integral))
 
@@ -996,10 +1029,11 @@ def _set_invalid_nan(f):
         if res_needs_copy:
             res = np.array(res, dtype=dtype, copy=True)
 
-        # For non-integral arguments to PMF, replace with zero
+        # For non-integral arguments to PMF (and PDF of discrete distribution)
+        # replace with zero.
         if any_non_integral:
-            zero = -np.inf if method_name == 'logpmf' else 0
-            res[mask_non_integral] = zero
+            zero = -np.inf if method_name in {'logpmf', 'logpdf'} else 0
+            res[mask_non_integral & ~np.isnan(res)] = zero
 
         # For arguments outside the function domain, replace results
         if any_invalid:
@@ -1150,22 +1184,24 @@ def _cdf2_input_validation(f):
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
         x, y = x.astype(dtype, copy=True), y.astype(dtype, copy=True)
+        all_ood = (x < low) & (y < low) | (x > high) & (y > high)
+        swap = x > y
 
-        # Swap arguments to ensure that x < y, and replace
-        # out-of domain arguments with domain endpoints. We'll
-        # transform the result later.
-        i_swap = y < x
-        x[i_swap], y[i_swap] = y[i_swap], x[i_swap]
-        i = x < low
-        x[i] = low[i]
-        i = y < low
-        y[i] = low[i]
-        i = x > high
-        x[i] = high[i]
-        i = y > high
-        y[i] = high[i]
+        x[x < low] = low[x < low]
+        x[x > high] = high[x > high]
+        y[y > high] = high[y > high]
+        y[y < low] = low[y < low]
 
         res = f(self, x, y, *args, **kwargs)
+        if func_name in {'_cdf2', '_logccdf2'}:
+            fill_value = 0.
+        elif func_name == '_ccdf2':
+            fill_value = 1.
+        else:
+            fill_value = -np.inf
+
+        res = np.asarray(res)
+        res[(all_ood | swap) & ~np.isnan(res)] = fill_value
 
         # Clipping probability to [0, 1]
         if func_name in {'_cdf2', '_ccdf2'}:
@@ -1173,21 +1209,7 @@ def _cdf2_input_validation(f):
         else:
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
-        # Transform the result to account for swapped argument order
-        res = np.asarray(res)
-        if func_name == '_cdf2':
-            res[i_swap] *= -1.
-        elif func_name == '_ccdf2':
-            res[i_swap] *= -1
-            res[i_swap] += 2.
-        elif func_name == '_logcdf2':
-            res = np.asarray(res + 0j) if np.any(i_swap) else res
-            res[i_swap] = res[i_swap] + np.pi*1j
-        else:
-            # res[i_swap] is always positive and less than 1, so it's
-            # safe to ensure that the result is real
-            res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
-        return res[()]
+        return res
 
     return wrapped
 
@@ -1216,7 +1238,7 @@ def _kwargs2args(f, args=None, kwargs=None):
     def wrapped(x, *args):
         return f(x, *args[:n_args], **dict(zip(names, args[n_args:])))
 
-    args = list(args) + list(kwargs.values())
+    args = tuple(args) + tuple(kwargs.values())
 
     return wrapped, args
 
@@ -2063,7 +2085,13 @@ class UnivariateDistribution(_ProbabilityDistribution):
         else:
             res = nsum(f, a, b, args=args, log=log, tolerances=dict(rtol=rtol)).sum
             res = np.asarray(res)
-            res[a > b] = -np.inf if log else 0  # fix in nsum?
+            # The result should be nan when parameters are nan, so need to special
+            # case this.
+            cond = np.isnan(params.popitem()[1]) if params else np.True_
+            cond = np.broadcast_to(cond, a.shape)
+            res[(a > b)] = -np.inf if log else 0  # fix in nsum?
+            res[cond] = np.nan
+
             return res[()]
 
     def _solve_bounded(self, f, p, *, bounds=None, params=None, xatol=None):
@@ -2640,7 +2668,7 @@ class UnivariateDistribution(_ProbabilityDistribution):
             params_mask = {key: np.broadcast_to(val, mask.shape)[mask]
                            for key, val in params.items()}
             out = np.asarray(out)
-            out[mask] = self._cdf2_quadrature(x[mask], y[mask], *params_mask)
+            out[mask] = self._cdf2_quadrature(x[mask], y[mask], **params_mask)
         return out[()]
 
     def _cdf2_quadrature(self, x, y, **params):
@@ -3582,12 +3610,21 @@ class DiscreteDistribution(UnivariateDistribution):
             return True
         return super()._overrides(method_name)
 
-    # These should probably check whether pmf = 0
     def _logpdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pdf_formula(self, x, **params):
-        return np.full_like(x, np.inf)
+        if params:
+            p = next(iter(params.values()))
+            nan_result = np.isnan(x) | np.isnan(p)
+        else:
+            nan_result = np.isnan(x)
+        return np.where(nan_result, np.nan, np.inf)
 
     def _pxf_dispatch(self, x, *, method=None, **params):
         return self._pmf_dispatch(x, method=method, **params)
@@ -3613,69 +3650,103 @@ class DiscreteDistribution(UnivariateDistribution):
     def _logcdf2_quadrature(self, x, y, **params):
         return super()._logcdf2_quadrature(np.ceil(x), np.floor(y), **params)
 
-    def _cdf2_subtraction(self, x, y, **params):
+    def _cdf2_subtraction_base(self, x, y, func, **params):
         x_, y_ = np.floor(x), np.floor(y)
-        cdf_ymx = super()._cdf2_subtraction(x_, y_, **params)
+        cdf_ymx = func(x_, y_, **params)
         pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
         return cdf_ymx + pmf_x
 
-    def _logcdf2_subtraction(self, x, y, **params):
+    def _logcdf2_subtraction_base(self, x, y, func, **params):
         x_, y_ = np.floor(x), np.floor(y)
-        logcdf_ymx = super()._logcdf2_subtraction(x_, y_, **params)
+        logcdf_ymx = func(x_, y_, **params)
         logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
         return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
+
+    def _cdf2_subtraction(self, x, y, **params):
+        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction, **params)
+
+    def _cdf2_subtraction_safe(self, x, y, **params):
+        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction_safe,
+                                           **params)
+
+    def _logcdf2_subtraction(self, x, y, **params):
+        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
+                                              **params)
+
+    def _logcdf2_subtraction_safe(self, x, y, **params):
+        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
+                                              **params)
 
     def _ccdf2_addition(self, x, y, **params):
         a, _ = self._support(**params)
         ccdf_y = self._ccdf_dispatch(y, **params)
         _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
-        cdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _cdf, fillvalue=0)
+        cdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _cdf, fill_value=0)
         return ccdf_y + cdf_xm1
 
     def _logccdf2_addition(self, x, y, **params):
         a, _ = self._support(**params)
         logccdf_y = self._logccdf_dispatch(y, **params)
         _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        logcdf_xm1 = apply_where(x - 1 >= a, [x - 1] + args, _logcdf, fillvalue=-np.inf)
+        logcdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _logcdf, fill_value=-np.inf)
         return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
 
+    def _base_discrete_inversion(self, p, func, comp, /, **params):
+        # For discrete distributions, icdf(p) is defined as the minimum n
+        # such that cdf(n) >= p. iccdf(p) is defined as the minimum n such
+        # that ccdf(n) <= p, or equivalently as iccdf(p) = icdf(1 - p).
+
+        res = self._solve_bounded(func, p, params=params, xatol=0.9)
+        # First try to find where cdf(x) == p for the continuous extension of the
+        # cdf. res.xl and res.xr will be a bracket for this root. The parameter
+        # xatol in solve_bounded controls the bracket width. We thus know that
+        # know cdf(res.xr) >= p, cdf(res.xl) <= p, and |res.xr - res.xl| <= 0.9.
+        # This means the minimum integer n such that cdf(n) >= p is either floor(x)
+        # or floor(x) + 1.
+        res, fr = np.asarray(np.floor(res.xr)), res.fr
+        # xr is a bracket endpoint, and will usually be a finite value even when
+        # the computed result should be nan. We need to explicitly handle this
+        # case.
+        res[np.isnan(fr)] = np.nan
+        # comp should be <= for ccdf, >= for cdf.
+        res = np.where(comp(func(res, **params), p), res, res + 1.0)
+        return res[()]
+
     def _icdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._cdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._cdf_dispatch,
+                                             np.greater_equal, **params)
 
     def _ilogcdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._logcdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl >= 0, np.floor(res.xl), np.floor(res.xr))
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._logcdf_dispatch,
+                                             np.greater_equal, **params)
 
     def _iccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._ccdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._ccdf_dispatch,
+                                             np.less_equal, **params)
 
     def _ilogccdf_inversion(self, x, **params):
-        res = self._solve_bounded(self._logccdf_dispatch, x, params=params, xatol=1)
-        res = np.where(res.fl <= 0, np.floor(res.xl), np.floor(res.xr))
-        res[np.isnan(x)] = np.nan
-        return res
+        return self._base_discrete_inversion(x, self._logccdf_dispatch,
+                                             np.less_equal, **params)
 
     def _mode_optimization(self, **params):
         # If `x` is the true mode of a unimodal continuous function, we can find
-        # the mode among the integers by rounding in each direction and checking
-        # which is better. I think `xatol` should be able to be 1 if the documented
-        # convergence criterion were implemented, but the actual convergence
-        # criterion is different, and I'm not sure if it controls the total width
-        # of the bracket. `xatol=0.1` might not be safe as-implemented.
-        x = super()._mode_optimization(xatol=0.1, **params)
+        # the mode among integers by rounding in each direction and checking
+        # which is better. If the difference between `x` and the nearest integer
+        # is less than `xatol`, the computed value of `x` may end up on the wrong
+        # side of the nearest integer. Setting `xatol=0.5` guarantees that at most
+        # three integers need to be checked, the two nearest integers, ``floor(x)``
+        # and ``round(x)`` and the nearest integer other than these.
+        x = super()._mode_optimization(xatol=0.5, **params)
+        low, high = self.support()
         xl, xr = np.floor(x), np.ceil(x)
-        fl, fr = self._pmf_dispatch(xl, **params), self._pmf_dispatch(xr, **params)
-        mode = np.asarray(xl)
-        mode[fr > fl] = xr
-        return mode
+        nearest = np.round(x)
+        # Clip to stay within support. There will be redundant calculation
+        # when clipping since `xo` will be one of `xl` or `xr`, but let's
+        # keep the implementation simple for now.
+        xo = np.clip(nearest + np.copysign(1, nearest - x), low, high)
+        x = np.stack([xl, xo, xr])
+        idx = np.argmax(self._pmf_dispatch(x, **params), axis=0)
+        return np.choose(idx, [xl, xo, xr])
 
     def _logentropy_quadrature(self, **params):
         def logintegrand(x, **params):
@@ -3685,7 +3756,7 @@ class DiscreteDistribution(UnivariateDistribution):
             # so logpmf is always negative, and so log(logpmf) = log(-logpmf) + pi*j.
             # The two imaginary components "cancel" each other out (which we would
             # expect because each term of the entropy summand is positive).
-            return logpmf + np.log(-logpmf)
+            return np.where(np.isfinite(logpmf), logpmf + np.log(-logpmf), -np.inf)
         return self._quadrature(logintegrand, params=params, log=True)
 
 
@@ -4030,7 +4101,7 @@ def _make_distribution_rv_generic(dist):
     names = []
     support = getattr(dist, '_support', (dist.a, dist.b))
     for shape_info in dist._shape_info():
-        domain = _RealDomain(endpoints=shape_info.endpoints,
+        domain = _RealInterval(endpoints=shape_info.endpoints,
                              inclusive=shape_info.inclusive)
         param = _RealParameter(shape_info.name, domain=domain)
         parameters.append(param)
@@ -4059,7 +4130,7 @@ def _make_distribution_rv_generic(dist):
     else:
         endpoints = support
 
-    _x_support = _RealDomain(endpoints=endpoints, inclusive=(True, True))
+    _x_support = _RealInterval(endpoints=endpoints, inclusive=(True, True))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     class CustomDistribution(new_class):
@@ -4175,13 +4246,15 @@ def _make_distribution_custom(dist):
 
         for name, info in parameterization.items():
             domain_info, typical = _get_domain_info(info)
-            domain = _RealDomain(**domain_info)
+            domain = _RealInterval(**domain_info)
             param = _RealParameter(name, domain=domain, typical=typical)
             parameters.append(param)
         parameterizations.append(_Parameterization(*parameters) if parameters else [])
 
-    domain_info, _ = _get_domain_info(dist.support)
-    _x_support = _RealDomain(**domain_info)
+    endpoints = dist.support["endpoints"]
+    inclusive = dist.support.get("inclusive", (True, True))
+
+    _x_support = _RealInterval(endpoints=endpoints, inclusive=inclusive)
     _x_param = _RealParameter('x', domain=_x_support)
     repr_str = dist.__class__.__name__
 
@@ -4313,7 +4386,7 @@ def _shift_scale_inverse_function(func):
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
         if not isinstance(X, ContinuousDistribution):
-            message = "Transformations are only supported for continuous RVs."
+            message = "Transformations are currently only supported for continuous RVs."
             raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
@@ -4370,11 +4443,11 @@ class TruncatedDistribution(TransformedDistribution):
     # - if the mode of `_dist` is within the support, it's still the mode
     # - rejection sampling might be more efficient than inverse transform
 
-    _lb_domain = _RealDomain(endpoints=(-inf, 'ub'), inclusive=(True, False))
+    _lb_domain = _RealInterval(endpoints=(-inf, 'ub'), inclusive=(True, False))
     _lb_param = _RealParameter('lb', symbol=r'b_l',
                                 domain=_lb_domain, typical=(0.1, 0.2))
 
-    _ub_domain = _RealDomain(endpoints=('lb', inf), inclusive=(False, True))
+    _ub_domain = _RealInterval(endpoints=('lb', inf), inclusive=(False, True))
     _ub_param = _RealParameter('ub', symbol=r'b_u',
                                   domain=_ub_domain, typical=(0.8, 0.9))
 
@@ -4516,11 +4589,11 @@ def truncate(X, lb=-np.inf, ub=np.inf):
 class ShiftedScaledDistribution(TransformedDistribution):
     """Distribution with a standard shift/scale transformation."""
     # Unclear whether infinite loc/scale will work reasonably in all cases
-    _loc_domain = _RealDomain(endpoints=(-inf, inf), inclusive=(True, True))
+    _loc_domain = _RealInterval(endpoints=(-inf, inf), inclusive=(True, True))
     _loc_param = _RealParameter('loc', symbol=r'\mu',
                                 domain=_loc_domain, typical=(1, 2))
 
-    _scale_domain = _RealDomain(endpoints=(-inf, inf), inclusive=(True, True))
+    _scale_domain = _RealInterval(endpoints=(-inf, inf), inclusive=(True, True))
     _scale_param = _RealParameter('scale', symbol=r'\sigma',
                                   domain=_scale_domain, typical=(0.1, 10))
 
@@ -4797,12 +4870,12 @@ class OrderStatisticDistribution(TransformedDistribution):
 
     """
 
-    # These can be restricted to _IntegerDomain/_IntegerParameter in a separate
+    # These can be restricted to _IntegerInterval/_IntegerParameter in a separate
     # PR if desired.
-    _r_domain = _RealDomain(endpoints=(1, 'n'), inclusive=(True, True))
+    _r_domain = _RealInterval(endpoints=(1, 'n'), inclusive=(True, True))
     _r_param = _RealParameter('r', domain=_r_domain, typical=(1, 2))
 
-    _n_domain = _RealDomain(endpoints=(1, np.inf), inclusive=(True, True))
+    _n_domain = _RealInterval(endpoints=(1, np.inf), inclusive=(True, True))
     _n_param = _RealParameter('n', domain=_n_domain, typical=(1, 4))
 
     _r_domain.define_parameters(_n_param)
