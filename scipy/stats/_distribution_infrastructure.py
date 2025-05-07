@@ -1184,24 +1184,22 @@ def _cdf2_input_validation(f):
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
         x, y = x.astype(dtype, copy=True), y.astype(dtype, copy=True)
-        all_ood = (x < low) & (y < low) | (x > high) & (y > high)
-        swap = x > y
 
-        x[x < low] = low[x < low]
-        x[x > high] = high[x > high]
-        y[y > high] = high[y > high]
-        y[y < low] = low[y < low]
+        # Swap arguments to ensure that x < y, and replace
+        # out-of domain arguments with domain endpoints. We'll
+        # transform the result later.
+        i_swap = y < x
+        x[i_swap], y[i_swap] = y[i_swap], x[i_swap]
+        i = x < low
+        x[i] = low[i]
+        i = y < low
+        y[i] = low[i]
+        i = x > high
+        x[i] = high[i]
+        i = y > high
+        y[i] = high[i]
 
         res = f(self, x, y, *args, **kwargs)
-        if func_name in {'_cdf2', '_logccdf2'}:
-            fill_value = 0.
-        elif func_name == '_ccdf2':
-            fill_value = 1.
-        else:
-            fill_value = -np.inf
-
-        res = np.asarray(res)
-        res[(all_ood | swap) & ~np.isnan(res)] = fill_value
 
         # Clipping probability to [0, 1]
         if func_name in {'_cdf2', '_ccdf2'}:
@@ -1209,7 +1207,21 @@ def _cdf2_input_validation(f):
         else:
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
-        return res
+        # Transform the result to account for swapped argument order
+        res = np.asarray(res)
+        if func_name == '_cdf2':
+            res[i_swap] *= -1.
+        elif func_name == '_ccdf2':
+            res[i_swap] *= -1
+            res[i_swap] += 2.
+        elif func_name == '_logcdf2':
+            res = np.asarray(res + 0j) if np.any(i_swap) else res
+            res[i_swap] = res[i_swap] + np.pi*1j
+        else:
+            # res[i_swap] is always positive and less than 1, so it's
+            # safe to ensure that the result is real
+            res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
+        return res[()]
 
     return wrapped
 
