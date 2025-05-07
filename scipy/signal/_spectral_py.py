@@ -2019,7 +2019,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     .. legacy:: function
 
         This function is soley used by the legacy functions `spectrogram` and `stft`
-        (which are also in this file).
+        (which are also in this same source file `scipy/signal/_spectral_py.py`).
 
     This is a helper function that implements the commonality between
     the stft, psd, csd, and spectrogram functions. It is not designed to
