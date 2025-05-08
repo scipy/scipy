@@ -19,7 +19,7 @@ References
 
 import warnings
 import numpy as np
-from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
+from scipy.linalg import (eigh, cho_factor, cho_solve, solve,
                           cholesky, LinAlgError)
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse import issparse
@@ -130,7 +130,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
     try:
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
-        VBV = inv(VBV, overwrite_a=True)
+        VBV = solve(VBV, np.eye(VBV.shape[0]), overwrite_a=True)
         blockVectorV = _matmul_inplace(
             blockVectorV, VBV,
             verbosityLevel=verbosityLevel
