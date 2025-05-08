@@ -30,7 +30,7 @@ dependencies:
   - asv >=0.6
   - conda-build
   - hypothesis
-  - array-api-strict<2.1.1
+  - array-api-strict>=2.3.1
   # For type annotations
   - mypy
   - typing_extensions
