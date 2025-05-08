@@ -1225,6 +1225,50 @@ nct_kurtosis_excess_double(double v, double l)
 
 template<typename Real>
 Real
+t_cdf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+	return NAN;
+    }
+    if (v <= 0) {
+	sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
+	return NAN;
+    }
+    if (std::isinf(x)) {
+	return  (x > 0) ? 1.0 : 0.0;
+    }
+    Real y;
+    try {
+	y = boost::math::cdf(
+                boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    } catch (...) {
+	/* Boost was unable to produce a result. */
+        sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    if ((y < 0) || (y > 1)) {
+	/* Result must be between 0 and 1 to be a valid CDF value.
+       Return NAN if the result is out of bounds because the answer cannot be trusted. */
+	    sf_error("stdtr", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_cdf_float(float v, float x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+double
+t_cdf_double(double v, double x)
+{
+    return t_cdf_wrap(v, x);
+}
+
+template<typename Real>
+Real
 skewnorm_cdf_wrap(const Real x, const Real l, const Real sc, const Real sh)
 {
     if (std::isfinite(x)) {

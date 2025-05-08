@@ -687,8 +687,10 @@
         }
     },
     "stdtr": {
-        "_cdflib_wrappers.pxd": {
-            "stdtr": "dd->d"        }
+        "boost_special_functions.h++": {
+            "t_cdf_float": "ff->f",
+            "t_cdf_double": "dd->d"
+        }
     },
     "stdtridf": {
         "_cdflib_wrappers.pxd": {

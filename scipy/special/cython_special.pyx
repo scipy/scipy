@@ -1767,10 +1767,6 @@ from ._spence cimport cspence as _func_cspence
 ctypedef double complex _proto_cspence_t(double complex) noexcept nogil
 cdef _proto_cspence_t *_proto_cspence_t_var = &_func_cspence
 
-from ._cdflib_wrappers cimport stdtr as _func_stdtr
-ctypedef double _proto_stdtr_t(double, double) noexcept nogil
-cdef _proto_stdtr_t *_proto_stdtr_t_var = &_func_stdtr
-
 from ._cdflib_wrappers cimport stdtridf as _func_stdtridf
 ctypedef double _proto_stdtridf_t(double, double) noexcept nogil
 cdef _proto_stdtridf_t *_proto_stdtridf_t_var = &_func_stdtridf
@@ -3546,9 +3542,14 @@ cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, doubl
     else:
         return NAN
 
-cpdef double stdtr(double x0, double x1) noexcept nogil:
+cpdef df_number_t stdtr(df_number_t x0, df_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
-    return _func_stdtr(x0, x1)
+    if df_number_t is float:
+        return (<float(*)(float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_float)(x0, x1)
+    elif df_number_t is double:
+        return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_t_cdf_double)(x0, x1)
+    else:
+        return NAN
 
 cpdef double stdtridf(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtridf"""

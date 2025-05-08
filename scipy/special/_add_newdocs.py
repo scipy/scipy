@@ -8086,6 +8086,13 @@ add_newdoc(
     Calling `stdtr` directly can improve performance compared to the
     ``cdf`` method of `scipy.stats.t` (see last example below).
 
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, http://www.boost.org/
+
     Examples
     --------
     Calculate the function for ``df=3`` at ``t=1``.
