@@ -206,14 +206,14 @@ class ShortTimeFFT:
 
     It is possible to calculate the SFT of signal parts:
 
-    >>> p_q = SFT.nearest_k_p(N // 2)
-    >>> Sx0 = SFT.stft(x[:p_q])
-    >>> Sx1 = SFT.stft(x[p_q:])
+    >>> N2 = SFT.nearest_k_p(N // 2)
+    >>> Sx0 = SFT.stft(x[:N2])
+    >>> Sx1 = SFT.stft(x[N2:])
 
     When assembling sequential STFT parts together, the overlap needs to be
     considered:
 
-    >>> p0_ub = SFT.upper_border_begin(p_q)[1] - SFT.p_min
+    >>> p0_ub = SFT.upper_border_begin(N2)[1] - SFT.p_min
     >>> p1_le = SFT.lower_border_end[1] - SFT.p_min
     >>> Sx01 = np.hstack((Sx0[:, :p0_ub],
     ...                   Sx0[:, p0_ub:] + Sx1[:, :p1_le],
@@ -1226,7 +1226,15 @@ class ShortTimeFFT:
 
     @lru_cache(maxsize=256)
     def _post_padding(self, n: int) -> tuple[int, int]:
-        """Largest signal index and slice index due to padding."""
+        """Largest signal index and slice index due to padding.
+
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal (must be ≥ half of the window length).
+        """
+        if not (n >= (m2p := self.m_num - self.m_num_mid)):
+            raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
         w2 = self.win.real**2 + self.win.imag**2
         # move window to the right until the overlap for t < t[n] vanishes:
         q1 = n // self.hop   # last slice index with t[p1] <= t[n]
@@ -1246,6 +1254,11 @@ class ShortTimeFFT:
         given input signal of `n` samples.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.
+
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal (must be ≥ half of the window length).
 
         See Also
         --------
@@ -1348,6 +1361,19 @@ class ShortTimeFFT:
         A detailed example is given :ref:`tutorial_stft_sliding_win` section
         of the :ref:`user_guide`.
 
+        Parameters
+        ----------
+        n : int
+            Number of samples of input signal (must be ≥ half of the window length).
+
+        Returns
+        -------
+        k_ub : int
+            Lowest signal index, where a touching time slice sticks out past the
+            signal end.
+        p_ub : int
+            Lowest index of time slice of which the end sticks out past the signal end.
+
         See Also
         --------
         k_min: The smallest possible signal index.
@@ -1359,13 +1385,15 @@ class ShortTimeFFT:
         p_range: Determine and validate slice index range.
         ShortTimeFFT: Class this method belongs to.
         """
+        if not (n >= (m2p := self.m_num - self.m_num_mid)):
+            raise ValueError(f"Parameter n must be >= ceil(m_num/2) = {m2p}!")
         w2 = self.win.real**2 + self.win.imag**2
         q2 = n // self.hop + 1  # first t[q] >= t[n]
         q1 = max((n-self.m_num) // self.hop - 1, -1)
         # move window left until does not stick out to the right:
         for q_ in range(q2, q1, -1):
             k_ = q_ * self.hop + (self.m_num - self.m_num_mid)
-            if k_ < n or all(w2[n-k_:] == 0):
+            if k_ <= n or all(w2[n-k_:] == 0):
                 return (q_ + 1) * self.hop - self.m_num_mid, q_ + 1
         return 0, 0  # border starts at first slice
 

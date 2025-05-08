@@ -453,7 +453,7 @@ cdef class _Qhull:
                 #Store the halfspaces in _points and the dual points in _dual_points later
                 self._point_arrays.append(np.array(points, copy=True))
                 dists = points[:, :-1].dot(interior_point)+points[:, -1]
-                arr = np.array(-points[:, :-1]/dists, dtype=np.double, order="C", copy=True)
+                arr = np.array(-points[:, :-1]/dists[:, np.newaxis], dtype=np.double, order="C", copy=True)
             else:
                 arr = np.array(points, dtype=np.double, order="C", copy=True)
 
@@ -2905,9 +2905,11 @@ class HalfspaceIntersection(_QhullUser):
 
         Parameters
         ----------
-        halfspaces : ndarray
-            New halfspaces to add. The dimensionality should match that of the
-            initial halfspaces.
+        halfspaces : ndarray of double, shape (n_new_ineq, ndim+1)
+            New halfspaces to add. The dimensionality (ndim) should match that of the
+            initial halfspaces. Like in the constructor, these are stacked 
+            inequalites of the form Ax + b <= 0 in format [A; b]. The original
+            feasible point must also be feasible for these new inequalities.
         restart : bool, optional
             Whether to restart processing from scratch, rather than
             adding halfspaces incrementally.
@@ -2929,6 +2931,22 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
+        if halfspaces.ndim > 2:
+            raise ValueError("`halfspaces` should be provided as a 2D array")
+        # We check for non-feasibility of incremental additions
+        # in a manner similar to `qh_sethalfspace`
+        halfspaces = np.atleast_2d(halfspaces)
+        dists = np.dot(halfspaces[:, :self.ndim], self.interior_point) + halfspaces[:, -1]
+        # HalfspaceIntersection uses closed half spaces so
+        # the feasible point also cannot be directly on the boundary
+        viols = dists >= 0
+        if viols.any():
+            # error out with an indication of the first violating
+            # half space discovered
+            first_viol = np.nonzero(viols)[0].min()
+            bad_hs = halfspaces[first_viol, :]
+            msg = f"feasible point is not clearly inside halfspace: {bad_hs}"
+            raise QhullError(msg)
         self._add_points(halfspaces, restart, self.interior_point)
 
     @property

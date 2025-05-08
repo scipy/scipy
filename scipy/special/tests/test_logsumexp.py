@@ -257,6 +257,20 @@ class TestLogSumExp:
         xp_assert_close(xp.real(res), xp.real(ref))
         xp_assert_close(xp.imag(res), xp.imag(ref), atol=0, rtol=1e-15)
 
+    def test_gh22903(self, xp):
+        # gh-22903 reported that `logsumexp` produced NaN where the weight associated
+        # with the max magnitude element was negative and `return_sign=False`, even if
+        # the net result should be the log of a positive number.
+
+        # result is log of positive number
+        a = xp.asarray([3.06409428, 0.37251854, 3.87471931])
+        b = xp.asarray([1.88190708, 2.84174795, -0.85016884])
+        xp_assert_close(logsumexp(a, b=b), logsumexp(a, b=b, return_sign=True)[0])
+
+        # result is log of negative number
+        b = xp.asarray([1.88190708, 2.84174795, -3.85016884])
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(xp.nan))
+
 
 class TestSoftmax:
     def test_softmax_fixtures(self):

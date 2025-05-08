@@ -98,8 +98,9 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
         the result dtype), respectively.  Iteration will stop when
-        ``res.error < atol + rtol * abs(res.df)``. The error estimate is as
-        described in [1]_ Section 5. While not theoretically rigorous or
+        ``res.error < atol`` or  ``res.error < res.integral * rtol``. The error
+        estimate is as described in [1]_ Section 5 but with a lower bound of
+        ``eps * res.integral``. While not theoretically rigorous or
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
@@ -445,9 +446,9 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
             stop[i] = True
         else:
             # Terminate if convergence criterion is met
-            work.rerr, work.aerr = _estimate_error(work, xp)
-            i = ((work.rerr < rtol) | (work.rerr + xp_real(work.Sn) < atol) if log
-                 else (work.rerr < rtol) | (work.rerr * xp.abs(work.Sn) < atol))
+            rerr, aerr = _estimate_error(work, xp)
+            i = (rerr < rtol) | (aerr < atol)
+            work.aerr =  xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
             work.status[i] = eim._ECONVERGED
             stop[i] = True
 
@@ -772,22 +773,23 @@ def _estimate_error(work, xp):
         d2 = xp_real(special.logsumexp(xp.stack([work.Sn, Snm2 + work.pi*1j]), axis=0))
         d3 = log_e1 + xp.max(xp_real(work.fjwj), axis=-1)
         d4 = work.d4
-        ds = xp.stack([d1 ** 2 / d2, 2 * d1, d3, d4])
+        d5 = log_e1 + xp.real(work.Sn)
+        temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
+        ds = xp.stack([temp, 2 * d1, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
-        rerr = xp.maximum(log_e1, aerr - xp_real(work.Sn))
+        rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
         d1 = xp.abs(work.Sn - Snm1)
         d2 = xp.abs(work.Sn - Snm2)
         d3 = e1 * xp.max(xp.abs(work.fjwj), axis=-1)
         d4 = work.d4
-        # If `d1` is 0, no need to warn. This does the right thing.
-        # with np.errstate(divide='ignore'):
-        ds = xp.stack([d1**(xp.log(d1)/xp.log(d2)), d1**2, d3, d4])
+        d5 = e1 * xp.abs(work.Sn)
+        temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
+        ds = xp.stack([temp, d1**2, d3, d4, d5])
         aerr = xp.max(ds, axis=0)
-        rerr = xp.maximum(e1, aerr/xp.abs(work.Sn))
+        rerr = aerr/xp.abs(work.Sn)
 
-    aerr = xp.reshape(xp.astype(aerr, work.dtype), work.Sn.shape)
     return rerr, aerr
 
 

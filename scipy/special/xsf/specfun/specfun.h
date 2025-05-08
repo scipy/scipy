@@ -887,7 +887,7 @@ inline double chgu(double x, double a, double b, int *md, int *isfer) {
     // =======================================================
 
     int il1, il2, il3, bl1, bl2, bl3, bn, id1 = 0, id;
-    double aa, hu = 0.0, hu1;
+    double aa, hu = 0.0, hu1, b00;
 
     aa = a - b + 1.0;
     *isfer = 0;
@@ -927,10 +927,11 @@ inline double chgu(double x, double a, double b, int *md, int *isfer) {
         }
     } else {
         if (b <= a) {
+            b00 = b;
             a -= b - 1.0;
             b = 2.0 - b;
             hu = chguit(x, a, b, &id);
-            hu *= pow(x, 1.0 - b);
+            hu *= pow(x, 1.0 - b00);
             *md = 4;
         } else if (bn && (~il1)) {
             hu = chgubi(x, a, b, &id);

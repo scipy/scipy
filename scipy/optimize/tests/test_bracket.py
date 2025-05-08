@@ -352,6 +352,41 @@ class TestBracketRoot:
                                 xmin=1)
         assert not res.success
 
+    def test_bug_fixes(self):
+        # 1. Bug in double sided bracket search.
+        # Happened in some cases where there are terminations on one side
+        # after corresponding searches on other side failed due to reaching the
+        # boundary.
+
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962853839
+        def f(x, p):
+            return np.exp(x) - p
+
+        p = np.asarray([0.29, 0.35])
+        res = _bracket_root(f, xl0=-1, xmin=-np.inf, xmax=0, args=(p, ))
+
+        # https://github.com/scipy/scipy/pull/22560/files#r1962952517
+        def f(x, p, c):
+            return np.exp(x*c) - p
+
+        p = [0.32061201, 0.39175242, 0.40047535, 0.50527218, 0.55654373,
+             0.11911647, 0.37507896, 0.66554191]
+        c = [1., -1., 1., 1., -1., 1., 1., 1.]
+        xl0 = [-7.63108551,  3.27840947, -8.36968526, -1.78124372,
+               0.92201295, -2.48930123, -0.66733533, -0.44606749]
+        xr0 = [-6.63108551,  4.27840947, -7.36968526, -0.78124372,
+               1.92201295, -1.48930123, 0., 0.]
+        xmin = [-np.inf, 0., -np.inf, -np.inf, 0., -np.inf, -np.inf,
+                -np.inf]
+        xmax = [0., np.inf, 0., 0., np.inf, 0., 0., 0.]
+
+        res = _bracket_root(f, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=(p, c))
+
+        # 2. Default xl0 + 1 for xr0 exceeds xmax.
+        # https://github.com/scipy/scipy/pull/22560#discussion_r1962947434
+        res = _bracket_root(lambda x: x + 0.25, xl0=-0.5, xmin=-np.inf, xmax=0)
+        assert res.success
+
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
 @pytest.mark.skip_xp_backends('jax.numpy', reason=jax_skip_reason)
