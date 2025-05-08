@@ -23,7 +23,7 @@ def test_fht_agrees_with_fftlog(xp):
 
     r = np.logspace(-4, 4, 16)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
     mu = 0.3
     offset = 0.0
     bias = 0.0
@@ -161,7 +161,7 @@ def test_fht_exact(n, xp):
     r = np.logspace(-2, 2, n)
     a = xp.asarray(r**gamma)
 
-    dln = np.log(r[1]/r[0])
+    dln = math.log(r[1]/r[0])
 
     offset = fhtoffset(dln, mu, initial=0.0, bias=gamma)
 

@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from warnings import warn
 from ._basic import rfft, irfft
@@ -8,7 +10,7 @@ from scipy._lib._array_api import array_namespace
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
 # constants
-LN_2 = np.log(2)
+LN_2 = math.log(2)
 
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
@@ -168,11 +170,11 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
 
     xp = (mu+1+q)/2
     xm = (mu+1-q)/2
-    y = np.pi/(2*dln)
-    zp = loggamma(xp + 1j*y)
-    zm = loggamma(xm + 1j*y)
-    arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/np.pi
-    return lnkr + (arg - np.round(arg))*dln
+    y = math.pi/(2*dln)
+    zp = complex(loggamma(xp + 1j*y))
+    zm = complex(loggamma(xm + 1j*y))
+    arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/math.pi
+    return lnkr + (arg - round(arg))*dln
 
 
 def _fhtq(a, u, inverse=False, *, xp=None):
