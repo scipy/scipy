@@ -1184,24 +1184,22 @@ def _cdf2_input_validation(f):
         dtype = np.result_type(x.dtype, y.dtype, self._dtype)
         # yes, copy to avoid modifying input arrays
         x, y = x.astype(dtype, copy=True), y.astype(dtype, copy=True)
-        all_ood = (x < low) & (y < low) | (x > high) & (y > high)
-        swap = x > y
 
-        x[x < low] = low[x < low]
-        x[x > high] = high[x > high]
-        y[y > high] = high[y > high]
-        y[y < low] = low[y < low]
+        # Swap arguments to ensure that x < y, and replace
+        # out-of domain arguments with domain endpoints. We'll
+        # transform the result later.
+        i_swap = y < x
+        x[i_swap], y[i_swap] = y[i_swap], x[i_swap]
+        i = x < low
+        x[i] = low[i]
+        i = y < low
+        y[i] = low[i]
+        i = x > high
+        x[i] = high[i]
+        i = y > high
+        y[i] = high[i]
 
         res = f(self, x, y, *args, **kwargs)
-        if func_name in {'_cdf2', '_logccdf2'}:
-            fill_value = 0.
-        elif func_name == '_ccdf2':
-            fill_value = 1.
-        else:
-            fill_value = -np.inf
-
-        res = np.asarray(res)
-        res[(all_ood | swap) & ~np.isnan(res)] = fill_value
 
         # Clipping probability to [0, 1]
         if func_name in {'_cdf2', '_ccdf2'}:
@@ -1209,7 +1207,21 @@ def _cdf2_input_validation(f):
         else:
             res = np.clip(res, None, 0.)  # exp(res) < 1
 
-        return res
+        # Transform the result to account for swapped argument order
+        res = np.asarray(res)
+        if func_name == '_cdf2':
+            res[i_swap] *= -1.
+        elif func_name == '_ccdf2':
+            res[i_swap] *= -1
+            res[i_swap] += 2.
+        elif func_name == '_logcdf2':
+            res = np.asarray(res + 0j) if np.any(i_swap) else res
+            res[i_swap] = res[i_swap] + np.pi*1j
+        else:
+            # res[i_swap] is always positive and less than 1, so it's
+            # safe to ensure that the result is real
+            res[i_swap] = _logexpxmexpy(np.log(2), res[i_swap]).real
+        return res[()]
 
     return wrapped
 
@@ -3644,53 +3656,25 @@ class DiscreteDistribution(UnivariateDistribution):
     def _logccdf_quadrature(self, x, **params):
         return super()._logccdf_quadrature(np.floor(x + 1), **params)
 
-    def _cdf2_quadrature(self, x, y, **params):
-        return super()._cdf2_quadrature(np.ceil(x), np.floor(y), **params)
+    def _cdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _logcdf2_quadrature(self, x, y, **params):
-        return super()._logcdf2_quadrature(np.ceil(x), np.floor(y), **params)
+    def _ccdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _cdf2_subtraction_base(self, x, y, func, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        cdf_ymx = func(x_, y_, **params)
-        pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
-        return cdf_ymx + pmf_x
+    def _logcdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _logcdf2_subtraction_base(self, x, y, func, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        logcdf_ymx = func(x_, y_, **params)
-        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
-        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
-
-    def _cdf2_subtraction(self, x, y, **params):
-        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction, **params)
-
-    def _cdf2_subtraction_safe(self, x, y, **params):
-        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction_safe,
-                                           **params)
-
-    def _logcdf2_subtraction(self, x, y, **params):
-        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
-                                              **params)
-
-    def _logcdf2_subtraction_safe(self, x, y, **params):
-        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
-                                              **params)
-
-    def _ccdf2_addition(self, x, y, **params):
-        a, _ = self._support(**params)
-        ccdf_y = self._ccdf_dispatch(y, **params)
-        _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
-        cdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _cdf, fill_value=0)
-        return ccdf_y + cdf_xm1
-
-    def _logccdf2_addition(self, x, y, **params):
-        a, _ = self._support(**params)
-        logccdf_y = self._logccdf_dispatch(y, **params)
-        _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        args = (x - 1,) + args
-        logcdf_xm1 = apply_where(x - 1 >= a, args, _logcdf, fill_value=-np.inf)
-        return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
+    def _logccdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
     def _base_discrete_inversion(self, p, func, comp, /, **params):
         # For discrete distributions, icdf(p) is defined as the minimum n
