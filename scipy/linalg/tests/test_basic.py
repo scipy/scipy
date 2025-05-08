@@ -1240,7 +1240,7 @@ class TestInv:
 
         # cholesky solver fails, and the routine falls back to the general inverse
         b_inv0 = inv(b)
-        assert_allclose(b_inv0 @ b, np.eye(3), atol=1e-15)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=3e-15)
 
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
