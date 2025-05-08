@@ -452,7 +452,7 @@ def geometric_discrepancy(
 
     if method == "mindist":
         min_d = distance._pmindist(sample, metric=metric, workers=workers)
-        if np.allclose(min_d, 0.0):
+        if np.isclose(min_d, 0.0):
             warnings.warn("Sample contains duplicate points.", stacklevel=2)
         return min_d
     elif method == "mst":

@@ -2320,7 +2320,7 @@ def _pmindist_slow_path(sample: "npt.ArrayLike", metric: str) -> float:
     sample = _asarray(sample)
     n = sample.shape[0]
     d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
-    if np.allclose(d, 0.0):
+    if np.isclose(d, 0.0):
         return 0.0
 
     for i in range(2, n):
@@ -2368,7 +2368,7 @@ def _pmindist(
             return _pmindist_slow_path(sample, metric=metric)
 
     distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
-    if np.allclose(distance_upper_bound, 0.0):
+    if np.isclose(distance_upper_bound, 0.0):
         return 0.0
     tree = KDTree(sample)
     d, _ = tree.query(sample,
