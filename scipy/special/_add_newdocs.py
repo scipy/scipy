@@ -1539,7 +1539,34 @@ add_newdoc("chndtrix",
 
     See Also
     --------
-    chndtr, chndtridf, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : inverse of `chndtr` with respect to `cdf`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`. ``scipy.stats.ncx2.ppf`` is equivalent to `chndtrix`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrix, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrix` is the inverse of `chndtr` with respect to `x`:
+
+    >>> chndtrix(p, df, nc)
+    3.0
 
     """)
 
@@ -1570,7 +1597,35 @@ add_newdoc("chndtridf",
 
     See Also
     --------
-    chndtr, chndtrix, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtrix : inverse of `chndtr` with respect to `x`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtridf, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtridf` is the inverse of `chndtr` with respect to `df`:
+
+    >>> chndtridf(x, p, nc)
+    5.0
 
     """)
 
@@ -1601,7 +1656,35 @@ add_newdoc("chndtrinc",
 
     See Also
     --------
-    chndtr, chndtrix, chndtrinc
+    chndtr : Noncentral chi-squared distribution CDF
+    chndtridf : inverse of `chndtr` with respect to `df`
+    chndtrinc : inverse of `chndtr` with respect to `nc`
+    scipy.stats.ncx2 : Non-central chi-squared distribution
+
+    Notes
+    -----
+    The noncentral chi squared distribution is also available in
+    `scipy.stats.ncx2`.
+
+    This function wraps routines from the Boost Math C++ library [1]_.
+
+    References
+    ----------
+    .. [1] The Boost Developers. "Boost C++ Libraries". https://www.boost.org/.
+
+    Examples
+    --------
+    >>> from scipy.special import chndtrinc, chndtr
+
+    Compute the noncentral chi squared distribution CDF at one point.
+
+    >>> x, df, nc = 3, 5, 10
+    >>> p = chndtr(x, df, nc)
+
+    `chndtrinc` is the inverse of `chndtr` with respect to `nc`:
+
+    >>> chndtrinc(x, p, nc)
+    10.0
 
     """)
 
