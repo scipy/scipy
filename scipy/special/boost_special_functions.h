@@ -4,7 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include "sf_error.h"
-
+// #include "xsf_wrappers.h"
 
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
@@ -1265,6 +1265,51 @@ double
 t_cdf_double(double v, double x)
 {
     return t_cdf_wrap(v, x);
+}
+
+template<typename Real>
+Real
+t_ppf_wrap(const Real v, const Real x)
+{
+    if (std::isnan(x) || std::isnan(v)) {
+        return NAN;
+    }
+    if (v <= 0 || x < 0 || x > 1) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    Real y;
+    try {
+    y = boost::math::quantile(
+        boost::math::students_t_distribution<Real, SpecialPolicy>(v), x);
+    }
+    catch (const std::domain_error& e) {
+        sf_error("stdtrit", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("stdtrit", SF_ERROR_UNDERFLOW, NULL);
+        y = 0; 
+    } catch (...) {
+    /* Boost was unable to produce a result. */
+        sf_error("stdtrit", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+t_ppf_float(float v, float x)
+{
+    return t_ppf_wrap(v, x);
+}
+
+double
+t_ppf_double(double v, double x)
+{
+    return t_ppf_wrap(v, x);
 }
 
 template<typename Real>

@@ -8231,6 +8231,13 @@ add_newdoc("stdtrit",
     `stdtrit` directly can improve performance compared to the ``ppf``
     method of `scipy.stats.t` (see last example below).
 
+    The function is computed using the Boost Math library [1]_, which
+    relies on the incomplete beta function.
+
+    References
+    ----------
+    .. [1] Boost C++ Libraries, http://www.boost.org/
+
     Examples
     --------
     `stdtrit` represents the inverse of the student t distribution CDF which
