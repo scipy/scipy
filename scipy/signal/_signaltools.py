@@ -3506,7 +3506,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
 
 
 def resample(x, num, t=None, axis=0, window=None, domain='time'):
-    """Resample `x` to `num` samples using the Fourier method along the given `axis`.
+    r"""Resample `x` to `num` samples using the Fourier method along the given `axis`.
 
     The resampling is performed by shortening or zero-padding the FFT of `x`. This has
     the advantages of providing an ideal antialiasing filter and allowing arbitrary
@@ -3538,7 +3538,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         ``X = W * fft(x, axis=axis)``. ``W`` may be interpreted as a spectral windowing
         function ``W(f_X)`` which consumes the frequencies ``f_X = fftfreq(n_x, T)``.
 
-        If `window` is a 1d array of length `n_x` then ``W=window``.
+        If `window` is a 1d array of length ``n_x`` then ``W=window``.
         If `window` is a callable  then ``W = window(f_X)``.
         Otherwise, `window` is passed to `~scipy.signal.get_window`, i.e.,
         ``W = fftshift(signal.get_window(window, n_x))``. Default is ``None``.
@@ -3617,62 +3617,132 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> ax0.grid(True)
     >>> plt.show()
 
-
-    The following example illustrates that a `~scipy.fft.rfft` / `~scipy.fft.irfft`
-    combination does not always produce the correct resampling result, while
-    `resample` does:
-
+    The following example compares this function with a naive `~scipy.fft.rfft` /
+    `~scipy.fft.irfft` combination: An input signal with a sampling interval of one
+    second is upsampled by a factor of eight. The first figure depicts an odd number of
+    input samples whereas the second figure an even number. The upper subplots show the
+    signals over time: The input samples are marked by large green dots, the upsampled
+    signals by a continuous and a dashed line. The lower subplots show the magnitude
+    spectrum: The FFT values of the input are depicted by large green dots, which lie
+    in the frequency interval [-0.5, 0.5] Hz, whereas the frequency interval of the
+    upsampled signal is [-4, 4] Hz. The continuous green line depicts the upsampled
+    spectrum without antialiasing filter, which is a periodic continuation of the input
+    spectrum. The blue x's and orange dots depict the FFT values of the signal created
+    by the naive approach as well as this function's result.
+    
+    >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> from scipy.fft import irfft, fft, fftfreq, rfft
-    >>> from scipy.signal import resample
-    ...
-    >>> n0, n1 = 8, 4  # number of samples
-    >>> t0, t1 = (np.linspace(0, 2, n_, endpoint=False) for n_ in (n0, n1))  # in s
-    >>> x0, x1 = (np.cos(2*np.pi*t_) for t_ in (t0, t1))  # 1 Hz cosine signal
-    >>> y1_r = resample(x0, num=n1)
-    >>> np.allclose(y1_r, x1)  # correct result, as expected
-    True
-    >>> y1_f = irfft(rfft(x0), n=n1) * n1/n0
-    >>> np.allclose(y1_f, x1)  # wrong result
-    False
-    >>> # Compare FFTs:
-    >>> fftfreq(n0, t0[1]-t0[0])  #  frequencies of fft(x0)
-    array([ 0. ,  0.5,  1. ,  1.5, -2. , -1.5, -1. , -0.5])
-    >>> np.round(fft(x0), 3)  # FFT of x0
-    array([-0.-0.j, -0.+0.j,  4.-0.j,  0.+0.j,  0.-0.j,  0.-0.j,  4.+0.j, -0.-0.j])
-    >>> fftfreq(n1, t1[1]-t1[0])  # frequencies of fft(x1) and fft(y1_f)
-    array([ 0. ,  0.5, -1. , -0.5])
-    >>> np.round(fft(x1), 3)  # reference FFT
-    array([0.+0.j, 0.+0.j, 4.+0.j, 0.+0.j])
-    >>> np.round(fft(y1_f), 3)  # irfft/rfft off by factor 2 in the Nyuist frequency
-    array([0.+0.j, 0.+0.j, 2.+0.j, 0.+0.j])
-
-    The reason for the different results lies in `resample` correctly treating unpaired
-    frequency bins. I.e., the input `x1` has a bin pair ±1 Hz, whereas the output has
-    only one unpaired bin at -1 Hz, which demands rescaling of that bin. Special
-    treatment is required if ``n_x != num`` and ``min(n_x, num)`` is even. If the bin
-    values at `±m` are zero, the, obviously, no special treatment is needed. Consult
-    the source code of `resample` for details.
-
-    The following code snippet shows how to use `resample_poly` to speed up the
-    down-sampling:
-
-    >>> import numpy as np
+    >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
     >>> from scipy.signal import resample, resample_poly
-    ...
+    ... 
+    >>> fac, T0, T1 = 8, 1, 1/8  # upsampling factor and sampling intervals
+    >>> for n0 in (15, 16):  # number of samples of input signal
+    ...     n1 = fac * n0  # number of samples of upsampled signal
+    ...     t0, t1 = T0 * np.arange(n0), T1 * np.arange(n1)  # time stamps
+    ...     x0 = np.zeros(n0)  # input signal has two non-zero sample values
+    ...     x0[n0//2], x0[n0//2+1] = n0 // 2, -(n0 // 2)
+    ... 
+    ...     x1n = irfft(rfft(x0), n=n1) * n1 / n0  # naive resampling
+    ...     x1r = resample(x0, n1)  # resample signal
+    ... 
+    ...     # Determine magnitude spectrum:
+    ...     x0_up = np.zeros_like(x1r)  # upsampling without antialiasing filter
+    ...     x0_up[::n1 // n0] = x0
+    ...     X0, X0_up = (fftshift(fft(x_)) / n0 for x_ in (x0, x0_up))
+    ...     XX1 = (fftshift(fft(x_)) / n1 for x_ in (x1n, x1r))
+    ...     f0, f1 = fftshift(fftfreq(n0, T0)), fftshift(fftfreq(n1, T1))  # frequencies
+    ...     df = f0[1] - f0[0]  # frequency resolution
+    ... 
+    ...     fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
+    ...     ax0.set_title(rf"Upsampling ${fac}\times$ from {n0} to {n1} samples")
+    ...     ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", 
+    ...             xlim=(0, n1*T1))
+    ...     ax0.step(t0, x0, 'C2o-', where='post', alpha=.3, linewidth=2, 
+    ...              label="$x_0(t)$ / $X_0(f)$")
+    ...     for x_, l_ in zip((x1n, x1r), ('C0--', 'C1-')):
+    ...         ax0.plot(t1, x_, l_, alpha=.5, label=None)
+    ...     ax0.grid()
+    ...     ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {df*1e3:.1f}\,$mHz)", 
+    ...             ylabel="Magnitude $|X(f)|$", xlim=(-0.7, 0.7))
+    ...     ax1.axvspan(0.5/T0, f1[-1], color='gray', alpha=.2)
+    ...     ax1.axvspan(f1[0], -0.5/T0, color='gray', alpha=.2)
+    ...     ax1.plot(f1, abs(X0_up), 'C2-', f0, abs(X0),  'C2o', alpha=.3, linewidth=2)
+    ...     for X_, n_, l_ in zip(XX1, ("naive", "resample"), ('C0x--', 'C1.-')): 
+    ...         ax1.plot(f1, abs(X_), l_, alpha=.5, label=n_)
+    ...     ax1.grid()
+    ...     fig.legend(loc='outside lower center', ncols=4)    
+    >>> plt.show()
+    
+    The first figure shows that upsampling an odd number of samples produces identical
+    results. The second figure illustrates that the signal produced with the naive
+    approach (dashed blue line) from an even number of samples does not touch all
+    original samples. This deviation is due to `resample` correctly treating unpaired
+    frequency bins. I.e., the input `x1` has a bin pair ±0.5 Hz, whereas the output has
+    only one unpaired bin at -0.5 Hz, which demands rescaling of that bin pair.
+    Generally, special treatment is required if ``n_x != num`` and ``min(n_x, num)`` is
+    even. If the bin values at `±m` are zero, obviously, no special treatment is
+    needed. Consult the source code of `resample` for details.
+
+    The final example shows how to utilize `resample_poly` to speed up the
+    down-sampling: The input signal a non-zero value at :math:`t=0` and is downsampled
+    from 19937 to 128 samples. Since 19937 is prime, the FFT is expected to be slow. To
+    speed matters up, `resample_poly` is used to downsample first by a factor of ``n0
+    // n1 = 155`` and then pass the result to `resample`. Two parameterization of 
+    `resample_poly` are used: Passing ``padtype='wrap'`` treats the input as being
+    periodic wheras the default parametrization performs zero-padding. The upper
+    subplot shows the resulting signals over time whereas the lower subplot depicts the
+    resulting one-sided magnitude spectra.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.fft import rfftfreq, rfft
+    >>> from scipy.signal import resample, resample_poly
+    ... 
     >>> n0 = 19937 # number of input samples - prime
     >>> n1 = 128  # number of output samples - fast FFT length
-    >>> x0 = np.random.rand(n0)  # input signal
-    ...
-    >>> y1 = resample(x0, n1)  # slow due to n0 being prime
+    >>> T0, T1 = 1/n0, 1/n1  # sampling intervals
+    >>> t0, t1 = np.arange(n0)*T0, np.arange(n1)*T1  # time stamps
+    ... 
+    >>> x0 = np.zeros(n0)  # Input has one non-zero sample
+    >>> x0[0] = n0
+    >>> 
+    >>> x1r = resample(x0, n1)  # slow due to n0 being prime
     >>> # This is faster:
-    >>> y1_p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)
+    >>> x1p = resample(resample_poly(x0, 1, n0 // n1, padtype='wrap'), n1)  # periodic 
+    >>> x2p = resample(resample_poly(x0, 1, n0 // n1), n1)  # with zero-padding
+    ... 
+    >>> X0 = rfft(x0) / n0 
+    >>> X1r, X1p, X2p = rfft(x1r) / n1, rfft(x1p) / n1, rfft(x2p) / n1
+    >>> f0, f1 = rfftfreq(n0, T0), rfftfreq(n1, T1)
+    ... 
+    >>> fig, (ax0, ax1) = plt.subplots(2, 1, layout='constrained', figsize=(5, 4))
+    >>> ax0.set_title(f"Dowsampled Impulse response (from {n0} to {n1} samples)")
+    >>> ax0.set(xlabel="Time $t$ in seconds", ylabel="Amplitude $x(t)$", xlim=(-T1, 1)) 
+    >>> for x_ in (x1r, x1p, x2p):
+    ...     ax0.plot(t1, x_, alpha=.5)
+    >>> ax0.grid()
+    >>> ax1.set(xlabel=rf"Frequency $f$ in hertz ($\Delta f = {f1[1]}\,$Hz)", 
+    ...         ylabel="Magnitude $|X(f)|$", xlim=(0, 0.55/T1))
+    >>> ax1.axvspan(0.5/T1, f0[-1], color='gray', alpha=.2)
+    >>> ax1.plot(f1, abs(X1r), 'C0.-', alpha=.5, label="resample")
+    >>> ax1.plot(f1, abs(X1p), 'C1.-', alpha=.5, label="resample_poly(padtype='wrap')")
+    >>> ax1.plot(f1, abs(X2p), 'C2x-', alpha=.5, label="resample_poly")
+    >>> ax1.grid()
+    >>> fig.legend(loc='outside lower center', ncols=2)
+    >>> plt.show()    
 
-    Note that the `y1` and `y1_p` are not identical due to the differences in the
-    utilized antialiasing filter in each function. In both functions the antialiasing
-    filter can be customized by modifying the `window` parameter, though `resample`
-    interprets it as a spectral window function, whereas `resample_poly` assumes it to
-    be some form of impulse response.
+    The plots show that the results of the "pure" `resample` and the usage of the
+    default parameters of `resample_poly` agree well.  The periodic padding of
+    `resample_poly` (``padtype='wrap'``) on the other hand produces significant
+    deviations. This is caused by the disconiuity at the beginning of the signal, for
+    which the default filter of `resample_poly` is not suited well. This example
+    illustrates that for some use cases, adpating the `resample_poly` parameters may
+    be beneficial. `resample` has a big advantage in this regard: It uses the ideal
+    antialiasing filter with the maximum bandwidth by default.
+    
+    Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
+    even number of ``n1=128`` output samples, which requires a special treatment as 
+    discussed in the previous example. 
     """
     if domain not in ('time', 'freq'):
         raise ValueError(f"Parameter {domain=} not in ('time', 'freq')!")
