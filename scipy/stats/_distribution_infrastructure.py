@@ -3656,52 +3656,25 @@ class DiscreteDistribution(UnivariateDistribution):
     def _logccdf_quadrature(self, x, **params):
         return super()._logccdf_quadrature(np.floor(x + 1), **params)
 
-    def _cdf2_quadrature(self, x, y, **params):
-        return super()._cdf2_quadrature(np.ceil(x), np.floor(y), **params)
+    def _cdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _logcdf2_quadrature(self, x, y, **params):
-        return super()._logcdf2_quadrature(np.ceil(x), np.floor(y), **params)
+    def _ccdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _cdf2_subtraction_base(self, x, y, func, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        cdf_ymx = func(x_, y_, **params)
-        pmf_x = np.where(x_ == x, self._pmf_dispatch(x_, **params), 0)
-        return cdf_ymx + pmf_x
+    def _logcdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
-    def _logcdf2_subtraction_base(self, x, y, func, **params):
-        x_, y_ = np.floor(x), np.floor(y)
-        logcdf_ymx = func(x_, y_, **params)
-        logpmf_x = np.where(x_ == x, self._logpmf_dispatch(x_, **params), -np.inf)
-        return special.logsumexp([logcdf_ymx, logpmf_x], axis=0)
-
-    def _cdf2_subtraction(self, x, y, **params):
-        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction, **params)
-
-    def _cdf2_subtraction_safe(self, x, y, **params):
-        return self._cdf2_subtraction_base(x, y, super()._cdf2_subtraction_safe,
-                                           **params)
-
-    def _logcdf2_subtraction(self, x, y, **params):
-        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
-                                              **params)
-
-    def _logcdf2_subtraction_safe(self, x, y, **params):
-        return self._logcdf2_subtraction_base(x, y, super()._logcdf2_subtraction,
-                                              **params)
-
-    def _ccdf2_addition(self, x, y, **params):
-        a, _ = self._support(**params)
-        ccdf_y = self._ccdf_dispatch(y, **params)
-        _cdf, args = _kwargs2args(self._cdf_dispatch, kwargs=params)
-        cdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _cdf, fill_value=0)
-        return ccdf_y + cdf_xm1
-
-    def _logccdf2_addition(self, x, y, **params):
-        a, _ = self._support(**params)
-        logccdf_y = self._logccdf_dispatch(y, **params)
-        _logcdf, args = _kwargs2args(self._logcdf_dispatch, kwargs=params)
-        logcdf_xm1 = apply_where(x - 1 >= a, (x - 1,) + args, _logcdf, fill_value=-np.inf)
-        return special.logsumexp([logccdf_y, logcdf_xm1], axis=0)
+    def _logccdf2(self, x, y, *, method):
+        raise NotImplementedError(
+            "Two argument cdf functions are currently only supported for "
+            "continuous distributions.")
 
     def _base_discrete_inversion(self, p, func, comp, /, **params):
         # For discrete distributions, icdf(p) is defined as the minimum n
