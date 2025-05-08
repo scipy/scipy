@@ -1095,8 +1095,8 @@ def test_normalize_dual_quaternion(xp):
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
     xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:])[()], xp.asarray(0.0)[()],
-                    atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:])[()],
+                    xp.asarray(0.0)[()], atol=1e-12)
 
     rng = np.random.default_rng(103213650)
     dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
