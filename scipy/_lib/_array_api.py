@@ -758,7 +758,7 @@ def xp_capabilities(
     Array API compatible backends.
 
     This decorator has two effects:
-    1. It allows tagging tests with ``@make_skip_xp_backends`` or
+    1. It allows tagging tests with ``@make_xp_test_case`` or
        ``make_xp_pytest_param`` (see below) to automatically generate
        SKIP/XFAIL markers and perform additional backend-specific
        testing, such as extra validation for Dask and JAX;
@@ -767,7 +767,7 @@ def xp_capabilities(
 
     See Also
     --------
-    make_skip_xp_backends
+    make_xp_test_case
     make_xp_pytest_param
     array_api_extra.testing.lazy_xp_function
     """
@@ -835,7 +835,7 @@ def _make_xp_pytest_marks(*funcs, capabilities_table=None):
     return marks
 
 
-def make_skip_xp_backends(*funcs, capabilities_table=None):
+def make_xp_test_case(*funcs, capabilities_table=None):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
     """Generate pytest decorator for a test function that tests functionality
@@ -860,18 +860,19 @@ def make_skip_xp_backends(*funcs, capabilities_table=None):
 
 
 def make_xp_pytest_param(func, capabilities_table=None):
-    """Variant of ``make_skip_xp_backends`` that returns a pytest.param for a function,
+    """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
     
         @pytest.mark.parametrize(
-            func, [make_xp_pytest_param(f1), make_xp_pytest_param(f2)]
+            "func", [make_xp_pytest_param(f1), make_xp_pytest_param(f2)]
         )
         def test(func, xp):
             ...
 
-    The above is equivalent to:
+    The above is equivalent to::
+
         @pytest.mark.parametrize(
-            func, [
+            "func", [
                 pytest.param(f1, marks=[
                     pytest.mark.skip_xp_backends(...),
                     pytest.mark.xfail_xp_backends(...), ...]),
@@ -885,7 +886,7 @@ def make_xp_pytest_param(func, capabilities_table=None):
     See Also
     --------
     xp_capabilities
-    make_skip_xp_backends
+    make_xp_test_case
     array_api_extra.testing.lazy_xp_function
     """
     import pytest
