@@ -9,6 +9,8 @@ from typing import Literal
 import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
+
+from scipy._lib._array_api import array_namespace
 from scipy.fft import rfft
 
 __all__ = ['sawtooth', 'sawtooth_rfft', 'square', 'square_rfft', 'gausspulse', 'chirp',
@@ -197,28 +199,29 @@ def sawtooth_rfft(n: int, m_cyc: int, duty: float = 0.5, *,
     ...    ax_.grid()
     >>> plt.show()
     """
-    if not (isinstance(n, int | np.integer) and n > 0):
+    xp = array_namespace()
+    if not (xp.result_type(n, xp.int64) == xp.int64 and n > 0):
         raise ValueError(f"Parameter {n=} is not a positive integer!")
-    if not (isinstance(m_cyc, int | np.integer) and 0 < m_cyc < n // 2):
+    if not (xp.result_type(m_cyc, xp.int64) == xp.int64 and 0 < m_cyc < n // 2):
         raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
     if not (0 <= duty <= 1):
         raise ValueError(f"0 <= duty <= 1 does not hold for parameter {duty=}!")
 
-    scale_factors = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}
+    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
     if norm not in scale_factors:
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
     n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
     X_dtype = rfft([0., ], norm=norm).dtype  # Use same dtype as rfft produces
-    X = np.zeros((n_X,), dtype=X_dtype)
+    X = xp.zeros((n_X,), dtype=X_dtype)
 
-    ll = np.arange(1, (n_X + m_cyc - 1) // m_cyc) * np.pi
+    ll = xp.arange(1, (n_X + m_cyc - 1) // m_cyc) * xp.pi
     if duty == 0:
         X[m_cyc::m_cyc] = -scale_factors[norm] * 1j / ll
     elif duty == 1:
         X[m_cyc::m_cyc] = scale_factors[norm] * 1j / ll
     else:
-        exponent, denominator = np.exp(-2j * duty * ll), 2 * ll**2 * duty * (duty - 1)
+        exponent, denominator = xp.exp(-2j * duty * ll), 2 * ll**2 * duty * (duty - 1)
         X[m_cyc::m_cyc] = scale_factors[norm] * (1 - exponent) / denominator
     return X
 
@@ -440,25 +443,26 @@ def square_rfft(n: int, m_cyc: int, duty: float = 0.5,  *,
     >>> ax0.grid()
     >>> plt.show()
     """
-    if not (isinstance(n, int | np.integer) and n > 0):
+    xp = array_namespace()
+    if not (xp.result_type(n, xp.int64) == xp.int64 and n > 0):
         raise ValueError(f"Parameter {n=} is not a positive integer!")
-    if not (isinstance(m_cyc, int | np.integer) and 0 < m_cyc < n // 2):
+    if not (xp.result_type(m_cyc, xp.int64) == xp.int64 and 0 < m_cyc < n // 2):
         raise ValueError(f"Parameter {m_cyc=} is not a positive integer < {n//2=}!")
     if not (0 < duty < 1):
         raise ValueError(f"0 < duty < 1 does not hold for parameter {duty=}!")
 
-    scale_factors = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}
+    scale_factors = {'backward': n, 'ortho': xp.sqrt(n), 'forward': 1}
     if norm not in scale_factors:
         raise ValueError(f"Parameter {norm=} not in {list(scale_factors)}!")
 
     n_X = n // 2 + 1  # number of bins produced by rfft for signal of n samples
     X_dtype = rfft([0., ], norm=norm).dtype  # Use same dtype as rfft produces
-    X = np.zeros((n_X,), dtype=X_dtype)
+    X = xp.zeros((n_X,), dtype=X_dtype)
 
-    fac0, fac1 = scale_factors[norm], scale_factors[norm] * 1j / np.pi
+    fac0, fac1 = scale_factors[norm], scale_factors[norm] * 1j / xp.pi
     X[0] = fac0 * (2 * duty - 1)  # zeroth Fourier coefficient
-    ll = np.arange(1, (n_X + m_cyc - 1) // m_cyc)
-    X[m_cyc::m_cyc] = fac1 * (np.exp(-2j * np.pi * duty * ll) - 1) / ll
+    ll = xp.arange(1, (n_X + m_cyc - 1) // m_cyc)
+    X[m_cyc::m_cyc] = fac1 * (xp.exp(-2j * xp.pi * duty * ll) - 1) / ll
     return X
 
 

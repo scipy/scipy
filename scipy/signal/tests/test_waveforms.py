@@ -1,10 +1,11 @@
+import math
 from typing import Literal
 
 import numpy as np
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
-    assert_almost_equal, xp_assert_equal, xp_assert_close
+    array_namespace, assert_almost_equal, xp_assert_equal, xp_assert_close
 )
 
 import scipy.signal._waveforms as waveforms
@@ -488,20 +489,21 @@ class TestSawtoothRFFT:
 
     def setup_class(self):
         """Reference values are calculated here. """
+        xp = array_namespace()
         # For self.test_values():
-        vv0 = -8 / 3 * np.array([1 + 1j, 2., 1 - 1j, 0, 1 + 1j])
-        self.Xa_ref = np.zeros((6,), dtype=vv0.dtype)
-        self.Xa_ref[1:] = vv0 / (np.arange(1, 6) * np.pi) ** 2
-        self.Xb_ref = np.zeros_like(self.Xa_ref)
+        vv0 = -8 / 3 * xp.array([1 + 1j, 2., 1 - 1j, 0, 1 + 1j])
+        self.Xa_ref = xp.zeros((6,), dtype=vv0.dtype)
+        self.Xa_ref[1:] = vv0 / (xp.arange(1, 6) * xp.pi) ** 2
+        self.Xb_ref = xp.zeros_like(self.Xa_ref)
         self.Xb_ref[2::2] = self.Xa_ref[1:3]
 
         # For self.test_norm_parameter():
         self.x0_ref = irfft(self.Xa_ref, norm='forward')
 
         # For self.test_duty01():
-        self.X01a_ref = np.zeros(6, dtype=complex)
-        self.X01a_ref[1:] = 1j / np.pi / np.arange(1, 6)
-        self.X01b_ref = np.zeros_like(self.X01a_ref)
+        self.X01a_ref = xp.zeros(6, dtype=complex)
+        self.X01a_ref[1:] = 1j / xp.pi / xp.arange(1, 6)
+        self.X01b_ref = xp.zeros_like(self.X01a_ref)
         self.X01b_ref[2::2] = self.X01a_ref[1:3]
 
     def test_exceptions(self):
@@ -540,7 +542,7 @@ class TestSawtoothRFFT:
     @pytest.mark.parametrize('n', (10, 11))
     def test_duty01(self, n, norm: Literal['backward', 'ortho', 'forward']):
         """Test for parameter ``duty=0`` and ``duty=1``. """
-        s = {'backward': n, 'ortho': np.sqrt(n), 'forward': 1}[norm]
+        s = {'backward': n, 'ortho': math.sqrt(n), 'forward': 1}[norm]
 
         X0a = waveforms.sawtooth_rfft(n, 1, duty=0, norm=norm)
         xp_assert_close(X0a, -s * self.X01a_ref, atol=1e-12)
@@ -583,11 +585,12 @@ class TestSquareRFFT:
     def setup_class(self):
         """Reference values are calculated here. """
         # For self.test_values():
-        self.X0 = np.array([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0., (1 - 1j) / 5]) / np.pi
+        xp = array_namespace()
+        self.X0 = xp.array([0, 1 - 1j, -1j, -(1 + 1j) / 3, 0., (1 - 1j) / 5]) / xp.pi
         self.X0[0] = -0.5
 
         # For self.test_norm_parameter():
-        X_ref = np.asarray([4., 0., -(8 + 8j) / np.pi, 0., -8j / np.pi])
+        X_ref = xp.asarray([4., 0., -(8 + 8j) / xp.pi, 0., -8j / xp.pi])
         self.x_ref = irfft(X_ref, norm='backward')
 
     def test_exceptions(self):
