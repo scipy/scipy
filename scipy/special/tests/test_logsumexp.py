@@ -4,7 +4,7 @@ import pytest
 
 import numpy as np
 
-from scipy._lib._array_api import (is_array_api_strict, make_skip_xp_backends,
+from scipy._lib._array_api import (is_array_api_strict, make_xp_test_case,
                                    xp_default_dtype, xp_device)
 from scipy._lib._array_api_no_0d import (xp_assert_equal, xp_assert_close,
                                          xp_assert_less)
@@ -32,7 +32,7 @@ def test_wrap_radians(xp):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning")
 @pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
-@make_skip_xp_backends(logsumexp)
+@make_xp_test_case(logsumexp)
 class TestLogSumExp:
     def test_logsumexp(self, xp):
         # Test with zero-size array
@@ -301,8 +301,22 @@ class TestLogSumExp:
             assert xp_device(logsumexp(x)) == xp_device(x)
             assert xp_device(logsumexp(x, b=x)) == xp_device(x)
 
+    def test_gh22903(self, xp):
+        # gh-22903 reported that `logsumexp` produced NaN where the weight associated
+        # with the max magnitude element was negative and `return_sign=False`, even if
+        # the net result should be the log of a positive number.
 
-@make_skip_xp_backends(softmax)
+        # result is log of positive number
+        a = xp.asarray([3.06409428, 0.37251854, 3.87471931])
+        b = xp.asarray([1.88190708, 2.84174795, -0.85016884])
+        xp_assert_close(logsumexp(a, b=b), logsumexp(a, b=b, return_sign=True)[0])
+
+        # result is log of negative number
+        b = xp.asarray([1.88190708, 2.84174795, -3.85016884])
+        xp_assert_close(logsumexp(a, b=b), xp.asarray(xp.nan))
+
+
+@make_xp_test_case(softmax)
 class TestSoftmax:
     def test_softmax_fixtures(self, xp):
         xp_assert_close(softmax(xp.asarray([1000., 0., 0., 0.])),
@@ -371,7 +385,7 @@ class TestSoftmax:
                         np.asarray([1., 0., 0., 0.]), rtol=1e-13)
 
 
-@make_skip_xp_backends(log_softmax)
+@make_xp_test_case(log_softmax)
 class TestLogSoftmax:
     def test_log_softmax_basic(self, xp):
         xp_assert_close(log_softmax(xp.asarray([1000., 1.])),

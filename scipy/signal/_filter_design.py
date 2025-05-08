@@ -4,20 +4,22 @@ import operator
 import warnings
 
 import numpy as np
-from numpy import (atleast_1d, poly, polyval, roots, asarray,
+from numpy import (atleast_1d, poly, roots, asarray,
                    pi, absolute, sqrt, tan, log10,
                    arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    sinh, concatenate, prod, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
-from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
+from scipy.signal import _polyutils as _pu
 
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size
+from scipy._lib._array_api import (
+    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+)
 from scipy._lib.array_api_compat import numpy as np_compat
 
 
@@ -58,6 +60,31 @@ def _is_int_type(x):
         return True
 
 
+# https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
+def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
+    if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
+        # If base is non-scalar, broadcast it with the others, since it
+        # may influence how axis is interpreted.
+        start, stop, base = map(xp.asarray, (start, stop, base))
+        ndmax = xp.broadcast_arrays(start, stop, base).ndim
+        start, stop, base = (
+            xpx.atleast_nd(a, ndim=ndmax)
+            for a in (start, stop, base)
+        )
+        base = xp.expand_dims(base)
+    try:
+        result_dt = xp.result_type(start, stop, base)
+    except ValueError:
+        # all of start, stop and base are python scalars
+        result_dt = xp_default_dtype(xp)
+    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
+
+    yp = xp.pow(base, y)
+    if dtype is None:
+        return yp
+    return xp.astype(yp, dtype, copy=False)
+
+
 def findfreqs(num, den, N, kind='ba'):
     """
     Find array of frequencies for computing the response of an analog filter.
@@ -93,27 +120,42 @@ def findfreqs(num, den, N, kind='ba'):
              3.16227766e-01,   1.00000000e+00,   3.16227766e+00,
              1.00000000e+01,   3.16227766e+01,   1.00000000e+02])
     """
+    xp = array_namespace(num, den)
+    num, den = map(xp.asarray, (num, den))
+
     if kind == 'ba':
-        ep = atleast_1d(roots(den)) + 0j
-        tz = atleast_1d(roots(num)) + 0j
+        ep = xpx.atleast_nd(_pu.polyroots(den, xp=xp), ndim=1, xp=xp)
+        tz = xpx.atleast_nd(_pu.polyroots(num, xp=xp), ndim=1, xp=xp)
     elif kind == 'zp':
-        ep = atleast_1d(den) + 0j
-        tz = atleast_1d(num) + 0j
+        ep = xpx.atleast_nd(den, ndim=1, xp=xp)
+        tz = xpx.atleast_nd(num, ndim=1, xp=xp)
     else:
         raise ValueError("input must be one of {'ba', 'zp'}")
 
-    if len(ep) == 0:
-        ep = atleast_1d(-1000) + 0j
+    ep = xp_float_to_complex(ep, xp=xp)
+    tz = xp_float_to_complex(tz, xp=xp)
 
-    ez = np.r_[ep[ep.imag >= 0], tz[(np.abs(tz) < 1e5) & (tz.imag >= 0)]]
+    if ep.shape[0] == 0:
+        ep = xp.asarray([-1000], dtype=ep.dtype)
 
-    integ = np.abs(ez) < 1e-10
-    hfreq = np.round(np.log10(np.max(3 * np.abs(ez.real + integ) +
-                                     1.5 * ez.imag)) + 0.5)
-    lfreq = np.round(np.log10(0.1 * np.min(np.abs((ez + integ).real) +
-                                           2 * ez.imag)) - 0.5)
+    ez = xp.concat((
+        ep[xp.imag(ep) >= 0],
+        tz[(xp.abs(tz) < 1e5) & (xp.imag(tz) >= 0)]
+    ))
 
-    w = np.logspace(lfreq, hfreq, N)
+    integ = xp.astype(xp.abs(ez) < 1e-10, ez.dtype) # XXX True->1, False->0
+    hfreq = xp.round(
+        xp.log10(xp.max(3*xp.abs(xp.real(ez) + integ) + 1.5*xp.imag(ez))) + 0.5
+    )
+
+    # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
+    # depending on the the floating-point jitter in -1.5
+    fudge = 1e-14 if is_jax(xp) else 0
+    lfreq = xp.round(
+        xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
+    )
+
+    w = _logspace(lfreq, hfreq, N, xp=xp)
     return w
 
 
@@ -178,16 +220,18 @@ def freqs(b, a, worN=200, plot=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(b, a, worN)
+
     if worN is None:
         # For backwards compatibility
         w = findfreqs(b, a, 200)
     elif _is_int_type(worN):
         w = findfreqs(b, a, worN)
     else:
-        w = atleast_1d(worN)
+        w = xpx.atleast_nd(xp.asarray(worN), ndim=1, xp=xp)
 
     s = 1j * w
-    h = polyval(b, s) / polyval(a, s)
+    h = _pu.polyval(b, s, xp=xp) / _pu.polyval(a, s, xp=xp)
     if plot is not None:
         plot(w, h)
 
@@ -254,8 +298,13 @@ def freqs_zpk(z, p, k, worN=200):
     >>> plt.show()
 
     """
-    k = np.asarray(k)
-    if k.size > 1:
+    xp = array_namespace(z, p)
+    z, p = map(xp.asarray, (z, p))
+
+    # NB: k is documented to be a scalar; for backwards compat we keep allowing it
+    # to be a size-1 array, but it does not influence the namespace calculation.
+    k = xp.asarray(k, dtype=xp_default_dtype(xp))
+    if xp_size(k) > 1:
         raise ValueError('k must be a single scalar gain')
 
     if worN is None:
@@ -266,10 +315,10 @@ def freqs_zpk(z, p, k, worN=200):
     else:
         w = worN
 
-    w = atleast_1d(w)
+    w = xpx.atleast_nd(xp.asarray(w), ndim=1, xp=xp)
     s = 1j * w
-    num = polyvalfromroots(s, z)
-    den = polyvalfromroots(s, p)
+    num = _pu.npp_polyvalfromroots(s, z, xp=xp)
+    den = _pu.npp_polyvalfromroots(s, p, xp=xp)
     h = k * num/den
     return w, h
 
@@ -433,8 +482,15 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     (2, 1024)
 
     """
-    b = atleast_1d(b)
-    a = atleast_1d(a)
+    xp = array_namespace(b, a)
+
+    b, a = map(xp.asarray, (b, a))
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, xp_default_dtype(xp))
+    res_dtype = xp.result_type(b, a)
+
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -452,40 +508,51 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
-        w = np.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole)
+        w = xp.linspace(0, lastpoint, N,
+                        endpoint=include_nyquist and not whole, dtype=res_dtype)
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
-        if (a.size == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
+        if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
                 and n_fft > 0):  # TODO: review threshold acc. to benchmark?
-            if np.isrealobj(b) and np.isrealobj(a):
+ 
+            if (xp.isdtype(b.dtype, "real floating") and
+                xp.isdtype(a.dtype, "real floating")
+            ):
                 fft_func = sp_fft.rfft
             else:
                 fft_func = sp_fft.fft
-            h = fft_func(b, n=n_fft, axis=0)[:N]
+
+            h = fft_func(b, n=n_fft, axis=0)
+            h = h[:min(N, h.shape[0]), ...]
             h /= a
+
             if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
-                stop = -1 if n_fft % 2 == 1 else -2
-                h_flip = slice(stop, 0, -1)
-                h = np.concatenate((h, h[h_flip].conj()))
+                stop = None if n_fft % 2 == 1 else -1
+                h_flipped = xp.flip(h[1:stop, ...], axis=0)
+                h = xp.concat((h, xp.conj(h_flipped)))
             if b.ndim > 1:
                 # Last axis of h has length 1, so drop it.
                 h = h[..., 0]
                 # Move the first axis of h to the end.
-                h = np.moveaxis(h, 0, -1)
+                h = xp.moveaxis(h, 0, -1)
     else:
-        w = atleast_1d(worN)
+        if isinstance(worN, complex):
+            # backwards compat
+            worN = worN.real
+        w = xpx.atleast_nd(xp.asarray(worN, dtype=res_dtype), ndim=1, xp=xp)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
         del worN
-        w = 2*pi*w/fs
+        w = 2 * pi * w / fs
 
     if h is None:  # still need to compute using freqs w
-        zm1 = exp(-1j * w)
-        h = (npp_polyval(zm1, b, tensor=False) /
-             npp_polyval(zm1, a, tensor=False))
+        zm1 = xp.exp(-1j * w)
+        h = (_pu.npp_polyval(zm1, b, tensor=False, xp=xp) /
+             _pu.npp_polyval(zm1, a, tensor=False, xp=xp))
 
-    w = w*(fs/(2*pi))
+    w = w * (fs / (2 * pi))
 
     if plot is not None:
         plot(w, h)
@@ -576,7 +643,13 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
-    z, p = map(atleast_1d, (z, p))
+    xp = array_namespace(z, p)
+    z, p = map(xp.asarray, (z, p))
+
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+    res_dtype = xp.result_type(z, p)
+    res_dtype = xp.float64 if res_dtype in (xp.float64, xp.complex128) else xp.float32
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -587,15 +660,19 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = np.linspace(0, lastpoint, 512, endpoint=False)
+        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype)
     elif _is_int_type(worN):
-        w = np.linspace(0, lastpoint, worN, endpoint=False)
+        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype)
     else:
-        w = atleast_1d(worN)
-        w = 2*pi*w/fs
+        w = xp.asarray(worN)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
+        w = xpx.atleast_nd(w, ndim=1, xp=xp)
+        w = 2 * pi * w / fs
 
-    zm1 = exp(1j * w)
-    h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
+    zm1 = xp.exp(1j * w)
+    func = _pu.npp_polyvalfromroots
+    h = xp.asarray(k, dtype=res_dtype) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
 
     w = w*(fs/(2*pi))
 
@@ -728,16 +805,19 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     return w, gd
 
 
-def _validate_sos(sos):
+def _validate_sos(sos, xp=None):
     """Helper to validate a SOS input"""
-    sos = np.asarray(sos)
-    sos = np.atleast_2d(sos)
+    if xp is None:
+        xp = np    # backcompat, cf sosfilt, sosfiltfilt
+
+    sos = xp.asarray(sos)
+    sos = xpx.atleast_nd(sos, ndim=2, xp=xp)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')
     n_sections, m = sos.shape
     if m != 6:
         raise ValueError('sos array must be shape (n_sections, 6)')
-    if not (sos[:, 3] == 1).all():
+    if not xp.all(sos[:, 3] == 1):
         raise ValueError('sos[:, 3] should be all ones')
     return sos, n_sections
 
@@ -856,13 +936,16 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos)
+
     fs = _validate_fs(fs, allow_none=False)
 
-    sos, n_sections = _validate_sos(sos)
+    sos, n_sections = _validate_sos(sos, xp)
     if n_sections == 0:
         raise ValueError('Cannot compute frequencies with no sections')
     h = 1.
-    for row in sos:
+    for j in range(sos.shape[0]):
+        row = sos[j, :]
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
