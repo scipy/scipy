@@ -163,8 +163,9 @@
             "chndtridf": "ddd->d"        }
     },
     "chndtrinc": {
-        "_cdflib_wrappers.pxd": {
-            "chndtrinc": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "ncx2_find_noncentrality_float": "fff->f",
+            "ncx2_find_noncentrality_double": "ddd->d" }
     },
     "chndtrix":{
         "boost_special_functions.h++": {

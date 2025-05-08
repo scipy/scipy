@@ -825,6 +825,52 @@ ncx2_ppf_double(double x, double k, double l)
 
 template<typename Real>
 Real
+ncx2_find_noncentrality_wrap(const Real x, const Real k, const Real p)
+{
+    if (std::isnan(x) || std::isnan(k) || std::isnan(p)) {
+        return NAN;
+    }
+    if (k < 0 || x < 0 || p < 0 || p > 1) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+    return NAN;
+    }
+    Real y;
+    try {
+        y = boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>::find_non_centrality(k, x, p);
+    } catch (const std::domain_error& e) {
+        sf_error("chndtrinc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("chndtrinc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("chndtrinc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    if (y < 0) {
+        sf_error("chndtrinc", SF_ERROR_NO_RESULT, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ncx2_find_noncentrality_float(float x, float k, float p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+double
+ncx2_find_noncentrality_double(double x, double k, double p)
+{
+    return ncx2_find_noncentrality_wrap(x, k, p);
+}
+
+template<typename Real>
+Real
 ncx2_sf_wrap(const Real x, const Real k, const Real l)
 {
     return boost::math::cdf(boost::math::complement(

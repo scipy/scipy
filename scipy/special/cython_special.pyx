@@ -168,6 +168,7 @@ Available functions
 - :py:func:`~scipy.special.chndtrinc`::
 
         double chndtrinc(double, double, double)
+        float chndtrinc(float, float, float)
 
 - :py:func:`~scipy.special.chndtrix`::
 
@@ -1436,13 +1437,18 @@ cpdef df_number_t chndtrix(df_number_t x0, df_number_t x1, df_number_t x2) noexc
     else:
         return NAN
 
+cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtrinc"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_noncentrality_double)(x0, x1, x2)
+    else:
+        return NAN
+
 from ._cdflib_wrappers cimport chndtridf as _func_chndtridf
 ctypedef double _proto_chndtridf_t(double, double, double) noexcept nogil
 cdef _proto_chndtridf_t *_proto_chndtridf_t_var = &_func_chndtridf
-
-from ._cdflib_wrappers cimport chndtrinc as _func_chndtrinc
-ctypedef double _proto_chndtrinc_t(double, double, double) noexcept nogil
-cdef _proto_chndtrinc_t *_proto_chndtrinc_t_var = &_func_chndtrinc
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -2033,10 +2039,6 @@ cpdef double chdtriv(double x0, double x1) noexcept nogil:
 cpdef double chndtridf(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.chndtridf"""
     return _func_chndtridf(x0, x1, x2)
-
-cpdef double chndtrinc(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtrinc"""
-    return _func_chndtrinc(x0, x1, x2)
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""
