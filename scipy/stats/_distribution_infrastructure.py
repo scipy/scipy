@@ -8,7 +8,6 @@ import numpy as np
 from numpy import inf
 
 from scipy._lib._array_api import xp_promote
-from scipy._lib.array_api_extra import apply_where
 from scipy._lib._util import _rng_spawn, _RichResult
 from scipy._lib._docscrape import ClassDoc, NumpyDocString
 from scipy import special, stats
