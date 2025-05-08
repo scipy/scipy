@@ -159,8 +159,9 @@
             "ncx2_cdf_double": "ddd->d" }
     },
     "chndtridf": {
-        "_cdflib_wrappers.pxd": {
-            "chndtridf": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "ncx2_find_degrees_of_freedom_float": "fff->f",
+            "ncx2_find_degrees_of_freedom_double": "ddd->d" }
     },
     "chndtrinc": {
         "boost_special_functions.h++": {

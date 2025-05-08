@@ -1446,9 +1446,14 @@ cpdef df_number_t chndtrinc(df_number_t x0, df_number_t x1, df_number_t x2) noex
     else:
         return NAN
 
-from ._cdflib_wrappers cimport chndtridf as _func_chndtridf
-ctypedef double _proto_chndtridf_t(double, double, double) noexcept nogil
-cdef _proto_chndtridf_t *_proto_chndtridf_t_var = &_func_chndtridf
+cpdef df_number_t chndtridf(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.chndtridf"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ncx2_find_degrees_of_freedom_double)(x0, x1, x2)
+    else:
+        return NAN
 
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_int _func_cephes_ellpj_wrap "cephes_ellpj_wrap"(npy_double, npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -2035,10 +2040,6 @@ cpdef double chdtri(double x0, double x1) noexcept nogil:
 cpdef double chdtriv(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.chdtriv"""
     return _func_chdtriv(x0, x1)
-
-cpdef double chndtridf(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.chndtridf"""
-    return _func_chndtridf(x0, x1, x2)
 
 cpdef double cosdg(double x0) noexcept nogil:
     """See the documentation for scipy.special.cosdg"""
