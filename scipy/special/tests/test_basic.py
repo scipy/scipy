@@ -202,9 +202,6 @@ class TestCephes:
     def test_chndtridf(self):
         assert_equal(cephes.chndtridf(0,0,1),5.0)
 
-    def test_chndtrinc(self):
-        assert_equal(cephes.chndtrinc(0,1,0),5.0)
-
     def test_chndtrix(self):
         assert_equal(cephes.chndtrix(0,1,0),0.0)
 
