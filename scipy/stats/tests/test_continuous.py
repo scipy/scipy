@@ -524,6 +524,13 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
         assert np.isscalar(ref)
 
     for method in methods:
+        if isinstance(dist, DiscreteDistribution):
+            message = ("Two argument cdf functions are currently only supported for "
+                       "continuous distributions.")
+            with pytest.raises(NotImplementedError, match=message):
+                res = (np.exp(dist.logcdf(x, y, method=method)) if log
+                       else dist.cdf(x, y, method=method))
+            continue
         res = (np.exp(dist.logcdf(x, y, method=method)) if log
                else dist.cdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
@@ -552,6 +559,13 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
         assert np.isscalar(ref)
 
     for method in methods:
+        message = ("Two argument cdf functions are currently only supported for "
+                   "continuous distributions.")
+        if isinstance(dist, DiscreteDistribution):
+            with pytest.raises(NotImplementedError, match=message):
+                res = (np.exp(dist.logccdf(x, y, method=method)) if log
+                       else dist.ccdf(x, y, method=method))
+            continue
         res = (np.exp(dist.logccdf(x, y, method=method)) if log
                else dist.ccdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
