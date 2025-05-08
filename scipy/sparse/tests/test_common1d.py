@@ -180,7 +180,7 @@ class TestCommon1D:
             datsp.mean(axis=(0, 3))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.mean(axis=1.5)
-        with pytest.raises(ValueError, match='output parameter.*wrong.*dimension'):
+        with pytest.raises(ValueError, match='out.*not match shape'):
             datsp.mean(axis=1, out=out)
 
     def test_sum_dtype(self, spcreator):

@@ -1053,7 +1053,9 @@ class _TestCommon:
             datsp.sum(axis=(0, 3))
         with assert_raises(TypeError, match="axis must be an integer"):
             datsp.sum(axis=1.5)
-        assert_raises(ValueError, datsp.sum, axis=1, out=out)
+        # error msg varies by sparray (1d result) or spmatrix (2d result)
+        with assert_raises(ValueError, match="do.*n.t match.*shape|wrong.*dimensions"):
+            datsp.mean(axis=1, out=out)
 
     def test_sum_dtype(self):
         dat = array([[0, 1, 2],
@@ -1151,7 +1153,7 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
-    def test_mean_invalid_params(self):
+    def test_mean_invalid_param(self):
         out = self.asdense(np.zeros((1, 3)))
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -1164,7 +1166,8 @@ class _TestCommon:
             datsp.mean(axis=(0, 3))
         with assert_raises(TypeError, match="axis must be an integer"):
             datsp.mean(axis=1.5)
-        with assert_raises(ValueError, match="doesn't match.*shape|wrong.*dimensions"):
+        # error msg varies by sparray (1d result) or spmatrix (2d result)
+        with assert_raises(ValueError, match="do.*n.t match.*shape|wrong.*dimensions"):
             datsp.mean(axis=1, out=out)
 
     def test_mean_dtype(self):
@@ -1663,7 +1666,10 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                sp_mult = i.multiply(j)
+                try:
+                    sp_mult = i.multiply(j)
+                except ValueError:
+                    continue
                 if issparse(sp_mult):
                     assert_almost_equal(sp_mult.toarray(), dense_mult)
                 else:
@@ -2080,8 +2086,8 @@ class _TestCommon:
 
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
-                           "Taking maximum .minimum. with > 0 .< 0. number "
-                           "results to a dense matrix")
+                           "Taking (maximum|minimum) with a (positive|negative) number "
+                           "results in a dense matrix")
 
                 max_s = A.maximum(B)
                 min_s = A.minimum(B)
@@ -3722,9 +3728,11 @@ class _TestMinMax:
         X = self.spcreator(np.arange(1, 10).reshape(3, 3))
         assert_equal(X.min(), 1)
         assert_equal(X.min().dtype, X.dtype)
+        assert_equal(X.min(explicit=True), 1)
 
         X = -X
         assert_equal(X.max(), -1)
+        assert_equal(X.max(explicit=True), -1)
 
         # and a fully sparse matrix
         Z = self.spcreator(np.zeros((1, 1)))
@@ -3886,10 +3894,12 @@ class _TestMinMax:
         datsp = self.spcreator(dat)
 
         for fname in ('min', 'max'):
+            datfunc = getattr(dat, fname)
             func = getattr(datsp, fname)
             assert_raises(ValueError, func, axis=3)
             assert_raises(TypeError, func, axis=1.5)
             assert_raises(ValueError, func, axis=1, out=1)
+            assert_equal(func(axis=(0, 1)), datfunc(axis=(0, 1)))
 
     def test_numpy_minmax(self):
         # See gh-5987
@@ -3938,6 +3948,13 @@ class _TestMinMax:
 
             assert_equal(mat.argmax(axis=1), np.argmax(D, axis=1))
             assert_equal(mat.argmin(axis=1), np.argmin(D, axis=1))
+
+        # full matrix with explicit=True
+        mat = self.spcreator(self.asdense(D5))
+        assert_equal(mat.argmax(explicit=True), 5)
+        assert_equal((-mat).argmax(explicit=True), 2)
+        assert_equal(mat.argmin(explicit=True), 2)
+        assert_equal((-mat).argmin(explicit=True), 5)
 
         # zero-size matrices
         D6 = self.spcreator(np.empty((0, 5)))
