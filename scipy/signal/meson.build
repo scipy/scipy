@@ -74,6 +74,7 @@ py3.install_sources([
     '_ltisys.py',
     '_max_len_seq.py',
     '_peak_finding.py',
+    '_polyutils.py',
     '_savitzky_golay.py',
     '_short_time_fft.py',
     '_signaltools.py',
