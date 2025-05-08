@@ -378,7 +378,7 @@ class Binomial(DiscreteDistribution):
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(True, False))
-    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(True, True))
+    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(False, False))
     _x_support = _IntegerInterval(endpoints=(0, 'n'), inclusive=(True, True))
 
     _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
