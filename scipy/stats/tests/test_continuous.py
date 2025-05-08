@@ -333,9 +333,9 @@ class TestDistributions:
         # Safe subtraction is needed in special cases
         x = np.asarray([-1e-20, -1e-21, 1e-20, 1e-21, -1e-20])
         y = np.asarray([-1e-21, -1e-20, 1e-21, 1e-20, 1e-20])
-        p0 = np.asarray(X.pdf(0)*(y-x))
-        p0[(x > y) & ~np.isnan(p0)] = 0.0
-        p0 = p0[()]
+
+
+        p0 = X.pdf(0)*(y-x)
         p1 = X.cdf(x, y, method='subtraction_safe')
         p2 = X.cdf(x, y, method='subtraction')
         assert_equal(p2, 0)
@@ -517,16 +517,20 @@ def check_cdf2(dist, log, x, y, result_shape, methods):
                 or dist._overrides('_logccdf_formula')):
             methods.add('log/exp')
 
-    ref = np.asarray(dist.cdf(y) - dist.cdf(x) + dist.pmf(x))
-    ref[~np.isnan(ref) & (x > y)] = 0.0
-    ref = ref[()]
-
+    ref = dist.cdf(y) - dist.cdf(x)
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
         assert np.isscalar(ref)
 
     for method in methods:
+        if isinstance(dist, DiscreteDistribution):
+            message = ("Two argument cdf functions are currently only supported for "
+                       "continuous distributions.")
+            with pytest.raises(NotImplementedError, match=message):
+                res = (np.exp(dist.logcdf(x, y, method=method)) if log
+                       else dist.cdf(x, y, method=method))
+            continue
         res = (np.exp(dist.logcdf(x, y, method=method)) if log
                else dist.cdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
@@ -548,16 +552,20 @@ def check_ccdf2(dist, log, x, y, result_shape, methods):
     if dist._overrides(f'_{"log" if log else ""}ccdf2_formula'):
         methods.add('formula')
 
-    ref = np.asarray(dist.cdf(x) + dist.ccdf(y) - dist.pmf(x))
-    ref[~np.isnan(ref) & (x > y)] = 1.0
-    ref = ref[()]
-
+    ref = dist.cdf(x) + dist.ccdf(y)
     np.testing.assert_equal(ref.shape, result_shape)
 
     if result_shape == tuple():
         assert np.isscalar(ref)
 
     for method in methods:
+        message = ("Two argument cdf functions are currently only supported for "
+                   "continuous distributions.")
+        if isinstance(dist, DiscreteDistribution):
+            with pytest.raises(NotImplementedError, match=message):
+                res = (np.exp(dist.logccdf(x, y, method=method)) if log
+                       else dist.ccdf(x, y, method=method))
+            continue
         res = (np.exp(dist.logccdf(x, y, method=method)) if log
                else dist.ccdf(x, y, method=method))
         np.testing.assert_allclose(res, ref, atol=1e-14)
