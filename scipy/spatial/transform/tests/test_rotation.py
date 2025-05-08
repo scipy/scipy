@@ -9,7 +9,6 @@ from scipy.stats import special_ortho_group
 from itertools import permutations, product
 from scipy._lib._array_api import (
     xp_assert_equal,
-    is_jax,
     is_numpy,
     is_lazy_array,
     xp_vector_norm,

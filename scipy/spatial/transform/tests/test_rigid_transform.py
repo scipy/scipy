@@ -466,13 +466,14 @@ def test_from_dual_quat(xp):
     )
     xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3)[()],
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]),
+    xp_assert_close(xp.vecdot(unnormalized_dual_quat[:4],
+                              unnormalized_dual_quat[4:])[()],
                     xp.asarray(0.0)[()], atol=1e-8)
 
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
                     atol=1e-8)
 
     # real and dual quaternion are not orthogonal
@@ -486,7 +487,7 @@ def test_from_dual_quat(xp):
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
                     atol=1e-12)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
@@ -496,7 +497,7 @@ def test_from_dual_quat(xp):
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
                     atol=1e-12)
 
     # compensation for precision loss in real quaternion
@@ -532,7 +533,7 @@ def test_from_dual_quat(xp):
     xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
 
 
-def test_from_dual_quat_array_like(xp):
+def test_from_dual_quat_array_like():
     rng = np.random.default_rng(123)
     # Test single transform
     t = np.array([1, 2, 3])
@@ -677,7 +678,7 @@ def test_apply(xp):
     xp_assert_close(tf.apply(vecs), expected, atol=atol)
 
 
-def test_apply_array_like(xp):
+def test_apply_array_like():
     rng = np.random.default_rng(123)
     # Single vector
     t = np.array([1, 2, 3])
@@ -1094,7 +1095,7 @@ def test_normalize_dual_quaternion(xp):
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
     xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
                     atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:]), xp.asarray(0.0)[()],
+    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:])[()], xp.asarray(0.0)[()],
                     atol=1e-12)
 
     rng = np.random.default_rng(103213650)
