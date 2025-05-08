@@ -23,7 +23,6 @@ def rigid_transform_to_xp(r: RigidTransform, xp):
     return RigidTransform.from_matrix(xp.asarray(r.as_matrix()))
 
 
-@pytest.mark.array_api_backends
 def test_repr(xp):
     actual = repr(RigidTransform.from_matrix(xp.eye(4)))
     expected = """\
@@ -48,7 +47,6 @@ RigidTransform.from_matrix(array([[[1., 0., 0., 0.],
     assert actual == expected
 
 
-@pytest.mark.array_api_backends
 def test_from_rotation(xp):
     atol = 1e-12
 
@@ -76,15 +74,6 @@ def test_from_rotation(xp):
     assert not tf.single
 
 
-def test_from_rotation_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    from_rotation = jax.jit(RigidTransform.from_rotation)
-    jax.block_until_ready(from_rotation(r))
-
-
-@pytest.mark.array_api_backends
 def test_from_translation(xp):
     # Test single translation
     t = xp.asarray([1, 2, 3])
@@ -104,15 +93,22 @@ def test_from_translation(xp):
     assert not tf.single
 
 
-def test_from_translation_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_translation_array_like():
+    # Test single translation
+    t = [1, 2, 3]
+    tf = RigidTransform.from_translation(t)
+    tf_expected = RigidTransform.from_translation(np.array(t))
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix())
+    assert tf.single
 
-    t = jax.numpy.asarray([1, 2, 3])
-    from_translation = jax.jit(RigidTransform.from_translation)
-    jax.block_until_ready(from_translation(t))
+    # Test multiple translations
+    t = [[1, 2, 3], [4, 5, 6]]
+    tf = RigidTransform.from_translation(t)
+    tf_expected = RigidTransform.from_translation(np.array(t))
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix())
+    assert not tf.single
 
 
-@pytest.mark.array_api_backends
 def test_from_matrix(xp):
     atol = 1e-12
 
@@ -160,15 +156,25 @@ def test_from_matrix(xp):
             RigidTransform.from_matrix(invalid)
 
 
-def test_from_matrix_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_matrix_array_like():
+    # Test single transform matrix
+    matrix = [[1, 0, 0, 0],
+              [0, 1, 0, 0],
+              [0, 0, 1, 0],
+              [0, 0, 0, 1]]
+    expected = np.eye(4)
+    tf = RigidTransform.from_matrix(matrix)
+    xp_assert_close(tf.as_matrix(), expected)
+    assert tf.single
 
-    matrix = jax.numpy.eye(4)
-    from_matrix = jax.jit(RigidTransform.from_matrix)
-    jax.block_until_ready(from_matrix(matrix))
+    # Test multiple transform matrices
+    matrices = [matrix, matrix]
+    tf = RigidTransform.from_matrix(matrices)
+    for i in range(len(matrices)):
+        xp_assert_close(tf.as_matrix()[i, ...], expected)
+    assert not tf.single
 
 
-@pytest.mark.array_api_backends
 def test_from_components(xp):
     atol = 1e-12
 
@@ -211,16 +217,26 @@ def test_from_components(xp):
         xp_assert_close(tf.as_matrix()[i, ...], expected, atol=atol)
 
 
-def test_from_components_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_components_array_like():
+    rng = np.random.default_rng(123)
+    # Test single rotation and translation
+    t = [1, 2, 3]
+    r = Rotation.random(rng=rng)
+    tf = RigidTransform.from_components(t, r)
+    tf_expected = RigidTransform.from_components(np.array(t), r)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
+    assert tf.single
 
-    t = jax.numpy.asarray([1, 2, 3])
-    r = Rotation.from_euler("zyx", jax.numpy.asarray([90, 0, 0]), degrees=True)
-    from_components = jax.jit(RigidTransform.from_components)
-    jax.block_until_ready(from_components(t, r))
+    # Test multiple rotations and translations
+    t = [[1, 2, 3], [4, 5, 6]]
+    r = Rotation.random(len(t), rng=rng)
+    tf = RigidTransform.from_components(t, r)
+    tf_expected = RigidTransform.from_components(np.array(t), r)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
+    assert not tf.single
 
 
-@pytest.mark.array_api_backends
+
 def test_as_components(xp):
     atol = 1e-12
     n = 10
@@ -233,17 +249,6 @@ def test_as_components(xp):
     xp_assert_close(new_t, t, atol=atol)
 
 
-def test_as_components_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    t = jax.numpy.asarray([1, 2, 3])
-    r = Rotation.from_euler("zyx", jax.numpy.asarray([90, 0, 0]), degrees=True)
-    tf = RigidTransform.from_components(t, r)
-    as_components = jax.jit(RigidTransform.as_components)
-    jax.block_until_ready(as_components(tf))
-
-
-@pytest.mark.array_api_backends
 def test_from_exp_coords(xp):
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
@@ -325,15 +330,27 @@ def test_from_exp_coords(xp):
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
 
-def test_from_exp_coords_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_exp_coords_array_like():
+    rng = np.random.default_rng(123)
+    # Test single transform
+    t = np.array([1, 2, 3])
+    r = Rotation.random(rng=rng)
+    tf_expected = RigidTransform.from_components(t, r)
+    exp_coords = tf_expected.as_exp_coords().tolist()
+    assert isinstance(exp_coords, list)
+    tf = RigidTransform.from_exp_coords(exp_coords)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
-    exp_coords = jax.numpy.asarray([0.0, 0.0, 0.0, 3.0, -5.4, 100.2])
-    from_exp_coords = jax.jit(RigidTransform.from_exp_coords)
-    jax.block_until_ready(from_exp_coords(exp_coords))
+    # Test multiple transforms
+    t = [[1, 2, 3], [4, 5, 6]]
+    r = Rotation.random(len(t), rng=rng)
+    tf_expected = RigidTransform.from_components(t, r)
+    exp_coords = tf_expected.as_exp_coords().tolist()
+    assert isinstance(exp_coords, list)
+    tf = RigidTransform.from_exp_coords(exp_coords)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_as_exp_coords(xp):
     # identity
     expected = xp.zeros(6)
@@ -347,25 +364,17 @@ def test_as_exp_coords(xp):
     tf = RigidTransform.from_rotation(Rotation.from_rotvec(rot_vec))
     exp_coords = tf.as_exp_coords()
     xp_assert_close(exp_coords[:, :3], rot_vec, rtol=1e-13)
-    xp_assert_close(exp_coords[:, 3:], xp.asarray(0.0), atol=1e-16, check_shape=False)
+    expected = xp.zeros_like(rot_vec)
+    xp_assert_close(exp_coords[:, 3:], expected, atol=1e-16)
 
     # pure translation
     translation = xp.asarray(rng.normal(scale=100.0, size=(1000, 3)))
     tf = RigidTransform.from_translation(translation)
     exp_coords = tf.as_exp_coords()
-    xp_assert_close(exp_coords[:, :3], xp.asarray(0.0), atol=1e-16, check_shape=False)
+    xp_assert_close(exp_coords[:, :3], expected, atol=1e-16)
     xp_assert_close(exp_coords[:, 3:], translation, rtol=1e-15)
 
 
-def test_as_exp_coords_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    tf = RigidTransform.from_translation(jax.numpy.asarray([1, 2, 3]))
-    as_exp_coords = jax.jit(RigidTransform.as_exp_coords)
-    jax.block_until_ready(as_exp_coords(tf))
-
-
-@pytest.mark.array_api_backends
 def test_from_dual_quat(xp):
     # identity
     xp_assert_close(
@@ -455,31 +464,30 @@ def test_from_dual_quat(xp):
         [-0.2547655, 1.23506123, 0.20230088, 0.24247194,  # norm 1.3
          0.38559628, 0.08184063, 0.1755943, -0.1582222]  # orthogonal
     )
-    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3),
-                    atol=1e-12, check_0d=False)
+    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3)[()],
+                    atol=1e-12)
     xp_assert_close(xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]),
-                    xp.asarray(0.0), atol=1e-8, check_0d=False)
+                    xp.asarray(0.0)[()], atol=1e-8)
+
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0), atol=1e-8,
-                    check_0d=False)
+    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+                    atol=1e-8)
 
     # real and dual quaternion are not orthogonal
     unnormalized_dual_quat = xp.asarray(
         [0.20824458, 0.75098079, 0.54542913, -0.30849493,  # unit norm
          -0.16051025, 0.10742978, 0.21277201, 0.20596935]  # not orthogonal
     )
-    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0),
-                    atol=1e-12, check_0d=False)
+    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0)[()],
+                    atol=1e-12)
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0), atol=1e-12,
-                    check_0d=False)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0),
-                    atol=1e-12, check_0d=False)
+    xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
     unnormalized_dual_quat = xp.asarray(
@@ -488,8 +496,8 @@ def test_from_dual_quat(xp):
     dual_quat = RigidTransform.from_dual_quat(
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=1e-12)
-    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0),
-                    atol=1e-12, check_0d=False)
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:]), xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
@@ -498,14 +506,13 @@ def test_from_dual_quat(xp):
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    non_normal_dual_quats = random_dual_quats[:, :4] + 0.01
-    random_dual_quats = xpx.at(random_dual_quats)[:, :4].set(non_normal_dual_quats)
-    assert not xp.any(xp.abs(
-        xp_vector_norm(random_dual_quats[:, :4], axis=1) - 1.0) < 0.0001)
+    random_dual_quats = xpx.at(random_dual_quats)[:, :4].add(0.01)
+    assert not xp.any(xpx.isclose(xp_vector_norm(random_dual_quats[:, :4], axis=1), 
+                                  1.0, atol=0.0001))
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
-    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), xp.asarray(1.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
+    expected = xp.ones(dual_quat_norm.shape[0])
+    xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), expected, atol=1e-12)
 
     # compensation for precision loss in dual quaternion, results in violation
     # of orthogonality constraint
@@ -514,26 +521,38 @@ def test_from_dual_quat(xp):
     random_dual_quats = RigidTransform.from_components(t, r).as_dual_quat()
 
     # ensure that random quaternions are not normalized
-    non_normal_dual_quats = random_dual_quats[:, 4:] + 0.01
-    random_dual_quats = xpx.at(random_dual_quats)[:, 4:].set(non_normal_dual_quats)
+    random_dual_quats = xpx.at(random_dual_quats)[:, 4:].add(0.01)
     q_norm = xp.vecdot(random_dual_quats[:, :4], random_dual_quats[:, 4:])
-    assert not xp.any(xp.abs(q_norm) < 0.0001)
+    assert not xp.any(xpx.isclose(q_norm, 0.0, atol=0.0001))
     dual_quat_norm = RigidTransform.from_dual_quat(
         random_dual_quats).as_dual_quat()
-    xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]),
-                    xp.asarray(0.0), atol=1e-12, check_0d=False, check_shape=False)
+    expected = xp.zeros(dual_quat_norm.shape[0])
+    xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]), expected,
+                              atol=1e-12)
     xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
 
 
-def test_from_dual_quat_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_dual_quat_array_like(xp):
+    rng = np.random.default_rng(123)
+    # Test single transform
+    t = np.array([1, 2, 3])
+    r = Rotation.random(rng=rng)
+    tf_expected = RigidTransform.from_components(t, r)
+    dual_quat = tf_expected.as_dual_quat().tolist()
+    assert isinstance(dual_quat, list)
+    tf = RigidTransform.from_dual_quat(dual_quat)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
-    q = jax.numpy.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
-    from_dual_quat = jax.jit(RigidTransform.from_dual_quat)
-    jax.block_until_ready(from_dual_quat(q))
+    # Test multiple transforms
+    t = [[1, 2, 3], [4, 5, 6]]
+    r = Rotation.random(len(t), rng=rng)
+    tf_expected = RigidTransform.from_components(t, r)
+    dual_quat = tf_expected.as_dual_quat().tolist()
+    assert isinstance(dual_quat, list)
+    tf = RigidTransform.from_dual_quat(dual_quat)
+    xp_assert_close(tf.as_matrix(), tf_expected.as_matrix(), atol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_as_dual_quat(xp):
     # identity
     expected = xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
@@ -579,15 +598,6 @@ def test_as_dual_quat(xp):
         xp_assert_close(actual, expected, atol=1e-12)
 
 
-def test_as_dual_quat_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    tf = RigidTransform.from_matrix(jax.numpy.eye(4))
-    as_dual_quat = jax.jit(RigidTransform.as_dual_quat)
-    jax.block_until_ready(as_dual_quat(tf))
-
-
-@pytest.mark.array_api_backends
 def test_from_as_internal_consistency(xp):
     atol = 1e-12
     n = 1000
@@ -632,7 +642,6 @@ def test_identity():
     xp_assert_close(tf.as_matrix(), np.array([np.eye(4)] * 5), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_apply(xp):
     atol = 1e-12
 
@@ -668,15 +677,25 @@ def test_apply(xp):
     xp_assert_close(tf.apply(vecs), expected, atol=atol)
 
 
-def test_apply_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_apply_array_like(xp):
+    rng = np.random.default_rng(123)
+    # Single vector
+    t = np.array([1, 2, 3])
+    r = Rotation.random(rng=rng)
+    tf = RigidTransform.from_components(t, r)
+    vec = [1, 0, 0]
+    expected = t + r.apply(vec)
+    xp_assert_close(tf.apply(vec), expected, atol=1e-12)
 
-    tf = RigidTransform.from_matrix(jax.numpy.eye(4))
-    apply = jax.jit(RigidTransform.apply)
-    jax.block_until_ready(apply(tf, jax.numpy.array([1, 0, 0])))
+    # Multiple vectors
+    t = np.array([[1, 2, 3], [4, 5, 6]])
+    r = Rotation.random(len(t), rng=rng)
+    tf = RigidTransform.from_components(t, r)
+    vec = [[1, 0, 0], [0, 1, 0]]
+    expected = t + r.apply(vec)
+    xp_assert_close(tf.apply(vec), expected, atol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_inverse_apply(xp):
     atol = 1e-12
 
@@ -696,7 +715,6 @@ def test_inverse_apply(xp):
     xp_assert_close(tf.apply(vecs, inverse=True), expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_rotation_alone(xp):
     atol = 1e-12
 
@@ -707,7 +725,6 @@ def test_rotation_alone(xp):
     xp_assert_close(tf.apply(vec), expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_translation_alone(xp):
     atol = 1e-12
     t = xp.asarray([1.0, 2, 3])
@@ -717,7 +734,6 @@ def test_translation_alone(xp):
     xp_assert_close(tf.apply(vec), expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_composition(xp):
     atol = 1e-12
 
@@ -764,7 +780,6 @@ def test_composition(xp):
     xp_assert_close(composed.apply(vec), expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_pow(xp):
     atol = 1e-12
     num = 10
@@ -806,15 +821,6 @@ def test_pow(xp):
     xp_assert_close(tf.as_matrix(), xp.eye(4), atol=atol)
 
 
-def test_pow_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    identity = RigidTransform.from_matrix(jax.numpy.eye(4))
-    pow = jax.jit(RigidTransform.__pow__)
-    jax.block_until_ready(pow(identity, 2))
-
-
-@pytest.mark.array_api_backends
 def test_pow_equivalence_with_rotation(xp):
     atol = 1e-12
     num = 10
@@ -825,7 +831,6 @@ def test_pow_equivalence_with_rotation(xp):
         xp_assert_close((p**n).rotation.as_matrix(), (r**n).as_matrix(), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_inverse(xp):
     atol = 1e-12
 
@@ -859,7 +864,6 @@ def test_inverse(xp):
     xp_assert_close(composed.as_matrix(), expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_properties(xp):
     atol = 1e-12
 
@@ -882,7 +886,6 @@ def test_properties(xp):
     xp_assert_close(tf.translation, t, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_indexing(xp):
     atol = 1e-12
 
@@ -915,7 +918,21 @@ def test_indexing(xp):
     assert len(tf_masked) == 0
 
 
-@pytest.mark.array_api_backends
+def test_indexing_array_like():
+    atol = 1e-12
+
+    r = Rotation.from_euler('zyx', np.array([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    t = np.array([[1.0, 2, 3], [4, 5, 6]])
+    tf = RigidTransform.from_components(t, r)
+
+    tf_masked = tf[[False, True]]
+    xp_assert_close(tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(),
+                    atol=atol)
+    xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
+    tf_masked = tf[[False, False]]
+    assert len(tf_masked) == 0
+
+
 def test_concatenate(xp):
     atol = 1e-12
 
@@ -940,16 +957,6 @@ def test_concatenate(xp):
     xp_assert_close(concatenated2[2].as_matrix(), tf2.as_matrix(), atol=atol)
 
 
-def test_concatenate_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    tf = RigidTransform.from_translation(jax.numpy.array([1, 0, 0]))
-    concatenate = jax.jit(RigidTransform.concatenate)
-    result = jax.block_until_ready(concatenate([tf, tf]))
-    assert isinstance(result, RigidTransform)
-
-
-@pytest.mark.array_api_backends
 def test_input_validation(xp):
     # Test invalid matrix shapes
     inputs = [xp.eye(3), xp.zeros((4, 3)), [], xp.zeros((1, 1, 4, 4))]
@@ -995,7 +1002,6 @@ def test_input_validation(xp):
         RigidTransform.from_rotation(xp.eye(3))
 
 
-@pytest.mark.array_api_backends
 def test_translation_validation(xp):
     # Test invalid translation shapes
     with pytest.raises(ValueError, match="Expected `translation` to have shape"):
@@ -1008,7 +1014,6 @@ def test_translation_validation(xp):
         RigidTransform.from_translation(xp.zeros((1, 1, 3)))
 
 
-@pytest.mark.array_api_backends
 def test_vector_validation(xp):
     tf = rigid_transform_to_xp(RigidTransform.identity(2), xp=xp)
 
@@ -1023,7 +1028,6 @@ def test_vector_validation(xp):
         tf.apply(xp.zeros((1, 1, 3)))
 
 
-@pytest.mark.array_api_backends
 def test_indexing_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
 
@@ -1039,7 +1043,6 @@ def test_indexing_validation(xp):
         len(tf)
 
 
-@pytest.mark.array_api_backends
 def test_composition_validation(xp):
     tf2 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
     tf3 = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
@@ -1049,7 +1052,6 @@ def test_composition_validation(xp):
         tf2 * tf3
 
 
-@pytest.mark.array_api_backends
 def test_concatenate_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
 
@@ -1059,7 +1061,6 @@ def test_concatenate_validation(xp):
         RigidTransform.concatenate([tf, xp.eye(4)])
 
 
-@pytest.mark.array_api_backends
 def test_setitem_validation(xp):
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
     single = RigidTransform.from_matrix(xp.eye(4))
@@ -1073,53 +1074,43 @@ def test_setitem_validation(xp):
         tf[0] = xp.eye(4)
 
 
-@pytest.mark.skip_xp_backends(eager_only=True,
-                              reason="lazy backends do not support memory sharing")
+@pytest.mark.skip_xp_backends("jax.numpy",
+                              reason="JAX does not support memory sharing")
 def test_copy_flag(xp):
     # Test that copy=True creates new memory
     matrix = xp.eye(4)
     tf = RigidTransform(matrix, normalize=False, copy=True)
-    matrix = xpx.at(matrix)[0, 0].set(2)
+    matrix[0, 0] = 2
     assert tf.as_matrix()[0, 0] == 1
 
     # Test that copy=False shares memory
     matrix = xp.eye(4)
     tf = RigidTransform(matrix, normalize=False, copy=False)
-    matrix = xpx.at(matrix)[0, 0].set(2)
+    matrix[0, 0] = 2
     assert tf.as_matrix()[0, 0] == 2
 
 
-@pytest.mark.array_api_backends
 def test_normalize_dual_quaternion(xp):
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
-    xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
-    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:]), xp.asarray(0.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
+    xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
+                    atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:]), xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     rng = np.random.default_rng(103213650)
     dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
     dual_quat = normalize_dual_quaternion(dual_quat)
-    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), xp.asarray(1.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
-    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), xp.asarray(0.0),
-                    atol=1e-12, check_0d=False, check_shape=False)
+    expected = xp.ones(dual_quat.shape[0])
+    xp_assert_close(xp_vector_norm(dual_quat[:, :4], axis=-1), expected, atol=1e-12)
+    expected = xp.zeros(dual_quat.shape[0])
+    xp_assert_close(xp.vecdot(dual_quat[:, :4], dual_quat[:, 4:]), expected, atol=1e-12)
 
 
-def test_normalize_dual_quaternion_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    dual_quat = jax.numpy.zeros((1, 8))
-    jit_normalize_dual_quaternion = jax.jit(normalize_dual_quaternion)
-    jax.block_until_ready(jit_normalize_dual_quaternion(dual_quat))
-
-
-@pytest.mark.array_api_backends
 def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
     assert not tf.single
-
+    
     tf = RigidTransform.from_rotation(Rotation.from_quat(xp.zeros((0, 4))))
     assert len(tf) == 0
     assert not tf.single
@@ -1146,7 +1137,6 @@ def test_empty_transform_construction(xp):
     assert not tf.single
 
 
-@pytest.mark.array_api_backends
 def test_empty_transform_representation(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
@@ -1162,7 +1152,6 @@ def test_empty_transform_representation(xp):
     assert tf.as_dual_quat().shape == (0, 8)
 
 
-@pytest.mark.array_api_backends
 def test_empty_transform_application(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
 
@@ -1173,7 +1162,6 @@ def test_empty_transform_application(xp):
         tf.apply(xp.zeros((2, 3)))
 
 
-@pytest.mark.array_api_backends
 def test_empty_transform_composition(xp):
     tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     tf_single = RigidTransform.from_matrix(xp.eye(4))
@@ -1190,7 +1178,6 @@ def test_empty_transform_composition(xp):
         tf_empty * tf_many
 
 
-@pytest.mark.array_api_backends
 def test_empty_transform_concatenation(xp):
     tf_empty = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     tf_single = RigidTransform.from_matrix(xp.eye(4))
@@ -1204,7 +1191,6 @@ def test_empty_transform_concatenation(xp):
     assert len(RigidTransform.concatenate([tf_many, tf_empty, tf_single])) == 3
 
 
-@pytest.mark.array_api_backends
 def test_empty_transform_inv_and_pow(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf.inv()) == 0

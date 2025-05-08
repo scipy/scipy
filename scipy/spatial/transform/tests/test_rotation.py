@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 import numpy as np
@@ -12,6 +14,7 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
+    eager_warns
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -31,12 +34,15 @@ def basis_vec(axis):
         return [0, 0, 1]
 
 
+def rotation_to_xp(r: Rotation, xp):
+    return Rotation.from_quat(xp.asarray(r.as_quat()))
+
+
 def test_init_non_array():
     Rotation((0, 0, 0, 1))
     Rotation([0, 0, 0, 1])
 
 
-@pytest.mark.array_api_backends
 def test_generic_quat_matrix(xp):
     x = xp.asarray([[3.0, 4, 0, 0], [5, 12, 0, 0]])
     r = Rotation.from_quat(x)
@@ -44,7 +50,6 @@ def test_generic_quat_matrix(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_single_1d_quaternion(xp):
     x = xp.asarray([3.0, 4, 0, 0])
     r = Rotation.from_quat(x)
@@ -52,7 +57,6 @@ def test_from_single_1d_quaternion(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_single_2d_quaternion(xp):
     x = xp.asarray([[3.0, 4, 0, 0]])
     r = Rotation.from_quat(x)
@@ -60,7 +64,6 @@ def test_from_single_2d_quaternion(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_quat_scalar_first(xp):
     rng = np.random.RandomState(0)
 
@@ -84,15 +87,24 @@ def test_from_quat_scalar_first(xp):
     xp_assert_close(xp.roll(r.as_quat(), 1, axis=1), q, rtol=1e-15)
 
 
-def test_from_quat_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_quat_array_like():
+    rng = np.random.default_rng(123)
+    # Single rotation
+    r_expected = Rotation.random(rng=rng)
+    r = Rotation.from_quat(r_expected.as_quat().tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
 
-    q = jax.numpy.array([0, 0, 0, 1])
-    r = jax.block_until_ready(jax.jit(Rotation.from_quat)(q))
-    assert isinstance(r, Rotation)
+    # Multiple rotations
+    r_expected = Rotation.random(3, rng=rng)
+    r = Rotation.from_quat(r_expected.as_quat().tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
 
-@pytest.mark.array_api_backends
+def test_from_quat_int_dtype(xp):
+    r = Rotation.from_quat(xp.asarray([1, 0, 0, 0]))
+    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+
+
 def test_as_quat_scalar_first(xp):
     rng = np.random.RandomState(0)
 
@@ -125,7 +137,6 @@ def test_as_quat_scalar_first(xp):
                     xp.roll(r.as_quat(canonical=True), 1, axis=1), rtol=1e-15)
 
 
-@pytest.mark.array_api_backends
 def test_from_square_quat_matrix(xp):
     # Ensure proper norm array broadcasting
     x = xp.asarray([
@@ -141,7 +152,6 @@ def test_from_square_quat_matrix(xp):
     xp_assert_close(r.as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_quat_double_to_canonical_single_cover(xp):
     x = xp.asarray([
         [-1.0, 0, 0, 0],
@@ -155,7 +165,6 @@ def test_quat_double_to_canonical_single_cover(xp):
     xp_assert_close(r.as_quat(canonical=True), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_quat_double_cover(xp):
     # See the Rotation.from_quat() docstring for scope of the quaternion
     # double cover property.
@@ -164,16 +173,16 @@ def test_quat_double_cover(xp):
     r = Rotation.from_quat(q)
     xp_assert_equal(q, r.as_quat(canonical=False))
     # Check composition and inverse
-    q = xp.asarray([1.0, 0, 0, 1])/np.sqrt(2)  # 90 deg rotation about x
+    q = xp.asarray([1.0, 0, 0, 1])/math.sqrt(2)  # 90 deg rotation about x
     r = Rotation.from_quat(q)
     r3 = r*r*r
-    xp_assert_close(r.as_quat(canonical=False)*np.sqrt(2),
+    xp_assert_close(r.as_quat(canonical=False)*math.sqrt(2),
                     xp.asarray([1.0, 0, 0, 1]))
-    xp_assert_close(r.inv().as_quat(canonical=False)*np.sqrt(2),
+    xp_assert_close(r.inv().as_quat(canonical=False)*math.sqrt(2),
                     xp.asarray([-1.0, 0, 0, 1]))
-    xp_assert_close(r3.as_quat(canonical=False)*np.sqrt(2),
+    xp_assert_close(r3.as_quat(canonical=False)*math.sqrt(2),
                     xp.asarray([1.0, 0, 0, -1]))
-    xp_assert_close(r3.inv().as_quat(canonical=False)*np.sqrt(2),
+    xp_assert_close(r3.inv().as_quat(canonical=False)*math.sqrt(2),
                     xp.asarray([-1.0, 0, 0, -1]))
 
     # More sanity checks
@@ -187,14 +196,6 @@ def test_quat_double_cover(xp):
                     xp.asarray([0.0, 0, 0, -1]), atol=2e-16)
 
 
-def test_as_quat_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_quat(jax.numpy.array([1, 0, 0, 0]))
-    jax.block_until_ready(jax.jit(Rotation.as_quat)(r))
-
-
-@pytest.mark.array_api_backends
 def test_from_quat_wrong_shape(xp):
     # Wrong shape 1d array
     with pytest.raises(ValueError, match='Expected `quat` to have shape'):
@@ -215,7 +216,6 @@ def test_from_quat_wrong_shape(xp):
             ]))
 
 
-@pytest.mark.array_api_backends
 def test_zero_norms_from_quat(xp):
     x = xp.asarray([
             [3, 4, 0, 0],
@@ -229,7 +229,6 @@ def test_zero_norms_from_quat(xp):
             Rotation.from_quat(x)
 
 
-@pytest.mark.array_api_backends
 def test_as_matrix_single_1d_quaternion(xp):
     quat = xp.asarray([0, 0, 0, 1])
     mat = Rotation.from_quat(quat).as_matrix()
@@ -237,7 +236,6 @@ def test_as_matrix_single_1d_quaternion(xp):
     xp_assert_close(mat, xp.eye(3))
 
 
-@pytest.mark.array_api_backends
 def test_as_matrix_single_2d_quaternion(xp):
     quat = xp.asarray([[0, 0, 1, 1]])
     mat = Rotation.from_quat(quat).as_matrix()
@@ -250,7 +248,6 @@ def test_as_matrix_single_2d_quaternion(xp):
     xp_assert_close(mat[0, ...], expected_mat)
 
 
-@pytest.mark.array_api_backends
 def test_as_matrix_from_square_input(xp):
     quats = xp.asarray([
             [0, 0, 1, 1],
@@ -279,7 +276,6 @@ def test_as_matrix_from_square_input(xp):
     xp_assert_close(mat[3, ...], xp.eye(3))
 
 
-@pytest.mark.array_api_backends
 def test_as_matrix_from_generic_input(xp):
     quats = xp.asarray([
             [0, 0, 1, 1],
@@ -311,14 +307,6 @@ def test_as_matrix_from_generic_input(xp):
     xp_assert_close(mat[2, ...], expected2)
 
 
-def test_as_matrix_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(jax.jit(Rotation.as_matrix)(r))
-
-
-@pytest.mark.array_api_backends
 def test_from_single_2d_matrix(xp):
     mat = xp.asarray([
             [0, 0, 1],
@@ -329,23 +317,19 @@ def test_from_single_2d_matrix(xp):
     xp_assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_single_3d_matrix(xp):
-    mat = xp.reshape(
-        xp.asarray([
-            [0, 0, 1],
-            [1, 0, 0],
-            [0, 1, 0]
-            ]),
-        (1, 3, 3))
-    expected_quat = np.array([0.5, 0.5, 0.5, 0.5]).reshape((1, 4))
+    mat = xp.asarray([[
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0],
+        ]])
+    expected_quat = xp.asarray([[0.5, 0.5, 0.5, 0.5]])
     xp_assert_close(Rotation.from_matrix(mat).as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_matrix_calculation(xp):
     atol = 1e-8
-    expected_quat = xp.asarray([1.0, 1, 6, 1]) / np.sqrt(39)
+    expected_quat = xp.asarray([1.0, 1, 6, 1]) / math.sqrt(39)
     mat = xp.asarray([
             [-0.8974359, -0.2564103, 0.3589744],
             [0.3589744, -0.8974359, 0.2564103],
@@ -357,13 +341,11 @@ def test_from_matrix_calculation(xp):
                     atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_matrix_calculation_pipeline(xp):
     mat = xp.asarray(special_ortho_group.rvs(3, size=10, random_state=0))
     xp_assert_close(Rotation.from_matrix(mat).as_matrix(), mat)
 
 
-@pytest.mark.array_api_backends
 def test_from_matrix_ortho_output(xp):
     atol = 1e-12
     rnd = np.random.RandomState(0)
@@ -381,7 +363,6 @@ def test_from_matrix_ortho_output(xp):
     xp_assert_close(mult_result, eye3d, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_matrix_normalize(xp):
     mat = xp.asarray([
         [1, 1, 0],
@@ -397,12 +378,11 @@ def test_from_matrix_normalize(xp):
         [0.5, 0  , 0  ],
         [0,   0  , 0.5]])
     expected = xp.asarray([[0.0, -1, 0],
-                           [ 1,  0, 0],
-                           [ 0,  0, 1]])
+                           [  1,  0, 0],
+                           [  0,  0, 1]])
     xp_assert_close(Rotation.from_matrix(mat).as_matrix(), expected, atol=1e-6)
 
 
-@pytest.mark.array_api_backends
 def test_from_matrix_non_positive_determinant(xp):
     mat = xp.eye(3)
     mat = xpx.at(mat)[0, 0].set(0)
@@ -420,15 +400,25 @@ def test_from_matrix_non_positive_determinant(xp):
             Rotation.from_matrix(mat)
 
 
-def test_from_matrix_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_matrix_array_like():
+    rng = np.random.default_rng(123)
+    # Single rotation
+    r_expected = Rotation.random(rng=rng)
+    r = Rotation.from_matrix(r_expected.as_matrix().tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
+    
+    # Multiple rotations
+    r_expected = Rotation.random(3, rng=rng)
+    r = Rotation.from_matrix(r_expected.as_matrix().tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
-    m = jax.numpy.eye(3)
-    r = jax.block_until_ready(jax.jit(Rotation.from_matrix)(m))
-    assert isinstance(r, Rotation)
+
+def test_from_matrix_int_dtype(xp):
+    mat = xp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    r = Rotation.from_matrix(mat)
+    assert r.as_quat().dtype == xp.asarray(0.0).dtype
 
 
-@pytest.mark.array_api_backends
 def test_from_1d_single_rotvec(xp):
     atol = 1e-7
     rotvec = xp.asarray([1, 0, 0])
@@ -437,7 +427,6 @@ def test_from_1d_single_rotvec(xp):
     xp_assert_close(result.as_quat(), expected_quat, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_2d_single_rotvec(xp):
     atol = 1e-7
     rotvec = xp.asarray([[1, 0, 0]])
@@ -446,7 +435,6 @@ def test_from_2d_single_rotvec(xp):
     xp_assert_close(result.as_quat(), expected_quat, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_generic_rotvec(xp):
     atol = 1e-7
     rotvec = xp.asarray([
@@ -461,21 +449,20 @@ def test_from_generic_rotvec(xp):
     xp_assert_close(Rotation.from_rotvec(rotvec).as_quat(), expected_quat, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_rotvec_small_angle(xp):
     rotvec = xp.asarray([
-        [5e-4 / np.sqrt(3), -5e-4 / np.sqrt(3), 5e-4 / np.sqrt(3)],
+        [5e-4 / math.sqrt(3), -5e-4 / math.sqrt(3), 5e-4 / math.sqrt(3)],
         [0.2, 0.3, 0.4],
         [0, 0, 0]
         ])
 
     quat = Rotation.from_rotvec(rotvec).as_quat()
     # cos(theta/2) ~~ 1 for small theta
-    xp_assert_close(quat[0, 3], xp.asarray(1.0), check_0d=False)
+    xp_assert_close(quat[0, 3], xp.asarray(1.0)[()])
     # sin(theta/2) / theta ~~ 0.5 for small theta
     xp_assert_close(quat[0, :3], rotvec[0, ...] * 0.5)
 
-    xp_assert_close(quat[1, 3], xp.asarray(0.9639685), check_0d=False)
+    xp_assert_close(quat[1, 3], xp.asarray(0.9639685)[()])
     xp_assert_close(quat[1, :3],
             xp.asarray([
                 0.09879603932153465,
@@ -485,27 +472,43 @@ def test_from_rotvec_small_angle(xp):
     xp_assert_equal(quat[2, ...], xp.asarray([0.0, 0, 0, 1]))
 
 
-@pytest.mark.array_api_backends
+def test_from_rotvec_array_like():
+    rng = np.random.default_rng(123)
+    # Single rotation
+    r_expected = Rotation.random(rng=rng)
+    r = Rotation.from_rotvec(r_expected.as_rotvec().tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
+
+    # Multiple rotations
+    r_expected = Rotation.random(3, rng=rng)
+    r = Rotation.from_rotvec(r_expected.as_rotvec().tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
+
+
+def test_from_rotvec_int_dtype(xp):
+    rotvec = xp.asarray([1, 0, 0])
+    r = Rotation.from_rotvec(rotvec)
+    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+
+
 def test_degrees_from_rotvec(xp):
-    rotvec1 = xp.asarray([1.0 / np.cbrt(3), 1.0 / np.cbrt(3), 1.0 / np.cbrt(3)])
+    rotvec1 = xp.asarray([1 / 3 ** (1/3)] * 3)
     rot1 = Rotation.from_rotvec(rotvec1, degrees=True)
     quat1 = rot1.as_quat()
 
-    # deg2rad is not implemented in Array API -> / 180 * np.pi
-    rotvec2 = xp.asarray(rotvec1 / 180 * np.pi)
+    # deg2rad is not implemented in Array API -> / 180 * xp.pi
+    rotvec2 = xp.asarray(rotvec1 / 180 * xp.pi)
     rot2 = Rotation.from_rotvec(rotvec2)
     quat2 = rot2.as_quat()
 
     xp_assert_close(quat1, quat2)
 
 
-@pytest.mark.array_api_backends
 def test_malformed_1d_from_rotvec(xp):
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec(xp.asarray([1, 2]))
 
 
-@pytest.mark.array_api_backends
 def test_malformed_2d_from_rotvec(xp):
     with pytest.raises(ValueError, match='Expected `rot_vec` to have shape'):
         Rotation.from_rotvec(xp.asarray([
@@ -514,15 +517,6 @@ def test_malformed_2d_from_rotvec(xp):
             ]))
 
 
-def test_from_rotvec_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    rot_vec = jax.numpy.array([1, 2, 3])
-    r = jax.block_until_ready(jax.jit(Rotation.from_rotvec)(rot_vec))
-    assert isinstance(r, Rotation)
-
-
-@pytest.mark.array_api_backends
 def test_as_generic_rotvec(xp):
     quat = xp.asarray([
             [1, 2, -1, 0.5],
@@ -538,7 +532,6 @@ def test_as_generic_rotvec(xp):
     xp_assert_close(xp.linalg.cross(rotvec, quat[:, :3]), xp.zeros((3, 3)), atol=1e-15)
 
 
-@pytest.mark.array_api_backends
 def test_as_rotvec_single_1d_input(xp):
     quat = xp.asarray([1, 2, -3, 2])
     expected_rotvec = xp.asarray([0.5772381, 1.1544763, -1.7317144])
@@ -549,7 +542,6 @@ def test_as_rotvec_single_1d_input(xp):
     xp_assert_close(actual_rotvec, expected_rotvec)
 
 
-@pytest.mark.array_api_backends
 def test_as_rotvec_single_2d_input(xp):
     quat = xp.asarray([[1, 2, -3, 2]])
     expected_rotvec = xp.asarray([[0.5772381, 1.1544763, -1.7317144]])
@@ -560,19 +552,17 @@ def test_as_rotvec_single_2d_input(xp):
     xp_assert_close(actual_rotvec, expected_rotvec)
 
 
-@pytest.mark.array_api_backends
-def test_as_rotvec_degrees(xp):
+def test_as_rotvec_degreess(xp):
     # x->y, y->z, z->x
     mat = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
     rot = Rotation.from_matrix(mat)
     rotvec = rot.as_rotvec(degrees=True)
     angle = xp_vector_norm(rotvec, axis=-1)
-    xp_assert_close(angle, xp.asarray(120.0), check_0d=False)
+    xp_assert_close(angle, xp.asarray(120.0)[()])
     xp_assert_close(rotvec[0], rotvec[1])
     xp_assert_close(rotvec[1], rotvec[2])
 
 
-@pytest.mark.array_api_backends
 def test_rotvec_calc_pipeline(xp):
     # Include small angles
     rotvec = xp.asarray([
@@ -585,14 +575,6 @@ def test_rotvec_calc_pipeline(xp):
                     rotvec)
 
 
-def test_as_rotvec_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(jax.jit(Rotation.as_rotvec)(r))
-
-
-@pytest.mark.array_api_backends
 def test_from_1d_single_mrp(xp):
     mrp = xp.asarray([0, 0, 1.0])
     expected_quat = xp.asarray([0.0, 0, 1, 0])
@@ -600,7 +582,6 @@ def test_from_1d_single_mrp(xp):
     xp_assert_close(result.as_quat(), expected_quat, atol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_from_2d_single_mrp(xp):
     mrp = xp.asarray([[0, 0, 1.0]])
     expected_quat = xp.asarray([[0.0, 0, 1, 0]])
@@ -608,7 +589,25 @@ def test_from_2d_single_mrp(xp):
     xp_assert_close(result.as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
+def test_from_mrp_array_like():
+    rng = np.random.default_rng(123)
+    # Single rotation
+    r_expected = Rotation.random(rng=rng)
+    r = Rotation.from_mrp(r_expected.as_mrp().tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
+
+    # Multiple rotations
+    r_expected = Rotation.random(3, rng=rng)
+    r = Rotation.from_mrp(r_expected.as_mrp().tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
+
+
+def test_from_mrp_int_dtype(xp):
+    mrp = xp.asarray([0, 0, 1])
+    r = Rotation.from_mrp(mrp)
+    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+
+
 def test_from_generic_mrp(xp):
     mrp = xp.asarray([
         [1, 2, 2],
@@ -621,13 +620,11 @@ def test_from_generic_mrp(xp):
     xp_assert_close(Rotation.from_mrp(mrp).as_quat(), expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_malformed_1d_from_mrp(xp):
     with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
         Rotation.from_mrp(xp.asarray([1, 2]))
 
 
-@pytest.mark.array_api_backends
 def test_malformed_2d_from_mrp(xp):
     with pytest.raises(ValueError, match='Expected `mrp` to have shape'):
         Rotation.from_mrp(xp.asarray([
@@ -636,15 +633,6 @@ def test_malformed_2d_from_mrp(xp):
             ]))
 
 
-def test_from_mrp_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    mrp = jax.numpy.array([0, 0, 1.0])
-    r = jax.block_until_ready(jax.jit(Rotation.from_mrp)(mrp))
-    assert isinstance(r, Rotation)
-
-
-@pytest.mark.array_api_backends
 def test_as_generic_mrp(xp):
     quat = xp.asarray([
         [1, 2, -1, 0.5],
@@ -659,18 +647,16 @@ def test_as_generic_mrp(xp):
     xp_assert_close(Rotation.from_quat(quat).as_mrp(), expected_mrp)
 
 
-@pytest.mark.array_api_backends
 def test_past_180_degree_rotation(xp):
     # ensure that a > 180 degree rotation is returned as a <180 rotation in MRPs
     # in this case 270 should be returned as -90
-    expected_mrp = xp.asarray([-np.tan(np.pi / 2 / 4), 0.0, 0])
+    expected_mrp = xp.asarray([-math.tan(xp.pi / 2 / 4), 0.0, 0])
     xp_assert_close(
         Rotation.from_euler('xyz', xp.asarray([270, 0, 0]), degrees=True).as_mrp(),
         expected_mrp,
     )
 
 
-@pytest.mark.array_api_backends
 def test_as_mrp_single_1d_input(xp):
     quat = xp.asarray([1, 2, -3, 2])
     expected_mrp = xp.asarray([0.16018862, 0.32037724, -0.48056586])
@@ -681,7 +667,6 @@ def test_as_mrp_single_1d_input(xp):
     xp_assert_close(actual_mrp, expected_mrp)
 
 
-@pytest.mark.array_api_backends
 def test_as_mrp_single_2d_input(xp):
     quat = xp.asarray([[1, 2, -3, 2]])
     expected_mrp = xp.asarray([[0.16018862, 0.32037724, -0.48056586]])
@@ -692,7 +677,6 @@ def test_as_mrp_single_2d_input(xp):
     xp_assert_close(actual_mrp, expected_mrp)
 
 
-@pytest.mark.array_api_backends
 def test_mrp_calc_pipeline(xp):
     actual_mrp = xp.asarray([
         [0, 0, 0],
@@ -707,28 +691,18 @@ def test_mrp_calc_pipeline(xp):
     xp_assert_close(Rotation.from_mrp(actual_mrp).as_mrp(), expected_mrp)
 
 
-def test_as_mrp_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(jax.jit(Rotation.as_mrp)(r))
-
-
-@pytest.mark.array_api_backends
 def test_from_euler_single_rotation(xp):
     quat = Rotation.from_euler("z", xp.asarray(90), degrees=True).as_quat()
-    expected_quat = xp.asarray([0.0, 0, 1, 1]) / np.sqrt(2)
+    expected_quat = xp.asarray([0.0, 0, 1, 1]) / math.sqrt(2)
     xp_assert_close(quat, expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_single_intrinsic_extrinsic_rotation(xp):
     extrinsic = Rotation.from_euler('z', xp.asarray(90), degrees=True).as_matrix()
     intrinsic = Rotation.from_euler('Z', xp.asarray(90), degrees=True).as_matrix()
     xp_assert_close(extrinsic, intrinsic)
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_rotation_order(xp):
     # Intrinsic rotation is same as extrinsic with order reversed
     rnd = np.random.RandomState(0)
@@ -739,7 +713,6 @@ def test_from_euler_rotation_order(xp):
     xp_assert_close(x, y)
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_elementary_extrinsic_rotation(xp):
     atol = 1e-12
     # Simple test to check if extrinsic rotations are implemented correctly
@@ -752,7 +725,6 @@ def test_from_euler_elementary_extrinsic_rotation(xp):
     xp_assert_close(mat, expected_mat, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_intrinsic_rotation_312(xp):
     atol = 1e-7
     angles = xp.asarray([
@@ -781,7 +753,6 @@ def test_from_euler_intrinsic_rotation_312(xp):
     ]), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_intrinsic_rotation_313(xp):
     angles = xp.asarray([
         [30, 60, 45],
@@ -809,7 +780,6 @@ def test_from_euler_intrinsic_rotation_313(xp):
     ]))
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_extrinsic_rotation_312(xp):
     angles = xp.asarray([
         [30, 60, 45],
@@ -837,7 +807,6 @@ def test_from_euler_extrinsic_rotation_312(xp):
     ]))
 
 
-@pytest.mark.array_api_backends
 def test_from_euler_extrinsic_rotation_313(xp):
     angles = xp.asarray([
         [30, 60, 45],
@@ -865,16 +834,28 @@ def test_from_euler_extrinsic_rotation_313(xp):
     ]))
 
 
-def test_from_euler_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_euler_array_like():
+    rng = np.random.default_rng(123)
+    order = "xyz"
+    # Single rotation
+    r_expected = Rotation.random(rng=rng)
+    r = Rotation.from_euler(order, r_expected.as_euler(order).tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
 
-    angle = jax.numpy.array([0, 0, 0])
-    from_euler = jax.jit(Rotation.from_euler, static_argnums=0)
-    r = jax.block_until_ready(from_euler("zxz", angle, degrees=True))
-    assert isinstance(r, Rotation)
+    # Multiple rotations
+    r_expected = Rotation.random(3, rng=rng)
+    r = Rotation.from_euler(order, r_expected.as_euler(order).tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
 
-@pytest.mark.array_api_backends
+def test_from_euler_scalar():
+    rng = np.random.default_rng(123)
+    deg = rng.uniform(low=-180, high=180)
+    r_expected = Rotation.from_euler("x", deg, degrees=True)
+    r = Rotation.from_euler("x", float(deg), degrees=True)
+    assert r_expected.approx_equal(r, atol=1e-12)
+
+
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
@@ -889,9 +870,9 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
     rnd = np.random.RandomState(0)
     n = 1000
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=-xp.pi / 2, high=xp.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
     angles = xp.asarray(angles)
 
     seq = "".join(seq_tuple)
@@ -911,7 +892,6 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
 
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
@@ -926,9 +906,9 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     rnd = np.random.RandomState(0)
     n = 1000
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
     angles = xp.asarray(angles)
 
     # Rotation of the form A/B/A are rotation around symmetric axes
@@ -945,7 +925,6 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     test_stats(angles_mat - angles, 1e-15, 1e-13)
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
@@ -969,17 +948,13 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 
     # We can only warn on non-lazy backends because we'd need to condition on traced
     # booleans
-    if is_lazy_array(mat_expected):
+    with eager_warns(mat_expected, UserWarning, match="Gimbal lock"):
         angle_estimates = rotation.as_euler(seq, degrees=True)
-    else:
-        with pytest.warns(UserWarning, match="Gimbal lock"):
-            angle_estimates = rotation.as_euler(seq, degrees=True)
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
@@ -1003,17 +978,13 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     mat_expected = rotation.as_matrix()
 
     # We can only warn on non-lazy backends
-    if is_lazy_array(mat_expected):
+    with eager_warns(mat_expected, UserWarning, match="Gimbal lock"):
         angle_estimates = rotation.as_euler(seq, degrees=True)
-    else:
-        with pytest.warns(UserWarning, match="Gimbal lock"):
-            angle_estimates = rotation.as_euler(seq, degrees=True)
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
     xp_assert_close(mat_expected, mat_estimated, atol=atol)
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.thread_unsafe
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
@@ -1035,13 +1006,9 @@ def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    if is_lazy_array(rot):
+    with eager_warns(rot, UserWarning, match="Gimbal lock"):
         estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
         estimates_quat = rot.as_euler(seq, degrees=True)
-    else:
-        with pytest.warns(UserWarning, match="Gimbal lock"):
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-            estimates_quat = rot.as_euler(seq, degrees=True)    
     xp_assert_close(
         estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
     )
@@ -1068,14 +1035,10 @@ def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    if is_lazy_array(rot):
+    with eager_warns(rot, UserWarning, match="Gimbal lock"):
         estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
+    with eager_warns(rot, UserWarning, match="Gimbal lock"):
         estimates_quat = rot.as_euler(seq, degrees=True)
-    else:
-        with pytest.warns(UserWarning, match="Gimbal lock"):
-            estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-        with pytest.warns(UserWarning, match="Gimbal lock"):
-            estimates_quat = rot.as_euler(seq, degrees=True)
     xp_assert_close(
         estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
     )
@@ -1089,15 +1052,6 @@ def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
     )  # problematic, angles[1] = 0
 
 
-def test_as_euler_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    angle = jax.numpy.array([0, 0, 0])
-    from_euler = jax.jit(Rotation.from_euler, static_argnums=0)
-    jax.block_until_ready(from_euler("zxz", angle, degrees=True))
-
-
-@pytest.mark.array_api_backends
 def test_inv(xp):
     atol = 1e-12
     rnd = np.random.RandomState(0)
@@ -1119,7 +1073,6 @@ def test_inv(xp):
     xp_assert_close(result2, eye3d, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_inv_single_rotation(xp):
     atol = 1e-12
     rng = np.random.default_rng(146972845698875399755764481408308808739)
@@ -1153,31 +1106,21 @@ def test_inv_single_rotation(xp):
     xp_assert_close(result2, eye3d, atol=atol)
 
 
-def test_inv_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    inv = jax.jit(Rotation.inv)
-    jax.block_until_ready(inv(r))
-
-
-@pytest.mark.array_api_backends
 def test_identity_magnitude(xp):
     n = 10
     r = Rotation.identity(n)
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
-    xp_assert_close(r.magnitude(), xp.asarray(0.0), check_shape=False)
-    xp_assert_close(r.inv().magnitude(), xp.asarray(0.0), check_shape=False)
+    expected = xp.zeros(n)
+    xp_assert_close(r.magnitude(), expected)
+    xp_assert_close(r.inv().magnitude(), expected)
 
 
-@pytest.mark.array_api_backends
 def test_single_identity_magnitude(xp):
     r = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
     assert r.magnitude() == 0
     assert r.inv().magnitude() == 0
 
 
-@pytest.mark.array_api_backends
 def test_identity_invariance(xp):
     atol = 1e-12
     n = 10
@@ -1191,7 +1134,6 @@ def test_identity_invariance(xp):
     xp_assert_close(result.magnitude(), xp.zeros(n), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_single_identity_invariance(xp):
     atol = 1e-12
     n = 10
@@ -1206,43 +1148,25 @@ def test_single_identity_invariance(xp):
     xp_assert_close(result.magnitude(), xp.zeros(n), atol=atol)
 
 
-def test_identity_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    identity = jax.jit(Rotation.identity)
-    jax.block_until_ready(identity())
-
-
-@pytest.mark.array_api_backends
 def test_magnitude(xp):
     r = Rotation.from_quat(xp.eye(4))
     result = r.magnitude()
-    xp_assert_close(result, xp.asarray([np.pi, np.pi, np.pi, 0]))
+    xp_assert_close(result, xp.asarray([xp.pi, xp.pi, xp.pi, 0]))
 
     r = Rotation.from_quat(-xp.eye(4))
     result = r.magnitude()
-    xp_assert_close(result, xp.asarray([np.pi, np.pi, np.pi, 0]))
+    xp_assert_close(result, xp.asarray([xp.pi, xp.pi, xp.pi, 0]))
 
 
-@pytest.mark.array_api_backends
 def test_magnitude_single_rotation(xp):
     r = Rotation.from_quat(xp.eye(4))
     result1 = r[0].magnitude()
-    xp_assert_close(result1, np.pi)
+    xp_assert_close(result1, xp.pi)
 
     result2 = r[3].magnitude()
     xp_assert_close(result2, 0.0)
 
 
-def test_magnitude_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    magnitude = jax.jit(Rotation.magnitude)
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(magnitude(r))
-
-
-@pytest.mark.array_api_backends
 def test_approx_equal(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = Rotation.random(10, rng=rng)
@@ -1255,7 +1179,6 @@ def test_approx_equal(xp):
     xp_assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.thread_unsafe
 def test_approx_equal_single_rotation(xp):
     # also tests passing single argument to approx_equal
@@ -1271,29 +1194,19 @@ def test_approx_equal_single_rotation(xp):
         assert p.approx_equal(q[3], degrees=True)
 
 
-def test_approx_equal_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    approx_equal = jax.jit(Rotation.approx_equal)
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(approx_equal(r, r))
-
-
-@pytest.mark.array_api_backends
 def test_mean(xp):
     axes = xp.concat((-xp.eye(3), xp.eye(3)))
     axes = np.concatenate((-np.eye(3), np.eye(3)))
-    thetas = xp.linspace(0, np.pi / 2, 100)
+    thetas = xp.linspace(0, xp.pi / 2, 100)
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
         xp_assert_close(r.mean().magnitude(), 0.0, atol=1e-10)
 
 
-@pytest.mark.array_api_backends
 def test_weighted_mean(xp):
     # test that doubling a weight is equivalent to including a rotation twice.
     axes = xp.asarray([[0.0, 0, 0], [1, 0, 0], [1, 0, 0]])
-    thetas = xp.linspace(0, np.pi / 2, 100)
+    thetas = xp.linspace(0, xp.pi / 2, 100)
     for t in thetas:
         rw = Rotation.from_rotvec(t * axes[:2, ...])
         mw = rw.mean(weights=[1, 2])
@@ -1303,7 +1216,6 @@ def test_weighted_mean(xp):
         xp_assert_close((m * mw.inv()).magnitude(), 0.0, atol=1e-10)
 
 
-@pytest.mark.array_api_backends
 def test_mean_invalid_weights(xp):
     r = Rotation.from_quat(xp.eye(4))
     if is_lazy_array(r.as_quat()):
@@ -1314,22 +1226,12 @@ def test_mean_invalid_weights(xp):
             r.mean(weights=-xp.ones(4))
 
 
-def test_mean_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    mean = jax.jit(Rotation.mean)
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(mean(r))
-
-
-@pytest.mark.array_api_backends
 def test_reduction_no_indices(xp):
     r = Rotation.from_quat(xp.asarray([0.0, 0.0, 0.0, 1.0]))
     result = r.reduce(return_indices=False)
     assert isinstance(result, Rotation)
 
 
-@pytest.mark.array_api_backends
 def test_reduction_none_indices(xp):
     r = Rotation.from_quat(xp.asarray([0.0, 0.0, 0.0, 1.0]))
     result = r.reduce(return_indices=True)
@@ -1341,7 +1243,6 @@ def test_reduction_none_indices(xp):
     assert right_best is None
 
 
-@pytest.mark.array_api_backends
 def test_reduction_scalar_calculation(xp):
     atol = 1e-12
     rng = np.random.default_rng(146972845698875399755764481408308808739)
@@ -1369,15 +1270,6 @@ def test_reduction_scalar_calculation(xp):
     xp_assert_close(mag, xp.zeros(len(p)), atol=atol)
 
 
-def test_reduce_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    reduce = jax.jit(Rotation.reduce, static_argnums=(3,))
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(reduce(r, return_indices=True))
-
-
-@pytest.mark.array_api_backends
 def test_apply_single_rotation_single_point(xp):
     mat = xp.asarray([
         [0, -1, 0],
@@ -1406,7 +1298,6 @@ def test_apply_single_rotation_single_point(xp):
     xp_assert_close(r_2d.apply(v_2d, inverse=True), v2d_inverse)
 
 
-@pytest.mark.array_api_backends
 def test_apply_single_rotation_multiple_points(xp):
     mat = xp.asarray([
         [0, -1, 0],
@@ -1428,7 +1319,6 @@ def test_apply_single_rotation_multiple_points(xp):
     xp_assert_close(r2.apply(v, inverse=True), v_inverse)
 
 
-@pytest.mark.array_api_backends
 def test_apply_multiple_rotations_single_point(xp):
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1458,7 +1348,6 @@ def test_apply_multiple_rotations_single_point(xp):
     xp_assert_close(r.apply(v2, inverse=True), v_inverse)
 
 
-@pytest.mark.array_api_backends
 def test_apply_multiple_rotations_multiple_points(xp):
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1482,7 +1371,6 @@ def test_apply_multiple_rotations_multiple_points(xp):
     xp_assert_close(r.apply(v, inverse=True), v_inverse)
 
 
-@pytest.mark.array_api_backends
 def test_apply_shapes(xp):
     vector0 = xp.asarray([1.0, 2.0, 3.0])
     vector1 = xp.asarray([vector0])
@@ -1502,15 +1390,22 @@ def test_apply_shapes(xp):
         assert x.shape == shape
 
 
-def test_apply_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_apply_array_like(xp):
+    rng = np.random.default_rng(123)
+    # Single vector
+    r = rotation_to_xp(Rotation.random(rng=rng), xp)
+    t = rng.uniform(-100, 100, size=(3,)).tolist()
+    v = r.apply(t)
+    v_expected = r.apply(xp.asarray(t))
+    xp_assert_close(v, v_expected, atol=1e-12)
 
-    apply = jax.jit(Rotation.apply, static_argnums=(2,))
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    jax.block_until_ready(apply(r, jax.numpy.eye(3), inverse=False))
+    # Multiple vectors
+    t = rng.uniform(-100, 100, size=(2, 3)).tolist()
+    v = r.apply(t)
+    v_expected = r.apply(xp.asarray(t))
+    xp_assert_close(v, v_expected, atol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_getitem(xp):
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1531,28 +1426,31 @@ def test_getitem(xp):
     xp_assert_close(r[:-1].as_matrix(), xp.expand_dims(mat[0, ...], axis=0), atol=1e-15)
 
 
-@pytest.mark.array_api_backends
 def test_getitem_single(xp):
     with pytest.raises(TypeError, match='not subscriptable'):
         Rotation.from_quat(xp.asarray([0, 0, 0, 1]))[0]
 
 
-def test_getitem_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_getitem_array_like(xp):
+    mat = np.array([[[0.0, -1, 0],
+                     [1, 0, 0],
+                     [0, 0, 1]],
 
-    getitem = jax.jit(Rotation.__getitem__, static_argnums=(1,))
-    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
-    jax.block_until_ready(getitem(r, 0))
+                    [[1, 0, 0],
+                     [0, 0, -1],
+                     [0, 1, 0]]])
+    mat = xp.asarray(mat)
+    r = Rotation.from_matrix(mat)
+    xp_assert_close(r[[0]].as_matrix(), mat[[0]], atol=1e-15)
+    xp_assert_close(r[[0, 1]].as_matrix(), mat[[0, 1]], atol=1e-15)
 
 
-@pytest.mark.array_api_backends
 def test_setitem_single(xp):
     r = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
     with pytest.raises(TypeError, match='not subscriptable'):
         r[0] = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
 
 
-@pytest.mark.array_api_backends
 def test_setitem_slice(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
@@ -1561,7 +1459,6 @@ def test_setitem_slice(xp):
     xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
 
 
-@pytest.mark.array_api_backends
 def test_setitem_integer(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
@@ -1570,22 +1467,12 @@ def test_setitem_integer(xp):
     xp_assert_equal(r1[1].as_quat(), r2.as_quat())
 
 
-@pytest.mark.array_api_backends
 def test_setitem_wrong_type(xp):
     r = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=0).as_quat()))
     with pytest.raises(TypeError, match='Rotation object'):
         r[0] = 1
 
 
-def test_setitem_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    setitem = jax.jit(Rotation.__setitem__, static_argnums=(1,))
-    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
-    jax.block_until_ready(setitem(r, 0, r[0]))
-
-
-@pytest.mark.array_api_backends
 def test_n_rotations(xp):
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
@@ -1605,13 +1492,6 @@ def test_n_rotations(xp):
     assert_equal(len(r[:-1]), 1)
 
 
-def test_len_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_matrix(jax.numpy.eye(3).reshape(1, 3, 3))
-    jax.block_until_ready(jax.jit(lambda rot: len(rot))(r))
-
-
 def test_random_rotation_shape():
     # No xp testing since random rotations are always using NumPy
     rng = np.random.default_rng(146972845698875399755764481408308808739)
@@ -1622,17 +1502,15 @@ def test_random_rotation_shape():
     assert_equal(Rotation.random(5, rng=rng).as_quat().shape, (5, 4))
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_no_rotation(xp):
     x = xp.asarray([[1, 2, 3], [4, 5, 6]])
     y = xp.asarray(x, copy=True)
 
     r, rssd = Rotation.align_vectors(x, y)
     xp_assert_close(r.as_matrix(), xp.eye(3), atol=1e-12)
-    xp_assert_close(rssd, xp.asarray(0.0), check_0d=False, check_shape=False, atol=1e-6)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-6)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_no_noise(xp):
     rng = np.random.default_rng(14697284569885399755764481408308808739)
     c = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
@@ -1641,10 +1519,9 @@ def test_align_vectors_no_noise(xp):
 
     est, rssd = Rotation.align_vectors(a, b)
     xp_assert_close(c.as_quat(), est.as_quat())
-    xp_assert_close(rssd, xp.asarray(0.0), check_0d=False, check_shape=False, atol=1e-7)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-7)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_improper_rotation(xp):
     # Tests correct logic for issue #10444
     x = xp.asarray([[0.89299824, -0.44372674, 0.0752378],
@@ -1654,12 +1531,11 @@ def test_align_vectors_improper_rotation(xp):
 
     est, rssd = Rotation.align_vectors(x, y)
     xp_assert_close(x, est.apply(y), atol=1e-6)
-    xp_assert_close(rssd, xp.asarray(0.0), check_0d=False, check_shape=False, atol=1e-7)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-7)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_rssd_sensitivity(xp):
-    rssd_expected = xp.asarray(0.141421356237308)
+    rssd_expected = xp.asarray(0.141421356237308)[()]
     sens_expected = xp.asarray([[0.2, 0. , 0.],
                                 [0. , 1.5, 1.],
                                 [0. , 1. , 1.]])
@@ -1667,30 +1543,28 @@ def test_align_vectors_rssd_sensitivity(xp):
     a = xp.asarray([[0, 1, 0], [0, 1, 1], [0, 1, 1]])
     b = xp.asarray([[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]])
     rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
-    assert xp.all(xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp))
+    xp_assert_close(rssd, rssd_expected, atol=atol)
     xp_assert_close(sens, sens_expected, atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_scaled_weights(xp):
     n = 10
     a = xp.asarray(Rotation.random(n, rng=0).apply([1, 0, 0]))
     b = xp.asarray(Rotation.random(n, rng=1).apply([1, 0, 0]))
-    scale = xp.asarray(2.0)
+    scale = 2
 
     est1, rssd1, cov1 = Rotation.align_vectors(a, b, xp.ones(n), True)
     est2, rssd2, cov2 = Rotation.align_vectors(a, b, scale * xp.ones(n), True)
 
     xp_assert_close(est1.as_matrix(), est2.as_matrix())
-    xp_assert_close(xp.sqrt(scale) * rssd1, rssd2, atol=1e-6)
+    xp_assert_close(math.sqrt(scale) * rssd1, rssd2, atol=1e-6)
     xp_assert_close(cov1, cov2)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_noise(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     n_vectors = 100
-    rot = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
+    rot = rotation_to_xp(Rotation.random(rng=rng), xp)
     vectors = xp.asarray(rng.normal(size=(n_vectors, 3)))
     result = rot.apply(vectors)
 
@@ -1713,21 +1587,20 @@ def test_align_vectors_noise(xp):
 
     # Use rotation compositions to find out closeness
     error_vector = (rot * est.inv()).as_rotvec()
-    xp_assert_close(error_vector[0], xp.asarray(0.0), check_0d=False, atol=tolerance)
-    xp_assert_close(error_vector[1], xp.asarray(0.0), check_0d=False, atol=tolerance)
-    xp_assert_close(error_vector[2], xp.asarray(0.0), check_0d=False, atol=tolerance)
+    xp_assert_close(error_vector[0], xp.asarray(0.0)[()], atol=tolerance)
+    xp_assert_close(error_vector[1], xp.asarray(0.0)[()], atol=tolerance)
+    xp_assert_close(error_vector[2], xp.asarray(0.0)[()], atol=tolerance)
 
     # Check error bounds using covariance matrix
     cov *= sigma
-    xp_assert_close(cov[0, 0], xp.asarray(0.0), check_0d=False, atol=tolerance)
-    xp_assert_close(cov[1, 1], xp.asarray(0.0), check_0d=False, atol=tolerance)
-    xp_assert_close(cov[2, 2], xp.asarray(0.0), check_0d=False, atol=tolerance)
+    xp_assert_close(cov[0, 0], xp.asarray(0.0)[()], atol=tolerance)
+    xp_assert_close(cov[1, 1], xp.asarray(0.0)[()], atol=tolerance)
+    xp_assert_close(cov[2, 2], xp.asarray(0.0)[()], atol=tolerance)
 
     rssd_check = xp.sum((noisy_result - est.apply(vectors)) ** 2) ** 0.5
-    xp_assert_close(rssd, rssd_check, check_0d=False, check_shape=False)
+    xp_assert_close(rssd, rssd_check, check_shape=False)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_invalid_input(xp):
     with pytest.raises(ValueError, match="Expected input `a` to have shape"):
         a, b = xp.asarray([1, 2, 3, 4]), xp.asarray([1, 2, 3])
@@ -1766,7 +1639,7 @@ def test_align_vectors_invalid_input(xp):
             Rotation.align_vectors(a, b, weights)
 
     a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
-    weights = xp.asarray([np.inf, np.inf])
+    weights = xp.asarray([xp.inf, xp.inf])
     if is_lazy_array(weights):
         r, rssd = Rotation.align_vectors(a, b, weights)
         assert xp.all(xp.isnan(r.as_quat())), "Quaternion should be nan"
@@ -1787,7 +1660,7 @@ def test_align_vectors_invalid_input(xp):
             Rotation.align_vectors(a, b)
 
     a, b = xp.asarray([[1, 2, 3], [4, 5, 6]]), xp.asarray([[1, 2, 3], [4, 5, 6]])
-    weights = xp.asarray([np.inf, 1])
+    weights = xp.asarray([xp.inf, 1])
     if is_lazy_array(a):
         r, rssd, sens = Rotation.align_vectors(a, b, weights, return_sensitivity=True)
         assert xp.all(xp.isnan(sens)), "Sensitivity matrix should be nan"
@@ -1806,7 +1679,6 @@ def test_align_vectors_invalid_input(xp):
                         Rotation.align_vectors(a, b, return_sensitivity=True)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_align_constrain(xp):
     # Align the primary +X B axis with the primary +Y A axis, and rotate about
     # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
@@ -1818,15 +1690,15 @@ def test_align_vectors_align_constrain(xp):
     m_expected = xp.asarray([[0.0, 0, 1],
                              [1, 0, 0],
                              [0, 1, 0]])
-    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([xp.inf, 1]))
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     xp_assert_close(R.apply(b), a, atol=atol)  # Pri and sec align exactly
-    assert xpx.isclose(rssd, xp.asarray(0.0), atol=atol, xp=xp)
+    assert xpx.isclose(rssd, 0.0, atol=atol, xp=xp)
 
     # Do the same but with an inexact secondary rotation
     b = xp.asarray([[1, 0, 0], [1, 2, 0]])
-    rssd_expected = xp.asarray(1.0)
-    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
+    rssd_expected = 1.0
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([xp.inf, 1]))
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     xp_assert_close(R.apply(b)[0, ...], a[0, ...], atol=atol)  # Only pri aligns exactly
     assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
@@ -1836,13 +1708,12 @@ def test_align_vectors_align_constrain(xp):
     # Check random vectors
     b = xp.asarray([[1, 2, 3], [-2, 3, -1]])
     a = xp.asarray([[-1.0, 3, 2], [1, -1, 2]])
-    rssd_expected = xp.asarray(1.3101595297515016)
-    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([np.inf, 1]))
+    rssd_expected = 1.3101595297515016
+    R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([xp.inf, 1]))
     xp_assert_close(R.apply(b)[0, ...], a[0, ...], atol=atol)  # Only pri aligns exactly
     assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_near_inf(xp):
     # align_vectors should return near the same result for high weights as for
     # infinite weights. rssd will be different with floating point error on the
@@ -1852,21 +1723,13 @@ def test_align_vectors_near_inf(xp):
     for i in range(6):
         mats.append(Rotation.random(n, rng=10 + i).as_matrix())
 
-    # We jit these tests for JAX because the non-jitted version significantly slows down
-    # the test
-    align_vectors = Rotation.align_vectors
-    if is_jax(xp):
-        import jax  # Must be installed because is_jax succeeds
-
-        align_vectors = jax.jit(Rotation.align_vectors)
-
     for i in range(n):
         # Get random pairs of 3-element vectors
         a = xp.asarray([1 * mats[0][i][0], 2 * mats[1][i][0]])
         b = xp.asarray([3 * mats[2][i][0], 4 * mats[3][i][0]])
 
-        R, _ = align_vectors(a, b, weights=[1e10, 1])
-        R2, _ = align_vectors(a, b, weights=[np.inf, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
     for i in range(n):
@@ -1874,12 +1737,11 @@ def test_align_vectors_near_inf(xp):
         a = xp.asarray([1*mats[0][i][0], 2*mats[1][i][0], 3*mats[2][i][0]])
         b = xp.asarray([4*mats[3][i][0], 5*mats[4][i][0], 6*mats[5][i][0]])
 
-        R, _ = align_vectors(a, b, weights=[1e10, 2, 1])
-        R2, _ = align_vectors(a, b, weights=[np.inf, 2, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[1e10, 2, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 2, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_parallel(xp):
     atol = 1e-12
     a = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
@@ -1887,7 +1749,7 @@ def test_align_vectors_parallel(xp):
     m_expected = xp.asarray([[0.0, 1, 0],
                              [-1, 0, 0],
                              [0, 0, 1]])
-    R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     R, _ = Rotation.align_vectors(a[0, ...], b[0, ...])
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
@@ -1897,14 +1759,13 @@ def test_align_vectors_parallel(xp):
     m_expected = xp.asarray([[1.0, 0, 0],
                              [0, 1, 0],
                              [0, 0, 1]])
-    R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     R, _ = Rotation.align_vectors(a[0, ...], b[0, ...])
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_antiparallel(xp):
     # Test exact 180 deg rotation
     atol = 1e-12
@@ -1912,19 +1773,11 @@ def test_align_vectors_antiparallel(xp):
                            [[0, 1, 0], [1, 0, 0]],
                            [[0, 0, 1], [0, 1, 0]]])
 
-    # We jit these tests for JAX because the non-jitted version significantly slows down
-    # the test
-    align_vectors = Rotation.align_vectors
-    if is_jax(xp):
-        import jax  # Must be installed because is_jax succeeds
-
-        align_vectors = jax.jit(Rotation.align_vectors)
-
     bs_to_test = [[-a[0], a[1]] for a in as_to_test]
     for a, b in zip(as_to_test, bs_to_test):
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
-        xp_assert_close(R.magnitude(), np.pi, atol=atol)
+        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
+        xp_assert_close(R.magnitude(), xp.pi, atol=atol)
         xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
     # Test exact rotations near 180 deg
@@ -1937,24 +1790,15 @@ def test_align_vectors_antiparallel(xp):
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
     for a in as_to_test:
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = align_vectors(a, b, weights=[np.inf, 1])
-        R2, _ = align_vectors(a, b, weights=[1e10, 1])
+        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_align_vectors_primary_only(xp):
     atol = 1e-12
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
-
-    # We jit these tests for JAX because the non-jitted version significantly slows down
-    # the test
-    align_vectors = Rotation.align_vectors
-    if is_jax(xp):
-        import jax  # Must be installed because is_jax succeeds
-
-        align_vectors = jax.jit(Rotation.align_vectors)
 
     for mat_a, mat_b in zip(mats_a, mats_b):
         # Get random 3-element unit vectors
@@ -1962,38 +1806,38 @@ def test_align_vectors_primary_only(xp):
         b = xp.asarray(mat_b[0])
 
         # Compare to align_vectors with primary only
-        R, rssd = align_vectors(a, b)
+        R, rssd = Rotation.align_vectors(a, b)
         xp_assert_close(R.apply(b), a, atol=atol)
         assert np.isclose(rssd, 0, atol=atol)
 
 
-def test_align_vectors_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_align_vectors_array_like():
+    rng = np.random.default_rng(123)
+    c = Rotation.random(rng=rng)
+    b = rng.normal(size=(5, 3))
+    a = c.apply(b)
 
-    rng = np.random.default_rng(14697284569885399755764481408308808739)
-    a = jax.numpy.asarray(rng.normal(size=(5, 3)))
-    b = jax.numpy.asarray(rng.normal(size=(5, 3)))
+    est_expected, rssd_expected = Rotation.align_vectors(a, b)
+    est, rssd = Rotation.align_vectors(a.tolist(), b.tolist())
+    xp_assert_close(est_expected.as_quat(), est.as_quat())
+    xp_assert_close(rssd, rssd_expected)
 
-    jax.block_until_ready(jax.jit(Rotation.align_vectors)(a, b))
 
-
-@pytest.mark.array_api_backends
 def test_repr_single_rotation(xp):
     q = xp.asarray([0, 0, 0, 1])
     actual = repr(Rotation.from_quat(q))
-    # TODO: Decide how we want to print that the inner array may be a different type
-    # (e.g. a torch.Tensor)
     if is_numpy(xp):
         expected = """\
 Rotation.from_matrix(array([[1., 0., 0.],
                             [0., 1., 0.],
                             [0., 0., 1.]]))"""
         assert actual == expected
+    else:
+        assert actual.startswith("Rotation.from_matrix(")
 
 
-@pytest.mark.array_api_backends
 def test_repr_rotation_sequence(xp):
-    q = xp.asarray([[0.0, 1, 0, 1], [0, 0, 1, 1]]) / np.sqrt(2)
+    q = xp.asarray([[0.0, 1, 0, 1], [0, 0, 1, 1]]) / math.sqrt(2)
     actual = f"{Rotation.from_quat(q)!r}"
     if is_numpy(xp):
         expected = """\
@@ -2005,9 +1849,10 @@ Rotation.from_matrix(array([[[ 0.,  0.,  1.],
                              [ 1.,  0.,  0.],
                              [ 0.,  0.,  1.]]]))"""
         assert actual == expected
+    else:
+        assert actual.startswith("Rotation.from_matrix(")
 
 
-@pytest.mark.array_api_backends
 def test_slerp(xp):
     rnd = np.random.RandomState(0)
 
@@ -2055,7 +1900,6 @@ def test_slerp(xp):
     assert_equal(len(interp_rots), len(times))
 
 
-@pytest.mark.array_api_backends
 def test_slerp_rot_is_rotation(xp):
     with pytest.raises(TypeError, match="must be a `Rotation` instance"):
         r = xp.asarray([[1,2,3,4],
@@ -2067,14 +1911,12 @@ def test_slerp_rot_is_rotation(xp):
 SLERP_EXCEPTION_MESSAGE = "must be a sequence of at least 2 rotations"
 
 
-@pytest.mark.array_api_backends
 def test_slerp_single_rot(xp):
     r = Rotation.from_quat(xp.asarray([[1.0, 2, 3, 4]]))
     with pytest.raises(ValueError, match=SLERP_EXCEPTION_MESSAGE):
         Slerp([1], r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_rot_len0(xp):
     r = Rotation.random()
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2082,7 +1924,6 @@ def test_slerp_rot_len0(xp):
         Slerp([], r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_rot_len1(xp):
     r = Rotation.random(1)
     r = Rotation.from_quat(xp.asarray(r.as_quat()))
@@ -2090,7 +1931,6 @@ def test_slerp_rot_len1(xp):
         Slerp([1], r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_time_dim_mismatch(xp):
     with pytest.raises(ValueError,
                        match="times to be specified in a 1 dimensional array"):
@@ -2101,7 +1941,6 @@ def test_slerp_time_dim_mismatch(xp):
         Slerp(t, r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_num_rotations_mismatch(xp):
     with pytest.raises(ValueError, match="number of rotations to be equal to "
                                          "number of timestamps"):
@@ -2111,7 +1950,6 @@ def test_slerp_num_rotations_mismatch(xp):
         Slerp(t, r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_equal_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2125,7 +1963,6 @@ def test_slerp_equal_times(xp):
             Slerp(t, r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_decreasing_times(xp):
     rnd = np.random.RandomState(0)
     q = xp.asarray(rnd.uniform(size=(5, 4)))
@@ -2139,7 +1976,6 @@ def test_slerp_decreasing_times(xp):
             Slerp(t, r)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_call_time_dim_mismatch(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2153,7 +1989,6 @@ def test_slerp_call_time_dim_mismatch(xp):
         s(interp_times)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_call_time_out_of_range(xp):
     rnd = np.random.RandomState(0)
     r = Rotation.from_quat(xp.asarray(rnd.uniform(size=(5, 4))))
@@ -2178,7 +2013,6 @@ def test_slerp_call_time_out_of_range(xp):
             s(times_high)
 
 
-@pytest.mark.array_api_backends
 def test_slerp_call_scalar_time(xp):
     r = Rotation.from_euler('X', xp.asarray([0, 80]), degrees=True)
     s = Slerp([0, 1], r)
@@ -2189,29 +2023,19 @@ def test_slerp_call_scalar_time(xp):
     delta = r_interpolated * r_interpolated_expected.inv()
 
     assert xp.allclose(delta.magnitude(), 0, atol=1e-16)
-    
-    
-def test_slerp_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    r = Rotation.from_euler("X", jax.numpy.array([0, 80]), degrees=True)
-    s = Slerp([0, 1], r)
-    jax.block_until_ready(jax.jit(s)(0.25))
 
 
-@pytest.mark.array_api_backends
 def test_multiplication_stability(xp):
     qs = Rotation.random(50, rng=0)
     qs = Rotation.from_quat(xp.asarray(qs.as_quat()))
     rs = Rotation.random(1000, rng=1)
     rs = Rotation.from_quat(xp.asarray(rs.as_quat()))
+    expected = xp.ones(len(rs))
     for q in qs:
         rs *= q * rs
-        xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), xp.asarray(1.0),
-                        check_shape=False)
+        xp_assert_close(xp_vector_norm(rs.as_quat(), axis=1), expected)
 
 
-@pytest.mark.array_api_backends
 def test_pow(xp):
     atol = 1e-14
     p = Rotation.random(10, rng=0)
@@ -2251,19 +2075,11 @@ def test_pow(xp):
     xp_assert_close(q.as_quat(), r.as_quat(), atol=atol)
 
 
-@pytest.mark.array_api_backends
 def test_pow_errors(xp):
     p = Rotation.random(rng=0)
     p = Rotation.from_quat(xp.asarray(p.as_quat()))
     with pytest.raises(NotImplementedError, match='modulus not supported'):
         pow(p, 1, 1)
-
-
-def test_pow_jax_compile():
-    jax = pytest.importorskip("jax")
-    p = Rotation.from_quat(jax.numpy.array([0, 0, 0, 1]))
-    rpow = jax.jit(Rotation.__pow__)
-    jax.block_until_ready(rpow(p, 1.0))
 
 
 def test_rotation_within_numpy_array():
@@ -2298,16 +2114,18 @@ def test_rotation_within_numpy_array():
 
 
 def test_pickling(xp):
-    # TODO: Can we support this for all Array API frameworks?
-    r = Rotation.from_quat(xp.asarray([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)]))
+    # Note: Array API makes no provision for arrays to be pickleable, so
+    # it's OK to skip this test for the backends that don't support it
+    r = Rotation.from_quat(xp.asarray([0, 0, math.sin(xp.pi/4), math.cos(xp.pi/4)]))
     pkl = pickle.dumps(r)
     unpickled = pickle.loads(pkl)
     xp_assert_close(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
 def test_deepcopy():
-    # TODO: Can we support this for all Array API frameworks?
-    r = Rotation.from_quat([0, 0, np.sin(np.pi/4), np.cos(np.pi/4)])
+    # Note: Array API makes no provision for arrays to support the `__copy__`
+    # protocol, so it's OK to skip this test for the backends that don't
+    r = Rotation.from_quat([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)])
     r1 = copy.deepcopy(r)
     xp_assert_close(r.as_matrix(), r1.as_matrix(), atol=1e-15)
 
@@ -2323,7 +2141,6 @@ def test_as_euler_contiguous():
     assert all(i >= 0 for i in e2.strides)
 
 
-@pytest.mark.array_api_backends
 def test_concatenate(xp):
     rotation = Rotation.random(10, rng=0)
     rotation = Rotation.from_quat(xp.asarray(rotation.as_quat()))
@@ -2346,25 +2163,13 @@ def test_concatenate(xp):
     xp_assert_equal(rot.as_quat(), result.as_quat())
 
 
-@pytest.mark.array_api_backends
 def test_concatenate_wrong_type(xp):
     with pytest.raises(TypeError, match='Rotation objects only'):
         rot = Rotation(xp.asarray(Rotation.identity().as_quat()))
         Rotation.concatenate([rot, 1, None])
 
 
-def test_concatenate_jax_compile():
-    jax = pytest.importorskip("jax")
-
-    rotation = Rotation.random(10, rng=0)
-    rotation = Rotation.from_quat(jax.numpy.asarray(rotation.as_quat()))
-    concatenate = jax.jit(Rotation.concatenate)
-    result = jax.block_until_ready(concatenate([rotation, rotation]))
-    assert isinstance(result, Rotation)
-
-
 # Regression test for gh-16663
-@pytest.mark.array_api_backends
 def test_len_and_bool(xp):
     rotation_multi_one = Rotation(xp.asarray([[0, 0, 0, 1]]))
     rotation_multi = Rotation(xp.asarray([[0, 0, 0, 1], [0, 0, 0, 1]]))
@@ -2381,52 +2186,49 @@ def test_len_and_bool(xp):
     assert rotation_single
 
 
-@pytest.mark.array_api_backends
 def test_from_davenport_single_rotation(xp):
     axis = xp.asarray([0, 0, 1])
     quat = Rotation.from_davenport(axis, 'extrinsic', 90,
                                    degrees=True).as_quat()
-    expected_quat = xp.asarray([0.0, 0, 1, 1]) / np.sqrt(2)
+    expected_quat = xp.asarray([0.0, 0, 1, 1]) / math.sqrt(2)
     xp_assert_close(quat, expected_quat)
 
 
-@pytest.mark.array_api_backends
 def test_from_davenport_one_or_two_axes(xp):
     ez = xp.asarray([0.0, 0, 1])
     ey = xp.asarray([0.0, 1, 0])
 
     # Single rotation, single axis, axes.shape == (3, )
-    rot = Rotation.from_rotvec(ez * np.pi/4)
-    rot_dav = Rotation.from_davenport(ez, 'e', np.pi/4)
+    rot = Rotation.from_rotvec(ez * xp.pi/4)
+    rot_dav = Rotation.from_davenport(ez, 'e', xp.pi/4)
     xp_assert_close(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
 
     # Single rotation, single axis, axes.shape == (1, 3)
     axes = xp.reshape(ez, (1, 3))  # Torch can't create tensors from xp.asarray([ez])
-    rot = Rotation.from_rotvec(axes * np.pi/4)
-    rot_dav = Rotation.from_davenport(axes, 'e', [np.pi/4])
+    rot = Rotation.from_rotvec(axes * xp.pi/4)
+    rot_dav = Rotation.from_davenport(axes, 'e', [xp.pi/4])
     xp_assert_close(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
 
     # Single rotation, two axes, axes.shape == (2, 3)
     axes = xp.stack([ez, ey], axis=0)
-    rot = Rotation.from_rotvec(axes * xp.asarray([[np.pi/4], [np.pi/6]]))
+    rot = Rotation.from_rotvec(axes * xp.asarray([[xp.pi/4], [xp.pi/6]]))
     rot = rot[0] * rot[1]
     axes_dav = xp.stack([ey, ez], axis=0)
-    rot_dav = Rotation.from_davenport(axes_dav, 'e', [np.pi/6, np.pi/4])
+    rot_dav = Rotation.from_davenport(axes_dav, 'e', [xp.pi/6, xp.pi/4])
     xp_assert_close(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
 
     # Two rotations, single axis, axes.shape == (3, )
     axes = xp.stack([ez, ez], axis=0)
-    rot = Rotation.from_rotvec(axes * xp.asarray([[np.pi/6], [np.pi/4]]))
+    rot = Rotation.from_rotvec(axes * xp.asarray([[xp.pi/6], [xp.pi/4]]))
     axes_dav = xp.reshape(ez, (1, 3))
-    rot_dav = Rotation.from_davenport(axes_dav, 'e', [np.pi/6, np.pi/4])
+    rot_dav = Rotation.from_davenport(axes_dav, 'e', [xp.pi/6, xp.pi/4])
     xp_assert_close(rot.as_quat(canonical=True),
                     rot_dav.as_quat(canonical=True))
 
 
-@pytest.mark.array_api_backends
 def test_from_davenport_invalid_input(xp):
     ez = [0, 0, 1]
     ey = [0, 1, 0]
@@ -2452,26 +2254,32 @@ def test_from_davenport_invalid_input(xp):
         Rotation.from_davenport(xp.asarray([ez, ey, ez]), 'e', [0, 1, 2, 3])
 
 
-def test_from_davenport_jax_compile():
-    jax = pytest.importorskip("jax")
+def test_from_davenport_array_like():
+    rng = np.random.default_rng(123)
+    # Single rotation
+    e1 = np.array([1, 0, 0])
+    e2 = np.array([0, 1, 0])
+    e3 = np.array([0, 0, 1])
+    r_expected = Rotation.random(rng=rng)
+    angles = r_expected.as_davenport([e1, e2, e3], 'e')
+    r = Rotation.from_davenport([e1, e2, e3], 'e', angles.tolist())
+    assert r_expected.approx_equal(r, atol=1e-12)
 
-    axes = jax.numpy.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
-    order = "e"
-    angles = jax.numpy.array([0.0, 0.0, 0.0])
-    from_davenport = jax.jit(Rotation.from_davenport, static_argnums=(1,))
-    r = jax.block_until_ready(from_davenport(axes, order, angles))
-    assert isinstance(r, Rotation)
+    # Multiple rotations
+    r_expected = Rotation.random(2, rng=rng)
+    angles = r_expected.as_davenport([e1, e2, e3], 'e')
+    r = Rotation.from_davenport([e1, e2, e3], 'e', angles.tolist())
+    assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
 
-@pytest.mark.array_api_backends
 def test_as_davenport(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles_middle = rnd.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    lambdas = rnd.uniform(low=0, high=np.pi, size=(20,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles_middle = rnd.uniform(low=0, high=xp.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=xp.pi, size=(20,))
 
     e1 = xp.asarray([1.0, 0, 0])
     e2 = xp.asarray([0.0, 1, 0])
@@ -2487,7 +2295,6 @@ def test_as_davenport(xp):
             xp_assert_close(angles_dav, xp.asarray(angles))
 
 
-@pytest.mark.array_api_backends
 @pytest.mark.thread_unsafe
 def test_as_davenport_degenerate(xp):
     # Since we cannot check for angle equality, we check for rotation matrix
@@ -2497,10 +2304,10 @@ def test_as_davenport_degenerate(xp):
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles_middle = [rnd.choice([0, np.pi]) for i in range(n)]
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    lambdas = rnd.uniform(low=0, high=np.pi, size=(5,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles_middle = [rnd.choice([0, xp.pi]) for i in range(n)]
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=xp.pi, size=(5,))
 
     e1 = xp.asarray([1.0, 0, 0])
     e2 = xp.asarray([0.0, 1, 0])
@@ -2512,37 +2319,23 @@ def test_as_davenport_degenerate(xp):
         for order in ['extrinsic', 'intrinsic']:
             ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
             rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
-            if is_lazy_array(rot.as_quat()):
+            with eager_warns(rot, UserWarning, match="Gimbal lock"):
                 angles_dav = rot.as_davenport(xp.asarray(ax), order)
-            else:  # We can only warn in non-lazy frameworks.
-                with pytest.warns(UserWarning, match="Gimbal lock"):
-                    angles_dav = rot.as_davenport(xp.asarray(ax), order)
             mat_expected = rot.as_matrix()
             rot_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav)
             mat_estimated = rot_estimated.as_matrix()
             xp_assert_close(mat_expected, mat_estimated, atol=1e-12)
 
-def test_as_davenport_jax_compile():
-    jax = pytest.importorskip("jax")
 
-    axes = jax.numpy.array([[1.0, 0, 0], [0, 1, 0], [0, 0, 1]])
-    order = "e"
-    r = Rotation.from_matrix(jax.numpy.eye(3))
-    as_davenport = jax.jit(Rotation.as_davenport, static_argnums=(2,))
-    angles = jax.block_until_ready(as_davenport(r, axes, order))
-    assert isinstance(angles, type(jax.numpy.array(0)))
-
-
-@pytest.mark.array_api_backends
 def test_compare_from_davenport_from_euler(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
@@ -2555,7 +2348,7 @@ def test_compare_from_davenport_from_euler(xp):
                             rtol=1e-12)
 
     # asymmetric sequences
-    angles[:, 1] -= np.pi / 2
+    angles[:, 1] -= xp.pi / 2
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
@@ -2567,16 +2360,15 @@ def test_compare_from_davenport_from_euler(xp):
             xp_assert_close(eul.as_quat(), dav.as_quat(), rtol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_compare_as_davenport_as_euler(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
@@ -2589,7 +2381,7 @@ def test_compare_as_davenport_as_euler(xp):
             xp_assert_close(eul, dav, rtol=1e-12)
 
     # asymmetric sequences
-    angles[:, 1] -= np.pi / 2
+    angles[:, 1] -= xp.pi / 2
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
@@ -2602,7 +2394,6 @@ def test_compare_as_davenport_as_euler(xp):
             xp_assert_close(eul, dav, rtol=1e-12)
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_construction(xp):
     r = Rotation.random(num=0)
     assert len(r) == 0
@@ -2632,7 +2423,6 @@ def test_zero_rotation_construction(xp):
     assert len(r_mrp) == 0
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_representation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     assert r.as_quat().shape == (0, 4)
@@ -2643,7 +2433,6 @@ def test_zero_rotation_representation(xp):
     assert r.as_davenport(xp.eye(3), "extrinsic").shape == (0, 3)
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_array_rotation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
@@ -2661,7 +2450,6 @@ def test_zero_rotation_array_rotation(xp):
         r.apply(v2)
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_multiplication(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
@@ -2686,7 +2474,6 @@ def test_zero_rotation_multiplication(xp):
         r2 * r0
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_concatentation(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
@@ -2707,7 +2494,6 @@ def test_zero_rotation_concatentation(xp):
     assert len(r4) == 4
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_power(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     for pp in [-1.5, -1, 0, 1, 1.5]:
@@ -2715,28 +2501,24 @@ def test_zero_rotation_power(xp):
         assert len(pow0) == 0
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_inverse(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     r_inv = r.inv()
     assert len(r_inv) == 0
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_magnitude(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     magnitude = r.magnitude()
     assert magnitude.shape == (0,)
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_mean(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     with pytest.raises(ValueError, match="Mean of an empty rotation set is undefined."):
         r.mean()
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_approx_equal(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
     r0 = Rotation.from_quat(xp.zeros((0, 4)))
@@ -2755,7 +2537,6 @@ def test_zero_rotation_approx_equal(xp):
         r3.approx_equal(r)
 
 
-@pytest.mark.array_api_backends
 def test_zero_rotation_get_set(xp):
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
@@ -2775,7 +2556,6 @@ def test_zero_rotation_get_set(xp):
         r[0] = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
 
 
-@pytest.mark.array_api_backends
 def test_boolean_indexes(xp):
     r = Rotation.from_quat(xp.asarray(Rotation.random(3).as_quat()))
 
