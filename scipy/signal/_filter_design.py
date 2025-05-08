@@ -1217,13 +1217,7 @@ def tf2zpk(b, a):
     xp = array_namespace(b, a)
     b, a = normalize(b, a)
 
-    if xp.isdtype(b.dtype, 'integral'):
-        b = xp.astype(b, xp.float64)
-    if xp.isdtype(a.dtype, 'integral'):
-        a = xp.astype(a, xp.float64)
-
-    b = b / a[0]
-    a = a / a[0]
+    a, b = xp_promote(a, b, xp=xp, force_floating=True)
 
     k = b[0]
     b = b / b[0]
@@ -1662,7 +1656,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     k = xp.asarray(k)
     if xp.isdtype(k.dtype, 'complex floating'):
         if xp.imag(k) != 0:
-            raise ValueError('k must be real')  
+            raise ValueError('k must be real')
         k = float(xp.real(k))
     else:
         k = float(k)

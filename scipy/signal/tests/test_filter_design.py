@@ -525,11 +525,8 @@ class TestZpk2Sos:
             # first example
             thetas = xp.asarray([22.5, 45, 77.5])
             mags = xp.asarray([0.8, 0.6, 0.9])
-     #       z = xp.asarray([xp.exp(theta * deg2rad * 1j) for theta in thetas])
             z = xp.exp(1j * deg2rad * thetas)
             z = xp.concat((z, xp.conj(z)))
-#            p = xp.asarray([mag * np.exp(theta * deg2rad * 1j)
-#                          for theta, mag in zip(thetas, mags)])
             p = xp.exp(1j * deg2rad * thetas) * mags
             p = xp.concat((p, xp.conj(p)))
             sos = zpk2sos(z, p, k)
@@ -544,8 +541,6 @@ class TestZpk2Sos:
             assert_array_almost_equal(sos, sos2, decimal=4)
 
             # second example
-#            z = xp.asarray([xp.exp(theta * deg2rad * 1j)
-#                          for theta in (85., 10.)])
             thetas = xp.asarray([85., 10.])
             z = xp.exp(1j * deg2rad * thetas)
             z = xp.concat((z, xp.conj(z), xp.asarray([1.0, -1.0])))
