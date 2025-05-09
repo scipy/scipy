@@ -651,7 +651,7 @@ def is_marray(xp):
 class _XPSphinxCapability:
     cpu: bool | None  # None if not applicable
     gpu: bool | None
-    warnings: str | None = None
+    warnings: list[str] = dataclasses.field(default_factory=list)
 
     def _render(self, value):
         if value is None:
@@ -659,8 +659,8 @@ class _XPSphinxCapability:
         if not value:
             return "⛔"
         if self.warnings:
-            res = f"⚠️ {self.warnings}"
-            assert len(res) <= 20
+            res = "⚠️ " + '; '.join(self.warnings)
+            assert len(res) <= 20, "Warnings too long"
             return res
         return "✅"
 
@@ -677,6 +677,8 @@ def _make_sphinx_capabilities(
     cpu_only=False, np_only=False, exceptions=(),
     # xpx.lazy_xp_backends kwargs
     allow_dask_compute=False, jax_jit=True,
+    # list of tuples [(module name, reason), ...]
+    warnings = (),
     # unused in documentation
     reason=None,
 ):
@@ -689,10 +691,10 @@ def _make_sphinx_capabilities(
         "cupy": _XPSphinxCapability(cpu=None, gpu=True),
         "torch": _XPSphinxCapability(cpu=True, gpu=True),
         "jax.numpy": _XPSphinxCapability(cpu=True, gpu=True,
-            warnings=None if jax_jit else "no JIT"),
+            warnings=[] if jax_jit else ["no JIT"]),
         # Note: Dask+CuPy is currently untested and unsupported
         "dask.array": _XPSphinxCapability(cpu=True, gpu=None,
-            warnings="computes graph" if allow_dask_compute else None),
+            warnings=["computes graph"] if allow_dask_compute else []),
     }
 
     # documentation doesn't display the reason
@@ -711,6 +713,10 @@ def _make_sphinx_capabilities(
                 backend.gpu = False
         elif cpu_only and module not in exceptions and backend.gpu is not None:
             backend.gpu = False
+
+    for module, warning in warnings:
+        backend = capabilities[module]
+        backend.warnings.append(warning)
 
     return capabilities
 
@@ -749,6 +755,8 @@ def xp_capabilities(
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
     cpu_only=False, np_only=False, reason=None, exceptions=(),
+    # lists of tuples [(module name, reason), ...]
+    warnings=(),
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
     allow_dask_compute=False, jax_jit=True,
@@ -782,6 +790,7 @@ def xp_capabilities(
         exceptions=exceptions,
         allow_dask_compute=allow_dask_compute,
         jax_jit=jax_jit,
+        warnings=warnings,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
