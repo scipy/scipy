@@ -1652,14 +1652,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     # convert to numpy, convert back on exit   XXX
     z, p = map(np.asarray, (z, p))
-
-    k = xp.asarray(k)
-    if xp.isdtype(k.dtype, 'complex floating'):
-        if xp.imag(k) != 0:
-            raise ValueError('k must be real')
-        k = float(xp.real(k))
-    else:
-        k = float(k)
+    k = np.asarray(k)
 
     if pairing is None:
         pairing = 'minimal' if analog else 'nearest'
@@ -1674,9 +1667,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     if len(z) == len(p) == 0:
         if not analog:
-            return xp.asarray([[k, 0., 0., 1., 0., 0.]])
+            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]))
         else:
-            return xp.asarray([[0., 0., k, 0., 0., 1.]])
+            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]))
 
     if pairing != 'minimal':
         # ensure we have the same number of poles and zeros, and make copies
