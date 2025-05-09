@@ -11381,6 +11381,10 @@ class wrapcauchy_gen(rv_continuous):
             data = data._uncensor()
         return 0.5, np.min(data), np.ptp(data)/(2*np.pi)
 
+    @inherit_docstring_from(rv_continuous)
+    def rvs(self, *args, **kwds):
+        rvs = super().rvs(*args, **kwds)
+        return np.mod(rvs, 2*np.pi)
 
 wrapcauchy = wrapcauchy_gen(a=0.0, b=2*np.pi, name='wrapcauchy')
 
