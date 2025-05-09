@@ -13,7 +13,8 @@ from scipy._lib._array_api import (
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
-    eager_warns
+    eager_warns,
+    xp_default_dtype
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -101,7 +102,7 @@ def test_from_quat_array_like():
 
 def test_from_quat_int_dtype(xp):
     r = Rotation.from_quat(xp.asarray([1, 0, 0, 0]))
-    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+    assert r.as_quat().dtype == xp_default_dtype(xp)
 
 
 def test_as_quat_scalar_first(xp):
@@ -415,7 +416,7 @@ def test_from_matrix_array_like():
 def test_from_matrix_int_dtype(xp):
     mat = xp.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     r = Rotation.from_matrix(mat)
-    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+    assert r.as_quat().dtype == xp_default_dtype(xp)
 
 
 def test_from_1d_single_rotvec(xp):
@@ -487,7 +488,7 @@ def test_from_rotvec_array_like():
 def test_from_rotvec_int_dtype(xp):
     rotvec = xp.asarray([1, 0, 0])
     r = Rotation.from_rotvec(rotvec)
-    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+    assert r.as_quat().dtype == xp_default_dtype(xp)
 
 
 def test_degrees_from_rotvec(xp):
@@ -551,7 +552,7 @@ def test_as_rotvec_single_2d_input(xp):
     xp_assert_close(actual_rotvec, expected_rotvec)
 
 
-def test_as_rotvec_degreess(xp):
+def test_as_rotvec_degrees(xp):
     # x->y, y->z, z->x
     mat = xp.asarray([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
     rot = Rotation.from_matrix(mat)
@@ -604,7 +605,7 @@ def test_from_mrp_array_like():
 def test_from_mrp_int_dtype(xp):
     mrp = xp.asarray([0, 0, 1])
     r = Rotation.from_mrp(mrp)
-    assert r.as_quat().dtype == xp.asarray(0.0).dtype
+    assert r.as_quat().dtype == xp_default_dtype(xp)
 
 
 def test_from_generic_mrp(xp):
@@ -869,9 +870,9 @@ def test_as_euler_asymmetric_axes(xp, seq_tuple, intrinsic):
     rnd = np.random.RandomState(0)
     n = 1000
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=-xp.pi / 2, high=xp.pi / 2, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=-np.pi / 2, high=np.pi / 2, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles = xp.asarray(angles)
 
     seq = "".join(seq_tuple)
@@ -905,9 +906,9 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
     rnd = np.random.RandomState(0)
     n = 1000
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles = xp.asarray(angles)
 
     # Rotation of the form A/B/A are rotation around symmetric axes
@@ -1389,19 +1390,18 @@ def test_apply_shapes(xp):
         assert x.shape == shape
 
 
-def test_apply_array_like(xp):
+def test_apply_array_like():
     rng = np.random.default_rng(123)
     # Single vector
-    r = rotation_to_xp(Rotation.random(rng=rng), xp)
-    t = rng.uniform(-100, 100, size=(3,)).tolist()
-    v = r.apply(t)
-    v_expected = r.apply(xp.asarray(t))
+    r = Rotation.random(rng=rng)
+    t = rng.uniform(-100, 100, size=(3,))
+    v = r.apply(t.tolist())
+    v_expected = r.apply(t)
     xp_assert_close(v, v_expected, atol=1e-12)
-
     # Multiple vectors
-    t = rng.uniform(-100, 100, size=(2, 3)).tolist()
-    v = r.apply(t)
-    v_expected = r.apply(xp.asarray(t))
+    t = rng.uniform(-100, 100, size=(2, 3))
+    v = r.apply(t.tolist())
+    v_expected = r.apply(t)
     xp_assert_close(v, v_expected, atol=1e-12)
 
 
@@ -1430,15 +1430,13 @@ def test_getitem_single(xp):
         Rotation.from_quat(xp.asarray([0, 0, 0, 1]))[0]
 
 
-def test_getitem_array_like(xp):
+def test_getitem_array_like():
     mat = np.array([[[0.0, -1, 0],
                      [1, 0, 0],
                      [0, 0, 1]],
-
                     [[1, 0, 0],
                      [0, 0, -1],
                      [0, 1, 0]]])
-    mat = xp.asarray(mat)
     r = Rotation.from_matrix(mat)
     xp_assert_close(r[[0]].as_matrix(), mat[[0]], atol=1e-15)
     xp_assert_close(r[[0, 1]].as_matrix(), mat[[0, 1]], atol=1e-15)
@@ -2115,16 +2113,16 @@ def test_rotation_within_numpy_array():
 def test_pickling(xp):
     # Note: Array API makes no provision for arrays to be pickleable, so
     # it's OK to skip this test for the backends that don't support it
-    r = Rotation.from_quat(xp.asarray([0, 0, math.sin(xp.pi/4), math.cos(xp.pi/4)]))
+    r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     pkl = pickle.dumps(r)
     unpickled = pickle.loads(pkl)
     xp_assert_close(r.as_matrix(), unpickled.as_matrix(), atol=1e-15)
 
 
-def test_deepcopy():
+def test_deepcopy(xp):
     # Note: Array API makes no provision for arrays to support the `__copy__`
     # protocol, so it's OK to skip this test for the backends that don't
-    r = Rotation.from_quat([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)])
+    r = Rotation.from_quat(xp.asarray([0, 0, math.sin(np.pi/4), math.cos(np.pi/4)]))
     r1 = copy.deepcopy(r)
     xp_assert_close(r.as_matrix(), r1.as_matrix(), atol=1e-15)
 
@@ -2275,10 +2273,10 @@ def test_as_davenport(xp):
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles_middle = rnd.uniform(low=0, high=xp.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    lambdas = rnd.uniform(low=0, high=xp.pi, size=(20,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(20,))
 
     e1 = xp.asarray([1.0, 0, 0])
     e2 = xp.asarray([0.0, 1, 0])
@@ -2303,10 +2301,10 @@ def test_as_davenport_degenerate(xp):
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles_middle = [rnd.choice([0, xp.pi]) for i in range(n)]
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    lambdas = rnd.uniform(low=0, high=xp.pi, size=(5,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles_middle = [rnd.choice([0, np.pi]) for i in range(n)]
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    lambdas = rnd.uniform(low=0, high=np.pi, size=(5,))
 
     e1 = xp.asarray([1.0, 0, 0])
     e2 = xp.asarray([0.0, 1, 0])
@@ -2332,9 +2330,9 @@ def test_compare_from_davenport_from_euler(xp):
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
@@ -2347,7 +2345,7 @@ def test_compare_from_davenport_from_euler(xp):
                             rtol=1e-12)
 
     # asymmetric sequences
-    angles[:, 1] -= xp.pi / 2
+    angles[:, 1] -= np.pi / 2
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
@@ -2365,9 +2363,9 @@ def test_compare_as_davenport_as_euler(xp):
     angles = np.empty((n, 3))
 
     # symmetric sequences
-    angles[:, 0] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
-    angles[:, 1] = rnd.uniform(low=0, high=xp.pi, size=(n,))
-    angles[:, 2] = rnd.uniform(low=-xp.pi, high=xp.pi, size=(n,))
+    angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
+    angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
@@ -2380,7 +2378,7 @@ def test_compare_as_davenport_as_euler(xp):
             xp_assert_close(eul, dav, rtol=1e-12)
 
     # asymmetric sequences
-    angles[:, 1] -= xp.pi / 2
+    angles[:, 1] -= np.pi / 2
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)

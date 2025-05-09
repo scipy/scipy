@@ -423,7 +423,7 @@ def test_from_dual_quat(xp):
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # rotation and translation
-    # The tolerance is set to 1e-8 because xp_assert_close deviates from 
+    # rtol is set to 1e-7 because xp_assert_close deviates from
     # np.testing.assert_allclose in that it does not automatically default to 1e-7 for
     # floating point inputs.
     # See https://numpy.org/doc/2.2/reference/generated/numpy.testing.assert_allclose.html
@@ -442,7 +442,7 @@ def test_from_dual_quat(xp):
           [0.08979911, 0.91647262, -0.3898898, -0.70540077],
           [-0.8587822, 0.26951399, 0.43572393, -0.47776265],
           [0., 0., 0., 1.]]])
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-8)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
 
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
@@ -451,7 +451,7 @@ def test_from_dual_quat(xp):
          [0.8450749, 0.19507259, 0.49404931, -0.06091285,
           0.04174544, 0.65049656, -0.30782513, 0.16566752]]),
         scalar_first=True)
-    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-8)
+    xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
 
     # unnormalized dual quaternions
 
@@ -474,7 +474,7 @@ def test_from_dual_quat(xp):
         unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
     xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
-                    atol=1e-8)
+                    atol=1e-12)
 
     # real and dual quaternion are not orthogonal
     unnormalized_dual_quat = xp.asarray(
