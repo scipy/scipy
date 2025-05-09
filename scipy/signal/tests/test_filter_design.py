@@ -13,10 +13,10 @@ import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal,
-    assert_array_almost_equal, xp_size, xp_default_dtype,
+    assert_array_almost_equal, xp_size, xp_default_dtype, is_numpy
 )
 
-from numpy import array, spacing, sin, pi, sort
+from numpy import array, spacing, sin, pi
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
                           buttap, butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
@@ -29,6 +29,8 @@ from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bili
 from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 from scipy.signal._filter_design import _logspace
+from scipy.signal import _polyutils as _pu
+from scipy.signal._polyutils import _sort_cmplx
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -176,26 +178,33 @@ class TestCplxReal:
 
 class TestTf2zpk:
 
-    @pytest.mark.parametrize('dt', (np.float64, np.complex128))
-    def test_simple(self, dt):
-        z_r = np.array([0.5, -0.5])
-        p_r = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+    )
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @pytest.mark.parametrize('dt', ('float64', 'complex128'))
+    def test_simple(self, dt, xp):
+        dtyp = getattr(xp, dt)
+
+        z_r = xp.asarray([0.5, -0.5])
+        p_r = xp.asarray([1.j / math.sqrt(2), -1.j / math.sqrt(2)])
         # Sort the zeros/poles so that we don't fail the test if the order
         # changes
-        z_r.sort()
-        p_r.sort()
-        b = np.poly(z_r).astype(dt)
-        a = np.poly(p_r).astype(dt)
+        z_r = _sort_cmplx(z_r, xp=xp)
+        p_r = _sort_cmplx(p_r, xp=xp)
+
+        b = xp.astype(_pu.poly(z_r, xp=xp), dtyp)
+        a = xp.astype(_pu.poly(p_r, xp=xp), dtyp)
 
         z, p, k = tf2zpk(b, a)
-        z.sort()
+        z = _sort_cmplx(z, xp=xp)
         # The real part of `p` is ~0.0, so sort by imaginary part
-        p = p[np.argsort(p.imag)]
+        p = p[xp.argsort(xp.imag(p))]
 
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
-        assert_array_almost_equal(k, 1.)
-        assert k.dtype == dt
+        assert math.isclose(xp.real(k), 1.)
+        assert k.dtype == dtyp
 
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
@@ -207,76 +216,91 @@ class TestTf2zpk:
 
 class TestZpk2Tf:
 
-    def test_identity(self):
+    def test_identity(self, xp):
         """Test the identity transfer function."""
-        z = []
-        p = []
+        z = xp.asarray([])
+        p = xp.asarray([])
         k = 1.
         b, a = zpk2tf(z, p, k)
-        b_r = np.array([1.])  # desired result
-        a_r = np.array([1.])  # desired result
+        b_r = xp.asarray([1.])  # desired result
+        a_r = xp.asarray([1.])  # desired result
         # The test for the *type* of the return values is a regression
         # test for ticket #1095. In the case p=[], zpk2tf used to
         # return the scalar 1.0 instead of array([1.0]).
         xp_assert_equal(b, b_r)
-        assert isinstance(b, np.ndarray)
         xp_assert_equal(a, a_r)
-        assert isinstance(a, np.ndarray)
+        if is_numpy(xp):
+            assert isinstance(b, np.ndarray)
+            assert isinstance(a, np.ndarray)
 
-    def test_conj_pair(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
+    def test_conj_pair(self, xp):
         # conjugate pairs give real-coeff num & den
-        z = np.array([1j, -1j, 2j, -2j])
+        z = xp.asarray([1j, -1j, 2j, -2j])
         # shouldn't need elements of pairs to be adjacent
-        p = np.array([1+1j, 3-100j, 3+100j, 1-1j])
+        p = xp.asarray([1+1j, 3-100j, 3+100j, 1-1j])
         k = 23
 
         # np.poly should do the right thing, but be explicit about
         # taking real part
-        b = k * np.poly(z).real
-        a = np.poly(p).real
+        z_np, p_np = map(np.asarray, (z, p))
+        b_np = k * np.poly(z_np).real
+        a_np = np.poly(p_np).real
+        b, a = map(xp.asarray, (b_np, a_np))
 
         bp, ap = zpk2tf(z, p, k)
 
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
 
-        assert np.isrealobj(bp)
-        assert np.isrealobj(ap)
+        assert xp.isdtype(bp.dtype, 'real floating')
+        assert xp.isdtype(ap.dtype, 'real floating')
 
-    def test_complexk(self):
+    @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/11883")
+    @skip_xp_backends(
+        cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+    )
+    def test_complexk(self, xp):
         # regression: z, p real, k complex k gave real b, a
-        b, a = np.array([1j, 1j]), np.array([1.0, 2])
+        b, a = xp.asarray([1j, 1j]), xp.asarray([1.0, 2])
         z, p, k = tf2zpk(b, a)
-        xp_assert_close(k, 1j)
+        xp_assert_close(k, xp.asarray(1j), check_0d=False)
         bp, ap = zpk2tf(z, p, k)
         xp_assert_close(b, bp)
         xp_assert_close(a, ap)
 
 
+@skip_xp_backends("jax.numpy", reason='no eig in JAX on GPU.')
 class TestSos2Zpk:
 
-    def test_basic(self):
+    @skip_xp_backends("dask.array", reason="it https://github.com/dask/dask/issues/11883")
+    def test_basic(self, xp):
         sos = [[1, 0, 1, 1, 0, -0.81],
                [1, 0, 0, 1, 0, +0.49]]
+        sos = xp.asarray(sos)
         z, p, k = sos2zpk(sos)
-        z2 = [1j, -1j, 0, 0]
-        p2 = [0.9, -0.9, 0.7j, -0.7j]
-        k2 = 1
-        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
-        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
-        assert_array_almost_equal(k, k2)
+        z2 = xp.asarray([1j, -1j, 0, 0])
+        p2 = xp.asarray([0.9, -0.9, 0.7j, -0.7j])
+        k2 = 1.
+        assert_array_almost_equal(_sort_cmplx(z, xp), _sort_cmplx(z2, xp), decimal=4)
+        assert_array_almost_equal(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), decimal=4)
+        assert math.isclose(k, k2)
 
         sos = [[1.00000, +0.61803, 1.0000, 1.00000, +0.60515, 0.95873],
                [1.00000, -1.61803, 1.0000, 1.00000, -1.58430, 0.95873],
                [1.00000, +1.00000, 0.0000, 1.00000, +0.97915, 0.00000]]
+        sos = xp.asarray(sos)
         z, p, k = sos2zpk(sos)
         z2 = [-0.3090 + 0.9511j, -0.3090 - 0.9511j, 0.8090 + 0.5878j,
               0.8090 - 0.5878j, -1.0000 + 0.0000j, 0]
         p2 = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
               0.7922 - 0.5755j, -0.9791 + 0.0000j, 0]
+        z2 = xp.asarray(z2)
+        p2 = xp.asarray(p2)
         k2 = 1
-        assert_array_almost_equal(sort(z), sort(z2), decimal=4)
-        assert_array_almost_equal(sort(p), sort(p2), decimal=4)
+        assert_array_almost_equal(_sort_cmplx(z, xp), _sort_cmplx(z2, xp), decimal=4)
+        assert_array_almost_equal(_sort_cmplx(p, xp), _sort_cmplx(p2, xp), decimal=4)
 
         sos = array([[1, 2, 3, 1, 0.2, 0.3],
                      [4, 5, 6, 1, 0.4, 0.5]])
@@ -284,138 +308,164 @@ class TestSos2Zpk:
                   -0.625 - 1.05326872164704j, -0.625 + 1.05326872164704j])
         p = array([-0.2 - 0.678232998312527j, -0.2 + 0.678232998312527j,
                   -0.1 - 0.538516480713450j, -0.1 + 0.538516480713450j])
+        sos, z, p = map(xp.asarray, (sos, z, p))
         k = 4
         z2, p2, k2 = sos2zpk(sos)
-        xp_assert_close(_cplxpair(z2), z)
-        xp_assert_close(_cplxpair(p2), p)
+
+        xp_assert_close(_sort_cmplx(z2, xp=xp), _sort_cmplx(z, xp=xp))
+        xp_assert_close(_sort_cmplx(p2, xp=xp), _sort_cmplx(p, xp=xp))
         assert k2 == k
 
     @pytest.mark.thread_unsafe
-    def test_fewer_zeros(self):
+    def test_fewer_zeros(self, xp):
         """Test not the expected number of p/z (effectively at origin)."""
         sos = butter(3, 0.1, output='sos')
+        sos = xp.asarray(sos)   # XXX convert butter
         z, p, k = sos2zpk(sos)
-        assert len(z) == 4
-        assert len(p) == 4
+        assert z.shape[0] == 4
+        assert p.shape[0] == 4
 
         sos = butter(12, [5., 30.], 'bandpass', fs=1200., analog=False,
                     output='sos')
+        xp = xp.asarray(sos)
         with pytest.warns(BadCoefficients, match='Badly conditioned'):
             z, p, k = sos2zpk(sos)
-        assert len(z) == 24
-        assert len(p) == 24
+        assert z.shape[0] == 24
+        assert p.shape[0] == 24
 
 
+@skip_xp_backends(
+    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+)
 class TestSos2Tf:
 
-    def test_basic(self):
-        sos = [[1, 1, 1, 1, 0, -1],
+    def test_basic(self, xp):
+        sos = [[1.0, 1, 1, 1, 0, -1],
                [-2, 3, 1, 1, 10, 1]]
+        sos = xp.asarray(sos)
         b, a = sos2tf(sos)
-        assert_array_almost_equal(b, [-2, 1, 2, 4, 1])
-        assert_array_almost_equal(a, [1, 10, 0, -10, -1])
+        assert_array_almost_equal(b, xp.asarray([-2.0, 1, 2, 4, 1]))
+        assert_array_almost_equal(a, xp.asarray([1.0, 10, 0, -10, -1]))
 
 
+@skip_xp_backends(cpu_only=True, reason="XXX zpk2sos is numpy-only")
 class TestTf2Sos:
 
-    def test_basic(self):
-        num = [2, 16, 44, 56, 32]
-        den = [3, 3, -15, 18, -12]
+    def test_basic(self, xp):
+        num = xp.asarray([2., 16, 44, 56, 32])
+        den = xp.asarray([3., 3, -15, 18, -12])
         sos = tf2sos(num, den)
         sos2 = [[0.6667, 4.0000, 5.3333, 1.0000, +2.0000, -4.0000],
                 [1.0000, 2.0000, 2.0000, 1.0000, -1.0000, +1.0000]]
+        sos2 = xp.asarray(sos2)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
-        b = [1, -3, 11, -27, 18]
-        a = [16, 12, 2, -4, -1]
+        b = xp.asarray([1.0, -3, 11, -27, 18])
+        a = xp.asarray([16.0, 12, 2, -4, -1])
         sos = tf2sos(b, a)
         sos2 = [[0.0625, -0.1875, 0.1250, 1.0000, -0.2500, -0.1250],
                 [1.0000, +0.0000, 9.0000, 1.0000, +1.0000, +0.5000]]
-        # assert_array_almost_equal(sos, sos2, decimal=4)
+        sos2 = xp.asarray(sos2)
+        #assert_array_almost_equal(sos, sos2, decimal=4)
 
     @pytest.mark.parametrize('b, a, analog, sos',
-                             [([1], [1], False, [[1., 0., 0., 1., 0., 0.]]),
-                              ([1], [1], True, [[0., 0., 1., 0., 0., 1.]]),
-                              ([1], [1., 0., -1.01, 0, 0.01], False,
+                             [([1.0], [1.0], False, [[1., 0., 0., 1., 0., 0.]]),
+                              ([1.0], [1.0], True, [[0., 0., 1., 0., 0., 1.]]),
+                              ([1.0], [1., 0., -1.01, 0, 0.01], False,
                                [[1., 0., 0., 1., 0., -0.01],
                                 [1., 0., 0., 1., 0., -1]]),
-                              ([1], [1., 0., -1.01, 0, 0.01], True,
+                              ([1.0], [1., 0., -1.01, 0, 0.01], True,
                                [[0., 0., 1., 1., 0., -1],
                                 [0., 0., 1., 1., 0., -0.01]])])
-    def test_analog(self, b, a, analog, sos):
+    def test_analog(self, b, a, analog, sos, xp):
+        b, a, sos = map(xp.asarray, (b, a, sos))
         sos2 = tf2sos(b, a, analog=analog)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
 
+@skip_xp_backends(
+    cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
+)
 class TestZpk2Sos:
 
-    @pytest.mark.parametrize('dt', 'fdgFDG')
+#    @pytest.mark.parametrize('dt', 'fdgFDG')
+    # XXX: quietly remove float128 and complex256
+    @pytest.mark.parametrize('dt', ['float32', 'float64', 'complex64', 'complex128'])
     @pytest.mark.parametrize('pairing, analog',
                              [('nearest', False),
                               ('keep_odd', False),
                               ('minimal', False),
                               ('minimal', True)])
-    def test_dtypes(self, dt, pairing, analog):
-        z = np.array([-1, -1]).astype(dt)
-        ct = dt.upper()  # the poles have to be complex
-        p = np.array([0.57149 + 0.29360j, 0.57149 - 0.29360j]).astype(ct)
-        k = np.array(1).astype(dt)
+    def test_dtypes(self, dt, pairing, analog, xp):
+        dtype = getattr(xp, dt)
+        # the poles have to be complex
+        cdtype = (xp.empty(1, dtype=dtype) + 1j*xp.empty(1, dtype=dtype)).dtype
+
+        z = xp.asarray([-1, -1], dtype=dtype)
+        p = xp.asarray([0.57149 + 0.29360j, 0.57149 - 0.29360j], dtype=cdtype)
+        k = xp.asarray(1, dtype=dtype)
         sos = zpk2sos(z, p, k, pairing=pairing, analog=analog)
-        sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+        # octave & MATLAB
+        sos2 = xp.asarray([[1, 2, 1, 1, -1.14298, 0.41280]], dtype=dtype)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
-    def test_basic(self):
+    def test_basic(self, xp):
         for pairing in ('nearest', 'keep_odd'):
             #
             # Cases that match octave
             #
 
-            z = [-1, -1]
-            p = [0.57149 + 0.29360j, 0.57149 - 0.29360j]
+            z = xp.asarray([-1.0, -1.0])
+            p = xp.asarray([0.57149 + 0.29360j, 0.57149 - 0.29360j])
             k = 1
             sos = zpk2sos(z, p, k, pairing=pairing)
-            sos2 = [[1, 2, 1, 1, -1.14298, 0.41280]]  # octave & MATLAB
+            sos2 = xp.asarray([[1, 2, 1, 1, -1.14298, 0.41280]])  # octave & MATLAB
             assert_array_almost_equal(sos, sos2, decimal=4)
 
-            z = [1j, -1j]
-            p = [0.9, -0.9, 0.7j, -0.7j]
+            z = xp.asarray([1j, -1j])
+            p = xp.asarray([0.9, -0.9, 0.7j, -0.7j])
             k = 1
             sos = zpk2sos(z, p, k, pairing=pairing)
             sos2 = [[1, 0, 1, 1, 0, +0.49],
                     [1, 0, 0, 1, 0, -0.81]]  # octave
+            sos2 = xp.asarray(sos2)
             # sos2 = [[0, 0, 1, 1, -0.9, 0],
             #         [1, 0, 1, 1, 0.9, 0]]  # MATLAB
             assert_array_almost_equal(sos, sos2, decimal=4)
 
-            z = []
-            p = [0.8, -0.5+0.25j, -0.5-0.25j]
+            z = xp.asarray([])
+            p = xp.asarray([0.8, -0.5+0.25j, -0.5-0.25j])
             k = 1.
             sos = zpk2sos(z, p, k, pairing=pairing)
             sos2 = [[1., 0., 0., 1., 1., 0.3125],
                     [1., 0., 0., 1., -0.8, 0.]]  # octave, MATLAB fails
+            sos2 = xp.asarray(sos2)
             assert_array_almost_equal(sos, sos2, decimal=4)
 
-            z = [1., 1., 0.9j, -0.9j]
-            p = [0.99+0.01j, 0.99-0.01j, 0.1+0.9j, 0.1-0.9j]
+            z = xp.asarray([1., 1., 0.9j, -0.9j])
+            p = xp.asarray([0.99+0.01j, 0.99-0.01j, 0.1+0.9j, 0.1-0.9j])
             k = 1
             sos = zpk2sos(z, p, k, pairing=pairing)
             sos2 = [[1, 0, 0.81, 1, -0.2, 0.82],
                     [1, -2, 1, 1, -1.98, 0.9802]]  # octave
+            sos2 = xp.asarray(sos2)
             # sos2 = [[1, -2, 1, 1,  -0.2, 0.82],
             #         [1, 0, 0.81, 1, -1.98, 0.9802]]  # MATLAB
             assert_array_almost_equal(sos, sos2, decimal=4)
 
-            z = [0.9+0.1j, 0.9-0.1j, -0.9]
-            p = [0.75+0.25j, 0.75-0.25j, 0.9]
+            z = xp.asarray([0.9+0.1j, 0.9-0.1j, -0.9])
+            p = xp.asarray([0.75+0.25j, 0.75-0.25j, 0.9])
             k = 1
             sos = zpk2sos(z, p, k, pairing=pairing)
             if pairing == 'keep_odd':
                 sos2 = [[1, -1.8, 0.82, 1, -1.5, 0.625],
                         [1, 0.9, 0, 1, -0.9, 0]]  # octave; MATLAB fails
+                sos2 = xp.asarray(sos2)
                 assert_array_almost_equal(sos, sos2, decimal=4)
             else:  # pairing == 'nearest'
                 sos2 = [[1, 0.9, 0, 1, -1.5, 0.625],
                         [1, -1.8, 0.82, 1, -0.9, 0]]  # our algorithm
+                sos2 = xp.asarray(sos2)
                 assert_array_almost_equal(sos, sos2, decimal=4)
 
             #
@@ -426,6 +476,8 @@ class TestZpk2Sos:
                  +0.8090 - 0.5878j, -1.0000 + 0.0000j]
             p = [-0.3026 + 0.9312j, -0.3026 - 0.9312j, 0.7922 + 0.5755j,
                  +0.7922 - 0.5755j, -0.9791 + 0.0000j]
+            z = xp.asarray(z)
+            p = xp.asarray(p)
             k = 1
             sos = zpk2sos(z, p, k, pairing=pairing)
             # sos2 = [[1, 0.618, 1, 1, 0.6052, 0.95870],
@@ -434,26 +486,31 @@ class TestZpk2Sos:
             sos2 = [[1, 1, 0, 1, +0.97915, 0],
                     [1, 0.61803, 1, 1, +0.60515, 0.95873],
                     [1, -1.61803, 1, 1, -1.58430, 0.95873]]
+            sos2 = xp.asarray(sos2)
             assert_array_almost_equal(sos, sos2, decimal=4)
 
             z = [-1 - 1.4142j, -1 + 1.4142j,
                  -0.625 - 1.0533j, -0.625 + 1.0533j]
             p = [-0.2 - 0.6782j, -0.2 + 0.6782j,
                  -0.1 - 0.5385j, -0.1 + 0.5385j]
+            z = xp.asarray(z)
+            p = xp.asarray(p)
             k = 4
             sos = zpk2sos(z, p, k, pairing=pairing)
             sos2 = [[4, 8, 12, 1, 0.2, 0.3],
                     [1, 1.25, 1.5, 1, 0.4, 0.5]]  # MATLAB
+            sos2 = xp.asarray(sos2, dtype=xp.float64)
             # sos2 = [[4, 8, 12, 1, 0.4, 0.5],
             #         [1, 1.25, 1.5, 1, 0.2, 0.3]]  # octave
             xp_assert_close(sos, sos2, rtol=1e-4, atol=1e-4)
 
-            z = []
-            p = [0.2, -0.5+0.25j, -0.5-0.25j]
+            z = xp.asarray([])
+            p = xp.asarray([0.2, -0.5+0.25j, -0.5-0.25j])
             k = 1.
             sos = zpk2sos(z, p, k, pairing=pairing)
             sos2 = [[1., 0., 0., 1., -0.2, 0.],
                     [1., 0., 0., 1., 1., 0.3125]]
+            sos2 = xp.asarray(sos2)
             # sos2 = [[1., 0., 0., 1., 1., 0.3125],
             #         [1., 0., 0., 1., -0.2, 0]]  # octave, MATLAB fails
             assert_array_almost_equal(sos, sos2, decimal=4)
@@ -462,17 +519,16 @@ class TestZpk2Sos:
             # "Digital Filters and Signal Processing (1995) p.400:
             # http://books.google.com/books?id=VZ8uabI1pNMC&lpg=PA400&ots=gRD9pi8Jua&dq=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&pg=PA400#v=onepage&q=Pole%2Fzero%20pairing%20for%20minimum%20roundoff%20noise%20in%20BSF.&f=false
 
-            deg2rad = np.pi / 180.
+            deg2rad = xp.pi / 180.
             k = 1.
 
             # first example
-            thetas = [22.5, 45, 77.5]
-            mags = [0.8, 0.6, 0.9]
-            z = np.array([np.exp(theta * deg2rad * 1j) for theta in thetas])
-            z = np.concatenate((z, np.conj(z)))
-            p = np.array([mag * np.exp(theta * deg2rad * 1j)
-                          for theta, mag in zip(thetas, mags)])
-            p = np.concatenate((p, np.conj(p)))
+            thetas = xp.asarray([22.5, 45, 77.5])
+            mags = xp.asarray([0.8, 0.6, 0.9])
+            z = xp.exp(1j * deg2rad * thetas)
+            z = xp.concat((z, xp.conj(z)))
+            p = xp.exp(1j * deg2rad * thetas) * mags
+            p = xp.concat((p, xp.conj(p)))
             sos = zpk2sos(z, p, k)
             # sos2 = [[1, -0.43288, 1, 1, -0.38959, 0.81],  # octave,
             #         [1, -1.41421, 1, 1, -0.84853, 0.36],  # MATLAB fails
@@ -481,12 +537,13 @@ class TestZpk2Sos:
             sos2 = [[1, -1.41421, 1, 1, -0.84853, 0.36],
                     [1, -1.84776, 1, 1, -1.47821, 0.64],
                     [1, -0.43288, 1, 1, -0.38959, 0.81]]
+            sos2 = xp.asarray(sos2)
             assert_array_almost_equal(sos, sos2, decimal=4)
 
             # second example
-            z = np.array([np.exp(theta * deg2rad * 1j)
-                          for theta in (85., 10.)])
-            z = np.concatenate((z, np.conj(z), [1, -1]))
+            thetas = xp.asarray([85., 10.])
+            z = xp.exp(1j * deg2rad * thetas)
+            z = xp.concat((z, xp.conj(z), xp.asarray([1.0, -1.0])))
             sos = zpk2sos(z, p, k)
 
             # sos2 = [[1, -0.17431, 1, 1, -0.38959, 0.81],  # octave "wrong",
@@ -496,6 +553,7 @@ class TestZpk2Sos:
             sos2 = [[1, 0, -1, 1, -0.84853, 0.36],
                     [1, -1.96962, 1, 1, -1.47821, 0.64],
                     [1, -0.17431, 1, 1, -0.38959, 0.81]]
+            sos2 = xp.asarray(sos2)
             assert_array_almost_equal(sos, sos2, decimal=4)
 
     # these examples are taken from the doc string, and show the
@@ -510,9 +568,10 @@ class TestZpk2Sos:
                               ('minimal',
                                np.array([[0., 1., 1., 0., 1., -0.75],
                                          [1., 1., 0.5, 1., -1.6, 0.65]]))])
-    def test_pairing(self, pairing, sos):
-        z1 = np.array([-1, -0.5-0.5j, -0.5+0.5j])
-        p1 = np.array([0.75, 0.8+0.1j, 0.8-0.1j])
+    def test_pairing(self, pairing, sos, xp):
+        sos = xp.asarray(sos)
+        z1 = xp.asarray([-1, -0.5-0.5j, -0.5+0.5j])
+        p1 = xp.asarray([0.75, 0.8+0.1j, 0.8-0.1j])
         sos2 = zpk2sos(z1, p1, 1, pairing=pairing)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
@@ -523,14 +582,16 @@ class TestZpk2Sos:
                               ([-0.7071+0.7071j, -0.7071-0.7071j, -0.1j, 0.1j],
                                [[0., 0., 1., 1., 0., 0.01],
                                 [0., 0., 1., 1., 1.4142, 1.]])])
-    def test_analog(self, p, sos_dt):
+    def test_analog(self, p, sos_dt, xp):
         # test `analog` argument
         # for discrete time, poles closest to unit circle should appear last
         # for cont. time, poles closest to imaginary axis should appear last
-        sos2_dt = zpk2sos([], p, 1, pairing='minimal', analog=False)
-        sos2_ct = zpk2sos([], p, 1, pairing='minimal', analog=True)
+        z, p = xp.asarray([]), xp.asarray(p)
+        sos_dt = xp.asarray(sos_dt)
+        sos2_dt = zpk2sos(z, p, 1, pairing='minimal', analog=False)
+        sos2_ct = zpk2sos(z, p, 1, pairing='minimal', analog=True)
         assert_array_almost_equal(sos_dt, sos2_dt, decimal=4)
-        assert_array_almost_equal(sos_dt[::-1], sos2_ct, decimal=4)
+        assert_array_almost_equal(xp.flip(sos_dt, axis=0), sos2_ct, decimal=4)
 
     def test_bad_args(self):
         with pytest.raises(ValueError, match=r'pairing must be one of'):
@@ -1600,19 +1661,6 @@ class TestBilinear:
 
         with pytest.raises(ValueError, match="Sampling.*be none"):
             bilinear(b, a, fs=None)
-
-
-def _sort_cmplx(arr, xp):
-    # xp.sort is undefined for complex dtypes. Here we only need some
-    # consistent way to sort a complex array, including equal magnitude elements.
-    arr = xp.asarray(arr)
-    if xp.isdtype(arr.dtype, 'complex floating'):
-        sorter = abs(arr) + xp.real(arr) + xp.imag(arr)**3
-    else:
-        sorter = arr
-
-    idxs = xp.argsort(sorter)
-    return arr[idxs]
 
 
 class TestLp2lp_zpk:
