@@ -596,7 +596,7 @@ cdef class VarReader5:
         # all miMATRIX types except the mxOPAQUE_CLASS have dims and a
         # name.
         if mc == mxOPAQUE_CLASS:
-            header.name = None
+            header.name = self.read_int8_string()
             header.dims = None
             return header
         header.n_dims = self.read_into_int32s(header.dims_ptr, sizeof(header.dims_ptr))
@@ -986,8 +986,7 @@ cdef class VarReader5:
         # Cython (0.23.4).
         res = np.empty((1,), dtype=OPAQUE_DTYPE)
         res0 = res[0]
-        res0['s0'] = self.read_int8_string()
-        res0['s1'] = self.read_int8_string()
-        res0['s2'] = self.read_int8_string()
-        res0['arr'] = self.read_mi_matrix()
+        res0['_TypeSystem'] = PyUnicode_FromString(self.read_int8_string())
+        res0['_Class'] = PyUnicode_FromString(self.read_int8_string())
+        res0['_ObjectMetadata'] = self.read_mi_matrix()
         return res
