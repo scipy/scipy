@@ -5175,8 +5175,8 @@ def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
     pr = xp.asarray(0.27647818616351882)
-    tr_2D = xp.asarray([tr, -tr])
-    pr_2D = xp.asarray([pr, pr])
+    tr_2D = xp.stack([tr, -tr])
+    pr_2D = xp.stack([pr, pr])
 
     rvs1 = xp.linspace(5, 105, 100)
     rvs2 = xp.linspace(1, 100, 100)
@@ -6017,8 +6017,8 @@ class TestTTestInd:
         tr_uneq_n = xp.asarray(0.66745638708050492)
         pr = xp.asarray(0.27647831993021388)
         pr_uneq_n = xp.asarray(0.50873585065616544)
-        tr_2D = xp.asarray([tr, -tr])
-        pr_2D = xp.asarray([pr, pr])
+        tr_2D = xp.stack([tr, -tr])
+        pr_2D = xp.stack([pr, pr])
 
         rvs3 = xp.linspace(1, 100, 25)
         rvs2 = xp.linspace(1, 100, 100)
@@ -6689,8 +6689,8 @@ class TestJarqueBera:
         res = stats.jarque_bera(x, axis=1)
         s0, p0 = stats.jarque_bera(x[0, :])
         s1, p1 = stats.jarque_bera(x[1, :])
-        xp_assert_close(res.statistic, xp.asarray([s0, s1]))
-        xp_assert_close(res.pvalue, xp.asarray([p0, p1]))
+        xp_assert_close(res.statistic, xp.stack([s0, s1]))
+        xp_assert_close(res.pvalue, xp.stack([p0, p1]))
 
         resT = stats.jarque_bera(x.T, axis=0)
         xp_assert_close(res.statistic, resT.statistic)
@@ -8237,7 +8237,7 @@ class TestCombinePvalues:
             pvaluess = xp.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
 
         combined_pvalues = xp.asarray([
-            stats.combine_pvalues(pvaluess[i, :], method=method)[1]
+            float(stats.combine_pvalues(pvaluess[i, :], method=method)[1])
             for i in range(pvaluess.shape[0])
         ])
         assert xp.all(combined_pvalues[1:] - combined_pvalues[:-1] >= 0)
