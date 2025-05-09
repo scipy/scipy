@@ -1683,7 +1683,7 @@ add_newdoc("chndtrinc",
 
     `chndtrinc` is the inverse of `chndtr` with respect to `nc`:
 
-    >>> chndtrinc(x, p, nc)
+    >>> chndtrinc(x, df, p)
     10.0
 
     """)
