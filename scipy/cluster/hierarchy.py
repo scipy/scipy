@@ -1439,7 +1439,7 @@ def to_tree(Z, rd=False):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='C', xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', materialize=True, xp=xp)
 
     # Number of original objects is equal to the number of rows plus 1.
@@ -1964,7 +1964,7 @@ def to_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
+    Z = _asarray(Z, dtype=xp.float64, xp=xp)
     if Z.shape in ((), (0, )):
         return xp_copy(Z, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
@@ -2051,7 +2051,7 @@ def is_monotonic(Z):
 
     """
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
+    Z = _asarray(Z, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
     # We expect the i'th value to be greater than its successor.
@@ -2425,7 +2425,7 @@ def num_obs_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = xp.asarray(Z)
+    Z = _asarray(Z, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
     return Z.shape[0] + 1
 
@@ -2480,8 +2480,8 @@ def correspond(Z, Y):
 
     """
     xp = array_namespace(Z, Y)
-    Z = _asarray(Z, order='C', xp=xp)
-    Y = _asarray(Y, order='C', xp=xp)
+    Z = _asarray(Z, xp=xp)
+    Y = _asarray(Y, xp=xp)
     _is_valid_linkage(Z, throw=True, xp=xp)
     distance.is_valid_y(Y, throw=True)
     return distance.num_obs_y(Y) == num_obs_linkage(Z)
@@ -2769,7 +2769,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = _asarray(R, order='c', xp=xp)
+        R = _asarray(R, order='C', xp=xp)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -3371,7 +3371,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
     xp = array_namespace(Z)
-    Z = _asarray(Z, order='c', xp=xp)
+    Z = _asarray(Z, order='C', xp=xp)
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
@@ -3845,8 +3845,8 @@ def is_isomorphic(T1, T2):
 
     """
     xp = array_namespace(T1, T2)
-    T1 = xp.asarray(T1)
-    T2 = xp.asarray(T2)
+    T1 = _asarray(T1, xp=xp)
+    T2 = _asarray(T2, xp=xp)
 
     if T1.ndim != 1:
         raise ValueError('T1 must be one-dimensional.')
