@@ -49,7 +49,7 @@ cpdef double betaln(double x0, double x1) noexcept nogil
 cpdef double binom(double x0, double x1) noexcept nogil
 cpdef double boxcox(double x0, double x1) noexcept nogil
 cpdef double boxcox1p(double x0, double x1) noexcept nogil
-cpdef double btdtria(double x0, double x1, double x2) noexcept nogil
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil
 cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil
 cpdef double cbrt(double x0) noexcept nogil
 cpdef double chdtr(double x0, double x1) noexcept nogil
