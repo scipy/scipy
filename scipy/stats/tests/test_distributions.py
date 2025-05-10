@@ -9951,6 +9951,12 @@ class TestWrapCauchy:
         assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
+    def test_rvs_lie_on_circle(self):
+        # Check that the rvs lie in range [0, 2*pi]
+        x = stats.wrapcauchy.rvs(c=0.1, loc=100, scale=1, size=1000)
+        assert np.all(x >= 0)
+        assert np.all(x <= 2 * np.pi)
+
 
 def test_rvs_no_size_error():
     # _rvs methods must have parameter `size`; see gh-11394
