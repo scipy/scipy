@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.linalg import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+from scipy.optimize import minimize_scalar
 from scipy.special import binom
 
 # TODO:
@@ -64,7 +65,7 @@ def _solveh_banded(ab, b, calc_logdet=False):
     return x, logdet
 
 
-def whittaker_henderson(signal, lamb=1.0, order=2, weights=None):
+def whittaker_henderson(signal, lamb="reml", order=2, weights=None):
     r"""
     Whittaker-Henderson (WH) smoothing/graduation of a discrete signal.
 
@@ -82,8 +83,10 @@ def whittaker_henderson(signal, lamb=1.0, order=2, weights=None):
         A rank-1 array at least of length `order + 1` representing equidistant data
         points of a signal, e.g. a time series with constant time lag.
     
-    lamb : float, optional
-        Smoothing or penalty parameter, default is 0.0.
+    lamb : str or float, optional
+        Smoothing or penalty parameter, default is "reml" which minimized the REML
+        criterion to find the parameter `lamb`. If a number is passed, it must be
+        non-negative and it is used directly.
 
     order : int, default: 2
         The order of the difference penalty, must be at least 1.
@@ -155,13 +158,21 @@ def whittaker_henderson(signal, lamb=1.0, order=2, weights=None):
                                  "elements of signal.")
             signal = np.nan_to_num(signal)
 
+
+    msg = f"Parameter lamb must be string 'reml' or a non-negative float; got {lamb=}."
+    if isinstance(lamb, str):
+        if lamb != "reml":
+            raise ValueError(msg)
+        def criterion(loglamb):
+            return -_reml(lamb=np.exp(loglamb), y=signal, order=order, weights=weights)
+        opt = minimize_scalar(criterion, bracket=[-10, 10])
+        lamb = np.exp(opt.x)
+
     if lamb < 0:
-        msg = f"Parameter lamb must be non-negative; got {lamb=}."
         raise ValueError(msg)
     elif lamb == 0.0:
         x = np.asarray(signal).copy()
     else:
-        x = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
         # If performance matters and p == 2, think about a C++/Pybind implementation of
         # x = _solve_WH_order2_fast(signal, lamb=lamb)
         x, _ = _solve_WH_banded(signal, lamb=lamb, order=order, weights=weights)
@@ -326,14 +337,36 @@ def _reml(lamb, y, order, weights=None):
         y=y, lamb=lamb, order=order, weights=weights, calc_logdet=True
     )
     logdet_M = _logdet_difference_matrix(order=order, n=n)
-    # Eq 12 of Biessy, but only terms depending on lambda.
     residual = y - x
+    # Eq. 12 of Biessy gives the REML criterion. But note that Biessy forgot the
+    # process error sigma as in var(Y|theta) ~ W^-1 * sigma^2. To correct for this, we
+    # set W -> W / sigma^2 and P = M / tau^2 with lambda = sigma^2 / tau^2 and M = D'D
+    # the difference penalty matrix.
+    # This can be derived from a mixed model formulation of P-splines, see e.g. Currie
+    # and Durban https://doi.org/10.1191/1471082x02st039ob or Boer
+    # https://doi.org/10.1177/1471082X231178591
+    # Possibly neglecting terms not dependent on sigma nor tau, we have:
+    #     REML(sigma, tau) = (log of restriced maximum likelihood)
+    #     = -1/2 ((y - theta) W (y - theta) / sigma^2 + theta M theta / tau^2 
+    #             -log|W / sigma^2| - log|M / tau^2| + log|W / sigma^2 + M / tau^2|)
+    # where theta = x = solution of the smoothed signal. Upon replacing
+    # tau^2 = sigma^2 / lambda, optimizing for sigma^2 gives
+    #     sigma^2 = r2 / (n - d)
+    #     r^2     = (y - theta) W (y - theta) + lambda theta M theta
+    # d is the order of the difference penalty. The profiled REML is then
+    #     profiled REML = -1/2 (
+    #                            (n-d) (1 + log(r^2 / (n-d)))
+    #                            -log|lambda M| + log|W + lambda M|
+    #                          )
+    # This can be compared to Eq. 41 of Bates et al
+    # https://doi.org/10.18637/jss.v067.i01
     if weights is None:
-        reml = residual @ residual
+        r2 = residual @ residual
     else:
-        reml = residual @ (weights * residual)
-    reml += lamb * np.sum(np.diff(x, n=order)**2)  # +theta P theta
-    reml -= (n - order) * np.log(lamb) + logdet_M  # -ln|P|
-    reml += logdet  # +ln|W+P|
+        r2 = residual @ (weights * residual)
+    r2 += lamb * np.sum(np.diff(x, n=order)**2)  # + lambda theta P theta
+    reml = (n - order) * (1 + np.log(r2 / (n - order)))
+    reml -= (n - order) * np.log(lamb) + logdet_M  # -log|lambda M|
+    reml += logdet  # +log|W + lambda M|
     reml *= -0.5
     return reml

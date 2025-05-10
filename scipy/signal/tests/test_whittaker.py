@@ -54,7 +54,7 @@ def test_logdet_difference_matrix(order, n):
             ([[1, 2, 3] * 3], 1, 2, None,
              "Input array signal must be of shape \\(n,\\)"),
             (np.zeros(2), 1, 2, None, "Input array signal must be at least of shape"),
-            (np.arange(10), -0.9, 2, None, "Parameter lamb must be non-negative"),
+            (np.arange(10), -0.9, 2, None, "Parameter lamb must be string"),
             ([1, 2, 3], 1, 1.5, None,
              "Parameter order must be an integer larger equal 1."),
             ([1, 2, 3], 1, 0, None,
@@ -201,10 +201,24 @@ def test_reml_criterion(order):
         A = np.eye(n) + la * M
         x = np.linalg.solve(A, y)
         resid = y - x
-        return -0.5 * (resid @ resid + la * x @ M @ x
+        r2 = resid @ resid + la * x @ M @ x
+        return -0.5 * ((n-order) * (1 + np.log(r2 / (n - order)))
                        - np.log(np.linalg.det(la * D @ D.T))
                        + np.log(np.linalg.det(A)))
 
     r1 = _reml(lamb=la, y=y, order=order)
     r2 = test_reml(la=la, y=y)
     assert_allclose(r1, r2)
+
+
+def test_whittaker_reml():
+    """Test that whittaker with REML criterion works."""
+    n = 10
+    order = 2
+    signal = np.sin(2*np.pi * np.linspace(0, 1, n))
+    y = signal.copy()
+    # add some (deterministic) noise
+    y[::2] += 0.2
+    y[1::2] -= 0.2
+    whittaker_henderson(y, lamb="reml", order=order)
+    # TODO: validate against another implementation (e.g. in R)
