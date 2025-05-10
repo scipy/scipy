@@ -20,6 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
+    variant="degree",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -69,6 +70,15 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
+    variant : 'degree', or 'use_abs'
+        Specifies the method used to compute vertex degrees:
+
+        * 'degree' is standard degree calculation using edge weights;
+        * 'use_abs' computes the degree using absolute values of edge weights.
+          This prevents cancellation of positive and negative edge weights in
+          signed graphs, as described in [2].
+
+        Default: 'degree'.
 
     Returns
     -------
@@ -115,6 +125,10 @@ def laplacian(
     References
     ----------
     .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
+    .. [2] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch and Jürgen Lerner and Ernesto W. De Luca and Sahin Albayrak. (2010).
+           Spectral Analysis of Signed Graphs for Clustering, Prediction and Visualization.
+           In Proceedings of the 2010 SIAM International Conference on Data Mining (SDM), 559-570.
+           https://doi.org/10.1137/1.9781611972801.49
 
     Examples
     --------
@@ -271,6 +285,36 @@ def laplacian(
            [-1.,  2., -1.],
            [-1., -1.,  2.]])
 
+    The signed graph, where edge weights can cancel each other out:
+
+    >>> G = np.array([[0, 1, -1],
+    ...               [1, 0,  1],
+    ...               [-1, 1, 0]])
+    >>> G
+    array([[ 0,  1, -1],
+           [ 1,  0,  1],
+           [-1,  1,  0]])
+
+    By default, positive and negative edge weights cancel during degree computation:
+
+    >>> L_signed, d_signed = csgraph.laplacian(G, return_diag=True)
+    >>> L_signed
+    array([[ 0, -1,  1],
+           [-1,  2, -1],
+           [ 1, -1,  0]])
+    >>> d_signed
+    array([0, 2, 0])
+
+    Setting variant="use_abs" prevents cancellation by summing absolute edge weights:
+
+    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, variant="use_abs")
+    >>> L_abs
+    array([[ 2, -1, 1],
+           [-1,  2, -1],
+           [1, -1,  2]])
+    >>> d_abs
+    array([2, 2, 2])
+
     The Laplacian matrix is used for
     spectral data clustering and embedding
     as well as for spectral graph partitioning.
@@ -365,6 +409,7 @@ def laplacian(
         form=form,
         dtype=dtype,
         symmetrized=symmetrized,
+        variant=variant,
     )
     if is_pydata_sparse:
         lap = pydata_sparse_cls.from_scipy_sparse(lap)
@@ -404,7 +449,7 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, variant):
     # The keyword argument `copy` is unused and has no effect here.
     del copy
 
@@ -417,6 +462,14 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
     if symmetrized:
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
         diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if variant == "use_abs":
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        if symmetrized:
+            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
+                    - np.abs(graph_diagonal)
 
     if normed:
         isolated_node_mask = diag == 0
@@ -446,7 +499,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, variant):
     # The keyword argument `form` is unused and has no effect here.
     del form
 
@@ -461,10 +514,25 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         if copy:
             needs_copy = True
 
+    # Normalization affects only the diagonal (degree) computation, not the rest.
+    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    if variant == "degree":
+        w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
+    elif variant == "use_abs":
+        w = np.asarray(np.abs(m).sum(axis=axis)).ravel() - np.abs(m.diagonal())
+    else:
+        raise ValueError(f"Invalid variant: {variant!r}")
+
     if symmetrized:
+        if variant == "degree":
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
+        elif variant == "use_abs":
+            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel() \
+                 - np.abs(m.diagonal())
+        else:
+            raise ValueError(f"Invalid variant: {variant!r}")
         m += m.T.conj()
 
-    w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
@@ -484,7 +552,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, variant):
 
     if copy:
         m = np.array(graph)
@@ -500,6 +568,14 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
     if symmetrized:
         graph_sum += m.sum(axis=1 - axis)
         diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if variant == "use_abs":
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        if symmetrized:
+            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
+                    - np.abs(graph_diagonal)
 
     if normed:
         isolated_node_mask = diag == 0
@@ -529,7 +605,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             raise ValueError(f"Invalid form: {form!r}")
 
 
-def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, variant):
 
     if form != "array":
         raise ValueError(f'{form!r} must be "array"')
@@ -545,10 +621,26 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
-    if symmetrized:
-        m += m.T.conj()
     np.fill_diagonal(m, 0)
-    w = m.sum(axis=axis)
+
+    # Normalization affects only the diagonal (degree) computation, not the rest.
+    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    if variant == "degree":
+        w = np.asarray(m.sum(axis=axis)).ravel()
+    elif variant == "use_abs":
+        w = np.asarray(np.abs(m).sum(axis=axis)).ravel()
+    else:
+        raise ValueError(f"Invalid variant: {variant!r}")
+
+    if symmetrized:
+        if variant == "degree":
+            w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
+        elif variant == "use_abs":
+            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel()
+        else:
+            raise ValueError(f"Invalid variant: {variant!r}")
+        m += m.T.conj()
+
     if normed:
         isolated_node_mask = (w == 0)
         w = np.where(isolated_node_mask, 1, np.sqrt(w))
