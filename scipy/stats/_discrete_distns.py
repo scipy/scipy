@@ -1371,12 +1371,13 @@ def _gen_harmonic_leq1(n, a):
     """Generalized harmonic number, a <= 1"""
     if not np.size(n):
         return n
-    n_max = np.max(n)  # loop starts at maximum of all n
+    n_max = np.nanmax(n)  # loop starts at maximum of all n
     out = np.zeros_like(a, dtype=float)
     # add terms of harmonic series; starting from smallest to avoid roundoff
     for i in np.arange(n_max, 0, -1, dtype=float):
         mask = i <= n  # don't add terms after nth
         out[mask] += 1/i**a[mask]
+    out[np.isnan(n)] = np.nan
     return out
 
 

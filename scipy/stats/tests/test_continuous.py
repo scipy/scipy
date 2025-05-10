@@ -1125,7 +1125,6 @@ class TestMakeDistribution:
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
             'skellam',                # during `entropy`, Fatal Python error: Aborted!
-            'zipfian',                # during init, value error due to unexpected nans
         }:
             return
 
@@ -1195,10 +1194,14 @@ class TestMakeDistribution:
                 if distname not in skip_standardized:
                     assert_allclose(X.moment(order, kind='standardized'),
                                     Y.stats('mvsk'[order-1]), rtol=rtol, atol=atol)
-            seed = 845298245687345
-            assert_allclose(X.sample(shape=10, rng=seed),
-                            Y.rvs(size=10, random_state=np.random.default_rng(seed)),
-                            rtol=rtol)
+            if isinstance(dist, stats.rv_continuous):
+                # For discrete distributions, these won't agree at the far left end
+                # of the support, and the new infrastructure is slow there (for now).
+                seed = 845298245687345
+                assert_allclose(X.sample(shape=10, rng=seed),
+                                Y.rvs(size=10,
+                                      random_state=np.random.default_rng(seed)),
+                                rtol=rtol)
 
     def test_custom(self):
         rng = np.random.default_rng(7548723590230982)
