@@ -32,7 +32,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -47,6 +47,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        persist-credentials: 'false'
 
     - name: Setup Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
@@ -148,12 +149,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        persist-credentials: 'false'
 
     - name: Install Ubuntu dependencies
       run: |
@@ -207,12 +209,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-24.04  # provides python3.12-dbg
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          persist-credentials: 'false'
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
@@ -237,12 +240,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          persist-credentials: 'false'
 
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
@@ -289,7 +293,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -301,6 +305,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        persist-credentials: 'false'
 
     - name: Setup Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
@@ -371,7 +376,7 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
@@ -380,6 +385,7 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        persist-credentials: 'false'
 
     - name: build + test
       run: |
@@ -414,12 +420,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          persist-credentials: 'false'
 
       - name: Setup system dependencies
         run: |
@@ -461,12 +468,14 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
         fetch-tags: true
+        persist-credentials: 'false'
+
     - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.13t'
@@ -542,12 +551,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          persist-credentials: 'false'
 
       - name: Setup Python
         uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
@@ -578,12 +588,13 @@ jobs:
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'scipy/scipy' || github.repository == '')
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
     runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
+        persist-credentials: 'false'
 
     - name: Setup Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
