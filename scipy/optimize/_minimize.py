@@ -218,7 +218,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function. Not all attributes within
+        of the parameter vector and objective function. Not all attributes of
         `OptimizeResult` may be present. The name of the parameter must be
         ``intermediate_result`` for the callback to be passed an `OptimizeResult`.
         These methods will also terminate if the callback raises ``StopIteration``.
