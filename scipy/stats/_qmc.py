@@ -339,7 +339,8 @@ def discrepancy(
 def geometric_discrepancy(
         sample: "npt.ArrayLike",
         method: Literal["mindist", "mst"] = "mindist",
-        metric: str = "euclidean") -> float:
+        metric: str = "euclidean",
+        workers: IntNumber = 1) -> float:
     """Discrepancy of a given sample based on its geometric properties.
 
     Parameters
@@ -353,7 +354,14 @@ def geometric_discrepancy(
         The distance metric to use. See the documentation
         for `scipy.spatial.distance.pdist` for the available metrics and
         the default.
-
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
+        
+        .. versionadded:: 1.16.0
+            Parallel processing is only available when ``method="mindist"`` and
+            ``metric in ["euclidean", "cityblock", "chebyshev"]``.
+            
     Returns
     -------
     discrepancy : float
@@ -442,14 +450,15 @@ def geometric_discrepancy(
     if sample.shape[0] < 2:
         raise ValueError("Sample must contain at least two points")
 
-    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
-
-    if np.any(distances == 0.0):
-        warnings.warn("Sample contains duplicate points.", stacklevel=2)
-
     if method == "mindist":
-        return np.min(distances[distances.nonzero()])
+        min_d = distance._pmindist(sample, metric=metric, workers=workers)
+        if np.isclose(min_d, 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
+        return min_d
     elif method == "mst":
+        distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+        if np.any(distances == 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
         fully_connected_graph = distance.squareform(distances)
         mst = minimum_spanning_tree(fully_connected_graph)
         distances = mst[mst.nonzero()]
