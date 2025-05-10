@@ -11,6 +11,7 @@ from numpy.polynomial.polynomial import polyval as npp_polyval
 
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
+from scipy._lib import doccer
 from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
 from scipy.signal import _polyutils as _pu
@@ -4614,6 +4615,17 @@ def buttap(N, *, xp=None, device=None):
 
     The filter will have an angular (e.g., rad/s) cutoff frequency of 1.
 
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
+
     See Also
     --------
     butter : Filter design function using this prototype
@@ -4639,6 +4651,19 @@ def cheb1ap(N, rp, *, xp=None, device=None):
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rp: float
+        The ripple intensity
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
 
     See Also
     --------
@@ -4682,6 +4707,19 @@ def cheb2ap(N, rs, *, xp=None, device=None):
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rs : float
+        The attenuation in the stopband
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
 
     See Also
     --------
@@ -4859,6 +4897,22 @@ def ellipap(N, rp, rs, *, xp=None, device=None):
 
     The filter's angular (e.g., rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rp : float
+        The passband ripple intensity
+    rs : float
+        The stopband attenuation
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
+
 
     See Also
     --------
@@ -5173,6 +5227,8 @@ def besselap(N, norm='phase', *, xp=None, device=None):
             Bond. [1]_
 
         .. versionadded:: 0.18.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5940,3 +5996,23 @@ bessel_norms = {'bessel': 'phase',
                 'bessel_phase': 'phase',
                 'bessel_delay': 'delay',
                 'bessel_mag': 'mag'}
+
+
+########## complete the docstrings, on import
+_xp_device_snippet = {'xp_device_snippet':
+"""\
+xp : array_namespace, optional
+    Optional array namespace.
+    Should be compatible with the array API standard, or supported by array-api-compat.
+    Default: ``numpy``
+device: any
+    optional device specification for output. Should match one of the
+    supported device specification in ``xp``.
+"""
+}
+
+
+_names = [x for x in ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap"]]
+for name in _names:
+    window = vars()[name]
+    window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)
