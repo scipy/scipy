@@ -83,6 +83,7 @@ py3.install_sources([
     '_upfirdn.py',
     '_waveforms.py',
     '_wavelets.py',
+    '_whittaker.py',
     'bsplines.py',
     'filter_design.py',
     'fir_filter_design.py',
