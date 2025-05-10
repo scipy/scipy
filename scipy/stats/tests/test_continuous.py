@@ -1113,7 +1113,7 @@ class TestMakeDistribution:
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line', # continuous
-                'betanbinom', 'zipf', 'logser', 'skellam'}  # discrete
+                'skellam'}  # discrete
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1139,7 +1139,8 @@ class TestMakeDistribution:
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
         skip_standardized = {'exponpow', 'ksone'}  # tolerances
-        skip_median = {'nhypergeom', 'yulesimon'}  # nan mismatch
+        skip_median = {'nhypergeom', 'yulesimon',  # nan mismatch
+                       'betanbinom', 'zipf', 'logser'}  # median 0th element
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
