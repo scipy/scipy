@@ -9,7 +9,7 @@
 
 #define qhull_misc_lib_check() QHULL_LIB_CHECK
 
-#include "qhull_src/src/libqhull_r.h"
+#include <libqhull_r/libqhull_r.h>
 
 int qh_new_qhull_scipy(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
                        char *qhull_cmd, FILE *outfile, FILE *errfile, coordT* feaspoint);

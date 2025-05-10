@@ -126,8 +126,8 @@ elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
     '/assume:minus0'
   )
 endif
-add_project_arguments(_intel_cflags, language: ['c', 'cpp'])
-add_project_arguments(_intel_fflags, language: 'fortran')
+add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
+add_global_arguments(_intel_fflags, language: 'fortran')
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
@@ -169,5 +169,10 @@ boost_math_dep = dependency(
   fallback : ['boost_math', 'boost_math_dep'],
 )
 
+qhull_r_dep = dependency(
+  'qhull_r',
+  version : '8.0.2',
+  fallback : ['qhull_r', 'qhull_r_dep']
+)
 
 subdir('scipy')

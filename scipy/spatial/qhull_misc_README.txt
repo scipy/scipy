@@ -1,12 +1,9 @@
-The directory ./qhull_src/src ships unmodified Qhull 2019.1 "_r"
-version source code.
-
-The file scipy/spatial/qhull_misc.c additionally contains a function
+The file scipy/spatial/qhull_misc.c contains a function
 "qh_new_qhull_scipy" derived from Qhull sources, via the following
 patch:
 
---- a/scipy/spatial/qhull_src/src/user_r.c
-+++ b/scipy/spatial/qhull_src/src/user_r.c
+--- a/subprojects/qhull_r/libqhull_r/user_r.c
++++ b/subprojects/qhull_r/libqhull_r/user_r.c
 @@ -122,7 +122,7 @@
      An example of using qh_new_qhull is user_eg_r.c
  */
@@ -16,8 +13,7 @@ patch:
    /* gcc may issue a "might be clobbered" warning for dim, points, and ismalloc [-Wclobbered].
       These parameters are not referenced after a longjmp() and hence not clobbered.
       See http://stackoverflow.com/questions/7721854/what-sense-do-these-clobbered-variable-warnings-make */
-@@ -158,7 +158,26 @@ int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc
-       /* points is an array of halfspaces,
+@@ -159,6 +159,26 @@ int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc
           the last coordinate of each halfspace is its offset */
        hulldim= dim-1;
 -      qh_setfeasible(qh, hulldim);
