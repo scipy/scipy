@@ -4095,20 +4095,13 @@ def _pre_warp(wp, ws, analog, *, xp):
         stopb = xp.tan(xp.pi * ws / 2.0)
     else:
         passb, stopb = wp, ws
-        if xp.isdtype(passb.dtype, 'integral'):
-            passb = xp.astype(passb, xp_default_dtype(xp))
-        if xp.isdtype(stopb.dtype, 'integral'):
-            stopb = xp.astype(stopb, xp_default_dtype(xp))
     return passb, stopb
 
 
 def _validate_wp_ws(wp, ws, fs, analog, *, xp):
     wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
     ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
-    if xp.isdtype(wp.dtype, 'integral'):
-        wp = xp.astype(wp, xp_default_dtype(xp))
-    if xp.isdtype(ws.dtype, 'integral'):
-        ws = xp.astype(ws, xp_default_dtype(xp))
+    wp, ws = xp_promote(wp, ws, force_floating=True, xp=xp)
 
     if fs is not None:
         if analog:
