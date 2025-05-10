@@ -44,8 +44,7 @@ from scipy.sparse._sputils import (
     convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
 )
 from scipy.sparse.linalg import gmres, splu
-from scipy._lib._util import _aligned_zeros
-from scipy._lib._threadsafety import ReentrancyLock
+
 from . import _arpack
 arpack_int = _arpack.timing.nbx.dtype
 
@@ -270,6 +269,10 @@ _SEUPD_WHICH = ['LM', 'SM', 'LA', 'SA', 'BE']
 # accepted values of parameter WHICH in _NAUPD
 _NEUPD_WHICH = ['LM', 'SM', 'LR', 'SR', 'LI', 'SI']
 
+# The enum values for the parameter WHICH in _NAUPD and _SEUPD
+WHICH_DICT = {
+    'LM': 0, 'SM': 1, 'LR': 2, 'SR': 3, 'LI': 4, 'SI': 5, 'LA': 6, 'SA': 7, 'BE': 8
+}
 
 class ArpackError(RuntimeError):
     """
@@ -524,9 +527,8 @@ class _SymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k:
             raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
-        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-        self.workd = _aligned_zeros(3 * n, self.tp)
-        self.workl = _aligned_zeros(self.ncv * (self.ncv + 8), self.tp)
+        self.workd = np.zeros(3 * n, dtype=self.tp)
+        self.workl = np.zeros(self.ncv * (self.ncv + 8), dtype=self.tp)
 
         ltr = _type_conv[self.tp]
         if ltr not in ["s", "d"]:
@@ -604,9 +606,10 @@ class _SymmetricArpackParams(_ArpackParams):
 
 
 class _UnsymmetricArpackParams(_ArpackParams):
-    def __init__(self, n, k, tp, matvec, mode=1, M_matvec=None,
-                 Minv_matvec=None, sigma=None,
-                 ncv=None, v0=None, maxiter=None, which="LM", tol=0):
+    def __init__(self, n: int, k: int, tp: str, matvec, mode: int=1,
+                 M_matvec=None, Minv_matvec=None, sigma=None,
+                 ncv: int | None=None, v0=None, maxiter: int | None=None,
+                 which="LM", tol: float=0.0):
         # The following modes are supported:
         #  mode = 1:
         #    Solve the standard eigenvalue problem:
@@ -706,9 +709,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if self.ncv > n or self.ncv <= k + 1:
             raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
-        # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-        self.workd = _aligned_zeros(3 * n, self.tp)
-        self.workl = _aligned_zeros(3 * self.ncv * (self.ncv + 2), self.tp)
+        self.workd = np.zeros(3 * n, dtype=self.tp)
+        self.workl = np.zeros(3 * self.ncv * (self.ncv + 2), dtype=self.tp)
 
         ltr = _type_conv[self.tp]
         self._arpack_solver = _arpack.__dict__[ltr + 'naupd']
@@ -720,8 +722,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         self.ipntr = np.zeros(14, arpack_int)
 
         if self.tp in 'FD':
-            # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-            self.rwork = _aligned_zeros(self.ncv, self.tp.lower())
+            self.rwork = np.zeros(self.ncv, dtype=self.tp.lower())
         else:
             self.rwork = None
 
@@ -1096,12 +1097,6 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return SpLuInv(OP).matvec
 
 
-# ARPACK is not threadsafe or reentrant (SAVE variables), so we need a
-# lock and a re-entering check.
-_ARPACK_LOCK = ReentrancyLock("Nested calls to eigs/eighs not allowed: "
-                              "ARPACK is not re-entrant")
-
-
 def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
          ncv=None, maxiter=None, tol=0, return_eigenvectors=True,
          Minv=None, OPinv=None, OPpart=None):
@@ -1336,7 +1331,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         matvec = aslinearoperator(A).matvec
         if Minv is not None:
-            raise ValueError("Minv should not be specified when sigma is")
+            raise ValueError("Minv should not be specified when sigma is"
+                             "specified.")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                            hermitian=False, tol=tol)
@@ -1352,11 +1348,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                       M_matvec, Minv_matvec, sigma,
                                       ncv, v0, maxiter, which, tol)
 
-    with _ARPACK_LOCK:
-        while not params.converged:
-            params.iterate()
+    while not params.converged:
+        params.iterate()
 
-        return params.extract(return_eigenvectors)
+    return params.extract(return_eigenvectors)
 
 
 def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
@@ -1374,8 +1369,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     with corresponding eigenvectors x[i].
 
     Note that there is no specialized routine for the case when A is a complex
-    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return the
-    real parts of the eigenvalues thus obtained.
+    Hermitian matrix. In this case, ``eigsh()`` will call ``eigs()`` and return
+    the real parts of the eigenvalues thus obtained.
 
     Parameters
     ----------
@@ -1626,16 +1621,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         matvec = A.matvec
 
         if OPinv is not None:
-            raise ValueError("OPinv should not be specified "
-                             "with sigma = None.")
+            raise ValueError("OPinv should not be specified with sigma = None.")
         if M is None:
             #standard eigenvalue problem
             mode = 1
             M_matvec = None
             Minv_matvec = None
             if Minv is not None:
-                raise ValueError("Minv should not be "
-                                 "specified with M = None.")
+                raise ValueError("Minv should not be specified with M = None.")
         else:
             #general eigenvalue problem
             mode = 2
@@ -1648,7 +1641,8 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     else:
         # sigma is not None: shift-invert mode
         if Minv is not None:
-            raise ValueError("Minv should not be specified when sigma is")
+            raise ValueError("Minv should not be specified when sigma is "
+                             "specified.")
 
         # normal mode
         if mode == 'normal':
@@ -1699,8 +1693,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                                     M_matvec, Minv_matvec, sigma,
                                     ncv, v0, maxiter, which, tol)
 
-    with _ARPACK_LOCK:
-        while not params.converged:
-            params.iterate()
+    while not params.converged:
+        params.iterate()
 
-        return params.extract(return_eigenvectors)
+    return params.extract(return_eigenvectors)
