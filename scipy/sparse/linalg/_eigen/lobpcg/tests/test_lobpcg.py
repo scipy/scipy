@@ -75,6 +75,7 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.filterwarnings("ignore:An ill-conditioned matrix")
 @pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
 @pytest.mark.parametrize("BVdtype", INEXACTDTYPES)
@@ -136,6 +137,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = B @ X
     BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
+    # XXX: internally, _b_orthonormalize tries to invert an ill-conditioned matrix
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns
     Xo1 =  sign_align(Xo1, Xo)
