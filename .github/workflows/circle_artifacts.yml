@@ -1,6 +1,10 @@
 name: Redirect circleci artifacts
 
 on: [status]
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04
