@@ -8,6 +8,8 @@ static const double unfl = 2.2250738585072014e-308;
 // static const double ovfl = 1.0 / 2.2250738585072014e-308;
 static const double ulp = 2.220446049250313e-16;
 
+
+static ARPACK_CPLX_TYPE zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const ARPACK_CPLX_TYPE* restrict y, const int* incy);
 static void zgetv0(struct ARPACK_arnoldi_update_vars_d*, int, int, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*, ARPACK_CPLX_TYPE*);
 static void znaup2(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE* , ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int*, ARPACK_CPLX_TYPE*, double*);
 static void znaitr(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE*, double*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, int*, ARPACK_CPLX_TYPE*);
@@ -2062,3 +2064,43 @@ static int sortc_LR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return
 static int sortc_SR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) < creal(y)); }
 static int sortc_LI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
 static int sortc_SI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
+
+
+// zdotc is the complex conjugate dot product of two complex vectors.
+// Due some historical reasons, this function can cause segfaults on some
+// platforms. Hence implemented here instead of using the BLAS version.
+static ARPACK_CPLX_TYPE
+zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const ARPACK_CPLX_TYPE* restrict y, const int* incy)
+{
+    ARPACK_CPLX_TYPE result = ARPACK_cplx(0.0, 0.0);
+#ifdef _MSC_VER
+    ARPACK_CPLX_TYPE temp = ARPACK_cplx(0.0, 0.0);
+#endif
+    if (*n <= 0) { return result; }
+    if ((*incx == 1) && (*incy == 1))
+    {
+        for (int i = 0; i < *n; i++)
+        {
+#ifdef _MSC_VER
+            temp = _Cmulcc(x[i], conj(y[i]));
+            result = ARPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
+#else
+            result = result + (x[i] * conj(y[i]));
+#endif
+        }
+
+    } else {
+
+        for (int i = 0; i < *n; i++)
+        {
+#ifdef _MSC_VER
+            temp = _Cmulcc(x[i * (*incx)], conj(y[i * (*incy)]));
+            result = ARPACK_cplx(creal(result) + creal(temp), cimag(result) + cimag(temp));
+#else
+            result = result + (x[i * (*incx)] * conj(y[i * (*incy)]));
+#endif
+        }
+    }
+
+    return result;
+}

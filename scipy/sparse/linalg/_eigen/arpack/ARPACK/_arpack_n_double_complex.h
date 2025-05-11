@@ -6,7 +6,6 @@
 // BLAS Routines used
 void zaxpy_(int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* y, int* incy);
 void zcopy_(int* n, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* y, int* incy);
-ARPACK_CPLX_TYPE zdotc_(int* n, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* y, int* incy);
 void zgeru_(int* m, int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* y, int* incy, ARPACK_CPLX_TYPE* a, int* lda);
 double dznrm2_(int* n, ARPACK_CPLX_TYPE* x, int* incx);
 void zscal_(int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* x, int* incx);
