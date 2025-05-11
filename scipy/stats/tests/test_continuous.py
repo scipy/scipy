@@ -1124,7 +1124,6 @@ class TestMakeDistribution:
             'hypergeom',              # distribution functions need interpolation
             'nchypergeom_fisher',     # distribution functions don't accept NaN
             'nchypergeom_wallenius',  # distribution functions don't accept NaN
-            'skellam',                # during `entropy`, Fatal Python error: Aborted!
             'zipfian',                # during init, value error due to unexpected nans
         }:
             return
