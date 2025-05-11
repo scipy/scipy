@@ -1140,7 +1140,6 @@ class TestMakeDistribution:
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
         skip_standardized = {'exponpow', 'ksone'}  # tolerances
-        skip_median = {'nhypergeom', 'yulesimon'}  # nan mismatch
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1162,8 +1161,7 @@ class TestMakeDistribution:
                 # some continuous distributions have trouble with `logentropy` because
                 # it uses complex numbers
                 assert_allclose(np.exp(X.logentropy()), Y.entropy(), rtol=rtol)
-            if distname not in skip_median:
-                assert_allclose(X.median(), Y.median(), rtol=rtol)
+            assert_allclose(X.median(), Y.median(), rtol=rtol)
             assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
             assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
@@ -1182,11 +1180,18 @@ class TestMakeDistribution:
             if distname not in skip_logccdf:
                 assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
             assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
-            if isinstance(dist, stats.rv_continuous):
-                # For discrete distributions, these won't agree at the far left end
-                # of the support, and the new infrastructure is slow there (for now).
-                assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
-                assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
+
+            # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
+            # new infrastructure. Adjust reference values accordingly.
+            a, _ = Y.support()
+            ref_ppf = Y.ppf(p)
+            ref_ppf[p == 0] = a
+            ref_isf = Y.isf(p)
+            ref_isf[p == 1] = a
+
+            assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
+            assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
+
             for order in range(5):
                 if distname not in skip_raw.get(order, {}):
                     assert_allclose(X.moment(order, kind='raw'),
