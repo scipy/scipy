@@ -8,6 +8,8 @@ static const float unfl = 1.1754943508222875e-38;
 // static const float ovfl = 1.0 / 1.1754943508222875e-38;
 static const float ulp = 1.1920928955078125e-07;
 
+
+static ARPACK_CPLXF_TYPE cdotc_(const int* n, const ARPACK_CPLXF_TYPE* restrict x, const int* incx, const ARPACK_CPLXF_TYPE* restrict y, const int* incy);
 static void cgetv0(struct ARPACK_arnoldi_update_vars_s*, int, int, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, float*, int*, ARPACK_CPLXF_TYPE*);
 static void cnaup2(struct ARPACK_arnoldi_update_vars_s*, ARPACK_CPLXF_TYPE* , ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int*, ARPACK_CPLXF_TYPE*, float*);
 static void cnaitr(struct ARPACK_arnoldi_update_vars_s*, ARPACK_CPLXF_TYPE*, float*, ARPACK_CPLXF_TYPE*, int, ARPACK_CPLXF_TYPE*, int, int*, ARPACK_CPLXF_TYPE*);
@@ -288,7 +290,7 @@ cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
              | Note that since Q is orthogonal, R is a diagonal  |
              | matrix consisting of plus or minus ones.          |
              *--------------------------------------------------*/
-            if (creal(workl[invsub + j*ldq + j]) < 0.0)
+            if (crealf(workl[invsub + j*ldq + j]) < 0.0)
             {
                 cscal_(&V->nconv, &cdblm1, &workl[iuptri + j], &ldq);
                 cscal_(&V->nconv, &cdblm1, &workl[iuptri + j*ldq], &int1);
@@ -2062,3 +2064,43 @@ static int sortc_LR(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { retu
 static int sortc_SR(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (crealf(x) < crealf(y)); }
 static int sortc_LI(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cimagf(x) > cimagf(y)); }
 static int sortc_SI(const ARPACK_CPLXF_TYPE x, const ARPACK_CPLXF_TYPE y) { return (cimagf(x) < cimagf(y)); }
+
+
+// cdotc is the complex conjugate dot product of two complex vectors.
+// Due some historical reasons, this function can cause segfaults on some
+// platforms. Hence implemented here instead of using the BLAS version.
+static ARPACK_CPLXF_TYPE
+cdotc_(const int* n, const ARPACK_CPLXF_TYPE* restrict x, const int* incx, const ARPACK_CPLXF_TYPE* restrict y, const int* incy)
+{
+    ARPACK_CPLXF_TYPE result = ARPACK_cplxf(0.0, 0.0);
+#ifdef _MSC_VER
+    ARPACK_CPLXF_TYPE temp = ARPACK_cplxf(0.0, 0.0);
+#endif
+    if (*n <= 0) { return result; }
+    if ((*incx == 1) && (*incy == 1))
+    {
+        for (int i = 0; i < *n; i++)
+        {
+#ifdef _MSC_VER
+            temp = _FCmulcc(x[i], conjf(y[i]));
+            result = ARPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
+#else
+            result = result + (x[i] * conjf(y[i]));
+#endif
+        }
+
+    } else {
+
+        for (int i = 0; i < *n; i++)
+        {
+#ifdef _MSC_VER
+            temp = _FCmulcc(x[i * (*incx)], conjf(y[i * (*incy)]));
+            result = ARPACK_cplxf(crealf(result) + crealf(temp), cimagf(result) + cimagf(temp));
+#else
+            result = result + (x[i * (*incx)] * conjf(y[i * (*incy)]));
+#endif
+        }
+    }
+
+    return result;
+}
