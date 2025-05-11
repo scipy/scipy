@@ -14,13 +14,20 @@ arpack_sources = [
   'ARPACK/_arpack_s_single.h'
 ]
 
-arpack_lib = static_library('_arpack_lib',
+arpack_lib = static_library('_arpack',
   arpack_sources,
   c_args: ['-Wall', '-Wextra'],
   dependencies: [m_dep, lapack_dep, blas_dep],
-  install: true
 )
 
+py3.extension_module('_arpacklib',
+  '_arpackmodule.c',
+  link_with: arpack_lib,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/sparse/linalg/_eigen/arpack',
+)
 
 py3.install_sources([
     '__init__.py',
