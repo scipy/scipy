@@ -1122,8 +1122,6 @@ class TestMakeDistribution:
             'vonmises',               # circular distribution; shouldn't work
             'poisson_binom',          # vector shape parameter
             'hypergeom',              # distribution functions need interpolation
-            'nchypergeom_fisher',     # distribution functions don't accept NaN
-            'nchypergeom_wallenius',  # distribution functions don't accept NaN
             'skellam',                # gh-22956 (_ncx2_pdf crashes with extreme input)
         }:
             return
@@ -1131,14 +1129,15 @@ class TestMakeDistribution:
         # skip single test, mostly due to slight disagreement
         custom_tolerances = {'ksone': 1e-5, 'kstwo': 1e-5}  # discontinuous PDF
         skip_entropy = {'kstwobign', 'pearson3'}  # tolerance issue
-        skip_skewness = {'exponpow', 'ksone'}  # tolerance issue
-        skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance issue
-                         'johnsonsb', 'ksone', 'kstwo'}  # tolerance issue
+        skip_skewness = {'exponpow', 'ksone', 'nchypergeom_wallenius'}  # tolerance
+        skip_kurtosis = {'chi', 'exponpow', 'invgamma',  # tolerance
+                         'johnsonsb', 'ksone', 'kstwo',  # tolerance
+                         'nchypergeom_wallenius'}  # tolerance
         skip_logccdf = {'arcsine', 'skewcauchy', 'trapezoid', 'triang'}  # tolerance
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
-        skip_standardized = {'exponpow', 'ksone'}  # tolerances
+        skip_standardized = {'exponpow', 'ksone', 'nchypergeom_wallenius'}  # tolerances
         skip_median = {'nhypergeom', 'yulesimon',  # nan mismatch
                        'betanbinom', 'zipf', 'logser'}  # median 0th element
 
