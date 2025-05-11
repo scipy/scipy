@@ -25,13 +25,25 @@ static void ssortc(const enum ARPACK_which w, const int apply, const int n, floa
 static void sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j, float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd);
 
 enum ARPACK_neupd_type {
-    REGULAR,
+    REGULAR = 0,
     SHIFTI,
     REALPART,
     IMAGPART
 };
 
-
+/* rvec : bool
+ * howmny: int, {0, 1, 2} possible values
+ * select: int[ncv], bool valued
+ * dr: double[nev + 1], real part of the Ritz values
+ * di: double[nev + 1], imaginary part of the Ritz values
+ * z: double[(nev + 1) * n], the eigenvectors of the matrix
+ * ldz: int, leading dimension of z
+ * sigmar: double, real part of the shift
+ * sigmai: double, imaginary part of the shift
+ * workev: double[3*ncv], workspace
+ * -------------
+ *
+ * */
 void
 sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
        float* dr, float* di, float* z, int ldz, float sigmar, float sigmai,
@@ -67,7 +79,7 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
     if ((V->mode == 1) || (V->mode == 2)) {
         TYP = REGULAR;
-    } else if ((V->mode == 3) && (sigmai = 0.0)) {
+    } else if ((V->mode == 3) && (sigmai == 0.0)) {
         TYP = SHIFTI;
     } else if (V->mode == 3) {
         TYP = REALPART;
@@ -84,32 +96,28 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         return;
     }
 
-     /*-------------------------------------------------------*
-     | Pointer into WORKL for address of H, RITZ, BOUNDS, Q   |
-     | etc... and the remaining workspace.                    |
-     | Also update pointer to be used on output.              |
-     | Memory is laid out as follows:                         |
-     | workl(1:ncv*ncv) := generated Hessenberg matrix        |
-     | workl(ncv*ncv+1:ncv*ncv+2*ncv) := real and imaginary   |
-     |                                   parts of ritz values |
-     | workl(ncv*ncv+2*ncv+1:ncv*ncv+3*ncv) := error bounds   |
-     *-------------------------------------------------------*/
+    //  Pointer into WORKL for address of H, RITZ, BOUNDS, Q
+    //  etc... and the remaining workspace.
+    //  Also update pointer to be used on output.
+    //  Memory is laid out as follows:
+    //  workl(1:ncv*ncv) := generated Hessenberg matrix
+    //  workl(ncv*ncv+1:ncv*ncv+2*ncv) := real and imaginary
+    //                                    parts of ritz values
+    //  workl(ncv*ncv+2*ncv+1:ncv*ncv+3*ncv) := error bounds
 
-     /*----------------------------------------------------------*
-     | The following is used and set by DNEUPD .                 |
-     | workl(ncv*ncv+3*ncv+1:ncv*ncv+4*ncv) := The untransformed |
-     |                             real part of the Ritz values. |
-     | workl(ncv*ncv+4*ncv+1:ncv*ncv+5*ncv) := The untransformed |
-     |                        imaginary part of the Ritz values. |
-     | workl(ncv*ncv+5*ncv+1:ncv*ncv+6*ncv) := The untransformed |
-     |                           error bounds of the Ritz values |
-     | workl(ncv*ncv+6*ncv+1:2*ncv*ncv+6*ncv) := Holds the upper |
-     |                             quasi-triangular matrix for H |
-     | workl(2*ncv*ncv+6*ncv+1: 3*ncv*ncv+6*ncv) := Holds the    |
-     |       associated matrix representation of the invariant   |
-     |       subspace for H.                                     |
-     | GRAND total of NCV * ( 3 * NCV + 6 ) locations.           |
-     *----------------------------------------------------------*/
+    //  The following is used and set by DNEUPD .
+    //  workl(ncv*ncv+3*ncv+1:ncv*ncv+4*ncv) := The untransformed
+    //                              real part of the Ritz values.
+    //  workl(ncv*ncv+4*ncv+1:ncv*ncv+5*ncv) := The untransformed
+    //                         imaginary part of the Ritz values.
+    //  workl(ncv*ncv+5*ncv+1:ncv*ncv+6*ncv) := The untransformed
+    //                            error bounds of the Ritz values
+    //  workl(ncv*ncv+6*ncv+1:2*ncv*ncv+6*ncv) := Holds the upper
+    //                              quasi-triangular matrix for H
+    //  workl(2*ncv*ncv+6*ncv+1: 3*ncv*ncv+6*ncv) := Holds the
+    //        associated matrix representation of the invariant
+    //        subspace for H.
+    //  GRAND total of NCV * ( 3 * NCV + 6 ) locations.
 
 
     ih     = ipntr[4];
@@ -132,34 +140,34 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
     wri = V->ncv;
     iwev = wri + V->ncv;
 
-     /*----------------------------------------*
-     | irr points to the REAL part of the Ritz |
-     |     values computed by _neigh before    |
-     |     exiting _naup2.                     |
-     | iri points to the IMAGINARY part of the |
-     |     Ritz values computed by _neigh      |
-     |     before exiting _naup2.              |
-     | ibd points to the Ritz estimates        |
-     |     computed by _neigh before exiting   |
-     |     _naup2.                             |
-     *----------------------------------------*/
+
+    //  irr points to the REAL part of the Ritz
+    //      values computed by _neigh before
+    //      exiting _naup2.
+    //  iri points to the IMAGINARY part of the
+    //      Ritz values computed by _neigh
+    //      before exiting _naup2.
+    //  ibd points to the Ritz estimates
+    //      computed by _neigh before exiting
+    //      _naup2.
+
     irr = ipntr[13] + (V->ncv)*(V->ncv);
     iri = irr + V->ncv;
     ibd = iri + V->ncv;
 
-     /*-----------------------------------*
-     | RNORM is B-norm of the RESID(1:N). |
-     *-----------------------------------*/
+
+    //  RNORM is B-norm of the RESID(1:N).
+
     rnorm = workl[ih+1];
     workl[ih+1] = 0.0;
 
     if (rvec) {
         reord = 0;
 
-         /*--------------------------------------------------*
-         | Use the temporary bounds array to store indices   |
-         | These will be used to mark the select array later |
-         *--------------------------------------------------*/
+
+        //  Use the temporary bounds array to store indices
+        //  These will be used to mark the select array later
+
         for (j = 0; j < V->ncv; j++)
         {
             workl[bounds + j] = j;
@@ -167,23 +175,23 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         }
         // 10
 
-         /*------------------------------------*
-         | Select the wanted Ritz values.      |
-         | Sort the Ritz values so that the    |
-         | wanted ones appear at the tailing   |
-         | NEV positions of workl(irr) and     |
-         | workl(iri).  Move the corresponding |
-         | error estimates in workl(bound)     |
-         | accordingly.                        |
-         *------------------------------------*/
+
+        //  Select the wanted Ritz values.
+        //  Sort the Ritz values so that the
+        //  wanted ones appear at the tailing
+        //  NEV positions of workl(irr) and
+        //  workl(iri).  Move the corresponding
+        //  error estimates in workl(bound)
+        //  accordingly.
+
 
         np = V->ncv - V->nev;
         sngets(V, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
 
-         /*----------------------------------------------------*
-         | Record indices of the converged wanted Ritz values  |
-         | Mark the select array for possible reordering       |
-         *----------------------------------------------------*/
+
+        //  Record indices of the converged wanted Ritz values
+        //  Mark the select array for possible reordering
+
 
         numcnv = 0;
         for (j = 0; j < V->ncv; j++)
@@ -201,12 +209,12 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         }
         // 11
 
-         /*----------------------------------------------------------*
-         | Check the count (numcnv) of converged Ritz values with    |
-         | the number (nconv) reported by dnaupd.  If these two      |
-         | are different then there has probably been an error       |
-         | caused by incorrect passing of the dnaupd data.           |
-         *----------------------------------------------------------*/
+
+        //  Check the count (numcnv) of converged Ritz values with
+        //  the number (nconv) reported by dnaupd.  If these two
+        //  are different then there has probably been an error
+        //  caused by incorrect passing of the dnaupd data.
+
 
         if (numcnv != V->nconv)
         {
@@ -214,12 +222,12 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             return;
         }
 
-         /*-----------------------------------------------------------*
-         | Call LAPACK routine dlahqr  to compute the real Schur form |
-         | of the upper Hessenberg matrix returned by DNAUPD .        |
-         | Make a copy of the upper Hessenberg matrix.                |
-         | Initialize the Schur vector matrix Q to the identity.      |
-         *-----------------------------------------------------------*/
+
+        //  Call LAPACK routine dlahqr  to compute the real Schur form
+        //  of the upper Hessenberg matrix returned by DNAUPD .
+        //  Make a copy of the upper Hessenberg matrix.
+        //  Initialize the Schur vector matrix Q to the identity.
+
         tmp_int = ldh*V->ncv;
         scopy_(&tmp_int, &workl[ih], &int1, &workl[iuptri], &int1);
         slaset_("A", &V->ncv, &V->ncv, &dbl0, &dbl1, &workl[invsub], &ldq);
@@ -247,58 +255,58 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             }
         }
 
-         /*--------------------------------------*
-         | Copy the last row of the Schur vector |
-         | into workl(ihbds).  This will be used |
-         | to compute the Ritz estimates of      |
-         | converged Ritz values.                |
-         *--------------------------------------*/
+
+        //  Copy the last row of the Schur vector
+        //  into workl(ihbds).  This will be used
+        //  to compute the Ritz estimates of
+        //  converged Ritz values.
+
 
         scopy_(&V->ncv, &workl[invsub + V->ncv - 1], &ldq, &workl[ihbds], &int1);
 
-         /*---------------------------------------------------*
-         | Place the computed eigenvalues of H into DR and DI |
-         | if a spectral transformation was not used.         |
-         *---------------------------------------------------*/
+
+        //  Place the computed eigenvalues of H into DR and DI
+        //  if a spectral transformation was not used.
+
 
         if (TYP == REGULAR) {
             scopy_(&V->nconv, &workl[iheigr], &int1, dr, &int1);
             scopy_(&V->nconv, &workl[iheigi], &int1, di, &int1);
         }
 
-         /*---------------------------------------------------------*
-         | Compute the QR factorization of the matrix representing  |
-         | the wanted invariant subspace located in the first NCONV |
-         | columns of workl(invsub,ldq).                            |
-         *---------------------------------------------------------*/
+
+        //  Compute the QR factorization of the matrix representing
+        //  the wanted invariant subspace located in the first NCONV
+        //  columns of workl(invsub,ldq).
+
 
         sgeqr2_(&V->ncv, &V->nconv, &workl[invsub], &ldq, workev, &workev[V->ncv], &ierr);
 
-         /*--------------------------------------------------------*
-         | * Postmultiply V by Q using dorm2r .                    |
-         | * Copy the first NCONV columns of VQ into Z.            |
-         | * Postmultiply Z by R.                                  |
-         | The N by NCONV matrix Z is now a matrix representation  |
-         | of the approximate invariant subspace associated with   |
-         | the Ritz values in workl(iheigr) and workl(iheigi)      |
-         | The first NCONV columns of V are now approximate Schur  |
-         | vectors associated with the real upper quasi-triangular |
-         | matrix of order NCONV in workl(iuptri)                  |
-         *--------------------------------------------------------*/
+
+        //  * Postmultiply V by Q using dorm2r .
+        //  * Copy the first NCONV columns of VQ into Z.
+        //  * Postmultiply Z by R.
+        //  The N by NCONV matrix Z is now a matrix representation
+        //  of the approximate invariant subspace associated with
+        //  the Ritz values in workl(iheigr) and workl(iheigi)
+        //  The first NCONV columns of V are now approximate Schur
+        //  vectors associated with the real upper quasi-triangular
+        //  matrix of order NCONV in workl(iuptri)
+
 
         sorm2r_("R", "N", &V->n, &V->ncv, &V->nconv, &workl[invsub], &ldq, workev,
                 v, &ldv, &workd[V->n], &ierr);
 
         slacpy_("A", &V->n, &V->nconv, v, &ldv, z, &ldz);
 
-         /*--------------------------------------------------*
-         | Perform both a column and row scaling if the      |
-         | diagonal element of workl(invsub,ldq) is negative |
-         | I'm lazy and don't take advantage of the upper    |
-         | quasi-triangular form of workl(iuptri,ldq)        |
-         | Note that since Q is orthogonal, R is a diagonal  |
-         | matrix consisting of plus or minus ones           |
-         *--------------------------------------------------*/
+
+        //  Perform both a column and row scaling if the
+        //  diagonal element of workl(invsub,ldq) is negative
+        //  I'm lazy and don't take advantage of the upper
+        //  quasi-triangular form of workl(iuptri,ldq)
+        //  Note that since Q is orthogonal, R is a diagonal
+        //  matrix consisting of plus or minus ones
+
 
         for (j = 0; j < V->nconv; j++)
         {
@@ -312,10 +320,10 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
         if (howmny == 0)
         {
-             /*-------------------------------------------*
-             | Compute the NCONV wanted eigenvectors of T |
-             | located in workl(iuptri,ldq).              |
-             *-------------------------------------------*/
+
+            //  Compute the NCONV wanted eigenvectors of T
+            //  located in workl(iuptri,ldq).
+
             for (j = 0; j < V->ncv; j++)
             {
                 if (j <= V->nconv - 1)
@@ -336,34 +344,34 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
                 return;
             }
 
-             /*-----------------------------------------------*
-             | Scale the returning eigenvectors so that their |
-             | Euclidean norms are all one. LAPACK subroutine |
-             | dtrevc  returns each eigenvector normalized so |
-             | that the element of largest magnitude has      |
-             | magnitude 1;                                   |
-             *-----------------------------------------------*/
+
+            //  Scale the returning eigenvectors so that their
+            //  Euclidean norms are all one. LAPACK subroutine
+            //  dtrevc  returns each eigenvector normalized so
+            //  that the element of largest magnitude has
+            //  magnitude 1;
+
 
             iconj = 0;
             for (j = 0; j < V->nconv; j++)
             {
                 if (workl[iheigi + j] == 0.0)
                 {
-                     /*---------------------*
-                     | real eigenvalue case |
-                     *---------------------*/
+
+                    //  real eigenvalue case
+
 
                     temp = 1.0 / snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
                     sscal_(&V->ncv, &temp, &workl[invsub + j*ldq], &int1);
 
                 } else {
-                     /*------------------------------------------*
-                     | Complex conjugate pair case. Note that    |
-                     | since the real and imaginary part of      |
-                     | the eigenvector are stored in consecutive |
-                     | columns, we further normalize by the      |
-                     | square root of two.                       |
-                     *------------------------------------------*/
+
+                    //  Complex conjugate pair case. Note that
+                    //  since the real and imaginary part of
+                    //  the eigenvector are stored in consecutive
+                    //  columns, we further normalize by the
+                    //  square root of two.
+
                     if (iconj == 0)
                     {
                         temp = 1.0 / hypotf(snrm2_(&V->ncv, &workl[invsub + j*ldq], &int1),
@@ -385,11 +393,11 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             {
                 if (workl[iheigi + j] != 0.0)
                 {
-                     /*------------------------------------------*
-                     | Complex conjugate pair case. Note that    |
-                     | since the real and imaginary part of      |
-                     | the eigenvector are stored in consecutive |
-                     *------------------------------------------*/
+
+                    //  Complex conjugate pair case. Note that
+                    //  since the real and imaginary part of
+                    //  the eigenvector are stored in consecutive
+
                     if (iconj == 0)
                     {
                         workev[j] = hypotf(workev[j], workev[j+1]);
@@ -402,27 +410,27 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             }
             // 45
 
-             /*--------------------------------------*
-             | Copy Ritz estimates into workl(ihbds) |
-             *--------------------------------------*/
+
+            //  Copy Ritz estimates into workl(ihbds)
+
 
             scopy_(&V->nconv, workev, &int1, &workl[ihbds], &int1);
 
-             /*--------------------------------------------------------*
-             | Compute the QR factorization of the eigenvector matrix  |
-             | associated with leading portion of T in the first NCONV |
-             | columns of workl(invsub,ldq).                           |
-             *--------------------------------------------------------*/
+
+            //  Compute the QR factorization of the eigenvector matrix
+            //  associated with leading portion of T in the first NCONV
+            //  columns of workl(invsub,ldq).
+
 
             sgeqr2_(&V->ncv, &V->nconv, &workl[invsub], &ldq, workev, &workev[V->ncv], &ierr);
 
-             /*---------------------------------------------*
-             | * Postmultiply Z by Q.                       |
-             | * Postmultiply Z by R.                       |
-             | The N by NCONV matrix Z is now contains the  |
-             | Ritz vectors associated with the Ritz values |
-             | in workl(iheigr) and workl(iheigi).          |
-             *---------------------------------------------*/
+
+            //  * Postmultiply Z by Q.
+            //  * Postmultiply Z by R.
+            //  The N by NCONV matrix Z is now contains the
+            //  Ritz vectors associated with the Ritz values
+            //  in workl(iheigr) and workl(iheigi).
+
 
             sorm2r_("R", "N", &V->n, &V->ncv, &V->nconv, &workl[invsub], &ldq,
                     workev, z, &ldz, &workd[V->n], &ierr);
@@ -432,10 +440,10 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         }
 
     } else {
-         /*------------------------------------------------------*
-         | An approximate invariant subspace is not needed.      |
-         | Place the Ritz values computed DNAUPD  into DR and DI |
-         *------------------------------------------------------*/
+
+        //  An approximate invariant subspace is not needed.
+        //  Place the Ritz values computed DNAUPD  into DR and DI
+
         scopy_(&V->nconv, &workl[ritzr], &int1, dr, &int1);
         scopy_(&V->nconv, &workl[ritzi], &int1, di, &int1);
         scopy_(&V->nconv, &workl[ritzr], &int1, &workl[iheigr], &int1);
@@ -443,11 +451,11 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         scopy_(&V->nconv, &workl[bounds], &int1, &workl[ihbds], &int1);
     }
 
-     /*-----------------------------------------------*
-     | Transform the Ritz values and possibly vectors |
-     | and corresponding error bounds of OP to those  |
-     | of A*x = lambda*B*x.                           |
-     *-----------------------------------------------*/
+
+    //  Transform the Ritz values and possibly vectors
+    //  and corresponding error bounds of OP to those
+    //  of A*x = lambda*B*x.
+
 
     if (TYP == REGULAR)
     {
@@ -456,11 +464,11 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             sscal_(&V->ncv, &rnorm, &workl[ihbds], &int1);
         }
     } else {
-         /*--------------------------------------*
-         |   A spectral transformation was used. |
-         | * Determine the Ritz estimates of the |
-         |   Ritz values in the original system. |
-         *--------------------------------------*/
+
+        //    A spectral transformation was used.
+        //  * Determine the Ritz estimates of the
+        //    Ritz values in the original system.
+
 
         if (TYP == SHIFTI)
         {
@@ -478,15 +486,15 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
         }
 
-         /*----------------------------------------------------------*
-         | *  Transform the Ritz values back to the original system. |
-         |    For TYPE = 'SHIFTI' the transformation is              |
-         |             lambda = 1/theta + sigma                      |
-         |    For TYPE = 'REALPT' or 'IMAGPT' the user must from     |
-         |    Rayleigh quotients or a projection. See remark 3 above.|
-         | NOTES:                                                    |
-         | *The Ritz vectors are not affected by the transformation. |
-         *----------------------------------------------------------*/
+
+        //  *  Transform the Ritz values back to the original system.
+        //     For TYPE = 'SHIFTI' the transformation is
+        //              lambda = 1/theta + sigma
+        //     For TYPE = 'REALPT' or 'IMAGPT' the user must from
+        //     Rayleigh quotients or a projection. See remark 3 above.
+        //  NOTES:
+        //  *The Ritz vectors are not affected by the transformation.
+
 
         if (TYP == SHIFTI)
         {
@@ -507,24 +515,24 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         }
     }
 
-     /*------------------------------------------------*
-     | Eigenvector Purification step. Formally perform |
-     | one of inverse subspace iteration. Only used    |
-     | for MODE = 2.                                   |
-     *------------------------------------------------*/
+
+    //  Eigenvector Purification step. Formally perform
+    //  one of inverse subspace iteration. Only used
+    //  for MODE = 2.
+
 
     if ((rvec) && (howmny == 1) && (TYP == SHIFTI))
     {
-         /*-----------------------------------------------*
-         | Purify the computed Ritz vectors by adding a   |
-         | little bit of the residual vector:             |
-         |                      T                         |
-         |          resid(:)*( e    s ) / theta           |
-         |                      NCV                       |
-         | where H s = s theta. Remember that when theta  |
-         | has nonzero imaginary part, the corresponding  |
-         | Ritz vector is stored across two columns of Z. |
-         *-----------------------------------------------*/
+
+        //  Purify the computed Ritz vectors by adding a
+        //  little bit of the residual vector:
+        //                       T
+        //           resid(:)*( e    s ) / theta
+        //                       NCV
+        //  where H s = s theta. Remember that when theta
+        //  has nonzero imaginary part, the corresponding
+        //  Ritz vector is stored across two columns of Z.
+
 
         iconj = 0;
         for (j = 0; j < V->nconv; j++)
@@ -551,10 +559,10 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         }
         // 110
 
-         /*--------------------------------------*
-         | Perform a rank one update to Z and    |
-         | purify all the Ritz vectors together. |
-         *--------------------------------------*/
+
+        //  Perform a rank one update to Z and
+        //  purify all the Ritz vectors together.
+
         sger_(&V->n, &V->nconv, &dbl1, resid, &int1, workev, &int1, z, &ldz);
     }
 
@@ -563,42 +571,43 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
 
 void
-snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
-       int* ipntr, float* workd, float* workl)
+snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl)
 {
-    int bounds, ierr = 0, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
+    int bounds, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
 
-    // perform basic checks
-    if (V->n <= 0) {
-        ierr = -1;
-    } else if (V->nev <= 0) {
-        ierr = -2;
-    } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
-        ierr = -3;
-    } else if (V->maxiter <= 0) {
-        ierr = -4;
-    } else if ((V->which < 0) || (V->which > 5)) {
-        ierr = -5;
-    } else if ((V->bmat != 0) && (V->bmat != 1)) {
-        ierr = -6;
-    } else if ((V->mode < 1) || (V->mode > 4)) {
-        ierr = -10;
-    } else if ((V->mode == 1) && (V->bmat == 1)) {
-        ierr = -11;
-    } else if ((V->shift != 0) && (V->shift != 1)) {
-        ierr = -12;
+    if (V->ido == ido_FIRST)
+    {
+
+        // perform basic checks
+        if (V->n <= 0) {
+            V->info = -1;
+        } else if (V->nev <= 0) {
+            V->info = -2;
+        } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
+            V->info = -3;
+        } else if (V->maxiter <= 0) {
+            V->info = -4;
+        } else if ((V->which < 0) || (V->which > 5)) {
+            V->info = -5;
+        } else if ((V->bmat != 0) && (V->bmat != 1)) {
+            V->info = -6;
+        } else if ((V->mode < 1) || (V->mode > 4)) {
+            V->info = -10;
+        } else if ((V->mode == 1) && (V->bmat == 1)) {
+            V->info = -11;
+        } else if ((V->shift != 0) && (V->shift != 1)) {
+            V->info = -12;
+        }
+
+        if (V->info != 0) {
+            V->ido = ido_DONE;
+            return;
+        }
+
+        if (V->tol <= 0.0) {
+            V->tol = ulp;
+        }
     }
-
-    if (ierr != 0) {
-        V->info = ierr;
-        V->ido = ido_DONE;
-        return;
-    }
-
-    if (V->tol <= 0.0) {
-        V-> tol = ulp;
-    }
-
     V->np = V->ncv - V->nev;
     nev0 = V->nev;
 
@@ -607,23 +616,22 @@ snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         workl[j] = 0.0;
     }
 
-     /*------------------------------------------------------------*
-     | Pointer into WORKL for address of H, RITZ, BOUNDS, Q        |
-     | etc... and the remaining workspace.                         |
-     | Also update pointer to be used on output.                   |
-     | Memory is laid out as follows:                              |
-     |                                                             |
-     | workl[0:ncv*ncv] := generated Hessenberg matrix             |
-     | workl[ncv**2:ncv**2+2*ncv] := ritz.real and ritz.imag values|
-     | workl[ncv**2+2*ncv:ncv*ncv+3*ncv] := error bounds           |
-     | workl[ncv**2+3*ncv+1:2*ncv*ncv+3*ncv] := rotation matrix Q  |
-     | workl[2*ncv**2+3*ncv:3*ncv*ncv+6*ncv] := workspace          |
-     |                                                             |
-     | The final workspace is needed by subroutine dneigh  called  |
-     | by dnaup2 . Subroutine dneigh  calls LAPACK routines for    |
-     | calculating eigenvalues and the last row of the eigenvector |
-     | matrix.                                                     |
-     *------------------------------------------------------------*/
+    //  Pointer into WORKL for address of H, RITZ, BOUNDS, Q
+    //  etc... and the remaining workspace.
+    //  Also update pointer to be used on output.
+    //  Memory is laid out as follows:
+    //
+    //  workl[0:ncv*ncv] := generated Hessenberg matrix
+    //  workl[ncv**2:ncv**2+2*ncv] := ritz.real and ritz.imag values
+    //  workl[ncv**2+2*ncv:ncv*ncv+3*ncv] := error bounds
+    //  workl[ncv**2+3*ncv+1:2*ncv*ncv+3*ncv] := rotation matrix Q
+    //  workl[2*ncv**2+3*ncv:3*ncv*ncv+6*ncv] := workspace
+    //
+    //  The final workspace is needed by subroutine dneigh  called
+    //  by dnaup2 . Subroutine dneigh  calls LAPACK routines for
+    //  calculating eigenvalues and the last row of the eigenvector
+    //  matrix.
+
 
     ldh    = V->ncv;
     ldq    = V->ncv;
@@ -643,15 +651,16 @@ snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
     ipntr[13]  = iw;
 
 
-    snaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi],
-           &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
+    //  Carry out the Implicitly restarted Arnoldi Iteration.
 
-     /*-------------------------------------------------*
-     | ido .ne. 99 implies use of reverse communication |
-     | to compute operations involving OP or shifts.    |
-     *-------------------------------------------------*/
 
-    // if (V->ido == 3)
+    snaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[iritzr], &workl[iritzi], &workl[bounds], &workl[iq], ldq, &workl[iw], ipntr, workd);
+
+
+    //  ido != DONE implies use of reverse communication
+    //  to compute operations involving OP or shifts.
+
+
     if (V->ido != ido_DONE) { return; }
 
     V->nconv = V->np;
@@ -681,23 +690,23 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         V->aup2_nev0 = V->nev;
         V->aup2_np0 = V->np;
 
-         /*------------------------------------*
-         | kplusp is the bound on the largest  |
-         |        Lanczos factorization built. |
-         | nconv is the current number of      |
-         |        "converged" eigenvlues.      |
-         | iter is the counter on the current  |
-         |      iteration step.                |
-         *------------------------------------*/
+
+        //  kplusp is the bound on the largest
+        //         Lanczos factorization built.
+        //  nconv is the current number of
+        //         "converged" eigenvlues.
+        //  iter is the counter on the current
+        //       iteration step.
+
 
         V->aup2_kplusp = V->nev + V->np;
         V->nconv = 0;
         V->aup2_iter = 0;
 
-         /*--------------------------------------*
-         | Set flags for computing the first NEV |
-         | steps of the Arnoldi factorization.   |
-         *--------------------------------------*/
+
+        //  Set flags for computing the first NEV
+        //  steps of the Arnoldi factorization.
+
         V->aup2_getv0 = 1;
         V->aup2_update = 0;
         V->aup2_ushift = 0;
@@ -705,9 +714,9 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
 
         if (V->info != 0)
         {
-             /*-------------------------------------------*
-             | User provides the initial residual vector. |
-             *-------------------------------------------*/
+
+            //  User provides the initial residual vector.
+
             V->aup2_initv = 1;
             V->info = 0;
         } else {
@@ -715,10 +724,10 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         }
     }
 
-     /*--------------------------------------------*
-     | Get a possibly random starting vector and   |
-     | force it into the range of the operator OP. |
-     *--------------------------------------------*/
+
+    //  Get a possibly random starting vector and
+    //  force it into the range of the operator OP.
+
     if (V->aup2_getv0)
     {
         sgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
@@ -733,60 +742,60 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         V->ido = ido_FIRST;
     }
 
-     /*----------------------------------*
-     | Back from reverse communication : |
-     | continue with update step         |
-     *----------------------------------*/
+
+    //  Back from reverse communication :
+    //  continue with update step
+
     if (V->aup2_update) { goto LINE20; }
 
-     /*------------------------------------------*
-     | Back from computing user specified shifts |
-     *------------------------------------------*/
+
+    //  Back from computing user specified shifts
+
     if (V->aup2_ushift) { goto LINE50; }
 
-     /*------------------------------------*
-     | Back from computing residual norm   |
-     | at the end of the current iteration |
-     *------------------------------------*/
+
+    //  Back from computing residual norm
+    //  at the end of the current iteration
+
     if (V->aup2_cnorm) { goto LINE100; }
 
-     /*---------------------------------------------------------*
-     | Compute the first NEV steps of the Arnoldi factorization |
-     *---------------------------------------------------------*/
+
+    //  Compute the first NEV steps of the Arnoldi factorization
+
 
     snaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
-     /*--------------------------------------------------*
-     | ido .ne. 99 implies use of reverse communication  |
-     | to compute operations involving OP and possibly B |
-     *--------------------------------------------------*/
+
+    //  ido .ne. 99 implies use of reverse communication
+    //  to compute operations involving OP and possibly B
+
     if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0)
     {
         V->np = V->info;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->info = -9999;
         V->ido = ido_DONE;
         return;
     }
 
-     /*-------------------------------------------------------------*
-     |                                                              |
-     |           M A I N  ARNOLDI  I T E R A T I O N  L O O P       |
-     |           Each iteration implicitly restarts the Arnoldi     |
-     |           factorization in place.                            |
-     |                                                              |
-     *-------------------------------------------------------------*/
+
+    //
+    //            M A I N  ARNOLDI  I T E R A T I O N  L O O P
+    //            Each iteration implicitly restarts the Arnoldi
+    //            factorization in place.
+    //
+
 
 LINE1000:
     V->aup2_iter += 1;
 
-     /*----------------------------------------------------------*
-     | Compute NP additional steps of the Arnoldi factorization. |
-     | Adjust NP since NEV might have been updated by last call  |
-     | to the shift application routine dnapps .                 |
-     *----------------------------------------------------------*/
+
+    //  Compute NP additional steps of the Arnoldi factorization.
+    //  Adjust NP since NEV might have been updated by last call
+    //  to the shift application routine dnapps .
+
     V->np = V->aup2_kplusp - V->nev;
     V->ido = ido_FIRST;
 
@@ -795,29 +804,28 @@ LINE20:
 
     snaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
-     /*--------------------------------------------------*
-     | ido .ne. 99 implies use of reverse communication  |
-     | to compute operations involving OP and possibly B |
-     *--------------------------------------------------*/
+
+    //  ido .ne. 99 implies use of reverse communication
+    //  to compute operations involving OP and possibly B
+
 
     if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0) {
         V->np = V->info;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->info = -9999;
         V->ido = ido_DONE;
         return;
     }
     V->aup2_update = 0;
 
-     /*-------------------------------------------------------*
-     | Compute the eigenvalues and corresponding error bounds |
-     | of the current upper Hessenberg matrix.                |
-     *-------------------------------------------------------*/
 
-    sneigh(&V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritzr, ritzi, bounds,
-           q, ldq, workl, &V->info);
+    //  Compute the eigenvalues and corresponding error bounds
+    //  of the current upper Hessenberg matrix.
+
+
+    sneigh(&V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritzr, ritzi, bounds, q, ldq, workl, &V->info);
 
     if (V->info != 0)
     {
@@ -826,10 +834,10 @@ LINE20:
        return;
     }
 
-     /*---------------------------------------------------*
-     | Make a copy of eigenvalues and corresponding error |
-     | bounds obtained from dneigh.                       |
-     *---------------------------------------------------*/
+
+    //  Make a copy of eigenvalues and corresponding error
+    //  bounds obtained from dneigh.
+
 
     tmp_int = V->aup2_kplusp * V->aup2_kplusp;
     scopy_(&V->aup2_kplusp, ritzr, &int1, &workl[tmp_int], &int1);
@@ -839,18 +847,18 @@ LINE20:
     scopy_(&V->aup2_kplusp, bounds, &int1, &workl[tmp_int], &int1);
 
 
-     /*--------------------------------------------------*
-     | Select the wanted Ritz values and their bounds    |
-     | to be used in the convergence test.               |
-     | The wanted part of the spectrum and corresponding |
-     | error bounds are in the last NEV loc. of RITZR,   |
-     | RITZI and BOUNDS respectively. The variables NEV  |
-     | and NP may be updated if the NEV-th wanted Ritz   |
-     | value has a non zero imaginary part. In this case |
-     | NEV is increased by one and NP decreased by one.  |
-     | NOTE: The last two arguments of dngets  are no    |
-     | longer used as of version 2.1.                    |
-     *--------------------------------------------------*/
+
+    //  Select the wanted Ritz values and their bounds
+    //  to be used in the convergence test.
+    //  The wanted part of the spectrum and corresponding
+    //  error bounds are in the last NEV loc. of RITZR,
+    //  RITZI and BOUNDS respectively. The variables NEV
+    //  and NP may be updated if the NEV-th wanted Ritz
+    //  value has a non zero imaginary part. In this case
+    //  NEV is increased by one and NP decreased by one.
+    //  NOTE: The last two arguments of dngets  are no
+    //  longer used as of version 2.1.
+
 
     V->nev = V->aup2_nev0;
     V->np = V->aup2_np0;
@@ -860,21 +868,21 @@ LINE20:
 
     if (V->nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_numcnv + 1;}
 
-     /*------------------*
-     | Convergence test. |
-     *------------------*/
+
+    //  Convergence test.
+
     scopy_(&V->nev, &bounds[V->np], &int1, &workl[2*V->np], &int1);
     snconv(V->nev, &ritzr[V->np], &ritzi[V->np], &workl[2*V->np], V->tol, &V->nconv);
 
-     /*--------------------------------------------------------*
-     | Count the number of unwanted Ritz values that have zero |
-     | Ritz estimates. If any Ritz estimates are equal to zero |
-     | then a leading block of H of order equal to at least    |
-     | the number of Ritz values with zero Ritz estimates has  |
-     | split off. None of these Ritz values may be removed by  |
-     | shifting. Decrease NP the number of shifts to apply. If |
-     | no shifts may be applied, then prepare to exit          |
-     *--------------------------------------------------------*/
+
+    //  Count the number of unwanted Ritz values that have zero
+    //  Ritz estimates. If any Ritz estimates are equal to zero
+    //  then a leading block of H of order equal to at least
+    //  the number of Ritz values with zero Ritz estimates has
+    //  split off. None of these Ritz values may be removed by
+    //  shifting. Decrease NP the number of shifts to apply. If
+    //  no shifts may be applied, then prepare to exit
+
 
     // We are modifying V->np hence the temporary variable.
     int nptemp = V->np;
@@ -891,28 +899,28 @@ LINE20:
 
     if ((V->nconv >= V->aup2_numcnv) || (V->aup2_iter > V->maxiter) || (V->np == 0))
     {
-         /*-----------------------------------------------*
-         | Prepare to exit. Put the converged Ritz values |
-         | and corresponding bounds in RITZ(1:NCONV) and  |
-         | BOUNDS(1:NCONV) respectively. Then sort. Be    |
-         | careful when NCONV > NP                        |
-         *-----------------------------------------------*/
 
-         /*-----------------------------------------*
-         |  Use h( 3,1 ) as storage to communicate  |
-         |  rnorm to _neupd if needed               |
-         *-----------------------------------------*/
+        //  Prepare to exit. Put the converged Ritz values
+        //  and corresponding bounds in RITZ(1:NCONV) and
+        //  BOUNDS(1:NCONV) respectively. Then sort. Be
+        //  careful when NCONV > NP
+
+
+
+        //   Use h( 3,1 ) as storage to communicate
+        //   rnorm to _neupd if needed
+
 
          h[2] = V->aup2_rnorm;
 
-         /*---------------------------------------------*
-         | To be consistent with dngets , we first do a |
-         | pre-processing sort in order to keep complex |
-         | conjugate pairs together.  This is similar   |
-         | to the pre-processing sort used in dngets    |
-         | except that the sort is done in the opposite |
-         | order.                                       |
-         *---------------------------------------------*/
+
+        //  To be consistent with dngets , we first do a
+        //  pre-processing sort in order to keep complex
+        //  conjugate pairs together.  This is similar
+        //  to the pre-processing sort used in dngets
+        //  except that the sort is done in the opposite
+        //  order.
+
 
         // Translation note: Is this all because ARPACK did not have complex sort?
 
@@ -934,10 +942,10 @@ LINE20:
 
         ssortc(temp_which, 1, V->aup2_kplusp, ritzr, ritzi, bounds);
 
-         /*-------------------------------------------------*
-         | Scale the Ritz estimate of each Ritz value       |
-         | by 1 / max(eps23,magnitude of the Ritz value).   |
-         *-------------------------------------------------*/
+
+        //  Scale the Ritz estimate of each Ritz value
+        //  by 1 / max(eps23,magnitude of the Ritz value).
+
 
         for (j = 0; j < V->aup2_numcnv; j++)
         {
@@ -946,19 +954,19 @@ LINE20:
         }
         // 35
 
-         /*---------------------------------------------------*
-         | Sort the Ritz values according to the scaled Ritz  |
-         | estimates.  This will push all the converged ones  |
-         | towards the front of ritzr, ritzi, bounds          |
-         | (in the case when NCONV < NEV.)                    |
-         *---------------------------------------------------*/
+
+        //  Sort the Ritz values according to the scaled Ritz
+        //  estimates.  This will push all the converged ones
+        //  towards the front of ritzr, ritzi, bounds
+        //  (in the case when NCONV < NEV.)
+
         temp_which = which_LR;
         ssortc(temp_which, 1, V->aup2_numcnv, bounds, ritzr, ritzi);
 
-         /*---------------------------------------------*
-         | Scale the Ritz estimate back to its original |
-         | value.                                       |
-         *---------------------------------------------*/
+
+        //  Scale the Ritz estimate back to its original
+        //  value.
+
 
         for (j = 0; j < V->aup2_numcnv; j++)
         {
@@ -967,42 +975,42 @@ LINE20:
         }
         // 40
 
-         /*-----------------------------------------------*
-         | Sort the converged Ritz values again so that   |
-         | the "threshold" value appears at the front of  |
-         | ritzr, ritzi and bound.                        |
-         *-----------------------------------------------*/
+
+        //  Sort the converged Ritz values again so that
+        //  the "threshold" value appears at the front of
+        //  ritzr, ritzi and bound.
+
 
         ssortc(V->which, 1, V->nconv, ritzr, ritzi, bounds);
 
         if ((V->aup2_iter > V->maxiter) && (V->nconv < V->aup2_numcnv))
         {
-             /*-----------------------------------*
-             | Max iterations have been exceeded. |
-             *-----------------------------------*/
+
+            //  Max iterations have been exceeded.
+
             V->info = 1;
         }
 
         if ((V->np == 0) && (V->nconv < V->aup2_numcnv))
         {
-             /*--------------------*
-             | No shifts to apply. |
-             *--------------------*/
+
+            //  No shifts to apply.
+
             V->info = 2;
         }
 
         V->np = V->nconv;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->nev = V->aup2_numcnv;
         V->ido = ido_DONE;
         return;
 
     } else if ((V->nconv < V->aup2_numcnv) && (V->shift)) {
-         /*------------------------------------------------*
-         | Do not have all the requested eigenvalues yet.  |
-         | To prevent possible stagnation, adjust the size |
-         | of NEV.                                         |
-         *------------------------------------------------*/
+
+        //  Do not have all the requested eigenvalues yet.
+        //  To prevent possible stagnation, adjust the size
+        //  of NEV.
+
         int nevbef = V->nev;
         V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
         if ((V->nev == 1) && (V->aup2_kplusp >= 6)) {
@@ -1011,19 +1019,17 @@ LINE20:
             V->nev = 2;
         }
 
-         /* ---------------------------------------------------------------*
-         | SciPy Fix                                                       |
-         | We must keep nev below this value, as otherwise we can get      |
-         | np == 0 (note that dngets below can bump nev by 1). If np == 0, |
-         | the next call to `dnaitr` will write out-of-bounds.             */
+
+        //  SciPy Fix
+        //  We must keep nev below this value, as otherwise we can get
+        //  np == 0 (note that dngets below can bump nev by 1). If np == 0,
+        // the next call to `dnaitr` will write out-of-bounds.
 
         if (V->nev > (V->aup2_kplusp - 2)) {
             V->nev = V->aup2_kplusp - 2;
         }
+        //  SciPy Fix End
 
-         /*
-         | SciPy Fix End                                                    |
-         *-----------------------------------------------------------------*/
 
         V->np = V->aup2_kplusp - V->nev;
 
@@ -1035,50 +1041,50 @@ LINE20:
 
     if (V->shift == 0)
     {
-         /*------------------------------------------------------*
-         | User specified shifts: reverse communication to       |
-         | compute the shifts. They are returned in the first    |
-         | 2*NP locations of WORKL.                              |
-         *------------------------------------------------------*/
+
+        //  User specified shifts: reverse communication to
+        //  compute the shifts. They are returned in the first
+        //  2*NP locations of WORKL.
+
         V->aup2_ushift = 1;
         V->ido = ido_USER_SHIFT;
         return;
     }
 
 LINE50:
-     /*-----------------------------------*
-     | Back from reverse communication;   |
-     | User specified shifts are returned |
-     | in WORKL(1:2*NP)                   |
-     *-----------------------------------*/
+
+    //  Back from reverse communication;
+    //  User specified shifts are returned
+    //  in WORKL(1:2*NP)
+
 
     V->aup2_ushift = 0;
 
     if (V->shift == 0)
     {
-         /*---------------------------------*
-         | Move the NP shifts from WORKL to |
-         | RITZR, RITZI to free up WORKL    |
-         | for non-exact shift case.        |
-         *---------------------------------*/
+
+        //  Move the NP shifts from WORKL to
+        //  RITZR, RITZI to free up WORKL
+        //  for non-exact shift case.
+
         scopy_(&V->np, workl, &int1, ritzr, &int1);
-        scopy_(&V->np, &workl[V->np], &int1, ritzr, &int1);
+        scopy_(&V->np, &workl[V->np], &int1, ritzi, &int1);
     }
 
-     /*--------------------------------------------------------*
-     | Apply the NP implicit shifts by QR bulge chasing.       |
-     | Each shift is applied to the whole upper Hessenberg     |
-     | matrix H.                                               |
-     | The first 2*N locations of WORKD are used as workspace. |
-     *--------------------------------------------------------*/
+
+    //  Apply the NP implicit shifts by QR bulge chasing.
+    //  Each shift is applied to the whole upper Hessenberg
+    //  matrix H.
+    //  The first 2*N locations of WORKD are used as workspace.
+
 
     snapps(V->n, &V->nev, V->np, ritzr, ritzi, v, ldv, h, ldh, resid, q, ldq, workl, workd);
 
-     /*--------------------------------------------*
-     | Compute the B-norm of the updated residual. |
-     | Keep B*RESID in WORKD(1:N) to be used in    |
-     | the first step of the next call to dnaitr . |
-     *--------------------------------------------*/
+
+    //  Compute the B-norm of the updated residual.
+    //  Keep B*RESID in WORKD(1:N) to be used in
+    //  the first step of the next call to dnaitr .
+
 
     V->aup2_cnorm = 1;
     if (V->bmat)
@@ -1087,19 +1093,19 @@ LINE50:
         ipntr[0] = V->n;
         ipntr[1] = 0;
         V->ido = ido_BX;
-         /*---------------------------------*
-         | Exit in order to compute B*RESID |
-         *---------------------------------*/
+
+        //  Exit in order to compute B*RESID
+
         return;
     } else {
         scopy_(&V->n, resid, &int1, workd, &int1);
     }
 
 LINE100:
-     /*---------------------------------*
-     | Back from reverse communication; |
-     | WORKD(1:N) := B*RESID            |
-     *---------------------------------*/
+
+    //  Back from reverse communication;
+    //  WORKD(1:N) := B*RESID
+
 
     if (V->bmat)
     {
@@ -1111,11 +1117,11 @@ LINE100:
 
     goto LINE1000;
 
-     /*--------------------------------------------------------------*
-     |                                                               |
-     |  E N D     O F     M A I N     I T E R A T I O N     L O O P  |
-     |                                                               |
-     *--------------------------------------------------------------*/
+
+    //
+    //   E N D     O F     M A I N     I T E R A T I O N     L O O P
+    //
+
 
 }
 
@@ -1150,13 +1156,13 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     char *UPLO = "A", *SIDE = "R", *HOWMNY = "A", *TRANS = "T";
 
 
-     /*----------------------------------------------------------*
-     | 1. Compute the eigenvalues, the last components of the    |
-     |    corresponding Schur vectors and the full Schur form T  |
-     |    of the current upper Hessenberg matrix H.              |
-     | dlahqr returns the full Schur form of H in WORKL(1:N**2)  |
-     | and the last components of the Schur vectors in BOUNDS.   |
-     *----------------------------------------------------------*/
+
+    //  1. Compute the eigenvalues, the last components of the
+    //     corresponding Schur vectors and the full Schur form T
+    //     of the current upper Hessenberg matrix H.
+    //  dlahqr returns the full Schur form of H in WORKL(1:N**2)
+    //  and the last components of the Schur vectors in BOUNDS.
+
 
     slacpy_(UPLO, &n, &n, h, &ldh, workl, &n);
     for (j = 0; j < n-1; j++)
@@ -1167,38 +1173,48 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     slahqr_(&int1, &int1, &n, &int1, &n, workl, &n, ritzr, ritzi, &int1, &int1, bounds, &int1, ierr);
     if (ierr != 0) { return; }
 
+
+    //  2. Compute the eigenvectors of the full Schur form T and
+    //     apply the last components of the Schur vectors to get
+    //     the last components of the corresponding eigenvectors.
+    //  Remember that if the i-th and (i+1)-st eigenvalues are
+    //  complex conjugate pairs, then the real & imaginary part
+    //  of the eigenvector components are split across adjacent
+    //  columns of Q.
+
+
     strevc_(SIDE, HOWMNY, select, &n, workl, &n, vl, &n, q, &ldq, &n, &n, &workl[n*n], ierr);
     if (*ierr != 0) { return; }
 
-     /*-----------------------------------------------*
-     | Scale the returning eigenvectors so that their |
-     | euclidean norms are all one. LAPACK subroutine |
-     | dtrevc returns each eigenvector normalized so  |
-     | that the element of largest magnitude has      |
-     | magnitude 1; here the magnitude of a complex   |
-     | number (x,y) is taken to be |x| + |y|.         |
-     *-----------------------------------------------*/
+
+    //  Scale the returning eigenvectors so that their
+    //  euclidean norms are all one. LAPACK subroutine
+    //  dtrevc returns each eigenvector normalized so
+    //  that the element of largest magnitude has
+    //  magnitude 1; here the magnitude of a complex
+    //  number (x,y) is taken to be |x| + |y|.
+
 
     iconj = 0;
     for (i = 0; i < n; i++)
     {
-        if (fabsf(ritzi[i]) <= 0.0)
+        if (fabsf(ritzi[i]) == 0.0)
         {
-             /*---------------------*
-             | Real eigenvalue case |
-             *---------------------*/
+
+            //  Real eigenvalue case
+
             temp = snrm2_(&n, &q[ldq*i], &int1);
             tmp_dbl = 1.0 / temp;
             sscal_(&n, &tmp_dbl, &q[ldq*i], &int1);
 
         } else {
-             /*------------------------------------------*
-             | Complex conjugate pair case. Note that    |
-             | since the real and imaginary part of      |
-             | the eigenvector are stored in consecutive |
-             | columns, we further normalize by the      |
-             | square root of two.                       |
-             *------------------------------------------*/
+
+            //  Complex conjugate pair case. Note that
+            //  since the real and imaginary part of
+            //  the eigenvector are stored in consecutive
+            //  columns, we further normalize by the
+            //  square root of two.
+
 
             if (iconj == 0)
             {
@@ -1217,28 +1233,28 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
 
     sgemv_(TRANS, &n, &n, &dbl1, q, &ldq, bounds, &int1, &dbl0, workl, &int1);
 
-     /*---------------------------*
-     | Compute the Ritz estimates |
-     *---------------------------*/
+
+    //  Compute the Ritz estimates
+
 
     iconj = 0;
     for (i = 0; i < n; i++)
     {
-        if (fabsf(ritzi[i]) <= 0.0)
+        if (fabsf(ritzi[i]) == 0.0)
         {
-             /*---------------------*
-             | Real eigenvalue case |
-             *---------------------*/
+
+            //  Real eigenvalue case
+
             bounds[i] = *rnorm * fabsf(workl[i]);
 
         } else {
-             /*------------------------------------------*
-             | Complex conjugate pair case. Note that    |
-             | since the real and imaginary part of      |
-             | the eigenvector are stored in consecutive |
-             | columns, we need to take the magnitude    |
-             | of the last components of the two vectors |
-             *------------------------------------------*/
+
+            //  Complex conjugate pair case. Note that
+            //  since the real and imaginary part of
+            //  the eigenvector are stored in consecutive
+            //  columns, we need to take the magnitude
+            //  of the last components of the two vectors
+
 
             if (iconj == 0)
             {
@@ -1260,7 +1276,7 @@ void
 snaitr(struct ARPACK_arnoldi_update_vars_s *V,  float* resid, float* rnorm,
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
-    int i, infol, ipj, irj, ivj, jj, n, tmp_int;
+    int i = 0, infol, ipj, irj, ivj, jj, n, tmp_int;
     float smlnum = unfl * ( V->n / ulp);
     // float xtemp[2] = { 0.0 };
     const float sq2o2 = sqrtf(2.0) / 2.0;
@@ -1276,9 +1292,9 @@ snaitr(struct ARPACK_arnoldi_update_vars_s *V,  float* resid, float* rnorm,
 
     if (V->ido == ido_FIRST)
     {
-         /*-----------------------------*
-         | Initial call to this routine |
-         *-----------------------------*/
+
+        //  Initial call to this routine
+
         V->info = 0;
         V->aitr_step3 = 0;
         V->aitr_step4 = 0;
@@ -1288,51 +1304,51 @@ snaitr(struct ARPACK_arnoldi_update_vars_s *V,  float* resid, float* rnorm,
         V->aitr_j = V->nev;
     }
 
-     /*------------------------------------------------*
-     | When in reverse communication mode one of:      |
-     | STEP3, STEP4, ORTH1, ORTH2, RSTART              |
-     | will be .true. when ....                        |
-     | STEP3: return from computing OP*v_{j}.          |
-     | STEP4: return from computing B-norm of OP*v_{j} |
-     | ORTH1: return from computing B-norm of r_{j+1}  |
-     | ORTH2: return from computing B-norm of          |
-     |        correction to the residual vector.       |
-     | RSTART: return from OP computations needed by   |
-     |         sgetv0.                                 |
-     *------------------------------------------------*/
+
+    //  When in reverse communication mode one of:
+    //  STEP3, STEP4, ORTH1, ORTH2, RSTART
+    //  will be .true. when ....
+    //  STEP3: return from computing OP*v_{j}.
+    //  STEP4: return from computing B-norm of OP*v_{j}
+    //  ORTH1: return from computing B-norm of r_{j+1}
+    //  ORTH2: return from computing B-norm of
+    //         correction to the residual vector.
+    //  RSTART: return from OP computations needed by
+    //          sgetv0.
+
     if (V->aitr_step3) { goto LINE50; }
     if (V->aitr_step4) { goto LINE60; }
     if (V->aitr_orth1) { goto LINE70; }
     if (V->aitr_orth2) { goto LINE90; }
     if (V->aitr_restart) { goto LINE30; }
 
-     /*----------------------------*
-     | Else this is the first step |
-     *----------------------------*/
 
-     /*-------------------------------------------------------------*
-     |                                                              |
-     |        A R N O L D I     I T E R A T I O N     L O O P       |
-     |                                                              |
-     | Note:  B*r_{j-1} is already in WORKD(1:N)=WORKD(IPJ:IPJ+N-1) |
-     *-------------------------------------------------------------*/
+    //  Else this is the first step
+
+
+
+    //
+    //         A R N O L D I     I T E R A T I O N     L O O P
+    //
+    //  Note:  B*r_{j-1} is already in WORKD(1:N)=WORKD(IPJ:IPJ+N-1)
+
 
 LINE1000:
 
-     /*--------------------------------------------------*
-     | STEP 1: Check if the B norm of j-th residual      |
-     | vector is zero. Equivalent to determining whether |
-     | an exact j-step Arnoldi factorization is present. |
-     *--------------------------------------------------*/
+
+    //  STEP 1: Check if the B norm of j-th residual
+    //  vector is zero. Equivalent to determining whether
+    //  an exact j-step Arnoldi factorization is present.
+
 
     V->aitr_betaj = *rnorm;
     if (*rnorm > 0.0) { goto LINE40; }
 
-     /*--------------------------------------------------*
-     | Invariant subspace found, generate a new starting |
-     | vector which is orthogonal to the current Arnoldi |
-     | basis and continue the iteration.                 |
-     *--------------------------------------------------*/
+
+    //  Invariant subspace found, generate a new starting
+    //  vector which is orthogonal to the current Arnoldi
+    //  basis and continue the iteration.
+
     V->aitr_betaj = 0.0;
     V->getv0_itry = 1;
 
@@ -1343,16 +1359,16 @@ LINE20:
 LINE30:
     sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
-
+    V->aitr_ierr = V->info;
     if (V->aitr_ierr < 0)
     {
         V->getv0_itry += 1;
         if (V->getv0_itry <= 3) { goto LINE20; }
-         /*-----------------------------------------------*
-         | Give up after several restart attempts.        |
-         | Set INFO to the size of the invariant subspace |
-         | which spans OP and exit.                       |
-         *-----------------------------------------------*/
+
+        //  Give up after several restart attempts.
+        //  Set INFO to the size of the invariant subspace
+        //  which spans OP and exit.
+
         V->info = V->aitr_j;
         V->ido = ido_DONE;
         return;
@@ -1360,12 +1376,12 @@ LINE30:
 
 LINE40:
 
-     /*--------------------------------------------------------*
-     | STEP 2:  v_{j} = r_{j-1}/rnorm and p_{j} = p_{j}/rnorm  |
-     | Note that p_{j} = B*r_{j-1}. In order to avoid overflow |
-     | when reciprocating a small RNORM, test against lower    |
-     | machine bound.                                          |
-     *--------------------------------------------------------*/
+
+    //  STEP 2:  v_{j} = r_{j-1}/rnorm and p_{j} = p_{j}/rnorm
+    //  Note that p_{j} = B*r_{j-1}. In order to avoid overflow
+    //  when reciprocating a small RNORM, test against lower
+    //  machine bound.
+
     scopy_(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
@@ -1377,10 +1393,10 @@ LINE40:
         slascl_(MTYPE, &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
-     /*-----------------------------------------------------*
-     | STEP 3:  r_{j} = OP*v_{j}; Note that p_{j} = B*v_{j} |
-     | Note that this is not quite yet r_{j}. See STEP 4    |
-     *-----------------------------------------------------*/
+
+    //  STEP 3:  r_{j} = OP*v_{j}; Note that p_{j} = B*v_{j}
+    //  Note that this is not quite yet r_{j}. See STEP 4
+
     V->aitr_step3 = 1;
     scopy_(&n, &v[ldv*(V->aitr_j)], &int1, &workd[ivj], &int1);
     ipntr[0] = ivj;
@@ -1388,54 +1404,54 @@ LINE40:
     ipntr[2] = ipj;
     V->ido = ido_OPX;
 
-     /*----------------------------------*
-     | Exit in order to compute OP*v_{j} |
-     *----------------------------------*/
+
+    //  Exit in order to compute OP*v_{j}
+
     return;
 
 LINE50:
-     /*---------------------------------*
-     | Back from reverse communication; |
-     | WORKD(IRJ:IRJ+N-1) := OP*v_{j}   |
-     | if step3 = .true.                |
-     *---------------------------------*/
+
+    //  Back from reverse communication;
+    //  WORKD(IRJ:IRJ+N-1) := OP*v_{j}
+    //  if step3 = .true.
+
     V->aitr_step3 = 0;
 
-     /*-----------------------------------------*
-     | Put another copy of OP*v_{j} into RESID. |
-     *-----------------------------------------*/
+
+    //  Put another copy of OP*v_{j} into RESID.
+
     scopy_(&n, &workd[irj], &int1, resid, &int1);
 
-     /*--------------------------------------*
-     | STEP 4:  Finish extending the Arnoldi |
-     |          factorization to length j.   |
-     *--------------------------------------*/
+
+    //  STEP 4:  Finish extending the Arnoldi
+    //           factorization to length j.
+
     if (V->bmat)
     {
         V->aitr_step4 = 1;
         ipntr[0] = irj;
         ipntr[1] = ipj;
         V->ido = ido_BX;
-         /*------------------------------------*
-         | Exit in order to compute B*OP*v_{j} |
-         *------------------------------------*/
+
+        //  Exit in order to compute B*OP*v_{j}
+
         return;
     } else {
         scopy_(&n, resid, &int1, &workd[ipj], &int1);
     }
 
 LINE60:
-     /*---------------------------------*
-     | Back from reverse communication; |
-     | WORKD(IPJ:IPJ+N-1) := B*OP*v_{j} |
-     | if step4 = .true.                |
-     *---------------------------------*/
+
+    //  Back from reverse communication;
+    //  WORKD(IPJ:IPJ+N-1) := B*OP*v_{j}
+    //  if step4 = .true.
+
     V->aitr_step4 = 0;
 
-     /*------------------------------------*
-     | The following is needed for STEP 5. |
-     | Compute the B-norm of OP*v_{j}.     |
-     *------------------------------------*/
+
+    //  The following is needed for STEP 5.
+    //  Compute the B-norm of OP*v_{j}.
+
 
     if (V->bmat)
     {
@@ -1445,27 +1461,27 @@ LINE60:
         V->aitr_wnorm = snrm2_(&n, resid, &int1);
     }
 
-     /*----------------------------------------*
-     | Compute the j-th residual corresponding |
-     | to the j step factorization.            |
-     | Use Classical Gram Schmidt and compute: |
-     | w_{j} <-  V_{j}^T * B * OP * v_{j}      |
-     | r_{j} <-  OP*v_{j} - V_{j} * w_{j}      |
-     *----------------------------------------*/
 
-     /*-----------------------------------------*
-     | Compute the j Fourier coefficients w_{j} |
-     | WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.  |
-     *-----------------------------------------*/
+    //  Compute the j-th residual corresponding
+    //  to the j step factorization.
+    //  Use Classical Gram Schmidt and compute:
+    //  w_{j} <-  V_{j}^T * B * OP * v_{j}
+    //  r_{j} <-  OP*v_{j} - V_{j} * w_{j}
+
+
+
+    //  Compute the j Fourier coefficients w_{j}
+    //  WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.
+
     sgemv_(TRANS, &n, &V->aitr_j, &dbl1, v, &ldv, &workd[ipj], &int1, &dbl0, &h[ldh*(V->aitr_j)], &int1);
 
-     /*-------------------------------------*
-     | Orthogonalize r_{j} against V_{j}.   |
-     | RESID contains OP*v_{j}. See STEP 3. |
-     *-------------------------------------*/
+
+    //  Orthogonalize r_{j} against V_{j}.
+    //  RESID contains OP*v_{j}. See STEP 3.
+
     TRANS = "N";
     tmp_dbl = -1.0;
-    sgemv_(TRANS, &n, &(V->aitr_j), &tmp_dbl, v, &ldv, &h[ldv*(V->aitr_j)], &int1, &dbl1, resid, &int1);
+    sgemv_(TRANS, &n, &(V->aitr_j), &tmp_dbl, v, &ldv, &h[ldh*(V->aitr_j)], &int1, &dbl1, resid, &int1);
     if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = V->aitr_betaj; }
 
     V->aitr_orth1 = 1;
@@ -1475,9 +1491,9 @@ LINE60:
         ipntr[0] = irj;
         ipntr[1] = ipj;
         V->ido = ido_BX;
-         /*---------------------------------*
-         | Exit in order to compute B*r_{j} |
-         *---------------------------------*/
+
+        //  Exit in order to compute B*r_{j}
+
         return;
     } else {
         scopy_(&n, resid, &int1, &workd[ipj], &int1);
@@ -1485,16 +1501,16 @@ LINE60:
 
 LINE70:
 
-     /*--------------------------------------------------*
-     | Back from reverse communication if ORTH1 = .true. |
-     | WORKD(IPJ:IPJ+N-1) := B*r_{j}.                    |
-     *--------------------------------------------------*/
+
+    //  Back from reverse communication if ORTH1 = .true.
+    //  WORKD(IPJ:IPJ+N-1) := B*r_{j}.
+
 
     V->aitr_orth1 = 0;
 
-     /*-----------------------------*
-     | Compute the B-norm of r_{j}. |
-     *-----------------------------*/
+
+    //  Compute the B-norm of r_{j}.
+
     if (V->bmat)
     {
         *rnorm = sdot_(&n, resid, &int1, &workd[ipj], &int1);
@@ -1503,49 +1519,49 @@ LINE70:
         *rnorm = snrm2_(&n, resid, &int1);
     }
 
-     /*----------------------------------------------------------*
-     | STEP 5: Re-orthogonalization / Iterative refinement phase |
-     | Maximum NITER_ITREF tries.                                |
-     |                                                           |
-     |          s      = V_{j}^T * B * r_{j}                     |
-     |          r_{j}  = r_{j} - V_{j}*s                         |
-     |          alphaj = alphaj + s_{j}                          |
-     |                                                           |
-     | The stopping criteria used for iterative refinement is    |
-     | discussed in Parlett's book SEP, page 107 and in Gragg &  |
-     | Reichel ACM TOMS paper; Algorithm 686, Dec. 1990.         |
-     | Determine if we need to correct the residual. The goal is |
-     | to enforce ||v(:,1:j)^T * r_{j}|| .le. eps * || r_{j} ||  |
-     | The following test determines whether the sine of the     |
-     | angle between  OP*x and the computed residual is less     |
-     | than or equal to 0.7071.                                  |
-     *----------------------------------------------------------*/
+
+    //  STEP 5: Re-orthogonalization / Iterative refinement phase
+    //  Maximum NITER_ITREF tries.
+    //
+    //           s      = V_{j}^T * B * r_{j}
+    //           r_{j}  = r_{j} - V_{j}*s
+    //           alphaj = alphaj + s_{j}
+    //
+    //  The stopping criteria used for iterative refinement is
+    //  discussed in Parlett's book SEP, page 107 and in Gragg &
+    //  Reichel ACM TOMS paper; Algorithm 686, Dec. 1990.
+    //  Determine if we need to correct the residual. The goal is
+    //  to enforce ||v(:,1:j)^T * r_{j}|| .le. eps * || r_{j} ||
+    //  The following test determines whether the sine of the
+    //  angle between  OP*x and the computed residual is less
+    //  than or equal to 0.7071.
+
 
     if (*rnorm > sq2o2) { goto LINE100; }
     V->aitr_iter = 0;
 
-     /*--------------------------------------------------*
-     | Enter the Iterative refinement phase. If further  |
-     | refinement is necessary, loop back here. The loop |
-     | variable is ITER. Perform a step of Classical     |
-     | Gram-Schmidt using all the Arnoldi vectors V_{j}  |
-     *--------------------------------------------------*/
+
+    //  Enter the Iterative refinement phase. If further
+    //  refinement is necessary, loop back here. The loop
+    //  variable is ITER. Perform a step of Classical
+    //  Gram-Schmidt using all the Arnoldi vectors V_{j}
+
 LINE80:
 
-     /*---------------------------------------------------*
-     | Compute V_{j}^T * B * r_{j}.                       |
-     | WORKD(IRJ:IRJ+J-1) = v(:,1:J)'*WORKD(IPJ:IPJ+N-1). |
-     *---------------------------------------------------*/
+
+    //  Compute V_{j}^T * B * r_{j}.
+    //  WORKD(IRJ:IRJ+J-1) = v(:,1:J)'*WORKD(IPJ:IPJ+N-1).
+
 
     TRANS = "T";
     sgemv_(TRANS, &n, &V->aitr_j, &dbl1, v, &ldv, &workd[ipj], &int1, &dbl0, &workd[irj], &int1);
 
-     /*--------------------------------------------*
-     | Compute the correction to the residual:     |
-     | r_{j} = r_{j} - V_{j} * WORKD(IRJ:IRJ+J-1). |
-     | The correction to H is v(:,1:J)*H(1:J,1:J)  |
-     | + v(:,1:J)*WORKD(IRJ:IRJ+J-1)*e'_j.         |
-     *--------------------------------------------*/
+
+    //  Compute the correction to the residual:
+    //  r_{j} = r_{j} - V_{j} * WORKD(IRJ:IRJ+J-1).
+    //  The correction to H is v(:,1:J)*H(1:J,1:J)
+    //  + v(:,1:J)*WORKD(IRJ:IRJ+J-1)*e'_j.
+
     TRANS = "N";
     tmp_dbl = -1.0;
     sgemv_(TRANS, &n, &V->aitr_j, &tmp_dbl, v, &ldv, &workd[irj], &int1, &dbl1, resid, &int1);
@@ -1557,23 +1573,23 @@ LINE80:
         ipntr[0] = irj;
         ipntr[1] = ipj;
         V->ido = ido_BX;
-         /*----------------------------------*
-         | Exit in order to compute B*r_{j}. |
-         | r_{j} is the corrected residual.  |
-         *----------------------------------*/
+
+        //  Exit in order to compute B*r_{j}.
+        //  r_{j} is the corrected residual.
+
         return;
     } else {
         scopy_(&n, resid, &int1, &workd[ipj], &int1);
     }
 
 LINE90:
-     /*--------------------------------------------------*
-     | Back from reverse communication if ORTH2 = .true. |
-     *--------------------------------------------------*/
 
-     /*----------------------------------------------------*
-     | Compute the B-norm of the corrected residual r_{j}. |
-     *----------------------------------------------------*/
+    //  Back from reverse communication if ORTH2 = .true.
+
+
+
+    //  Compute the B-norm of the corrected residual r_{j}.
+
     if (V->bmat)
     {
         V->aitr_rnorm1 = sdot_(&n, resid, &int1, &workd[ipj], &int1);
@@ -1582,35 +1598,35 @@ LINE90:
         V->aitr_rnorm1 = snrm2_(&n, resid, &int1);
     }
 
-     /*----------------------------------------*
-     | Determine if we need to perform another |
-     | step of re-orthogonalization.           |
-     *----------------------------------------*/
+
+    //  Determine if we need to perform another
+    //  step of re-orthogonalization.
+
     if (V->aitr_rnorm1 > sq2o2)
     {
-         /*--------------------------------------*
-         | No need for further refinement.       |
-         | The cosine of the angle between the   |
-         | corrected residual vector and the old |
-         | residual vector is greater than 0.717 |
-         | In other words the corrected residual |
-         | and the old residual vector share an  |
-         | angle of less than arcCOS(0.717)      |
-         *--------------------------------------*/
+
+        //  No need for further refinement.
+        //  The cosine of the angle between the
+        //  corrected residual vector and the old
+        //  residual vector is greater than 0.717
+        //  In other words the corrected residual
+        //  and the old residual vector share an
+        //  angle of less than arcCOS(0.717)
+
         *rnorm = V->aitr_rnorm1;
 
     } else {
-         /*------------------------------------------*
-         | Another step of iterative refinement step |
-         | is required.                              |
-         *------------------------------------------*/
+
+        //  Another step of iterative refinement step
+        //  is required.
+
         *rnorm = V->aitr_rnorm1;
         V->aitr_iter += 1;
         if (V->aitr_iter < 2) { goto LINE80; }
 
-         /*------------------------------------------------*
-         | Otherwise RESID is numerically in the span of V |
-         *------------------------------------------------*/
+
+        //  Otherwise RESID is numerically in the span of V
+
         for (jj = 0; jj < n; jj++)
         {
             resid[jj] = 0.0;
@@ -1623,9 +1639,9 @@ LINE100:
     V->aitr_restart = 0;
     V->aitr_orth2 = 0;
 
-     /*-----------------------------------*
-     | STEP 6: Update  j = j+1;  Continue |
-     *-----------------------------------*/
+
+    //  STEP 6: Update  j = j+1;  Continue
+
     V->aitr_j += 1;
     if (V->aitr_j >= V->nev + V->np)
     {
@@ -1633,11 +1649,11 @@ LINE100:
         int k = (V->nev > 1 ? V->nev : 1);
         for (i = k - 1; i < k - 2 + V->np; i++)
         {
-             /*-------------------------------------------*
-             | Check for splitting and deflation.         |
-             | Use a standard test as in the QR algorithm |
-             | REFERENCE: LAPACK subroutine dlahqr        |
-             *-------------------------------------------*/
+
+            //  Check for splitting and deflation.
+            //  Use a standard test as in the QR algorithm
+            //  REFERENCE: LAPACK subroutine dlahqr
+
             tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
             if (tst1 == 0.0)
             {
@@ -1671,10 +1687,10 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
     float u[3] = { 0.0 };
     char *NORM = "1", *SIDE = "L", *TRANS = "N";
 
-     /*-------------------------------------------*
-     | Initialize Q to the identity to accumulate |
-     | the rotations and reflections              |
-     *-------------------------------------------*/
+
+    //  Initialize Q to the identity to accumulate
+    //  the rotations and reflections
+
     for (i = 0; i < kplusp; i++)
     {
         for (j = 0; j < kplusp; j++)
@@ -1684,16 +1700,16 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
         }
     }
 
-     /*---------------------------------------------*
-     | Quick return if there are no shifts to apply |
-     *---------------------------------------------*/
+
+    //  Quick return if there are no shifts to apply
+
     if (np == 0) { return; }
 
-     /*---------------------------------------------*
-     | Chase the bulge with the application of each |
-     | implicit shift. Each shift is applied to the |
-     | whole matrix including each block.           |
-     *---------------------------------------------*/
+
+    //  Chase the bulge with the application of each
+    //  implicit shift. Each shift is applied to the
+    //  whole matrix including each block.
+
 
     cconj = 0;
     for (jj = 0; jj < np; jj++)
@@ -1701,34 +1717,34 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
         sigmar = shiftr[jj];
         sigmai = shifti[jj];
 
-         /*------------------------------------------------*
-         | The following set of conditionals is necessary  |
-         | in order that complex conjugate pairs of shifts |
-         | are applied together or not at all.             |
-         *------------------------------------------------*/
+
+        //  The following set of conditionals is necessary
+        //  in order that complex conjugate pairs of shifts
+        //  are applied together or not at all.
+
 
         if (cconj)
         {
-             /*----------------------------------------*
-             | cconj = .true. means the previous shift |
-             | had non-zero imaginary part.            |
-             *----------------------------------------*/
+
+            //  cconj = .true. means the previous shift
+            //  had non-zero imaginary part.
+
             cconj = 0;
             continue;
 
         } else if ((jj < np-1) && fabsf(sigmai) > 0.0) {
-             /*-----------------------------------*
-             | Start of a complex conjugate pair. |
-             *-----------------------------------*/
+
+            //  Start of a complex conjugate pair.
+
             cconj = 1;
 
         } else if ((jj == np-1) && fabsf(sigmai) > 0.0) {
-             /*---------------------------------------------*
-             | The last shift has a nonzero imaginary part. |
-             | Don't apply it; thus the order of the        |
-             | compressed H is order KEV+1 since only np-1  |
-             | were applied.                                |
-             *---------------------------------------------*/
+
+            //  The last shift has a nonzero imaginary part.
+            //  Don't apply it; thus the order of the
+            //  compressed H is order KEV+1 since only np-1
+            //  were applied.
+
             kev += 1;
             continue;
         }
@@ -1736,24 +1752,24 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
 LINE20:
 
-         /*-------------------------------------------------*
-         | if sigmai = 0 then                               |
-         |    Apply the jj-th shift ...                     |
-         | else                                             |
-         |    Apply the jj-th and (jj+1)-th together ...    |
-         |    (Note that jj < np at this point in the code) |
-         | end                                              |
-         | to the current block of H. The next do loop      |
-         | determines the current block ;                   |
-         *-------------------------------------------------*/
+
+        //  if sigmai = 0 then
+        //     Apply the jj-th shift ...
+        //  else
+        //     Apply the jj-th and (jj+1)-th together ...
+        //     (Note that jj < np at this point in the code)
+        //  end
+        //  to the current block of H. The next do loop
+        //  determines the current block ;
+
 
         for (i = istart; i < kplusp - 1; i++)
         {
-             /*---------------------------------------*
-             | Check for splitting and deflation. Use |
-             | a standard test as in the QR algorithm |
-             | REFERENCE: LAPACK subroutine dlahqr    |
-             *---------------------------------------*/
+
+            //  Check for splitting and deflation. Use
+            //  a standard test as in the QR algorithm
+            //  REFERENCE: LAPACK subroutine dlahqr
+
 
             tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
             if (tst1 == 0.0)
@@ -1768,20 +1784,20 @@ LINE20:
                 h[i+1 + ldh*i] = 0.0;
                 break;
             }
+            // No break adjustment to iend
+            if (i == kplusp - 2) { iend = kplusp - 1; }
         }
         // 30
-        // Adjust iend if no break
-        if (i == kplusp - 1) { iend = kplusp - 1; }
         // 40
 
-         /*-----------------------------------------------*
-         | No reason to apply a shift to block of order 1 |
-         *-----------------------------------------------*/
+
+        //  No reason to apply a shift to block of order 1
+
         // OR
-         /*-----------------------------------------------------*
-         | If istart + 1 = iend then no reason to apply a       |
-         | complex conjugate pair of shifts on a 2 by 2 matrix. |
-         *-----------------------------------------------------*/
+
+        //  If istart + 1 = iend then no reason to apply a
+        //  complex conjugate pair of shifts on a 2 by 2 matrix.
+
 
         if ((istart == iend) || ((istart + 1 == iend) && fabsf(sigmai) > 0.0))
         {
@@ -1796,25 +1812,25 @@ LINE20:
 
         if (fabsf(sigmai) <= 0.0)
         {
-             /*--------------------------------------------*
-             | Real-valued shift ==> apply single shift QR |
-             *--------------------------------------------*/
+
+            //  Real-valued shift ==> apply single shift QR
+
             f = h11 - sigmar;
             g = h21;
 
             for (i = istart; i <= iend-1; i++)
             {
-                 /*-----------------------------------------------------*
-                 | Construct the plane rotation G to zero out the bulge |
-                 *-----------------------------------------------------*/
+
+                //  Construct the plane rotation G to zero out the bulge
+
                 slartg_(&f, &g, &c, &s, &r);
                 if (i > istart)
                 {
-                     /*------------------------------------------*
-                     | The following ensures that h(1:iend-1,1), |
-                     | the first iend-2 off diagonal of elements |
-                     | H, remain non negative.                   |
-                     *------------------------------------------*/
+
+                    //  The following ensures that h(1:iend-1,1),
+                    //  the first iend-2 off diagonal of elements
+                    //  H, remain non negative.
+
 
                     if (r < 0.0)
                     {
@@ -1826,9 +1842,9 @@ LINE20:
                     h[i + 1 + ldh*(i-1)] = 0.0;
                 }
 
-                 /*--------------------------------------------*
-                 | Apply rotation to the left of H;  H <- G'*H |
-                 *--------------------------------------------*/
+
+                //  Apply rotation to the left of H;  H <- G'*H
+
 
                 for (j = i; j < kplusp; j++)
                 {
@@ -1838,9 +1854,9 @@ LINE20:
                 }
                 // 50
 
-                 /*--------------------------------------------*
-                 | Apply rotation to the right of H;  H <- H*G |
-                 *--------------------------------------------*/
+
+                //  Apply rotation to the right of H;  H <- H*G
+
                 for (j = 0; j < (i+2 > iend ? iend : i+2); j++)
                 {
                     t                  =  c*h[j + ldh*i] + s*h[j + ldh*(i + 1)];
@@ -1849,9 +1865,9 @@ LINE20:
                 }
                 // 60
 
-                 /*---------------------------------------------------*
-                 | Accumulate the rotation in the matrix Q;  Q <- Q*G |
-                 *---------------------------------------------------*/
+
+                //  Accumulate the rotation in the matrix Q;  Q <- Q*G
+
                 for (j = 0; j < (i+jj+1 > kplusp ? kplusp : i+jj+1); j++)
                 {
                     t                  =  c*q[j + ldq*i] + s*q[j + ldq*(i + 1)];
@@ -1872,22 +1888,22 @@ LINE20:
             }
             //80
 
-             /*----------------------------------*
-             | Finished applying the real shift. |
-             *----------------------------------*/
+
+            //  Finished applying the real shift.
+
         } else {
 
-             /*---------------------------------------------------*
-             | Complex conjugate shifts ==> apply double shift QR |
-             *---------------------------------------------------*/
+
+            //  Complex conjugate shifts ==> apply double shift QR
+
 
             h12 = h[istart + ldh*(istart + 1)];
             h22 = h[istart + 1 + ldh*(istart + 1)];
             h32 = h[istart + 2 + ldh*(istart + 1)];
 
-             /*--------------------------------------------------------*
-             | Compute 1st column of (H - shift*I)*(H - conj(shift)*I) |
-             *--------------------------------------------------------*/
+
+            //  Compute 1st column of (H - shift*I)*(H - conj(shift)*I)
+
 
             s = 2.0 * sigmar;
             t = hypotf(sigmar, sigmai);
@@ -1898,10 +1914,10 @@ LINE20:
             for (i = istart; i < iend; i++)
             {
                 nr = (iend-i+1 > 3 ? 3 : iend-i+1);  // CHECK THIS CONDITION
-                 /*----------------------------------------------------*
-                 | Construct Householder reflector G to zero out u(1). |
-                 | G is of the form I - tau*( 1 u )' * ( 1 u' ).       |
-                 *----------------------------------------------------*/
+
+                //  Construct Householder reflector G to zero out u(1).
+                //  G is of the form I - tau*( 1 u )' * ( 1 u' ).
+
 
                 slarfg_(&nr, &u[0], &u[1], &int1, &tau);
 
@@ -1913,27 +1929,27 @@ LINE20:
                 }
                 u[0] = 1.0;
 
-                 /*-------------------------------------*
-                 | Apply the reflector to the left of H |
-                 *-------------------------------------*/
+
+                //  Apply the reflector to the left of H
+
                 tmp_int = kplusp - i;
                 slarf_(SIDE, &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
 
-                 /*--------------------------------------*
-                 | Apply the reflector to the right of H |
-                 *--------------------------------------*/
+
+                //  Apply the reflector to the right of H
+
                 ir = (i + 3 > iend ? iend : i + 3);
                 SIDE = "R";
                 slarf_(SIDE, &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
 
-                 /*----------------------------------------------------*
-                 | Accumulate the reflector in the matrix Q;  Q <- Q*G |
-                 *----------------------------------------------------*/
+
+                //  Accumulate the reflector in the matrix Q;  Q <- Q*G
+
                 slarf_(SIDE, &kplusp, &nr, u, &int1, &tau, &q[ldq*i], &ldq, workl);
 
-                 /*---------------------------*
-                 | Prepare for next reflector |
-                 *---------------------------*/
+
+                //  Prepare for next reflector
+
                 if (i < iend - 1)
                 {
                     u[0] = h[i+1 + ldh*i];
@@ -1945,18 +1961,18 @@ LINE20:
         }
         // 100
 
-         /*--------------------------------------------------------*
-         | Apply the same shift to the next block if there is any. |
-         *--------------------------------------------------------*/
+
+        //  Apply the same shift to the next block if there is any.
+
         istart = iend + 1;
         if (iend < kplusp) { goto LINE20; }
     }
     // 110
 
-     /*-------------------------------------------------*
-     | Perform a similarity transformation that makes   |
-     | sure that H will have non negative sub diagonals |
-     *-------------------------------------------------*/
+
+    //  Perform a similarity transformation that makes
+    //  sure that H will have non negative sub diagonals
+
     for (j = 0; j < *kev; j++)
     {
         if (h[j+1 + ldh*j] < 0.0)
@@ -1974,11 +1990,11 @@ LINE20:
 
     for (i = 0; i < *kev; i++)
     {
-         /*-------------------------------------------*
-         | Final check for splitting and deflation.   |
-         | Use a standard test as in the QR algorithm |
-         | REFERENCE: LAPACK subroutine dlahqr        |
-         *-------------------------------------------*/
+
+        //  Final check for splitting and deflation.
+        //  Use a standard test as in the QR algorithm
+        //  REFERENCE: LAPACK subroutine dlahqr
+
         tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
         if (tst1 == 0.0)
         {
@@ -1991,22 +2007,22 @@ LINE20:
     }
     // 130
 
-     /*------------------------------------------------*
-     | Compute the (kev+1)-st column of (V*Q) and      |
-     | temporarily store the result in WORKD(N+1:2*N). |
-     | This is needed in the residual update since we  |
-     | cannot GUARANTEE that the corresponding entry   |
-     | of H would be zero as in exact arithmetic.      |
-     *------------------------------------------------*/
+
+    //  Compute the (kev+1)-st column of (V*Q) and
+    //  temporarily store the result in WORKD(N+1:2*N).
+    //  This is needed in the residual update since we
+    //  cannot GUARANTEE that the corresponding entry
+    //  of H would be zero as in exact arithmetic.
+
     if (h[*kev + ldh*(*kev-1)] > 0.0)
     {
         sgemv_(TRANS, &n, &kplusp, &dbl1, v, &ldv, &q[(*kev)*ldq], &int1, &dbl0, &workd[n], &int1);
     }
 
-     /*---------------------------------------------------------*
-     | Compute column 1 to kev of (V*Q) in backward order       |
-     | taking advantage of the upper Hessenberg structure of Q. |
-     *---------------------------------------------------------*/
+
+    //  Compute column 1 to kev of (V*Q) in backward order
+    //  taking advantage of the upper Hessenberg structure of Q.
+
     for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
@@ -2014,28 +2030,28 @@ LINE20:
         scopy_(&n, workd, &int1, &v[(kplusp-i)*ldv], &int1);
     }
 
-     /*------------------------------------------------*
-     |  Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev). |
-     *------------------------------------------------*/
+
+    //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
+
     for (i = 0; i < *kev; i++)
     {
         scopy_(&n, &v[(kplusp-*kev+i)*ldv], &int1, &v[i*ldv], &int1);
     }
 
-     /*-------------------------------------------------------------*
-     | Copy the (kev+1)-st column of (V*Q) in the appropriate place |
-     *-------------------------------------------------------------*/
+
+    //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
+
     if (h[*kev + ldh*(*kev-1)] > 0.0){
         scopy_(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
     }
 
-     /*------------------------------------*
-     | Update the residual vector:         |
-     |    r <- sigmak*r + betak*v(:,kev+1) |
-     | where                               |
-     |    sigmak = (e_{kplusp}'*Q)*e_{kev} |
-     |    betak = e_{kev+1}'*H*e_{kev}     |
-     *------------------------------------*/
+
+    //  Update the residual vector:
+    //     r <- sigmak*r + betak*v(:,kev+1)
+    //  where
+    //     sigmak = (e_{kplusp}'*Q)*e_{kev}
+    //     betak = e_{kev+1}'*H*e_{kev}
+
     sscal_(&n, &q[kplusp-1 + ldq*(*kev-i)], resid, &int1);
 
     if (h[*kev + ldh*(*kev-1)] > 0.0)
@@ -2051,15 +2067,15 @@ void
 sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
        float* ritzr, float* ritzi, float* bounds)
 {
-     /*---------------------------------------------------*
-     | LM, SM, LR, SR, LI, SI case.                       |
-     | Sort the eigenvalues of H into the desired order   |
-     | and apply the resulting order to BOUNDS.           |
-     | The eigenvalues are sorted so that the wanted part |
-     | are always in the last KEV locations.              |
-     | We first do a pre-processing sort in order to keep |
-     | complex conjugate pairs together                   |
-     *---------------------------------------------------*/
+
+    //  LM, SM, LR, SR, LI, SI case.
+    //  Sort the eigenvalues of H into the desired order
+    //  and apply the resulting order to BOUNDS.
+    //  The eigenvalues are sorted so that the wanted part
+    //  are always in the last KEV locations.
+    //  We first do a pre-processing sort in order to keep
+    //  complex conjugate pairs together
+
 
     switch (V->which)
     {
@@ -2087,29 +2103,29 @@ sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
     }
     ssortc(V->which, 1, *kev + *np, ritzr, ritzi, bounds);
 
-     /*------------------------------------------------------*
-     | Increase KEV by one if the ( ritzr(np),ritzi(np) )    |
-     | = ( ritzr(np+1),-ritzi(np+1) ) and ritz(np) .ne. zero |
-     | Accordingly decrease NP by one. In other words keep   |
-     | complex conjugate pairs together.                     |
-     *------------------------------------------------------*/
 
-    if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] -ritzr[*np-1] == 0.0))
+    //  Increase KEV by one if the ( ritzr(np),ritzi(np) )
+    //  = ( ritzr(np+1),-ritzi(np+1) ) and ritz(np) .ne. zero
+    //  Accordingly decrease NP by one. In other words keep
+    //  complex conjugate pairs together.
+
+
+    if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] + ritzi[*np-1] == 0.0))
     {
-        np -= 1;
+        *np -= 1;
         *kev += 1;
     }
 
     if (V->shift == 1)
     {
-         /*------------------------------------------------------*
-         | Sort the unwanted Ritz values used as shifts so that  |
-         | the ones with largest Ritz estimates are first        |
-         | This will tend to minimize the effects of the         |
-         | forward instability of the iteration when they shifts |
-         | are applied in subroutine dnapps.                     |
-         | Be careful and use 'SR' since we want to sort BOUNDS! |
-         *------------------------------------------------------*/
+
+        //  Sort the unwanted Ritz values used as shifts so that
+        //  the ones with largest Ritz estimates are first
+        //  This will tend to minimize the effects of the
+        //  forward instability of the iteration when they shifts
+        //  are applied in subroutine dnapps.
+        //  Be careful and use 'SR' since we want to sort BOUNDS!
+
         ssortc(which_SR, 1, *np, bounds, ritzr, ritzi);
     }
 
@@ -2122,7 +2138,6 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
        float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd)
 {
     int jj, int1 = 1;
-    char *TRANS = "T";
     const float sq2o2 = sqrtf(2.0) / 2.0;
     float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;;
 
@@ -2133,10 +2148,10 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
         V->getv0_first = 0;
         V->getv0_orth = 0;
 
-         /*----------------------------------------------------*
-         | Possibly generate a random starting vector in RESID |
-         | Skip if this the return of ido_RANDOM.              |
-         *----------------------------------------------------*/
+
+        //  Possibly generate a random starting vector in RESID
+        //  Skip if this the return of ido_RANDOM.
+
         if (!(initv) || (V->ido != ido_RANDOM))
         {
             // Request a random vector from the user into resid
@@ -2144,17 +2159,17 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
             return;
         }
 
-         /*---------------------------------------------------------*
-         | Force the starting vector into the range of OP to handle |
-         | the generalized problem when B is possibly (singular).   |
-         *---------------------------------------------------------*/
+
+        //  Force the starting vector into the range of OP to handle
+        //  the generalized problem when B is possibly (singular).
+
 
         if (V->getv0_itry == 1)
         {
             ipntr[0] = 0;
             ipntr[1] = n;
             scopy_(&n, resid, &int1, workd, &int1);
-            V->ido = -1;
+            V->ido = ido_OPX;
             return;
         } else if ((V->getv0_itry > 1) && (V->bmat == 1))
         {
@@ -2162,22 +2177,22 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
         }
     }
 
-     /*----------------------------------------*
-     | Back from computing OP*(initial-vector) |
-     *----------------------------------------*/
+
+    //  Back from computing OP*(initial-vector)
+
 
     if (V->getv0_first) { goto LINE20; }
 
-     /*-----------------------------------------------*
-     | Back from computing OP*(orthogonalized-vector) |
-     *-----------------------------------------------*/
+
+    //  Back from computing OP*(orthogonalized-vector)
+
 
     if (V->getv0_orth) { goto LINE40; }
 
-     /*-----------------------------------------------------*
-     | Starting vector is now in the range of OP; r = OP*r; |
-     | Compute B-norm of starting vector.                   |
-     *-----------------------------------------------------*/
+
+    //  Starting vector is now in the range of OP; r = OP*r;
+    //  Compute B-norm of starting vector.
+
 
     V->getv0_first = 1;
     if (V->getv0_itry == 1)
@@ -2204,9 +2219,7 @@ LINE20:
     }
     *rnorm = V->getv0_rnorm0;
 
-     /*--------------------------------------------%
-     | Exit if this is the very first Arnoldi step |
-     *--------------------------------------------*/
+    //  Exit if this is the very first Arnoldi step
 
     if (j == 0)
     {
@@ -2214,28 +2227,25 @@ LINE20:
         return;
     }
 
-     /*--------------------------------------------------------------*
-     | Otherwise need to B-orthogonalize the starting vector against |
-     | the current Arnoldi basis using Gram-Schmidt with iter. ref.  |
-     | This is the case where an invariant subspace is encountered   |
-     | in the middle of the Arnoldi factorization.                   |
-     |                                                               |
-     |       s = V^{T}*B*r;   r = r - V*s;                           |
-     |                                                               |
-     | Stopping criteria used for iter. ref. is discussed in         |
-     | Parlett's book, page 107 and in Gragg & Reichel TOMS paper.   |
-     *--------------------------------------------------------------*/
+    //  Otherwise need to B-orthogonalize the starting vector against
+    //  the current Arnoldi basis using Gram-Schmidt with iter. ref.
+    //  This is the case where an invariant subspace is encountered
+    //  in the middle of the Arnoldi factorization.
+    //
+    //        s = V^{T}*B*r;   r = r - V*s;
+    //
+    //  Stopping criteria used for iter. ref. is discussed in
+    //  Parlett's book, page 107 and in Gragg & Reichel TOMS paper.
 
     V->getv0_orth = 1;
 
 LINE30:
-    sgemv_(TRANS, &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
-    TRANS = "N";
-    sgemv_(TRANS, &n, &j, &dblm1, v, &ldv, workd, &int1, &dbl1, &workd[n], &int1);
+    sgemv_("T", &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
+    sgemv_("N", &n, &j, &dblm1, v, &ldv, &workd[n], &int1, &dbl1, resid, &int1);
 
-     /*---------------------------------------------------------*
-     | Compute the B-norm of the orthogonalized starting vector |
-     *---------------------------------------------------------*/
+
+    //  Compute the B-norm of the orthogonalized starting vector
+
 
     if (V->bmat)
     {
@@ -2257,9 +2267,9 @@ LINE40:
         *rnorm = snrm2_(&n, resid, &int1);
     }
 
-     /*-------------------------------------*
-     | Check for further orthogonalization. |
-     *-------------------------------------*/
+
+    //  Check for further orthogonalization.
+
 
     if (*rnorm > sq2o2*V->getv0_rnorm0)
     {
@@ -2270,15 +2280,15 @@ LINE40:
     V->getv0_iter += 1;
     if (V->getv0_iter < 5)
     {
-         /*----------------------------------*
-         | Perform iterative refinement step |
-         *----------------------------------*/
+
+        //  Perform iterative refinement step
+
         V->getv0_rnorm0 = *rnorm;
         goto LINE30;
     } else {
-         /*-----------------------------------*
-         | Iterative refinement step "failed" |
-         *-----------------------------------*/
+
+        //  Iterative refinement step "failed"
+
 
         for (jj = 0; jj < n; jj++) { resid[jj] = 0.0; }
         *rnorm = 0.0;
