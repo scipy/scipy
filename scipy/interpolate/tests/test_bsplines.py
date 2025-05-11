@@ -2167,7 +2167,7 @@ class TestSmoothingSpline:
         # using an iterative algorithm for minimizing the GCV criteria. These
         # algorithms may vary, so the tolerance should be rather low.
         # Not checking dtypes as gcvspl.npz stores little endian arrays, which
-        # result in conflicting dtypes on big endian systems. 
+        # result in conflicting dtypes on big endian systems.
         xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
     def test_non_regularized_case(self):
