@@ -3533,6 +3533,18 @@ class TestMakeSplrep:
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
 
+        x = np.asarray([20.00, 153.81, 175.57, 202.47, 237.11,
+             253.61, 258.56, 273.40, 284.54, 293.61,
+             298.56, 301.86, 305.57, 307.22, 308.45,
+             310.10, 310.10, 310.50], dtype=np.float64)
+        y = np.asarray([53.00, 49.50, 48.60, 46.80, 43.20,
+             40.32, 39.60, 36.00, 32.40, 28.80,
+             25.20, 21.60, 18.00, 14.40, 10.80,
+             7.20, 3.60, 0.0], dtype=np.float64)
+        w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
+        with assert_raises(RuntimeError):
+            make_splrep(x, y, w=w, k=2, s=12)
+
     def test_shape(self):
         # make sure coefficients have the right shape (not extra dims)
         n, k = 10, 3
