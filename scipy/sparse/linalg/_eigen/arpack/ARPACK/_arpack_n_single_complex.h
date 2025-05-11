@@ -6,7 +6,6 @@
 // BLAS Routines used
 void caxpy_(int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* y, int* incy);
 void ccopy_(int* n, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* y, int* incy);
-ARPACK_CPLXF_TYPE cdotc_(int* n, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* y, int* incy);
 void cgeru_(int* m, int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* y, int* incy, ARPACK_CPLXF_TYPE* a, int* lda);
 float scnrm2_(int* n, ARPACK_CPLXF_TYPE* x, int* incx);
 void cscal_(int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* x, int* incx);
