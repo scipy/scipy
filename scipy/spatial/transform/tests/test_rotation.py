@@ -1841,7 +1841,7 @@ def test_repr_rotation_sequence(xp):
 Rotation.from_matrix(array([[[ 0.,  0.,  1.],
                              [ 0.,  1.,  0.],
                              [-1.,  0.,  0.]],
-
+                     
                             [[ 0., -1.,  0.],
                              [ 1.,  0.,  0.],
                              [ 0.,  0.,  1.]]]))"""
