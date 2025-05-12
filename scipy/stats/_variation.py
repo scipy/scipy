@@ -101,7 +101,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     # `nan_policy` and `keepdims` are handled by `_axis_nan_policy`
     if axis is None:
         a = xp.reshape(a, (-1,))
-        axis = -1
+        axis = 0
 
     n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype)
 

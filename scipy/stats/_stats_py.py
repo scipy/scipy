@@ -4377,7 +4377,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+@xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
+                 cpu_only=True, exceptions=['cupy'],
                  static_argnames=("alternative", "method", "axis"),
                  jax_jit=False, allow_dask_compute=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
