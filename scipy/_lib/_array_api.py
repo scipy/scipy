@@ -260,7 +260,7 @@ def default_xp(xp: ModuleType) -> Generator[None, None, None]:
         _default_xp_ctxvar.reset(token)
 
 
-def eager_warns(warning_type, match=None, *, xp):
+def eager_warns(warning_type, *, match=None, xp):
     """pytest.warns context manager if arrays of specified namespace are always eager.
 
     Otherwise, context manager that *ignores* specified warning.
