@@ -11,9 +11,9 @@
 
    see qhull_ra.h for internal functions
 
-   Copyright (c) 1993-2019 The Geometry Center.
-   $Id: //main/2019/qhull/src/libqhull_r/global_r.c#12 $$Change: 2712 $
-   $DateTime: 2019/06/28 12:57:00 $$Author: bbarber $
+   Copyright (c) 1993-2020 The Geometry Center.
+   $Id: //main/2019/qhull/src/libqhull_r/global_r.c#19 $$Change: 3037 $
+   $DateTime: 2020/09/03 17:28:32 $$Author: bbarber $
  */
 
 #include "qhull_ra.h"
@@ -33,14 +33,14 @@
     change date:    Changes.txt, Announce.txt, index.htm, README.txt,
                     qhull-news.html, Eudora signatures, CMakeLists.txt
     change version: README.txt, qh-get.htm, File_id.diz, Makefile.txt, CMakeLists.txt
-    check that CmakeLists @version is the same as qh_version2
+    check that CMakeLists.txt @version is the same as qh_version2
     change year:    Copying.txt
     check download size
     recompile user_eg_r.c, rbox_r.c, libqhull_r.c, qconvex_r.c, qdelaun_r.c qvoronoi_r.c, qhalf_r.c, testqset_r.c
 */
 
-const char qh_version[]= "2019.1.r 2019/06/21";
-const char qh_version2[]= "qhull_r 7.3.2 (2019.1.r 2019/06/21)";
+const char qh_version[]= "2020.2.r 2020/08/31";
+const char qh_version2[]= "qhull_r 8.0.2 (2020.2.r 2020/08/31)";
 
 /*-<a                             href="qh-globa_r.htm#TOC"
   >-------------------------------</a><a name="appendprint">-</a>
@@ -1517,7 +1517,7 @@ void qh_initflags(qhT *qh, char *command) {
     lastwarning= command;
   }
   if (lastwarning && !qh->ALLOWwarning) {
-    qh_fprintf(qh, qh->ferr, 6035, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n", 
+    qh_fprintf(qh, qh->ferr, 6035, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n",
           command, (int)(lastwarning-command));
     qh_errexit(qh, qh_ERRinput, NULL, NULL);
   }
@@ -1626,7 +1626,7 @@ void qh_initqhull_globals(qhT *qh, coordT *points, int numpoints, int dim, boolT
 #endif
   }
   if (qh->TRIangulate && qh->JOGGLEmax < REALmax/2 && !qh->PREmerge && !qh->POSTmerge && qh->PRINTprecision)
-      qh_fprintf(qh, qh->ferr, 7038, "qhull option warning: joggle ('QJ') produces simplicial output (i.e., triangles in 2-D).  Unless merging is requested, option 'Qt' has no effect\n");
+    qh_fprintf(qh, qh->ferr, 7038, "qhull option warning: joggle ('QJ') produces simplicial output (i.e., triangles in 2-D).  Unless merging is requested, option 'Qt' has no effect\n");
   if (qh->JOGGLEmax < REALmax/2 && qh->DELAUNAY && !qh->SCALEinput && !qh->SCALElast) {
     qh->SCALElast= True;
     qh_option(qh, "Qbbound-last-qj", NULL, NULL);
@@ -2099,14 +2099,14 @@ void qh_initthresholds(qhT *qh, char *command) {
           if (!isdigit(*s)) {
             qh_fprintf(qh, qh->ferr, 7047, "qhull option warning: no dimension given for Qhull option 'Q%c'\n",
                     key);
-            lastwarning= lastoption;            
+            lastwarning= lastoption;
             continue;
           }
           idx= qh_strtol(s, &s);
           if (idx >= maxdim) {
             qh_fprintf(qh, qh->ferr, 7048, "qhull option warning: dimension %d for Qhull option 'Q%c' is >= %d.  Ignored\n",
                 idx, key, maxdim);
-            lastwarning= lastoption;            
+            lastwarning= lastoption;
             continue;
           }
           if (*s == ':') {
@@ -2141,7 +2141,7 @@ void qh_initthresholds(qhT *qh, char *command) {
       qh->GOODthreshold= True;
   }
   if (lastwarning && !qh->ALLOWwarning) {
-    qh_fprintf(qh, qh->ferr, 6036, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n", 
+    qh_fprintf(qh, qh->ferr, 6036, "qhull option error: see previous warnings, use 'Qw' to override: '%s' (last offset %d)\n",
       command, (int)(lastwarning-command));
     qh_errexit(qh, qh_ERRinput, NULL, NULL);
   }
@@ -2205,7 +2205,7 @@ void qh_lib_check(int qhullLibraryType, int qhTsize, int vertexTsize, int ridgeT
       last_errcode= 6254;
     }
     if (last_errcode) {
-      qh_fprintf_stderr(6259, "qhull internal error (qh_lib_check): Cannot continue due to QH%d.  '%s' is not reentrant (e.g., qhull.so) or out-of-date.  Exit with %d\n", 
+      qh_fprintf_stderr(6259, "qhull internal error (qh_lib_check): Cannot continue due to QH%d.  '%s' is not reentrant (e.g., qhull.so) or out-of-date.  Exit with %d\n",
             last_errcode, qh_version2, last_errcode - 6200);
       qh_exit(last_errcode - 6200);  /* can not use qh_errexit(), must be less than 255 */
     }

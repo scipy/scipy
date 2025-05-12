@@ -103,22 +103,20 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         axis = 0
 
     n = a.shape[axis]
-    NaN = _get_nan(a)
 
     if a.size == 0 or ddof > n:
         # Handle as a special case to avoid spurious warnings.
         # The return values, if any, are all nan.
-        shp = list(a.shape)
-        shp.pop(axis)
-        result = xp.full(shp, fill_value=NaN)
-        return result[()] if result.ndim == 0 else result
+        shape = list(a.shape)
+        shape.pop(axis)
+        return _get_nan(a, shape=tuple(shape), xp=xp)
 
     mean_a = xp.mean(a, axis=axis)
 
     if ddof == n:
         # Another special case.  Result is either inf or nan.
         std_a = xp.std(a, axis=axis, correction=0)
-        result = xp.where(std_a > 0, xp.copysign(xp.inf, mean_a), NaN)
+        result = xp.where(std_a > 0, xp.copysign(xp.inf, mean_a), xp.nan)
         return result[()] if result.ndim == 0 else result
 
     with np.errstate(divide='ignore', invalid='ignore'):

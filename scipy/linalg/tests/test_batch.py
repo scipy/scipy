@@ -142,17 +142,15 @@ class TestBatch:
         res2 = linalg.fractional_matrix_power(A, 1.5)
         np.testing.assert_equal(res1, res2)
 
-    @pytest.mark.parametrize('disp', [False, True])
     @pytest.mark.parametrize('dtype', floating)
-    def test_logm(self, dtype, disp):
+    def test_logm(self, dtype):
         # One test failed absolute tolerance with default random seed
         rng = np.random.default_rng(89940026998903887141749720079406074936)
         A = get_random((5, 3, 4, 4), dtype=dtype, rng=rng)
         A = A + 3*np.eye(4)  # avoid complex output for real input
-        n_out = 1 if disp else 2
-        res1 = self.batch_test(linalg.logm, A, n_out=n_out, kwargs=dict(disp=disp))
+        res1 = self.batch_test(linalg.logm, A)
         # test that `disp` can be passed by position
-        res2 = linalg.logm(A, disp)
+        res2 = linalg.logm(A)
         for res1i, res2i in zip(res1, res2):
             np.testing.assert_equal(res1i, res2i)
 

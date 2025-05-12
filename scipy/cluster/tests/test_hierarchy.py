@@ -78,7 +78,7 @@ lazy_xp_function(single)
 lazy_xp_function(ward)
 lazy_xp_function(linkage, static_argnames=('method', 'metric', 'optimal_ordering'))
 lazy_xp_function(cut_tree, static_argnames=('n_clusters', 'height'))
-lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=999,
+lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=True,
                  static_argnames=('rd', ))
 lazy_xp_function(optimal_leaf_ordering, static_argnames=('metric',))
 lazy_xp_function(cophenet, jax_jit=False, allow_dask_compute=2)
@@ -94,16 +94,16 @@ lazy_xp_function(is_valid_linkage, static_argnames=("warning", "throw", "name"))
 
 lazy_xp_function(num_obs_linkage)
 lazy_xp_function(correspond)
-lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=999, 
+lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=True, 
                  static_argnames=('criterion', 'depth'))
-lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=999,
+lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=True,
                  static_argnames=('criterion', 'metric', 'depth', 'method'))
 lazy_xp_function(leaves_list, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=999)
+lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=True)
 lazy_xp_function(is_isomorphic, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=999)
-lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=999)
-lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=999,
+lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=True)
+lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=True)
+lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=True,
                  static_argnames=('i',))
 
 # Returns data-dependent shape
