@@ -1062,6 +1062,41 @@ def test_concatenate_validation(xp):
         RigidTransform.concatenate([tf, xp.eye(4)])
 
 
+def test_setitem(xp):
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    single = RigidTransform.from_translation(xp.asarray([1, 1, 1]))
+    double = RigidTransform.from_translation(xp.asarray([[2, 2, 2], [3, 3, 3]]))
+    triple = RigidTransform.from_translation(xp.asarray([[3, 3, 3],
+                                                         [4, 4, 4],
+                                                         [5, 5, 5]]))
+
+    # Test indexing with integer index
+    tf[0] = single
+    xp_assert_close(tf.translation, xp.asarray([[1.0, 1, 1], [4, 5, 6], [7, 8, 9]]))
+
+    # Test indexing with slice
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    tf[:2] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [3, 3, 3], [7, 8, 9]]))
+
+    # Test indexing with ellipsis
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    tf[...] = triple
+    xp_assert_close(tf.translation, xp.asarray([[3.0, 3, 3], [4, 4, 4], [5, 5, 5]]))
+
+    # Test indexing with integer array
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    idx = xp.asarray([0, 2])
+    tf[idx] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
+
+    # Test indexing with boolean array
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    mask = xp.asarray([True, False, True])
+    tf[mask] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
+
+
 def test_setitem_validation(xp):
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6]]))
     single = RigidTransform.from_matrix(xp.eye(4))
