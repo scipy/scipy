@@ -7,6 +7,9 @@ import contextlib
 import numpy as np
 import pytest
 from numpy.testing import suppress_warnings, assert_allclose, assert_array_equal
+from hypothesis import strategies as st
+from hypothesis import given
+import hypothesis.extra.numpy as npst
 from pytest import raises as assert_raises
 from scipy import ndimage
 from scipy._lib._array_api import (
@@ -2857,12 +2860,12 @@ class TestVectorizedFilter:
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, xp.sum, **kwargs)
-            xp_assert_close(res, xp.asarray(ref, dtype=sum_dtype))
+            xp_assert_close(res, xp.astype(xp.stack(ref), sum_dtype))
             assert res.dtype == sum_dtype
 
             output = xp.empty_like(input)
             res = ndimage.vectorized_filter(input, xp.sum, output=output, **kwargs)
-            xp_assert_close(res, xp.asarray(ref, dtype=dtype))
+            xp_assert_close(res, xp.astype(xp.stack(ref), dtype))
             assert res.dtype == dtype
 
     def test_mode_valid(self, xp):
@@ -2982,3 +2985,14 @@ class TestVectorizedFilter:
         res = ndimage.vectorized_filter(input, function, size=21)
         ref = ndimage.vectorized_filter(input, function, size=21)
         xp_assert_close(res, ref)
+
+
+@given(x=npst.arrays(dtype=np.float64,
+                     shape=st.integers(min_value=1, max_value=1000)),
+       size=st.integers(min_value=1, max_value=50),
+       mode=st.sampled_from(["constant", "mirror", "wrap", "reflect",
+                             "nearest"]),
+      )
+def test_gh_22586_crash_property(x, size, mode):
+    # property-based test for median_filter resilience to hard crashing
+    ndimage.median_filter(x, size=size, mode=mode)

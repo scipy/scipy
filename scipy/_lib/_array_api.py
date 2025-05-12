@@ -647,101 +647,154 @@ def is_marray(xp):
     return "marray" in xp.__name__
 
 
+@dataclasses.dataclass(repr=False)
+class _XPSphinxCapability:
+    cpu: bool | None  # None if not applicable
+    gpu: bool | None
+    warnings: str | None = None
 
-def _make_capabilities(skip_backends=None, cpu_only=False, np_only=False,
-                       exceptions=None, reason=None):
-    skip_backends = [] if skip_backends is None else skip_backends
-    exceptions = [] if exceptions is None else exceptions
+    def _render(self, value):
+        if value is None:
+            return "n/a"
+        if not value:
+            return "⛔"
+        if self.warnings:
+            res = f"⚠️ {self.warnings}"
+            assert len(res) <= 20
+            return res
+        return "✅"
 
-    capabilities = dataclasses.make_dataclass('capabilities', ['cpu', 'gpu'])
+    def __str__(self):
+        cpu = self._render(self.cpu)
+        gpu = self._render(self.gpu)
+        return f"{cpu:20}  {gpu:20}"
+
+
+def _make_sphinx_capabilities(
+    # lists of tuples [(module name, reason), ...]
+    skip_backends=(), xfail_backends=(),
+    # @pytest.mark.skip/xfail_xp_backends kwargs
+    cpu_only=False, np_only=False, exceptions=(),
+    # xpx.lazy_xp_backends kwargs
+    allow_dask_compute=False, jax_jit=True,
+    # unused in documentation
+    reason=None, static_argnums=None, static_argnames=None,
+):
+    exceptions = set(exceptions)
 
     # Default capabilities
-    numpy = capabilities(cpu=True, gpu=False)
-    strict = capabilities(cpu=True, gpu=False)
-    cupy = capabilities(cpu=False, gpu=True)
-    torch = capabilities(cpu=True, gpu=True)
-    jax = capabilities(cpu=True, gpu=True)
-    dask = capabilities(cpu=True, gpu=True)
+    capabilities = {
+        "numpy": _XPSphinxCapability(cpu=True, gpu=None),
+        "array_api_strict": _XPSphinxCapability(cpu=True, gpu=None),
+        "cupy": _XPSphinxCapability(cpu=None, gpu=True),
+        "torch": _XPSphinxCapability(cpu=True, gpu=True),
+        "jax.numpy": _XPSphinxCapability(cpu=True, gpu=True,
+            warnings=None if jax_jit else "no JIT"),
+        # Note: Dask+CuPy is currently untested and unsupported
+        "dask.array": _XPSphinxCapability(cpu=True, gpu=None,
+            warnings="computes graph" if allow_dask_compute else None),
+    }
 
-    capabilities = dict(numpy=numpy, array_api_strict=strict, cupy=cupy,
-                        torch=torch, jax=jax, dask=dask)
+    # documentation doesn't display the reason
+    for module, _ in list(skip_backends) + list(xfail_backends):
+        backend = capabilities[module]
+        if backend.cpu is not None:
+            backend.cpu = False
+        if backend.gpu is not None:
+            backend.gpu = False
 
-    for backend, _ in skip_backends:  # ignoring the reason
-        setattr(capabilities[backend], 'cpu', False)
-        setattr(capabilities[backend], 'gpu', False)
-
-    other_backends = {'cupy', 'torch', 'jax', 'dask'}
-
-    if cpu_only:
-        for backend in other_backends - set(exceptions):
-            setattr(capabilities[backend], 'gpu', False)
-
-    if np_only:
-        for backend in other_backends:
-            setattr(capabilities[backend], 'cpu', False)
-            setattr(capabilities[backend], 'gpu', False)
+    for module, backend in capabilities.items():
+        if np_only and module not in exceptions | {"numpy"}:
+            if backend.cpu is not None:
+                backend.cpu = False
+            if backend.gpu is not None:
+                backend.gpu = False
+        elif cpu_only and module not in exceptions and backend.gpu is not None:
+            backend.gpu = False
 
     return capabilities
 
 
-def _make_capabilities_table(capabilities):
-    numpy = capabilities['numpy']
-    cupy = capabilities['cupy']
-    torch = capabilities['torch']
-    jax = capabilities['jax']
-    dask = capabilities['dask']
-
-    for backend in [numpy, cupy, torch, jax, dask]:
-        for attr in ['cpu', 'gpu']:
-            val = "✓" if getattr(backend, attr) else "✗"
-            val += " " * (len('{numpy.}') + len(attr) - 1)
-            setattr(backend, attr, val)
-
-    table = f"""
-    +---------+-------------+-------------+
-    | Library | CPU         | GPU         |
-    +=========+=============+=============+
-    | NumPy   | {numpy.cpu} | n/a         |
-    +---------+-------------+-------------+
-    | CuPy    | n/a         | {cupy.gpu } |
-    +---------+-------------+-------------+
-    | PyTorch | {torch.cpu} | {torch.gpu} |
-    +---------+-------------+-------------+
-    | JAX     | {jax.cpu  } | {jax.gpu  } |
-    +---------+-------------+-------------+
-    | Dask    | {dask.cpu } | {dask.gpu } |
-    +---------+-------------+-------------+
-    """
-    return table
-
-
 def _make_capabilities_note(fun_name, capabilities):
-    table = _make_capabilities_table(capabilities)
+    # Note: deliberately not documenting array-api-strict
     note = f"""
     `{fun_name}` has experimental support for Python Array API Standard compatible
     backends in addition to NumPy. Please consider testing these features
     by setting an environment variable ``SCIPY_ARRAY_API=1`` and providing
     CuPy, PyTorch, JAX, or Dask arrays as array arguments. The following
     combinations of backend and device (or other capability) are supported.
-    {table}
+
+    ====================  ====================  ====================
+    Library               CPU                   GPU
+    ====================  ====================  ====================
+    NumPy                 {capabilities['numpy']                   }
+    CuPy                  {capabilities['cupy']                    }
+    PyTorch               {capabilities['torch']                   }
+    JAX                   {capabilities['jax.numpy']               }
+    Dask                  {capabilities['dask.array']              }
+    ====================  ====================  ====================
+
     See :ref:`dev-arrayapi` for more information.
     """
     return textwrap.dedent(note)
 
 
-def xp_capabilities(capabilities_table=None, **kwargs):
+def xp_capabilities(
+    *,
+    # Alternative capabilities table.
+    # Used only for testing this decorator.
+    capabilities_table=None,
+    # Generate pytest.mark.skip/xfail_xp_backends.
+    # See documentation in conftest.py.
+    # lists of tuples [(module name, reason), ...]
+    skip_backends=(), xfail_backends=(),
+    cpu_only=False, np_only=False, reason=None, exceptions=(),
+    # xpx.testing.lazy_xp_function kwargs.
+    # Refer to array-api-extra documentation.
+    allow_dask_compute=False, jax_jit=True,
+    static_argnums=None, static_argnames=None,
+):
+    """Decorator for a function that states its support among various
+    Array API compatible backends.
+
+    This decorator has two effects:
+    1. It allows tagging tests with ``@make_xp_test_case`` or
+       ``make_xp_pytest_param`` (see below) to automatically generate
+       SKIP/XFAIL markers and perform additional backend-specific
+       testing, such as extra validation for Dask and JAX;
+    2. It automatically adds a note to the function's docstring, containing
+       a table matching what has been tested.    
+
+    See Also
+    --------
+    make_xp_test_case
+    make_xp_pytest_param
+    array_api_extra.testing.lazy_xp_function
+    """
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
+
+    capabilities = dict(
+        skip_backends=skip_backends,
+        xfail_backends=xfail_backends,
+        cpu_only=cpu_only,
+        np_only=np_only,
+        reason=reason,
+        exceptions=exceptions,
+        allow_dask_compute=allow_dask_compute,
+        jax_jit=jax_jit,
+        static_argnums=static_argnums,
+        static_argnames=static_argnames,
+    )
+    sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             return f(*args, **kwargs)
 
-        capabilities_table[wrapper] = kwargs
-        capabilities = _make_capabilities(**capabilities_table[wrapper])
-
-        note = _make_capabilities_note(f.__name__, capabilities)
+        capabilities_table[wrapper] = capabilities
+        note = _make_capabilities_note(f.__name__, sphinx_capabilities)
         doc = FunctionDoc(wrapper)
         doc['Notes'].append(note)
         wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
@@ -750,41 +803,96 @@ def xp_capabilities(capabilities_table=None, **kwargs):
     return decorator
 
 
-def make_skip_xp_backends(*funs, capabilities_table=None):
+def _make_xp_pytest_marks(*funcs, capabilities_table=None):
     capabilities_table = (xp_capabilities_table if capabilities_table is None
                           else capabilities_table)
+    import pytest
+    from scipy._lib.array_api_extra.testing import lazy_xp_function
 
+    marks = []
+    for func in funcs:
+        capabilities = capabilities_table[func]
+        exceptions = capabilities['exceptions']
+        reason = capabilities['reason']
+
+        if capabilities['cpu_only']:
+            marks.append(pytest.mark.skip_xp_backends(
+                cpu_only=True, exceptions=exceptions, reason=reason))
+        if capabilities['np_only']:
+            marks.append(pytest.mark.skip_xp_backends(
+                np_only=True, exceptions=exceptions, reason=reason))
+
+        for mod_name, reason in capabilities['skip_backends']:
+            marks.append(pytest.mark.skip_xp_backends(mod_name, reason=reason))
+        for mod_name, reason in capabilities['xfail_backends']:
+            marks.append(pytest.mark.xfail_xp_backends(mod_name, reason=reason))
+
+        lazy_kwargs = {k: capabilities[k]
+                       for k in ('allow_dask_compute', 'jax_jit',
+                                 'static_argnums', 'static_argnames')}
+        lazy_xp_function(func, **lazy_kwargs)
+
+    return marks
+
+
+def make_xp_test_case(*funcs, capabilities_table=None):
+    capabilities_table = (xp_capabilities_table if capabilities_table is None
+                          else capabilities_table)
+    """Generate pytest decorator for a test function that tests functionality
+    of one or more Array API compatible functions.
+
+    Read the parameters of the ``@xp_capabilities`` decorator applied to the
+    listed functions and:
+
+    - Generate the ``@pytest.mark.skip_xp_backends`` and
+      ``@pytest.mark.xfail_xp_backends`` decorators
+      for the decorated test function
+    - Tag the function with `xpx.testing.lazy_xp_function`
+
+    See Also
+    --------
+    xp_capabilities
+    make_xp_pytest_param
+    array_api_extra.testing.lazy_xp_function
+    """
+    marks = _make_xp_pytest_marks(*funcs, capabilities_table=capabilities_table)
+    return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
+
+
+def make_xp_pytest_param(func, capabilities_table=None):
+    """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
+    with all necessary skip_xp_backends and xfail_xp_backends marks applied::
+    
+        @pytest.mark.parametrize(
+            "func", [make_xp_pytest_param(f1), make_xp_pytest_param(f2)]
+        )
+        def test(func, xp):
+            ...
+
+    The above is equivalent to::
+
+        @pytest.mark.parametrize(
+            "func", [
+                pytest.param(f1, marks=[
+                    pytest.mark.skip_xp_backends(...),
+                    pytest.mark.xfail_xp_backends(...), ...]),
+                pytest.param(f2, marks=[
+                    pytest.mark.skip_xp_backends(...),
+                    pytest.mark.xfail_xp_backends(...), ...]),
+        )
+        def test(func, xp):
+            ...
+
+    See Also
+    --------
+    xp_capabilities
+    make_xp_test_case
+    array_api_extra.testing.lazy_xp_function
+    """
     import pytest
 
-    skip_backends = []
-    cpu_only = False
-    cpu_only_reason = set()
-    np_only = False
-    exceptions = []
-
-    for fun in funs:
-        skip_backends += capabilities_table[fun].get('skip_backends', [])
-        cpu_only |= capabilities_table[fun].get('cpu_only', False)
-        # Empty reason causes the decorator to have no effect
-        cpu_only_reason.add(capabilities_table[fun].get('reason', "No reason given."))
-        np_only |= capabilities_table[fun].get('np_only', False)
-        exceptions += capabilities_table[fun].get('exceptions', [])
-
-    decorators = []
-    if cpu_only:
-        kwargs = dict(cpu_only=True, exceptions=exceptions)
-        kwargs |= {'reason': "\n".join(cpu_only_reason)}
-        decorators.append(pytest.mark.skip_xp_backends(**kwargs))
-
-    if np_only:
-        decorators.append(pytest.mark.skip_xp_backends(np_only=True))
-
-    for backend, reason in skip_backends:
-        backends = {'dask': 'dask.array', 'jax': 'jax.numpy'}
-        backend = backends.get(backend, backend)
-        decorators.append(pytest.mark.skip_xp_backends(backend, reason=reason))
-
-    return lambda fun: functools.reduce(lambda f, g: g(f), decorators, fun)
+    marks = _make_xp_pytest_marks(func, capabilities_table=capabilities_table)
+    return pytest.param(func, marks=marks)
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?

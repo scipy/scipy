@@ -128,7 +128,7 @@ template<typename MinMaxDist>
         p = _p;
 
         /* internally we represent all distances as distance ** p */
-        if (CKDTREE_LIKELY(p == 2.0))
+        if (p == 2.0)
             upper_bound = _upper_bound * _upper_bound;
         else if ((!std::isinf(p)) && (!std::isinf(_upper_bound)))
             upper_bound = std::pow(_upper_bound,p);
@@ -136,7 +136,7 @@ template<typename MinMaxDist>
             upper_bound = _upper_bound;
 
         /* fiddle approximation factor */
-        if (CKDTREE_LIKELY(p == 2.0)) {
+        if (p == 2.0) {
             double tmp = 1. + eps;
             epsfac = 1. / (tmp*tmp);
         }
@@ -212,7 +212,7 @@ template<typename MinMaxDist>
         subnomial = subnomial || ((min2 != 0 && min2 < inaccurate_distance_limit) || max2 < inaccurate_distance_limit);
         subnomial = subnomial || (min_distance < inaccurate_distance_limit || max_distance < inaccurate_distance_limit);
 
-        if (CKDTREE_UNLIKELY(subnomial)) {
+        if (subnomial) {
             MinMaxDist::rect_rect_p(tree, rect1, rect2, p, &min_distance, &max_distance);
         } else {
             min_distance += (min2 - min1);
@@ -235,7 +235,7 @@ template<typename MinMaxDist>
         --stack_size;
 
         /* assert stack_size >= 0 */
-        if (CKDTREE_UNLIKELY(stack_size < 0)) {
+        if (stack_size < 0) {
             const char *msg = "Bad stack size. This error should never occur.";
             throw std::logic_error(msg);
         }

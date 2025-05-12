@@ -824,7 +824,7 @@ class TestGetWindow:
         sig = xp.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2, xp=xp)
-        with assert_raises(ValueError, match='must have the same length'):
+        with assert_raises(ValueError, match='^window.shape='):
             resample(sig, len(sig) * osfactor, window=win)
 
     def test_general_cosine(self, xp):
