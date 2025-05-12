@@ -136,6 +136,7 @@ from ._matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
+from ._krylov_funmv import *
 from ._special_sparse_arrays import *
 
 # Deprecated namespaces, to be removed in v2.0.0
