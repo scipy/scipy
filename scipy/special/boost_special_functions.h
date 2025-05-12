@@ -1318,6 +1318,9 @@ binom_cdf_wrap(const Real x, const Real n, const Real p)
         return boost::math::cdf(
             boost::math::binomial_distribution<Real, StatsPolicy>(n, p), x);
     }
+    if (std::isnan(x)) {
+	return std::numeric_limits<double>::quiet_NaN();
+    }
     // -inf => 0, inf => 1
     return 1 - std::signbit(x);
 }

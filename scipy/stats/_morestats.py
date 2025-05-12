@@ -868,15 +868,11 @@ def _log_mean(logx, axis):
 
 def _log_var(logx, xp, axis):
     # compute log of variance of x from log(x)
-    logmean = _log_mean(logx, axis=axis)
-    # get complex dtype with component dtypes same as `logx` dtype;
-    dtype = xp.result_type(logx.dtype, 1j)
-    pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
-    logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
-    return (
-        xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=axis)))
-        - math.log(logx.shape[axis])
-    )
+    logmean = xp.broadcast_to(_log_mean(logx, axis=axis), logx.shape)
+    ones = xp.ones_like(logx)
+    logxmu, _ = special.logsumexp(xp.stack((logx, logmean), axis=0), axis=0,
+                                  b=xp.stack((ones, -ones), axis=0), return_sign=True)
+    return special.logsumexp(2 * logxmu, axis=axis) - math.log(logx.shape[axis])
 
 
 def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
@@ -995,7 +991,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
                           result_to_tuple=lambda x: (x,))
 def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
-    data = xp_promote(data, force_floating=True, xp=xp)
+    lmb, data = xp_promote(lmb, data, force_floating=True, xp=xp)
     N = data.shape[axis]
     if N == 0:
         return _get_nan(data, xp=xp)
@@ -1014,7 +1010,7 @@ def _boxcox_llf(data, axis=0, *, lmb):
         logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
     res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
-    res = xp.astype(res, data.dtype)
+    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 

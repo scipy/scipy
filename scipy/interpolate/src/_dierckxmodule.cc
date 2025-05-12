@@ -23,8 +23,7 @@ check_array(PyObject *obj, npy_intp ndim, int typenum) {
 
     if(!cond) {
         std::string msg = ("Expected a " + std::to_string(ndim) + "-dim C contiguous array " +
-                           " of dtype = " + std::to_string(typenum) + "( got " +
-                           std::to_string(PyArray_TYPE((PyArrayObject*)obj)) +" )\n");
+                           " of dtype = " + std::to_string(typenum) + "\n");
         // XXX: name the dtype from typenum? Also type of arg if not array
         PyErr_SetString(PyExc_ValueError, msg.c_str());
         return 0;
