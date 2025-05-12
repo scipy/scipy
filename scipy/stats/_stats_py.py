@@ -351,7 +351,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         return 1.0 / _xp_mean(1.0 / a, axis=axis, weights=weights)
 
 
-@xp_capabilities(static_argnames=("axis", "dtype"), 
+@xp_capabilities(static_argnames=("axis", "dtype"),
                  jax_jit=False, allow_dask_compute=1)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
@@ -10196,7 +10196,8 @@ def _square_of_sums(a, axis=0):
 
 @xp_capabilities(skip_backends=[("torch", "no `repeat`"),
                                 ("cupy", "`repeat` can't handle array second arg"),
-                                ("dask", "no `take_along_axis`")])
+                                ("dask.array", "no `take_along_axis`"),
+                                ("jax.numpy", "NonConcreteBooleanIndexError")])
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 

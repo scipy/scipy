@@ -5,7 +5,7 @@ import pytest
 from scipy import stats
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._array_api import xp_assert_equal, make_skip_xp_backends
+from scipy._lib._array_api import xp_assert_equal, make_xp_test_case
 
 class TestTieCorrect:
 
@@ -73,7 +73,7 @@ class TestTieCorrect:
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
-@make_skip_xp_backends(stats.rankdata)
+@make_xp_test_case(stats.rankdata)
 class TestRankData:
 
     def desired_dtype(self, method='average', has_nans=False, *, xp):
@@ -93,7 +93,7 @@ class TestRankData:
         assert_array_equal(r, np.array([]))
 
         r = rankdata([40, 10, 30, 10, 50])
-        assert_array_equal(r, [4.0, 1.5, 3.0, 1.5, 5.0])
+        assert_equal(r, [4.0, 1.5, 3.0, 1.5, 5.0])
 
     @pytest.mark.parametrize("shape", [(0, 1, 2)])
     @pytest.mark.parametrize("axis", [None, *range(3)])
