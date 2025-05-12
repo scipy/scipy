@@ -133,7 +133,7 @@ struct nodeinfo {
     }
 
     inline void update_side_distance(const int d, const double new_side_distance, const double p) {
-        if (CKDTREE_UNLIKELY(std::isinf(p))) {
+        if (std::isinf(p)) {
             min_distance = ckdtree_fmax(min_distance, new_side_distance);
         } else {
             min_distance += new_side_distance - side_distances()[d];
@@ -261,7 +261,7 @@ query_single_point(const ckdtree *self,
     }
 
     /* fiddle approximation factor */
-    if (CKDTREE_LIKELY(p == 2.0)) {
+    if (p == 2.0) {
         double tmp = 1. + eps;
         epsfac = 1. / (tmp*tmp);
     }
@@ -273,7 +273,7 @@ query_single_point(const ckdtree *self,
         epsfac = 1. / std::pow((1. + eps), p);
 
     /* internally we represent all distances as distance**p */
-    if (CKDTREE_LIKELY(p == 2.0)) {
+    if (p == 2.0) {
         double tmp = distance_upper_bound;
         distance_upper_bound = tmp*tmp;
     }
@@ -292,14 +292,7 @@ query_single_point(const ckdtree *self,
                 const double *data = self->raw_data;
                 const ckdtree_intp_t *indices = self->raw_indices;
 
-                CKDTREE_PREFETCH(data+indices[start_idx]*m, 0, m);
-                if (start_idx < end_idx - 1)
-                    CKDTREE_PREFETCH(data+indices[start_idx+1]*m, 0, m);
-
                 for (i=start_idx; i<end_idx; ++i) {
-
-                    if (i < end_idx - 2)
-                        CKDTREE_PREFETCH(data+indices[i+2]*m, 0, m);
 
                     d = MinMaxDist::point_point_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
                     if (d < distance_upper_bound) {
@@ -346,7 +339,7 @@ query_single_point(const ckdtree *self,
 
             ni2 = nipool.allocate();
 
-            if (CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
+            if (self->raw_boxsize_data == NULL) {
                 /*
                  * non periodic : the 'near' node is know from the
                  * relative distance to the split, and
@@ -449,13 +442,13 @@ query_single_point(const ckdtree *self,
 
     /* fill output arrays with sorted neighbors */
     for (i = 0; i < nk; ++i) {
-        if(CKDTREE_UNLIKELY(k[i] - 1 >= nnb)) {
+        if (k[i] - 1 >= nnb) {
             result_indices[i] = self->n;
             result_distances[i] = inf;
         } else {
             neighbor = sorted_neighbors[k[i] - 1];
             result_indices[i] = neighbor.contents.intdata;
-            if (CKDTREE_LIKELY(p == 2.0))
+            if (p == 2.0)
                 result_distances[i] = std::sqrt(-neighbor.priority);
             else if ((p == 1.) || (std::isinf(p)))
                 result_distances[i] = -neighbor.priority;
@@ -488,12 +481,12 @@ query_knn(const ckdtree      *self,
     ckdtree_intp_t m = self->m;
     ckdtree_intp_t i;
 
-    if(CKDTREE_LIKELY(!self->raw_boxsize_data)) {
+    if (!self->raw_boxsize_data) {
         for (i=0; i<n; ++i) {
             double *dd_row = dd + (i*nk);
             ckdtree_intp_t *ii_row = ii + (i*nk);
             const double *xx_row = xx + (i*m);
-            HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
+            HANDLE(p == 2, MinkowskiDistP2)
             HANDLE(p == 1, MinkowskiDistP1)
             HANDLE(std::isinf(p), MinkowskiDistPinf)
             HANDLE(1, MinkowskiDistPp)
@@ -510,7 +503,7 @@ query_knn(const ckdtree      *self,
             for(j=0; j<m; ++j) {
                 xx_row[j] = BoxDist1D::wrap_position(old_xx_row[j], self->raw_boxsize_data[j]);
             }
-            HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
+            HANDLE(p == 2, BoxMinkowskiDistP2)
             HANDLE(p == 1, BoxMinkowskiDistP1)
             HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp) {}

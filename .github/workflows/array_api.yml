@@ -60,7 +60,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click pooch hypothesis array-api-strict spin
 
     - name: Install PyTorch CPU
       run: |
@@ -98,14 +98,15 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build
+        spin build
 
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
+        # expand as more modules are supported by adding to `XP_TESTS` above
+        spin test -b all $XP_TESTS -- --durations 3 --timeout=60
 
     - name: Test SciPy with torch/float32
       run: |
         export SCIPY_DEFAULT_DTYPE="float32"
-        python dev.py --no-build test -b torch $XP_TESTS -- --durations 3 --timeout=60
+        spin test -b torch $XP_TESTS -- --durations 3 --timeout=60
