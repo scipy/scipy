@@ -918,6 +918,12 @@ def test_indexing(xp):
     tf_masked = tf[xp.asarray([False, False])]
     assert len(tf_masked) == 0
 
+    # Test integer array indexing
+    idx = xp.asarray([0, 1])
+    tf_array_idx = tf[idx]
+    xp_assert_close(tf_array_idx.as_matrix()[:, :3, :3], r[idx].as_matrix(), atol=atol)
+    xp_assert_close(tf_array_idx.as_matrix()[:, :3, 3], t[idx], atol=atol)
+
 
 def test_indexing_array_like():
     atol = 1e-12

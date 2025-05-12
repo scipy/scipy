@@ -372,7 +372,7 @@ class RigidTransform:
                 "Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
                 f"got {matrix.shape}."
             )
-        # We only need the _sinlge flag for the cython backend. The Array API backend
+        # We only need the _single flag for the cython backend. The Array API backend
         # uses broadcasting by default and hence returns the correct shape without
         # additional _single logic
         self._single = matrix.ndim == 2 and is_numpy(xp)
@@ -1215,13 +1215,8 @@ class RigidTransform:
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
         if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
-            # Array API limitation: Integer index arrays are only allowed with integer
-            # indices
-            all_ind = xp.arange(4)
-            indexer = xp.reshape(indexer, (indexer.shape[0], 1, 1))
             return RigidTransform(
-                self._matrix[indexer, all_ind[None, :, None], all_ind[None, None, :]],
-                normalize=False,
+                xp.take(self._matrix, indexer, axis=0), normalize=False
             )
         return RigidTransform(self._matrix[indexer, ...], normalize=False)
 
