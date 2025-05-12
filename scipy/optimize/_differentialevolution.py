@@ -281,7 +281,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
 
     minimizer_kwargs : dict, optional
-        Can be used to pass additional parameters to `scipy.optimize.minimize` during polishing (e.g. a jacobian).
+        Can be used to pass additional parameters to `minimize` during polishing (e.g.
+        a jacobian).
 
         .. versionadded:: 1.16.0
 
@@ -749,7 +750,8 @@ class DifferentialEvolutionSolver:
         This option will override the `updating` keyword to
         ``updating='deferred'``.
     minimizer_kwargs : dict, optional
-        Can be used to pass additional parameters to `scipy.optimize.minimize` during polishing (e.g. a jacobian).
+        Can be used to pass additional parameters to `minimize` during polishing (e.g.
+        a jacobian).
     """ # noqa: E501
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -1242,11 +1244,16 @@ class DifferentialEvolutionSolver:
                 limits[1, integrality] = DE_result.x[integrality]
 
             if 'method' not in self.minimizer_kwargs:
-                self.minimizer_kwargs['method'] = 'L-BFGS-B'
+                if self._wrapped_constraints:
+                    self.minimizer_kwargs['method'] = 'trust-constr'
+                else:
+                    self.minimizer_kwargs['method'] = 'L-BFGS-B'
+            if 'bounds' not in self.minimizer_kwargs:
+                self.minimizer_kwargs['bounds'] = self.limits.T
+            if 'constraints' not in self.minimizer_kwargs:
+                self.minimizer_kwargs['constraints'] = self.constraints
 
             if self._wrapped_constraints:
-                self.minimizer_kwargs['method'] = 'trust-constr'
-
                 constr_violation = self._constraint_violation_fn(DE_result.x)
                 if np.any(constr_violation > 0.):
                     warnings.warn("differential evolution didn't find a "
@@ -1259,8 +1266,6 @@ class DifferentialEvolutionSolver:
             result = minimize(lambda x:
                                 list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
                               np.copy(DE_result.x),
-                              bounds=self.limits.T,
-                              constraints=self.constraints,
                               **self.minimizer_kwargs)
 
             self._nfev += result.nfev
