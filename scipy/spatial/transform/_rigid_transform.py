@@ -1205,13 +1205,15 @@ class RigidTransform:
             raise TypeError("Single transform is not subscriptable.")
 
         is_array = isinstance(indexer, type(self._matrix))
-        # Masking is only specified in the Array API when the array is the sole index
         # TODO: Getting xp on every call may be expensive. Check if we can make access
         # to xp more efficient. Should we store a self._xp attribute? What about pickle?
-        # TODO: This special case handling is mainly a result of Array API limitations
-        # (or my understanding of the standard). Ideally we would get rid of them
-        #  altogether and converge to [indexer, ...] indexing.
         xp = array_namespace(self._matrix)
+        # Masking is only specified in the Array API when the array is the sole index
+        # This special case handling is necessary to support boolean indexing and
+        # integer array indexing with take (see 
+        # https://github.com/data-apis/array-api/pull/900#issuecomment-2674432480)
+        # Ideally we would converge to [indexer, ...] indexing, but this is not
+        # supported for now.
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
         if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
