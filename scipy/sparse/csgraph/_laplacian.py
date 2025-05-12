@@ -125,9 +125,12 @@ def laplacian(
     References
     ----------
     .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
-    .. [2] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch and Jürgen Lerner and Ernesto W. De Luca and Sahin Albayrak. (2010).
-           Spectral Analysis of Signed Graphs for Clustering, Prediction and Visualization.
-           In Proceedings of the 2010 SIAM International Conference on Data Mining (SDM), 559-570.
+    .. [2] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch
+           and Jürgen Lerner and Ernesto W. De Luca and Sahin Albayrak. (2010).
+           Spectral Analysis of Signed Graphs for Clustering,
+           Prediction and Visualization.
+           In Proceedings of the 2010 SIAM International Conference
+           on Data Mining (SDM), 559-570.
            https://doi.org/10.1137/1.9781611972801.49
 
     Examples
