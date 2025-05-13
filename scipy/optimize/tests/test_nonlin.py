@@ -235,7 +235,7 @@ class TestNonlin:
         # This should not raise a warning (`minres` without `inner_atol`,
         # but with `inner_maxiter` which is valid)
         nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100,
-                             inner_callback= lambda _ : pass)
+                             inner_callback= lambda _ : ...)
 
         # Test newton_krylov with a user-provided callable method
         def user_provided_callable_method_enh_21986(op, rhs, **kwargs):
