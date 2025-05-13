@@ -10324,7 +10324,8 @@ def _order_ranks(ranks, j, *, xp):
         ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
         xp.put_along_axis(ordered_ranks, j, ranks, axis=-1)
     else:
-        # Can't use `put_along_axis`, so argsort the argsort and take_along_axis...
+        # `put_along_axis` not in array API (data-apis/array-api#177)
+        #  so argsort the argsort and take_along_axis...
         j_inv = xp.argsort(j, axis=-1)
         ordered_ranks = xp.take_along_axis(ranks, j_inv, axis=-1)
     return ordered_ranks
