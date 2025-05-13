@@ -1527,6 +1527,7 @@ class matrix_t_gen(multi_rv_generic):
     The probability density function for `matrix_t` is
 
     .. math::
+
         \mathcal{T}_{m,n} = \\frac{
             \Gamma_n \left( 
                 \\frac{\mathrm{df} + m + n - 1}{2} 
