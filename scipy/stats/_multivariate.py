@@ -1549,6 +1549,7 @@ class matrix_t_gen(multi_rv_generic):
     or, alternatively,
 
     .. math::
+
         \mathcal{T}_{m,n} = 
         \\frac{
             \Gamma_m \left( 
