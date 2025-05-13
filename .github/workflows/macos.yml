@@ -125,7 +125,7 @@ jobs:
         mamba install qhull=2020.2
         rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
 
-        CC="ccache $CC" spin build
+        CC="ccache $CC" spin build --use-system-libraries
 
     - name: Test SciPy
       shell: bash -l {0}

@@ -54,13 +54,18 @@ PROJECT_MODULE = "scipy"
             " Takes precedence over -with-scipy-openblas (macOS only)")
 )
 @click.option(
+    '--use-system-libraries', default=False, is_flag=True,
+    help=("If set, use system libraries"
+            "if they are available for subprojects."))
+@click.option(
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
 @spin.util.extend_command(spin.cmds.meson.build)
 def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           release, parallel, setup_args, show_build_log,
-          with_scipy_openblas, with_accelerate, tags, **kwargs):
+          with_scipy_openblas, with_accelerate, use_system_libraries,
+          tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
     MESON_ARGS are passed through e.g.:
@@ -126,6 +131,9 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                 os.getcwd(),
                 os.environ.get('PKG_CONFIG_PATH', '')
                 ])
+        
+    if use_system_libraries:
+        meson_args = meson_args + ("-Duse-system-libraries=true")
 
     if parallel is None:
         # Use number of physical cores rather than ninja's default of 2N+2,

@@ -163,16 +163,34 @@ endif
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
-boost_math_dep = dependency(
-  'boost',
-  version : '1.88.0',
-  fallback : ['boost_math', 'boost_math_dep'],
-)
+use_system_libraries = get_option('use-system-libraries')
 
-qhull_r_dep = dependency(
-  'qhull_r',
-  version : '8.0.2',
-  fallback : ['qhull_r', 'qhull_r_dep']
-)
+if use_system_libraries
+  boost_math_dep = dependency(
+    'boost',
+    version : '1.88.0',
+    fallback : ['boost_math', 'boost_math_dep'],
+  )
+else
+  boost_math = subproject(
+    'boost_math'
+    version : '1.88.0',
+  )
+  boost_math_dep = boost_math.get_variable('boost_math_dep')
+endif
+
+if use_system_libraries
+  qhull_r_dep = dependency(
+    'qhull_r',
+    version : '8.0.2',
+    fallback : ['qhull_r', 'qhull_r_dep']
+  )
+else
+  qhull_r = subproject(
+    'qhull_r'
+    version : '8.0.2',
+  )
+  boost_math_dep = boost_math.get_variable('qhull_r_dep')
+endif
 
 subdir('scipy')
