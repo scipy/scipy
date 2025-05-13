@@ -13,7 +13,6 @@ from numpy.linalg import inv
 import numpy as np
 import scipy
 from scipy.sparse.linalg import minres
-import warnings
 
 from .test_minpack import pressure_network
 
@@ -229,13 +228,14 @@ class TestNonlin:
         """
         # This should raise exactly one warning
         # (`inner_atol` is not valid for `minres`)
-        with pytest.warns(UserWarning, 
+        with pytest.warns(UserWarning,
                           match="Please check inner method documentation"):
             nonlin.newton_krylov(F, F.xin, method="minres", inner_atol=1e-5)
 
         # This should not raise a warning (`minres` without `inner_atol`,
         # but with `inner_maxiter` which is valid)
-        nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100)
+        nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100,
+                             inner_callback= lambda _ : pass)
 
         # Test newton_krylov with a user-provided callable method
         def user_provided_callable_method_enh_21986(op, rhs, **kwargs):
