@@ -10,3 +10,7 @@ option('use-pythran', type: 'boolean', value: true,
         description: 'If set to false, disables using Pythran (it falls back ' +
                      'to either pure Python code or Cython code, depending on ' +
                      'the implementation).')
+
+option('use-system-libraries', type: 'boolean', value: false,
+        description: 'If set to true, use system libraries for subprojects ' +
+                     'if they are available.')
