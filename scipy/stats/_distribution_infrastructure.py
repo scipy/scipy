@@ -3856,7 +3856,7 @@ def make_distribution(dist):
 
         `make_distribution` does not work perfectly with all instances of
         `rv_continuous`. Known failures include `levy_stable`, `vonmises`,
-        `hypergeom`, `poisson_binom`, and 'skellam'. Some methods of some distributions
+        `hypergeom`, and `poisson_binom`. Some methods of some distributions
         will not support array shape parameters.
 
     Parameters
@@ -4065,7 +4065,7 @@ def make_distribution(dist):
 
     """
     if dist in {stats.levy_stable, stats.vonmises, stats.hypergeom,
-                stats.poisson_binom, stats.skellam}:
+                stats.poisson_binom}:
         raise NotImplementedError(f"`{dist.name}` is not supported.")
 
     if isinstance(dist, stats.rv_continuous | stats.rv_discrete):

@@ -1122,7 +1122,6 @@ class TestMakeDistribution:
             'vonmises',               # circular distribution; shouldn't work
             'poisson_binom',          # vector shape parameter
             'hypergeom',              # distribution functions need interpolation
-            'skellam',                # gh-22956 (_ncx2_pdf crashes with extreme input)
         }:
             return
 
