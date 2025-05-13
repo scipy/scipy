@@ -20,7 +20,7 @@ from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    
+
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
@@ -266,7 +266,10 @@ def discrepancy(
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
 
-    See [2]_ for precise definitions of each method.
+    Methods ``CD``, ``WD``, and ``MD`` implement the right hand side of equations
+    9, 10, and 18 of [2]_, respectively; the square root is not taken. On the
+    other hand, ``L2-star`` computes the quantity given by equation 10 of
+    [3]_ as implemented by subsequent equations; the square root is taken.
 
     Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
@@ -1586,7 +1589,7 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-        
+
         oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
@@ -1860,7 +1863,7 @@ class Sobol(QMCEngine):
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.", stacklevel=2)
+                              " n to be a power of 2.", stacklevel=3)
 
             if n == 1:
                 sample = self._first_point
@@ -2123,7 +2126,7 @@ class PoissonDisk(QMCEngine):
 
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
-        
+
         if u_bounds is None:
             u_bounds = np.ones(d)
         if l_bounds is None:

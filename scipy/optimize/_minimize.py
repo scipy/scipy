@@ -218,10 +218,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the present values
-        of the parameter vector and objective function. Note that the name
-        of the parameter must be ``intermediate_result`` for the callback
-        to be passed an `OptimizeResult`. These methods will also terminate if
-        the callback raises ``StopIteration``.
+        of the parameter vector and objective function. Not all attributes of
+        `OptimizeResult` may be present. The name of the parameter must be
+        ``intermediate_result`` for the callback to be passed an `OptimizeResult`.
+        These methods will also terminate if the callback raises ``StopIteration``.
 
         All methods except trust-constr (also) support a signature like::
 
@@ -339,7 +339,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     **Constrained Minimization**
 
-    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the
+    Method :ref:`COBYLA <optimize.minimize-cobyla>` uses the PRIMA
+    implementation [19]_ of the
     Constrained Optimization BY Linear Approximation (COBYLA) method
     [9]_, [10]_, [11]_. The algorithm is based on linear
     approximations to the objective function and each constraint.
@@ -486,6 +487,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         and Software*. PhD thesis, Department of Applied Mathematics, The Hong
         Kong Polytechnic University, Hong Kong, China, 2022. URL:
         https://theses.lib.polyu.edu.hk/handle/200/12294.
+    .. [19] Zhang, Z. "PRIMA: Reference Implementation for Powell's Methods with
+        Modernization and Amelioration", https://www.libprima.net,
+        :doi:`10.5281/zenodo.8052654`
 
     Examples
     --------
