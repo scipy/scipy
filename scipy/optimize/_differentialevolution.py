@@ -1252,6 +1252,12 @@ class DifferentialEvolutionSolver:
                 self.minimizer_kwargs['bounds'] = self.limits.T
             if 'constraints' not in self.minimizer_kwargs:
                 self.minimizer_kwargs['constraints'] = self.constraints
+            if 'fun' in self.minimizer_kwargs or 'x0' in self.minimizer_kwargs:
+                warnings.warn("user-provided arguments fun or x0 in minimizer_kwargs"
+                              " will be overridden", UserWarning, stacklevel=2)
+            self.minimizer_kwargs['fun'] =\
+                lambda x: list(self._mapwrapper(self.func,np.atleast_2d(x)))[0]
+            self.minimizer_kwargs['x0'] = np.copy(DE_result.x)
 
             if self._wrapped_constraints:
                 constr_violation = self._constraint_violation_fn(DE_result.x)
@@ -1263,10 +1269,7 @@ class DifferentialEvolutionSolver:
                                   UserWarning, stacklevel=2)
             if self.disp:
                 print(f"Polishing solution with '{self.minimizer_kwargs['method']}'")
-            result = minimize(lambda x:
-                                list(self._mapwrapper(self.func, np.atleast_2d(x)))[0],
-                              np.copy(DE_result.x),
-                              **self.minimizer_kwargs)
+            result = minimize(**self.minimizer_kwargs)
 
             self._nfev += result.nfev
             DE_result.nfev = self._nfev
