@@ -1576,6 +1576,11 @@ class matrix_t_gen(multi_rv_generic):
 
     .. versionadded:: 1.16.0
 
+    References
+    ----------
+    .. [1] Gupta, A.K., & Nagar, D.K. (2000). Matrix Variate Distributions (1st ed.). 
+           Chapman and Hall/CRC.
+
     Examples
     --------
 
