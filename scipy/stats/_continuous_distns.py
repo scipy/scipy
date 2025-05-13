@@ -11457,6 +11457,15 @@ class gennorm_gen(rv_continuous):
     def _isf(self, x, beta):
         return -self._ppf(x, beta)
 
+    def _munp(self, n, beta):
+        if n == 0:
+            return 1.
+        if n % 2 == 0:
+            c1, cn = sc.gammaln([1.0/beta, (n + 1.0)/beta])
+            return np.exp(cn - c1)
+        else:
+            return 0.
+
     def _stats(self, beta):
         c1, c3, c5 = sc.gammaln([1.0/beta, 3.0/beta, 5.0/beta])
         return 0., np.exp(c3 - c1), 0., np.exp(c5 + c1 - 2.0*c3) - 3.
