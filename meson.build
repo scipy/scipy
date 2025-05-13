@@ -190,7 +190,7 @@ else
     'qhull_r',
     version : '8.0.2',
   )
-  qhull_r_dep = boost_math.get_variable('qhull_r_dep')
+  qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
 subdir('scipy')
