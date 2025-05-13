@@ -1527,19 +1527,46 @@ class matrix_t_gen(multi_rv_generic):
     The probability density function for `matrix_t` is
 
     .. math::
-        \mathcal{T}_{m,n} = \\frac{\Gamma_n \left( \\frac{\mathrm{df} + m + n - 1}{2} \\right)}{
-        \Gamma_n \left( \\frac{\mathrm{df} + n - 1}{2} \\right)\pi^{mn / 2}\left|\Sigma\\right|^{n/2}
-        \left|\Omega\\right|^{m/2}}\left|I_n + ( X - \mathrm{M} )^T \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}\\right|^{
-        -\\frac{\mathrm{df} + m + n - 1}{2}}
+        \mathcal{T}_{m,n} = \\frac{
+            \Gamma_n \left( 
+                \\frac{\mathrm{df} + m + n - 1}{2} 
+            \\right)
+            \left( 
+            \det \left( 
+                I_n + (X - \mathrm{M})^T \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1}
+            \\right) 
+        \\right)^{ -\\frac{\mathrm{df} + m + n - 1}{2} }
+        }{
+            \Gamma_n \left( 
+                \\frac{\mathrm{df} + n - 1}{2} 
+            \\right)
+            \pi^{mn / 2}
+            \left( \det \Sigma \\right)^{n/2}
+            \left( \det \Omega \\right)^{m/2}
+        }
 
     or, alternatively,
 
     .. math::
-        \mathcal{T}_{m,n} = \\frac{\Gamma_m \left( \\frac{\mathrm{df} + m + n - 1}{2} \\right)}{
-        \Gamma_m \left( \\frac{\mathrm{df} + n - 1}{2} \\right)\pi^{mn / 2}\left|\Sigma\\right|^{n/2}
-        \left|\Omega\\right|^{m/2}}\left|I_m+ \Sigma^{-1} ( X - \mathrm{M} ) \Omega^{-1}
-        ( X - \mathrm{M} )^T\\right|^{-\\frac{\mathrm{df} + m + n - 1}{2}}
-
+        \mathcal{T}_{m,n} = 
+        \\frac{
+            \Gamma_m \left( 
+                \\frac{\mathrm{df} + m + n - 1}{2} 
+            \\right)
+            \left( 
+                \det \left(
+                    I_m + \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1} (X - \mathrm{M})^T
+                    \\right)
+            \\right)^{ -\\frac{\mathrm{df} + m + n - 1}{2} }
+        }{
+            \Gamma_m \left( 
+                \\frac{\mathrm{df} + n - 1}{2} 
+            \\right)
+            \pi^{mn / 2}
+            \left( \det \Sigma \\right)^{n/2}
+            \left( \det \Omega \\right)^{m/2}
+        }
+        
     where :math:`\mathrm{M}` is the mean,
     :math:`\Sigma` is the among-row covariance matrix,
     :math:`\Omega` is the among-column covariance matrix,
@@ -1700,7 +1727,9 @@ class matrix_t_gen(multi_rv_generic):
             )
         return X
 
-    def _logpdf(self, dims, X, mean, df, invrowcov, invcolcov, logdetrowcov, logdetcolcov):
+    def _logpdf(
+            self, dims, X, mean, df, invrowcov, invcolcov, logdetrowcov, logdetcolcov
+        ):
         """
         Log of the matrix t probability density function.
 
@@ -1895,7 +1924,9 @@ class matrix_t_gen(multi_rv_generic):
         else:
             rowchol = scipy.linalg.cholesky(rowcov, lower=True)[np.newaxis, ...]
             colchol = _cholesky_invwishart_rvs(df, colcov, size, random_state)
-        t_raw = np.einsum("ijp,ipq,ikq->ijk", rowchol, std_norm, colchol, optimize=True)
+        t_raw = np.einsum(
+            "ijp,ipq,ikq->ijk", rowchol, std_norm, colchol, optimize=True
+        )
         t_centered = mean[np.newaxis, ...] + t_raw
         if size == 1:
             t_centered = t_centered.reshape(mean.shape)
