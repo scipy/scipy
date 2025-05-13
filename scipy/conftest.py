@@ -304,21 +304,20 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                              f"must be a subset of {list(xp_known_backends)}")
 
         if marker.kwargs.get('np_only', False):
-            reason = marker.kwargs.get(
-                "reason", "do not run with non-NumPy backends")
+            reason = marker.kwargs.get("reason") or "do not run with non-NumPy backends"
             for backend in xp_skip_np_only_backends - exceptions:
                 reasons[backend].append(reason)
 
         elif marker.kwargs.get('cpu_only', False):
-            reason = marker.kwargs.get(
-                "reason", "no array-agnostic implementation or delegation available "
-                          "for this backend and device")
+            reason = marker.kwargs.get("reason") or (
+                "no array-agnostic implementation or delegation available "
+                "for this backend and device")
             for backend in xp_skip_cpu_only_backends - exceptions:
                 reasons[backend].append(reason)
 
         elif marker.kwargs.get('eager_only', False):
-            reason = marker.kwargs.get(
-                "reason", "eager checks not executed on lazy backends")
+            reason = marker.kwargs.get("reason") or (
+                "eager checks not executed on lazy backends")
             for backend in xp_skip_eager_only_backends - exceptions:
                 reasons[backend].append(reason)
 
@@ -328,8 +327,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             if backend not in xp_known_backends:
                 raise ValueError(f"Unknown backend: {backend}; "
                                  f"must be one of {list(xp_known_backends)}")
-            reason = marker.kwargs.get(
-                "reason", f"do not run with array API backend: {backend}")
+            reason = marker.kwargs.get("reason") or (
+                f"do not run with array API backend: {backend}")
             # reason overrides the ones from cpu_only, np_only, and eager_only.
             # This is regardless of order of appearence of the markers.
             reasons[backend].insert(0, reason)
@@ -403,9 +402,10 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         request, skip_or_xfail=skip_or_xfail
     )
     xp = request.param
-    skip_or_xfail = getattr(pytest, skip_or_xfail)
-    reason = skip_xfail_reasons.get(xp.__name__)
-    if reason:
+    if xp.__name__ in skip_xfail_reasons:
+        reason = skip_xfail_reasons[xp.__name__]
+        assert reason  # Default reason applied above
+        skip_or_xfail = getattr(pytest, skip_or_xfail)
         skip_or_xfail(reason=reason)
 
 

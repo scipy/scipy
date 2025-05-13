@@ -1804,7 +1804,7 @@ class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
         data = xp.asarray(rng.randn(12345), dtype=xp.float64)
-        moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
+        moments = xp.stack([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
         expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
                               dtype=data.dtype)
@@ -1814,7 +1814,7 @@ class TestKstat:
         m1 = stats.moment(data, order=1)
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
-        xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
+        xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -3247,11 +3247,11 @@ class TestCommonAxis:
         x = xp.asarray(rng.random((6, 7)))
 
         res = fun(x, **kwargs, axis=0)
-        ref = xp.asarray([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
+        ref = xp.stack([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=1)
-        ref = xp.asarray([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
+        ref = xp.stack([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=None)

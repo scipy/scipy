@@ -606,10 +606,12 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
 def lint(ctx, fix, diff_against, files, all, no_cython):
     """🔦 Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    root = Path(__file__).parent.parent
+    cmd_prefix = [sys.executable] if sys.platform == "win32" else []
 
-    cmd_lint = [os.path.join(root, 'tools', 'lint.py'),
-           f'--diff-against={diff_against}']
+    cmd_lint = cmd_prefix + [
+        os.path.join('tools', 'lint.py'),
+        f'--diff-against={diff_against}'
+    ]
     if files != "":
         cmd_lint += [f'--files={files}']
     if all:
@@ -620,10 +622,14 @@ def lint(ctx, fix, diff_against, files, all, no_cython):
         cmd_lint += ['--fix']
     util.run(cmd_lint)
 
-    cmd_unicode = [os.path.join(root, 'tools', 'check_unicode.py')]
+    cmd_unicode = cmd_prefix + [
+        os.path.join('tools', 'check_unicode.py')
+    ]
     util.run(cmd_unicode)
 
-    cmd_check_test_name = [os.path.join(root, 'tools', 'check_test_name.py')]
+    cmd_check_test_name = cmd_prefix + [
+        os.path.join('tools', 'check_test_name.py')
+    ]
     util.run(cmd_check_test_name)
 
 # From scipy: benchmarks/benchmarks/common.py

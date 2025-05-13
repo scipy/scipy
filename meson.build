@@ -14,6 +14,8 @@ project(
   ],
 )
 
+meson.add_dist_script('tools/trim_sdist_content.py')
+
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 

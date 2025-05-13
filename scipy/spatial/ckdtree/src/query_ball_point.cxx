@@ -75,14 +75,7 @@ traverse_checking(const ckdtree *self,
         const ckdtree_intp_t start = lnode->start_idx;
         const ckdtree_intp_t end = lnode->end_idx;
 
-        CKDTREE_PREFETCH(data + indices[start] * m, 0, m);
-        if (start < end - 1)
-            CKDTREE_PREFETCH(data + indices[start+1] * m, 0, m);
-
         for (i = start; i < end; ++i) {
-
-            if (i < end -2 )
-                CKDTREE_PREFETCH(data + indices[i+2] * m, 0, m);
 
             d = MinMaxDist::point_point_p(self, data + indices[i] * m, tpt, p, m, tub);
 
@@ -124,9 +117,9 @@ query_ball_point(const ckdtree *self, const double *x,
     for (ckdtree_intp_t i=0; i < n_queries; ++i) {
         const ckdtree_intp_t m = self->m;
         Rectangle rect(m, self->raw_mins, self->raw_maxes);
-        if (CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
+        if (self->raw_boxsize_data == NULL) {
             Rectangle point(m, x + i * m, x + i * m);
-            HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
+            HANDLE(p == 2, MinkowskiDistP2)
             HANDLE(p == 1, MinkowskiDistP1)
             HANDLE(std::isinf(p), MinkowskiDistPinf)
             HANDLE(1, MinkowskiDistPp)
@@ -137,7 +130,7 @@ query_ball_point(const ckdtree *self, const double *x,
             for(j=0; j<m; ++j) {
                 point.maxes()[j] = point.mins()[j] = BoxDist1D::wrap_position(point.mins()[j], self->raw_boxsize_data[j]);
             }
-            HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
+            HANDLE(p == 2, BoxMinkowskiDistP2)
             HANDLE(p == 1, BoxMinkowskiDistP1)
             HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp)
