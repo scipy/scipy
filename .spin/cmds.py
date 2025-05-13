@@ -133,7 +133,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                 ])
         
     if use_system_libraries:
-        meson_args = meson_args + ("-Duse-system-libraries=true")
+        meson_args = meson_args + ("-Duse-system-libraries=true",)
 
     if parallel is None:
         # Use number of physical cores rather than ninja's default of 2N+2,

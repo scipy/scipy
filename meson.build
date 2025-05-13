@@ -173,7 +173,7 @@ if use_system_libraries
   )
 else
   boost_math = subproject(
-    'boost_math'
+    'boost_math',
     version : '1.88.0',
   )
   boost_math_dep = boost_math.get_variable('boost_math_dep')
@@ -183,14 +183,14 @@ if use_system_libraries
   qhull_r_dep = dependency(
     'qhull_r',
     version : '8.0.2',
-    fallback : ['qhull_r', 'qhull_r_dep']
+    fallback : ['qhull_r', 'qhull_r_dep'],
   )
 else
   qhull_r = subproject(
-    'qhull_r'
+    'qhull_r',
     version : '8.0.2',
   )
-  boost_math_dep = boost_math.get_variable('qhull_r_dep')
+  qhull_r_dep = boost_math.get_variable('qhull_r_dep')
 endif
 
 subdir('scipy')
