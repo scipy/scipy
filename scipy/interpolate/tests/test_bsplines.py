@@ -3533,6 +3533,8 @@ class TestMakeSplrep:
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
 
+    def test_issue_22704(self):
+        # Reference - https://github.com/scipy/scipy/issues/22704
         x = np.asarray([20.00, 153.81, 175.57, 202.47, 237.11,
              253.61, 258.56, 273.40, 284.54, 293.61,
              298.56, 301.86, 305.57, 307.22, 308.45,
@@ -3542,7 +3544,7 @@ class TestMakeSplrep:
              25.20, 21.60, 18.00, 14.40, 10.80,
              7.20, 3.60, 0.0], dtype=np.float64)
         w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
-        with assert_raises(RuntimeError):
+        with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
 
     def test_shape(self):

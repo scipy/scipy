@@ -60,7 +60,7 @@ def _get_residuals(x, y, t, k, w):
     residuals = _compute_residuals(w2, spl(x), y)
     fp = residuals.sum()
     if np.isnan(fp):
-        raise RuntimeError(_iermesg[1])
+        raise ValueError(_iermesg[1])
     return residuals, fp
 
 
