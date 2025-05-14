@@ -329,7 +329,6 @@ class TestCDFlib:
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
 
-    @pytest.mark.xfail(run=False)
     def test_chndtridf(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -339,7 +338,6 @@ class TestCDFlib:
                 Arg(0, 100, inclusive_a=False)],
             n=1000, rtol=1e-4, atol=1e-15)
 
-    @pytest.mark.xfail(run=False)
     def test_chndtrinc(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
