@@ -619,8 +619,8 @@ Result classes used in :mod:`scipy.stats`
 
    stats._result_classes
 
-Base class for Continuous Distributions
----------------------------------------
+Base classes for statistical distributions
+------------------------------------------
 
 .. toctree::
    :maxdepth: 2
