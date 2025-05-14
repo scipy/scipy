@@ -3746,23 +3746,6 @@ class TestEnvelope:
         xp_assert_close(y6, np.zeros(6), atol=1e-12)
         xp_assert_close(y6_res, x6, atol=1e-12)
 
-    def test_nyquist(self):
-        """Test behavior when input is a cosine at the Nyquist frequency.
-
-        Resampling even length signals, requires accounting for unpaired bins at the
-        Nyquist frequency (consults the source code of `resample`).
-
-        Since `envelope` excludes the Nyquist frequency from the envelope calculation,
-        only the residues need to be investigated.
-        """
-        x4 = sp_fft.irfft([0, 0, 8])  # = [2, -2, 2, -2]
-        x6 = signal.resample(x4, num=6)  # = [2, -1, -1, 2, -1, -1]
-        y6, y6_res = envelope(x4, n_out=6, residual='all')  # real-valued case
-        z6, z6_res = envelope(x4 + 0j, n_out=6, residual='all')  # complex-valued case
-
-        xp_assert_close(y6, np.zeros(6), atol=1e-12)
-        xp_assert_close(y6_res, x6, atol=1e-12)
-
         xp_assert_close(z6, np.zeros(6, dtype=z6.dtype), atol=1e-12)
         xp_assert_close(z6_res, x6.astype(z6.dtype), atol=1e-12)
 
