@@ -328,6 +328,8 @@ class TestCDFlib:
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
 
+
+    @pytest.mark.xfail(run=False)
     def test_chndtridf(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -337,6 +339,7 @@ class TestCDFlib:
                 Arg(0, 100, inclusive_a=False)],
             n=1000, rtol=1e-4, atol=1e-15)
 
+    @pytest.mark.xfail(run=False)
     def test_chndtrinc(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -712,7 +715,7 @@ class TestNoncentralTFunctions:
 
 class TestNoncentralChiSquaredFunctions:
 
-    def test_chndtr_against_wolfram_alpha(self):
+    def test_chndtr_and_inverses_against_wolfram_alpha(self):
         # Each row holds (x, nu, lam, expected_value)
         # These values were computed using Wolfram Alpha with
         #     CDF[NoncentralChiSquareDistribution[nu, lam], x]
@@ -733,6 +736,14 @@ class TestNoncentralChiSquaredFunctions:
         ])
         cdf = sp.chndtr(values[:, 0], values[:, 1], values[:, 2])
         assert_allclose(cdf, values[:, 3], rtol=1e-13)
+        # the last two values are very close to 1.0, so we do not
+        # test the inverses for them
+        x = sp.chndtrix(values[:, 3], values[:, 1], values[:, 2])
+        assert_allclose(x[:-2], values[:-2, 0], rtol=1e-8)
+        df = sp.chndtridf(values[:, 0], values[:, 3], values[:, 2])
+        assert_allclose(df[:-2], values[:-2, 1], rtol=1e-8)
+        nc = sp.chndtrinc(values[:, 0], values[:, 1], values[:, 3])
+        assert_allclose(nc[:-2], values[:-2, 2], rtol=1e-8)
 
     # CDF Reference values computed with mpmath with the following script
     # 
