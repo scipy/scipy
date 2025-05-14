@@ -460,19 +460,25 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, v
         dtype = graph.dtype
 
     graph_sum = np.asarray(graph.sum(axis=axis)).ravel()
-    graph_diagonal = graph.diagonal()
-    diag = graph_sum - graph_diagonal
     if symmetrized:
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
-        diag = graph_sum - graph_diagonal - graph_diagonal
+    graph_diagonal = graph.diagonal()
 
-    if variant == "use_abs":
+    if variant == "degree":
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            diag -= graph_diagonal
+    elif variant == "use_abs":
         # Normalization affects only the diagonal (degree) computation, not the rest.
         # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        graph_abs = np.abs(graph)
+        graph_diagonal_abs = np.abs(graph_diagonal)
+        diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
         if symmetrized:
-            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
-                    - np.abs(graph_diagonal)
+            diag += np.asarray(graph_abs.sum(axis=1 - axis)).ravel() \
+                    - graph_diagonal_abs
+    else:
+        raise ValueError(f"Invalid variant: {variant!r}")
 
     if normed:
         isolated_node_mask = diag == 0
@@ -517,24 +523,23 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
         if copy:
             needs_copy = True
 
-    # Normalization affects only the diagonal (degree) computation, not the rest.
-    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
     if variant == "degree":
+        if symmetrized:
+            m += m.T.conj()
         w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     elif variant == "use_abs":
-        w = np.asarray(np.abs(m).sum(axis=axis)).ravel() - np.abs(m.diagonal())
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        m_abs = np.abs(m)
+        m_diagonal_abs = np.abs(m.diagonal())
+        w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
+        if symmetrized:
+            # m_abs.T == np.abs(m.T.conj())
+            w += np.asarray(m_abs.T.sum(axis=axis)).ravel() \
+                 - m_diagonal_abs
+            m += m.T.conj()
     else:
         raise ValueError(f"Invalid variant: {variant!r}")
-
-    if symmetrized:
-        if variant == "degree":
-            w += np.asarray(m.T.conj().sum(axis=axis)).ravel() - m.diagonal()
-        elif variant == "use_abs":
-            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel() \
-                 - np.abs(m.diagonal())
-        else:
-            raise ValueError(f"Invalid variant: {variant!r}")
-        m += m.T.conj()
 
     if normed:
         m = m.tocoo(copy=needs_copy)
@@ -566,19 +571,25 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, va
         dtype = m.dtype
 
     graph_sum = m.sum(axis=axis)
-    graph_diagonal = m.diagonal()
-    diag = graph_sum - graph_diagonal
     if symmetrized:
         graph_sum += m.sum(axis=1 - axis)
-        diag = graph_sum - graph_diagonal - graph_diagonal
+    graph_diagonal = m.diagonal()
 
-    if variant == "use_abs":
+    if variant == "degree":
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            diag -= graph_diagonal
+    elif variant == "use_abs":
         # Normalization affects only the diagonal (degree) computation, not the rest.
         # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
-        diag = np.asarray(np.abs(graph).sum(axis=axis)).ravel() - np.abs(graph_diagonal)
+        graph_abs = np.abs(graph)
+        graph_diagonal_abs = np.abs(graph_diagonal)
+        diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
         if symmetrized:
-            diag += np.asarray(np.abs(graph).sum(axis=1 - axis)).ravel() \
-                    - np.abs(graph_diagonal)
+            diag += np.asarray(graph_abs.sum(axis=1 - axis)).ravel() \
+                    - graph_diagonal_abs
+    else:
+        raise ValueError(f"Invalid variant: {variant!r}")
 
     if normed:
         isolated_node_mask = diag == 0
@@ -626,23 +637,21 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
 
     np.fill_diagonal(m, 0)
 
-    # Normalization affects only the diagonal (degree) computation, not the rest.
-    # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
     if variant == "degree":
-        w = np.asarray(m.sum(axis=axis)).ravel()
+        if symmetrized:
+            m += m.T.conj()
+        w = m.sum(axis=axis)
     elif variant == "use_abs":
-        w = np.asarray(np.abs(m).sum(axis=axis)).ravel()
+        # Normalization affects only the diagonal (degree) computation, not the rest.
+        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+        m_abs = np.abs(m)
+        w = m_abs.sum(axis=axis)
+        if symmetrized:
+            # m_abs.T == np.abs(m.T.conj())
+            w += m_abs.T.sum(axis=axis)
+            m += m.T.conj()
     else:
         raise ValueError(f"Invalid variant: {variant!r}")
-
-    if symmetrized:
-        if variant == "degree":
-            w += np.asarray(m.T.conj().sum(axis=axis)).ravel()
-        elif variant == "use_abs":
-            w += np.asarray(np.abs(m.T.conj()).sum(axis=axis)).ravel()
-        else:
-            raise ValueError(f"Invalid variant: {variant!r}")
-        m += m.T.conj()
 
     if normed:
         isolated_node_mask = (w == 0)
