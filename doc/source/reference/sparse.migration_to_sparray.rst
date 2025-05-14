@@ -239,8 +239,8 @@ Details: shape changes and reductions
 
 -  Reduction operations along an axis reduce the shape:
 
-   -  ``M.min(axis=1)`` returns a 2D row matrix by summing along axis 1.
-   -  ``A.min(axis=1)`` returns a 1D ``coo_array`` summing along axis 1.
+   -  ``M.min(axis=1)`` returns a 2D row matrix of the min along axis 1.
+   -  ``A.min(axis=1)`` returns a 1D ``coo_array`` of the min along axis 1.
       Some reductions return dense arrays/matrices instead of sparse ones:
 
       ============  =========
@@ -261,7 +261,7 @@ Details: shape changes and reductions
 
 -  Some reductions return a scalar. Those should behave as they did
    before and shouldn’t need to be considered during migration. E.g.
-   ``A.sum()``
+   ``A.min()``
 
 .. _sparse-migration-removed-methods:
 
