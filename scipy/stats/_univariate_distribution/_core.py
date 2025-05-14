@@ -359,8 +359,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     Attributes
     ----------
-    Parameters `tol`, `validation_policy`, and `cache_policy` are available
-    as attributes.
+    tol, validation_policy, cache_policy :
+        All parameters are available as attributes.
 
     Methods
     -------
