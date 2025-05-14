@@ -631,6 +631,7 @@ class TestCumulativeSimpson:
         # `simpson` uses the trapezoidal rule
         return theoretical_difference
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(
@@ -662,6 +663,7 @@ class TestCumulativeSimpson:
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
         )
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.thread_unsafe
     @pytest.mark.slow
     @given(

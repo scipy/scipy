@@ -1146,7 +1146,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
 
     Returns
     -------
-    generic_gradient_matnitude : ndarray
+    generic_gradient_magnitude : ndarray
         Filtered array. Has the same shape as `input`.
 
     """
