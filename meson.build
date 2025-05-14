@@ -164,8 +164,15 @@ xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
 use_system_libraries = get_option('use-system-libraries')
+auto_system_libraries = false
 
-if use_system_libraries
+if use_system_libraries.contains('none')
+  use_system_libraries = ['none']
+elif use_system_libraries.contains('auto')
+  auto_system_libraries = true 
+endif
+
+if auto_system_libraries or use_system_libraries.contains('boost.math')
   boost_math_dep = dependency(
     'boost',
     version : '1.88.0',
@@ -179,7 +186,7 @@ else
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
-if use_system_libraries
+if auto_system_libraries or use_system_libraries.contains('qhull')
   qhull_r_dep = dependency(
     'qhull_r',
     version : '8.0.2',
