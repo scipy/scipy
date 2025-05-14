@@ -1,9 +1,9 @@
 """Restared Krylov method for evaluating f(A)b"""
 
 import numpy as np
-import scipy.sparse.linalg
 from ._isolve.iterative import _get_atol_rtol
 
+__all__ = ['krylov_funmv']
 
 def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
     """
@@ -17,9 +17,11 @@ def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
     b : ndarray
         The vector b to multiply the f(A) with.
     V : ndarray
-        The n x (m + 1) matrix whose columns determines the basis for Krylov subspace Km(A, b).
+        The n x (m + 1) matrix whose columns determines the basis for
+        Krylov subspace Km(A, b).
     H : ndarray
-        A (m + 1) x m upper Hessenberg matrix representing the projection of A onto Km(A, b).
+        A (m + 1) x m upper Hessenberg matrix representing the projection of A
+        onto Km(A, b).
     m : int
         The order of the Krylov subspace.
 
@@ -41,7 +43,8 @@ def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
         if H[k + 1, k] != 0:
             V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
         else:
-            raise RuntimeError(f"krylov_funmv: The Arnoldi iteration broke down at k = {k}, i.e., V[:, k + 1] = 0")
+            raise RuntimeError("krylov_funmv: The Arnoldi iteration broke down "
+                               f"at k = {k}, i.e., V[:, k + 1] = 0")
 
 def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
     """
@@ -55,9 +58,11 @@ def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
     b : ndarray
         The vector b to multiply the f(A) with.
     V : ndarray
-        The n x (m + 1) matrix whose columns determines the basis for Krylov subspace Km(A, b).
+        The n x (m + 1) matrix whose columns determines the basis for
+        Krylov subspace Km(A, b).
     H : ndarray
-        A (m + 1) x m upper Hessenberg matrix representing the projection of A onto Km(A, b).
+        A (m + 1) x m upper Hessenberg matrix representing the projection of A
+        onto Km(A, b).
     m : int
         The order of the Krylov subspace.
 
@@ -80,10 +85,12 @@ def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
             if k < m - 1:
                 H[k, k + 1] = H[k + 1, k]
         else:
-            raise RuntimeError(f"krylov_funmv: The Lanczos iteration broke down at k = {k}, i.e., V[:, k + 1] = 0")
+            raise RuntimeError("krylov_funmv: The Lanczos iteration broke down "
+                               f"at k = {k}, i.e., V[:, k + 1] = 0")
 
 
-def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max_restarts = 20, ortho_method = "arnoldi", verbose = False):
+def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
+                 max_restarts = 20, ortho_method = "arnoldi", verbose = False):
     """
     A restarted Krylov method for evaluating ``y = f(tA) b``.
 
@@ -118,7 +125,7 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
         after max_restarts cycles even if the specified tolerance has not been
         achieved. The default is ``max_restarts=20``
 
-    method : string, optional
+    ortho_method : string, optional
         Orthogonalization method to use. ``lanczos`` is faster, but it requires
         that ``A`` is Hermitian. ``arnoldi`` is the default option.
 
@@ -133,10 +140,10 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
     Notes
     ______
 
-    The convergence of the Krylov method heavily depends on the spectrum of ``A`` and the
-    function ``f``. With restarting, there are only formal proofs for functions of order 1
-    (e.g., ``exp``, ``sin``, ``cos``) and Stieltjes functions [2, 3], while the general
-    case remains an open problem.
+    The convergence of the Krylov method heavily depends on the spectrum
+    of ``A`` and the function ``f``. With restarting, there are only formal
+    proofs for functions of order 1 (e.g., ``exp``, ``sin``, ``cos``) and
+    Stieltjes functions [2, 3], while the general case remains an open problem.
 
     Examples
     ________
@@ -176,17 +183,19 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
 
     References
     ----------
-    .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel, “Implementation of a restarted Krylov
-           subspace method for the evaluation of matrix functions,” Linear Algebra and its Applications,
+    .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel,
+          “Implementation of a restarted Krylov subspace method for the
+          evaluation of matrix functions,” Linear Algebra and its Applications,
            vol. 429, no. 10, pp. 2293–2314, Nov. 2008, doi: 10.1016/j.laa.2008.06.029.
 
-    .. [2] M. Eiermann and O. G. Ernst, “A Restarted Krylov Subspace Method for the Evaluation of Matrix
-           Functions,” SIAM J. Numer. Anal., vol. 44, no. 6, pp. 2481–2504, Jan. 2006, doi: 10.1137/050633846.
+    .. [2] M. Eiermann and O. G. Ernst, “A Restarted Krylov Subspace Method
+           for the Evaluation of Matrix Functions,” SIAM J. Numer. Anal., vol. 44,
+           no. 6, pp. 2481–2504, Jan. 2006, doi: 10.1137/050633846.
 
-    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, “Convergence of Restarted Krylov Subspace Methods
-        for Stieltjes Functions of Matrices,” SIAM J. Matrix Anal. Appl., vol. 35, no. 4, pp. 1602–1624,
-        Jan. 2014, doi: 10.1137/140973463.
-
+    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, “Convergence of Restarted
+           Krylov Subspace Methods for Stieltjes Functions of Matrices,” SIAM J.
+           Matrix Anal. Appl., vol. 35, no. 4, pp. 1602–1624,
+           Jan. 2014, doi: 10.1137/140973463.
 
     """
 
@@ -197,9 +206,10 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
 
     if restart_length is None:
         restart_length = min(20, n)
+    m = restart_length
     max_restarts = min(max_restarts, int(n / restart_length) + 1)
-
     mmax = restart_length * max_restarts
+
     bnorm = np.linalg.norm(b)
     atol, _ = _get_atol_rtol("krylov_funmv", bnorm, atol, btol)
 
@@ -207,9 +217,10 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
         y = b
         return y
 
-    # Using the column major order here since we work with each individual column separately.
     # Pre-allocate the maximum memory space.
-    V = np.zeros((n, restart_length + 1), dtype = b.dtype, order = 'F')
+    # Using the column major order here since we work with
+    # each individual column separately.
+    V = np.zeros((n, m + 1), dtype = b.dtype, order = 'F')
     H = np.zeros((mmax + 1, mmax), dtype = b.dtype, order = 'F')
     y = np.zeros_like(b)
 
@@ -223,37 +234,38 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None, max
 
     restart = 1
     if ortho_method == "lanczos":
-        _krylov_funmv_lanczos(A, b, bnorm, V, H[:restart_length + 1, :restart_length], restart_length)
+        _krylov_funmv_lanczos(A, b, bnorm, V, H[:m + 1, :m], m)
     elif ortho_method == "arnoldi":
-        _krylov_funmv_arnoldi(A, b, bnorm, V, H[:restart_length + 1, :restart_length], restart_length)
+        _krylov_funmv_arnoldi(A, b, bnorm, V, H[:m + 1, :m], m)
     else:
-        raise RuntimeError("krylov_funmv: Invalid orthogonalization method. Available options: 'arnoldi' or 'lanczos'")
+        raise RuntimeError("krylov_funmv: Invalid orthogonalization method. "
+                           "Available options: 'arnoldi' or 'lanczos'")
 
-    fH = f(t * H[:restart_length, :restart_length])
-    y = bnorm * V[:, :restart_length].dot(fH[:, 0])
+    fH = f(t * H[:m, :m])
+    y = bnorm * V[:, :m].dot(fH[:, 0])
     update_norm = np.linalg.norm(bnorm * fH[:, 0])
 
     if verbose:
         print("{:^10}{:^10}{:^10}".format('restart', '||y_k||', '||y_k - y_k-1||'))
-        print("{:^10}{:^10.3g}{:^10.3g}".format(restart, np.linalg.norm(y), update_norm))
+        print(f"{restart:^10}{np.linalg.norm(y):^10.3g}{update_norm:^10.3g}")
 
 
     while restart < max_restarts and update_norm > atol:
-        begin = restart * restart_length
-        end = (restart + 1) * restart_length
+        begin = restart * m
+        end = (restart + 1) * m
 
         if ortho_method == "lanczos":
-            _krylov_funmv_lanczos(A, V[:, restart_length], 1, V, H[begin:end + 1, begin:end], restart_length)
+            _krylov_funmv_lanczos(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
         elif ortho_method == "arnoldi":
-            _krylov_funmv_arnoldi(A, V[:, restart_length], 1, V, H[begin:end + 1, begin:end], restart_length)
+            _krylov_funmv_arnoldi(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
 
         fH = f(t * H[:end, :end])
-        y = y + bnorm * V[:, :restart_length].dot(fH[begin:end, 0])
+        y = y + bnorm * V[:, :m].dot(fH[begin:end, 0])
         update_norm = np.linalg.norm(bnorm * fH[begin:end, 0])
         restart += 1
 
         if verbose:
-            print("{:^10}{:^10.3g}{:^10.3g}".format(restart, np.linalg.norm(y), update_norm))
+            print(f"{restart:^10}{np.linalg.norm(y):^10.3g}{update_norm:^10.3g}")
 
     if verbose:
         print("\n")

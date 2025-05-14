@@ -1,17 +1,13 @@
 """Test functions for the sparse.linalg._krylov_funm module."""
 from functools import partial
-from itertools import product
 
 import numpy as np
 import pytest
-from numpy.testing import (assert_allclose, assert_, assert_equal,
-                           suppress_warnings)
-from scipy.sparse import SparseEfficiencyWarning
+from numpy.testing import (assert_allclose)
 import scipy.sparse
 import scipy.linalg
 from scipy.sparse.linalg import aslinearoperator
-from scipy.linalg import (expm, cosm, coshm, sinm, sinhm, tanm, tanhm, logm, signm,
-                          sqrtm)
+from scipy.linalg import (expm, cosm, coshm, sinm, sinhm)
 
 from scipy.sparse.linalg._krylov_funmv import krylov_funmv
 
@@ -83,7 +79,8 @@ class TestKrylovFunmv:
             expected = fA @ b
             observed = krylov_funmv(f, t, A, b, ortho_method = 'lanczos')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
-            observed = krylov_funmv(f, t, aslinearoperator(A), b, ortho_method = 'lanczos')
+            observed = krylov_funmv(f, t, aslinearoperator(A), b,
+                                    ortho_method = 'lanczos')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
     @pytest.mark.parametrize("f", FUNCS)
@@ -107,7 +104,8 @@ class TestKrylovFunmv:
             observed = krylov_funmv(f, t, A, b, ortho_method = 'lanczos')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
-            observed = krylov_funmv(f, t, aslinearoperator(A), b, ortho_method = 'lanczos')
+            observed = krylov_funmv(f, t, aslinearoperator(A), b,
+                                    ortho_method='lanczos')
             assert_allclose(observed, expected, rtol = 1E-6, atol = 1E-8)
 
 
