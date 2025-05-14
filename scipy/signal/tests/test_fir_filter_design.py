@@ -8,7 +8,7 @@ import pytest
 import scipy._lib.array_api_extra as xpx
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, assert_almost_equal, assert_array_almost_equal,
-    array_namespace, xp_default_dtype, np_compat
+    array_namespace, xp_default_dtype
 )
 from scipy.fft import fft, fft2
 from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
@@ -143,21 +143,17 @@ class TestFirWinMore:
     def test_lowpass(self, xp):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
+        cutoff = xp.asarray(0.5)
+        kwargs = dict(cutoff=cutoff, window=('kaiser', beta), scale=False)
         taps = firwin(ntaps, **kwargs)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
-        )
+        assert_array_almost_equal(taps[:ntaps//2], xp.flip(taps)[:ntaps//2])
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
         freq_samples = xp.asarray([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
-        freqs, response = freqz(taps, worN=np.pi*freq_samples)
-
-        freqs = xp.asarray(freqs)    # XXX: convert freqz
-        response = xp.asarray(response)
+        freqs, response = freqz(taps, worN=xp.pi*freq_samples)
 
         assert_array_almost_equal(
             xp.abs(response),
@@ -165,7 +161,7 @@ class TestFirWinMore:
         )
 
         taps_str = firwin(ntaps, pass_zero='lowpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=np_compat)
+        xp_assert_close(taps, taps_str)
 
     def test_highpass(self, xp):
         width = 0.04
@@ -174,61 +170,56 @@ class TestFirWinMore:
         # Ensure that ntaps is odd.
         ntaps |= 1
 
-        kwargs = dict(cutoff=0.5, window=('kaiser', beta), scale=False)
+        cutoff = xp.asarray(0.5)
+        kwargs = dict(cutoff=cutoff, window=('kaiser', beta), scale=False)
         taps = firwin(ntaps, pass_zero=False, **kwargs)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
-        )
+        assert_array_almost_equal(taps[:ntaps//2], xp.flip(taps)[:ntaps//2])
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
         freq_samples = xp.asarray([0.0, 0.25, 0.5 - width/2, 0.5 + width/2, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
 
         assert_array_almost_equal(xp.abs(response),
                                   xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='highpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=np_compat)
+        xp_assert_close(taps, taps_str)
 
     def test_bandpass(self, xp):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        kwargs = dict(cutoff=[0.3, 0.7], window=('kaiser', beta), scale=False)
+        kwargs = dict(
+            cutoff=xp.asarray([0.3, 0.7]), window=('kaiser', beta), scale=False
+        )
         taps = firwin(ntaps, pass_zero=False, **kwargs)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
-        )
+        assert_array_almost_equal(taps[:ntaps//2], xp.flip(taps)[:ntaps//2])
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
         freq_samples = xp.asarray([0.0, 0.2, 0.3 - width/2, 0.3 + width/2, 0.5,
                                    0.7 - width/2, 0.7 + width/2, 0.8, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
 
         assert_array_almost_equal(xp.abs(response),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
         taps_str = firwin(ntaps, pass_zero='bandpass', **kwargs)
-        xp_assert_close(taps, taps_str, xp=np_compat)
+        xp_assert_close(taps, taps_str)
 
     def test_bandstop_multi(self, xp):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        kwargs = dict(cutoff=[0.2, 0.5, 0.8], window=('kaiser', beta),
+        kwargs = dict(cutoff=xp.asarray([0.2, 0.5, 0.8]), window=('kaiser', beta),
                       scale=False)
         taps = firwin(ntaps, **kwargs)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1], xp=np_compat
-        )
+        assert_array_almost_equal(taps[:ntaps//2], xp.flip(taps)[:ntaps//2])
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
@@ -236,7 +227,6 @@ class TestFirWinMore:
                                    0.5 - width/2, 0.5 + width/2, 0.65,
                                    0.8 - width/2, 0.8 + width/2, 0.9, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
 
         assert_array_almost_equal(
             xp.abs(response),
@@ -245,7 +235,7 @@ class TestFirWinMore:
         )
 
         taps_str = firwin(ntaps, pass_zero='bandstop', **kwargs)
-        xp_assert_close(taps, taps_str, xp=np_compat)
+        xp_assert_close(taps, taps_str)
 
     def test_fs_nyq(self, xp):
         """Test the fs and nyq keywords."""
@@ -253,28 +243,27 @@ class TestFirWinMore:
         width = 40.0
         relative_width = width/nyquist
         ntaps, beta = kaiserord(120, relative_width)
-        taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+        taps = firwin(ntaps, cutoff=xp.asarray([300, 700]), window=('kaiser', beta),
                         pass_zero=False, scale=False, fs=2*nyquist)
 
         # Check the symmetry of taps.
-        assert_array_almost_equal(
-            taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2 - 1:-1], xp=np_compat
-        )
+        assert_array_almost_equal(taps[:ntaps//2], xp.flip(taps)[:ntaps//2])
 
         # Check the gain at a few samples where
         # we know it should be approximately 0 or 1.
         freq_samples = xp.asarray([0.0, 200, 300 - width/2, 300 + width/2, 500,
                                    700 - width/2, 700 + width/2, 800, 1000])
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
-        freqs, response = xp.asarray(freqs), xp.asarray(response)
 
         assert_array_almost_equal(xp.abs(response),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
     def test_array_cutoff(self, xp):
         taps = firwin(3, xp.asarray([.1, .2]))
-        # the value is as computed by scipy==1.5.2
-        xp_assert_close(taps, xp.asarray([-0.00801395, 1.0160279, -0.00801395]), atol=1e-8)
+        # smoke test against the value computed by scipy==1.5.2
+        xp_assert_close(
+            taps, xp.asarray([-0.00801395, 1.0160279, -0.00801395]), atol=1e-8
+        )
 
     def test_bad_cutoff(self):
         """Test that invalid cutoff argument raises ValueError."""
@@ -322,8 +311,7 @@ class TestFirWinMore:
 @skip_xp_backends(cpu_only=True, reason="firwin2 uses np.interp")
 class TestFirwin2:
 
-    @skip_xp_backends(np_only=True)
-    def test_invalid_args(self, xp):
+    def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
         with assert_raises(ValueError, match='must be of same length'):
             firwin2(50, [0, 0.5, 1], [0.0, 1.0])
@@ -483,8 +471,7 @@ class TestFirwin2:
                         fs=120.0)
         assert_array_almost_equal(taps1, taps2)
 
-    @skip_xp_backends(np_only=True, reason="test array-likes")
-    def test_tuple(self, xp):
+    def test_tuple(self):
         taps1 = firwin2(150, (0.0, 0.5, 0.5, 1.0), (1.0, 1.0, 0.0, 0.0))
         taps2 = firwin2(150, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0])
         assert_array_almost_equal(taps1, taps2)
@@ -500,12 +487,10 @@ class TestFirwin2:
 @skip_xp_backends(cpu_only=True)
 class TestRemez:
 
-    @skip_xp_backends(np_only=True)
-    def test_bad_args(self, xp):
+    def test_bad_args(self):
         assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
 
-    @skip_xp_backends(np_only=True)
-    def test_hilbert(self, xp):
+    def test_hilbert(self):
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
@@ -557,8 +542,7 @@ class TestRemez:
             xp.asarray(h, dtype=xp.float64), **atol_arg
         )
 
-    @skip_xp_backends(np_only=True)
-    def test_fs_validation(self, xp):
+    def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             remez(11, .1, 1, fs=np.array([10, 20]))
 
@@ -567,8 +551,7 @@ class TestRemez:
 @skip_xp_backends(cpu_only=True, reason="lstsq")
 class TestFirls:
 
-    @skip_xp_backends(np_only=True)
-    def test_bad_args(self, xp):
+    def test_bad_args(self):
         # even numtaps
         assert_raises(ValueError, firls, 10, [0.1, 0.2], [0, 0])
         # odd bands
@@ -689,16 +672,14 @@ class TestFirls:
         habs = xp.abs(h[mask])
         xp_assert_close(habs, xp.zeros_like(habs), atol=1e-4)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firls(11, .1, 1, fs=np.array([10, 20]))
 
 class TestMinimumPhase:
 
-    @skip_xp_backends(np_only=True)
     @pytest.mark.thread_unsafe
-    def test_bad_args(self, xp):
+    def test_bad_args(self):
         # not enough taps
         assert_raises(ValueError, minimum_phase, [1.])
         assert_raises(ValueError, minimum_phase, [1., 1.])
@@ -710,8 +691,7 @@ class TestMinimumPhase:
         with pytest.raises(ValueError, match="is only supported when"):
             minimum_phase(np.ones(3), method='hilbert', half=False)
 
-    @skip_xp_backends(np_only=True)
-    def test_homomorphic(self, xp):
+    def test_homomorphic(self):
         # check that it can recover frequency responses of arbitrary
         # linear-phase filters
 
@@ -763,15 +743,15 @@ class TestMinimumPhase:
 
 class Testfirwin_2d:
     def test_invalid_args(self):
-        with pytest.raises(ValueError, 
+        with pytest.raises(ValueError,
                            match="hsize must be a 2-element tuple or list"):
             firwin_2d((50,), window=(("kaiser", 5.0), "boxcar"), fc=0.4)
-        
-        with pytest.raises(ValueError, 
+
+        with pytest.raises(ValueError,
                            match="window must be a 2-element tuple or list"):
             firwin_2d((51, 51), window=("hamming",), fc=0.5)
-        
-        with pytest.raises(ValueError, 
+
+        with pytest.raises(ValueError,
                            match="window must be a 2-element tuple or list"):
             firwin_2d((51, 51), window="invalid_window", fc=0.5)
 
