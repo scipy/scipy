@@ -320,7 +320,7 @@ class TestArithmetic1D:
         assert_equal(asp.dot(asp), np.dot(a, a))
 
         # bad matrix products
-        with pytest.raises(ValueError, match='dimension mismatch'):
+        with pytest.raises(ValueError, match='dimension mismatch|shapes.*not aligned'):
             asp.dot(f)
 
         # elemente-wise multiplication

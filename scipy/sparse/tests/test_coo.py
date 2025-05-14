@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import coo_array, random_array
@@ -563,8 +563,7 @@ def test_nd_add_sparse_with_inconsistent_shapes(a_shape, b_shape):
 
     arr_a = random_array((a_shape), density=0.6, rng=rng, dtype=int)
     arr_b = random_array((b_shape), density=0.6, rng=rng, dtype=int)
-    with pytest.raises(ValueError,
-                       match="(Incompatible|inconsistent) shapes|cannot be broadcast"):
+    with pytest.raises(ValueError, match="inconsistent shapes"):
         arr_a + arr_b
 
 
@@ -849,3 +848,140 @@ def test_extract_block_diag(shape):
     res = _extract_block_diag(_block_diag(sp_x), shape)
 
     assert_equal(res.toarray(), sp_x.toarray())
+
+
+add_sub_shapes = [
+    ((3,4), (3,4)), ((3,4,6), (3,4,6)), ((3,7,5), (3,7,5))
+]
+@pytest.mark.parametrize(('a_shape', 'b_shape'), add_sub_shapes)
+def test_add_no_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a + b
+    exp = np.add(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+    res = a + b.toarray()
+    assert_equal(res, exp)
+
+@pytest.mark.parametrize(('a_shape', 'b_shape'), add_sub_shapes)
+def test_sub_no_broadcasting(a_shape, b_shape):
+    rng = np.random.default_rng(23409823)
+    a = random_array(a_shape, density=0.6, random_state=rng, dtype=int)
+    b = random_array(b_shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a - b
+    exp = np.subtract(a.toarray(), b.toarray())
+    assert_equal(res.toarray(), exp)
+
+    res = a - b.toarray()
+    assert_equal(res, exp)
+
+argmax_argmin_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((2,0), 0), ((3,0,0,2), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((3,2,4,7), -2), ((4,5,7,8,2), 4), ((4,5,7,8,2), -3),
+]
+@pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
+def test_argmax_argmin(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.argmax(axis=axis)
+    exp = np.argmax(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+
+    res = a.argmin(axis=axis)
+    exp = np.argmin(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+
+
+max_min_shapes_axis = [
+    ((3,), None), ((3,), 0),
+    ((4,6), 1), ((7,3), 0), ((3,5), None),
+    ((2,8,7), 2), ((2,8,7), 0),
+    ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
+    ((4,5,7,8,2), 4), ((4,5,8,1), 3), ((4,6), (0,)), ((4,6), (0,1)),
+    ((3,0,2), 2), ((3,0,2), (0,2)), ((3,0), 0),
+    ((3,7,8,5), (0,1)), ((3,7,8,5), (2,1)), ((3,7,8,5), (2,0)),
+    ((3,7,8,5), (0,-2)), ((3,7,8,5), (-1,2)), ((3,7,8,5), (3)),
+    ((3,7,8,5), (0,1,2)), ((3,7,8,5), (0,1,2,3)),
+]
+@pytest.mark.parametrize(('shape', 'axis'), max_min_shapes_axis)
+def test_min_max(shape, axis):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res_min = a.min(axis=axis)
+    exp_min = np.min(a.toarray(), axis=axis)
+    res_max = a.max(axis=axis)
+    exp_max = np.max(a.toarray(), axis=axis)
+    res_nanmin = a.nanmin(axis=axis)
+    exp_nanmin = np.nanmin(a.toarray(), axis=axis)
+    res_nanmax = a.nanmax(axis=axis)
+    exp_nanmax = np.nanmax(a.toarray(), axis=axis)
+
+    for res, exp in [(res_min, exp_min), (res_max, exp_max),
+                     (res_nanmin, exp_nanmin), (res_nanmax, exp_nanmax)]:
+        if np.issubdtype(type(res), np.number):
+            assert_equal(res, exp)
+        else:
+            assert_equal(res.toarray(), exp)
+
+
+def test_min_max_full():
+    for a in (coo_array([[[1, 2, 3, 4]]]), coo_array([[1, 2, 3, 4]])):
+        assert a.min() == 1
+        assert (-a).max() == -1
+
+
+sum_mean_params = [
+    ((3,), None, None), ((3,), 0, None),
+    ((4,6), 1, None), ((7,3), 0, None), ((3,5), None, None),
+    ((2,8,7), 2, None), ((2,8,7), 0, np.zeros((8,7))),
+    ((3,2,4,7), None, None), ((3,2,4,7), 1, np.zeros((3,4,7))),
+    ((3,2,4,7), 0, None), ((4,5,7,8,2), 4, None),
+    ((4,5,8,1), 3, None), ((4,6), (0,), None), ((4,6), (0,1), None),
+    ((3,0,2), 2, None), ((3,0,2), (0,2), None), ((3,0), 0, None),
+    ((3,7,8,5), (0,1), np.zeros((8,5))), ((3,7,8,5), (2,1), None),
+    ((3,7,8,5), (0,-2), None), ((3,7,8,5), (-1,2), np.zeros((3,7))),
+    ((3,7,8,5), (3), None), ((3,7,8,5), (0,1,2), np.zeros((5,))),
+    ((3,7,8,5), (0,1,2,3), None),
+]
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_sum(shape, axis, out):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.sum(axis=axis, out=out)
+    exp = np.sum(a.toarray(), axis=axis)
+    assert_equal(res, exp)
+    if out is not None:
+        assert_equal(out, exp)
+        assert id(res) == id(out)
+
+
+@pytest.mark.parametrize(('shape', 'axis', 'out'), sum_mean_params)
+def test_mean(shape, axis, out):
+    rng = np.random.default_rng(23409823)
+    a = random_array(shape, density=0.6, random_state=rng, dtype=int)
+
+    res = a.mean(axis=axis, out=out)
+    exp = np.mean(a.toarray(), axis=axis)
+    assert_allclose(res, exp)
+    if out is not None:
+        assert id(res) == id(out)
+        assert_allclose(out, exp)
+
+
+def test_pow_abs_round():
+    rng = np.random.default_rng(23409823)
+    a = random_array((3,6,5,2,4), density=0.6, random_state=rng, dtype=int)
+    assert_allclose((a**3).toarray(), np.power(a.toarray(), 3))
+    assert_allclose((a**7).toarray(), np.power(a.toarray(), 7))
+    assert_allclose(round(a).toarray(), np.round(a.toarray()))
+    assert_allclose(abs(a).toarray(), np.abs(a.toarray()))
