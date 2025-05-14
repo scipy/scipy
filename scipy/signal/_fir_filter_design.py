@@ -384,7 +384,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     nyq = 0.5 * fs
 
     cutoff = xp.asarray(cutoff, dtype=xp.float64)
-    cutoff = xpx.atleast_nd(cutoff, ndim=1) / float(nyq)
+    cutoff = xpx.atleast_nd(cutoff, ndim=1, xp=xp) / float(nyq)
 
     # Check for invalid input.
     if cutoff.ndim > 1:
@@ -444,21 +444,22 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     # Build up the coefficients.
     alpha = 0.5 * (numtaps - 1)
-    m = xp.arange(0, numtaps) - alpha
+    m = xp.arange(0, numtaps, dtype=cutoff.dtype) - alpha
     h = 0
-    for left, right in bands:
+    for j in range(bands.shape[0]):
+        left, right = bands[j, 0], bands[j, 1]
         h += right * xpx.sinc(right * m, xp=xp)
         h -= left * xpx.sinc(left * m, xp=xp)
 
     # Get and apply the window function.
     from .windows import get_window
-    win = get_window(window, numtaps, fftbins=False)
+    win = get_window(window, numtaps, fftbins=False, xp=xp)
     h *= win
 
     # Now handle scaling if desired.
     if scale:
         # Get the first passband.
-        left, right = bands[0]
+        left, right = bands[0, ...]
         if left == 0:
             scale_frequency = 0.0
         elif right == 1:
@@ -466,7 +467,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
         else:
             scale_frequency = 0.5 * (left + right)
         c = xp.cos(xp.pi * m * scale_frequency)
-        s = np.sum(h * c)
+        s = xp.sum(h * c)
         h /= s
 
     return h

@@ -137,7 +137,6 @@ class TestFirwin:
             firwin(51, .5, fs=np.array([10, 20]))
 
 
-@skip_xp_backends(cpu_only=True, reason="TODO convert freqs/freqz")
 class TestFirWinMore:
     """Different author, different style, different tests..."""
 
@@ -272,8 +271,12 @@ class TestFirWinMore:
         assert_array_almost_equal(xp.abs(response),
                 xp.asarray([0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0]), decimal=5)
 
-    @skip_xp_backends(np_only=True)
-    def test_bad_cutoff(self, xp):
+    def test_array_cutoff(self, xp):
+        taps = firwin(3, xp.asarray([.1, .2]))
+        # the value is as computed by scipy==1.5.2
+        xp_assert_close(taps, xp.asarray([-0.00801395, 1.0160279, -0.00801395]), atol=1e-8)
+
+    def test_bad_cutoff(self):
         """Test that invalid cutoff argument raises ValueError."""
         # cutoff values must be greater than 0 and less than 1.
         assert_raises(ValueError, firwin, 99, -0.5)
@@ -292,14 +295,12 @@ class TestFirWinMore:
         assert_raises(ValueError, firwin, 99, 50.0, fs=80)
         assert_raises(ValueError, firwin, 99, [10, 20, 30], fs=50)
 
-    @skip_xp_backends(np_only=True)
     def test_even_highpass_raises_value_error(self):
         """Test that attempt to create a highpass filter with an even number
         of taps raises a ValueError exception."""
         assert_raises(ValueError, firwin, 40, 0.5, pass_zero=False)
         assert_raises(ValueError, firwin, 40, [.25, 0.5])
 
-    @skip_xp_backends(np_only=True)
     def test_bad_pass_zero(self):
         """Test degenerate pass_zero cases."""
         with assert_raises(ValueError, match="^Parameter pass_zero='foo' not in "):
@@ -313,7 +314,6 @@ class TestFirWinMore:
             with assert_raises(ValueError, match='must have at least two'):
                 firwin(41, [0.5], pass_zero=pass_zero)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             firwin2(51, .5, 1, fs=np.array([10, 20]))
