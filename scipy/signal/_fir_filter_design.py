@@ -383,7 +383,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
 
     nyq = 0.5 * fs
 
-    cutoff = xp.asarray(cutoff, dtype=xp.float64)
+    cutoff = xp.asarray(cutoff, dtype=xp_default_dtype(xp))
     cutoff = xpx.atleast_nd(cutoff, ndim=1, xp=xp) / float(nyq)
 
     # Check for invalid input.

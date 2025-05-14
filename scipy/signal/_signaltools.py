@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size,
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype
 
 )
 from scipy._lib.array_api_compat import is_array_api_obj
@@ -3769,6 +3769,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
         W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
+        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
