@@ -184,17 +184,17 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
     References
     ----------
     .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel,
-          “Implementation of a restarted Krylov subspace method for the
-          evaluation of matrix functions,” Linear Algebra and its Applications,
-           vol. 429, no. 10, pp. 2293–2314, Nov. 2008, doi: 10.1016/j.laa.2008.06.029.
+          "Implementation of a restarted Krylov subspace method for the
+          evaluation of matrix functions," Linear Algebra and its Applications,
+           vol. 429, no. 10, pp. 2293-2314, Nov. 2008, doi: 10.1016/j.laa.2008.06.029.
 
-    .. [2] M. Eiermann and O. G. Ernst, “A Restarted Krylov Subspace Method
-           for the Evaluation of Matrix Functions,” SIAM J. Numer. Anal., vol. 44,
-           no. 6, pp. 2481–2504, Jan. 2006, doi: 10.1137/050633846.
+    .. [2] M. Eiermann and O. G. Ernst, "A Restarted Krylov Subspace Method
+           for the Evaluation of Matrix Functions," SIAM J. Numer. Anal., vol. 44,
+           no. 6, pp. 2481-2504, Jan. 2006, doi: 10.1137/050633846.
 
-    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, “Convergence of Restarted
-           Krylov Subspace Methods for Stieltjes Functions of Matrices,” SIAM J.
-           Matrix Anal. Appl., vol. 35, no. 4, pp. 1602–1624,
+    .. [3] A. Frommer, S. Güttel, and M. Schweitzer, "Convergence of Restarted
+           Krylov Subspace Methods for Stieltjes Functions of Matrices," SIAM J.
+           Matrix Anal. Appl., vol. 35, no. 4, pp. 1602-1624,
            Jan. 2014, doi: 10.1137/140973463.
 
     """
