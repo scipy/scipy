@@ -601,8 +601,8 @@ Deprecated Functionality
 
    stats.mstats
 
-Base class for Continuous Distributions
----------------------------------------
+Base classes for statistical distributions
+------------------------------------------
 
 .. toctree::
    :maxdepth: 2
