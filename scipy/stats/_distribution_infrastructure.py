@@ -3616,6 +3616,26 @@ class ContinuousDistribution(UnivariateDistribution):
 
 
 class DiscreteDistribution(UnivariateDistribution):
+    def __add__(self, loc):
+        loc = np.asarray(loc)
+        integral = (loc == np.round(loc))
+        loc[~integral] = np.nan
+        return super().__add__(loc=loc)
+
+    def __sub__(self, loc):
+        loc = np.asarray(loc)
+        integral = (loc == np.round(loc))
+        loc[~integral] = np.nan
+        return super.__sub__(loc=-loc)
+
+    def __mul__(self, scale):
+        message = "Scaling is currently only supported for continuous RVs."
+        raise NotImplementedError(message)
+
+    def __truediv__(self, scale):
+        message = "Scaling is currently only supported for continuous RVs."
+        raise NotImplementedError(message)
+
     def _overrides(self, method_name):
         if method_name in {'_logpdf_formula', '_pdf_formula'}:
             return True
@@ -4365,9 +4385,6 @@ def _shift_scale_inverse_function(func):
 
 class TransformedDistribution(ContinuousDistribution):
     def __init__(self, X, /, *args, **kwargs):
-        if not isinstance(X, ContinuousDistribution):
-            message = "Transformations are currently only supported for continuous RVs."
-            raise NotImplementedError(message)
         self._copy_parameterization()
         self._variable = X._variable
         self._dist = X
