@@ -89,10 +89,10 @@ def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
                                f"at k = {k}, i.e., V[:, k + 1] = 0")
 
 
-def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
+def krylov_funmv(f, t, A, b, *, atol = 0.0, btol = 1e-6, restart_length = None,
                  max_restarts = 20, ortho_method = "arnoldi", verbose = False):
     """
-    A restarted Krylov method for evaluating ``y = f(tA) b``.
+    A restarted Krylov method for evaluating ``y = f(tA) b`` from [1]_ [2]_.
 
     Parameters
     ----------
@@ -135,19 +135,17 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
     Returns
     -------
     y : ndarray
-        The resulting vector from the operation
+        The result of ``f(tA) b``.
 
     Notes
-    ______
-
+    -----
     The convergence of the Krylov method heavily depends on the spectrum
     of ``A`` and the function ``f``. With restarting, there are only formal
     proofs for functions of order 1 (e.g., ``exp``, ``sin``, ``cos``) and
-    Stieltjes functions [2, 3], while the general case remains an open problem.
+    Stieltjes functions [2]_ [3]_, while the general case remains an open problem.
 
     Examples
-    ________
-
+    --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array
     >>> from scipy.sparse.linalg import krylov_funmv
@@ -165,12 +163,7 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
     >>> y - ref
     [4.44089210e-16 0.00000000e+00 2.22044605e-16]
 
-    Compute ``y = phi_1(tA) b``, where
-
-    .. math::
-
-        \phi_1(A) = A^{-1}(e^{A} - I).
-
+    Compute :math:`y = \phi_1(tA) b`, where  :math:`\phi_1(A) = A^{-1}(e^{A} - I)`.
 
     >>> def phim_1(X):
     >>>     return solve(X, expm(X) - np.eye(X.shape[0]))
@@ -186,16 +179,16 @@ def krylov_funmv(f, t, A, b, atol = 0.0, btol = 1e-6, restart_length = None,
     .. [1] M. Afanasjew, M. Eiermann, O. G. Ernst, and S. Güttel,
           "Implementation of a restarted Krylov subspace method for the
           evaluation of matrix functions," Linear Algebra and its Applications,
-           vol. 429, no. 10, pp. 2293-2314, Nov. 2008, doi: 10.1016/j.laa.2008.06.029.
+          vol. 429, no. 10, pp. 2293-2314, Nov. 2008, :doi:`10.1016/j.laa.2008.06.029`.
 
     .. [2] M. Eiermann and O. G. Ernst, "A Restarted Krylov Subspace Method
            for the Evaluation of Matrix Functions," SIAM J. Numer. Anal., vol. 44,
-           no. 6, pp. 2481-2504, Jan. 2006, doi: 10.1137/050633846.
+           no. 6, pp. 2481-2504, Jan. 2006, :doi:`10.1137/050633846`.
 
     .. [3] A. Frommer, S. Güttel, and M. Schweitzer, "Convergence of Restarted
            Krylov Subspace Methods for Stieltjes Functions of Matrices," SIAM J.
            Matrix Anal. Appl., vol. 35, no. 4, pp. 1602-1624,
-           Jan. 2014, doi: 10.1137/140973463.
+           Jan. 2014, :doi:`10.1137/140973463`.
 
     """
 
