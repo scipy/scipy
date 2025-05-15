@@ -825,13 +825,21 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             nsum(f, a, b, tolerances=dict(rtol=pytest))
 
-        with np.errstate(all='ignore'):
+        with (np.errstate(all='ignore')):
             res = nsum(f, xp.asarray([np.nan, np.inf]), xp.asarray(1.))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(10.), xp.asarray([np.nan, 1]))
-            assert xp.all((res.status == -1) & xp.isnan(res.sum)
-                          & xp.isnan(res.error) & ~res.success & res.nfev == 1)
+            assert (res.status[0] == -1) and not res.success[0]
+            assert xp.isnan(res.sum[0]) and xp.isnan(res.error[0])
+            assert (res.status[1] == 0) and res.success[1]
+            assert res.sum[1] == res.error[1]
+            assert xp.all(res.nfev[0] == 1)
+
             res = nsum(f, xp.asarray(1.), xp.asarray(10.),
                        step=xp.asarray([xp.nan, -xp.inf, xp.inf, -1, 0]))
             assert xp.all((res.status == -1) & xp.isnan(res.sum)
@@ -1084,8 +1092,8 @@ class TestNSum:
                 return 1 / x
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=0)
-        assert xp.isnan(res.sum)
-        assert xp.isnan(res.error)
+        assert xp.isinf(res.sum)
+        assert xp.isinf(res.error)
         assert res.status == -2
 
         res = nsum(f, xp.asarray(0), xp.asarray(10), maxterms=1)

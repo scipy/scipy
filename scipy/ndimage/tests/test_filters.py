@@ -2860,12 +2860,12 @@ class TestVectorizedFilter:
                    if batch_memory == 1 else contextlib.nullcontext())
         with context:
             res = ndimage.vectorized_filter(input, xp.sum, **kwargs)
-            xp_assert_close(res, xp.asarray(ref, dtype=sum_dtype))
+            xp_assert_close(res, xp.astype(xp.stack(ref), sum_dtype))
             assert res.dtype == sum_dtype
 
             output = xp.empty_like(input)
             res = ndimage.vectorized_filter(input, xp.sum, output=output, **kwargs)
-            xp_assert_close(res, xp.asarray(ref, dtype=dtype))
+            xp_assert_close(res, xp.astype(xp.stack(ref), dtype))
             assert res.dtype == dtype
 
     def test_mode_valid(self, xp):
