@@ -500,6 +500,9 @@ class _spbase(SparseABC):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
+                # numpy creates a 0d object array if all else fails.
+                # Not interpretable as an array; return NotImplemented so
+                # other's __rmul__ can kick in if that's implemented.
                 return NotImplemented
             # Allow custom sparse class indicated by attr sparse gh-6520
             try:
@@ -524,6 +527,8 @@ class _spbase(SparseABC):
             return csr_self._binopt(csr_other, '_elmul_').reshape(self.shape)
 
         else:
+            # Not scalar, dense or sparse. Return NotImplemented so that
+            # other's __rmul__ can kick in if that's implemented.
             return NotImplemented
 
     def _maximum_minimum(self, other, np_op):
@@ -531,7 +536,10 @@ class _spbase(SparseABC):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
-                return NotImplemented
+                # numpy creates a 0d object array if all else fails.
+                # We don't know how to handle it either.
+                raise NotImplementedError('maximum or minimum with an unrecognized '
+                                          'array type is not supported')
             # Allow custom sparse class indicated by attr sparse gh-6520
             try:
                 other.shape
@@ -603,10 +611,14 @@ class _spbase(SparseABC):
         # If ndim>2 we reshape to 2D, compare and then reshape back to nD
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             if is_pydata_spmatrix(other):
+                # cannot compare with pydata other, but it might compare with us.
                 return NotImplemented
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
+                # numpy creates a 0d object array if all else fails.
+                # Not interpretable as an array; return NotImplemented so
+                # other's dunder methods can kick in if implemented.
                 return NotImplemented
             # Allow custom sparse class indicated by attr sparse gh-6520
             try:
@@ -662,6 +674,7 @@ class _spbase(SparseABC):
                 result = all_true - inv
                 return result if self.ndim < 3 else result.tocoo().reshape(self.shape)
         else:
+            # cannot compare with other, but it might compare with us.
             return NotImplemented
 
     def __eq__(self, other):
@@ -796,6 +809,7 @@ class _spbase(SparseABC):
         # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
         if other_a.ndim == 0 and other_a.dtype == np.object_:
+            # numpy creates a 0d object array if all else fails.
             # Not interpretable as an array; return NotImplemented so that
             # other's __rmatmul__ can kick in if that's implemented.
             return NotImplemented
@@ -903,6 +917,9 @@ class _spbase(SparseABC):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
             if other_a.ndim == 0 and other_a.dtype == np.object_:
+                # numpy creates a 0d object array if all else fails.
+                # Not interpretable as an array; return NotImplemented so that
+                # other's __rdiv__ can kick in if that's implemented.
                 return NotImplemented
             # Allow custom sparse class indicated by attr sparse gh-6520
             try:
@@ -953,6 +970,8 @@ class _spbase(SparseABC):
                 result = csr_self._divide_sparse(csr_other)
             return result if self.ndim < 3 else result.reshape(self.shape)
         else:
+            # not scalar, dense or sparse. Return NotImplemented so
+            # other's __rdiv__ can kick in if that's implemented.
             return NotImplemented
 
     def __truediv__(self, other):
