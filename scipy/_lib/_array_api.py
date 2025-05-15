@@ -808,8 +808,8 @@ def xp_capabilities(
         try:
             f.__doc__ = doc
         except AttributeError:
-            # Can't update __doc__ on Cython ufuncs if SciPy
-            # was compiled against NumPy 1.x
+            # Can't update __doc__ on ufuncs if SciPy
+            # was compiled against NumPy < 2.2.
             pass
 
         return f
