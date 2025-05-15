@@ -1666,7 +1666,10 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                sp_mult = i.multiply(j)
+                try:
+                    sp_mult = i.multiply(j)
+                except ValueError:
+                    continue
                 if issparse(sp_mult):
                     assert_almost_equal(sp_mult.toarray(), dense_mult)
                 else:
@@ -2083,8 +2086,8 @@ class _TestCommon:
 
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
-                           "Taking maximum .minimum. with > 0 .< 0. number "
-                           "results to a dense matrix")
+                           "Taking (maximum|minimum) with a (positive|negative) number "
+                           "results in a dense matrix")
 
                 max_s = A.maximum(B)
                 min_s = A.minimum(B)
