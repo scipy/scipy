@@ -1036,7 +1036,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     n = distance.num_obs_y(y)
     method_code = _LINKAGE_METHODS[method]
 
-    def linkage_(y, validate):
+    def cy_linkage(y, validate):
         if validate and not np.all(np.isfinite(y)):
             raise ValueError("The condensed distance matrix must contain only "
                             "finite values.")            
@@ -1048,7 +1048,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         else:
             return _hierarchy.fast_linkage(y, n, method_code)
 
-    result = xpx.lazy_apply(linkage_, y, validate=lazy,
+    result = xpx.lazy_apply(cy_linkage, y, validate=lazy,
                             shape=(n - 1, 4), dtype=xp.float64,
                             as_numpy=True, xp=xp)
 
@@ -1545,7 +1545,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     # The function name is prominently visible on the user-facing Dask dashboard;
     # make sure it is meaningful.
-    def optimal_leaf_ordering_(Z, y, validate):
+    def cy_optimal_leaf_ordering(Z, y, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
             if not np.all(np.isfinite(y)):
@@ -1553,7 +1553,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
                                  "finite values.")
         return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
-    return xpx.lazy_apply(optimal_leaf_ordering_, Z, y, validate=lazy,
+    return xpx.lazy_apply(cy_optimal_leaf_ordering, Z, y, validate=lazy,
                           shape=Z.shape, dtype=Z.dtype, as_numpy=True, xp=xp)
 
 
@@ -1669,7 +1669,7 @@ def cophenet(Z, Y=None):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    def cophenet_(Z, validate):
+    def cy_cophenet(Z, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         n = Z.shape[0] + 1
@@ -1678,7 +1678,7 @@ def cophenet(Z, Y=None):
         return zz
     
     n = Z.shape[0] + 1
-    zz = xpx.lazy_apply(cophenet_, Z, validate=is_lazy_array(Z),
+    zz = xpx.lazy_apply(cy_cophenet, Z, validate=is_lazy_array(Z),
                         shape=((n * (n-1)) // 2, ), dtype=xp.float64,
                         as_numpy=True, xp=xp)
                         
@@ -1762,7 +1762,7 @@ def inconsistent(Z, d=2):
         raise ValueError('The second argument d must be a nonnegative '
                          'integer value.')
 
-    def inconsistent_(Z, d, validate):
+    def cy_inconsistent(Z, d, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         R = np.zeros((Z.shape[0], 4), dtype=np.float64)
@@ -1770,7 +1770,7 @@ def inconsistent(Z, d=2):
         _hierarchy.inconsistent(Z, R, n, d)
         return R
 
-    return xpx.lazy_apply(inconsistent_, Z, d=int(d), validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_inconsistent, Z, d=int(d), validate=is_lazy_array(Z),
                           shape=(Z.shape[0], 4), dtype=xp.float64,
                           as_numpy=True, xp=xp)
 
@@ -1869,7 +1869,7 @@ def from_mlab_linkage(Z):
     res = xpx.at(res)[:, :2].set(Z[:, :2] - 1.0)
     res = xpx.at(res)[:, 2:-1].set(Z[:, 2:])
 
-    def from_mlab_linkage_(Zpart, validate):
+    def cy_from_mlab_linkage(Zpart, validate):
         n = Zpart.shape[0]
         if validate and np.min(Zpart[:, :2]) != 0.0 and np.max(Zpart[:, :2]) != 2 * n:
             raise ValueError('The format of the indices is not 1..N')
@@ -1881,7 +1881,7 @@ def from_mlab_linkage(Z):
         _hierarchy.calculate_cluster_sizes(Zpart, CS, n + 1)
         return CS
 
-    CS = xpx.lazy_apply(from_mlab_linkage_, res[:, :-1], validate=lazy,
+    CS = xpx.lazy_apply(cy_from_mlab_linkage, res[:, :-1], validate=lazy,
                         shape=(res.shape[0],), dtype=xp.float64,
                         as_numpy=True, xp=xp)
 
@@ -2826,7 +2826,7 @@ def leaves_list(Z):
     Z = _asarray(Z, order='C', xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    def leaves_list_(Z, validate):
+    def cy_leaves_list(Z, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         n = Z.shape[0] + 1
@@ -2835,7 +2835,7 @@ def leaves_list(Z):
         return ML
 
     n = Z.shape[0] + 1
-    return xpx.lazy_apply(leaves_list_, Z, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_leaves_list, Z, validate=is_lazy_array(Z),
                           shape=(n, ), dtype=xp.int32,
                           as_numpy=True, xp=xp)
 
@@ -3855,7 +3855,7 @@ def is_isomorphic(T1, T2):
     if T1.shape != T2.shape:
         raise ValueError('T1 and T2 must have the same number of elements.')
 
-    def is_isomorphic_(T1, T2):
+    def py_is_isomorphic(T1, T2):
         d1 = {}
         d2 = {}
         for t1, t2 in zip(T1, T2):
@@ -3871,7 +3871,7 @@ def is_isomorphic(T1, T2):
                 d2[t2] = t1
         return True
 
-    res = xpx.lazy_apply(is_isomorphic_, T1, T2,
+    res = xpx.lazy_apply(py_is_isomorphic, T1, T2,
                          shape=(), dtype=xp.bool,
                          as_numpy=True, xp=xp)
     return res if is_lazy_array(res) else bool(res)
@@ -3953,14 +3953,14 @@ def maxdists(Z):
     Z = _asarray(Z, order='C', dtype=xp.float64, xp=xp)
     _is_valid_linkage(Z, throw=True, name='Z', xp=xp)
 
-    def maxdists_(Z, validate):
+    def cy_maxdists(Z, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         MD = np.zeros((Z.shape[0],))
         _hierarchy.get_max_dist_for_each_cluster(Z, MD, Z.shape[0] + 1)
         return MD
 
-    return xpx.lazy_apply(maxdists_, Z, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_maxdists, Z, validate=is_lazy_array(Z),
                           shape=(Z.shape[0], ), dtype=xp.float64,
                           as_numpy=True, xp=xp)
 
@@ -4050,7 +4050,7 @@ def maxinconsts(Z, R):
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
     
-    def maxinconsts_(Z, R, validate):
+    def cy_maxinconsts(Z, R, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
             _is_valid_im(R, throw=True, name='R', xp=np)
@@ -4059,7 +4059,7 @@ def maxinconsts(Z, R):
         _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, n, 3)
         return MI
 
-    return xpx.lazy_apply(maxinconsts_, Z, R, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_maxinconsts, Z, R, validate=is_lazy_array(Z),
                           shape=(Z.shape[0], ), dtype=xp.float64,
                           as_numpy=True, xp=xp)
 
@@ -4157,7 +4157,7 @@ def maxRstat(Z, R, i):
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
 
-    def maxRstat_(Z, R, i, validate):
+    def cy_maxRstat(Z, R, i, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
             _is_valid_im(R, throw=True, name='R', xp=np)
@@ -4166,7 +4166,7 @@ def maxRstat(Z, R, i):
         _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, n, i)
         return MR
 
-    return xpx.lazy_apply(maxRstat_, Z, R, i=i, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_maxRstat, Z, R, i=i, validate=is_lazy_array(Z),
                           shape=(Z.shape[0], ), dtype=xp.float64,
                           as_numpy=True, xp=xp)
 
@@ -4291,7 +4291,7 @@ def leaders(Z, T):
 
     n_obs = Z.shape[0] + 1
 
-    def leaders_(Z, T, validate):
+    def cy_leaders(Z, T, validate):
         if validate:
             _is_valid_linkage(Z, throw=True, name='Z', xp=np)
         n_clusters = int(xpx.nunique(T))
@@ -4303,6 +4303,6 @@ def leaders(Z, T):
                              f'when examining linkage node {s} (< 2n-1).')
         return L, M
 
-    return xpx.lazy_apply(leaders_, Z, T, validate=is_lazy_array(Z),
+    return xpx.lazy_apply(cy_leaders, Z, T, validate=is_lazy_array(Z),
                           shape=((None,), (None, )), dtype=(xp.int32, xp.int32),
                           as_numpy=True, xp=xp)
