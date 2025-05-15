@@ -373,7 +373,6 @@ class TestLeaders:
         xp_assert_close(xp.concat(L), expect, rtol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True, reason='pure-Python algorithm')
 class TestIsIsomorphic:
 
     def test_array_like(self):

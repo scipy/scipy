@@ -134,8 +134,9 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
-                                   is_lazy_array, xp_copy)
+from scipy._lib._array_api import (_asarray, array_namespace,
+                                   is_dask, is_jax, is_lazy_array, is_torch,
+                                   xp_copy, xp_device, xp_size)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -3795,11 +3796,6 @@ def is_isomorphic(T1, T2):
         Whether the flat cluster assignments `T1` and `T2` are
         equivalent.
 
-    Notes
-    -----
-    *Array API support (experimental):* If the input is a lazy Array (e.g. Dask
-    or JAX), the return value will be a 0-dimensional bool Array.
-
     See Also
     --------
     linkage : for a description of what a linkage matrix is.
@@ -3855,26 +3851,42 @@ def is_isomorphic(T1, T2):
     if T1.shape != T2.shape:
         raise ValueError('T1 and T2 must have the same number of elements.')
 
-    def py_is_isomorphic(T1, T2):
-        d1 = {}
-        d2 = {}
-        for t1, t2 in zip(T1, T2):
-            if t1 in d1:
-                if t2 not in d2:
-                    return False
-                if d1[t1] != t2 or d2[t2] != t1:
-                    return False
-            elif t2 in d2:
-                return False
-            else:
-                d1[t1] = t2
-                d2[t2] = t1
-        return True
+    # For each pair of (i, j) indices, test that
+    # T1[i] == T1[j] <--> T2[i] == T2[j]
 
-    res = xpx.lazy_apply(py_is_isomorphic, T1, T2,
-                         shape=(), dtype=xp.bool,
-                         as_numpy=True, xp=xp)
-    return res if is_lazy_array(res) else bool(res)
+    has_unique_all = (
+        xp.__array_namespace_info__().capabilities()['data-dependent shapes']
+        # Dask implements unique_all, but it can't run xp.take on its output
+        # because it has unknown size.
+        and not is_dask(xp) and not is_torch(xp)
+        or is_jax(xp)  # See special case below
+    )
+
+    if has_unique_all:  # O(n) algorithm
+        # Inside `jax.jit`, JAX supports unique_* methods only when
+        # a non-standard size= parameter is provided.
+        kwargs = {"size": xp_size(T1)} if is_jax(xp) else {}
+        unq1 = xp.unique_all(T1, **kwargs)
+        unq2 = xp.unique_all(T2, **kwargs)
+
+        if xp_size(unq1.indices) != xp_size(unq2.indices):
+            return xp.asarray(False, device=xp_device(T1))[()]
+
+        # index where each element was first seen
+        iso1 = xp.take(unq1.indices, unq1.inverse_indices)
+        iso2 = xp.take(unq2.indices, unq2.inverse_indices)
+
+    else:  # O(n*log(n)) algorithm
+        idx = xp.argsort(T1)
+        T1 = xp.take(T1, idx)
+        T2 = xp.take(T2, idx)
+        # Indirectly count how many times each element is repeated
+        # by detecting where the value changes
+        iso1 = T1[:-1] == T1[1:]
+        iso2 = T2[:-1] == T2[1:]
+
+    return xp.all(iso1 == iso2)
+
 
 def maxdists(Z):
     """
