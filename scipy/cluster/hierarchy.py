@@ -3870,7 +3870,7 @@ def is_isomorphic(T1, T2):
         iso1 = xp.take(unq1.indices, unq1.inverse_indices)
         iso2 = xp.take(unq2.indices, unq2.inverse_indices)
 
-    except (NotImplementedError, RuntimeError):
+    except NotImplementedError:
         # PyTorch does not implement unique_all; Dask does, but then it can't run
         # xp.take on the indices because they have unknown size.
         # Note that, for both backends,
