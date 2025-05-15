@@ -4,6 +4,7 @@ Test functions for multivariate normal, t, and related distributions.
 """
 import pickle
 from dataclasses import dataclass
+from pathlib import Path
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
@@ -1587,31 +1588,34 @@ class TestMatrixT:
                                                        df=df)
                 assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
 
+    @staticmethod
+    def relative_error(vec1: np.ndarray, vec2: np.ndarray):
+        numerator = np.linalg.norm(vec1 - vec2) ** 2
+        denominator = np.linalg.norm(vec1) ** 2 + np.linalg.norm(vec2) ** 2
+        return 2 * numerator / denominator
+
+    @staticmethod
+    def matrix_divergence(mat_true: np.ndarray,
+                            mat_est: np.ndarray) -> float:
+        det_true = np.linalg.det(mat_true)
+        det_est = np.linalg.det(mat_est)
+        if (det_true <= 0) or (det_est <= 0):
+            return np.inf
+        trace_term = np.trace(np.linalg.inv(mat_est) @ mat_true)
+        log_detratio = np.log(det_est / det_true)
+        return (trace_term + log_detratio - len(mat_true)) / 2
+
+    @staticmethod
+    def vec(a_mat: np.ndarray) -> np.ndarray:
+        """
+        For an (m,n) array `a_mat` the output `vec(a_mat)` is an (m*n, 1)
+        array formed by stacking the columns of `a_mat` in the order in
+        which they occur in `a_mat`.
+        """
+        assert a_mat.ndim == 2
+        return a_mat.T.reshape((a_mat.size,))
+    
     def test_moments(self):
-
-        def relative_error(vec1: np.ndarray, vec2: np.ndarray):
-            numerator = np.linalg.norm(vec1 - vec2) ** 2
-            denominator = np.linalg.norm(vec1) ** 2 + np.linalg.norm(vec2) ** 2
-            return 2 * numerator / denominator
-
-        def matrix_divergence(mat_true: np.ndarray,
-                              mat_est: np.ndarray) -> float:
-            det_true = np.linalg.det(mat_true)
-            det_est = np.linalg.det(mat_est)
-            if (det_true <= 0) or (det_est <= 0):
-                return np.inf
-            trace_term = np.trace(np.linalg.inv(mat_est) @ mat_true)
-            log_detratio = np.log(det_est / det_true)
-            return (trace_term + log_detratio - len(mat_true)) / 2
-
-        def vec(a_mat: np.ndarray) -> np.ndarray:
-            """
-            For an (m,n) array `a_mat` the output `vec(a_mat)` is an (m*n, 1)
-            array formed by stacking the columns of `a_mat` in the order in
-            which they occur in `a_mat`.
-            """
-            assert a_mat.ndim == 2
-            return a_mat.T.reshape((a_mat.size,))
 
         df = 5
         num_rows = 4
@@ -1625,7 +1629,7 @@ class TestMatrixT:
         frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
         X = frozen.rvs(size=N, random_state=42)
 
-        relerr = relative_error(M, X.mean(axis=0))
+        relerr = self.relative_error(M, X.mean(axis=0))
         assert_close(relerr, 0, atol=atol)
 
         # Gupta and Nagar (2000) Theorem 4.3.1 (p.135)
@@ -1634,10 +1638,58 @@ class TestMatrixT:
         #     $$ ( V \otimes U ) / ( \text{df} - 2 ) $$
         # where $\otimes$ denotes the usual Kronecker product.
         cov_vec_true = np.kron(V, U) / (df - 2)
-        cov_vec_rvs = np.cov(np.array([vec(x) for x in X]), rowvar=False)
-        kl = matrix_divergence(cov_vec_true, cov_vec_rvs)
+        cov_vec_rvs = np.cov(np.array([self.vec(x) for x in X]), rowvar=False)
+        kl = self.matrix_divergence(cov_vec_true, cov_vec_rvs)
         assert_close(kl, 0, atol=atol)
 
+    def test_pdf_against_mathematica(self):
+
+        df = 5
+        M = np.array([[1, 2, 3], [4, 5, 6]])
+        U = np.array([[1, 0.5], [0.5, 1]])
+        V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+        
+        atol = 1e-10
+
+        samples_m, pdfs_m = [np.load(
+            Path(__file__).parent / "data/matrixt_samples_pdfs_from_mathematica.npz"
+        )[k] for k in ("samples", "pdfs")]
+        samples_m = samples_m.reshape(samples_m.shape[0], *M.shape)
+
+        pdfs_py = matrix_t.pdf(
+            samples_m, mean=M, rowcov=U, colcov=V, df=df
+        )
+
+        assert_allclose(pdfs_m, pdfs_py, atol=atol)
+
+    def test_rvs_against_mathematica(self):
+
+        M = np.array([[1, 2, 3], [4, 5, 6]])
+        U = np.array([[1, 0.5], [0.5, 1]])
+        V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+        df = 5
+
+        atol = 1e-2
+
+        samples_m = np.load(
+            Path(__file__).parent / "data/matrixt_samples_pdfs_from_mathematica.npz"
+        )["samples"]
+        samples_m = samples_m.reshape(samples_m.shape[0], *M.shape)
+
+        samples_py = matrix_t.rvs(
+            mean=M, rowcov=U, colcov=V, df=df, size=samples_m.shape[0]
+        )
+        
+        relerr = self.relative_error(samples_m.mean(0), samples_py.mean(0))
+        assert_close(relerr, 0, atol=atol)
+
+        samples_m_cov = np.cov(np.array([self.vec(mv) for mv in samples_m]), 
+                               rowvar=False)
+        samples_py_cov = np.cov(np.array([self.vec(mv) for mv in samples_py]), 
+                               rowvar=False)
+        kl = self.matrix_divergence(samples_m_cov, samples_py_cov)
+        assert_close(kl, 0, atol=atol)
+        
     def test_samples(self):
         df = 5
         num_rows = 4
@@ -1670,7 +1722,7 @@ class TestMatrixT:
         assert_allclose(M.T, mT, atol=atol)
         assert_allclose(m, mT.T, atol=atol)
         assert_allclose(m.T, mT, atol=atol)
-
+        
 
 class TestDirichlet:
 
