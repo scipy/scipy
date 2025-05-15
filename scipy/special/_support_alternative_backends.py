@@ -19,7 +19,7 @@ class _FuncInfo:
     func: Callable
     # Number of arguments, not counting out=
     # This is for testing purposes only, due to the fact that
-    # inspect.signature() just returns *args for Cython ufuncs.
+    # inspect.signature() just returns *args for ufuncs.
     n_args: int
     # @xp_capabilities decorator, for the purpose of
     # documentation and unit testing. Omit to indicate
