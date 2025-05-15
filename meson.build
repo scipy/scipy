@@ -172,7 +172,9 @@ elif use_system_libraries.contains('auto')
   auto_system_libraries = true 
 endif
 
-if auto_system_libraries or use_system_libraries.contains('boost.math')
+if use_system_libraries.contains('boost.math')
+  boost_math_dep = dependency('boost', version : '1.88.0')
+elif auto_system_libraries
   boost_math_dep = dependency(
     'boost', version : '1.88.0',
     fallback : ['boost_math', 'boost_math_dep']
@@ -182,7 +184,9 @@ else
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
-if auto_system_libraries or use_system_libraries.contains('qhull')
+if use_system_libraries.contains('qhull')
+  qhull_r_dep = dependency('qhull_r', version : '8.0.2')
+elif auto_system_libraries
   qhull_r_dep = dependency(
     'qhull_r', version : '8.0.2',
     fallback : ['qhull_r', 'qhull_r_dep']
