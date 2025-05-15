@@ -993,7 +993,7 @@ class TestAkima1DInterpolator:
         # Testing extrapoation to actual function.
         xp_assert_close(y_ext, ak_true(x_ext), atol=1e-15)
 
-    def test_large_dynamic_rannge(self):
+    def test_large_dynamic_range(self):
         # check a large step does not change non-overlapping subsplines
         x = 1.*np.arange(1, 12)                    # grid of spline points
         x_sample = np.linspace(1., 7., 21)         # grid of points to sample splines at
@@ -1014,6 +1014,24 @@ class TestAkima1DInterpolator:
 
         xp_assert_equal(y_eval1, y_eval2)
         xp_assert_equal(y_eval3, y_eval4)
+
+    def test_large_dynamic_range2(self):
+        # variant of test_large_dynamic_range specifically engineered to fail if m2=m3 handling is not on
+        x = np.linspace(-1., 9., num=40)
+        x_sample = np.linspace(0.,3.,41)
+
+        y1 = np.heaviside(x - 2, 0.5)                # small step function
+        y2 = y1 + 1.e9 * np.heaviside(x - 7, 0.5)    # very large increase
+
+        ak1 = Akima1DInterpolator(x, y1, method='akima')
+
+        ak2 = Akima1DInterpolator(x, y2, method='akima')
+
+        y_eval1 = ak1(x_sample)
+        y_eval2 = ak2(x_sample)
+
+        xp_assert_equal(np.isnan(y_eval1), np.isnan(y_eval2))
+        xp_assert_close(y_eval1[~np.isnan(y_eval2)], y_eval2[~np.isnan(y_eval2)])
 
     def test_no_overflow(self):
         # check a large jump does not cause a float overflow

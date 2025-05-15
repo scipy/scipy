@@ -547,7 +547,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
             f12 = f1 + f2
 
             # mask to handle m2=m3 case exactly
-            ind = np.nonzero((dm[1:-1] == 0.))
+            ind = np.nonzero(dm[1:-1] == 0.)
             x_ind, y_ind = ind[0], ind[1:]
             t[ind] = m[(x_ind + 1,) + y_ind]
 
