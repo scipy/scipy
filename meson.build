@@ -164,6 +164,14 @@ xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
 use_system_libraries = get_option('use-system-libraries')
+
+foreach lib : use_system_libraries
+  if lib not in ['none', 'auto', 'boost.math', 'qhull']
+    error('Unknown value passed to `use-system-libraries`: `' + lib
+          + '`. recognised values: `none`, `auto`, `boost.math`, `qhull`.')
+  endif
+endforeach
+
 auto_system_libraries = false
 
 if use_system_libraries.contains('none')
@@ -174,29 +182,21 @@ endif
 
 if auto_system_libraries or use_system_libraries.contains('boost.math')
   boost_math_dep = dependency(
-    'boost',
-    version : '1.88.0',
-    fallback : ['boost_math', 'boost_math_dep'],
+    'boost', version : '1.88.0',
+    fallback : ['boost_math', 'boost_math_dep']
   )
 else
-  boost_math = subproject(
-    'boost_math',
-    version : '1.88.0',
-  )
+  boost_math = subproject('boost_math',version : '1.88.0')
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
 if auto_system_libraries or use_system_libraries.contains('qhull')
   qhull_r_dep = dependency(
-    'qhull_r',
-    version : '8.0.2',
-    fallback : ['qhull_r', 'qhull_r_dep'],
+    'qhull_r', version : '8.0.2',
+    fallback : ['qhull_r', 'qhull_r_dep']
   )
 else
-  qhull_r = subproject(
-    'qhull_r',
-    version : '8.0.2',
-  )
+  qhull_r = subproject('qhull_r', version : '8.0.2')
   qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
