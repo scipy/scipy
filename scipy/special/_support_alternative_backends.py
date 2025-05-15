@@ -79,7 +79,7 @@ class _FuncInfo:
 
         # If a native implementation is available, use that
         spx = scipy_namespace_for(xp)
-        f = _get_native_func(spx, self.name)
+        f = _get_native_func(xp, spx, self.name)
         if f is not None:
             return f
 
@@ -131,8 +131,13 @@ class _FuncInfo:
         return f
 
 
-def _get_native_func(spx, f_name):
-    return getattr(spx.special, f_name, None) if spx else None
+def _get_native_func(xp, spx, f_name):
+    f = getattr(spx.special, f_name, None) if spx else None
+    if f is None and hasattr(xp, 'special'):
+        # Currently dead branch, in anticipation of 'special' Array API extension
+        # https://github.com/data-apis/array-api/issues/725
+        f = getattr(xp.special, f_name, None)
+    return f
 
 
 def _rel_entr(xp, spx):
@@ -171,7 +176,7 @@ def _chdtr(xp, spx):
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = _get_native_func(spx, 'gammainc')
+    gammainc = _get_native_func(xp, spx, 'gammainc')
     if gammainc is None:
         return None
 
@@ -190,7 +195,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = _get_native_func(spx, 'gammaincc')
+    gammaincc = _get_native_func(xp, spx, 'gammaincc')
     if gammaincc is None:
         return None
 
@@ -203,7 +208,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = _get_native_func(spx, 'betainc')
+    betainc = _get_native_func(xp, spx, 'betainc')
     if betainc is None:
         return None
 
@@ -214,7 +219,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = _get_native_func(spx, 'betainc')
+    betainc = _get_native_func(xp, spx, 'betainc')
     if betainc is None:
         return None
 
@@ -228,7 +233,7 @@ def _stdtr(xp, spx):
 
 def _stdtrit(xp, spx):
     # Need either native stdtr or native betainc
-    stdtr = _get_native_func(spx, 'stdtr') or _stdtr(xp, spx)
+    stdtr = _get_native_func(xp, spx, 'stdtr') or _stdtr(xp, spx)
     # If betainc is not defined, the root-finding would be done with `xp`
     # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
