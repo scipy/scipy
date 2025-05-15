@@ -376,8 +376,6 @@ class TestLeaders:
         xp_assert_close(xp.concat(L), expect, rtol=1e-15)
 
 
-@skip_xp_backends(np_only=True,
-                  reason='`is_isomorphic` only supports NumPy backend')
 class TestIsIsomorphic:
 
     def test_array_like(self):
