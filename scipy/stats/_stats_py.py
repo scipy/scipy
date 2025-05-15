@@ -74,7 +74,6 @@ from scipy._lib._array_api import (
     array_namespace,
     is_lazy_array,
     is_numpy,
-    is_marray,
     is_cupy,
     xp_size,
     xp_vector_norm,
