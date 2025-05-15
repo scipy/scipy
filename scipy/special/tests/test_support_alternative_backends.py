@@ -4,6 +4,7 @@ import pickle
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
+from packaging import version
 
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
