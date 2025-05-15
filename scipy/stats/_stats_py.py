@@ -10178,8 +10178,7 @@ def _square_of_sums(a, axis=0):
 @xp_capabilities(skip_backends=[("torch", "no `repeat`"),
                                 ("cupy", "`repeat` can't handle array second arg"),
                                 ("dask.array", "no `take_along_axis`")],
-                 static_argnames=("method", "axis", "nan_policy"), jax_jit=False,
-                 allow_dask_compute=True)
+                 jax_jit=False, allow_dask_compute=True)
 def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
