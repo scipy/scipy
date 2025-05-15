@@ -110,12 +110,8 @@ import warnings
 import dataclasses
 from collections.abc import Callable
 from functools import partial
-from typing import (
-    ClassVar,
-    Literal,
-    overload,
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     import numpy.typing as npt
 
@@ -2303,7 +2299,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError(
+            f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,

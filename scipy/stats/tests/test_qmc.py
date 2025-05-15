@@ -235,12 +235,15 @@ class TestUtils:
         assert_allclose(qmc.geometric_discrepancy(sample, workers=workers), 0.5)
         
         sample = np.array([[0, 0], [0.25, 0.25], [1, 1]])
-        assert_allclose(qmc.geometric_discrepancy(sample, workers=workers), np.sqrt(2) / 4)
-        assert_allclose(qmc.geometric_discrepancy(sample, metric="chebyshev", workers=workers), 0.25)
-        
+        assert_allclose(qmc.geometric_discrepancy(sample, workers=workers),
+                        np.sqrt(2) / 4)
+        assert_allclose(qmc.geometric_discrepancy(sample, metric="chebyshev",
+                                                  workers=workers), 0.25)
+
         rng = np.random.default_rng(191468432622931918890291693003068437394)
         sample = qmc.LatinHypercube(d=3, rng=rng).random(50)
-        assert_allclose(qmc.geometric_discrepancy(sample, workers=workers), 0.05106012076093356)
+        assert_allclose(qmc.geometric_discrepancy(sample, workers=workers),
+                        0.05106012076093356)
 
     @pytest.mark.xfail(
             reason="minimum_spanning_tree ignores zero distances (#18892)",
