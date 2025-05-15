@@ -3852,6 +3852,9 @@ def is_isomorphic(T1, T2):
 
     # For each pair of (i, j) indices, test that
     # T1[i] == T1[j] <--> T2[i] == T2[j]
+    # In other words, if the same symbol appears multiple times in T1,
+    # then a potentially different symbol must also be repeated in the same
+    # positions in T2, and vice versa.
 
     # O(n*log(n)) algorithm.
     # It is also possible to write a O(n) algorithm on top of unique_all(),
@@ -3859,8 +3862,8 @@ def is_isomorphic(T1, T2):
     idx = xp.argsort(T1)
     T1 = xp.take(T1, idx)
     T2 = xp.take(T2, idx)
-    changes1 = T1[:-1] == T1[1:]
-    changes2 = T2[:-1] == T2[1:]
+    changes1 = T1 != xp.roll(T1, -1)
+    changes2 = T2 != xp.roll(T2, -1)
     return xp.all(changes1 == changes2)
 
 
