@@ -5002,6 +5002,40 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
 
+    def test_add_sparse(self):
+        # test format and cases not covered by common add tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp + Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A + B)
+
+        Csp = Bsp + Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B + A)
+
+    def test_sub_sparse(self):
+        # test format and cases not covered by common sub tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp - Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A - B)
+
+        Csp = Bsp - Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B - A)
+
+        Bsp = Bsp.asformat('csr')
+        assert_array_equal((Asp - Bsp).toarray(), A - B)
+        assert_array_equal((Bsp - Asp).toarray(), B - A)
+
     def test_mul_scalar(self):
         # repro for gh-20434
         m = self.dia_container([[1, 2], [0, 4]])
@@ -5012,6 +5046,50 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         res2 = m.multiply(3)
         assert isinstance(res2, m.__class__)
         assert_array_equal(res2.toarray(), [[3, 6], [0, 12]])
+
+    def test_matmul_dia(self):
+        # test DIA structure of DIA @ DIA:
+
+        # that all and only needed elements are used and produced
+        A = array([[1, 2, 3],
+                   [4, 5, 6]])
+        B = array([[11, 12],
+                   [13, 14],
+                   [15, 16]])
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+        Asp.data[Asp.data == 0] = -1  # poison outside elements
+        Bsp.data[Bsp.data == 0] = -1
+        assert_array_equal(Asp.toarray(), A)
+        assert_array_equal(Bsp.toarray(), B)
+
+        C = A @ B
+        Csp = Asp @ Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-1, 0, 1])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        C = B @ A
+        Csp = Bsp @ Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        # short data and that order of input offsets doesn't matter
+        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+
+        Csp = Asp @ Bsp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 35., 0.],
+                                      [6., 14., 27.]])
+
+        Csp = Bsp @ Asp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 0., 0.],
+                                      [27., 6., 14.]])
 
 
 class TestDIAMatrix(_MatrixMixin, TestDIA):
