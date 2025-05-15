@@ -78,14 +78,15 @@ xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 lazy_xp_function(single)
 lazy_xp_function(ward)
-lazy_xp_function(linkage)
-lazy_xp_function(cut_tree)
-lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(optimal_leaf_ordering)
-lazy_xp_function(cophenet, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(inconsistent, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(from_mlab_linkage, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(to_mlab_linkage, jax_jit=False, allow_dask_compute=1)
+lazy_xp_function(linkage, static_argnames=('method', 'metric', 'optimal_ordering'))
+lazy_xp_function(cut_tree, static_argnames=('n_clusters', 'height'))
+lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=True,
+                 static_argnames=('rd', ))
+lazy_xp_function(optimal_leaf_ordering, static_argnames=('metric',))
+lazy_xp_function(cophenet)
+lazy_xp_function(inconsistent, static_argnames=('d',))
+lazy_xp_function(from_mlab_linkage)
+lazy_xp_function(to_mlab_linkage)
 lazy_xp_function(is_monotonic)
 
 # Note: these functions materialize lazy arrays when warning=True or throw=True
@@ -94,14 +95,16 @@ lazy_xp_function(is_valid_linkage)
 
 lazy_xp_function(num_obs_linkage)
 lazy_xp_function(correspond)
-lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(leaves_list, jax_jit=False, allow_dask_compute=2)
+lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=True, 
+                 static_argnames=('criterion', 'depth'))
+lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=True,
+                 static_argnames=('criterion', 'metric', 'depth', 'method'))
+lazy_xp_function(leaves_list)
 lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(is_isomorphic, jax_jit=False, allow_dask_compute=2)
-lazy_xp_function(maxdists, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(maxinconsts, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(maxRstat, jax_jit=False, allow_dask_compute=True)
+lazy_xp_function(is_isomorphic)
+lazy_xp_function(maxdists)
+lazy_xp_function(maxinconsts)
+lazy_xp_function(maxRstat, static_argnames=('i',))
 
 # Returns data-dependent shape
 lazy_xp_function(leaders, jax_jit=False)
@@ -244,6 +247,7 @@ class TestCopheneticDistance:
         xp_assert_close(c, expectedc, atol=1e-10)
         xp_assert_close(M, expectedM, atol=1e-10)
 
+    @skip_xp_backends("jax.numpy", reason="Can't raise inside jax.pure_callback")
     def test_gh_22183(self, xp):
         # check for lack of segfault
         # (out of bounds memory access)
@@ -372,8 +376,7 @@ class TestLeaders:
         xp_assert_close(xp.concat(L), expect, rtol=1e-15)
 
 
-@skip_xp_backends(np_only=True,
-                  reason='`is_isomorphic` only supports NumPy backend')
+@skip_xp_backends(cpu_only=True, reason='pure-Python algorithm')
 class TestIsIsomorphic:
 
     def test_array_like(self):
