@@ -1289,6 +1289,42 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             indices = np.tile(np.arange(N), len(self.data))
             indptr = self.indptr * N
         return self.__class__((data, indices, indptr), shape=shape, copy=False)
+    
+    def __binsparse_descriptor__(self) -> dict:
+        """Return a `dict` equivalent to a parsed JSON [`binsparse` descriptor](https://graphblas.org/binsparse-specification/#descriptor)
+        of this array.
+
+        Returns
+        -------
+        dict
+            Parsed `binsparse` descriptor.
+        """
+        from scipy import __version__
+
+        data_dt = str(self.data.dtype)
+        if np.issubdtype(data_dt, np.complexfloating):
+            data_dt = f"complex[float{self.data.dtype.itemsize * 4}]"
+        return {
+            "binsparse": {
+                "version": "0.1",
+                "format": self.format.upper(),
+                "shape": list(self.shape),
+                "number_of_stored_values": self.nnz,
+                "data_types": {
+                    "pointers_to_1": str(self.indices.dtype),
+                    "indices_1": str(self.indptr.dtype),
+                    "values": data_dt,
+                },
+            },
+            "original_source": f"`scipy.sparse`, version {__version__}",
+        }
+
+    def __binsparse__(self) -> dict[str, np.ndarray]:
+        return {
+            "pointers_to_1": self.indptr,
+            "indices_1": self.indices,
+            "values": self.data,
+        }
 
 
 def _make_diagonal_csr(data, is_array=False):
