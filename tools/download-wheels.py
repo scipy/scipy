@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 __version__ = '0.1'
 
 # Edit these for other projects.
+STAGING_FILE_URL = "https://pypi.anaconda.org/multibuild-wheels-staging/simple/scipy/"
 STAGING_URL = 'https://anaconda.org/multibuild-wheels-staging/scipy'
 PREFIX = 'scipy'
 
@@ -47,7 +48,7 @@ def get_wheel_names(version):
     """
     http = http_manager()
     tmpl = re.compile(rf"^.*{PREFIX}-{version}-.*\.whl$")
-    index_url = f"{STAGING_URL}/files"
+    index_url = f"{STAGING_FILE_URL}"
     index_html = http.request('GET', index_url)
     soup = BeautifulSoup(index_html.data, 'html.parser')
     return soup.findAll(string=tmpl)

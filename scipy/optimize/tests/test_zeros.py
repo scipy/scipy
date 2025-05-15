@@ -225,6 +225,10 @@ class TestBracketMethods(TestScalarRootFinders):
         assert r.converged
         assert_allclose(root, 0)
 
+    def test_gh_22934(self):
+        with pytest.raises(ValueError, match="maxiter must be >= 0"):
+            zeros.brentq(lambda x: x**2 - 1, -2, 0, maxiter=-1)
+
 
 class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):

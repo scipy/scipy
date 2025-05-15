@@ -14,6 +14,8 @@ project(
   ],
 )
 
+meson.add_dist_script('tools/trim_sdist_content.py')
+
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
@@ -152,5 +154,20 @@ if use_pythran
   # gh-15698). Hence look for xsimd explicitly.
   xsimd_dep = dependency('xsimd', required: false)
 endif
+
+fs = import('fs')
+if not fs.exists('subprojects/xsf/README.md')
+  error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
+endif
+
+xsf = subproject('xsf')
+xsf_dep = xsf.get_variable('xsf_dep')
+
+boost_math_dep = dependency(
+  'boost',
+  version : '1.88.0',
+  fallback : ['boost_math', 'boost_math_dep'],
+)
+
 
 subdir('scipy')
