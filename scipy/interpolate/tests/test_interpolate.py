@@ -1052,15 +1052,19 @@ class TestAkima1DInterpolator:
 
         y_eval1_1 = ak1(x_sample1)
         y_eval2_1 = ak2(x_sample1)
+        y_eval3_1 = x_sample1 - 3  # the known result for this segment
 
         y_eval1_2 = ak1(x_sample2)
         y_eval2_2 = ak2(x_sample2)
+        y_eval3_2 = 6 - x_sample2  # the known result for this segment
 
         xp_assert_equal(np.isnan(y_eval1_1), np.isnan(y_eval2_1))
         xp_assert_close(y_eval1_1[~np.isnan(y_eval1_1)], y_eval2_1[~np.isnan(y_eval1_1)])
+        xp_assert_close(y_eval3_1, y_eval1_1)
 
         xp_assert_equal(np.isnan(y_eval1_2), np.isnan(y_eval2_2))
         xp_assert_close(y_eval1_2[~np.isnan(y_eval1_2)], y_eval2_2[~np.isnan(y_eval1_2)])
+        xp_assert_close(y_eval3_2, y_eval1_2)
 
 
     def test_no_overflow(self):
