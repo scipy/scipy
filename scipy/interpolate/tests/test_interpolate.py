@@ -1033,6 +1033,36 @@ class TestAkima1DInterpolator:
         xp_assert_equal(np.isnan(y_eval1), np.isnan(y_eval2))
         xp_assert_close(y_eval1[~np.isnan(y_eval2)], y_eval2[~np.isnan(y_eval2)])
 
+    def test_large_dynamic_range3(self):
+        # variant of test_large_dynamic_range that more specifically isolates the failure if m2=m3 handling is not on
+        x = np.arange(0, 14)
+
+        # evaluate at x points chosen specifically to isolate only the misbehavior in m2=m3 handling
+        x_sample1 = np.linspace(1.,3.,11)
+        x_sample2 = np.linspace(6.,8.,11)
+
+        # points to create spline
+        y1 = np.array([-3, -2, -1, 0, 1, 0, 0, -1, -2, -3, -4, -5, -6, -7])
+        y2 = y1.copy()
+        y2[-1] -= 1.e10  # make a copy identical except for one very large value at one end
+
+        ak1 = Akima1DInterpolator(x, y1, method='akima')
+
+        ak2 = Akima1DInterpolator(x, y2, method='akima')
+
+        y_eval1_1 = ak1(x_sample1)
+        y_eval2_1 = ak2(x_sample1)
+
+        y_eval1_2 = ak1(x_sample2)
+        y_eval2_2 = ak2(x_sample2)
+
+        xp_assert_equal(np.isnan(y_eval1_1), np.isnan(y_eval2_1))
+        xp_assert_close(y_eval1_1[~np.isnan(y_eval1_1)], y_eval2_1[~np.isnan(y_eval1_1)])
+
+        xp_assert_equal(np.isnan(y_eval1_2), np.isnan(y_eval2_2))
+        xp_assert_close(y_eval1_2[~np.isnan(y_eval1_2)], y_eval2_2[~np.isnan(y_eval1_2)])
+
+
     def test_no_overflow(self):
         # check a large jump does not cause a float overflow
         x = np.arange(1, 10)
