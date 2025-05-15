@@ -4,7 +4,7 @@ import operator
 import warnings
 
 import numpy as np
-from numpy import (atleast_1d, poly, roots, asarray,
+from numpy import (atleast_1d, asarray,
                    pi, absolute, sqrt, tan, log10,
                    arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    sinh, concatenate, prod, array)
@@ -1214,13 +1214,15 @@ def tf2zpk(b, a):
         array([ -2.5+2.59807621j ,  -2.5-2.59807621j]),
         3.0)
     """
+    xp = array_namespace(b, a)
     b, a = normalize(b, a)
-    b = (b + 0.0) / a[0]
-    a = (a + 0.0) / a[0]
+
+    a, b = xp_promote(a, b, xp=xp, force_floating=True)
+
     k = b[0]
-    b /= b[0]
-    z = roots(b)
-    p = roots(a)
+    b = b / b[0]
+    z = _pu.polyroots(b, xp=xp)
+    p = _pu.polyroots(a, xp=xp)
     return z, p, k
 
 
@@ -1262,18 +1264,26 @@ def zpk2tf(z, p, k):
     >>> zpk2tf(z, p, k)
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
-    z = atleast_1d(z)
-    k = atleast_1d(k)
-    if len(z.shape) > 1:
-        temp = poly(z[0])
-        b = np.empty((z.shape[0], z.shape[1] + 1), temp.dtype.char)
-        if len(k) == 1:
+    xp = array_namespace(z, p)
+    z, p, k = map(xp.asarray, (z, p, k))
+
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    k = xpx.atleast_nd(k, ndim=1, xp=xp)
+    if xp.isdtype(k.dtype, 'integral'):
+        k = xp.astype(k, xp_default_dtype(xp))
+
+    if z.ndim > 1:
+        temp = _pu.poly(z[0], xp=xp)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
+        if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            b[i] = k[i] * poly(z[i])
+            b[i] = k[i] * _pu.poly(z[i], xp=xp)
     else:
-        b = k * poly(z)
-    a = atleast_1d(poly(p))
+        b = k * _pu.poly(z, xp=xp)
+
+    a = _pu.poly(p, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
 
     return b, a
 
@@ -1369,17 +1379,20 @@ def sos2tf(sos):
     (   array([0.91256522, 0.91256522, 0.        ]),
         array([1.        , 0.82513043, 0.        ]))
     """
-    sos = np.asarray(sos)
-    result_type = sos.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
+    xp = array_namespace(sos)
+    sos = xp.asarray(sos)
 
-    b = np.array([1], dtype=result_type)
-    a = np.array([1], dtype=result_type)
+    result_type = sos.dtype
+    if xp.isdtype(result_type, 'integral'):
+        result_type = xp_default_dtype(xp)
+
+    b = xp.asarray([1], dtype=result_type)
+    a = xp.asarray([1], dtype=result_type)
+
     n_sections = sos.shape[0]
     for section in range(n_sections):
-        b = np.polymul(b, sos[section, :3])
-        a = np.polymul(a, sos[section, 3:])
+        b = _pu.polymul(b, sos[section, :3], xp=xp)
+        a = _pu.polymul(a, sos[section, 3:], xp=xp)
     return b, a
 
 
@@ -1410,15 +1423,17 @@ def sos2zpk(sos):
 
     .. versionadded:: 0.16.0
     """
-    sos = np.asarray(sos)
+    xp = array_namespace(sos)
+    sos = xp.asarray(sos)
+
     n_sections = sos.shape[0]
-    z = np.zeros(n_sections*2, np.complex128)
-    p = np.zeros(n_sections*2, np.complex128)
+    z = xp.zeros(n_sections*2, dtype=xp.complex128)
+    p = xp.zeros(n_sections*2, dtype=xp.complex128)
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
-        z[2*section:2*section+len(zpk[0])] = zpk[0]
-        p[2*section:2*section+len(zpk[1])] = zpk[1]
+        z = xpx.at(z, slice(2*section, 2*section + zpk[0].shape[0])).set(zpk[0])
+        p = xpx.at(p, slice(2*section, 2*section + zpk[1].shape[0])).set(zpk[1])
         k *= zpk[2]
     return z, p, k
 
@@ -1633,6 +1648,12 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
+    xp = array_namespace(z, p)
+
+    # convert to numpy, convert back on exit   XXX
+    z, p = map(np.asarray, (z, p))
+    k = np.asarray(k)
+
     if pairing is None:
         pairing = 'minimal' if analog else 'nearest'
 
@@ -1646,9 +1667,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     if len(z) == len(p) == 0:
         if not analog:
-            return np.array([[k, 0., 0., 1., 0., 0.]])
+            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]))
         else:
-            return np.array([[0., 0., k, 0., 0., 1.]])
+            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]))
 
     if pairing != 'minimal':
         # ensure we have the same number of poles and zeros, and make copies
@@ -1759,7 +1780,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     # put gain in first sos
     sos[0][:3] *= k
-    return sos
+    return xp.asarray(sos)
 
 
 def _align_nums(nums, xp):
@@ -1806,26 +1827,6 @@ def _align_nums(nums, xp):
             aligned_nums[index, -num.size:] = num
 
         return aligned_nums
-
-
-def _trim_zeros(filt, trim='fb'):
-    # https://github.com/numpy/numpy/blob/v2.1.0/numpy/lib/_function_base_impl.py#L1874-L1925
-    first = 0
-    trim = trim.upper()
-    if 'F' in trim:
-        for i in filt:
-            if i != 0.:
-                break
-            else:
-                first = first + 1
-    last = filt.shape[0]
-    if 'B' in trim:
-        for i in filt[::-1]:
-            if i != 0.:
-                break
-            else:
-                last = last - 1
-    return filt[first:last]
 
 
 def normalize(b, a):
@@ -1905,7 +1906,7 @@ def normalize(b, a):
         raise ValueError("Denominator must have at least on nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
-    den = _trim_zeros(den, 'f')
+    den = _pu._trim_zeros(den, 'f')
 
     # Normalize transfer function
     num, den = num / den[0], den / den[0]

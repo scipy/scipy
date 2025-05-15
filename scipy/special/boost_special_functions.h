@@ -699,8 +699,22 @@ Real
 ncx2_pdf_wrap(const Real x, const Real k, const Real l)
 {
     if (std::isfinite(x)) {
+        try {
         return boost::math::pdf(
-            boost::math::non_central_chi_squared_distribution<Real, StatsPolicy>(k, l), x);
+            boost::math::non_central_chi_squared_distribution<Real, SpecialPolicy>(k, l), x);
+    }
+    catch (const std::overflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_OVERFLOW, NULL);
+        return INFINITY;
+    }
+    catch (const std::underflow_error& e) {
+        sf_error("_ncx2_pdf", SF_ERROR_UNDERFLOW, NULL);
+        return 0;
+    }
+    catch (...) {
+        sf_error("_ncx2_pdf", SF_ERROR_OTHER, NULL);
+        return NAN;
+    }
     }
     return NAN; // inf or -inf returns NAN
 }
