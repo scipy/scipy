@@ -250,7 +250,7 @@ def _stdtrit(xp, spx):
 # IMPORTANT: these must all be **elementwise** functions!
 
 # PyTorch doesn't implement `betainc`.
-# On torch CPU we can fall back to Cython, but on GPU it won't work.
+# On torch CPU we can fall back to NumPy, but on GPU it won't work.
 _needs_betainc = xp_capabilities(cpu_only=True, exceptions=['jax.numpy', 'cupy'])
 
 _special_funcs = (
@@ -285,6 +285,6 @@ _special_funcs = (
 
 # Override ufuncs.
 # When SCIPY_ARRAY_API is disabled, this exclusively updates the docstrings in place
-# and populates the xp_capabilities table, while retaining the original Cython ufuncs.
+# and populates the xp_capabilities table, while retaining the original ufuncs.
 globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
 __all__ = [nfo.func.__name__ for nfo in _special_funcs]
