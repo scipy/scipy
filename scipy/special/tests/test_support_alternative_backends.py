@@ -107,7 +107,7 @@ def test_support_alternative_backends(xp, func, nfo, dtype, shapes):
         args_xp = [arg.rechunk(5) for arg in args_xp]
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
-    ref = nfo.func(*args_np)  # Unwrapped Cython ufunc
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
@@ -142,7 +142,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
                for arg, dtype_np_ref in zip(args_np, dtypes_np_ref)]
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
-    ref = nfo.func(*args_np)  # Unwrapped Cython ufunc
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     atol = 10 * np.finfo(ref.dtype).eps
     xp_assert_close(res, xp.asarray(ref), atol=atol)
@@ -182,7 +182,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
 
     res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
-    ref = nfo.func(*args_np)  # Unwrapped Cython ufunc
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
@@ -203,7 +203,7 @@ def test_repr(func):
 
 @pytest.mark.skipif(
     version.parse(np.__version__) < version.parse("2.2"),
-    reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy 1.x")
+    reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
 @pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
 def test_doc(func):
     """xp_capabilities updates the docstring in place. 
