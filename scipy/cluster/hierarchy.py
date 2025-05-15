@@ -134,9 +134,8 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import (_asarray, array_namespace,
-                                   is_dask, is_jax, is_lazy_array, is_torch,
-                                   xp_copy, xp_device, xp_size)
+from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
+                                   is_lazy_array, xp_copy)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -3854,38 +3853,15 @@ def is_isomorphic(T1, T2):
     # For each pair of (i, j) indices, test that
     # T1[i] == T1[j] <--> T2[i] == T2[j]
 
-    has_unique_all = (
-        xp.__array_namespace_info__().capabilities()['data-dependent shapes']
-        # Dask implements unique_all, but it can't run xp.take on its output
-        # because it has unknown size.
-        and not is_dask(xp) and not is_torch(xp)
-        or is_jax(xp)  # See special case below
-    )
-
-    if has_unique_all:  # O(n) algorithm
-        # Inside `jax.jit`, JAX supports unique_* methods only when
-        # a non-standard size= parameter is provided.
-        kwargs = {"size": xp_size(T1)} if is_jax(xp) else {}
-        unq1 = xp.unique_all(T1, **kwargs)
-        unq2 = xp.unique_all(T2, **kwargs)
-
-        if xp_size(unq1.indices) != xp_size(unq2.indices):
-            return xp.asarray(False, device=xp_device(T1))[()]
-
-        # index where each element was first seen
-        iso1 = xp.take(unq1.indices, unq1.inverse_indices)
-        iso2 = xp.take(unq2.indices, unq2.inverse_indices)
-
-    else:  # O(n*log(n)) algorithm
-        idx = xp.argsort(T1)
-        T1 = xp.take(T1, idx)
-        T2 = xp.take(T2, idx)
-        # Indirectly count how many times each element is repeated
-        # by detecting where the value changes
-        iso1 = T1[:-1] == T1[1:]
-        iso2 = T2[:-1] == T2[1:]
-
-    return xp.all(iso1 == iso2)
+    # O(n*log(n)) algorithm.
+    # It is also possible to write a O(n) algorithm on top of unique_all(),
+    # but in practice it's much slower even for large clusters.
+    idx = xp.argsort(T1)
+    T1 = xp.take(T1, idx)
+    T2 = xp.take(T2, idx)
+    changes1 = T1[:-1] == T1[1:]
+    changes2 = T2[:-1] == T2[1:]
+    return xp.all(changes1 == changes2)
 
 
 def maxdists(Z):
