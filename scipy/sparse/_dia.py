@@ -148,7 +148,7 @@ class _dia_base(_data_matrix):
         num_rows, num_cols = self.shape
         ret = None
 
-        if axis == 0:
+        if axis == (0,):
             mask = self._data_mask()
             x = (self.data * mask).sum(axis=0)
             if x.shape[0] == num_cols:
@@ -158,7 +158,7 @@ class _dia_base(_data_matrix):
                 res[:x.shape[0]] = x
             ret = self._ascontainer(res, dtype=res_dtype)
 
-        else:
+        else:  # axis is None or (1,)
             row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),

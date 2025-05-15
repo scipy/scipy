@@ -3875,9 +3875,9 @@ def make_distribution(dist):
 
         `make_distribution` does not work perfectly with all instances of
         `rv_continuous`. Known failures include `levy_stable`, `vonmises`,
-        `hypergeom`, `nchypergeom_fisher`, `nchypergeom_wallenius`,
-        `poisson_binom`; and some methods of some distributions
-        will not support array shape parameters.
+        `hypergeom`, 'nchypergeom_fisher', 'nchypergeom_wallenius', and
+        `poisson_binom`. Some methods of some distributions will not support
+        array shape parameters.
 
     Parameters
     ----------
