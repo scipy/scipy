@@ -400,7 +400,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Notes
     -----
-    The ratio of the squared magnitude (``scaling='spectrum'``) divided the spectral
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided by the spectral
     power density (``scaling='density'``) is the constant factor of
     ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
     If `return_onesided` is ``True``, the values of the negative frequencies are added
@@ -574,7 +574,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     windows may require a larger overlap. If `noverlap` is 0, this
     method is equivalent to Bartlett's method [2]_.
 
-    The ratio of the squared magnitude (``scaling='spectrum'``) divided the spectral
+    The ratio of the squared magnitude (``scaling='spectrum'``) divided by the spectral
     power density (``scaling='density'``) is the constant factor of
     ``sum(abs(window)**2)*fs / abs(sum(window))**2``.
     If `return_onesided` is ``True``, the values of the negative frequencies are added
@@ -765,6 +765,26 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
     for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
 
+    Welch's method may be interpreted as taking the average over the time slices of a
+    (cross-) spectrogram. Internally, this function utilizes the  `ShortTimeFFT`  to
+    determine the required (cross-) spectrogram. An example below illustrates that it
+    is straightforward to calculate `Pxy` directly with the `ShortTimeFFT`. However,
+    there are some notable differences in the behavior of the `ShortTimeFFT`:
+
+    * There is no direct `ShortTimeFFT` equivalent for the `csd()` parameter
+      combination ``return_onesided=True, scaling='density'``, since
+      ``fft_mode='onesided2X'`` requires ``'psd'`` scaling. The is due to `csd()`
+      returning the doubled squared magnitude in this case, which does not have a
+      sensible interpretation.
+    * `ShortTimeFFT` uses `float64` / `complex128` internally, which is due to the
+      behavior of the utilized `~scipy.fft` module. Thus, those are the dtypes being
+      returned. The `csd` function casts the return values to `float32` / `complex64`
+      if the input is `float32` / `complex64` as well.
+    * The `csd` function calculates ``np.conj(Sx[q,p]) * Sy[q,p]``, whereas
+      `~ShortTimeFFT.spectrogram` calculates ``Sx[q,p] * np.conj(Sy[q,p])`` where
+      ``Sx[q,p]``, ``Sy[q,p]`` are the STFTs of `x` and `y`. Also, the window
+      positioning is different (consult the code snippet above).
+
     .. versionadded:: 0.16.0
 
     References
@@ -819,23 +839,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> np.allclose(Pxy, Pxy1)  # same result as with csd()
     True
 
-    Allthough this function uses the `ShortTimeFFT` internally, the results of using an
-    approach analog to the code snippet above and the `csd()` function may deviate due
-    to implementation details. Notable differences are:
-
-    * There is no direct `ShortTimeFFT` equivalent for the `csd()` parameter
-      combination ``return_onesided=True, scaling='density'``, since
-      ``fft_mode='onesided2X'`` requires ``'psd'`` scaling. The is due to `csd()`
-      returning the doubled squared magnitude in this case, which does not have a
-      sensible interpretation.
-    * `ShortTimeFFT` uses `float64` / `complex128` internally, which is due to the
-      behavior of the utilized `~scipy.fft` module. Thus, those are the dtypes being
-      returned. The `csd` function casts the return values to `float32` / `complex64`
-      if the input is `float32` / `complex64` as well.
-    * The `csd` function calculates ``np.conj(Sx[q,p]) * Sy[q,p]``, whereas
-      `~ShortTimeFFT.spectrogram` calculates ``Sx[q,p] * np.conj(Sy[q,p])`` where
-      ``Sx[q,p]``, ``Sy[q,p]`` are the STFTs of `x` and `y`. Also, the window
-      positioning is different (consult the code snippet above).
+    As discussed in the Notes section, the results of using an approach analogous to
+    the code snippet above and the `csd()` function may deviate due to implementation
+    details.
 
     Note that the code snippet above can be easily adapted to determine other
     statistical properties than the mean value.
@@ -2318,7 +2324,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     .. legacy:: function
 
         This function is solely used by the legacy `_spectral_helper` function,
-        which s located also in this file.
+        which is located also in this file.
 
     This is a helper function that does the main FFT calculation for
     `_spectral helper`. All input validation is performed there, and the
