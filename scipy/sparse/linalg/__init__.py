@@ -22,7 +22,7 @@ Matrix Operations
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
    expm_multiply -- compute the product of a matrix exponential and a matrix
-   krylov_funmv -- use a Krylov method to compute f(A)b for a general f 
+   funm_multiply_krylov -- use a Krylov method to compute f(A)b for a general f
    matrix_power -- compute the matrix power by raising a matrix to an exponent
 
 Matrix norms
@@ -137,7 +137,7 @@ from ._matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
-from ._krylov_funmv import *
+from ._funm_multiply_krylov import *
 from ._special_sparse_arrays import *
 
 # Deprecated namespaces, to be removed in v2.0.0

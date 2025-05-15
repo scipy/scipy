@@ -1,11 +1,13 @@
 """Restared Krylov method for evaluating f(A)b"""
+from warnings import warn
 
 import numpy as np
+from scipy.linalg import norm
 from ._isolve.iterative import _get_atol_rtol
 
-__all__ = ['krylov_funmv']
+__all__ = ['funm_multiply_krylov']
 
-def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
+def _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H, m):
     """
     The Arnoldi iteration for constructing the basis V and the projection H = V * A V
     for the Krylov subspace Km(A, b) of order m.
@@ -25,9 +27,18 @@ def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
     m : int
         The order of the Krylov subspace.
 
+    Returns
+    -------
+    breakdown : bool
+        Indicate if the Arnoldi broke down or not
+
+    iter : int
+        Returns the last valid iteration.
+
     """
 
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
+    norm_tol = np.finfo(b.dtype.char).eps ** 2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -39,14 +50,15 @@ def _krylov_funmv_arnoldi(A, b, bnorm, V, H, m):
             H[i, k] = dotprod(V[:, i], V[:, k + 1])
             V[:, k + 1] = V[:, k + 1] - H[i, k] * V[:, i]
 
-        H[k + 1, k] = np.linalg.norm(V[:, k + 1])
-        if H[k + 1, k] != 0:
-            V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
-        else:
-            raise RuntimeError("krylov_funmv: The Arnoldi iteration broke down "
-                               f"at k = {k}, i.e., V[:, k + 1] = 0")
+        H[k + 1, k] = norm(V[:, k + 1])
+        if H[k + 1, k] < norm_tol:
+            return True, k
 
-def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
+        V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
+
+    return False, m
+
+def _funm_multiply_krylov_lanczos(A, b, bnorm, V, H, m):
     """
     The Lanczos iteration for constructing the basis V and the projection H = V * A V
     for the Krylov subspace Km(A, b) of order m. A must be Hermitian.
@@ -66,8 +78,17 @@ def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
     m : int
         The order of the Krylov subspace.
 
+    Returns
+    -------
+    breakdown : bool
+        Indicate if the Arnoldi broke down or not
+
+    iter : int
+        Returns the last valid iteration.
+
     """
     dotprod = np.vdot if np.iscomplexobj(b) else np.dot
+    norm_tol = np.finfo(b.dtype.char).eps ** 2
     V[:, 0] = b / bnorm
 
     for k in range(0, m):
@@ -79,58 +100,67 @@ def _krylov_funmv_lanczos(A, b, bnorm, V, H, m):
         H[k, k] = dotprod(V[:, k + 1], V[:, k])
         V[:, k + 1] = V[:, k + 1] - H[k, k] * V[:, k]
 
-        H[k + 1, k] = np.linalg.norm(V[:, k + 1])
-        if H[k + 1, k] != 0:
-            V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
-            if k < m - 1:
-                H[k, k + 1] = H[k + 1, k]
-        else:
-            raise RuntimeError("krylov_funmv: The Lanczos iteration broke down "
-                               f"at k = {k}, i.e., V[:, k + 1] = 0")
+        H[k + 1, k] = norm(V[:, k + 1])
+
+        if H[k + 1, k] < norm_tol:
+            return True, k
+
+        V[:, k + 1] = V[:, k + 1] / H[k + 1, k]
+        if k < m - 1:
+            H[k, k + 1] = H[k + 1, k]
+
+    return False, m
 
 
-def krylov_funmv(f, t, A, b, *, atol = 0.0, btol = 1e-6, restart_length = None,
-                 max_restarts = 20, ortho_method = "arnoldi", verbose = False):
+def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
+                         rtol = 1e-6, restart_every_m = None, max_restarts = 20):
     """
     A restarted Krylov method for evaluating ``y = f(tA) b`` from [1]_ [2]_.
 
+    If the structure of ``A`` is known, then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated algorithm.
+    The available options are
+
+    =============================  ================================
+     symmetric                      'symmetric' (or 'sym')
+     hermitian                      'hermitian' (or 'her')
+     general                        'general' (or 'gen')
+    =============================  ================================
+
     Parameters
     ----------
-    f : function
+    f : callable
         Callable object that computes the matrix function ``F = f(X)``.
-
-    t : float
-        The value to scale the matrix ``A`` with.
 
     A : {sparse array, ndarray, LinearOperator}
         A real or complex N-by-N matrix.
         Alternatively, `A` can be a linear operator which can
         produce ``Ax`` using, e.g., ``scipy.sparse.linalg.LinearOperator``.
 
-    b : ndarray, sparse array
+    b : ndarray
         A vector to multiply the ``f(tA)`` with.
 
-    atol, btol : float, optional
-        Parameters for the convergence test. For convergence,
-        ``norm(||y_k - y_k-1||) <= max(btol*norm(b), atol)`` should be satisfied.
-        The default is ``atol=0.`` and ``btol=1e-6``.
+    assume_a : string, optional
+        Indicate the structure of ``A`` as described above. If ommited, then
+        it is assumed that ``A`` has a general structure.
 
-    restart_length : integer
-        Number of iterations between restarts. Larger values increase
-        iteration cost, but may be necessary for convergence.
+    t : float, optional
+        The value to scale the matrix ``A`` with. The default is ``t = 1.0``
+
+    atol, rtol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(||y_k - y_k-1||) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``atol=0.`` and ``rtol=1e-6``.
+
+    restart_every_m : integer
+        If the iteration number reaches this value a restart is triggered.
+        Larger values increase iteration cost but may be necessary for convergence.
         If omitted, ``min(20, n)`` is used.
 
     max_restarts : int, optional
-        Maximum number of restart cycles.  The algorithm will stop
+        Maximum number of restart cycles. The algorithm will stop
         after max_restarts cycles even if the specified tolerance has not been
         achieved. The default is ``max_restarts=20``
-
-    ortho_method : string, optional
-        Orthogonalization method to use. ``lanczos`` is faster, but it requires
-        that ``A`` is Hermitian. ``arnoldi`` is the default option.
-
-    verbose : bool
-        Prints iteration logs if ``verbose=True``. Default is ``False``.
 
     Returns
     -------
@@ -148,7 +178,7 @@ def krylov_funmv(f, t, A, b, *, atol = 0.0, btol = 1e-6, restart_length = None,
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csr_array
-    >>> from scipy.sparse.linalg import krylov_funmv
+    >>> from scipy.sparse.linalg import funm_multiply_krylov
     >>> from scipy.linalg import expm, solve
     >>> A = csr_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
@@ -156,18 +186,19 @@ def krylov_funmv(f, t, A, b, *, atol = 0.0, btol = 1e-6, restart_length = None,
 
     Compute ``y = exp(tA) b``.
 
-    >>> y = krylov_funmv(expm, t, A, b)
+    >>> y = funm_multiply_krylov(expm, A, b, t = t)
     [3.6164913 3.88421511 0.96073457]
 
     >>> ref = expm(t * A.todense()) @ b
     >>> y - ref
     [4.44089210e-16 0.00000000e+00 2.22044605e-16]
 
-    Compute :math:`y = \phi_1(tA) b`, where  :math:`\phi_1(A) = A^{-1}(e^{A} - I)`.
+    Compute :math:`y = f(tA) b`, where  :math:`f(X) = X^{-1}(e^{X} - I)`. This is
+    known as the "phi function" from the exponential integrator literature.
 
     >>> def phim_1(X):
     >>>     return solve(X, expm(X) - np.eye(X.shape[0]))
-    >>> y = krylov_funmv(phim_1, t, A, b)
+    >>> y = funm_multiply_krylov(phim_1, A, b, t = t)
     [ 2.76984306  3.92769192 -0.03111392]
 
     >>> ref = phim_1(t * A.todense()) @ b
@@ -192,75 +223,81 @@ def krylov_funmv(f, t, A, b, *, atol = 0.0, btol = 1e-6, restart_length = None,
 
     """
 
-    if len(b.shape) != 1:
-        raise RuntimeError("krylov_funmv: b must be a vector.")
+    if assume_a not in {'symmetric', 'hermitian', 'general', 'sym', 'her', 'gen'}:
+        raise ValueError(f'scipy.sparse.linalg.funm_multiply_krylov: {assume_a} '
+                         'is not a recognized matrix structure')
+    is_hermitian = (assume_a is not 'gen') and (assume_a is not 'general')
 
+    if len(b.shape) != 1:
+        raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
+                         "argument 'b' must be a 1D array.")
     n = b.shape[0]
 
-    if restart_length is None:
-        restart_length = min(20, n)
-    m = restart_length
-    max_restarts = min(max_restarts, int(n / restart_length) + 1)
-    mmax = restart_length * max_restarts
+    if restart_every_m is None:
+        restart_every_m = min(20, n)
 
-    bnorm = np.linalg.norm(b)
-    atol, _ = _get_atol_rtol("krylov_funmv", bnorm, atol, btol)
+    restart_every_m = int(restart_every_m)
+    max_restarts = int(max_restarts)
+
+    if restart_every_m <= 0:
+        raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
+                         "argument 'restart_every_m' must be positive.")
+
+    if max_restarts <= 0:
+            raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
+                             "argument 'max_restarts' must be positive.")
+
+    m = restart_every_m
+    max_restarts = min(max_restarts, int(n / m) + 1)
+    mmax = m * max_restarts
+
+    bnorm = norm(b)
+    atol, _ = _get_atol_rtol("funm_multiply_krylov", bnorm, atol, rtol)
 
     if bnorm == 0:
-        y = b
+        y = np.array(b)
         return y
 
-    # Pre-allocate the maximum memory space.
+    # Preallocate the maximum memory space.
     # Using the column major order here since we work with
     # each individual column separately.
-    V = np.zeros((n, m + 1), dtype = b.dtype, order = 'F')
-    H = np.zeros((mmax + 1, mmax), dtype = b.dtype, order = 'F')
-    y = np.zeros_like(b)
-
-    if verbose:
-        print(f"N = {n}")
-        print(f"f = {f.__name__}")
-        print(f"atol = {atol:8.2e}, btol = {btol:8.2e}")
-        print(f"restart_length = {restart_length}, max_restarts = {max_restarts}")
-        print(f"ortho_method = {ortho_method}")
-        print(f"||b|| = {bnorm}")
+    internal_type = np.common_type(A, b)
+    V = np.zeros((n, m + 1), dtype = internal_type, order = 'F')
+    H = np.zeros((mmax + 1, mmax), dtype = internal_type, order = 'F')
 
     restart = 1
-    if ortho_method == "lanczos":
-        _krylov_funmv_lanczos(A, b, bnorm, V, H[:m + 1, :m], m)
-    elif ortho_method == "arnoldi":
-        _krylov_funmv_arnoldi(A, b, bnorm, V, H[:m + 1, :m], m)
+
+    if is_hermitian:
+        breakdown, iter = _funm_multiply_krylov_lanczos(A, b, bnorm, V, H[:m + 1, :m], m)
     else:
-        raise RuntimeError("krylov_funmv: Invalid orthogonalization method. "
-                           "Available options: 'arnoldi' or 'lanczos'")
+        breakdown, iter = _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H[:m + 1, :m], m)
 
-    fH = f(t * H[:m, :m])
-    y = bnorm * V[:, :m].dot(fH[:, 0])
-    update_norm = np.linalg.norm(bnorm * fH[:, 0])
+    fH = f(t * H[:iter, :iter])
+    y = bnorm * V[:, :iter].dot(fH[:, 0])
 
-    if verbose:
-        print("{:^10}{:^10}{:^10}".format('restart', '||y_k||', '||y_k - y_k-1||'))
-        print(f"{restart:^10}{np.linalg.norm(y):^10.3g}{update_norm:^10.3g}")
+    if breakdown:
+        return y
 
+    update_norm = norm(bnorm * fH[:, 0])
 
     while restart < max_restarts and update_norm > atol:
         begin = restart * m
         end = (restart + 1) * m
 
-        if ortho_method == "lanczos":
-            _krylov_funmv_lanczos(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
-        elif ortho_method == "arnoldi":
-            _krylov_funmv_arnoldi(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
+        if is_hermitian:
+            breakdown, iter = _funm_multiply_krylov_lanczos(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
+        else:
+            breakdown, iter = _funm_multiply_krylov_arnoldi(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
+
+        if breakdown:
+            end = begin + iter
+            fH = f(t * H[:end, :end])
+            y[:end] = y[:end] + bnorm * V[:, :m].dot(fH[begin:end, 0])
+            return y
 
         fH = f(t * H[:end, :end])
         y = y + bnorm * V[:, :m].dot(fH[begin:end, 0])
-        update_norm = np.linalg.norm(bnorm * fH[begin:end, 0])
+        update_norm = norm(bnorm * fH[begin:end, 0])
         restart += 1
-
-        if verbose:
-            print(f"{restart:^10}{np.linalg.norm(y):^10.3g}{update_norm:^10.3g}")
-
-    if verbose:
-        print("\n")
 
     return y
