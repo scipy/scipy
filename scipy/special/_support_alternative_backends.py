@@ -66,7 +66,7 @@ class _FuncInfo:
             func = self.func
 
         capabilities = self.xp_capabilities or xp_capabilities()
-        # In order to retain a naked Cython ufunc when SCIPY_ARRAY_API is
+        # In order to retain a naked ufunc when SCIPY_ARRAY_API is
         # disabled, xp_capabilities must apply its changes in place.
         cap_func = capabilities(func)
         assert cap_func is func
