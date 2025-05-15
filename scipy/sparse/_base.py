@@ -655,6 +655,8 @@ class _spbase(SparseABC):
         elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
+                # eq and ne return True or False instead of an array when the shapes
+                # don't match. Numpy doesn't do this. Is this what we want?
                 if op in (operator.eq, operator.ne):
                     return op == operator.eq
                 raise ValueError("inconsistent shape")
@@ -913,6 +915,7 @@ class _spbase(SparseABC):
     ####################
 
     def _divide(self, other, true_divide=False, rdivide=False):
+        # Do we need to continue to support true_divide and divide?
         if not (issparse(other) or isdense(other) or isscalarlike(other)):
             # If it's a list or whatever, treat it like an array
             other_a = np.asanyarray(other)
