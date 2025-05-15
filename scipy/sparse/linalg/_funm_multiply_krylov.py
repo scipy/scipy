@@ -1,5 +1,4 @@
 """Restared Krylov method for evaluating f(A)b"""
-from warnings import warn
 
 import numpy as np
 from scipy.linalg import norm
@@ -226,7 +225,7 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     if assume_a not in {'symmetric', 'hermitian', 'general', 'sym', 'her', 'gen'}:
         raise ValueError(f'scipy.sparse.linalg.funm_multiply_krylov: {assume_a} '
                          'is not a recognized matrix structure')
-    is_hermitian = (assume_a is not 'gen') and (assume_a is not 'general')
+    is_hermitian = (assume_a != 'gen') and (assume_a != 'general')
 
     if len(b.shape) != 1:
         raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
@@ -268,12 +267,14 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     restart = 1
 
     if is_hermitian:
-        breakdown, iter = _funm_multiply_krylov_lanczos(A, b, bnorm, V, H[:m + 1, :m], m)
+        breakdown, j = _funm_multiply_krylov_lanczos(A, b, bnorm, V,
+                                                        H[:m + 1, :m], m)
     else:
-        breakdown, iter = _funm_multiply_krylov_arnoldi(A, b, bnorm, V, H[:m + 1, :m], m)
+        breakdown, j = _funm_multiply_krylov_arnoldi(A, b, bnorm, V,
+                                                        H[:m + 1, :m], m)
 
-    fH = f(t * H[:iter, :iter])
-    y = bnorm * V[:, :iter].dot(fH[:, 0])
+    fH = f(t * H[:j, :j])
+    y = bnorm * V[:, :j].dot(fH[:, 0])
 
     if breakdown:
         return y
@@ -285,12 +286,14 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
         end = (restart + 1) * m
 
         if is_hermitian:
-            breakdown, iter = _funm_multiply_krylov_lanczos(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
+            breakdown, j = _funm_multiply_krylov_lanczos(A, V[:, m], 1, V,
+                                                         H[begin:end + 1, begin:end], m)
         else:
-            breakdown, iter = _funm_multiply_krylov_arnoldi(A, V[:, m], 1, V, H[begin:end + 1, begin:end], m)
+            breakdown, j = _funm_multiply_krylov_arnoldi(A, V[:, m], 1, V,
+                                                         H[begin:end + 1, begin:end], m)
 
         if breakdown:
-            end = begin + iter
+            end = begin + j
             fH = f(t * H[:end, :end])
             y[:end] = y[:end] + bnorm * V[:, :m].dot(fH[begin:end, 0])
             return y
