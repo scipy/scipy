@@ -164,14 +164,6 @@ xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
 use_system_libraries = get_option('use-system-libraries')
-
-foreach lib : use_system_libraries
-  if lib not in ['none', 'auto', 'boost.math', 'qhull']
-    error('Unknown value passed to `use-system-libraries`: `' + lib
-          + '`. recognised values: `none`, `auto`, `boost.math`, `qhull`.')
-  endif
-endforeach
-
 auto_system_libraries = false
 
 if use_system_libraries.contains('none')
