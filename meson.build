@@ -183,7 +183,7 @@ elif auto_system_libraries
     fallback : ['boost_math', 'boost_math_dep']
   )
 else
-  boost_math = subproject('boost_math',version : '1.88.0')
+  boost_math = subproject('boost_math', version : '1.88.0')
   boost_math_dep = boost_math.get_variable('boost_math_dep')
 endif
 
