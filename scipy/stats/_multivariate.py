@@ -1528,7 +1528,7 @@ class matrix_t_gen(multi_rv_generic):
 
     .. math::
 
-        \mathcal{T}_{m,n} = \\frac{
+        \\mathcal{T}_{m,n} = \\frac{
             \Gamma_n \left( 
                 \\frac{\mathrm{df} + m + n - 1}{2} 
             \\right)
@@ -1550,7 +1550,7 @@ class matrix_t_gen(multi_rv_generic):
 
     .. math::
 
-        \mathcal{T}_{m,n} = 
+        \\mathcal{T}_{m,n} = 
         \\frac{
             \Gamma_m \left( 
                 \\frac{\mathrm{df} + m + n - 1}{2} 
