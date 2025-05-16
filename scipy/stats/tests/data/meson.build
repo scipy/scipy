@@ -3,8 +3,7 @@ py3.install_sources([
     'fisher_exact_results_from_r.py',
     'jf_skew_t_gamlss_pdf_data.npy',
     'rel_breitwigner_pdf_sample_data_ROOT.npy',
-    'studentized_range_mpmath_ref.json',
-    'matrixt_samples_pdfs_from_mathematica.npz'
+    'studentized_range_mpmath_ref.json'
   ],
   subdir: 'scipy/stats/tests/data',
   install_tag: 'tests'

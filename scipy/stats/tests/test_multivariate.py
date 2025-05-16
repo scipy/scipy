@@ -4,7 +4,6 @@ Test functions for multivariate normal, t, and related distributions.
 """
 import pickle
 from dataclasses import dataclass
-from pathlib import Path
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
@@ -1614,7 +1613,7 @@ class TestMatrixT:
         """
         assert a_mat.ndim == 2
         return a_mat.T.reshape((a_mat.size,))
-    
+
     def test_moments(self):
 
         df = 5
@@ -1643,18 +1642,61 @@ class TestMatrixT:
         assert_close(kl, 0, atol=atol)
 
     def test_pdf_against_mathematica(self):
+        # Test values generated from Mathematica 13.0.0 for Linux x86 (64-bit)
+        # Release ID 13.0.0.0 (7522564, 2021120311723), Patch Level 0
+        #
+        # mu={{1,2,3},{4,5,6}};
+        # sigma={{1,0.5},{0.5,1}};
+        # omega={{1,0.3,0.2},{0.3,1,0.4},{0.2,0.4,1}};
+        # df=5;
+        # sampleSize=10;
+        # SeedRandom[42];
+        # dist=MatrixTDistribution[mu,sigma,omega,alpha];
+        # samples=RandomVariate[dist,sampleSize];
+        # pdfs=PDF[dist,#]&/@samples;
 
         df = 5
         M = np.array([[1, 2, 3], [4, 5, 6]])
         U = np.array([[1, 0.5], [0.5, 1]])
         V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
-        
+
         atol = 1e-10
 
-        samples_m, pdfs_m = [np.load(
-            Path(__file__).parent / "data/matrixt_samples_pdfs_from_mathematica.npz"
-        )[k] for k in ("samples", "pdfs")]
-        samples_m = samples_m.reshape(samples_m.shape[0], *M.shape)
+        samples_m = np.array(
+            [[[0.6399716994253741, 2.171718671534955, 2.5758260933527706],
+              [4.031082477912233, 5.0216809585266375, 6.268126154787008]],
+             [[1.1648428842062322, 2.5262970999930445, 3.7813752298650685],
+              [3.9129791149568334, 4.202714884504189, 5.661830748993523]],
+             [[1.00461853907369, 2.080028751298565, 3.4064894856024104],
+              [3.993327716320432, 5.655909265966448, 6.578059791357837]],
+             [[0.8062520950137404, 2.5290095606749072, 2.8075133133021892],
+              [3.722896768794995, 5.26987322525995, 5.801155613199776]],
+             [[0.44581620865781746, 3.224059910964103, 2.9549909805414227],
+              [3.451520519442941, 7.064424621385415, 5.438834195890955]],
+             [[0.9192327696366637, 2.374572300756703, 3.495118928313048],
+              [3.9244472379032365, 5.627654256287447, 5.806104608153957]],
+             [[2.0142420040901134, 1.3770181277098705, 3.1140643114686863],
+              [3.88881648137925, 4.603482820518904, 5.714205489738063]],
+             [[1.322000147426889, 2.602135838377777, 2.558921028724319],
+              [4.50534702030683, 5.861137323151889, 5.1818725483348524]],
+             [[1.448743656862261, 2.0538475576522415, 3.6373215432417694],
+              [4.097711403906707, 4.506916241403669, 5.68010653497977]],
+             [[1.0451873189951977, 1.6454671896797293, 3.2843962145445067],
+              [3.648493466445393, 5.004212508553601, 6.301624351328048]]]
+        )
+
+        pdfs_m = np.array(
+            [0.08567193713182396,
+             0.004821273644067376,
+             0.10597803402975409,
+             0.1742504488082082,
+             3.945711836053583e-05,
+             0.027158790350347867,
+             0.0029909512030897095,
+             0.0055945460180775505,
+             0.025788366971310307,
+             0.12021073359884471]
+        )
 
         pdfs_py = matrix_t.pdf(
             samples_m, mean=M, rowcov=U, colcov=V, df=df
@@ -1662,34 +1704,6 @@ class TestMatrixT:
 
         assert_allclose(pdfs_m, pdfs_py, atol=atol)
 
-    def test_rvs_against_mathematica(self):
-
-        M = np.array([[1, 2, 3], [4, 5, 6]])
-        U = np.array([[1, 0.5], [0.5, 1]])
-        V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
-        df = 5
-
-        atol = 1e-2
-
-        samples_m = np.load(
-            Path(__file__).parent / "data/matrixt_samples_pdfs_from_mathematica.npz"
-        )["samples"]
-        samples_m = samples_m.reshape(samples_m.shape[0], *M.shape)
-
-        samples_py = matrix_t.rvs(
-            mean=M, rowcov=U, colcov=V, df=df, size=samples_m.shape[0]
-        )
-        
-        relerr = self.relative_error(samples_m.mean(0), samples_py.mean(0))
-        assert_close(relerr, 0, atol=atol)
-
-        samples_m_cov = np.cov(np.array([self.vec(mv) for mv in samples_m]), 
-                               rowvar=False)
-        samples_py_cov = np.cov(np.array([self.vec(mv) for mv in samples_py]), 
-                               rowvar=False)
-        kl = self.matrix_divergence(samples_m_cov, samples_py_cov)
-        assert_close(kl, 0, atol=atol)
-        
     def test_samples(self):
         df = 5
         num_rows = 4
@@ -1722,7 +1736,7 @@ class TestMatrixT:
         assert_allclose(M.T, mT, atol=atol)
         assert_allclose(m, mT.T, atol=atol)
         assert_allclose(m.T, mT, atol=atol)
-        
+
 
 class TestDirichlet:
 
