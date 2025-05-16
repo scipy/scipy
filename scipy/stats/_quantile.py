@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.special import betainc
-from scipy._lib._array_api import xp_ravel, array_namespace, xp_promote
+from scipy._lib._array_api import (xp_ravel, array_namespace, xp_promote,
+                                   _length_nonmasked)
 import scipy._lib.array_api_extra as xpx
 from scipy.stats._axis_nan_policy import _broadcast_arrays, _contains_nan
-from scipy.stats._stats_py import _length_nonmasked
 
 
 def _quantile_iv(x, p, method, axis, nan_policy, keepdims):

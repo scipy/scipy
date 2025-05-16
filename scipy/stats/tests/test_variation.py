@@ -14,6 +14,7 @@ from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_om
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@skip_xp_backends("dask.array", reason='data-apis/array-api-extra#196')
 @skip_xp_backends('torch', reason='data-apis/array-api-compat#271')
 class TestVariation:
     """

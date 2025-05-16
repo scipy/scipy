@@ -2294,7 +2294,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError('A 2-dimensional array must be passed. '
+                         f'(Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
@@ -2303,7 +2304,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           kwargs.pop('V', None),
                           kwargs.pop('VI', None),
                           # See src/distance_pybind.cpp::pdist
-                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
 
 
@@ -2706,7 +2707,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2736,7 +2737,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
