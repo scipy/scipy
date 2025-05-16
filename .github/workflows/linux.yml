@@ -456,7 +456,7 @@ jobs:
     needs: get_commit_message
     strategy:
       matrix:
-        parallel: ['0', '1']
+        parallel: ['0']  # '1' temporarily disabled, `stats` segfault (see gh-22758)
 
     runs-on: ubuntu-latest
     if: >
