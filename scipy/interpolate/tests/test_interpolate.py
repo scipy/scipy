@@ -996,7 +996,7 @@ class TestAkima1DInterpolator:
     def test_large_dynamic_range(self):
         # check a large step does not change non-overlapping subsplines
         x = 1.*np.arange(1, 12)                    # grid of spline points
-        x_sample = np.linspace(1., 7., 21)         # grid of points to sample splines at
+        x_sample = np.linspace(1., 7., 21)         # grid of points to sample
         y1 = np.heaviside(x - 3, 0.5)              # small step function
         y2 = y1 + 1.e9 * np.heaviside(x - 9, 0.5)  # increase of at least ~1e9
 
@@ -1016,9 +1016,10 @@ class TestAkima1DInterpolator:
         xp_assert_equal(y_eval3, y_eval4)
 
     def test_large_dynamic_range2(self):
-        # variant of test_large_dynamic_range specifically engineered to fail if m2=m3 handling is not on
+        # variant of test_large_dynamic_range
+        # specifically engineered to fail if m2=m3 handling is not on
         x = np.linspace(-1., 9., num=40)
-        x_sample = np.linspace(0.,3.,41)
+        x_sample = np.linspace(0., 3., 41)
 
         y1 = np.heaviside(x - 2, 0.5)                # small step function
         y2 = y1 + 1.e9 * np.heaviside(x - 7, 0.5)    # very large increase
@@ -1030,21 +1031,25 @@ class TestAkima1DInterpolator:
         y_eval1 = ak1(x_sample)
         y_eval2 = ak2(x_sample)
 
-        xp_assert_equal(np.isnan(y_eval1), np.isnan(y_eval2))
-        xp_assert_close(y_eval1[~np.isnan(y_eval2)], y_eval2[~np.isnan(y_eval2)])
+        mask = np.isnan(y_eval1)
+        xp_assert_equal(mask, np.isnan(y_eval2))
+        xp_assert_close(y_eval1[~mask], y_eval2[~mask])
 
     def test_large_dynamic_range3(self):
-        # variant of test_large_dynamic_range that more specifically isolates the failure if m2=m3 handling is not on
+        # variant of test_large_dynamic_range
+        # that better isolates the failure if m2=m3 handling is not on
         x = np.arange(0, 14)
 
-        # evaluate at x points chosen specifically to isolate only the misbehavior in m2=m3 handling
-        x_sample1 = np.linspace(1.,3.,11)
-        x_sample2 = np.linspace(6.,8.,11)
+        # evaluate at x points chosen to isolate only m2=m3 handling
+        x_sample1 = np.linspace(1., 3., 11)
+        x_sample2 = np.linspace(6., 8., 11)
 
         # points to create spline
-        y1 = np.array([-3, -2, -1, 0, 1, 0, 0, -1, -2, -3, -4, -5, -6, -7])
+        y1 = np.array([-3., -2., -1., 0., 1., 0., 0.,
+                       -1., -2., -3., -4., -5., -6., -7.])
         y2 = y1.copy()
-        y2[-1] -= 1.e10  # make a copy identical except for one very large value at one end
+        # make a copy identical except for one very large value
+        y2[-1] = 1.e9
 
         ak1 = Akima1DInterpolator(x, y1, method='akima')
 
@@ -1059,18 +1064,17 @@ class TestAkima1DInterpolator:
         y_eval3_2 = 6 - x_sample2  # the known result for this segment
 
         xp_assert_equal(np.isnan(y_eval1_1), np.isnan(y_eval2_1))
-        xp_assert_close(y_eval1_1[~np.isnan(y_eval1_1)], y_eval2_1[~np.isnan(y_eval1_1)])
+        xp_assert_close(y_eval1_1, y_eval2_1)
         xp_assert_close(y_eval3_1, y_eval1_1)
 
         xp_assert_equal(np.isnan(y_eval1_2), np.isnan(y_eval2_2))
-        xp_assert_close(y_eval1_2[~np.isnan(y_eval1_2)], y_eval2_2[~np.isnan(y_eval1_2)])
+        xp_assert_close(y_eval1_2, y_eval2_2)
         xp_assert_close(y_eval3_2, y_eval1_2)
-
 
     def test_no_overflow(self):
         # check a large jump does not cause a float overflow
         x = np.arange(1, 10)
-        y = 1.e160*np.heaviside(x-4, 0.5)
+        y = 1.e6*np.sqrt(np.finfo(float).max)*np.heaviside(x-4, 0.5)
 
         ak1 = Akima1DInterpolator(x, y, method='makima')
         ak2 = Akima1DInterpolator(x, y, method='akima')
