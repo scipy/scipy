@@ -8913,7 +8913,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 
 @xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'],
-    reason=('Delegation for `special.stdtr` only implemented for CuPy and JAX.'),
+    reason='Delegation for `special.stdtr` only implemented for CuPy and JAX.',
     jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
