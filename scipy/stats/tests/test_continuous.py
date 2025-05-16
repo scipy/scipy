@@ -1113,7 +1113,7 @@ class TestMakeDistribution:
                 'johnsonsb', 'kappa4', 'ksone', 'kstwo', 'kstwobign', 'norminvgauss',
                 'powerlognorm', 'powernorm', 'recipinvgauss', 'studentized_range',
                 'vonmises_line', # continuous
-                'skellam'}  # discrete
+                'betanbinom', 'logser', 'skellam', 'zipf'}  # discrete
         if not int(os.environ.get('SCIPY_XSLOW', '0')) and distname in slow:
             pytest.skip('Skipping as XSLOW')
 
@@ -1122,6 +1122,8 @@ class TestMakeDistribution:
             'vonmises',               # circular distribution; shouldn't work
             'poisson_binom',          # vector shape parameter
             'hypergeom',              # distribution functions need interpolation
+            'nchypergeom_fisher',     # distribution functions need interpolation
+            'nchypergeom_wallenius',  # distribution functions need interpolation
         }:
             return
 
@@ -1136,9 +1138,7 @@ class TestMakeDistribution:
         skip_raw = {2: {'alpha', 'foldcauchy', 'halfcauchy', 'levy', 'levy_l'},
                     3: {'pareto'},  # stats.pareto is just wrong
                     4: {'invgamma'}}  # tolerance issue
-        skip_standardized = {'exponpow', 'ksone', 'nchypergeom_wallenius'}  # tolerances
-        skip_median = {'nhypergeom', 'yulesimon',  # nan mismatch
-                       'betanbinom', 'zipf', 'logser'}  # median 0th element
+        skip_standardized = {'exponpow', 'ksone'}  # tolerances
 
         dist = getattr(stats, distname)
         params = dict(zip(dist.shapes.split(', '), distdata[1])) if dist.shapes else {}
@@ -1160,8 +1160,7 @@ class TestMakeDistribution:
                 # some continuous distributions have trouble with `logentropy` because
                 # it uses complex numbers
                 assert_allclose(np.exp(X.logentropy()), Y.entropy(), rtol=rtol)
-            if distname not in skip_median:
-                assert_allclose(X.median(), Y.median(), rtol=rtol)
+            assert_allclose(X.median(), Y.median(), rtol=rtol)
             assert_allclose(X.mean(), m, rtol=rtol, atol=atol)
             assert_allclose(X.variance(), v, rtol=rtol, atol=atol)
             if distname not in skip_skewness:
@@ -1180,11 +1179,18 @@ class TestMakeDistribution:
             if distname not in skip_logccdf:
                 assert_allclose(X.logccdf(x), Y.logsf(x), rtol=rtol)
             assert_allclose(X.ccdf(x), Y.sf(x), rtol=rtol)
-            if isinstance(dist, stats.rv_continuous):
-                # For discrete distributions, these won't agree at the far left end
-                # of the support, and the new infrastructure is slow there (for now).
-                assert_allclose(X.icdf(p), Y.ppf(p), rtol=rtol)
-                assert_allclose(X.iccdf(p), Y.isf(p), rtol=rtol)
+
+            # old infrastructure convention for ppf(p=0) and isf(p=1) is different than
+            # new infrastructure. Adjust reference values accordingly.
+            a, _ = Y.support()
+            ref_ppf = Y.ppf(p)
+            ref_ppf[p == 0] = a
+            ref_isf = Y.isf(p)
+            ref_isf[p == 1] = a
+
+            assert_allclose(X.icdf(p), ref_ppf, rtol=rtol)
+            assert_allclose(X.iccdf(p), ref_isf, rtol=rtol)
+
             for order in range(5):
                 if distname not in skip_raw.get(order, {}):
                     assert_allclose(X.moment(order, kind='raw'),
