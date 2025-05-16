@@ -31,13 +31,12 @@ Authors
 * Neil Schemenauer (1) +
 * Dan Schult (1)
 * sildater (1) +
-* Gagandeep Singh (4)
 * Albert Steppi (2)
 * Matthias Urlichs (1) +
 * David Varela (1) +
-* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (3)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (7)
 
-A total of 24 people contributed to this release.
+A total of 23 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
