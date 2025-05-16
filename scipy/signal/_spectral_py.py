@@ -771,9 +771,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     is straightforward to calculate `Pxy` directly with the `ShortTimeFFT`. However,
     there are some notable differences in the behavior of the `ShortTimeFFT`:
 
-    * There is no direct `ShortTimeFFT` equivalent for the `csd()` parameter
+    * There is no direct `ShortTimeFFT` equivalent for the `csd` parameter
       combination ``return_onesided=True, scaling='density'``, since
-      ``fft_mode='onesided2X'`` requires ``'psd'`` scaling. The is due to `csd()`
+      ``fft_mode='onesided2X'`` requires ``'psd'`` scaling. The is due to `csd`
       returning the doubled squared magnitude in this case, which does not have a
       sensible interpretation.
     * `ShortTimeFFT` uses `float64` / `complex128` internally, which is due to the
@@ -783,7 +783,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     * The `csd` function calculates ``np.conj(Sx[q,p]) * Sy[q,p]``, whereas
       `~ShortTimeFFT.spectrogram` calculates ``Sx[q,p] * np.conj(Sy[q,p])`` where
       ``Sx[q,p]``, ``Sy[q,p]`` are the STFTs of `x` and `y`. Also, the window
-      positioning is different (consult the code snippet above).
+      positioning is different.
 
     .. versionadded:: 0.16.0
 
@@ -840,7 +840,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     True
 
     As discussed in the Notes section, the results of using an approach analogous to
-    the code snippet above and the `csd()` function may deviate due to implementation
+    the code snippet above and the `csd` function may deviate due to implementation
     details.
 
     Note that the code snippet above can be easily adapted to determine other
