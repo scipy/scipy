@@ -131,7 +131,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                 os.getcwd(),
                 os.environ.get('PKG_CONFIG_PATH', '')
                 ])
-        
+
     if use_system_libraries:
         meson_args = meson_args + ("-Duse-system-libraries=auto",)
 
@@ -266,9 +266,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     n_jobs = parallel
     if (n_jobs != 1) and ('-n' not in pytest_args):
         pytest_args = ('-n', str(n_jobs)) + pytest_args
-
-    if tests and '--pyargs' not in pytest_args:
-        pytest_args += ('--pyargs', tests)
 
     if durations:
         pytest_args += ('--durations', durations)
