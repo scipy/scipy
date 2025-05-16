@@ -41,10 +41,13 @@ New features
 ``scipy.differentiate`` improvements
 ====================================
 
+``scipy.interpolate`` improvements
+==================================
+- Improved the error estimate of `scipy.integrate.tanhsinh`
 
 ``scipy.interpolate`` improvements
 ==================================
-
+- Added batch support to `scipy.interpolate.make_smoothing_spline`
 
 ``scipy.linalg`` improvements
 =============================
@@ -58,11 +61,13 @@ New features
   deprecated and will be removed four versions later. Similarly, after
   changing the underlying algorithm to recursion, the ``blocksize`` keyword
   argument has no effect and will be removed two versions later.
-
+- Added wrappers for ``?langb`` and ``?gbcon`` to `scipy.linalg.lapack`.
+- Improved default driver of `scipy.linalg.eigh_tridiagonal`.
 
 ``scipy.ndimage`` improvements
 ==============================
-
+- Added `scipy.ndimage.vectorized_filter` for generic filters that take advantage
+  of a vectorized Python callable.
 
 ``scipy.optimize`` improvements
 ===============================
@@ -96,6 +101,7 @@ New features
 
 ``scipy.signal`` improvements
 =============================
+-
 - A new function ``firwin_2d`` for the creation of a 2-D FIR Filter using the
   1-D window method was added.
 
@@ -118,7 +124,27 @@ New features
 
 ``scipy.stats`` improvements
 ============================
+- Added `scipy.stats.quantile`, an array API compatible function for quantile
+  estimation.
+- Extended `scipy.stats.make_distribution` to:
 
+  - work with existing discrete distributions and
+  - facilitate the creation of custom distributions
+
+  in the new random variable infrastructure.
+
+- Added `scipy.stats.Binomial`.
+- Added ``equal_var`` keyword to:
+  - `scipy.stats.tukey_hsd` (enables the Games-Howell test) and
+  - `scipy.stats.f_oneway` (enables Welch ANOVA).
+- Improved moment calculation for `scipy.stats.gennorm`.
+- Added native vectorization to `scipy.stats.mode` for faster batch calculation.
+- Added ``axis``, ``nan_policy``, and ``keepdims`` to `scipy.stats.power_divergence`,
+  `scipy.stats.chisquare`, `scipy.stats.pointbiserialr`, `scipy.stats.kendalltau`,
+  `scipy.stats.weightedtau`, `scipy.stats.theilslopes`, `scipy.stats.siegelslopes`,
+  and `scipy.stats.boxcox_llf`.
+- Improved speed of `scipy.stats.special_ortho_group`.
+-
 
 **************************
 Array API Standard Support
@@ -127,8 +153,18 @@ Array API Standard Support
 Experimental support for array libraries other than NumPy has been added to
 existing sub-packages in recent versions of SciPy. Please consider testing
 these features by setting an environment variable ``SCIPY_ARRAY_API=1`` and
-providing PyTorch, JAX, or CuPy arrays as array arguments.
-Features with support added for SciPy 1.16.0 include:
+providing PyTorch, JAX, or CuPy arrays as array arguments. Many functions
+in `scipy.stats`, `scipy.special`, `scipy.optimize`, and `scipy.constants`
+now provide tables documenting compatible array and device types as well as
+support for lazy arrays and JIT compilation. New features with support and
+old features with support added for SciPy 1.16.0 include:
+
+- Most features of `scipy.signal`
+- `scipy.ndimage.vectorized_filter`
+- `scipy.special.stdtrit`
+- `scipy.stats.quantile`
+- `scipy.stats.gstd`
+- `scipy.stats.rankdata`
 
 *******************
 Deprecated features
@@ -137,6 +173,9 @@ Deprecated features
   be removed in SciPy 1.18.0.
 - The ``disp`` argument of `scipy.lingalg.signm`, `scipy.lingalg.logm`, and
   `scipy.lingalg.sqrtm` will be removed in SciPy 1.18.0.
+- `scipy.stats.multinomial` now emits a ``FutureWarning`` if the rows of ``p``
+  do not sum to ``1.0``. This condition will produce NaNs beginning in SciPy
+  1.18.0.
 
 ********************
 Expired Deprecations
@@ -145,6 +184,8 @@ Expired Deprecations
 - The ``quadrature='trapz'`` option has been removed from
   `scipy.intgerate.quad_vec` and ``scipy.stats.trapz`` has been removed. Use
   ``trapezoid`` in both instances instead.
+- `scipy.special.comb` and `scipy.special.perm` now raise when ``exact=True``
+  and arguments are non-integral.
 - Support for inference of the two sets of measurements from the single
   argument ``x`` has been removed from `scipy.stats.linregress`. The data
   must be specified separately as ``x`` and ``y``.
@@ -166,7 +207,7 @@ Backwards incompatible changes
 *************
 Other changes
 *************
-* The ``lm`` method of ``least_squares`` function now has a different behavior
+- The ``lm`` method of ``least_squares`` function now has a different behavior
   for the maximum number of function evaluations, ``max_nfev``. The default for
   the ``lm`` method is changed to ``100 * n``, for both a callable and a
   numerically estimated jacobian. This limit on function evaluations excludes
@@ -176,11 +217,10 @@ Other changes
   ``lm`` method the number of function calls used in Jacobian approximation
   is no longer included in ``OptimizeResult.nfev``. This brings the behavior
   of ``lm``, ``trf``, and ``dogbox`` into line.
-
-* For ``Cython>=3.1.0b1``, SciPy now uses the new
+- For ``Cython>=3.1.0b1``, SciPy now uses the new
   ``cython --generate-shared`` functionality, which reduces the total size of
   SciPy's wheels and on-disk installations significantly.
-
+- The output of `scipy.stats.wrapcauchy.rvs` is now mapped to the unit circle.
 
 
 *******
