@@ -37,9 +37,6 @@ Highlights of this release
 New features
 ************
 
-``scipy.cluster`` improvements
-==============================
-
 ``scipy.io`` improvements
 ==============================
 - ``savemat`` now provides informative warnings for invalid field names.
@@ -47,9 +44,6 @@ New features
   a source file path that does not exist.
 - `scipy.io.wavfile.read` can now read non-seekable files.
 
-
-``scipy.differentiate`` improvements
-====================================
 
 ``scipy.integrate`` improvements
 ==================================
@@ -157,10 +151,6 @@ New features
   It follows the same design approach as `scipy.spatial.transform.Rotation`.
 - `scipy.spatial.transform.Rotation` now has an appropriate ``__repr__`` method.
 - ``Rotation.apply`` has improved performance.
-
-
-``scipy.special`` improvements
-==============================
 
 
 ``scipy.stats`` improvements
