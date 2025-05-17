@@ -117,7 +117,9 @@ def poly(seq_of_zeros, *, xp):
     if xp.isdtype(a.dtype, 'complex floating'):
         # if complex roots are all complex conjugates, the roots are real.
         roots = xp.asarray(seq_of_zeros, dtype=xp.complex128)
-        if xp.all(_sort_cmplx(roots, xp) == _sort_cmplx(xp.conj(roots), xp)):
+        delta = xp.abs(_sort_cmplx(roots, xp) - _sort_cmplx(xp.conj(roots), xp=xp))
+        eps = xp.finfo(delta.dtype).eps * 10
+        if xp.all(delta < eps):
             a = xp.asarray(xp.real(a), copy=True)
 
     return a
