@@ -107,10 +107,10 @@ coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iilIIT*Ti
 coo_todense_nd      v IllIT*Ti
 coo_matvec          v lIITT*T
-dia_matmat          v iiiiITiiiIT*V*W
 coo_matvec_nd       v llIITT*T
 coo_matmat_dense    v llIITT*T
 coo_matmat_dense_nd v lllIIITT*T
+dia_matmat          v iiiiITiiiIT*V*W
 dia_matvec          v iiiiITT*T
 dia_matvecs         v iiiiITiT*T
 cs_graph_components i iII*I

@@ -109,7 +109,7 @@ void dia_matmat(const I A_rows,
             T* diag_r = data->data() + npy_intp(L) * ofs_map[ofs] + B_ofs; // row-indexed
             // overlapping span of data within current B and A diagonals
             const I j_beg = max(B_j_beg, A_ofs),
-                    j_end = min({B_j_end, min(A_cols, A_L), A_rows + A_ofs});
+                    j_end = min({B_j_end, A_cols, A_L, A_rows + A_ofs});
             // add partial product to output
             for (I j = j_beg; j < j_end; ++j)
                 diag_r[j] += A_diag_c[j] * B_diag_r[j];
