@@ -213,6 +213,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: recursive
+          
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
@@ -467,6 +468,7 @@ jobs:
       with:
         submodules: recursive
         fetch-tags: true
+
     - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: '3.13t'

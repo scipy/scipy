@@ -39,7 +39,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         csc_array, csr_array, dok_array,
         coo_array, lil_array, dia_array, bsr_array,
-        eye, issparse, SparseEfficiencyWarning, sparray)
+        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
@@ -1112,6 +1112,21 @@ class _TestCommon:
 
         assert_array_almost_equal(dat_sum, datsp_sum)
         assert_equal(dat_sum.dtype, datsp_sum.dtype)
+
+    def test_sum_mean_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+
+        assert isscalarlike(datsp.sum())
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        assert isinstance(datsp.sum(axis=0), matrix_or_array)
+        assert isinstance(datsp.sum(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.mean())
+        assert isinstance(datsp.mean(axis=0), matrix_or_array)
+        assert isinstance(datsp.mean(axis=1), matrix_or_array)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -3854,6 +3869,38 @@ class _TestMinMax:
         for axis, ex in even_explicit_pairs:
             assert_equal(X.max(axis=axis, explicit=ex).toarray(), D.max(axis=axis))
             assert_equal(X.min(axis=axis, explicit=ex).toarray(), D.min(axis=axis))
+
+    def test_minmax_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        spmatrix_or_sparray = sparray if self.is_array_test else spmatrix
+
+        assert isscalarlike(datsp.min())
+        assert isinstance(datsp.min(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.min(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.max())
+        assert isinstance(datsp.max(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.max(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmin())
+        assert isinstance(datsp.nanmin(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmin(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmax())
+        assert isinstance(datsp.nanmax(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmax(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.argmin())
+        assert isinstance(datsp.argmin(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmin(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.argmax())
+        assert isinstance(datsp.argmax(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmax(axis=1), matrix_or_array)
 
     def test_nanminmax(self):
         D = self.asdense(np.arange(50).reshape(5,10), dtype=float)

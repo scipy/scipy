@@ -1343,7 +1343,7 @@ class _spbase(SparseABC):
 
         if out is None:
             # create out array with desired dtype
-            out = np.zeros(new_shape, dtype=dtype or res_dtype)
+            out = self._ascontainer(np.zeros(new_shape, dtype=dtype or res_dtype))
         else:
             if out.shape != new_shape:
                 raise ValueError("out dimensions do not match shape")
