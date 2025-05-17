@@ -56,7 +56,6 @@ python_sources = [
   'test_wrightomega.py',
   'test_zeta.py',
   'test_boost_ufuncs.py',
-  'test_xsf_cuda.py',
 ]
 
 

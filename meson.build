@@ -126,8 +126,8 @@ elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
     '/assume:minus0'
   )
 endif
-add_project_arguments(_intel_cflags, language: ['c', 'cpp'])
-add_project_arguments(_intel_fflags, language: 'fortran')
+add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
+add_global_arguments(_intel_fflags, language: 'fortran')
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
@@ -163,11 +163,40 @@ endif
 xsf = subproject('xsf')
 xsf_dep = xsf.get_variable('xsf_dep')
 
-boost_math_dep = dependency(
-  'boost',
-  version : '1.88.0',
-  fallback : ['boost_math', 'boost_math_dep'],
-)
+use_system_libraries = get_option('use-system-libraries')
+all_system_libraries = false
+auto_system_libraries = false
 
+if use_system_libraries.contains('none')
+  use_system_libraries = ['none']
+elif use_system_libraries.contains('all')
+  all_system_libraries = true
+elif use_system_libraries.contains('auto')
+  auto_system_libraries = true 
+endif
+
+if all_system_libraries or use_system_libraries.contains('boost.math')
+  boost_math_dep = dependency('boost', version : '1.88.0')
+elif auto_system_libraries
+  boost_math_dep = dependency(
+    'boost', version : '1.88.0',
+    fallback : ['boost_math', 'boost_math_dep']
+  )
+else
+  boost_math = subproject('boost_math', version : '1.88.0')
+  boost_math_dep = boost_math.get_variable('boost_math_dep')
+endif
+
+if all_system_libraries or use_system_libraries.contains('qhull')
+  qhull_r_dep = dependency('qhull_r', version : '8.0.2')
+elif auto_system_libraries
+  qhull_r_dep = dependency(
+    'qhull_r', version : '8.0.2',
+    fallback : ['qhull_r', 'qhull_r_dep']
+  )
+else
+  qhull_r = subproject('qhull_r', version : '8.0.2')
+  qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
+endif
 
 subdir('scipy')

@@ -46,6 +46,7 @@ jobs:
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Get commit message
         id: commit_message
         run: |
@@ -56,7 +57,6 @@ jobs:
               RUN="1"
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
-          echo github.ref ${{ github.ref }}
 
   build_wheels:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}

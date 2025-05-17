@@ -200,8 +200,9 @@ def quantile(x, p, *, method='linear', axis=0, nan_policy='propagate', keepdims=
 
     Note that indices ``j`` and ``j + 1`` are clipped to the range ``0`` to
     ``n - 1`` when the results of the formula would be outside the allowed
-    range of non-negative indices. The ``-1`` in the formulas for ``j`` and
-    ``g`` accounts for Python's 0-based indexing.
+    range of non-negative indices. When ``j`` is clipped to zero, ``g`` is
+    set to zero as well. The ``-1`` in the formulas for ``j`` and ``g``
+    accounts for Python's 0-based indexing.
 
     The table above includes only the estimators from [1]_ that are continuous
     functions of probability `p` (estimators 4-9). SciPy also provides the
@@ -308,6 +309,8 @@ def _quantile_hf(y, p, n, method, xp):
     if method in {'inverted_cdf', 'averaged_inverted_cdf', 'closest_observation'}:
         g = xp.asarray(g)
         g = xpx.at(g, jg < 0).set(0)
+
+    g[j < 0] = 0
     j = xp.clip(j, 0., n - 1)
     jp1 = xp.clip(j + 1, 0., n - 1)
 

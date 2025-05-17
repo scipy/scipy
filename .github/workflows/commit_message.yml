@@ -23,6 +23,7 @@ jobs:
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Check for skips
         id: skip_check
         # the lint workflow is not currently skipped with [docs only].
@@ -40,4 +41,4 @@ jobs:
             fi
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
-          echo github.ref ${{ github.ref }}
+          echo github.ref $GITHUB_REF

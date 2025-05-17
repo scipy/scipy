@@ -21,7 +21,7 @@ from scipy._lib.array_api_extra.testing import lazy_xp_function
 from scipy import cluster, interpolate, linalg, optimize, sparse, spatial, stats
 
 
-lazy_xp_function(_contains_nan, static_argnames=("nan_policy", "xp_omit_okay", "xp"))
+lazy_xp_function(_contains_nan)
 
 
 @pytest.mark.slow

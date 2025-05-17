@@ -43,7 +43,7 @@ Overview and big picture
       ``scipy.sparse.linalg.matrix_power(A, n)``.
 -  When index arrays are provided to the constructor functions, spmatrix
    selects a dtype based on dtype and values of the incoming arrays, while
-   sparray only bases on the dtype of the incoming arrays. For example,
+   sparray only considers the dtype of the incoming arrays. For example,
    ``M=csr_matrix((data, indices, indptr))`` results in ``int32`` dtype for
    ``M.indices`` so long as the values in ``indices`` and ``indptr`` are small,
    even if the ``dtype`` of the incoming arrays are ``int64``. In contrast,
@@ -162,15 +162,15 @@ Their signatures are::
    def random_array(shape, density=0.01, format='coo', dtype=None, rng=None, data_sampler=None):
 
 The ``random_array`` function has a ``shape`` (2-tuple) arg rather than
-two integers. And the ``random_state`` arg defaults to NumPy's new ``default_rng()``.
+two integers. And the ``rng`` arg defaults to NumPy's new ``default_rng()``.
 This differs from the spmatrix ``rand`` and ``random`` which default to
 the global RandomState instance. If you don't care much about these things,
 leaving it as the default should work fine.  If you care about seeding your
-random numbers, you should probably add a ``random_state=...`` keyword argument
+random numbers, you should probably add a ``rng=...`` keyword argument
 to this call when you switch functions. In summary, to migrate to ``random_array``
 change the function name, switch the shape argument to a single tuple argument,
 leave any other parameters as before, and think about what
-sort of ``random_state=`` argument should be used, if any.
+sort of ``rng=`` argument should be used, if any.
 
 The `diags_array` function uses keyword-only rules for arguments. So you have
 to type the `offsets=` in front of the offsets arguments. That seems like a pain
@@ -239,8 +239,8 @@ Details: shape changes and reductions
 
 -  Reduction operations along an axis reduce the shape:
 
-   -  ``M.sum(axis=1)`` returns a 2D row matrix by summing along axis 1.
-   -  ``A.sum(axis=1)`` returns a 1D ``coo_array`` summing along axis 1.
+   -  ``M.min(axis=1)`` returns a 2D row matrix of the min along axis 1.
+   -  ``A.min(axis=1)`` returns a 1D ``coo_array`` of the min along axis 1.
       Some reductions return dense arrays/matrices instead of sparse ones:
 
       ============  =========
@@ -261,7 +261,7 @@ Details: shape changes and reductions
 
 -  Some reductions return a scalar. Those should behave as they did
    before and shouldn’t need to be considered during migration. E.g.
-   ``A.sum()``
+   ``A.min()``
 
 .. _sparse-migration-removed-methods:
 
@@ -341,17 +341,28 @@ Use tests to find * and ** spots
    you change when you shouldn't have. So the test suite with this
    monkey-patch checks the corrections too.
 
-   Add the following code to your ``conftest.py`` file near the top.
+   Add the following code to your ``conftest.py`` file.
    Then run your tests locally. If there are many matrix expressions,
    you might want to test one section of your codebase at a time.
    A quick read of the code shows that it raises a ``ValueError`` whenever
    ``*`` is used between two matrix-like objects (sparse or dense),
-   and whenever ``**`` is used for matrix power.
+   and whenever ``**`` is used for matrix power. It also produces a warning
+   whenever sum/mean/min/max/argmin/argmax are used with an axis so the
+   output will be 2D with spmatrix and 1D with sparray. That means you
+   check that the code will handle either 1D or 2D output via
+   ``flatten``/``ravel``, ``np.atleast_2d`` or indexing.
 
    .. code-block:: python
 
+        #================== Added to check spmatrix usage ========================
         import scipy
+        from warnings import warn
 
+        def flag_this_call(*args, **kwds):
+            raise ValueError("Old spmatrix function names for rand/spdiags called")
+
+        scipy.sparse._construct.rand = flag_this_call
+        scipy.sparse._construct.spdiags = flag_this_call
 
         class _strict_mul_mixin:
             def __mul__(self, other):
@@ -372,53 +383,143 @@ Use tests to find * and ** spots
             def __pow__(self, *args, **kwargs):
                 raise ValueError('spmatrix ** found! Use linalg.matrix_power?')
 
-        class _strict_coo_matrix(_strict_mul_mixin, scipy.sparse.coo_matrix):
+            @property
+            def A(self):
+                raise TypeError('spmatrix A property found! Use .toarray()')
+
+            @property
+            def H(self):
+                raise TypeError('spmatrix H property found! Use .conjugate().T')
+
+            def asfptype(self):
+                raise TypeError('spmatrix asfptype found! rewrite needed')
+
+            def get_shape(self):
+                raise TypeError('spmatrix get_shape found! Use .shape')
+
+            def getformat(self):
+                raise TypeError('spmatrix getformat found! Use .format')
+
+            def getmaxprint(self):
+                raise TypeError('spmatrix getmaxprint found! Use .shape')
+
+            def getnnz(self):
+                raise TypeError('spmatrix getnnz found! Use .nnz')
+
+            def getH(self):
+                raise TypeError('spmatrix getH found! Use .conjugate().T')
+
+            def getrow(self):
+                raise TypeError('spmatrix getrow found! Use .row')
+
+            def getcol(self):
+                raise TypeError('spmatrix getcol found! Use .col')
+
+            def sum(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix sum found using axis={axis}. "
+                         "\nsparray with a single axis will produce 1D output. "
+                         "\nCheck nearby to ensure 1D output is handled OK in this spot.\n")
+                print(f"{args=} {axis=} {kwds=}")
+                return super().sum(*args, **kwds)
+
+            def mean(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix mean found using axis={axis}."
+                         "\nsparray with a single axis will produce 1D output.\n"
+                         "Check nearby to ensure 1D output is handled OK in this spot.\n")
+                return super().mean(*args, **kwds)
+
+            def min(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix min found using axis={axis}."
+                         "\nsparray with a single axis will produce 1D output. "
+                         "Check nearby to ensure 1D output is handled OK in this spot.\n")
+                return super().min(*args, **kwds)
+
+            def max(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix max found using axis={axis}."
+                         "\nsparray with a single axis will produce 1D output. "
+                         "Check nearby to ensure 1D output is handled OK in this spot.\n")
+                return super().max(*args, **kwds)
+
+            def argmin(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix argmin found using axis={axis}."
+                         "\nsparray with a single axis will produce 1D output. "
+                         "Check nearby to ensure 1D output is handled OK in this spot.\n")
+                return super().argmin(*args, **kwds)
+
+            def argmax(self, *args, **kwds):
+                axis = args[0] if len(args)==1 else args if args else kwds.get("axis", None)
+                if axis is not None:
+                    warn(f"\nMIGRATION WARNING: spmatrix argmax found using axis={axis}."
+                         "\nsparray with a single axis will produce 1D output. "
+                         "Check nearby to ensure 1D output is handled OK in this spot.\n")
+                return super().argmax(*args, **kwds)
+
+
+        class coo_matrix_strict(_strict_mul_mixin, scipy.sparse.coo_matrix):
             pass
 
-        class _strict_bsr_matrix(_strict_mul_mixin, scipy.sparse.bsr_matrix):
+        class bsr_matrix_strict(_strict_mul_mixin, scipy.sparse.bsr_matrix):
             pass
 
-        class _strict_csr_matrix(_strict_mul_mixin, scipy.sparse.csr_matrix):
+        class csr_matrix_strict(_strict_mul_mixin, scipy.sparse.csr_matrix):
             pass
 
-        class _strict_csc_matrix(_strict_mul_mixin, scipy.sparse.csc_matrix):
+        class csc_matrix_strict(_strict_mul_mixin, scipy.sparse.csc_matrix):
             pass
 
-        class _strict_dok_matrix(_strict_mul_mixin, scipy.sparse.dok_matrix):
+        class dok_matrix_strict(_strict_mul_mixin, scipy.sparse.dok_matrix):
             pass
 
-        class _strict_lil_matrix(_strict_mul_mixin, scipy.sparse.lil_matrix):
+        class lil_matrix_strict(_strict_mul_mixin, scipy.sparse.lil_matrix):
             pass
 
-        class _strict_dia_matrix(_strict_mul_mixin, scipy.sparse.dia_matrix):
+        class dia_matrix_strict(_strict_mul_mixin, scipy.sparse.dia_matrix):
             pass
 
-        scipy.sparse.coo_matrix = scipy.sparse._coo.coo_matrix = _strict_coo_matrix
-        scipy.sparse.bsr_matrix = scipy.sparse._bsr.bsr_matrix = _strict_bsr_matrix
-        scipy.sparse.csr_matrix = scipy.sparse._csr.csr_matrix = _strict_csr_matrix
-        scipy.sparse.csc_matrix = scipy.sparse._csc.csc_matrix = _strict_csc_matrix
-        scipy.sparse.dok_matrix = scipy.sparse._dok.dok_matrix = _strict_dok_matrix
-        scipy.sparse.lil_matrix = scipy.sparse._lil.lil_matrix = _strict_lil_matrix
-        scipy.sparse.dia_matrix = scipy.sparse._dia.dia_matrix = _strict_dia_matrix
+        scipy.sparse.coo_matrix = scipy.sparse._coo.coo_matrix = coo_matrix_strict
+        scipy.sparse.bsr_matrix = scipy.sparse._bsr.bsr_matrix = bsr_matrix_strict
+        scipy.sparse.csr_matrix = scipy.sparse._csr.csr_matrix = csr_matrix_strict
+        scipy.sparse.csc_matrix = scipy.sparse._csc.csc_matrix = csc_matrix_strict
+        scipy.sparse.dok_matrix = scipy.sparse._dok.dok_matrix = dok_matrix_strict
+        scipy.sparse.lil_matrix = scipy.sparse._lil.lil_matrix = lil_matrix_strict
+        scipy.sparse.dia_matrix = scipy.sparse._dia.dia_matrix = dia_matrix_strict
 
-        scipy.sparse._compressed.csr_matrix = _strict_csr_matrix
+        scipy.sparse._compressed.csr_matrix = csr_matrix_strict
 
-        scipy.sparse._construct.bsr_matrix = _strict_bsr_matrix
-        scipy.sparse._construct.coo_matrix = _strict_coo_matrix
-        scipy.sparse._construct.csc_matrix = _strict_csc_matrix
-        scipy.sparse._construct.csr_matrix = _strict_csr_matrix
-        scipy.sparse._construct.dia_matrix = _strict_dia_matrix
+        scipy.sparse._construct.bsr_matrix = bsr_matrix_strict
+        scipy.sparse._construct.coo_matrix = coo_matrix_strict
+        scipy.sparse._construct.csc_matrix = csc_matrix_strict
+        scipy.sparse._construct.csr_matrix = csr_matrix_strict
+        scipy.sparse._construct.dia_matrix = dia_matrix_strict
 
-        scipy.sparse._extract.coo_matrix = _strict_coo_matrix
+        scipy.sparse._extract.coo_matrix = coo_matrix_strict
 
-        scipy.sparse._matrix.bsr_matrix = _strict_bsr_matrix
-        scipy.sparse._matrix.coo_matrix = _strict_coo_matrix
-        scipy.sparse._matrix.csc_matrix = _strict_csc_matrix
-        scipy.sparse._matrix.csr_matrix = _strict_csr_matrix
-        scipy.sparse._matrix.dia_matrix = _strict_dia_matrix
-        scipy.sparse._matrix.dok_matrix = _strict_dok_matrix
-        scipy.sparse._matrix.lil_matrix = _strict_lil_matrix
+        scipy.sparse._matrix.bsr_matrix = bsr_matrix_strict
+        scipy.sparse._matrix.coo_matrix = coo_matrix_strict
+        scipy.sparse._matrix.csc_matrix = csc_matrix_strict
+        scipy.sparse._matrix.csr_matrix = csr_matrix_strict
+        scipy.sparse._matrix.dia_matrix = dia_matrix_strict
+        scipy.sparse._matrix.dok_matrix = dok_matrix_strict
+        scipy.sparse._matrix.lil_matrix = lil_matrix_strict
 
+        del coo_matrix_strict
+        del bsr_matrix_strict
+        del csr_matrix_strict
+        del csc_matrix_strict
+        del dok_matrix_strict
+        del lil_matrix_strict
+        del dia_matrix_strict
+        #==========================================
 
 .. _sparse-migration-index-array-dtypes:
 
