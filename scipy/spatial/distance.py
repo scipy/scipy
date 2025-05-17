@@ -110,6 +110,10 @@ import warnings
 import dataclasses
 from collections.abc import Callable
 from functools import partial
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 import numpy as np
 
@@ -2294,7 +2298,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError(
+            f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
@@ -2305,6 +2310,34 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           # See src/distance_pybind.cpp::pdist
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
                           as_numpy=True, metric=metric, **kwargs)
+
+def _pmindist(sample: "npt.ArrayLike", metric: str) -> float:
+    """Mininum distance between points in the given sample.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the minimum distance from.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+
+    Returns
+    -------
+    distance : float
+        Minimum distance.
+
+    """
+    sample = _asarray(sample)
+    n = sample.shape[0]
+    d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
+    if np.isclose(d, 0.0):
+        return 0.0
+
+    for i in range(2, n):
+        d = min(d, cdist(sample[(i-1):i,...], sample[i:,...], metric=metric).min())
+    return d
 
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
