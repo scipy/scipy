@@ -1,6 +1,7 @@
 py3.install_sources([
     '__init__.py',
     'propack_test_data.npz',
+    'test_funm_multiply_krylov.py',
     'test_expm_multiply.py',
     'test_interface.py',
     'test_matfuncs.py',
