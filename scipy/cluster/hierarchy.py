@@ -3809,8 +3809,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     return (((uiva + uivb) / 2), uwa + uwb, h, max_dist)
 
 
-@xp_capabilities(cpu_only=True,
-                 warnings=[("dask.array", "see notes"), ("jax.numpy", "see notes")])
+@xp_capabilities()
 def is_isomorphic(T1, T2):
     """
     Determine if two different cluster assignments are equivalent.
@@ -3898,7 +3897,6 @@ def is_isomorphic(T1, T2):
     changes1 = T1 != xp.roll(T1, -1)
     changes2 = T2 != xp.roll(T2, -1)
     return xp.all(changes1 == changes2)
-
 
 
 @lazy_cython
