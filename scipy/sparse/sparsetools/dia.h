@@ -227,4 +227,52 @@ void dia_matvecs(const I A_rows,
 }
 
 
+template <class I, class T>
+void dia_tocsr(const I rows,
+               const I cols,
+               const I diags,
+               const I L,
+               const I offsets[],
+               const T data[],
+               const I order[],
+               std::vector<I>* indices,
+               std::vector<I>* indptr,
+               std::vector<T>* csr_data)
+{
+    // allocate enough space for output arrays
+    I max_nnz = 0;
+    for (I i = 0; i < diags; ++i) {
+        const I ofs = offsets[i];
+        const I beg = max<I>(0, ofs),
+                end = min({cols, L, rows + ofs});
+        max_nnz += end - beg;
+    }
+    indices->resize(max_nnz);
+    csr_data->resize(max_nnz);
+    indptr->resize(1 + rows, 0);
+
+    I nnz = 0;
+    // loop over rows
+    for (I i = 0; i < rows; ++i) {
+        // loop over offsets in ascending order
+        for (I k = 0; k < diags; ++k) {
+            const I n = order[k], // index of diagonal
+                    j = i + offsets[n]; // column
+            if (j < 0 or j >= L)
+                continue;
+            const T x = (data + npy_intp(L) * n)[j];
+            if (x != 0) {
+                (*indices)[nnz] = j;
+                (*csr_data)[nnz] = x;
+                ++nnz;
+            }
+        }
+        (*indptr)[1 + i] = nnz;
+    }
+    // set actual output lengths
+    indices->resize(nnz);
+    csr_data->resize(nnz);
+}
+
+
 #endif

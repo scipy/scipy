@@ -14,7 +14,7 @@ from ._sputils import (
     isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
     validateaxis, check_shape
 )
-from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs
+from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs, dia_tocsr
 
 
 class _dia_base(_data_matrix):
@@ -403,6 +403,30 @@ class _dia_base(_data_matrix):
         return result
 
     diagonal.__doc__ = _spbase.diagonal.__doc__
+
+    def tocsr(self, copy=False):
+        if 0 in self.shape or len(self.offsets) == 0:
+            return self._csr_container(self.shape, dtype=self.dtype)
+
+        # np.argsort always returns dtype=int, which can cause automatic dtype
+        # expansion for everything else even if not needed (see gh19245);
+        # at the same time, CSR wants common dtype for indices and indptr;
+        # so care should be taken to use appropriate indexing dtype throughout.
+        # Estimate smallest safe dtype for indptr.
+        idx_dtype = self._get_index_dtype(maxval=self.data.size)
+        order = np.argsort(self.offsets).astype(idx_dtype, copy=False)
+        indices, indptr, data = dia_tocsr(*self.shape, *self.data.shape,
+                                          self.offsets, self.data, order)
+        # If possible, shrink indexing dtype using actual nnz.
+        idx_dtype = self._get_index_dtype(maxval=indptr[-1])
+        indices = indices.astype(idx_dtype, copy=False)
+        indptr = indptr.astype(idx_dtype, copy=False)
+        out = self._csr_container((data, indices, indptr), shape=self.shape,
+                                  dtype=self.dtype)
+        out.has_canonical_format = True
+        return out
+
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
         if self.nnz == 0:
