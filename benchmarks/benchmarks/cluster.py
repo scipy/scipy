@@ -1,10 +1,12 @@
+from functools import cache
+
 import numpy as np
 from numpy.testing import suppress_warnings
 
-from .common import Benchmark, safe_import
+from .common import Benchmark, XPBenchmark, is_xslow, safe_import
 
 with safe_import():
-    from scipy.cluster.hierarchy import linkage
+    from scipy.cluster.hierarchy import linkage, is_isomorphic
     from scipy.cluster.vq import kmeans, kmeans2, vq
 
 
@@ -19,6 +21,42 @@ class HierarchyLinkage(Benchmark):
 
     def time_linkage(self, method):
         linkage(self.X, method=method)
+
+
+class IsIsomorphic(XPBenchmark):
+    NCLUSTERS = 5
+    # This is very slow and memory intensive, but necessary to
+    # let _most_ backends approach O(n*logn) behaviour.
+    # Note: memory usage = 16 * nobs
+    if is_xslow():
+        nobs = [100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+    else:
+        nobs = [100, 100_000]
+    # Skip cpu backends for nobs greater than this. 
+    # They should all have reached O(n*logn) behaviour by then.
+    CPU_MAX_OBS = 1_000_000
+
+    param_names = (*XPBenchmark.param_names, "nobs")
+    params = (*XPBenchmark.params, nobs)
+
+    def setup(self, backend, nobs):
+        use_cuda = backend == "cupy" or backend.endswith(":cuda")
+        if not use_cuda and nobs > self.CPU_MAX_OBS:
+            raise NotImplementedError("Skipping huge size on CPU")
+
+        super().setup(backend, is_isomorphic)
+
+        rng = np.random.default_rng(0)
+        a = self.xp.asarray(rng.integers(0, self.NCLUSTERS, size=nobs))
+        p = self.xp.asarray(rng.permutation(self.NCLUSTERS))
+        b = self.xp.take(p, a)
+        self.a, self.b = self.synchronize(a, b)
+
+        if self.warmup:
+            self.func(self.a, self.b)
+
+    def time_is_isomorphic(self, backend, nobs):
+        self.func(self.a, self.b)
 
 
 class KMeans(Benchmark):
