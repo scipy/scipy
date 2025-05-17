@@ -918,6 +918,12 @@ def test_indexing(xp):
     tf_masked = tf[xp.asarray([False, False])]
     assert len(tf_masked) == 0
 
+    # Test integer array indexing
+    idx = xp.asarray([0, 1])
+    tf_array_idx = tf[idx]
+    xp_assert_close(tf_array_idx.as_matrix()[:, :3, :3], r[idx].as_matrix(), atol=atol)
+    xp_assert_close(tf_array_idx.as_matrix()[:, :3, 3], t[idx], atol=atol)
+
 
 def test_indexing_array_like():
     atol = 1e-12
@@ -1060,6 +1066,41 @@ def test_concatenate_validation(xp):
     with pytest.raises(TypeError,
                        match="input must contain RigidTransform objects"):
         RigidTransform.concatenate([tf, xp.eye(4)])
+
+
+def test_setitem(xp):
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    single = RigidTransform.from_translation(xp.asarray([1, 1, 1]))
+    double = RigidTransform.from_translation(xp.asarray([[2, 2, 2], [3, 3, 3]]))
+    triple = RigidTransform.from_translation(xp.asarray([[3, 3, 3],
+                                                         [4, 4, 4],
+                                                         [5, 5, 5]]))
+
+    # Test indexing with integer index
+    tf[0] = single
+    xp_assert_close(tf.translation, xp.asarray([[1.0, 1, 1], [4, 5, 6], [7, 8, 9]]))
+
+    # Test indexing with slice
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    tf[:2] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [3, 3, 3], [7, 8, 9]]))
+
+    # Test indexing with ellipsis
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    tf[...] = triple
+    xp_assert_close(tf.translation, xp.asarray([[3.0, 3, 3], [4, 4, 4], [5, 5, 5]]))
+
+    # Test indexing with integer array
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    idx = xp.asarray([0, 2])
+    tf[idx] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
+
+    # Test indexing with boolean array
+    tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
+    mask = xp.asarray([True, False, True])
+    tf[mask] = double
+    xp_assert_close(tf.translation, xp.asarray([[2.0, 2, 2], [4, 5, 6], [3, 3, 3]]))
 
 
 def test_setitem_validation(xp):
