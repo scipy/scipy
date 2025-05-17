@@ -318,7 +318,6 @@ Authors
 * Scott Shambaugh (4)
 * ShannonS00 (1) +
 * sildater (3) +
-* Gagandeep Singh (32)
 * PARAM SINGH (1) +
 * G Sreeja (7) +
 * Albert Steppi (133)
@@ -352,9 +351,9 @@ Authors
 * Eric Zitong Zhou (5) +
 * zitongzhoueric (4) +
 * Case Zumbrum (2) +
-* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (10)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (42)
 
-    A total of 125 people contributed to this release.
+    A total of 124 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
