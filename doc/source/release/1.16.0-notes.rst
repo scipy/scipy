@@ -29,6 +29,9 @@ Highlights of this release
   The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_
   in the old Fortran 77 implementation with
   `a better performance on average <https://github.com/libprima/prima#improvements>`_.
+- ``scipy.sparse.coo_array`` now supports nD arrays with reshaping, arithmetic and
+  reduction operations like sum/mean/min/max. No nD indexing or `random_array` support yet.
+- Updated guide and tools for migration from sparse matrices to sparse arrays.
 
 ************
 New features
@@ -108,7 +111,13 @@ New features
 
 ``scipy.sparse`` improvements
 =============================
-
+- ``coo_array`` supports nD arrays using binary and reduction operations.
+- Math is faster between two DIA arrays/matrices: add, sub, multiply, matmul.
+- ``csgraph.dijkstra`` shortest_path is more efficient.
+- ``csgraph.yen`` has performance improvements.
+- Import of ``_lib.issparse`` allows checking for ``scipy.sparse`` object
+  without full import of scipy.
+- add lazy loading of ``sparse.csgraph`` and ``sparse.linalg``.
 
 ``scipy.spatial`` improvements
 ==============================
