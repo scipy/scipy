@@ -12,6 +12,7 @@ from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
 import scipy
+from scipy.sparse.linalg import minres
 
 from .test_minpack import pressure_network
 
@@ -216,6 +217,41 @@ class TestNonlin:
 
         with pytest.raises(scipy.optimize.NoConvergence):
             nonlin.newton_krylov(wont_converge, xin=[0], maxiter=1)
+
+    def test_warnings_invalid_inner_param(self):
+        """
+        Test for ENH #21986, for behavior of `nonlin.newton_krylov`
+        Test the following scenarios:
+        1. Raise warning for invalid inner param
+        2. No warning for valid inner param
+        3. No warning for user-provided callable method
+        """
+        # This should raise exactly one warning
+        # (`inner_atol` is not valid for `minres`)
+        with pytest.warns(UserWarning,
+                          match="Please check inner method documentation"):
+            nonlin.newton_krylov(F, F.xin, method="minres", inner_atol=1e-5)
+
+        # This should not raise a warning (`minres` without `inner_atol`,
+        # but with `inner_maxiter` which is valid)
+        nonlin.newton_krylov(F, F.xin, method="minres", inner_maxiter=100,
+                             inner_callback= lambda _ : ...)
+
+        # Test newton_krylov with a user-provided callable method
+        def user_provided_callable_method_enh_21986(op, rhs, **kwargs):
+            """A dummy user-provided callable method for testing."""
+            # Return a dummy result (mimicking minres)
+            return minres(op, rhs, **kwargs)
+        # This should not raise any warnings
+        nonlin.newton_krylov(F, F.xin,
+                             method=user_provided_callable_method_enh_21986)
+
+    def test_non_inner_prefix(self):
+        with pytest.raises(ValueError,
+                           match="Unknown parameter"
+                           ):
+            # Pass a parameter without 'inner_' prefix
+            nonlin.newton_krylov(F, F.xin, method="minres", invalid_param=1e-5)
 
 
 class TestSecant:

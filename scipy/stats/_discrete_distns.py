@@ -1371,12 +1371,13 @@ def _gen_harmonic_leq1(n, a):
     """Generalized harmonic number, a <= 1"""
     if not np.size(n):
         return n
-    n_max = np.max(n)  # loop starts at maximum of all n
+    n_max = np.nanmax(n)  # loop starts at maximum of all n
     out = np.zeros_like(a, dtype=float)
     # add terms of harmonic series; starting from smallest to avoid roundoff
     for i in np.arange(n_max, 0, -1, dtype=float):
         mask = i <= n  # don't add terms after nth
         out[mask] += 1/i**a[mask]
+    out[np.isnan(n)] = np.nan
     return out
 
 
@@ -1871,9 +1872,9 @@ class _nchypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N, odds):
         M, n = np.asarray(M), np.asarray(n),
         N, odds = np.asarray(N), np.asarray(odds)
-        cond1 = (M.astype(int) == M) & (M >= 0)
-        cond2 = (n.astype(int) == n) & (n >= 0)
-        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond1 = (~np.isnan(M)) & (M.astype(int) == M) & (M >= 0)
+        cond2 = (~np.isnan(n)) & (n.astype(int) == n) & (n >= 0)
+        cond3 = (~np.isnan(N)) & (N.astype(int) == N) & (N >= 0)
         cond4 = odds > 0
         cond5 = N <= M
         cond6 = n <= M
@@ -1883,6 +1884,8 @@ class _nchypergeom_gen(rv_discrete):
 
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, N, odds, size, random_state):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.full(size, np.nan)
             length = np.prod(size)
             urn = _PyStochasticLib3()
             rv_gen = getattr(urn, self.rvs_name)
@@ -1900,15 +1903,19 @@ class _nchypergeom_gen(rv_discrete):
 
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
+            if np.isnan(x) | np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.probability(x)
 
         return _pmf1(x, M, n, N, odds)
 
-    def _stats(self, M, n, N, odds, moments):
+    def _stats(self, M, n, N, odds, moments='mv'):
 
         @np.vectorize
         def _moments1(M, n, N, odds):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan, np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 

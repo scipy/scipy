@@ -124,7 +124,7 @@ class _data_matrix(_spbase):
 
         data = self._deduped_data()
         if dtype is not None:
-            data = data.astype(dtype)
+            data = data.astype(dtype, copy=False)
         return self._with_data(data ** n)
 
     ###########################
@@ -172,9 +172,8 @@ class _minmax_mixin:
     """
 
     def _min_or_max_axis(self, axis, min_or_max, explicit):
+        # already checked that self.shape[axis] is not zero
         N = self.shape[axis]
-        if N == 0:
-            raise ValueError("zero-size array to reduction operation")
         M = self.shape[1 - axis]
         idx_dtype = self._get_index_dtype(maxval=M)
 
@@ -208,7 +207,7 @@ class _minmax_mixin:
 
     def _min_or_max(self, axis, out, min_or_max, explicit):
         if out is not None:
-            raise ValueError("Sparse arrays do not support an 'out' parameter.")
+            raise ValueError("Sparse min/max does not support an 'out' parameter.")
 
         axis = validateaxis(axis, ndim=self.ndim)
 
@@ -224,12 +223,15 @@ class _minmax_mixin:
                 m = min_or_max(zero, m)
             return m
 
-        return self._min_or_max_axis(axis, min_or_max, explicit)
+        if any(self.shape[d] == 0 for d in axis):
+            raise ValueError("zero-size array to reduction operation")
 
-    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare, explicit):
-        if self.shape[axis] == 0:
-            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
+        if self.ndim == 2:
+            # note: 2D ensures that len(axis)==1 so we pass in the int axis[0]
+            return self._min_or_max_axis(axis[0], min_or_max, explicit)
+        return self._min_or_max_axis_nd(axis, min_or_max, explicit)
 
+    def _argminmax_axis(self, axis, argminmax, compare, explicit):
         zero = self.dtype.type(0)
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
@@ -243,7 +245,7 @@ class _minmax_mixin:
             p, q = mat.indptr[i:i + 2]
             data = mat.data[p:q]
             indices = mat.indices[p:q]
-            extreme_index = argmin_or_argmax(data)
+            extreme_index = argminmax(data)
             extreme_value = data[extreme_index]
             if explicit:
                 if q - p > 0:
@@ -266,21 +268,31 @@ class _minmax_mixin:
 
         return self._ascontainer(ret)
 
-    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare, explicit):
+    def _argminmax(self, axis, out, argminmax, compare, explicit):
         if out is not None:
-            raise ValueError("Sparse types do not support an 'out' parameter.")
+            minmax = "argmin" if argminmax == np.argmin else "argmax"
+            raise ValueError(f"Sparse {minmax} does not support an 'out' parameter.")
 
         axis = validateaxis(axis, ndim=self.ndim)
 
         if axis is not None:
-            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare, explicit)
+            if any(self.shape[i] == 0 for i in axis):
+                minmax = "argmin" if argminmax == np.argmin else "argmax"
+                raise ValueError(f"Cannot apply {minmax} along a zero-sized dimension.")
+
+            if self.ndim == 2:
+                # note: 2D ensures that len(axis)==1 so we pass in the int axis[0]
+                return self._argminmax_axis(axis[0], argminmax, compare, explicit)
+            return self._argminmax_axis_nd(axis, argminmax, compare, explicit)
 
         if 0 in self.shape:
-            raise ValueError("Cannot apply the operation to an empty matrix.")
+            minmax = "argmin" if argminmax == np.argmin else "argmax"
+            raise ValueError(f"Cannot apply {minmax} to an empty matrix.")
 
         if self.nnz == 0:
             if explicit:
-                raise ValueError("Cannot apply the operation to zero matrix "
+                minmax = "argmin" if argminmax == np.argmin else "argmax"
+                raise ValueError(f"Cannot apply {minmax} to zero matrix "
                                  "when explicit=True.")
             return 0
 
@@ -288,28 +300,34 @@ class _minmax_mixin:
         mat = self.tocoo()
         # Convert to canonical form: no duplicates, sorted indices.
         mat.sum_duplicates()
-        extreme_index = argmin_or_argmax(mat.data)
+        extreme_index = argminmax(mat.data)
         if explicit:
             return extreme_index
         extreme_value = mat.data[extreme_index]
-        num_col = mat.shape[-1]
 
+        if mat.ndim > 2:
+            mat = mat.reshape(-1)
         # If the min value is less than zero, or max is greater than zero,
         # then we do not need to worry about implicit zeros.
-        if compare(extreme_value, zero):
+        # And we use a "cheap test" for the rare case of no implicit zeros.
+        maxnnz = math.prod(self.shape)
+        if compare(extreme_value, zero) or mat.nnz == maxnnz:
             # cast to Python int to avoid overflow and RuntimeError
-            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
-
-        # Cheap test for the rare case where we have no implicit zeros.
-        size = math.prod(self.shape)
-        if size == mat.nnz:
+            if mat.ndim == 1:  # includes nD case that was reshaped above
+                return int(mat.col[extreme_index])
+            # ndim == 2
+            num_col = mat.shape[-1]
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # At this stage, any implicit zero could be the min or max value.
         # After sum_duplicates(), the `row` and `col` arrays are guaranteed to
         # be sorted in C-order, which means the linearized indices are sorted.
-        linear_indices = mat.row * num_col + mat.col
-        first_implicit_zero_index = _find_missing_index(linear_indices, size)
+        if mat.ndim == 1:  # includes nD case that was reshaped above
+            linear_indices = mat.coords[-1]
+        else:  # ndim == 2
+            num_col = mat.shape[-1]
+            linear_indices = mat.row * num_col + mat.col
+        first_implicit_zero_index = _find_missing_index(linear_indices, maxnnz)
         if extreme_value == zero:
             return min(first_implicit_zero_index, extreme_index)
         return first_implicit_zero_index
@@ -506,7 +524,7 @@ class _minmax_mixin:
 
         explicit : {False, True} optional (default: False)
             When set to True, only explicitly stored elements will be considered.
-            If axis is not None and a row/column has no stored elements, argmax
+            If axis is not None and an axis has no stored elements, argmax
             is undefined, so the index ``0`` is returned for that row/column.
 
             .. versionadded:: 1.15.0
@@ -516,7 +534,7 @@ class _minmax_mixin:
         ind : numpy.matrix or int
             Indices of maximum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmax, np.greater, explicit)
+        return self._argminmax(axis, out, np.argmax, np.greater, explicit)
 
     def argmin(self, axis=None, out=None, *, explicit=False):
         """Return indices of minimum elements along an axis.
@@ -538,7 +556,7 @@ class _minmax_mixin:
 
         explicit : {False, True} optional (default: False)
             When set to True, only explicitly stored elements will be considered.
-            If axis is not None and a row/column has no stored elements, argmin
+            If axis is not None and an axis has no stored elements, argmin
             is undefined, so the index ``0`` is returned for that row/column.
 
             .. versionadded:: 1.15.0
@@ -548,4 +566,4 @@ class _minmax_mixin:
          ind : numpy.matrix or int
             Indices of minimum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmin, np.less, explicit)
+        return self._argminmax(axis, out, np.argmin, np.less, explicit)

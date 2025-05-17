@@ -101,21 +101,13 @@ variable is set:
 - `scipy.fft`
 - `scipy.io`
 - `scipy.ndimage`
+- `scipy.special`
 - `scipy.stats`
 
 Individual functions in the above modules provide a capability table in the
 documentation like the one below. If the table is absent, the function does not
 yet support backends other than NumPy.
 
-Additionally, support is provided in `scipy.special` for the following functions, even
-if they do not have a capability table in the documentation:
-`scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
-`scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
-`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
-`scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
-`scipy.special.logit`, `scipy.special.expit`, `scipy.special.entr`,
-`scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
-and `scipy.special.chdtrc`.
 
 Example capabilities table
 --------------------------

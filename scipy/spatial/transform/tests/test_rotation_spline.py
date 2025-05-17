@@ -1,7 +1,7 @@
 from itertools import product
 import numpy as np
 from numpy.testing import assert_allclose
-from pytest import raises
+import pytest
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
     _angular_rate_to_rotvec_dot_matrix,
@@ -9,6 +9,9 @@ from scipy.spatial.transform._rotation_spline import (
     _matrix_vector_product_of_stacks,
     _angular_acceleration_nonlinear_term,
     _create_block_3_diagonal_matrix)
+
+
+pytestmark = pytest.mark.skip_xp_backends(np_only=True)
 
 
 def test_angular_rate_to_rotvec_conversions():
@@ -141,22 +144,40 @@ def test_spline_properties():
 
 
 def test_error_handling():
-    raises(ValueError, RotationSpline, [1.0], Rotation.random())
+    with pytest.raises(ValueError):
+        RotationSpline([1.0], Rotation.random())
 
     r = Rotation.random(10)
     t = np.arange(10).reshape(5, 2)
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(9)
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(10)
     t[5] = 0
-    raises(ValueError, RotationSpline, t, r)
+    with pytest.raises(ValueError):
+        RotationSpline(t, r)
 
     t = np.arange(10)
 
     s = RotationSpline(t, r)
-    raises(ValueError, s, 10, -1)
+    with pytest.raises(ValueError):
+        s(10, -1)
 
-    raises(ValueError, s, np.arange(10).reshape(5, 2))
+    with pytest.raises(ValueError):
+        s(np.arange(10).reshape(5, 2))
+
+
+@pytest.mark.skip_xp_backends("numpy")
+def test_xp_errors(xp):
+    times = xp.asarray([0, 10])
+    r = Rotation.random(2)
+    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    s = RotationSpline(times, r)
+    t = xp.asarray([0.5, 1.5])
+    # RotationSpline does not have native Array API support, so we check that it
+    # converts any array to NumPy and outputs NumPy arrays.
+    assert isinstance(s(t).as_quat(), np.ndarray)
