@@ -214,12 +214,12 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
 
     >>> y = funm_multiply_krylov(expm, A, b, t = t)
     >>> y
-    array([3.6164913 3.88421511 0.96073457])
+    array([3.6164913 , 3.88421511 , 0.96073457])
 
     >>> ref = expm(t * A.todense()) @ b
     >>> err = y - ref
     >>> err
-    array([4.44089210e-16 0.00000000e+00 2.22044605e-16])
+    array([4.44089210e-16 , 0.00000000e+00 , 2.22044605e-16])
 
     Compute :math:`y = (A^3 - A) b`.
 
@@ -227,12 +227,12 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     >>>     return X @ X @ X - X
     >>> y = funm_multiply_krylov(polynomial, A, b)
     >>> y
-    array([132.  24.  70.])
+    array([132. , 24. , 70.])
 
     >>> ref = polynomial(A.todense()) @ b
     >>> err = y - ref
     >>> err
-    array([ 0.00000000e+00  7.10542736e-15 -2.84217094e-14])
+    array([ 0.00000000e+00 , 7.10542736e-15 , -2.84217094e-14])
 
     Compute :math:`y = f(tA) b`, where  :math:`f(X) = X^{-1}(e^{X} - I)`. This is
     known as the "phi function" from the exponential integrator literature.
@@ -241,12 +241,12 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     >>>     return solve(X, expm(X) - np.eye(X.shape[0]))
     >>> y = funm_multiply_krylov(phim_1, A, b, t = t)
     >>> y
-    array([ 2.76984306  3.92769192 -0.03111392])
+    array([ 2.76984306 , 3.92769192 , -0.03111392])
 
     >>> ref = phim_1(t * A.todense()) @ b
     >>> err = y - ref
     >>> err
-    array([ 0.00000000e+00  8.88178420e-16 -4.60742555e-15])
+    array([ 0.00000000e+00 , 8.88178420e-16 , -4.60742555e-15])
 
     References
     ----------
