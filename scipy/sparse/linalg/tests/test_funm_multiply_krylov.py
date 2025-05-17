@@ -6,6 +6,7 @@ import pytest
 from numpy.testing import (assert_allclose)
 import scipy.sparse
 import scipy.linalg
+from scipy.sparse import csr_array
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import (expm, cosm, coshm, sinm, sinhm)
 
@@ -131,6 +132,7 @@ class TestKrylovFunmv:
         expected = fA @ b
         observed = funm_multiply_krylov(expm, A, b, restart_every_m = 40)
         assert_allclose(observed, expected)
+
 
 @pytest.mark.parametrize("dtype_a", DTYPES)
 @pytest.mark.parametrize("dtype_b", DTYPES)

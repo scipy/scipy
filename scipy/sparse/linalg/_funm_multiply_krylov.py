@@ -1,4 +1,39 @@
-"""Restared Krylov method for evaluating f(A)b"""
+"""
+  Restared Krylov method for evaluating f(A)b
+
+  The original code was written in MATLAB by Stefan Guttel.
+  It was later adapted to C++ and Python by Nicolas Guidotti.
+  Both authors agrees to relicense the code under the BSD license.
+
+  Copyright (C) 2025 Nicolas Guidotti and Stefan Guttel.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its contributors
+  may be used to endorse or promote products derived from this software without
+  specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+"""
 
 import numpy as np
 from scipy.linalg import norm
@@ -116,16 +151,6 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     """
     A restarted Krylov method for evaluating ``y = f(tA) b`` from [1]_ [2]_.
 
-    If the structure of ``A`` is known, then supplying the
-    corresponding string to ``assume_a`` key chooses the dedicated algorithm.
-    The available options are
-
-    =============================  ================================
-     symmetric                      'symmetric' (or 'sym')
-     hermitian                      'hermitian' (or 'her')
-     general                        'general' (or 'gen')
-    =============================  ================================
-
     Parameters
     ----------
     f : callable
@@ -140,8 +165,10 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
         A vector to multiply the ``f(tA)`` with.
 
     assume_a : string, optional
-        Indicate the structure of ``A`` as described above. If ommited, then
-        it is assumed that ``A`` has a general structure.
+        Indicate the structure of ``A``. The algorithm will use this information
+        to select the appropriated code path. The available options are
+        'hermitian'/'her' and 'general'/'gen'. If ommited, then it is assumed
+        that ``A`` has a 'general' structure.
 
     t : float, optional
         The value to scale the matrix ``A`` with. The default is ``t = 1.0``
@@ -186,11 +213,26 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     Compute ``y = exp(tA) b``.
 
     >>> y = funm_multiply_krylov(expm, A, b, t = t)
+    >>> y
     [3.6164913 3.88421511 0.96073457]
 
     >>> ref = expm(t * A.todense()) @ b
-    >>> y - ref
+    >>> err = y - ref
+    >>> err
     [4.44089210e-16 0.00000000e+00 2.22044605e-16]
+
+    Compute :math:`y = (A^3 - A) b`.
+
+    >>> def polynomial(X):
+    >>>     return X @ X @ X - X
+    >>> y = funm_multiply_krylov(polynomial, A, b)
+    >>> y
+    [132.  24.  70.]
+
+    >>> ref = polynomial(A.todense()) @ b
+    >>> err = y - ref
+    >>> err
+    [ 0.00000000e+00  7.10542736e-15 -2.84217094e-14]
 
     Compute :math:`y = f(tA) b`, where  :math:`f(X) = X^{-1}(e^{X} - I)`. This is
     known as the "phi function" from the exponential integrator literature.
@@ -198,10 +240,12 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
     >>> def phim_1(X):
     >>>     return solve(X, expm(X) - np.eye(X.shape[0]))
     >>> y = funm_multiply_krylov(phim_1, A, b, t = t)
+    >>> y
     [ 2.76984306  3.92769192 -0.03111392]
 
     >>> ref = phim_1(t * A.todense()) @ b
-    >>> y - ref
+    >>> err = y - ref
+    >>> err
     [ 0.00000000e+00  8.88178420e-16 -4.60742555e-15]
 
     References
@@ -222,10 +266,10 @@ def funm_multiply_krylov(f, A, b, *, assume_a = "general", t = 1.0, atol = 0.0,
 
     """
 
-    if assume_a not in {'symmetric', 'hermitian', 'general', 'sym', 'her', 'gen'}:
+    if assume_a not in {'hermitian', 'general', 'her', 'gen'}:
         raise ValueError(f'scipy.sparse.linalg.funm_multiply_krylov: {assume_a} '
                          'is not a recognized matrix structure')
-    is_hermitian = (assume_a != 'gen') and (assume_a != 'general')
+    is_hermitian = (assume_a == 'her') or (assume_a == 'hermitian')
 
     if len(b.shape) != 1:
         raise ValueError("scipy.sparse.linalg.funm_multiply_krylov: "
