@@ -46,9 +46,9 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
-from scipy._lib._array_api import eager_warns, xp_assert_close, xp_assert_equal
+from scipy._lib._array_api import (eager_warns, make_xp_test_case, 
+                                   xp_assert_close, xp_assert_equal)
 import scipy._lib.array_api_extra as xpx
-from scipy._lib.array_api_extra.testing import lazy_xp_function
 
 from threading import Lock
 
@@ -74,40 +74,9 @@ except Exception:
     have_matplotlib = False
 
 skip_xp_backends = pytest.mark.skip_xp_backends
-xfail_xp_backends = pytest.mark.xfail_xp_backends
-
-lazy_xp_function(single)
-lazy_xp_function(ward)
-lazy_xp_function(linkage)
-lazy_xp_function(cut_tree)
-lazy_xp_function(to_tree, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(optimal_leaf_ordering)
-lazy_xp_function(cophenet)
-lazy_xp_function(inconsistent)
-lazy_xp_function(from_mlab_linkage)
-lazy_xp_function(to_mlab_linkage)
-lazy_xp_function(is_monotonic)
-
-# Note: these functions materialize lazy arrays when warning=True or throw=True
-lazy_xp_function(is_valid_im) 
-lazy_xp_function(is_valid_linkage)
-
-lazy_xp_function(num_obs_linkage)
-lazy_xp_function(correspond)
-lazy_xp_function(fcluster, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(fclusterdata, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(leaves_list)
-lazy_xp_function(dendrogram, jax_jit=False, allow_dask_compute=True)
-lazy_xp_function(is_isomorphic)
-lazy_xp_function(maxdists)
-lazy_xp_function(maxinconsts)
-lazy_xp_function(maxRstat)
-
-# Returns data-dependent shape
-lazy_xp_function(leaders, jax_jit=False)
 
 
-@skip_xp_backends(cpu_only=True, reason="linkage() invokes Cython code")
+@make_xp_test_case(linkage)
 class TestLinkage:
 
     @skip_xp_backends("jax.numpy", reason="Can't raise inside jax.pure_callback")
@@ -210,7 +179,7 @@ class TestLinkage:
             linkage(values, method='centroid')
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(inconsistent)
 class TestInconsistent:
 
     def test_inconsistent_tdist(self, xp):
@@ -223,7 +192,7 @@ class TestInconsistent:
                         xp.asarray(hierarchy_test_data.inconsistent_ytdist[depth]))
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(cophenet)
 class TestCopheneticDistance:
 
     def test_linkage_cophenet_tdist_Z(self, xp):
@@ -265,6 +234,7 @@ class TestCopheneticDistance:
             cophenet(xp.asarray(arr))
 
 
+@make_xp_test_case(from_mlab_linkage, to_mlab_linkage)
 class TestMLabLinkageConversion:
 
     def test_mlab_linkage_conversion_empty(self, xp):
@@ -273,7 +243,6 @@ class TestMLabLinkageConversion:
         xp_assert_equal(from_mlab_linkage(X), X)
         xp_assert_equal(to_mlab_linkage(X), X)
 
-    @skip_xp_backends(cpu_only=True)
     def test_mlab_linkage_conversion_single_row(self, xp):
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
@@ -283,7 +252,6 @@ class TestMLabLinkageConversion:
         xp_assert_close(to_mlab_linkage(Z), xp.asarray(Zm, dtype=xp.float64),
                         rtol=1e-15)
 
-    @skip_xp_backends(cpu_only=True)
     def test_mlab_linkage_conversion_multiple_rows(self, xp):
         # Tests from/to_mlab_linkage on linkage array with multiple rows.
         Zm = xp.asarray([[3, 6, 138], [4, 5, 219],
@@ -299,9 +267,10 @@ class TestMLabLinkageConversion:
                         rtol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(fclusterdata)
 class TestFclusterData:
 
+    @make_xp_test_case(is_isomorphic)
     @pytest.mark.parametrize("criterion,t",
         [("inconsistent", t) for t in hierarchy_test_data.fcluster_inconsistent]
         + [("distance", t) for t in hierarchy_test_data.fcluster_distance]
@@ -315,9 +284,10 @@ class TestFclusterData:
         assert is_isomorphic(T, expectedT)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(fcluster)
 class TestFcluster:
 
+    @make_xp_test_case(single, is_isomorphic)
     @pytest.mark.parametrize("criterion,t",
         [("inconsistent", t) for t in hierarchy_test_data.fcluster_inconsistent]
         + [("distance", t) for t in hierarchy_test_data.fcluster_distance]
@@ -330,6 +300,7 @@ class TestFcluster:
         T = fcluster(Z, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
 
+    @make_xp_test_case(single, is_isomorphic, maxdists)
     @pytest.mark.parametrize("t", hierarchy_test_data.fcluster_distance)
     def test_fcluster_monocrit(self, t, xp):
         expectedT = xp.asarray(hierarchy_test_data.fcluster_distance[t])
@@ -337,6 +308,7 @@ class TestFcluster:
         T = fcluster(Z, t, criterion='monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
 
+    @make_xp_test_case(single, is_isomorphic, maxdists)
     @pytest.mark.parametrize("t", hierarchy_test_data.fcluster_maxclust)
     def test_fcluster_maxclust_monocrit(self, t, xp):
         expectedT = xp.asarray(hierarchy_test_data.fcluster_maxclust[t])
@@ -344,6 +316,7 @@ class TestFcluster:
         T = fcluster(Z, t, criterion='maxclust_monocrit', monocrit=maxdists(Z))
         assert_(is_isomorphic(T, expectedT))
 
+    @make_xp_test_case(single)
     def test_fcluster_maxclust_gh_12651(self, xp):
         y = xp.asarray([[1], [4], [5]])
         Z = single(y)
@@ -357,7 +330,7 @@ class TestFcluster:
                            xp.asarray([1, 2, 3]))
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(leaders)
 class TestLeaders:
 
     def test_leaders_single(self, xp):
@@ -373,7 +346,7 @@ class TestLeaders:
         xp_assert_close(xp.concat(L), expect, rtol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True, reason='pure-Python algorithm')
+@make_xp_test_case(is_isomorphic)
 class TestIsIsomorphic:
 
     def test_array_like(self):
@@ -460,6 +433,7 @@ class TestIsIsomorphic:
             assert is_isomorphic(b, a) == (not noniso)
 
 
+@make_xp_test_case(is_valid_linkage)
 class TestIsValidLinkage:
 
     @pytest.mark.parametrize("nrow, ncol, valid", [(2, 5, False), (2, 3, False),
@@ -544,6 +518,7 @@ class TestIsValidLinkage:
                 eager.is_valid_linkage(Z, throw=True)
 
 
+@make_xp_test_case(is_valid_im)
 class TestIsValidInconsistent:
 
     def test_is_valid_im_int_type(self, xp):
@@ -655,7 +630,7 @@ class TestNumObsLinkage:
             assert num_obs_linkage(Z) == n
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(leaves_list, to_tree)
 class TestLeavesList:
 
     def test_leaves_list_1x4(self, xp):
@@ -690,6 +665,7 @@ class TestLeavesList:
                         rtol=1e-15)
 
 
+@make_xp_test_case(correspond)
 class TestCorrespond:
 
     def test_correspond_empty(self, xp):
@@ -741,6 +717,7 @@ class TestCorrespond:
             assert not correspond(Z2, y)
 
 
+@make_xp_test_case(is_monotonic)
 class TestIsMonotonic:
 
     def test_is_monotonic_empty(self, xp):
@@ -814,7 +791,7 @@ class TestIsMonotonic:
         assert is_monotonic(Z)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(maxdists)
 class TestMaxDists:
 
     def test_maxdists_empty_linkage(self, xp):
@@ -840,7 +817,7 @@ class TestMaxDists:
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(maxinconsts)
 class TestMaxInconsts:
 
     def test_maxinconsts_empty_linkage(self, xp):
@@ -878,7 +855,7 @@ class TestMaxInconsts:
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(maxRstat)
 class TestMaxRStat:
 
     def test_maxRstat_invalid_index(self, xp):
@@ -929,7 +906,7 @@ class TestMaxRStat:
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(dendrogram)
 class TestDendrogram:
 
     def test_dendrogram_single_linkage_tdist(self, xp):
@@ -1172,7 +1149,7 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     return B
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(to_tree)
 def test_node_compare(xp):
     np.random.seed(23)
     nobs = 50
@@ -1185,7 +1162,7 @@ def test_node_compare(xp):
     assert_(tree.get_right() != tree.get_left())
 
 
-@skip_xp_backends(np_only=True, reason='`cut_tree` uses non-standard indexing')
+@make_xp_test_case(cut_tree)
 def test_cut_tree(xp):
     np.random.seed(23)
     nobs = 50
@@ -1213,7 +1190,7 @@ def test_cut_tree(xp):
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
-@skip_xp_backends(cpu_only=True)
+@make_xp_test_case(optimal_leaf_ordering)
 def test_optimal_leaf_ordering(xp):
     # test with the distance vector y
     Z = optimal_leaf_ordering(xp.asarray(linkage(hierarchy_test_data.ytdist)),
