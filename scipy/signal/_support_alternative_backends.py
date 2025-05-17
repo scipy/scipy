@@ -20,10 +20,11 @@ JAX_SIGNAL_FUNCS = [
 ]
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
-CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi', 'get_window']
+CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi', 'get_window', 'envelope', 'remez']
 
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
 CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
+
 
 def delegate_xp(delegator, module_name):
     def inner(func):
