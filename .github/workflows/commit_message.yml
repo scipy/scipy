@@ -23,7 +23,7 @@ jobs:
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: 'false'
+          
       - name: Check for skips
         id: skip_check
         # the lint workflow is not currently skipped with [docs only].
