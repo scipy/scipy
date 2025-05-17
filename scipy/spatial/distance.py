@@ -110,16 +110,21 @@ import warnings
 import dataclasses
 from collections.abc import Callable
 from functools import partial
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 import numpy as np
 
 from scipy._lib._array_api import _asarray
-from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib._util import _asarray_validated, _transition_to_rng, IntNumber
 from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
 from scipy.linalg import norm
 from scipy.special import rel_entr
 from . import _hausdorff, _distance_pybind, _distance_wrap
+from ._kdtree import KDTree
 
 
 def _copy_array_if_base_present(a):
@@ -2294,7 +2299,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError(
+            f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
@@ -2305,6 +2311,71 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           # See src/distance_pybind.cpp::pdist
                           shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
                           as_numpy=True, metric=metric, **kwargs)
+
+def _pmindist_slow_path(sample: "npt.ArrayLike", metric: str) -> float:
+
+    sample = _asarray(sample)
+    n = sample.shape[0]
+    d = cdist(sample[0:1,...], sample[1:,...], metric=metric).min()
+    if np.isclose(d, 0.0):
+        return 0.0
+
+    for i in range(2, n):
+        d = min(d, cdist(sample[(i-1):i,...], sample[i:,...], metric=metric).min())
+    return d
+
+
+def _pmindist(
+        sample: "npt.ArrayLike",
+        metric: str = "euclidean",
+        workers: IntNumber = 1) -> float:
+    """Mininum distance between points in the given sample.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the minimum distance from.
+    metric : str or callable, optional
+        The distance metric to use. See the documentation
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1. Parallel processing is only
+        available when ``metric in ["euclidean","cityblock","chebyshev"]``.
+
+    Returns
+    -------
+    distance : float
+        Minimum distance.
+
+    """
+    match metric:
+        case 'euclidean':
+            p = 2
+            distance_fun = euclidean
+        case 'cityblock':
+            p = 1
+            distance_fun = cityblock
+        case 'chebyshev':
+            p = np.inf
+            distance_fun = chebyshev
+        case _:
+            # Slow path for metrics unsupported by KDTree.
+            return _pmindist_slow_path(sample, metric=metric)
+
+    distance_upper_bound = distance_fun(sample[0,...], sample[1,...])
+    if np.isclose(distance_upper_bound, 0.0):
+        return 0.0
+    tree = KDTree(sample)
+    d, _ = tree.query(sample,
+                      k=[2], p=p,
+                      workers=workers,
+                      distance_upper_bound=distance_upper_bound)
+    d = d.min()
+    if np.isinf(d):
+        return distance_upper_bound
+    return d
 
 
 def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
