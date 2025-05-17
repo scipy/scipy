@@ -6,7 +6,6 @@ import pytest
 from numpy.testing import (assert_allclose)
 import scipy.sparse
 import scipy.linalg
-from scipy.sparse import csr_array
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import (expm, cosm, coshm, sinm, sinhm)
 
