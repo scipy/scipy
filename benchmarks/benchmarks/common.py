@@ -220,7 +220,7 @@ class XPBenchmark(Benchmark):
             self.func = wrapper
 
         else:
-            assert backend in ("numpy", "array_api_strict", "cupy")
+            assert backend in ("numpy", "array_api_strict")
 
     def synchronize(self, *arrays):
         """Wait until the given arrays have finished generating and return a
