@@ -746,30 +746,43 @@ class TestNoncentralChiSquaredFunctions:
         assert_allclose(nc[:-2], values[:-2, 2], rtol=1e-8)
 
     # CDF Reference values computed with mpmath with the following script
-    # 
+    # Formula from:
+    # https://www.boost.org/doc/libs/1_87_0/libs/math/doc/html/math_toolkit/dist_ref/dists/nc_chi_squared_dist.html  # noqa: E501
+    # which cites:
+    # Computing discrete mixtures of continuous distributions: noncentral chisquare,
+    # noncentral t and the distribution of the square of the
+    # sample multiple correlation coefficient",
+    # Denise Benton and K. Krishnamoorthy,
+    # Computational Statistics & Data Analysis, 43, (2003), 249-267
+
+    # Warning: may take a long time to run
     # from mpmath import mp
     #
     # mp.dps = 400
     # 
-    # def _noncentral_chi_pdf(t, df, nc):
-    #     res = mp.besseli(df/2 - 1, mp.sqrt(nc*t))
-    #     res *= mp.exp(-(t + nc)/2)*(t/nc)**(df/4 - 1/2)/2
-    #     return res
-    #
-    # def _noncentral_chi_cdf(x, df, nc, dps=None):
-    #     x, df, nc = mp.mpf(x), mp.mpf(df), mp.mpf(nc)
-    #     res = mp.quad(lambda t: _noncentral_chi_pdf(t, df, nc), [mp.zero, x])
-    #     return float(res)
+    # def noncentral_chi_squared_cdf(x, df, nc):
+    #    x, df, nc = map(mp.mpf, (x, df, nc))
+    #    def term(i):
+    #        return mp.exp(-nc/2) * (nc/2)**i / mp.factorial(i) * 
+    #               mp.gammainc(df/2 + i, 0, x/2, regularized=True)
+    #    return float(mp.nsum(term, [0, mp.inf]))
 
     @pytest.mark.parametrize(
-        "x, df, nc, expected_cdf, rtol",
-        [(0.1, 200, 50, 1.1311224867205481e-299, 1e-13),
-         (1e-12, 20, 50, 3.737446313006551e-141, 1e-13),
-         (1, 200, 50, 8.09760974833666e-200, 1e-13),
-         (9e4, 1e5, 1e3, 1.6895533704217566e-141, 5e-12)]
+        "x, df, nc, expected_cdf, rtol_cdf, rtol_inv",
+        [(0.1, 200, 50, 1.1311224867205481e-299, 1e-13, 1e-13),
+         (1e-12, 20, 50, 3.737446313006551e-141, 1e-13, 1e-13),
+         (1, 200, 50, 8.09760974833666e-200, 1e-13, 1e-13),
+         (9e4, 1e5, 1e3, 1.6895533704217566e-141, 5e-12, 5e-12),
+         (30, 3, 1.5, 0.9999508759095675, 5e-13, 5e-13),
+         (500, 300, 1.5, 0.9999999999944232, 1e-13, 1e-5),
+         (1400, 30, 1e3, 0.9999999612246238, 1e-13, 1e-9),
+         (400, 50, 200, 0.9999948255072892, 1e-13, 1e-11)]
     )
-    def test_chndtr_left_tail(self, x, df, nc, expected_cdf, rtol):
-        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol)
+    def test_tails(self, x, df, nc, expected_cdf, rtol_cdf, rtol_inv):
+        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol_cdf)
+        assert_allclose(sp.chndtrix(expected_cdf, df, nc), x, rtol=rtol_inv)
+        assert_allclose(sp.chndtridf(x, expected_cdf, nc), df, rtol=rtol_inv)
+        assert_allclose(sp.chndtrinc(x, df, expected_cdf), nc, rtol=rtol_inv)
 
     @pytest.mark.parametrize("x, df",
         [(1, 3), (1, 0), (1, np.inf), (np.inf, 1)]
@@ -777,22 +790,28 @@ class TestNoncentralChiSquaredFunctions:
     def test_chndtr_with_nc_zero_equals_chdtr(self, x, df):
         assert_allclose(sp.chndtr(x, df, 0), sp.chdtr(df, x), rtol=1e-15)
 
+    @pytest.mark.parametrize("fun",
+        [sp.chndtr, sp.chndtrix, sp.chndtridf, sp.chndtrinc]
+    )
     @pytest.mark.parametrize("args",
         [(-1, 1, 1), (1, -1, 1), (1, 1, -1), (-1, -1, 1),
          (-1, 1, -1), (1, -1, -1), (-1, -1, -1)]
     )  
-    def test_domain_error(self, args):
+    def test_domain_error(self, args, fun):
         with sp.errstate(domain="raise"):
             with pytest.raises(sp.SpecialFunctionError, match="domain"):
-                sp.chndtr(*args)
+                fun(*args)
 
+    @pytest.mark.parametrize("fun",
+        [sp.chndtr, sp.chndtrix, sp.chndtridf, sp.chndtrinc]
+    )
     @pytest.mark.parametrize("args",
         [(np.nan, 1, 1), (1, np.nan, 1), (1, 1, np.nan),
          (np.nan, np.nan, 1), (np.nan, 1, np.nan), (1, np.nan, np.nan),
          (np.nan, np.nan, np.nan)]
     )
-    def test_nan_propagation(self, args):
-        assert np.isnan(sp.chndtr(*args))
+    def test_nan_propagation(self, fun, args):
+        assert np.isnan(fun(*args))
 
     @pytest.mark.parametrize(
         "x, df, nc, expected",
