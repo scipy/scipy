@@ -69,7 +69,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     self._shape = check_shape(arg1.shape, allow_nd=self._allow_nd)
                     self.has_canonical_format = arg1.has_canonical_format
                 else:
-                    coo = arg1.tocoo()
+                    coo = arg1.tocoo(copy=copy)
                     self.coords = tuple(coo.coords)
                     self.data = coo.data.astype(getdtype(dtype, coo), copy=False)
                     self._shape = check_shape(coo.shape, allow_nd=self._allow_nd)
