@@ -135,7 +135,8 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
-                                   is_lazy_array, xp_capabilities, xp_copy)
+                                   is_lazy_array, xp_capabilities, xp_copy,
+                                   SCIPY_ARRAY_API)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -3896,7 +3897,10 @@ def is_isomorphic(T1, T2):
     T2 = xp.take(T2, idx)
     changes1 = T1 != xp.roll(T1, -1)
     changes2 = T2 != xp.roll(T2, -1)
-    return xp.all(changes1 == changes2)
+    res = xp.all(changes1 == changes2)
+    # Return type was bool up to 1.16.0.
+    # Vectorization changed it to np.bool_, which is backwards incompatible.
+    return res if SCIPY_ARRAY_API else bool(res)
 
 
 @lazy_cython
