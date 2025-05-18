@@ -186,7 +186,7 @@ class XPBenchmark(Benchmark):
 
             if capabilities["jax_jit"]:
                 func = jax.jit(func, static_argnames=static_argnames,
-                                static_argnums=static_argnums)
+                               static_argnums=static_argnums)
                 self.warmup = True
 
             def wrapper(*args, **kwargs):
