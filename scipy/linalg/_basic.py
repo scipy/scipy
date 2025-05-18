@@ -1182,13 +1182,27 @@ def inv0(a, overwrite_a=False, check_finite=True):
 
 
 def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
-    """
+    r"""
     Compute the inverse of a matrix.
+
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    =============================  ================================
+     general                        'general' (or 'gen')
+     upper triangular               'upper triangular'
+     lower triangular               'lower triangular'
+     symmetric positive definite    'pos', 'pos upper', 'pos lower'
+    =============================  ================================
+
+    For the 'pos upper' and 'pos lower' options, only the specified
+    triangle of the input matrix is used, and the other triangle is not referenced.
 
     Parameters
     ----------
-    a : array_like
-        Square matrix to be inverted.
+    a : array_like, shape (..., M, M)
+        Square matrix (or a batch of matrices) to be inverted.
     overwrite_a : bool, optional
         Discard data in `a` (may improve performance). Default is False.
     check_finite : bool, optional
@@ -1196,7 +1210,7 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
-        Valid entries are described below.
+        Valid entries are described above.
         If omitted or ``None``, checks are performed to identify structure so the
         appropriate solver can be called.
 
@@ -1204,12 +1218,14 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     -------
     ainv : ndarray
         Inverse of the matrix `a`.
+
     Raises
     ------
     LinAlgError
         If `a` is singular.
     ValueError
         If `a` is not square, or not 2D.
+
     Examples
     --------
     >>> import numpy as np
@@ -1225,19 +1241,12 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
     Notes
     -----
 
-    If the data matrix is known to be a particular type then supplying the
-    corresponding string to ``assume_a`` key chooses the dedicated solver.
-    The available options are
+    The input array ``a`` may represent a single matrix or a collection (a.k.a.
+    a "batch") of square matrices. For example, if ``a.shape == (4, 3, 2, 2)``, it is
+    interpreted as a ``(4, 3)``-shaped batch of :math:`2\times 2` matrices.
 
-    =============================  ================================
-     general                        'general' (or 'gen')
-     upper triangular               'upper triangular'
-     lower triangular               'lower triangular'
-     symmetric positive definite    'pos def', 'pos def upper', 'pos def lower'
-    =============================  ================================
-
-    For the 'pos def upper' and 'pos def lower' options, only the specified
-    triangle of the input matrix is used, and the other triangle is not referenced.
+    This routine checks the condition number of the `a` matrix and emits a
+    `LinAlgWarning` for ill-conditioned inputs.
 
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
@@ -1266,9 +1275,9 @@ def inv(a, overwrite_a=False, check_finite=True, assume_a=None):
         # 'diagonal': 11,
         'upper triangular': 21,
         'lower triangular': 22,
-        'pos def' : 101,
-        'pos def upper': 111,     # the "other" triangle is not referenced
-        'pos def lower': 112,
+        'pos' : 101,
+        'pos upper': 111,     # the "other" triangle is not referenced
+        'pos lower': 112,
     }[assume_a]
 
     # a1 is well behaved, invert it.
