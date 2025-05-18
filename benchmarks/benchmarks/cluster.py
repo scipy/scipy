@@ -1,5 +1,3 @@
-from functools import cache
-
 import numpy as np
 from numpy.testing import suppress_warnings
 
