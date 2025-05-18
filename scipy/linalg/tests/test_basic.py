@@ -1220,17 +1220,17 @@ class TestInv:
         y += 21*np.eye(5)
 
         y_inv0 = inv(y)
-        y_inv1 = inv(y, assume_a="pos def")
+        y_inv1 = inv(y, assume_a="pos")
 
         assert_allclose(y_inv1, y_inv0, atol=1e-15)
 
-        # check that the lower triangle is not referenced for "pos def upper"
+        # check that the lower triangle is not referenced for "pos upper"
         mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
-        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos def upper")
+        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos upper")
         assert_allclose(y_inv2, y_inv0, atol=1e-15)
 
-        # repeat with the upper triangle and "pos def lower"
-        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos def lower")
+        # repeat with the upper triangle and "pos lower"
+        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos lower")
         assert_allclose(y_inv3, y_inv0, atol=1e-15)
 
     def test_posdef_not_posdef(self):
@@ -1244,7 +1244,7 @@ class TestInv:
 
         # but it does not fall back if `assume_a` is given
         with assert_raises(LinAlgError):
-            inv(b, assume_a='pos def')
+            inv(b, assume_a='pos')
 
     def test_triangular_1(self):
         x = np.arange(25, dtype=float).reshape(5, 5)
@@ -1253,7 +1253,7 @@ class TestInv:
         y_inv0 = inv(y, assume_a='upper triangular')
 
         # check that upper triangular differs from posdef
-        y_inv_posdef = inv(y, assume_a='pos def')
+        y_inv_posdef = inv(y, assume_a='pos')
         assert not np.allclose(y_inv0, y_inv_posdef)
 
     def test_triangular_2(self):
