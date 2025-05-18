@@ -24,14 +24,28 @@ This release requires Python 3.11-3.13 and NumPy 1.25.2 or greater.
 Highlights of this release
 **************************
 
+- Improved experimental support for the Python array API standard, including
+  new support in `scipy.signal`, and additional support in `scipy.stats` and
+  `scipy.special`. Improved support for JAX and Dask backends has been added,
+  with notable support in `scipy.cluster.hierarchy`, many functions in
+  `scipy.special`, and many of the trimmed ``stats`` functions.
 - ``scipy.optimize`` now uses the new Python implementation from the
   `PRIMA <https://www.libprima.net>`_ package for COBYLA.
   The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_
   in the old Fortran 77 implementation with
   `a better performance on average <https://github.com/libprima/prima#improvements>`_.
 - ``scipy.sparse.coo_array`` now supports nD arrays with reshaping, arithmetic and
-  reduction operations like sum/mean/min/max. No nD indexing or `random_array` support yet.
+  reduction operations like sum/mean/min/max. No nD indexing or ``random_array``
+  support yet.
 - Updated guide and tools for migration from sparse matrices to sparse arrays.
+- All functions in the `scipy.linalg` namespace that accept array arguments
+  now support N-dimensional arrays to be processed as a batch.
+- Two new `scipy.signal` functions, ``firwin_2d`` and
+  ``closest_STFT_dual_window``, for creation of a 2-D FIR filter and
+  ``ShortTimeFFT`` dual window calculation, respectivly.
+- A new class, ``RigidTransform``, is available in the ``transform`` submodule.
+  It provides functionality to convert between different representations of
+  rigid transforms in 3D space.
 
 ************
 New features
@@ -90,7 +104,7 @@ New features
   result. For those cases the user can try modifying the initial and final
   trust region radii given by ``rhobeg`` and ``tol`` respectively. A larger
   ``rhobeg`` can help the algorithm take bigger steps initially, while a
-  smaller ``tol`` can help it for keep going and find a better solution.
+  smaller ``tol`` can help it continue and find a better solution.
   For more information, see the `PRIMA documentation <https://www.libprima.net>`_.
 - Several of the ``minimize`` methods, and the ``least_squares`` function,
   have been given a ``workers`` keyword. This allows parallelization of some
@@ -123,10 +137,10 @@ New features
 - ``signal.cspline1d_eval`` and ``signal.qspline1d_eval`` now provide an
   informative error on empty input rather than hitting the recursion limit.
 - A new function `scipy.signal.closest_STFT_dual_window` to calculate the
-  `ShortTimeFFT` dual window of a given window closest to a desired dual
+  ``ShortTimeFFT`` dual window of a given window closest to a desired dual
   window.
 - A new classmethod `scipy.signal.ShortTimeFFT.from_win_equals_dual` to
-  create a `ShortTimeFFT` instance where the window and its dual are equal
+  create a ``ShortTimeFFT`` instance where the window and its dual are equal
   up to a scaling factor. It allows to create short-time Fourier transforms
   which are unitary mappings.
 - The performance of ``signal.convolve2d`` has improved.
@@ -139,7 +153,7 @@ New features
 - ``csgraph.dijkstra`` shortest_path is more efficient.
 - ``csgraph.yen`` has performance improvements.
 - Import of ``_lib.issparse`` allows checking for ``scipy.sparse`` object
-  without full import of scipy.
+  without full import of ``scipy``.
 - add lazy loading of ``sparse.csgraph`` and ``sparse.linalg``.
 
 
@@ -166,8 +180,10 @@ New features
 
 - Added `scipy.stats.Binomial`.
 - Added ``equal_var`` keyword to:
+
   - `scipy.stats.tukey_hsd` (enables the Games-Howell test) and
   - `scipy.stats.f_oneway` (enables Welch ANOVA).
+
 - Improved moment calculation for `scipy.stats.gennorm`.
 - Added native vectorization to `scipy.stats.mode` for faster batch calculation.
 - Added ``axis``, ``nan_policy``, and ``keepdims`` to `scipy.stats.power_divergence`,
@@ -202,6 +218,7 @@ old features with support added for SciPy 1.16.0 include:
 
 Features with extended array API support (generally, improved support
 for JAX and Dask) in SciPy 1.16.0 include:
+
 - many of the `scipy.cluster.hierarchy` functions
 - many functions in `scipy.special`
 - many of the trimmed `stats` functions
@@ -213,8 +230,8 @@ Deprecated features
 *******************
 - The unused ``atol`` argument of `scipy.optimize.nnls` is deprecated and will
   be removed in SciPy 1.18.0.
-- The ``disp`` argument of `scipy.lingalg.signm`, `scipy.lingalg.logm`, and
-  `scipy.lingalg.sqrtm` will be removed in SciPy 1.18.0.
+- The ``disp`` argument of `scipy.linalg.signm`, `scipy.linalg.logm`, and
+  `scipy.linalg.sqrtm` will be removed in SciPy 1.18.0.
 - `scipy.stats.multinomial` now emits a ``FutureWarning`` if the rows of ``p``
   do not sum to ``1.0``. This condition will produce NaNs beginning in SciPy
   1.18.0.
@@ -224,7 +241,7 @@ Expired Deprecations
 ********************
 - ``scipy.sparse.conjtransp`` has been removed. Use ``.T.conj()`` instead.
 - The ``quadrature='trapz'`` option has been removed from
-  `scipy.intgerate.quad_vec` and ``scipy.stats.trapz`` has been removed. Use
+  `scipy.integrate.quad_vec` and ``scipy.stats.trapz`` has been removed. Use
   ``trapezoid`` in both instances instead.
 - `scipy.special.comb` and `scipy.special.perm` now raise when ``exact=True``
   and arguments are non-integral.
@@ -262,7 +279,7 @@ Other changes
 - For ``Cython>=3.1.0b1``, SciPy now uses the new
   ``cython --generate-shared`` functionality, which reduces the total size of
   SciPy's wheels and on-disk installations significantly.
-- The output of `scipy.stats.wrapcauchy.rvs` is now mapped to the unit circle
+- The output of `scipy.stats.wrapcauchy` ``rvs`` is now mapped to the unit circle
   between 0 and ``2 * pi``.
 - The vendored Qhull library was upgraded from version 2019.1 to 2020.2.
 - A new build option ``-Duse-system-libraries`` has been added. It allows
@@ -270,7 +287,7 @@ Other changes
   Currently ``Boost.Math`` and ``Qhull`` are supported as system build
   dependencies.
 - The ``namedtuple``-like bunch objects returned by some SciPy functions
-  now have improved compatiblity with the ``polars`` library.
+  now have improved compatibility with the ``polars`` library.
 - The testsuite thread safety with free-threaded CPython has improved.
 
 
@@ -423,7 +440,7 @@ Issues closed for 1.16.0
 * `#6606 <https://github.com/scipy/scipy/issues/6606>`__: BUG: signal.bilinear: can't handle leading zeros
 * `#6689 <https://github.com/scipy/scipy/issues/6689>`__: ENH: optimize: consider using NLopt's version of ``slsqp``
 * `#6755 <https://github.com/scipy/scipy/issues/6755>`__: ENH: ndimage.percentile_filter: take multiple percentiles
-* `#7518 <https://github.com/scipy/scipy/issues/7518>`__: DOC: optimize: meaning of accuracy in ``fmin_slsqp ``\ undocumented
+* `#7518 <https://github.com/scipy/scipy/issues/7518>`__: DOC: optimize: meaning of accuracy in ``fmin_slsqp`` undocumented
 * `#7818 <https://github.com/scipy/scipy/issues/7818>`__: ENH: ndimage.uniform_filter: expands NaNs all the way to the...
 * `#8140 <https://github.com/scipy/scipy/issues/8140>`__: sparse LU decomposition does not solve with complex right-hand...
 * `#8367 <https://github.com/scipy/scipy/issues/8367>`__: ENH: stats.mvndst: make thread-safe
