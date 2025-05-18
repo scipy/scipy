@@ -127,8 +127,6 @@ py3.extension_module('_batched_linalg',
   subdir: 'scipy/linalg'
 )
 
-
-
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
   linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
