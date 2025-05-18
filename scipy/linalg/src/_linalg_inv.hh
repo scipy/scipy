@@ -172,7 +172,17 @@ void _inverse(PyArrayObject* ap_Am, T* ret_data, St structure, int overwrite_a, 
 
     getri(&intn, NULL, &intn, NULL, &tmp, &lwork, info);
     if (*info != 0) { *info = -100; return; }
-    lwork = (CBLAS_INT)real_part(tmp);  // TODO 500x500 OpenBLAS comment
+
+    /*
+     * The factor of 1.01 here mirrors
+     * https://github.com/scipy/scipy/blob/v1.15.2/scipy/linalg/_basic.py#L1154
+     *
+     * It was added in commit
+     * https://github.com/scipy/scipy/commit/dfb543c147c
+     * to avoid a "curious segfault with 500x500 matrices and OpenBLAS".
+     */
+    lwork = (CBLAS_INT)(1.01 * real_part(tmp));
+
     lwork = (4*n > lwork ? 4*n : lwork); // gecon needs at least 4*n
     T* buffer = (T *)malloc((2*n*n + lwork)*sizeof(T));
     if (NULL == buffer) { *info = -101; return; }
