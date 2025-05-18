@@ -60,6 +60,13 @@ class _csr_base(_cs_matrix):
 
     tocsr.__doc__ = _spbase.tocsr.__doc__
 
+    def tocoo(self, copy=False):
+        A = super().tocoo(copy=copy)
+        A.has_canonical_format = self.has_canonical_format
+        return A
+
+    tocoo.__doc__ = _spbase.tocoo.__doc__
+
     def tocsc(self, copy=False):
         if self.ndim != 2:
             raise ValueError("Cannot convert a 1d sparse array to csc format")
