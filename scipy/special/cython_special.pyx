@@ -133,7 +133,6 @@ Available functions
 
         double btdtria(double, double, double)
         float btdtria(float, float, float)
-        float btdtria(float, float, float)
 
 - :py:func:`~scipy.special.btdtrib`::
 
