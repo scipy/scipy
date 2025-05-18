@@ -159,8 +159,6 @@ New features
   matmul.
 - `scipy.sparse.csgraph.dijkstra` shortest_path is more efficient.
 - `scipy.sparse.csgraph.yen` has performance improvements.
-- Import of ``_lib.issparse`` allows checking for ``scipy.sparse`` object
-  without full import of ``scipy``.
 - Support for lazy loading of ``sparse.csgraph`` and ``sparse.linalg`` was
   added.
 
@@ -228,6 +226,9 @@ for JAX and Dask) in SciPy 1.16.0 include:
 - many functions in `scipy.special`
 - many of the trimmed statistics functions in `scipy.stats`
 
+SciPy now has a CI job that exercises GPU (CUDA) support, and as a result
+using PyTorch, CuPy or JAX arrays on GPU with SciPy is now more reliable.
+
 
 *******************
 Deprecated features
@@ -268,9 +269,45 @@ Backwards incompatible changes
   same shape (ignoring ``axis``) before performing the calculation.
 
 
+***********************************
+Build and packaging related changes
+***********************************
+- The minimum supported version of Clang was bumped from 12.0 to 15.0.
+- The lowest supported macOS version for wheels on PyPI is now 10.14 instead of
+  10.13.
+- The sdist contents were optimized, resulting in a size reduction of about 50%,
+  from 60 MB to 30 MB.
+- For ``Cython>=3.1.0``, SciPy now uses the new ``cython --generate-shared``
+  functionality, which reduces the total size of SciPy's wheels and on-disk
+  installations significantly.
+- SciPy no longer contains an internal shared library that requires RPATH support,
+  after ``sf_error_state`` was removed from `scipy.special`.
+- A new build option ``-Duse-system-libraries`` has been added. It allows
+  opting in to using system libraries instead of using vendored sources.
+  Currently ``Boost.Math`` and ``Qhull`` are supported as system build
+  dependencies.
+
+
 *************
 Other changes
 *************
+- The internal dependency of ``scipy._lib`` on ``scipy.sparse`` was removed,
+  which reduces the import time of a number of other SciPy submodules.
+- Support for free-threaded CPython was improved: the last known thread-safety
+  issues in `scipy.special` were fixed, and ``pytest-run-parallel`` is now used
+  in a CI job to guard against regressions.
+- Support for `spin <https://github.com/scientific-python/spin>`__ as a developer
+  CLI was added, including support for editable installs. The SciPy-specific
+  ``python dev.py`` CLI will be removed in the next release cycle in favor of
+  ``spin``.
+- The vendored Qhull library was upgraded from version 2019.1 to 2020.2.
+- A large amount of the C++ code in ``scipy.special`` was moved to the new
+  header-only `xsf <https://github.com/scipy/xsf>`__ library. That library was
+  included back in the SciPy source tree as a git submodule.
+- The ``namedtuple``-like bunch objects returned by some SciPy functions
+  now have improved compatibility with the ``polars`` library.
+- The output of the ``rvs`` method of `scipy.stats.wrapcauchy` is now mapped to
+  the unit circle between 0 and ``2 * pi``.
 - The ``lm`` method of `scipy.optimize.least_squares` now has a different behavior
   for the maximum number of function evaluations, ``max_nfev``. The default for
   the ``lm`` method is changed to ``100 * n``, for both a callable and a
@@ -281,19 +318,6 @@ Other changes
   ``lm`` method the number of function calls used in Jacobian approximation
   is no longer included in ``OptimizeResult.nfev``. This brings the behavior
   of ``lm``, ``trf``, and ``dogbox`` into line.
-- For ``Cython>=3.1.0b1``, SciPy now uses the new
-  ``cython --generate-shared`` functionality, which reduces the total size of
-  SciPy's wheels and on-disk installations significantly.
-- The output of the ``rvs`` method of `scipy.stats.wrapcauchy` is now mapped to
-  the unit circle between 0 and ``2 * pi``.
-- The vendored Qhull library was upgraded from version 2019.1 to 2020.2.
-- A new build option ``-Duse-system-libraries`` has been added. It allows
-  opting in to using system libraries instead of using vendored sources.
-  Currently ``Boost.Math`` and ``Qhull`` are supported as system build
-  dependencies.
-- The ``namedtuple``-like bunch objects returned by some SciPy functions
-  now have improved compatibility with the ``polars`` library.
-- The testsuite thread safety with free-threaded CPython has improved.
 
 
 *******
