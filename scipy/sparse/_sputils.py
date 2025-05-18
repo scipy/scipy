@@ -403,7 +403,7 @@ def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis, *, ndim=2) -> int | tuple[int, ...]:
+def validateaxis(axis, *, ndim=2) -> tuple[int, ...] | None:
     if axis is None:
         return None
 
@@ -437,8 +437,6 @@ def validateaxis(axis, *, ndim=2) -> int | tuple[int, ...]:
         raise ValueError("axis tuple has too many elements")
     elif len_axis == ndim:
         return None
-    elif len_axis == 1:
-        return canon_axis[0]
     else:
         return tuple(canon_axis)
 
