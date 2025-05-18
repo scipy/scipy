@@ -239,13 +239,15 @@ void dia_tocsr(const I rows,
                std::vector<I>* indptr,
                std::vector<T>* csr_data)
 {
+    const I max_j = min(L, cols); // max. output column
+
     // allocate enough space for output arrays
     I max_nnz = 0;
     for (I i = 0; i < diags; ++i) {
         const I ofs = offsets[i];
         const I beg = max<I>(0, ofs),
-                end = min({cols, L, rows + ofs});
-        max_nnz += end - beg;
+                end = min(rows + ofs, max_j);
+        max_nnz += max<I>(end - beg, 0); // ignoring out-of-range diagonals (end < beg)
     }
     indices->resize(max_nnz);
     csr_data->resize(max_nnz);
@@ -258,7 +260,7 @@ void dia_tocsr(const I rows,
         for (I k = 0; k < diags; ++k) {
             const I n = order[k], // index of diagonal
                     j = i + offsets[n]; // column
-            if (j < 0 or j >= L)
+            if (j < 0 or j >= max_j)
                 continue;
             const T x = (data + npy_intp(L) * n)[j];
             if (x != 0) {
