@@ -28,68 +28,72 @@ Highlights of this release
   new support in `scipy.signal`, and additional support in `scipy.stats` and
   `scipy.special`. Improved support for JAX and Dask backends has been added,
   with notable support in `scipy.cluster.hierarchy`, many functions in
-  `scipy.special`, and many of the trimmed ``stats`` functions.
-- ``scipy.optimize`` now uses the new Python implementation from the
+  `scipy.special`, and many of the trimmed statistics functions.
+- `scipy.optimize` now uses the new Python implementation from the
   `PRIMA <https://www.libprima.net>`_ package for COBYLA.
   The PRIMA implementation `fixes many bugs <https://github.com/libprima/prima#bug-fixes>`_
   in the old Fortran 77 implementation with
   `a better performance on average <https://github.com/libprima/prima#improvements>`_.
-- ``scipy.sparse.coo_array`` now supports nD arrays with reshaping, arithmetic and
-  reduction operations like sum/mean/min/max. No nD indexing or ``random_array``
-  support yet.
+- `scipy.sparse.coo_array` now supports n-D arrays with reshaping, arithmetic and
+  reduction operations like sum/mean/min/max. No n-D indexing or
+  `~scipy.sparse.random_array` support yet.
 - Updated guide and tools for migration from sparse matrices to sparse arrays.
 - All functions in the `scipy.linalg` namespace that accept array arguments
   now support N-dimensional arrays to be processed as a batch.
-- Two new `scipy.signal` functions, ``firwin_2d`` and
-  ``closest_STFT_dual_window``, for creation of a 2-D FIR filter and
-  ``ShortTimeFFT`` dual window calculation, respectivly.
-- A new class, ``RigidTransform``, is available in the ``transform`` submodule.
-  It provides functionality to convert between different representations of
-  rigid transforms in 3D space.
+- Two new `scipy.signal` functions, `~scipy.signal.firwin_2d` and
+  `~scipy.signal.closest_STFT_dual_window`, for creation of a 2-D FIR filter and
+  `~scipy.signal.ShortTimeFFT` dual window calculation, respectively.
+- A new class, `scipy.spatial.transform.RigidTransform`, provides functionality
+  to convert between different representations of rigid transforms in 3-D
+  space.
 
 ************
 New features
 ************
 
 ``scipy.io`` improvements
-==============================
-- ``savemat`` now provides informative warnings for invalid field names.
+=========================
+- `scipy.io.savemat` now provides informative warnings for invalid field names.
 - `scipy.io.mmread` now provides a clearer error message when provided with
   a source file path that does not exist.
 - `scipy.io.wavfile.read` can now read non-seekable files.
 
 
 ``scipy.integrate`` improvements
-==================================
-- Improved the error estimate of `scipy.integrate.tanhsinh`
+================================
+- The error estimate of `scipy.integrate.tanhsinh` was improved.
+
 
 ``scipy.interpolate`` improvements
 ==================================
-- Added batch support to `scipy.interpolate.make_smoothing_spline`
+- Batch support was added to `scipy.interpolate.make_smoothing_spline`.
+
 
 ``scipy.linalg`` improvements
 =============================
 - All functions in the `scipy.linalg` namespace that accept array arguments
   now support N-dimensional arrays to be processed as a batch.
   See :ref:`linalg_batch` for details.
-- ``linalg.sqrtm`` is rewritten in C and its performance is improved. It also
-  tries harder to return real-valued results for real-valued inputs if
+- `scipy.linalg.sqrtm` is rewritten in C and its performance is improved. It
+  also tries harder to return real-valued results for real-valued inputs if
   possible. See the function docstring for more details. In this version the
   input argument ``disp`` and the optional output argument ``errest`` are
   deprecated and will be removed four versions later. Similarly, after
   changing the underlying algorithm to recursion, the ``blocksize`` keyword
   argument has no effect and will be removed two versions later.
-- Added wrappers for ``?stevd``, ``?langb``, ``?sytri``, ``?hetri`` and
-  ``?gbcon`` to `scipy.linalg.lapack`.
-- Improved default driver of `scipy.linalg.eigh_tridiagonal`.
+- Wrappers for ``?stevd``, ``?langb``, ``?sytri``, ``?hetri`` and
+  ``?gbcon`` were added to `scipy.linalg.lapack`.
+- The default driver of `scipy.linalg.eigh_tridiagonal` was improved.
 - `scipy.linalg.solve` can now estimate the reciprocal condition number and
   the matrix norm calculation is more efficient.
 
+
 ``scipy.ndimage`` improvements
 ==============================
-- Added `scipy.ndimage.vectorized_filter` for generic filters that take advantage
-  of a vectorized Python callable.
+- A new function `scipy.ndimage.vectorized_filter` for generic filters that
+  take advantage of a vectorized Python callable was added.
 - `scipy.ndimage.rotate` has improved performance, especially on ARM platforms.
+
 
 ``scipy.optimize`` improvements
 ===============================
@@ -106,92 +110,90 @@ New features
   ``rhobeg`` can help the algorithm take bigger steps initially, while a
   smaller ``tol`` can help it continue and find a better solution.
   For more information, see the `PRIMA documentation <https://www.libprima.net>`_.
-- Several of the ``minimize`` methods, and the ``least_squares`` function,
-  have been given a ``workers`` keyword. This allows parallelization of some
-  calculations via a map-like callable, such as ``multiprocessing.Pool``. These
-  parallelization opportunities typically occur during numerical
-  differentiation. This can greatly speed-up minimization when the objective
-  function is expensive to calculate.
-- The ``lm`` method of ``least_squares`` can now accept ``3-point`` and ``cs``
-  for the ``jac`` keyword.
-- SLSQP Fortran77 code ported to C. When this method is used now the constraint
-  multipliers are exposed to the user through the ``multiplier`` keyword of
-  the returned ``OptimizeResult`` object.
+- Several of the `scipy.optimize.minimize` methods, and the
+  `scipy.optimize.least_squares` function, have been given a ``workers``
+  keyword. This allows parallelization of some calculations via a map-like
+  callable, such as ``multiprocessing.Pool``. These parallelization
+  opportunities typically occur during numerical differentiation. This can
+  greatly speed up minimization when the objective function is expensive to
+  calculate.
+- The ``lm`` method of `scipy.optimize.least_squares` can now accept
+  ``3-point`` and ``cs`` for the ``jac`` keyword.
+- The SLSQP Fortran 77 code was ported to C. When this method is used now the
+  constraint multipliers are exposed to the user through the ``multiplier``
+  keyword of the returned `~scipy.optimize.OptimizeResult` object.
 - NNLS code has been corrected and rewritten in C to address the performance
   regression introduced in 1.15.x
-- ``optimize.root`` now warns for invalid inner parameters when using the
+- `scipy.optimize.root` now warns for invalid inner parameters when using the
   ``newton_krylov`` method
 - The return value of minimization with ``method='L-BFGS-B'`` now has
   a faster ``hess_inv.todense()`` implementation. Time complexity has improved
   from cubic to quadratic.
-- ``optimize.least_squares`` has a new ``callback`` argument that is applicable
-  to ``trf`` and ``dogbox`` methods. ``callback`` may be used to track
+- `scipy.optimize.least_squares` has a new ``callback`` argument that is applicable
+  to the ``trf`` and ``dogbox`` methods. ``callback`` may be used to track
   optimization results at each step or to provide custom conditions for
   stopping.
 
 
 ``scipy.signal`` improvements
 =============================
-- A new function ``firwin_2d`` for the creation of a 2-D FIR Filter using the
-  1-D window method was added.
-- ``signal.cspline1d_eval`` and ``signal.qspline1d_eval`` now provide an
-  informative error on empty input rather than hitting the recursion limit.
+- A new function `scipy.signal.firwin_2d` for the creation of a 2-D FIR Filter
+  using the 1-D window method was added.
+- `scipy.signal.cspline1d_eval` and `scipy.signal.qspline1d_eval` now provide
+  an informative error on empty input rather than hitting the recursion limit.
 - A new function `scipy.signal.closest_STFT_dual_window` to calculate the
-  ``ShortTimeFFT`` dual window of a given window closest to a desired dual
-  window.
+  `~scipy.signal.ShortTimeFFT` dual window of a given window closest to a
+  desired dual window.
 - A new classmethod `scipy.signal.ShortTimeFFT.from_win_equals_dual` to
-  create a ``ShortTimeFFT`` instance where the window and its dual are equal
-  up to a scaling factor. It allows to create short-time Fourier transforms
-  which are unitary mappings.
-- The performance of ``signal.convolve2d`` has improved.
+  create a `~scipy.signal.ShortTimeFFT` instance where the window and its dual
+  are equal up to a scaling factor. It allows to create short-time Fourier
+  transforms which are unitary mappings.
+- The performance of `scipy.signal.convolve2d` was improved.
 
 
 ``scipy.sparse`` improvements
 =============================
-- ``coo_array`` supports nD arrays using binary and reduction operations.
-- Math is faster between two DIA arrays/matrices: add, sub, multiply, matmul.
-- ``csgraph.dijkstra`` shortest_path is more efficient.
-- ``csgraph.yen`` has performance improvements.
-- Import of ``_lib.issparse`` allows checking for ``scipy.sparse`` object
-  without full import of ``scipy``.
-- add lazy loading of ``sparse.csgraph`` and ``sparse.linalg``.
+- `scipy.sparse.coo_array` now supports n-D arrays using binary and reduction
+  operations.
+- Faster operations between two DIA arrays/matrices for: add, sub, multiply,
+  matmul.
+- `scipy.sparse.csgraph.dijkstra` shortest_path is more efficient.
+- `scipy.sparse.csgraph.yen` has performance improvements.
+- Support for lazy loading of ``sparse.csgraph`` and ``sparse.linalg`` was
+  added.
 
 
 ``scipy.spatial`` improvements
 ==============================
-- A new class ``RigidTransform`` is available in the ``transform`` submodule. It
-  provides functionality to convert between different representations of rigid
-  transforms in 3D space, its application to vectors and transform composition.
+- A new class, `scipy.spatial.transform.RigidTransform`, provides functionality
+  to convert between different representations of rigid transforms in 3-D
+  space, its application to vectors and transform composition.
   It follows the same design approach as `scipy.spatial.transform.Rotation`.
-- `scipy.spatial.transform.Rotation` now has an appropriate ``__repr__`` method.
-- ``Rotation.apply`` has improved performance.
+- `~scipy.spatial.transform.Rotation` now has an appropriate ``__repr__`` method,
+  and improved performance for its `~scipy.spatial.transform.Rotation.apply`
+  method.
 
 
 ``scipy.stats`` improvements
 ============================
-- Added `scipy.stats.quantile`, an array API compatible function for quantile
-  estimation.
-- Extended `scipy.stats.make_distribution` to:
-
-  - work with existing discrete distributions and
-  - facilitate the creation of custom distributions
-
-  in the new random variable infrastructure.
-
-- Added `scipy.stats.Binomial`.
-- Added ``equal_var`` keyword to:
-
-  - `scipy.stats.tukey_hsd` (enables the Games-Howell test) and
-  - `scipy.stats.f_oneway` (enables Welch ANOVA).
-
-- Improved moment calculation for `scipy.stats.gennorm`.
-- Added native vectorization to `scipy.stats.mode` for faster batch calculation.
-- Added ``axis``, ``nan_policy``, and ``keepdims`` to `scipy.stats.power_divergence`,
-  `scipy.stats.chisquare`, `scipy.stats.pointbiserialr`, `scipy.stats.kendalltau`,
-  `scipy.stats.weightedtau`, `scipy.stats.theilslopes`, `scipy.stats.siegelslopes`,
-  and `scipy.stats.boxcox_llf`.
-- Improved speed of `scipy.stats.special_ortho_group`.
-- Improved speed of `scipy.stats.pearsonr`.
+- A new function `scipy.stats.quantile`, an array API compatible function for
+  quantile estimation, was added.
+- `scipy.stats.make_distribution` was extended to work with existing discrete
+  distributions and to facilitate the creation of custom distributions in the
+  new random variable infrastructure.
+- A new distribution, `scipy.stats.Binomial`, was added.
+- An ``equal_var`` keyword was added to `scipy.stats.tukey_hsd` (enables the
+  Games-Howell test) and `scipy.stats.f_oneway` (enables Welch ANOVA).
+- The moment calculation for `scipy.stats.gennorm` was improved.
+- The `scipy.stats.mode` implementation was vectorized, for faster batch
+  calculation.
+- Support for ``axis``, ``nan_policy``, and ``keepdims`` keywords was added to
+  `~scipy.stats.power_divergence`, `~scipy.stats.chisquare`,
+  `~scipy.stats.pointbiserialr`, `~scipy.stats.kendalltau`,
+  `~scipy.stats.weightedtau`, `~scipy.stats.theilslopes`,
+  `~scipy.stats.siegelslopes`, and `~scipy.stats.boxcox_llf`.
+- The performance of `scipy.stats.special_ortho_group` and `scipy.stats.pearsonr`
+  was improved.
 
 
 **************************
@@ -199,15 +201,16 @@ Array API Standard Support
 **************************
 
 Experimental support for array libraries other than NumPy has been added to
-existing sub-packages in recent versions of SciPy. Please consider testing
-these features by setting an environment variable ``SCIPY_ARRAY_API=1`` and
-providing PyTorch, JAX, or CuPy arrays as array arguments. Many functions
-in `scipy.stats`, `scipy.special`, `scipy.optimize`, and `scipy.constants`
-now provide tables documenting compatible array and device types as well as
-support for lazy arrays and JIT compilation. New features with support and
-old features with support added for SciPy 1.16.0 include:
+multiple submodules in recent versions of SciPy. Please consider testing
+these features by setting the environment variable ``SCIPY_ARRAY_API=1`` and
+providing PyTorch, JAX, CuPy or Dask arrays as array arguments.
 
-- Most features of `scipy.signal`
+Many functions in `scipy.stats`, `scipy.special`, `scipy.optimize`, and
+`scipy.constants` now provide tables documenting compatible array and device
+types as well as support for lazy arrays and JIT compilation. New features with
+support and old features with support added for SciPy 1.16.0 include:
+
+- Most of the `scipy.signal` functionality
 - `scipy.ndimage.vectorized_filter`
 - `scipy.special.stdtrit`
 - `scipy.special.softmax`
@@ -221,8 +224,10 @@ for JAX and Dask) in SciPy 1.16.0 include:
 
 - many of the `scipy.cluster.hierarchy` functions
 - many functions in `scipy.special`
-- many of the trimmed `stats` functions
+- many of the trimmed statistics functions in `scipy.stats`
 
+SciPy now has a CI job that exercises GPU (CUDA) support, and as a result
+using PyTorch, CuPy or JAX arrays on GPU with SciPy is now more reliable.
 
 
 *******************
@@ -241,7 +246,7 @@ Expired Deprecations
 ********************
 - ``scipy.sparse.conjtransp`` has been removed. Use ``.T.conj()`` instead.
 - The ``quadrature='trapz'`` option has been removed from
-  `scipy.integrate.quad_vec` and ``scipy.stats.trapz`` has been removed. Use
+  `scipy.integrate.quad_vec`, and ``scipy.stats.trapz`` has been removed. Use
   ``trapezoid`` in both instances instead.
 - `scipy.special.comb` and `scipy.special.perm` now raise when ``exact=True``
   and arguments are non-integral.
@@ -256,17 +261,54 @@ Expired Deprecations
 Backwards incompatible changes
 ******************************
 - Several of the `scipy.linalg` functions for solving a linear system (e.g.
-  `scipy.linalg.solve`) documented that the RHS argument must be either 1-D or
+  `~scipy.linalg.solve`) documented that the RHS argument must be either 1-D or
   2-D but did not always raise an error when the RHS argument had more the
   two dimensions. Now, many-dimensional right hand sides are treated according
   to the rules specified in :ref:`linalg_batch`.
 - `scipy.stats.bootstrap` now explicitly broadcasts elements of ``data`` to the
   same shape (ignoring ``axis``) before performing the calculation.
 
+
+***********************************
+Build and packaging related changes
+***********************************
+- The minimum supported version of Clang was bumped from 12.0 to 15.0.
+- The lowest supported macOS version for wheels on PyPI is now 10.14 instead of
+  10.13.
+- The sdist contents were optimized, resulting in a size reduction of about 50%,
+  from 60 MB to 30 MB.
+- For ``Cython>=3.1.0``, SciPy now uses the new ``cython --generate-shared``
+  functionality, which reduces the total size of SciPy's wheels and on-disk
+  installations significantly.
+- SciPy no longer contains an internal shared library that requires RPATH support,
+  after ``sf_error_state`` was removed from `scipy.special`.
+- A new build option ``-Duse-system-libraries`` has been added. It allows
+  opting in to using system libraries instead of using vendored sources.
+  Currently ``Boost.Math`` and ``Qhull`` are supported as system build
+  dependencies.
+
+
 *************
 Other changes
 *************
-- The ``lm`` method of ``least_squares`` function now has a different behavior
+- The internal dependency of ``scipy._lib`` on ``scipy.sparse`` was removed,
+  which reduces the import time of a number of other SciPy submodules.
+- Support for free-threaded CPython was improved: the last known thread-safety
+  issues in `scipy.special` were fixed, and ``pytest-run-parallel`` is now used
+  in a CI job to guard against regressions.
+- Support for `spin <https://github.com/scientific-python/spin>`__ as a developer
+  CLI was added, including support for editable installs. The SciPy-specific
+  ``python dev.py`` CLI will be removed in the next release cycle in favor of
+  ``spin``.
+- The vendored Qhull library was upgraded from version 2019.1 to 2020.2.
+- A large amount of the C++ code in ``scipy.special`` was moved to the new
+  header-only `xsf <https://github.com/scipy/xsf>`__ library. That library was
+  included back in the SciPy source tree as a git submodule.
+- The ``namedtuple``-like bunch objects returned by some SciPy functions
+  now have improved compatibility with the ``polars`` library.
+- The output of the ``rvs`` method of `scipy.stats.wrapcauchy` is now mapped to
+  the unit circle between 0 and ``2 * pi``.
+- The ``lm`` method of `scipy.optimize.least_squares` now has a different behavior
   for the maximum number of function evaluations, ``max_nfev``. The default for
   the ``lm`` method is changed to ``100 * n``, for both a callable and a
   numerically estimated jacobian. This limit on function evaluations excludes
@@ -276,20 +318,6 @@ Other changes
   ``lm`` method the number of function calls used in Jacobian approximation
   is no longer included in ``OptimizeResult.nfev``. This brings the behavior
   of ``lm``, ``trf``, and ``dogbox`` into line.
-- For ``Cython>=3.1.0b1``, SciPy now uses the new
-  ``cython --generate-shared`` functionality, which reduces the total size of
-  SciPy's wheels and on-disk installations significantly.
-- The output of `scipy.stats.wrapcauchy` ``rvs`` is now mapped to the unit circle
-  between 0 and ``2 * pi``.
-- The vendored Qhull library was upgraded from version 2019.1 to 2020.2.
-- A new build option ``-Duse-system-libraries`` has been added. It allows
-  opting in to using system libraries instead of using vendored sources.
-  Currently ``Boost.Math`` and ``Qhull`` are supported as system build
-  dependencies.
-- The ``namedtuple``-like bunch objects returned by some SciPy functions
-  now have improved compatibility with the ``polars`` library.
-- The testsuite thread safety with free-threaded CPython has improved.
-
 
 
 *******
