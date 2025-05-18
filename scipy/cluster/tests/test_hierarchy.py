@@ -421,7 +421,7 @@ class TestIsIsomorphic:
         for _ in range(3):
             a = rng.integers(0, nclusters, size=nobs)
             p = rng.permutation(nclusters)
-            b = np.take(p, a)
+            b = p.take(a.astype(np.intp))
             if noniso:
                 q = rng.permutation(nobs)
                 b[q[0:nerrors]] += 1
