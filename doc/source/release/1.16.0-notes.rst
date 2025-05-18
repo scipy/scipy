@@ -42,7 +42,7 @@ Highlights of this release
   now support N-dimensional arrays to be processed as a batch.
 - Two new `scipy.signal` functions, `~scipy.signal.firwin_2d` and
   `~scipy.signal.closest_STFT_dual_window`, for creation of a 2-D FIR filter and
-  `~scipy.signal.ShortTimeFFT` dual window calculation, respectivly.
+  `~scipy.signal.ShortTimeFFT` dual window calculation, respectively.
 - A new class, `scipy.spatial.transform.RigidTransform`, provides functionality
   to convert between different representations of rigid transforms in 3-D
   space.
@@ -111,13 +111,13 @@ New features
   smaller ``tol`` can help it continue and find a better solution.
   For more information, see the `PRIMA documentation <https://www.libprima.net>`_.
 - Several of the `scipy.optimize.minimize` methods, and the
-  `scipy.linalg.least_squares` function, have been given a ``workers``
+  `scipy.optimize.least_squares` function, have been given a ``workers``
   keyword. This allows parallelization of some calculations via a map-like
   callable, such as ``multiprocessing.Pool``. These parallelization
   opportunities typically occur during numerical differentiation. This can
   greatly speed up minimization when the objective function is expensive to
   calculate.
-- The ``lm`` method of `scipy.linalg.least_squares` can now accept
+- The ``lm`` method of `scipy.optimize.least_squares` can now accept
   ``3-point`` and ``cs`` for the ``jac`` keyword.
 - The SLSQP Fortran 77 code was ported to C. When this method is used now the
   constraint multipliers are exposed to the user through the ``multiplier``
