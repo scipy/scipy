@@ -779,10 +779,16 @@ class TestNoncentralChiSquaredFunctions:
          (400, 50, 200, 0.9999948255072892, 1e-13, 1e-11)]
     )
     def test_tails(self, x, df, nc, expected_cdf, rtol_cdf, rtol_inv):
-        assert_allclose(sp.chndtr(x, df, nc), expected_cdf, rtol=rtol_cdf)
+        chndtr_result = sp.chndtr(x, df, nc)
+        assert_allclose(chndtr_result, expected_cdf, rtol=rtol_cdf)
         assert_allclose(sp.chndtrix(expected_cdf, df, nc), x, rtol=rtol_inv)
         assert_allclose(sp.chndtridf(x, expected_cdf, nc), df, rtol=rtol_inv)
         assert_allclose(sp.chndtrinc(x, df, expected_cdf), nc, rtol=rtol_inv)
+
+        # test round-trip calculation
+        assert_allclose(sp.chndtrix(chndtr_result, df, nc), x, rtol=rtol_inv)
+        assert_allclose(sp.chndtridf(x, chndtr_result, nc), df, rtol=1e-7)
+        assert_allclose(sp.chndtrinc(x, df, chndtr_result), nc, rtol=1e-5)
 
     @pytest.mark.parametrize("x, df",
         [(1, 3), (1, 0), (1, np.inf), (np.inf, 1)]
