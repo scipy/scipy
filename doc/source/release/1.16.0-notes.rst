@@ -334,6 +334,8 @@ Authors
 * Nickolai Belakovski (5)
 * Peter Bell (1)
 * Benoît W. (1) +
+* Evandro Bernardes (1)
+* Gauthier Berthomieu (1) +
 * Maxwell Bileschi (1) +
 * Sam Birch (1) +
 * Florian Bourgey (3) +
@@ -344,21 +346,19 @@ Authors
 * Dietrich Brunn (52)
 * Evgeni Burovski (252)
 * Christine P. Chai (12) +
+* Gayatri Chakkithara (1) +
 * Saransh Chopra (2) +
 * Omer Cohen (1) +
 * Lucas Colley (91)
-* crusaderky (56) +
 * Yahya Darman (3) +
-* dartvader316 (2) +
 * Benjamin Eisele (1) +
 * Donnie Erb (1)
-* Evandro (1)
-* Sagi Ezri (57) +
+* Sagi Ezri (58) +
 * Alexander Fabisch (2) +
 * Matthew H Flamm (1)
-* Gautzilla (1) +
+* Karthik Viswanath Ganti (1) +
 * Neil Girdhar (1)
-* Ralf Gommers (149)
+* Ralf Gommers (153)
 * Rohit Goswami (4)
 * Saarthak Gupta (4) +
 * Matt Haberland (320)
@@ -367,14 +367,17 @@ Authors
 * Chengyu Han (1) +
 * Charles Harris (1)
 * Kim Hsieh (4) +
+* Yongcai Huang (2) +
 * Lukas Huber (1) +
-* Guido Imperiale (47) +
-* Jigyasu (1) +
-* karthik-ganti-2025 (1) +
+* Yuji Ikeda (2) +
+* Guido Imperiale (103) +
 * Robert Kern (2)
 * Harin Khakhi (2) +
 * Agriya Khetarpal (4)
+* Kirill R. (2) +
 * Tetsuo Koyama (1)
+* Jigyasu Krishnan (1) +
+* Pratham Kumar (3) +
 * David Kun (1) +
 * Eric Larson (3)
 * lciti (1)
@@ -387,7 +390,6 @@ Authors
 * Nikolay Mayorov (2)
 * Melissa Weber Mendonça (10)
 * Miguel Cárdenas (2) +
-* MikhailRyazanov (6) +
 * Swastik Mishra (1) +
 * Sturla Molden (2)
 * Andreas Nazlidis (1) +
@@ -395,14 +397,13 @@ Authors
 * Parth Nobel (1) +
 * Nick ODell (9)
 * Giacomo Petrillo (1)
+* Victor PM (10) +
 * pmav99 (1) +
-* Ilhan Polat (72)
-* pratham-mcw (3) +
-* Tyler Reddy (73)
-* redpinecube (1) +
+* Ilhan Polat (73)
+* Tyler Reddy (66)
 * Érico Nogueira Rolim (1) +
 * Pamphile Roy (10)
-* sagi-ezri (1) +
+* Mikhail Ryazanov (6)
 * Atsushi Sakai (9)
 * Marco Salathe (1) +
 * sanvi (1) +
@@ -415,7 +416,7 @@ Authors
 * Scott Shambaugh (4)
 * ShannonS00 (1) +
 * sildater (3) +
-* PARAM SINGH (1) +
+* Param Singh (1) +
 * G Sreeja (7) +
 * Albert Steppi (133)
 * Kai Striega (3)
@@ -426,31 +427,27 @@ Authors
 * Jamie Townsend (2) +
 * Edgar Andrés Margffoy Tuay (4)
 * Matthias Urlichs (1) +
+* Mark van Rossum (1) +
 * Jacob Vanderplas (2)
 * David Varela (2) +
 * Christian Veenhuis (3)
 * vfdev (1)
-* vpecanins (10) +
-* vrossum (1) +
 * Stefan van der Walt (2)
 * Warren Weckesser (5)
 * Jason N. White (1) +
 * windows-server-2003 (5)
 * Zhiqing Xiao (1)
 * Pavadol Yamsiri (1)
-* YongcaiHuang (2) +
 * Rory Yorke (3)
-* yuzie007 (2) +
 * Irwin Zaid (4)
-* zaikunzhang (1) +
 * Austin Zhang (1) +
 * William Zijie Zhang (1) +
-* Eric Zitong Zhou (5) +
-* zitongzhoueric (6) +
+* Zaikun Zhang (1) +
+* Eric Zitong Zhou (11) +
 * Case Zumbrum (2) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (45)
 
-    A total of 124 people contributed to this release.
+    A total of 121 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
