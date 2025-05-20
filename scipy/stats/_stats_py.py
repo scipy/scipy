@@ -82,7 +82,6 @@ from scipy._lib._array_api import (
     xp_promote,
     xp_capabilities,
     xp_ravel,
-    xp_device,
     xp_swapaxes,
     xp_default_dtype,
 )
@@ -496,9 +495,6 @@ def _mode_result(mode, count):
     return ModeResult(mode, count)
 
 
-@xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
-                                ('cupy', "data-apis/array-api-compat#312"),
-                                ('torch', "data-apis/array-api-compat#292")])
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
@@ -563,54 +559,40 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     ModeResult(mode=3, count=5)
 
     """
-    xp = array_namespace(a)
-
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
-    if not xp.isdtype(a.dtype, 'numeric'):
+    if not np.issubdtype(a.dtype, np.number):
         message = ("Argument `a` is not recognized as numeric. "
                    "Support for input that cannot be coerced to a numeric "
                    "array was deprecated in SciPy 1.9.0 and removed in SciPy "
                    "1.11.0. Please consider `np.unique`.")
         raise TypeError(message)
 
-    if xp_size(a) == 0:
-        NaN = _get_nan(a, xp=xp)
-        return ModeResult(*xp.asarray([NaN, 0], dtype=NaN.dtype))
+    if a.size == 0:
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
     if a.ndim == 1:
-        vals, cnts = xp.unique_counts(a)
-        # in contrast with np.unique, `unique_counts` treats all NaNs as distinct,
-        # but we have always grouped them. Replace `cnts` corresponding with NaNs
-        # with the number of NaNs.
-        mask = xp.isnan(vals)
-        cnts = xpx.at(cnts)[mask].set(xp.count_nonzero(mask))
-        modes, counts = vals[xp.argmax(cnts)], xp.max(cnts)
-        default_int = xp.asarray(1).dtype  # fail slow CI job failed - incorrect dtype
-        counts = xp.astype(counts, default_int, copy=False)
-        modes = modes[()] if modes.ndim == 0 else modes
-        counts = counts[()] if counts.ndim == 0 else counts
-        return ModeResult(modes, counts)
+        vals, cnts = np.unique(a, return_counts=True)
+        modes, counts = vals[cnts.argmax()], cnts.max()
+        return ModeResult(modes[()], counts[()])
 
     # `axis` is always -1 after the `_axis_nan_policy` decorator
-    y = xp.sort(a, axis=-1)
+    y = np.sort(a, axis=-1)
     # Get boolean array of elements that are different from the previous element
-    i = xp.concat([xp.ones(y.shape[:-1] + (1,), dtype=xp.bool),
-                  (y[..., :-1] != y[..., 1:]) & ~xp.isnan(y[..., :-1])], axis=-1)
+    i = np.concatenate([np.ones(y.shape[:-1] + (1,), dtype=bool),
+                        (y[..., :-1] != y[..., 1:]) & ~np.isnan(y[..., :-1])], axis=-1)
     # Get linear integer indices of these elements in a raveled array
-    indices = xp.arange(xp_size(y), device=xp_device(y))[xp_ravel(i)]
+    indices = np.arange(y.size)[i.ravel()]
     # The difference between integer indices is the number of repeats
-    append = xp.full(indices.shape[:-1] + (1,), xp_size(y), dtype=indices.dtype)
-    counts = xp.diff(indices, append=append)
+    counts = np.diff(indices, append=y.size)
     # Now we form an array of `counts` corresponding with each element of `y`...
-    counts = xp.reshape(xp.repeat(counts, counts), y.shape)
+    counts = np.reshape(np.repeat(counts, counts), y.shape)
     # ... so we can get the argmax of *each slice* separately.
-    k = xp.argmax(counts, axis=-1, keepdims=True)
+    k = np.argmax(counts, axis=-1, keepdims=True)
     # Extract the corresponding element/count, and eliminate the reduced dimension
-    modes = xp.take_along_axis(y, k, axis=-1)[..., 0]
-    counts = xp.take_along_axis(counts, k, axis=-1)[..., 0]
-    modes = modes[()] if modes.ndim == 0 else modes
-    counts = counts[()] if counts.ndim == 0 else counts
-    return ModeResult(modes, counts)
+    modes = np.take_along_axis(y, k, axis=-1)[..., 0]
+    counts = np.take_along_axis(counts, k, axis=-1)[..., 0]
+    return ModeResult(modes[()], counts[()])
 
 
 def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):

@@ -2,7 +2,6 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-import contextlib
 import math
 import re
 import sys
