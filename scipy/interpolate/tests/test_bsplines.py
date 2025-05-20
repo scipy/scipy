@@ -40,6 +40,7 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
 
 
+@skip_xp_backends(cpu_only=True)
 class TestBSpline:
 
     def test_ctor(self, xp):
@@ -715,6 +716,7 @@ class TestBSpline:
         xp_assert_close(b(xx), expected)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestInsert:
 
     @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
@@ -1219,6 +1221,7 @@ class TestInterop:
         assert isinstance(tck_n2, tuple)   # back-compat: tck in, tck out
 
 
+@skip_xp_backends(cpu_only=True)
 class TestInterp:
     #
     # Test basic ways of constructing interpolating splines.
