@@ -34,6 +34,9 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 #  f2py-generated version
 from . import _dfitpack as dfitpack
 
+from scipy._lib._array_api import array_namespace
+from scipy._lib import array_api_extra as xpx
+
 
 dfitpack_int = dfitpack.types.intvar.dtype
 
@@ -745,12 +748,22 @@ def insert(x, tck, m=1, per=0):
         return (tt, cc, k)
 
 
-def splder(tck, n=1):
+# np.r_ replacement
+def npr(xp, *arys):
+    arys = [xp.asarray(a) for a in arys]
+    arys = [xpx.atleast_nd(a, ndim=1, xp=xp) for a in arys]
+    return xp.concat(arys)
+
+
+def splder(tck, n=1, xp=None):
     # see the docstring of `_fitpack_py/splder`
     if n < 0:
         return splantider(tck, -n)
 
     t, c, k = tck
+
+    if xp is None:
+        xp = array_namespace(t, c)
 
     if n > k:
         raise ValueError(f"Order of derivative (n = {n!r}) must be <= "
@@ -769,10 +782,10 @@ def splder(tck, n=1):
                 dt = t[k+1:-1] - t[1:-k-1]
                 dt = dt[sh]
                 # Compute the new coefficients
-                c = (c[1:-1-k] - c[:-2-k]) * k / dt
+                c = (c[1:-1-k, ...] - c[:-2-k, ...]) * k / dt
                 # Pad coefficient array to same size as knots (FITPACK
                 # convention)
-                c = np.r_[c, np.zeros((k,) + c.shape[1:])]
+                c = npr(xp, c, xp.zeros((k,) + c.shape[1:]))
                 # Adjust knots
                 t = t[1:-1]
                 k -= 1
@@ -783,12 +796,15 @@ def splder(tck, n=1):
     return t, c, k
 
 
-def splantider(tck, n=1):
+def splantider(tck, n=1, *, xp=None):
     # see the docstring of `_fitpack_py/splantider`
     if n < 0:
         return splder(tck, -n)
 
     t, c, k = tck
+
+    if xp is None:
+        xp = array_namespace(t, c)
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + (None,)*len(c.shape[1:])
@@ -800,12 +816,15 @@ def splantider(tck, n=1):
         dt = t[k+1:] - t[:-k-1]
         dt = dt[sh]
         # Compute the new coefficients
-        c = np.cumsum(c[:-k-1] * dt, axis=0) / (k + 1)
-        c = np.r_[np.zeros((1,) + c.shape[1:]),
-                  c,
-                  [c[-1]] * (k+2)]
+        c = xp.cumulative_sum(c[:-k-1, ...] * dt, axis=0) / (k + 1)
+        c = npr(
+            xp,
+            xp.zeros((1,) + c.shape[1:]),
+            c,
+            xp.stack([c[-1, ...]] * (k+2)),
+        )
         # New knots
-        t = np.r_[t[0], t, t[-1]]
+        t = npr(xp, t[0], t, t[-1])
         k += 1
 
     return t, c, k
