@@ -64,6 +64,7 @@ enum ARPACK_ido {
     ido_BX         = 2,  // B*x needed
     ido_USER_SHIFT = 3,  // User shifts are needed
     ido_RANDOM     = 4,  // A random vector is needed to be written in resid
+    ido_RANDOM_OPX = 5,  // Force random vector to be in the range of OP
     ido_DONE       = 99  // Done
 };
 
