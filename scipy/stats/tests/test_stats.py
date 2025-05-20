@@ -40,12 +40,13 @@ from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _m
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
-from scipy._lib._array_api import (array_namespace, is_lazy_array, is_numpy,
-                                   is_torch, xp_default_dtype, xp_size, SCIPY_ARRAY_API,
-                                   make_skip_xp_backends, xp_ravel)
+from scipy._lib._array_api import (array_namespace, eager_warns, is_lazy_array,
+                                   is_numpy, is_torch, xp_default_dtype, xp_size,
+                                   SCIPY_ARRAY_API, make_xp_test_case, xp_ravel)
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 import scipy._lib.array_api_extra as xpx
 
+lazy_xp_modules = [stats]
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -87,7 +88,7 @@ class TestTrimmedStats:
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
-    @make_skip_xp_backends(stats.tmean)
+    @make_xp_test_case(stats.tmean)
     def test_tmean(self, xp):
         default_dtype = xp_default_dtype(xp)
         x = xp.asarray(X, dtype=default_dtype)
@@ -134,7 +135,7 @@ class TestTrimmedStats:
         y_true = [4.5, 10, 17, 21, xp.nan, xp.nan, xp.nan, xp.nan, xp.nan]
         xp_assert_close(y, xp.asarray(y_true))
 
-    @make_skip_xp_backends(stats.tvar)
+    @make_xp_test_case(stats.tvar)
     @pytest.mark.filterwarnings(
         "ignore:invalid value encountered in divide:RuntimeWarning:dask"
     )
@@ -166,7 +167,7 @@ class TestTrimmedStats:
         xp_assert_close(y[0], xp.asarray(4.666666666666667))
         xp_assert_equal(y[1], xp.asarray(xp.nan))
 
-    @make_skip_xp_backends(stats.tstd)
+    @make_xp_test_case(stats.tstd)
     def test_tstd(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
 
@@ -176,7 +177,7 @@ class TestTrimmedStats:
         y = stats.tstd(x, limits=None)
         xp_assert_close(y, xp.std(x, correction=1))
 
-    @make_skip_xp_backends(stats.tmin)
+    @make_xp_test_case(stats.tmin)
     def test_tmin(self, xp):
         x = xp.arange(10.)
         xp_assert_equal(stats.tmin(x), xp.asarray(0.))
@@ -215,7 +216,7 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foobar')
 
-    @make_skip_xp_backends(stats.tmax)
+    @make_xp_test_case(stats.tmax)
     def test_tmax(self, xp):
         x = xp.arange(10.)
         xp_assert_equal(stats.tmax(x), xp.asarray(9.))
@@ -256,7 +257,7 @@ class TestTrimmedStats:
             with assert_raises(ValueError, match=msg):
                 stats.tmax(x, nan_policy='foobar')
 
-    @make_skip_xp_backends(stats.tmin, stats.tmax)
+    @make_xp_test_case(stats.tmin, stats.tmax)
     def test_tmin_tmax_int_dtype(self, xp):
         x = xp.reshape(xp.arange(10, dtype=xp.int16), (2, 5)).T
 
@@ -272,14 +273,14 @@ class TestTrimmedStats:
         xp_assert_equal(stats.tmax(x, upperlimit=3), xp.asarray([3., xp.nan]))
 
     @skip_xp_backends(eager_only=True, reason="Only with data-dependent output dtype")
-    @make_skip_xp_backends(stats.tmin, stats.tmax)
+    @make_xp_test_case(stats.tmin, stats.tmax)
     def test_gh_22626(self, xp):
         # Test that `tmin`/`tmax` returns exact result with outrageously large integers
         x = xp.arange(2**62, 2**62+10)
         xp_assert_equal(stats.tmin(x[None, :]), x)
         xp_assert_equal(stats.tmax(x[None, :]), x)
 
-    @make_skip_xp_backends(stats.tsem)
+    @make_xp_test_case(stats.tsem)
     def test_tsem(self, xp):
         x = xp.asarray(X.tolist())  # use default dtype of xp
 
@@ -404,7 +405,7 @@ class TestPearsonrWilkinson:
         assert_approx_equal(r,1.0)
 
 
-@make_skip_xp_backends(stats.pearsonr)
+@make_xp_test_case(stats.pearsonr)
 class TestPearsonr:
     def test_pearsonr_result_attributes(self):
         res = stats.pearsonr(X, X)
@@ -651,6 +652,7 @@ class TestPearsonr:
             assert_equal(res2.statistic, res.statistic)
             assert_equal(res2.pvalue, res.pvalue)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(2462935790378923)
@@ -2591,7 +2593,7 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
-@make_skip_xp_backends(stats.mode)
+@make_xp_test_case(stats.mode)
 class TestMode:
 
     def test_empty(self, xp):
@@ -2863,7 +2865,7 @@ class TestMode:
             stats.mode(np.arange(3, dtype=object))
 
 
-@make_skip_xp_backends(stats.sem)
+@make_xp_test_case(stats.sem)
 class TestSEM:
 
     testcase = [1., 2., 3., 4.]
@@ -2910,7 +2912,7 @@ class TestSEM:
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
 
 
-@make_skip_xp_backends(stats.zmap)
+@make_xp_test_case(stats.zmap)
 class TestZmap:
 
     @pytest.mark.parametrize(
@@ -3009,11 +3011,7 @@ class TestZmap:
         scores = xp.arange(3)
         compare = xp.ones(3)
         ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(scores)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
-
-        with warn_ctx:
+        with eager_warns(scores, RuntimeWarning, match="Precision loss occurred..."):
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
@@ -3024,7 +3022,7 @@ class TestZmap:
         xp_assert_close(res, ref)
 
 
-@make_skip_xp_backends(stats.zscore)
+@make_xp_test_case(stats.zscore)
 class TestZscore:
     def test_zscore(self, xp):
         # not in R, so tested by using:
@@ -3101,11 +3099,7 @@ class TestZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(x)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
-
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
@@ -3113,16 +3107,12 @@ class TestZscore:
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(x)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
-
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -3131,7 +3121,7 @@ class TestZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with warn_ctx:
+        with eager_warns(y, RuntimeWarning, match="Precision loss occurred..."):
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full_like(y, xp.nan))
 
@@ -3142,17 +3132,14 @@ class TestZscore:
                         [10.0, 12.0, xp.nan, 10.0]])
         s = (3/2)**0.5
         s2 = 2**0.5
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(x)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -3205,7 +3192,7 @@ class TestZscore:
         assert_equal(res[1:], np.nan)
 
 
-@make_skip_xp_backends(stats.gzscore)
+@make_xp_test_case(stats.gzscore)
 class TestGZscore:
     def test_gzscore_normal_array(self, xp):
         x = np.asarray([1, 2, 3, 4])
@@ -3534,7 +3521,7 @@ class TestIQR:
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
 
 
-@make_skip_xp_backends(stats.moment)
+@make_xp_test_case(stats.moment)
 class TestMoments:
     """
         Comparison numbers are found using R v.1.5.1
@@ -3705,7 +3692,7 @@ class SkewKurtosisTest:
         xp_assert_equal(res, xp.asarray(xp.nan))
 
 
-@make_skip_xp_backends(stats.skew)
+@make_xp_test_case(stats.skew)
 class TestSkew(SkewKurtosisTest):
     def stat_fun(self, x):
         return stats.skew(x)
@@ -3752,26 +3739,18 @@ class TestSkew(SkewKurtosisTest):
 
     def test_skew_constant_value(self, xp):
         # Skewness of a constant input should be NaN (gh-16061)
-        a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(a)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
+        a = xp.repeat(xp.asarray([-0.27829495]), 10)
 
-        with warn_ctx:
+        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
-        with warn_ctx:
             xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
-        with warn_ctx:
             xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
-        with warn_ctx:
             xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
 
-        # # similarly, from gh-11086:
-        a = xp.asarray([14.3]*7)
-        with warn_ctx:
+            # # similarly, from gh-11086:
+            a = xp.asarray([14.3]*7)
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
-        a = 1. + xp.arange(-3., 4)*1e-16
-        with warn_ctx:
+            a = 1. + xp.arange(-3., 4)*1e-16
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
     @skip_xp_backends(eager_only=True)
@@ -3812,7 +3791,7 @@ class TestSkew(SkewKurtosisTest):
         xp_assert_close(res, ref)
 
 
-@make_skip_xp_backends(stats.kurtosis)
+@make_xp_test_case(stats.kurtosis)
 class TestKurtosis(SkewKurtosisTest):
     def stat_fun(self, x):
         return stats.kurtosis(x)
@@ -3873,17 +3852,10 @@ class TestKurtosis(SkewKurtosisTest):
     def test_kurtosis_constant_value(self, xp):
         # Kurtosis of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(a)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
-
-        with warn_ctx:
+        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
             assert xp.isnan(stats.kurtosis(a, fisher=False))
-        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
-        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
-        with warn_ctx:
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
@@ -3950,7 +3922,7 @@ def ttest_data_axis_strategy(draw):
     return data, axis
 
 
-@make_skip_xp_backends(stats.ttest_1samp)
+@make_xp_test_case(stats.ttest_1samp)
 class TestStudentTest:
     # Preserving original test cases.
     # Recomputed statistics and p-values with R t.test, e.g.
@@ -4278,7 +4250,7 @@ power_div_empty_cases = [
 ]
 
 
-@make_skip_xp_backends(stats.power_divergence)
+@make_xp_test_case(stats.power_divergence)
 class TestPowerDivergence:
 
     def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
@@ -4475,7 +4447,7 @@ class TestPowerDivergence:
             xp_assert_close(stat, expected_stat, rtol=5e-3)
 
 
-@make_skip_xp_backends(stats.chisquare)
+@make_xp_test_case(stats.chisquare)
 class TestChisquare:
     def test_chisquare_12282a(self, xp):
         # Currently `chisquare` is implemented via power_divergence
@@ -5237,13 +5209,13 @@ def _desc_stats(x1, x2, axis=0, *, xp=None):
     return _stats(x1, axis) + _stats(x2, axis)
 
 
-@make_skip_xp_backends(stats.ttest_ind, stats.ttest_ind_from_stats)
+@make_xp_test_case(stats.ttest_ind, stats.ttest_ind_from_stats)
 def test_ttest_ind(xp):
     # regression test
     tr = xp.asarray(1.0912746897927283)
     pr = xp.asarray(0.27647818616351882)
-    tr_2D = xp.asarray([tr, -tr])
-    pr_2D = xp.asarray([pr, pr])
+    tr_2D = xp.stack([tr, -tr])
+    pr_2D = xp.stack([pr, pr])
 
     rvs1 = xp.linspace(5, 105, 100)
     rvs2 = xp.linspace(1, 100, 100)
@@ -5949,7 +5921,7 @@ class Test_ttest_trim:
             stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 
-@make_skip_xp_backends(stats.ttest_ind)
+@make_xp_test_case(stats.ttest_ind)
 class Test_ttest_CI:
     # indices in order [alternative={two-sided, less, greater},
     #                   equal_var={False, True}, trim={0, 0.2}]
@@ -6045,9 +6017,9 @@ def test__broadcast_concatenate():
             assert b[i, j, k, l - a.shape[-3], m, n] == c[i, j, k, l, m, n]
 
 
-@make_skip_xp_backends(stats.ttest_ind)
+@make_xp_test_case(stats.ttest_ind)
 class TestTTestInd:
-    @make_skip_xp_backends(stats.ttest_ind_from_stats)
+    @make_xp_test_case(stats.ttest_ind_from_stats)
     def test_ttest_ind_with_uneq_var(self, xp):
         # check vs. R `t.test`, e.g.
         # options(digits=20)
@@ -6085,8 +6057,8 @@ class TestTTestInd:
         tr_uneq_n = xp.asarray(0.66745638708050492)
         pr = xp.asarray(0.27647831993021388)
         pr_uneq_n = xp.asarray(0.50873585065616544)
-        tr_2D = xp.asarray([tr, -tr])
-        pr_2D = xp.asarray([pr, pr])
+        tr_2D = xp.stack([tr, -tr])
+        pr_2D = xp.stack([pr, pr])
 
         rvs3 = xp.linspace(1, 100, 25)
         rvs2 = xp.linspace(1, 100, 100)
@@ -6138,11 +6110,8 @@ class TestTTestInd:
         # test zero division problem
         x = xp.zeros(3)
         y = xp.ones(3)
-        warn_ctx = (
-            contextlib.nullcontext() if is_lazy_array(x)
-            else pytest.warns(RuntimeWarning, match="Precision loss occurred..."))
 
-        with warn_ctx:
+        with eager_warns(x, RuntimeWarning, match="Precision loss occurred"):
             t, p = stats.ttest_ind(x, y, equal_var=False)
 
         xp_assert_equal(t, xp.asarray(-xp.inf))
@@ -6180,7 +6149,8 @@ class TestTTestInd:
         assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901),
                         atol=1e-15)
 
-    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
+
+    # @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_ttest_ind_empty_1d_returns_nan(self, xp):
         # Two empty inputs should return a TtestResult containing nan
         # for both values.
@@ -6191,7 +6161,7 @@ class TestTTestInd:
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
+    # @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     @pytest.mark.parametrize('b, expected_shape',
                             [(np.empty((1, 5, 0)), (3, 5)),
                             (np.empty((1, 0, 0)), (3, 0))])
@@ -6200,7 +6170,7 @@ class TestTTestInd:
         # The results should be arrays containing nan with shape
         # given by the broadcast nonaxis dimensions.
         a = xp.empty((3, 1, 0))
-        b = xp.asarray(b, dtype=xp_default_dtype(xp))
+        b = xp.asarray(b, dtype=a.dtype)
         with np.testing.suppress_warnings() as sup:
             # first case should warn, second shouldn't?
             sup.filter(SmallSampleWarning, too_small_nd_not_omit)
@@ -6238,7 +6208,7 @@ class TestTTestInd:
         assert res.pvalue.shape == (5, 0)
 
 
-@make_skip_xp_backends(stats.ttest_ind_from_stats)
+@make_xp_test_case(stats.ttest_ind_from_stats)
 class TestTTestIndFromStats:
     @pytest.mark.skip_xp_backends(np_only=True,
                                 reason="Other backends don't like integers")
@@ -6302,7 +6272,7 @@ def _convert_pvalue_alternative(t, p, alt, xp):
 @pytest.mark.slow
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@make_skip_xp_backends(stats.ttest_1samp)
+@make_xp_test_case(stats.ttest_1samp)
 def test_ttest_1samp_new(xp):
     n1, n2, n3 = (10, 15, 20)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
@@ -6386,7 +6356,7 @@ def test_ttest_1samp_new_omit(xp):
     xp_assert_close(t, tr)
 
 
-@make_skip_xp_backends(stats.ttest_1samp)
+@make_xp_test_case(stats.ttest_1samp)
 @pytest.mark.skip_xp_backends('jax.numpy', reason='Generic stdtrit mutates array.')
 @skip_xp_backends('dask.array', reason="Arrays chunk sizes are unknown: (nan,)")
 def test_ttest_1samp_popmean_array(xp):
@@ -6418,7 +6388,7 @@ def test_ttest_1samp_popmean_array(xp):
     xp_assert_close(res.pvalue, ref)
 
 
-@make_skip_xp_backends(stats.describe)
+@make_xp_test_case(stats.describe)
 class TestDescribe:
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
     def test_describe_scalar(self, xp):
@@ -6605,7 +6575,7 @@ class NormalityTests:
             xp_assert_equal(res.pvalue, NaN)
 
 
-@make_skip_xp_backends(stats.skewtest)
+@make_xp_test_case(stats.skewtest)
 class TestSkewTest(NormalityTests):
     test_name = 'skewtest'
     case_ref = (1.98078826090875881, 0.04761502382843208)  # statistic, pvalue
@@ -6631,7 +6601,7 @@ class TestSkewTest(NormalityTests):
             xp_assert_equal(res.pvalue, NaN)
 
 
-@make_skip_xp_backends(stats.kurtosistest)
+@make_xp_test_case(stats.kurtosistest)
 class TestKurtosisTest(NormalityTests):
     test_name = 'kurtosistest'
     case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
@@ -6663,7 +6633,7 @@ class TestKurtosisTest(NormalityTests):
             xp_assert_equal(res.pvalue, NaN)
 
 
-@make_skip_xp_backends(stats.normaltest)
+@make_xp_test_case(stats.normaltest)
 class TestNormalTest(NormalityTests):
     test_name = 'normaltest'
     case_ref = (3.92371918158185551, 0.14059672529747502)  # statistic, pvalue
@@ -6703,7 +6673,7 @@ class TestRankSums:
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
-@make_skip_xp_backends(stats.jarque_bera)
+@make_xp_test_case(stats.jarque_bera)
 class TestJarqueBera:
     def test_jarque_bera_against_R(self, xp):
         # library(tseries)
@@ -6753,8 +6723,8 @@ class TestJarqueBera:
         res = stats.jarque_bera(x, axis=1)
         s0, p0 = stats.jarque_bera(x[0, :])
         s1, p1 = stats.jarque_bera(x[1, :])
-        xp_assert_close(res.statistic, xp.asarray([s0, s1]))
-        xp_assert_close(res.pvalue, xp.asarray([p0, p1]))
+        xp_assert_close(res.statistic, xp.stack([s0, s1]))
+        xp_assert_close(res.pvalue, xp.stack([p0, p1]))
 
         resT = stats.jarque_bera(x.T, axis=0)
         xp_assert_close(res.statistic, resT.statistic)
@@ -6975,7 +6945,7 @@ def check_equal_pmean(*args, **kwargs):
     return check_equal_xmean(*args, mean_fun=stats.pmean, **kwargs)
 
 
-@make_skip_xp_backends(stats.hmean)
+@make_xp_test_case(stats.hmean)
 class TestHMean:
     @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_0(self, xp):
@@ -7092,7 +7062,7 @@ class TestHMean:
                           dtype=np.float64, xp=xp)
 
 
-@make_skip_xp_backends(stats.gmean)
+@make_xp_test_case(stats.gmean)
 class TestGMean:
     @pytest.mark.filterwarnings(
         "ignore:divide by zero encountered in log:RuntimeWarning:dask"
@@ -7206,7 +7176,7 @@ class TestGMean:
                           dtype=np.float64, xp=xp)
 
 
-@make_skip_xp_backends(stats.pmean)
+@make_xp_test_case(stats.pmean)
 class TestPMean:
 
     def pmean_reference(a, p):
@@ -7326,7 +7296,7 @@ class TestPMean:
         check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5, xp=xp)
 
 
-@make_skip_xp_backends(stats.gstd)
+@make_xp_test_case(stats.gstd)
 class TestGSTD:
     # must add 1 as `gstd` is only defined for positive values
     array_1d = (np.arange(2 * 3 * 4) + 1).tolist()
@@ -8300,7 +8270,7 @@ class TestCombinePvalues:
             pvaluess = xp.sort(xp.asarray(rng.uniform(0, 1, size=(m, n))), axis=0)
 
         combined_pvalues = xp.asarray([
-            stats.combine_pvalues(pvaluess[i, :], method=method)[1]
+            float(stats.combine_pvalues(pvaluess[i, :], method=method)[1])
             for i in range(pvaluess.shape[0])
         ])
         assert xp.all(combined_pvalues[1:] - combined_pvalues[:-1] >= 0)

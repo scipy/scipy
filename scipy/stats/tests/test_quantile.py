@@ -86,8 +86,8 @@ class TestQuantile:
           'hazen', 'interpolated_inverted_cdf', 'linear',
           'median_unbiased', 'normal_unbiased', 'weibull'])
     @pytest.mark.parametrize('shape_x, shape_p, axis',
-         [(10, None, -1), (10, 3, -1), (10, (2, 3), -1),
-          ((10, 2), None, 0), ((10, 2), None, 0)])
+         [(10, None, -1), (10, 10, -1), (10, (2, 3), -1),
+          ((10, 2), None, 0), ((10, 2), None, 0),])
     def test_against_numpy(self, method, shape_x, shape_p, axis, xp):
         dtype = xp_default_dtype(xp)
         rng = np.random.default_rng(23458924568734956)
