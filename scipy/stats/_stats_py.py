@@ -43,7 +43,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               normalize_axis_index, np_vecdot, AxisError)
-from scipy._lib.deprecation import _deprecate_positional_args, _deprecated
+from scipy._lib.deprecation import _deprecate_positional_args
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -90,7 +90,7 @@ import scipy._lib.array_api_extra as xpx
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
-__all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
+__all__ = ['gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera',
@@ -10073,51 +10073,6 @@ def _validate_distribution(values, weights):
 #####################################
 #         SUPPORT FUNCTIONS         #
 #####################################
-
-RepeatedResults = namedtuple('RepeatedResults', ('values', 'counts'))
-
-
-@_deprecated("`scipy.stats.find_repeats` is deprecated as of SciPy 1.15.0 "
-             "and will be removed in SciPy 1.17.0. Please use "
-             "`numpy.unique`/`numpy.unique_counts` instead.")
-def find_repeats(arr):
-    """Find repeats and repeat counts.
-
-    .. deprecated:: 1.15.0
-
-        This function is deprecated as of SciPy 1.15.0 and will be removed
-        in SciPy 1.17.0. Please use `numpy.unique` / `numpy.unique_counts` instead.
-
-    Parameters
-    ----------
-    arr : array_like
-        Input array. This is cast to float64.
-
-    Returns
-    -------
-    values : ndarray
-        The unique values from the (flattened) input that are repeated.
-
-    counts : ndarray
-        Number of times the corresponding 'value' is repeated.
-
-    Notes
-    -----
-    In numpy >= 1.9 `numpy.unique` provides similar functionality. The main
-    difference is that `find_repeats` only returns repeated values.
-
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> stats.find_repeats([2, 1, 2, 3, 2, 2, 5])
-    RepeatedResults(values=array([2.]), counts=array([4]))
-
-    >>> stats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
-    RepeatedResults(values=array([4.,  5.]), counts=array([2, 2]))
-
-    """
-    # Note: always copies.
-    return RepeatedResults(*_find_repeats(np.array(arr, dtype=np.float64)))
 
 
 def _sum_of_squares(a, axis=0):
