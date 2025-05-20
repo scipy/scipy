@@ -496,7 +496,7 @@ def _mode_result(mode, count):
     return ModeResult(mode, count)
 
 
-@xp_capabilities(skip_backends=[('dask', "can't compute chunk size"),
+@xp_capabilities(skip_backends=[('dask.array', "can't compute chunk size"),
                                 ('cupy', "data-apis/array-api-compat#312"),
                                 ('torch', "data-apis/array-api-compat#292")])
 @_axis_nan_policy_factory(_mode_result, override={'nan_propagation': False})

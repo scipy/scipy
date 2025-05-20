@@ -8207,7 +8207,7 @@ class TestKruskal:
             stats.kruskal()
 
 
-@make_skip_xp_backends(stats.combine_pvalues)
+@make_xp_test_case(stats.combine_pvalues)
 class TestCombinePvalues:
     # Reference values computed using the following R code:
     # options(digits=16)
