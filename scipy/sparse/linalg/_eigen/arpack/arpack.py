@@ -337,7 +337,7 @@ class _ArpackParams:
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy
-            self.resid = np.array(v0, copy=True)
+            self.resid = np.array(v0, copy=True, dtype=tp)
             info = 1
         else:
             # ARPACK will use a random initial vector.
@@ -588,7 +588,7 @@ class _SymmetricArpackParams(_ArpackParams):
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
-        if self.arpack_dict['ido'] == -1:
+        if self.arpack_dict['ido'] == 5:
             # initialization
             self.workd[yslice] = self.OP(self.workd[xslice])
         elif self.arpack_dict['ido'] == 1:
@@ -614,9 +614,16 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
 
         elif self.arpack_dict['ido'] == 4:
-            # Generate random vector into resid
-            self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
-                                             size=[self.n]).astype(self.tp)
+            if self.tp in 'fd':
+                # Generate random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
+                                                 size=[self.n]).astype(self.tp)
+            else:
+                # Generate complex random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n]
+                                                 ).astype(self.tp.lower())
+                self.resid += (self.rng.uniform(low=-1.0, high=1.0, size=[self.n])
+                               *1j).astype(self.tp.lower())
 
         else:
             self.converged = True
@@ -791,7 +798,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         xslice = slice(self.ipntr[0], self.ipntr[0] + self.n)
         yslice = slice(self.ipntr[1], self.ipntr[1] + self.n)
-        if self.arpack_dict['ido'] == -1:
+        if self.arpack_dict['ido'] == 5:
             # initialization
             self.workd[yslice] = self.OP(self.workd[xslice])
 
@@ -810,9 +817,17 @@ class _UnsymmetricArpackParams(_ArpackParams):
             raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
 
         elif self.arpack_dict['ido'] == 4:
-            # Generate random vector into resid
-            self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
-                                             size=[self.n]).astype(self.tp)
+            if self.tp in 'fd':
+                # Generate random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
+                                                 size=[self.n]).astype(self.tp)
+            else:
+                # Generate complex random vector into resid
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n]
+                                                 ).astype(self.tp.lower())
+                self.resid += (self.rng.uniform(low=-1.0, high=1.0, size=[self.n])
+                               *1j).astype(self.tp.lower())
+
         else:
             self.converged = True
 
@@ -821,7 +836,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
             elif self.arpack_dict['info'] == 1:
                 self._raise_no_convergence()
             else:
-                raise ArpackError(self.info, infodict=self.iterate_infodict)
+                raise ArpackError(info=self.arpack_dict['info'],
+                                  infodict=self.iterate_infodict)
 
     def extract(self, return_eigenvectors):
         k, n = self.k, self.n
@@ -836,7 +852,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
         if self.tp in 'fd':
             dr = np.zeros([k + 1], dtype=self.tp)
             di = np.zeros([k + 1], dtype=self.tp)
-            zr = np.zeros([n, k + 1], dtype=self.tp)
+            # Using a Fortran ordered array for NumPy parse the result correctly
+            zr = np.zeros([n, k + 1], dtype=self.tp, order='F')
 
             # ARPACK _neupd call
             self._arpack_extract(
