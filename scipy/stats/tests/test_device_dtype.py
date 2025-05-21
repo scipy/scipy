@@ -53,7 +53,19 @@ def test_entropy(nargs, dtype, xp, devices):
         args = get_arrays(nargs, device=device, dtype=dtype, xp=xp)
         res = stats.entropy(*args)
         assert xp_device(res) == xp_device(args[0])
-        assert args[0].dtype == dtype
+        assert res.dtype == dtype
+
+
+@pytest.mark.parametrize('dtype', dtypes)
+def test_directional_stats(dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        x = get_arrays(1, shape=(30, 3), device=device, dtype=dtype, xp=xp)[0]
+        res = stats.directional_stats(x)
+        assert xp_device(res.mean_direction) == xp_device(x)
+        assert res.mean_direction.dtype == dtype
+        assert xp_device(res.mean_resultant_length) == xp_device(x)
+        assert res.mean_resultant_length.dtype == dtype
 
 
 @pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa', 'auto'])
@@ -68,6 +80,25 @@ def test_differential_entropy(method, dtype, xp, devices):
     for device in devices:
         values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
         res = stats.differential_entropy(values, method=method)
+        assert xp_device(res) == xp_device(values)
+        assert values.dtype == dtype
+
+
+@pytest.mark.skip_xp_backends('dask.array', reason='no take_along_axis')
+@pytest.mark.parametrize('method', ['inverted_cdf', 'averaged_inverted_cdf',
+                                    'closest_observation', 'interpolated_inverted_cdf',
+                                    'hazen', 'weibull', 'linear', 'median_unbiased',
+                                    'normal_unbiased', 'harrell-davis'])
+@pytest.mark.parametrize('dtype', dtypes)
+def test_quantile(method, dtype, xp, devices):
+    if is_array_api_strict(xp) and method == 'harrell-davis':
+        pytest.skip("Can not convert array on the 'array_api_strict.Device('device1')' "
+                    "device to a Numpy array.")
+
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.quantile(values, 0.5, method=method)
         assert xp_device(res) == xp_device(values)
         assert values.dtype == dtype
 
@@ -202,8 +233,3 @@ def test_combine_pvalues(method, dtype, xp, devices):
         assert xp_device(res.pvalue) == xp_device(pvalues)
         assert res.statistic.dtype == dtype
         assert res.pvalue.dtype == dtype
-
-
-# directional_stats,
-# quantile
-# how are we supposed to compare dask dtypes?
