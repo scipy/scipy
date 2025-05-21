@@ -210,7 +210,7 @@ class BSpline:
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
 
-        self.xp = array_namespace(c, t)
+        self._xp = array_namespace(c, t)
 
         self.k = operator.index(k)
         self._c = np.asarray(c)
@@ -267,7 +267,7 @@ class BSpline:
         self._t, self._c, self.k = np.asarray(t), np.asarray(c), k
         self.extrapolate = extrapolate
         self.axis = axis
-        self.xp = array_namespace(t, c)
+        self._xp = array_namespace(t, c)
         return self
 
     @property
@@ -278,7 +278,7 @@ class BSpline:
 
     @property
     def t(self):
-        return self.xp.asarray(self._t)
+        return self._xp.asarray(self._t)
 
     @t.setter
     def t(self, t):
@@ -286,19 +286,19 @@ class BSpline:
 
     @property
     def c(self):
-        return self.xp.asarray(self._c)
+        return self._xp.asarray(self._c)
 
     @c.setter
     def c(self, c):
         self._c = np.asarray(c)
 
     def __getstate__(self):
-        return self._t, self._c, self.k, self.axis, self.extrapolate, self.xp.empty(1)
+        return self._t, self._c, self.k, self.axis, self.extrapolate, self._xp.empty(1)
 
     def __setstate__(self, state):
-        # {get,set}state needed because storing a module as self.xp breaks pickling
+        # {get,set}state needed because storing a module as self._xp breaks pickling
         self._t, self._c, self.k, self.axis, self.extrapolate, token = state
-        self.xp = array_namespace(token)
+        self._xp = array_namespace(token)
 
     @classmethod
     def basis_element(cls, t, extrapolate=True):
@@ -568,7 +568,7 @@ class BSpline:
             l = list(range(out.ndim))
             l = l[x_ndim:x_ndim+self.axis] + l[:x_ndim] + l[x_ndim+self.axis:]
             out = out.transpose(l)
-        return self.xp.asarray(out)
+        return self._xp.asarray(out)
 
     def _ensure_c_contiguous(self):
         """
@@ -600,7 +600,7 @@ class BSpline:
         splder, splantider
 
         """
-        xp = self.xp
+        xp = self._xp
         c = xp.asarray(self.c, copy=True)
         t = self.t
         npr = _fitpack_impl.npr   # np.r_ replacement
@@ -638,7 +638,7 @@ class BSpline:
         splder, splantider
 
         """
-        xp = self.xp
+        xp = self._xp
         c = xp.asarray(self.c, copy=True)
         t = self.t
         npr = _fitpack_impl.npr   # np.r_ replacement
@@ -727,7 +727,7 @@ class BSpline:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
                 integral = _fitpack_impl.splint(a, b, (self._t, self._c, self.k))
-                return self.xp.asarray(integral * sign)
+                return self._xp.asarray(integral * sign)
 
         # Compute the antiderivative.
         c = self._c
@@ -785,7 +785,7 @@ class BSpline:
             integral = out[1] - out[0]
 
         integral *= sign
-        return self.xp.asarray(integral.reshape(ca.shape[1:]))
+        return self._xp.asarray(integral.reshape(ca.shape[1:]))
 
     @classmethod
     def from_power_basis(cls, pp, bc_type='not-a-knot'):
@@ -975,7 +975,7 @@ class BSpline:
 
         for _ in range(m):
             tt, cc = _insert(x, tt, cc, self.k, self.extrapolate == "periodic")
-        tt, cc = self.xp.asarray(tt), self.xp.asarray(cc)
+        tt, cc = self._xp.asarray(tt), self._xp.asarray(cc)
         return self.construct_fast(tt, cc, self.k, self.extrapolate, self.axis)
 
 
