@@ -7,6 +7,7 @@ from scipy.stats._stats_py import _xp_mean, _xp_var, _length_nonmasked
 from scipy.stats._axis_nan_policy import _axis_nan_policy_factory
 
 
+pytest.skip(allow_module_level=True)  # temporary until `marray` supports `device`
 marray = pytest.importorskip('marray')
 skip_backend = pytest.mark.skip_xp_backends
 
