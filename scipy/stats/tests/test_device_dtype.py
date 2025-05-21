@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_device, is_array_api_strict, is_dask
+from scipy._lib._array_api import xp_device, is_array_api_strict, is_dask, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
@@ -91,9 +91,8 @@ def test_differential_entropy(method, dtype, xp, devices):
                                     'normal_unbiased', 'harrell-davis'])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_quantile(method, dtype, xp, devices):
-    if is_array_api_strict(xp) and method == 'harrell-davis':
-        pytest.skip("Can not convert array on the 'array_api_strict.Device('device1')' "
-                    "device to a Numpy array.")
+    if (is_array_api_strict(xp) or is_torch(xp)) and method == 'harrell-davis':
+        pytest.skip("'harrell-davis' not currently not supported on GPU.")
 
     dtype = getattr(xp, dtype)
     for device in devices:
