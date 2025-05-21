@@ -14,7 +14,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax,
+    is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -440,6 +440,10 @@ def devices(xp):
         # verbose to skip the test for each jit-capable function and run it for
         # those that only support eager mode.
         pytest.xfail(reason="jax-ml/jax#26000")
+    if is_torch(xp):
+        devices = xp.__array_namespace_info__().devices()
+        # open an issue about this - cannot branch based on `any`/`all`?
+        return (device for device in devices if device.type != 'meta')
 
     return xp.__array_namespace_info__().devices() + [None]
 

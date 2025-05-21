@@ -84,6 +84,7 @@ from scipy._lib._array_api import (
     xp_ravel,
     xp_swapaxes,
     xp_default_dtype,
+    xp_device,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1170,7 +1171,7 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
 
     n = _length_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
-        device = device=xp_device(a)
+        device = xp_device(a)
         precision_loss = xp.any(xp.asarray(rel_diff < eps, device=device)
                                 & xp.asarray(n > 1, device=device))
 

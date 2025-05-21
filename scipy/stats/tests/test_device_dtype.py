@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_device
+from scipy._lib._array_api import xp_device, is_array_api_strict
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
@@ -44,7 +44,7 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
      (stats.skew, {}),
      (stats.skew, {'bias': False}),
      (stats.kurtosis, {}),
-     (stats.kurtosis, {'bias': False}),git
+     (stats.kurtosis, {'bias': False}),
      (stats.sem, {}),
      (stats.kstat, {'n': 1}),
      (stats.kstat, {'n': 2}),
@@ -56,6 +56,7 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
      (stats.circvar, {}),
      (stats.circstd, {}),
      (_xp_var, {}),
+     (stats.gstd, {}),
      (stats.variation, {}),
      (stats.tmean, {'limits': (0.1, 0.9)}),
      (stats.tvar, {'limits': (0.1, 0.9)}),
@@ -136,3 +137,6 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
             assert xp_device(res_ci.high) == xp_device(arrays[0])
             assert res_ci.low.dtype == dtype
             assert res_ci.high.dtype == dtype
+
+# entropy, differential_entropy, directional_stats, pearsonr, combine_pvalues,
+# power_divergence/chi_square, boxcox_llf, bartlett, quantile, monte_carlo_test
