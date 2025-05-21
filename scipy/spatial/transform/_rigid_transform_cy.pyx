@@ -132,7 +132,10 @@ def from_dual_quat(dual_quat, *, bint scalar_first=False):
 
     real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
 
-    rot = Rotation.from_quat(real_part)
+    # We own the real_part buffer and don't use it after this point, so we don't have
+    # to copy it. _normalize_dual_quaternion() also guarantees that the quaternion is
+    # already normalized, so we don't need to normalize it again.
+    rot = Rotation(real_part, normalize=False, copy=False)
 
     translation = 2.0 * np.asarray(
         compose_quat(dual_part, rot.inv().as_quat()))[:, :3]
