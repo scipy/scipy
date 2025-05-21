@@ -24,6 +24,7 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     is_lazy_array,
     size as xp_size,
+    numpy as np_compat,
     device as xp_device,
     is_numpy_namespace as is_numpy,
     is_cupy_namespace as is_cupy,
