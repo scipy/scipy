@@ -1210,7 +1210,7 @@ class RigidTransform:
         xp = array_namespace(self._matrix)
         # Masking is only specified in the Array API when the array is the sole index
         # This special case handling is necessary to support boolean indexing and
-        # integer array indexing with take (see 
+        # integer array indexing with take (see
         # https://github.com/data-apis/array-api/pull/900#issuecomment-2674432480)
         # Ideally we would converge to [indexer, ...] indexing, but this is not
         # supported for now.
@@ -1349,7 +1349,7 @@ class RigidTransform:
         # Only necessary for cython. Array API broadcasting handles this by default
         if self._single and other._single:
             matrix = matrix[0, ...]
-        return RigidTransform(matrix, normalize=False, copy=False)
+        return RigidTransform(matrix, normalize=True, copy=False)
 
     def __pow__(self, n: float) -> RigidTransform:
         """Compose this transform with itself `n` times.
