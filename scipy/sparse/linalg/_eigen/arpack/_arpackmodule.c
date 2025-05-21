@@ -179,54 +179,6 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     // Call ARPACK function
     dnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
-/*
-    // print all variables in the struct Vars
-    printf("""dnaupd_wrap: Vars.tol = %f\n", Vars.tol);
-    printf("dnaupd_wrap: Vars.getv0_rnorm0 = %f\n", Vars.getv0_rnorm0);
-    printf("dnaupd_wrap: Vars.aitr_betaj = %f\n", Vars.aitr_betaj);
-    printf("dnaupd_wrap: Vars.aitr_rnorm1 = %f\n", Vars.aitr_rnorm1);
-    printf("dnaupd_wrap: Vars.aitr_wnorm = %f\n", Vars.aitr_wnorm);
-    printf("dnaupd_wrap: Vars.aup2_rnorm = %f\n", Vars.aup2_rnorm);
-    printf("dnaupd_wrap: Vars.ido = %d\n", Vars.ido);
-    printf("dnaupd_wrap: Vars.which = %d\n", Vars.which);
-    printf("dnaupd_wrap: Vars.bmat = %d\n", Vars.bmat);
-    printf("dnaupd_wrap: Vars.info = %d\n", Vars.info);
-    printf("dnaupd_wrap: Vars.iter = %d\n", Vars.iter);
-    printf("dnaupd_wrap: Vars.maxiter = %d\n", Vars.maxiter);
-    printf("dnaupd_wrap: Vars.mode = %d\n", Vars.mode);
-    printf("dnaupd_wrap: Vars.n = %d\n", Vars.n);
-    printf("dnaupd_wrap: Vars.nconv = %d\n", Vars.nconv);
-    printf("dnaupd_wrap: Vars.ncv = %d\n", Vars.ncv);
-    printf("dnaupd_wrap: Vars.nev = %d\n", Vars.nev);
-    printf("dnaupd_wrap: Vars.np = %d\n", Vars.np);
-    printf("dnaupd_wrap: Vars.numop = %d\n", Vars.numop);
-    printf("dnaupd_wrap: Vars.numpb = %d\n", Vars.numpb);
-    printf("dnaupd_wrap: Vars.numreo = %d\n", Vars.numreo);
-    printf("dnaupd_wrap: Vars.shift = %d\n", Vars.shift);
-    printf("dnaupd_wrap: Vars.getv0_first = %d\n", Vars.getv0_first);
-    printf("dnaupd_wrap: Vars.getv0_iter = %d\n", Vars.getv0_iter);
-    printf("dnaupd_wrap: Vars.getv0_itry = %d\n", Vars.getv0_itry);
-    printf("dnaupd_wrap: Vars.getv0_orth = %d\n", Vars.getv0_orth);
-    printf("dnaupd_wrap: Vars.aitr_iter = %d\n", Vars.aitr_iter);
-    printf("dnaupd_wrap: Vars.aitr_j = %d\n", Vars.aitr_j);
-    printf("dnaupd_wrap: Vars.aitr_orth1 = %d\n", Vars.aitr_orth1);
-    printf("dnaupd_wrap: Vars.aitr_orth2 = %d\n", Vars.aitr_orth2);
-    printf("dnaupd_wrap: Vars.aitr_restart = %d\n", Vars.aitr_restart);
-    printf("dnaupd_wrap: Vars.aitr_step3 = %d\n", Vars.aitr_step3);
-    printf("dnaupd_wrap: Vars.aitr_step4 = %d\n", Vars.aitr_step4);
-    printf("dnaupd_wrap: Vars.aitr_ierr = %d\n", Vars.aitr_ierr);
-    printf("dnaupd_wrap: Vars.aup2_initv = %d\n", Vars.aup2_initv);
-    printf("dnaupd_wrap: Vars.aup2_iter = %d\n", Vars.aup2_iter);
-    printf("dnaupd_wrap: Vars.aup2_getv0 = %d\n", Vars.aup2_getv0);
-    printf("dnaupd_wrap: Vars.aup2_cnorm = %d\n", Vars.aup2_cnorm);
-    printf("dnaupd_wrap: Vars.aup2_kplusp = %d\n", Vars.aup2_kplusp);
-    printf("dnaupd_wrap: Vars.aup2_nev0 = %d\n", Vars.aup2_nev0);
-    printf("dnaupd_wrap: Vars.aup2_np0 = %d\n", Vars.aup2_np0);
-    printf("dnaupd_wrap: Vars.aup2_numcnv = %d\n", Vars.aup2_numcnv);
-    printf("dnaupd_wrap: Vars.aup2_update = %d\n", Vars.aup2_update);
-    printf("dnaupd_wrap: Vars.aup2_ushift = %d\n", Vars.aup2_ushift);
-    printf("==========================\n");
-*/
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -434,9 +386,83 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 static PyObject*
 sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "sneupd_wrap is not implemented yet.");
-    return NULL;
+
+    PyObject* input_dict = NULL;
+    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    PyArrayObject* ap_select = NULL;
+    float sigmar = 0.0;
+    float sigmai = 0.0;
+    PyArrayObject* ap_dr = NULL;
+    PyArrayObject* ap_di = NULL;
+    PyArrayObject* ap_v = NULL;
+    PyArrayObject* ap_z = NULL;
+    PyArrayObject* ap_workev = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_ipntr = NULL;
+    PyArrayObject* ap_workd = NULL;
+    PyArrayObject* ap_workl = NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!O!ffO!O!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &want_ev,                                // i
+        &howmny,                                 // i
+        &PyArray_Type, (PyObject **)&ap_select,  // O!
+        &PyArray_Type, (PyObject **)&ap_dr,      // O!
+        &PyArray_Type, (PyObject **)&ap_di,      // O!
+        &PyArray_Type, (PyObject **)&ap_z,       // O!
+        &sigmar,                                 // f
+        &sigmai,                                 // f
+        &PyArray_Type, (PyObject **)&ap_workev,  // O!
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = PyArray_DATA(ap_ipntr);
+    int* select = PyArray_DATA(ap_select);
+    float* dr = PyArray_DATA(ap_dr);
+    float* di = PyArray_DATA(ap_di);
+    float* workev = PyArray_DATA(ap_workev);
+    float* z = PyArray_DATA(ap_z);
+    float* resid = PyArray_DATA(ap_resid);
+    float* v = PyArray_DATA(ap_v);
+    float* workd = PyArray_DATA(ap_workd);
+    float* workl = PyArray_DATA(ap_workl);
+    ldv = (int)PyArray_DIMS(ap_v)[0];
+    ldz = (int)PyArray_DIMS(ap_z)[0];
+
+    struct ARPACK_arnoldi_update_vars_s Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (float)PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+
+    sneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
+
+    Py_RETURN_NONE;
+
 }
 
 static PyObject*
