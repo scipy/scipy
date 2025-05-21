@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_device
+from scipy._lib._array_api import array_namespace
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
