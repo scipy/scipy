@@ -11,6 +11,7 @@ void dger_(int* m, int* n, double* alpha, double* x, int* incx, double* y, int* 
 double dnrm2_(int* n, double* x, int* incx);
 void dscal_(int* n, double* alpha, double* x, int* incx);
 void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
+void drot_(int* n, double* x, int* incx, double* y, int* incy, double* c, double* s);
 void dtrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, double* alpha, double* a, int* lda, double* b, int* ldb);
 
 // LAPACK Routines used
@@ -22,6 +23,7 @@ void dlaset_(char* uplo, int* m, int* n, double* alpha, double* beta, double* a,
 void dlarf_(char* side, int* m, int* n, double* v, int* incv, double* tau, double* c, int* ldc, double* work);
 void dlarfg_(int* n, double* alpha, double* x, int* incx, double* tau);
 void dlartg_(double* f, double* g, double* c, double* s, double* r);
+void dlartgp_(double* f, double* g, double* c, double* s, double* r);
 void dlascl_(char* mtype, int* kl, int* ku, double* cfrom, double* cto, int* m, int* n, double* a, int* lda, int* info);
 void dorm2r_(char* side, char* trans, int* m, int* n, int* k, double* a, int* lda, double* tau, double* c, int* ldc, double* work, int* info);
 void dtrevc_(char* side, char* howmny, int* select, int* n, double* t, int* ldt, double* vl, int* ldvl, double* vr, int* ldvr, int* mm, int* m, double* work, int* info);

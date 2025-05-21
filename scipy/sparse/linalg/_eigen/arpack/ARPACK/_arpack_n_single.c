@@ -1061,7 +1061,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     {
         bounds[j] = 0.0;
     }
-
+    bounds[n-1] = 1.0;
     slahqr_(&int1, &int1, &n, &int1, &n, workl, &n, ritzr, ritzi, &int1, &int1, bounds, &int1, ierr);
     if (*ierr != 0) { return; }
 
@@ -1528,15 +1528,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
     //  Initialize Q to the identity to accumulate
     //  the rotations and reflections
-    //  dlaset("A", kplusp, kplusp, 0.0, 1.0, q, ldq);
-    for (i = 0; i < kplusp; i++)
-    {
-        for (j = 0; j < kplusp; j++)
-        {
-            q[j + ldq*i] = 0.0;
-            if (i == j) { q[j + ldq*i] = 1.0; }
-        }
-    }
+    slaset_("A", &kplusp, &kplusp, &dbl0, &dbl1, q, &ldq);
 
     //  Quick return if there are no shifts to apply
 
@@ -1606,7 +1598,7 @@ LINE20:
             {
                 // slanhs_(norm, n, a, lda, work)
                 tmp_int = kplusp - jj + 2;
-                slanhs_("1", &tmp_int, h, &ldh, workl);
+                tst1 = slanhs_("1", &tmp_int, h, &ldh, workl);
             }
             if (fabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
             {
@@ -1651,20 +1643,9 @@ LINE20:
 
                 //  Construct the plane rotation G to zero out the bulge
 
-                slartg_(&f, &g, &c, &s, &r);
+                slartgp_(&f, &g, &c, &s, &r);
                 if (i > istart)
                 {
-
-                    //  The following ensures that h(1:iend-1,1),
-                    //  the first iend-2 off diagonal of elements
-                    //  H, remain non negative.
-
-                    if (r < 0.0)
-                    {
-                        r = -r;
-                        c = -c;
-                        s = -s;
-                    }
                     h[i + ldh*(i-1)] = r;
                     h[i + 1 + ldh*(i-1)] = 0.0;
                 }
