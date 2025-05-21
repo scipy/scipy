@@ -53,7 +53,10 @@ def from_rotation(quat):
     single = quat.ndim == 1
     if quat.ndim == 1:
         quat = quat[None, :]
-    rotmat = Rotation.from_quat(quat).as_matrix()
+    # We don't need to normalize the quaternion here. The backend is only supposed to
+    # be called from quaternions resulting from Rotation.as_quat(), which are already
+    # guaranteed to be normalized.
+    rotmat = Rotation(quat, normalize=False, copy=False).as_matrix()
     num_transforms = len(rotmat)
     matrix = np.zeros((num_transforms, 4, 4), dtype=float)
     matrix[:, :3, :3] = rotmat
