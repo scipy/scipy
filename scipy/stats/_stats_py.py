@@ -85,7 +85,6 @@ from scipy._lib._array_api import (
     xp_swapaxes,
     xp_default_dtype,
     xp_device,
-    SCIPY_ARRAY_API,
 )
 import scipy._lib.array_api_extra as xpx
 
