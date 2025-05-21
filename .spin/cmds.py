@@ -179,7 +179,7 @@ def build(*, parent_callback, meson_args, verbose, werror, asan, debug,
         "'jax.numpy', 'dask.array')."
     )
 )
-@spin.util.extend_command(spin.cmds.meson.test)
+@spin.util.extend_command(spin.cmds.meson.test, remove_args=("n_jobs",))
 def test(*, parent_callback, pytest_args, tests, coverage,
          durations, submodule, mode, parallel,
          array_api_backend, **kwargs):
@@ -263,10 +263,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
         if markexpr != "full":
             pytest_args = ('-m', markexpr) + pytest_args
 
-    n_jobs = parallel
-    if (n_jobs != 1) and ('-n' not in pytest_args):
-        pytest_args = ('-n', str(n_jobs)) + pytest_args
-
     if durations:
         pytest_args += ('--durations', durations)
 
@@ -274,7 +270,7 @@ def test(*, parent_callback, pytest_args, tests, coverage,
         os.environ['SCIPY_ARRAY_API'] = json.dumps(list(array_api_backend))
 
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
-                    "coverage": coverage, **kwargs})
+                    "coverage": coverage, "n_jobs": parallel, **kwargs})
 
 @click.option(
         '--list-targets', '-t', default=False, is_flag=True,
