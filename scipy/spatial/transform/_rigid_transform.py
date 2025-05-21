@@ -1216,7 +1216,8 @@ class RigidTransform:
         # supported for now.
         if is_array and indexer.dtype == xp.bool:
             return RigidTransform(self._matrix[indexer], normalize=False)
-        if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
+        if is_array and xp.isdtype(indexer.dtype, "integral"):
+            indexer = xpx.atleast_nd(indexer, ndim=1, xp=xp)
             return RigidTransform(
                 xp.take(self._matrix, indexer, axis=0), normalize=False
             )
