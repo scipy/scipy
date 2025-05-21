@@ -37,6 +37,8 @@ from scipy._lib.array_api_compat import (
 )
 from scipy._lib._sparse import issparse
 from scipy._lib._docscrape import FunctionDoc
+from scipy._lib import array_api_extra as xpx
+
 
 __all__ = [
     '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
@@ -649,6 +651,15 @@ def xp_result_device(*args):
         if is_array_api_obj(arg):
             return xp_device(arg)
     return None
+
+
+# np.r_ replacement
+def concat_1d(xp, *arys):
+    """A replacement for np.r_: `xp.concat` does not accept python scalars or 0D arrays.
+    """
+    arys = [xp.asarray(a) for a in arys]
+    arys = [xpx.atleast_nd(a, ndim=1, xp=xp) for a in arys]
+    return xp.concat(arys)
 
 
 def is_marray(xp):
