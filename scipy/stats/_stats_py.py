@@ -85,6 +85,7 @@ from scipy._lib._array_api import (
     xp_swapaxes,
     xp_default_dtype,
     xp_device,
+    SCIPY_ARRAY_API,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1171,9 +1172,10 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
 
     n = _length_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
-        device = xp_device(a)
-        precision_loss = xp.any(xp.asarray(rel_diff < eps, device=device)
-                                & xp.asarray(n > 1, device=device))
+        # Old NumPy doesn't accept `device` arg, but it's not relevant for NumPy anyway
+        device = {'device': xp_device(a)} if SCIPY_ARRAY_API else {}
+        precision_loss = xp.any(xp.asarray(rel_diff < eps, **device)
+                                & xp.asarray(n > 1, **device))
 
     if precision_loss:
         message = ("Precision loss occurred in moment calculation due to "
@@ -7355,8 +7357,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs, f_exp)
-    f_obs, f_exp = xp_promote(f_obs, f_exp, force_floating=True, xp=xp)
+    xp = array_namespace(f_obs, f_exp, ddof)
+    f_obs, f_exp, ddof = xp_promote(f_obs, f_exp, ddof,
+                                    force_floating=True, xp=xp)
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):

@@ -9,6 +9,10 @@ from scipy.stats._stats_py import _xp_mean, _xp_var
 dtypes = ['float32', 'float64']
 
 
+if np.__version__ < "2":  # need NEP 50 dtype behavior
+    pytest.skip(allow_module_level=True)
+
+
 def get_arrays(n_arrays, *, dtype=np.float64, xp=np, shape=(30,), device=None,
                seed=84912165484321):
     rng = np.random.default_rng(seed)
@@ -149,6 +153,7 @@ def test_zscore(fun, dtype, xp, devices):
 
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason="special/_support_alternative_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @pytest.mark.parametrize('f_name', ['ttest_1samp', 'ttest_rel', 'ttest_ind', 'skewtest',
                                     'kurtosistest', 'normaltest', 'jarque_bera',
                                     'bartlett', 'pearsonr', 'chisquare',
@@ -184,6 +189,7 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
 
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason="special functions don't work with 'device1'")
+@pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'tippett', 'stouffer',
                                     'mudholkar_george'])
 @pytest.mark.parametrize('dtype', dtypes)
