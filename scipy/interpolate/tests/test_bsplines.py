@@ -10,6 +10,7 @@ import numpy as np
 from scipy._lib._array_api import (
     xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d
 )
+import scipy._lib.array_api_extra as xpx
 from pytest import raises as assert_raises
 import pytest
 
@@ -1570,7 +1571,7 @@ class TestInterp:
         y = x**2
 
         for z in [xp.nan, xp.inf, -xp.inf]:
-            y[-1] = z
+            y = xpx.at(y, -1).set(z)
             assert_raises(ValueError, make_interp_spline, x, y)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 5])

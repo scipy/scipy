@@ -365,9 +365,10 @@ class BSpline:
         k = t.shape[0] - 2
         t = _as_float_array(t)
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
-        t = xp.asarray(t)
-        c = xp.zeros_like(t)
+        c = np.zeros_like(t)
         c[k] = 1.
+
+        t, c = xp.asarray(t), xp.asarray(c)
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
