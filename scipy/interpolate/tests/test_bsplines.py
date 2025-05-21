@@ -8,7 +8,9 @@ import copy
 
 import numpy as np
 from numpy.testing import suppress_warnings
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close, xp_default_dtype
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close, xp_default_dtype, concat_1d
+)
 from pytest import raises as assert_raises
 import pytest
 
@@ -1464,10 +1466,9 @@ class TestInterp:
         # use a quadratic spline, knots are at data averages,
         # two additional constraints are zero 2nd derivatives at edges
         k = 2
-        npr = _impl.npr
         xx, yy = self._get_xy(xp)
 
-        t = npr(xp,
+        t = concat_1d(xp,
                 xp.ones(k+1) * xx[0],
                 (xx[1:] + xx[:-1]) / 2.,
                 xp.ones(k+1) * xx[-1]

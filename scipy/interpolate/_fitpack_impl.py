@@ -34,8 +34,7 @@ from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
 #  f2py-generated version
 from . import _dfitpack as dfitpack
 
-from scipy._lib._array_api import array_namespace
-from scipy._lib import array_api_extra as xpx
+from scipy._lib._array_api import array_namespace, concat_1d
 
 
 dfitpack_int = dfitpack.types.intvar.dtype
@@ -748,13 +747,6 @@ def insert(x, tck, m=1, per=0):
         return (tt, cc, k)
 
 
-# np.r_ replacement
-def npr(xp, *arys):
-    arys = [xp.asarray(a) for a in arys]
-    arys = [xpx.atleast_nd(a, ndim=1, xp=xp) for a in arys]
-    return xp.concat(arys)
-
-
 def splder(tck, n=1, xp=None):
     # see the docstring of `_fitpack_py/splder`
     if n < 0:
@@ -785,7 +777,7 @@ def splder(tck, n=1, xp=None):
                 c = (c[1:-1-k, ...] - c[:-2-k, ...]) * k / dt
                 # Pad coefficient array to same size as knots (FITPACK
                 # convention)
-                c = npr(xp, c, xp.zeros((k,) + c.shape[1:]))
+                c = concat_1d(xp, c, xp.zeros((k,) + c.shape[1:]))
                 # Adjust knots
                 t = t[1:-1]
                 k -= 1
@@ -817,14 +809,14 @@ def splantider(tck, n=1, *, xp=None):
         dt = dt[sh]
         # Compute the new coefficients
         c = xp.cumulative_sum(c[:-k-1, ...] * dt, axis=0) / (k + 1)
-        c = npr(
+        c = concat_1d(
             xp,
             xp.zeros((1,) + c.shape[1:]),
             c,
             xp.stack([c[-1, ...]] * (k+2)),
         )
         # New knots
-        t = npr(xp, t[0], t, t[-1])
+        t = concat_1d(xp, t[0], t, t[-1])
         k += 1
 
     return t, c, k
