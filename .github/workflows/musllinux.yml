@@ -24,7 +24,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   musllinux_x86_64:
-    name: musl Ubuntu-latest, fast, py3.11/npAny, dev.py
+    name: musl Ubuntu-latest, fast, py3.11/npAny, spin
     needs: get_commit_message
     runs-on: ubuntu-latest
     # If using act to run CI locally the github object does not exist and
@@ -40,17 +40,17 @@ jobs:
 
     steps:
     - name: Get source
-      run: |    
+      run: |
         apk update --quiet
 
         apk add build-base gfortran git
 
-        git config --global --add safe.directory $PWD 
-        
+        git config --global --add safe.directory $PWD
+
         if [ $GITHUB_EVENT_NAME != pull_request ]; then
             git clone --recursive --branch=$GITHUB_REF_NAME https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
             git reset --hard $GITHUB_SHA
-        else        
+        else
             git clone --recursive https://github.com/${GITHUB_REPOSITORY}.git $GITHUB_WORKSPACE
             git fetch origin $GITHUB_REF:my_ref_name
             git checkout $GITHUB_BASE_REF
@@ -62,7 +62,7 @@ jobs:
 
 
     - name: prep build environment
-      run: |    
+      run: |
         cd $RUNNER_TEMP
         python -m venv test_env
         source test_env/bin/activate
@@ -70,12 +70,11 @@ jobs:
 
         python -m pip install cython numpy
         # python -m pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-        python -m pip install meson ninja pybind11 pythran pytest hypothesis
-        python -m pip install click rich_click doit pydevtool pooch
+        python -m pip install meson ninja pybind11 pythran pytest hypothesis spin pooch
         python -m pip install -r requirements/openblas.txt
-        
+
         chmod +x tools/wheels/cibw_before_build_linux.sh
-        tools/wheels/cibw_before_build_linux.sh --nightly .     
+        tools/wheels/cibw_before_build_linux.sh --nightly .
 
     - name: test
       run: |
@@ -84,4 +83,4 @@ jobs:
         source test_env/bin/activate
         cd $GITHUB_WORKSPACE
         export PKG_CONFIG_PATH=$PWD
-        python dev.py test
+        spin test

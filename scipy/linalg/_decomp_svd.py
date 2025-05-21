@@ -169,6 +169,9 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
+        if lapack_driver == "gesdd" and info == -4:
+            msg = "A has a NaN entry"
+            raise ValueError(msg)
         raise ValueError(f'illegal value in {-info}th argument of internal gesdd')
     if compute_uv:
         return u, s, v
