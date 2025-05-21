@@ -4795,7 +4795,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     else:
         # As explained in the docstring, the distribution of `r` under the null
         # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-        ab = xp.asarray(n/2 - 1, device=xp_device(x))
+        ab = xp.asarray(n/2 - 1, dtype=dtype, device=xp_device(x))
         dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
         pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
@@ -7418,7 +7418,8 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = xp.asarray(_length_nonmasked(terms, axis), device=xp_device(terms))
+    num_obs = xp.asarray(_length_nonmasked(terms, axis), device=xp_device(terms),
+                         dtype=f_obs.dtype)
 
     df = num_obs - 1 - ddof
     chi2 = _SimpleChi2(df)

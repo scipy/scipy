@@ -17,6 +17,7 @@ from scipy._lib._array_api import (
     xp_size,
     xp_vector_norm,
     xp_promote,
+    xp_result_type,
     xp_device,
 )
 
@@ -988,7 +989,8 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
                           result_to_tuple=lambda x: (x,))
 def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
-    lmb, data = xp_promote(lmb, data, force_floating=True, xp=xp)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
     N = data.shape[axis]
     if N == 0:
         return _get_nan(data, xp=xp)
@@ -2952,7 +2954,7 @@ def bartlett(*samples, axis=0):
              * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
-    chi2 = _SimpleChi2(xp.asarray(k-1))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
     T = xp.clip(T, min=0., max=xp.inf)

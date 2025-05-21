@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_device, is_array_api_strict
+from scipy._lib._array_api import xp_device, is_array_api_strict, is_dask
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 
@@ -37,6 +37,45 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
         res = fun(x, weights=weights, **kwargs)
         assert xp_device(res) == xp_device(x)
         assert x.dtype == dtype
+
+
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason="special functions don't work with 'device1'")
+@pytest.mark.parametrize('nargs', [1, 2])
+@pytest.mark.parametrize('dtype', dtypes)
+def test_entropy(nargs, dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        args = get_arrays(nargs, device=device, dtype=dtype, xp=xp)
+        res = stats.entropy(*args)
+        assert xp_device(res) == xp_device(args[0])
+        assert args[0].dtype == dtype
+
+
+@pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa', 'auto'])
+@pytest.mark.parametrize('dtype', dtypes)
+def test_differential_entropy(method, dtype, xp, devices):
+    if is_array_api_strict(xp) and method == 'correa':
+        pytest.skip("Can't use elipses and integer indices")
+    if is_dask(xp) and method in {'ebrahimi', 'correa', 'auto'}:
+        pytest.skip("method not compatible with Dask")
+
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.differential_entropy(values, method=method)
+        assert xp_device(res) == xp_device(values)
+        assert values.dtype == dtype
+
+
+@pytest.mark.parametrize('dtype', dtypes)
+def test_boxcox_llf(dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        data = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
+        res = stats.boxcox_llf(1, data)
+        assert xp_device(res) == xp_device(data)
+        assert data.dtype == dtype
 
 
 @pytest.mark.parametrize('fun, kwargs',
@@ -110,20 +149,24 @@ def test_zscore(fun, dtype, xp, devices):
 
 @pytest.mark.skip_xp_backends('array_api_strict',
                               reason="special/_support_alternative_backends")
-@pytest.mark.parametrize('f_name', ['ttest_1samp', 'ttest_rel', 'ttest_ind',
-                                    'skewtest', 'kurtosistest',
-                                    'normaltest', 'jarque_bera'])
+@pytest.mark.parametrize('f_name', ['ttest_1samp', 'ttest_rel', 'ttest_ind', 'skewtest',
+                                    'kurtosistest', 'normaltest', 'jarque_bera',
+                                    'bartlett', 'pearsonr', 'chisquare',
+                                    'power_divergence'])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_hypothesis_tests(f_name, dtype, xp, devices):
     dtype = getattr(xp, dtype)
     for device in devices:
         f = getattr(stats, f_name)
 
-        n = 2 if f_name in {'ttest_1samp', 'ttest_rel', 'ttest_ind'} else 1
+        n = 2 if f_name in {'ttest_1samp', 'ttest_rel', 'ttest_ind', 'bartlett',
+                            'pearsonr', 'chisquare'} else 1
 
         arrays = get_arrays(n, xp=xp, dtype=dtype, device=device)
         if f_name == 'ttest_1samp':
             arrays[1] = xp.mean(arrays[1])
+        if f_name == 'chisquare':
+            arrays[1] = xp.sum(arrays[0]) * arrays[1] / xp.sum(arrays[1])
 
         res = f(*arrays)
         assert xp_device(res.statistic) == xp_device(arrays[0])
@@ -131,12 +174,30 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
         assert res.statistic.dtype == dtype
         assert res.pvalue.dtype == dtype
 
-        if f_name in {'ttest_1samp', 'ttest_rel', 'ttest_ind'}:
+        if f_name in {'ttest_1samp', 'ttest_rel', 'ttest_ind', 'pearsonr'}:
             res_ci = res.confidence_interval()
             assert xp_device(res_ci.low) == xp_device(arrays[0])
             assert xp_device(res_ci.high) == xp_device(arrays[0])
             assert res_ci.low.dtype == dtype
             assert res_ci.high.dtype == dtype
 
-# entropy, differential_entropy, directional_stats, pearsonr, combine_pvalues,
-# power_divergence/chi_square, boxcox_llf, bartlett, quantile, monte_carlo_test
+
+@pytest.mark.skip_xp_backends('array_api_strict',
+                              reason="special functions don't work with 'device1'")
+@pytest.mark.parametrize('method', ['fisher', 'pearson', 'tippett', 'stouffer',
+                                    'mudholkar_george'])
+@pytest.mark.parametrize('dtype', dtypes)
+def test_combine_pvalues(method, dtype, xp, devices):
+    dtype = getattr(xp, dtype)
+    for device in devices:
+        pvalues = get_arrays(1, xp=xp, dtype=dtype, device=device)[0] / 10
+        res = stats.combine_pvalues(pvalues, method=method)
+        assert xp_device(res.statistic) == xp_device(pvalues)
+        assert xp_device(res.pvalue) == xp_device(pvalues)
+        assert res.statistic.dtype == dtype
+        assert res.pvalue.dtype == dtype
+
+
+# directional_stats,
+# quantile
+# how are we supposed to compare dask dtypes?
