@@ -33,7 +33,9 @@ from scipy._lib.array_api_compat import (
     is_array_api_strict_namespace as is_array_api_strict
 )
 from scipy._lib.array_api_extra.testing import lazy_xp_function
-from scipy._lib._array_api_override import array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
+from scipy._lib._array_api_override import (
+    array_namespace, SCIPY_ARRAY_API, SCIPY_DEVICE
+)
 from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
