@@ -286,8 +286,8 @@ def test(*, parent_callback, pytest_args, tests, coverage,
             "needed in order to make docstring changes in C/Cython files " + \
             "show up."
 )
-@spin.util.extend_command(spin.cmds.meson.docs)
-def docs(*, parent_callback, sphinx_target, clean, jobs,
+@spin.util.extend_command(spin.cmds.meson.docs, remove_args=("jobs", ))
+def docs(*, parent_callback, sphinx_target, clean,
          list_targets, parallel, no_cache, **kwargs):
     """📖 Build Sphinx documentation
 
