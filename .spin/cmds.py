@@ -61,8 +61,8 @@ PROJECT_MODULE = "scipy"
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
-@spin.util.extend_command(spin.cmds.meson.build)
-def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
+@spin.util.extend_command(spin.cmds.meson.build, remove_args=("jobs",))
+def build(*, parent_callback, meson_args, verbose, werror, asan, debug,
           release, parallel, setup_args, show_build_log,
           with_scipy_openblas, with_accelerate, use_system_libraries,
           tags, **kwargs):
