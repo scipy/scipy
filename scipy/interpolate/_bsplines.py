@@ -14,7 +14,7 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, concat_1d
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
@@ -606,12 +606,11 @@ class BSpline:
         xp = self._xp
         c = xp.asarray(self.c, copy=True)
         t = self.t
-        npr = _fitpack_impl.npr   # np.r_ replacement
 
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = npr(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
         tck = _fitpack_impl.splder((t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate,
                                    axis=self.axis)
@@ -644,12 +643,11 @@ class BSpline:
         xp = self._xp
         c = xp.asarray(self.c, copy=True)
         t = self.t
-        npr = _fitpack_impl.npr   # np.r_ replacement
 
         # pad the c array if needed
         ct = t.shape[0] - c.shape[0]
         if ct > 0:
-            c = npr(xp, c, xp.zeros((ct,) + c.shape[1:]))
+            c = concat_1d(xp, c, xp.zeros((ct,) + c.shape[1:]))
         tck = _fitpack_impl.splantider((t, c, self.k), nu)
 
         if self.extrapolate == 'periodic':
