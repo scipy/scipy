@@ -38,8 +38,8 @@ Highlights of this release
   reduction operations like sum/mean/min/max. No n-D indexing or
   `~scipy.sparse.random_array` support yet.
 - Updated guide and tools for migration from sparse matrices to sparse arrays.
-- All functions in the `scipy.linalg` namespace that accept array arguments
-  now support N-dimensional arrays to be processed as a batch.
+- Nearly all functions in the `scipy.linalg` namespace that accept array
+  arguments now support N-dimensional arrays to be processed as a batch.
 - Two new `scipy.signal` functions, `~scipy.signal.firwin_2d` and
   `~scipy.signal.closest_STFT_dual_window`, for creation of a 2-D FIR filter and
   `~scipy.signal.ShortTimeFFT` dual window calculation, respectively.
@@ -71,8 +71,8 @@ New features
 
 ``scipy.linalg`` improvements
 =============================
-- All functions in the `scipy.linalg` namespace that accept array arguments
-  now support N-dimensional arrays to be processed as a batch.
+- Nearly all functions in the `scipy.linalg` namespace that accept array
+  arguments now support N-dimensional arrays to be processed as a batch.
   See :ref:`linalg_batch` for details.
 - `scipy.linalg.sqrtm` is rewritten in C and its performance is improved. It
   also tries harder to return real-valued results for real-valued inputs if
