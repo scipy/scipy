@@ -16,7 +16,7 @@ BLAS/LAPACK on Linux distros, and can be dynamically switched between
 implementations on conda-forge), use::
 
     $ # for a development build
-    $ python dev.py build -C-Dblas=blas -C-Dlapack=lapack
+    $ spin build -C-Dblas=blas -C-Dlapack=lapack
 
     $ # to build and install a wheel
     $ python -m build -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
@@ -29,11 +29,11 @@ Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
 ``accelerate``.
 
-Note that both Accelerate and ``scipy-openblas`` have flags in ``dev.py``
+Note that both Accelerate and ``scipy-openblas`` have flags in ``spin``
 that are easier to remember, since they're commonly used for development::
 
-    $ python dev.py build --with-accelerate
-    $ python dev.py build --with-scipy-openblas
+    $ spin build --with-accelerate
+    $ spin build --with-scipy-openblas
 
 The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
 since we can be sure that BLAS and LAPACK are the same for those options.
