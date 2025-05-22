@@ -39,7 +39,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         csc_array, csr_array, dok_array,
         coo_array, lil_array, dia_array, bsr_array,
-        eye, issparse, SparseEfficiencyWarning, sparray)
+        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
@@ -1112,6 +1112,21 @@ class _TestCommon:
 
         assert_array_almost_equal(dat_sum, datsp_sum)
         assert_equal(dat_sum.dtype, datsp_sum.dtype)
+
+    def test_sum_mean_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+
+        assert isscalarlike(datsp.sum())
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        assert isinstance(datsp.sum(axis=0), matrix_or_array)
+        assert isinstance(datsp.sum(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.mean())
+        assert isinstance(datsp.mean(axis=0), matrix_or_array)
+        assert isinstance(datsp.mean(axis=1), matrix_or_array)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -3855,6 +3870,38 @@ class _TestMinMax:
             assert_equal(X.max(axis=axis, explicit=ex).toarray(), D.max(axis=axis))
             assert_equal(X.min(axis=axis, explicit=ex).toarray(), D.min(axis=axis))
 
+    def test_minmax_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        spmatrix_or_sparray = sparray if self.is_array_test else spmatrix
+
+        assert isscalarlike(datsp.min())
+        assert isinstance(datsp.min(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.min(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.max())
+        assert isinstance(datsp.max(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.max(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmin())
+        assert isinstance(datsp.nanmin(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmin(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmax())
+        assert isinstance(datsp.nanmax(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmax(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.argmin())
+        assert isinstance(datsp.argmin(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmin(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.argmax())
+        assert isinstance(datsp.argmax(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmax(axis=1), matrix_or_array)
+
     def test_nanminmax(self):
         D = self.asdense(np.arange(50).reshape(5,10), dtype=float)
         D[1, :] = 0
@@ -5002,6 +5049,40 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
 
+    def test_add_sparse(self):
+        # test format and cases not covered by common add tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp + Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A + B)
+
+        Csp = Bsp + Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B + A)
+
+    def test_sub_sparse(self):
+        # test format and cases not covered by common sub tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp - Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A - B)
+
+        Csp = Bsp - Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B - A)
+
+        Bsp = Bsp.asformat('csr')
+        assert_array_equal((Asp - Bsp).toarray(), A - B)
+        assert_array_equal((Bsp - Asp).toarray(), B - A)
+
     def test_mul_scalar(self):
         # repro for gh-20434
         m = self.dia_container([[1, 2], [0, 4]])
@@ -5012,6 +5093,50 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         res2 = m.multiply(3)
         assert isinstance(res2, m.__class__)
         assert_array_equal(res2.toarray(), [[3, 6], [0, 12]])
+
+    def test_matmul_dia(self):
+        # test DIA structure of DIA @ DIA:
+
+        # that all and only needed elements are used and produced
+        A = array([[1, 2, 3],
+                   [4, 5, 6]])
+        B = array([[11, 12],
+                   [13, 14],
+                   [15, 16]])
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+        Asp.data[Asp.data == 0] = -1  # poison outside elements
+        Bsp.data[Bsp.data == 0] = -1
+        assert_array_equal(Asp.toarray(), A)
+        assert_array_equal(Bsp.toarray(), B)
+
+        C = A @ B
+        Csp = Asp @ Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-1, 0, 1])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        C = B @ A
+        Csp = Bsp @ Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        # short data and that order of input offsets doesn't matter
+        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+
+        Csp = Asp @ Bsp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 35., 0.],
+                                      [6., 14., 27.]])
+
+        Csp = Bsp @ Asp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 0., 0.],
+                                      [27., 6., 14.]])
 
 
 class TestDIAMatrix(_MatrixMixin, TestDIA):

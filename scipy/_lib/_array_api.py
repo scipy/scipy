@@ -683,7 +683,7 @@ def _share_masks(*args, xp):
 class _XPSphinxCapability:
     cpu: bool | None  # None if not applicable
     gpu: bool | None
-    warnings: str | None = None
+    warnings: list[str] = dataclasses.field(default_factory=list)
 
     def _render(self, value):
         if value is None:
@@ -691,8 +691,8 @@ class _XPSphinxCapability:
         if not value:
             return "⛔"
         if self.warnings:
-            res = f"⚠️ {self.warnings}"
-            assert len(res) <= 20
+            res = "⚠️ " + '; '.join(self.warnings)
+            assert len(res) <= 20, "Warnings too long"
             return res
         return "✅"
 
@@ -709,8 +709,10 @@ def _make_sphinx_capabilities(
     cpu_only=False, np_only=False, exceptions=(),
     # xpx.lazy_xp_backends kwargs
     allow_dask_compute=False, jax_jit=True,
+    # list of tuples [(module name, reason), ...]
+    warnings = (),
     # unused in documentation
-    reason=None, static_argnums=None, static_argnames=None,
+    reason=None,
 ):
     exceptions = set(exceptions)
 
@@ -721,10 +723,10 @@ def _make_sphinx_capabilities(
         "cupy": _XPSphinxCapability(cpu=None, gpu=True),
         "torch": _XPSphinxCapability(cpu=True, gpu=True),
         "jax.numpy": _XPSphinxCapability(cpu=True, gpu=True,
-            warnings=None if jax_jit else "no JIT"),
+            warnings=[] if jax_jit else ["no JIT"]),
         # Note: Dask+CuPy is currently untested and unsupported
         "dask.array": _XPSphinxCapability(cpu=True, gpu=None,
-            warnings="computes graph" if allow_dask_compute else None),
+            warnings=["computes graph"] if allow_dask_compute else []),
     }
 
     # documentation doesn't display the reason
@@ -743,6 +745,10 @@ def _make_sphinx_capabilities(
                 backend.gpu = False
         elif cpu_only and module not in exceptions and backend.gpu is not None:
             backend.gpu = False
+
+    for module, warning in warnings:
+        backend = capabilities[module]
+        backend.warnings.append(warning)
 
     return capabilities
 
@@ -781,10 +787,11 @@ def xp_capabilities(
     # lists of tuples [(module name, reason), ...]
     skip_backends=(), xfail_backends=(),
     cpu_only=False, np_only=False, reason=None, exceptions=(),
+    # lists of tuples [(module name, reason), ...]
+    warnings=(),
     # xpx.testing.lazy_xp_function kwargs.
     # Refer to array-api-extra documentation.
     allow_dask_compute=False, jax_jit=True,
-    static_argnums=None, static_argnames=None,
 ):
     """Decorator for a function that states its support among various
     Array API compatible backends.
@@ -815,23 +822,26 @@ def xp_capabilities(
         exceptions=exceptions,
         allow_dask_compute=allow_dask_compute,
         jax_jit=jax_jit,
-        static_argnums=static_argnums,
-        static_argnames=static_argnames,
+        warnings=warnings,
     )
     sphinx_capabilities = _make_sphinx_capabilities(**capabilities)
 
     def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            return f(*args, **kwargs)
-
-        capabilities_table[wrapper] = capabilities
+        # Don't use a wrapper, as in some cases @xp_capabilities is
+        # applied to a ufunc
+        capabilities_table[f] = capabilities
         note = _make_capabilities_note(f.__name__, sphinx_capabilities)
-        doc = FunctionDoc(wrapper)
+        doc = FunctionDoc(f)
         doc['Notes'].append(note)
-        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+        doc = str(doc).split("\n", 1)[1]  # remove signature
+        try:
+            f.__doc__ = doc
+        except AttributeError:
+            # Can't update __doc__ on ufuncs if SciPy
+            # was compiled against NumPy < 2.2.
+            pass
 
-        return wrapper
+        return f
     return decorator
 
 
@@ -860,8 +870,7 @@ def _make_xp_pytest_marks(*funcs, capabilities_table=None):
             marks.append(pytest.mark.xfail_xp_backends(mod_name, reason=reason))
 
         lazy_kwargs = {k: capabilities[k]
-                       for k in ('allow_dask_compute', 'jax_jit',
-                                 'static_argnums', 'static_argnames')}
+                       for k in ('allow_dask_compute', 'jax_jit')}
         lazy_xp_function(func, **lazy_kwargs)
 
     return marks
@@ -891,7 +900,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
     return lambda func: functools.reduce(lambda f, g: g(f), marks, func)
 
 
-def make_xp_pytest_param(func, capabilities_table=None):
+def make_xp_pytest_param(func, *args, capabilities_table=None):
     """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
 
@@ -915,6 +924,20 @@ def make_xp_pytest_param(func, capabilities_table=None):
         def test(func, xp):
             ...
 
+    Parameters
+    ----------
+    func : Callable
+        Function to be tested. It must be decorated with ``@xp_capabilities``.
+    *args : Any, optional
+        Extra pytest parameters for the use case, e.g.::
+
+        @pytest.mark.parametrize("func,verb", [
+            make_xp_pytest_param(f1, "hello"),
+            make_xp_pytest_param(f2, "world")])
+        def test(func, verb, xp):
+            # iterates on (func=f1, verb="hello")
+            # and (func=f2, verb="world")
+
     See Also
     --------
     xp_capabilities
@@ -924,7 +947,7 @@ def make_xp_pytest_param(func, capabilities_table=None):
     import pytest
 
     marks = _make_xp_pytest_marks(func, capabilities_table=capabilities_table)
-    return pytest.param(func, marks=marks)
+    return pytest.param(func, *args, marks=marks, id=func.__name__)
 
 
 # Is it OK to have a dictionary that is mutated (once upon import) in many places?

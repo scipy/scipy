@@ -34,10 +34,6 @@ PROJECT_MODULE = "scipy"
 @click.option(
     '--release', '-r', default=False, is_flag=True, help="Release build")
 @click.option(
-    '--parallel', '-j', default=None, metavar='N_JOBS',
-    help=("Number of parallel jobs for building. "
-            "This defaults to the number of available physical CPU cores"))
-@click.option(
     '--setup-args', '-C', default=[], multiple=True,
     help=("Pass along one or more arguments to `meson setup` "
             "Repeat the `-C` in case of multiple arguments."))
@@ -54,13 +50,18 @@ PROJECT_MODULE = "scipy"
             " Takes precedence over -with-scipy-openblas (macOS only)")
 )
 @click.option(
+    '--use-system-libraries', default=False, is_flag=True,
+    help=("If set, use system libraries"
+            "if they are available for subprojects."))
+@click.option(
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
 @spin.util.extend_command(spin.cmds.meson.build)
 def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
-          release, parallel, setup_args, show_build_log,
-          with_scipy_openblas, with_accelerate, tags, **kwargs):
+          release, setup_args, show_build_log,
+          with_scipy_openblas, with_accelerate, use_system_libraries,
+          tags, **kwargs):
     """🔧 Build package with Meson/ninja and install
 
     MESON_ARGS are passed through e.g.:
@@ -127,13 +128,14 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
                 os.environ.get('PKG_CONFIG_PATH', '')
                 ])
 
-    if parallel is None:
+    if use_system_libraries:
+        meson_args = meson_args + ("-Duse-system-libraries=auto",)
+
+    if jobs is None:
         # Use number of physical cores rather than ninja's default of 2N+2,
         # to avoid out of memory issues (see gh-17941 and gh-18443)
         n_cores = cpu_count(only_physical_cores=True)
         jobs = n_cores
-    else:
-        jobs = parallel
 
     meson_install_args = meson_install_args + ("--tags=" + tags, )
 
@@ -159,10 +161,6 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
     help=("'fast', 'full', or something that could be passed to "
             "`pytest -m` as a marker expression"))
 @click.option(
-    '--parallel', '-j', default=1, metavar='N_JOBS',
-    help="Number of parallel jobs for testing"
-)
-@click.option(
     '--array-api-backend', '-b', default=None, metavar='ARRAY_BACKEND',
     multiple=True,
     help=(
@@ -173,8 +171,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
 )
 @spin.util.extend_command(spin.cmds.meson.test)
 def test(*, parent_callback, pytest_args, tests, coverage,
-         durations, submodule, mode, parallel,
-         array_api_backend, **kwargs):
+         durations, submodule, mode, array_api_backend, **kwargs):
     """🔧 Run tests
 
     PYTEST_ARGS are passed through directly to pytest, e.g.:
@@ -255,13 +252,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
         if markexpr != "full":
             pytest_args = ('-m', markexpr) + pytest_args
 
-    n_jobs = parallel
-    if (n_jobs != 1) and ('-n' not in pytest_args):
-        pytest_args = ('-n', str(n_jobs)) + pytest_args
-
-    if tests and '--pyargs' not in pytest_args:
-        pytest_args += ('--pyargs', tests)
-
     if durations:
         pytest_args += ('--durations', durations)
 
@@ -276,10 +266,6 @@ def test(*, parent_callback, pytest_args, tests, coverage,
         help='List doc targets',
     )
 @click.option(
-        '--parallel', '-j', default="auto", metavar='N_JOBS',
-        help="Number of parallel jobs"
-    )
-@click.option(
     '--no-cache', default=False, is_flag=True,
     help="Forces a full rebuild of the docs. Note that this may be " + \
             "needed in order to make docstring changes in C/Cython files " + \
@@ -287,7 +273,7 @@ def test(*, parent_callback, pytest_args, tests, coverage,
 )
 @spin.util.extend_command(spin.cmds.meson.docs)
 def docs(*, parent_callback, sphinx_target, clean, jobs,
-         list_targets, parallel, no_cache, **kwargs):
+         list_targets, no_cache, **kwargs):
     """📖 Build Sphinx documentation
 
     By default, SPHINXOPTS="-W", raising errors on warnings.
@@ -321,7 +307,6 @@ def docs(*, parent_callback, sphinx_target, clean, jobs,
     if no_cache:
         SPHINXOPTS += " -E"
 
-    jobs = parallel
     SPHINXOPTS = os.environ.get("SPHINXOPTS", "") + SPHINXOPTS
     os.environ["SPHINXOPTS"] = SPHINXOPTS
 
