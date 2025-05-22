@@ -162,7 +162,7 @@ MKL is as simple as::
       "user_api": "blas",
       "internal_api": "mkl",
 
-This can be done for development builds as well, when building via ``dev.py``
+This can be done for development builds as well, when building via ``spin``
 in the exact same way as in `SciPy's conda-forge build recipe
 <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`__
 (outputs omitted for brevity, they're similar to the ones above)::
@@ -170,10 +170,10 @@ in the exact same way as in `SciPy's conda-forge build recipe
     $ mamba env create -f environment.yml
     $ mamba activate scipy-dev
     $ mamba install "libblas=*=*netlib"  # necessary, we need to build against blas/lapack
-    $ python dev.py build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true
-    $ python dev.py test -s linalg  # run tests to verify
+    $ spin build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true
+    $ spin test -s linalg  # run tests to verify
     $ mamba install "libblas=*=*mkl"
-    $ python dev.py test -s linalg
+    $ spin test -s linalg
     $ mamba install "libblas=*=*openblas"
 
 
@@ -222,9 +222,9 @@ source.
 
 Once you have everything set up, the development experience is::
 
-    $ python dev.py build -C-Dblas=flexiblas -C-Dlapack=flexiblas
-    $ FLEXIBLAS=NETLIB python dev.py test -s linalg
-    $ FLEXIBLAS=OpenBLAS python dev.py test -s linalg
+    $ spin build -C-Dblas=flexiblas -C-Dlapack=flexiblas
+    $ FLEXIBLAS=NETLIB spin test -s linalg
+    $ FLEXIBLAS=OpenBLAS spin test -s linalg
     # Or export the environment variable to make the selection stick:
     $ export FLEXIBLAS=OpenBLAS
 
@@ -277,7 +277,7 @@ We're now ready to build SciPy against FlexiBLAS::
 
     $ export PKG_CONFIG_PATH=$PWD/flexiblas-setup/built-libs/lib/pkgconfig/
     $ cd scipy
-    $ python dev.py build -C-Dblas=flexiblas -C-Dlapack=flexiblas
+    $ spin build -C-Dblas=flexiblas -C-Dlapack=flexiblas
     ...
     Run-time dependency flexiblas found: YES 3.4.2
 
@@ -285,9 +285,9 @@ Now we can run the tests. Note that the ``NETLIB`` option is built without
 having to specify it; it's the default in FlexiBLAS and sources are included in
 its repository::
 
-    $ FLEXIBLAS=OpenBLAS python dev.py test -s linalg
-    $ FLEXIBLAS=NETLIB python dev.py test -s linalg
-    $ python dev.py test -s linalg  # uses the default (NETLIB)
+    $ FLEXIBLAS=OpenBLAS spin test -s linalg
+    $ FLEXIBLAS=NETLIB spin test -s linalg
+    $ spin test -s linalg  # uses the default (NETLIB)
 
 This backend switching can also be done inside a Python interpreter with
 ``threadpoolctl`` (see `its README

@@ -278,7 +278,7 @@ The following pytest markers are available:
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
-    python dev.py test -b all -m array_api_backends
+    spin test -b all -m array_api_backends
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
@@ -324,17 +324,17 @@ requires conversion to NumPy for compiled code::
   def test_toto(self, xp):
       ...
 
-After applying these markers, ``dev.py test`` can be used with the new option
+After applying these markers, ``spin test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b torch -s cluster
+  spin test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
+backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.

@@ -15,7 +15,7 @@ though*).
 
 - :ref:`building-from-source` - how to set up a development environment,
   including installing compilers and SciPy dependencies, cloning the SciPy
-  repository on GitHub and updating git submodules, and using the ``dev.py``
+  repository on GitHub and updating git submodules, and using the ``spin``
   interface for building and running tests.
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding
   which module contains SciPy functionality to be edited, adding new modules to
@@ -52,9 +52,9 @@ Testing
 - :doc:`numpy:reference/testing` is the definitive guide to writing unit tests
   of NumPy or SciPy code (part of the NumPy documentation)
 - :ref:`writing-test-tips` contains tips for writing units tests
-- :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and
+- :ref:`devpy-test` documents ``spin test``, the command to build SciPy and
   run tests locally
-- :ref:`debugging-linalg-issues` 
+- :ref:`debugging-linalg-issues`
 
 .. _docs:
 
