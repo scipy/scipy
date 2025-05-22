@@ -204,7 +204,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         convergence.
     atol : float, optional
         Absolute tolerance for convergence, the solving stops when
-        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        ``np.std(population_energies) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
