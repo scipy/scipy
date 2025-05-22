@@ -779,7 +779,7 @@ def xp_capabilities(
        SKIP/XFAIL markers and perform additional backend-specific
        testing, such as extra validation for Dask and JAX;
     2. It automatically adds a note to the function's docstring, containing
-       a table matching what has been tested.    
+       a table matching what has been tested.
 
     See Also
     --------
@@ -880,7 +880,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 def make_xp_pytest_param(func, *args, capabilities_table=None):
     """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
-    
+
         @pytest.mark.parametrize(
             "func", [make_xp_pytest_param(f1), make_xp_pytest_param(f2)]
         )
