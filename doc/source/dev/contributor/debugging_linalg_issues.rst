@@ -11,7 +11,7 @@ runtime dependency - and we support a significant number of BLAS/LAPACK
 libraries.
 
 This document aims to provide guidance about how to go about debugging linear
-algebra issues. 
+algebra issues.
 
 If there is a real bug, it can be in one of three places:
 
@@ -150,7 +150,7 @@ MKL is as simple as::
       libblas                         3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       libcblas                        3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
       liblapack                       3.9.0-21_linux64_openblas --> 3.9.0-5_h92ddd45_netlib
-    
+
     $ mamba install "libblas=*=*mkl"
     ...
       libblas                           3.9.0-5_h92ddd45_netlib --> 3.9.0-21_linux64_mkl
@@ -442,7 +442,7 @@ file to automate this and avoid the manual paths:
         $ ./build/repro_c  # output may vary
 
         info = 0
-        Re(eigv) = 4.000000 , 8.000000 , inf , -inf , 
+        Re(eigv) = 4.000000 , 8.000000 , inf , -inf ,
         Im(eigv = 0.000000 , 0.000000 , -nan , -nan ,
 
   .. tab-item:: Fortran
@@ -464,8 +464,8 @@ file to automate this and avoid the manual paths:
 
         info =            0
         alphar =    1.0204501477442456        11.707793036240817        3.7423579363517347E-014  -1.1492523608519701E-014
-        alphai =    0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000     
-        beta =   0.25511253693606051        1.4634741295300704        0.0000000000000000        0.0000000000000000     
+        alphai =    0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000
+        beta =   0.25511253693606051        1.4634741295300704        0.0000000000000000        0.0000000000000000
 
         Re(eigv) =    4.0000000000000142        8.0000000000001741                       Infinity                 -Infinity
         Im(eigv) =    0.0000000000000000        0.0000000000000000                            NaN                       NaN
@@ -531,7 +531,7 @@ Here is an example ``gdb`` session::
     (gdb) s     # step through the C function
     Single stepping until exit from function dpotrf_,
     which has no line number information.
-    f2py_rout__flapack_dpotrf (capi_self=<optimized out>, capi_args=<optimized out>, 
+    f2py_rout__flapack_dpotrf (capi_self=<optimized out>, capi_args=<optimized out>,
         capi_keywds=<optimized out>, f2py_func=0x7ffff4c48820 <dpotrf_>)
         at scipy/linalg/_flapackmodule.c:63281
     ....

@@ -251,7 +251,7 @@ Adding tests
 ------------
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to it,
-which is valued to the currently tested array namespace. 
+which is valued to the currently tested array namespace.
 
 The following pytest markers are available:
 
@@ -312,7 +312,7 @@ The following examples demonstrate how to use the markers::
 
 Passing names of backends into ``exceptions`` means that they will not be skipped
 by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
-is implemented for some, but not all, non-CPU backends, and the CPU code path 
+is implemented for some, but not all, non-CPU backends, and the CPU code path
 requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.

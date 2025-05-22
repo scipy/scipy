@@ -93,7 +93,7 @@ user wants to override this autodetection mechanism for building against plain
 ``libblas``/``liblapack`` (this is what conda-forge does for example), use the
 ``-Duse-g77-abi=true`` build option. E.g.,::
 
-    $ python -m build -C-Duse-g77-abi=true -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack 
+    $ python -m build -C-Duse-g77-abi=true -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 
 Work-in-progress
@@ -107,4 +107,3 @@ of the box:
   LP64 (32-bit integer size) BLAS/LAPACK.
 - Automatically selecting from multiple possible BLAS and LAPACK options, with
   a user-provided order of precedence
-
