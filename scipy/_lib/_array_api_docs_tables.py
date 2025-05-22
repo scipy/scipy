@@ -118,3 +118,55 @@ def make_flat_capabilities_table(
                 # from stats.distributions.
                 continue
     return output
+
+
+def calculate_table_statistics(
+    flat_table: list[dict[str, str]]
+) -> dict[str, str] | dict[str, dict[str, str]]:
+    """Get counts of what is supported per module.
+
+    Parameters
+    ----------
+    flat_table : list[dict[str, str]]
+        A table as returned by `make_flat_capabilities_table`
+
+    Returns
+    -------
+    dict[str, str] | dict[str, dict[str, str]]
+        If `flat_table` is only for one module (and has no module column)
+        then the output is a dictionary with a key "total" and a key for
+        each backend column of the flat capabilities table. The value
+        corresponding to total is the total count of functions in the given
+        module, and the value associated to the other keys is the count of
+        functions that support that particular backend/details.
+
+        If `flat_table` has a module column, then the output will be a
+        dictionary with keys for each included module and values of type
+        dict[str, str] of the kind returned by this function when `flat_table`
+        has no module column.
+    """
+    if not flat_table:
+        return []
+    table_contains_modules = "module" in flat_table[0]
+    if table_contains_modules:
+        counter = defaultdict(lambda: defaultdict(int))
+    else:
+        counter = defaultdict(int)
+
+    for entry in flat_table:
+        entry = entry.copy()
+        function_name = entry.pop("function")
+        if table_contains_modules:
+            module = entry.pop("module")
+            current_counter = counter[module]
+        else:
+            current_counter = counter
+        current_counter["total"] += 1
+        for key, value in entry.items():
+            current_counter[key] += value
+    # Strip away dangerous defaultdictness
+    if table_contains_modules:
+        counter = {key: dict(value) for key, value in counter.items()}
+    else:
+        counter = dict(counter)
+    return counter
