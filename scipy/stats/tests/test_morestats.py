@@ -2,7 +2,6 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
-import contextlib
 import math
 import re
 import sys
@@ -27,7 +26,6 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -766,16 +764,8 @@ class TestBartlett:
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.bartlett(*args)
-        else:
-            with np.testing.suppress_warnings() as sup:
-                # torch/array_api_strict
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
-                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
-                res = stats.bartlett(*args)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.bartlett(*args)
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
@@ -1816,14 +1806,9 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstat(xp.asarray([]))
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstat(xp.asarray([]))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.kstat(xp.asarray([]))
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -1859,15 +1844,10 @@ class TestKstat:
 
 
 class TestKstatVar:
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
         x = xp.asarray([])
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = stats.kstatvar(x)
-        else:
-            with np.errstate(invalid='ignore'):  # for array_api_strict
-                res = stats.kstatvar(x)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.kstatvar(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
@@ -2029,9 +2009,7 @@ class TestBoxcox_llf:
     @pytest.mark.thread_unsafe
     def test_empty(self, xp):
         message = "One or more sample arguments is too small..."
-        context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
-                   else contextlib.nullcontext())
-        with context:
+        with pytest.warns(SmallSampleWarning, match=message):
             assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
@@ -2751,15 +2729,8 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        if is_numpy(xp):
-            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-                res = test_func(x)
-        else:
-            with np.testing.suppress_warnings() as sup:
-                # for array_api_strict
-                sup.filter(RuntimeWarning, "Mean of empty slice")
-                sup.filter(RuntimeWarning, "invalid value encountered")
-                res = test_func(x)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = test_func(x)
         xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
@@ -2815,6 +2786,7 @@ class TestCircFuncs:
         y = stats.circstd(xp.asarray([0]))
         assert math.copysign(1.0, y) == 1.0
 
+    @pytest.mark.skip_xp_backends("dask.array", reason='chunk sizes unknown')
     def test_circmean_accuracy_tiny_input(self, xp):
         # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
         # circmean(x) should return x because atan2(sin(x), cos(x)) == x.

@@ -486,11 +486,12 @@ def _mode_result(mode, count):
     # When a slice is empty, `_axis_nan_policy` automatically produces
     # NaN for `mode` and `count`. This is a reasonable convention for `mode`,
     # but `count` should not be NaN; it should be zero.
-    i = np.isnan(count)
+    xp = array_namespace(mode, count)
+    i = xp.isnan(count)
     if i.shape == ():
-        count = np.asarray(0, dtype=count.dtype)[()] if i else count
+        count = xp.asarray(0, dtype=count.dtype)[()] if i else count
     else:
-        count[i] = 0
+        count = xpx.at(count)[i].set(0)
     return ModeResult(mode, count)
 
 
@@ -620,9 +621,9 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
     lower_limit, upper_limit = limits
     lower_include, upper_include = inclusive
     if lower_limit is not None:
-        mask |= (a < lower_limit) if lower_include else a <= lower_limit
+        mask = mask | ((a < lower_limit) if lower_include else a <= lower_limit)
     if upper_limit is not None:
-        mask |= (a > upper_limit) if upper_include else a >= upper_limit
+        mask = mask | ((a > upper_limit) if upper_include else a >= upper_limit)
     lazy = is_lazy_array(mask)
     if not lazy and xp.all(mask):
         raise ValueError("No array values within given limits")
@@ -1008,7 +1009,8 @@ def _moment_outputs(kwds, default_order=1):
 def _moment_result_object(*args):
     if len(args) == 1:
         return args[0]
-    return np.asarray(args)
+    xp = array_namespace(*args)
+    return xp.stack(args)
 
 
 # When `order` is array-like with size > 1, moment produces an *array*
@@ -1016,7 +1018,7 @@ def _moment_result_object(*args):
 # separate outputs. It is important to make the distinction between
 # separate outputs when adding the reduced axes back (`keepdims=True`).
 def _moment_tuple(x, n_out):
-    return tuple(x) if n_out > 1 else (x,)
+    return tuple(x[i, ...] for i in range(x.shape[0])) if n_out > 1 else (x,)
 
 
 # `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
@@ -6020,9 +6022,10 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
     # at most one unique non-NaN value
-    alternative = np.atleast_1d(alternative)  # can't index 0D object
-    alternative = alternative[np.isfinite(alternative)]
-    alternative = alternative[0] if alternative.size else np.nan
+    xp = array_namespace(statistic, pvalue)
+    alternative = xpx.atleast_nd(xp.asarray(alternative), ndim=1, xp=xp)
+    alternative = alternative[xp.isfinite(alternative)]
+    alternative = alternative[0] if xp_size(alternative) else xp.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
 

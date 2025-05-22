@@ -6,7 +6,6 @@ from numpy.testing import suppress_warnings
 
 from scipy.stats import variation
 from scipy._lib._util import AxisError
-from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_equal, xp_assert_close
 from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
@@ -141,10 +140,7 @@ class TestVariation:
             # torch
             sup.filter(UserWarning, "std*")
             if axis != 0:
-                if is_numpy(xp):
-                    with pytest.warns(SmallSampleWarning, match="See documentation..."):
-                        y = variation(x, axis=axis)
-                else:
+                with pytest.warns(SmallSampleWarning, match="See documentation..."):
                     y = variation(x, axis=axis)
             else:
                 y = variation(x, axis=axis)
