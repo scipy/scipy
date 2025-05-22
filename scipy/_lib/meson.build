@@ -111,6 +111,7 @@ python_sources = [
   '__init__.py',
   '_array_api.py',
   '_array_api_compat_vendor.py',
+  '_array_api_docs_tables.py',
   '_array_api_no_0d.py',
   '_array_api_override.py',
   '_bunch.py',
