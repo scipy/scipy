@@ -2954,7 +2954,7 @@ def bartlett(*samples, axis=0):
              * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
-    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(T)))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
     T = xp.clip(T, min=0., max=xp.inf)
