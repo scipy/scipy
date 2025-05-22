@@ -442,14 +442,15 @@ def geometric_discrepancy(
     if sample.shape[0] < 2:
         raise ValueError("Sample must contain at least two points")
 
-    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
-
-    if np.any(distances == 0.0):
-        warnings.warn("Sample contains duplicate points.", stacklevel=2)
-
     if method == "mindist":
-        return np.min(distances[distances.nonzero()])
+        min_d = distance._pmindist(sample, metric=metric)
+        if np.isclose(min_d, 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
+        return min_d
     elif method == "mst":
+        distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+        if np.any(distances == 0.0):
+            warnings.warn("Sample contains duplicate points.", stacklevel=2)
         fully_connected_graph = distance.squareform(distances)
         mst = minimum_spanning_tree(fully_connected_graph)
         distances = mst[mst.nonzero()]
