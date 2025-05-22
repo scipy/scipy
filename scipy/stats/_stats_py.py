@@ -1244,8 +1244,7 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-@xp_capabilities(static_argnames=("axis", "bias", "nan_policy"),
-                 jax_jit=False, allow_dask_compute=2)
+@xp_capabilities(jax_jit=False, allow_dask_compute=2)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
@@ -2582,8 +2581,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities(static_argnames=("axis", "ddof", "nan_policy"),
-                 jax_jit=False, allow_dask_compute=True)
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
 )
@@ -4374,7 +4372,6 @@ class PearsonRResult(PearsonRResultBase):
 
 @xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
                  cpu_only=True, exceptions=['cupy'],
-                 static_argnames=("alternative", "method", "axis"),
                  jax_jit=False, allow_dask_compute=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
