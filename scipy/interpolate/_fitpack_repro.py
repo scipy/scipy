@@ -21,7 +21,7 @@ import warnings
 import operator
 import numpy as np
 
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, concat_1d
 
 from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
@@ -237,7 +237,7 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
     yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest, xp=xp)
 
 
-def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, xp=None):
+def _generate_knots_impl(x, y, w, xb, xe, k, s, nest, xp=np):
     acc = s * TOL
     m = x.size    # the number of data points
 
@@ -657,7 +657,7 @@ def root_rati(f, p0, bracket, acc):
     return Bunch(converged=converged, root=p, iterations=it, ier=ier)
 
 
-def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest):
+def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, xp=np):
     """Shared infra for make_splrep and make_splprep.
     """
     acc = s * TOL
@@ -682,6 +682,7 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest):
     if t.shape[0] == 2 * (k + 1):
         # nothing to optimize
         _, _, c = _lsq_solve_qr(x, y, t, k, w)
+        t, c = xp.asarray(t), xp.asarray(c)
         return BSpline(t, c, k)
 
     ### solve ###
@@ -716,7 +717,11 @@ def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest):
  #   assert res_.converged
 
     # f.spl is the spline corresponding to the found `p` value
-    return f.spl
+    t, c, k = f.spl.tck
+    axis, extrap = f.spl.axis, f.spl.extrapolate
+    t, c = xp.asarray(t), xp.asarray(c)
+    spl = BSpline.construct_fast(t, c, k, axis=axis, extrapolate=extrap)
+    return spl
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
@@ -838,6 +843,10 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
     .. versionadded:: 1.15.0
     """  # noqa:E501
+    xp = array_namespace(x, y, w, t)
+    if t is not None:
+        t = np.asarray(t)
+
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
@@ -845,7 +854,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
     x, y, w, k, s, xb, xe = _validate_inputs(x, y, w, k, s, xb, xe, parametric=False)
 
-    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest)
+    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest, xp=xp)
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
@@ -974,13 +983,14 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
     """  # noqa:E501
-    x = np.stack(x, axis=1)
+    xp = array_namespace(x, w, u, t)
+    x = xp.stack(x, axis=1)
 
     # construct the default parametrization of the curve
     if u is None:
         dp = (x[1:, :] - x[:-1, :])**2
-        u = np.sqrt((dp).sum(axis=1)).cumsum()
-        u = np.r_[0, u / u[-1]]
+        u = xp.cumulative_sum(xp.sum(xp.sqrt(dp, axis=1)))
+        u = concat_1d[0, u / u[-1]]
 
     if s == 0:
         if t is not None or w is not None or nest is not None:
@@ -988,8 +998,10 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
         return make_interp_spline(u, x.T, k=k, axis=1), u
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue, parametric=True)
+    if t is not None:
+        t = np.asarray(t)
 
-    spl = _make_splrep_impl(u, x, w, ub, ue, k, s, t, nest)
+    spl = _make_splrep_impl(u, x, w, ub, ue, k, s, t, nest, xp=xp)
 
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
