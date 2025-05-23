@@ -27,7 +27,10 @@ class IndexMixin:
     This class provides common dispatching and validation logic for indexing.
     """
     def __getitem__(self, key):
-        index, new_shape = self._validate_indices(key)
+        index, new_shape, _, _ = self._validate_indices(key)
+        if len(new_shape) > 2:
+            raise IndexError("Indexing that leads to >2D is not supported by "
+                             f"{self.format} format. Try converting to COO format")
 
         # 1D array
         if len(index) == 1:
@@ -122,7 +125,7 @@ class IndexMixin:
         return res
 
     def __setitem__(self, key, x):
-        index, _ = self._validate_indices(key)
+        index, new_shape, _, _ = self._validate_indices(key)
 
         # 1D array
         if len(index) == 1:
@@ -213,13 +216,21 @@ class IndexMixin:
         """Returns two tuples: (index tuple, requested shape tuple)"""
         # single ellipsis
         if key is Ellipsis:
-            return (slice(None),) * self.ndim, self.shape
+            return (slice(None),) * self.ndim, self.shape, [], []
 
         if not isinstance(key, tuple):
             key = [key]
 
+        # pass 1:
+        # - expand ellipsis to allow matching to self._shape
+        # - preprocess boolean array index
+        # - error on sparse array as an index
+        # - use asarray on any other index element
+        # - count the ndim of the index and check if too long
+        # note: integer arrays provide info for one axis even if >1D array
         ellps_pos = None
         index_1st = []
+        arr_int_pos = []
         prelim_ndim = 0
         for i, idx in enumerate(key):
             if idx is Ellipsis:
@@ -228,12 +239,18 @@ class IndexMixin:
                 ellps_pos = i
             elif idx is None:
                 index_1st.append(idx)
-            elif isinstance(idx, slice) or isintlike(idx):
+            elif isinstance(idx, slice):
                 index_1st.append(idx)
                 prelim_ndim += 1
+            elif isintlike(idx):
+                index_1st.append(idx)
+                arr_int_pos.append(prelim_ndim)
+                prelim_ndim += 1
             elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+                # can't check the shape of ix until we resolve ellipsis (pass 2)
                 index_1st.append(ix)
                 prelim_ndim += ix.ndim
+                arr_int_pos.extend(range(prelim_ndim - ix.ndim, prelim_ndim))
             elif issparse(idx):
                 # TODO: make sparse matrix indexing work for sparray
                 raise IndexError(
@@ -242,7 +259,13 @@ class IndexMixin:
                     'are equal shapes.')
             else:  # dense array
                 index_1st.append(np.asarray(idx))
+                arr_int_pos.append(prelim_ndim)
                 prelim_ndim += 1
+        if prelim_ndim > self.ndim:
+            raise IndexError(
+                'Too many indices for array or tuple index out of range. '
+                f'Key {key} needs {prelim_ndim}D. Array is {self.ndim}D'
+            )
         ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
         if ellip_slices:
             if ellps_pos is None:
@@ -250,13 +273,18 @@ class IndexMixin:
             else:
                 index_1st = index_1st[:ellps_pos] + ellip_slices + index_1st[ellps_pos:]
 
+        print(f"{index_1st=}")
         # second pass (have processed ellipsis and preprocessed arrays)
         idx_shape = []
         index_ndim = 0
         index = []
-        array_indices = []
+        none_indices = []  # store arrays
+        array_indices = []  # store arrays
+        arr_int_pos = []  # track positions of arrays and integers
+
         for i, idx in enumerate(index_1st):
             if idx is None:
+                none_indices.append(len(idx_shape))
                 idx_shape.append(1)
             elif isinstance(idx, slice):
                 index.append(idx)
@@ -270,45 +298,49 @@ class IndexMixin:
                     raise IndexError(f'index ({idx}) out of range')
                 idx = int(idx + N if idx < 0 else idx)
                 index.append(idx)
+                arr_int_pos.append(index_ndim)
                 index_ndim += 1
             # bool array (checked in first pass)
             elif idx.dtype.kind == 'b':
-                ix = idx
-                tmp_ndim = index_ndim + ix.ndim
+                tmp_ndim = index_ndim + idx.ndim
                 mid_shape = self._shape[index_ndim:tmp_ndim]
-                if ix.shape != mid_shape:
+                if idx.shape != mid_shape:
                     raise IndexError(
-                        f"bool index {i} has shape {mid_shape} instead of {ix.shape}"
+                        f"bool index {i} has shape {mid_shape} instead of {idx.shape}"
                     )
-                index.extend(ix.nonzero())
+                index.extend(idx.nonzero())
                 array_indices.extend(range(index_ndim, tmp_ndim))
+                arr_int_pos.extend(range(index_ndim, tmp_ndim))
                 index_ndim = tmp_ndim
             else:  # dense array
                 N = self._shape[index_ndim]
                 idx = self._asindices(idx, N)
                 index.append(idx)
+                arr_int_pos.append(index_ndim)
                 array_indices.append(index_ndim)
                 index_ndim += 1
-        if index_ndim > self.ndim:
-            raise IndexError(
-                f'invalid index ndim. Array is {self.ndim}D. Index needs {index_ndim}D'
-            )
-        if len(array_indices) > 1:
-            idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
-            if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
-                shapes = " ".join(str(ix.shape) for ix in idx_arrays)
-                msg = (f'shape mismatch: indexing arrays could not be broadcast '
-                       f'together with shapes {shapes}')
-                raise IndexError(msg)
-            # TODO: handle this for nD (adjacent arrays stay, separated move to start)
-            idx_shape = list(idx_arrays[0].shape) + idx_shape
-        elif len(array_indices) == 1:
-            arr_index = array_indices[0]
-            arr_shape = list(index[arr_index].shape)
-            idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
-        if (ndim := len(idx_shape)) > 2:
-            raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
-        return tuple(index), tuple(idx_shape)
+        if array_indices:
+            # raises if arrays not broadcastable to a single shape
+            # arr_shape == () if no arrays in index
+            arr_shape = np.broadcast_shapes(*[index[i].shape for i in array_indices])
+            for i in array_indices:
+                index[i] = np.broadcast_to(index[i], arr_shape)
+
+            # array_indices implies arr_int_pos has at least one element
+            # if arrays and ints not adjacent, move to front of shape
+#            print(f"{len(arr_int_pos)=} {arr_int_pos=}\n{arr_int_pos[-1] - arr_int_pos[0] + 1=}")
+#            print(f" HHH {(len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1)) =}")
+            if len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1):
+                prepend_arrays = arr_int_pos
+                idx_shape = list(arr_shape) + idx_shape
+            else:
+                prepend_arrays = False
+                arr_pos = array_indices[0]
+                idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
+#            print(f"{prepend_arrays=} {arr_pos=} {arr_shape=} {idx_shape=}")
+        print(f"{idx_shape=}, {none_indices=}")
+        print(f"{index=} {arr_int_pos=}")
+        return tuple(index), tuple(idx_shape), arr_int_pos, none_indices
 
     def _asindices(self, idx, length):
         """Convert `idx` to a valid index for an axis with a given length.
@@ -321,7 +353,9 @@ class IndexMixin:
             raise IndexError('invalid index') from e
 
         if x.ndim not in (1, 2):
-            raise IndexError('Index dimension must be 1 or 2')
+            print("X.NDIM: ", x.ndim)
+            if self.format != "coo":
+                raise IndexError('Index dimension must be 1 or 2')
 
         if x.size == 0:
             return x
