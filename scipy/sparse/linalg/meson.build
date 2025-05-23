@@ -1,6 +1,7 @@
 py3.install_sources([
     '__init__.py',
     '_expm_multiply.py',
+    '_funm_multiply_krylov.py',
     '_interface.py',
     '_matfuncs.py',
     '_norm.py',

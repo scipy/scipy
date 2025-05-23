@@ -2141,26 +2141,6 @@ def test_weightedtau_vs_quadratic():
             rng.shuffle(rank)
 
 
-class TestFindRepeats:
-
-    def test_basic(self):
-        a = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 5]
-        message = "`scipy.stats.find_repeats` is deprecated..."
-        with pytest.deprecated_call(match=message):
-            res, nums = stats.find_repeats(a)
-        assert_array_equal(res, [1, 2, 3, 4])
-        assert_array_equal(nums, [3, 3, 2, 2])
-
-    def test_empty_result(self):
-        # Check that empty arrays are returned when there are no repeats.
-        for a in [[10, 20, 50, 30, 40], []]:
-            message = "`scipy.stats.find_repeats` is deprecated..."
-            with pytest.deprecated_call(match=message):
-                repeated, counts = stats.find_repeats(a)
-            assert_array_equal(repeated, [])
-            assert_array_equal(counts, [])
-
-
 class TestRegression:
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
