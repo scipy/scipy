@@ -2571,7 +2571,7 @@ class TestThreading:
         for i in range(n):
             fun(*args, output=out[i, ...])
 
-    @xfail_xp_backends("cupy", 
+    @xfail_xp_backends("cupy",
                        reason="XXX thread exception; cannot repro outside of pytest")
     def test_correlate1d(self, xp):
         d = np.random.randn(5000)
@@ -2585,7 +2585,7 @@ class TestThreading:
         self.check_func_thread(4, ndimage.correlate1d, (d, k), ot)
         xp_assert_equal(os, ot)
 
-    @xfail_xp_backends("cupy", 
+    @xfail_xp_backends("cupy",
                        reason="XXX thread exception; cannot repro outside of pytest")
     def test_correlate(self, xp):
         d = xp.asarray(np.random.randn(500, 500))
@@ -2596,7 +2596,7 @@ class TestThreading:
         self.check_func_thread(4, ndimage.correlate, (d, k), ot)
         xp_assert_equal(os, ot)
 
-    @xfail_xp_backends("cupy", 
+    @xfail_xp_backends("cupy",
                        reason="XXX thread exception; cannot repro outside of pytest")
     def test_median_filter(self, xp):
         d = xp.asarray(np.random.randn(500, 500))
@@ -2606,7 +2606,7 @@ class TestThreading:
         self.check_func_thread(4, ndimage.median_filter, (d, 3), ot)
         xp_assert_equal(os, ot)
 
-    @xfail_xp_backends("cupy", 
+    @xfail_xp_backends("cupy",
                        reason="XXX thread exception; cannot repro outside of pytest")
     def test_uniform_filter1d(self, xp):
         d = np.random.randn(5000)
@@ -2619,7 +2619,7 @@ class TestThreading:
         self.check_func_thread(4, ndimage.uniform_filter1d, (d, 5), ot)
         xp_assert_equal(os, ot)
 
-    @xfail_xp_backends("cupy", 
+    @xfail_xp_backends("cupy",
                        reason="XXX thread exception; cannot repro outside of pytest")
     def test_minmax_filter(self, xp):
         d = xp.asarray(np.random.randn(500, 500))
@@ -2984,6 +2984,21 @@ class TestVectorizedFilter:
         # window is bigger than input shouldn't be a problem
         res = ndimage.vectorized_filter(input, function, size=21)
         ref = ndimage.vectorized_filter(input, function, size=21)
+        xp_assert_close(res, ref)
+
+    def test_gh23046(self, xp):
+        # While investigating the feasibility of gh-23046, I noticed a bug when the
+        # length of an `axes` tuple equals the dimensionality of the image.
+        rng = np.random.default_rng(45982734597824)
+        img = xp.asarray(rng.random((5, 5)))
+        size = (2, 3)
+        ref = ndimage.vectorized_filter(img.T, xp.mean, size=size).T
+        res = ndimage.vectorized_filter(img, xp.mean, size=size, axes=(1, 0))
+        xp_assert_close(res, ref)
+
+        ref = ndimage.vectorized_filter(img, xp.mean, size=size, mode='constant')
+        res = ndimage.vectorized_filter(img, xp.mean, size=size[::-1], axes=(1, 0),
+                                        mode='constant')
         xp_assert_close(res, ref)
 
 
