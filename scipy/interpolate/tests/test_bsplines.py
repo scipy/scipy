@@ -3531,12 +3531,12 @@ class TestMakeSplrep:
             # len(x) != len(y)
             make_splrep(np.arange(8), np.arange(9), s=0.1)
 
-    def _get_xykt(self):
-        x = np.linspace(0, 5, 11)
-        y  = np.sin(x*3.14 / 5)**2
+    def _get_xykt(self, xp=np):
+        x = xp.linspace(0, 5, 11)
+        y  = xp.sin(x*3.14 / 5)**2
         k = 3
         s = 1.7e-4
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
         return x, y, k, s, tt
 
@@ -3579,18 +3579,19 @@ class TestMakeSplrep:
         assert D.shape[0] == n - 2*k - 2   # number of internal knots
         xp_assert_close(D, D_dense, atol=1e-15)
 
-    def test_simple_vs_splrep(self):
-        x, y, k, s, tt = self._get_xykt()
-        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+    def test_simple_vs_splrep(self, xp):
+        x, y, k, s, tt = self._get_xykt(xp)
+        tt = xp.asarray([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
 
-        t,c,k = splrep(x, y, k=k, s=s)
+        t, c, k = splrep(x, y, k=k, s=s)
+        t, c = xp.asarray(t), xp.asarray(c)
         assert all(t == tt)
 
         spl = make_splrep(x, y, k=k, s=s)
-        xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
+        xp_assert_close(c[:spl.c.shape[0]], spl.c, atol=1e-15)
 
-    def test_with_knots(self):
-        x, y, k, s, _ = self._get_xykt()
+    def test_with_knots(self, xp):
+        x, y, k, s, _ = self._get_xykt(xp)
 
         t = list(generate_knots(x, y, k=k, s=s))[-1]
 
@@ -3601,18 +3602,18 @@ class TestMakeSplrep:
         xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
         assert spl_auto.k == spl_t.k
 
-    def test_no_internal_knots(self):
+    def test_no_internal_knots(self, xp):
         # should not fail if there are no internal knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         k = 3
         spl = make_splrep(x, y, k=k, s=1)
         assert spl.t.shape[0] == 2*(k+1)
 
-    def test_default_s(self):
+    def test_default_s(self, xp):
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         spl = make_splrep(x, y, k=3)
         spl_i = make_interp_spline(x, y, k=3)
@@ -3648,10 +3649,10 @@ class TestMakeSplrep:
         with assert_raises(ValueError):
             make_splrep(x, y, w=w, k=2, s=12)
 
-    def test_shape(self):
+    def test_shape(self, xp):
         # make sure coefficients have the right shape (not extra dims)
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl = make_splrep(x, y, k=k)
@@ -3664,10 +3665,10 @@ class TestMakeSplrep:
         spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5)
         assert spl_2.c.ndim == 1
 
-    def test_s0_vs_not(self):
+    def test_s0_vs_not(self, xp):
         # check that the shapes are consistent
         n, k = 10, 3
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
 
         spl_0 = make_splrep(x, y, k=3, s=0)
