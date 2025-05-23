@@ -46,7 +46,6 @@ Basics
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinvh - Pseudo-inverse of hermitian matrix
-   kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
