@@ -14,10 +14,8 @@ import numpy as np
 import numpy.typing as npt
 
 from scipy._lib import array_api_compat
-from scipy._lib.array_api_compat import (
-    is_array_api_obj,
-    numpy as np_compat,
-)
+import scipy._lib.array_api_compat.numpy as np_compat
+from scipy._lib.array_api_compat import is_array_api_obj
 from scipy._lib._sparse import issparse
 
 
