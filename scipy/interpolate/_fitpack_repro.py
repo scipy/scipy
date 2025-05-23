@@ -21,6 +21,8 @@ import warnings
 import operator
 import numpy as np
 
+from scipy._lib._array_api import array_namespace
+
 from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
@@ -219,22 +221,25 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
     .. versionadded:: 1.15.0
 
     """
+    xp = array_namespace(x, y, w)
+
     if s == 0:
         if nest is not None or w is not None:
             raise ValueError("s == 0 is interpolation only")
         t = _not_a_knot(x, k)
-        yield t
+        yield xp.asarray(t)
         return
 
     x, y, w, k, s, xb, xe = _validate_inputs(
         x, y, w, k, s, xb, xe, parametric=np.ndim(y) == 2
     )
 
-    yield from _generate_knots_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, nest=nest)
+    yield from _generate_knots_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, nest=nest, xp=xp)
 
 
-def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-
+def _generate_knots_impl(
+    x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None, xp=None
+):
     acc = s * TOL
     m = x.size    # the number of data points
 
@@ -258,7 +263,7 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
     # c  main loop for the different sets of knots. m is a safe upper bound
     # c  for the number of trials.
     for _ in range(m):
-        yield t
+        yield xp.asarray(t)
 
         # construct the LSQ spline with this set of knots
         fpold = fp
@@ -292,13 +297,13 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
             # c  if n=nmax we locate the knots as for interpolation.
             if n >= nmax:
                 t = _not_a_knot(x, k)
-                yield t
+                yield xp.asarray(t)
                 return
 
             # c  if n=nest we cannot increase the number of knots because of
             # c  the storage capacity limitation.
             if n >= nest:
-                yield t
+                yield xp.asarray(t)
                 return
 
             # recompute if needed
