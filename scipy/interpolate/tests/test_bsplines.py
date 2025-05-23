@@ -1766,6 +1766,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
 
 parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
 
+@skip_xp_backends(cpu_only=True)
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -1793,10 +1794,10 @@ class TestLSQ:
         xp_assert_close(b.c, c1)
 
     @parametrize_lsq_methods
-    def test_weights(self, method):
+    def test_weights(self, method, xp):
         # weights = 1 is same as None
-        x, y, t, k = self.x, self.y, self.t, self.k
-        w = np.ones_like(x)
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
+        w = xp.ones_like(x)
 
         b = make_lsq_spline(x, y, t, k, method=method)
         b_w = make_lsq_spline(x, y, t, k, w=w, method=method)
@@ -1805,79 +1806,84 @@ class TestLSQ:
         xp_assert_close(b.c, b_w.c, atol=1e-14)
         assert b.k == b_w.k
 
-    def test_weights_same(self):
+    def test_weights_same(self, xp):
         # both methods treat weights
-        x, y, t, k = self.x, self.y, self.t, self.k
+        x, y, t, k = *map(xp.asarray, (self.x, self.y, self.t)), self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
+        w = xp.asarray(w)
 
         b_ne = make_lsq_spline(x, y, t, k, w=w, method="norm-eq")
         b_qr = make_lsq_spline(x, y, t, k, w=w, method="qr")
         b_no_w = make_lsq_spline(x, y, t, k, method="qr")
 
         xp_assert_close(b_ne.c, b_qr.c, atol=1e-14)
-        assert not np.allclose(b_no_w.c, b_qr.c, atol=1e-14)
+        assert not xp.all(xp.abs(b_no_w.c - b_qr.c) < 1e-14)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, 5, 6, 7))
+        y = xp.asarray(y)
+
         b = make_lsq_spline(x, y, t, k, method=method)
-        assert b.c.shape == (t.size-k-1, 5, 6, 7)
+        assert b.c.shape == (t.shape[0] - k - 1, 5, 6, 7)
 
     @parametrize_lsq_methods
-    def test_multiple_rhs_2(self, method):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_2(self, method, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         rng = np.random.RandomState(1234)
         y = rng.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b = make_lsq_spline(x, y, t, k, method=method)
 
         bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
               for i in range(nrhs)]
-        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+        coefs = xp.stack([bb[i].c for i in range(nrhs)]).T
 
         xp_assert_close(coefs, b.c, atol=1e-15)
 
-    def test_multiple_rhs_3(self):
-        x, t, k, n = self.x, self.t, self.k, self.n
+    def test_multiple_rhs_3(self, xp):
+        x, t, k, n = *map(xp.asarray, (self.x, self.t)), self.k, self.n
         nrhs = 3
         y = np.random.random(size=(n, nrhs))
+        y = xp.asarray(y)
         b_qr = make_lsq_spline(x, y, t, k, method="qr")
         b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
         xp_assert_close(b_qr.c, b_neq.c, atol=1e-15)
 
     @parametrize_lsq_methods
-    def test_complex(self, method):
+    def test_complex(self, method, xp):
         # cmplx-valued `y`
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
 
         b = make_lsq_spline(x, yc, t, k, method=method)
-        b_re = make_lsq_spline(x, yc.real, t, k, method=method)
-        b_im = make_lsq_spline(x, yc.imag, t, k, method=method)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k, method=method)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k, method=method)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
-    def test_complex_2(self):
+    def test_complex_2(self, xp):
         # test complex-valued y with y.ndim > 1
 
-        x, t, k = self.x, self.t, self.k
-        yc = self.y * (1. + 2.j)
-        yc = np.stack((yc, yc), axis=1)
+        x, t, k = *map(xp.asarray, (self.x, self.t)), self.k
+        yc = xp.asarray(self.y * (1. + 2.j))
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
         # repeat with num_trailing_dims > 1 : yc.shape[1:] = (2, 2)
-        yc = np.stack((yc, yc), axis=1)
+        yc = xp.stack((yc, yc), axis=1)
 
         b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b_re = make_lsq_spline(x, xp.real(yc), t, k)
+        b_im = make_lsq_spline(x, xp.imag(yc), t, k)
 
         xp_assert_close(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
