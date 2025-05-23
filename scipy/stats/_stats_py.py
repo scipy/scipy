@@ -26,7 +26,6 @@ References
    York. 2000.
 
 """
-import functools
 import math
 import operator
 import warnings
@@ -75,13 +74,14 @@ from scipy._lib._array_api import (
     array_namespace,
     is_lazy_array,
     is_numpy,
-    is_marray,
     is_cupy,
     xp_size,
     xp_vector_norm,
     xp_promote,
     xp_capabilities,
     xp_ravel,
+    _length_nonmasked,
+    _share_masks,
     xp_swapaxes,
     xp_default_dtype,
 )
@@ -1242,25 +1242,6 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
         n = _length_nonmasked(x, axis, xp=xp)
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
-
-
-def _length_nonmasked(x, axis, keepdims=False, xp=None):
-    xp = array_namespace(x) if xp is None else xp
-    if is_marray(xp):
-        if np.iterable(axis):
-            message = '`axis` must be an integer or None for use with `MArray`.'
-            raise NotImplementedError(message)
-        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
-    return (xp_size(x) if axis is None else
-            # compact way to deal with axis tuples or ints
-            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
-
-
-def _share_masks(*args, xp):
-    if is_marray(xp):
-        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
-        args = [xp.asarray(arg.data, mask=mask) for arg in args]
-    return args[0] if len(args) == 1 else args
 
 
 @xp_capabilities(jax_jit=False, allow_dask_compute=2)
@@ -2600,7 +2581,7 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities()
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
 )
@@ -4239,33 +4220,35 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     """
     xp = array_namespace(r)
 
-    with np.errstate(divide='ignore'):
-        zr = xp.atanh(r)
-
     ones = xp.ones_like(r)
     n = xp.asarray(n, dtype=r.dtype)
     confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
-    if n > 3:
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        zr = xp.atanh(r)
         se = xp.sqrt(1 / (n - 3))
-        if alternative == "two-sided":
-            h = special.ndtri(0.5 + confidence_level/2)
-            zlo = zr - h*se
-            zhi = zr + h*se
-            rlo = xp.tanh(zlo)
-            rhi = xp.tanh(zhi)
-        elif alternative == "less":
-            h = special.ndtri(confidence_level)
-            zhi = zr + h*se
-            rhi = xp.tanh(zhi)
-            rlo = -ones
-        else:
-            # alternative == "greater":
-            h = special.ndtri(confidence_level)
-            zlo = zr - h*se
-            rlo = xp.tanh(zlo)
-            rhi = ones
+
+    if alternative == "two-sided":
+        h = special.ndtri(0.5 + confidence_level/2)
+        zlo = zr - h*se
+        zhi = zr + h*se
+        rlo = xp.tanh(zlo)
+        rhi = xp.tanh(zhi)
+    elif alternative == "less":
+        h = special.ndtri(confidence_level)
+        zhi = zr + h*se
+        rhi = xp.tanh(zhi)
+        rlo = -ones
     else:
-        rlo, rhi = -ones, ones
+        # alternative == "greater":
+        h = special.ndtri(confidence_level)
+        zlo = zr - h*se
+        rlo = xp.tanh(zlo)
+        rhi = ones
+
+    mask = (n <= 3)
+    rlo = xpx.at(rlo)[mask].set(-1)
+    rhi = xpx.at(rhi)[mask].set(1)
 
     rlo = rlo[()] if rlo.ndim == 0 else rlo
     rhi = rhi[()] if rhi.ndim == 0 else rhi
@@ -4387,7 +4370,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+@xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
+                 cpu_only=True, exceptions=['cupy'],
                  jax_jit=False, allow_dask_compute=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
@@ -4681,12 +4665,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
-    n = x.shape[axis]
-    if n != y.shape[axis]:
+    if x.shape[axis] != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
-    if n < 2:
+    if x.shape[axis] < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
+
+    x, y = _share_masks(x, y, xp=xp)
+    n = xp.asarray(_length_nonmasked(x, axis=axis), dtype=x.dtype)
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -4780,18 +4766,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.clip(r, -1., 1.)
     r = xpx.at(r, const_xy).set(xp.nan)
 
-    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
-    # in the docs.
-    if n == 2:
-        r = xp.round(r)
-        one = xp.asarray(1, dtype=dtype)
-        pvalue = xp.where(xp.asarray(xp.isnan(r)), xp.nan*one, one)
-    else:
-        # As explained in the docstring, the distribution of `r` under the null
-        # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-        ab = xp.asarray(n/2 - 1)
-        dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+    # As explained in the docstring, the distribution of `r` under the null
+    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+    ab = xp.asarray(n/2 - 1)
+    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+
+    mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
+    def special_case(r): return xp.where(xp.isnan(r), xp.nan, xp.ones_like(r))
+    r = xpx.apply_where(mask, (r,), xp.round, fill_value=r)
+    pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue

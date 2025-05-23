@@ -6,6 +6,7 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
+import operator
 import contextlib
 import dataclasses
 import functools
@@ -637,6 +638,7 @@ def xp_default_dtype(xp):
         return xp.float64
 
 
+### MArray Helpers ###
 def xp_result_device(*args):
     """Return the device of an array in `args`, for the purpose of
     input-output device propagation.
@@ -654,6 +656,27 @@ def xp_result_device(*args):
 def is_marray(xp):
     """Returns True if `xp` is an MArray namespace; False otherwise."""
     return "marray" in xp.__name__
+
+
+def _length_nonmasked(x, axis, keepdims=False, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_marray(xp):
+        if np.iterable(axis):
+            message = '`axis` must be an integer or None for use with `MArray`.'
+            raise NotImplementedError(message)
+        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
+    return (xp_size(x) if axis is None else
+            # compact way to deal with axis tuples or ints
+            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
+
+
+def _share_masks(*args, xp):
+    if is_marray(xp):
+        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+        args = [xp.asarray(arg.data, mask=mask) for arg in args]
+    return args[0] if len(args) == 1 else args
+
+### End MArray Helpers ###
 
 
 @dataclasses.dataclass(repr=False)
@@ -779,7 +802,7 @@ def xp_capabilities(
        SKIP/XFAIL markers and perform additional backend-specific
        testing, such as extra validation for Dask and JAX;
     2. It automatically adds a note to the function's docstring, containing
-       a table matching what has been tested.    
+       a table matching what has been tested.
 
     See Also
     --------
@@ -880,7 +903,7 @@ def make_xp_test_case(*funcs, capabilities_table=None):
 def make_xp_pytest_param(func, *args, capabilities_table=None):
     """Variant of ``make_xp_test_case`` that returns a pytest.param for a function,
     with all necessary skip_xp_backends and xfail_xp_backends marks applied::
-    
+
         @pytest.mark.parametrize(
             "func", [make_xp_pytest_param(f1), make_xp_pytest_param(f2)]
         )
