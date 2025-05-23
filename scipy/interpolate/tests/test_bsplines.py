@@ -3262,28 +3262,31 @@ class TestGenerateKnots:
         xp_assert_close(new_t2, new_t2_py, atol=1e-15)
 
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
-    def test_s0(self, k):
-        x = np.arange(8, dtype=np.float64)
-        y = np.sin(x*np.pi/8)
+    def test_s0(self, k, xp):
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         t = list(generate_knots(x, y, k=k, s=0))[-1]
 
         tt = splrep(x, y, k=k, s=0)[0]
+        tt = xp.asarray(tt, dtype=xp.float64)
         xp_assert_close(t, tt, atol=1e-15)
 
-    def test_s0_1(self):
+    def test_s0_1(self, xp):
         # with these data, naive algorithm tries to insert >= nmax knots
         n = 10
-        x = np.arange(n)
+        x = xp.arange(n, dtype=xp.float64)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
-    def test_s0_n20(self):
+    def test_s0_n20(self, xp):
         n = 20
-        x = np.arange(n)
+        x = xp.arange(n)
         y = x**3
         knots = list(generate_knots(x, y, k=3, s=0))
-        xp_assert_close(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+        expected = xp.asarray(_not_a_knot(np.asarray(x), 3))
+        xp_assert_close(knots[-1], expected, atol=1e-15)
 
     def test_s0_nest(self):
         # s=0 and non-default nest: not implemented, errors out
@@ -3292,7 +3295,7 @@ class TestGenerateKnots:
         with assert_raises(ValueError):
             list(generate_knots(x, y, k=3, s=0, nest=10))
 
-    def test_s_switch(self):
+    def test_s_switch(self, xp):
         # test the process switching to interpolating knots when len(t) == m + k + 1
         """
         To generate the `wanted` list below apply the following diff and rerun
@@ -3315,8 +3318,8 @@ index 1afb1900f1..d817e51ad8 100644
            if(n.eq.nmax) go to 10
  c  test whether we cannot further increase the number of knots.
         """  # NOQA: E501
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*np.pi/8)
         k = 3
 
         knots = list(generate_knots(x, y, k=k, s=1e-7))
@@ -3326,6 +3329,7 @@ index 1afb1900f1..d817e51ad8 100644
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
+        wanted = [xp.asarray(want) for want in wanted]
 
         assert len(knots) == len(wanted)
         for t, tt in zip(knots, wanted):
@@ -3333,7 +3337,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         # also check that the last knot vector matches FITPACK
         t, _, _ = splrep(x, y, k=k, s=1e-7)
-        xp_assert_close(knots[-1], t, atol=1e-15)
+        xp_assert_close(knots[-1], xp.asarray(t), atol=1e-15)
 
     def test_list_input(self):
         # test that list inputs are accepted
@@ -3341,15 +3345,16 @@ index 1afb1900f1..d817e51ad8 100644
         gen = generate_knots(x, x, s=0.1, k=1)
         next(gen)
 
-    def test_nest(self):
+    def test_nest(self, xp):
         # test that nest < nmax stops the process early (and we get 10 knots not 12)
-        x = np.arange(8)
-        y = np.sin(x*np.pi/8)
+        x = xp.arange(8, dtype=xp.float64)
+        y = xp.sin(x*xp.pi/8)
         s = 1e-7
 
         knots = list(generate_knots(x, y, k=3, s=s, nest=10))
-        xp_assert_close(knots[-1],
-                        [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
+        xp_assert_close(
+            knots[-1], xp.asarray([0., 0., 0., 0., 2., 4., 7., 7., 7., 7.]), atol=1e-15
+        )
 
         with assert_raises(ValueError):
             # nest < 2*(k+1)
