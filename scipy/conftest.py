@@ -493,14 +493,8 @@ if HAVE_SCPDT:
             known_warnings[name] = dict(category=RuntimeWarning,
                                         message='divide by zero')
 
-        # Deprecated stuff in scipy.signal and elsewhere
-        deprecated = [
-            'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
-            'scipy.signal.ricker',
-            'scipy.integrate.simpson',
-            'scipy.interpolate.interp2d',
-            'scipy.linalg.kron',
-        ]
+        # Deprecated stuff
+        deprecated = []
         for name in deprecated:
             known_warnings[name] = dict(category=DeprecationWarning)
 
