@@ -19,11 +19,12 @@ from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs, isscalarlike, isdense)
+from ._index import IndexMixin
 
 import operator
 
 
-class _coo_base(_data_matrix, _minmax_mixin):
+class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
     _format = 'coo'
     _allow_nd = range(1, 65)
 
@@ -523,6 +524,104 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             coords = self.coords
         return self.__class__((data, coords), shape=self.shape, dtype=data.dtype)
+
+    def __getitem__(self, key):
+        index, new_shape, arr_pos, none_indices = self._validate_indices(key)
+
+        # handle bool array indices
+        if len(index) == 1:
+            idx = index[0]
+            if isdense(idx) and idx.dtype.type == 'b':
+                coords = idx.nonzero()
+                # need to sort to find which match the nnz coords values
+                raise NotImplementedError("boolean dense indexing not yet supported")
+            if issparse(idx) and idx.dtype.type == 'b':
+                coords = idx.tocoo().coords()
+                raise NotImplementedError("boolean dense indexing not yet supported")
+
+        # handle int, slice and int-array indices
+        accum=np.ones(len(self.data), dtype=np.bool)
+        slice_coords = []
+        arr_coords = []
+        arr_indices = []
+        for i, (idx, co) in enumerate(zip(index, self.coords)):
+            if isinstance(idx, int):
+                accum &= (co==idx)
+            elif isinstance(idx, slice):
+                if idx == slice(None):
+                    slice_coords.append(co)
+                else:
+                    start, stop, step = idx.indices(self.shape[i])
+                    if step != 1:
+                        if step < 0:
+                            in_range = (co <= start) & (co > stop)
+                        else:
+                            in_range = (co >= start) & (co < stop)
+                        new_ix, m = np.divmod(co - start, step)
+                        accum &= (m == 0) & in_range
+                    else:
+                        in_range = (co >= start) & (co < stop)
+                        new_ix = co - start
+                        accum &= in_range
+                    slice_coords.append(new_ix)
+            else:  # array
+                arr_coords.append(co)
+                arr_indices.append(idx)
+        # shortcut for scalar output
+        if new_shape == ():
+            return self.data[accum].sum().astype(self.dtype, copy=False)
+
+        new_coords = [co[accum] for co in slice_coords]
+        print(f"After slices: {self.data=} {accum=}")
+        new_data = self.data[accum]
+        print(f"After slices2: {new_data=} {new_coords=}")
+#        print(f"{[len(co) for co in new_coords]=} {[len(co) for co in slice_coords]=}")
+
+        # handle array indices
+        if arr_indices:
+            arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
+            # keyarr is arr_size by #array indices
+            keyarr = np.array(arr_indices).reshape(len(arr_indices), -1).T
+
+            # arr_coords.T is old_NNZ by #array indices
+            arr_coords = np.array([co[accum] for co in arr_coords])
+            # found is arr_size x old_NNZ. True means coords match all arr_indices
+            found = (keyarr[:, None, :] == arr_coords.T).all(axis=2)
+
+            arr_ix, arr_co = found.nonzero()
+            new_data = new_data[arr_co]
+            new_coords = [co[arr_co] for co in new_coords]
+            new_arr_coords = list(np.unravel_index(arr_ix, shape=arr_shape))
+
+            # prepend array index shape? (non-adjacent array indices)
+            if len(arr_pos) != arr_pos[-1] - arr_pos[0] + 1:
+                # new_coords is coords for nonzero values with array part of new_coords
+                new_coords = new_arr_coords + new_coords
+            else:  # put all array index shape at position of array indices
+#                print(f"HHHHH\n{arr_ix=}\n{new_arr_coords=}\nHHHH")
+                pos = arr_pos[0]
+#                print(f"{pos=} {new_coords[:pos]=}\n{new_arr_coords=}\n{index=}")
+                new_coords = new_coords[:pos] + new_arr_coords + new_coords[pos:]
+
+        if none_indices:
+            if new_coords:
+                coord_like = new_coords[0]
+            else:
+                coord_like = np.zeros(len(new_data), dtype=self.coords[0].dtype)
+            print(f"BEFORE:{none_indices=} {coord_like=} {new_coords=} {new_data=}")
+            for i in none_indices:
+                new_coords.insert(i, np.zeros_like(coord_like))
+            print(f"{none_indices=} {coord_like=} {new_coords=} {new_data=}")
+        print(f"{none_indices=} {new_shape=} {key=}")
+        assert len(new_coords) == len(new_shape), f"{new_coords=} {new_shape=}"
+#        print(f"{[len(co) for co in new_coords]=} {len(new_data)=}")
+        coo = coo_array((new_data, new_coords), shape=new_shape, dtype=self.dtype)
+#        print(f"{coo.shape=} {new_shape=}")
+#        print(f"{key=} {self=}")
+        return coo
+
+    def __setitem__(self, key, x):
+        raise TypeError("coo_array assignment is not implemented yet")
 
     def sum_duplicates(self) -> None:
         """Eliminate duplicate entries by adding them together
@@ -1579,3 +1678,9 @@ class coo_matrix(spmatrix, _coo_base):
             # storing nnz coordinates for 2D COO matrix.
             state['coords'] = (state.pop('row'), state.pop('col'))
         self.__dict__.update(state)
+
+    def __getitem__(self, key):
+        raise TypeError("'coo_matrix' object is not subscriptable")
+
+    def __setitem__(self, key):
+        raise TypeError("'coo_matrix' object does not support item assignment")

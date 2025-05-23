@@ -123,12 +123,11 @@ def test_non_subscriptability():
     coo_2d = coo_array((2, 2))
 
     with pytest.raises(TypeError,
-                        match="'coo_array' object does not support item assignment"):
+                       match="coo_array assignment is not implemented yet"):
         coo_2d[0, 0] = 1
 
-    with pytest.raises(TypeError,
-                       match="'coo_array' object is not subscriptable"):
-        coo_2d[0, :]
+    # should not raise
+    coo_2d[0, :]
 
 def test_reshape_overflow():
     # see gh-22353 : new idx_dtype can need to be int64 instead of int32
@@ -866,6 +865,7 @@ def test_add_no_broadcasting(a_shape, b_shape):
     res = a + b.toarray()
     assert_equal(res, exp)
 
+
 @pytest.mark.parametrize(('a_shape', 'b_shape'), add_sub_shapes)
 def test_sub_no_broadcasting(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
@@ -879,6 +879,7 @@ def test_sub_no_broadcasting(a_shape, b_shape):
     res = a - b.toarray()
     assert_equal(res, exp)
 
+
 argmax_argmin_shapes_axis = [
     ((3,), None), ((3,), 0),
     ((4,6), 1), ((7,3), 0), ((3,5), None),
@@ -887,6 +888,8 @@ argmax_argmin_shapes_axis = [
     ((3,2,4,7), None), ((3,2,4,7), 1), ((3,2,4,7), 0), ((3,2,4,7), 2),
     ((3,2,4,7), -2), ((4,5,7,8,2), 4), ((4,5,7,8,2), -3),
 ]
+
+
 @pytest.mark.parametrize(('shape', 'axis'), argmax_argmin_shapes_axis)
 def test_argmax_argmin(shape, axis):
     rng = np.random.default_rng(23409823)
@@ -1081,6 +1084,7 @@ def test_maximum(a_shape, b_shape):
         exp = np.maximum(a.toarray(), b.toarray())
         assert_equal(res.toarray(), exp)
 
+
 @pytest.mark.parametrize(('a_shape', 'b_shape'), bitwise_op_and_compare_shapes)
 def test_minimum(a_shape, b_shape):
     rng = np.random.default_rng(23409823)
@@ -1106,6 +1110,7 @@ def test_maximum_with_scalar():
         assert_equal(b.maximum(9).toarray(), np.maximum(b.toarray(), 9))
         assert_equal(c.maximum(5).toarray(), np.maximum(c.toarray(), 5))
 
+
 def test_minimum_with_scalar():
     sup = suppress_warnings()
     sup.filter(SparseEfficiencyWarning)
@@ -1117,3 +1122,53 @@ def test_minimum_with_scalar():
         assert_equal(a.minimum(5).toarray(), np.minimum(a.toarray(), 5))
         assert_equal(b.minimum(9).toarray(), np.minimum(b.toarray(), 9))
         assert_equal(c.minimum(5).toarray(), np.minimum(c.toarray(), 5))
+
+
+def test_1d_coo_get():
+    B = coo_array(np.arange(9))
+
+    assert B[0] == 0
+    assert B[4] == 4
+
+    np.testing.assert_equal(B[1:3].toarray(), B.toarray()[1:3])
+    np.testing.assert_equal(B[:3].toarray(), B.toarray()[:3])
+    np.testing.assert_equal(B[1:].toarray(), B.toarray()[1:])
+    np.testing.assert_equal(B[1:5:2].toarray(), B.toarray()[1:5:2])
+
+    np.testing.assert_equal(B[[1, 3, 4]].toarray(), B.toarray()[[1, 3, 4]])
+    np.testing.assert_equal(B[[3, 4, 1]].toarray(), B.toarray()[[3, 4, 1]])
+
+
+def test_2d_coo_get():
+    B = coo_array(np.arange(4 * 5).reshape((4, 5)))
+
+    assert B[0, 0] == 0
+    assert B[3, 4] == 19
+
+    np.testing.assert_equal(B[1:3, 0].toarray(), B.toarray()[1:3, 0])
+    np.testing.assert_equal(B[2, 1:3].toarray(), B.toarray()[2, 1:3])
+    np.testing.assert_equal(B[:2, 1:5:3].toarray(), B.toarray()[:2, 1:5:3])
+
+    np.testing.assert_equal(B[[1, 3], 0].toarray(), B.toarray()[[1,3], 0])
+    np.testing.assert_equal(B[2:, [1, 3]].toarray(), B.toarray()[2:, [1,3]])
+    np.testing.assert_equal(B[np.array([1, 3]), 0].toarray(), B.toarray()[[1,3], 0])
+    np.testing.assert_equal(B[2:, np.array([1, 3])].toarray(), B.toarray()[2:, [1,3]])
+
+    np.testing.assert_equal(B[:, 0].toarray(), B.toarray()[:, 0])
+    np.testing.assert_equal(B[0, :].toarray(), B.toarray()[0, :])
+
+
+def test_3d_coo_get():
+    A = coo_array(np.arange(4 * 5 * 6).reshape((4, 5, 6)))
+    assert A[0, 0, 0] == 0
+    assert A[3, 4, 5] == 119
+
+    np.testing.assert_equal(A[0, 1:3, 0].toarray(), A.toarray()[0, 1:3, 0])
+    np.testing.assert_equal(A[0, 1:3, 3].toarray(), A.toarray()[0, 1:3, 3])
+    np.testing.assert_equal(A[:3, 1:5:2, 2:].toarray(), A.toarray()[:3, 1:5:2, 2:])
+
+    np.testing.assert_equal(A[[1, 3], 0, 0].toarray(), A.toarray()[[1, 3], 0, 0])
+    np.testing.assert_equal(A[:2, 1:3, [1, 3]].toarray(), A.toarray()[:2, 1:3, [1, 3]])
+
+    np.testing.assert_equal(A[0, :, 0].toarray(), A.toarray()[0, :, 0])
+    np.testing.assert_equal(A[:, :, 0].toarray(), A.toarray()[:, :, 0])
