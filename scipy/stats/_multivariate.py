@@ -1492,7 +1492,7 @@ matrix_t_docdict_noparams = {
 
 
 class matrix_t_gen(multi_rv_generic):
-    """
+    r"""
     A matrix t-random variable.
 
     The `mean` keyword specifies the mean.
@@ -1528,47 +1528,48 @@ class matrix_t_gen(multi_rv_generic):
 
     .. math::
 
-        \\mathcal{T}_{m,n} = \\frac{
-            \Gamma_n \left( 
-                \\frac{\mathrm{df} + m + n - 1}{2} 
-            \\right)
-            \left( 
-            \det \left( 
+        f(X \vert \mathrm{M}, \Sigma, \Omega, \mathrm{df}) =
+        \frac{
+            \Gamma_n \left(
+                \frac{\mathrm{df} + m + n - 1}{2}
+            \right)
+            \left(
+            \det \left(
                 I_n + (X - \mathrm{M})^T \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1}
-            \\right) 
-        \\right)^{ -\\frac{\mathrm{df} + m + n - 1}{2} }
+            \right)
+        \right)^{ -\frac{\mathrm{df} + m + n - 1}{2} }
         }{
-            \Gamma_n \left( 
-                \\frac{\mathrm{df} + n - 1}{2} 
-            \\right)
+            \Gamma_n \left(
+                \frac{\mathrm{df} + n - 1}{2}
+            \right)
             \pi^{mn / 2}
-            \left( \det \Sigma \\right)^{n/2}
-            \left( \det \Omega \\right)^{m/2}
+            \left( \det \Sigma \right)^{n/2}
+            \left( \det \Omega \right)^{m/2}
         }
 
     or, alternatively,
 
     .. math::
 
-        \\mathcal{T}_{m,n} = 
-        \\frac{
-            \Gamma_m \left( 
-                \\frac{\mathrm{df} + m + n - 1}{2} 
-            \\right)
-            \left( 
+        f(X \vert \mathrm{M}, \Sigma, \Omega, \mathrm{df}) =
+        \frac{
+            \Gamma_m \left(
+                \frac{\mathrm{df} + m + n - 1}{2}
+            \right)
+            \left(
                 \det \left(
                     I_m + \Sigma^{-1} (X - \mathrm{M}) \Omega^{-1} (X - \mathrm{M})^T
-                    \\right)
-            \\right)^{ -\\frac{\mathrm{df} + m + n - 1}{2} }
+                    \right)
+            \right)^{ -\frac{\mathrm{df} + m + n - 1}{2} }
         }{
-            \Gamma_m \left( 
-                \\frac{\mathrm{df} + n - 1}{2} 
-            \\right)
+            \Gamma_m \left(
+                \frac{\mathrm{df} + n - 1}{2}
+            \right)
             \pi^{mn / 2}
-            \left( \det \Sigma \\right)^{n/2}
-            \left( \det \Omega \\right)^{m/2}
+            \left( \det \Sigma \right)^{n/2}
+            \left( \det \Omega \right)^{m/2}
         }
-        
+
     where :math:`\mathrm{M}` is the mean,
     :math:`\Sigma` is the among-row covariance matrix,
     :math:`\Omega` is the among-column covariance matrix,
@@ -1578,7 +1579,7 @@ class matrix_t_gen(multi_rv_generic):
 
     References
     ----------
-    .. [1] Gupta, A.K., & Nagar, D.K. (2000). Matrix Variate Distributions (1st ed.). 
+    .. [1] Gupta, A.K., & Nagar, D.K. (2000). Matrix Variate Distributions (1st ed.).
            Chapman and Hall/CRC.
 
     Examples
@@ -1940,13 +1941,6 @@ class matrix_t_gen(multi_rv_generic):
         return t_centered
 
     def _entropy(self, dims, df, row_cov_logpdet, col_cov_logpdet):
-        """
-        h(X) = (mn/2)*log(df*pi)
-               + (n/2)*log|Sigma|
-               + (m/2)*log|Omega|
-               + log( Gamma_n(df/2) / Gamma_n((df+m)/2) )
-               + ((df+m)/2) * sum_{i=1}^{n} [psi((df+m-i)/2) - psi((df-i)/2)]
-        """
         m, n = dims
         term1 = (m * n / 2) * np.log(df * np.pi)
         term2 = (n / 2) * row_cov_logpdet
@@ -1962,7 +1956,34 @@ class matrix_t_gen(multi_rv_generic):
         return term1 + term2 + term3 + term4 + term5
 
     def entropy(self, df=1, rowcov=1, colcov=1):
-        """Differential entropy of the matrix t probability density function.
+        r"""Differential entropy of the matrix t probability density function.
+
+        .. math::
+
+            h(X) =
+            \frac12 \left[
+                mn \log \left( \mathrm{df} \pi \right)
+                + n \log \det \Sigma
+                + m \log \det \Omega
+                + 2 \log \left(
+                    \frac{
+                        \Gamma_n\left( \mathrm{df} / 2 \right)
+                    }{
+                        \Gamma_n \left( (\mathrm{df} + m) / 2 \right)
+                    }
+                \right)
+                + \left( \mathrm{df}+m \right)
+                    \sum_{i=1}^n \left[
+                        \psi\left( \frac{\mathrm{df} + m - i}{2} \right)
+                        - \psi\left( \frac{\mathrm{df} - i}{2} \right)
+                    \right]
+            \right]
+
+        where
+        :math:`\Sigma` is the among-row covariance matrix,
+        :math:`\Omega` is the among-column covariance matrix,
+        :math:`\mathrm{df}` is the degrees of freedom,
+         and :math:`\Sigma` :math:`\psi` is the digamma function.
 
         Parameters
         ----------
