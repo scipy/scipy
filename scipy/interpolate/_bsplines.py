@@ -1792,6 +1792,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     does not matter as long as the corresponding weight is zero.)
 
     """
+    xp = array_namespace(x, y, t, w)
+
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
     t = _as_float_array(t, check_finite)
@@ -1886,6 +1888,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="
     # restore the shape of `c` for both single and multiple r.h.s.
     c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
+    t, c = xp.asarray(t), xp.asarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
