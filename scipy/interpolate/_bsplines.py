@@ -2322,6 +2322,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
     >>> plt.show()
 
     """  # noqa:E501
+    xp = array_namespace(x, y)
 
     x = np.ascontiguousarray(x, dtype=float)
     y = np.ascontiguousarray(y, dtype=float)
@@ -2421,6 +2422,7 @@ def make_smoothing_spline(x, y, w=None, lam=None, *, axis=0):
                cm0 * (t[-4] - t[-6]) + cm1,
                cm0 * (2 * t[-4] - t[-5] - t[-6]) + cm1]
 
+    t, c_ = xp.asarray(t), xp.asarray(c_)
     return BSpline.construct_fast(t, c_, 3, axis=axis)
 
 

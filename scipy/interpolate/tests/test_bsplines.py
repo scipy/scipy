@@ -2286,20 +2286,22 @@ class TestSmoothingSpline:
                         atol=1e-15)
 
     @pytest.mark.fail_slow(2)
-    def test_weighted_smoothing_spline(self):
+    def test_weighted_smoothing_spline(self, xp):
         # create data sample
         rng = np.random.RandomState(1234)
         n = 100
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = map(xp.asarray, (x, y))
+
         spl = make_smoothing_spline(x, y)
 
         # in order not to iterate over all of the indices, we select 10 of
         # them randomly
         for ind in rng.choice(range(100), size=10):
-            w = np.ones(n)
-            w[ind] = 30.
+            w = xp.ones(n)
+            w[xp.asarray(ind)] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
             # original point than the one without weights
