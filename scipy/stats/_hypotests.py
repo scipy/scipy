@@ -482,7 +482,7 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-def _cvm_result_to_tuple(res):
+def _cvm_result_to_tuple(res, _):
     return res.statistic, res.pvalue
 
 

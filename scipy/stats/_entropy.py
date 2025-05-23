@@ -20,7 +20,7 @@ __all__ = ['entropy', 'differential_entropy']
         2 if ("qk" in kwgs and kwgs["qk"] is not None)
         else 1
     ),
-    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    n_outputs=1, result_to_tuple=lambda x, _: (x,), paired=True,
     too_small=-1  # entropy doesn't have too small inputs
 )
 def entropy(pk: np.typing.ArrayLike,
@@ -170,7 +170,7 @@ def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
     too_small=_differential_entropy_is_too_small
 )
 def differential_entropy(

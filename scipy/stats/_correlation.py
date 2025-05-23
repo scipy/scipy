@@ -81,7 +81,7 @@ def _chatterjeexi_iv(y_continuous, method):
     return y_continuous, method
 
 
-def _unpack(res):
+def _unpack(res, _):
     return res.statistic, res.pvalue
 
 
