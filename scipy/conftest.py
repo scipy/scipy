@@ -465,7 +465,7 @@ hypothesis.settings.register_profile(
 )
 
 # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into dev.py.
+# In the future, it would be good to work the choice into `.spin/cmds.py`.
 SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
                                           "deterministic")
 hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
