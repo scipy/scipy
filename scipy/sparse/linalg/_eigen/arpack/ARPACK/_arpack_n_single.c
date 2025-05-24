@@ -1981,6 +1981,8 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
         ipntr[1] = 0;
         V->ido = ido_BX;
         return;
+    } else {
+        scopy_(&n, resid, &int1, workd, &int1);
     }
 
 LINE20:
@@ -2016,9 +2018,9 @@ LINE20:
     V->getv0_orth = 1;
 
 LINE30:
-    int tmp_int = j + 1;
-    sgemv_("T", &n, &tmp_int, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
-    sgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[n], &int1, &dbl1, resid, &int1);
+
+    sgemv_("T", &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
+    sgemv_("N", &n, &j, &dblm1, v, &ldv, &workd[n], &int1, &dbl1, resid, &int1);
 
     //  Compute the B-norm of the orthogonalized starting vector
 
