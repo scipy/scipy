@@ -1054,6 +1054,10 @@ class TestSolveTriangular:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
 
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+)
+
 class TestInv:
     def setup_method(self):
         np.random.seed(1234)
@@ -1102,6 +1106,99 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.size == 0
         assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
+
+        a = np.ones((3, 0, 2, 2), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 0, 2, 2)
+
+        a = np.ones((3, 1, 0, 0), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 1, 0, 0)
+
+    def test_overwrite_a(self):
+        a = np.arange(1, 5).reshape(2, 2)
+        a_inv = inv(a, overwrite_a=True)
+        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
+        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: work inplace 
+        a = a.astype(float).copy(order='F')
+        a_inv = inv(a, overwrite_a=True)
+        assert np.shares_memory(a, a_inv)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_batch_core_1x1(self, dt):
+        a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, 1.)
+
+    @parametrize_overwrite_arg
+    def test_batch_zero_stride(self, overwrite_kw):
+        a = np.arange(3*2*2, dtype=float).reshape(3, 2, 2)
+        aa = a[None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+        aa = a[:, None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
+
+    @parametrize_overwrite_arg
+    def test_singular(self, overwrite_kw):
+        # 2D case: A singular matrix: raise
+
+        with assert_raises(LinAlgError):
+            inv(np.ones((2, 2)))
+
+        # batched case: If all slices are singlar, raise
+        with assert_raises(LinAlgError):
+            inv(np.ones((3, 2, 2)))
+
+        # if some of the slices are singular and some are not: 
+        # - singular slices are filled with nans
+        # - non-singular slices are inverted
+        # - there is no error
+        # XXX: shall we make this behavior configurable somehow?
+        a = np.stack((np.ones((2, 2), dtype=complex), np.arange(4).reshape(2, 2)))
+        a_inv = inv(a)
+
+        assert np.isnan(a_inv[0, ...]).all()
+        assert_allclose(a_inv[1, ...] @ a[1, ...],  np.eye(2), atol=1e-14)
 
 
 class TestDet:
