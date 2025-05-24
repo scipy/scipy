@@ -594,19 +594,22 @@ class TestCSD:
 
     def test_unequal_length_input_1D(self):
         """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 1d arrays.
-        """
-        n = 8
-        x = irfft([0, 0, 8], n=n)  # x = [2, 0, -2, 0, 2, 0, -2, 0]
 
-        kw = dict(fs=n, window='boxcar', nperseg=8)
+        This test ensures that issue 23036 is fixed.
+        """
+        x = np.tile([4, 0, -4, 0], 4)
+
+        kw = dict(fs=len(x), window='boxcar', nperseg=4)
         X0 = signal.csd(x, np.copy(x), **kw)[1]  # `x is x` must be False
-        X1 = signal.csd(x, x[:4], **kw)[1]
-        X2 = signal.csd(x[:4], x, **kw)[1]
+        X1 = signal.csd(x, x[:8], **kw)[1]
+        X2 = signal.csd(x[:8], x, **kw)[1]
         xp_assert_close(X1, X0 / 2)
         xp_assert_close(X2, X0 / 2)
 
     def test_unequal_length_input_3D(self):
         """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 3d arrays.
+
+        This test ensures that issue 23036 is fixed.
         """
         n = 8
         x = np.zeros(2 * 3 * n).reshape(2, n, 3)
