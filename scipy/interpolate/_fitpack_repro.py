@@ -983,14 +983,20 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
     """  # noqa:E501
-    xp = array_namespace(x, w, u, t)
+
+    # x can be either a 2D array or a list of 1D arrays
+    if isinstance(x, list):
+        xp = array_namespace(*x, w, u, t)
+    else:
+        xp = array_namespace(x, w, u, t)
+
     x = xp.stack(x, axis=1)
 
     # construct the default parametrization of the curve
     if u is None:
         dp = (x[1:, :] - x[:-1, :])**2
-        u = xp.cumulative_sum(xp.sum(xp.sqrt(dp, axis=1)))
-        u = concat_1d[0, u / u[-1]]
+        u = xp.cumulative_sum( xp.sqrt(xp.sum(dp, axis=1)) )
+        u = concat_1d(xp, 0., u / u[-1])
 
     if s == 0:
         if t is not None or w is not None or nest is not None:
@@ -1008,4 +1014,4 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     cc = spl.c.T
     spl1 = BSpline(spl.t, cc, spl.k, axis=1)
 
-    return spl1, u
+    return spl1, xp.asarray(u)
