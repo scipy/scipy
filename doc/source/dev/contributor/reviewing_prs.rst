@@ -72,9 +72,9 @@ Assuming you set up your development environment according to
 
 build the code and test it::
 
-   python dev.py test -v
+   spin test -v
 
-and if you ``import`` SciPy from within IPython (start it with ``python dev.py
+and if you ``import`` SciPy from within IPython (start it with ``spin
 ipython``), you'll be importing the author's modified version of SciPy.
 
 If you want to collaborate with the author on their PR, you might instead

@@ -39,7 +39,7 @@ compliance before pushing your code:
 
    Alternatively, you can run the check manually from the SciPy root directory::
 
-      python dev.py lint
+      spin lint
 
    You can also run the linter on specific files, using the ``--files`` option::
 
