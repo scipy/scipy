@@ -2301,7 +2301,7 @@ class TestSmoothingSpline:
         # them randomly
         for ind in rng.choice(range(100), size=10):
             w = xp.ones(n)
-            w[xp.asarray(ind)] = 30.
+            w[int(ind)] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
             # original point than the one without weights
@@ -3329,7 +3329,7 @@ index 1afb1900f1..d817e51ad8 100644
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
-        wanted = [xp.asarray(want) for want in wanted]
+        wanted = [xp.asarray(want, dtype=xp.float64) for want in wanted]
 
         assert len(knots) == len(wanted)
         for t, tt in zip(knots, wanted):
@@ -3353,7 +3353,9 @@ index 1afb1900f1..d817e51ad8 100644
 
         knots = list(generate_knots(x, y, k=3, s=s, nest=10))
         xp_assert_close(
-            knots[-1], xp.asarray([0., 0., 0., 0., 2., 4., 7., 7., 7., 7.]), atol=1e-15
+            knots[-1],
+            xp.asarray([0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], dtype=xp.float64),
+            atol=1e-15
         )
 
         with assert_raises(ValueError):
