@@ -68,12 +68,23 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
     if size is not None and footprint is not None:
         raise ValueError("Either `size` or `footprint` may be provided, not both.")
 
-    # Either footprint or size must be provided, and these determine the core
-    # dimensionality...
+    if axes is None:
+        axes = tuple(range(-input.ndim, 0))
+    elif np.isscalar(axes):
+        axes = (axes,)
+    n_axes = len(axes)
+    n_batch = input.ndim - n_axes
+
+    if n_axes > input.ndim:
+        message = ("The length of `axes` may not exceed the dimensionality of `input`"
+                   "(`input.ndim`).")
+        raise ValueError(message)
+
+    # Either footprint or size must be provided
     footprinted_function = function
     if size is not None:
         # If provided, size must be an integer or tuple of integers.
-        size = (size,)*input.ndim if np.isscalar(size) else tuple(size)
+        size = (size,)*n_axes if np.isscalar(size) else tuple(size)
         valid = [xp.isdtype(xp.asarray(i).dtype, 'integral') and i > 0 for i in size]
         if not all(valid):
             raise ValueError("All elements of `size` must be positive integers.")
@@ -84,13 +95,10 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
         def footprinted_function(input, *args, axis=-1, **kwargs):
             return function(input[..., footprint], *args, axis=-1, **kwargs)
 
-    n_axes = len(size)
-    n_batch = input.ndim - n_axes
-
-    # ...which can't exceed the dimensionality of `input`.
-    if n_axes > input.ndim:
-        message = ("The dimensionality of the window (`len(size)` or `footprint.ndim`) "
-                   "may not exceed the number of axes of `input` (`input.ndim`).")
+    # And by now, the dimensionality of the footprint must equal the number of axes
+    if n_axes != len(size):
+        message = ("`axes` must be compatible with the dimensionality "
+                   "of the window specified by `size` or `footprint`.")
         raise ValueError(message)
 
     # If this is not *equal* to the dimensionality of `input`, then `axes`
@@ -151,10 +159,9 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
 
     # For simplicity, work with `axes` at the end.
     working_axes = tuple(range(-n_axes, 0))
-    if axes is not None:
-        input = xp.moveaxis(input, axes, working_axes)
-        output = (xp.moveaxis(output, axes, working_axes)
-                  if output is not None else output)
+    input = xp.moveaxis(input, axes, working_axes)
+    output = (xp.moveaxis(output, axes, working_axes)
+              if output is not None else output)
 
     # Wrap the function to limit maximum memory usage, deal with `footprint`,
     # and populate `output`. The latter requires some verbosity because we
@@ -191,8 +198,8 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                                                          **kwargs)
         return output
 
-    return (input, wrapped_function, size, mode, cval,
-            origin, working_axes, n_axes, n_batch, xp)
+    return (input, wrapped_function, size, mode, cval, origin,
+            working_axes, axes, n_axes, n_batch, xp)
 
 
 @_ni_docstrings.docfiller
@@ -410,7 +417,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
     """  # noqa: E501
 
-    (input, function, size, mode, cval, origin, working_axes, n_axes, n_batch, xp
+    (input, function, size, mode, cval, origin, working_axes, axes, n_axes, n_batch, xp
      ) = _vectorized_filter_iv(input, function, size, footprint, output, mode, cval,
         origin, axes, batch_memory)
 
@@ -456,7 +463,7 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
     res = function(view)
 
     # move working_axes back to original positions
-    return xp.moveaxis(res, working_axes, axes) if axes is not None else res
+    return xp.moveaxis(res, working_axes, axes)
 
 
 def _invalid_origin(origin, lenw):
