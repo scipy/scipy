@@ -62,7 +62,7 @@ with Sphinx`_ \ *.*
 To render the documentation on your own machine:
 
 0. Ensure that you have a working SciPy build (see :ref:`building-from-source`).
-#. Then run ``spin doc`` to build the documentation.
+#. Then run ``spin docs`` to build the documentation.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.
 #. View the documentation in ``doc/build/html/``. You can start
