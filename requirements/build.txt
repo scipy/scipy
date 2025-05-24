@@ -5,4 +5,4 @@ Cython>=3.0.8
 pybind11>=2.13.2
 pythran>=0.14.0
 ninja
-numpy>=1.25.2
+numpy>=1.26.4
