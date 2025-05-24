@@ -3682,9 +3682,9 @@ class TestMakeSplrep:
 
 
 class TestMakeSplprep:
-    def _get_xyk(self, m=10, k=3):
-        x = np.arange(m) * np.pi / m
-        y = [np.sin(x), np.cos(x)]
+    def _get_xyk(self, m=10, k=3, xp=np):
+        x = xp.arange(m, dtype=xp.float64) * xp.pi / m
+        y = [xp.sin(x), xp.cos(x)]
         return x, y, k
 
     @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
@@ -3752,22 +3752,22 @@ class TestMakeSplprep:
         with assert_raises(ValueError):
             make_splprep(np.asarray(y).T, s=s)
 
-    def test_default_s_is_zero(self):
-        x, y, k = self._get_xyk(m=10)
+    def test_default_s_is_zero(self, xp):
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl, u = make_splprep(y)
-        xp_assert_close(spl(u), y, atol=1e-15)
+        xp_assert_close(spl(u), xp.stack(y), atol=1e-15)
 
-    def test_s_zero_vs_near_zero(self):
+    def test_s_zero_vs_near_zero(self, xp):
         # s=0 and s \approx 0 are consistent
-        x, y, k = self._get_xyk(m=10)
+        x, y, k = self._get_xyk(m=10, xp=xp)
 
         spl_i, u_i = make_splprep(y, s=0)
         spl_n, u_n = make_splprep(y, s=1e-15)
 
         xp_assert_close(u_i, u_n, atol=1e-15)
-        xp_assert_close(spl_i(u_i), y, atol=1e-15)
-        xp_assert_close(spl_n(u_n), y, atol=1e-7)
+        xp_assert_close(spl_i(u_i), xp.stack(y), atol=1e-15)
+        xp_assert_close(spl_n(u_n), xp.stack(y), atol=1e-7)
         assert spl_i.axis == spl_n.axis
         assert spl_i.c.shape == spl_n.c.shape
 
