@@ -74,7 +74,7 @@ To render the documentation on your own machine:
    - Changes to certain documents do not take effect when Sphinx documentation
      is rebuilt. In this case, you can build from scratch by deleting the
      directories ``scipy/doc/build`` and ``source/reference/generated``, or by
-     running ``spin doc clean`` then building the docs again.
+     running ``spin docs clean`` then building the docs again.
 
    - In case the SciPy version found by the above command is different from
      that of the latest commit in the repo, you will see a message like::
