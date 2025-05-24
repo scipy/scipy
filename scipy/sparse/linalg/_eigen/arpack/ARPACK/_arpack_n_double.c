@@ -730,7 +730,6 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     printf("DNAUP2: returned from dnaitr\n");
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
-
     if (V->ido != ido_DONE) { printf("DNAUP2: exit ido = %d, kplusp = %d, nev = %d\n", V->ido, V->aup2_kplusp, V->nev);return; }
 
     if (V->info > 0)
@@ -761,7 +760,7 @@ LINE1000:
 LINE20:
     V->aup2_update = 1;
 
-    dnaitr(V, V->nev-1, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    dnaitr(V, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -1222,6 +1221,7 @@ dnaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, double* resid, double* rno
 
         //  Initial call to this routine
         printf("DNAITR: ido = ido_FIRST, j = %d\n", V->aitr_j);
+        V->aitr_j = k;
         V->info = 0;
         V->aitr_step3 = 0;
         V->aitr_step4 = 0;
@@ -1465,10 +1465,14 @@ LINE80:
 
     dgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[irj], &int1, &dbl1, resid, &int1);
     daxpy_(&tmp_int, &dbl1, &workd[irj], &int1, &h[ldh*(V->aitr_j)], &int1);
-    printf("DNAITR: After daxpy h = ");
+    printf("DNAITR: After daxpy h = \n");
     for (int ccc = 0; ccc < tmp_int; ccc++)
     {
-        printf("%12.4e ", h[ldh*(V->aitr_j) + ccc]);
+        for (int ddd = 0; ddd < tmp_int; ddd++)
+        {
+            printf("%12.4e ", h[ldh*ddd + ccc]);
+        }
+        printf("\n");
     }
     printf("\n");
     V->aitr_orth2 = 1;
@@ -1693,7 +1697,6 @@ LINE20:
 
         if (fabs(sigmai) == 0.0)
         {
-            printf("DNAPPS: At real shift\n");
             //  Real-valued shift ==> apply single shift QR
 
             f = h11 - sigmar;
@@ -1764,7 +1767,6 @@ LINE20:
             //  Finished applying the real shift.
 
         } else {
-            printf("DNAPPS: At complex shift\n");
             //  Complex conjugate shifts ==> apply double shift QR
 
             h12 = h[istart + ldh*(istart + 1)];
@@ -1829,7 +1831,7 @@ LINE20:
         if (iend < kplusp - 1) { printf("DNAPPS: Going to 20 from 110\n");goto LINE20; }
     }
     // 110
-    printf("DNAPPS: At 110\n");
+
     //  Perform a similarity transformation that makes
     //  sure that H will have non negative sub diagonals
 
@@ -1913,7 +1915,7 @@ LINE20:
     {
         daxpy_(&n, &h[*kev + ldh*(*kev-1)], &v[ldv*(*kev)], &int1, resid, &int1);
     }
-    printf("DNAPPS: Exiting\n");
+
     return;
 }
 
@@ -2053,6 +2055,8 @@ dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
         ipntr[1] = 0;
         V->ido = ido_BX;
         return;
+    } else {
+        dcopy_(&n, resid, &int1, workd, &int1);
     }
 
 LINE20:
@@ -2088,9 +2092,9 @@ LINE20:
     V->getv0_orth = 1;
 
 LINE30:
-    int tmp_int = j + 1;
-    dgemv_("T", &n, &tmp_int, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
-    dgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[n], &int1, &dbl1, resid, &int1);
+
+    dgemv_("T", &n, &j, &dbl1, v, &ldv, workd, &int1, &dbl0, &workd[n], &int1);
+    dgemv_("N", &n, &j, &dblm1, v, &ldv, &workd[n], &int1, &dbl1, resid, &int1);
 
     //  Compute the B-norm of the orthogonalized starting vector
 
