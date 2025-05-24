@@ -22,10 +22,10 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
         # If the list of supported backends will grows, this hard-coded dict
         # will need to be updated.
         return {
-            "cupy": False, "torch (cpu)": False,
-            "torch (gpu)": False, "jax.numpy (cpu)": False,
-            "jax.numpy (gpu)": False, "jax.numpy (jit)": False,
-            "dask.array": False, "dask.array (lazy)": False
+            "cupy": False, "torch cpu": False,
+            "torch gpu": False, "jax.numpy cpu": False,
+            "jax.numpy gpu": False, "jax.numpy jit": False,
+            "dask.array": False, "dask.array lazy": False
         }
     row = {}
     # For now, use _make_sphinx_capabilities because that's where
@@ -42,13 +42,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
         elif gpu is None:
             row[backend] = capabilities.cpu
         else:
-            row[f"{backend} (cpu)"] = capabilities.cpu
-            row[f"{backend} (gpu)"] = capabilities.gpu
+            row[f"{backend} cpu"] = capabilities.cpu
+            row[f"{backend} gpu"] = capabilities.gpu
         if backend == "jax.numpy":
-            row["jax.numpy (jit)"] = entry["jax_jit"] and row["jax.numpy (cpu)"]
+            row["jax.numpy jit"] = entry["jax_jit"] and row["jax.numpy cpu"]
         if backend == "dask.array":
             support_lazy = not entry["allow_dask_compute"] and row["dask.array"]
-            row["dask.array (lazy)"] = support_lazy
+            row["dask.array lazy"] = support_lazy
     return row
 
 
