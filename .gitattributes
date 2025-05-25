@@ -34,3 +34,5 @@ scipy/special/tests/data/*/*/*.txt binary
 
 # Release notes, reduce number of conflicts.
 doc/release/*.rst merge=union
+# SCM syntax highlighting & preventing 3-way merges
+pixi.lock merge=binary linguist-language=YAML linguist-generated=true
