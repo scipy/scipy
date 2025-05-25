@@ -4226,6 +4226,19 @@ class TestRound:
 # sph_harm is deprecated and is implemented as a shim around sph_harm_y.
 # The following two tests are maintained to verify the correctness of the shim.
 
+class TestAbs2:
+    def test_abs2_zero(self):
+        assert_equal(special.abs_sq(0), 0)
+
+    def test_abs2_is_square_of_reals(self):
+        reals = np.array([0., 1., 2.])
+        assert_equal(special.abs_sq(reals), np.array([0., 1., 4.]))
+
+    def test_abs2_is_absolute_square_of_complex(self):
+        cmplx = np.array([complex(0, 0), complex(1, 1)])
+        assert_equal(special.abs_sq(cmplx), np.array([0., 2.]))
+
+
 def test_sph_harm():
     # Tests derived from tables in
     # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
