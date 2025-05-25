@@ -131,14 +131,11 @@ class _dia_base(_data_matrix):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DIA format")
-        M,N = self.shape
-        nnz = 0
-        for k in self.offsets:
-            if k > 0:
-                nnz += min(M,N-k)
-            else:
-                nnz += min(M+k,N)
-        return int(nnz)
+        rows, cols = self.shape
+        row_len = min(cols, self.data.shape[1])
+        return int(np.maximum(np.minimum(rows + self.offsets, row_len) -
+                              np.maximum(self.offsets, 0),
+                              0).sum())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
