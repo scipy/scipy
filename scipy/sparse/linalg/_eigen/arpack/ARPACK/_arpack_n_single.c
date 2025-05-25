@@ -16,7 +16,7 @@ static const float ulp = 1.1920928955078125e-07;
 static void snaup2(struct ARPACK_arnoldi_update_vars_s*, float*, float*, int, float*, int, float*, float*, float*, float*, int, float*, int*, float*);
 static void snconv(int n, float* ritzr, float* ritzi, float* bounds, const float tol, int* nconv);
 static void sneigh(float*,int,float*,int,float*,float*,float*,float*,int,float*,int*);
-static void snaitr(struct ARPACK_arnoldi_update_vars_s*,int,float*,float*,float*,int,float*,int,int*,float*);
+static void snaitr(struct ARPACK_arnoldi_update_vars_s*,int,int,float*,float*,float*,int,float*,int,int*,float*);
 static void snapps(int,int*,int,float*,float*,float*,int,float*,int,float*,float*,int,float*,float*);
 static void sngets(struct ARPACK_arnoldi_update_vars_s*,int*,int*,float*,float*,float*);
 static void ssortc(const enum ARPACK_which w, const int apply, const int n, float* xreal, float* ximag, float* y);
@@ -295,7 +295,7 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
             for (j = 0; j < V->ncv; j++)
             {
-                if (j <= V->nconv - 1)
+                if (j < V->nconv)
                 {
                     select[j] = 1;
                 } else {
@@ -699,7 +699,7 @@ snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
 
     //  Compute the first NEV steps of the Arnoldi factorization
 
-    snaitr(V, 0, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    snaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -729,12 +729,15 @@ LINE1000:
     //  to the shift application routine dnapps .
 
     V->np = V->aup2_kplusp - V->nev;
+
+    //  Compute NP additional steps of the Arnoldi factorization.
+
     V->ido = ido_FIRST;
 
 LINE20:
     V->aup2_update = 1;
 
-    snaitr(V, V->nev-1, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    snaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
@@ -789,7 +792,7 @@ LINE20:
 
     sngets(V, &V->nev, &V->np, ritzr, ritzi, bounds);
 
-    if (V->nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_numcnv + 1;}
+    if (V->nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
 
     //  Convergence test.
 
@@ -1156,12 +1159,11 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
 }
 
 void
-snaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, float* resid, float* rnorm,
+snaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, float* rnorm,
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
     int i = 0, infol, ipj, irj, ivj, jj, n, tmp_int;
     float smlnum = unfl * ( V->n / ulp);
-    // float xtemp[2] = { 0.0 };
     const float sq2o2 = sqrtf(2.0) / 2.0;
 
     int int1 = 1;
@@ -1177,6 +1179,7 @@ snaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, float* resid, float* rnorm
 
         //  Initial call to this routine
 
+        V->aitr_j = k;
         V->info = 0;
         V->aitr_step3 = 0;
         V->aitr_step4 = 0;
@@ -1228,6 +1231,9 @@ LINE20:
     V->ido = ido_FIRST;
 
 LINE30:
+
+    // If in reverse communication mode and aitr_restart = 1, flow returns here.
+
     sgetv0(V, 0, n, V->getv0_itry, v, ldv, resid, rnorm, ipntr, workd);
     if (V->ido != ido_DONE) { return; }
     V->aitr_ierr = V->info;
@@ -1477,6 +1483,10 @@ LINE90:
         *rnorm = 0.0;
     }
 
+    // Branch here directly if iterative refinement
+    // wasn't necessary or after at most NITER_REF
+    // steps of iterative refinement.
+
 LINE100:
 
     V->aitr_restart = 0;
@@ -1485,10 +1495,10 @@ LINE100:
     //  STEP 6: Update  j = j+1;  Continue
 
     V->aitr_j += 1;
-    if (V->aitr_j > k + V->np)
+    if (V->aitr_j >= k + np)
     {
         V->ido = ido_DONE;
-        for (i = k; i < k + V->np - 1; i++)
+        for (i = k; i < k + np; i++)
         {
 
             //  Check for splitting and deflation.
@@ -1498,7 +1508,7 @@ LINE100:
             tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
             if (tst1 == 0.0)
             {
-                tmp_int = k + V->np;
+                tmp_int = k + np;
                 tst1 = slanhs_("1", &tmp_int, h, &ldh, &workd[n]);
             }
             if (fabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
@@ -1523,7 +1533,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
     int kplusp = *kev + np;
     float smlnum = unfl * ( n / ulp);
     float c, f, g, h11, h21, h12, h22, h32, s, sigmar, sigmai, r, t, tau, tst1;
-    float tmp_dbl, dbl1 = 1.0, dbl0 = 0.0;
+    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
     float u[3] = { 0.0 };
 
     //  Initialize Q to the identity to accumulate
@@ -1597,7 +1607,7 @@ LINE20:
             if (tst1 == 0.0)
             {
                 // slanhs_(norm, n, a, lda, work)
-                tmp_int = kplusp - jj + 2;
+                tmp_int = kplusp - jj;
                 tst1 = slanhs_("1", &tmp_int, h, &ldh, workl);
             }
             if (fabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
@@ -1606,16 +1616,14 @@ LINE20:
                 h[i+1 + ldh*i] = 0.0;
                 break;
             }
-            // No break adjustment to iend
+            // 30
+            // No-break condition
             if (i == kplusp - 2) { iend = kplusp - 1; }
         }
-        // 30
         // 40
 
         //  No reason to apply a shift to block of order 1
-
-        // OR
-
+        //  OR
         //  If istart + 1 = iend then no reason to apply a
         //  complex conjugate pair of shifts on a 2 by 2 matrix.
 
@@ -1623,7 +1631,7 @@ LINE20:
         {
             // go to 100
             istart = iend + 1;
-            if (iend < kplusp) { goto LINE20; }
+            if (iend < kplusp - 1) { goto LINE20; }
             continue;
         }
 
@@ -1643,7 +1651,7 @@ LINE20:
 
                 //  Construct the plane rotation G to zero out the bulge
 
-                slartgp_(&f, &g, &c, &s, &r);
+                slartgp_(&f, &g, &c, &s, &r);  // Use dlartgp for positive r
                 if (i > istart)
                 {
                     h[i + ldh*(i-1)] = r;
@@ -1680,9 +1688,7 @@ LINE20:
                 }
                 // 70
 
-                /*--------------------------*
-                | Prepare for next rotation |
-                *--------------------------*/
+                // Prepare for next rotation
                if (i < iend-1)
                {
                    f = h[i + 1 + ldh*i];
@@ -1734,7 +1740,7 @@ LINE20:
 
                 //  Apply the reflector to the right of H
 
-                ir = (i + 3 > iend ? iend : i + 3);
+                ir = (i + 3 > iend ? iend : i + 3) + 1;
                 slarf_("R", &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
 
                 //  Accumulate the reflector in the matrix Q;  Q <- Q*G
@@ -1757,7 +1763,7 @@ LINE20:
         //  Apply the same shift to the next block if there is any.
 
         istart = iend + 1;
-        if (iend < kplusp) { goto LINE20; }
+        if (iend < kplusp - 1) { goto LINE20; }
     }
     // 110
 
@@ -1769,12 +1775,11 @@ LINE20:
         if (h[j+1 + ldh*j] < 0.0)
         {
             tmp_int = kplusp - j;
-            tmp_dbl = -1.0;
-            sscal_(&tmp_int, &tmp_dbl, &h[j+1 + ldh*j], &ldh);
-            tmp_int = (j+2 > kplusp ? kplusp : j+ 2);
-            sscal_(&tmp_int, &tmp_dbl, &h[ldh*(j+1)], &int1);
-            tmp_int = (j+np+1 > kplusp ? kplusp : j+np+1);
-            sscal_(&tmp_int, &tmp_dbl, &q[ldq*(j+1)], &int1);
+            sscal_(&tmp_int, &dblm1, &h[j+1 + ldh*j], &ldh);
+            tmp_int = (j+3 > kplusp ? kplusp : j+3);
+            sscal_(&tmp_int, &dblm1, &h[ldh*(j+1)], &int1);
+            tmp_int = (j+np+2 > kplusp ? kplusp : j+np+2);
+            sscal_(&tmp_int, &dblm1, &q[ldq*(j+1)], &int1);
         }
     }
     // 120
@@ -1816,7 +1821,7 @@ LINE20:
     {
         tmp_int = kplusp - i;
         sgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[(*kev-i)*ldq], &int1, &dbl0, workd, &int1);
-        scopy_(&n, workd, &int1, &v[(kplusp-i)*ldv], &int1);
+        scopy_(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
     }
 
     //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
@@ -1838,7 +1843,7 @@ LINE20:
     //     sigmak = (e_{kplusp}'*Q)*e_{kev}
     //     betak = e_{kev+1}'*H*e_{kev}
 
-    sscal_(&n, &q[kplusp-1 + ldq*(*kev-i)], resid, &int1);
+    sscal_(&n, &q[kplusp-1 + ldq*(*kev-1)], resid, &int1);
 
     if (h[*kev + ldh*(*kev-1)] > 0.0)
     {
