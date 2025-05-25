@@ -22,7 +22,7 @@ The `runtests.py` file was removed in commit `0f73f92255253ec5dff2de5ca45d8d3bdd
 
 *New workflows (Meson and meson-python based):*
 
-1. ``python dev.py``
+1. ``spin``
 2. ``pip install -e . --no-build-isolation`` (see the ``meson-python`` docs)
 3. the same as (2)
 4. ``python -m build --no-isolation`` + ``pip install dist/scipy*.whl`` - see

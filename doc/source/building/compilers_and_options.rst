@@ -52,10 +52,10 @@ you can configure the build as following to use the ``debug`` build type::
 
     meson setup build --buildtype debug  --prefix=$PWD/build-install
 
-Now, you can use the ``dev.py`` interface for further building, installing and
+Now, you can use the ``spin`` interface for further building, installing and
 testing SciPy::
 
-    python dev.py -s linalg
+    spin -s linalg
 
 This will work because after initial configuration, Meson will remember the
 config options.
@@ -75,7 +75,7 @@ such that you have at least 2 GB RAM per job. For example, to launch 6 jobs::
 
 or::
 
-    python dev.py build -j6
+    spin build -j6
 
 
 Use GCC and Clang builds in parallel
@@ -89,14 +89,14 @@ For example, let us build using GCC and Clang.
 
 1. Build with GCC::
 
-    python dev.py build
+    spin build
 
 Using the above command, meson will build with the (default) GCC compilers in
 the ``build`` directory, and install to the ``build-install`` directory.
 
 2. Build with Clang::
 
-    CC=clang CXX=clang++ FC=gfortran python dev.py --build-dir=build-clang build
+    CC=clang CXX=clang++ FC=gfortran spin --build-dir=build-clang build
 
 Using the above commands, Meson will build with the Clang, Clang++ and Gfortran
 compilers in the ``build-clang`` directory, and then install SciPy into
@@ -104,16 +104,14 @@ compilers in the ``build-clang`` directory, and then install SciPy into
 
 Meson will remember the compiler selection for the ``build-clang`` directory and
 it cannot be changed, so each future invocation of
-``python dev.py --build-dir=build-clang <command>`` it will automatically use Clang.
+``spin --build-dir=build-clang <command>`` it will automatically use Clang.
 
 Tip: use an alias to make this easier to use, e.g.,
-``alias dev-clang="python dev.py --build-dir=build-clang"`` and then
+``alias dev-clang="spin --build-dir=build-clang"`` and then
 ``dev-clang build``.
 
 A common reason to have two builds is to compare between them. For example,
 to run the ``scipy.linalg`` tests for builds with both compilers, do::
 
-    python dev.py -s linalg                          # run tests for the GCC build
-    python dev.py --build-dir build-clang -s linalg  # run tests for the Clang build
-
-
+    spin -s linalg                          # run tests for the GCC build
+    spin --build-dir build-clang -s linalg  # run tests for the Clang build
