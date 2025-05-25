@@ -120,10 +120,10 @@ not been merged to upstream yet::
     $ pip install git+https://github.com/numpy/meson.git@main-numpymeson
 
 For a development build with MKL, install the library and its development headers, and
-give use the ``ilp64=true`` command line argument
+give use the ``ilp64=true`` option::
 
     $ pip install mkl mkl-devel
-    $ python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
+    $ spin build -C-Dblas=mkl -C-Duse-ilp64=true
 
 For a development build with ``scipy-openblas64``, make sure you have installed both
 ``scipy-openblas32`` and ``scipy-openblas64``, and generate the pkg-config file
@@ -131,7 +131,7 @@ for the ILP64 variant::
 
     >>> python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
     >>> export PKG_CONFIG_PATH=`pwd`
-    >>> python dev.py build --with-scipy-openblas -C-Duse-ilp64=true
+    >>> spin build --with-scipy-openblas -C-Duse-ilp64=true
 
 
 Work-in-progress
