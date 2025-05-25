@@ -2175,6 +2175,7 @@ def data_file(basename):
                         'data', basename)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestSmoothingSpline:
     #
     # test make_smoothing_spline
@@ -2266,7 +2267,7 @@ class TestSmoothingSpline:
         # result in conflicting dtypes on big endian systems.
         xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
-    def test_non_regularized_case(self):
+    def test_non_regularized_case(self, xp):
         """
         In case the regularization parameter is 0, the resulting spline
         is an interpolation spline with natural boundary conditions.
@@ -2277,10 +2278,12 @@ class TestSmoothingSpline:
         x = np.sort(rng.random_sample(n) * 4 - 2)
         y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
+        x, y = xp.asarray(x), xp.asarray(y)
+
         spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
 
-        grid = np.linspace(x[0], x[-1], 2 * n)
+        grid = xp.linspace(x[0], x[-1], 2 * n)
         xp_assert_close(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
@@ -2301,7 +2304,7 @@ class TestSmoothingSpline:
         # them randomly
         for ind in rng.choice(range(100), size=10):
             w = xp.ones(n)
-            w[int(ind)] = 30.
+            xpx.at(w, int(ind)).set(30.)    # w[int(ind)] = 30.
             spl_w = make_smoothing_spline(x, y, w)
             # check that spline with weight in a certain point is closer to the
             # original point than the one without weights
@@ -3236,6 +3239,7 @@ def _add_knot(x, t, k, residuals):
     return t_new
 
 
+@skip_xp_backends(cpu_only=True)
 class TestGenerateKnots:
     def test_split_add_knot(self):
         # smoke test implementation details: insert a new knot given residuals
@@ -3477,6 +3481,7 @@ class F_dense:
         return fp - self.s
 
 
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplrep:
     def test_input_errors(self):
         x = np.linspace(0, 10, 11)
@@ -3683,6 +3688,7 @@ class TestMakeSplrep:
         assert spl_1.t.shape[0] == 2 * (k + 1)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestMakeSplprep:
     def _get_xyk(self, m=10, k=3, xp=np):
         x = xp.arange(m, dtype=xp.float64) * xp.pi / m
