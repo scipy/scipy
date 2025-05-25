@@ -65,7 +65,7 @@ class ArrayAPISupportPerModule(SphinxDirective):
         ]
         for module in modules:
             link = self.options.get(module)
-            module_text = f"`{module} <{link}>`__" if link else module
+            module_text = f":doc:`{module} <{link}>`" if link else module
             row = [module_text]
             info = table_stats[f"scipy.{module}"]
             total = info.pop("total")
