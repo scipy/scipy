@@ -1066,8 +1066,7 @@ class RigidTransform:
         >>> Tf.identity().as_exp_coords()
         array([0., 0., 0., 0., 0., 0.])
         """
-        xp = array_namespace(self._matrix)
-        exp_coords = backend_registry[xp].as_exp_coords(self._matrix)
+        exp_coords = self._backend.as_exp_coords(self._matrix)
         if self._single:
             exp_coords = exp_coords[0, ...]
         return exp_coords
@@ -1108,8 +1107,7 @@ class RigidTransform:
         >>> Tf.identity().as_dual_quat(scalar_first=True)
         array([1., 0., 0., 0., 0., 0., 0., 0.])
         """
-        xp = array_namespace(self._matrix)
-        dual_quat = backend_registry[xp].as_dual_quat(
+        dual_quat = self._backend.as_dual_quat(
             self._matrix, scalar_first=scalar_first
         )
         if self._single:
@@ -1344,8 +1342,7 @@ class RigidTransform:
         if not isinstance(other, RigidTransform):
             raise TypeError("other must be a RigidTransform object")
 
-        xp = array_namespace(self._matrix, other._matrix)
-        matrix = backend_registry[xp].compose_transforms(self._matrix, other._matrix)
+        matrix = self._backend.compose_transforms(self._matrix, other._matrix)
         # Only necessary for cython. Array API broadcasting handles this by default
         if self._single and other._single:
             matrix = matrix[0, ...]
@@ -1449,8 +1446,7 @@ class RigidTransform:
                [0., 0., 1., 3.],
                [0., 0., 0., 1.]])
         """
-        xp = array_namespace(self._matrix)
-        matrix = backend_registry[xp].pow(self._matrix, n)
+        matrix = self._backend.pow(self._matrix, n)
         if self._single:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=False, copy=False)
@@ -1513,8 +1509,7 @@ class RigidTransform:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        xp = array_namespace(self._matrix)
-        matrix = backend_registry[xp].inv(self._matrix)
+        matrix = self._backend.inv(self._matrix)
         if self._single:
             matrix = matrix[0, ...]
         return RigidTransform(matrix, normalize=False, copy=False)
@@ -1611,7 +1606,7 @@ class RigidTransform:
         vector = xp.asarray(
             vector, dtype=self._matrix.dtype, device=device(self._matrix)
         )
-        result = backend_registry[xp].apply(self._matrix, vector, inverse)
+        result = self._backend.apply(self._matrix, vector, inverse)
         if self._single and vector.ndim == 1:
             result = result[0, ...]
         return result
