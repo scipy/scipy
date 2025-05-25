@@ -633,7 +633,6 @@ Authors (commits)
 * Zhida Shang (1) +
 * Sheila-nk (4)
 * Romain Simon (2) +
-* Gagandeep Singh (31)
 * Albert Steppi (40)
 * Kai Striega (1)
 * Anushka Suyal (143) +
@@ -660,9 +659,9 @@ Authors (commits)
 * Xiao Yuan (2)
 * Irwin Zaid (12)
 * Gang Zhao (1)
-* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (10)
+* ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (41)
 
-A total of 149 people contributed to this release.
+A total of 148 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
