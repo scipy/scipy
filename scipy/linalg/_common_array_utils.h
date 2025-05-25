@@ -23,10 +23,12 @@
 // BLAS and LAPACK functions used
 void saxpy_(int* n, float* sa, float* sx, int* incx, float* sy, int* incy);
 void scopy_(int* n, float* dx, int* incx, float* dy, int* incy);
+void sgecon_(char* norm, int* n, float* a, int* lda, float* anorm, float* rcond, float* work, int* iwork, int* info);
 void sgees_(char* jobvs, char* sort, int (*select)(float*, float*), int* n, float* a, int* lda, int* sdim, float* wr, float* wi, float* vs, int* ldvs, float* work, int* lwork, int* bwork, int* info);
 void sgemm_(char* transa, char* transb, int* m, int* n, int* k, float* alpha, float* a, int* lda, float* b, int* ldb, float* beta, float* c, int* ldc);
 void sgemv_(char* trans, int* m, int* n, float* alpha, float* a, int* lda, float* x, int* incx, float* beta, float* y, int* incy);
 void sgetrf_(int* m, int* n, float* a, int* lda, int* ipiv, int* info);
+void sgetri_(int* n, float* a, int* lda, int* ipiv, float* work, int* lwork, int* info);
 void sgetrs_(char* trans, int* n, int* nrhs, float* a, int* lda, int* ipiv, float* b, int* ldb, int* info);
 void slacn2_(int* n, float* v, float* x, int* isgn, float* est, int* kase, int* isave);
 void slanv2_(float* a, float* b, float* c, float* d, float* rt1r, float* rt1i, float* rt2r, float* rt2i, float* cs, float* sn);
@@ -37,9 +39,11 @@ void strsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, float* a, int*
 void daxpy_(int* n, double* sa, double* sx, int* incx, double* sy, int* incy);
 void dcopy_(int* n, double* dx, int* incx, double* dy, int* incy);
 void dgees_(char* jobvs, char* sort, int (*select)(double*, double*), int* n, double* a, int* lda, int* sdim, double* wr, double* wi, double* vs, int* ldvs, double* work, int* lwork, int* bwork, int* info);
+void dgecon_(char* norm, int* n, double* a, int* lda, double* anorm, double* rcond, double* work, int* iwork, int* info);
 void dgemm_(char* transa, char* transb, int* m, int* n, int* k, double* alpha, double* a, int* lda, double* b, int* ldb, double* beta, double* c, int* ldc);
 void dgemv_(char* trans, int* m, int* n, double* alpha, double* a, int* lda, double* x, int* incx, double* beta, double* y, int* incy);
 void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
+void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work, int* lwork, int* info);
 void dgetrs_(char* trans, int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* ldb, int* info);
 void dlacn2_(int* n, double* v, double* x, int* isgn, double* est, int* kase, int* isave);
 void dlanv2_(double* a, double* b, double* c, double* d, double* rt1r, double* rt1i, double* rt2r, double* rt2i, double* cs, double* sn);
@@ -50,10 +54,12 @@ void dtrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, double* a, int
 void caxpy_(int* n, SCIPY_C* sa, SCIPY_C* sx, int* incx, SCIPY_C* sy, int* incy);
 void ccopy_(int* n, SCIPY_C* dx, int* incx, SCIPY_C* dy, int* incy);
 void cgees_(char* jobvs, char* sort, int (*select)(SCIPY_C), int* n, SCIPY_C* a, int* lda, int* sdim, SCIPY_C* w, SCIPY_C* vs, int* ldvs, SCIPY_C* work, int* lwork, float* rwork, int* bwork, int* info);
+void cgecon_(char* norm, int* n, SCIPY_C* a, int* lda, float* anorm, float* rcond, SCIPY_C* work, float* rwork, int* info);
 void cgemm_(char* transa, char* transb, int* m, int* n, int* k, SCIPY_C* alpha, SCIPY_C* a, int* lda, SCIPY_C* b, int* ldb, SCIPY_C* beta, SCIPY_C* c, int* ldc);
 void cgemv_(char* trans, int* m, int* n, SCIPY_C* alpha, SCIPY_C* a, int* lda, SCIPY_C* x, int* incx, SCIPY_C* beta, SCIPY_C* y, int* incy);
 void cgetrf_(int* m, int* n, SCIPY_C* a, int* lda, int* ipiv, int* info);
 void cgetrs_(char* trans, int* n, int* nrhs, SCIPY_C* a, int* lda, int* ipiv, SCIPY_C* b, int* ldb, int* info);
+void cgetri_(int* n, SCIPY_C* a, int* lda, int* ipiv, SCIPY_C* work, int* lwork, int* info);
 void clacn2_(int* n, SCIPY_C* v, SCIPY_C* x, float* est, int* kase, int* isave);
 void crot_(int* n, SCIPY_C* cx, int* incx, SCIPY_C* cy, int* incy, float* c, SCIPY_C* s);
 void csscal_(int* n, float* sa, SCIPY_C* sx, int* incx);
@@ -63,9 +69,11 @@ void ctrsyl_(char* trana, char* tranb, int* isgn, int* m, int* n, SCIPY_C* a, in
 void zaxpy_(int* n, SCIPY_Z* sa, SCIPY_Z* sx, int* incx, SCIPY_Z* sy, int* incy);
 void zcopy_(int* n, SCIPY_Z* dx, int* incx, SCIPY_Z* dy, int* incy);
 void zgees_(char* jobvs, char* sort, int (*select)(SCIPY_Z), int* n, SCIPY_Z* a, int* lda, int* sdim, SCIPY_Z* w, SCIPY_Z* vs, int* ldvs, SCIPY_Z* work, int* lwork, double* rwork, int* bwork, int* info);
+void zgecon_(char* norm, int* n, SCIPY_Z* a, int* lda, double* anorm, double* rcond, SCIPY_Z* work, double* rwork, int* info);
 void zgemm_(char* transa, char* transb, int* m, int* n, int* k, SCIPY_Z* alpha, SCIPY_Z* a, int* lda, SCIPY_Z* b, int* ldb, SCIPY_Z* beta, SCIPY_Z* c, int* ldc);
 void zgemv_(char* trans, int* m, int* n, SCIPY_Z* alpha, SCIPY_Z* a, int* lda, SCIPY_Z* x, int* incx, SCIPY_Z* beta, SCIPY_Z* y, int* incy);
 void zgetrf_(int* m, int* n, SCIPY_Z* a, int* lda, int* ipiv, int* info);
+void zgetri_(int* n, SCIPY_Z* a, int* lda, int* ipiv, SCIPY_Z* work, int* lwork, int* info);
 void zgetrs_(char* trans, int* n, int* nrhs, SCIPY_Z* a, int* lda, int* ipiv, SCIPY_Z* b, int* ldb, int* info);
 void zlacn2_(int* n, SCIPY_Z* v, SCIPY_Z* x, double* est, int* kase, int* isave);
 void zrot_(int* n, SCIPY_Z* cx, int* incx, SCIPY_Z* cy, int* incy, double* c, SCIPY_Z* s);
@@ -316,4 +324,109 @@ isschur(const double* restrict data, const Py_ssize_t n)
     return isSchur;
 }
 
+// Given a F-contiguous matrix 'data', find the lower and upper bandwidth.
+inline void
+bandwidth_s(const float* restrict data, const Py_ssize_t n, const Py_ssize_t m, Py_ssize_t* lower_band, Py_ssize_t* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    // Fortran contiguous hence we traverse columns.
+    // lower triangle; start from lower left corner and up until
+    // the already discovered bandwidth
+    for (Py_ssize_t c = 0; c < m-1; c++)
+    {
+        for (Py_ssize_t r = n-1; r > c + lb; r--)
+        {
+            if (data[c*n + r] != 0.0f) { lb = r - c; break; }
+        }
+        // If existing band falls outside matrix; we are done
+        // Say array is 8x8, lb already 3 hence we don't need to check
+        // columns 5, 6, 7 (we skip 8 anyways)
+        if (c + lb + 1 > m) { break; }
+    }
+    for (Py_ssize_t c = m-1; c > 0; c--)
+    {
+        for (Py_ssize_t r = 0; r < c - ub; r++)
+        {
+            if (data[c*n + r] != 0.0f) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+inline void
+bandwidth_d(const double* restrict data, const Py_ssize_t n, const Py_ssize_t m, Py_ssize_t* lower_band, Py_ssize_t* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    for (Py_ssize_t c = 0; c < m-1; c++)
+    {
+        for (Py_ssize_t r = n-1; r > c + lb; r--)
+        {
+            if (data[c*n + r] != 0.0) { lb = r - c; break; }
+        }
+        if (c + lb + 1 > m) { break; }
+    }
+    for (Py_ssize_t c = m-1; c > 0; c--)
+    {
+        for (Py_ssize_t r = 0; r < c - ub; r++)
+        {
+            if (data[c*n + r] != 0.0) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+inline void
+bandwidth_c(const SCIPY_C* restrict data, const Py_ssize_t n, const Py_ssize_t m, Py_ssize_t* lower_band, Py_ssize_t* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    for (Py_ssize_t c = 0; c < m-1; c++)
+    {
+        for (Py_ssize_t r = n-1; r > c + lb; r--)
+        {
+            if ((crealf(data[c*n + r]) != 0.0f) && (cimagf(data[c*n + r]) != 0.0f)) { lb = r - c; break; }
+        }
+        if (c + lb + 1 > m) { break; }
+    }
+    for (Py_ssize_t c = m-1; c > 0; c--)
+    {
+        for (Py_ssize_t r = 0; r < c - ub; r++)
+        {
+            if ((crealf(data[c*n + r]) != 0.0f) && (cimagf(data[c*n + r]) != 0.0f)) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
+
+
+inline void
+bandwidth_z(const SCIPY_Z* restrict data, const Py_ssize_t n, const Py_ssize_t m, Py_ssize_t* lower_band, Py_ssize_t* upper_band)
+{
+    Py_ssize_t lb = 0, ub = 0;
+    for (Py_ssize_t c = 0; c < m-1; c++)
+    {
+        for (Py_ssize_t r = n-1; r > c + lb; r--)
+        {
+            if ((creal(data[c*n + r]) != 0.0) && (cimag(data[c*n + r]) != 0.0)) { lb = r - c; break; }
+        }
+        if (c + lb + 1 > m) { break; }
+    }
+    for (Py_ssize_t c = m-1; c > 0; c--)
+    {
+        for (Py_ssize_t r = 0; r < c - ub; r++)
+        {
+            if ((creal(data[c*n + r]) != 0.0) && (cimag(data[c*n + r]) != 0.0)) { ub = c - r; break; }
+        }
+        if (c <= ub) { break; }
+    }
+    *lower_band = lb;
+    *upper_band = ub;
+}
 #endif
