@@ -486,7 +486,7 @@ class TestApproxDerivativesDense:
     def test_fp(self):
         # checks that approx_derivative works for FP size other than 64.
         # Example is derived from the minimal working example in gh12991.
-        np.random.seed(1)
+        rng = np.random.default_rng(1)
 
         def func(p, x):
             return p[0] + p[1] * x
@@ -495,7 +495,7 @@ class TestApproxDerivativesDense:
             return func(p, x) - y
 
         x = np.linspace(0, 1, 100, dtype=np.float64)
-        y = np.random.random(100).astype(np.float64)
+        y = rng.random(size=100, dtype=np.float64)
         p0 = np.array([-1.0, -1.0])
 
         jac_fp64 = approx_derivative(err, p0, method='2-point', args=(x, y))
@@ -570,7 +570,7 @@ class TestApproxDerivativesDense:
 class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
     def setup_method(self):
-        np.random.seed(0)
+        self.rng = np.random.default_rng(121091202)
         self.n = 50
         self.lb = -0.1 * (1 + np.arange(self.n))
         self.ub = 0.1 * (1 + np.arange(self.n))
@@ -614,7 +614,7 @@ class TestApproxDerivativeSparse:
         A = self.structure(self.n)
         order = np.arange(self.n)
         groups_1 = group_columns(A, order)
-        np.random.shuffle(order)
+        self.rng.shuffle(order)
         groups_2 = group_columns(A, order)
 
         with MapWrapper(2) as mapper:
@@ -712,9 +712,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_scalar_scalar(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=(1,))
+            p = rng.uniform(-10, 10, size=(1,))
             assert_allclose(jac_diff_2.dot(p), jac_true*p,
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true*p,
@@ -733,9 +733,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=(1,))
+            p = rng.uniform(-10, 10, size=(1,))
             assert_allclose(jac_diff_2.dot(p), jac_true.dot(p),
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true.dot(p),
@@ -754,9 +754,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_vector_scalar(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=x0.shape)
+            p = rng.uniform(-10, 10, size=x0.shape)
             assert_allclose(jac_diff_2.dot(p), np.atleast_1d(jac_true.dot(p)),
                             rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), np.atleast_1d(jac_true.dot(p)),
@@ -775,9 +775,9 @@ class TestApproxDerivativeLinearOperator:
                                        method='cs',
                                        as_linear_operator=True)
         jac_true = self.jac_vector_vector(x0)
-        np.random.seed(1)
+        rng = np.random.default_rng(11290049580398)
         for i in range(10):
-            p = np.random.uniform(-10, 10, size=x0.shape)
+            p = rng.uniform(-10, 10, size=x0.shape)
             assert_allclose(jac_diff_2.dot(p), jac_true.dot(p), rtol=1e-5)
             assert_allclose(jac_diff_3.dot(p), jac_true.dot(p), rtol=1e-6)
             assert_allclose(jac_diff_4.dot(p), jac_true.dot(p), rtol=1e-7)
