@@ -32,7 +32,7 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
                      || (typenum == NPY_DOUBLE)
                      || (typenum == NPY_CFLOAT)
                      || (typenum == NPY_CDOUBLE);
-    if(!dtype_ok || !PyArray_ISBEHAVED(ap_Am)) {
+    if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
         PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
         return NULL;
     }
