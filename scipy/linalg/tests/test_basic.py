@@ -1128,6 +1128,13 @@ class TestInv:
         a_inv = inv(a, overwrite_a=True)
         assert np.shares_memory(a, a_inv)
 
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+
+        a_inv = inv(a)
+        assert_allclose(a_inv, a, atol=1e-14)
+
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_batch_core_1x1(self, dt):
         a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
