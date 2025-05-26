@@ -49,8 +49,7 @@ Explanation of build stages
 ---------------------------
 
 *This is for teaching purposes only; there should be no need to execute these
-stages separately. The dev.py scripts in the root of the repo also contains
-these steps and may be studied for insights.*
+stages separately.*
 
 Assume we're starting from a clean repo and a fully set up conda environment::
 

@@ -260,7 +260,6 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
-   find_repeats
    rankdata
    tiecorrect
    trim_mean
