@@ -38,6 +38,15 @@ class _ArrayClsInfo(enum.Enum):
 
 @lru_cache(100)
 def _validate_array_cls(cls: type) -> _ArrayClsInfo:
+    # Note: this must happen before the test for np.generic,
+    # because np.float64 and np.complex128 are subclasses of
+    # float and complex respectively.
+    if issubclass(cls, int | float | complex | bool | type(None)):
+        return _ArrayClsInfo.skip
+
+    if issubclass(cls, list | tuple):
+        return _ArrayClsInfo.is_array_like
+
     # this comes from `_util._asarray_validated`
     if issubclass(cls, SparseABC):
         msg = ('Sparse arrays/matrices are not supported by this function. '
@@ -53,15 +62,6 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
 
     if issubclass(cls, np.ndarray | np.generic):
         return _ArrayClsInfo.is_numpy
-
-    # Note: this must happen after the test for np.generic,
-    # because np.float64 and np.complex128 are subclasses of
-    # float and complex respectively.
-    if issubclass(cls, int | float | complex | bool | type(None)):
-        return _ArrayClsInfo.skip
-
-    if issubclass(cls, list | tuple):
-        return _ArrayClsInfo.is_array_like
 
     return _ArrayClsInfo.no_info
 
