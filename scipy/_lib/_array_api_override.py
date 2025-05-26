@@ -66,18 +66,13 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
     return _ArrayClsInfo.no_info
 
 
-class _DTypeInfo(enum.Enum):
-    numpy_aapi = 0
-    maybe_jax = 1
-
-
 @lru_cache(100)
-def _validate_numpy_dtype(dtype: np.dtype) -> _DTypeInfo:
+def _validate_numpy_dtype(dtype: np.dtype, maybe_jax: bool) -> bool:
     if np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_):
-        return _DTypeInfo.numpy_aapi
+        return False
     # See array_api_compat._common._helpers._is_jax_zero_gradient_array
-    if isinstance(dtype, np.dtypes.VoidDType):
-        return _DTypeInfo.maybe_jax
+    if maybe_jax and isinstance(dtype, np.dtypes.VoidDType):
+        return True
     raise TypeError(f"An argument has dtype `{dtype!r}`; "
                     "only boolean and numerical dtypes are supported.")
 
@@ -130,14 +125,12 @@ def array_namespace(*arrays: Array) -> ModuleType:
         if arr_info is _ArrayClsInfo.skip:
             pass
         elif arr_info is _ArrayClsInfo.is_numpy:
-            dtype_info = _validate_numpy_dtype(array.dtype)
-            if dtype_info is _DTypeInfo.maybe_jax:
+            if _validate_numpy_dtype(array.dtype, maybe_jax=True):
                 if is_jax_array(array):
                     api_arrays.append(array)  # JAX zero gradient array
                 else:
-                    # void dtype, but not a JAX zero gradient array
-                    raise TypeError(f"An argument has dtype `{array.dtype!r}`; "
-                        f"only boolean and numerical dtypes are supported.")
+                    # void dtype, but not a JAX zero gradient array. Raise.
+                    _validate_numpy_dtype(array.dtype, maybe_jax=False)
             else:
                 numpy_arrays.append(array)
         elif arr_info is _ArrayClsInfo.no_info and is_array_api_obj(array):
@@ -149,7 +142,7 @@ def array_namespace(*arrays: Array) -> ModuleType:
             except TypeError:
                 raise TypeError("An argument is neither array API compatible nor "
                                 "coercible by NumPy.")
-            _validate_numpy_dtype(array.dtype)
+            _validate_numpy_dtype(array.dtype, maybe_jax=False)
             numpy_arrays.append(array)
 
     # When there are exclusively NumPy and ArrayLikes, skip calling

@@ -115,6 +115,8 @@ class TestArrayAPI:
         void = np.empty(0, dtype=np.dtype([]))
         with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
             array_namespace(void)
+        with pytest.raises(TypeError, match="only boolean and numerical dtypes"):
+            array_namespace([void, void])
 
     def test_copy(self, xp):
         for _xp in [xp, None]:
