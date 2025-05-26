@@ -31,9 +31,9 @@ SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
 class _ArrayClsInfo(enum.Enum):
     skip = 0
-    is_numpy = 1
-    is_array_like = 2
-    no_info = 3
+    numpy = 1
+    array_like = 2
+    unknown = 3
 
 
 @lru_cache(100)
@@ -45,7 +45,7 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
         return _ArrayClsInfo.skip
 
     if issubclass(cls, list | tuple):
-        return _ArrayClsInfo.is_array_like
+        return _ArrayClsInfo.array_like
 
     # this comes from `_util._asarray_validated`
     if issubclass(cls, SparseABC):
@@ -61,20 +61,9 @@ def _validate_array_cls(cls: type) -> _ArrayClsInfo:
         raise TypeError("Inputs of type `numpy.matrix` are not supported.")
 
     if issubclass(cls, np.ndarray | np.generic):
-        return _ArrayClsInfo.is_numpy
+        return _ArrayClsInfo.numpy
 
-    return _ArrayClsInfo.no_info
-
-
-@lru_cache(100)
-def _validate_numpy_dtype(dtype: np.dtype, maybe_jax: bool) -> bool:
-    if np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.bool_):
-        return False
-    # See array_api_compat._common._helpers._is_jax_zero_gradient_array
-    if maybe_jax and isinstance(dtype, np.dtypes.VoidDType):
-        return True
-    raise TypeError(f"An argument has dtype `{dtype!r}`; "
-                    "only boolean and numerical dtypes are supported.")
+    return _ArrayClsInfo.unknown
 
 
 def array_namespace(*arrays: Array) -> ModuleType:
@@ -124,17 +113,21 @@ def array_namespace(*arrays: Array) -> ModuleType:
         arr_info = _validate_array_cls(type(array))
         if arr_info is _ArrayClsInfo.skip:
             pass
-        elif arr_info is _ArrayClsInfo.is_numpy:
-            if _validate_numpy_dtype(array.dtype, maybe_jax=True):
-                if is_jax_array(array):
-                    api_arrays.append(array)  # JAX zero gradient array
-                else:
-                    # void dtype, but not a JAX zero gradient array. Raise.
-                    _validate_numpy_dtype(array.dtype, maybe_jax=False)
-            else:
+
+        elif arr_info is _ArrayClsInfo.numpy:
+            if array.dtype.kind in 'iufcb':  # Numeric or bool
                 numpy_arrays.append(array)
-        elif arr_info is _ArrayClsInfo.no_info and is_array_api_obj(array):
+            elif array.dtype.kind == 'V' and is_jax_array(array):
+                # Special case for JAX zero gradient arrays;
+                # see array_api_compat._common._helpers._is_jax_zero_gradient_array
+                api_arrays.append(array)  # JAX zero gradient array
+            else:
+                raise TypeError(f"An argument has dtype `{array.dtype!r}`; "
+                                "only boolean and numerical dtypes are supported.")
+
+        elif arr_info is _ArrayClsInfo.unknown and is_array_api_obj(array):
             api_arrays.append(array)
+
         else:
             # list, tuple, or arbitrary object
             try:
@@ -142,7 +135,9 @@ def array_namespace(*arrays: Array) -> ModuleType:
             except TypeError:
                 raise TypeError("An argument is neither array API compatible nor "
                                 "coercible by NumPy.")
-            _validate_numpy_dtype(array.dtype, maybe_jax=False)
+            if array.dtype.kind not in 'iufcb':  # Numeric or bool
+                raise TypeError(f"An argument has dtype `{array.dtype!r}`; "
+                                "only boolean and numerical dtypes are supported.")
             numpy_arrays.append(array)
 
     # When there are exclusively NumPy and ArrayLikes, skip calling
