@@ -81,9 +81,45 @@ class ArrayAPISupportPerModule(SphinxDirective):
         return node.children
 
 
+class ArrayAPISupportPerFunction(SphinxDirective):
+    has_content = False
+    option_spec = {"module": directives.unchanged}
+
+    def run(self):
+        flat_table, backends = _get_flat_table_and_backends()
+        module = self.options["module"]
+        relevant_rows = (
+            row for row in flat_table if row["module"] == f"scipy.{module}"
+        )
+        print(len(relevant_rows))
+
+        headers = ["function"]
+        headers += [
+            backend_names_map.get(backend, backend) for backend in backends
+        ]
+        new_rows = []
+        for row in relevant_rows:
+            func = row["function"]
+            new_row = [func]
+            for backend in backends:
+                supported = row["backend"]
+                cell_text = "✅" if supported else "⛔"
+                row.append(cell_text)
+            rows.append(row)
+        rst_table = tabulate(rows, headers=headers, tablefmt="rst")
+        string_list = StringList(rst_table.splitlines())
+        node = nodes.section()
+        node.document = self.state.document
+        nested_parse_with_titles(self.state, string_list, node)
+        return node.children
+
+
 def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive(
         "array-api-support-per-module", ArrayAPISupportPerModule
+    )
+    app.add_directive(
+        "array-api-support-per-function", ArrayAPISupportPerFunction
     )
     return {
         "parallel_read_safe": True,
