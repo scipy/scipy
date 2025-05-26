@@ -1107,9 +1107,7 @@ class RigidTransform:
         >>> Tf.identity().as_dual_quat(scalar_first=True)
         array([1., 0., 0., 0., 0., 0., 0., 0.])
         """
-        dual_quat = self._backend.as_dual_quat(
-            self._matrix, scalar_first=scalar_first
-        )
+        dual_quat = self._backend.as_dual_quat(self._matrix, scalar_first=scalar_first)
         if self._single:
             dual_quat = dual_quat[0]
         return dual_quat

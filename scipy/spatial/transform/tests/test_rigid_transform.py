@@ -56,7 +56,7 @@ def test_from_rotation(xp):
     xp_assert_close(tf.as_matrix(), xp.eye(4), atol=atol)
     assert tf.single
 
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf = RigidTransform.from_rotation(r)
     xp_assert_close(tf.as_matrix()[:3, :3], r.as_matrix(), atol=atol)
     xp_assert_close(tf.as_matrix()[:3, 3], xp.asarray([0.0, 0, 0]), atol=atol)
@@ -64,15 +64,13 @@ def test_from_rotation(xp):
     assert tf.single
 
     # Test multiple rotations
-    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     tf = RigidTransform.from_rotation(r)
     xp_assert_close(tf.as_matrix()[:, :3, :3], r.as_matrix(), atol=atol)
-    xp_assert_close(
-        tf.as_matrix()[:, :3, 3], xp.asarray([[0.0, 0, 0], [0, 0, 0]]), atol=atol
-    )
-    xp_assert_close(
-        tf.as_matrix()[:, 3, :], xp.asarray([[0.0, 0, 0, 1], [0, 0, 0, 1]]), atol=atol
-    )
+    xp_assert_close(tf.as_matrix()[:, :3, 3], xp.asarray([[0.0, 0, 0], [0, 0, 0]]),
+                    atol=atol)
+    xp_assert_close(tf.as_matrix()[:, 3, :], xp.asarray([[0.0, 0, 0, 1], [0, 0, 0, 1]]),
+                    atol=atol)
     assert not tf.single
 
 
@@ -136,16 +134,15 @@ def test_from_matrix(xp):
     xp_assert_close(tf.as_matrix(), xp.eye(4), atol=atol)
 
     # Test non-orthogonal rotation matrix
-    matrix = xp.asarray([[1, 1, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+    matrix = xp.asarray([[1, 1, 0, 0],
+                         [0, 1, 0, 0],
+                         [0, 0, 1, 0],
+                         [0, 0, 0, 1]])
     tf = RigidTransform.from_matrix(matrix)
-    expected = xp.asarray(
-        [
-            [0.894427, 0.447214, 0, 0],
-            [-0.447214, 0.894427, 0, 0],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1],
-        ]
-    )
+    expected = xp.asarray([[0.894427,  0.447214, 0, 0],
+                           [-0.447214,  0.894427, 0, 0],
+                           [0, 0, 1, 0],
+                           [0, 0, 0, 1]])
     xp_assert_close(tf.as_matrix(), expected, atol=1e-6)
 
     # Test invalid matrix
@@ -161,7 +158,10 @@ def test_from_matrix(xp):
 
 def test_from_matrix_array_like():
     # Test single transform matrix
-    matrix = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    matrix = [[1, 0, 0, 0],
+              [0, 1, 0, 0],
+              [0, 0, 1, 0],
+              [0, 0, 0, 1]]
     expected = np.eye(4)
     tf = RigidTransform.from_matrix(matrix)
     xp_assert_close(tf.as_matrix(), expected)
@@ -192,7 +192,7 @@ def test_from_components(xp):
 
     # Test single rotation and multiple translations
     t = xp.asarray([[1, 2, 3], [4, 5, 6]])
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
@@ -205,7 +205,7 @@ def test_from_components(xp):
 
     # Test multiple rotations and translations
     t = xp.asarray([[1, 2, 3], [4, 5, 6]])
-    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     tf = RigidTransform.from_components(t, r)
     assert not tf.single
 
@@ -236,6 +236,7 @@ def test_from_components_array_like():
     assert not tf.single
 
 
+
 def test_as_components(xp):
     atol = 1e-12
     n = 10
@@ -252,109 +253,80 @@ def test_from_exp_coords(xp):
     # example from 3.3 of
     # https://hades.mech.northwestern.edu/images/2/25/MR-v2.pdf
     angle1 = np.deg2rad(30.0)
-    mat = xp.asarray(
-        [
-            [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
-            [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]
-    )
+    mat = xp.asarray([
+        [np.cos(angle1), -np.sin(angle1), 0.0, 1.0],
+        [np.sin(angle1), np.cos(angle1), 0.0, 2.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
     tf1 = RigidTransform.from_matrix(mat)
     angle2 = np.deg2rad(60.0)
-    mat = xp.asarray(
-        [
-            [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
-            [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0],
-        ]
-    )
+    mat = xp.asarray([
+        [np.cos(angle2), -np.sin(angle2), 0.0, 2.0],
+        [np.sin(angle2), np.cos(angle2), 0.0, 1.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0]
+    ])
     tf2 = RigidTransform.from_matrix(mat)
     expected = tf2 * tf1.inv()
     actual = RigidTransform.from_exp_coords(
-        np.deg2rad(30.0) * xp.asarray([0.0, 0.0, 1.0, 3.37, -3.37, 0.0])
-    )
+        np.deg2rad(30.0) * xp.asarray([0.0, 0.0, 1.0, 3.37, -3.37, 0.0]))
     xp_assert_close(actual.as_matrix(), expected.as_matrix(), atol=1e-2)
 
     # test cases generated by comparison to pytransform3d
-    exp_coords = xp.asarray(
-        [
-            [-2.01041204, -0.52983629, 0.65773501, 0.10386614, 0.05855009, 0.54959179],
-            [
-                -0.22537438,
-                -0.24132627,
-                -2.4747121,
-                -0.09158594,
-                1.88075832,
-                -0.03197204,
-            ],
-        ]
-    )
-    expected_matrix = xp.asarray(
-        [
-            [
-                [0.76406621, 0.10504613, -0.63652819, -0.10209961],
-                [0.59956454, -0.47987325, 0.64050295, 0.40158789],
-                [-0.2381705, -0.87102639, -0.42963687, 0.19637636],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            [
-                [-0.78446989, 0.61157488, 0.10287448, 1.33330055],
-                [-0.58017785, -0.78232107, 0.22664378, 0.52660831],
-                [0.21909052, 0.11810973, 0.96852952, -0.02968529],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-        ]
-    )
+    exp_coords = xp.asarray([
+        [-2.01041204, -0.52983629, 0.65773501,
+         0.10386614, 0.05855009, 0.54959179],
+        [-0.22537438, -0.24132627, -2.4747121,
+         -0.09158594,  1.88075832, -0.03197204]
+    ])
+    expected_matrix = xp.asarray([
+        [[0.76406621, 0.10504613, -0.63652819, -0.10209961],
+         [0.59956454, -0.47987325, 0.64050295, 0.40158789],
+         [-0.2381705, -0.87102639, -0.42963687, 0.19637636],
+         [0., 0., 0., 1.]],
+        [[-0.78446989, 0.61157488, 0.10287448, 1.33330055],
+         [-0.58017785, -0.78232107, 0.22664378, 0.52660831],
+         [0.21909052, 0.11810973, 0.96852952, -0.02968529],
+         [0., 0., 0., 1.]]
+    ])
     xp_assert_close(
         RigidTransform.from_exp_coords(exp_coords).as_matrix(),
-        expected_matrix,
-        atol=1e-8,
-    )
+        expected_matrix, atol=1e-8)
 
     # identity
     xp_assert_close(
-        RigidTransform.from_exp_coords(xp.zeros(6)).as_matrix(), xp.eye(4), atol=1e-12
-    )
+        RigidTransform.from_exp_coords(xp.zeros(6)).as_matrix(),
+        xp.eye(4), atol=1e-12)
 
     # only translation
-    expected_matrix = xp.asarray(
-        [
-            [
-                [1.0, 0.0, 0.0, 3.0],
-                [0.0, 1.0, 0.0, -5.4],
-                [0.0, 0.0, 1.0, 100.2],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            [
-                [1.0, 0.0, 0.0, -3.0],
-                [0.0, 1.0, 0.0, 13.3],
-                [0.0, 0.0, 1.0, 1.3],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-        ]
-    )
-    actual = RigidTransform.from_exp_coords(
-        xp.asarray(
-            [
-                [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
-                [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
-            ]
-        )
-    )
+    expected_matrix = xp.asarray([
+        [[1.0, 0.0, 0.0, 3.0],
+         [0.0, 1.0, 0.0, -5.4],
+         [0.0, 0.0, 1.0, 100.2],
+         [0.0, 0.0, 0.0, 1.0]],
+        [[1.0, 0.0, 0.0, -3.0],
+         [0.0, 1.0, 0.0, 13.3],
+         [0.0, 0.0, 1.0, 1.3],
+         [0.0, 0.0, 0.0, 1.0]]
+    ])
+    actual = RigidTransform.from_exp_coords(xp.asarray([
+        [0.0, 0.0, 0.0, 3.0, -5.4, 100.2],
+        [0.0, 0.0, 0.0, -3.0, 13.3, 1.3],
+    ]))
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # only rotation
     rot = Rotation.from_euler(
-        "zyx", xp.asarray([[34, -12, 0.5], [-102, -55, 30]]), degrees=True
-    )
+        'zyx',
+        xp.asarray([[34, -12, 0.5],
+                    [-102, -55, 30]]),
+        degrees=True)
     rotvec = rot.as_rotvec()
     expected_matrix = xp.repeat(xp.eye(4)[None, ...], 2, axis=0)
     expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(rot.as_matrix())
     actual = RigidTransform.from_exp_coords(
-        xp.concat((rotvec, xp.zeros((2, 3))), axis=-1)
-    )
+        xp.concat((rotvec, xp.zeros((2, 3))), axis=-1))
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
 
@@ -407,48 +379,45 @@ def test_from_dual_quat(xp):
     # identity
     xp_assert_close(
         RigidTransform.from_dual_quat(
-            xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])
-        ).as_matrix(),
-        xp.eye(4),
-        atol=1e-12,
-    )
+            xp.asarray([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0])).as_matrix(),
+        xp.eye(4), atol=1e-12)
     xp_assert_close(
         RigidTransform.from_dual_quat(
-            xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]), scalar_first=True
-        ).as_matrix(),
-        xp.eye(4),
-        atol=1e-12,
-    )
+            xp.asarray([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+            scalar_first=True).as_matrix(),
+        xp.eye(4), atol=1e-12)
 
     # only translation
     actual = RigidTransform.from_dual_quat(
-        xp.asarray([0, 0, 0, 1, 0.25, 0.15, -0.7, 0])
-    )
-    expected_matrix = xp.asarray(
-        [[1, 0, 0, 0.5], [0, 1, 0, 0.3], [0, 0, 1, -1.4], [0, 0, 0, 1]]
-    )
+        xp.asarray([0, 0, 0, 1, 0.25, 0.15, -0.7, 0]))
+    expected_matrix = xp.asarray([
+        [1, 0, 0, 0.5],
+        [0, 1, 0, 0.3],
+        [0, 0, 1, -1.4],
+        [0, 0, 0, 1]
+    ])
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
     actual = RigidTransform.from_dual_quat(
-        xp.asarray([1, 0, 0, 0, 0, 0.25, 0.15, -0.7]), scalar_first=True
-    )
-    expected_matrix = xp.asarray(
-        [[1, 0, 0, 0.5], [0, 1, 0, 0.3], [0, 0, 1, -1.4], [0, 0, 0, 1]]
-    )
+        xp.asarray([1, 0, 0, 0, 0, 0.25, 0.15, -0.7]), scalar_first=True)
+    expected_matrix = xp.asarray([
+        [1, 0, 0, 0.5],
+        [0, 1, 0, 0.3],
+        [0, 0, 1, -1.4],
+        [0, 0, 0, 1]
+    ])
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     # only rotation
     actual_rot = Rotation.from_euler("xyz", xp.asarray([65, -13, 90]), degrees=True)
     actual = RigidTransform.from_dual_quat(
-        xp.concat((actual_rot.as_quat(), xp.zeros(4)), axis=-1)
-    )
+        xp.concat((actual_rot.as_quat(), xp.zeros(4)), axis=-1))
     expected_matrix = xp.eye(4)
     expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
 
     actual = RigidTransform.from_dual_quat(
         xp.concat((actual_rot.as_quat(scalar_first=True), xp.zeros(4)), axis=-1),
-        scalar_first=True,
-    )
+        scalar_first=True)
     expected_matrix = xp.eye(4)
     expected_matrix = xpx.at(expected_matrix)[..., :3, :3].set(actual_rot.as_matrix())
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12)
@@ -460,75 +429,28 @@ def test_from_dual_quat(xp):
     # See https://numpy.org/doc/2.2/reference/generated/numpy.testing.assert_allclose.html
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
-            [
-                [
-                    0.0617101,
-                    -0.06483886,
-                    0.31432811,
-                    0.94508498,
-                    0.04985168,
-                    -0.26119618,
-                    0.1691491,
-                    -0.07743254,
-                ],
-                [
-                    0.19507259,
-                    0.49404931,
-                    -0.06091285,
-                    0.8450749,
-                    0.65049656,
-                    -0.30782513,
-                    0.16566752,
-                    0.04174544,
-                ],
-            ]
-        )
-    )
+        [[0.0617101, -0.06483886, 0.31432811, 0.94508498,
+          0.04985168, -0.26119618, 0.1691491, -0.07743254],
+         [0.19507259, 0.49404931, -0.06091285, 0.8450749,
+          0.65049656, -0.30782513, 0.16566752, 0.04174544]]))
     expected_matrix = xp.asarray(
-        [
-            [
-                [0.79398752, -0.60213598, -0.08376202, 0.24605262],
-                [0.58613113, 0.79477941, -0.15740392, -0.4932833],
-                [0.16135089, 0.07588122, 0.98397557, 0.34262676],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-            [
-                [0.50440981, 0.2957028, 0.81125249, 1.20934468],
-                [0.08979911, 0.91647262, -0.3898898, -0.70540077],
-                [-0.8587822, 0.26951399, 0.43572393, -0.47776265],
-                [0.0, 0.0, 0.0, 1.0],
-            ],
-        ]
-    )
+        [[[0.79398752, -0.60213598, -0.08376202, 0.24605262],
+          [0.58613113, 0.79477941, -0.15740392, -0.4932833],
+          [0.16135089, 0.07588122, 0.98397557, 0.34262676],
+          [0., 0., 0., 1.]],
+         [[0.50440981, 0.2957028, 0.81125249, 1.20934468],
+          [0.08979911, 0.91647262, -0.3898898, -0.70540077],
+          [-0.8587822, 0.26951399, 0.43572393, -0.47776265],
+          [0., 0., 0., 1.]]])
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
 
     actual = RigidTransform.from_dual_quat(
         xp.asarray(
-            [
-                [
-                    0.94508498,
-                    0.0617101,
-                    -0.06483886,
-                    0.31432811,
-                    -0.07743254,
-                    0.04985168,
-                    -0.26119618,
-                    0.1691491,
-                ],
-                [
-                    0.8450749,
-                    0.19507259,
-                    0.49404931,
-                    -0.06091285,
-                    0.04174544,
-                    0.65049656,
-                    -0.30782513,
-                    0.16566752,
-                ],
-            ]
-        ),
-        scalar_first=True,
-    )
+        [[0.94508498, 0.0617101, -0.06483886, 0.31432811,
+          -0.07743254, 0.04985168, -0.26119618, 0.1691491],
+         [0.8450749, 0.19507259, 0.49404931, -0.06091285,
+          0.04174544, 0.65049656, -0.30782513, 0.16566752]]),
+        scalar_first=True)
     xp_assert_close(actual.as_matrix(), expected_matrix, atol=1e-12, rtol=1e-7)
 
     # unnormalized dual quaternions
@@ -539,65 +461,44 @@ def test_from_dual_quat(xp):
 
     # real quaternion with norm != 1
     unnormalized_dual_quat = xp.asarray(
-        [
-            -0.2547655,
-            1.23506123,
-            0.20230088,
-            0.24247194,  # norm 1.3
-            0.38559628,
-            0.08184063,
-            0.1755943,
-            -0.1582222,
-        ]  # orthogonal
+        [-0.2547655, 1.23506123, 0.20230088, 0.24247194,  # norm 1.3
+         0.38559628, 0.08184063, 0.1755943, -0.1582222]  # orthogonal
     )
-    xp_assert_close(
-        xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3)[()], atol=1e-12
-    )
-    xp_assert_close(
-        xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:])[()],
-        xp.asarray(0.0)[()],
-        atol=1e-8,
-    )
+    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.3)[()],
+                    atol=1e-12)
+    xp_assert_close(xp.vecdot(unnormalized_dual_quat[:4],
+                              unnormalized_dual_quat[4:])[()],
+                    xp.asarray(0.0)[()], atol=1e-8)
 
-    dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
+    dual_quat = RigidTransform.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
-    xp_assert_close(
-        xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()], atol=1e-12
-    )
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     # real and dual quaternion are not orthogonal
     unnormalized_dual_quat = xp.asarray(
-        [
-            0.20824458,
-            0.75098079,
-            0.54542913,
-            -0.30849493,  # unit norm
-            -0.16051025,
-            0.10742978,
-            0.21277201,
-            0.20596935,
-        ]  # not orthogonal
+        [0.20824458, 0.75098079, 0.54542913, -0.30849493,  # unit norm
+         -0.16051025, 0.10742978, 0.21277201, 0.20596935]  # not orthogonal
     )
-    xp_assert_close(
-        xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12
-    )
+    xp_assert_close(xp_vector_norm(unnormalized_dual_quat[:4]), xp.asarray(1.0)[()],
+                    atol=1e-12)
     assert xp.vecdot(unnormalized_dual_quat[:4], unnormalized_dual_quat[4:]) != 0.0
-    dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
+    dual_quat = RigidTransform.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(xp_vector_norm(dual_quat[:4]), xp.asarray(1.0)[()], atol=1e-12)
-    xp_assert_close(
-        xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()], atol=1e-12
-    )
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     # invalid real quaternion with norm 0, non-orthogonal dual quaternion
     unnormalized_dual_quat = xp.asarray(
-        [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935]
-    )
+        [0.0, 0.0, 0.0, 0.0, -0.16051025, 0.10742978, 0.21277201, 0.20596935])
     assert xp.vecdot(xp.asarray([0.0, 0, 0, 1]), unnormalized_dual_quat[4:]) != 0.0
-    dual_quat = RigidTransform.from_dual_quat(unnormalized_dual_quat).as_dual_quat()
+    dual_quat = RigidTransform.from_dual_quat(
+        unnormalized_dual_quat).as_dual_quat()
     xp_assert_close(dual_quat[:4], xp.asarray([0.0, 0, 0, 1]), atol=1e-12)
-    xp_assert_close(
-        xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()], atol=1e-12
-    )
+    xp_assert_close(xp.vecdot(dual_quat[:4], dual_quat[4:])[()], xp.asarray(0.0)[()],
+                    atol=1e-12)
 
     # compensation for precision loss in real quaternion
     rng = np.random.default_rng(1000)
@@ -607,10 +508,10 @@ def test_from_dual_quat(xp):
 
     # ensure that random quaternions are not normalized
     random_dual_quats = xpx.at(random_dual_quats)[:, :4].add(0.01)
-    assert not xp.any(
-        xpx.isclose(xp_vector_norm(random_dual_quats[:, :4], axis=1), 1.0, atol=0.0001)
-    )
-    dual_quat_norm = RigidTransform.from_dual_quat(random_dual_quats).as_dual_quat()
+    assert not xp.any(xpx.isclose(xp_vector_norm(random_dual_quats[:, :4], axis=1), 
+                                  1.0, atol=0.0001))
+    dual_quat_norm = RigidTransform.from_dual_quat(
+        random_dual_quats).as_dual_quat()
     expected = xp.ones(dual_quat_norm.shape[0])
     xp_assert_close(xp_vector_norm(dual_quat_norm[:, :4], axis=1), expected, atol=1e-12)
 
@@ -624,11 +525,11 @@ def test_from_dual_quat(xp):
     random_dual_quats = xpx.at(random_dual_quats)[:, 4:].add(0.01)
     q_norm = xp.vecdot(random_dual_quats[:, :4], random_dual_quats[:, 4:])
     assert not xp.any(xpx.isclose(q_norm, 0.0, atol=0.0001))
-    dual_quat_norm = RigidTransform.from_dual_quat(random_dual_quats).as_dual_quat()
+    dual_quat_norm = RigidTransform.from_dual_quat(
+        random_dual_quats).as_dual_quat()
     expected = xp.zeros(dual_quat_norm.shape[0])
-    xp_assert_close(
-        xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]), expected, atol=1e-12
-    )
+    xp_assert_close(xp.vecdot(dual_quat_norm[:, :4], dual_quat_norm[:, 4:]), expected,
+                              atol=1e-12)
     xp_assert_close(random_dual_quats[:, :4], dual_quat_norm[:, :4], atol=1e-12)
 
 
@@ -724,8 +625,7 @@ def test_from_as_internal_consistency(xp):
     # exp_coords small rotation
     tf0 = RigidTransform.from_components(
         xp.asarray(rng.normal(scale=1000.0, size=(1000, 3))),
-        Rotation.from_rotvec(xp.asarray(rng.normal(scale=1e-10, size=(1000, 3)))),
-    )
+        Rotation.from_rotvec(xp.asarray(rng.normal(scale=1e-10, size=(1000, 3)))))
     tf1 = RigidTransform.from_exp_coords(tf0.as_exp_coords())
     xp_assert_close(tf0.as_matrix(), tf1.as_matrix(), atol=atol)
 
@@ -747,7 +647,7 @@ def test_apply(xp):
     atol = 1e-12
 
     ## Single transform
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     t = xp.asarray([2, 3, 4])
     tf = RigidTransform.from_components(t, r)
 
@@ -763,7 +663,7 @@ def test_apply(xp):
     xp_assert_close(tf.apply(vecs), expected, atol=atol)
 
     ## Multiple transforms
-    r = Rotation.from_euler("z", xp.asarray([90, 0]), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray([90, 0]), degrees=True)
     t = xp.asarray([[2, 3, 4], [5, 6, 7]])
     tf = RigidTransform.from_components(t, r)
 
@@ -802,7 +702,7 @@ def test_inverse_apply(xp):
 
     # Test applying inverse transform
     t = xp.asarray([1, 2, 3])
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf = RigidTransform.from_components(t, r)
 
     # Test single vector
@@ -819,7 +719,7 @@ def test_inverse_apply(xp):
 def test_rotation_alone(xp):
     atol = 1e-12
 
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf = RigidTransform.from_rotation(r)
     vec = xp.asarray([1, 0, 0])
     expected = r.apply(vec)
@@ -840,11 +740,11 @@ def test_composition(xp):
 
     # Test composing single transforms
     t1 = xp.asarray([1.0, 0, 0])
-    r1 = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r1 = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf1 = RigidTransform.from_components(t1, r1)
 
     t2 = xp.asarray([0, 1, 0])
-    r2 = Rotation.from_euler("x", xp.asarray(90), degrees=True)
+    r2 = Rotation.from_euler('x', xp.asarray(90), degrees=True)
     tf2 = RigidTransform.from_components(t2, r2)
 
     composed = tf2 * tf1
@@ -912,9 +812,9 @@ def test_pow(xp):
     xp_assert_close((q * q).as_matrix(), p.as_matrix(), atol=atol)
     q = p**-0.5
     xp_assert_close((q * q).as_matrix(), p.inv().as_matrix(), atol=atol)
-    q = p**1.5
+    q = p** 1.5
     xp_assert_close((q * q).as_matrix(), (p**3).as_matrix(), atol=atol)
-    q = p**-1.5
+    q = p** -1.5
     xp_assert_close((q * q).as_matrix(), (p**-3).as_matrix(), atol=atol)
 
     # pow function
@@ -936,7 +836,7 @@ def test_inverse(xp):
     atol = 1e-12
 
     # Test inverse transform
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     t = xp.asarray([1, 2, 3])
     tf = RigidTransform.from_components(t, r)
 
@@ -956,7 +856,7 @@ def test_inverse(xp):
     xp_assert_close(composed.as_matrix(), expected, atol=atol)
 
     # Test multiple transforms
-    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     t = xp.asarray([[1, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
     tf_inv = tf.inv()
@@ -969,7 +869,7 @@ def test_properties(xp):
     atol = 1e-12
 
     # Test rotation and translation properties for single transform
-    r = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     t = xp.asarray([1.0, 2, 3])
     tf = RigidTransform.from_components(t, r)
 
@@ -978,7 +878,7 @@ def test_properties(xp):
     xp_assert_close(tf.translation, t, atol=atol)
 
     # Test rotation and translation properties for multiple transforms
-    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     t = xp.asarray([[1.0, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
 
@@ -991,7 +891,7 @@ def test_indexing(xp):
     atol = 1e-12
 
     # Test indexing for multiple transforms
-    r = Rotation.from_euler("zyx", xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
     t = xp.asarray([[1.0, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
 
@@ -1010,14 +910,10 @@ def test_indexing(xp):
     xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t, atol=atol)
 
     tf_masked = tf[xp.asarray([False, True])]
-    xp_assert_close(
-        tf_masked.as_matrix()[:, :3, :3],
-        r[xp.asarray([False, True])].as_matrix(),
-        atol=atol,
-    )
-    xp_assert_close(
-        tf_masked.as_matrix()[:, :3, 3], t[xp.asarray([False, True])], atol=atol
-    )
+    xp_assert_close(tf_masked.as_matrix()[:, :3, :3],
+                    r[xp.asarray([False, True])].as_matrix(), atol=atol)
+    xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t[xp.asarray([False, True])],
+                    atol=atol)
 
     tf_masked = tf[xp.asarray([False, False])]
     assert len(tf_masked) == 0
@@ -1032,14 +928,13 @@ def test_indexing(xp):
 def test_indexing_array_like():
     atol = 1e-12
 
-    r = Rotation.from_euler("zyx", np.array([[90, 0, 0], [0, 90, 0]]), degrees=True)
+    r = Rotation.from_euler('zyx', np.array([[90, 0, 0], [0, 90, 0]]), degrees=True)
     t = np.array([[1.0, 2, 3], [4, 5, 6]])
     tf = RigidTransform.from_components(t, r)
 
     tf_masked = tf[[False, True]]
-    xp_assert_close(
-        tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(), atol=atol
-    )
+    xp_assert_close(tf_masked.as_matrix()[:, :3, :3], r[[False, True]].as_matrix(),
+                    atol=atol)
     xp_assert_close(tf_masked.as_matrix()[:, :3, 3], t[[False, True]], atol=atol)
     tf_masked = tf[[False, False]]
     assert len(tf_masked) == 0
@@ -1050,11 +945,11 @@ def test_concatenate(xp):
 
     # Test concatenation of transforms
     t1 = xp.asarray([1, 0, 0])
-    r1 = Rotation.from_euler("z", xp.asarray(90), degrees=True)
+    r1 = Rotation.from_euler('z', xp.asarray(90), degrees=True)
     tf1 = RigidTransform.from_components(t1, r1)
 
     t2 = xp.asarray([0, 1, 0])
-    r2 = Rotation.from_euler("x", xp.asarray(90), degrees=True)
+    r2 = Rotation.from_euler('x', xp.asarray(90), degrees=True)
     tf2 = RigidTransform.from_components(t2, r2)
 
     # Concatenate single transforms
@@ -1109,9 +1004,8 @@ def test_input_validation(xp):
             RigidTransform(matrix, normalize=True)
 
     # Test non-Rotation input
-    with pytest.raises(
-        ValueError, match="Expected `rotation` to be a `Rotation` instance"
-    ):
+    with pytest.raises(ValueError,
+                       match="Expected `rotation` to be a `Rotation` instance"):
         RigidTransform.from_rotation(xp.eye(3))
 
 
@@ -1169,7 +1063,8 @@ def test_concatenate_validation(xp):
     tf = RigidTransform.from_matrix(xp.eye(4))
 
     # Test invalid inputs
-    with pytest.raises(TypeError, match="input must contain RigidTransform objects"):
+    with pytest.raises(TypeError,
+                       match="input must contain RigidTransform objects"):
         RigidTransform.concatenate([tf, xp.eye(4)])
 
 
@@ -1177,9 +1072,9 @@ def test_setitem(xp):
     tf = RigidTransform.from_translation(xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))
     single = RigidTransform.from_translation(xp.asarray([1, 1, 1]))
     double = RigidTransform.from_translation(xp.asarray([[2, 2, 2], [3, 3, 3]]))
-    triple = RigidTransform.from_translation(
-        xp.asarray([[3, 3, 3], [4, 4, 4], [5, 5, 5]])
-    )
+    triple = RigidTransform.from_translation(xp.asarray([[3, 3, 3],
+                                                         [4, 4, 4],
+                                                         [5, 5, 5]]))
 
     # Test indexing with integer index
     tf[0] = single
@@ -1221,7 +1116,8 @@ def test_setitem_validation(xp):
         tf[0] = xp.eye(4)
 
 
-@pytest.mark.skip_xp_backends("jax.numpy", reason="JAX does not support memory sharing")
+@pytest.mark.skip_xp_backends("jax.numpy",
+                              reason="JAX does not support memory sharing")
 def test_copy_flag(xp):
     # Test that copy=True creates new memory
     matrix = xp.eye(4)
@@ -1238,14 +1134,10 @@ def test_copy_flag(xp):
 
 def test_normalize_dual_quaternion(xp):
     dual_quat = normalize_dual_quaternion(xp.zeros((1, 8)))
-    xp_assert_close(
-        xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()], atol=1e-12
-    )
-    xp_assert_close(
-        xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:])[()],
-        xp.asarray(0.0)[()],
-        atol=1e-12,
-    )
+    xp_assert_close(xp_vector_norm(dual_quat[0, :4], axis=-1), xp.asarray(1.0)[()],
+                    atol=1e-12)
+    xp_assert_close(xp.vecdot(dual_quat[0, :4], dual_quat[0, 4:])[()],
+                    xp.asarray(0.0)[()], atol=1e-12)
 
     rng = np.random.default_rng(103213650)
     dual_quat = xp.asarray(rng.normal(size=(1000, 8)))
@@ -1260,7 +1152,7 @@ def test_empty_transform_construction(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf) == 0
     assert not tf.single
-
+    
     tf = RigidTransform.from_rotation(Rotation.from_quat(xp.zeros((0, 4))))
     assert len(tf) == 0
     assert not tf.single
@@ -1344,10 +1236,10 @@ def test_empty_transform_concatenation(xp):
 def test_empty_transform_inv_and_pow(xp):
     tf = RigidTransform.from_matrix(xp.empty((0, 4, 4)))
     assert len(tf.inv()) == 0
-    assert len(tf**0) == 0
-    assert len(tf**1) == 0
-    assert len(tf**-1) == 0
-    assert len(tf**0.5) == 0
+    assert len(tf ** 0) == 0
+    assert len(tf ** 1) == 0
+    assert len(tf ** -1) == 0
+    assert len(tf ** 0.5) == 0
 
 
 def test_empty_transform_indexing(xp):
