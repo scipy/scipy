@@ -1699,7 +1699,7 @@ class ShortTimeFFT:
     def k_max(self, n: int) -> int:
         """First sample index after signal end not touched by a time slice.
 
-        `k_max` - 1 is the largest sample index of the slice `p_max` for a
+        `k_max` - 1 is the largest sample index of the slice `p_max` - 1 for a
         given input signal of `n` samples.
         A detailed example is provided in the :ref:`tutorial_stft_sliding_win`
         section of the :ref:`user_guide`.

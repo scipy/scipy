@@ -3231,7 +3231,7 @@ def factorial2(n, exact=False, extend="zero"):
     --------
     >>> from scipy.special import factorial2
     >>> factorial2(7, exact=False)
-    array(105.00000000000001)
+    np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
 

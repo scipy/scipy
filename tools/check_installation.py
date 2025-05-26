@@ -7,7 +7,7 @@ Examples::
 
         install_directory_name:
             the relative path from the root of the repo to the directory where
-            SciPy is installed (for dev.py usually "build-install")
+            SciPy is installed (for `spin` usually "build-install")
 
 Notes
 =====
