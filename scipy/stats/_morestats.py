@@ -11,19 +11,23 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_vector_norm,
     xp_promote,
+    is_marray,
+    xp_ravel,
+    _length_nonmasked,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal, _SimpleChi2, _length_nonmasked)
+from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -222,7 +226,7 @@ def mvsdist(data):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2, *, axis=None):
     r"""
@@ -327,7 +331,7 @@ def kstat(data, n=2, *, axis=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
@@ -984,7 +988,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
 
 
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
-                          result_to_tuple=lambda x: (x,))
+                          result_to_tuple=lambda x, _: (x,))
 def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
     lmb, data = xp_promote(lmb, data, force_floating=True, xp=xp)
@@ -2931,15 +2935,20 @@ def bartlett(*samples, axis=0):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
+    if axis is None:
+        samples = [xp_ravel(sample) for sample in samples]
+    else:
+        samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+        samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp), dtype=sample.dtype)
+          for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
+    Ni = xpx.at(Ni)[Ni == 0].set(xp.nan)
     ssq = xp.concat(ssq, axis=0)
     dtype = Ni.dtype
     Ntot = xp.sum(Ni, axis=0)
@@ -3496,7 +3505,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
-def wilcoxon_result_unpacker(res):
+def wilcoxon_result_unpacker(res, _):
     if hasattr(res, 'zstatistic'):
         return res.statistic, res.pvalue, res.zstatistic
     else:
@@ -3993,7 +4002,7 @@ def _circfuncs_common(samples, period, xp=None):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
@@ -4086,7 +4095,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
@@ -4180,7 +4189,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
@@ -4416,6 +4425,12 @@ def directional_stats(samples, *, axis=0, normalize=True):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")
     samples = xp.moveaxis(samples, axis, 0)
+
+    if is_marray(xp):
+        _xp = array_namespace(samples.mask)
+        mask = _xp.any(samples.mask, axis=-1, keepdims=True)
+        samples = xp.asarray(samples.data, mask=mask)
+
     if normalize:
         vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms
