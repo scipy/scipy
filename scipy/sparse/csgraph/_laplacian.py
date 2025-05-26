@@ -20,7 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    variant="degree",
+    variant="unsigned",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -70,15 +70,15 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
-    variant : 'degree', or 'use_abs'
+    variant : 'unsigned', or 'opposing'
         Specifies the method used to compute vertex degrees:
 
-        * 'degree' is standard degree calculation using edge weights;
-        * 'use_abs' computes the degree using absolute values of edge weights.
+        * 'unsigned' is standard degree calculation using edge weights;
+        * 'opposing' computes the degree using absolute values of edge weights.
           This prevents cancellation of positive and negative edge weights in
           signed graphs, as described in [2].
 
-        Default: 'degree'.
+        Default: 'unsigned'.
 
     Returns
     -------
@@ -308,9 +308,9 @@ def laplacian(
     >>> d_signed
     array([0, 2, 0])
 
-    Setting variant="use_abs" prevents cancellation by summing absolute edge weights:
+    Setting variant="opposing" prevents cancellation by summing absolute edge weights:
 
-    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, variant="use_abs")
+    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, variant="opposing")
     >>> L_abs
     array([[ 2, -1, 1],
            [-1,  2, -1],
@@ -464,13 +464,13 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, v
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
     graph_diagonal = graph.diagonal()
 
-    if variant == "degree":
+    if variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
-    elif variant == "use_abs":
-        # Normalization affects only the diagonal (degree) computation, not the rest.
-        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    elif variant == "opposing":
+        # Normalization affects only the diagonal (unsigned) computation, not the rest.
+        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
         graph_abs = np.abs(graph)
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
@@ -523,13 +523,13 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
         if copy:
             needs_copy = True
 
-    if variant == "degree":
+    if variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
-    elif variant == "use_abs":
-        # Normalization affects only the diagonal (degree) computation, not the rest.
-        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    elif variant == "opposing":
+        # Normalization affects only the diagonal (unsigned) computation, not the rest.
+        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
         m_abs = np.abs(m)
         m_diagonal_abs = np.abs(m.diagonal())
         w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
@@ -575,13 +575,13 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, va
         graph_sum += m.sum(axis=1 - axis)
     graph_diagonal = m.diagonal()
 
-    if variant == "degree":
+    if variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
-    elif variant == "use_abs":
-        # Normalization affects only the diagonal (degree) computation, not the rest.
-        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    elif variant == "opposing":
+        # Normalization affects only the diagonal (unsigned) computation, not the rest.
+        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
         graph_abs = np.abs(graph)
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
@@ -637,13 +637,13 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
 
     np.fill_diagonal(m, 0)
 
-    if variant == "degree":
+    if variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = m.sum(axis=axis)
-    elif variant == "use_abs":
-        # Normalization affects only the diagonal (degree) computation, not the rest.
-        # abs before symmetrize (for degree), seems implied by Kunegis et al (2010).
+    elif variant == "opposing":
+        # Normalization affects only the diagonal (unsigned) computation, not the rest.
+        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
         m_abs = np.abs(m)
         w = m_abs.sum(axis=axis)
         if symmetrized:
