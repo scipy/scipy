@@ -99,9 +99,10 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
     int isSingular = 0;
     St structure = St::NONE;
     int overwrite_a = 0;
+    int transposed = 0;
 
     // Get the input array
-    if (!PyArg_ParseTuple(args, "O!O!|np", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &overwrite_a)) {
+    if (!PyArg_ParseTuple(args, "O!O!|npp", &PyArray_Type, (PyObject **)&ap_Am, &PyArray_Type, (PyObject **)&ap_b, &structure, &transposed, &overwrite_a)) {
         return NULL;
     }
 
@@ -115,7 +116,6 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
         return NULL;
     }
-
 
     // Sanity check shapes
     int ndim = PyArray_NDIM(ap_Am);
@@ -150,20 +150,19 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
         return NULL;
     }
 
-
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
         case(NPY_FLOAT):
-            _solve<float>(ap_Am, ap_b, (float *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<float>(ap_Am, ap_b, (float *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_DOUBLE):
-            _solve<double>(ap_Am, ap_b, (double *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<double>(ap_Am, ap_b, (double *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_CFLOAT):
-            _solve<npy_cfloat>(ap_Am, ap_b, (npy_cfloat *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<npy_cfloat>(ap_Am, ap_b, (npy_cfloat *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         case(NPY_CDOUBLE):
-            _solve<npy_cdouble>(ap_Am, ap_b, (npy_cdouble *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+            _solve<npy_cdouble>(ap_Am, ap_b, (npy_cdouble *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")

@@ -168,7 +168,7 @@ inline CBLAS_INT invert_slice_triangular(
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline CBLAS_INT solve_slice_general(
-    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, void *irwork, T *work, CBLAS_INT lwork,
+    CBLAS_INT N, CBLAS_INT NRHS, T *data, CBLAS_INT *ipiv, T *b_data, char trans, void *irwork, T *work, CBLAS_INT lwork,
     int* isIllconditioned, int* isSingular
 ) {
     using real_type = typename type_traits<T>::real_type;
@@ -188,7 +188,6 @@ inline CBLAS_INT solve_slice_general(
             *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
 
             // finally, solve
-            char trans = 'N';
             getrs(&trans, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
             *isSingular = (info > 0);
         }
@@ -205,14 +204,13 @@ inline CBLAS_INT solve_slice_general(
 // triangular solve with trtrs
 template<typename T>
 inline CBLAS_INT solve_slice_triangular(
-    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, T *work, void *irwork,
+    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, char trans, T *work, void *irwork,
     int* isIllconditioned, int* isSingular
 ) {
     using real_type = typename type_traits<T>::real_type;
 
     CBLAS_INT info;
     char norm = '1';
-    char trans = 'N';
     real_type rcond;
 
     trtrs(&uplo, &trans, &diag, &N, &NRHS, data, &N, b_data, &N, &info);
@@ -459,12 +457,13 @@ free_exit:
 
 
 template<typename T>
-void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
+void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure, int transposed, int overwrite_a, int* isIllconditioned, int* isSingular, int* info)
 {
     using real_type = typename type_traits<T>::real_type; // float if T==npy_cfloat etc
 
     *isIllconditioned = 0;
     *isSingular = 0;
+    char trans = transposed ? 'T' : 'N'; 
     npy_intp lower_band = 0, upper_band = 0;
     bool is_symm = false;
     char uplo;
@@ -604,18 +603,17 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
         }
 
-//        slice_structure = St::GENERAL; // FIXME
-
         switch(slice_structure) {
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
 
-                std::cerr << "TRIANGULAR @ " << idx << "\n";
+                std::cerr << "TRIANGULAR @ " << idx << " uplo = "<< uplo << " uband = "<< upper_band << " lband = "<< lower_band<<"\n";
+                std::cerr << "structure = " << slice_structure << "\n";
                 std::cerr << "nrhs = " << int_nrhs<<"\n";
 
                 char diag = 'N';
-                *info = solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, work, irwork, isIllconditioned, isSingular);
+                *info = solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info < 0) || (*isSingular )) { goto free_exit;}
                 zero_other_triangle(uplo, data, intn);
@@ -634,7 +632,7 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                     break;
                 }
                 else { // potrf failed
-                    if(posdef_fallback) {
+                    if(posdef_fallback) {   // FIXME: test the fallback
                         // restore
                         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
                         swap_cf(scratch, data, n, n, n);
@@ -652,7 +650,7 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
 
                 std::cerr << "GENERAL @ " << idx << "\n";
                 // general matrix inverse
-                *info = solve_slice_general(intn, int_nrhs, data, ipiv, data_b, irwork, work, lwork, isIllconditioned, isSingular);
+                *info = solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, lwork, isIllconditioned, isSingular);
             }
         }
 

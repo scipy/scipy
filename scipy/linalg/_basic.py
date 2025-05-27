@@ -63,31 +63,104 @@ def _find_matrix_structure(a):
     return kind, n_below, n_above
 
 
-
 def solve(a, b,lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a=None, transposed=False):
-    '''
-    # Flags for 1-D or N-D right-hand side
-    b_is_1D = False
+    """
+    Solve the equation ``a @ x = b`` for  ``x``,
+    where `a` is a square matrix.
 
-    # check finite after determining structure
-    a1 = atleast_2d(_asarray_validated(a, check_finite=False))
-    b1 = atleast_1d(_asarray_validated(b, check_finite=False))
-    a1, b1 = _ensure_dtype_cdsz(a1, b1)
-    n = a1.shape[0]
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
 
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
+    =============================  ================================
+     diagonal                       'diagonal'
+     tridiagonal                    'tridiagonal'
+     banded                         'banded'
+     upper triangular               'upper triangular'
+     lower triangular               'lower triangular'
+     symmetric                      'symmetric' (or 'sym')
+     hermitian                      'hermitian' (or 'her')
+     symmetric positive definite    'positive definite' (or 'pos')
+     general                        'general' (or 'gen')
+    =============================  ================================
 
-    if a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input a needs to be a square matrix.')
+    Parameters
+    ----------
+    a : (..., N, N) array_like
+        Square input data
+    b : (..., N, NRHS) array_like
+        Input data for the right hand side.
+    lower : bool, default: False
+        Ignored unless ``assume_a`` is one of ``'sym'``, ``'her'``, or ``'pos'``.
+        If True, the calculation uses only the data in the lower triangle of `a`;
+        entries above the diagonal are ignored. If False (default), the
+        calculation uses only the data in the upper triangle of `a`; entries
+        below the diagonal are ignored.
+    overwrite_a : bool, default: False
+        Allow overwriting data in `a` (may enhance performance).
+    overwrite_b : bool, default: False
+        Allow overwriting data in `b` (may enhance performance).
+    check_finite : bool, default: True
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    assume_a : str, optional
+        Valid entries are described above.
+        If omitted or ``None``, checks are performed to identify structure so the
+        appropriate solver can be called.
+    transposed : bool, default: False
+        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
+        for complex `a`.
 
-    if n != b1.shape[0]:
-        # Last chance to catch 1x1 scalar a and 1-D b arrays
-        if not (n == 1 and b1.size != 0):
-            raise ValueError('Input b has to have same number of rows as '
-                             'input a')
-    '''
+    Returns
+    -------
+    x : (N, NRHS) ndarray
+        The solution array.
+
+    Raises
+    ------
+    ValueError
+        If size mismatches detected or input a is not square.
+    LinAlgError
+        If the computation fails because of matrix singularity.
+    LinAlgWarning
+        If an ill-conditioned input a is detected.
+    NotImplementedError
+        If transposed is True and input a is a complex matrix.
+
+    Notes
+    -----
+    If the input b matrix is a 1-D array with N elements, when supplied
+    together with an NxN input a, it is assumed as a valid column vector
+    despite the apparent size mismatch. This is compatible with the
+    numpy.dot() behavior and the returned result is still 1-D array.
+
+    The general, symmetric, Hermitian and positive definite solutions are
+    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
+    LAPACK respectively.
+
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
+
+    Examples
+    --------
+    Given `a` and `b`, solve for `x`:
+
+    >>> import numpy as np
+    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
+    >>> b = np.array([2, 4, -1])
+    >>> from scipy import linalg
+    >>> x = linalg.solve(a, b)
+    >>> x
+    array([ 2., -2.,  9.])
+    >>> np.dot(a, x) == b
+    array([ True,  True,  True], dtype=bool)
+
+    """
+
     if assume_a in ['sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded', 'banded']:
         # TODO: handle these structures in this function
         return solve0(
@@ -122,11 +195,7 @@ def solve(a, b,lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-
-    # XXX: is the argument actually useful? Consider deprecating.
-    if transposed:
-        a1 = a1.swapaxes(-2, -1)
-
+    
     b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
 
@@ -174,7 +243,7 @@ def solve(a, b,lower=False, overwrite_a=False,
     # 7. check b no more than 2D, k=0
 
     # heavy lifting
-    result = _batched_linalg._solve(a1, b1, structure)
+    result = _batched_linalg._solve(a1, b1, structure, transposed)
     x, is_ill_cond, is_singular, info = result
 
     if info < 0:
@@ -187,8 +256,6 @@ def solve(a, b,lower=False, overwrite_a=False,
     if b_is_1D:
         x = x[..., 0]
     return x
-
-
 
 
 @_apply_over_batch(('a', 2), ('b', '1|2'))
