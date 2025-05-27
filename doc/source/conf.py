@@ -248,7 +248,8 @@ html_theme_options = {
         {
             "name": "Scientific Python Forum",
             "url": "https://discuss.scientific-python.org/c/contributor/scipy/",
-            "icon": "fa-custom fa-SciPy_Forum",  # defined in file `_static/custom-icons.js`
+            # icon is defined in file `_static/custom-icons.js`
+            "icon": "fa-custom fa-SciPy_Forum",
             "type": "fontawesome",
         },
     ],
