@@ -56,8 +56,9 @@ _configtest.c
 
 # Python files #
 ################
-# build directory
+# build directories
 build
+build-*
 # sphinx build directory
 doc/_build
 # cython files
@@ -85,7 +86,6 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/
 .mesonpy/
 
 # doit
