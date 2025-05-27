@@ -27,8 +27,9 @@ __all__ = ['entropy', 'differential_entropy']
 def entropy(pk: np.typing.ArrayLike,
             qk: np.typing.ArrayLike | None = None,
             base: float | None = None,
-            axis: int = 0
-            ) -> np.number | np.ndarray:
+            axis: int = 0,
+            *, 
+            normalize: bool = True) -> np.number | np.ndarray:
     """
     Calculate the Shannon entropy/relative entropy of given distribution(s).
 
@@ -39,7 +40,7 @@ def entropy(pk: np.typing.ArrayLike,
     ``D = sum(pk * log(pk / qk))``. This quantity is also known
     as the Kullback-Leibler divergence.
 
-    This routine will normalize `pk` and `qk` if they don't sum to 1.
+    By default, this routine normalizes pk and qk so they sum to 1 along the given axis. Set normalize=False to skip this step.
 
     Parameters
     ----------
@@ -54,6 +55,9 @@ def entropy(pk: np.typing.ArrayLike,
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
     axis : int, optional
         The axis along which the entropy is calculated. Default is 0.
+    normalize : bool, optional
+        If True (default), `pk` and `qk` will be normalized to sum to 1 along the specified axis.
+        If False, the inputs are assumed to already represent valid distributions, and no normalization is applied. 
 
     Returns
     -------
@@ -137,6 +141,13 @@ def entropy(pk: np.typing.ArrayLike,
     >>> CE == -np.sum(pk * np.log(qk)) / np.log(base)
     True
 
+    Using unnormalized inputs with `normalize=False`:
+
+    >>> pk = np.array([2.0, 8.0])
+    >>> qk = np.array([1.0, 9.0])
+    >>> entropy(pk, qk, base=2, normalize=False)
+    0.08164398904051034
+
     """
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
@@ -145,10 +156,11 @@ def entropy(pk: np.typing.ArrayLike,
     pk, qk = xp_promote(pk, qk, broadcast=True, xp=xp)
 
     with np.errstate(invalid='ignore'):
-        if qk is not None:
-            pk, qk = _share_masks(pk, qk, xp=xp)
-            qk = qk / xp.sum(qk, axis=axis, keepdims=True)
-        pk = pk / xp.sum(pk, axis=axis, keepdims=True)
+        if normalize:
+            if qk is not None:
+                pk, qk = _share_masks(pk, qk, xp=xp)
+                qk = qk / xp.sum(qk, axis=axis, keepdims=True)
+            pk = pk / xp.sum(pk, axis=axis, keepdims=True)
 
     if qk is None:
         vec = special.entr(pk)
