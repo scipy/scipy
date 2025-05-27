@@ -891,6 +891,13 @@ class TestSolve:
         assert x.size == 0
         dt_nonempty = solve(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)).dtype
         assert x.dtype == dt_nonempty
+        assert x.shape == np.linalg.solve(a, b).shape
+
+        a = np.ones((3, 0, 2, 2), dtype=dt_a)
+        b = np.ones((2, 4), dtype=dt_b)
+        x = solve(a, b)
+        assert x.shape == (3, 0, 2, 4)
+        assert x.dtype == dt_nonempty
 
     def test_empty_rhs(self):
         a = np.eye(2)
@@ -970,18 +977,25 @@ class TestSolve:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
 
-    def test_broadcasted_shapes(self):
+    @pytest.mark.parametrize(
+        "assume_a",
+        [
+            None, "general", "upper triangular", "lower triangular",
+            "pos", "pos upper", "pos lower"
+        ]
+    )
+    def test_vs_np_solve(self, assume_a):
         e = np.eye(2)
         a = np.arange(1, 4*3*2 + 1).reshape((4, 3, 2, 1, 1)) * e
 
         b = np.ones(2)
-        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
         b = np.ones((2, 1))
-        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
         b = np.ones((2, 2)) * [1, 2]
-        assert_allclose(solve(a, b), np.linalg.solve(a, b))
+        assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
 
 class TestSolveTriangular:

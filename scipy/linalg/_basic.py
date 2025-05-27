@@ -88,8 +88,6 @@ def solve(a, b, overwrite_a=False,
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
     '''
-    breakpoint()
-
     a1 = _asarray_validated(a, check_finite=check_finite)
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
@@ -123,6 +121,13 @@ def solve(a, b, overwrite_a=False,
     a1 = np.broadcast_to(a1, batch_shape + a1.shape[-2:])
     b1 = np.broadcast_to(b1, batch_shape + b1.shape[-2:])
 
+    # catch empty inputs
+    if a1.size == 0 or b1.size == 0:
+        x = np.empty_like(b1)
+        if b_is_1D:
+            x = x[..., 0]
+        return x
+
     print(f"{a1.shape=} {b1.shape=}  {b1.dtype} \n")
 
 
@@ -139,9 +144,9 @@ def solve(a, b, overwrite_a=False,
         # 'diagonal': 11,
         'upper triangular': 21,
         'lower triangular': 22,
-        'pos def' : 101,
-        'pos def upper': 111,     # the "other" triangle is not referenced
-        'pos def lower': 112,
+        'pos' : 101,
+        'pos upper': 111,     # the "other" triangle is not referenced
+        'pos lower': 112,
     }[assume_a]
 
     # heavy lifting
