@@ -64,8 +64,8 @@ def _find_matrix_structure(a):
 
 
 
-def solve(a, b, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a=None):
+def solve(a, b,lower=False, overwrite_a=False,
+          overwrite_b=False, check_finite=True, assume_a=None, transposed=False):
     '''
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
@@ -88,7 +88,28 @@ def solve(a, b, overwrite_a=False,
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
     '''
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    if assume_a in ['sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded', 'banded']:
+        # TODO: handle these structures in this function
+        return solve0(
+            a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+            check_finite=check_finite, assume_a=assume_a, transposed=transposed
+        )
+
+    # keep the numbers in sync with C
+    structure = {
+        None: -1,
+        'general': 0, 'gen': 0,
+        # 'diagonal': 11,
+        'upper triangular': 21,
+        'lower triangular': 22,
+        'pos' : 101, 'positive definite': 101,
+        'pos upper': 111,     # the "other" triangle is not referenced
+        'pos lower': 112,
+    }.get(assume_a, 'unknown')
+    if structure == 'unknown':
+        raise ValueError(f'{assume_a} is not a recognized matrix structure')
+
+    a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     if a1.ndim < 2:
@@ -96,7 +117,17 @@ def solve(a, b, overwrite_a=False,
     if a1.shape[-1] != a1.shape[-2]:
         raise ValueError(f"Expected square matrix, got {a1.shape=}")
 
-    b1 = _asarray_validated(b, check_finite=check_finite)
+    # backwards compatibility
+    if np.issubdtype(a1.dtype, np.complexfloating) and transposed:
+        raise NotImplementedError('scipy.linalg.solve can currently '
+                                  'not solve a^T x = b or a^H x = b '
+                                  'for complex matrices.')
+
+    # XXX: is the argument actually useful? Consider deprecating.
+    if transposed:
+        a1 = a1.swapaxes(-2, -1)
+
+    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
     a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
 
     if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
@@ -112,8 +143,9 @@ def solve(a, b, overwrite_a=False,
     if b_is_1D:
         b1 = b1[:, None]
 
-    n = a1.shape[-1]
-    if b1.shape[-2] != n:
+    a_is_scalar = a1.size == 1
+
+    if b1.shape[-2] != a1.shape[-1] and not a_is_scalar:
         raise ValueError(f"incompatible shapes: {a1.shape=} and {b1.shape=}")
 
     # 2. broadcast the batch dimensions of b1 and a1
@@ -128,6 +160,10 @@ def solve(a, b, overwrite_a=False,
             x = x[..., 0]
         return x
 
+    if a_is_scalar:
+        out = b1 / a1
+        return out[..., 0] if b_is_1D else out
+
     print(f"{a1.shape=} {b1.shape=}  {b1.dtype} \n")
 
 
@@ -136,18 +172,6 @@ def solve(a, b, overwrite_a=False,
     # 5. check empty a, b
     # 6. fast path for a.size == 1
     # 7. check b no more than 2D, k=0
-
-    # keep the numbers in sync with C
-    structure = {
-        None: -1,
-        'general': 0,
-        # 'diagonal': 11,
-        'upper triangular': 21,
-        'lower triangular': 22,
-        'pos' : 101,
-        'pos upper': 111,     # the "other" triangle is not referenced
-        'pos lower': 112,
-    }[assume_a]
 
     # heavy lifting
     result = _batched_linalg._solve(a1, b1, structure)
