@@ -125,6 +125,12 @@ void BLAS_FUNC(dposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLA
 void BLAS_FUNC(cposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
 void BLAS_FUNC(zposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
+/* ?POTRS*/
+void BLAS_FUNC(spotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(dpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(cpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
+void BLAS_FUNC(zpotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
+
 
 } // extern "C"
 
@@ -264,6 +270,21 @@ GEN_POCON(d, double, double, CBLAS_INT)
 GEN_POCON(c, npy_cfloat, float, float)
 GEN_POCON(z, npy_cdouble, double, double)
 
+
+#define GEN_POTRS(PREFIX, TYPE) \
+inline void \
+potrs(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
+{ \
+    BLAS_FUNC(PREFIX ## potrs)(uplo, n, nrhs, a, lda, b, ldb, info); \
+};
+
+GEN_POTRS(s, float)
+GEN_POTRS(d, double)
+GEN_POTRS(c, npy_cfloat)
+GEN_POTRS(z, npy_cdouble)
+
+
+// XXX posv, gesv not used?
 
 #define GEN_POSV(PREFIX, TYPE) \
 inline void \
