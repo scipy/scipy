@@ -37,6 +37,33 @@ void copy_slice(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, 
 }
 
 
+/*
+ * Copy n-by-m C-order slice from slice_ptr to dst in F-order.
+ */
+template<typename T>
+void copy_slice_F(T* dst, const T* slice_ptr, const npy_intp n, const npy_intp m, const npy_intp s2, const npy_intp s1) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp j = 0; j < m; j++) {
+            dst[i + j*n] = *(slice_ptr + (i*s2/sizeof(T)) + (j*s1/sizeof(T)));  // == src[i*m + j]
+        }
+    }
+}
+
+/*
+ * Copy n-by-m F-ordered `src` to C-ordered `dst`.
+ */
+template<typename T>
+void copy_slice_F_to_C(T* dst, const T* src, const npy_intp n, const npy_intp m) {
+
+    for (npy_intp i = 0; i < n; i++) {
+        for (npy_intp j = 0; j < m; j++) {
+            dst[i*m + j] = src[i + j*n];
+        }
+    }
+}
+
+
 // Dense array inversion with getrf, gecon and getri
 template<typename T>
 inline CBLAS_INT invert_slice_general(
@@ -136,6 +163,8 @@ inline CBLAS_INT invert_slice_triangular(
 }
 
 
+// //// *solve family /// //
+
 // Dense array solve with getrf, gecon and getrs
 template<typename T>
 inline CBLAS_INT solve_slice_general(
@@ -161,6 +190,69 @@ inline CBLAS_INT solve_slice_general(
             // finally, solve
             char trans = 'N';
             getrs(&trans, &N, &NRHS, data, &N, ipiv, b_data, &N, &info);
+            *isSingular = (info > 0);
+        }
+    }
+    else if (info > 0) {
+        // trf detected singularity
+        *isSingular = 1;
+    }
+
+    return info;
+}
+
+
+// triangular solve with trtrs
+template<typename T>
+inline CBLAS_INT solve_slice_triangular(
+    char uplo, char diag, CBLAS_INT N, CBLAS_INT NRHS, T *data,  T *b_data, T *work, void *irwork,
+    int* isIllconditioned, int* isSingular
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    char norm = '1';
+    char trans = 'N';
+    real_type rcond;
+
+    trtrs(&uplo, &trans, &diag, &N, &NRHS, data, &N, b_data, &N, &info);
+
+    *isSingular  = (info > 0);
+
+    if(info >= 0) {
+
+        trcon(&norm, &uplo, &diag, &N, data, &N, &rcond, work, irwork, &info);
+        if (info >= 0) {
+            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+        }
+    }
+    return info;
+}
+
+
+// Cholesky solve with potrf, pocon and potrs
+template<typename T>
+inline CBLAS_INT solve_slice_cholesky(
+    char uplo, CBLAS_INT N, CBLAS_INT NRHS, T *data, T *b_data, T* work, void *irwork,
+    int* isIllconditioned, int* isSingular
+) {
+    using real_type = typename type_traits<T>::real_type;
+
+    CBLAS_INT info;
+    real_type anorm = norm1_sym_herm(uplo, data, work, (npy_intp)N);
+
+    real_type rcond;
+
+    potrf(&uplo, &N, data, &N, &info);
+    if (info == 0) {
+        // potrf success
+        pocon(&uplo, &N, data, &N, &anorm, &rcond, work, irwork, &info);
+
+        if (info >= 0) {
+            *isIllconditioned = (rcond != rcond) || (rcond < numeric_limits<real_type>::eps);
+
+            // finally, invert
+            potrs(&uplo, &N, &NRHS, data, &N, b_data, &N, &info);
             *isSingular = (info > 0);
         }
     }
@@ -477,12 +569,17 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             temp_idx /= shape_b[i];
         }
         T *slice_ptr_b = (T *)(bm_data + (offset/sizeof(T)));
-        copy_slice(scratch_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
-        swap_cf(scratch_b, data_b, n, nrhs, nrhs);  // XXX: the last arg is the number of columns, really?
+        copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
+
+        std::cerr<< "2 data_b = ";
+        for(int i=0; i<n*nrhs; i++){
+            std::cerr << data_b[i] << ", ";
+        }
+        std::cerr << "\n";
 
         // detect the structure if not given
         slice_structure = structure;
-/*
+
         if (slice_structure == St::NONE) {
             // Get the bandwidth of the slice
             bandwidth(data, n, n, &lower_band, &upper_band);
@@ -506,15 +603,19 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                 }
             }
         }
-*/
-        slice_structure = St::GENERAL; // FIXME
+
+//        slice_structure = St::GENERAL; // FIXME
 
         switch(slice_structure) {
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
+
+                std::cerr << "TRIANGULAR @ " << idx << "\n";
+                std::cerr << "nrhs = " << int_nrhs<<"\n";
+
                 char diag = 'N';
-                *info = invert_slice_triangular(uplo, diag, intn, data, work, irwork, isIllconditioned, isSingular);
+                *info = solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info < 0) || (*isSingular )) { goto free_exit;}
                 zero_other_triangle(uplo, data, intn);
@@ -522,7 +623,10 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
             case St::POS_DEF:
             {
-                *info = invert_slice_cholesky(uplo, intn, data, work, irwork, isIllconditioned, isSingular);
+
+                std::cerr << "POS DEF @ " << idx << "\n";
+
+                *info = solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info == 0) || (*isSingular == 0) ) {
                     // success
@@ -545,6 +649,8 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
             default:
             {
+
+                std::cerr << "GENERAL @ " << idx << "\n";
                 // general matrix inverse
                 *info = solve_slice_general(intn, int_nrhs, data, ipiv, data_b, irwork, work, lwork, isIllconditioned, isSingular);
             }
@@ -555,8 +661,8 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             goto free_exit;     // fail fast and loud
         }
 
-        // Swap back to original order
-        swap_cf(data_b, &ret_data[idx*n*nrhs], n, nrhs, nrhs);
+        // Swap back to the C order
+        copy_slice_F_to_C(&ret_data[idx*n*nrhs], data_b, n, nrhs);
     }
 
 free_exit:
