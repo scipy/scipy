@@ -54,8 +54,8 @@ class Normal(ContinuousDistribution):
     Notes
     -----
 
-    This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+    This distribution is a subclass of the :class:`ContinuousDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """
     # `ShiftedScaledDistribution` allows this to be generated automatically from
@@ -65,10 +65,23 @@ class Normal(ContinuousDistribution):
     _sigma_domain = _RealInterval(endpoints=(0, inf))
     _x_support = _RealInterval(endpoints=(-inf, inf))
 
-    _mu_param = _RealParameter('mu',  symbol=r'\mu', domain=_mu_domain,
-                               typical=(-1, 1))
-    _sigma_param = _RealParameter('sigma', symbol=r'\sigma', domain=_sigma_domain,
-                                  typical=(0.5, 1.5))
+    _mu_param = _RealParameter(
+        "mu",
+        symbol=r"\mu",
+        domain=_mu_domain,
+        typical=(-1, 1),
+        docstring="The location parameter, which is also the mean, median, and mode. "\
+                  "Default: 0.0.",
+    )
+    
+    _sigma_param = _RealParameter(
+        'sigma',
+        symbol=r'\sigma',
+        domain=_sigma_domain,
+        typical=(0.5, 1.5),
+        docstring="The scalar parameter, which is also the standard deviation. "\
+                  "Default: 1.0.",
+    )
     _x_param = _RealParameter('x', domain=_x_support, typical=(-1, 1))
 
     _parameterizations = [_Parameterization(_mu_param, _sigma_param)]
@@ -443,8 +456,8 @@ class Uniform(ContinuousDistribution):
     Notes
     -----
 
-    This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+    This distribution is a subclass of the :class:`ContinuousDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """
 
@@ -564,8 +577,8 @@ class Binomial(DiscreteDistribution):
     Notes
     -----
 
-    This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.DiscreteDistribution` class.
+    This distribution is a subclass of the :class:`DiscreteDistribution
+    <scipy.stats._distribution_infrastructure.UnivariateDistribution>` class.
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(True, False))
