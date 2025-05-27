@@ -729,15 +729,23 @@ def custom_generate_autosummary_docs(
 
         # Custom autosummary for scipy.stats
         newdist = importlib.import_module("scipy.stats._new_distributions")
-        orig_name = name.replace(modname + ".", "")
-        if inspect.isfunction(obj):
-            # Extract the class and method name
-            if orig_name.split(".")[0] in newdist.__all__:
-                if obj.__qualname__ != orig_name:
-                    # This is an inherited object; do not generate a stub file for it
-                    app.config.autosummary_filename_map[f"{name}"] = (
-                        f"scipy.stats._distribution_infrastructure.{obj.__qualname__}"
-                    )
+        if inspect.isfunction(obj) or isinstance(obj, property):
+            if qualname.split(".")[0] in newdist.__all__:
+                if inspect.isfunction(obj):
+                    if obj.__qualname__ != qualname:
+                        # This is an inherited object; do not generate a stub file for it
+                        app.config.autosummary_filename_map[f"{name}"] = (
+                            f"scipy.stats._distribution_infrastructure.{obj.__qualname__}"
+                        )
+                elif isinstance(obj, property):
+                    # Check if the property is inherited from a parent class
+                    # Distribution-specific properties are defined by ._update_parameters, and their
+                    # qualname is ._update_parameters.<locals>.<lambda>
+                    if obj.fget.__qualname__ != qualname and obj.fget.__name__ == qualname.split(".")[-1]:
+                        # This is an inherited property; do not generate a stub file for it
+                        app.config.autosummary_filename_map[f"{name}"] = (
+                            f"scipy.stats._distribution_infrastructure.{obj.fget.__qualname__}"
+                        )
 
         filename_map = app.config.autosummary_filename_map
 
@@ -789,6 +797,7 @@ def custom_generate_autosummary_docs(
         )
 
     return all_files
+
 
 class InfoFilter(logging.Filter):
     """Filter 'document is referenced in multiple toctrees' messages.
