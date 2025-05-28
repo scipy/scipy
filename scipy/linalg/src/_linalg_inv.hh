@@ -494,11 +494,10 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     // --------------------------------------------------------------------
     // Workspace computation and allocation
     // --------------------------------------------------------------------
-    T tmp = numeric_limits<T>::zero;
     CBLAS_INT intn = (CBLAS_INT)n, int_nrhs = (CBLAS_INT)nrhs, lwork = -1;
 
     lwork = 4*n; // gecon needs at least 4*n
-    T* buffer = (T *)malloc((2*n*n + 2*n*nrhs + lwork)*sizeof(T));
+    T* buffer = (T *)malloc((2*n*n + n*nrhs + lwork)*sizeof(T));
     if (NULL == buffer) { *info = -101; return; }
 
     // Chop the buffer into parts, one for data and one for work
@@ -506,9 +505,7 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
     T* scratch = &buffer[n*n];
 
     T *data_b = &buffer[2*n*n];
-    T *scratch_b = &buffer[2*n*n + n*nrhs];
-
-    T* work = &buffer[2*n*n + 2*n*nrhs];
+    T* work = &buffer[2*n*n + n*nrhs];
 
     CBLAS_INT* ipiv = (CBLAS_INT *)malloc(n*sizeof(CBLAS_INT));
     if (ipiv == NULL) { free(ipiv); *info = -102; return; }
