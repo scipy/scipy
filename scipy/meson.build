@@ -36,10 +36,12 @@ thread_dep = dependency('threads', required: false)
 # version easily for >=2.0.
 _numpy_dep = dependency('numpy', required: false)
 f2py_freethreading_arg = []
-if _numpy_dep.found()
-  if _numpy_dep.version().version_compare('>=2.1.0')
-    f2py_freethreading_arg = ['--free-threading']
-  endif
+if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+  f2py_freethreading_arg = ['--free-threading']
+  message('f2py free-threading enabled')
+else
+  message('f2py free-threading disabled; need numpy >=2.1.0.')
+  message('See https://github.com/mesonbuild/meson/issues/14651')
 endif
 
 # NumPy include directory - needed in all submodules
