@@ -11,25 +11,7 @@
  * declare LAPACK prototypes
  */
 
-
-/* ?GESV */
 extern "C" {
-CBLAS_INT
-BLAS_FUNC(sgesv)(CBLAS_INT *n, CBLAS_INT *nrhs, float a[], CBLAS_INT *lda,
-                 CBLAS_INT ipiv[], float b[], CBLAS_INT *ldb, CBLAS_INT *info
-);
-CBLAS_INT
-BLAS_FUNC(dgesv)(CBLAS_INT *n, CBLAS_INT *nrhs, double a[], CBLAS_INT *lda,
-                 CBLAS_INT ipiv[], double b[], CBLAS_INT *ldb, CBLAS_INT *info
-);
-CBLAS_INT
-BLAS_FUNC(cgesv)(CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat a[], CBLAS_INT *lda,
-                 CBLAS_INT ipiv[], npy_cfloat b[], CBLAS_INT *ldb, CBLAS_INT *info
-);
-CBLAS_INT
-BLAS_FUNC(zgesv)(CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble a[], CBLAS_INT *lda,
-                 CBLAS_INT ipiv[], npy_cdouble b[], CBLAS_INT *ldb, CBLAS_INT *info
-);
 
 /* ?GETRF */
 CBLAS_INT
@@ -118,12 +100,6 @@ void BLAS_FUNC(spocon)(char *uplo, CBLAS_INT *n, float* a, CBLAS_INT *lda, float
 void BLAS_FUNC(dpocon)(char *uplo, CBLAS_INT *n, double* a, CBLAS_INT *lda, double *anorm, double *rcond, double* work, CBLAS_INT* iwork, CBLAS_INT *info);
 void BLAS_FUNC(cpocon)(char *uplo, CBLAS_INT *n, npy_cfloat* a, CBLAS_INT *lda, float *anorm, float *rcond, npy_cfloat* work, float *rwork, CBLAS_INT *info);
 void BLAS_FUNC(zpocon)(char *uplo, CBLAS_INT *n, npy_cdouble* a, CBLAS_INT *lda, double *anorm, double *rcond, npy_cdouble* work, double *rwork, CBLAS_INT *info);
-
-/* ?POSV*/
-void BLAS_FUNC(sposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(dposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda, double *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(cposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cfloat *a, CBLAS_INT *lda, npy_cfloat *b, CBLAS_INT *ldb, CBLAS_INT *info);
-void BLAS_FUNC(zposv)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, npy_cdouble *a, CBLAS_INT *lda, npy_cdouble *b, CBLAS_INT *ldb, CBLAS_INT *info);
 
 /* ?POTRS*/
 void BLAS_FUNC(spotrs)(char *uplo, CBLAS_INT *n, CBLAS_INT *nrhs, float *a, CBLAS_INT *lda, float *b, CBLAS_INT *ldb, CBLAS_INT *info);
@@ -282,36 +258,6 @@ GEN_POTRS(s, float)
 GEN_POTRS(d, double)
 GEN_POTRS(c, npy_cfloat)
 GEN_POTRS(z, npy_cdouble)
-
-
-// XXX posv, gesv not used?
-
-#define GEN_POSV(PREFIX, TYPE) \
-inline void \
-posv(char* uplo, CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
-{ \
-    BLAS_FUNC(PREFIX ## posv)(uplo, n, nrhs, a, lda, b, ldb, info); \
-};
-
-GEN_POSV(s, float)
-GEN_POSV(d, double)
-GEN_POSV(c, npy_cfloat)
-GEN_POSV(z, npy_cdouble)
-
-
-#define GEN_GESV(PREFIX, TYPE) \
-inline void \
-gesv(CBLAS_INT* n, CBLAS_INT *nrhs, TYPE *a, CBLAS_INT *lda, CBLAS_INT *ipiv, TYPE *b, CBLAS_INT *ldb, CBLAS_INT* info) \
-{ \
-    BLAS_FUNC(PREFIX ## gesv)(n, nrhs, a, lda, ipiv, b, ldb, info); \
-};
-
-GEN_GESV(s, float)
-GEN_GESV(d, double)
-GEN_GESV(c, npy_cfloat)
-GEN_GESV(z, npy_cdouble)
-
-
 
 
 /*

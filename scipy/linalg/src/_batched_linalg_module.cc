@@ -179,8 +179,6 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 }
 
 
-
-
 static char doc_inv[] = ("Compute the matrix inverse.");
 static char doc_solve[] = ("Solve the linear system of equations.");
 

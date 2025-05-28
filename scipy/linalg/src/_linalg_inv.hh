@@ -570,12 +570,6 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
         T *slice_ptr_b = (T *)(bm_data + (offset/sizeof(T)));
         copy_slice_F(data_b, slice_ptr_b, n, nrhs, strides_b[ndim-2], strides_b[ndim-1]);
 
-        std::cerr<< "2 data_b = ";
-        for(int i=0; i<n*nrhs; i++){
-            std::cerr << data_b[i] << ", ";
-        }
-        std::cerr << "\n";
-
         // detect the structure if not given
         slice_structure = structure;
 
@@ -607,11 +601,6 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             case St::UPPER_TRIANGULAR:
             case St::LOWER_TRIANGULAR:
             {
-
-                std::cerr << "TRIANGULAR @ " << idx << " uplo = "<< uplo << " uband = "<< upper_band << " lband = "<< lower_band<<"\n";
-                std::cerr << "structure = " << slice_structure << "\n";
-                std::cerr << "nrhs = " << int_nrhs<<"\n";
-
                 char diag = 'N';
                 *info = solve_slice_triangular(uplo, diag, intn, int_nrhs, data, data_b, trans, work, irwork, isIllconditioned, isSingular);
 
@@ -621,9 +610,6 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
             case St::POS_DEF:
             {
-
-                std::cerr << "POS DEF @ " << idx << "\n";
-
                 *info = solve_slice_cholesky(uplo, intn, int_nrhs, data, data_b, work, irwork, isIllconditioned, isSingular);
 
                 if ((*info == 0) || (*isSingular == 0) ) {
@@ -632,7 +618,7 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
                     break;
                 }
                 else { // potrf failed
-                    if(posdef_fallback) {   // FIXME: test the fallback
+                    if(posdef_fallback) {
                         // restore
                         copy_slice(scratch, slice_ptr, n, n, strides[ndim-2], strides[ndim-1]);
                         swap_cf(scratch, data, n, n, n);
@@ -647,8 +633,6 @@ void _solve(PyArrayObject* ap_Am, PyArrayObject *ap_b, T* ret_data, St structure
             }
             default:
             {
-
-                std::cerr << "GENERAL @ " << idx << "\n";
                 // general matrix inverse
                 *info = solve_slice_general(intn, int_nrhs, data, ipiv, data_b, trans, irwork, work, lwork, isIllconditioned, isSingular);
             }
