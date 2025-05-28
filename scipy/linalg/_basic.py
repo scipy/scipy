@@ -64,7 +64,8 @@ def _find_matrix_structure(a):
 
 
 def solve(a, b,lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a=None, transposed=False):
+          overwrite_b=False, check_finite=True, assume_a=None,
+          transposed=False):
     """
     Solve the equation ``a @ x = b`` for  ``x``,
     where `a` is a square matrix.
@@ -232,15 +233,6 @@ def solve(a, b,lower=False, overwrite_a=False,
     if a_is_scalar:
         out = b1 / a1
         return out[..., 0] if b_is_1D else out
-
-    print(f"{a1.shape=} {b1.shape=}  {b1.dtype} \n")
-
-
-    # 3. check a, b dtype, cast if needed  (b does not upcast a?)
-    # 4. check a, b flags, copy if needed
-    # 5. check empty a, b
-    # 6. fast path for a.size == 1
-    # 7. check b no more than 2D, k=0
 
     # heavy lifting
     result = _batched_linalg._solve(a1, b1, structure, transposed)
