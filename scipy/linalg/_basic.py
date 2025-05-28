@@ -88,10 +88,10 @@ def solve(a, b,lower=False, overwrite_a=False,
 
     Parameters
     ----------
-    a : (..., N, N) array_like
-        Square input data
+    a : array_like, shape (..., N, N)
+        Square left-hand side matrix or a batch of matrices.
     b : (..., N, NRHS) array_like
-        Input data for the right hand side.
+        Input data for the right hand side or a batch of right-hand sides.
     lower : bool, default: False
         Ignored unless ``assume_a`` is one of ``'sym'``, ``'her'``, or ``'pos'``.
         If True, the calculation uses only the data in the lower triangle of `a`;
@@ -116,7 +116,7 @@ def solve(a, b,lower=False, overwrite_a=False,
 
     Returns
     -------
-    x : (N, NRHS) ndarray
+    x : ndarray, shape (N, NRHS) or (..., N)
         The solution array.
 
     Raises
@@ -138,7 +138,7 @@ def solve(a, b,lower=False, overwrite_a=False,
     numpy.dot() behavior and the returned result is still 1-D array.
 
     The general, symmetric, Hermitian and positive definite solutions are
-    obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
+    obtained via calling ?GETRF/?GETRS, ?SYSV, ?HESV, and ?POTRF/?POTRS routines of
     LAPACK respectively.
 
     The datatype of the arrays define which solver is called regardless
@@ -153,15 +153,27 @@ def solve(a, b,lower=False, overwrite_a=False,
     >>> import numpy as np
     >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
     >>> b = np.array([2, 4, -1])
-    >>> from scipy import linalg
-    >>> x = linalg.solve(a, b)
+    >>> from scipy.linalg import solve
+    >>> x = solve(a, b)
     >>> x
     array([ 2., -2.,  9.])
-    >>> np.dot(a, x) == b
+    >>> a @ x == b
     array([ True,  True,  True], dtype=bool)
 
-    """
+    Batches of matrices are supported, with and without structure detection:
 
+    >>> a = np.arange(12).reshape(3, 2, 2)   # a batch of 3 2x2 matrices
+    >>> A = a.transpose(0, 2, 1) @ a    # A is a batch of 3 positive definite matrices
+    >>> b = np.ones(2)
+    >>> solve(A, b)      # this automatically detects that A is pos.def.
+    array([[ 1. , -0.5],
+           [ 3. , -2.5],
+           [ 5. , -4.5]])
+    >>> solve(A, b, assume_a='pos')   # bypass structucture detection
+    array([[ 1. , -0.5],
+           [ 3. , -2.5],
+           [ 5. , -4.5]])
+    """
     if assume_a in ['sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded', 'banded']:
         # TODO: handle these structures in this function
         return solve0(
