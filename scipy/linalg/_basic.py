@@ -174,7 +174,9 @@ def solve(a, b,lower=False, overwrite_a=False,
            [ 3. , -2.5],
            [ 5. , -4.5]])
     """
-    if assume_a in ['sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded', 'banded']:
+    if assume_a in [
+        'sym', 'her', 'symmetric', 'hermitian', 'diagonal', 'tridiagonal', 'banded'
+    ]:
         # TODO: handle these structures in this function
         return solve0(
             a, b, lower=lower, overwrite_a=overwrite_a, overwrite_b=overwrite_b,
