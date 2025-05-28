@@ -976,7 +976,9 @@ class TestSolve:
         # Check that `solve` correctly identifies the structure and returns
         # *exactly* the same solution whether `assume_a` is specified or not
         if assume_a != 'banded':  # structure detection removed for banded
-            assert_allclose(solve(A_copy, b_copy, transposed=transposed), res, atol=1e-15)
+            assert_allclose(
+                solve(A_copy, b_copy, transposed=transposed), res, atol=1e-15
+            )
 
         # Check that overwrite was respected
         if not overwrite:
