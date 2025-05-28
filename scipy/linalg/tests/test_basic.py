@@ -1081,6 +1081,20 @@ class TestSolve:
         assert x.shape == np.linalg.solve(a, b).shape
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
+    def test_posdef_not_posdef(self):
+        # the `b` matrix is invertible but not positive definite
+        a = np.arange(9).reshape(3, 3)
+        A = a + a.T + np.eye(3)
+        b = np.ones(3)
+
+        # cholesky solver fails, and the routine falls back to the general inverse
+        x0 = solve(A, b)
+        assert_allclose(A @ x0, b, atol=1e-14)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            solve(A, b, assume_a='pos')
+
 
 class TestSolveTriangular:
 
