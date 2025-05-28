@@ -146,7 +146,7 @@ def entropy(pk: np.typing.ArrayLike,
     >>> pk = np.array([2.0, 8.0])
     >>> qk = np.array([1.0, 9.0])
     >>> entropy(pk, qk, base=2, normalize=False)
-    0.08164398904051034
+    0.6405999884615012
 
     .. versionadded:: 1.15.4
     """
