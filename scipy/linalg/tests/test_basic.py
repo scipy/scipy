@@ -25,6 +25,11 @@ COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+)
+
+
 def _eps_cast(dtyp):
     """Get the epsilon for dtype, possibly downcast to BLAS types."""
     dt = dtyp
@@ -998,6 +1003,84 @@ class TestSolve:
         b = np.ones((2, 2)) * [1, 2]
         assert_allclose(solve(a, b, assume_a=assume_a), np.linalg.solve(a, b))
 
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+        b = np.ones(3)
+        x = solve(a, b)
+        assert_allclose(x, b, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[:, ::-1]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use b with a negative stride now
+        b = np.ones((2, 4))[::-1, :]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones(4)[::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
+        # use strided b now
+        b = np.ones((2, 6))[:, ::2]
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x - b, 0, atol=1e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_weird_strides(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 2, 2)
+        a = a.transpose(1, 3, 4, 0, 2)
+
+        b = np.ones(2)
+        x = solve(a, b, **overwrite_kw)
+        assert x.shape == np.linalg.solve(a, b).shape
+        assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
+
 
 class TestSolveTriangular:
 
@@ -1079,11 +1162,6 @@ class TestSolveTriangular:
         x = solve_triangular(a, b)
         assert_(x.size == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
-
-
-parametrize_overwrite_arg = pytest.mark.parametrize(
-    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
-)
 
 
 class TestInv:
