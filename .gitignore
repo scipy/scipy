@@ -56,8 +56,9 @@ _configtest.c
 
 # Python files #
 ################
-# build directory
+# build directories
 build
+build-*
 # sphinx build directory
 doc/_build
 # cython files
@@ -85,7 +86,6 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/
 .mesonpy/
 
 # doit
@@ -153,6 +153,7 @@ benchmarks/html
 benchmarks/scipy-benchmarks
 .github/workflows/.pixi
 .openblas
+scipy-openblas.pc
 scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
