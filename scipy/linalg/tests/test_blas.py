@@ -90,7 +90,7 @@ def parametrize_blas(mod, func_name, prefixes):
 
         f = getattr(mod, prefix + func_name, None)
         params.append(pytest.param(
-            f, np.dtype(dtype), id=prefix + func_name, 
+            f, dtype, id=prefix + func_name, 
             marks=[pytest.mark.skip(reason="not implemented")] if f is None else []))
 
     return pytest.mark.parametrize("f,dtype", params)
@@ -101,7 +101,7 @@ class TestCBLAS1Simple:
     def test_axpy(self, f, dtype):
         assert_array_almost_equal(f([1, 2, 3], [2, -1, 3], a=5),
                                   [7, 9, 18])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f([1, 2j, 3], [2, -1, 3], a=5),
                                       [7, 10j-1, 18])
 
@@ -112,20 +112,20 @@ class TestFBLAS1Simple:
     def test_axpy(self, f, dtype):
         assert_array_almost_equal(f([1, 2, 3], [2, -1, 3], a=5),
                                   [7, 9, 18])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f([1, 2j, 3], [2, -1, 3], a=5),
                                       [7, 10j-1, 18])
 
     @parametrize_blas(fblas, "copy", "sdcz")
     def test_copy(self, f, dtype):
         assert_array_almost_equal(f([3, 4, 5], [8]*3), [3, 4, 5])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f([3, 4j, 5+3j], [8]*3), [3, 4j, 5+3j])
 
     @parametrize_blas(fblas, "asum", ["s", "d", "sc", "dz"])
     def test_asum(self, f, dtype):
         assert_almost_equal(f([3, -4, 5]), 12)
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_almost_equal(f([3j, -4, 3-4j]), 14)
 
     @parametrize_blas(fblas, "dot", "sd")
@@ -143,13 +143,13 @@ class TestFBLAS1Simple:
     @parametrize_blas(fblas, "nrm2", ["s", "d", "sc", "dz"])
     def test_nrm2(self, f, dtype):
         assert_almost_equal(f([3, -4, 5]), math.sqrt(50))
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_almost_equal(f([3j, -4, 3-4j]), math.sqrt(50))
 
     @parametrize_blas(fblas, "scal", ["s", "d", "cs", "zd"])
     def test_scal(self, f, dtype):
         assert_array_almost_equal(f(2, [3, -4, 5]), [6, -8, 10])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f(3, [3j, -4, 3-4j]), [9j, -12, 9-12j])
 
     @parametrize_blas(fblas, "swap", "sdcz")
@@ -159,7 +159,7 @@ class TestFBLAS1Simple:
         assert_array_almost_equal(x1, y)
         assert_array_almost_equal(y1, x)
 
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             x, y = [2, 3j, 1], [-2, 3, 7-3j]
             x1, y1 = f(x, y)
             assert_array_almost_equal(x1, y)
@@ -168,7 +168,7 @@ class TestFBLAS1Simple:
     @parametrize_blas(fblas, "amax", ["is", "id", "ic", "iz"])
     def test_amax(self, f, dtype):
         assert_equal(f([-2, 4, 3]), 1)
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_equal(f([-5, 4+3j, 6]), 1)
 
     # XXX: need tests for rot,rotm,rotg,rotmg
@@ -179,7 +179,7 @@ class TestFBLAS2Simple:
     def test_gemv(self, f, dtype):
         assert_array_almost_equal(f(3, [[3]], [-4]), [-36])
         assert_array_almost_equal(f(3, [[3]], [-4], 3, [5]), [-21])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f(3j, [[3-4j]], [-4]), [-48-36j])
             assert_array_almost_equal(f(3j, [[3-4j]], [-4], 3, [5j]),
                                       [-48-21j])
@@ -194,7 +194,7 @@ class TestFBLAS2Simple:
                                   [[6, 8], [12, 16], [18, 24]])
         assert_array_almost_equal(f(1, [1, 2], [3, 4],
                                   a=[[1, 2], [3, 4]]), [[4, 6], [9, 12]])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f(1, [1j, 2], [3, 4]),
                                       [[3j, 4j], [6, 8]])
             assert_array_almost_equal(f(2, [1j, 2j, 3j], [3j, 4j]),
@@ -236,15 +236,7 @@ class TestFBLAS2Simple:
         assert_allclose(f(1.0, y, incx=-2, offx=2, n=4),
                         resx_reverse, rtol=rtol)
 
-        if dtype.kind == 'f':
-            a = np.zeros((4, 4), dtype, 'F')
-            b = f(1.0, x, a=a, overwrite_a=True)
-            assert_allclose(a, resx, rtol=rtol)
-            b = f(2.0, x, a=a)
-            assert a is not b
-            assert_allclose(b, 3*resx, rtol=rtol)
-
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_allclose(f(1.0, z), resz, rtol=rtol)
             assert_allclose(f(1.0, z, lower=True), resz.T, rtol=rtol)
             assert_allclose(f(1.0, w, incx=3, offx=1, n=4), resz, rtol=rtol)
@@ -258,6 +250,14 @@ class TestFBLAS2Simple:
             b = f(2.0, z, a=a)
             assert a is not b
             assert_allclose(b, 3*resz, rtol=rtol)
+
+        else:
+            a = np.zeros((4, 4), dtype, 'F')
+            b = f(1.0, x, a=a, overwrite_a=True)
+            assert_allclose(a, resx, rtol=rtol)
+            b = f(2.0, x, a=a)
+            assert a is not b
+            assert_allclose(b, 3*resx, rtol=rtol)
 
         assert_raises(Exception, f, 1.0, x, incx=0)
         assert_raises(Exception, f, 1.0, x, offx=5)
@@ -745,7 +745,7 @@ class TestFBLAS3Simple:
     def test_gemm(self, f, dtype):
         assert_array_almost_equal(f(3, [3], [-4]), [[-36]])
         assert_array_almost_equal(f(3, [3], [-4], 3, [5]), [-21])
-        if dtype.kind == 'c':
+        if dtype in COMPLEX_DTYPES:
             assert_array_almost_equal(f(3j, [3-4j], [-4]), [[-48-36j]])
             assert_array_almost_equal(f(3j, [3-4j], [-4], 3, [5j]), [-48-21j])
 
