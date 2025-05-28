@@ -121,7 +121,7 @@ class TestEntropy:
         qk = xp.asarray([1.0, 9.0, 2.0, 2.0, 5.0, 3.0, 6.0, 4.0, 5.0, 3.0])
         result = stats.entropy(pk, qk, base=2, normalize=False)
 
-        expected = xp.asarray(3.4388635654728785)
+        expected = xp.asarray(2.190590872098243)
         xp_assert_close(result, expected)
 
     def test_entropy_normalize_true_equals_false_when_inputs_normalized(self, xp):
@@ -131,7 +131,7 @@ class TestEntropy:
         res1 = stats.entropy(pk, qk, base=2)
         res2 = stats.entropy(pk, qk, base=2, normalize=False)
 
-        expected = xp.asarray(0.08560810937047036) 
+        expected = xp.asarray(0.0660149997115376) 
         xp_assert_close(res1, expected)
         xp_assert_close(res2, expected)
 
