@@ -83,9 +83,6 @@ class TestArrayAPI:
         assert array_namespace(1, x) is xp
         assert array_namespace(None, x) is xp
 
-        assert array_namespace(x, np.float64(1)) is xp  # Subclass of float
-        assert array_namespace(x, np.complex128(1)) is xp  # Subclass of complex
-
         if is_numpy(xp):
             assert array_namespace(x, [1, 2]) is xp
         else:
@@ -93,6 +90,12 @@ class TestArrayAPI:
                 array_namespace(x, [1, 2])
             with pytest.raises(TypeError, match="Multiple namespaces"):
                 array_namespace(x, np.int64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                 # Subclass of float; matches array_api_compat behavior
+                array_namespace(x, np.float64(1))
+            with pytest.raises(TypeError, match="Multiple namespaces"):
+                # Subclass of complex; matches array_api_compat behavior
+                array_namespace(x, np.complex128(1))
 
     def test_array_api_extra_hook(self):
         """Test that the `array_namespace` function used by
