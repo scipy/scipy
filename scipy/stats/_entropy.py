@@ -148,6 +148,7 @@ def entropy(pk: np.typing.ArrayLike,
     >>> entropy(pk, qk, base=2, normalize=False)
     0.08164398904051034
 
+    .. versionadded:: 1.15.4
     """
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
