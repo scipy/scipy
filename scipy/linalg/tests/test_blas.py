@@ -76,6 +76,8 @@ def test_get_blas_funcs_alias():
 
 
 def parametrize_blas(mod, func_name, prefixes):
+    if mod is None:
+        return pytest.mark.skip(reason="cblas not available")
     params = []
     for prefix in prefixes:
         if 'z' in prefix:
@@ -88,10 +90,8 @@ def parametrize_blas(mod, func_name, prefixes):
             assert 's' in prefix
             dtype = np.float32
 
-        f = getattr(mod, prefix + func_name, None)
-        params.append(pytest.param(
-            f, dtype, id=prefix + func_name, 
-            marks=[pytest.mark.skip(reason="not implemented")] if f is None else []))
+        f = getattr(mod, prefix + func_name)
+        params.append(pytest.param(f, dtype, id=prefix + func_name))
 
     return pytest.mark.parametrize("f,dtype", params)
 
