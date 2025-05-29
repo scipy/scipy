@@ -131,7 +131,7 @@ package = 'scipy'
 install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
+skip = "cp38-* *_ppc64le *_i686 *_s390x"
 # We're only testing with essential test dependencies, not optional ones.
 # Some of those require binary wheels (often missing for some platforms),
 # or they slow down the test suite runs too much or simply aren't necessary.
