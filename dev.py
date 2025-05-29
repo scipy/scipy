@@ -911,7 +911,9 @@ class SmokeDocs(Task):
 
         # Request doctesting; use strategy=api unless -t path/to/specific/file
         # also switch off assertion rewriting: not useful for doctests
-        extra_argv += ["--doctest-modules", "--assert=plain"]
+        extra_argv += [
+            "--doctest-modules", "--doctest-only-doctests=true", "--assert=plain"
+        ]
         if not args.tests:
             extra_argv += ['--doctest-collect=api']
 
