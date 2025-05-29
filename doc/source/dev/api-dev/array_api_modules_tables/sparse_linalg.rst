@@ -1,4 +1,4 @@
-Array API Support: sparse.linalg
+array API Support: sparse.linalg
 ================================
 
 .. array-api-support-per-function::

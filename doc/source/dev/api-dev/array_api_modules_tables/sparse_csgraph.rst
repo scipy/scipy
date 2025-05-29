@@ -1,4 +1,4 @@
-Array API Support: sparse.csgraph
+array API Support: sparse.csgraph
 =================================
 
 .. array-api-support-per-function::

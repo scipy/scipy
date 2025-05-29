@@ -1,4 +1,4 @@
-Array API Support: optimize.elementwise
+array API Support: optimize.elementwise
 =======================================
 
 .. array-api-support-per-function::

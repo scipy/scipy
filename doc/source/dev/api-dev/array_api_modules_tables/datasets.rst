@@ -1,4 +1,4 @@
-Array API Support: datasets
+array API Support: datasets
 ===========================
 
 .. array-api-support-per-function::

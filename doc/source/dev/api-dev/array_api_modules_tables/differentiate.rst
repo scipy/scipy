@@ -1,4 +1,4 @@
-Array API Support: differentiate
+array API Support: differentiate
 ================================
 
 .. array-api-support-per-function::

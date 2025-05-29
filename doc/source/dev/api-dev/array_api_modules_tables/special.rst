@@ -1,4 +1,4 @@
-Array API Support: special
+array API Support: special
 ==========================
 
 .. array-api-support-per-function::

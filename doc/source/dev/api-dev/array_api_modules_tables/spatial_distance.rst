@@ -1,4 +1,4 @@
-Array API Support: spatial.distance
+array API Support: spatial.distance
 ===================================
 
 .. array-api-support-per-function::

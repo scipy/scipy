@@ -1,4 +1,4 @@
-Array API Support: stats.qmc
+array API Support: stats.qmc
 ============================
 
 .. array-api-support-per-function::

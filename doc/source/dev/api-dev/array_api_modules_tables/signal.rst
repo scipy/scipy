@@ -1,4 +1,4 @@
-Array API Support: signal
+array API Support: signal
 =========================
 
 .. array-api-support-per-function::

@@ -1,4 +1,4 @@
-Array API Support: cluster.vq
+array API Support: cluster.vq
 =============================
 
 .. array-api-support-per-function::

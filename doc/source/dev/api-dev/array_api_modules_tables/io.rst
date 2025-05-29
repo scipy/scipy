@@ -1,4 +1,4 @@
-Array API Support: io
+array API Support: io
 =====================
 
 .. array-api-support-per-function::

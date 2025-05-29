@@ -1,4 +1,4 @@
-Array API Support: stats.contingency
+array API Support: stats.contingency
 ====================================
 
 

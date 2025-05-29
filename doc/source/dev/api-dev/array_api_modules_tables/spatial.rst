@@ -1,4 +1,4 @@
-Array API Support: spatial
+array API Support: spatial
 ==========================
 
 .. array-api-support-per-function::

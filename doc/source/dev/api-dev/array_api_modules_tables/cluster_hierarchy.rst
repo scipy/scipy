@@ -1,4 +1,4 @@
-Array API Support: cluster.hierarchy
+array API Support: cluster.hierarchy
 ====================================
 
 .. array-api-support-per-function::

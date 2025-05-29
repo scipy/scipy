@@ -1,4 +1,4 @@
-Array API Support: integrate
+array API Support: integrate
 ============================
 
 .. array-api-support-per-function::

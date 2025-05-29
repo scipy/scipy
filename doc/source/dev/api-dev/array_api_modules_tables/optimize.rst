@@ -1,4 +1,4 @@
-Array API Support: optimize
+array API Support: optimize
 ===========================
 
 .. array-api-support-per-function::

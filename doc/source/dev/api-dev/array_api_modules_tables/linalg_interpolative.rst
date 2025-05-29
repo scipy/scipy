@@ -1,4 +1,4 @@
-Array API Support: linalg.interpolative
+array API Support: linalg.interpolative
 =======================================
 
 .. array-api-support-per-function::

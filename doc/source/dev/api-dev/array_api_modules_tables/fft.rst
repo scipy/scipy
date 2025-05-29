@@ -1,4 +1,4 @@
-Array API Support: fft
+array API Support: fft
 ======================
 
 .. array-api-support-per-function::

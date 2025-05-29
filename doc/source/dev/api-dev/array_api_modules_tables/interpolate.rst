@@ -1,4 +1,4 @@
-Array API Support: interpolate
+array API Support: interpolate
 ==============================
 
 .. array-api-support-per-function::
