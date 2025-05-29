@@ -131,9 +131,9 @@ class _dia_base(_data_matrix):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DIA format")
-        rows, cols = self.shape
-        row_len = min(cols, self.data.shape[1])
-        return int(np.maximum(np.minimum(rows + self.offsets, row_len) -
+        M, N = self.shape
+        L = min(self.data.shape[1], N)
+        return int(np.maximum(np.minimum(M + self.offsets, L) -
                               np.maximum(self.offsets, 0),
                               0).sum())
 
