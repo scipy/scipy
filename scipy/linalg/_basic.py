@@ -198,6 +198,8 @@ def solve(a, b,lower=False, overwrite_a=False,
         raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     a1 = np.atleast_2d(_asarray_validated(a, check_finite=check_finite))
+    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
+    a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
     a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     if a1.ndim < 2:
@@ -210,9 +212,6 @@ def solve(a, b,lower=False, overwrite_a=False,
         raise NotImplementedError('scipy.linalg.solve can currently '
                                   'not solve a^T x = b or a^H x = b '
                                   'for complex matrices.')
-    
-    b1 = np.atleast_1d(_asarray_validated(b, check_finite=check_finite))
-    a1, b1 = _ensure_dtype_cdsz(a1, b1)   # XXX; b upcasts a?
 
     if not (a1.flags['ALIGNED'] or a1.dtype.byteorder == '='):
         overwrite_a = True
