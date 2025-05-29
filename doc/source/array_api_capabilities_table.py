@@ -91,7 +91,6 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         relevant_rows = (
             row for row in flat_table if row["module"] == f"scipy.{module}"
         )
-        print(len(relevant_rows))
 
         headers = ["function"]
         headers += [
@@ -102,11 +101,11 @@ class ArrayAPISupportPerFunction(SphinxDirective):
             func = row["function"]
             new_row = [func]
             for backend in backends:
-                supported = row["backend"]
-                cell_text = "✅" if supported else "⛔"
-                row.append(cell_text)
-            rows.append(row)
-        rst_table = tabulate(rows, headers=headers, tablefmt="rst")
+                supported = row[backend]
+                cell_text = "Yes" if supported else "No"
+                new_row.append(cell_text)
+            new_rows.append(new_row)
+        rst_table = tabulate(new_rows, headers=headers, tablefmt="rst")
         string_list = StringList(rst_table.splitlines())
         node = nodes.section()
         node.document = self.state.document
