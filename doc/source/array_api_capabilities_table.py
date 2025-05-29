@@ -99,7 +99,8 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         new_rows = []
         for row in relevant_rows:
             func = row["function"]
-            new_row = [func]
+            func_text = f":doc:`{func} <../../../reference/generated/scipy.{module}.{func}>`"
+            new_row = [func_text]
             for backend in backends:
                 supported = row[backend]
                 cell_text = "Yes" if supported else "No"
