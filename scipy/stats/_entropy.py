@@ -7,7 +7,7 @@ Created on Fri Apr  2 09:06:05 2021
 import math
 import numpy as np
 from scipy import special
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
                                    is_marray, _share_masks)
 from scipy._lib import array_api_extra as xpx
