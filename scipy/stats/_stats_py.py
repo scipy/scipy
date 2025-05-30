@@ -26,7 +26,6 @@ References
    York. 2000.
 
 """
-import functools
 import math
 import operator
 import warnings
@@ -75,13 +74,14 @@ from scipy._lib._array_api import (
     array_namespace,
     is_lazy_array,
     is_numpy,
-    is_marray,
     is_cupy,
     xp_size,
     xp_vector_norm,
     xp_promote,
     xp_capabilities,
     xp_ravel,
+    _length_nonmasked,
+    _share_masks,
     xp_swapaxes,
     xp_default_dtype,
     xp_device,
@@ -161,7 +161,7 @@ def _pack_CorrelationResult(statistic, pvalue, correlation):
     return res
 
 
-def _unpack_CorrelationResult(res):
+def _unpack_CorrelationResult(res, _):
     return res.statistic, res.pvalue, res.correlation
 
 
@@ -169,7 +169,7 @@ def _unpack_CorrelationResult(res):
 @xp_capabilities()
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     r"""Compute the weighted geometric mean along the specified axis.
 
@@ -253,7 +253,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 @xp_capabilities(jax_jit=False, allow_dask_compute=1)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
     r"""Calculate the weighted harmonic mean along the specified axis.
 
@@ -354,7 +354,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 @xp_capabilities(jax_jit=False, allow_dask_compute=1)
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x, _: (x,), kwd_samples=['weights'])
 def pmean(a, p, *, axis=0, dtype=None, weights=None):
     r"""Calculate the weighted power mean along the specified axis.
 
@@ -635,7 +635,7 @@ def _put_val_to_limits(a, limits, inclusive, val=np.nan, xp=None):
 @xp_capabilities()
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """Compute the trimmed mean.
@@ -691,7 +691,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
 @xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed variance.
@@ -751,7 +751,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 @xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
@@ -815,7 +815,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
 @xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed maximum.
@@ -878,7 +878,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
 
 @xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed sample standard deviation.
@@ -931,7 +931,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 @xp_capabilities()
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """Compute the trimmed standard error of the mean.
@@ -1250,28 +1250,9 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     return var
 
 
-def _length_nonmasked(x, axis, keepdims=False, xp=None):
-    xp = array_namespace(x) if xp is None else xp
-    if is_marray(xp):
-        if np.iterable(axis):
-            message = '`axis` must be an integer or None for use with `MArray`.'
-            raise NotImplementedError(message)
-        return xp.astype(xp.count(x, axis=axis, keepdims=keepdims), x.dtype)
-    return (xp_size(x) if axis is None else
-            # compact way to deal with axis tuples or ints
-            int(np.prod(np.asarray(x.shape)[np.asarray(axis)])))
-
-
-def _share_masks(*args, xp):
-    if is_marray(xp):
-        mask = functools.reduce(operator.or_, (arg.mask for arg in args))
-        args = [xp.asarray(arg.data, mask=mask) for arg in args]
-    return args[0] if len(args) == 1 else args
-
-
 @xp_capabilities(jax_jit=False, allow_dask_compute=2)
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -1372,7 +1353,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
 @xp_capabilities(jax_jit=False, allow_dask_compute=2)
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1
 )
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
@@ -2607,9 +2588,9 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
-@xp_capabilities()
+@xp_capabilities(jax_jit=False, allow_dask_compute=True)
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, too_small=1
 )
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """Compute standard error of the mean.
@@ -3077,7 +3058,7 @@ _scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1,
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1,
     default_axis=None, override={'nan_propagation': False}
 )
 def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
@@ -4075,7 +4056,7 @@ class AlexanderGovernResult:
 
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
-    result_to_tuple=lambda x: (x.statistic, x.pvalue),
+    result_to_tuple=lambda x, _: (x.statistic, x.pvalue),
     too_small=1
 )
 def alexandergovern(*samples, nan_policy='propagate', axis=0):
@@ -4246,33 +4227,35 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     """
     xp = array_namespace(r)
 
-    with np.errstate(divide='ignore'):
-        zr = xp.atanh(r)
-
     ones = xp.ones_like(r)
     n = xp.asarray(n, dtype=r.dtype, device=xp_device(r))
     confidence_level = xp.asarray(confidence_level, dtype=r.dtype, device=xp_device(r))
-    if n > 3:
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        zr = xp.atanh(r)
         se = xp.sqrt(1 / (n - 3))
-        if alternative == "two-sided":
-            h = special.ndtri(0.5 + confidence_level/2)
-            zlo = zr - h*se
-            zhi = zr + h*se
-            rlo = xp.tanh(zlo)
-            rhi = xp.tanh(zhi)
-        elif alternative == "less":
-            h = special.ndtri(confidence_level)
-            zhi = zr + h*se
-            rhi = xp.tanh(zhi)
-            rlo = -ones
-        else:
-            # alternative == "greater":
-            h = special.ndtri(confidence_level)
-            zlo = zr - h*se
-            rlo = xp.tanh(zlo)
-            rhi = ones
+
+    if alternative == "two-sided":
+        h = special.ndtri(0.5 + confidence_level/2)
+        zlo = zr - h*se
+        zhi = zr + h*se
+        rlo = xp.tanh(zlo)
+        rhi = xp.tanh(zhi)
+    elif alternative == "less":
+        h = special.ndtri(confidence_level)
+        zhi = zr + h*se
+        rhi = xp.tanh(zhi)
+        rlo = -ones
     else:
-        rlo, rhi = -ones, ones
+        # alternative == "greater":
+        h = special.ndtri(confidence_level)
+        zlo = zr - h*se
+        rlo = xp.tanh(zlo)
+        rhi = ones
+
+    mask = (n <= 3)
+    rlo = xpx.at(rlo)[mask].set(-1)
+    rhi = xpx.at(rhi)[mask].set(1)
 
     rlo = rlo[()] if rlo.ndim == 0 else rlo
     rhi = rhi[()] if rhi.ndim == 0 else rhi
@@ -4394,7 +4377,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'],
+@xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
+                 cpu_only=True, exceptions=['cupy'],
                  jax_jit=False, allow_dask_compute=True)
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
@@ -4688,12 +4672,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
-    n = x.shape[axis]
-    if n != y.shape[axis]:
+    if x.shape[axis] != y.shape[axis]:
         raise ValueError('`x` and `y` must have the same length along `axis`.')
 
-    if n < 2:
+    if x.shape[axis] < 2:
         raise ValueError('`x` and `y` must have length at least 2.')
+
+    x, y = _share_masks(x, y, xp=xp)
+    n = xp.asarray(_length_nonmasked(x, axis=axis), dtype=x.dtype)
 
     x = xp.moveaxis(x, axis, -1)
     y = xp.moveaxis(y, axis, -1)
@@ -4787,18 +4773,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r = xp.clip(r, -1., 1.)
     r = xpx.at(r, const_xy).set(xp.nan)
 
-    # Make sure we return exact 1.0 or -1.0 values for n == 2 case as promised
-    # in the docs.
-    if n == 2:
-        r = xp.round(r)
-        one = xp.asarray(1, dtype=dtype, device=xp_device(r))
-        pvalue = xp.where(xp.asarray(xp.isnan(r)), xp.nan*one, one)
-    else:
-        # As explained in the docstring, the distribution of `r` under the null
-        # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-        ab = xp.asarray(n/2 - 1, dtype=dtype, device=xp_device(x))
-        dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
-        pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+    # As explained in the docstring, the distribution of `r` under the null
+    # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+    ab = xp.asarray(n/2 - 1, dtype=dtype, device=xp_device(x))
+    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
+
+    mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
+    def special_case(r): return xp.where(xp.isnan(r), xp.nan, xp.ones_like(r))
+    r = xpx.apply_where(mask, (r,), xp.round, fill_value=r)
+    pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -6034,7 +6018,7 @@ def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                        standard_error=standard_error, estimate=estimate)
 
 
-def unpack_TtestResult(res):
+def unpack_TtestResult(res, _):
     return (res.statistic, res.pvalue, res.df, res._alternative,
             res._standard_error, res._estimate)
 
@@ -7643,7 +7627,7 @@ def _tuple_to_KstestResult(statistic, pvalue,
                         statistic_sign=statistic_sign)
 
 
-def _KstestResult_to_tuple(res):
+def _KstestResult_to_tuple(res, _):
     return *res, res.statistic_location, res.statistic_sign
 
 
@@ -10616,7 +10600,7 @@ def _pack_LinregressResult(slope, intercept, rvalue, pvalue, stderr, intercept_s
                             intercept_stderr=intercept_stderr)
 
 
-def _unpack_LinregressResult(res):
+def _unpack_LinregressResult(res, _):
     return tuple(res) + (res.intercept_stderr,)
 
 

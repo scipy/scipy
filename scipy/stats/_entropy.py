@@ -8,7 +8,8 @@ import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
-from scipy._lib._array_api import array_namespace, xp_promote, xp_device
+from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
+                                   is_marray, _share_masks)
 from scipy._lib import array_api_extra as xpx
 
 __all__ = ['entropy', 'differential_entropy']
@@ -20,7 +21,7 @@ __all__ = ['entropy', 'differential_entropy']
         2 if ("qk" in kwgs and kwgs["qk"] is not None)
         else 1
     ),
-    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    n_outputs=1, result_to_tuple=lambda x, _: (x,), paired=True,
     too_small=-1  # entropy doesn't have too small inputs
 )
 def entropy(pk: np.typing.ArrayLike,
@@ -140,19 +141,24 @@ def entropy(pk: np.typing.ArrayLike,
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    xp = array_namespace(pk) if qk is None else array_namespace(pk, qk)
+    xp = array_namespace(pk, qk)
+    pk, qk = xp_promote(pk, qk, broadcast=True, xp=xp)
 
-    pk = xp.asarray(pk)
     with np.errstate(invalid='ignore'):
-        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
+        if qk is not None:
+            pk, qk = _share_masks(pk, qk, xp=xp)
+            qk = qk / xp.sum(qk, axis=axis, keepdims=True)
+        pk = pk / xp.sum(pk, axis=axis, keepdims=True)
+
     if qk is None:
         vec = special.entr(pk)
     else:
-        qk = xp.asarray(qk)
-        pk, qk = _broadcast_arrays((pk, qk), axis=None, xp=xp)  # don't ignore any axes
-        sum_kwargs = dict(axis=axis, keepdims=True)
-        qk = 1.0*qk / xp.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
-        vec = special.rel_entr(pk, qk)
+        if is_marray(xp):  # compensate for mdhaber/marray#97
+            vec = special.rel_entr(pk.data, qk.data)  # type: ignore[union-attr]
+            vec = xp.asarray(vec, mask=pk.mask)  #  type: ignore[union-attr]
+        else:
+            vec = special.rel_entr(pk, qk)
+
     S = xp.sum(vec, axis=axis)
     if base is not None:
         S /= math.log(base)
@@ -170,7 +176,7 @@ def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
     too_small=_differential_entropy_is_too_small
 )
 def differential_entropy(

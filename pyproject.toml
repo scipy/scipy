@@ -46,7 +46,7 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.11"
 dependencies = [
-    "numpy>=1.25.2",
+    "numpy>=1.26.4",
 ] # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
@@ -191,5 +191,9 @@ PKG_CONFIG_PATH = "{project}"
   ".spin/cmds.py:smoke_docs",
   ".spin/cmds.py:refguide_check",
   ".spin/cmds.py:smoke_tutorials"
+]
+"Release" = [
+  ".spin/cmds.py:notes",
+  ".spin/cmds.py:authors"
 ]
 "Metrics" = [".spin/cmds.py:bench"]

@@ -360,7 +360,6 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')

@@ -3,6 +3,7 @@ import os
 import sys
 import importlib
 import importlib.util
+import importlib.metadata
 import json
 import traceback
 import warnings
@@ -456,8 +457,11 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
 
     """  # noqa: E501
     # prevent obscure error later; cf https://github.com/numpy/numpy/pull/26691/
-    if not importlib.util.find_spec("scipy_doctest"):
-        raise ModuleNotFoundError("Please install scipy-doctest")
+    if (
+        not importlib.util.find_spec("scipy_doctest")
+        or importlib.metadata.version("scipy_doctest") < "1.8.0"
+    ):
+        raise ModuleNotFoundError("Please install scipy-doctest>=1.8.0")
 
     tests = kwargs["tests"]
     if kwargs["submodule"]:
@@ -469,6 +473,7 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     # turn doctesting on:
     doctest_args = (
         '--doctest-modules',
+        '--doctest-only-doctests=true',
         '--doctest-collect=api'
     )
 
@@ -570,6 +575,43 @@ def smoke_tutorials(ctx, pytest_args, tests, verbose, build_dir, *args, **kwargs
 
     cmd_str = ' '.join(cmd)
     click.secho(cmd_str, bold=True, fg="bright_blue")
+    util.run(cmd)
+
+@click.command()
+@click.argument('version_args', nargs=2)
+@click.pass_context
+def notes(ctx_obj, version_args):
+    """Release notes and log generation.
+
+    Example:
+
+      spin notes v1.7.0 v1.8.0
+    """
+    if version_args:
+        sys.argv = version_args
+        log_start = sys.argv[0]
+        log_end = sys.argv[1]
+    cmd = ["python", "tools/write_release_and_log.py", f"{log_start}", f"{log_end}"]
+    click.secho(' '.join(cmd), bold=True, fg="bright_blue")
+    util.run(cmd)
+
+@click.command()
+@click.argument('revision_args', nargs=2)
+@click.pass_context
+def authors(ctx_obj, revision_args):
+    """Generate list of authors who contributed within revision
+    interval.
+
+    Example:
+
+      spin authors v1.7.0 v1.8.0
+    """
+    if revision_args:
+        sys.argv = revision_args
+        start_revision = sys.argv[0]
+        end_revision = sys.argv[1]
+    cmd = ["python", "tools/authors.py", f"{start_revision}..{end_revision}"]
+    click.secho(' '.join(cmd), bold=True, fg="bright_blue")
     util.run(cmd)
 
 @click.command()

@@ -403,16 +403,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     override.update(temp)
 
     if result_to_tuple is None:
-        def result_to_tuple(res):
+        def result_to_tuple(res, _):
             return res
-
-    # The only `result_to_tuple` that needs the second argument (number of
-    # outputs) is the one for `moment`, and this was realized very late.
-    # Rather than changing all `result_to_tuple` definitions, we wrap them
-    # here to accept a second argument if they don't already.
-    if len(inspect.signature(result_to_tuple).parameters) == 1:
-        def result_to_tuple(res, _, f=result_to_tuple):
-            return f(res)
 
     if not callable(too_small):
         def is_too_small(samples, *ts_args, axis=-1, **ts_kwargs):
