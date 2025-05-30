@@ -10,15 +10,60 @@ import types
 from collections import defaultdict
 from importlib import import_module
 
+import scipy.stats as stats
+
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._array_api import _make_sphinx_capabilities
 
-DISALLOW_LIST = {
+# For undocumented aliases of public functions which are kept around for
+# backwards compatibility reasons. These should be excluded from the
+# tables since they would be redundant. There are also no docs pages to
+# link entries to.
+ALIASES = {
+    "scipy.linalg": {
+        # Alias of scipy.linalg.solve_continuous_lyapunov
+        "solve_lyapunov",
+    },
     "scipy.ndimage": {
-        # Undocumented alias of scipy.ndimage.sum_labels
+        # Alias of scipy.ndimage.sum_labels
         "sum",
+    },
+    "scipy.special": {
+        # Alias of scipy.special.jv
+        "jn",
+        # Alias of scipy.special.roots_legendre
+        "p_roots",
+        # Alias of scipy.special.roots_chebyt
+        "t_roots",
+        # Alias of scipy.special.roots_chebyu
+        "u_roots",
+        # Alias of scipy.special.roots_chebyc
+        "c_roots",
+        # Alias of scipy.special.roots_chebys
+        "s_roots",
+        # Alias of scipy.special.roots_jacobi
+        "j_roots",
+        # Alias of scipy.special.roots_laguerre
+        "l_roots",
+        # Alias of scipy.special.roots_genlaguerre
+        "la_roots",
+        # Alias of scipy.special.roots_hermite
+        "h_roots",
+        # Alias of scipy.special.roots_hermitenorm
+        "he_roots",
+        # Alias of scipy.special.roots_gegenbauer
+        "cg_roots",
+        # Alias of scipy.special.roots_sh_legendre
+        "ps_roots",
+        # Alias of scipy.special.roots_sh_chebyt
+        "ts_roots",
+        # Alias of scipy.special.roots_chebyu
+        "us_roots",
+        # Alias of scipy.special.roots_sh_jacobi
+        "js_roots",
     }
 }
+
 
 def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
     """Returns flat dict showing what is and isn't supported in entry."""
@@ -96,8 +141,8 @@ def make_flat_capabilities_table(
         module = import_module(module_name)
         public_things = module.__all__
         for name in public_things:
-            if name in DISALLOW_LIST.get(module, {}):
-                # For things like undocumented aliases that are kept
+            if name in ALIASES.get(module_name, {}):
+                # Skip undocumented aliases that are kept
                 # for backwards compatibility reasons.
                 continue
             thing = getattr(module, name)
@@ -111,14 +156,15 @@ def make_flat_capabilities_table(
                 # Skip classes for now, but we may want to handle these in some
                 # way later, so giving them their own branch.
                 continue
-            elif callable(thing) and hasattr(thing, "__name__"):
+            if isinstance(thing, stats._distn_infrastructure.rv_generic):
+                # Skip distributions from the old insfrastrucutre.
+                continue
+            if callable(thing):
                 entry = xp_capabilities_table.get(thing, None)
                 capabilities = _process_capabilities_table_entry(entry)
                 # If a list of multiple modules is passed in, add the module
                 # as an entry of the table.
                 row = {"module": module_name} if multiple_modules else {}
-                # There are several cases where name and thing.__name__
-                # disagree.
                 row.update({"function": name})
                 row.update(capabilities)
                 output.append(row)
