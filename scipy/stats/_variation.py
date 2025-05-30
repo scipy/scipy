@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 
-from scipy._lib._array_api import array_namespace, _length_nonmasked
+from scipy._lib._array_api import array_namespace, xp_device, _length_nonmasked
 import scipy._lib.array_api_extra as xpx
 
 from ._axis_nan_policy import _axis_nan_policy_factory
@@ -103,7 +103,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         a = xp.reshape(a, (-1,))
         axis = 0
 
-    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype)
+    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
 
     with (np.errstate(divide='ignore', invalid='ignore'), warnings.catch_warnings()):
         warnings.simplefilter("ignore")
@@ -113,7 +113,10 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         result = std_a * correction / mean_a
 
     def special_case(std_a, mean_a):
-        return xp.where(std_a > 0, xp.copysign(xp.inf, mean_a), xp.nan)
+        # `_xp_inf` is a workaround for torch.copysign not accepting a scalar yet,
+        # xref array-api-compat#271
+        _xp_inf = xp.asarray(xp.inf, dtype=mean_a.dtype, device=xp_device(mean_a))
+        return xp.where(std_a > 0, xp.copysign(_xp_inf, mean_a), xp.nan)
 
     result = xpx.apply_where((ddof == n), (std_a, mean_a),
                              special_case, fill_value=result)
