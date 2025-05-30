@@ -113,6 +113,11 @@ def make_flat_capabilities_table(
         A string containing single SciPy module, (e.g `scipy.stats`, `scipy.fft`)
         or a list of such strings.
 
+    capabilities_table : Optional[list[str]]
+        Table in the form of `scipy._lib._array_api.xp_capabilities_table`.
+        If None, uses `scipy._lib._array_api.xp_capabilities_table`.
+        Default: None.
+
     Returns
     -------
     output : list[dict[str, str]]
