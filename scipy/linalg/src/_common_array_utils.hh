@@ -373,7 +373,7 @@ swap_cf(T* src, T* dst, const Py_ssize_t r, const Py_ssize_t c, const Py_ssize_t
     Py_ssize_t i, j, ith_row, r2, c2;
     T *bb = dst;
     T *aa = src;
-    if (r < 16) {
+    if ((r < 16) && (c < 16)) {
         for (j = 0; j < c; j++)
         {
             ith_row = 0;
