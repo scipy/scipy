@@ -121,6 +121,7 @@ python_sources = [
   '_elementwise_iterative_method.py',
   '_gcutils.py',
   '_pep440.py',
+  '_public_api.py',
   '_sparse.py',
   '_testutils.py',
   '_threadsafety.py',

@@ -11,7 +11,7 @@ from tabulate import tabulate
 
 from scipy._lib._array_api_docs_tables import calculate_table_statistics
 from scipy._lib._array_api_docs_tables import make_flat_capabilities_table
-from scipy._lib.tests.test_public_api import PUBLIC_MODULES
+from scipy._lib._public_api import PUBLIC_MODULES
 
 
 _flat_capabilities_table = None
@@ -80,7 +80,7 @@ class ArrayAPISupportPerModule(SphinxDirective):
         nested_parse_with_titles(self.state, string_list, node)
         return node.children
 
- 
+
 class ArrayAPISupportPerFunction(SphinxDirective):
     has_content = False
     option_spec = {"module": directives.unchanged}
