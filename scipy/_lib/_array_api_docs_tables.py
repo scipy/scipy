@@ -5,7 +5,6 @@ a wide number of functions at once. Rows correspond to functions and
 columns correspond to library/device/option combinations.
 """
 
-import inspect
 import types
 
 from collections import defaultdict
@@ -32,7 +31,6 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
     # Perhaps this logic should be decoupled from sphinx.
-    backends = _make_sphinx_capabilities(**entry).keys()
     for backend, capabilities in _make_sphinx_capabilities(**entry).items():
         if backend in {"array_api_strict", "numpy"}:
             continue
@@ -155,7 +153,7 @@ def calculate_table_statistics(
 
     for entry in flat_table:
         entry = entry.copy()
-        function_name = entry.pop("function")
+        entry.pop("function")
         if table_contains_modules:
             module = entry.pop("module")
             current_counter = counter[module]
