@@ -13,6 +13,12 @@ from importlib import import_module
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._array_api import _make_sphinx_capabilities
 
+DISALLOW_LIST = {
+    "scipy.ndimage": {
+        # Undocumented alias of scipy.ndimage.sum_labels
+        "sum",
+    }
+}
 
 def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
     """Returns flat dict showing what is and isn't supported in entry."""
@@ -90,6 +96,10 @@ def make_flat_capabilities_table(
         module = import_module(module_name)
         public_things = module.__all__
         for name in public_things:
+            if name in DISALLOW_LIST.get(module, {}):
+                # For things like undocumented aliases that are kept
+                # for backwards compatibility reasons.
+                continue
             thing = getattr(module, name)
             if isinstance(thing, type) and issubclass(thing, Exception):
                 # Skip exception types
@@ -107,7 +117,9 @@ def make_flat_capabilities_table(
                 # If a list of multiple modules is passed in, add the module
                 # as an entry of the table.
                 row = {"module": module_name} if multiple_modules else {}
-                row.update({"function": thing.__name__})
+                # There are several cases where name and thing.__name__
+                # disagree.
+                row.update({"function": name})
                 row.update(capabilities)
                 output.append(row)
             else:

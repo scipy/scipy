@@ -80,10 +80,19 @@ class ArrayAPISupportPerModule(SphinxDirective):
         nested_parse_with_titles(self.state, string_list, node)
         return node.children
 
-
+ 
 class ArrayAPISupportPerFunction(SphinxDirective):
     has_content = False
     option_spec = {"module": directives.unchanged}
+
+    def _get_generated_doc_link_for_function(self, module, func):
+        if module == "signal" and func == "czt":
+            pagename = "czt-function"
+        else:
+            pagename = f"scipy.{module}.{func}"
+        return (
+            f":doc:`{func} <../../../reference/generated/{pagename}>`"
+        )
 
     def run(self):
         flat_table, backends = _get_flat_table_and_backends()
@@ -99,10 +108,7 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         new_rows = []
         for row in relevant_rows:
             func = row["function"]
-            func_text = (
-                f":doc:`{func} <../../../reference/generated/scipy.{module}.{func}>`"
-            )
-            new_row = [func_text]
+            new_row = [self._get_generated_doc_link_for_function(module, func)]
             for backend in backends:
                 supported = row[backend]
                 cell_text = "Yes" if supported else "No"
