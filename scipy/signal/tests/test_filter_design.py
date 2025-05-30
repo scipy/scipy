@@ -399,7 +399,7 @@ class TestZpk2Sos:
     def test_dtypes(self, dt, pairing, analog, xp):
         dtype = getattr(xp, dt)
         # the poles have to be complex
-        cdtype = (xp.empty(1, dtype=dtype) + 1j*xp.empty(1, dtype=dtype)).dtype
+        cdtype = (1j*xp.empty(0, dtype=dtype)).dtype
 
         z = xp.asarray([-1, -1], dtype=dtype)
         p = xp.asarray([0.57149 + 0.29360j, 0.57149 - 0.29360j], dtype=cdtype)
