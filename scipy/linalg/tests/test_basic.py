@@ -984,6 +984,9 @@ class TestSolve:
             assert_equal(A, A_copy)
             assert_equal(b, b_copy)
 
+    @pytest.mark.skipif(
+        np.__version__ < '2', reason="solve chokes on b.ndim == 1 in numpy < 2"
+    )
     @pytest.mark.parametrize(
         "assume_a",
         [
@@ -1017,13 +1020,13 @@ class TestSolve:
         a = a[:, ::-1, :, :]
         b = np.ones(2)
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
         # use b with a negative stride now
         b = np.ones((2, 4))[:, ::-1]
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
         assert_allclose(a @ x - b, 0, atol=1e-14)
 
     @parametrize_overwrite_arg
@@ -1033,13 +1036,13 @@ class TestSolve:
         b = np.ones(2)
         x = solve(a, b, **overwrite_kw)
 
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
         # use b with a negative stride now
         b = np.ones((2, 4))[::-1, :]
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
         assert_allclose(a @ x - b, 0, atol=1e-14)
 
     @parametrize_overwrite_arg
@@ -1048,13 +1051,13 @@ class TestSolve:
         a = a[..., ::2]
         b = np.ones(2)
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
         # use strided b now
         b = np.ones(4)[::2]
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
     @parametrize_overwrite_arg
@@ -1063,13 +1066,13 @@ class TestSolve:
         a = a[:, ::2, ...]
         b = np.ones(2)
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
         # use strided b now
         b = np.ones((2, 6))[:, ::2]
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1] + (b.shape[-1],)
         assert_allclose(a @ x - b, 0, atol=1e-14)
 
     @parametrize_overwrite_arg
@@ -1079,7 +1082,7 @@ class TestSolve:
 
         b = np.ones(2)
         x = solve(a, b, **overwrite_kw)
-        assert x.shape == np.linalg.solve(a, b).shape
+        assert x.shape == a.shape[:-1]
         assert_allclose(a @ x[..., None] - b, 0, atol=1e-14)
 
     def test_posdef_not_posdef(self):
