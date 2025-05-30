@@ -176,11 +176,11 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         //  Mark the select array for possible reordering
 
         numcnv = 0;
-        for (j = 0; j < V->ncv; j++)
+        for (j = 1; j <= V->ncv; j++)
         {
             temp1 = fmax(eps23, hypot(workl[irr + V->ncv - j], workl[iri + V->ncv - j]));
 
-            jj = (int)workl[bounds + V->ncv - j - 1];
+            jj = (int)workl[bounds + V->ncv - j];
 
             if ((numcnv < V->nconv) && (workl[ibd + jj] <= V->tol*temp1))
             {
