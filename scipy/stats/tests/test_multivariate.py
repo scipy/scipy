@@ -1,5 +1,5 @@
 """
-Test functions for multivariate normal distributions.
+Test functions for multivariate normal, t, and related distributions.
 
 """
 import pickle
@@ -27,7 +27,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
                          random_table, uniform_direction, vonmises_fisher,
-                         dirichlet_multinomial, vonmises)
+                         dirichlet_multinomial, vonmises, matrix_t)
 
 from scipy.stats import _covariance, Covariance
 from scipy.stats._continuous_distns import _norm_pdf as norm_pdf
@@ -431,15 +431,15 @@ class MVNProblem:
 class SingularMVNProblem:
     """Instantiate a multivariate normal integration problem with a special singular
     covariance structure.
-    
+
     When covariance matrix is a correlation matrix where the off-diagonal entries
     ``covar[i, j] == -lambdas[i]*lambdas[j]`` for ``i != j``, and
     ``sum(lambdas**2 / (1+lambdas**2)) == 1``, then the matrix is singular, and
-    the multidimensional integral reduces to a simpler univariate integral that 
+    the multidimensional integral reduces to a simpler univariate integral that
     can be numerically integrated fairly easily.
-    
+
     The lower bound must be infinite, though the upper bounds can be general.
-    
+
     References
     ----------
     .. [1] Kwong, K.-S. (1995). "Evaluation of the one-sided percentage points of the
@@ -453,7 +453,7 @@ class SingularMVNProblem:
     covar : np.ndarray
     target_val : float
     target_err : float
-    
+
     def __init__(self, ndim, high, lambdas):
         self.ndim = ndim
         self.high = high
@@ -479,7 +479,7 @@ class SingularMVNProblem:
             lambdas=lambdas,
         )
         return self
-    
+
     def find_target(self, **kwds):
         d = dict(
             a=-9.0,
@@ -505,7 +505,7 @@ class SingularMVNProblem:
     def univariate_func(self, t):
         t = np.atleast_1d(t)
         return (norm_pdf(t) * self._univariate_term(t)).squeeze()
-    
+
     def plot_integrand(self):
         """Plot the univariate integrand and its component terms for understanding.
         """
@@ -1089,7 +1089,7 @@ class TestMultivariateNormal:
     @pytest.mark.parametrize("ndim", range(4, 11))
     @pytest.mark.parametrize("seed", [0xdeadbeef, 0xdd24528764c9773579731c6b022b48e4])
     def test_cdf_vs_univariate_singular(self, seed, ndim):
-        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds. 
+        # NB: ndim = 2, 3 has much poorer accuracy than ndim > 3 for many seeds.
         # No idea why.
         rng = np.random.default_rng(seed)
         case = SingularMVNProblem.generate_semiinfinite(ndim=ndim, rng=rng)
@@ -1427,6 +1427,315 @@ class TestMatrixNormal:
               [2.59428444080606, 5.79987854490876]]]
         )
         assert_allclose(actual, expected)
+
+
+class TestMatrixT:
+
+    def test_bad_input(self):
+        # Check that bad inputs raise errors
+        num_rows = 4
+        num_cols = 3
+        df = 5
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+
+        # Nonpositive degrees of freedom
+        assert_raises(ValueError, matrix_t, 0, 1, 1, 0)
+        assert_raises(ValueError, matrix_t, 0, 1, 1, -1)
+
+        # Incorrect dimensions
+        assert_raises(ValueError, matrix_t, np.zeros((5,4,3)), df)
+        assert_raises(ValueError, matrix_t, np.zeros((4,3,0)), df)
+        assert_raises(ValueError, matrix_t, M, np.zeros(10), V, df)
+        assert_raises(ValueError, matrix_t, M, U, np.zeros(10), df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,4,3)), V, df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,3)), V, df)
+        assert_raises(ValueError, matrix_t, M, np.ones((4,4,0)), V, df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,4)), df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,4)), df)
+        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,0)), df)
+        assert_raises(ValueError, matrix_t, M, U, U, df)
+        assert_raises(ValueError, matrix_t, M, V, V, df)
+        assert_raises(ValueError, matrix_t, M.T, U, V, df)
+
+        e = np.linalg.LinAlgError
+        # Singular covariance for the rvs method of a non-frozen instance
+        assert_raises(e, matrix_t.rvs, M, U, np.ones((num_cols, num_cols)), df)
+        assert_raises(e, matrix_t.rvs, M, np.ones((num_rows, num_rows)), V, df)
+        # Singular covariance for a frozen instance
+        assert_raises(e, matrix_t, M, U, np.ones((num_cols, num_cols)), df)
+        assert_raises(e, matrix_t, M, np.ones((num_rows, num_rows)), V, df)
+
+    def test_default_inputs(self):
+        # Check that default argument handling works
+        num_rows = 4
+        num_cols = 3
+        df = 5
+        M = np.full((num_rows, num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        Z = np.zeros((num_rows, num_cols))
+        Zr = np.zeros((num_rows, 1))
+        Zc = np.zeros((1, num_cols))
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+        I1 = np.identity(1)
+        dfdefault = 1
+
+        assert_equal(matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(mean=M).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(rowcov=U).shape,
+                     (num_rows, 1))
+        assert_equal(matrix_t.rvs(colcov=V).shape,
+                     (1, num_cols))
+        assert_equal(matrix_t.rvs(mean=M, colcov=V).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(mean=M, rowcov=U).shape,
+                     (num_rows, num_cols))
+        assert_equal(matrix_t.rvs(rowcov=U, colcov=V).shape,
+                     (num_rows, num_cols))
+
+        assert_equal(matrix_t().df, dfdefault)
+        assert_equal(matrix_t(mean=M).rowcov, Ir)
+        assert_equal(matrix_t(mean=M).colcov, Ic)
+        assert_equal(matrix_t(rowcov=U).mean, Zr)
+        assert_equal(matrix_t(rowcov=U).colcov, I1)
+        assert_equal(matrix_t(colcov=V).mean, Zc)
+        assert_equal(matrix_t(colcov=V).rowcov, I1)
+        assert_equal(matrix_t(mean=M, rowcov=U).colcov, Ic)
+        assert_equal(matrix_t(mean=M, colcov=V).rowcov, Ir)
+        assert_equal(matrix_t(rowcov=U, colcov=V,df=df).mean, Z)
+
+    def test_covariance_expansion(self):
+        # Check that covariance can be specified with scalar or vector
+        num_rows = 4
+        num_cols = 3
+        df = 1
+        M = np.full((num_rows, num_cols), 0.3)
+        Uv = np.full(num_rows, 0.2)
+        Us = 0.2
+        Vv = np.full(num_cols, 0.1)
+        Vs = 0.1
+
+        Ir = np.identity(num_rows)
+        Ic = np.identity(num_cols)
+
+        assert_equal(matrix_t(mean=M, rowcov=Uv, colcov=Vv, df=df).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_t(mean=M, rowcov=Uv, colcov=Vv, df=df).colcov,
+                     0.1*Ic)
+        assert_equal(matrix_t(mean=M, rowcov=Us, colcov=Vs, df=df).rowcov,
+                     0.2*Ir)
+        assert_equal(matrix_t(mean=M, rowcov=Us, colcov=Vs, df=df).colcov,
+                     0.1*Ic)
+
+    def test_frozen_matrix_t(self):
+        for i in range(1,5):
+            for j in range(1,5):
+                M = np.full((i,j), 0.3)
+                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
+                df = i + j
+
+                frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+
+                rvs1 = frozen.rvs(random_state=1234)
+                rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df,
+                                         random_state=1234)
+                assert_equal(rvs1, rvs2)
+
+                X = frozen.rvs(random_state=1234)
+
+                pdf1 = frozen.pdf(X)
+                pdf2 = matrix_t.pdf(X, mean=M, rowcov=U, colcov=V, df=df)
+                assert_equal(pdf1, pdf2)
+
+                logpdf1 = frozen.logpdf(X)
+                logpdf2 = matrix_t.logpdf(X, mean=M, rowcov=U, colcov=V, df=df)
+                assert_equal(logpdf1, logpdf2)
+
+                entropy1 = frozen.entropy()
+                entropy2 = matrix_t.entropy(rowcov=U, colcov=V, df=df)
+                assert_equal(entropy1, entropy2)
+
+    def test_array_input(self):
+        # Check array of inputs has the same output as the separate entries.
+        num_rows = 4
+        num_cols = 3
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        df = 1
+        N = 10
+
+        frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+        X1 = frozen.rvs(size=N, random_state=1234)
+        X2 = frozen.rvs(size=N, random_state=4321)
+        X = np.concatenate((X1[np.newaxis,:,:,:],X2[np.newaxis,:,:,:]), axis=0)
+        assert_equal(X.shape, (2, N, num_rows, num_cols))
+
+        array_logpdf = frozen.logpdf(X)
+        logpdf_shape = array_logpdf.shape
+        assert_equal(logpdf_shape, (2, N))
+        for i in range(2):
+            for j in range(N):
+                separate_logpdf = matrix_t.logpdf(X[i,j], mean=M,
+                                                       rowcov=U, colcov=V,
+                                                       df=df)
+                assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
+
+    @staticmethod
+    def relative_error(vec1: np.ndarray, vec2: np.ndarray):
+        numerator = np.linalg.norm(vec1 - vec2) ** 2
+        denominator = np.linalg.norm(vec1) ** 2 + np.linalg.norm(vec2) ** 2
+        return 2 * numerator / denominator
+
+    @staticmethod
+    def matrix_divergence(mat_true: np.ndarray,
+                            mat_est: np.ndarray) -> float:
+        det_true = np.linalg.det(mat_true)
+        det_est = np.linalg.det(mat_est)
+        if (det_true <= 0) or (det_est <= 0):
+            return np.inf
+        trace_term = np.trace(np.linalg.inv(mat_est) @ mat_true)
+        log_detratio = np.log(det_est / det_true)
+        return (trace_term + log_detratio - len(mat_true)) / 2
+
+    @staticmethod
+    def vec(a_mat: np.ndarray) -> np.ndarray:
+        """
+        For an (m,n) array `a_mat` the output `vec(a_mat)` is an (m*n, 1)
+        array formed by stacking the columns of `a_mat` in the order in
+        which they occur in `a_mat`.
+        """
+        assert a_mat.ndim == 2
+        return a_mat.T.reshape((a_mat.size,))
+
+    def test_moments(self):
+
+        df = 5
+        num_rows = 4
+        num_cols = 3
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        N = 10**4
+        atol = 1e-1
+
+        frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+        X = frozen.rvs(size=N, random_state=42)
+
+        relerr = self.relative_error(M, X.mean(axis=0))
+        assert_close(relerr, 0, atol=atol)
+
+        # Gupta and Nagar (2000) Theorem 4.3.1 (p.135)
+        # --------------------------------------------
+        # The covariance of the vectorized matrix variate t-distribution equals
+        #     $$ ( V \otimes U ) / ( \text{df} - 2 ) $$
+        # where $\otimes$ denotes the usual Kronecker product.
+        cov_vec_true = np.kron(V, U) / (df - 2)
+        cov_vec_rvs = np.cov(np.array([self.vec(x) for x in X]), rowvar=False)
+        kl = self.matrix_divergence(cov_vec_true, cov_vec_rvs)
+        assert_close(kl, 0, atol=atol)
+
+    def test_pdf_against_mathematica(self):
+        # Test values generated from Mathematica 13.0.0 for Linux x86 (64-bit)
+        # Release ID 13.0.0.0 (7522564, 2021120311723), Patch Level 0
+        #
+        # mu={{1,2,3},{4,5,6}};
+        # sigma={{1,0.5},{0.5,1}};
+        # omega={{1,0.3,0.2},{0.3,1,0.4},{0.2,0.4,1}};
+        # df=5;
+        # sampleSize=10;
+        # SeedRandom[42];
+        # dist=MatrixTDistribution[mu,sigma,omega,alpha];
+        # samples=RandomVariate[dist,sampleSize];
+        # pdfs=PDF[dist,#]&/@samples;
+
+        df = 5
+        M = np.array([[1, 2, 3], [4, 5, 6]])
+        U = np.array([[1, 0.5], [0.5, 1]])
+        V = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+
+        atol = 1e-10
+
+        samples_m = np.array(
+            [[[0.6399716994253741, 2.171718671534955, 2.5758260933527706],
+              [4.031082477912233, 5.0216809585266375, 6.268126154787008]],
+             [[1.1648428842062322, 2.5262970999930445, 3.7813752298650685],
+              [3.9129791149568334, 4.202714884504189, 5.661830748993523]],
+             [[1.00461853907369, 2.080028751298565, 3.4064894856024104],
+              [3.993327716320432, 5.655909265966448, 6.578059791357837]],
+             [[0.8062520950137404, 2.5290095606749072, 2.8075133133021892],
+              [3.722896768794995, 5.26987322525995, 5.801155613199776]],
+             [[0.44581620865781746, 3.224059910964103, 2.9549909805414227],
+              [3.451520519442941, 7.064424621385415, 5.438834195890955]],
+             [[0.9192327696366637, 2.374572300756703, 3.495118928313048],
+              [3.9244472379032365, 5.627654256287447, 5.806104608153957]],
+             [[2.0142420040901134, 1.3770181277098705, 3.1140643114686863],
+              [3.88881648137925, 4.603482820518904, 5.714205489738063]],
+             [[1.322000147426889, 2.602135838377777, 2.558921028724319],
+              [4.50534702030683, 5.861137323151889, 5.1818725483348524]],
+             [[1.448743656862261, 2.0538475576522415, 3.6373215432417694],
+              [4.097711403906707, 4.506916241403669, 5.68010653497977]],
+             [[1.0451873189951977, 1.6454671896797293, 3.2843962145445067],
+              [3.648493466445393, 5.004212508553601, 6.301624351328048]]]
+        )
+
+        pdfs_m = np.array(
+            [0.08567193713182396,
+             0.004821273644067376,
+             0.10597803402975409,
+             0.1742504488082082,
+             3.945711836053583e-05,
+             0.027158790350347867,
+             0.0029909512030897095,
+             0.0055945460180775505,
+             0.025788366971310307,
+             0.12021073359884471]
+        )
+
+        pdfs_py = matrix_t.pdf(
+            samples_m, mean=M, rowcov=U, colcov=V, df=df
+        )
+
+        assert_allclose(pdfs_m, pdfs_py, atol=atol)
+
+    def test_samples(self):
+        df = 5
+        num_rows = 4
+        num_cols = 3
+        M = np.full((num_rows,num_cols), 0.3)
+        U = 0.5 * np.identity(num_rows) + np.full((num_rows, num_rows), 0.5)
+        V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
+        N = 10**4
+        atol = 1e-1
+
+        # `rvs` performs Cholesky-inverse-Wishart sampling on the smaller
+        # dimension of `mean`
+
+        frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+        X = frozen.rvs(size=N, random_state=42)  # column-wise rvs
+        m = X.mean(0)
+
+        frozenT = matrix_t(mean=M.T, rowcov=V, colcov=U, df=df)
+        XT = frozenT.rvs(size=N, random_state=42)  # row-wise rvs
+        mT = XT.mean(0)
+
+        # Gupta and Nagar (2000) Theorem 4.3.3 (p.137)
+        # --------------------------------------------
+        # If T follows a matrix variate t-distribution with mean M and rowcov U
+        # and colcov V and df degrees of freedom, then its transpose T.T follows
+        # a matrix variate t-distribution with mean M.T and rowcov V and
+        # colcov U and df degrees of freedom.
+
+        assert_allclose(M, m, atol=atol)
+        assert_allclose(M.T, mT, atol=atol)
+        assert_allclose(m, mT.T, atol=atol)
+        assert_allclose(m.T, mT, atol=atol)
 
 
 class TestDirichlet:
