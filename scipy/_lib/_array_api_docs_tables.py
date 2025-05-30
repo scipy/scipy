@@ -10,8 +10,6 @@ import types
 from collections import defaultdict
 from importlib import import_module
 
-import scipy.stats as stats
-
 from scipy._lib._array_api import xp_capabilities_table
 from scipy._lib._array_api import _make_sphinx_capabilities
 
@@ -137,6 +135,8 @@ def make_flat_capabilities_table(
 
     output = []
 
+    from scipy.stats._distn_infrastructure import rv_generic
+
     for module_name in modules:
         module = import_module(module_name)
         public_things = module.__all__
@@ -156,7 +156,7 @@ def make_flat_capabilities_table(
                 # Skip classes for now, but we may want to handle these in some
                 # way later, so giving them their own branch.
                 continue
-            if isinstance(thing, stats._distn_infrastructure.rv_generic):
+            if isinstance(thing, rv_generic):
                 # Skip distributions from the old insfrastrucutre.
                 continue
             if callable(thing):
@@ -169,9 +169,7 @@ def make_flat_capabilities_table(
                 row.update(capabilities)
                 output.append(row)
             else:
-                # Skip anything else which isn't callable and also unnamed
-                # callables. The only unnamed callables are distributions
-                # from stats.distributions.
+                # Skip anything else which isn't a callable.
                 continue
     return output
 
