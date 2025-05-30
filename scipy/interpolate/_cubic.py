@@ -535,16 +535,29 @@ class Akima1DInterpolator(CubicHermiteSpline):
                 pm = np.abs(m[1:] + m[:-1])
                 f1 = dm[2:] + 0.5 * pm[2:]
                 f2 = dm[:-2] + 0.5 * pm[:-2]
+                # makima is more numerically stable for small f12,
+                # so a finite cutoff should not improve any behavior
+                break_mult = 0.0
             else:
                 f1 = dm[2:]
                 f2 = dm[:-2]
+                # akima has a qualitative discontinuity near f12=0
+                # a finite cutoff moves it, but cannot remove it.
+                break_mult = 1.e-9
             f12 = f1 + f2
+
+            # mask to handle m2=m3 case exactly
+            ind = np.nonzero(dm[1:-1] == 0.)
+            x_ind, y_ind = ind[0], ind[1:]
+            t[ind] = m[(x_ind + 1,) + y_ind]
+
             # These are the mask of where the slope at breakpoint is defined:
-            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            ind = np.nonzero((dm[1:-1] != 0.) & (f12 > break_mult * dm[1:-1]))
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
-            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            t[ind] = m[(x_ind + 1,) + y_ind] + (
+                    (f2[ind] / f12[ind]) * (
+                        m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind]))
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
