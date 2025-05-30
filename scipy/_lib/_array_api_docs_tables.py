@@ -135,8 +135,6 @@ def make_flat_capabilities_table(
 
     output = []
 
-    from scipy.stats._distn_infrastructure import rv_generic
-
     for module_name in modules:
         module = import_module(module_name)
         public_things = module.__all__
@@ -156,10 +154,7 @@ def make_flat_capabilities_table(
                 # Skip classes for now, but we may want to handle these in some
                 # way later, so giving them their own branch.
                 continue
-            if isinstance(thing, rv_generic):
-                # Skip distributions from the old insfrastrucutre.
-                continue
-            if callable(thing):
+            if callable(thing) and hasattr(thing, "__name__"):
                 entry = xp_capabilities_table.get(thing, None)
                 capabilities = _process_capabilities_table_entry(entry)
                 # If a list of multiple modules is passed in, add the module
@@ -169,7 +164,9 @@ def make_flat_capabilities_table(
                 row.update(capabilities)
                 output.append(row)
             else:
-                # Skip anything else which isn't a callable.
+                # Skip anything else which isn't a callable. Also skip unnamed
+                # callables. Currently the only unnamed callables are distributions
+                # from the old distribution infrastructure.
                 continue
     return output
 
