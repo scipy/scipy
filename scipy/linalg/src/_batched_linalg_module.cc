@@ -28,10 +28,10 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Check for dtype compatibility & array flags
     int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT)
-                     || (typenum == NPY_DOUBLE)
-                     || (typenum == NPY_CFLOAT)
-                     || (typenum == NPY_CDOUBLE);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
     if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
         PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
         return NULL;
@@ -62,17 +62,17 @@ _linalg_inv(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     void *buf = PyArray_DATA(ap_Ainv);
     switch(typenum) {
-        case(NPY_FLOAT):
+        case(NPY_FLOAT32):
             _inverse<float>(ap_Am, (float *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_DOUBLE):
+        case(NPY_FLOAT64):
             _inverse<double>(ap_Am, (double *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_CFLOAT):
-            _inverse<npy_cfloat>(ap_Am, (npy_cfloat *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+        case(NPY_COMPLEX64):
+            _inverse<npy_complex64>(ap_Am, (npy_complex64 *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_CDOUBLE):
-            _inverse<npy_cdouble>(ap_Am, (npy_cdouble *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
+        case(NPY_COMPLEX128):
+            _inverse<npy_complex128>(ap_Am, (npy_complex128 *)buf, structure, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
