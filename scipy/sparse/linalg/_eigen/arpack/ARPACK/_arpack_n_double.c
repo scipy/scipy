@@ -1,5 +1,5 @@
 #include "_arpack_n_double.h"
-#include <stdio.h>
+
 typedef int ARPACK_compare_cfunc(const double, const double, const double, const double);
 
 static int sortc_LM(const double, const double, const double, const double);
@@ -170,29 +170,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         //  accordingly.
 
         np = V->ncv - V->nev;
-        printf("DNEUPD: np = %d, V->np = %d\n", np, V->np);
-        printf("DNEUPD: ritzr and ritzi before dngets\n");
-        for (int ccc = 0; ccc < V->ncv; ccc++)
-        {
-            printf("DNEUPD: ritz[%d] = %12.4e %12.4e \n", ccc, workl[irr + ccc], workl[iri + ccc]);
-        }
-        printf("DNEUPD: bounds before dngets\n");
-        for (int ccc = 0; ccc < V->ncv; ccc++)
-        {
-            printf("DNEUPD: bounds[%d] = %12.4e \n", ccc, workl[bounds + ccc]);
-        }
         dngets(V, &V->nev, &np, &workl[irr], &workl[iri], &workl[bounds]);
-
-        printf("DNEUPD: bounds after dngets\n");
-        for (int ccc = 0; ccc < V->ncv; ccc++)
-        {
-            printf("DNEUPD: bounds[%d] = %12.4e \n", ccc, workl[bounds + ccc]);
-        }
-        printf("DNEUPD: ritzr and ritzi after dngets\n");
-        for (int ccc = 0; ccc < V->ncv; ccc++)
-        {
-            printf("DNEUPD: ritz[%d] = %12.4e %12.4e \n", ccc, workl[irr + ccc], workl[iri + ccc]);
-        }
 
         //  Record indices of the converged wanted Ritz values
         //  Mark the select array for possible reordering
@@ -314,7 +292,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
             //  Compute the NCONV wanted eigenvectors of T
             //  located in workl(iuptri,ldq).
-            printf("DNEUPD: After 20, nconv, ncv %d, %d\n", V->nconv, V->ncv);
+
             for (j = 0; j < V->ncv; j++)
             {
                 if (j < V->nconv)
@@ -375,7 +353,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
             // 40
 
             dgemv_("T", &V->ncv, &V->nconv, &dbl1, &workl[invsub], &ldq, &workl[ihbds], &int1, &dbl0, workev, &int1);
-            printf("DNEUPD: After 40, below dgemv\n");
+
             iconj = 0;
             for (j = 0; j < V->nconv; j++)
             {
@@ -651,10 +629,8 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0;
 
-    printf("DNAUP2: Entered dnaup2 ido = %d\n", V->ido);
     if (V->ido == ido_FIRST)
     {
-        printf("DNAUP2: ido = ido_FIRST\n");
         V->aup2_nev0 = V->nev;
         V->aup2_np0 = V->np;
 
@@ -687,8 +663,6 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
         } else {
             V->aup2_initv = 0;
         }
-        printf("DNAUP2: ido first variables set\n");
-        printf("DNAUP2: kplusp = %d, nev = %d, np = %d\n", V->aup2_kplusp, V->nev, V->np);
     }
 
     //  Get a possibly random starting vector and
@@ -697,9 +671,8 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     if (V->aup2_getv0)
     {
         V->getv0_itry = 1;
-        printf("DNAUP2: Going into dgetv0 because aup2_getv0 is True\n");
         dgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
-        if (V->ido != ido_DONE) { printf("DNAUP2: exit ido = %d, kplusp = %d, nev = %d\n", V->ido, V->aup2_kplusp, V->nev);return; }
+        if (V->ido != ido_DONE) { return; }
         if (V->aup2_rnorm == 0.0)
         {
             V->info = -9;
@@ -725,12 +698,13 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
     if (V->aup2_cnorm) { goto LINE100; }
 
     //  Compute the first NEV steps of the Arnoldi factorization
-    printf("DNAUP2: Did not jump anywhere, first call to dnaitr\n");
+
     dnaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
-    printf("DNAUP2: returned from dnaitr\n");
+
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
-    if (V->ido != ido_DONE) { printf("DNAUP2: exit ido = %d, kplusp = %d, nev = %d\n", V->ido, V->aup2_kplusp, V->nev);return; }
+
+    if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0)
     {
@@ -749,7 +723,7 @@ dnaup2(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
 
 LINE1000:
     V->aup2_iter += 1;
-    printf("Entered dnaup2 main loop iter = %d\n", V->aup2_iter);
+
     //  Compute NP additional steps of the Arnoldi factorization.
     //  Adjust NP since NEV might have been updated by last call
     //  to the shift application routine dnapps .
@@ -759,7 +733,7 @@ LINE1000:
     //  Compute NP additional steps of the Arnoldi factorization.
 
     V->ido = ido_FIRST;
-    printf("DNAUP2: Top of the iteration np set to %d\n", V->np);
+
 LINE20:
     V->aup2_update = 1;
 
@@ -768,7 +742,7 @@ LINE20:
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
 
-    if (V->ido != ido_DONE) { printf("DNAUP2: exit ido = %d, kplusp = %d, nev = %d\n", V->ido, V->aup2_kplusp, V->nev);return; }
+    if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0) {
         V->np = V->info;
@@ -783,13 +757,6 @@ LINE20:
     //  of the current upper Hessenberg matrix.
 
     dneigh(&V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritzr, ritzi, bounds, q, ldq, workl, &V->info);
-
-    // Print ritzr and ritzi for debugging
-    printf("DNAUP2: ritzr ritzi: \n");
-    for (j = 0; j < V->aup2_kplusp; j++)
-    {
-        printf("%12.4e %12.4e\n", ritzr[j], ritzi[j]);
-    }
 
     if (V->info != 0)
     {
@@ -825,13 +792,13 @@ LINE20:
 
     dngets(V, &V->nev, &V->np, ritzr, ritzi, bounds);
 
-    if (V->nev == V->aup2_nev0 + 1) { printf("HERERERERERERE\n");V->aup2_numcnv = V->aup2_nev0 + 1;}
+    if (V->nev == V->aup2_nev0 + 1) { V->aup2_numcnv = V->aup2_nev0 + 1;}
 
     //  Convergence test.
-    printf("DNAUP2: Convergence test done V->nconv = %d\n", V->nconv);
+
     dcopy_(&V->nev, &bounds[V->np], &int1, &workl[2*V->np], &int1);
     dnconv(V->nev, &ritzr[V->np], &ritzi[V->np], &workl[2*V->np], V->tol, &V->nconv);
-    printf("DNAUP2: Convergence test done, nconv = %d\n", V->nconv);
+
     //  Count the number of unwanted Ritz values that have zero
     //  Ritz estimates. If any Ritz estimates are equal to zero
     //  then a leading block of H of order equal to at least
@@ -851,9 +818,8 @@ LINE20:
             V->nev += 1;
         }
     }
-    printf("DNAUP2: After 30, np = %d, nev = %d\n", V->np, V->nev);
     // 30
-    printf("DNAUP2: After 30, checking exit conditions\n");
+
     if ((V->nconv >= V->aup2_numcnv) || (V->aup2_iter > V->maxiter) || (V->np == 0))
     {
 
@@ -882,7 +848,7 @@ LINE20:
         if (V->which == which_SR) { temp_which = which_LM; }
         if (V->which == which_LI) { temp_which = which_SM; }
         if (V->which == which_SI) { temp_which = which_LM; }
-        printf("DNAUP2: Before dsortc I\n");
+
         dsortc(temp_which, 1, V->aup2_kplusp, ritzr, ritzi, bounds);
 
         if (V->which == which_LM) { temp_which = which_SM; }
@@ -892,7 +858,6 @@ LINE20:
         if (V->which == which_LI) { temp_which = which_SI; }
         if (V->which == which_SI) { temp_which = which_LI; }
 
-        printf("DNAUP2: Before dsortc II\n");
         dsortc(temp_which, 1, V->aup2_kplusp, ritzr, ritzi, bounds);
 
         //  Scale the Ritz estimate of each Ritz value
@@ -909,7 +874,7 @@ LINE20:
         //  estimates.  This will push all the converged ones
         //  towards the front of ritzr, ritzi, bounds
         //  (in the case when NCONV < NEV.)
-        printf("DNAUP2: Before dsortc III\n");
+
         temp_which = which_LR;
         dsortc(temp_which, 1, V->aup2_numcnv, bounds, ritzr, ritzi);
 
@@ -926,9 +891,9 @@ LINE20:
         //  Sort the converged Ritz values again so that
         //  the "threshold" value appears at the front of
         //  ritzr, ritzi and bound.
-        printf("DNAUP2: Before dsortc IV\n");
+
         dsortc(V->which, 1, V->nconv, ritzr, ritzi, bounds);
-        printf("DNAUP2: After dsortc IV\n");
+
         if ((V->aup2_iter > V->maxiter) && (V->nconv < V->aup2_numcnv))
         {
 
@@ -956,7 +921,7 @@ LINE20:
         //  Do not have all the requested eigenvalues yet.
         //  To prevent possible stagnation, adjust the size
         //  of NEV.
-        printf("DNAUP2: Inside second exit condition\n");
+
         int nevbef = V->nev;
         V->nev += (V->nconv > (V->np / 2) ? (V->np / 2) : V->nconv);
         if ((V->nev == 1) && (V->aup2_kplusp >= 6)) {
@@ -982,7 +947,7 @@ LINE20:
         }
 
     }
-    printf("DNAUP2: After exit conditions\n");
+
     if (V->shift == 0)
     {
 
@@ -1000,7 +965,7 @@ LINE50:
     //  Back from reverse communication;
     //  User specified shifts are returned
     //  in WORKL(1:2*NP)
-    printf("DNAUP2: AT 50\n");
+
     V->aup2_ushift = 0;
 
     if (V->shift == 0)
@@ -1018,7 +983,7 @@ LINE50:
     //  Each shift is applied to the whole upper Hessenberg
     //  matrix H.
     //  The first 2*N locations of WORKD are used as workspace.
-    printf("DNAUP2: Before dnapps\n");
+
     dnapps(V->n, &V->nev, V->np, ritzr, ritzi, v, ldv, h, ldh, resid, q, ldq, workl, workd);
 
     //  Compute the B-norm of the updated residual.
@@ -1215,7 +1180,7 @@ dnaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, double* resid, dou
     {
 
         //  Initial call to this routine
-        printf("DNAITR: ido = ido_FIRST, j = %d\n", V->aitr_j);
+
         V->aitr_j = k;
         V->info = 0;
         V->aitr_step3 = 0;
@@ -1239,7 +1204,7 @@ dnaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, double* resid, dou
     if (V->aitr_orth1) { goto LINE70; }
     if (V->aitr_orth2) { goto LINE90; }
     if (V->aitr_restart) { goto LINE30; }
-    printf("DNAITR: Did not jump ido = %d, j = %d\n", V->ido, V->aitr_j);
+
     //  Else this is the first step
 
     //
@@ -1254,7 +1219,7 @@ LINE1000:
     //  an exact j-step Arnoldi factorization is present.
 
     V->aitr_betaj = *rnorm;
-    printf("DNAITR: Top of iteration rnorm = %e\n", *rnorm);
+
     if (*rnorm > 0.0) { goto LINE40; }
 
     //  Invariant subspace found, generate a new starting
@@ -1263,26 +1228,22 @@ LINE1000:
 
     V->aitr_betaj = 0.0;
     V->getv0_itry = 1;
-    printf("DNAITR: rnorm is zero beta =0.0, getv0_itry = 1\n");
 
 LINE20:
     V->aitr_restart = 1;
     V->ido = ido_FIRST;
-    printf("DNAITR: at 20, restart=1, ido=0\n");
+
 LINE30:
-    printf("DNAITR: at 30, entering dgetv0\n");
 
     // If in reverse communication mode and aitr_restart = 1, flow returns here.
 
     dgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
-    printf("DNAITR: back from dgetv0 ido = %d\n", V->ido);
 
-    if (V->ido != ido_DONE) { printf("DNAITR: exiting from DNAITR\n");return; }
+    if (V->ido != ido_DONE) { return; }
     V->aitr_ierr = V->info;
     if (V->aitr_ierr < 0)
     {
         V->getv0_itry += 1;
-        printf("DNAITR: Incremented itry = %d, ierr = %d\n", V->getv0_itry, V->aitr_ierr);
         if (V->getv0_itry <= 3) { goto LINE20; }
 
         //  Give up after several restart attempts.
@@ -1300,7 +1261,7 @@ LINE40:
     //  Note that p_{j} = B*r_{j-1}. In order to avoid overflow
     //  when reciprocating a small RNORM, test against lower
     //  machine bound.
-    printf("DNAITR: At 40\n");
+
     dcopy_(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
@@ -1321,7 +1282,7 @@ LINE40:
     ipntr[1] = irj;
     ipntr[2] = ipj;
     V->ido = ido_OPX;
-    printf("DNAITR: exiting from 40 with ido = ido_OPX\n");
+
     //  Exit in order to compute OP*v_{j}
 
     return;
@@ -1331,7 +1292,7 @@ LINE50:
     //  Back from reverse communication;
     //  WORKD(IRJ:IRJ+N-1) := OP*v_{j}
     //  if step3 = .true.
-    printf("DNAITR: At 50\n");
+
     V->aitr_step3 = 0;
 
     //  Put another copy of OP*v_{j} into RESID.
@@ -1360,7 +1321,7 @@ LINE60:
     //  Back from reverse communication;
     //  WORKD(IPJ:IPJ+N-1) := B*OP*v_{j}
     //  if step4 = .true.
-    printf("DNAITR: At 60\n");
+
     V->aitr_step4 = 0;
 
     //  The following is needed for STEP 5.
@@ -1372,7 +1333,6 @@ LINE60:
         V->aitr_wnorm = sqrt(fabs(V->aitr_wnorm));
     } else {
         V->aitr_wnorm = dnrm2_(&n, resid, &int1);
-        printf("DNAITR: 60 computing wnorm = %12.4e\n", V->aitr_wnorm);
     }
 
     //  Compute the j-th residual corresponding
@@ -1384,16 +1344,15 @@ LINE60:
     //  Compute the j Fourier coefficients w_{j}
     //  WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.
     tmp_int = V->aitr_j + 1;
-    printf("DNAITR: DGEMV arguments: n, j, ldv, ldh = %d %d %d %d\n", n, tmp_int, ldv, ldh);
     dgemv_("T", &n, &tmp_int, &dbl1, v, &ldv, &workd[ipj], &int1, &dbl0, &h[ldh*(V->aitr_j)], &int1);
 
     //  Orthogonalize r_{j} against V_{j}.
     //  RESID contains OP*v_{j}. See STEP 3.
-    printf("DNAITR: Next DGEMV arguments: n, j, ldv, ldh = %d %d %d %d\n", n, tmp_int, ldv, ldh);
+
     dgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &h[ldh*(V->aitr_j)], &int1, &dbl1, resid, &int1);
 
     if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = V->aitr_betaj; }
-    printf("DNAITR: After dgemv h(j,j-1) = %12.4e\n", h[V->aitr_j + ldh*(V->aitr_j-1)]);
+
     V->aitr_orth1 = 1;
     if (V->bmat)
     {
@@ -1413,7 +1372,7 @@ LINE70:
 
     //  Back from reverse communication if ORTH1 = .true.
     //  WORKD(IPJ:IPJ+N-1) := B*r_{j}.
-    printf("DNAITR: At 70\n");
+
     V->aitr_orth1 = 0;
 
     //  Compute the B-norm of r_{j}.
@@ -1424,7 +1383,6 @@ LINE70:
         *rnorm = sqrt(fabs(*rnorm));
     } else {
         *rnorm = dnrm2_(&n, resid, &int1);
-        printf("DNAITR: computing rnorm = %12.4e\n", *rnorm);
     }
 
     //  STEP 5: Re-orthogonalization / Iterative refinement phase
@@ -1443,7 +1401,7 @@ LINE70:
     //  angle between  OP*x and the computed residual is less
     //  than or equal to 0.7071.
 
-    if (*rnorm > sq2o2*V->aitr_wnorm) { printf("DNAITR: *rnorm > 0.707*wnorm going to 100\n");goto LINE100; }
+    if (*rnorm > sq2o2*V->aitr_wnorm) { goto LINE100; }
     V->aitr_iter = 0;
 
     //  Enter the Iterative refinement phase. If further
@@ -1465,16 +1423,7 @@ LINE80:
 
     dgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[irj], &int1, &dbl1, resid, &int1);
     daxpy_(&tmp_int, &dbl1, &workd[irj], &int1, &h[ldh*(V->aitr_j)], &int1);
-//    printf("DNAITR: After daxpy h = \n");
-//    for (int ccc = 0; ccc < tmp_int; ccc++)
-//    {
-//        for (int ddd = 0; ddd < tmp_int; ddd++)
-//        {
-//            printf("%12.4e ", h[ldh*ddd + ccc]);
-//        }
-//        printf("\n");
-//    }
-//    printf("\n");
+
     V->aitr_orth2 = 1;
 
     if (V->bmat)
@@ -1545,20 +1494,19 @@ LINE90:
     // steps of iterative refinement.
 
 LINE100:
-    printf("DNAITR: At 100\n");
+
     V->aitr_restart = 0;
     V->aitr_orth2 = 0;
 
     //  STEP 6: Update  j = j+1;  Continue
 
     V->aitr_j += 1;
-    printf("DNAITR: At 100, incremented j = %d, V-np = %d\n", V->aitr_j, np);
     if (V->aitr_j >= k + np)
     {
         V->ido = ido_DONE;
         for (i = (k > 0 ? k-1 : k); i < k + np - 1; i++)
         {
-            printf("DNAITR: 100 i, k, np = %d %d %d\n", i, k, np);
+
             //  Check for splitting and deflation.
             //  Use a standard test as in the QR algorithm
             //  REFERENCE: LAPACK subroutine dlahqr
@@ -1580,6 +1528,7 @@ LINE100:
     goto LINE1000;
 
 }
+
 
 void
 dnapps(int n, int* kev, int np, double* shiftr, double* shifti, double* v,
@@ -1605,212 +1554,147 @@ dnapps(int n, int* kev, int np, double* shiftr, double* shifti, double* v,
     //  Chase the bulge with the application of each
     //  implicit shift. Each shift is applied to the
     //  whole matrix including each block.
-    printf("DNAPPS: Before jj loop, kplusp = %d\n", kplusp);
+
     cconj = 0;
+
+    // Loop over the shifts
+
     for (jj = 0; jj < np; jj++)
     {
         sigmar = shiftr[jj];
         sigmai = shifti[jj];
 
-        //  The following set of conditionals is necessary
-        //  in order that complex conjugate pairs of shifts
-        //  are applied together or not at all.
-
         if (cconj)
         {
 
-            //  cconj = .true. means the previous shift
-            //  had non-zero imaginary part.
+            // Skip flag is on; turn it off and proceed to the next shift.
 
             cconj = 0;
             continue;
 
-        } else if ((jj < np-1) && fabs(sigmai) > 0.0) {
+        } else if ((jj < np - 1) && fabs(sigmai) != 0.0) {
 
-            //  Start of a complex conjugate pair.
+            // This shift has nonzero imaginary part, so we will apply
+            // together with the next one; turn on the skip flag.
 
             cconj = 1;
 
-        } else if ((jj == np-1) && fabs(sigmai) > 0.0) {
+        } else if ((jj == np - 1) && (fabs(sigmai) != 0.0)) {
 
-            //  The last shift has a nonzero imaginary part.
-            //  Don't apply it; thus the order of the
-            //  compressed H is order KEV+1 since only np-1
-            //  were applied.
+            // We have one block left but the shift has nonzero imaginary part.
+            // Don't apply it and reduce the number of shifts by incrementing
+            // kev by one.
 
             *kev += 1;
             continue;
         }
+
+        // if sigmai = 0 then
+        //    Apply the jj-th shift ...
+        // else
+        //    Apply the jj-th and (jj+1)-th together ...
+        //    (Note that jj < np at this point in the code)
+        // end
+        // to the current block of H
+
         istart = 0;
-
-LINE20:
-
-        //  if sigmai = 0 then
-        //     Apply the jj-th shift ...
-        //  else
-        //     Apply the jj-th and (jj+1)-th together ...
-        //     (Note that jj < np at this point in the code)
-        //  end
-        //  to the current block of H. The next do loop
-        //  determines the current block ;
-
-        for (i = istart; i < kplusp - 1; i++)
+        while (istart < kplusp - 1)
         {
-
-            //  Check for splitting and deflation. Use
-            //  a standard test as in the QR algorithm
-            //  REFERENCE: LAPACK subroutine dlahqr
-
-            tst1 = fabs(h[i + ldh*i]) + fabs(h[i+1 + ldh*(i+1)]);
-            if (tst1 == 0.0)
+            for (iend = istart; iend < kplusp - 1; iend++)
             {
-                // dlanhs_(norm, n, a, lda, work)
-                tmp_int = kplusp - jj;
-                tst1 = dlanhs_("1", &tmp_int, h, &ldh, workl);
+                tst1 = fabs(h[iend + (iend * ldh)]) + fabs(h[iend + 1 + (iend + 1) * ldh]);
+                if (tst1 == 0.0)
+                {
+                    tmp_int = kplusp - jj;
+                    tst1 = dlanhs_("1", &tmp_int, h, &ldh, workl);
+                }
+                if (fabs(h[iend+1 + (iend * ldh)]) <= fmax(smlnum, ulp * tst1))
+                {
+                    break;
+                }
             }
-            if (fabs(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
+            if (istart == iend)
             {
-                // Found a split
-                iend = i;
-                h[i+1 + ldh*i] = 0.0;
-                break;
+                istart += 1;
+                continue;
+            } else if  ((istart + 1 == iend) && fabs(sigmai) > 0.0) {
+                istart += 2;
+                continue;
+            } else {
+                h[iend+1 + (iend * ldh)] = 0.0;
             }
-            // 30
-            // No-break condition
-            if (i == kplusp - 2) { iend = kplusp - 1; }
-        }
-        // 40
 
-        //  No reason to apply a shift to block of order 1
-        //  OR
-        //  If istart + 1 = iend then no reason to apply a
-        //  complex conjugate pair of shifts on a 2 by 2 matrix.
+            // We have a block [istart, iend] inclusive.
+            h11 = h[istart + istart * ldh];
+            h21 = h[istart + 1 + istart * ldh];
 
-        if ((istart == iend) || ((istart + 1 == iend) && fabs(sigmai) > 0.0))
-        {
-            // go to 100
+            if (fabs(sigmai) == 0.0)
+            {
+
+                f = h11 - sigmar;
+                g = h21;
+                for (i = istart; i < iend; i++)
+                {
+                    dlartgp_(&f, &g, &c, &s, &r);
+                    if (i > istart)
+                    {
+                        h[i + (i - 1) * ldh] = r;
+                        h[i + 1 + (i - 1) * ldh] = 0.0;
+                    }
+                    tmp_int = kplusp - i;
+                    drot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
+                    tmp_int = (i+2 > iend ? iend : i + 2) + 1;
+                    drot_(&tmp_int, &h[ldh*i], &int1, &h[ldh*(i+1)], &int1, &c, &s);
+                    tmp_int = (i+jj+2 > kplusp ? kplusp : i + jj + 2);
+                    drot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i+1)], &int1, &c, &s);
+
+                    if (i < iend - 1)
+                    {
+                        f = h[i+1 + i * ldh];
+                        g = h[i+2 + i * ldh];
+                    }
+                }
+            } else {
+
+                h12 = h[istart + ldh*(istart + 1)];
+                h22 = h[istart + 1 + ldh*(istart + 1)];
+                h32 = h[istart + 2 + ldh*(istart + 1)];
+
+                s = 2.0*sigmar;
+                t = hypot(sigmar, sigmai);
+                u[0] = (h11*(h11 - s) + t*t) / h21 + h12;
+                u[1] = h11 + h22 - s;
+                u[2] = h32;
+
+                for (i = istart; i < iend; i++)
+                {
+                    nr = iend - i + 1;
+                    nr = (nr > 3? 3 : nr);
+                    dlarfg_(&nr, &u[0], &u[1], &int1, &tau);
+                    if (i > istart)
+                    {
+                        h[i + (i - 1) * ldh] = u[0];
+                        h[i + 1 + (i - 1) * ldh] = 0.0;
+                        if (i < iend - 1) { h[i + 2 + (i - 1) * ldh] = 0.0; }
+                    }
+                    u[0] = 1.0;
+
+                    tmp_int = kplusp - i;
+                    dlarf_("L", &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
+                    ir = (i + 3 > iend ? iend : i + 3) + 1;
+                    dlarf_("R", &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
+                    dlarf_("R", &kplusp, &nr, u, &int1, &tau, &q[ldq*i], &ldq, workl);
+                    if (i < iend - 1)
+                    {
+                        u[0] = h[i+1 + i * ldh];
+                        u[1] = h[i+2 + i * ldh];
+                        if (i < iend-2) { u[2] = h[i+3 + i * ldh]; }
+                    }
+                }
+            }
             istart = iend + 1;
-            if (iend < kplusp - 1) { goto LINE20; }
-            continue;
         }
-
-        h11 = h[istart + ldh*istart];
-        h21 = h[istart + 1 + ldh*istart];
-
-        if (fabs(sigmai) == 0.0)
-        {
-            //  Real-valued shift ==> apply single shift QR
-
-            f = h11 - sigmar;
-            g = h21;
-
-            for (i = istart; i < iend; i++)
-            {
-
-                //  Construct the plane rotation G to zero out the bulge
-
-                dlartgp_(&f, &g, &c, &s, &r);  // Use dlartgp for positive r
-                if (i > istart)
-                {
-                    h[i + ldh*(i-1)] = r;
-                    h[i + 1 + ldh*(i-1)] = 0.0;
-                }
-
-                //  Apply rotation to the left of H;  H <- G*H
-                tmp_int = kplusp - i;
-                drot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
-                // 50
-
-                //  Apply rotation to the right of H;  H <- H*G'
-                tmp_int = (i+2 > iend ? iend : i+2);
-                s = -s;  // Transpose of the rotation matrix.
-                drot_(&tmp_int, &h[ldh*i], &int1, &h[ldh*(i+1)], &int1, &c, &s);
-                // 60
-
-                //  Accumulate the rotation in the matrix Q;  Q <- Q*G'
-                tmp_int = (i+jj > kplusp-1 ? kplusp-1 : i+jj);
-                drot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i + 1)], &int1, &c, &s);
-                // 70
-
-                // Prepare for next rotation
-               if (i < iend-1)
-               {
-                   f = h[i + 1 + ldh*i];
-                   g = h[i + 2 + ldh*i];
-               }
-
-            }
-            //80
-
-            //  Finished applying the real shift.
-
-        } else {
-
-            //  Complex conjugate shifts ==> apply double shift QR
-
-            h12 = h[istart + ldh*(istart + 1)];
-            h22 = h[istart + 1 + ldh*(istart + 1)];
-            h32 = h[istart + 2 + ldh*(istart + 1)];
-
-            //  Compute 1st column of (H - shift*I)*(H - conj(shift)*I)
-
-            s = 2.0 * sigmar;
-            t = hypot(sigmar, sigmai);
-            u[0] = (h11*(h11 - s) + t*t) / h21 + h12;
-            u[1] = h11 + h22 - s;
-            u[2] = h32;
-
-            for (i = istart; i < iend; i++)
-            {
-                nr = (iend-i+1 > 3 ? 3 : iend-i+1);  // CHECK THIS CONDITION
-
-                //  Construct Householder reflector G to zero out u(1).
-                //  G is of the form I - tau*( 1 u )' * ( 1 u' ).
-
-                dlarfg_(&nr, &u[0], &u[1], &int1, &tau);
-
-                if (i > istart)
-                {
-                    h[i + ldh*(i-1)] = u[0];
-                    h[i+1 + ldh*(i-1)] = 0.0;
-                    if (i < iend - 1) { h[i+2 + ldh*(i-1)] = 0.0; }
-                }
-                u[0] = 1.0;
-
-                //  Apply the reflector to the left of H
-
-                tmp_int = kplusp - i;
-                dlarf_("L", &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
-
-                //  Apply the reflector to the right of H
-
-                ir = (i + 3 > iend ? iend : i + 3) + 1;
-                dlarf_("R", &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
-
-                //  Accumulate the reflector in the matrix Q;  Q <- Q*G
-
-                dlarf_("R", &kplusp, &nr, u, &int1, &tau, &q[ldq*i], &ldq, workl);
-
-                //  Prepare for next reflector
-
-                if (i < iend - 1)
-                {
-                    u[0] = h[i+1 + ldh*i];
-                    u[1] = h[i+2 + ldh*i];
-                    if (i < iend - 2) { u[2] = h[i+3 + ldh*i]; }
-                }
-            }
-            // 90
-        }
-        // 100
-
-        //  Apply the same shift to the next block if there is any.
-
-        istart = iend + 1;
-        if (iend < kplusp - 1) { goto LINE20; }
     }
-    // 110
-
     //  Perform a similarity transformation that makes
     //  sure that H will have non negative sub diagonals
 
@@ -1840,7 +1724,7 @@ LINE20:
         {
             tst1 = dlanhs_("1", kev, h, &ldh, workl);
         }
-        if (h[i+1 + ldh*i] <= fmax(ulp+tst1, smlnum))
+        if (h[i+1 + ldh*i] <= fmax(ulp*tst1, smlnum))
         {
             h[i+1 + ldh*i] = 0.0;
         }
@@ -1895,6 +1779,7 @@ LINE20:
     }
 
     return;
+
 }
 
 
@@ -1944,7 +1829,6 @@ dngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
 
     if ((ritzr[*np] - ritzr[*np-1] == 0.0) && (ritzi[*np] + ritzi[*np-1] == 0.0))
     {
-        printf("DNGETS: Found complex conjugate pair\n");
         *np -= 1;
         *kev += 1;
     }
@@ -1999,7 +1883,6 @@ dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
 
         if (V->getv0_itry == 1)
         {
-            printf("DGETV0: itry = 1, ido = 5 returning\n");
             ipntr[0] = 0;
             ipntr[1] = n;
             dcopy_(&n, resid, &int1, workd, &int1);

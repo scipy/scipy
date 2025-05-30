@@ -1017,6 +1017,7 @@ LINE100:
     } else {
         V->aup2_rnorm = snrm2_(&V->n, resid, &int1);
     }
+    V->aup2_cnorm = 0;
 
     goto LINE1000;
 
@@ -1066,6 +1067,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
     }
     bounds[n-1] = 1.0;
     slahqr_(&int1, &int1, &n, &int1, &n, workl, &n, ritzr, ritzi, &int1, &int1, bounds, &int1, ierr);
+
     if (*ierr != 0) { return; }
 
     //  2. Compute the eigenvectors of the full Schur form T and
@@ -1217,6 +1219,7 @@ LINE1000:
     //  an exact j-step Arnoldi factorization is present.
 
     V->aitr_betaj = *rnorm;
+
     if (*rnorm > 0.0) { goto LINE40; }
 
     //  Invariant subspace found, generate a new starting
@@ -1234,7 +1237,8 @@ LINE30:
 
     // If in reverse communication mode and aitr_restart = 1, flow returns here.
 
-    sgetv0(V, 0, n, V->getv0_itry, v, ldv, resid, rnorm, ipntr, workd);
+    sgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
+
     if (V->ido != ido_DONE) { return; }
     V->aitr_ierr = V->info;
     if (V->aitr_ierr < 0)
@@ -1346,6 +1350,7 @@ LINE60:
     //  RESID contains OP*v_{j}. See STEP 3.
 
     sgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &h[ldh*(V->aitr_j)], &int1, &dbl1, resid, &int1);
+
     if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = V->aitr_betaj; }
 
     V->aitr_orth1 = 1;
@@ -1418,6 +1423,7 @@ LINE80:
 
     sgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[irj], &int1, &dbl1, resid, &int1);
     saxpy_(&tmp_int, &dbl1, &workd[irj], &int1, &h[ldh*(V->aitr_j)], &int1);
+
     V->aitr_orth2 = 1;
 
     if (V->bmat)
@@ -1498,7 +1504,7 @@ LINE100:
     if (V->aitr_j >= k + np)
     {
         V->ido = ido_DONE;
-        for (i = k; i < k + np; i++)
+        for (i = (k > 0 ? k-1 : k); i < k + np - 1; i++)
         {
 
             //  Check for splitting and deflation.
@@ -1522,6 +1528,7 @@ LINE100:
     goto LINE1000;
 
 }
+
 
 void
 snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
@@ -1549,224 +1556,145 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
     //  whole matrix including each block.
 
     cconj = 0;
+
+    // Loop over the shifts
+
     for (jj = 0; jj < np; jj++)
     {
         sigmar = shiftr[jj];
         sigmai = shifti[jj];
 
-        //  The following set of conditionals is necessary
-        //  in order that complex conjugate pairs of shifts
-        //  are applied together or not at all.
-
         if (cconj)
         {
 
-            //  cconj = .true. means the previous shift
-            //  had non-zero imaginary part.
+            // Skip flag is on; turn it off and proceed to the next shift.
 
             cconj = 0;
             continue;
 
-        } else if ((jj < np-1) && fabsf(sigmai) > 0.0) {
+        } else if ((jj < np - 1) && fabsf(sigmai) != 0.0) {
 
-            //  Start of a complex conjugate pair.
+            // This shift has nonzero imaginary part, so we will apply
+            // together with the next one; turn on the skip flag.
 
             cconj = 1;
 
-        } else if ((jj == np-1) && fabsf(sigmai) > 0.0) {
+        } else if ((jj == np - 1) && (fabsf(sigmai) != 0.0)) {
 
-            //  The last shift has a nonzero imaginary part.
-            //  Don't apply it; thus the order of the
-            //  compressed H is order KEV+1 since only np-1
-            //  were applied.
+            // We have one block left but the shift has nonzero imaginary part.
+            // Don't apply it and reduce the number of shifts by incrementing
+            // kev by one.
 
             *kev += 1;
             continue;
         }
+
+        // if sigmai = 0 then
+        //    Apply the jj-th shift ...
+        // else
+        //    Apply the jj-th and (jj+1)-th together ...
+        //    (Note that jj < np at this point in the code)
+        // end
+        // to the current block of H
+
         istart = 0;
-
-LINE20:
-
-        //  if sigmai = 0 then
-        //     Apply the jj-th shift ...
-        //  else
-        //     Apply the jj-th and (jj+1)-th together ...
-        //     (Note that jj < np at this point in the code)
-        //  end
-        //  to the current block of H. The next do loop
-        //  determines the current block ;
-
-        for (i = istart; i < kplusp - 1; i++)
+        while (istart < kplusp - 1)
         {
-
-            //  Check for splitting and deflation. Use
-            //  a standard test as in the QR algorithm
-            //  REFERENCE: LAPACK subroutine dlahqr
-
-            tst1 = fabsf(h[i + ldh*i]) + fabsf(h[i+1 + ldh*(i+1)]);
-            if (tst1 == 0.0)
+            for (iend = istart; iend < kplusp - 1; iend++)
             {
-                // slanhs_(norm, n, a, lda, work)
-                tmp_int = kplusp - jj;
-                tst1 = slanhs_("1", &tmp_int, h, &ldh, workl);
+                tst1 = fabsf(h[iend + (iend * ldh)]) + fabsf(h[iend + 1 + (iend + 1) * ldh]);
+                if (tst1 == 0.0)
+                {
+                    tmp_int = kplusp - jj;
+                    tst1 = slanhs_("1", &tmp_int, h, &ldh, workl);
+                }
+                if (fabsf(h[iend+1 + (iend * ldh)]) <= fmaxf(smlnum, ulp * tst1))
+                {
+                    break;
+                }
             }
-            if (fabsf(h[i+1 + ldh*i]) <= fmaxf(ulp*tst1, smlnum))
+            if (istart == iend)
             {
-                iend = i;
-                h[i+1 + ldh*i] = 0.0;
-                break;
+                istart += 1;
+                continue;
+            } else if  ((istart + 1 == iend) && fabsf(sigmai) > 0.0) {
+                istart += 2;
+                continue;
+            } else {
+                h[iend+1 + (iend * ldh)] = 0.0;
             }
-            // 30
-            // No-break condition
-            if (i == kplusp - 2) { iend = kplusp - 1; }
-        }
-        // 40
 
-        //  No reason to apply a shift to block of order 1
-        //  OR
-        //  If istart + 1 = iend then no reason to apply a
-        //  complex conjugate pair of shifts on a 2 by 2 matrix.
+            // We have a block [istart, iend] inclusive.
+            h11 = h[istart + istart * ldh];
+            h21 = h[istart + 1 + istart * ldh];
 
-        if ((istart == iend) || ((istart + 1 == iend) && fabsf(sigmai) > 0.0))
-        {
-            // go to 100
+            if (fabsf(sigmai) == 0.0)
+            {
+
+                f = h11 - sigmar;
+                g = h21;
+                for (i = istart; i < iend; i++)
+                {
+                    slartgp_(&f, &g, &c, &s, &r);
+                    if (i > istart)
+                    {
+                        h[i + (i - 1) * ldh] = r;
+                        h[i + 1 + (i - 1) * ldh] = 0.0;
+                    }
+                    tmp_int = kplusp - i;
+                    srot_(&tmp_int, &h[i + ldh*i], &ldh, &h[i + 1 + ldh*i], &ldh, &c, &s);
+                    tmp_int = (i+2 > iend ? iend : i + 2) + 1;
+                    srot_(&tmp_int, &h[ldh*i], &int1, &h[ldh*(i+1)], &int1, &c, &s);
+                    tmp_int = (i+jj+2 > kplusp ? kplusp : i + jj + 2);
+                    srot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i+1)], &int1, &c, &s);
+
+                    if (i < iend - 1)
+                    {
+                        f = h[i+1 + i * ldh];
+                        g = h[i+2 + i * ldh];
+                    }
+                }
+            } else {
+
+                h12 = h[istart + ldh*(istart + 1)];
+                h22 = h[istart + 1 + ldh*(istart + 1)];
+                h32 = h[istart + 2 + ldh*(istart + 1)];
+
+                s = 2.0*sigmar;
+                t = hypotf(sigmar, sigmai);
+                u[0] = (h11*(h11 - s) + t*t) / h21 + h12;
+                u[1] = h11 + h22 - s;
+                u[2] = h32;
+
+                for (i = istart; i < iend; i++)
+                {
+                    nr = iend - i + 1;
+                    nr = (nr > 3? 3 : nr);
+                    slarfg_(&nr, &u[0], &u[1], &int1, &tau);
+                    if (i > istart)
+                    {
+                        h[i + (i - 1) * ldh] = u[0];
+                        h[i + 1 + (i - 1) * ldh] = 0.0;
+                        if (i < iend - 1) { h[i + 2 + (i - 1) * ldh] = 0.0; }
+                    }
+                    u[0] = 1.0;
+
+                    tmp_int = kplusp - i;
+                    slarf_("L", &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
+                    ir = (i + 3 > iend ? iend : i + 3) + 1;
+                    slarf_("R", &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
+                    slarf_("R", &kplusp, &nr, u, &int1, &tau, &q[ldq*i], &ldq, workl);
+                    if (i < iend - 1)
+                    {
+                        u[0] = h[i+1 + i * ldh];
+                        u[1] = h[i+2 + i * ldh];
+                        if (i < iend-2) { u[2] = h[i+3 + i * ldh]; }
+                    }
+                }
+            }
             istart = iend + 1;
-            if (iend < kplusp - 1) { goto LINE20; }
-            continue;
         }
-
-        h11 = h[istart + ldh*istart];
-        h21 = h[istart + 1 + ldh*istart];
-
-        if (fabsf(sigmai) == 0.0)
-        {
-
-            //  Real-valued shift ==> apply single shift QR
-
-            f = h11 - sigmar;
-            g = h21;
-
-            for (i = istart; i <= iend-1; i++)
-            {
-
-                //  Construct the plane rotation G to zero out the bulge
-
-                slartgp_(&f, &g, &c, &s, &r);  // Use dlartgp for positive r
-                if (i > istart)
-                {
-                    h[i + ldh*(i-1)] = r;
-                    h[i + 1 + ldh*(i-1)] = 0.0;
-                }
-
-                //  Apply rotation to the left of H;  H <- G'*H
-
-                for (j = i; j < kplusp; j++)
-                {
-                    t                =  c*h[i + ldh*j] + s*h[i + 1 + ldh*j];
-                    h[i + 1 + ldh*j] = -s*h[i + ldh*j] + c*h[i + 1 + ldh*j];
-                    h[i + ldh*j]     = t;
-                }
-                // 50
-
-                //  Apply rotation to the right of H;  H <- H*G
-
-                for (j = 0; j < (i+2 > iend ? iend : i+2); j++)
-                {
-                    t                  =  c*h[j + ldh*i] + s*h[j + ldh*(i + 1)];
-                    h[j + ldh*(i + 1)] = -s*h[j + ldh*i] + c*h[j + ldh*(i + 1)];
-                    h[j + ldh*i]       = t;
-                }
-                // 60
-
-                //  Accumulate the rotation in the matrix Q;  Q <- Q*G
-
-                for (j = 0; j < (i+jj+1 > kplusp ? kplusp : i+jj+1); j++)
-                {
-                    t                  =  c*q[j + ldq*i] + s*q[j + ldq*(i + 1)];
-                    q[j + ldq*(i + 1)] = -s*q[j + ldq*i] + c*q[j + ldq*(i + 1)];
-                    q[j + ldq*i]       = t;
-                }
-                // 70
-
-                // Prepare for next rotation
-               if (i < iend-1)
-               {
-                   f = h[i + 1 + ldh*i];
-                   g = h[i + 2 + ldh*i];
-               }
-
-            }
-            //80
-
-            //  Finished applying the real shift.
-
-        } else {
-
-            //  Complex conjugate shifts ==> apply double shift QR
-
-            h12 = h[istart + ldh*(istart + 1)];
-            h22 = h[istart + 1 + ldh*(istart + 1)];
-            h32 = h[istart + 2 + ldh*(istart + 1)];
-
-            //  Compute 1st column of (H - shift*I)*(H - conj(shift)*I)
-
-            s = 2.0 * sigmar;
-            t = hypotf(sigmar, sigmai);
-            u[0] = (h11*(h11 - s) + t*t) / h21 + h12;
-            u[1] = h11 + h22 - s;
-            u[2] = h32;
-
-            for (i = istart; i < iend; i++)
-            {
-                nr = (iend-i+1 > 3 ? 3 : iend-i+1);  // CHECK THIS CONDITION
-
-                //  Construct Householder reflector G to zero out u(1).
-                //  G is of the form I - tau*( 1 u )' * ( 1 u' ).
-
-                slarfg_(&nr, &u[0], &u[1], &int1, &tau);
-
-                if (i > istart)
-                {
-                    h[i + ldh*(i-1)] = u[0];
-                    h[i+1 + ldh*(i-1)] = 0.0;
-                    if (i < iend - 1) { h[i+2 + ldh*(i-1)] = 0.0; }
-                }
-                u[0] = 1.0;
-
-                //  Apply the reflector to the left of H
-
-                tmp_int = kplusp - i;
-                slarf_("L", &nr, &tmp_int, u, &int1, &tau, &h[i + ldh*i], &ldh, workl);
-
-                //  Apply the reflector to the right of H
-
-                ir = (i + 3 > iend ? iend : i + 3) + 1;
-                slarf_("R", &ir, &nr, u, &int1, &tau, &h[ldh*i], &ldh, workl);
-
-                //  Accumulate the reflector in the matrix Q;  Q <- Q*G
-
-                slarf_("R", &kplusp, &nr, u, &int1, &tau, &q[ldq*i], &ldq, workl);
-
-                //  Prepare for next reflector
-
-                if (i < iend - 1)
-                {
-                    u[0] = h[i+1 + ldh*i];
-                    u[1] = h[i+2 + ldh*i];
-                    if (i < iend - 2) { u[2] = h[i+3 + ldh*i]; }
-                }
-            }
-            // 90
-        }
-        // 100
-
-        //  Apply the same shift to the next block if there is any.
-
-        istart = iend + 1;
-        if (iend < kplusp - 1) { goto LINE20; }
     }
-    // 110
-
     //  Perform a similarity transformation that makes
     //  sure that H will have non negative sub diagonals
 
@@ -1796,7 +1724,7 @@ LINE20:
         {
             tst1 = slanhs_("1", kev, h, &ldh, workl);
         }
-        if (h[i+1 + ldh*i] <= fmaxf(ulp+tst1, smlnum))
+        if (h[i+1 + ldh*i] <= fmaxf(ulp*tst1, smlnum))
         {
             h[i+1 + ldh*i] = 0.0;
         }
@@ -1820,7 +1748,7 @@ LINE20:
     for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
-        sgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[(*kev-i)*ldq], &int1, &dbl0, workd, &int1);
+        sgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[(*kev-i-1)*ldq], &int1, &dbl0, workd, &int1);
         scopy_(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
     }
 
@@ -1851,7 +1779,9 @@ LINE20:
     }
 
     return;
+
 }
+
 
 void
 sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
