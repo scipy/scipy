@@ -183,9 +183,9 @@ class TestInterpolativeDecomposition:
 
     def test_full_rank(self):
         eps = 1.0e-12
-
+        rng = np.random.default_rng(1234)
         # fixed precision
-        A = np.random.rand(16, 8)
+        A = rng.random((16, 8))
         k, idx, proj = pymatrixid.interp_decomp(A, eps)
         assert_equal(k, A.shape[1])
 
