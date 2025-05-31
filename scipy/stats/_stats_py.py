@@ -42,7 +42,6 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, _get_nan,
                               _rename_parameter, _contains_nan,
                               normalize_axis_index, np_vecdot, AxisError)
-from scipy._lib.deprecation import _deprecate_positional_args
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -6449,18 +6448,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-_ttest_ind_dep_msg = "Use ``method`` to perform a permutation test."
-
-
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
-@_deprecate_positional_args(version='1.17.0',
-                            deprecated_args={'permutations', 'random_state'},
-                            custom_message=_ttest_ind_dep_msg)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided",
-              trim=0, method=None):
+              alternative="two-sided", trim=0, method=None):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6494,37 +6486,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
         The 'omit' option is not currently available for permutation tests or
         one-sided asymptotic tests.
-
-    permutations : non-negative int, np.inf, or None (default), optional
-        If 0 or None (default), use the t-distribution to calculate p-values.
-        Otherwise, `permutations` is  the number of random permutations that
-        will be used to estimate p-values using a permutation test. If
-        `permutations` equals or exceeds the number of distinct partitions of
-        the pooled data, an exact test is performed instead (i.e. each
-        distinct partition is used exactly once). See Notes for details.
-
-        .. deprecated:: 1.17.0
-            `permutations` is deprecated and will be removed in SciPy 1.7.0.
-            Use the `n_resamples` argument of `PermutationMethod`, instead,
-            and pass the instance as the `method` argument.
-
-    random_state : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-
-        Pseudorandom number generator state used to generate permutations
-        (used only when `permutations` is not None).
-
-        .. deprecated:: 1.17.0
-            `random_state` is deprecated and will be removed in SciPy 1.7.0.
-            Use the `rng` argument of `PermutationMethod`, instead,
-            and pass the instance as the `method` argument.
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -6757,27 +6718,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
                            standard_error=NaN, estimate=NaN)
 
     alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
-
-    # This probably should be deprecated and replaced with a `method` argument
-    if permutations is not None and permutations != 0:
-        message = "Use of `permutations` is compatible only with NumPy arrays."
-        if not is_numpy(xp):
-            raise NotImplementedError(message)
-
-        message = "Use of `permutations` is incompatible with with use of `trim`."
-        if trim != 0:
-            raise NotImplementedError(message)
-
-        t, prob = _permutation_ttest(a, b, permutations=permutations,
-                                     axis=axis, equal_var=equal_var,
-                                     nan_policy=nan_policy,
-                                     random_state=random_state,
-                                     alternative=alternative)
-        df, denom, estimate = NaN, NaN, NaN
-
-        # _axis_nan_policy decorator doesn't play well with strings
-        return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
-                           standard_error=denom, estimate=estimate)
 
     n1 = _length_nonmasked(a, axis)
     n2 = _length_nonmasked(b, axis)

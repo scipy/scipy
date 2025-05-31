@@ -5344,76 +5344,6 @@ class Test_ttest_ind_permutations:
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
 
-    @pytest.mark.thread_unsafe
-    @pytest.mark.parametrize("a,b,update,p_d", params)
-    def test_ttest_ind_permutations(self, a, b, update, p_d):
-        options_a = {'axis': None, 'equal_var': False}
-        options_p = {'axis': None, 'equal_var': False,
-                     'permutations': 1000, 'random_state': 0}
-        options_a.update(update)
-        options_p.update(update)
-
-        stat_a, _ = stats.ttest_ind(a, b, **options_a)
-        stat_p, pvalue = stats.ttest_ind(a, b, **options_p)
-        assert_array_almost_equal(stat_a, stat_p, 5)
-        assert_array_almost_equal(pvalue, p_d)
-
-    def test_ttest_ind_exact_alternative(self):
-        rng = np.random.RandomState(0)
-        N = 3
-        a = rng.rand(2, N, 2)
-        b = rng.rand(2, N, 2)
-
-        options_p = {'axis': 1, 'permutations': 1000}
-
-        options_p.update(alternative="greater")
-        res_g_ab = stats.ttest_ind(a, b, **options_p)
-        res_g_ba = stats.ttest_ind(b, a, **options_p)
-
-        options_p.update(alternative="less")
-        res_l_ab = stats.ttest_ind(a, b, **options_p)
-        res_l_ba = stats.ttest_ind(b, a, **options_p)
-
-        options_p.update(alternative="two-sided")
-        res_2_ab = stats.ttest_ind(a, b, **options_p)
-        res_2_ba = stats.ttest_ind(b, a, **options_p)
-
-        # Alternative doesn't affect the statistic
-        assert_equal(res_g_ab.statistic, res_l_ab.statistic)
-        assert_equal(res_g_ab.statistic, res_2_ab.statistic)
-
-        # Reversing order of inputs negates statistic
-        assert_equal(res_g_ab.statistic, -res_g_ba.statistic)
-        assert_equal(res_l_ab.statistic, -res_l_ba.statistic)
-        assert_equal(res_2_ab.statistic, -res_2_ba.statistic)
-
-        # Reversing order of inputs does not affect p-value of 2-sided test
-        assert_equal(res_2_ab.pvalue, res_2_ba.pvalue)
-
-        # In exact test, distribution is perfectly symmetric, so these
-        # identities are exactly satisfied.
-        assert_equal(res_g_ab.pvalue, res_l_ba.pvalue)
-        assert_equal(res_l_ab.pvalue, res_g_ba.pvalue)
-        mask = res_g_ab.pvalue <= 0.5
-        assert_equal(res_g_ab.pvalue[mask] + res_l_ba.pvalue[mask],
-                     res_2_ab.pvalue[mask])
-        assert_equal(res_l_ab.pvalue[~mask] + res_g_ba.pvalue[~mask],
-                     res_2_ab.pvalue[~mask])
-
-    def test_ttest_ind_exact_selection(self):
-        # test the various ways of activating the exact test
-        rng = np.random.RandomState(0)
-        N = 3
-        a = rng.rand(N)
-        b = rng.rand(N)
-        res0 = stats.ttest_ind(a, b)
-        res1 = stats.ttest_ind(a, b, permutations=1000)
-        res2 = stats.ttest_ind(a, b, permutations=0)
-        res3 = stats.ttest_ind(a, b, permutations=np.inf)
-        assert res1.pvalue != res0.pvalue
-        assert res2.pvalue == res0.pvalue
-        assert res3.pvalue == res1.pvalue
-
     def test_ttest_ind_exact_distribution(self):
         # the exact distribution of the test statistic should have
         # binom(na + nb, na) elements, all unique. This was not always true
@@ -5432,123 +5362,6 @@ class Test_ttest_ind_permutations:
         n_unique = len(set(t_stat))
         assert n_unique == binom(na + nb, na)
         assert len(t_stat) == n_unique
-
-    def test_ttest_ind_randperm_alternative(self):
-        rng = np.random.RandomState(0)
-        N = 50
-        a = rng.rand(2, 3, N)
-        b = rng.rand(3, N)
-        options_p = {'axis': -1, 'permutations': 1000, "random_state": 0}
-
-        options_p.update(alternative="greater")
-        res_g_ab = stats.ttest_ind(a, b, **options_p)
-        res_g_ba = stats.ttest_ind(b, a, **options_p)
-
-        options_p.update(alternative="less")
-        res_l_ab = stats.ttest_ind(a, b, **options_p)
-        res_l_ba = stats.ttest_ind(b, a, **options_p)
-
-        # Alternative doesn't affect the statistic
-        assert_equal(res_g_ab.statistic, res_l_ab.statistic)
-
-        # Reversing order of inputs negates statistic
-        assert_equal(res_g_ab.statistic, -res_g_ba.statistic)
-        assert_equal(res_l_ab.statistic, -res_l_ba.statistic)
-
-        # For random permutations, the chance of ties between the observed
-        # test statistic and the population is small, so:
-        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue,
-                     1 + 1/(options_p['permutations'] + 1))
-        assert_equal(res_g_ba.pvalue + res_l_ba.pvalue,
-                     1 + 1/(options_p['permutations'] + 1))
-
-    @pytest.mark.slow()
-    def test_ttest_ind_randperm_alternative2(self):
-        rng = np.random.RandomState(0)
-        N = 50
-        a = rng.rand(N, 4)
-        b = rng.rand(N, 4)
-        options_p = {'permutations': 20000, "random_state": 0}
-
-        options_p.update(alternative="greater")
-        res_g_ab = stats.ttest_ind(a, b, **options_p)
-
-        options_p.update(alternative="less")
-        res_l_ab = stats.ttest_ind(a, b, **options_p)
-
-        options_p.update(alternative="two-sided")
-        res_2_ab = stats.ttest_ind(a, b, **options_p)
-
-        # For random permutations, the chance of ties between the observed
-        # test statistic and the population is small, so:
-        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue,
-                     1 + 1/(options_p['permutations'] + 1))
-
-        # For for large sample sizes, the distribution should be approximately
-        # symmetric, so these identities should be approximately satisfied
-        mask = res_g_ab.pvalue <= 0.5
-        assert_allclose(2 * res_g_ab.pvalue[mask],
-                        res_2_ab.pvalue[mask], atol=2e-2)
-        assert_allclose(2 * (1-res_g_ab.pvalue[~mask]),
-                        res_2_ab.pvalue[~mask], atol=2e-2)
-        assert_allclose(2 * res_l_ab.pvalue[~mask],
-                        res_2_ab.pvalue[~mask], atol=2e-2)
-        assert_allclose(2 * (1-res_l_ab.pvalue[mask]),
-                        res_2_ab.pvalue[mask], atol=2e-2)
-
-    def test_ttest_ind_permutation_nanpolicy(self):
-        rng = np.random.RandomState(0)
-        N = 50
-        a = rng.rand(N, 5)
-        b = rng.rand(N, 5)
-        a[5, 1] = np.nan
-        b[8, 2] = np.nan
-        a[9, 3] = np.nan
-        b[9, 3] = np.nan
-        options_p = {'permutations': 1000, "random_state": 0}
-
-        # Raise
-        options_p.update(nan_policy="raise")
-        with assert_raises(ValueError, match="The input contains nan values"):
-            res = stats.ttest_ind(a, b, **options_p)
-
-        # Propagate
-        with suppress_warnings() as sup:
-            sup.record(RuntimeWarning, "invalid value*")
-            options_p.update(nan_policy="propagate")
-            res = stats.ttest_ind(a, b, **options_p)
-
-            mask = np.isnan(a).any(axis=0) | np.isnan(b).any(axis=0)
-            res2 = stats.ttest_ind(a[:, ~mask], b[:, ~mask], **options_p)
-
-            assert_equal(res.pvalue[mask], np.nan)
-            assert_equal(res.statistic[mask], np.nan)
-
-            assert_allclose(res.pvalue[~mask], res2.pvalue)
-            assert_allclose(res.statistic[~mask], res2.statistic)
-
-            # Propagate 1d
-            res = stats.ttest_ind(a.ravel(), b.ravel(), **options_p)
-            assert np.isnan(res.pvalue)  # assert makes sure it's a scalar
-            assert np.isnan(res.statistic)
-
-    def test_ttest_ind_permutation_check_inputs(self):
-        with assert_raises(ValueError, match="Permutations must be"):
-            stats.ttest_ind(self.a2, self.b2, permutations=-3)
-        with assert_raises(ValueError, match="Permutations must be"):
-            stats.ttest_ind(self.a2, self.b2, permutations=1.5)
-        with assert_raises(ValueError, match="'hello' cannot be used"):
-            stats.ttest_ind(self.a, self.b, permutations=1,
-                            random_state='hello', axis=1)
-
-    def test_ttest_ind_permutation_check_p_values(self):
-        # p-values should never be exactly zero
-        N = 10
-        a = np.random.rand(N, 20)
-        b = np.random.rand(N, 20)
-        p_values = stats.ttest_ind(a, b, permutations=1).pvalue
-        print(0.0 not in p_values)
-        assert 0.0 not in p_values
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
@@ -5618,26 +5431,6 @@ class Test_ttest_ind_permutations:
         with pytest.raises(ValueError, match=message):
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
-    @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
-    def test_permutation_not_implement_for_xp(self, xp):
-        a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
-
-        message = "Use of `permutations` is compatible only with NumPy arrays."
-        if is_numpy(xp):  # no error
-            stats.ttest_ind(a2, b2, permutations=10)
-        else:  # NotImplementedError
-            with pytest.raises(NotImplementedError, match=message):
-                stats.ttest_ind(a2, b2, permutations=10)
-
-        message = "Use of resampling methods is compatible only with NumPy arrays."
-        rng = np.random.default_rng(7457345872572348)
-        method = stats.PermutationMethod(rng=rng)
-        if is_numpy(xp):  # no error
-            stats.ttest_ind(a2, b2, method=method)
-        else:  # NotImplementedError
-            with pytest.raises(NotImplementedError, match=message):
-                stats.ttest_ind(a2, b2, method=method)
-
 
 @pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
@@ -5684,9 +5477,8 @@ class Test_ttest_ind_common:
         assert_allclose(statistics, res.statistic)
         assert_allclose(pvalues, res.pvalue)
 
-    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
-                                      {'trim': .2}, {}],
-                             ids=["trim", "permutations", "basic"])
+    @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
+                             ids=["trim", "basic"])
     @pytest.mark.parametrize("axis", [-1, 0])
     def test_nans_on_axis(self, kwds, axis):
         # confirm that with `nan_policy='propagate'`, NaN results are returned
@@ -5830,20 +5622,6 @@ class Test_ttest_trim:
                                             alternative=alt)
         assert_allclose(pvalue, pr, atol=1e-10)
         assert_allclose(statistic, tr, atol=1e-10)
-
-    def test_errors_unsupported(self):
-        # confirm that attempting to trim with permutations raises an error
-        match = "Use of `permutations` is incompatible with with use of `trim`."
-        with assert_raises(NotImplementedError, match=match):
-            message = "Arguments {'permutations'} are deprecated, whether..."
-            with pytest.warns(DeprecationWarning, match=message):
-                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
-
-        with assert_raises(NotImplementedError, match=match):
-            message = "Arguments {.*'random_state'.*} are deprecated, whether..."
-            with pytest.warns(DeprecationWarning, match=message):
-                stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2,
-                                random_state=2)
 
     @skip_xp_backends(cpu_only=True, reason='Uses NumPy for pvalue, CI')
     def test_permutation_not_implement_for_xp(self, xp):
