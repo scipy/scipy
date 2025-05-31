@@ -1215,6 +1215,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
 # Allocating an array of such a size leads to _ArrayMemoryError(s)
 # since the maximum memory that can be in 32-bit (WASM) is 4GB
 @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.parallel_threads(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
