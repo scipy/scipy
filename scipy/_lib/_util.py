@@ -11,9 +11,8 @@ from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, is_marray, xp_result_device,
-                                   xp_size, xp_result_type)
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
+                                   is_marray, xp_size, xp_result_device, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -887,7 +886,7 @@ def _contains_nan(
     a: Array,
     nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
     *,
-    xp_omit_okay: bool = False, 
+    xp_omit_okay: bool = False,
     xp: ModuleType | None = None,
 ) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
