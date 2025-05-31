@@ -484,6 +484,9 @@ jobs:
         pip install -r requirements/openblas.txt
         pip install spin pytest pytest-xdist threadpoolctl pooch hypothesis
 
+    - name: DNM bump MyPy
+      run: pip install git+https://github.com/crusaderky/numpy@forcomb
+
     - name: Install pytest-run-parallel
       if: ${{ matrix.parallel == '1'}}
       run: |
