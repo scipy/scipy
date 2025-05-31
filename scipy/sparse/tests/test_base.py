@@ -433,6 +433,13 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
+    def test_eq_ne_different_shapes(self):
+        if self.datsp.format not in ['bsr', 'csc', 'csr']:
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
+        # Is this what we want? numpy raises when shape differs. we return False.
+        assert (self.datsp == self.datsp.T) is False
+        assert (self.datsp != self.datsp.T) is True
+
     def test_lt(self):
         sup = suppress_warnings()
         sup.filter(SparseEfficiencyWarning)
