@@ -11,6 +11,7 @@ float scnrm2_(int* n, ARPACK_CPLXF_TYPE* x, int* incx);
 void cscal_(int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* x, int* incx);
 void csscal_(int* n, float* da, ARPACK_CPLXF_TYPE* zx, int* incx);
 void cgemv_(char* trans, int* m, int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* a, int* lda, ARPACK_CPLXF_TYPE* x, int* incx, ARPACK_CPLXF_TYPE* beta, ARPACK_CPLXF_TYPE* y, int* incy);
+void crot_(int* n, ARPACK_CPLXF_TYPE* cx, int* incx, ARPACK_CPLXF_TYPE* cy, int* incy, float* c, ARPACK_CPLXF_TYPE* s);
 void ctrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, ARPACK_CPLXF_TYPE* alpha, ARPACK_CPLXF_TYPE* a, int* lda, ARPACK_CPLXF_TYPE* b, int* ldb);
 
 // LAPACK Routines used

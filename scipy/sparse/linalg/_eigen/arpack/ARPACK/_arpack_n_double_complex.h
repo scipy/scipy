@@ -11,6 +11,7 @@ double dznrm2_(int* n, ARPACK_CPLX_TYPE* x, int* incx);
 void zscal_(int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* x, int* incx);
 void zdscal_(int* n, double* da, ARPACK_CPLX_TYPE* zx, int* incx);
 void zgemv_(char* trans, int* m, int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* a, int* lda, ARPACK_CPLX_TYPE* x, int* incx, ARPACK_CPLX_TYPE* beta, ARPACK_CPLX_TYPE* y, int* incy);
+void zrot_(int* n, ARPACK_CPLX_TYPE* cx, int* incx, ARPACK_CPLX_TYPE* cy, int* incy, double* c, ARPACK_CPLX_TYPE* s);
 void ztrmm_(char* side, char* uplo, char* transa, char* diag, int* m, int* n, ARPACK_CPLX_TYPE* alpha, ARPACK_CPLX_TYPE* a, int* lda, ARPACK_CPLX_TYPE* b, int* ldb);
 
 // LAPACK Routines used

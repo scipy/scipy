@@ -10,11 +10,11 @@ static const double ulp = 2.220446049250313e-16;
 static ARPACK_CPLX_TYPE zdotc_(const int* n, const ARPACK_CPLX_TYPE* restrict x, const int* incx, const ARPACK_CPLX_TYPE* restrict y, const int* incy);
 static void zgetv0(struct ARPACK_arnoldi_update_vars_d*, int, int, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*, ARPACK_CPLX_TYPE*);
 static void znaup2(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE* , ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int*, ARPACK_CPLX_TYPE*, double*);
-static void znaitr(struct ARPACK_arnoldi_update_vars_d*, ARPACK_CPLX_TYPE*, double*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, int*, ARPACK_CPLX_TYPE*);
+static void znaitr(struct ARPACK_arnoldi_update_vars_d*, int, int, ARPACK_CPLX_TYPE*, double*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, int*, ARPACK_CPLX_TYPE*);
 static void znapps(int, int*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
 static void zneigh(double*, int, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*, int, ARPACK_CPLX_TYPE*, double*, int*);
 static void zngets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
-static void zsortc(const enum ARPACK_which, const int, const int, ARPACK_CPLX_TYPE*, ARPACK_CPLX_TYPE*);
+static void zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE* x, ARPACK_CPLX_TYPE* y);
 static int sortc_LM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_SM(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
 static int sortc_LR(const ARPACK_CPLX_TYPE, const ARPACK_CPLX_TYPE);
@@ -28,6 +28,7 @@ enum ARPACK_neupd_type {
     REALPART,
     IMAGPART
 };
+
 
 void
 zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
@@ -132,8 +133,8 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
     //  RNORM is B-norm of the RESID(1:N).
 
-    rnorm = workl[ih+1];
-    workl[ih+1] = ARPACK_cplx(0.0, 0.0);
+    rnorm = workl[ih+2];
+    workl[ih+2] = ARPACK_cplx(0.0, 0.0);
 
     if (rvec) {
         reord = 0;
@@ -163,14 +164,14 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         //  Mark the select array for possible reordering
 
         numcnv = 0;
-        for (j = 0; j < V->ncv; j++)
+        for (j = 1; j <= V->ncv; j++)
         {
-            temp1 = fmax(eps23, cabs(workl[irz+V->ncv-j]));
+            temp1 = fmax(eps23, cabs(workl[irz + V->ncv - j]));
             jj = (int)creal(workl[bounds + V->ncv - j]);
 
             if ((numcnv < V->nconv) && (cabs(workl[ibd + jj]) <= V->tol*temp1))
             {
-                select[jj - 1] = 1;
+                select[jj] = 1;
                 numcnv += 1;
                 if (jj > V->nconv) { reord = 1; }
             }
@@ -281,7 +282,7 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
             for (int j = 0; j < V->ncv; j++)
             {
-                if (j <= V->nconv - 1)
+                if (j < V->nconv)
                 {
                     select[j] = 1;
                 } else {
@@ -290,7 +291,8 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
             }
             // 30
 
-            ztrevc_("R", "S", select, &V->ncv, &workl[iuptri], &ldq, vl, &int1, &workl[invsub], &ldq, &V->ncv, &outncv, workev, rwork, &ierr);
+            ztrevc_("R", "S", select, &V->ncv, &workl[iuptri], &ldq, vl, &int1,
+                    &workl[invsub], &ldq, &V->ncv, &outncv, workev, rwork, &ierr);
             if (ierr != 0)
             {
                 V->info = -9;
@@ -303,10 +305,10 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
             //  that the element of largest magnitude has
             //  magnitude 1.
 
-            for (j = 1; j <= V->nconv; j++)
+            for (j = 0; j < V->nconv; j++)
             {
-                rtemp = 1.0 / dznrm2_(&V->ncv, &workl[invsub + (j-1)*ldq], &int1);
-                zdscal_(&V->ncv, &rtemp, &workl[invsub + (j-1)*ldq], &int1);
+                rtemp = 1.0 / dznrm2_(&V->ncv, &workl[invsub + j*ldq], &int1);
+                zdscal_(&V->ncv, &rtemp, &workl[invsub + j*ldq], &int1);
 
                 //  Ritz estimates can be obtained by taking
                 //  the inner product of the last row of the
@@ -314,8 +316,8 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
                 //  Note that the eigenvector matrix of T is
                 //  upper triangular, thus the length of the
                 //  inner product can be set to j.
-
-                workev[j] = zdotc_(&j, &workl[ihbds], &int1, &workl[invsub + (j-1)*ldq], &int1);
+                tmp_int = j + 1;
+                workev[j] = zdotc_(&tmp_int, &workl[ihbds], &int1, &workl[invsub + j*ldq], &int1);
             }
             // 40
 
@@ -330,9 +332,14 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         }
 
     } else {
+
+        // An approximate invariant subspace is not needed.
+        // Place the Ritz values computed ZNAUPD into D.
+
         zcopy_(&V->nconv, &workl[ritz], &int1, d, &int1);
         zcopy_(&V->nconv, &workl[ritz], &int1, &workl[iheig], &int1);
         zcopy_(&V->nconv, &workl[bounds], &int1, &workl[ihbds], &int1);
+
     }
 
     //  Transform the Ritz values and possibly vectors
@@ -426,7 +433,8 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
     }
 
     return;
-};
+}
+
 
 void
 znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
@@ -435,53 +443,56 @@ znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
 {
     int bounds, ierr = 0, ih, iq, iw, ldh, ldq, nev0, next, iritz;
 
-    // perform basic checks
-    if (V->n <= 0) {
-        ierr = -1;
-    } else if (V->nev <= 0) {
-        ierr = -2;
-    } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
-        ierr = -3;
-    } else if (V->maxiter <= 0) {
-        ierr = -4;
-    } else if ((V->which < 0) || (V->which > 5)) {
-        ierr = -5;
-    } else if ((V->bmat != 0) && (V->bmat != 1)) {
-        ierr = -6;
-    } else if ((V->mode < 1) || (V->mode > 3)) {
-        ierr = -10;
-    } else if ((V->mode == 1) && (V->bmat == 1)) {
-        ierr = -11;
-    }
-
-    if (ierr != 0) {
-        V->info = ierr;
-        V->ido = 99;
-        return;
-    }
-
-    if (V->tol <= 0.0) {
-        V-> tol = ulp;
-    }
-
-    if ((V->shift != 0) && (V->shift != 1) && (V->shift != 2))
+    if (V->ido == ido_FIRST)
     {
-        V->shift = 1;
+
+        // perform basic checks
+        if (V->n <= 0) {
+            ierr = -1;
+        } else if (V->nev <= 0) {
+            ierr = -2;
+        } else if ((V->ncv < V->nev + 1) || (V->ncv > V->n)) {
+            ierr = -3;
+        } else if (V->maxiter <= 0) {
+            ierr = -4;
+        } else if ((V->which < 0) || (V->which > 5)) {
+            ierr = -5;
+        } else if ((V->bmat != 0) && (V->bmat != 1)) {
+            ierr = -6;
+        } else if ((V->mode < 1) || (V->mode > 3)) {
+            ierr = -10;
+        } else if ((V->mode == 1) && (V->bmat == 1)) {
+            ierr = -11;
+        }
+
+        if (ierr != 0) {
+            V->info = ierr;
+            V->ido = 99;
+            return;
+        }
+
+        if (V->tol <= 0.0) {
+            V-> tol = ulp;
+        }
+
+        if ((V->shift != 0) && (V->shift != 1) && (V->shift != 2))
+        {
+            V->shift = 1;
+        }
+
+        //  NP is the number of additional steps to
+        //  extend the length NEV Lanczos factorization.
+        //  NEV0 is the local variable designating the
+        //  size of the invariant subspace desired.
+
+        V->np = V->ncv - V->nev;
+        nev0 = V->nev;
+
+        for (int j = 0; j < 3 * (V->ncv*V->ncv) + 6*V->ncv; j++)
+        {
+            workl[j] = ARPACK_cplx(0.0, 0.0);
+        }
     }
-
-    //  NP is the number of additional steps to
-    //  extend the length NEV Lanczos factorization.
-    //  NEV0 is the local variable designating the
-    //  size of the invariant subspace desired.
-
-    V->np = V->ncv - V->nev;
-    nev0 = V->nev;
-
-    for (int j = 0; j < 3 * (V->ncv*V->ncv) + 6*V->ncv; j++)
-    {
-        workl[j] = ARPACK_cplx(0.0, 0.0);
-    }
-
     //  Pointer into WORKL for address of H, RITZ, BOUNDS, Q
     //  etc... and the remaining workspace.
     //  Also update pointer to be used on output.
@@ -528,6 +539,7 @@ znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
     return;
 }
 
+
 void
 znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh,
@@ -536,7 +548,7 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* workd, double* rwork)
 {
     enum ARPACK_which temp_which;
-    int i, int1 = 1, j;
+    int i, int1 = 1, j, tmp_int;
     const double eps23 = pow(ulp, 2.0 / 3.0);
     double temp = 0.0, rtemp;
 
@@ -582,15 +594,15 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
     if (V->aup2_getv0)
     {
         zgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
-        if (V->ido != 99) { return; }
+        if (V->ido != ido_DONE) { return; }
         if (V->aup2_rnorm == 0.0)
         {
             V->info = -9;
-            V->ido = 99;
+            V->ido = ido_DONE;
             return;
         }
         V->aup2_getv0 = 0;
-        V->ido = 0;
+        V->ido = ido_FIRST;
     }
 
     //  Back from reverse communication :
@@ -609,19 +621,19 @@ znaup2(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
 
     //  Compute the first NEV steps of the Arnoldi factorization
 
-    znaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, 0, V->nev, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
 
-    if (V->ido != 99) { return; }
+    if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0)
     {
         V->np = V->info;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->info = -9999;
-        V->ido = 99;
+        V->ido = ido_DONE;
         return;
     }
 
@@ -639,21 +651,21 @@ LINE1000:
     //  to the shift application routine dnapps .
 
     V->np = V->aup2_kplusp - V->nev;
-    V->ido = 0;
+    V->ido = ido_FIRST;
 
 LINE20:
     V->aup2_update = 1;
 
-    znaitr(V, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
+    znaitr(V, V->nev, V->np, resid, &V->aup2_rnorm, v, ldv, h, ldh, ipntr, workd);
 
     //  ido .ne. 99 implies use of reverse communication
     //  to compute operations involving OP and possibly B
 
-    if (V->ido != 99) { return; }
+    if (V->ido != ido_DONE) { return; }
 
     if (V->info > 0) {
         V->np = V->info;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->info = -9999;
         V->ido = 99;
         return;
@@ -668,7 +680,7 @@ LINE20:
     if (V->info != 0)
     {
        V->info = -8;
-       V->ido = 99;
+       V->ido = ido_DONE;
        return;
     }
 
@@ -683,9 +695,10 @@ LINE20:
 
     //  Make a copy of Ritz values and the corresponding
     //  Ritz estimates obtained from zneigh .
-
-    zcopy_(&V->aup2_kplusp, ritz, &int1, &workl[V->aup2_kplusp*V->aup2_kplusp], &int1);
-    zcopy_(&V->aup2_kplusp, bounds, &int1, &workl[V->aup2_kplusp*V->aup2_kplusp + V->aup2_kplusp], &int1);
+    tmp_int = V->aup2_kplusp * V->aup2_kplusp;
+    zcopy_(&V->aup2_kplusp, ritz, &int1, &workl[tmp_int], &int1);
+    tmp_int += V->aup2_kplusp;
+    zcopy_(&V->aup2_kplusp, bounds, &int1, &workl[tmp_int], &int1);
 
     //  Select the wanted Ritz values and their bounds
     //  to be used in the convergence test.
@@ -701,11 +714,11 @@ LINE20:
     //
     //  error_bounds(i) .le. tol*max(eps23, magnitude_of_ritz(i)).
     //
-
+    V->nconv = 0;
     for (i = 0; i < V->nev; i++)
     {
-        rtemp = fmax(eps23, hypot(creal(ritz[V->np + i]), cimag(ritz[V->np + i])));
-        if (hypot(creal(bounds[V->np + i]), cimag(bounds[V->np + i])) <= V->tol*rtemp)
+        rtemp = fmax(eps23, cabs(ritz[V->np + i]));
+        if (cabs(bounds[V->np + i]) <= V->tol*rtemp)
         {
             V->nconv += 1;
         }
@@ -746,12 +759,10 @@ LINE20:
 
          h[2] = ARPACK_cplx(V->aup2_rnorm, 0.0);
 
-        //  To be consistent with dngets , we first do a
-        //  pre-processing sort in order to keep complex
-        //  conjugate pairs together.  This is similar
-        //  to the pre-processing sort used in dngets
-        //  except that the sort is done in the opposite
-        //  order.
+        // Sort Ritz values so that converged Ritz
+        // values appear within the first NEV locations
+        // of ritz and bounds, and the most desired one
+        // appears at the front.
 
         // Translation note: Is this all because ARPACK did not have complex sort?
 
@@ -769,7 +780,7 @@ LINE20:
 
         for (j = 0; j < V->aup2_nev0; j++)
         {
-            temp = fmax(eps23, hypot(creal(ritz[j]), cimag(ritz[j])));
+            temp = fmax(eps23, cabs(ritz[j]));
             bounds[j] = ARPACK_cplx(creal(bounds[j]) / temp, cimag(bounds[j]) / temp);
         }
         // 35
@@ -787,8 +798,8 @@ LINE20:
 
         for (j = 0; j < V->aup2_nev0; j++)
         {
-            temp = fmax(eps23, hypot(creal(ritz[j]), cimag(ritz[j])));
-            bounds[j] = ARPACK_cplx(creal(bounds[j]) / temp, cimag(bounds[j]) / temp);
+            temp = fmax(eps23, cabs(ritz[j]));
+            bounds[j] = ARPACK_cplx(creal(bounds[j]) * temp, cimag(bounds[j]) * temp);
         }
         // 40
 
@@ -815,9 +826,9 @@ LINE20:
         }
 
         V->np = V->nconv;
-        V->maxiter = V->aup2_iter;
+        V->iter = V->aup2_iter;
         V->nev = V->nconv;
-        V->ido = 99;
+        V->ido = ido_DONE;
         return;
 
     } else if ((V->nconv < V->aup2_nev0) && (V->shift)) {
@@ -836,10 +847,12 @@ LINE20:
 
         V->np = V->aup2_kplusp - V->nev;
 
+        // If the size of NEV was just increased
+        // resort the eigenvalues.
+
         if (nevbef < V->nev) {
             zngets(V, &V->nev, &V->np, ritz, bounds);
         }
-
     }
 
     if (V->shift == 0)
@@ -849,7 +862,7 @@ LINE20:
         //  and return them in the first 2*NP locations of WORKL.
 
         V->aup2_ushift = 1;
-        V->ido = 3;
+        V->ido = ido_USER_SHIFT;
         return;
     }
 
@@ -888,7 +901,7 @@ LINE50:
         zcopy_(&V->n, resid, &int1, &workd[V->n], &int1);
         ipntr[0] = V->n;
         ipntr[1] = 0;
-        V->ido = 2;
+        V->ido = ido_BX;
 
         //  Exit in order to compute B*RESID
 
@@ -904,11 +917,11 @@ LINE100:
 
     if (V->bmat)
     {
-        V->aup2_rnorm = cabs(zdotc_(&V->n, resid, &int1, workd, &int1));
-        V->aup2_rnorm = sqrt(V->aup2_rnorm);
+        V->aup2_rnorm = sqrt(cabs(zdotc_(&V->n, resid, &int1, workd, &int1)));
     } else {
         V->aup2_rnorm = dznrm2_(&V->n, resid, &int1);
     }
+    V->aup2_cnorm = 0;
 
     goto LINE1000;
 
@@ -918,33 +931,32 @@ LINE100:
 
 }
 
+
 static void
-znaitr(struct ARPACK_arnoldi_update_vars_d *V,  ARPACK_CPLX_TYPE* resid, double* rnorm,
-       ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh, int* ipntr,
-       ARPACK_CPLX_TYPE* workd)
+znaitr(struct ARPACK_arnoldi_update_vars_d *V, int k, int np, ARPACK_CPLX_TYPE* resid,
+       double* rnorm, ARPACK_CPLX_TYPE* v, int ldv, ARPACK_CPLX_TYPE* h, int ldh,
+       int* ipntr, ARPACK_CPLX_TYPE* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
     double smlnum = unfl * ( V->n / ulp);
-    // double xtemp[2] = { 0.0 };
     const double sq2o2 = sqrt(2.0) / 2.0;
 
-    char *MTYPE = "G", *TRANS = "T", *NORM = "1";
     int int1 = 1;
-    double dbl1 = 1.0, temp1, tmp_dbl, tst1;
+    double dbl1 = 1.0, temp1, tst1;
     ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cdblm1 = ARPACK_cplx(-1.0, 0.0);
     ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
 
-    n = V->n;  // constant value, just for typing convenience
+    n = V->n;  // n is constant, this is just for typing convenience
     ipj = 0;
     irj = ipj + n;
     ivj = irj + n;
 
-    if (V->ido == 0)
+    if (V->ido == ido_FIRST)
     {
 
         //  Initial call to this routine
-
+        V->aitr_j = k;
         V->info = 0;
         V->aitr_step3 = 0;
         V->aitr_step4 = 0;
@@ -996,12 +1008,16 @@ LINE1000:
 
 LINE20:
     V->aitr_restart = 1;
-    V->ido = 0;
+    V->ido = ido_FIRST;
 
 LINE30:
-    zgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
-    if (V->ido != 99) { return; }
 
+    // If in reverse communication mode and aitr_restart = 1, flow returns here.
+
+    zgetv0(V, 0, n, V->aitr_j, v, ldv, resid, rnorm, ipntr, workd);
+
+    if (V->ido != ido_DONE) { return; }
+    V->aitr_ierr = V->info;
     if (V->aitr_ierr < 0)
     {
         V->getv0_itry += 1;
@@ -1012,7 +1028,7 @@ LINE30:
         //  which spans OP and exit.
 
         V->info = V->aitr_j;
-        V->ido = 99;
+        V->ido = ido_DONE;
         return;
     }
 
@@ -1030,8 +1046,8 @@ LINE40:
         zdscal_(&n, &temp1, &v[ldv*V->aitr_j], &int1);
         zdscal_(&n, &temp1, &workd[ipj], &int1);
     } else {
-        zlascl_(MTYPE, &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*V->aitr_j], &n, &infol);
-        zlascl_(MTYPE, &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
+        zlascl_("G", &i, &i, rnorm, &dbl1, &n, &int1, &v[ldv*V->aitr_j], &n, &infol);
+        zlascl_("G", &i, &i, rnorm, &dbl1, &n, &int1, &workd[ipj], &n, &infol);
     }
 
     //  STEP 3:  r_{j} = OP*v_{j}; Note that p_{j} = B*v_{j}
@@ -1042,7 +1058,7 @@ LINE40:
     ipntr[0] = ivj;
     ipntr[1] = irj;
     ipntr[2] = ipj;
-    V->ido = 1;
+    V->ido = ido_OPX;
 
     //  Exit in order to compute OP*v_{j}
 
@@ -1068,7 +1084,7 @@ LINE50:
         V->aitr_step4 = 1;
         ipntr[0] = irj;
         ipntr[1] = ipj;
-        V->ido = 2;
+        V->ido = ido_BX;
 
         //  Exit in order to compute B*OP*v_{j}
 
@@ -1090,7 +1106,7 @@ LINE60:
 
     if (V->bmat)
     {
-        V->aitr_wnorm = cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1));
+        V->aitr_wnorm = sqrt(cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1)));
     } else {
         V->aitr_wnorm = dznrm2_(&n, resid, &int1);
     }
@@ -1103,14 +1119,14 @@ LINE60:
 
     //  Compute the j Fourier coefficients w_{j}
     //  WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.
-
-    zgemv_(TRANS, &n, &V->aitr_j, &cdbl1, v, &ldv, &workd[ipj], &int1, &cdbl0, &h[ldh*V->aitr_j], &int1);
+    tmp_int = V->aitr_j * 1;
+    zgemv_("C", &n, &tmp_int, &cdbl1, v, &ldv, &workd[ipj], &int1, &cdbl0, &h[ldh*V->aitr_j], &int1);
 
     //  Orthogonalize r_{j} against V_{j}.
     //  RESID contains OP*v_{j}. See STEP 3.
 
-    TRANS = "N";
-    zgemv_(TRANS, &n, &V->aitr_j, &cdblm1, v, &ldv, &h[ldv*V->aitr_j], &int1, &cdbl1, resid, &int1);
+    zgemv_("N", &n, &tmp_int, &cdblm1, v, &ldv, &h[ldv*V->aitr_j], &int1, &cdbl1, resid, &int1);
+
     if (V->aitr_j > 0) { h[V->aitr_j + ldh*(V->aitr_j-1)] = ARPACK_cplx(V->aitr_betaj, 0.0); }
 
     V->aitr_orth1 = 1;
@@ -1119,7 +1135,7 @@ LINE60:
         zcopy_(&n, resid, &int1, &workd[irj], &int1);
         ipntr[0] = irj;
         ipntr[1] = ipj;
-        V->ido = 2;
+        V->ido = ido_BX;
 
         //  Exit in order to compute B*r_{j}
 
@@ -1139,7 +1155,7 @@ LINE70:
 
     if (V->bmat)
     {
-        *rnorm = cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1));
+        *rnorm = sqrt(cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1)));
     } else {
         *rnorm = dznrm2_(&n, resid, &int1);
     }
@@ -1160,7 +1176,7 @@ LINE70:
     //  angle between  OP*x and the computed residual is less
     //  than or equal to 0.7071.
 
-    if (*rnorm > sq2o2) { goto LINE100; }
+    if (*rnorm > sq2o2*V->aitr_wnorm) { goto LINE100; }
     V->aitr_iter = 0;
 
     //  Enter the Iterative refinement phase. If further
@@ -1172,26 +1188,25 @@ LINE80:
 
     //  Compute V_{j}^T * B * r_{j}.
     //  WORKD(IRJ:IRJ+J-1) = v(:,1:J)'*WORKD(IPJ:IPJ+N-1).
-
-    TRANS = "T";
-    zgemv_(TRANS, &n, &V->aitr_j, &cdbl1, v, &ldv, &workd[ipj], &int1, &cdbl0, &workd[irj], &int1);
+    tmp_int = V->aitr_j + 1;
+    zgemv_("C", &n, &tmp_int, &cdbl1, v, &ldv, &workd[ipj], &int1, &cdbl0, &workd[irj], &int1);
 
     //  Compute the correction to the residual:
     //  r_{j} = r_{j} - V_{j} * WORKD(IRJ:IRJ+J-1).
     //  The correction to H is v(:,1:J)*H(1:J,1:J)
     //  + v(:,1:J)*WORKD(IRJ:IRJ+J-1)*e'_j.
 
-    TRANS = "N";
-    tmp_dbl = -1.0;
-    zgemv_(TRANS, &n, &V->aitr_j, &cdblm1, v, &ldv, &workd[irj], &int1, &cdbl1, resid, &int1);
-    zaxpy_(&V->aitr_j, &cdbl1, &workd[irj], &int1, &h[ldh*V->aitr_j], &int1);
+    zgemv_("N", &n, &tmp_int, &cdblm1, v, &ldv, &workd[irj], &int1, &cdbl1, resid, &int1);
+    zaxpy_(&tmp_int, &cdbl1, &workd[irj], &int1, &h[ldh*V->aitr_j], &int1);
+
     V->aitr_orth2 = 1;
+
     if (V->bmat)
     {
         zcopy_(&n, resid, &int1, &workd[irj], &int1);
         ipntr[0] = irj;
         ipntr[1] = ipj;
-        V->ido = 2;
+        V->ido = ido_BX;
 
         //  Exit in order to compute B*r_{j}.
         //  r_{j} is the corrected residual.
@@ -1209,7 +1224,7 @@ LINE90:
 
     if (V->bmat)
     {
-        V->aitr_rnorm1 = cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1));
+        V->aitr_rnorm1 = sqrt(cabs(zdotc_(&n, resid, &int1, &workd[ipj], &int1)));
     } else {
         V->aitr_rnorm1 = dznrm2_(&n, resid, &int1);
     }
@@ -1217,7 +1232,7 @@ LINE90:
     //  Determine if we need to perform another
     //  step of re-orthogonalization.
 
-    if (V->aitr_rnorm1 > sq2o2)
+    if (V->aitr_rnorm1 > sq2o2*(*rnorm))
     {
 
         //  No need for further refinement.
@@ -1256,11 +1271,10 @@ LINE100:
     //  STEP 6: Update  j = j+1;  Continue
 
     V->aitr_j += 1;
-    if (V->aitr_j >= V->nev + V->np)
+    if (V->aitr_j >= k + np)
     {
-        V->ido = 99;
-        int k = (V->nev > 1 ? V->nev : 1);
-        for (i = k - 1; i < k - 2 + V->np; i++)
+        V->ido = ido_DONE;
+        for (i = (k > 0 ? k-1 : k); i < k + np - 1; i++)
         {
 
             //  Check for splitting and deflation.
@@ -1270,10 +1284,10 @@ LINE100:
             tst1 = cabs(h[i + ldh*i]) + cabs(h[i+1 + ldh*(i+1)]);
             if (tst1 == 0.0)
             {
-                tmp_int = k + V->np;
-                // dlanhs(norm, n, a, lda, work) with "work" being double type
-                // Recasting complex workspace to double
-                tst1 = zlanhs_(NORM, &tmp_int, h, &ldh, (double*)&workd[n]);
+                tmp_int = k + np;
+                // zlanhs(norm, n, a, lda, work) with "work" being double type
+                // Recasting complex workspace to double for scratch space.
+                tst1 = zlanhs_("1", &tmp_int, h, &ldh, (double*)&workd[n]);
             }
             if (cabs(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
             {
@@ -1287,6 +1301,7 @@ LINE100:
 
 }
 
+
 static void
 znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
        int ldv, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* resid,
@@ -1295,12 +1310,12 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
 {
     int cconj;
     int i, j, jj, int1 = 1, istart, iend = 0, tmp_int;
+
     int kplusp = *kev + np;
 
     double smlnum = unfl * ( n / ulp);
     double c, tst1;
     double tmp_dbl;
-    // double u[3] = { 0.0 };
     ARPACK_CPLX_TYPE f, g, h11, h21, sigma, s, r, t, tmp_cplx;
 
 #if defined(_MSC_VER)
@@ -1309,19 +1324,11 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
 
     ARPACK_CPLX_TYPE cdbl1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cdbl0 = ARPACK_cplx(0.0, 0.0);
-    char *NORM = "1", *TRANS = "N";
+
 
     //  Initialize Q to the identity to accumulate
     //  the rotations and reflections
-
-    for (i = 0; i < kplusp; i++)
-    {
-        for (j = 0; j < kplusp; j++)
-        {
-            q[j + ldq*i] = ARPACK_cplx(0.0, 0.0);
-            if (i == j) { q[j + ldq*i] = ARPACK_cplx(1.0, 0.0); }
-        }
-    }
+    zlaset_("G", &kplusp, &kplusp, &cdbl0, &cdbl1, q, &ldq);
 
     //  Quick return if there are no shifts to apply
 
@@ -1337,151 +1344,70 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
         sigma = shift[jj];
         istart = 0;
 
-LINE20:
-
-        for (i = istart; i < kplusp - 1; i++)
+        while (istart < kplusp - 1)
         {
-
-            //  Check for splitting and deflation. Use
-            //  a standard test as in the QR algorithm
-            //  REFERENCE: LAPACK subroutine zlahqr
-
-            tst1 = fabs(creal(h[i + ldh*i])) + fabs(cimag(h[i + ldh*i])) +
-                   fabs(creal(h[i+1 + ldh*(i+1)])) + fabs(cimag(h[i+1 + ldh*(i+1)]));
-            if (tst1 == 0.0)
+            for  (iend = istart; iend < kplusp - 1; iend++)
             {
-                // zlanhs(norm, n, a, lda, work)
-                tmp_int = kplusp - jj + 1;
-                zlanhs_(NORM, &tmp_int, h, &ldh, (double*)workl);
+                tst1 = fabs(creal(h[iend + ldh*iend])) + fabs(cimag(h[iend + ldh*iend])) +
+                       fabs(creal(h[iend+1 + ldh*(iend+1)])) + fabs(cimag(h[iend+1 + ldh*(iend+1)]));
+                if (tst1 == 0.0)
+                {
+                   tmp_int = kplusp - jj;
+                    zlanhs_("1", &tmp_int, h, &ldh, (double*)workl);
+                }
+                if (fabs(creal(h[iend+1 + ldh*iend])) <= fmax(ulp*tst1, smlnum))
+                {
+                    break;
+                }
             }
-            if (fabs(creal(h[i+1 + ldh*i])) <= fmax(ulp*tst1, smlnum))
+            if ((istart == iend) || (istart >= *kev))
             {
-                iend = i;
-                h[i+1 + ldh*i] = ARPACK_cplx(0.0, 0.0);
-                break;
+                istart += 1;
+                continue;
+            } else {
+
+                // No reason to apply a shift to block of order 1
+                // or if the current block starts after the point
+                // of compression since we'll discard this stuff.
+
+                h[iend+1 + ldh*iend] = ARPACK_cplx(0.0, 0.0);
             }
-        }
-        // 30
-        // Adjust iend if no break
-        if (i == kplusp - 1) { iend = kplusp - 1; }
-        // 40
 
-        //  No reason to apply a shift to block of order 1
-        //  or if the current block starts after the point
-        //  of compression since we'll discard this stuff
+            h11 = h[istart + ldh*istart];
+            h21 = h[istart + 1 + ldh*istart];
+            // Because MSVC is not C99 compliant hence does not support arithmetic ops.
+            // f = h11 - sigma;
+            f = ARPACK_cplx(creal(h11)-creal(sigma), cimag(h11)-cimag(sigma));
+            g = h21;
 
-        if ((istart == iend) || (istart > *kev))
-        {
-            // go to 100
+            for (i = istart; i < iend; i++)
+            {
+
+                //  Construct the plane rotation G to zero out the bulge
+
+                zlartg_(&f, &g, &c, &s, &r);
+                if (i > istart)
+                {
+                    h[i + ldh*(i-1)] = r;
+                    h[i + 1 + ldh*(i-1)] = ARPACK_cplx(0.0, 0.0);
+                }
+                tmp_int = kplusp - i;
+                zrot_(&tmp_int, &h[i + ldh*i], &int1, &h[i + 1 + ldh*i], &ldh, &c, &s);
+                tmp_int = (i + 2 ? iend : i + 2) + 1;
+                s = conj(s);
+                zrot_(&tmp_int, &h[ldh*(i+1)], &int1, &h[ldh*(i+1)], &int1, &c, &s);
+                tmp_int = (i + jj + 2 > kplusp ? kplusp : i + jj + 2);
+                zrot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i+1)], &int1, &c, &s);
+
+                if (i < iend - 1)
+                {
+                    f = h[i + 1 + ldh*i];
+                    g = h[i + 2 + ldh*i];
+                }
+            }
             istart = iend + 1;
-            if (iend < kplusp) { goto LINE20; }
-            continue;
         }
-
-        h11 = h[istart + ldh*istart];
-        h21 = h[istart + 1 + ldh*istart];
-        // Because MSVC is not C99 compliant hence does not support arithmetic ops.
-        // f = h11 - sigma;
-        f = ARPACK_cplx(creal(h11)-creal(sigma), cimag(h11)-cimag(sigma));
-        g = h21;
-
-        for (i = istart; i <= iend-1; i++)
-        {
-
-            //  Construct the plane rotation G to zero out the bulge
-
-            zlartg_(&f, &g, &c, &s, &r);
-            if (i > istart)
-            {
-                h[i + ldh*(i-1)] = r;
-                h[i + 1 + ldh*(i-1)] = ARPACK_cplx(0.0, 0.0);
-            }
-
-            //  Apply rotation to the left of H;  H <- G'*H
-
-            // More MSVC torture to get basic arithmetic ops
-            // MSVC does not implement +,-,*,/ ops for complex numbers.
-            for (j = i; j < kplusp; j++)
-            {
-                #if defined(_MSC_VER)
-                    t = _Cmulcc(s, h[i + 1 + ldh*j]);
-                    tmp_cplx = _Cmulcr(h[i + ldh*j], c);
-                    t = ARPACK_cplx(creal(t) + creal(tmp_cplx), cimag(t) + cimag(tmp_cplx));
-
-                    tmp_cplx  = _Cmulcc(ARPACK_cplx(-creal(s),cimag(s)), h[i + 1 + ldh*j]);
-                    tmp_cplx2 = _Cmulcr(h[i + 1 + ldh*j], c);
-                    h[i + 1 + ldh*j] = ARPACK_cplx(creal(tmp_cplx) + creal(tmp_cplx2), cimag(tmp_cplx)+cimag(tmp_cplx2));
-
-                    h[i + ldh*j]     = t;
-                #else
-                    t                =        c*h[i + ldh*j] + s*h[i + 1 + ldh*j];
-                    h[i + 1 + ldh*j] = -conj(s)*h[i + ldh*j] + c*h[i + 1 + ldh*j];
-                    h[i + ldh*j]     = t;
-                #endif
-            }
-            // 50
-
-            //  Apply rotation to the right of H;  H <- H*G
-
-            for (j = 0; j < (i+2 > iend ? iend : i+2); j++)
-            {
-                #if defined(_MSC_VER)
-                    t = _Cmulcc(ARPACK_cplx(creal(s), -cimag(s)), h[j + ldh*(i + 1)]);
-                    tmp_cplx = _Cmulcr(h[j + ldh*i], c);
-                    t = ARPACK_cplx(creal(t) + creal(tmp_cplx), cimag(t) + cimag(tmp_cplx));
-
-                    tmp_cplx  = _Cmulcc(ARPACK_cplx(-creal(s), -cimag(s)), h[j + ldh*i]);
-                    tmp_cplx2 = _Cmulcr(h[j + ldh*(i + 1)], c);
-                    h[j + ldh*(i + 1)] = ARPACK_cplx(creal(tmp_cplx) + creal(tmp_cplx2), cimag(tmp_cplx) + cimag(tmp_cplx2));
-
-                    h[j + ldh*i]       = t;
-                #else
-                    t                  =  c*h[j + ldh*i] + conj(s)*h[j + ldh*(i + 1)];
-                    h[j + ldh*(i + 1)] = -s*h[j + ldh*i] +       c*h[j + ldh*(i + 1)];
-                    h[j + ldh*i]       = t;
-                #endif
-            }
-            // 60
-
-            //  Accumulate the rotation in the matrix Q;  Q <- Q*G
-
-            for (j = 0; j < (i+jj+1 > kplusp ? kplusp : i+jj+1); j++)
-            {
-                #if defined(_MSC_VER)
-                    t = _Cmulcc(ARPACK_cplx(creal(s), -cimag(s)), q[j + ldq*(i + 1)]);
-                    tmp_cplx = _Cmulcr(q[j + ldq*i], c);
-                    t = ARPACK_cplx(creal(t) + creal(tmp_cplx), cimag(t) + cimag(tmp_cplx));
-
-                    tmp_cplx  = _Cmulcc(ARPACK_cplx(-creal(s), -cimag(s)), q[j + ldq*i]);
-                    tmp_cplx2 = _Cmulcr(q[j + ldq*(i + 1)], c);
-                    q[j + ldq*(i + 1)] = ARPACK_cplx(creal(tmp_cplx) + creal(tmp_cplx2), cimag(tmp_cplx) + cimag(tmp_cplx2));
-
-                    q[j + ldq*i]       = t;
-                #else
-                    t                  =  c*q[j + ldq*i] + conj(s)*q[j + ldq*(i + 1)];
-                    q[j + ldq*(i + 1)] = -s*q[j + ldq*i] +       c*q[j + ldq*(i + 1)];
-                    q[j + ldq*i]       = t;
-                #endif
-            }
-            // 70
-
-            //  Prepare for next rotation
-
-            if (i < iend-1)
-            {
-                f = h[i + 1 + ldh*i];
-                g = h[i + 2 + ldh*i];
-            }
-
-        }
-        //80
-
-        //  Apply the same shift to the next block if there is any.
-
-        istart = iend + 1;
-        if (iend < kplusp) { goto LINE20; }
     }
-    // 110
 
     //  Perform a similarity transformation that makes
     //  sure that H will have non negative sub diagonals
@@ -1490,17 +1416,21 @@ LINE20:
     {
         if ((creal(h[j+1 + ldh*j]) < 0.0) && (cimag(h[j+1 + ldh*j]) != 0.0))
         {
-            tmp_int = kplusp - j;
             tmp_dbl = cabs(h[j+1 + ldh*j]);
             t = ARPACK_cplx(creal(h[j+1 + ldh*j]) / tmp_dbl,
-                            cimag(h[j+1 + ldh*j]) / tmp_dbl);
-            tmp_cplx = conj(t);
+            cimag(h[j+1 + ldh*j]) / tmp_dbl);
 
+            tmp_cplx = conj(t);
+            tmp_int = kplusp - j;
             zscal_(&tmp_int, &tmp_cplx, &h[j+1 + ldh*j], &ldh);
-            tmp_int = (j+2 > kplusp ? kplusp : j+ 2) + 1;
+
+            tmp_int = (j+3 > kplusp ? kplusp : j+3);
             zscal_(&tmp_int, &t, &h[ldh*(j+1)], &int1);
-            tmp_int = (j+np+1 > kplusp ? kplusp : j+np+1) + 1;
+
+            tmp_int = (j+np+2 > kplusp ? kplusp : j+np+2);
             zscal_(&tmp_int, &t, &q[ldq*(j+1)], &int1);
+
+            h[j+1 + ldh*j] = ARPACK_cplx(creal(h[j+1 + ldh*j]), 0.0);
         }
     }
     // 120
@@ -1519,9 +1449,9 @@ LINE20:
                fabs(cimag(h[i + ldh*i])) + fabs(cimag(h[i+1 + ldh*(i+1)]));
         if (tst1 == 0.0)
         {
-            tst1 = zlanhs_(NORM, kev, h, &ldh, (double*)workl);
+            tst1 = zlanhs_("1", kev, h, &ldh, (double*)workl);
         }
-        if (creal(h[i+1 + ldh*i]) <= fmax(ulp+tst1, smlnum))
+        if (creal(h[i+1 + ldh*i]) <= fmax(ulp*tst1, smlnum))
         {
             h[i+1 + ldh*i] = ARPACK_cplx(0.0, 0.0);
         }
@@ -1536,7 +1466,7 @@ LINE20:
 
     if (creal(h[*kev + ldh*(*kev-1)]) > 0.0)
     {
-        zgemv_(TRANS, &n, &kplusp, &cdbl1, v, &ldv, &q[(*kev)*ldq], &int1, &cdbl0, &workd[n], &int1);
+        zgemv_("N", &n, &kplusp, &cdbl1, v, &ldv, &q[(*kev)*ldq], &int1, &cdbl0, &workd[n], &int1);
     }
 
     //  Compute column 1 to kev of (V*Q) in backward order
@@ -1545,14 +1475,13 @@ LINE20:
     for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
-        zgemv_(TRANS, &n, &tmp_int, &cdbl1, v, &ldv, &q[(*kev-i)*ldq], &int1, &cdbl0, workd, &int1);
-        zcopy_(&n, workd, &int1, &v[(kplusp-i)*ldv], &int1);
+        zgemv_("N", &n, &tmp_int, &cdbl1, v, &ldv, &q[(*kev-i-1)*ldq], &int1, &cdbl0, workd, &int1);
+        zcopy_(&n, workd, &int1, &v[(kplusp-i-1)*ldv], &int1);
     }
 
     //   Move v(:,kplusp-kev+1:kplusp) into v(:,1:kev).
 
-    // Use any letter other than "L", "U", hence TRANS here.
-    zlacpy_(TRANS, &n, kev, &v[ldv*(kplusp - *kev)], &ldv, v, &ldv);
+    zlacpy_("A", &n, kev, &v[ldv*(kplusp - *kev)], &ldv, v, &ldv);
 
     //  Copy the (kev+1)-st column of (V*Q) in the appropriate place
 
@@ -1566,7 +1495,7 @@ LINE20:
     //     sigmak = (e_{kplusp}'*Q)*e_{kev}
     //     betak = e_{kev+1}'*H*e_{kev}
 
-    zscal_(&n, &q[kplusp-1 + ldq*(*kev-i)], resid, &int1);
+    zscal_(&n, &q[kplusp-1 + ldq*(*kev-1)], resid, &int1);
 
     if (creal(h[*kev + ldh*(*kev-1)]) > 0.0)
     {
@@ -1575,6 +1504,7 @@ LINE20:
 
     return;
 }
+
 
 static void
 zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* ritz,
@@ -1586,7 +1516,6 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
     double temp;
     ARPACK_CPLX_TYPE vl[1] = { 0.0 };
     ARPACK_CPLX_TYPE c1 = ARPACK_cplx(1.0, 0.0), c0 = ARPACK_cplx(0.0, 0.0);
-    char *UPLO = "A", *SIDE = "R", *HOWMNY = "B";
 
     //  1. Compute the eigenvalues, the last components of the
     //     corresponding Schur vectors and the full Schur form T
@@ -1594,13 +1523,8 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
     //     zlahqr returns the full Schur form of H
     //     in WORKL(1:N**2), and the Schur vectors in q.
 
-    zlacpy_(UPLO, &n, &n, h, &ldh, workl, &n);
-    zlaset_(UPLO, &n, &n, &c0, &c1, q, &ldq);
-    for (j = 0; j < n-1; j++)
-    {
-        bounds[j] = ARPACK_cplx(0.0, 0.0);
-    }
-
+    zlacpy_("A", &n, &n, h, &ldh, workl, &n);
+    zlaset_("A", &n, &n, &c0, &c1, q, &ldq);
     zlahqr_(&int1, &int1, &n, &int1, &n, workl, &ldh, ritz, &int1, &n, q, &ldq, ierr);
     if (*ierr != 0) { return; }
 
@@ -1610,7 +1534,7 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
     //     apply the Schur vectors to get the corresponding
     //     eigenvectors.
 
-    ztrevc_(SIDE, HOWMNY, select, &n, workl, &n, vl, &n, q, &ldq, &n, &n, &workl[n*n], rwork, ierr);
+    ztrevc_("R", "B", select, &n, workl, &n, vl, &n, q, &ldq, &n, &n, &workl[n*n], rwork, ierr);
     if (*ierr != 0) { return; }
 
     //  Scale the returning eigenvectors so that their
@@ -1628,11 +1552,12 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
 
     //  Compute the Ritz estimates
 
-    zcopy_(&n, &q[n-1], &ldq, workl, &int1);
+    zcopy_(&n, &q[n-1], &ldq, bounds, &int1);
     zdscal_(&n, rnorm, bounds, &int1);
 
     return;
 }
+
 
 void
 zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
@@ -1651,11 +1576,12 @@ zngets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np,
         //  are applied in subroutine znapps.
         //  Be careful and use 'SM' since we want to sort BOUNDS!
 
-        zsortc(which_SR, 1, *np, bounds, ritz);
+        zsortc(which_SM, 1, *np, bounds, ritz);
     }
 
     return;
 }
+
 
 static void
 zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
@@ -1663,14 +1589,13 @@ zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
        int* ipntr, ARPACK_CPLX_TYPE* workd)
 {
     int jj, int1 = 1;
-    char *TRANS = "C";
     const double sq2o2 = sqrt(2.0) / 2.0;
     ARPACK_CPLX_TYPE cnorm;
     ARPACK_CPLX_TYPE c0 = ARPACK_cplx(0.0, 0.0);
     ARPACK_CPLX_TYPE c1 = ARPACK_cplx(1.0, 0.0);
     ARPACK_CPLX_TYPE cm1 = ARPACK_cplx(-1.0, 0.0);
 
-    if (V->ido == 0)
+    if (V->ido == ido_FIRST)
     {
         V->info = 0;
         V->getv0_iter = 0;
@@ -1680,13 +1605,17 @@ zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
         //  Possibly generate a random starting vector in RESID
         //  Skip if this the return of ido_RANDOM.
 
-        if (!(initv) || (V->ido != ido_RANDOM))
+        if (!(initv))
         {
             // Request a random vector from the user into resid
             V->ido = ido_RANDOM;
             return;
         }
+    }
 
+    // Back from random vector generation
+    if (V->ido == ido_RANDOM)
+    {
         //  Force the starting vector into the range of OP to handle
         //  the generalized problem when B is possibly (singular).
 
@@ -1723,8 +1652,10 @@ zgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
     {
         ipntr[0] = n;
         ipntr[1] = 0;
-        V->ido = 2;
+        V->ido = ido_BX;
         return;
+    } else {
+        zcopy_(&n, resid, &int1, workd, &int1);
     }
 
 LINE20:
@@ -1743,7 +1674,7 @@ LINE20:
 
     if (j == 0)
     {
-        V->ido = 99;
+        V->ido = ido_DONE;
         return;
     }
 
@@ -1760,9 +1691,8 @@ LINE20:
     V->getv0_orth = 1;
 
 LINE30:
-    zgemv_(TRANS, &n, &j, &c1, v, &ldv, workd, &int1, &c0, &workd[n], &int1);
-    TRANS = "N";
-    zgemv_(TRANS, &n, &j, &cm1, v, &ldv, workd, &int1, &c1, &workd[n], &int1);
+    zgemv_("C", &n, &j, &c1, v, &ldv, workd, &int1, &c0, &workd[n], &int1);
+    zgemv_("N", &n, &j, &cm1, v, &ldv, &workd[n], &int1, &c1, resid, &int1);
 
     //  Compute the B-norm of the orthogonalized starting vector
 
@@ -1771,7 +1701,7 @@ LINE30:
         zcopy_(&n, resid, &int1, &workd[n], &int1);
         ipntr[0] = n;
         ipntr[1] = 0;
-        V->ido = 2;
+        V->ido = ido_BX;
         return;
     } else {
         zcopy_(&n, resid, &int1, workd, &int1);
@@ -1780,7 +1710,7 @@ LINE30:
 LINE40:
     if (V->bmat)
     {
-        *rnorm = cabs(zdotc_(&n, resid, &int1, workd, &int1));
+        *rnorm = sqrt(cabs(zdotc_(&n, resid, &int1, workd, &int1)));
     } else {
         *rnorm = dznrm2_(&n, resid, &int1);
     }
@@ -1789,12 +1719,12 @@ LINE40:
 
     if (*rnorm > sq2o2*V->getv0_rnorm0)
     {
-        V->ido = 99;
+        V->ido = ido_DONE;
         return;
     }
 
     V->getv0_iter += 1;
-    if (V->getv0_iter < 1)
+    if (V->getv0_iter < 2)
     {
 
         //  Perform iterative refinement step
@@ -1810,10 +1740,10 @@ LINE40:
         V->info = -1;
     }
 
-    V->ido = 99;
-
+    V->ido = ido_DONE;
     return;
 }
+
 
 static void
 zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE* x, ARPACK_CPLX_TYPE* y)
@@ -1875,12 +1805,14 @@ zsortc(const enum ARPACK_which w, const int apply, const int n, ARPACK_CPLX_TYPE
     }
 }
 
+
 static int sortc_LM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) > cabs(y)); }
 static int sortc_SM(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cabs(x) < cabs(y)); }
 static int sortc_LR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) > creal(y)); }
 static int sortc_SR(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (creal(x) < creal(y)); }
 static int sortc_LI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) > cimag(y)); }
 static int sortc_SI(const ARPACK_CPLX_TYPE x, const ARPACK_CPLX_TYPE y) { return (cimag(x) < cimag(y)); }
+
 
 // zdotc is the complex conjugate dot product of two complex vectors.
 // Due some historical reasons, this function can cause segfaults on some
