@@ -1073,7 +1073,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = xp.reshape(ret, shape_ret)
+    ret = xp.reshape(ret, tuple(shape_ret))
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
