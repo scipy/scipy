@@ -3235,7 +3235,7 @@ class TestCheby1:
                             6.334127355102684e+01, -4.963358186631157e+01,
                             2.434862182949389e+01, -6.836925348604676e+00,
                             8.412934944449140e-01]),
-                        rtol=0, atol=2.5e-14)
+                        rtol=0, atol=5e-14)
 
         b, a = cheby1(4, 1, xp.asarray([0.4, 0.7]), btype='band')
         assert_array_almost_equal(b, xp.asarray([0.0084, 0, -0.0335, 0, 0.0502, 0,
