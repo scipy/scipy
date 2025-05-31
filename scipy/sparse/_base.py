@@ -658,7 +658,7 @@ class _spbase(SparseABC):
                 # eq and ne return True or False instead of an array when the shapes
                 # don't match. Numpy doesn't do this. Is this what we want?
                 if op in (operator.eq, operator.ne):
-                    return op == operator.eq
+                    return op is operator.ne
                 raise ValueError("inconsistent shape")
 
             csr_self = (self if self.ndim < 3 else self.reshape(1, -1)).tocsr()
