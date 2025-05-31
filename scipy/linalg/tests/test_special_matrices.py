@@ -578,7 +578,6 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),
