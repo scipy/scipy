@@ -735,6 +735,7 @@ def remez(numtaps, bands, desired, *, weight=None, type='bandpass',
     firwin
     firwin2
     minimum_phase
+    remezord
 
     References
     ----------
@@ -943,30 +944,31 @@ def _remlplen_ichige(fp, fs, dp, ds):
     return int(N4)
 
 
-def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
-    """
-    Filter parameter selection for the Remez exchange algorithm.
+def remezord(band_edges, gains, tols, *, fs=1.0, alg="ichige"):
+    """Filter parameter selection for the Remez exchange algorithm.
 
-    Calculate the parameters required by the Remez exchange algorithm to
-    construct a finite impulse response (FIR) filter that approximately meets
-    the specified design.
+    Calculate the parameters required by the Remez exchange algorithm to construct a
+    finite impulse response (FIR) filter that approximately meets the specified design
+    of gains and tolerances for a given number of frequency bands.
 
     Parameters
     ----------
-    freqs : array_like
-        A monotonic sequence of non-negative band edges in Hertz. All elements
-        must be less than half the sampling frequency `fs`.
-    amps : array_like
-        A sequence containing the desired amplitudes of the signal to be
-        filtered over the corresponding frequency bands in `freqs`.
-    rips : array_like
-        A sequence specifying the maximum allowable ripples of each band in the
-        frequency response.
+    band_edges : array_like
+        A monotonic sequence of non-negative frequency band edges.
+        All elements must be less than half the sampling frequency `fs`.
+    gains : array_like
+        A sequence of non-negative numbers representing the desired gains for each
+        frequency band. For frequency bands to be valid, the condition
+        ``len(band_edges) == 2*(len(gains)-1)`` must hold.
+    tols : array_like
+        A sequence of non-negative numbers specifying the tolerance, i.e., the maximum
+        allowable deviation from each gain, in each frequency band. Note that
+        ``len(tols) == len(gains)`` must hold.
     fs : float, optional
         The sampling frequency of the signal. Defaults to 1.0
     alg : {'herrmann', 'kaiser', 'ichige'}, optional
         Filter length approximation algorithm. Possible algorithms are
-        Herrmann [1]_, Kaiser [2]_, or Ichige [3]_. (Default: 'ichige')
+        Herrmann [1]_, Kaiser [2]_, or Ichige [3]_. (Default: ``'ichige'``)
 
     Returns
     -------
@@ -983,11 +985,11 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
     Raises
     ------
     ValueError:
-        - If any element in `freqs` is negative, greater than 0.5, or the
+        - If any element in `band_edges` is negative, greater than 0.5, or the
           length is not valid.
-        - If the lengths of `amps` and `rips` are not equal or one more
-          than half the length of `freqs`.
-        - If any element in `rips` is negative.
+        - If the lengths of `gains` and `tols` are not equal or one more
+          than half the length of `band_edges`.
+        - If any element in `tols` is negative.
         - If `alg` is not a valid string option.
 
     See Also
@@ -996,27 +998,20 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
 
     Notes
     -----
-    This function estimates the filter parameters required for designing a
-    FIR filter using the Remez exchange algorithm (Parks-McClellan). Three
-    estimation methods are available: 'herrmann', 'kaiser', and 'ichige'.
-    Accurate filter length estimation is crucial for minimizing computational
-    cost (in software) and circuit complexity (in hardware), where shorter
-    filters translate to reduced cost, size, and power consumption.
+    This function consumes a desired gain with an allowed tolerance (`tols`) for each
+    frequency band to estimate the according parameters for the `remez` function. On
+    the other hand, the `remez` function minimizes a weighted deviation from the
+    desired gain in each frequency band.
 
-    The 'herrmann' and 'kaiser' methods provide relatively simple formulas for
-    estimating filter order. They suffer from several key drawbacks: the
-    original formulations were derived primarily from data for odd-length
-    filters, neglecting even-length filter designs. Furthermore, when these
-    formulas were developed, designing filters with a large number of taps
-    (e.g., greater than 150) was computationally challenging, leading to
-    decreased accuracy for longer filters, which are now commonly feasible.
+    Since this function only provides an estimate of the optimal parameters, i.e.,
+    minimum number of taps, for the `remez` algorithm, varying the those parameters a
+    bit, especially `numtaps`, can improve the results. According to [3]_, Ichige's
+    algorithm typically offers a more accurate estimation than the classical methods
+    from Herrmann and Kaiser. On the other hand, using the 'herrmann' and 'kaiser'
+    methods may result in a lower number of taps than 'ichige', especially for low
+    order filters.
 
-    The 'ichige' method, introduced by Ichige et al., offers a more accurate
-    estimation, especially for longer filters. Ichige's work addresses the
-    limitations of the earlier methods by providing a refined formula derived
-    from extensive experimental results.
-
-    .. versionadded:: 1.16.0
+    .. versionadded:: 1.17.0
 
     References
     ----------
@@ -1032,86 +1027,103 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
 
     Examples
     --------
-    In these examples, `remezord` is used to design low-pass, and a band-pass
-    filters.
-
-    `freqz` is used to compute the frequency response of each filter, and
-    the utility function ``plot_response`` defined below is used to plot
-    the response.
-
-    Designing a low-pass filter with the following specifications:
-        * 500 Hz passband cutoff frequency
-        * 600 Hz stopband cutoff frequency
-        * 40 dB attenuation
-        * 3 dB maximum passband ripple
-        * 2 kHz sampling frequency
-
-    >>> from scipy.signal import freqz, remez, remezord
-    >>> rp, rs = 3, 40  # Passband ripple, Stopband ripple
-    >>> fs = 2000  # Sampling frequency
-    >>> freqs = [500, 600]  # Band edges
-    >>> amps = [1, 0]  # Amplitudes
-    >>> rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max ripples
-    ...
-    >>> # Then, generate the filter parameters with `remezord`:
-    ...
-    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
-    >>> numtaps
-    27
-    >>> bands
-    [0, 0.25, 0.3, 0.5]
-    >>> desired
-    [1., 0.]
-    >>> weight
-    [1., 17.09973573]
-
-    The designed filter exhibits the following frequency response
-    characteristics:
+    The first example designs a low-pass filter where the transition region from
+    passband to stopband should be between 500 Hz and 600 Hz. The stopband should be
+    attenuated by at least 40 dB. The passband height should be no greater than 3 dB.
+    The first subplot shows the complete frequency response. The other two suplots are
+    maginfied regions of the first subplot. The white background depicts the allowed
+    tolerance region for the design.
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    >>> def plot_response(w, h, title):
-    ...     "Utility function to plot response functions"
-    ...     fig, ax = plt.subplots()
-    ...     ax.plot(w, 20*np.log10(np.abs(h)))
-    ...     ax.set_ylim(-60, 5)
-    ...     ax.grid(True)
-    ...     ax.set_xlabel('Frequency (Hz)')
-    ...     ax.set_ylabel('Gain (dB)')
-    ...     ax.set_title(title)
+    >>> from matplotlib.patches import Polygon
+    >>> from scipy.signal import freqz, remez, remezord
     ...
+    >>> fs = 2000  # Sampling frequency in Hz
+    >>> rp, rs = 3, 40  # Passband ripple bandwidth and stopband ripple magnitude in dB
+    >>> band_edges, gains = [500, 600], [1, 0]  # Band edges in Hz and desired gain
+    >>> tols = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]  # Max. gain deviation
+    ...
+    >>> # design the filter:
+    >>> numtaps, bands, desired, weight = remezord(band_edges, gains, tols, fs=fs)
     >>> taps = remez(numtaps, bands, desired, weight=weight)
-    >>> w, h = freqz(taps, worN=2000, fs=fs)
-    >>> plot_response(w, h, "Remezord Low-pass Filter")
+    >>> w, h = freqz(taps, worN=2000, fs=fs)  # frequency response of filter
+    ...
+    >>> # Create polygon depicting the tolerance region of the filter design:
+    >>> f0, f1, f2, f3 = (0, *band_edges, 1000)
+    >>> y0, y1, y2, y3 = 20 * np.log10([1e-10, tols[1], 1 - tols[0], 1 + tols[0]])
+    >>> p_pts = [(f0, y3), (f2, y3), (f2, y1), (f3, y1),  # polygon corners
+    ...          (f3, y0), (f1, y0), (f1, y2), (f0, y2)]
+    ...
+    >>> fig, axx = plt.subplots(3, 1, tight_layout=True, figsize=(5, 5))
+    >>> axx[0].set_title(f"Frequency response of low-pass filter with {numtaps} taps")
+    >>> x_lims = [(f0, f3), (f0, f1+20), (f2-5, f2+70)]
+    >>> y_lims = [(-60, 5), (-3, 3), (-55, -35)]
+    >>> for ax, xl, yl in zip(axx, x_lims, y_lims):
+    ...     ax.set(ylabel="Gain in dB", xlabel="Frequency in Hz", xlim=xl, ylim=yl)
+    ...     ax.add_patch(Polygon(p_pts, color='white'))
+    ...     ax.plot(w, 20 * np.log10(abs(h)))
+    ...     ax.set_facecolor('lightblue')
+    ...     ax.grid()
     >>> plt.show()
 
-    Designing a band-pass filter with the following specifications:
-        * 2-5 kHz passband frequency
-        * 22 kHz sampling frequency
-        * 1e-1 Max ripples
+    Note that varying parameters improves the result: Passing ``numtaps=24`` instead of
+    ``numtaps=27`` to `remez` will still produce a filter within specification.
+    Alternatively, passing ``alg='herrmann'`` would have produced a valid filter made up
+    of 25 taps.
 
-    >>> fs = 22000  # Sampling frequency
-    >>> freqs = [1800, 2000, 5000, 5200]  # Band edges
-    >>> amps = [0, 1, 0]  # Amplitudes
-    >>> rips = [0.1, 0.1, 0.1]  # Max ripples
-    >>> numtaps, bands, desired, weight = remezord(freqs, amps, rips, fs=fs)
+    The second example illstrates that the number of taps can also be underestimated by
+    this function: A band-pass filter with a passband from 2 kHz to 5 kHz should be
+    designed. The transition regions are 200 Hz wide and the maximum height of the
+    ripples should be no larger than 1/10.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from matplotlib.patches import Polygon
+    >>> from scipy.signal import freqz, remez, remezord
+    ...
+    >>> fs = 22_000  # Sampling frequency in Hz
+    >>> band_edges = [1800, 2000, 5000, 5200]  # Band edges in kHz
+    >>> gains = [0, 1, 0]  # Desired band amplitudes
+    >>> tols = [0.1, 0.1, 0.1]  # Max. allowed gain deviations
+    ...
+    >>> # design the filter:
+    >>> numtaps, bands, desired, weight = remezord(band_edges, gains, tols, fs=fs)
     >>> taps = remez(numtaps, bands, desired, weight=weight)
-    >>> w, h = freqz(taps, worN=2000, fs=fs)
-    >>> plot_response(w, h, "Remezord Band-pass Filter")
+    >>> w, h = freqz(taps, worN=2000, fs=fs)  # frequency response of filter
+    ...
+    >>> # Create polygon depicting the tolerance region of the filter design:
+    >>> f0, f1, f2, f3, f4, f5 = (0, *band_edges, 11_000)
+    >>> y0, y1, y2, y3 = 20 * np.log10([1e-10, 0.1, 0.9, 1.1])
+    >>> p_pts= [(f0, y1), (f1, y1), (f1, y3), (f4, y3), (f4, y1), (f5, y1),
+    ...         (f5, y0), (f3, y0), (f3, y2), (f2, y2), (f2, y0), (f0, y0)]
+    ...
+    >>> fig, axx = plt.subplots(3, 1, tight_layout=True, figsize=(5, 5))
+    >>> axx[0].set_title(f"Frequency response of band-pass filter with {numtaps} taps")
+    >>> x_lims = [(f0, f5), (f1, f4), (f0, f5)]
+    >>> y_lims = [(-25, 2), (-1.5, 1.2), (-22, -18)]
+    >>> for ax, xl, yl in zip(axx, x_lims, y_lims):
+    ...     ax.set(ylabel="Gain in dB", xlabel="Frequency in Hz", xlim=xl, ylim=yl)
+    ...     ax.add_patch(Polygon(p_pts, color='white'))
+    ...     ax.plot(w, 20*np.log10(abs(h)))
+    ...     ax.set_facecolor('lightblue')
+    ...     ax.grid()
     >>> plt.show()
+
+    Note that `numtaps` can be increased to 87 to obtain a filter within the desired
+    specification.
 
     """
     # Make sure the parameters are floating point numpy arrays:
-    freqs = np.asarray(freqs, "d")
-    amps = np.asarray(amps, "d")
-    rips = np.asarray(rips, "d")
+    band_edges = np.asarray(band_edges, "d")
+    gains = np.asarray(gains, "d")
+    tols = np.asarray(tols, "d")
 
     # Validate inputs shapes/types
-    if len(amps) != len(rips):
-        raise ValueError("Number of amplitudes must equal number of ripples.")
-    if len(freqs) != 2 * (len(amps) - 1):
-        raise ValueError("Number of band edges must equal "
-                         "2*((number of amplitudes)-1)")
+    if len(gains) != len(tols):
+        raise ValueError(f"{len(gains)=} does not equal {len(tols)=}!")
+    if len(band_edges) != 2 * (len(gains) - 1):
+        raise ValueError(f"{len(band_edges)=} must equal {2*(len(gains)-1)=}!")
     if alg == "herrmann":
         remlplen = _remlplen_herrmann
     elif alg == "kaiser":
@@ -1122,42 +1134,38 @@ def remezord(freqs, amps, rips, *, fs=1.0, alg="ichige"):
         raise ValueError(f"Parameter {alg=} not in ['herrmann' ,'kaiser', 'ichige'].")
 
     # Scale ripples with respect to band amplitudes:
-    rips /= amps + (amps == 0.0)
+    tols /= gains + (gains == 0.0)
     # Normalize input frequencies with respect to sampling frequency:
-    freqs /= fs
+    band_edges /= fs
 
     # Validate inputs values
-    if np.any(freqs > 0.5):
+    if np.any(band_edges > 0.5):
         raise ValueError("Frequency band edges must not exceed the Nyquist "
                          "frequency.")
-    if np.any(freqs < 0.0):
+    if np.any(band_edges < 0.0):
         raise ValueError("Frequency band edges must be nonnegative.")
-    if np.any(rips < 0.0):
+    if np.any(tols < 0.0):
         raise ValueError("Ripples must be nonnegative.")
 
     # Find the longest filter length needed to implement any of the
     # low-pass or high-pass filters with the specified edges:
-    f1 = freqs[0:-1:2]
-    f2 = freqs[1::2]
+    f1 = band_edges[0:-1:2]
+    f2 = band_edges[1::2]
     L = 0
-    for i in range(len(amps) - 1):
-        L = max(
-            (
-                L,
-                remlplen(f1[i], f2[i], rips[i], rips[i + 1]),
-                remlplen(0.5 - f2[i], 0.5 - f1[i], rips[i + 1], rips[i]),
-            )
-        )
-
+    for i in range(len(gains) - 1):
+        L = max((L,
+                 remlplen(f1[i], f2[i], tols[i], tols[i + 1]),
+                 remlplen(0.5 - f2[i], 0.5 - f1[i], tols[i + 1], tols[i]),
+                ))
     # Cap the sequence of band edges with the limits of the digital frequency
     # range:
-    bands = np.hstack((0.0, freqs, 0.5))
+    bands = np.hstack((0.0, band_edges, 0.5))
 
     # The filter design weights correspond to the ratios between the maximum
     # ripple and all of the other ripples:
-    weight = max(rips) / rips
+    weight = max(tols) / tols
 
-    return L, bands, amps, weight
+    return L, bands, gains, weight
 
 
 def firls(numtaps, bands, desired, *, weight=None, fs=None):

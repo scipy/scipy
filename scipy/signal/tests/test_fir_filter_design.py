@@ -557,42 +557,42 @@ class TestRemezord:
     """
 
     def test_bad_args(self):
-        freqs = np.array([0.1, 0.2, 0.3, 0.4])
-        amps = np.array([40, 50, 60])
-        rips = np.array([3, 4, 5])
+        band_edges = np.array([0.1, 0.2, 0.3, 0.4])
+        gains = np.array([40, 50, 60])
+        tols = np.array([3, 4, 5])
         # Nonexistent algorithm
         with assert_raises(ValueError):
-            remezord(freqs, amps, rips, alg="no_alg")
+            remezord(band_edges, gains, tols, alg="no_alg")
         # Freq greater than 0.5
         with assert_raises(ValueError):
-            remezord(freqs+1, amps, rips)
-        # Negative freqs
+            remezord(band_edges+1, gains, tols)
+        # Negative band_edges
         with assert_raises(ValueError):
-            remezord(freqs-1, amps, rips)
-        # Negative rips
+            remezord(band_edges-1, gains, tols)
+        # Negative tols
         with assert_raises(ValueError):
-            remezord(freqs, amps, -rips)
-        # Amps length different than rips
+            remezord(band_edges, gains, -tols)
+        # gains length different than tols
         with assert_raises(ValueError):
-            remezord(freqs, amps, rips[:2])
-        # Band edges different than 2*len(amps)-1
+            remezord(band_edges, gains, tols[:2])
+        # Band edges different than 2*len(gains)-1
         with assert_raises(ValueError):
-            remezord(freqs[:3], amps, rips)
+            remezord(band_edges[:3], gains, tols)
 
-    @pytest.mark.parametrize('alg, numtaps', [["ichige", 27],
-                                              ["herrmann", 25],
-                                              ["kaiser", 23]])
-    def test_remezord_example1(self, alg, numtaps):
+    @pytest.mark.parametrize('alg, numtaps_expected', [["ichige", 27],
+                                                       ["herrmann", 25],
+                                                       ["kaiser", 23]])
+    def test_remezord_example1(self, alg, numtaps_expected):
         fs = 2000
-        freqs = [500, 600]
-        amps = [1, 0]
+        band_edges = [500, 600]
+        gains = [1, 0]
         rp, rs = 3, 40
-        rips = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
+        tols = [(10**(rp/20)-1)/(10**(rp/20)+1), 10**(-rs/20)]
 
-        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs,
+        numtaps, bands, desired, weights = remezord(band_edges, gains, tols, fs=fs,
                                                     alg=alg)
 
-        assert numtaps == numtaps
+        assert numtaps == numtaps_expected
         xp_assert_close(bands, [0, 0.25, 0.3, 0.5])
         xp_assert_close(desired, [1., 0.])
         xp_assert_close(weights, [1., 17.09973573])
@@ -600,10 +600,10 @@ class TestRemezord:
 
     def test_remezord_example2(self):
         fs = 8000
-        freqs = np.array([1500, 2000])
-        amps = np.array([1, 0])
-        rips = [0.01, 0.1]
-        numtaps, bands, desired, weights = remezord(freqs, amps, rips, fs=fs)
+        band_edges = np.array([1500, 2000])
+        gains = np.array([1, 0])
+        tols = [0.01, 0.1]
+        numtaps, bands, desired, weights = remezord(band_edges, gains, tols, fs=fs)
         assert numtaps == 24
         xp_assert_close(bands, [0, 0.1875, 0.25, 0.5])
         xp_assert_close(desired, [1., 0.])
