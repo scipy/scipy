@@ -986,7 +986,7 @@ def signm(A, disp=_NoValue):
 @_apply_over_batch(('a', 2), ('b', 2))
 def khatri_rao(a, b):
     r"""
-    Khatri-rao product
+    Khatri-Rao product of two matrices.
 
     A column-wise Kronecker product of two matrices
 
