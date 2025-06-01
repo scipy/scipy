@@ -474,7 +474,6 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     doctest_args = (
         '--doctest-modules',
         '--doctest-only-doctests=true',
-        '--doctest-collect=api'
     )
 
     if not tests:
