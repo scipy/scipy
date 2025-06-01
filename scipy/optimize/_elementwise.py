@@ -1,16 +1,23 @@
+import math
+
+import numpy as np
+
 from scipy.optimize._bracket import _bracket_root, _bracket_minimum
-from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
+from scipy.optimize._chandrupatla import (_chandrupatla, _chandrupatla_minimize,
+                                          _chandrupatla_iv)
+import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
 
-def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=None):
-    """Find the root of a monotonic, real-valued function of a real variable.
+def find_root(f, init, /, *, args=(), method=None, tolerances=None, maxiter=None,
+              callback=None):
+    """Find the root of a real-valued function of a real variable.
 
     For each element of the output of `f`, `find_root` seeks the scalar
-    root that makes the element 0. This function currently uses Chandrupatla's
+    root that makes the element 0. By default, this function uses Chandrupatla's
     bracketing algorithm [1]_ and therefore requires argument `init` to
     provide a bracket around the root: the function values at the two endpoints
-    must have opposite signs.
+    must have opposite signs. Other methods are available via the `method` argument.
 
     Provided a valid bracket, `find_root` is guaranteed to converge to a solution
     that satisfies the provided `tolerances` if the function is continuous within
@@ -36,16 +43,27 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
         `find_root` seeks an array ``x`` such that ``f(x)`` is an array of zeros.
     init : 2-tuple of float array_like
-        The lower and upper endpoints of a bracket surrounding the desired root.
+        The initial point(s) from which to begin root finding.
+        Arrays must be broadcastable with one another and `args`.
+
+        For bracketing methods, this must be
+        the lower and upper endpoints of a bracket surrounding the desired root.
         A bracket is valid if arrays ``xl, xr = init`` satisfy ``xl < xr`` and
-        ``sign(f(xl)) == -sign(f(xr))`` elementwise. Arrays be broadcastable with
-        one another and `args`.
+        ``sign(f(xl)) == -sign(f(xr))`` elementwise.
+
     args : tuple of array_like, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
         If the callable for which the root is desired requires arguments that are
         not broadcastable with `x`, wrap that callable with `f` such that `f`
         accepts only `x` and broadcastable ``*args``.
+    method : {'chandrupatla', 'secant'}, optional
+        Method for finding a root.
+
+        - ``'chandrupatla'``: uses Chandrupatla's algorithm [1]_. `initial` must
+          be a bracket.
+        - ``'secant'``: uses the secant method [2]_. `initial` may be any two points,
+          but convergence is not guaranteed.
     tolerances : dictionary of floats, optional
         Absolute and relative tolerances on the root and function value.
         Valid keys of the dictionary are:
@@ -109,6 +127,8 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
     Notes
     -----
+    **Chandrupatla's method**
+
     Implemented based on Chandrupatla's original paper [1]_.
 
     Let:
@@ -132,6 +152,9 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     where ``eps`` and ``tiny`` are the precision and smallest normal number
     of the result ``dtype`` of function inputs and outputs.
 
+    **Secant Method**
+    Implemented based on [2]_.
+
     References
     ----------
 
@@ -140,6 +163,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         nonlinear function without using derivatives".
         Advances in Engineering Software, 28(3), 145-149.
         https://doi.org/10.1016/s0965-9978(96)00051-8
+    .. [2] "Secant Method". *Wikipedia*. https://en.wikipedia.org/wiki/Secant_method
 
     See Also
     --------
@@ -226,8 +250,13 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     else:
         _callback = callback
 
-    res = _chandrupatla(f, xl, xr, args=args, **tolerances,
-                        maxiter=maxiter, callback=_callback)
+    if method in {'chandrupatla', None}:
+        res = _chandrupatla(f, xl, xr, args=args, **tolerances,
+                            maxiter=maxiter, callback=_callback)
+    elif method == 'secant':
+        res = _secant(f, xl, xr, args=args, **tolerances,
+                      maxiter=maxiter, callback=_callback)
+
     return reformat_result(res)
 
 
@@ -796,3 +825,96 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     del res.fm
     del res.fr
     return res
+
+
+def _secant(func, a, b, *, args=(), xatol=None, xrtol=None,
+            fatol=None, frtol=0, maxiter=None, callback=None):
+    res = _chandrupatla_iv(func, args, xatol, xrtol,
+                           fatol, frtol, maxiter, callback)
+    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+
+    # Initialization
+    temp = eim._initialize(func, (a, b), args)
+    func, xs, fs, args, shape, dtype, xp = temp
+    x1, x2 = xs
+    f1, f2 = fs
+    status = xp.full_like(x1, xp.asarray(eim._EINPROGRESS),
+                          dtype=xp.int32)  # in progress
+    nit, nfev = 0, 2  # two function evaluations performed above
+    finfo = xp.finfo(dtype)
+    xatol = 4*finfo.smallest_normal if xatol is None else xatol
+    xrtol = 4*finfo.eps if xrtol is None else xrtol
+    fatol = finfo.smallest_normal if fatol is None else fatol
+    frtol = frtol * xp.minimum(xp.abs(f1), xp.abs(f2))
+    maxiter = (math.log2(finfo.max) - math.log2(finfo.smallest_normal)
+               if maxiter is None else maxiter)
+    work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
+                       xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
+                       nit=nit, nfev=nfev, status=status)
+    res_work_pairs = [('status', 'status'), ('x', 'xmin'), ('fun', 'fmin'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('xl', 'x1'),
+                      ('fl', 'f1'), ('xr', 'x2'), ('fr', 'f2')]
+
+    def pre_func_eval(work):
+        with np.errstate(divide='ignore'):
+            x = (work.x2*work.f1 - work.x1*work.f2) / (work.f1 - work.f2)
+        return x
+
+    def post_func_eval(x, f, work):
+        work.x1, work.x2 = x, work.x1
+        work.f1, work.f2 = f, work.f1
+
+    def check_termination(work):
+        # [1] Figure 1 (second diamond)
+        # Check for all terminal conditions and record statuses.
+
+        # See [1] Section 4 (first two sentences)
+        i = xp.abs(work.f1) < xp.abs(work.f2)
+        work.xmin = xp.where(i, work.x1, work.x2)
+        work.fmin = xp.where(i, work.f1, work.f2)
+        stop = xp.zeros_like(work.x1, dtype=xp.bool)  # termination condition met
+
+        # If function value tolerance is met, report successful convergence,
+        # regardless of other conditions. Note that `frtol` has been redefined
+        # as `frtol = frtol * minimum(f1, f2)`, where `f1` and `f2` are the
+        # function evaluated at the original ends of the bracket.
+        i = xp.abs(work.fmin) <= work.fatol + work.frtol
+        work.status[i] = eim._ECONVERGED
+        stop[i] = True
+
+        # If the abscissae are non-finite or either function value is NaN,
+        # report failure.
+        NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
+        x_nonfinite = ~(xp.isfinite(work.x1) & xp.isfinite(work.x2))
+        f_nan = xp.isnan(work.f1) & xp.isnan(work.f2)
+        i = (x_nonfinite | f_nan) & ~stop
+        work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._EVALUEERR
+        stop[i] = True
+
+        # This is the convergence criterion used in bisect. Chandrupatla's
+        # criterion is equivalent to this except with a factor of 4 on `xrtol`.
+        work.dx = xp.abs(work.x2 - work.x1)
+        work.tol = xp.abs(work.xmin) * work.xrtol + work.xatol
+        i = work.dx < work.tol
+        work.status[i] = eim._ECONVERGED
+        stop[i] = True
+
+        return stop
+
+    def post_termination_check(work):
+        pass
+
+    def customize_result(res, shape):
+        xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
+        i = res['xl'] < res['xr']
+        res['xl'] = xp.where(i, xl, xr)
+        res['xr'] = xp.where(i, xr, xl)
+        res['fl'] = xp.where(i, fl, fr)
+        res['fr'] = xp.where(i, fr, fl)
+        return shape
+
+
+    return eim._loop(work, callback, shape, maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval, check_termination,
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp=xp)
