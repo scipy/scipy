@@ -262,7 +262,8 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
                     "coverage": coverage, **kwargs})
 
-@spin.util.extend_command(spin.cmds.meson.docs, remove_args=("sphinx_gallery_plot", ), doc="")
+@spin.util.extend_command(spin.cmds.meson.docs,
+                          remove_args=("sphinx_gallery_plot", ), doc="")
 def docs(*, parent_callback, sphinx_target, clean, jobs, **kwargs):
     """📖 Build Sphinx documentation
 
