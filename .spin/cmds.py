@@ -58,7 +58,7 @@ PROJECT_MODULE = "scipy"
     '--tags', default="runtime,python-runtime,tests,devel",
     show_default=True, help="Install tags to be used by meson."
 )
-@spin.util.extend_command(spin.cmds.meson.build)
+@spin.util.extend_command(spin.cmds.meson.build, doc="")
 def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
           release, setup_args, show_build_log,
           with_scipy_openblas, with_accelerate, use_system_libraries,
@@ -170,7 +170,7 @@ def build(*, parent_callback, meson_args, jobs, verbose, werror, asan, debug,
         "'jax.numpy', 'dask.array')."
     )
 )
-@spin.util.extend_command(spin.cmds.meson.test)
+@spin.util.extend_command(spin.cmds.meson.test, doc="")
 def test(*, parent_callback, pytest_args, tests, coverage,
          durations, submodule, mode, array_api_backend, **kwargs):
     """🔧 Run tests
@@ -262,59 +262,27 @@ def test(*, parent_callback, pytest_args, tests, coverage,
     parent_callback(**{"pytest_args": pytest_args, "tests": tests,
                     "coverage": coverage, **kwargs})
 
-@click.option(
-        '--list-targets', '-t', default=False, is_flag=True,
-        help='List doc targets',
-    )
-@click.option(
-    '--no-cache', default=False, is_flag=True,
-    help="Forces a full rebuild of the docs. Note that this may be " + \
-            "needed in order to make docstring changes in C/Cython files " + \
-            "show up."
-)
-@spin.util.extend_command(spin.cmds.meson.docs)
-def docs(*, parent_callback, sphinx_target, clean, jobs,
-         list_targets, no_cache, **kwargs):
+@spin.util.extend_command(spin.cmds.meson.docs,
+                          remove_args=("sphinx_gallery_plot", ), doc="")
+def docs(*, parent_callback, sphinx_target, clean, jobs, **kwargs):
     """📖 Build Sphinx documentation
 
-    By default, SPHINXOPTS="-W", raising errors on warnings.
-    To build without raising on warnings:
+    Following Sphinx targets are supported:
 
-      SPHINXOPTS="" spin docs
+    html:
 
-    To list all Sphinx targets:
+      spin docs html
 
-      spin docs targets
-
-    To build another Sphinx target:
-
-      spin docs TARGET
-
-    E.g., to build a zipfile of the html docs for distribution:
+    dist: to build a zipfile of the html docs for distribution
 
       spin docs dist
 
     """
     meson.docs.ignore_unknown_options = True
 
-    if clean: # SciPy has its own mechanism to clear the previous docs build
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, "doc"))
-        subprocess.call(["make", "clean"], cwd=os.getcwd())
-        clean = False
-        os.chdir(cwd)
-
-    SPHINXOPTS = "-W"
-    if no_cache:
-        SPHINXOPTS += " -E"
-
-    SPHINXOPTS = os.environ.get("SPHINXOPTS", "") + SPHINXOPTS
-    os.environ["SPHINXOPTS"] = SPHINXOPTS
-
-    sphinx_target = "html"
-
     parent_callback(**{"sphinx_target": sphinx_target,
-                       "clean": clean, "jobs": jobs, **kwargs})
+                       "clean": clean, "jobs": jobs,
+                       "sphinx_gallery_plot": False, **kwargs})
 
 def _set_pythonpath(pythonpath):
     env = os.environ
@@ -327,7 +295,7 @@ def _set_pythonpath(pythonpath):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.python)
+@spin.util.extend_command(spin.cmds.meson.python, doc="")
 def python(*, parent_callback, pythonpath, **kwargs):
     """🐍 Launch Python shell with PYTHONPATH set
 
@@ -341,7 +309,7 @@ def python(*, parent_callback, pythonpath, **kwargs):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.ipython)
+@spin.util.extend_command(spin.cmds.meson.ipython, doc="")
 def ipython(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch IPython shell with PYTHONPATH set
 
@@ -355,7 +323,7 @@ def ipython(*, parent_callback, pythonpath, **kwargs):
 @click.option(
     '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
     help='Paths to prepend to PYTHONPATH')
-@spin.util.extend_command(spin.cmds.meson.shell)
+@spin.util.extend_command(spin.cmds.meson.shell, doc="")
 def shell(*, parent_callback, pythonpath, **kwargs):
     """💻 Launch shell with PYTHONPATH set
 
@@ -423,7 +391,7 @@ def mypy(ctx, build_dir=None):
     print(report, end='')
     print(errors, end='', file=sys.stderr)
 
-@spin.util.extend_command(test, doc='')
+@spin.util.extend_command(test, doc="")
 def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     """🔧 Run doctests of objects in the public API.
 
@@ -474,7 +442,6 @@ def smoke_docs(*, parent_callback, pytest_args, **kwargs):
     doctest_args = (
         '--doctest-modules',
         '--doctest-only-doctests=true',
-        '--doctest-collect=api'
     )
 
     if not tests:

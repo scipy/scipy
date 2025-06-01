@@ -17,7 +17,7 @@ run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
 1.17.x branch, and on adding new features on the main branch.
 
-This release requires Python 3.11-3.14 and NumPy 1.25.2 or greater.
+This release requires Python 3.11-3.14 and NumPy 1.26.4 or greater.
 
 
 **************************
