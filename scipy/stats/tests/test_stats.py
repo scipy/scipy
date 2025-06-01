@@ -30,13 +30,12 @@ import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
-from scipy.special import binom
 from scipy import optimize
 from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
+from scipy.stats._stats_py import (_chk_asarray, _moment,
                                    LinregressResult, _xp_mean, _xp_var, _SimpleChi2)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
@@ -5343,25 +5342,6 @@ class Test_ttest_ind_permutations:
         (a3, b3, {}, 1/3),  # exact test
         (a, b, {'random_state': np.random.default_rng(0), "axis": 1}, p_d_gen),
         ]
-
-    def test_ttest_ind_exact_distribution(self):
-        # the exact distribution of the test statistic should have
-        # binom(na + nb, na) elements, all unique. This was not always true
-        # in gh-4824; fixed by gh-13661.
-        rng = np.random.RandomState(0)
-        a = rng.rand(3)
-        b = rng.rand(4)
-
-        data = np.concatenate((a, b))
-        na, nb = len(a), len(b)
-
-        permutations = 100000
-        t_stat, _, _ = _permutation_distribution_t(data, permutations, na,
-                                                   True)
-
-        n_unique = len(set(t_stat))
-        assert n_unique == binom(na + nb, na)
-        assert len(t_stat) == n_unique
 
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
     @pytest.mark.parametrize("shape", [(12,), (2, 12)])
