@@ -2,13 +2,18 @@
  * Python bindings for SciPy usage
  */
 
-#ifndef __ARPACKMODULE_H
-#define __ARPACKMODULE_H
-
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "ARPACK/_arpack.h"
+
+#if defined(_MSC_VER)
+    #define ARPACK_cplx(real, imag) ((_Dcomplex){real, imag})
+    #define ARPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
+#else
+    #define ARPACK_cplx(real, imag) ((real) + (imag)*I)
+    #define ARPACK_cplxf(real, imag) ((real) + (imag)*I)
+#endif
 
 #define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 static PyObject* arpack_error;
@@ -35,6 +40,8 @@ void cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid, AR
 void znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
 void sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, float* dr, float* di, float* z, int ldz, float sigmar, float sigmai, float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
 void dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, double* dr, double* di, double* z, int ldz, double sigmar, double sigmai, double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+void cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, ARPACK_CPLXF_TYPE* d, ARPACK_CPLXF_TYPE* z, int ldz, ARPACK_CPLXF_TYPE sigma, ARPACK_CPLXF_TYPE* workev, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork);
+void zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, ARPACK_CPLX_TYPE sigma, ARPACK_CPLX_TYPE* workev, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
 
 
 static PyObject*
@@ -559,9 +566,78 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 static PyObject*
 zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "zneupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    PyArrayObject* ap_select = NULL;
+    Py_complex sigma = { .real = 0.0, .imag = 0.0 };
+    PyArrayObject* ap_d = NULL;
+    PyArrayObject* ap_v = NULL;
+    PyArrayObject* ap_z = NULL;
+    PyArrayObject* ap_workev = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_ipntr = NULL;
+    PyArrayObject* ap_workd = NULL;
+    PyArrayObject* ap_workl = NULL;
+    PyArrayObject* ap_rwork = NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!DO!O!O!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &want_ev,                                // i
+        &howmny,                                 // i
+        &PyArray_Type, (PyObject **)&ap_select,  // O!
+        &PyArray_Type, (PyObject **)&ap_d,       // O!
+        &PyArray_Type, (PyObject **)&ap_z,       // O!
+        &sigma,                                  // D
+        &PyArray_Type, (PyObject **)&ap_workev,  // O!
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl,   // O!
+        &PyArray_Type, (PyObject **)&ap_rwork    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = PyArray_DATA(ap_ipntr);
+    int* select = PyArray_DATA(ap_select);
+    ARPACK_CPLX_TYPE* d = PyArray_DATA(ap_d);
+    ARPACK_CPLX_TYPE* workev = PyArray_DATA(ap_workev);
+    ARPACK_CPLX_TYPE* z = PyArray_DATA(ap_z);
+    ARPACK_CPLX_TYPE* resid = PyArray_DATA(ap_resid);
+    ARPACK_CPLX_TYPE* v = PyArray_DATA(ap_v);
+    ARPACK_CPLX_TYPE* workd = PyArray_DATA(ap_workd);
+    ARPACK_CPLX_TYPE* workl = PyArray_DATA(ap_workl);
+    double* rwork = PyArray_DATA(ap_rwork);
+    ldv = (int)PyArray_DIMS(ap_v)[0];
+    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ARPACK_CPLX_TYPE sigmaC = ARPACK_cplx(sigma.real, sigma.imag);
+    struct ARPACK_arnoldi_update_vars_d Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    zneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
+
+    Py_RETURN_NONE;
 }
 
 
@@ -632,17 +708,26 @@ PyMethodDef arpacklib_module_methods[] = {
 };
 
 
+static struct PyModuleDef_Slot arpacklib_module_slots[] = {
+#if PY_VERSION_HEX >= 0x030c00f0  // Python 3.12+
+    // signal that this module can be imported in isolated subinterpreters
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+#endif
+#if PY_VERSION_HEX >= 0x030d00f0  // Python 3.13+
+    // signal that this module supports running without an active GIL
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
+    {0, NULL},
+};
+
+
 static struct
 PyModuleDef moduledef = {
-    PyModuleDef_HEAD_INIT,
-    "_arpacklib",
-    NULL,
-    -1,
-    arpacklib_module_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_arpacklib",
+    .m_size = 0,
+    .m_methods = arpacklib_module_methods,
+    .m_slots = arpacklib_module_slots,
 };
 
 
@@ -650,25 +735,10 @@ PyMODINIT_FUNC
 PyInit__arpacklib(void)
 {
     import_array();
-
-    PyObject* module = PyModule_Create(&moduledef);
-    if (module == NULL) { return NULL; }
-    PyObject* mdict = PyModule_GetDict(module);
-    if (mdict == NULL) { return NULL; }
-    arpack_error = PyErr_NewException("_arpacklib.error", NULL, NULL);
-    if (arpack_error == NULL) { return NULL; }
-    if (PyDict_SetItemString(mdict, "error", arpack_error)) { return NULL; }
-
-#if Py_GIL_DISABLED
-    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
-#endif
-
-    return module;
+    return PyModuleDef_Init(&moduledef);
 }
 
 
 #undef STRUCT_FIELD_NAMES
 #undef STRUCT_INT_FIELD_NAMES
 #undef STRUCT_INEXACT_FIELD_NAMES
-
-#endif // ifndef __ARPACKMODULE_H
