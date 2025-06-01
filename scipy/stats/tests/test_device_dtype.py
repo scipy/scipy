@@ -92,7 +92,7 @@ def test_differential_entropy(method, dtype, xp, devices):
 @pytest.mark.parametrize('dtype', dtypes)
 def test_quantile(method, dtype, xp, devices):
     if (is_array_api_strict(xp) or is_torch(xp)) and method == 'harrell-davis':
-        pytest.skip("'harrell-davis' not currently not supported on GPU.")
+        pytest.skip("'harrell-davis' not currently supported on GPU.")
 
     dtype = getattr(xp, dtype)
     for device in devices:
