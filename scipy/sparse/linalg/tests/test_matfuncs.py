@@ -221,6 +221,7 @@ class TestExpM:
         A_logm_perturbed[1, 0] = tiny
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "Ill-conditioned.*")
+            sup.filter(RuntimeWarning, "An ill-conditioned*")
             A_expm_logm_perturbed = expm(A_logm_perturbed)
         rtol = 1e-4
         atol = 100 * tiny
