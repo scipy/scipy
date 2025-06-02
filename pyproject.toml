@@ -126,7 +126,7 @@ package = 'scipy'
 install = ['--skip-subprojects']
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
+skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
 # We're only testing with essential test dependencies, not optional ones.
 # Some of those require binary wheels (often missing for some platforms),
 # or they slow down the test suite runs too much or simply aren't necessary.
@@ -141,8 +141,10 @@ before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
-manylinux-x86_64-image = "manylinux2014"
-manylinux-aarch64-image = "manylinux2014"
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+musllinux-x86_64-image = "musllinux_1_2"
+musllinux-aarch64-image = "musllinux_1_2"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 
 [tool.cibuildwheel.linux.environment]
