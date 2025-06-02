@@ -572,7 +572,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
             if hasattr(self.__class__, name):
                 continue
             setattr(self.__class__, name, property(lambda self_, name_=name:
-                                                   xp_copy(self_._parameters[name_])[()]))
+                                                   xp_copy(self_._parameters[name_])[()],
+                                                   doc=self._get_parameter_doc(name)))
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -714,6 +715,10 @@ class UnivariateDistribution(_ProbabilityDistribution):
     def _get_parameter_str(self, parameters):
         # Get a string representation of the parameters like "{a, b, c}".
         return f"{{{', '.join(parameters.keys())}}}"
+
+    def _get_parameter_doc(self, param):
+        # Get the __doc__ string of a parameterization parameter.
+        return self._parameterizations[0].get_param_doc(param)
 
     def _copy_parameterization(self):
         self._parameterizations = self._parameterizations.copy()
