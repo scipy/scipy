@@ -1,8 +1,10 @@
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.parsers.rst.states import Body
 from docutils.statemachine import StringList
 
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import nested_parse_with_titles
 from sphinx.util.typing import ExtensionMetadata
@@ -14,36 +16,48 @@ from scipy._lib._array_api_docs_tables import make_flat_capabilities_table
 from scipy._lib._public_api import PUBLIC_MODULES
 
 
-_flat_capabilities_table = None
-_backends = None
+def _make_reST_table(
+        rows: list[str],
+        headers: list[str],
+        state: Body,
+) -> list[nodes.Node]:
+    """Return list of docutils nodes representing a reST table."""
+    rst_table = tabulate(rows, headers=headers, tablefmt="rst")
+    string_list = StringList(rst_table.splitlines())
+    node = nodes.section()
+    node.document = state.document
+    nested_parse_with_titles(state, string_list, node)
+    return node.children
 
-def _get_flat_table_and_backends() -> tuple[list[dict[str, str]], list[str]]:
-    global _flat_capabilities_table
-    global _backends
-    if _flat_capabilities_table is not None:
-        return _flat_capabilities_table, _backends
+
+def _get_flat_table_and_backends(
+        env: BuildEnvironment, backend_type: str
+) -> tuple[list[dict[str, str]], list[str]]:
+    if not hasattr(env, "_array_api_capabilities_table_cache"):
+        env._array_api_capabilities_table_cache = {}
+    cache = env._array_api_capabilities_table_cache
+    if backend_type in cache:
+        return cache[backend_type]["flat_table"], cache[backend_type]["backends"]
+
     included_modules = [
         module for module in PUBLIC_MODULES
+        # These are extension modules which should never be included. The introspection
+        # in make_flat_capabilities_table will fail for these.
         if module not in {"scipy.linalg.cython_blas", "scipy.linalg.cython_lapack"}
     ]
-    _flat_capabilities_table = make_flat_capabilities_table(included_modules)
-    if not _flat_capabilities_table:
-        return _flat_capabilities_table, []
-    
-    _backends = [key for key in _flat_capabilities_table[0]
-                 if key not in ["module", "function"]]
-    
-    return _flat_capabilities_table, _backends
 
+    flat_table = make_flat_capabilities_table(
+        included_modules, backend_type
+    )
 
-# Shortened names for use in table.
-backend_names_map = {
-    "jax.numpy cpu": "jax cpu",
-    "jax.numpy gpu": "jax gpu",
-    "jax.numpy jit": "jax jit",
-    "dask.array": "dask",
-    "dask.array lazy": "dask lazy",
-}
+    if not flat_table:
+        backends = []
+    else:
+        backends = [key for key in flat_table[0]
+                    if key not in ["module", "function"]]
+
+    cache[backend_type] = {"flat_table": flat_table, "backends": backends}
+    return flat_table, backends
 
 
 class ArrayAPISupportPerModule(SphinxDirective):
@@ -52,38 +66,36 @@ class ArrayAPISupportPerModule(SphinxDirective):
         module_name.replace("scipy.", ""): directives.unchanged
         for module_name in PUBLIC_MODULES
     }
+    option_spec["backend_type"] = directives.unchanged
 
     def run(self):
-        flat_table, backends = _get_flat_table_and_backends()
+        backend_type = self.options.pop("backend_type")
+        flat_table, backends = _get_flat_table_and_backends(self.env, backend_type)
         table_stats = calculate_table_statistics(flat_table)
         modules = self.options.keys()
 
         rows = []
         headers = ["module"]
-        headers += [
-            backend_names_map.get(backend, backend) for backend in backends
-        ]
+        headers += backends
+
         for module in modules:
-            link = self.options.get(module)
-            module_text = f":doc:`{module} <{link}>`" if link else module
-            row = [module_text]
+            label = self.options.get(module)
+            module_text = f":ref:`{module} <{label}>`" if label else module
             info = table_stats[f"scipy.{module}"]
             total = info.pop("total")
+            row = [f"{module_text} ({total})"]
             for backend, count in info.items():
-                cell_text = f"{count}/{total}"
+                cell_text = f"{count/total:.0%}"
                 row.append(cell_text)
             rows.append(row)
-        rst_table = tabulate(rows, headers=headers, tablefmt="rst")
-        string_list = StringList(rst_table.splitlines())
-        node = nodes.section()
-        node.document = self.state.document
-        nested_parse_with_titles(self.state, string_list, node)
-        return node.children
+        return _make_reST_table(rows, headers, self.state)
 
 
 class ArrayAPISupportPerFunction(SphinxDirective):
     has_content = False
-    option_spec = {"module": directives.unchanged}
+    option_spec = {
+        "module": directives.unchanged, "backend_type": directives.unchanged
+    }
 
     def _get_generated_doc_link_for_function(self, module, func):
         if module == "signal" and func == "czt":
@@ -95,31 +107,26 @@ class ArrayAPISupportPerFunction(SphinxDirective):
         )
 
     def run(self):
-        flat_table, backends = _get_flat_table_and_backends()
+        backend_type = self.options["backend_type"]
+        flat_table, backends = _get_flat_table_and_backends(self.env, backend_type)
         module = self.options["module"]
         relevant_rows = (
             row for row in flat_table if row["module"] == f"scipy.{module}"
         )
 
         headers = ["function"]
-        headers += [
-            backend_names_map.get(backend, backend) for backend in backends
-        ]
+        headers += backends
+
         new_rows = []
         for row in relevant_rows:
             func = row["function"]
             new_row = [self._get_generated_doc_link_for_function(module, func)]
             for backend in backends:
                 supported = row[backend]
-                cell_text = "Yes" if supported else "No"
+                cell_text = "✔️" if supported else "-"
                 new_row.append(cell_text)
             new_rows.append(new_row)
-        rst_table = tabulate(new_rows, headers=headers, tablefmt="rst")
-        string_list = StringList(rst_table.splitlines())
-        node = nodes.section()
-        node.document = self.state.document
-        nested_parse_with_titles(self.state, string_list, node)
-        return node.children
+        return _make_reST_table(new_rows, headers, self.state)
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:

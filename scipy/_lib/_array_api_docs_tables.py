@@ -62,20 +62,49 @@ ALIASES = {
     }
 }
 
+# Shortened names for use in table.
+BACKEND_NAMES_MAP = {
+    "jax.numpy": "jax",
+    "dask.array": "dask",
+}
 
-def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
-    """Returns flat dict showing what is and isn't supported in entry."""
+
+def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str, bool]]:
+    """Returns dict showing alternative backend support in easy to consume form.
+
+    Parameters
+    ----------
+    entry : Optional[dict]
+       A dict with the structure of the values of the dict
+       scipy._lib._array_api.xp_capabilities_table. If None, it is
+       assumped that no alternative backends are supported.
+       Default: None.
+
+    Returns
+    -------
+    dict[str, dict[str, bool]]
+        The output dict currently has keys "cpu", "gpu", "jit" and "lazy".
+        The value associated to each key is itself a dict. The keys of
+        the inner dicts correspond to backends, with bool values stating
+        whether or not the backend is supported with a given device or
+        mode. Inapplicable backends do not appear in the inner dicts
+        (e.g. since cupy is gpu-only, it does not appear in the inner
+        dict keyed on "cpu"). Only alternative backends to NumPy are
+        included since NumPY support should be guaranteed.
+
+    """
+    output = {
+        "cpu": {"torch": False, "jax": False, "dask": False},
+        "gpu": {"cupy": False, "torch": False, "jax": False},
+        "jit": {"jax": False},
+        "lazy": {"dask": False},
+    }
     if entry is None:
         # If there is no entry, assume no alternative backends are supported.
         # If the list of supported backends will grows, this hard-coded dict
         # will need to be updated.
-        return {
-            "cupy": False, "torch cpu": False,
-            "torch gpu": False, "jax.numpy cpu": False,
-            "jax.numpy gpu": False, "jax.numpy jit": False,
-            "dask.array": False, "dask.array lazy": False
-        }
-    row = {}
+        return output
+
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
@@ -83,24 +112,33 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, str]:
     for backend, capabilities in _make_sphinx_capabilities(**entry).items():
         if backend in {"array_api_strict", "numpy"}:
             continue
+        backend = BACKEND_NAMES_MAP.get(backend, backend)
         cpu, gpu = capabilities.cpu, capabilities.gpu
-        if cpu is None:
-            row[backend] = capabilities.gpu
-        elif gpu is None:
-            row[backend] = capabilities.cpu
-        else:
-            row[f"{backend} cpu"] = capabilities.cpu
-            row[f"{backend} gpu"] = capabilities.gpu
-        if backend == "jax.numpy":
-            row["jax.numpy jit"] = entry["jax_jit"] and row["jax.numpy cpu"]
+        if cpu is not None:
+            if backend not in output["cpu"]:
+                raise ValueError(
+                    "Input capabilities table entry contains unhandled"
+                    f" backend {backend} on cpu."
+                )
+            output["cpu"][backend] = capabilities.cpu
+        if gpu is not None:
+            if backend not in output["gpu"]:
+                raise ValueError(
+                    "Input capabilities table entry contains unhandled"
+                    f" backend {backend} on gpu."
+                )
+            output["gpu"][backend] = capabilities.gpu
+        if backend == "jax":
+            output["jit"]["jax"] = entry["jax_jit"] and output["cpu"]["jax"]
         if backend == "dask.array":
-            support_lazy = not entry["allow_dask_compute"] and row["dask.array"]
-            row["dask.array lazy"] = support_lazy
-    return row
+            support_lazy = not entry["allow_dask_compute"] and output["dask"]
+            output["lazy"]["dask"] = support_lazy
+    return output
 
 
 def make_flat_capabilities_table(
         modules: str | list[str],
+        backend_type: str,
         /,
         *,
         capabilities_table: list[str] | None = None,
@@ -113,6 +151,8 @@ def make_flat_capabilities_table(
         A string containing single SciPy module, (e.g `scipy.stats`, `scipy.fft`)
         or a list of such strings.
 
+    backend_type : {'cpu', 'gpu', 'jit', 'lazy'}
+
     capabilities_table : Optional[list[str]]
         Table in the form of `scipy._lib._array_api.xp_capabilities_table`.
         If None, uses `scipy._lib._array_api.xp_capabilities_table`.
@@ -124,13 +164,16 @@ def make_flat_capabilities_table(
         `output` is a table in dict format
         (keys corresponding to column names). If `modules` is a list, then the
         first column will be "module" If `modules` is a string, then the
-        "module" column will be omitted. The other colums are currently
-    
-        "cupy", "torch (cpu)", "torch (gpu)", "jax.numpy (cpu)", "jax.numpy (gpu)",
-        "jax.numpy (jit)", "dask.array", "dask.array (lazy)".
+        "module" column will be omitted. The other columns correspond to
+        supported backends for the given `backend_type`,
+        e.g. jax, torch, and dask on cpu. numpy is excluded because it should
+         always be supported. See the helper function
+        `_process_capabilities_table_entry` above).
 
-        "numpy" is omitted because it will always be supported.
     """
+    if backend_type not in {"cpu", "gpu", "jit", "lazy"}:
+        raise ValueError(f"Received unhandled backend type {backend_type}")
+
     multiple_modules = True
     if isinstance(modules, str):
         modules = [modules]
@@ -161,7 +204,7 @@ def make_flat_capabilities_table(
                 continue
             if callable(thing) and hasattr(thing, "__name__"):
                 entry = xp_capabilities_table.get(thing, None)
-                capabilities = _process_capabilities_table_entry(entry)
+                capabilities = _process_capabilities_table_entry(entry)[backend_type]
                 # If a list of multiple modules is passed in, add the module
                 # as an entry of the table.
                 row = {"module": module_name} if multiple_modules else {}
