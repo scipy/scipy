@@ -2090,7 +2090,7 @@ for name in ["logpdf", "pdf", "rvs", "entropy"]:
 def _cholesky_invwishart_rvs(
     df: float, scale: np.ndarray, size: int, random_state: np.random.Generator
 ) -> np.ndarray:
-    """Samples the lower Cholesky factor of a matrix following an inverse
+    r"""Samples the lower Cholesky factor of a matrix following an inverse
     Wishart distribution.
 
     Notes
