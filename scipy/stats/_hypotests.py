@@ -482,7 +482,7 @@ def _cdf_cvm(x, n=None):
     return y
 
 
-def _cvm_result_to_tuple(res):
+def _cvm_result_to_tuple(res, _):
     return res.statistic, res.pvalue
 
 
@@ -1749,13 +1749,12 @@ class TukeyHSDResult:
         s = ("Pairwise Group Comparisons"
              f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
         s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
-        for i in range(self.pvalue.shape[0]):
-            for j in range(self.pvalue.shape[0]):
-                if i != j:
-                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
-                          f"{self.pvalue[i, j]:>10.3f}"
-                          f"{self._ci.low[i, j]:>10.3f}"
-                          f"{self._ci.high[i, j]:>10.3f}\n")
+        for i, j in np.ndindex(self.pvalue.shape):
+            if i != j:
+                s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                      f"{self.pvalue[i, j]:>10.3f}"
+                      f"{self._ci.low[i, j]:>10.3f}"
+                      f"{self._ci.high[i, j]:>10.3f}\n")
         return s
 
     def confidence_interval(self, confidence_level=.95):

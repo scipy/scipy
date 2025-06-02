@@ -43,6 +43,7 @@ IS_WASM = (sys.platform == "emscripten" or platform.machine() in ["wasm32", "was
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
+    # FIXME non-deterministic rng
     if dtype in COMPLEX_DTYPES:
         A = np.random.rand(n, n) + np.random.rand(n, n)*1.0j
         A = (A + A.conj().T)/2
@@ -862,9 +863,6 @@ class TestEigTridiagonal:
 
 
 class TestEigh:
-    def setup_class(self):
-        np.random.seed(1234)
-
     def test_wrong_inputs(self):
         # Nonsquare a
         assert_raises(ValueError, eigh, np.ones([1, 2]))
@@ -1215,6 +1213,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
 # Allocating an array of such a size leads to _ArrayMemoryError(s)
 # since the maximum memory that can be in 32-bit (WASM) is 4GB
 @pytest.mark.skipif(IS_WASM, reason="out of memory in WASM")
+@pytest.mark.parallel_threads(2)  # 1.9 GiB per thread RAM usage
 @pytest.mark.fail_slow(10)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
@@ -1287,8 +1286,8 @@ class TestSVDVals:
 
     @pytest.mark.slow
     def test_crash_2609(self):
-        np.random.seed(1234)
-        a = np.random.rand(1500, 2800)
+        rng = np.random.default_rng(1234)
+        a = rng.random((1500, 2800))
         # Shouldn't crash:
         svdvals(a)
 
@@ -3138,18 +3137,19 @@ class TestCDF2RDF:
         self.assert_eig_valid(wr, vr, X)
 
     def test_random_1d_stacked_arrays(self):
+        rng = np.random.default_rng(1234)
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            np.random.seed(999999999)
-            X = np.random.rand(100, M, M)
+            X = rng.random((100, M, M))
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
 
     def test_random_2d_stacked_arrays(self):
+        rng = np.random.default_rng(1234)
         # cannot test M == 0 due to bug in old numpy
         for M in range(1, 7):
-            X = np.random.rand(10, 10, M, M)
+            X = rng.random((10, 10, M, M))
             w, v = np.linalg.eig(X)
             wr, vr = cdf2rdf(w, v)
             self.assert_eig_valid(wr, vr, X)
