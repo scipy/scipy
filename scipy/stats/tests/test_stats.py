@@ -2141,26 +2141,6 @@ def test_weightedtau_vs_quadratic():
             rng.shuffle(rank)
 
 
-class TestFindRepeats:
-
-    def test_basic(self):
-        a = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 5]
-        message = "`scipy.stats.find_repeats` is deprecated..."
-        with pytest.deprecated_call(match=message):
-            res, nums = stats.find_repeats(a)
-        assert_array_equal(res, [1, 2, 3, 4])
-        assert_array_equal(nums, [3, 3, 2, 2])
-
-    def test_empty_result(self):
-        # Check that empty arrays are returned when there are no repeats.
-        for a in [[10, 20, 50, 30, 40], []]:
-            message = "`scipy.stats.find_repeats` is deprecated..."
-            with pytest.deprecated_call(match=message):
-                repeated, counts = stats.find_repeats(a)
-            assert_array_equal(repeated, [])
-            assert_array_equal(counts, [])
-
-
 class TestRegression:
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
@@ -6190,7 +6170,8 @@ class TestTTestIndFromStats:
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
@@ -6349,6 +6330,7 @@ def test_ttest_1samp_popmean_array(xp):
 @make_xp_test_case(stats.describe)
 class TestDescribe:
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_describe_scalar(self, xp):
         with suppress_warnings() as sup, \
               np.errstate(invalid="ignore", divide="ignore"):

@@ -55,6 +55,40 @@ More detailed information on these build dependencies can be found in
 :ref:`toolchain-roadmap`.
 
 
+Using system dependencies instead of vendored sources
+-----------------------------------------------------
+
+SciPy contains a *lot* of code that has been vendored from libraries written in
+C, C++ and Fortran. This is done for a mix of historical and robustness
+reasons. Distro packagers sometimes have reasons to want to *unvendor* this
+code, ensuring that they only have a single version of a particular library in
+use. We offer a build option, ``-Duse-system-libraries``, to allow them to do
+so, e.g.:
+
+.. code::
+
+    $ python -m build -wnx -Duse-system-libraries=boost.math
+
+The build option takes the following values:
+
+- ``none``: Use the source code shipped as part of SciPy, do not look for
+  external dependencies (default).
+- ``all``: Use external libraries for all components controlled by
+  ``use-system-libraries``, and error out if they are not found. Detecting is
+  done by Meson, typically first through the ``pkg-config`` and then the
+  ``cmake`` method of the ``dependency()`` function.
+- ``auto``: Try detecting external libraries, and if they are not found then
+  fall back onto vendored sources.
+- A comma-separated list of dependency names (e.g., ``boost.math,qhull``). If
+  given, uses the ``all`` behavior for the named dependencies (and ``none`` for
+  the rest). See ``meson.options`` in the root of the SciPy repository or sdist
+  for all supported options.
+
+It's also valid to combine the generic and named-library options above, for
+example ``boost.math,auto`` will apply the ``auto`` behavior to all
+dependencies other than ``boost.math``.
+
+
 Stripping the test suite from a wheel or installed package
 ----------------------------------------------------------
 

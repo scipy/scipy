@@ -54,11 +54,11 @@ cdef extern from "setjmp.h" nogil:
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
 # Define the clockwise constant
-cdef extern from "qhull_src/src/user_r.h":
+cdef extern from "<libqhull_r/user_r.h>":
     cdef enum:
         qh_ORIENTclock
 
-cdef extern from "qhull_src/src/qset_r.h":
+cdef extern from "<libqhull_r/qset_r.h>":
     ctypedef union setelemT:
         void *p
         int i
@@ -70,7 +70,7 @@ cdef extern from "qhull_src/src/qset_r.h":
     int qh_setsize(qhT *, setT *set) nogil
     void qh_setappend(qhT *, setT **setp, void *elem) nogil
 
-cdef extern from "qhull_src/src/libqhull_r.h":
+cdef extern from "<libqhull_r/libqhull_r.h>":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
@@ -182,7 +182,7 @@ cdef extern from "qhull_misc.h":
                            boolT ismalloc, char* qhull_cmd, void *outfile,
                            void *errfile, coordT* feaspoint) nogil
 
-cdef extern from "qhull_src/src/io_r.h":
+cdef extern from "<libqhull_r/io_r.h>":
     ctypedef enum qh_RIDGE:
         qh_RIDGEall
         qh_RIDGEinner
@@ -197,14 +197,14 @@ cdef extern from "qhull_src/src/io_r.h":
     void qh_order_vertexneighbors(qhT *, vertexT *vertex) nogil
     int qh_compare_facetvisit(const void *p1, const void *p2) nogil
 
-cdef extern from "qhull_src/src/geom_r.h":
+cdef extern from "<libqhull_r/geom_r.h>":
     pointT *qh_facetcenter(qhT *, setT *vertices) nogil
     double qh_getarea(qhT *, facetT *facetlist) nogil
 
-cdef extern from "qhull_src/src/poly_r.h":
+cdef extern from "<libqhull_r/poly_r.h>":
     void qh_check_maxout(qhT *) nogil
 
-cdef extern from "qhull_src/src/mem_r.h":
+cdef extern from "<libqhull_r/mem_r.h>":
     void qh_memfree(qhT *, void *object, int insize)
 
 from libc.stdlib cimport qsort

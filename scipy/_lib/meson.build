@@ -112,6 +112,7 @@ python_sources = [
   '_array_api.py',
   '_array_api_compat_vendor.py',
   '_array_api_no_0d.py',
+  '_array_api_override.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',

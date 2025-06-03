@@ -14,7 +14,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax,
+    is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -440,6 +440,10 @@ def devices(xp):
         # verbose to skip the test for each jit-capable function and run it for
         # those that only support eager mode.
         pytest.xfail(reason="jax-ml/jax#26000")
+    if is_torch(xp):
+        devices = xp.__array_namespace_info__().devices()
+        # open an issue about this - cannot branch based on `any`/`all`?
+        return (device for device in devices if device.type != 'meta')
 
     return xp.__array_namespace_info__().devices() + [None]
 
@@ -465,7 +469,7 @@ hypothesis.settings.register_profile(
 )
 
 # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into dev.py.
+# In the future, it would be good to work the choice into `.spin/cmds.py`.
 SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
                                           "deterministic")
 hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
@@ -493,14 +497,8 @@ if HAVE_SCPDT:
             known_warnings[name] = dict(category=RuntimeWarning,
                                         message='divide by zero')
 
-        # Deprecated stuff in scipy.signal and elsewhere
-        deprecated = [
-            'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
-            'scipy.signal.ricker',
-            'scipy.integrate.simpson',
-            'scipy.interpolate.interp2d',
-            'scipy.linalg.kron',
-        ]
+        # Deprecated stuff
+        deprecated = []
         for name in deprecated:
             known_warnings[name] = dict(category=DeprecationWarning)
 

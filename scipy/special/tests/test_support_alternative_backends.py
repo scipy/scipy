@@ -1,35 +1,24 @@
 from functools import partial
-from types import ModuleType
+import pickle
+
 import pytest
 from hypothesis import given, strategies
 import hypothesis.extra.numpy as npst
+from packaging import version
 
 from scipy import special
-from scipy.special._support_alternative_backends import (get_array_special_func,
-                                                         array_special_func_map)
+from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
 from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
-                                   xp_default_dtype, SCIPY_ARRAY_API, SCIPY_DEVICE)
+                                   make_xp_pytest_param, make_xp_test_case,
+                                   xp_default_dtype)
 from scipy._lib.array_api_compat import numpy as np
-from scipy._lib.array_api_extra.testing import lazy_xp_function
 
+# Run all tests in this module in the Array API CI, including those without
+# the xp fixture
+pytestmark = pytest.mark.array_api_backends
 
-special_wrapped = ModuleType("special_wrapped")
-lazy_xp_modules = [special_wrapped]
-for f_name in array_special_func_map:
-    f = getattr(special, f_name)
-    setattr(special_wrapped, f_name, f)
-    lazy_xp_function(f)
-
-
-@pytest.mark.skipif(not SCIPY_ARRAY_API, reason="Alternative backends must be enabled.")
-def test_dispatch_to_unrecognized_library():
-    xp = pytest.importorskip("array_api_strict")
-    f = get_array_special_func('ndtr', xp=xp)
-    x = [1, 2, 3]
-    res = f(xp.asarray(x))
-    ref = xp.asarray(special.ndtr(np.asarray(x)))
-    xp_assert_close(res, ref)
+lazy_xp_modules = [special]
 
 
 def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
@@ -44,15 +33,6 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     dtypes_np_ref : list[str]
         The dtypes to use for the reference NumPy arrays.
     """
-    if (SCIPY_DEVICE != 'cpu'
-        and is_torch(xp)
-        and f_name in {'stdtr', 'stdtrit', 'betaincc', 'betainc'}
-    ):
-        pytest.skip(f"`{f_name}` does not have an array-agnostic implementation "
-                    "and cannot delegate to PyTorch.")
-    if is_jax(xp) and f_name == "stdtrit":
-        pytest.skip(f"`{f_name}` requires scipy.optimize support for immutable arrays")
-
     if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
         # gh-20972
         or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')):
@@ -93,20 +73,19 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     return positive_only, dtypes_np_ref
 
 
-@pytest.mark.parametrize('f_name,n_args', array_special_func_map.items())
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
+@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
+@pytest.mark.parametrize(
+    'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
+def test_support_alternative_backends(xp, func, nfo, dtype, shapes):
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, f_name, [dtype])
-    f = getattr(special, f_name)  # Unwrapped
-    fw = getattr(special_wrapped, f_name)  # Wrapped by lazy_xp_function
+        xp, nfo.name, [dtype])
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
-    shapes = shapes[:n_args]
+    shapes = shapes[:nfo.n_args]
     rng = np.random.default_rng(984254252920492019)
     if 'int' in dtype:
         iinfo = np.iinfo(dtype_np)
@@ -127,27 +106,24 @@ def test_support_alternative_backends(xp, f_name, n_args, dtype, shapes):
         # Try to trigger bugs related to having multiple chunks.
         args_xp = [arg.rechunk(5) for arg in args_xp]
 
-    res = fw(*args_xp)
-    ref = f(*args_np)
+    res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
     xp_assert_close(res, xp.asarray(ref), atol=atol)
 
 
-@pytest.mark.parametrize('f_name,n_args',
-                         [(f_name, n_args)
-                          for f_name, n_args in array_special_func_map.items()
-                          if n_args >= 2])
+@pytest.mark.parametrize(
+    'func, nfo',
+    [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs if i.n_args >= 2])
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
-def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
+def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
-    assert n_args <= 3
-    dtypes = ['int64', 'float32', 'float64'][:n_args]
-    dtypes_xp = [xp.int64, xp.float32, xp.float64][:n_args]
+    dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
+    dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, f_name, dtypes)
-    f = getattr(special, f_name)
+        xp, nfo.name, dtypes)
 
     rng = np.random.default_rng(984254252920492019)
     iinfo = np.iinfo(np.int64)
@@ -156,7 +132,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
         randint(size=1, dtype=np.int64),
         rng.standard_normal(size=1, dtype=np.float32),
         rng.standard_normal(size=1, dtype=np.float64),
-    ][:n_args]
+    ][:nfo.n_args]
     if positive_only:
         args_np = [np.abs(arg) for arg in args_np]
 
@@ -165,8 +141,8 @@ def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
     args_np = [np.asarray(arg, dtype=dtype_np_ref)
                for arg, dtype_np_ref in zip(args_np, dtypes_np_ref)]
 
-    res = f(*args_xp)
-    ref = f(*args_np)
+    res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     atol = 10 * np.finfo(ref.dtype).eps
     xp_assert_close(res, xp.asarray(ref), atol=atol)
@@ -175,18 +151,18 @@ def test_support_alternative_backends_mismatched_dtypes(xp, f_name, n_args):
 @pytest.mark.xslow
 @given(data=strategies.data())
 @pytest.mark.fail_slow(5)
-# `reversed` is for developer convenience: test new function first = less waiting
-@pytest.mark.parametrize('f_name,n_args', reversed(array_special_func_map.items()))
+@pytest.mark.parametrize(
+    'func,nfo', [make_xp_pytest_param(nfo.wrapper, nfo) for nfo in _special_funcs])
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning:dask")
 @pytest.mark.filterwarnings(
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
-def test_support_alternative_backends_hypothesis(xp, f_name, n_args, data):
+def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, f_name, [dtype])
-    f = getattr(special, f_name)
+        xp, nfo.name, [dtype])
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
@@ -197,21 +173,70 @@ def test_support_alternative_backends_hypothesis(xp, f_name, n_args, data):
     if positive_only:
         elements['min_value'] = 0
 
-    shapes, _ = data.draw(npst.mutually_broadcastable_shapes(num_shapes=n_args))
+    shapes, _ = data.draw(
+        npst.mutually_broadcastable_shapes(num_shapes=nfo.n_args))
     args_np = [data.draw(npst.arrays(dtype_np, shape, elements=elements))
                for shape in shapes]
 
     args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
     args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
 
-    res = f(*args_xp)
-    ref = f(*args_np)
+    res = nfo.wrapper(*args_xp)  # Also wrapped by lazy_xp_function
+    ref = nfo.func(*args_np)  # Unwrapped ufunc
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
     xp_assert_close(res, xp.asarray(ref), atol=atol)
 
 
+@pytest.mark.parametrize("func", [nfo.wrapper for nfo in _special_funcs])
+def test_pickle(func):
+    roundtrip = pickle.loads(pickle.dumps(func))
+    assert roundtrip is func
+
+
+@pytest.mark.parametrize("func", [nfo.wrapper for nfo in _special_funcs])
+def test_repr(func):
+    assert func.__name__ in repr(func)
+    assert "locals" not in repr(func)
+
+
+@pytest.mark.skipif(
+    version.parse(np.__version__) < version.parse("2.2"),
+    reason="Can't update ufunc __doc__ when SciPy is compiled vs. NumPy < 2.2")
+@pytest.mark.parametrize('func', [nfo.wrapper for nfo in _special_funcs])
+def test_doc(func):
+    """xp_capabilities updates the docstring in place. 
+    Make sure it does so exactly once, including when SCIPY_ARRAY_API is not set.
+    """
+    match = "has experimental support for Python Array API"
+    assert func.__doc__.count(match) == 1
+
+
+@pytest.mark.parametrize('func,n_args',
+                         [(nfo.wrapper, nfo.n_args) for nfo in _special_funcs])
+def test_ufunc_kwargs(func, n_args):
+    """Test that numpy-specific out= and dtype= keyword arguments
+    of ufuncs still work when SCIPY_ARRAY_API is set.
+    """
+    # out=
+    args = [np.asarray([.1, .2])] * n_args
+    out = np.empty(2)
+    y = func(*args, out=out)
+    xp_assert_close(y, out)
+
+    # out= with out.dtype != args.dtype
+    out = np.empty(2, dtype=np.float32)
+    y = func(*args, out=out)
+    xp_assert_close(y, out)
+
+    # dtype=
+    y = func(*args, dtype=np.float32)
+    assert y.dtype == np.float32
+
+
+
+@make_xp_test_case(special.chdtr)
 def test_chdtr_gh21311(xp):
     # the edge case behavior of generic chdtr was not right; see gh-21311
     # be sure to test at least these cases

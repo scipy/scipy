@@ -21,7 +21,8 @@ def _n_samples_optional_x(kwargs):
 
 @_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
                           n_samples=_n_samples_optional_x,
-                          result_to_tuple=tuple, paired=True, too_small=1)
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
@@ -204,7 +205,8 @@ def _find_repeats(arr):
 
 @_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
                           n_samples=_n_samples_optional_x,
-                          result_to_tuple=tuple, paired=True, too_small=1)
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).

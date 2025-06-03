@@ -278,7 +278,7 @@ Building from source to use SciPy
 
 
 
-.. _the-dev-py-interface:
+.. _the-spin-interface:
 
 Building from source for SciPy development
 ``````````````````````````````````````````
@@ -295,8 +295,8 @@ Then you want to do the following:
 1. Create a dedicated development environment (virtual environment or conda
    environment),
 2. Install all needed dependencies (*build*, and also *test*, *doc* and
-   *optional* dependencies), 
-3. Build SciPy with our ``dev.py`` developer interface.
+   *optional* dependencies),
+3. Build SciPy with our ``spin`` developer interface.
 
 Step (3) is always the same, steps (1) and (2) are different between conda and
 virtual environments:
@@ -363,43 +363,43 @@ virtual environments:
        # Alternatively, you can install just the dependencies for certain
        # development tasks:
 
-       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       # Build and dev dependencies (for `spin {build, lint, mypy}`)
        python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       # Doc dependencies (for `spin {doc, refguide-check}`)
        python -m pip install -r requirements/doc.txt
 
-       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       # Test dependencies (for `spin {test, bench, refguide-check}`)
        python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 
-    python dev.py build
+    spin build
 
 This will install SciPy inside the repository (by default in a
-``build-install`` directory). You can then run tests (``python dev.py test``),
-drop into IPython (``python dev.py ipython``), or take other development steps
-like build the html documentation or running benchmarks. The ``dev.py``
-interface is self-documenting, so please see ``python dev.py --help`` and
-``python dev.py <subcommand> --help`` for detailed guidance.
+``build-install`` directory). You can then run tests (``spin test``),
+drop into IPython (``spin ipython``), or take other development steps
+like build the html documentation or running benchmarks. The ``spin``
+interface is self-documenting, so please see ``spin --help`` and
+``spin <subcommand> --help`` for detailed guidance.
 
 
 .. admonition:: IDE support & editable installs
 
-    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    While the ``spin`` interface is our recommended way of working on SciPy,
     it has one limitation: because of the custom install location, SciPy
-    installed using ``dev.py`` will not be recognized automatically within an
+    installed using ``spin`` will not be recognized automatically within an
     IDE (e.g., for running a script via a "run" button, or setting breakpoints
     visually). This will work better with an *in-place build* (or "editable
     install").
 
     Editable installs are supported. It is important to understand that **you
-    may use either an editable install or dev.py in a given repository clone,
+    may use either an editable install or spin in a given repository clone,
     but not both**. If you use editable installs, you have to use ``pytest``
-    and other development tools directly instead of using ``dev.py``.
+    and other development tools directly instead of using ``spin``.
 
     To use an editable install, ensure you start from a clean repository (run
-    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
+    ``git clean -xdf`` if you've built with ``spin`` before) and have all
     dependencies set up correctly as described higher up on this page. Then
     do::
 

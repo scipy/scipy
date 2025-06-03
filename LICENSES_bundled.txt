@@ -87,9 +87,9 @@ License: 3-clause BSD
   For details, see scipy/sparse/linalg/eigen/arpack/ARPACK/COPYING
 
 Name: Qhull
-Files: scipy/spatial/qhull/*
+Files: subprojects/qhull_r/libqhull_r/*
 License: Qhull license (BSD-like)
-  For details, see scipy/spatial/qhull/COPYING.txt
+  For details, see subprojects/qhull_r/libqhull_r/COPYING.txt
 
 Name: xsf
 Files: scipy/subprojects/xsf/*

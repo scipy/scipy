@@ -34,7 +34,7 @@ from scipy._lib import _testutils
 from scipy._lib._array_api import (
     xp_assert_close, xp_assert_equal, is_numpy, is_torch, is_jax, is_cupy,
     assert_array_almost_equal, assert_almost_equal,
-    xp_copy, xp_size, xp_default_dtype
+    xp_copy, xp_size, xp_default_dtype, array_namespace
 )
 skip_xp_backends = pytest.mark.skip_xp_backends
 xfail_xp_backends = pytest.mark.xfail_xp_backends
@@ -94,8 +94,8 @@ class TestConvolve:
             b_shape = [1]*3
             b_shape[i] = 3
 
-            x = convolve(a, xp.reshape(b, b_shape), method='direct')
-            y = convolve(a, xp.reshape(b, b_shape), method='fft')
+            x = convolve(a, xp.reshape(b, tuple(b_shape)), method='direct')
+            y = convolve(a, xp.reshape(b, tuple(b_shape)), method='fft')
             xp_assert_close(x, y, atol=1e-14)
 
     @xfail_xp_backends("jax.numpy", reason="wrong output dtype")
@@ -1381,14 +1381,19 @@ padtype_options = ["mean", "median", "minimum", "maximum", "line"]
 padtype_options += _upfirdn_modes
 
 
-@skip_xp_backends(np_only=True)
+@skip_xp_backends("dask.array", reason="XXX something in dask")
 class TestResample:
+
+    @skip_xp_backends("jax.numpy", reason="immutable arrays")
+    @skip_xp_backends(
+        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
+    )
     def test_basic(self, xp):
         # Some basic tests
 
         # Regression test for issue #3603.
         # window.shape must equal to sig.shape[0]
-        sig = np.arange(128)
+        sig = xp.arange(128, dtype=xp.float64)
         num = 256
         win = signal.get_window(('kaiser', 8.0), 160)
         assert_raises(ValueError, signal.resample, sig, num, window=win)
@@ -1405,7 +1410,7 @@ class TestResample:
         assert_raises(ValueError, signal.resample_poly, sig, 2, 1, window=np.eye(2))
 
         # test for issue #6505 - should not modify window.shape when axis ≠ 0
-        sig2 = np.tile(np.arange(160), (2, 1))
+        sig2 = xp.tile(xp.arange(160, dtype=xp.float64), (2, 1))
         signal.resample(sig2, num, axis=-1, window=win)
         assert win.shape == (160,)
 
@@ -1419,24 +1424,34 @@ class TestResample:
     @pytest.mark.parametrize('window', (None, 'hamming'))
     @pytest.mark.parametrize('N', (20, 19))
     @pytest.mark.parametrize('num', (100, 101, 10, 11))
+    @skip_xp_backends('jax.numpy', reason='immutable arrays')
     def test_rfft(self, N, num, window, xp):
         # Make sure the speed up using rfft gives the same result as the normal
         # way using fft
-        x = np.linspace(0, 10, N, endpoint=False)
-        y = np.cos(-x**2/6.0)
-        xp_assert_close(signal.resample(y, num, window=window),
-                        signal.resample(y + 0j, num, window=window).real)
+        dt_r = xp_default_dtype(xp)
+        dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
-        y = np.array([np.cos(-x**2/6.0), np.sin(-x**2/6.0)])
-        y_complex = y + 0j
+        x = xp.linspace(0, 10, N, endpoint=False)
+        y = xp.cos(-x**2/6.0)
+        desired = signal.resample(xp.astype(y, dt_c), num, window=window)
+        xp_assert_close(signal.resample(y, num, window=window),
+                        xp.real(desired))
+
+        y = xp.stack([xp.cos(-x**2/6.0), xp.sin(-x**2/6.0)])
+        y_complex = xp.astype(y, dt_c)
+        resampled = signal.resample(y_complex, num, axis=1, window=window)
+
+        atol = 1e-9 if dt_r == xp.float64 else 3e-7
+
         xp_assert_close(
             signal.resample(y, num, axis=1, window=window),
-            signal.resample(y_complex, num, axis=1, window=window).real,
-            atol=1e-9)
+            xp.real(resampled),
+            atol=atol)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_input_domain(self, xp):
         # Test if both input domain modes produce the same results.
-        tsig = np.arange(256) + 0j
+        tsig = xp.astype(xp.arange(256), xp.complex128)
         fsig = sp_fft.fft(tsig)
         num = 256
         xp_assert_close(
@@ -1444,39 +1459,54 @@ class TestResample:
             signal.resample(tsig, num, domain='time'),
             atol=1e-9)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('nx', (1, 2, 3, 5, 8))
     @pytest.mark.parametrize('ny', (1, 2, 3, 5, 8))
-    @pytest.mark.parametrize('dtype', ('float', 'complex'))
+    @pytest.mark.parametrize('dtype', ('float64', 'complex128'))
     def test_dc(self, nx, ny, dtype, xp):
-        x = np.array([1] * nx, dtype)
+        dtype = getattr(xp, dtype)
+        x = xp.asarray([1] * nx, dtype=dtype)
         y = signal.resample(x, ny)
-        xp_assert_close(y, np.asarray([1] * ny, dtype=y.dtype))
+        xp_assert_close(y, xp.asarray([1] * ny, dtype=y.dtype))
 
+    @skip_xp_backends(cpu_only=True, reason="resample_poly/upfirdn is CPU only")
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_mutable_window(self, padtype, xp):
         # Test that a mutable window is not modified
-        impulse = np.zeros(3)
-        window = np.random.RandomState(0).randn(2)
-        window_orig = window.copy()
+        impulse = xp.zeros(3)
+        window = xp.asarray(np.random.RandomState(0).randn(2))
+        window_orig = xp.asarray(window, copy=True)
         signal.resample_poly(impulse, 5, 1, window=window, padtype=padtype)
         xp_assert_equal(window, window_orig)
 
+    @skip_xp_backends(
+        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
+    )
     @pytest.mark.parametrize('padtype', padtype_options)
     def test_output_float32(self, padtype, xp):
         # Test that float32 inputs yield a float32 output
-        x = np.arange(10, dtype=np.float32)
-        h = np.array([1, 1, 1], dtype=np.float32)
+        x = xp.arange(10, dtype=xp.float32)
+        h = xp.asarray([1, 1, 1], dtype=xp.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert y.dtype == np.float32
+        assert y.dtype == xp.float32
 
+
+    @skip_xp_backends(
+        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
+    )
     @pytest.mark.parametrize('padtype', padtype_options)
-    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_output_match_dtype(self, padtype, dtype, xp):
         # Test that the dtype of x is preserved per issue #14733
-        x = np.arange(10, dtype=dtype)
+        dtype = getattr(xp, dtype)
+        x = xp.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
         assert y.dtype == x.dtype
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
+    @skip_xp_backends(
+        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
+    )
     @pytest.mark.parametrize(
         "method, ext, padtype",
         [("fft", False, None)]
@@ -1492,13 +1522,13 @@ class TestResample:
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
 
         # Sinusoids, windowed to avoid edge artifacts
-        t = np.arange(rate) / float(rate)
-        freqs = np.array((1., 10., 40.))[:, np.newaxis]
-        x = np.sin(2 * np.pi * freqs * t) * hann(rate)
+        t = xp.arange(rate, dtype=xp.float64) / float(rate)
+        freqs = xp.asarray((1., 10., 40.))[:, xp.newaxis]
+        x = xp.sin(2 * xp.pi * freqs * t) * hann(rate, xp=xp)
 
         for rate_to in rates_to:
-            t_to = np.arange(rate_to) / float(rate_to)
-            y_tos = np.sin(2 * np.pi * freqs * t_to) * hann(rate_to)
+            t_to = xp.arange(rate_to, dtype=xp.float64) / float(rate_to)
+            y_tos = xp.sin(2 * xp.pi * freqs * t_to) * hann(rate_to, xp=xp)
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
@@ -1519,9 +1549,13 @@ class TestResample:
                 y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
                                                  **polyargs)
 
-            for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
+            for i in range(y_tos.shape[0]):
+                y_to = y_tos[i, :]
+                y_resamp = y_resamps[i, :]
+                freq = float(freqs[i, 0])
                 if freq >= 0.5 * rate_to:
-                    y_to.fill(0.)  # mostly low-passed away
+                    #y_to.fill(0.)  # mostly low-passed away
+                    y_to = xp.zeros_like(y_to)  # mostly low-passed away
                     if padtype in ['minimum', 'maximum']:
                         xp_assert_close(y_resamp, y_to, atol=3e-1)
                     else:
@@ -1534,9 +1568,10 @@ class TestResample:
         # Random data
         rng = np.random.RandomState(0)
         x = hann(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        x = xp.asarray(x)
         for rate_to in rates_to:
             # random data
-            t_to = np.arange(rate_to) / float(rate_to)
+            t_to = xp.arange(rate_to, dtype=xp.float64) / float(rate_to)
             y_to = np.interp(t_to, t, x)
             if method == 'fft':
                 y_resamp = signal.resample(x, rate_to)
@@ -1544,21 +1579,20 @@ class TestResample:
                 y_resamp = signal.resample_poly(x, rate_to, rate,
                                                 padtype=padtype)
             assert y_to.shape == y_resamp.shape
-            corr = np.corrcoef(y_to, y_resamp)[0, 1]
+            corr = xp.asarray(np.corrcoef(y_to, np.asarray(y_resamp))[0, 1])
             assert corr > 0.99, corr
 
         # More tests of fft method (Master 0.18.1 fails these)
         if method == 'fft':
-            x1 = np.array([1.+0.j, 0.+0.j])
+            x1 = xp.asarray([1.+0.j, 0.+0.j])
             y1_test = signal.resample(x1, 4)
             # upsampling a complex array
-            y1_true = np.array([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
+            y1_true = xp.asarray([1.+0.j, 0.5+0.j, 0.+0.j, 0.5+0.j])
             xp_assert_close(y1_test, y1_true, atol=1e-12)
-            x2 = np.array([1., 0.5, 0., 0.5])
+            x2 = xp.asarray([1., 0.5, 0., 0.5])
             y2_test = signal.resample(x2, 2)  # downsampling a real array
-            y2_true = np.array([1., 0.])
+            y2_true = xp.asarray([1., 0.])
             xp_assert_close(y2_test, y2_true, atol=1e-12)
-
 
     @pytest.mark.parametrize("n_in", (8, 9))
     @pytest.mark.parametrize("n_out", (3, 4))
@@ -1606,48 +1640,62 @@ class TestResample:
         xp_assert_close(y1_r, x1, atol=1e-12)
         xp_assert_close(y1_c.real, x1, atol=1e-12)
 
-    def test_poly_vs_filtfilt(self, xp):
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="filtfilt is CPU-only"
+    )
+    @pytest.mark.parametrize('down_factor', [2, 11, 79])
+    def test_poly_vs_filtfilt(self, down_factor, xp):
         # Check that up=1.0 gives same answer as filtfilt + slicing
         random_state = np.random.RandomState(17)
         try_types = (int, np.float32, np.complex64, float, complex)
         size = 10000
-        down_factors = [2, 11, 79]
 
         for dtype in try_types:
             x = random_state.randn(size).astype(dtype)
             if dtype in (np.complex64, np.complex128):
                 x += 1j * random_state.randn(size)
+            x = xp.asarray(x)
 
             # resample_poly assumes zeros outside of signl, whereas filtfilt
             # can only constant-pad. Make them equivalent:
             x[0] = 0
             x[-1] = 0
 
-            for down in down_factors:
-                h = signal.firwin(31, 1. / down, window='hamming')
-                yf = filtfilt(h, 1.0, x, padtype='constant')[::down]
+            h = signal.firwin(31, 1. / down_factor, window='hamming')
+            h = xp.asarray(h)   # XXX: convert firwin
+            yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
 
-                # Need to pass convolved version of filter to resample_poly,
-                # since filtfilt does forward and backward, but resample_poly
-                # only goes forward
-                hc = convolve(h, h[::-1])
-                y = signal.resample_poly(x, 1, down, window=hc)
-                xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
+            # Need to pass convolved version of filter to resample_poly,
+            # since filtfilt does forward and backward, but resample_poly
+            # only goes forward
+            hc = convolve(h, xp.flip(h))
+            y = signal.resample_poly(x, 1, down_factor, window=hc)
+            xp_assert_close(yf, y, atol=1e-7, rtol=1e-7)
 
+    @skip_xp_backends(
+        cpu_only=True, exceptions=["cupy"], reason="correlate1d is CPU-only"
+    )
     def test_correlate1d(self, xp):
         for down in [2, 4]:
             for nx in range(1, 40, down):
                 for nweights in (32, 33):
                     x = np.random.random((nx,))
                     weights = np.random.random((nweights,))
-                    y_g = correlate1d(x, weights[::-1], mode='constant')
+                    x, weights = map(xp.asarray, (x, weights))
+                    flip = array_namespace(x).flip
+                    y_g = correlate1d(x, flip(weights), mode='constant')
                     y_s = signal.resample_poly(
                         x, up=1, down=down, window=weights)
                     xp_assert_close(y_g[::down], y_s)
 
-    @pytest.mark.parametrize('dtype', [np.int32, np.float32])
+    @skip_xp_backends(
+        cpu_only=True, reason="resample_poly/upfirdn is CPU only"
+    )
+    @pytest.mark.parametrize('dtype', ['int32', 'float32'])
     def test_gh_15620(self, dtype, xp):
-        data = np.array([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
+        dtype = getattr(xp, dtype)
+        data = xp.asarray([0, 1, 2, 3, 2, 1, 0], dtype=dtype)
         actual = signal.resample_poly(data,
                                       up=2,
                                       down=1,
@@ -3457,14 +3505,18 @@ class TestHilbert2:
         assert xp.real(signal.hilbert2(in_typed)).dtype == dtype
 
 
-@skip_xp_backends(np_only=True)
 class TestEnvelope:
     """Unit tests for function `._signaltools.envelope()`. """
 
     @staticmethod
-    def assert_close(actual, desired, msg):
+    def assert_close(actual, desired, msg, xp):
+        a_r_tol = ({'atol': 1e-12, 'rtol': 1e-12}
+                   if xp_default_dtype(xp) == xp.float64
+                   else {'atol': 1e-5, 'rtol': 1e-5}
+        )
+
         """Little helper to compare to arrays with proper tolerances"""
-        xp_assert_close(actual, desired, atol=1e-12, rtol=1e-12, err_msg=msg)
+        xp_assert_close(actual, desired, **a_r_tol, err_msg=msg)
 
     def test_envelope_invalid_parameters(self, xp):
         """For `envelope()` Raise all exceptions that are used to verify function
@@ -3474,72 +3526,85 @@ class TestEnvelope:
             envelope(np.ones(3), axis=2)
         with pytest.raises(ValueError,
                            match=r"z.shape\[axis\] not > 0 for z.shape=.*"):
-            envelope(np.ones((3, 0)), axis=1)
+            envelope(xp.ones((3, 0)), axis=1)
         for bp_in in [(0, 1, 2), (0, 2.), (None, 2.)]:
             ts = ', '.join(map(str, bp_in))
             with pytest.raises(ValueError,
                                match=rf"bp_in=\({ts}\) isn't a 2-tuple of.*"):
                 # noinspection PyTypeChecker
-                envelope(np.ones(4), bp_in=bp_in)
+                envelope(xp.ones(4), bp_in=bp_in)
         with pytest.raises(ValueError,
                            match="n_out=10.0 is not a positive integer or.*"):
             # noinspection PyTypeChecker
-            envelope(np.ones(4), n_out=10.)
+            envelope(xp.ones(4), n_out=10.)
         for bp_in in [(-1, 3), (1, 1), (0, 10)]:
             with pytest.raises(ValueError,
                                match=r"`-n//2 <= bp_in\[0\] < bp_in\[1\] <=.*"):
-                envelope(np.ones(4), bp_in=bp_in)
+                envelope(xp.ones(4), bp_in=bp_in)
         with pytest.raises(ValueError, match="residual='undefined' not in .*"):
             # noinspection PyTypeChecker
-            envelope(np.ones(4), residual='undefined')
+            envelope(xp.ones(4), residual='undefined')
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_parameters(self, xp):
         """Ensure that the various parametrizations produce compatible results. """
-        Z, Zr_a = [4, 2, 2, 3, 0], [4, 0, 0, 6, 0, 0, 0, 0]
+        dt_r = xp_default_dtype(xp)
+        dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
+
+        Z = xp.asarray([4.0, 2, 2, 3, 0], dtype=dt_r)
+        Zr_a = xp.asarray([4.0, 0, 0, 6, 0, 0, 0, 0], dtype=dt_r)
         z = sp_fft.irfft(Z)
-        n = len(z)
+        n = z.shape[0]
 
         # the reference envelope:
-        ze2_0, zr_0 = envelope(z, (1, 3), residual='all', squared=True)
-        self.assert_close(sp_fft.rfft(ze2_0), np.array([4, 2, 0, 0, 0]).astype(complex),
-                          msg="Envelope calculation error")
-        self.assert_close(sp_fft.rfft(zr_0), np.array([4, 0, 0, 3, 0]).astype(complex),
-                          msg="Residual calculation error")
+        ze2_0, zr_0 = xp.unstack(envelope(z, (1, 3), residual='all', squared=True))
+        self.assert_close(sp_fft.rfft(ze2_0),
+                          xp.asarray([4, 2, 0, 0, 0], dtype=dt_c),
+                          msg="Envelope calculation error", xp=xp)
+        self.assert_close(sp_fft.rfft(zr_0),
+                          xp.asarray([4, 0, 0, 3, 0], dtype=dt_c),
+                          msg="Residual calculation error", xp=xp)
 
-        ze_1, zr_1 = envelope(z, (1, 3), residual='all', squared=False)
+        ze_1, zr_1 = xp.unstack(envelope(z, (1, 3), residual='all', squared=False))
         self.assert_close(ze_1**2, ze2_0,
-                          msg="Unsquared versus Squared envelope calculation error")
+                          msg="Unsquared versus Squared envelope calculation error",
+                          xp=xp)
         self.assert_close(zr_1, zr_0,
-                          msg="Unsquared versus Squared residual calculation error")
+                          msg="Unsquared versus Squared residual calculation error",
+                          xp=xp)
 
-        ze2_2, zr_2 = envelope(z, (1, 3), residual='all', squared=True, n_out=3*n)
+        ze2_2, zr_2 = xp.unstack(
+            envelope(z, (1, 3), residual='all', squared=True, n_out=3*n)
+        )
         self.assert_close(ze2_2[::3], ze2_0,
-                          msg="3x up-sampled envelope calculation error")
+                          msg="3x up-sampled envelope calculation error", xp=xp)
         self.assert_close(zr_2[::3], zr_0,
-                          msg="3x up-sampled residual calculation error")
+                          msg="3x up-sampled residual calculation error", xp=xp)
 
-        ze2_3, zr_3 = envelope(z, (1, 3), residual='lowpass', squared=True)
+        ze2_3, zr_3 = xp.unstack(envelope(z, (1, 3), residual='lowpass', squared=True))
         self.assert_close(ze2_3, ze2_0,
-                          msg="`residual='lowpass'` envelope calculation error")
-        self.assert_close(sp_fft.rfft(zr_3), np.array([4, 0, 0, 0, 0]).astype(complex),
-                          msg="`residual='lowpass'` residual calculation error")
+                          msg="`residual='lowpass'` envelope calculation error", xp=xp)
+        self.assert_close(sp_fft.rfft(zr_3),
+                          xp.asarray([4, 0, 0, 0, 0], dtype=dt_c),
+                          msg="`residual='lowpass'` residual calculation error", xp=xp)
 
         ze2_4 = envelope(z, (1, 3), residual=None, squared=True)
         self.assert_close(ze2_4, ze2_0,
-                          msg="`residual=None` envelope calculation error")
+                          msg="`residual=None` envelope calculation error", xp=xp)
 
         # compare complex analytic signal to real version
-        Z_a = np.copy(Z)
+        Z_a = xp.asarray(Z, copy=True)
         Z_a[1:] *= 2
         z_a = sp_fft.ifft(Z_a, n=n)  # analytic signal of Z
-        self.assert_close(z_a.real, z,
-                          msg="Reference analytic signal error")
-        ze2_a, zr_a = envelope(z_a, (1, 3), residual='all', squared=True)
-        self.assert_close(ze2_a, ze2_0.astype(complex),  # dtypes must match
-                          msg="Complex envelope calculation error")
-        self.assert_close(sp_fft.fft(zr_a), np.array(Zr_a).astype(complex),
-                          msg="Complex residual calculation error")
+        self.assert_close(xp.real(z_a), z,
+                          msg="Reference analytic signal error", xp=xp)
+        ze2_a, zr_a = xp.unstack(envelope(z_a, (1, 3), residual='all', squared=True))
+        self.assert_close(ze2_a, xp.astype(ze2_0, dt_c),  # dtypes must match
+                          msg="Complex envelope calculation error", xp=xp)
+        self.assert_close(sp_fft.fft(zr_a), xp.asarray(Zr_a, dtype=dt_c),
+                          msg="Complex residual calculation error", xp=xp)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,     Ze2_desired,      Zr_desired",
         [([1, 0, 2, 2, 0],    (1, None), [4, 2, 0, 0, 0], [1, 0, 0, 0, 0]),
@@ -3559,25 +3624,30 @@ class TestEnvelope:
         determined by an FFT and that the absolute square of a Fourier series is again
         a Fourier series.
         """
+        Z = xp.asarray(Z, dtype=xp.float64)
+        Ze2_desired = xp.asarray(Ze2_desired, dtype=xp.float64)
+        Zr_desired = xp.asarray(Zr_desired, dtype=xp.float64)
+
         z = sp_fft.irfft(Z)
-        ze2, zr = envelope(z, bp_in, residual='all', squared=True)
-        ze2_lp, zr_lp = envelope(z, bp_in, residual='lowpass', squared=True)
+        ze2, zr = xp.unstack(envelope(z, bp_in, residual='all', squared=True))
+        ze2_lp, zr_lp = xp.unstack(envelope(z, bp_in, residual='lowpass', squared=True))
         Ze2, Zr, Ze2_lp, Zr_lp = (sp_fft.rfft(z_) for z_ in (ze2, zr, ze2_lp, zr_lp))
 
-        Ze2_desired = np.array(Ze2_desired).astype(complex)
-        Zr_desired = np.array(Zr_desired).astype(complex)
+        Ze2_desired = xp.asarray(Ze2_desired, dtype=xp.complex128)
+        Zr_desired = xp.asarray(Zr_desired, dtype=xp.complex128)
         self.assert_close(Ze2, Ze2_desired,
-                          msg="Envelope calculation error (residual='all')")
+                          msg="Envelope calculation error (residual='all')", xp=xp)
         self.assert_close(Zr, Zr_desired,
-                          msg="Residual calculation error (residual='all')")
+                          msg="Residual calculation error (residual='all')", xp=xp)
 
         if bp_in[1] is not None:
             Zr_desired[bp_in[1]:] = 0
         self.assert_close(Ze2_lp, Ze2_desired,
-                          msg="Envelope calculation error (residual='lowpass')")
+                          msg="Envelope calculation error (residual='lowpass')", xp=xp)
         self.assert_close(Zr_lp, Zr_desired,
-                          msg="Residual calculation error (residual='lowpass')")
+                          msg="Residual calculation error (residual='lowpass')", xp=xp)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize(
         "               Z,        bp_in,         Ze2_desired,         Zr_desired",
         [([0, 5, 0, 5, 0], (None, None),    [5, 0, 10, 0, 5],    [0, 0, 0, 0, 0]),
@@ -3590,56 +3660,75 @@ class TestEnvelope:
         We only need to test for the complex envelope here, since the ``Nones``s in the
         bandpass filter were already tested in the previous test.
         """
+        Z = xp.asarray(Z, dtype=xp.float64)
+        Ze2_desired = xp.asarray(Ze2_desired, dtype=xp.complex128)
+        Zr_desired = xp.asarray(Zr_desired, dtype=xp.complex128)
+
         z = sp_fft.ifft(sp_fft.ifftshift(Z))
-        ze2, zr = envelope(z, bp_in, residual='all', squared=True)
+        ze2, zr = xp.unstack(envelope(z, bp_in, residual='all', squared=True))
         Ze2, Zr = (sp_fft.fftshift(sp_fft.fft(z_)) for z_ in (ze2, zr))
 
-        self.assert_close(Ze2, np.array(Ze2_desired).astype(complex),
-                          msg="Envelope calculation error")
-        self.assert_close(Zr, np.array(Zr_desired).astype(complex),
-                          msg="Residual calculation error")
+        self.assert_close(Ze2, Ze2_desired,
+                          msg="Envelope calculation error", xp=xp)
+        self.assert_close(Zr, Zr_desired,
+                          msg="Residual calculation error", xp=xp)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter(self, xp):
         """Test for multi-channel envelope calculations. """
-        z = sp_fft.irfft([[1, 0, 2, 2, 0], [7, 0, 4, 4, 0]])
-        Ze2_desired = np.array([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
-                               dtype=complex)
-        Zr_desired = np.array([[1, 0, 0, 0, 0], [7, 0, 0, 0, 0]], dtype=complex)
+        dt_r = xp_default_dtype(xp)
+        dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
 
-        ze2, zr = envelope(z, squared=True, axis=1)
-        ye2T, yrT = envelope(z.T, squared=True, axis=0)
+        z = sp_fft.irfft(xp.asarray([[1.0, 0, 2, 2, 0], [7, 0, 4, 4, 0]], dtype=dt_r))
+        Ze2_desired = xp.asarray([[4, 2, 0, 0, 0], [16, 8, 0, 0, 0]],
+                                 dtype=dt_c)
+        Zr_desired = xp.asarray([[1, 0, 0, 0, 0], [7, 0, 0, 0, 0]], dtype=dt_c)
+
+        ze2, zr = xp.unstack(envelope(z, squared=True, axis=1))
+        ye2T, yrT = xp.unstack(envelope(z.T, squared=True, axis=0))
         Ze2, Ye2, Zr, Yr = (sp_fft.rfft(z_) for z_ in (ze2, ye2T.T, zr, yrT.T))
 
-        self.assert_close(Ze2, Ze2_desired, msg="2d envelope calculation error")
-        self.assert_close(Zr, Zr_desired,  msg="2d residual calculation error")
-        self.assert_close(Ye2, Ze2_desired, msg="Transposed 2d envelope calc. error")
-        self.assert_close(Yr, Zr_desired, msg="Transposed 2d residual calc. error")
+        self.assert_close(Ze2, Ze2_desired, msg="2d envelope calculation error", xp=xp)
+        self.assert_close(Zr, Zr_desired,  msg="2d residual calculation error", xp=xp)
+        self.assert_close(
+            Ye2, Ze2_desired, msg="Transposed 2d envelope calc. error", xp=xp
+        )
+        self.assert_close(
+            Yr, Zr_desired, msg="Transposed 2d residual calc. error", xp=xp
+        )
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     def test_envelope_verify_axis_parameter_complex(self, xp):
         """Test for multi-channel envelope calculations with complex values. """
-        z = sp_fft.ifft(sp_fft.ifftshift([[1, 5, 0, 5, 2], [1, 10, 0, 10, 2]], axes=1))
-        Ze2_des = np.array([[5, 0, 10, 0, 5], [20, 0, 40, 0, 20],],
-                           dtype=complex)
-        Zr_des = np.array([[1, 0, 0, 0, 2], [1, 0, 0, 0, 2]], dtype=complex)
+        dt_r = xp_default_dtype(xp)
+        dt_c = xp.complex64 if dt_r == xp.float32 else xp.complex128
+        inp = xp.asarray([[1.0, 5, 0, 5, 2], [1, 10, 0, 10, 2]], dtype=dt_r)
+        z = sp_fft.ifft(sp_fft.ifftshift(inp, axes=1))
+        Ze2_des = xp.asarray([[5, 0, 10, 0, 5], [20, 0, 40, 0, 20],], dtype=dt_c)
+        Zr_des = xp.asarray([[1, 0, 0, 0, 2], [1, 0, 0, 0, 2]], dtype=dt_c)
 
         kw = dict(bp_in=(-1, 2), residual='all', squared=True)
-        ze2, zr = envelope(z, axis=1, **kw)
-        ye2T, yrT = envelope(z.T, axis=0, **kw)
+        ze2, zr = xp.unstack(envelope(z, axis=1, **kw))
+        ye2T, yrT = xp.unstack(envelope(z.T, axis=0, **kw))
         Ze2, Ye2, Zr, Yr = (sp_fft.fftshift(sp_fft.fft(z_), axes=1)
                             for z_ in (ze2, ye2T.T, zr, yrT.T))
 
-        self.assert_close(Ze2, Ze2_des, msg="2d envelope calculation error")
-        self.assert_close(Zr, Zr_des, msg="2d residual calculation error")
-        self.assert_close(Ye2, Ze2_des,  msg="Transposed 2d envelope calc. error")
-        self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error")
+        self.assert_close(Ze2, Ze2_des, msg="2d envelope calculation error", xp=xp)
+        self.assert_close(Zr, Zr_des, msg="2d residual calculation error", xp=xp)
+        self.assert_close(
+            Ye2, Ze2_des,  msg="Transposed 2d envelope calc. error", xp=xp
+        )
+        self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error", xp=xp)
 
+    @skip_xp_backends("jax.numpy", reason="XXX: immutable arrays")
     @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
     def test_compare_envelope_hilbert(self, X, xp):
         """Compare output of `envelope()` and `hilbert()`. """
+        X = xp.asarray(X, dtype=xp.float64)
         x = sp_fft.irfft(X)
-        e_hil = np.abs(hilbert(x))
+        e_hil = xp.abs(hilbert(x))
         e_env = envelope(x, (None, None), residual=None)
-        self.assert_close(e_hil, e_env, msg="Hilbert-Envelope comparison error")
+        self.assert_close(e_hil, e_env, msg="Hilbert-Envelope comparison error", xp=xp)
 
     def test_nyquist(self):
         """Test behavior when input is a cosine at the Nyquist frequency.

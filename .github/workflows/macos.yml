@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -121,7 +121,11 @@ jobs:
         export BOOST_LIBRARYDIR=${{ env.CONDA }}/envs/scipy-dev/lib
         rm -rf subprojects/boost_math  # so will fail if system boost doesn't work
 
-        CC="ccache $CC" spin build
+        # configure system qhull
+        mamba install qhull=2020.2
+        rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
+
+        CC="ccache $CC" spin build --use-system-libraries
 
     - name: Test SciPy
       shell: bash -l {0}
@@ -153,7 +157,6 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
-
     - name: Setup Python
       uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
