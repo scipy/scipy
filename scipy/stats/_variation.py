@@ -113,10 +113,12 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
         result = std_a * correction / mean_a
 
     def special_case(std_a, mean_a):
+        # xref data-apis/array-api-extra#196
+        mxp = array_namespace(std_a, mean_a)
         # `_xp_inf` is a workaround for torch.copysign not accepting a scalar yet,
         # xref data-apis/array-api-compat#271
-        _xp_inf = xp.asarray(xp.inf, dtype=mean_a.dtype, device=xp_device(mean_a))
-        return xp.where(std_a > 0, xp.copysign(_xp_inf, mean_a), xp.nan)
+        _xp_inf = mxp.asarray(mxp.inf, dtype=mean_a.dtype, device=xp_device(mean_a))
+        return mxp.where(std_a > 0, mxp.copysign(_xp_inf, mean_a), mxp.nan)
 
     result = xpx.apply_where((ddof == n), (std_a, mean_a),
                              special_case, fill_value=result)
