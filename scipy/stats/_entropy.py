@@ -10,7 +10,6 @@ from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory
 from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
                                    is_marray, _share_masks)
-from scipy._lib import array_api_extra as xpx
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -409,8 +408,7 @@ def _ebrahimi_entropy(X, m, *, xp):
 
     i = xp.arange(1, n+1, dtype=X.dtype, device=xp_device(X))
     ci = xp.where(i <= m, 1 + (i - 1)/m, 2.)
-    cond = i >= n - m + 1
-    ci = xpx.at(ci, cond).set(1 + (n - i[cond])/m)
+    ci = xp.where(i >= n - m + 1, 1 + (n - i)/m, ci)
 
     logs = xp.log(n * differences / (ci * m))
     return xp.mean(logs, axis=-1)
