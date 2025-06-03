@@ -123,7 +123,7 @@ class ArrayAPISupportPerFunction(SphinxDirective):
             new_row = [self._get_generated_doc_link_for_function(module, func)]
             for backend in backends:
                 supported = row[backend]
-                cell_text = "🚫" if supported is None else "✔️" if supported else "-"
+                cell_text = "N/A" if supported is None else "✔️" if supported else "-"
                 new_row.append(cell_text)
             new_rows.append(new_row)
         return _make_reST_table(new_rows, headers, self.state)
