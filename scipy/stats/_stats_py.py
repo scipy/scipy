@@ -4379,7 +4379,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(cpu_only=True, exceptions=['cupy'])
+# Missing special.betainc on torch
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
