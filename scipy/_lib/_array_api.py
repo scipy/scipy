@@ -7,7 +7,6 @@ The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
 import operator
-import contextlib
 import dataclasses
 import functools
 import textwrap
@@ -169,7 +168,7 @@ def eager_warns(warning_type, *, match=None, xp):
     __thread_safe__ = False  # noqa: F841
     if is_numpy(xp) or is_array_api_strict(xp) or is_cupy(xp):
         return pytest.warns(warning_type, match=match)
-    return ignore_warns(warning_type, match=match)
+    return ignore_warns(warning_type, match='' if match is None else match)
 
 
 def _strict_check(actual, desired, xp, *,
