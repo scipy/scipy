@@ -230,10 +230,10 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
         x, y, w, k, s, xb, xe, parametric=np.ndim(y) == 2
     )
 
-    yield from _generate_knots_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, nest=nest)
+    yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
 
 
-def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
+def _generate_knots_impl(x, y, w, xb, xe, k, s, nest):
 
     acc = s * TOL
     m = x.size    # the number of data points
@@ -671,7 +671,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
             raise ValueError("Either supply `t` or `nest`.")
 
     if t is None:
-        gen = _generate_knots_impl(x, y, w=w, k=k, s=s, xb=xb, xe=xe, nest=nest)
+        gen = _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
         t = list(gen)[-1]
     else:
         fpcheck(x, t, k)
