@@ -154,11 +154,11 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    double* resid = PyArray_DATA(ap_resid);
-    double* v = PyArray_DATA(ap_v);
-    double* workd = PyArray_DATA(ap_workd);
-    double* workl = PyArray_DATA(ap_workl);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    double* resid = (double*)PyArray_DATA(ap_resid);
+    double* v = (double*)PyArray_DATA(ap_v);
+    double* workd = (double*)PyArray_DATA(ap_workd);
+    double* workl = (double*)PyArray_DATA(ap_workl);
 
     // Parse the dictionary, if the field is not found, raise an error.
     // Do it separately for floats and ints.
@@ -240,12 +240,12 @@ cnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    ARPACK_CPLXF_TYPE* resid = PyArray_DATA(ap_resid);
-    ARPACK_CPLXF_TYPE* v = PyArray_DATA(ap_v);
-    ARPACK_CPLXF_TYPE* workd = PyArray_DATA(ap_workd);
-    ARPACK_CPLXF_TYPE* workl = PyArray_DATA(ap_workl);
-    float* rwork = PyArray_DATA(ap_rwork);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARPACK_CPLXF_TYPE* resid = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_resid);
+    ARPACK_CPLXF_TYPE* v = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_v);
+    ARPACK_CPLXF_TYPE* workd = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_workd);
+    ARPACK_CPLXF_TYPE* workl = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_workl);
+    float* rwork = (float*)PyArray_DATA(ap_rwork);
 
     // Map the input dict to the ARPACK structure
 
@@ -329,12 +329,12 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    ARPACK_CPLX_TYPE* resid = PyArray_DATA(ap_resid);
-    ARPACK_CPLX_TYPE* v = PyArray_DATA(ap_v);
-    ARPACK_CPLX_TYPE* workd = PyArray_DATA(ap_workd);
-    ARPACK_CPLX_TYPE* workl = PyArray_DATA(ap_workl);
-    double* rwork = PyArray_DATA(ap_rwork);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    ARPACK_CPLX_TYPE* resid = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_resid);
+    ARPACK_CPLX_TYPE* v = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_v);
+    ARPACK_CPLX_TYPE* workd = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_workd);
+    ARPACK_CPLX_TYPE* workl = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_workl);
+    double* rwork = (double*)PyArray_DATA(ap_rwork);
 
     // Parse the dictionary, if the field is not found, raise an error.
     // Do it separately for floats and ints.
@@ -432,16 +432,16 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    int* select = PyArray_DATA(ap_select);
-    float* dr = PyArray_DATA(ap_dr);
-    float* di = PyArray_DATA(ap_di);
-    float* workev = PyArray_DATA(ap_workev);
-    float* z = PyArray_DATA(ap_z);
-    float* resid = PyArray_DATA(ap_resid);
-    float* v = PyArray_DATA(ap_v);
-    float* workd = PyArray_DATA(ap_workd);
-    float* workl = PyArray_DATA(ap_workl);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    float* dr = (float*)PyArray_DATA(ap_dr);
+    float* di = (float*)PyArray_DATA(ap_di);
+    float* workev = (float*)PyArray_DATA(ap_workev);
+    float* z = (float*)PyArray_DATA(ap_z);
+    float* resid = (float*)PyArray_DATA(ap_resid);
+    float* v = (float*)PyArray_DATA(ap_v);
+    float* workd = (float*)PyArray_DATA(ap_workd);
+    float* workl = (float*)PyArray_DATA(ap_workl);
     ldv = (int)PyArray_DIMS(ap_v)[0];
     ldz = (int)PyArray_DIMS(ap_z)[0];
 
@@ -514,16 +514,16 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    int* select = PyArray_DATA(ap_select);
-    double* dr = PyArray_DATA(ap_dr);
-    double* di = PyArray_DATA(ap_di);
-    double* workev = PyArray_DATA(ap_workev);
-    double* z = PyArray_DATA(ap_z);
-    double* resid = PyArray_DATA(ap_resid);
-    double* v = PyArray_DATA(ap_v);
-    double* workd = PyArray_DATA(ap_workd);
-    double* workl = PyArray_DATA(ap_workl);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    double* dr = (double*)PyArray_DATA(ap_dr);
+    double* di = (double*)PyArray_DATA(ap_di);
+    double* workev = (double*)PyArray_DATA(ap_workev);
+    double* z = (double*)PyArray_DATA(ap_z);
+    double* resid = (double*)PyArray_DATA(ap_resid);
+    double* v = (double*)PyArray_DATA(ap_v);
+    double* workd = (double*)PyArray_DATA(ap_workd);
+    double* workl = (double*)PyArray_DATA(ap_workl);
     ldv = (int)PyArray_DIMS(ap_v)[0];
     ldz = (int)PyArray_DIMS(ap_z)[0];
 
@@ -602,15 +602,15 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         return NULL;
     }
 
-    int* ipntr = PyArray_DATA(ap_ipntr);
-    int* select = PyArray_DATA(ap_select);
-    ARPACK_CPLX_TYPE* d = PyArray_DATA(ap_d);
-    ARPACK_CPLX_TYPE* workev = PyArray_DATA(ap_workev);
-    ARPACK_CPLX_TYPE* z = PyArray_DATA(ap_z);
-    ARPACK_CPLX_TYPE* resid = PyArray_DATA(ap_resid);
-    ARPACK_CPLX_TYPE* v = PyArray_DATA(ap_v);
-    ARPACK_CPLX_TYPE* workd = PyArray_DATA(ap_workd);
-    ARPACK_CPLX_TYPE* workl = PyArray_DATA(ap_workl);
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    ARPACK_CPLX_TYPE* d = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_d);
+    ARPACK_CPLX_TYPE* workev = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_workev);
+    ARPACK_CPLX_TYPE* z = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_z);
+    ARPACK_CPLX_TYPE* resid = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_resid);
+    ARPACK_CPLX_TYPE* v = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_v);
+    ARPACK_CPLX_TYPE* workd = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_workd);
+    ARPACK_CPLX_TYPE* workl = (ARPACK_CPLX_TYPE*)PyArray_DATA(ap_workl);
     double* rwork = PyArray_DATA(ap_rwork);
     ldv = (int)PyArray_DIMS(ap_v)[0];
     ldz = (int)PyArray_DIMS(ap_z)[0];
