@@ -798,11 +798,8 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
         xslice = slice(self.ipntr[0], self.ipntr[0] + self.n)
         yslice = slice(self.ipntr[1], self.ipntr[1] + self.n)
-        if self.arpack_dict['ido'] == 5:
-            # initialization
-            self.workd[yslice] = self.OP(self.workd[xslice])
 
-        elif self.arpack_dict['ido'] == 1:
+        if self.arpack_dict['ido'] == 1:
             # compute y = Op*x
             if self.mode in (1, 2):
                 self.workd[yslice] = self.OP(self.workd[xslice])
@@ -814,7 +811,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
             self.workd[yslice] = self.B(self.workd[xslice])
 
         elif self.arpack_dict['ido'] == 3:
-            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
+            raise ValueError("ARPACK requested user shifts. Assure ISHIFT==0")
 
         elif self.arpack_dict['ido'] == 4:
             if self.tp in 'fd':
@@ -823,10 +820,11 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                                  size=[self.n]).astype(self.tp)
             else:
                 # Generate complex random vector into resid
-                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n]
-                                                 ).astype(self.tp.lower())
-                self.resid += (self.rng.uniform(low=-1.0, high=1.0, size=[self.n])
-                               *1j).astype(self.tp.lower())
+                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n, 2]
+                ).view(np.complex128).astype(self.tp).ravel()
+
+        elif self.arpack_dict['ido'] == 5:
+            self.workd[yslice] = self.OP(self.workd[xslice])
 
         else:
             self.converged = True
@@ -961,13 +959,14 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 d = d[ind]
                 z = z[:, ind]
         else:
-            # complex is so much simpler...
-            d, z, ierr =\
-                    self._arpack_extract(return_eigenvectors,
-                           howmny, sselect, self.sigma, workev,
-                           self.bmat, self.which, k, self.tol, self.resid,
-                           self.v, self.iparam, self.ipntr,
-                           self.workd, self.workl, self.rwork, ierr)
+            d = np.zeros([k], dtype=self.tp)
+            z = np.zeros([n, k], dtype=self.tp, order='F')
+            self._arpack_extract(
+                self.arpack_dict, return_eigenvectors, howmny, sselect, d, z,
+                self.sigma, workev, self.resid, self.v, self.ipntr, self.workd,
+                self.workl, self.rwork)
+
+            ierr = self.arpack_dict['info']
 
             if ierr != 0:
                 raise ArpackError(ierr, infodict=self.extract_infodict)
