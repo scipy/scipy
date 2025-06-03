@@ -434,10 +434,10 @@ class TestPearsonr:
     def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
+        x = xp.asarray([0.667, 0.667, 0.667])
+        y = xp.asarray([0.123, 0.456, 0.789])
         msg = "An input array is constant"
-        with pytest.warns(stats.ConstantInputWarning, match=msg):
-            x = xp.asarray([0.667, 0.667, 0.667])
-            y = xp.asarray([0.123, 0.456, 0.789])
+        with eager_warns(x, stats.ConstantInputWarning, match=msg):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -450,7 +450,7 @@ class TestPearsonr:
         x = xp.asarray([2, 2, 2 + np.spacing(2, dtype=npdtype)], dtype=dtype)
         y = xp.asarray([3, 3, 3 + 6*np.spacing(3, dtype=npdtype)], dtype=dtype)
         msg = "An input array is nearly constant; the computed"
-        with pytest.warns(stats.NearConstantInputWarning, match=msg):
+        with eager_warns(x, stats.NearConstantInputWarning, match=msg):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             stats.pearsonr(x, y)
@@ -497,6 +497,8 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64))
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_length_two_pos1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -511,6 +513,8 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_length_two_neg1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
@@ -530,10 +534,10 @@ class TestPearsonr:
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
         # and https://github.com/scipy/scipy/issues/7730
+        x = xp.asarray([0.667, 0.667])
+        y = xp.asarray([0.123, 0.456])
         msg = "An input array is constant"
-        with pytest.warns(stats.ConstantInputWarning, match=msg):
-            x = xp.asarray([0.667, 0.667])
-            y = xp.asarray([0.123, 0.456])
+        with eager_warns(x, stats.ConstantInputWarning, match=msg):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -570,6 +574,7 @@ class TestPearsonr:
         xp_assert_close(test_greater.pvalue, xp.asarray(1.))
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_length3_r_exactly_negative_one(self, xp):
         x = xp.asarray([1., 2., 3.])
         y = xp.asarray([5., -4., -13.])
@@ -717,15 +722,17 @@ class TestPearsonr:
             with pytest.raises(ValueError, match=message):
                 stats.pearsonr(x, x, method=stats.PermutationMethod())
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in divide")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0, y0 = rng.random((4, 5)), rng.random((4, 5))
 
+        x0, y0 = rng.random((4, 5)), rng.random((4, 5))
+        x0[0, ...] = 1
+        y0[1, ...] = 2
+        x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is constant'
-        with pytest.warns(stats.ConstantInputWarning, match=message):
-            x0[0, ...], y0[1, ...] = 1, 2
-            x, y = xp.asarray(x0), xp.asarray(y0)
+        with eager_warns(x, stats.ConstantInputWarning, match=message):
             res = stats.pearsonr(x, y, axis=1)
             ci = res.confidence_interval()
             nans = xp.asarray([xp.nan, xp.nan], dtype=xp.float64)
@@ -738,10 +745,10 @@ class TestPearsonr:
             assert xp.all(xp.isfinite(ci.low[2:]))
             assert xp.all(xp.isfinite(ci.high[2:]))
 
+        x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
+        x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is nearly constant'
-        with pytest.warns(stats.NearConstantInputWarning, match=message):
-            x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
-            x, y = xp.asarray(x0), xp.asarray(y0)
+        with eager_warns(x, stats.NearConstantInputWarning, match=message):
             stats.pearsonr(x, y, axis=1)
 
         # length 2 along axis
@@ -7835,7 +7842,7 @@ class TestAlexanderGovern:
         # Zero variance input, consistent with `stats.pearsonr`
         x1 = np.asarray([0.667, 0.667, 0.667])
         x2 = np.asarray([0.123, 0.456, 0.789])
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(x1, RuntimeWarning, match="Precision loss occurred..."):
             res = stats.alexandergovern(x1, x2)
         assert_equal(res.statistic, np.nan)
         assert_equal(res.pvalue, np.nan)

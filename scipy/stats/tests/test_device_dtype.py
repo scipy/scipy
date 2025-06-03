@@ -193,9 +193,6 @@ def test_zscore(fun, dtype, xp, devices):
                                     'power_divergence'])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_hypothesis_tests(f_name, dtype, xp, devices):
-    if is_dask(xp) and f_name == 'pearsonr':
-        pytest.skip("dtype inference failing in xpx.apply_where")
-
     dtype = getattr(xp, dtype)
     for device in devices:
         f = getattr(stats, f_name)
