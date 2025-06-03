@@ -4798,7 +4798,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     mxp = array_namespace(r._meta) if is_dask(xp) else xp    
     def special_case(r):
         return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
-    r = xpx.apply_where(mask, (r,), mxp.round, fill_value=r)
+    r = xpx.apply_where(mask, r, mxp.round, fill_value=r)
     pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
