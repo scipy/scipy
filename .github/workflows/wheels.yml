@@ -79,15 +79,16 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
-        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-13, macosx, x86_64, openblas, "10.14"]
-        - [macos-13, macosx, x86_64, accelerate, "14.0"]
-        - [macos-14, macosx, arm64, openblas, "12.3"]
-        - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2019, win, AMD64, "", ""]
+        # - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        # - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        # - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        # - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        # - [macos-13, macosx, x86_64, openblas, "10.14"]
+        # - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        # - [macos-14, macosx, arm64, openblas, "12.3"]
+        # - [macos-14, macosx, arm64, accelerate, "14.0"]
+        # - [windows-2019, win, AMD64, "", ""]
+        - [windows-2022-arm64, win_arm64, arm64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
@@ -113,16 +114,26 @@ jobs:
           # mingw-w64
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
+        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
 
-      - name: windows - set PKG_CONFIG_PATH
+      - name: windows - set PKG_CONFIG_PATH for CIBW_ENVIRONMENT_WINDOWS
         if: ${{ runner.os == 'Windows' }}
         run: |
-          $env:CIBW = "${{ github.workspace }}"
-          # It seems somewhere in the env passing, `\` is not
-          # passed through, so convert it to '/'
-          $env:CIBW=$env:CIBW.replace("\","/")
-          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
+          $env:CIBW_WORKSPACE_PATH = "${{ github.workspace }}".replace("\","/")
+          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$env:CIBW_WORKSPACE_PATH" >> $env:GITHUB_ENV
+
+      - name: Set up MSVC environment for ARM64
+        if: matrix.buildplat[1] == 'win_arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
+      - name: Append ARM64 specific settings to CIBW_ENVIRONMENT_WINDOWS
+        if: matrix.buildplat[1] == 'win_arm64'
+        shell: cmd
+        run: |
+          set ARM64_ENV_VARS= CC=clang-cl CXX=clang-cl FC=flang LIB="C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib;%%LIB%%" LIBPATH="C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib;%%LIBPATH%%"
+          echo CIBW_ENVIRONMENT_WINDOWS=%CIBW_ENVIRONMENT_WINDOWS%%ARM64_ENV_VARS%>> %GITHUB_ENV%
 
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
