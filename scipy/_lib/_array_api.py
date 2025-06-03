@@ -625,7 +625,6 @@ def _make_sphinx_capabilities(
         # Note: Dask+CuPy is currently untested and unsupported
         "dask.array": _XPSphinxCapability(cpu=True, gpu=None,
             warnings=["computes graph"] if allow_dask_compute else []),
-        "out_of_scope": False,
     }
 
     # documentation doesn't display the reason
@@ -653,7 +652,7 @@ def _make_sphinx_capabilities(
 
 
 def _make_capabilities_note(fun_name, capabilities):
-    if capabilities["out_of_scope"]:
+    if "out_of_scope" in capabilities:
         # It will be better to link to a section of the dev-arrayapi docs
         # that explains what is and isn't in-scope, but such a section
         # doesn't exist yet. Using :ref:`dev-arrayapi` as a placeholder.
@@ -663,7 +662,7 @@ def _make_capabilities_note(fun_name, capabilities):
 
         See :ref:`dev-arrayapi` for more information.
         """
-    return textwrap.dedent(note)
+        return textwrap.dedent(note)
 
     # Note: deliberately not documenting array-api-strict
     note = f"""

@@ -105,6 +105,13 @@ def _process_capabilities_table_entry(entry: dict | None) -> dict[str, dict[str,
         # will need to be updated.
         return output
 
+    if entry["out_of_scope"]:
+        # None is used to signify out-of-scope functions.
+        return {
+            outer_key: {inner_key: None for inner_key in outer_value}
+            for outer_key, outer_value in output.items()
+        }
+
     # For now, use _make_sphinx_capabilities because that's where
     # the relevant logic for determining what is and isn't
     # supported based on xp_capabilities_table entries lives.
@@ -260,9 +267,13 @@ def calculate_table_statistics(
             current_counter = counter[module]
         else:
             current_counter = counter
-        current_counter["total"] += 1
-        for key, value in entry.items():
-            current_counter[key] += value
+        # All values in dict will be None for out-of-scope functions.
+        # There should be no other situations where a value will be None.
+        # Just pick an arbitrary entry here to test if function is in-scope.
+        if next(iter(entry.values())) is not None:
+            current_counter["total"] += 1
+            for key, value in entry.items():
+                current_counter[key] += value
     # Strip away dangerous defaultdictness
     if table_contains_modules:
         counter = {key: dict(value) for key, value in counter.items()}
