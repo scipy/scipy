@@ -5,6 +5,7 @@ from scipy import stats
 from scipy._lib._array_api import xp_device, is_array_api_strict, is_dask, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 dtypes = ['float32', 'float64']
 
@@ -43,8 +44,8 @@ def test_xmean(fun, kwargs, dtype, xp, devices):
         assert x.dtype == dtype
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason="special functions don't work with 'device1'")
+@skip_xp_backends('array_api_strict',
+                  reason="special functions don't work with 'device1'")
 @pytest.mark.parametrize('nargs', [1, 2])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_entropy(nargs, dtype, xp, devices):
@@ -68,14 +69,21 @@ def test_directional_stats(dtype, xp, devices):
         assert res.mean_resultant_length.dtype == dtype
 
 
-@pytest.mark.parametrize('method', ['vasicek', 'van es', 'ebrahimi', 'correa', 'auto'])
+@pytest.mark.parametrize('method', [
+    "vasicek",
+    "van es",
+    pytest.param(
+        "correa",
+        marks=[
+            skip_xp_backends("array_api_strict", reason="Invalid fancy indexing"),
+            skip_xp_backends("dask.array", reason="Invalid fancy indexing"),
+        ],
+    ),
+    "ebrahimi",
+    "auto",
+])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_differential_entropy(method, dtype, xp, devices):
-    if is_array_api_strict(xp) and method == 'correa':
-        pytest.skip("Can't use elipses and integer indices")
-    if is_dask(xp) and method in {'ebrahimi', 'correa', 'auto'}:
-        pytest.skip("method not compatible with Dask")
-
     dtype = getattr(xp, dtype)
     for device in devices:
         values = get_arrays(1, device=device, dtype=dtype, xp=xp)[0]
@@ -84,7 +92,7 @@ def test_differential_entropy(method, dtype, xp, devices):
         assert values.dtype == dtype
 
 
-@pytest.mark.skip_xp_backends('dask.array', reason='no take_along_axis')
+@skip_xp_backends('dask.array', reason='no take_along_axis')
 @pytest.mark.parametrize('method', ['inverted_cdf', 'averaged_inverted_cdf',
                                     'closest_observation', 'interpolated_inverted_cdf',
                                     'hazen', 'weibull', 'linear', 'median_unbiased',
@@ -181,9 +189,8 @@ def test_zscore(fun, dtype, xp, devices):
         assert res.dtype == dtype
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason="special/_support_alternative_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@skip_xp_backends('array_api_strict', reason="special/_support_alternative_backends")
+@skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @pytest.mark.parametrize('f_name', ['ttest_1samp', 'ttest_rel', 'ttest_ind', 'skewtest',
                                     'kurtosistest', 'normaltest', 'jarque_bera',
                                     'bartlett', 'pearsonr', 'chisquare',
@@ -220,9 +227,9 @@ def test_hypothesis_tests(f_name, dtype, xp, devices):
             assert res_ci.high.dtype == dtype
 
 
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason="special functions don't work with 'device1'")
-@pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
+@skip_xp_backends('array_api_strict',
+                  reason="special functions don't work with 'device1'")
+@skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 @pytest.mark.parametrize('method', ['fisher', 'pearson', 'tippett', 'stouffer',
                                     'mudholkar_george'])
 @pytest.mark.parametrize('dtype', dtypes)
