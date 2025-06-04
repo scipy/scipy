@@ -8,6 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
+from scipy._lib._array_api import xp_assert_close
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence, csd,
@@ -590,6 +591,36 @@ class TestCSD:
 
         assert_allclose(f, f1)
         assert_allclose(c, c1)
+
+    def test_unequal_length_input_1D(self):
+        """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 1d arrays.
+
+        This test ensures that issue 23036 is fixed.
+        """
+        x = np.tile([4, 0, -4, 0], 4)
+
+        kw = dict(fs=len(x), window='boxcar', nperseg=4)
+        X0 = signal.csd(x, np.copy(x), **kw)[1]  # `x is x` must be False
+        X1 = signal.csd(x, x[:8], **kw)[1]
+        X2 = signal.csd(x[:8], x, **kw)[1]
+        xp_assert_close(X1, X0 / 2)
+        xp_assert_close(X2, X0 / 2)
+
+    def test_unequal_length_input_3D(self):
+        """Test zero-padding for input `x.shape[axis] != y.shape[axis]` for 3d arrays.
+
+        This test ensures that issue 23036 is fixed.
+        """
+        n = 8
+        x = np.zeros(2 * 3 * n).reshape(2, n, 3)
+        x[:, 0, :] = n
+
+        kw = dict(fs=n, window='boxcar', nperseg=n, detrend=None, axis=1)
+        X0 = signal.csd(x, x.copy(), **kw)[1]  # `x is x` must be False
+        X1 = signal.csd(x, x[:, :2, :], **kw)[1]
+        X2 = signal.csd(x[:, :2, :], x, **kw)[1]
+        xp_assert_close(X1, X0)
+        xp_assert_close(X2, X0)
 
     def test_real_onesided_even(self):
         x = np.zeros(16)

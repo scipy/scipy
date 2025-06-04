@@ -94,8 +94,8 @@ class TestConvolve:
             b_shape = [1]*3
             b_shape[i] = 3
 
-            x = convolve(a, xp.reshape(b, b_shape), method='direct')
-            y = convolve(a, xp.reshape(b, b_shape), method='fft')
+            x = convolve(a, xp.reshape(b, tuple(b_shape)), method='direct')
+            y = convolve(a, xp.reshape(b, tuple(b_shape)), method='fft')
             xp_assert_close(x, y, atol=1e-14)
 
     @xfail_xp_backends("jax.numpy", reason="wrong output dtype")

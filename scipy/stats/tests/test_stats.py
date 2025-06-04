@@ -6170,7 +6170,8 @@ class TestTTestIndFromStats:
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True, reason='Test uses ks_1samp')
-@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning")
+@pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
 def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
@@ -6329,6 +6330,7 @@ def test_ttest_1samp_popmean_array(xp):
 @make_xp_test_case(stats.describe)
 class TestDescribe:
     @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered:RuntimeWarning:dask")
     def test_describe_scalar(self, xp):
         with suppress_warnings() as sup, \
               np.errstate(invalid="ignore", divide="ignore"):
