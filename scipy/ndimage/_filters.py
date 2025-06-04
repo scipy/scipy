@@ -206,7 +206,19 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
 
         where ``axis`` specifies the axis (or axes) of ``window`` along which
         the filter function is evaluated.
-    %(size_foot)s
+    size : scalar or tuple, optional
+        See `footprint` below. Ignored if `footprint` is given.
+    footprint : array, optional
+        Either `size` or `footprint` must be defined. `size` gives
+        the shape that is taken from the input array, at every element
+        position, to define the input to the filter function.
+        `footprint` is a boolean array that specifies (implicitly) a
+        shape, but also which of the elements within this shape will get
+        passed to the filter function. Thus ``size=(n, m)`` is equivalent
+        to ``footprint=np.ones((n, m))``.
+        We adjust `size` to the number of dimensions indicated by `axes`.
+        For instance, if `axes` is ``(0, 2, 1)`` and ``n`` is passed for ``size``,
+        then the effective `size` is ``(n, n, n)``.
     %(output)s
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the input array is extended
