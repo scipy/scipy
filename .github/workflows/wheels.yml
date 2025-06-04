@@ -210,6 +210,12 @@ jobs:
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
+      - name: Set up MSVC environment for ARM64
+        if: matrix.buildplat[1] == 'win_arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: arm64
+
       - name: Build wheels
         uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
         env:
