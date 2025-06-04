@@ -20,7 +20,9 @@ JAX_SIGNAL_FUNCS = [
 ]
 
 # some cupyx.scipy.signal functions are incompatible with their scipy counterparts
-CUPY_BLACKLIST = ['lfilter_zi', 'sosfilt_zi', 'get_window', 'envelope', 'remez']
+CUPY_BLACKLIST = [
+    'lfilter_zi', 'sosfilt_zi', 'get_window', 'besselap', 'envelope', 'remez'
+]
 
 # freqz_sos is a sosfreqz rename, and cupy does not have the new name yet (in v13.x)
 CUPY_RENAMES = {'freqz_sos': 'sosfreqz'}
@@ -45,11 +47,13 @@ def delegate_xp(delegator, module_name):
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
                 cupyx_func = getattr(cupyx_module, func_name)
+                kwds.pop('xp', None)
                 return cupyx_func(*args, **kwds)
             elif is_jax(xp) and func.__name__ in JAX_SIGNAL_FUNCS:
                 spx = scipy_namespace_for(xp)
                 jax_module = getattr(spx, module_name)
                 jax_func = getattr(jax_module, func.__name__)
+                kwds.pop('xp', None)
                 return jax_func(*args, **kwds)
             else:
                 # the original function

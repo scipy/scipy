@@ -433,6 +433,13 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             check(dtype)
 
+    def test_eq_ne_different_shapes(self):
+        if self.datsp.format not in ['bsr', 'csc', 'csr']:
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
+        # Is this what we want? numpy raises when shape differs. we return False.
+        assert (self.datsp == self.datsp.T) is False
+        assert (self.datsp != self.datsp.T) is True
+
     def test_lt(self):
         sup = suppress_warnings()
         sup.filter(SparseEfficiencyWarning)
@@ -5017,6 +5024,45 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert_equal(m.offsets.dtype, np.int64)
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
+
+    def ill_cases(self):
+        # Ill-formed inputs and reference 2 x 2 outputs for testing _getnnz()
+        # and tocsr(): list of tuples (data, offsets, nnz, dense array)
+
+        d1 = [[1]]        # diagonal shorter than width
+        d3 = [[1, 2, 3]]  # diagonal longer than width
+
+        return [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
+                (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
+                (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
+                (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
+                (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
+                (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
+                (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
+                (d3, [-3], 0, [[0, 0], [0, 0]]),  # all below
+                # empty
+                (None, None, 0, [[0, 0], [0, 0]]),
+                # explicit zeros
+                ([[0, 0]], [0], 2, [[0, 0], [0, 0]]),
+                # overfilled shorter-diagonal, out of order
+                (np.arange(1, 1 + 7).reshape((7, 1)),
+                 [0, 1, 2, 3, -1, -2, -3],
+                 2, [[1, 0], [5, 0]]),
+                # overfilled longer-diagonal, out of order
+                (np.arange(1, 1 + 7 * 3).reshape((7, 3)),
+                 [0, 1, 2, 3, -1, -2, -3],
+                 4, [[1, 5], [13, 2]])]
+
+    def test_getnnz(self):
+        for data, ofsets, nnz, ref in self.ill_cases():
+            for shape in [(2, 2), (0, 2), (2, 0)]:
+                if data is None:
+                    A = dia_array(shape)
+                else:
+                    A = dia_array((data, ofsets), shape=shape)
+                if 0 in shape:
+                    nnz = 0
+                assert A._getnnz() == nnz
 
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
