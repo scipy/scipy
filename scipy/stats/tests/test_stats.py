@@ -7136,8 +7136,6 @@ class TestPMean:
     def test_bad_exponent(self, xp):
         with pytest.raises(ValueError, match='Power mean only defined for'):
             stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
-        with pytest.raises(ValueError, match='Power mean only defined for'):
-            stats.pmean(xp.asarray([1, 2, 3]), xp.asarray([0]))
 
     def test_1d(self, xp):
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
