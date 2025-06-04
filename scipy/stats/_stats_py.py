@@ -4255,14 +4255,9 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         rhi = ones
 
     mask = (n <= 3)
-
-    # Slightly convoluted logic to
-    # 1. suppress NumPy warning for reading flags.writeable after np.broadcast_arrays
-    # 2. let xpx.at overwrite rlo and rhi if no broadcasting is needed
-    shape = xpx.broadcast_shapes(mask.shape, rlo.shape, rhi.shape)
-    mask = xp.broadcast_to(mask, shape)
-    rlo = xp.broadcast_to(rlo, shape) if shape != rlo.shape else rlo
-    rhi = xp.broadcast_to(rhi, shape) if shape != rhi.shape else rhi
+    if mask.ndim == 0:
+        # This is Array API legal, but Dask doesn't like it.
+        mask = xp.broadcast_to(mask, rlo.shape)
 
     rlo = xpx.at(rlo)[mask].set(-1)
     rhi = xpx.at(rhi)[mask].set(1)
