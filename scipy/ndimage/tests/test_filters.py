@@ -3001,6 +3001,20 @@ class TestVectorizedFilter:
 
         ref = ndimage.vectorized_filter(img, xp.mean, size=(2,), axes=(0,))
         res = ndimage.vectorized_filter(img, xp.mean, size=2, axes=0)
+
+    def test_gh23046_fix(self, xp):
+        # While investigating the feasibility of gh-23046, I noticed a bug when the
+        # length of an `axes` tuple equals the dimensionality of the image.
+        rng = np.random.default_rng(45982734597824)
+        img = xp.asarray(rng.random((5, 5)))
+        size = (2, 3)
+        ref = ndimage.vectorized_filter(img.T, xp.mean, size=size).T
+        res = ndimage.vectorized_filter(img, xp.mean, size=size, axes=(1, 0))
+        xp_assert_close(res, ref)
+
+        ref = ndimage.vectorized_filter(img, xp.mean, size=size, mode='constant')
+        res = ndimage.vectorized_filter(img, xp.mean, size=size[::-1], axes=(1, 0),
+                                        mode='constant')
         xp_assert_close(res, ref)
 
 

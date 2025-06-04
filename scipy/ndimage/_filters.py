@@ -101,6 +101,19 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                    "of the window specified by `size` or `footprint`.")
         raise ValueError(message)
 
+    # If this is not *equal* to the dimensionality of `input`, then `axes`
+    # must be a provided tuple, and its length must equal the core dimensionality.
+    elif n_axes < input.ndim:
+        if axes is None:
+            message = ("`axes` must be provided if the dimensionality of the window "
+                       "(`len(size)` or `footprint.ndim`) does not equal the number "
+                       "of axes of `input` (`input.ndim`).")
+            raise ValueError(message)
+    else:
+        axes = tuple(range(-n_axes, 0)) if axes is None else axes
+
+    axes = (axes,) if np.isscalar(axes) else axes
+
     # If `origin` is provided, then it must be "broadcastable" to a tuple with length
     # equal to the core dimensionality.
     if origin is None:
