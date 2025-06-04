@@ -232,6 +232,16 @@ jobs:
           )
           echo MSVC ARM64 environment initialized.
 
+          echo "Updated PATH is: %PATH%"
+          
+          echo "Checking clang-cl:"
+          where clang-cl
+          clang-cl --version || echo "clang-cl --version failed"
+          
+          echo "Checking flang:"
+          where flang
+          flang --version || echo "flang --version failed"
+
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
