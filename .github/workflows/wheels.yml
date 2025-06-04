@@ -210,12 +210,6 @@ jobs:
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
-      - name: Set up MSVC environment for ARM64
-        if: matrix.buildplat[1] == 'win_arm64'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: arm64
-
       - name: Build wheels
         if: matrix.buildplat[1] != 'win_arm64' # Skip for win_arm64, handled manually below
         uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
@@ -227,8 +221,17 @@ jobs:
 
       - name: Build wheel for win_arm64 manually
         if: matrix.buildplat[1] == 'win_arm64'
-        shell: cmd
+        shell: cmd /E:ON /V:OFF /D /S /C "CALL "{0}" && SET "ErrorLevel="" && CALL "{1}"" "{2}"" # Use cmd.exe to chain vcvarsall.bat and the script
         run: |
+          @echo off
+          echo "Attempting to initialize MSVC ARM64 environment..."
+          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+          IF ERRORLEVEL 1 (
+            echo Failed to initialize vcvarsall.bat
+            exit /b 1
+          )
+          echo MSVC ARM64 environment initialized.
+
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
@@ -257,6 +260,11 @@ jobs:
 
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
+          IF ERRORLEVEL 1 (
+            echo Build failed
+            exit /b 1
+          )
+          echo Build successful.
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
