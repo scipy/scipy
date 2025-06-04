@@ -84,6 +84,7 @@ import re
 import threading
 import warnings
 
+import numpy as np
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import _vode
@@ -91,7 +92,6 @@ from . import _dop
 from . import _lsoda
 
 
-_dop_int_dtype = _dop.types.intvar.dtype
 _vode_int_dtype = _vode.types.intvar.dtype
 _lsoda_int_dtype = _lsoda.types.intvar.dtype
 
@@ -1173,7 +1173,7 @@ class dopri5(IntegratorBase):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), _dop_int_dtype)
+        iwork = zeros((21,), type=np.int32)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
@@ -1234,7 +1234,7 @@ class dop853(dopri5):
         work[5] = self.max_step
         work[6] = self.first_step
         self.work = work
-        iwork = zeros((21,), _dop_int_dtype)
+        iwork = zeros((21,), dtype=np.int32)
         iwork[0] = self.nsteps
         iwork[2] = self.verbosity
         self.iwork = iwork
