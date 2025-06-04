@@ -101,9 +101,10 @@ def _vectorized_filter_iv(input, function, size, footprint, output, mode, cval, 
                        "(`len(size)` or `footprint.ndim`) does not equal the number "
                        "of axes of `input` (`input.ndim`).")
             raise ValueError(message)
-        axes = (axes,) if np.isscalar(axes) else axes
     else:
-        axes = tuple(range(-n_axes, 0))
+        axes = tuple(range(-n_axes, 0)) if axes is None else axes
+
+    axes = (axes,) if np.isscalar(axes) else axes
 
     # If `origin` is provided, then it must be "broadcastable" to a tuple with length
     # equal to the core dimensionality.
