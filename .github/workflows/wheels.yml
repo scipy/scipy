@@ -235,6 +235,7 @@ jobs:
         run: |
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
+          pip install -r requirements/build.txt -r requirements/openblas.txt
           
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
           set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
@@ -249,9 +250,6 @@ jobs:
           set "LIBPATH=%LLVM_LIB_DIRS%;%LIBPATH%"
           echo "Updated LIB: %LIB%"
           echo "Updated LIBPATH: %LIBPATH%"
-
-          echo "Installing build requirements..."
-          python -m pip install -r requirements/build.txt
 
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
