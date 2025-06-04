@@ -250,6 +250,9 @@ jobs:
           echo "Updated LIB: %LIB%"
           echo "Updated LIBPATH: %LIBPATH%"
 
+          echo "Installing build requirements..."
+          python -m pip install -r requirements/build.txt
+
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
 
