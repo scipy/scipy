@@ -2231,7 +2231,7 @@ def test_immutable_input(metric):
         getattr(scipy.spatial.distance, metric)(x, x, w=x)
 
 
-def test_ajz():
+def test_gh_23109():
     a = np.array([0, 0, 1, 1])
     b = np.array([0, 1, 1, 0])
     w = np.asarray([1.5, 1.2, 0.7, 1.3])
