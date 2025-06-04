@@ -228,10 +228,6 @@ jobs:
       - name: Build wheel for win_arm64 manually
         if: matrix.buildplat[1] == 'win_arm64'
         shell: cmd
-        env:
-          CC: clang-cl
-          CXX: clang-cl
-          FC: flang
         run: |
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
@@ -250,6 +246,14 @@ jobs:
           set "LIBPATH=%LLVM_LIB_DIRS%;%LIBPATH%"
           echo "Updated LIB: %LIB%"
           echo "Updated LIBPATH: %LIBPATH%"
+
+          echo "Setting compiler environment variables..."
+          set CC=clang-cl
+          set CXX=clang-cl
+          set FC=flang
+          echo "CC is %CC%"
+          echo "CXX is %CXX%"
+          echo "FC is %FC%"
 
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
