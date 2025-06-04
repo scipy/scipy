@@ -221,7 +221,7 @@ jobs:
 
       - name: Build wheel for win_arm64 manually
         if: matrix.buildplat[1] == 'win_arm64'
-        shell: cmd /E:ON /V:OFF /D /S /C "CALL "{0}" && SET "ErrorLevel="" && CALL "{1}"" "{2}"" # Use cmd.exe to chain vcvarsall.bat and the script
+        shell: cmd
         run: |
           @echo off
           echo "Attempting to initialize MSVC ARM64 environment..."
