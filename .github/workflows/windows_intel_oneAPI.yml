@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   msvc_ifx_blas:
-    name: py3.11, dev.py
+    name: py3.11, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
