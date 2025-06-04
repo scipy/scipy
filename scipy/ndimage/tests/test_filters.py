@@ -2908,15 +2908,19 @@ class TestVectorizedFilter:
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=0)
 
-        message = "The dimensionality of the window"
+        message = "The length of `axes` may not exceed "
+        axes = (0, 1, 2)
         with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, size=(1, 2, 3))
+            ndimage.vectorized_filter(input, function, size=(1, 2), axes=axes)
         with pytest.raises(ValueError, match=message):
-            ndimage.vectorized_filter(input, function, footprint=xp.ones((2, 2, 2)))
+            ndimage.vectorized_filter(input, function, footprint=xp.ones((2, 2)),
+                                      axes=axes)
 
-        message = "`axes` must be provided if the dimensionality..."
+        message = "`axes` must be compatible with the dimensionality..."
         with pytest.raises(ValueError, match=message):
             ndimage.vectorized_filter(input, function, size=(1,))
+        with pytest.raises(ValueError, match=message):
+            ndimage.vectorized_filter(input, function, size=(2,), axes=(0,1))
 
         message = "All elements of `origin` must be integers"
         with pytest.raises(ValueError, match=message):
@@ -2986,7 +2990,19 @@ class TestVectorizedFilter:
         ref = ndimage.vectorized_filter(input, function, size=21)
         xp_assert_close(res, ref)
 
-    def test_gh23046(self, xp):
+    def test_gh23046_feature(self, xp):
+        # The intent of gh-23046 was to always allow `size` to be a scalar.
+        rng = np.random.default_rng(45982734597824)
+        img = xp.asarray(rng.random((5, 5)))
+
+        ref = ndimage.vectorized_filter(img, xp.mean, size=2)
+        res = ndimage.vectorized_filter(img, xp.mean, size=2, axes=(0, 1))
+        xp_assert_close(res, ref)
+
+        ref = ndimage.vectorized_filter(img, xp.mean, size=(2,), axes=(0,))
+        res = ndimage.vectorized_filter(img, xp.mean, size=2, axes=0)
+
+    def test_gh23046_fix(self, xp):
         # While investigating the feasibility of gh-23046, I noticed a bug when the
         # length of an `axes` tuple equals the dimensionality of the image.
         rng = np.random.default_rng(45982734597824)
