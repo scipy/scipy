@@ -284,7 +284,7 @@ Checklist before submitting a PR
    :ref:`license-considerations`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
+-  Do all unit tests pass locally? See :ref:`the-spin-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
