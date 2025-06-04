@@ -117,6 +117,12 @@ jobs:
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
 
+      - name: windows - set PKG_CONFIG_PATH for CIBW_ENVIRONMENT_WINDOWS
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          $env:CIBW_WORKSPACE_PATH = "${{ github.workspace }}".replace("\","/")
+          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$env:CIBW_WORKSPACE_PATH" >> $env:GITHUB_ENV
+
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         run: |
@@ -213,10 +219,7 @@ jobs:
           CIBW_PLATFORM: ${{ (matrix.buildplat[1] == 'win_arm64' && 'windows') || 'auto' }}
           CIBW_ENVIRONMENT_WINDOWS: >-
             ${{
-              format('PKG_CONFIG_PATH={0}{1}',
-                replace(github.workspace, '\\', '/'),
-                (matrix.buildplat[1] == 'win_arm64' && ' CC=clang-cl CXX=clang-cl FC=flang LIB="C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows;C:\\Program Files\\LLVM\\lib;%%LIB%%" LIBPATH="C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows;C:\\Program Files\\LLVM\\lib;%%LIBPATH%%"') || ''
-              )
+              (matrix.buildplat[1] == 'win_arm64' && 'CC=clang-cl CXX=clang-cl FC=flang LIB="C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows;C:\\Program Files\\LLVM\\lib;%%LIB%%" LIBPATH="C:\\Program Files\\LLVM\\lib\\clang\\20\\lib\\windows;C:\\Program Files\\LLVM\\lib;%%LIBPATH%%"') || ''
             }}
 
       - name: Rename macOS wheels
