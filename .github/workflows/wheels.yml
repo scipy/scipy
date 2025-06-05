@@ -243,6 +243,13 @@ jobs:
           pip install build wheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
           
+          echo "Searching for pkg-config before install..."
+          vcpkg search pkg-config
+          echo "Installing pkgconf via vcpkg..."
+          vcpkg install pkgconf
+          echo "Searching for pkg-config after install..."
+          vcpkg search pkg-config
+
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
           set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
           for /f "delims=" %%i in ('powershell -Command "$env:GITHUB_WORKSPACE_PATH_TEMP.Replace('\','/')"') do set PKG_CONFIG_PATH_VALUE=%%i
