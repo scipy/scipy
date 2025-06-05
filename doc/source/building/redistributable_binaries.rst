@@ -88,7 +88,7 @@ Advice for packagers:
    stable API; effectively you'd be adding an extra ``==`` dependency for each
    library you unbundle. Only do that for a good reason. E.g., it allows you to
    drop patches, you consider both SciPy and the vendored library in question
-   security-critical, or it's a large gain in binary size).
+   security-critical, or it's a large gain in binary size.
 
 The build option takes the following values:
 
