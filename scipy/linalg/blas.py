@@ -45,15 +45,19 @@ BLAS Level 1 functions
 .. autosummary::
    :toctree: generated/
 
-   caxpy
-   ccopy
-   cdotc
-   cdotu
-   crotg
-   cscal
-   csrot
-   csscal
-   cswap
+   sasum
+   saxpy
+   scasum
+   scnrm2
+   scopy
+   sdot
+   snrm2
+   srot
+   srotg
+   srotm
+   srotmg
+   sscal
+   sswap
    dasum
    daxpy
    dcopy
@@ -71,19 +75,15 @@ BLAS Level 1 functions
    idamax
    isamax
    izamax
-   sasum
-   saxpy
-   scasum
-   scnrm2
-   scopy
-   sdot
-   snrm2
-   srot
-   srotg
-   srotm
-   srotmg
-   sscal
-   sswap
+   caxpy
+   ccopy
+   cdotc
+   cdotu
+   crotg
+   cscal
+   csrot
+   csscal
+   cswap
    zaxpy
    zcopy
    zdotc
