@@ -588,10 +588,7 @@ class _SymmetricArpackParams(_ArpackParams):
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
-        if self.arpack_dict['ido'] == 5:
-            # initialization
-            self.workd[yslice] = self.OP(self.workd[xslice])
-        elif self.arpack_dict['ido'] == 1:
+        if self.arpack_dict['ido'] == 1:
             # compute y = Op*x
             if self.mode == 1:
                 self.workd[yslice] = self.OP(self.workd[xslice])
@@ -611,7 +608,7 @@ class _SymmetricArpackParams(_ArpackParams):
             self.workd[yslice] = self.B(self.workd[xslice])
 
         elif self.arpack_dict['ido'] == 3:
-            raise ValueError("ARPACK requested user shifts.  Assure ISHIFT==0")
+            raise ValueError("ARPACK requested user shifts. Assure ISHIFT==0")
 
         elif self.arpack_dict['ido'] == 4:
             if self.tp in 'fd':
@@ -624,6 +621,9 @@ class _SymmetricArpackParams(_ArpackParams):
                                                  ).astype(self.tp.lower())
                 self.resid += (self.rng.uniform(low=-1.0, high=1.0, size=[self.n])
                                *1j).astype(self.tp.lower())
+
+        elif self.arpack_dict['ido'] == 5:
+            self.workd[yslice] = self.OP(self.workd[xslice])
 
         else:
             self.converged = True
