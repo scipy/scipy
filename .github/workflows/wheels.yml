@@ -240,8 +240,11 @@ jobs:
           CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
 
           echo "Setting up environment for win_arm64 manual build"
-          pip install build wheel
+          pip install build wheel delvewheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
+
+          echo "Generating scipy-openblas.pc"
+          python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
           
           echo "Setting VCPKG_ROOT..."
           set VCPKG_ROOT=C:\vcpkg
@@ -252,9 +255,6 @@ jobs:
           echo "Adding pkgconf to PATH..."
           set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
           echo "Updated PATH is %PATH%"
-
-          echo "Listing contents of C:\vcpkg..."
-          dir /s C:\vcpkg
 
           echo "Copying pkgconf.exe to pkg-config.exe"
           copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
