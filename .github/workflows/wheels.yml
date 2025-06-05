@@ -231,20 +231,23 @@ jobs:
             exit /b 1
           )
           echo MSVC ARM64 environment initialized.
-
-          echo "Updated PATH is: %PATH%"
-          
-          echo "Checking clang-cl:"
-          where clang-cl
-          clang-cl --version || echo "clang-cl --version failed"
-          
-          echo "Checking flang:"
-          where flang
-          flang --version || echo "flang --version failed"
+          echo "PATH after vcvarsall.bat: %PATH%"
 
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
+
+          echo "Adding C:\Program Files\LLVM\bin to PATH for flang and other tools..."
+          set "PATH=C:\Program Files\LLVM\bin;%PATH%"
+          echo "PATH after adding LLVM\bin: %PATH%"
+          
+          echo "Initial check for clang-cl (generic call, may pick x86_64 due to PATH order):"
+          where clang-cl
+          clang-cl --version || echo "clang-cl --version failed (generic call)"
+          
+          echo "Checking flang (should be found from C:\Program Files\LLVM\bin):"
+          where flang
+          flang --version || echo "flang --version failed"
           
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
           set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
@@ -260,13 +263,18 @@ jobs:
           echo "Updated LIB: %LIB%"
           echo "Updated LIBPATH: %LIBPATH%"
 
-          echo "Setting compiler environment variables..."
-          set CC=clang-cl
-          set CXX=clang-cl
+          echo "Setting compiler environment variables with explicit paths for C/C++ compilers..."
+          set "CC=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\ARM64\bin\clang-cl.exe"
+          set "CXX=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\ARM64\bin\clang-cl.exe"
           set FC=flang
           echo "CC is %CC%"
           echo "CXX is %CXX%"
           echo "FC is %FC%"
+
+          echo "Verifying selected C compiler (CC):"
+          "%CC%" --version || echo "Specified CC (%CC%) --version failed"
+          echo "Verifying selected CXX compiler (CXX):"
+          "%CXX%" --version || echo "Specified CXX (%CXX%) --version failed"
 
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
