@@ -104,12 +104,15 @@ BLAS Level 2 functions
    sgemv
    sger
    ssbmv
+   sspmv
    sspr
    sspr2
    ssymv
    ssyr
    ssyr2
    stbmv
+   stbsv
+   stpmv
    stpsv
    strmv
    strsv
@@ -117,12 +120,15 @@ BLAS Level 2 functions
    dgemv
    dger
    dsbmv
+   dspmv
    dspr
    dspr2
    dsymv
    dsyr
    dsyr2
    dtbmv
+   dtbsv
+   dtpmv
    dtpsv
    dtrmv
    dtrsv
@@ -137,13 +143,15 @@ BLAS Level 2 functions
    chpmv
    chpr
    chpr2
+   cspmv
+   cspr
+   csyr
    ctbmv
    ctbsv
    ctpmv
    ctpsv
    ctrmv
    ctrsv
-   csyr
    zgbmv
    zgemv
    zgerc
@@ -155,12 +163,15 @@ BLAS Level 2 functions
    zhpmv
    zhpr
    zhpr2
+   zspmv
+   zspr
+   zsyr
    ztbmv
    ztbsv
    ztpmv
+   ztpsv
    ztrmv
    ztrsv
-   zsyr
 
 BLAS Level 3 functions
 ----------------------
