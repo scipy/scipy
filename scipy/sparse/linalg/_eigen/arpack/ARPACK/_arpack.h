@@ -175,10 +175,17 @@ void snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int 
 void dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
 void cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork);
 void znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
+
 void sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, float* dr, float* di, float* z, int ldz, float sigmar, float sigmai, float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
 void dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, double* dr, double* di, double* z, int ldz, double sigmar, double sigmai, double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
 void cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, ARPACK_CPLXF_TYPE* d, ARPACK_CPLXF_TYPE* z, int ldz, ARPACK_CPLXF_TYPE sigma, ARPACK_CPLXF_TYPE* workev, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork);
 void zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, ARPACK_CPLX_TYPE sigma, ARPACK_CPLX_TYPE* workev, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
+
+void ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
+
+void sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, float* d, float* z, int ldz, float sigma, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
+void dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, double* d, double* z, int ldz, double sigma, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
 
 #undef ARPACK_cplx
 #undef ARPACK_cplxf
