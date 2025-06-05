@@ -239,7 +239,7 @@ class SparseMixin:
 
         # Default lsmr arguments should not fully converge the solution
         default_lsmr_sol = lsq_linear(A, b, lsq_solver='lsmr')
-        with pytest.raises(AssertionError, match=""):
+        with pytest.raises(AssertionError):
             assert_allclose(exact_sol.x, default_lsmr_sol.x)
 
         # By increasing the maximum lsmr iters, it will converge

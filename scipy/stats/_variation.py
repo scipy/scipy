@@ -7,7 +7,7 @@ from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """

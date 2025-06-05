@@ -222,7 +222,7 @@ def mvsdist(data):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2, *, axis=None):
     r"""
@@ -327,7 +327,7 @@ def kstat(data, n=2, *, axis=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
@@ -984,7 +984,7 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
 
 
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
-                          result_to_tuple=lambda x: (x,))
+                          result_to_tuple=lambda x, _: (x,))
 def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
     lmb, data = xp_promote(lmb, data, force_floating=True, xp=xp)
@@ -3496,7 +3496,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
-def wilcoxon_result_unpacker(res):
+def wilcoxon_result_unpacker(res, _):
     if hasattr(res, 'zstatistic'):
         return res.statistic, res.pvalue, res.zstatistic
     else:
@@ -3993,7 +3993,7 @@ def _circfuncs_common(samples, period, xp=None):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
@@ -4086,7 +4086,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
@@ -4180,7 +4180,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
