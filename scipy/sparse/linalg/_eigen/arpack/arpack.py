@@ -583,11 +583,11 @@ class _SymmetricArpackParams(_ArpackParams):
         self.ipntr = np.zeros(11, dtype=np.int32)
 
     def iterate(self):
-        self._arpack_solver(self.arpack_dict, self.resid, self.v,  self.ipntr,
-                            self.workd, self.workl, self.info)
+        self._arpack_solver(self.arpack_dict, self.resid, self.v, self.ipntr,
+                            self.workd, self.workl)
 
-        xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
-        yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
+        xslice = slice(self.ipntr[0], self.ipntr[0] + self.n)
+        yslice = slice(self.ipntr[1], self.ipntr[1] + self.n)
         if self.arpack_dict['ido'] == 1:
             # compute y = Op*x
             if self.mode == 1:
@@ -596,12 +596,12 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.workd[xslice] = self.OPb(self.workd[xslice])
                 self.workd[yslice] = self.OPa(self.workd[xslice])
             elif self.mode == 5:
-                Bxslice = slice(self.ipntr[2] - 1, self.ipntr[2] - 1 + self.n)
+                Bxslice = slice(self.ipntr[2], self.ipntr[2] + self.n)
                 Ax = self.A_matvec(self.workd[xslice])
                 self.workd[yslice] = self.OPa(Ax + (self.sigma *
                                                     self.workd[Bxslice]))
             else:
-                Bxslice = slice(self.ipntr[2] - 1, self.ipntr[2] - 1 + self.n)
+                Bxslice = slice(self.ipntr[2], self.ipntr[2] + self.n)
                 self.workd[yslice] = self.OPa(self.workd[Bxslice])
 
         elif self.arpack_dict['ido'] == 2:
@@ -611,16 +611,9 @@ class _SymmetricArpackParams(_ArpackParams):
             raise ValueError("ARPACK requested user shifts. Assure ISHIFT==0")
 
         elif self.arpack_dict['ido'] == 4:
-            if self.tp in 'fd':
-                # Generate random vector into resid
-                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
-                                                 size=[self.n]).astype(self.tp)
-            else:
-                # Generate complex random vector into resid
-                self.resid[:] = self.rng.uniform(low=-1.0, high=1.0, size=[self.n]
-                                                 ).astype(self.tp.lower())
-                self.resid += (self.rng.uniform(low=-1.0, high=1.0, size=[self.n])
-                               *1j).astype(self.tp.lower())
+            # Generate random vector into resid
+            self.resid[:] = self.rng.uniform(low=-1.0, high=1.0,
+                                             size=[self.n]).astype(self.tp)
 
         elif self.arpack_dict['ido'] == 5:
             self.workd[yslice] = self.OP(self.workd[xslice])
@@ -639,21 +632,25 @@ class _SymmetricArpackParams(_ArpackParams):
     def extract(self, return_eigenvectors):
         rvec = return_eigenvectors
         ierr = 0
-        howmny = 'A'  # return all eigenvectors
-        sselect = np.zeros(self.ncv, 'int')  # unused
-        d, z, ierr = self._arpack_extract(rvec, howmny, sselect, self.sigma,
-                                          self.bmat, self.which, self.k,
-                                          self.tol, self.resid, self.v,
-                                          self.iparam[0:7], self.ipntr,
-                                          self.workd[0:2 * self.n],
-                                          self.workl, ierr)
+        howmny = HOWMNY_DICT["A"]  # return all eigenvectors
+        sselect = np.zeros(self.ncv, dtype=np.int32)
+        d = np.zeros(self.k, dtype=self.tp)
+        z = np.zeros((self.n, self.ncv), dtype=self.tp, order='F')
+
+        self._arpack_extract(
+            self.arpack_dict, rvec, howmny, sselect, d, z, self.sigma,
+            self.resid, self.v, self.ipntr, self.workd, #[0:2 * self.n],
+            self.workl
+        )
+
+        ierr = self.arpack_dict['info']
         if ierr != 0:
             raise ArpackError(ierr, infodict=self.extract_infodict)
         k_ok = self.arpack_dict['nconv']
         d = d[:k_ok]
-        z = z[:, :k_ok]
 
         if return_eigenvectors:
+            z = z[:, :k_ok].copy(order='C')
             return d, z
         else:
             return d
