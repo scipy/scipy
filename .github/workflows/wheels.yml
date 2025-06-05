@@ -210,6 +210,16 @@ jobs:
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
+      - name: Install LLVM and Clang (WOA64)
+        if: matrix.buildplat[1] == 'win_arm64'
+        uses: KyleMayes/install-llvm-action@v2
+        id: install_llvm
+        with:
+          version: "20.1.6" # This version is used for outputs.version
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
+          # directory input removed, will default to C:\Program Files\LLVM on Windows
+          env: false # Do not set CC/CXX by the action, we manage it
+
       - name: Build wheels
         if: matrix.buildplat[1] != 'win_arm64' # Skip for win_arm64, handled manually below
         uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
@@ -222,32 +232,16 @@ jobs:
       - name: Build wheel for win_arm64 manually
         if: matrix.buildplat[1] == 'win_arm64'
         shell: cmd
+        env:
+          # Get the installed LLVM version from the previous step's output
+          INSTALLED_LLVM_VERSION: ${{ steps.install_llvm.outputs.version }}
         run: |
-          @echo off
           echo "Attempting to initialize MSVC ARM64 environment..."
           CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
-          IF ERRORLEVEL 1 (
-            echo Failed to initialize vcvarsall.bat
-            exit /b 1
-          )
-          echo MSVC ARM64 environment initialized.
-          echo "PATH after vcvarsall.bat: %PATH%"
 
           echo "Setting up environment for win_arm64 manual build"
           pip install build wheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
-
-          echo "Adding C:\Program Files\LLVM\bin to PATH for flang and other tools..."
-          set "PATH=C:\Program Files\LLVM\bin;%PATH%"
-          echo "PATH after adding LLVM\bin: %PATH%"
-          
-          echo "Initial check for clang-cl (generic call, may pick x86_64 due to PATH order):"
-          where clang-cl
-          clang-cl --version || echo "clang-cl --version failed (generic call)"
-          
-          echo "Checking flang (should be found from C:\Program Files\LLVM\bin):"
-          where flang
-          flang --version || echo "flang --version failed"
           
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
           set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
@@ -263,9 +257,9 @@ jobs:
           echo "Updated LIB: %LIB%"
           echo "Updated LIBPATH: %LIBPATH%"
 
-          echo "Setting compiler environment variables with explicit paths for C/C++ compilers..."
-          set "CC=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\ARM64\bin\clang-cl.exe"
-          set "CXX=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\ARM64\bin\clang-cl.exe"
+          echo "Setting compiler environment variables..."
+          set CC=clang-cl
+          set CXX=clang-cl
           set FC=flang
           echo "CC is %CC%"
           echo "CXX is %CXX%"
@@ -275,14 +269,11 @@ jobs:
           "%CC%" --version || echo "Specified CC (%CC%) --version failed"
           echo "Verifying selected CXX compiler (CXX):"
           "%CXX%" --version || echo "Specified CXX (%CXX%) --version failed"
+          echo "Verifying selected Fortran compiler (FC=flang from action-installed LLVM):"
+          flang --version || echo "flang from action-installed LLVM --version failed"
 
           echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
-          IF ERRORLEVEL 1 (
-            echo Build failed
-            exit /b 1
-          )
-          echo Build successful.
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
