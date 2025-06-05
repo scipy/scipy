@@ -30,20 +30,6 @@ static PyObject* arpack_error;
 #define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
 
 
-// ARPACK prototypes
-struct ARPACK_arnoldi_update_vars_s;
-struct ARPACK_arnoldi_update_vars_d;
-
-void snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
-void dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
-void cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork);
-void znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
-void sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, float* dr, float* di, float* z, int ldz, float sigmar, float sigmai, float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
-void dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, double* dr, double* di, double* z, int ldz, double sigmar, double sigmai, double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
-void cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, ARPACK_CPLXF_TYPE* d, ARPACK_CPLXF_TYPE* z, int ldz, ARPACK_CPLXF_TYPE sigma, ARPACK_CPLXF_TYPE* workev, ARPACK_CPLXF_TYPE* resid, ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork);
-void zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, ARPACK_CPLX_TYPE sigma, ARPACK_CPLX_TYPE* workev, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork);
-
-
 static PyObject*
 snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
@@ -557,9 +543,78 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 static PyObject*
 cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "cneupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    PyArrayObject* ap_select = NULL;
+    Py_complex sigma = { .real = 0.0, .imag = 0.0 };
+    PyArrayObject* ap_d = NULL;
+    PyArrayObject* ap_v = NULL;
+    PyArrayObject* ap_z = NULL;
+    PyArrayObject* ap_workev = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_ipntr = NULL;
+    PyArrayObject* ap_workd = NULL;
+    PyArrayObject* ap_workl = NULL;
+    PyArrayObject* ap_rwork = NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!DO!O!O!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &want_ev,                                // i
+        &howmny,                                 // i
+        &PyArray_Type, (PyObject **)&ap_select,  // O!
+        &PyArray_Type, (PyObject **)&ap_d,       // O!
+        &PyArray_Type, (PyObject **)&ap_z,       // O!
+        &sigma,                                  // D
+        &PyArray_Type, (PyObject **)&ap_workev,  // O!
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl,   // O!
+        &PyArray_Type, (PyObject **)&ap_rwork    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    ARPACK_CPLXF_TYPE* d = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_d);
+    ARPACK_CPLXF_TYPE* workev = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_workev);
+    ARPACK_CPLXF_TYPE* z = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_z);
+    ARPACK_CPLXF_TYPE* resid = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_resid);
+    ARPACK_CPLXF_TYPE* v = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_v);
+    ARPACK_CPLXF_TYPE* workd = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_workd);
+    ARPACK_CPLXF_TYPE* workl = (ARPACK_CPLXF_TYPE*)PyArray_DATA(ap_workl);
+    float* rwork = PyArray_DATA(ap_rwork);
+    ldv = (int)PyArray_DIMS(ap_v)[0];
+    ldz = (int)PyArray_DIMS(ap_z)[0];
+    ARPACK_CPLXF_TYPE sigmaC = ARPACK_cplxf((float)sigma.real, (float)sigma.imag);
+    struct ARPACK_arnoldi_update_vars_s Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (float)PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    cneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
+
+    Py_RETURN_NONE;
 }
 
 
@@ -644,34 +699,313 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 static PyObject*
 ssaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "ssaupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_v=NULL;
+    PyArrayObject* ap_ipntr=NULL;
+    PyArrayObject* ap_workd=NULL;
+    PyArrayObject* ap_workl=NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!O!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = PyArray_DATA(ap_ipntr);
+    float* resid = PyArray_DATA(ap_resid);
+    float* v = PyArray_DATA(ap_v);
+    float* workd = PyArray_DATA(ap_workd);
+    float* workl = PyArray_DATA(ap_workl);
+
+    // Map the input dict to the ARPACK structure
+
+    // Parse the dictionary, if the field is not found, raise an error.
+    // Do it separately for floats and ints.
+
+    // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
+    struct ARPACK_arnoldi_update_vars_s Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (float)PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    // Call ARPACK function
+    ssaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+
+    // Unpack the struct back to the dictionary
+    #define X(name) do { \
+            PyObject* tmp_##name = PyFloat_FromDouble((double)Vars.name); \
+            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
+            Py_XDECREF(tmp_##name); \
+            PYERR(arpack_error, "Setting '" #name "' failed."); \
+            } \
+            Py_DECREF(tmp_##name); \
+        } while (0);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) do { \
+            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
+            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
+                Py_XDECREF(tmp_##name); \
+                PYERR(arpack_error, "Setting '" #name "' failed."); \
+            } \
+            Py_DECREF(tmp_##name); \
+        } while (0);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    Py_RETURN_NONE;
 }
 
 static PyObject*
 dsaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "dsaupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_v=NULL;
+    PyArrayObject* ap_ipntr=NULL;
+    PyArrayObject* ap_workd=NULL;
+    PyArrayObject* ap_workl=NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!O!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    double* resid = (double*)PyArray_DATA(ap_resid);
+    double* v = (double*)PyArray_DATA(ap_v);
+    double* workd = (double*)PyArray_DATA(ap_workd);
+    double* workl = (double*)PyArray_DATA(ap_workl);
+
+    // Parse the dictionary, if the field is not found, raise an error.
+    // Do it separately for floats and ints.
+
+    // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
+    struct ARPACK_arnoldi_update_vars_d Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+    Vars.name = PyFloat_AsDouble(name##_obj);
+    STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+    Vars.name = (int)PyLong_AsLong(name##_obj);
+    STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    // Call ARPACK function
+    dsaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+
+    // Unpack the struct back to the dictionary
+    #define X(name) do { \
+            PyObject* tmp_##name = PyFloat_FromDouble(Vars.name); \
+            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
+            Py_XDECREF(tmp_##name); \
+            PYERR(arpack_error, "Setting '" #name "' failed."); \
+            } \
+            Py_DECREF(tmp_##name); \
+        } while (0);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) do { \
+            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
+            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
+                Py_XDECREF(tmp_##name); \
+                PYERR(arpack_error, "Setting '" #name "' failed."); \
+            } \
+            Py_DECREF(tmp_##name); \
+        } while (0);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    Py_RETURN_NONE;
 }
 
 static PyObject*
 sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "sseupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    PyArrayObject* ap_select = NULL;
+    float sigma = 0.0;
+    PyArrayObject* ap_d = NULL;
+    PyArrayObject* ap_v = NULL;
+    PyArrayObject* ap_z = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_ipntr = NULL;
+    PyArrayObject* ap_workd = NULL;
+    PyArrayObject* ap_workl = NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!fO!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &want_ev,                                // i
+        &howmny,                                 // i
+        &PyArray_Type, (PyObject **)&ap_select,  // O!
+        &PyArray_Type, (PyObject **)&ap_d,       // O!
+        &PyArray_Type, (PyObject **)&ap_z,       // O!
+        &sigma,                                  // f
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    float* d = (float*)PyArray_DATA(ap_d);
+    float* z = (float*)PyArray_DATA(ap_z);
+    float* resid = (float*)PyArray_DATA(ap_resid);
+    float* v = (float*)PyArray_DATA(ap_v);
+    float* workd = (float*)PyArray_DATA(ap_workd);
+    float* workl = (float*)PyArray_DATA(ap_workl);
+    ldv = (int)PyArray_DIMS(ap_v)[0];
+    ldz = (int)PyArray_DIMS(ap_z)[0];
+
+    struct ARPACK_arnoldi_update_vars_s Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (float)PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+
+    sseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
+
+    Py_RETURN_NONE;
 }
 
 
 static PyObject*
 dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 {
-    // This function is not implemented yet.
-    PyErr_SetString(arpack_error, "dseupd_wrap is not implemented yet.");
-    return NULL;
+    PyObject* input_dict = NULL;
+    int want_ev = 0, howmny = 0, ldv = 0, ldz = 0;
+    PyArrayObject* ap_select = NULL;
+    double sigma = 0.0;
+    PyArrayObject* ap_d = NULL;
+    PyArrayObject* ap_v = NULL;
+    PyArrayObject* ap_z = NULL;
+    PyArrayObject* ap_resid = NULL;
+    PyArrayObject* ap_ipntr = NULL;
+    PyArrayObject* ap_workd = NULL;
+    PyArrayObject* ap_workl = NULL;
+
+    // Process input arguments
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!fO!O!O!O!O!",
+        &PyDict_Type, (PyObject **)&input_dict,  // O!
+        &want_ev,                                // i
+        &howmny,                                 // i
+        &PyArray_Type, (PyObject **)&ap_select,  // O!
+        &PyArray_Type, (PyObject **)&ap_d,       // O!
+        &PyArray_Type, (PyObject **)&ap_z,       // O!
+        &sigma,                                  // f
+        &PyArray_Type, (PyObject **)&ap_resid,   // O!
+        &PyArray_Type, (PyObject **)&ap_v,       // O!
+        &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
+        &PyArray_Type, (PyObject **)&ap_workd,   // O!
+        &PyArray_Type, (PyObject **)&ap_workl    // O!
+        )
+    )
+    {
+        return NULL;
+    }
+
+    int* ipntr = (int*)PyArray_DATA(ap_ipntr);
+    int* select = (int*)PyArray_DATA(ap_select);
+    double* d = (double*)PyArray_DATA(ap_d);
+    double* z = (double*)PyArray_DATA(ap_z);
+    double* resid = (double*)PyArray_DATA(ap_resid);
+    double* v = (double*)PyArray_DATA(ap_v);
+    double* workd = (double*)PyArray_DATA(ap_workd);
+    double* workl = (double*)PyArray_DATA(ap_workl);
+    ldv = (int)PyArray_DIMS(ap_v)[0];
+    ldz = (int)PyArray_DIMS(ap_z)[0];
+
+    struct ARPACK_arnoldi_update_vars_d Vars = {0};
+
+    #define X(name) Vars.name = 0;
+    STRUCT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = PyFloat_AsDouble(name##_obj);
+        STRUCT_INEXACT_FIELD_NAMES
+    #undef X
+
+    #define X(name) \
+        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
+        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
+        Vars.name = (int)PyLong_AsLong(name##_obj);
+        STRUCT_INT_FIELD_NAMES
+    #undef X
+
+    dseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
+
+    Py_RETURN_NONE;
 }
 
 
