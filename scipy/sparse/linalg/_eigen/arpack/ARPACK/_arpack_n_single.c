@@ -549,7 +549,7 @@ snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, 
             V->info = -12;
         }
 
-        if (V->info != 0) {
+        if (V->info < 0) {
             V->ido = ido_DONE;
             return;
         }
@@ -1872,6 +1872,8 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
             // Request a random vector from the user into resid
             V->ido = ido_RANDOM;
             return;
+        } else {
+            V->ido = ido_RANDOM;
         }
     }
 
