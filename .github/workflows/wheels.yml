@@ -247,6 +247,8 @@ jobs:
           set VCPKG_ROOT=C:\vcpkg
           echo "VCPKG_ROOT is %VCPKG_ROOT%"
 
+          vcpkg install pkgconf
+
           echo "Adding pkgconf to PATH..."
           set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
           echo "Updated PATH is %PATH%"
