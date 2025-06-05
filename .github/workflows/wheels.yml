@@ -251,6 +251,9 @@ jobs:
           set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
           echo "Updated PATH is %PATH%"
 
+          echo "Listing contents of C:\vcpkg..."
+          dir /s C:\vcpkg
+
           echo "Copying pkgconf.exe to pkg-config.exe"
           copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
 
