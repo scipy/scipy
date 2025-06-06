@@ -36,29 +36,14 @@ import sys
 import inspect
 import operator
 import itertools
-import collections
 
+from contextlib import _GeneratorContextManager
 from inspect import getfullargspec
 
 __version__ = '4.0.5'
 
 
-def get_init(cls):
-    return cls.__init__
-
-
-# getargspec has been deprecated in Python 3.5
-ArgSpec = collections.namedtuple(
-    'ArgSpec', 'args varargs varkw defaults')
-
-
-def getargspec(f):
-    """A replacement for inspect.getargspec"""
-    spec = getfullargspec(f)
-    return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
-
-
-DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
+_DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 
 # basic functionality
@@ -145,7 +130,7 @@ class FunctionMaker:
         "Make a new function from a given template and update the signature"
         src = src_templ % vars(self)  # expand name and signature
         evaldict = evaldict or {}
-        mo = DEF.match(src)
+        mo = _DEF.match(src)
         if mo is None:
             raise SyntaxError(f'not a valid function template\n{src}')
         name = mo.group(1)  # extract the function name
@@ -220,8 +205,8 @@ def decorator(caller, _func=None):
     # else return a decorator function
     if inspect.isclass(caller):
         name = caller.__name__.lower()
-        callerfunc = get_init(caller)
-        doc = (f'decorator({caller.__name__}) converts functions/generators into ' 
+        callerfunc = caller.__init__
+        doc = (f'decorator({caller.__name__}) converts functions/generators into '
                f'factories of {caller.__name__} objects')
     elif inspect.isfunction(caller):
         if caller.__name__ == '<lambda>':
@@ -245,32 +230,16 @@ def decorator(caller, _func=None):
 
 # ####################### contextmanager ####################### #
 
-try:  # Python >= 3.2
-    from contextlib import _GeneratorContextManager
-except ImportError:  # Python >= 2.5
-    from contextlib import GeneratorContextManager as _GeneratorContextManager
-
-
 class ContextManager(_GeneratorContextManager):
+    def __init__(self, genfunc, /, *args, **kwds):
+        return super().__init__(genfunc, args, kwds)
+
     def __call__(self, func):
         """Context manager decorator"""
         return FunctionMaker.create(
             func, "with _self_: return _func_(%(shortsignature)s)",
             dict(_self_=self, _func_=func), __wrapped__=func)
 
-
-init = getfullargspec(_GeneratorContextManager.__init__)
-n_args = len(init.args)
-if n_args == 2 and not init.varargs:  # (self, genobj) Python 2.7
-    def __init__(self, g, *a, **k):
-        return _GeneratorContextManager.__init__(self, g(*a, **k))
-    ContextManager.__init__ = __init__
-elif n_args == 2 and init.varargs:  # (self, gen, *a, **k) Python 3.4
-    pass
-elif n_args == 4:  # (self, gen, args, kwds) Python 3.5
-    def __init__(self, g, *a, **k):
-        return _GeneratorContextManager.__init__(self, g, a, k)
-    ContextManager.__init__ = __init__
 
 contextmanager = decorator(ContextManager)
 
@@ -307,7 +276,7 @@ def dispatch_on(*dispatch_args):
         """Make sure one passes the expected number of arguments"""
         if wrong(len(arguments), len(dispatch_args)):
             raise TypeError(f'Expected {len(dispatch_args)} arguments, '
-                            'got {len(arguments)}{msg}')
+                            f'got {len(arguments)}{msg}')
 
     def gen_func_dec(func):
         """Decorator turning a function into a generic function"""
