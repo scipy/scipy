@@ -632,6 +632,7 @@ class _SymmetricArpackParams(_ArpackParams):
     def extract(self, return_eigenvectors):
         rvec = return_eigenvectors
         ierr = 0
+        self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT["A"]  # return all eigenvectors
         sselect = np.zeros(self.ncv, dtype=np.int32)
         d = np.zeros(self.k, dtype=self.tp)
@@ -838,6 +839,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
         k, n = self.k, self.n
 
         ierr = 0
+        self.arpack_dict['info'] = 0  # Clear, if any, previous error from naupd
         howmny = HOWMNY_DICT['A']  # return all eigenvectors
         sselect = np.zeros(self.ncv, dtype=np.int32)
         sigmar = float(np.real(self.sigma))
