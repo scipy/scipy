@@ -246,7 +246,7 @@ class XPBenchmark(Benchmark):
         else:
             assert self.backend in ("numpy", "array_api_strict", "torch:cpu")
 
-        return arrays
+        return arrays[0] if len(arrays) == 1 else arrays
 
 
 def is_xslow():
