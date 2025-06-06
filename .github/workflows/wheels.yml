@@ -324,6 +324,7 @@ jobs:
           python-version: "3.11"
           miniforge-version: latest
           conda-remove-defaults: "true"
+          architecture: ${{ matrix.buildplat[1] == 'win_arm64' && 'x64' || '' }}
 
       - name: Upload wheels
         if: success()
