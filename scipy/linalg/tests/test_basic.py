@@ -1052,6 +1052,11 @@ class TestSolveTriangular:
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
 
+parametrize_overwrite_arg = pytest.mark.parametrize(
+    "overwrite_kw", [{"overwrite_a": True}, {"overwrite_a": False}, {}]
+)
+
+
 class TestInv:
     def test_simple(self):
         a = [[1, 2], [3, 4]]
@@ -1099,6 +1104,194 @@ class TestInv:
         a_inv = inv(a)
         assert a_inv.size == 0
         assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
+
+        a = np.ones((3, 0, 2, 2), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 0, 2, 2)
+
+        a = np.ones((3, 1, 0, 0), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.shape == (3, 1, 0, 0)
+
+    @pytest.mark.xfail(reason="TODO: re-enable overwrite_a")
+    def test_overwrite_a(self):
+        a = np.arange(1, 5).reshape(2, 2)
+        a_inv = inv(a, overwrite_a=True)
+        assert_allclose(a_inv @ a, np.eye(2), atol=1e-14)
+        assert not np.shares_memory(a, a_inv)    # int arrays are copied internally
+
+        # 2D F-ordered arrays of LAPACK-compatible dtypes: works inplace 
+        a = a.astype(float).copy(order='F')
+        a_inv = inv(a, overwrite_a=True)
+        assert np.shares_memory(a, a_inv)
+
+    def test_readonly(self):
+        a = np.eye(3)
+        a.flags.writeable = False
+
+        a_inv = inv(a)
+        assert_allclose(a_inv, a, atol=1e-14)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_batch_core_1x1(self, dt):
+        a = np.arange(3*2, dtype=dt).reshape(3, 2, 1, 1) + 1
+        a_inv = inv(a)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, 1.)
+
+    @parametrize_overwrite_arg
+    def test_batch_zero_stride(self, overwrite_kw):
+        a = np.arange(3*2*2, dtype=float).reshape(3, 2, 2)
+        aa = a[None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+        aa = a[:, None, ...]
+        a_inv = inv(aa, **overwrite_kw)
+        assert a_inv.shape == aa.shape
+        assert_allclose(aa @ a_inv, np.broadcast_to(np.eye(2), aa.shape), atol=2e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, ::-1, :, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_negative_stride(self, overwrite_kw):
+        a = np.arange(3*8).reshape(2, 3, 2, 2)
+        a = a[:, :, ::-1, :]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == a.shape
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_core_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 3, 2, 4)
+        a = a[..., ::2]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=5e-14)
+
+    @parametrize_overwrite_arg
+    def test_batch_non_contiguous(self, overwrite_kw):
+        a = np.arange(3*8*2).reshape(2, 6, 2, 2)
+        a = a[:, ::2, ...]
+        a_inv = inv(a, **overwrite_kw)
+        assert a_inv.shape == (2, 3, 2, 2)
+        assert_allclose(a @ a_inv, np.broadcast_to(np.eye(2), a.shape), atol=2e-13)
+
+    @parametrize_overwrite_arg
+    def test_singular(self, overwrite_kw):
+        # 2D case: A singular matrix: raise
+
+        with assert_raises(LinAlgError):
+            inv(np.ones((2, 2)))
+
+        # batched case: If all slices are singlar, raise
+        with assert_raises(LinAlgError):
+            inv(np.ones((3, 2, 2)))
+
+        # XXX: shall we make this behavior configurable somehow?
+        # A "keep-going" option would be this:
+        # if some of the slices are singular and some are not,
+        # - singular slices are filled with nans
+        # - non-singular slices are inverted
+        # - there is no error
+        a = np.stack((np.ones((2, 2), dtype=complex), np.arange(4).reshape(2, 2)))
+        with assert_raises(LinAlgError):
+            inv(a)
+
+        # this would be true for a "keep-going" option
+        # assert np.isnan(a_inv[0, ...]).all()
+        # assert_allclose(a_inv[1, ...] @ a[1, ...],  np.eye(2), atol=1e-14)
+
+    def test_ill_cond(self):
+        a = np.diag([1., 1e-20])
+        with pytest.warns(LinAlgWarning):
+            inv(a)
+
+    def test_wrong_assume_a(self):
+        with assert_raises(KeyError):
+            inv(np.eye(2), assume_a="kaboom")
+
+    def test_posdef(self):
+        x = np.arange(25, dtype=float).reshape(5, 5)
+        y = x + x.T
+        y += 21*np.eye(5)
+
+        y_inv0 = inv(y)
+        y_inv1 = inv(y, assume_a="pos")
+
+        assert_allclose(y_inv1, y_inv0, atol=1e-15)
+
+        # check that the lower triangle is not referenced for "pos upper"
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv2 = inv(y*mask, check_finite=False, assume_a="pos upper")
+        assert_allclose(y_inv2, y_inv0, atol=1e-15)
+
+        # repeat with the upper triangle and "pos lower"
+        y_inv3 = inv(y*mask.T, check_finite=False, assume_a="pos lower")
+        assert_allclose(y_inv3, y_inv0, atol=1e-15)
+
+    def test_posdef_not_posdef(self):
+        # the `b` matrix is invertible but not positive definite
+        a = np.arange(9).reshape(3, 3)
+        b = a + a.T + np.eye(3)
+
+        # cholesky solver fails, and the routine falls back to the general inverse
+        b_inv0 = inv(b)
+        assert_allclose(b_inv0 @ b, np.eye(3), atol=3e-15)
+
+        # but it does not fall back if `assume_a` is given
+        with assert_raises(LinAlgError):
+            inv(b, assume_a='pos')
+
+    def test_triangular_1(self):
+        x = np.arange(25, dtype=float).reshape(5, 5)
+        y = x + x.T
+        y += 21*np.eye(5)
+        y_inv0 = inv(y, assume_a='upper triangular')
+
+        # check that upper triangular differs from posdef
+        y_inv_posdef = inv(y, assume_a='pos')
+        assert not np.allclose(y_inv0, y_inv_posdef)
+
+    def test_triangular_2(self):
+        y = np.ones(25, dtype=float).reshape(5, 5)
+
+        y_inv_0_u = inv(np.triu(y))
+        assert_allclose(y_inv_0_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        y_inv_1_u = inv(y, assume_a='upper triangular')
+        assert_allclose(y_inv_1_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        # check that the lower triangle is not referenced for "upper triangular"
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv_2_u = inv(y*mask, check_finite=False, assume_a='upper triangular')
+        assert_allclose(y_inv_2_u @ np.triu(y), np.eye(5), atol=1e-15)
+
+        # repeat for the lower traingular matrix
+        y_inv_0_l = inv(np.tril(y))
+        assert_allclose(y_inv_0_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+        y_inv_1_l = inv(y, assume_a='lower triangular')
+        assert_allclose(y_inv_1_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+        # check that the lower triangle is not referenced for "lower triangular"
+        mask = np.where(1 - np.tri(*y.shape, -1) == 0, np.nan, 1)
+        y_inv_2_l = inv(y*mask.T, check_finite=False, assume_a='lower triangular')
+        assert_allclose(y_inv_2_l @ np.tril(y), np.eye(5), atol=1e-15)
+
+        # TODO
+        # 1. general, ill-conditioned: warns
+        # 2. posdef, ill-conditioned: warns
+        # 4. triangular, upper, lower, ill-conditioned: warns
+        # 5. assume_a="posdef" but Cholesky fails: fall back to general or raise?
+        # 6. error control (fast-fail, fill with nans, fill and raise)
 
 
 class TestDet:
