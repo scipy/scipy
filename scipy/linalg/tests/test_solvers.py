@@ -8,6 +8,7 @@ from pytest import raises as assert_raises
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
+from scipy.linalg import solve_continuous_rde
 from scipy.linalg import block_diag, solve, LinAlgError
 from scipy.sparse._sputils import matrix
 
@@ -695,9 +696,219 @@ def test_solve_generalized_discrete_are():
     for ind, case in enumerate(cases):
         _test_factory(case, max_atol[ind])
 
+class TestSolveContinuousRde:
+    cases = [
+        # The format of the data is (a, b, q, r, pt, tspan, s, knownfailure), where
+        # knownfailure is None if the test passes or a string
+        # indicating the reason for failure.
+
+        # Test Case 0 : Real a, b, q, r, pt; s=None
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         None,
+         None),
+        # TEST CASE 1 : Complex a; real b, q, r, pt; s=None
+        (np.array([[2, 1-2j], [0, -3j]]),
+         np.array([[0], [1]]),
+         np.array([[1, 0], [0, 2]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         None,
+         None),
+        # TEST CASE 2 :Real a, q, r, pt; complex b; s=None
+        (np.array([[2, 1], [0, -1]]),
+         np.array([[-2j], [1j]]),
+         np.array([[1, 0], [0, 2]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         None,
+         None),
+        # TEST CASE 3 : Real a, b, pt; complex q, r; s=None
+        (np.array([[3, 1], [0, -1]]),
+         np.array([[1, 2], [1, 3]]),
+         np.array([[5+0.j, 2+1j], [2-1j, 3+0.j]]),
+         np.array([[2, -2j], [2j, 3]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         None,
+         None),
+        # TEST CASE 4 : Real a, b, q, r; complex pt; s=None
+        (np.array([[3, 1], [0, -1]]),
+         np.array([[1], [2]]),
+         np.array([[5, 2], [2, 3]]),
+         np.array([1]),
+         np.array([[2, -2j], [2j, 3]]),
+         [0, 5],
+         None,
+         None),
+        # TEST CASE 5 : Real a, b, q, r, pt; s=zeros
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         np.array([[0], [0]]),
+         None),
+        # TEST CASE 6 : Real a, b, q, r, pt; s=[[1],[-1]]
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         np.array([[1], [-1]]),
+         None),
+        # TEST CASE 7 : Real a, b, q, r, pt; s=[[10],[-10]]
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         np.array([[10], [-10]]),
+         None),
+        # TEST CASE 8 : Real a, b, q, r, pt; large-magnitude complex S
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         np.array([[3 + 4j], [-2 - 1j]]),
+         "Solver fails due to stiff complex-valued S with RK-45"),
+        # TEST CASE 9 : Real a, b, q, r, pt; small-magnitude complex S
+        (np.array([[1, 1], [2, 1]]),
+         np.array([[1], [1]]),
+         np.array([[2, 1], [1, 1]]),
+         np.array([[1]]),
+         np.array([[1, 1], [1, 1]]),
+         [0, 5],
+         np.array([[0.5 + 0.5j], [0.5 - 0.5j]]),
+         None),
+        ]
+    min_decimal = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+
+    @pytest.mark.parametrize("j, case", enumerate(cases))
+    def test_solve_continuous_rde(self, j, case):
+        a, b, q, r, pt, tspan, s, knownfailure = case
+        if knownfailure:
+            pytest.xfail(reason=knownfailure)
+
+        dec = self.min_decimal[j]
+        if s is None:
+            s = np.zeros((b.shape[0], b.shape[1]))
+
+        t, p = solve_continuous_rde(a, b, q, r, pt, tspan, s)
+
+        for pi in p:
+            # Check P is simetric
+            assert_array_almost_equal(pi, pi.conj().T, decimal=dec)
+
+            # Check P is semidefinite
+            if np.allclose(s, 0):
+                eigvals = np.linalg.eigvalsh(pi)
+                assert_array_almost_equal(np.minimum(eigvals, 0),
+                                          np.zeros_like(eigvals), decimal=dec)
+
+def test_dre_validate_args():
+    def test_shape_consistency():
+        a = np.eye(4)
+        b = np.ones((3, 2))
+        q = np.eye(4)
+        r = np.eye(2)
+        pt = np.eye(4)
+        tspan = [0, 10]
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        b = np.ones((4, 2))
+        q = np.eye(3)
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        q = np.eye(4)
+        r = np.eye(3)
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        r = np.eye(2)
+        pt = np.eye(3)
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+    def test_tspan_validation():
+        eye3 = np.eye(3)
+        b = np.ones((3, 2))
+        r = np.eye(2)
+        assert_raises(ValueError, solve_continuous_rde, eye3, b, eye3, r, eye3, [10, 0])
+        assert_raises(ValueError, solve_continuous_rde, eye3, b, eye3, r, eye3, [0, 10, 20])
+        assert_raises(ValueError, solve_continuous_rde, eye3, b, eye3, r, eye3, [10])
+
+    def test_hermitian_check():
+        a = np.eye(3)
+        b = np.ones((3, 2))
+        q = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])  # not symmetric
+        r = np.eye(2)
+        pt = np.eye(3)
+        tspan = [0, 5]
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        q = np.eye(3)
+        r = np.array([[1, 2], [3, 4]])  # not symmetric
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        r = np.eye(2)
+        pt = np.array([[0, 1, 2], [2, 0, 1], [1, 2, 0]])  # not symmetric
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+    def test_definiteness():
+        a = np.eye(2)
+        b = np.ones((2, 1))
+        r = np.array([[0, 0], [0, 0]])  # not positive definite
+        q = np.eye(2)
+        pt = np.eye(2)
+        tspan = [0, 1]
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        r = np.eye(1)
+        q = np.array([[1, 0], [0, -1]])  # not positive semi-definite
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+        q = np.eye(2)
+        pt = np.array([[0, 0], [0, -1]])  # not positive semi-definite
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan)
+
+    def test_s_shape():
+        a = np.eye(3)
+        b = np.ones((3, 2))
+        q = np.eye(3)
+        r = np.eye(2)
+        pt = np.eye(3)
+        tspan = [0, 1]
+        s = np.ones((2, 3))  # wrong shape
+        assert_raises(ValueError, solve_continuous_rde, a, b, q, r, pt, tspan, s)
+
+        # Test valid_input
+        a = np.eye(3)
+        b = np.ones((3, 2))
+        q = np.eye(3)
+        r = np.eye(2)
+        pt = np.eye(3)
+        s = np.ones((3, 2))
+        tspan = [0, 1]
+        out = solve_continuous_rde(a, b, q, r, pt, tspan, s)
+        assert len(out) == 10
+
+        test_shape_consistency()
+        test_tspan_validation()
+        test_hermitian_check()
+        test_definiteness()
+        test_s_shape()
 
 def test_are_validate_args():
-
     def test_square_shape():
         nsq = np.ones((3, 2))
         sq = np.eye(3)

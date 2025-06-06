@@ -391,6 +391,25 @@ class TestBatch:
         # can't easily generate valid random e, s
         self.batch_test(fun, (a, b, q, r))
 
+    @pytest.mark.parametrize('fun', [linalg.solve_continuous_rde])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_rde(self, fun, dtype):
+        rng = np.random.default_rng(8342310302941288912051)
+        a = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        b = get_random((2, 3, 5, 5), dtype=dtype, rng=rng)
+        q = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        r = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        pt = get_nearly_hermitian((2, 3, 5, 5), dtype=dtype, atol=0, rng=rng)
+        a = a + 5*np.eye(5)
+        b = b + 5*np.eye(5)
+        q = q + 5*np.eye(5)
+        r = r + 5*np.eye(5)
+        pt = pt + 5*np.eye(5)
+        tspan = (0.0, 5.0) # [t0, tf]
+        # can't easily generate valid random s
+        self.batch_test(fun, (a, b, q, r, pt), n_out=2, 
+                        kwargs=dict(tspan=tspan))
+
     @pytest.mark.parametrize('dtype', floating)
     def test_rsf2cs(self, dtype):
         rng = np.random.default_rng(8342310302941288912051)
