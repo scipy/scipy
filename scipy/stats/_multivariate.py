@@ -1458,7 +1458,7 @@ rowcov : array_like, optional
 colcov : array_like, optional
     Among-column covariance matrix of the distribution (default: ``1```)
 df : scalar, optional
-    Degrees of freedom (default: ```1```)
+    Degrees of freedom (default: ``1``)
 """
 
 _matt_doc_callparams_note = """\
@@ -1507,8 +1507,6 @@ class matrix_t_gen(multi_rv_generic):
         Log of the probability density function.
     rvs(mean=None, rowcov=1, colcov=1, df=1, size=1, random_state=None)
         Draw random samples.
-    entropy(df, rowcov=None, colcov=None)
-        Differential entropy of the probability density function.
 
     Parameters
     ----------
@@ -1574,6 +1572,9 @@ class matrix_t_gen(multi_rv_generic):
     :math:`\Sigma` is the among-row covariance matrix,
     :math:`\Omega` is the among-column covariance matrix,
     and :math:`\mathrm{df}` is the degrees of freedom.
+
+    When :math:`\mathrm{df} = 1` this distribution is known as the matrix 
+    variate Cauchy.
 
     .. versionadded:: 1.16.0
 
@@ -1650,10 +1651,10 @@ class matrix_t_gen(multi_rv_generic):
         if mean is not None:
             mean = np.asarray(mean, dtype=float)
             meanshape = mean.shape
+            if 0 in meanshape:
+                raise ValueError("Array `mean` has invalid shape.")
             if len(meanshape) != 2:
                 raise ValueError("Array `mean` must be 2D.")
-            if np.any(meanshape == 0):
-                raise ValueError("Array `mean` has invalid shape.")
 
         # Process among-row 2nd moment
         rowcov = np.asarray(rowcov, dtype=float)
@@ -1667,12 +1668,12 @@ class matrix_t_gen(multi_rv_generic):
         elif rowcov.ndim == 1:
             rowcov = np.diag(rowcov)
         rowshape = rowcov.shape
+        if 0 in rowshape:
+            raise ValueError("Array `rowcov` has invalid shape.")
         if len(rowshape) != 2:
             raise ValueError("Array `rowcov` must be a scalar or a 2D array.")
         if rowshape[0] != rowshape[1]:
             raise ValueError("Array `rowcov` must be square.")
-        if np.any(rowshape == 0):
-            raise ValueError("Array `rowcov` has invalid shape.")
         numrows = rowshape[0]
 
         # Process among-column 2nd moment
@@ -1687,24 +1688,23 @@ class matrix_t_gen(multi_rv_generic):
         elif colcov.ndim == 1:
             colcov = np.diag(colcov)
         colshape = colcov.shape
+        if 0 in colshape:
+            raise ValueError("Array `colcov` has invalid shape.")
         if len(colshape) != 2:
             raise ValueError("Array `colcov` must be a scalar or a 2D array.")
         if colshape[0] != colshape[1]:
             raise ValueError("Array `colcov` must be square.")
-        if np.any(colshape == 0):
-            raise ValueError("Array `colcov` has invalid shape.")
         numcols = colshape[0]
 
         # Ensure mean and 2nd moments are conformal
         if mean is not None:
             if meanshape[0] != numrows:
                 raise ValueError(
-                    "Arrays `mean` and `rowcov` must have the " "same number of rows."
+                    "Arrays `mean` and `rowcov` must have the same number of rows."
                 )
             if meanshape[1] != numcols:
                 raise ValueError(
-                    "Arrays `mean` and `colcov` must have the "
-                    "same number of columns."
+                    "Arrays `mean` and `colcov` must have the same number of columns."
                 )
         else:
             mean = np.zeros((numrows, numcols))
@@ -1940,93 +1940,6 @@ class matrix_t_gen(multi_rv_generic):
             t_centered = t_centered.reshape(mean.shape)
         return t_centered
 
-    def _entropy(self, dims, df, row_cov_logpdet, col_cov_logpdet):
-        m, n = dims
-        term1 = (m * n / 2) * np.log(df * np.pi)
-        term2 = (n / 2) * row_cov_logpdet
-        term3 = (m / 2) * col_cov_logpdet
-        term4 = scipy.special.multigammaln(df / 2, n) - scipy.special.multigammaln(
-            (df + m) / 2, n
-        )
-        term5 = ((df + m) / 2) * sum(
-            scipy.special.digamma((df + m - i) / 2)
-            - scipy.special.digamma((df - i) / 2)
-            for i in range(1, n + 1)
-        )
-        return term1 + term2 + term3 + term4 + term5
-
-    def entropy(self, df=1, rowcov=1, colcov=1):
-        r"""Differential entropy of the matrix t probability density function.
-
-        .. math::
-
-            h(X) =
-            \frac12 \left[
-                mn \log \left( \mathrm{df} \pi \right)
-                + n \log \det \Sigma
-                + m \log \det \Omega
-                + 2 \log \left(
-                    \frac{
-                        \Gamma_n\left( \mathrm{df} / 2 \right)
-                    }{
-                        \Gamma_n \left( (\mathrm{df} + m) / 2 \right)
-                    }
-                \right)
-                + \left( \mathrm{df}+m \right)
-                    \sum_{i=1}^n \left[
-                        \psi\left( \frac{\mathrm{df} + m - i}{2} \right)
-                        - \psi\left( \frac{\mathrm{df} - i}{2} \right)
-                    \right]
-            \right]
-
-        where
-        :math:`\Sigma` is the among-row covariance matrix,
-        :math:`\Omega` is the among-column covariance matrix,
-        :math:`\mathrm{df}` is the degrees of freedom,
-         and :math:`\Sigma` :math:`\psi` is the digamma function.
-
-        Parameters
-        ----------
-        df : float
-            Degrees-of-freedom parameter.
-        rowcov : array_like, optional
-            Among-row covariance matrix of the distribution (default: ``1``)
-        colcov : array_like, optional
-            Among-column covariance matrix of the distribution (default: ``1``)
-
-        Returns
-        -------
-        entropy : float
-            Entropy of the distribution
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from scipy.stats import matrix_t
-        >>> Sigma = np.diag([1,2,3]); Sigma
-        array([[1, 0, 0],
-            [0, 2, 0],
-            [0, 0, 3]])
-        >>> Omega = 0.3*np.identity(2); Omega
-        array([[ 0.3,  0. ],
-            [ 0. ,  0.3]])
-        >>> X = M + 0.1; X
-        array([[ 0.1,  1.1],
-            [ 2.1,  3.1],
-            [ 4.1,  5.1]])
-        >>> df = 5; df
-        >>> matrix_t.entropy(rowcov=Sigma, colcov=Omega, df=df)
-        10.000960916665203
-        """
-
-        dummy_mean = np.zeros((rowcov.shape[0], colcov.shape[0]))
-        dims, _, rowcov, colcov, df = self._process_parameters(
-            dummy_mean, rowcov, colcov, df
-        )
-        rowpsd = _PSD(rowcov, allow_singular=False)
-        colpsd = _PSD(colcov, allow_singular=False)
-        return self._entropy(dims, df, rowpsd.log_pdet, colpsd.log_pdet)
-
 
 matrix_t = matrix_t_gen()
 
@@ -2062,21 +1975,10 @@ class matrix_t_frozen:
             self.mean, self.rowcov, self.colcov, self.df, size, random_state
         )
 
-    def entropy(self):
-        dims, _, rowcov, colcov, df = self._dist._process_parameters(
-            mean=np.zeros((self.rowcov.shape[0], self.colcov.shape[0])),
-            rowcov=self.rowcov,
-            colcov=self.colcov,
-            df=self.df
-        )
-        rowpsd = _PSD(rowcov, allow_singular=False)
-        colpsd = _PSD(colcov, allow_singular=False)
-        return self._dist._entropy(dims, df, rowpsd.log_pdet, colpsd.log_pdet)
-
 
 # Set frozen generator docstrings from corresponding docstrings in
 # matrix_t_gen and fill in default strings in class docstrings
-for name in ["logpdf", "pdf", "rvs", "entropy"]:
+for name in ["logpdf", "pdf", "rvs"]:
     method = matrix_t_gen.__dict__[name]
     method_frozen = matrix_t_frozen.__dict__[name]
     method_frozen.__doc__ = scipy._lib.doccer.docformat(

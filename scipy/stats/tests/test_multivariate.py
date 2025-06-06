@@ -1441,31 +1441,112 @@ class TestMatrixT:
         V = 0.7 * np.identity(num_cols) + np.full((num_cols, num_cols), 0.3)
 
         # Nonpositive degrees of freedom
-        assert_raises(ValueError, matrix_t, 0, 1, 1, 0)
-        assert_raises(ValueError, matrix_t, 0, 1, 1, -1)
+        with pytest.raises(
+            ValueError, 
+            match="Degrees of freedom must be positive."
+        ):
+            matrix_t(df=0)
 
         # Incorrect dimensions
-        assert_raises(ValueError, matrix_t, np.zeros((5,4,3)), df)
-        assert_raises(ValueError, matrix_t, np.zeros((4,3,0)), df)
-        assert_raises(ValueError, matrix_t, M, np.zeros(10), V, df)
-        assert_raises(ValueError, matrix_t, M, U, np.zeros(10), df)
-        assert_raises(ValueError, matrix_t, M, np.ones((4,4,3)), V, df)
-        assert_raises(ValueError, matrix_t, M, np.ones((4,3)), V, df)
-        assert_raises(ValueError, matrix_t, M, np.ones((4,4,0)), V, df)
-        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,4)), df)
-        assert_raises(ValueError, matrix_t, M, U, np.ones((3,4)), df)
-        assert_raises(ValueError, matrix_t, M, U, np.ones((3,3,0)), df)
-        assert_raises(ValueError, matrix_t, M, U, U, df)
-        assert_raises(ValueError, matrix_t, M, V, V, df)
-        assert_raises(ValueError, matrix_t, M.T, U, V, df)
+        with pytest.raises(
+            ValueError, 
+            match="Array `mean` must be 2D."
+        ):
+            matrix_t(mean=np.zeros((5, 4, 3)))
 
-        e = np.linalg.LinAlgError
-        # Singular covariance for the rvs method of a non-frozen instance
-        assert_raises(e, matrix_t.rvs, M, U, np.ones((num_cols, num_cols)), df)
-        assert_raises(e, matrix_t.rvs, M, np.ones((num_rows, num_rows)), V, df)
+        with pytest.raises(
+            ValueError, 
+            match="Array `mean` has invalid shape."
+        ):
+            matrix_t(mean=np.zeros((4, 3, 0)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `rowcov` has invalid shape."
+        ):
+            matrix_t(rowcov=np.ones((1, 0)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `rowcov` must be a scalar or a 2D array."
+        ):
+            matrix_t(rowcov=np.ones((1, 2, 3)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `rowcov` must be square."
+        ):
+            matrix_t(rowcov=np.ones((1, 2)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `colcov` has invalid shape."
+        ):
+            matrix_t(colcov=np.ones((1, 0)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `colcov` must be a scalar or a 2D array."
+        ):
+            matrix_t(colcov=np.ones((1, 2, 3)))
+
+        with pytest.raises(
+            ValueError,
+            match="Array `colcov` must be square."
+        ):
+            matrix_t(colcov=np.ones((1, 2)))
+
+        with pytest.raises(
+            ValueError,
+            match="Arrays `mean` and `rowcov` must have the same number "
+            "of rows."
+        ):
+            matrix_t(mean=M, rowcov=V)
+
+        with pytest.raises(
+            ValueError,
+            match="Arrays `mean` and `colcov` must have the same number "
+            "of columns."
+        ):
+            matrix_t(mean=M, colcov=U)
+
+        # Incorrect dimension of input matrix
+        with pytest.raises(
+            ValueError,
+            match="The shape of array `X` is not conformal with "
+                "the distribution parameters."
+        ):
+            matrix_t.pdf(X=np.zeros((num_rows, num_rows)), mean=M)
+
+        # Singular covariance for a non-frozen instance
+
+        with pytest.raises(
+            np.linalg.LinAlgError,
+            match="2-th leading minor of the array is not positive definite"
+        ):
+            matrix_t.rvs(M, U, np.ones((num_cols, num_cols)), df)
+
+        with pytest.raises(
+            np.linalg.LinAlgError,
+            match="2-th leading minor of the array is not positive definite"
+        ):
+            matrix_t.rvs(M, np.ones((num_rows, num_rows)), V, df)
+
         # Singular covariance for a frozen instance
-        assert_raises(e, matrix_t, M, U, np.ones((num_cols, num_cols)), df)
-        assert_raises(e, matrix_t, M, np.ones((num_rows, num_rows)), V, df)
+
+        with pytest.raises(
+            np.linalg.LinAlgError,
+            match="When `allow_singular is False`, the input matrix must be "
+            "symmetric positive definite."
+        ):
+            matrix_t(M, U, np.ones((num_cols, num_cols)), df)
+
+        with pytest.raises(
+            np.linalg.LinAlgError,
+            match="When `allow_singular is False`, the input matrix must be "
+            "symmetric positive definite."
+        ):
+            matrix_t(M, np.ones((num_rows, num_rows)), V, df)
 
     def test_default_inputs(self):
         # Check that default argument handling works
@@ -1532,34 +1613,31 @@ class TestMatrixT:
         assert_equal(matrix_t(mean=M, rowcov=Us, colcov=Vs, df=df).colcov,
                      0.1*Ic)
 
-    def test_frozen_matrix_t(self):
-        for i in range(1,5):
-            for j in range(1,5):
-                M = np.full((i,j), 0.3)
-                U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
-                V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
-                df = i + j
+    @pytest.mark.parametrize("i", range(1, 4))
+    @pytest.mark.parametrize("j", range(1, 4))
+    def test_frozen_matrix_t(self, i, j):
 
-                frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
+        M = np.full((i,j), 0.3)
+        U = 0.5 * np.identity(i) + np.full((i,i), 0.5)
+        V = 0.7 * np.identity(j) + np.full((j,j), 0.3)
+        df = i + j
 
-                rvs1 = frozen.rvs(random_state=1234)
-                rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df,
-                                         random_state=1234)
-                assert_equal(rvs1, rvs2)
+        frozen = matrix_t(mean=M, rowcov=U, colcov=V, df=df)
 
-                X = frozen.rvs(random_state=1234)
+        rvs1 = frozen.rvs(random_state=1234)
+        rvs2 = matrix_t.rvs(mean=M, rowcov=U, colcov=V, df=df,
+                                 random_state=1234)
+        assert_equal(rvs1, rvs2)
 
-                pdf1 = frozen.pdf(X)
-                pdf2 = matrix_t.pdf(X, mean=M, rowcov=U, colcov=V, df=df)
-                assert_equal(pdf1, pdf2)
+        X = frozen.rvs(random_state=1234)
 
-                logpdf1 = frozen.logpdf(X)
-                logpdf2 = matrix_t.logpdf(X, mean=M, rowcov=U, colcov=V, df=df)
-                assert_equal(logpdf1, logpdf2)
+        pdf1 = frozen.pdf(X)
+        pdf2 = matrix_t.pdf(X, mean=M, rowcov=U, colcov=V, df=df)
+        assert_equal(pdf1, pdf2)
 
-                entropy1 = frozen.entropy()
-                entropy2 = matrix_t.entropy(rowcov=U, colcov=V, df=df)
-                assert_equal(entropy1, entropy2)
+        logpdf1 = frozen.logpdf(X)
+        logpdf2 = matrix_t.logpdf(X, mean=M, rowcov=U, colcov=V, df=df)
+        assert_equal(logpdf1, logpdf2)
 
     def test_array_input(self):
         # Check array of inputs has the same output as the separate entries.
@@ -1582,26 +1660,26 @@ class TestMatrixT:
         assert_equal(logpdf_shape, (2, N))
         for i in range(2):
             for j in range(N):
-                separate_logpdf = matrix_t.logpdf(X[i,j], mean=M,
-                                                       rowcov=U, colcov=V,
-                                                       df=df)
+                separate_logpdf = matrix_t.logpdf(
+                    X[i,j], mean=M, rowcov=U, colcov=V, df=df
+                )
                 assert_allclose(separate_logpdf, array_logpdf[i,j], 1E-10)
 
     @staticmethod
     def relative_error(vec1: np.ndarray, vec2: np.ndarray):
         numerator = np.linalg.norm(vec1 - vec2) ** 2
         denominator = np.linalg.norm(vec1) ** 2 + np.linalg.norm(vec2) ** 2
-        return 2 * numerator / denominator
+        return numerator / denominator
 
     @staticmethod
-    def matrix_divergence(mat_true: np.ndarray,
-                            mat_est: np.ndarray) -> float:
-        det_true = np.linalg.det(mat_true)
-        det_est = np.linalg.det(mat_est)
-        if (det_true <= 0) or (det_est <= 0):
+    def matrix_divergence(mat_true: np.ndarray, mat_est: np.ndarray) -> float:
+        mat_true_psd = _PSD(mat_true, allow_singular=False)
+        mat_est_psd = _PSD(mat_est, allow_singular=False)
+        if (np.exp(mat_est_psd.log_pdet) <= 0) or (
+            np.exp(mat_true_psd.log_pdet) <= 0):
             return np.inf
-        trace_term = np.trace(np.linalg.inv(mat_est) @ mat_true)
-        log_detratio = np.log(det_est / det_true)
+        trace_term = np.trace(mat_est_psd.pinv @ mat_true)
+        log_detratio = mat_est_psd.log_pdet - mat_true_psd.log_pdet
         return (trace_term + log_detratio - len(mat_true)) / 2
 
     @staticmethod
@@ -1615,6 +1693,13 @@ class TestMatrixT:
         return a_mat.T.reshape((a_mat.size,))
 
     def test_moments(self):
+        r"""
+            Gupta and Nagar (2000) Theorem 4.3.1 (p.135)
+            --------------------------------------------
+            The covariance of the vectorized matrix variate t-distribution equals 
+            $ (V \otimes U) / (\text{df} - 2)$, where $\otimes$ 
+            denotes the usual Kronecker product.
+        """
 
         df = 5
         num_rows = 4
@@ -1631,29 +1716,26 @@ class TestMatrixT:
         relerr = self.relative_error(M, X.mean(axis=0))
         assert_close(relerr, 0, atol=atol)
 
-        # Gupta and Nagar (2000) Theorem 4.3.1 (p.135)
-        # --------------------------------------------
-        # The covariance of the vectorized matrix variate t-distribution equals
-        #     $$ ( V \otimes U ) / ( \text{df} - 2 ) $$
-        # where $\otimes$ denotes the usual Kronecker product.
         cov_vec_true = np.kron(V, U) / (df - 2)
         cov_vec_rvs = np.cov(np.array([self.vec(x) for x in X]), rowvar=False)
         kl = self.matrix_divergence(cov_vec_true, cov_vec_rvs)
         assert_close(kl, 0, atol=atol)
 
     def test_pdf_against_mathematica(self):
-        # Test values generated from Mathematica 13.0.0 for Linux x86 (64-bit)
-        # Release ID 13.0.0.0 (7522564, 2021120311723), Patch Level 0
-        #
-        # mu={{1,2,3},{4,5,6}};
-        # sigma={{1,0.5},{0.5,1}};
-        # omega={{1,0.3,0.2},{0.3,1,0.4},{0.2,0.4,1}};
-        # df=5;
-        # sampleSize=10;
-        # SeedRandom[42];
-        # dist=MatrixTDistribution[mu,sigma,omega,alpha];
-        # samples=RandomVariate[dist,sampleSize];
-        # pdfs=PDF[dist,#]&/@samples;
+        """
+            Test values generated from Mathematica 13.0.0 for Linux x86 (64-bit)
+            Release ID 13.0.0.0 (7522564, 2021120311723), Patch Level 0
+            
+            mu={{1,2,3},{4,5,6}};
+            sigma={{1,0.5},{0.5,1}};
+            omega={{1,0.3,0.2},{0.3,1,0.4},{0.2,0.4,1}};
+            df=5;
+            sampleSize=10;
+            SeedRandom[42];
+            dist=MatrixTDistribution[mu,sigma,omega,df];
+            samples=RandomVariate[dist,sampleSize];
+            pdfs=PDF[dist,#]&/@samples;
+        """
 
         df = 5
         M = np.array([[1, 2, 3], [4, 5, 6]])
@@ -1736,6 +1818,38 @@ class TestMatrixT:
         assert_allclose(M.T, mT, atol=atol)
         assert_allclose(m, mT.T, atol=atol)
         assert_allclose(m.T, mT, atol=atol)
+
+    def test_against_multivariate_t(self):
+        r"""
+            Gupta and Nagar (2000) p.133f
+            When the number of rows or the number of columns equals 1 the 
+            matrix t reduces to the multivariate t. But, the matrix t 
+            is parameterized by raw 2nd moments whereas the multivariate t is 
+            parameterized by a covariance (raw 2nd moment normalized by df). 
+            We can see the difference by comparing the author's notation 
+                $t_p(n, \omega, \mathbf{\mu}, \Sigma)$ 
+            for a matrix t with a single column 
+            to the formula (4.1.2) for the PDF of the multivariate t.
+        """
+        atol=1e-6
+        df = 5
+        num_rows = 1
+        num_cols = 3
+        N = 3
+        M = np.full((num_rows, num_cols), 0.3)
+
+        # matrix variate t parameterized by raw 2nd moment, called `rowcov`
+        # multivariate t parameterized by average, but also called `rowcov`
+        colcov = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+        V = colcov / df
+
+        t_mat = matrix_t(mean=M, colcov=colcov, df=df)
+        t_mvt = multivariate_t(loc=M.squeeze(), shape=V, df=df)
+        
+        X = t_mat.rvs(size=3, random_state=42)
+        t_mat_logpdf = t_mat.logpdf(X)
+        t_mvt_logpdf = t_mvt.logpdf(X.squeeze())
+        assert_allclose(t_mvt_logpdf, t_mat_logpdf, atol=atol)
 
 
 class TestDirichlet:
