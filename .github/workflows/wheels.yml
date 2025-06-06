@@ -244,7 +244,6 @@ jobs:
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
           CIBW_PLATFORM: ${{ (matrix.buildplat[1] == 'win_arm64' && 'windows') || 'auto' }}
           CIBW_BEFORE_BUILD_WINDOWS: ${{ matrix.buildplat[1] == 'win_arm64' && env.CIBW_WIN_ARM64_BEFORE_BUILD_SCRIPT || '' }}
-          CIBW_BUILD_FRONTEND: ${{ (endsWith(matrix.python[0], 't') || matrix.buildplat[1] == 'win_arm64') && 'pip --no-build-isolation' || '' }}
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
