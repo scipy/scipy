@@ -73,6 +73,7 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_lazy_array,
+    is_dask,
     is_numpy,
     is_cupy,
     xp_size,
@@ -4254,6 +4255,10 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         rhi = ones
 
     mask = (n <= 3)
+    if mask.ndim == 0:
+        # This is Array API legal, but Dask doesn't like it.
+        mask = xp.broadcast_to(mask, rlo.shape)
+
     rlo = xpx.at(rlo)[mask].set(-1)
     rhi = xpx.at(rhi)[mask].set(1)
 
@@ -4377,9 +4382,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
-                 cpu_only=True, exceptions=['cupy'],
-                 jax_jit=False, allow_dask_compute=True)
+# Missing special.betainc on torch
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -4696,10 +4700,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     const_x = xp.all(x == x[..., 0:1], axis=-1)
     const_y = xp.all(y == y[..., 0:1], axis=-1)
     const_xy = const_x | const_y
-    if xp.any(const_xy):
+
+    any_const_xy = xp.any(const_xy)
+    lazy = is_lazy_array(const_xy)
+    if not lazy and any_const_xy:
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
+    if lazy or any_const_xy:
         x = xp.where(const_x[..., xp.newaxis], xp.nan, x)
         y = xp.where(const_y[..., xp.newaxis], xp.nan, y)
 
@@ -4754,16 +4762,17 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
-    nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
-    nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
-    nconst_xy = nconst_x | nconst_y
-    if xp.any(nconst_xy & (~const_xy)):
-        # If all the values in x (likewise y) are very close to the mean,
-        # the loss of precision that occurs in the subtraction xm = x - xmean
-        # might result in large errors in r.
-        msg = ("An input array is nearly constant; the computed "
-               "correlation coefficient may be inaccurate.")
-        warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
+    if not lazy:
+        nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
+        nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
+        nconst_xy = nconst_x | nconst_y
+        if xp.any(nconst_xy & (~const_xy)):
+            # If all the values in x (likewise y) are very close to the mean,
+            # the loss of precision that occurs in the subtraction xm = x - xmean
+            # might result in large errors in r.
+            msg = ("An input array is nearly constant; the computed "
+                "correlation coefficient may be inaccurate.")
+            warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
         r = xp.vecdot(xm / normxm, ym / normym, axis=axis)
@@ -4780,8 +4789,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
-    def special_case(r): return xp.where(xp.isnan(r), xp.nan, xp.ones_like(r))
-    r = xpx.apply_where(mask, (r,), xp.round, fill_value=r)
+    # data-apis/array-api-extra#196
+    mxp = array_namespace(r._meta) if is_dask(xp) else xp    
+    def special_case(r):
+        return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
+    r = xpx.apply_where(mask, r, mxp.round, fill_value=r)
     pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
