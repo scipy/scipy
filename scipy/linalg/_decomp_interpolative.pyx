@@ -120,7 +120,7 @@ from scipy.linalg.cython_lapack cimport dlarfgp, dorm2r, zunm2r, zlarfgp
 from scipy.linalg.cython_blas cimport dnrm2, dtrsm, dznrm2, ztrsm
 
 
-__all__ = ['idd_estrank', 'idd_ldiv', 'idd_poweroftwo', 'idd_reconid', 'iddp_aid',
+__all__ = ['idd_estrank', 'idd_reconid', 'iddp_aid',
            'iddp_asvd', 'iddp_id', 'iddp_qrpiv', 'iddp_svd', 'iddr_aid', 'iddr_asvd',
            'iddr_id', 'iddr_qrpiv', 'iddr_svd', 'idz_estrank', 'idz_reconid',
            'idzp_aid', 'idzp_asvd', 'idzp_id', 'idzp_qrpiv', 'idzp_svd', 'idzr_aid',
