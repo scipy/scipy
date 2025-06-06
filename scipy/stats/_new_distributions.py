@@ -21,6 +21,12 @@ class Normal(ContinuousDistribution):
         f(x) = \frac{1}{\sigma \sqrt{2 \pi}} \exp {
             \left( -\frac{1}{2}\left( \frac{x - \mu}{\sigma} \right)^2 \right)}
 
+    Notes
+    -----
+
+    This distribution is a subclass of the
+    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+
     """
     # `ShiftedScaledDistribution` allows this to be generated automatically from
     # an instance of `StandardNormal`, but the normal distribution is so frequently
@@ -277,6 +283,12 @@ class Uniform(ContinuousDistribution):
         f(x; a, b) = \frac{1}
                           {b - a}
 
+    Notes
+    -----
+
+    This distribution is a subclass of the
+    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+
     """
 
     _a_domain = _RealInterval(endpoints=(-inf, inf))
@@ -375,6 +387,12 @@ class Binomial(DiscreteDistribution):
     .. math::
 
         f(x) = {n \choose x} p^x (1 - p)^{n-x}
+
+    Notes
+    -----
+
+    This distribution is a subclass of the
+    :class:`~._distribution_infrastructure.DiscreteDistribution` class.
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
