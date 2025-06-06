@@ -1454,9 +1454,9 @@ _matt_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
 row_spread : array_like, optional
-    Row-wise 2nd order raw central moment matrix of the distribution (default: ``1``)
+    Row-wise 2nd order raw central moment matrix (default: ``1``)
 col_spread : array_like, optional
-    Column-wise 2nd order raw central moment matrix of the distribution (default: ``1```)
+    Column-wise 2nd order raw central moment matrix (default: ``1``)
 df : scalar, optional
     Degrees of freedom (default: ``1``)
 """
@@ -1704,7 +1704,8 @@ class matrix_t_gen(multi_rv_generic):
                 )
             if meanshape[1] != numcols:
                 raise ValueError(
-                    "Arrays `mean` and `col_spread` must have the same number of columns."
+                    "Arrays `mean` and `col_spread` must have the same number "
+                    "of columns."
                 )
         else:
             mean = np.zeros((numrows, numcols))

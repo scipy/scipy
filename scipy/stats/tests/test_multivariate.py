@@ -1836,7 +1836,6 @@ class TestMatrixT:
         df = 5
         num_rows = 1
         num_cols = 3
-        N = 3
         M = np.full((num_rows, num_cols), 0.3)
 
         col_spread = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
