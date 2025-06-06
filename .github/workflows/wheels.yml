@@ -104,18 +104,10 @@ jobs:
         CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64 &&
         pip install -r {project}/requirements/build.txt -r {project}/requirements/openblas.txt &&
         python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > {project}/scipy-openblas.pc &&
-        set VCPKG_ROOT=C:\vcpkg &&
-        vcpkg install pkgconf &&
-        set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH% &&
+        C:\vcpkg\vcpkg install pkgconf &&
         copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
         copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib" &&
-        set CC=clang-cl &&
-        set CXX=clang-cl &&
-        set FC=flang &&
-        set LLVM_LIB_DIRS_TEMP="C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib" &&
-        set LIB="%LLVM_LIB_DIRS_TEMP%;%LIB%" &&
-        set LIBPATH="%LLVM_LIB_DIRS_TEMP%;%LIBPATH%" &&
-        echo "win_arm64 CIBW_BEFORE_BUILD_WINDOWS setup complete. CC=%CC% FC=%FC% LIB=%LIB% PATH=%PATH% PKG_CONFIG_PATH=%PKG_CONFIG_PATH%"
+        echo "win_arm64 CIBW_BEFORE_BUILD_WINDOWS script part complete."
 
     steps:
       - name: Checkout scipy
@@ -134,11 +126,19 @@ jobs:
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: ${{ matrix.buildplat[1] == 'win_amd64'}}
 
-      - name: windows - set PKG_CONFIG_PATH for CIBW_ENVIRONMENT_WINDOWS
+      - name: Set CIBW_ENVIRONMENT_WINDOWS
         if: ${{ runner.os == 'Windows' }}
+        shell: pwsh
         run: |
-          $env:CIBW_WORKSPACE_PATH = "${{ github.workspace }}".replace("\","/")
-          echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$env:CIBW_WORKSPACE_PATH" >> $env:GITHUB_ENV
+          $CIBW_WORKSPACE_PATH_FWDSLASH = "${{ github.workspace }}".replace("\","/")
+          if ('${{ matrix.buildplat[1] }}' -eq 'win_arm64') {
+            $env_str = "PKG_CONFIG_PATH={project} CC=clang-cl CXX=clang-cl FC=flang LIB=`"C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib;%LIB%`" LIBPATH=`"C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib;%LIBPATH%`" VCPKG_ROOT=C:\vcpkg PATH=`"C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%`""
+            echo "CIBW_ENVIRONMENT_WINDOWS=$env_str" >> $env:GITHUB_ENV
+            Write-Host "Set CIBW_ENVIRONMENT_WINDOWS for win_arm64: $env_str"
+          } else {
+            echo "CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=$CIBW_WORKSPACE_PATH_FWDSLASH" >> $env:GITHUB_ENV
+            Write-Host "Set CIBW_ENVIRONMENT_WINDOWS for other Windows: PKG_CONFIG_PATH=$CIBW_WORKSPACE_PATH_FWDSLASH"
+          }
 
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
