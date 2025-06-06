@@ -103,16 +103,9 @@ class VQ(Benchmark):
 
 
 class Whiten(XPBenchmark):
-    # This is very slow and memory intensive, but necessary to
-    # let _most_ backends approach O(n*logn) behaviour.
-    # Note: memory usage = 8 * shape[0] * shape[1]
+    shape = [(10, 10), (100, 100)]
     if is_xslow():
-        shape = [(10, 10), (100, 100), (1000, 1000), (10_000, 10_000)]
-    else:
-        shape = [(10, 10), (100, 100)]
-    # Skip cpu backends for shape greater than this. 
-    # They should all have reached O(n*logn) behaviour by then.
-    CPU_MAX_OBS = (1000, 1000)
+        shape += [(1000, 1000), (10_000, 10_000)]
 
     param_names = (*XPBenchmark.param_names, "shape")
     params = (*XPBenchmark.params, shape)
