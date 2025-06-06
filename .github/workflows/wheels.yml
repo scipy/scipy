@@ -259,8 +259,11 @@ jobs:
           echo "Copying pkgconf.exe to pkg-config.exe"
           copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
 
+          echo "Listing contents of C:\Program Files\LLVM\lib\"
+          dir "C:\Program Files\LLVM\lib\"
+
           echo "Copying FortranRuntime.static.lib to FortranRuntime.lib"
-          copy C:\Program Files\LLVM\lib\FortranRuntime.static.lib C:\Program Files\LLVM\lib\FortranRuntime.lib
+          copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
 
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
           set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
