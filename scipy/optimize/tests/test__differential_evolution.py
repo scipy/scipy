@@ -1701,3 +1701,25 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+
+    def test_minimizer_kwargs(self):
+        # test that minimizer_kwargs can be used to pass a jacobian, which is then
+        # used by differential_evolution, and result contains the number of jacobian
+        # evaluations
+        bounds = [(-10, 10)]
+        jac_calls = [0]
+
+        def quadratic(x):
+            return 1. + 2. * x + 3. * x**2.
+
+        def quadratic_jac(x):
+            jac_calls[0] += 1
+            return 2. + 6. * x
+
+        result = differential_evolution(quadratic,
+                                        bounds,
+                                        polish=True,
+                                        minimizer_kwargs={"jac": quadratic_jac})
+        assert_almost_equal(result.fun, 2 / 3.)
+        assert jac_calls[0] > 0
+        assert jac_calls[0] == result.njev
