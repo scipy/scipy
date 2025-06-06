@@ -21,6 +21,7 @@
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator, Callable
 from functools import cache, lru_cache, partial
+from types import GenericAlias
 from typing import get_args, Literal
 
 import numpy as np
@@ -419,6 +420,9 @@ class ShortTimeFFT:
     _fac_mag: float | None = None
     _fac_psd: float | None = None
     _lower_border_end: tuple[int, int] | None = None
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, win: np.ndarray, hop: int, fs: float, *,
                  fft_mode: FFT_MODE_TYPE = 'onesided',
