@@ -6540,8 +6540,9 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     observed data against a theoretical t-distribution.
 
     It is also possible to compute the test statistic using a permutation test by
-    passing ``method=scipy.stats.PermutationMethod(n_resamples=permutations)``. When
-    ``1 < permutations < binom(n, k)``, where
+    passing ``method=scipy.stats.PermutationMethod(n_resamples=permutations)``,
+    where ``permutations`` is the desired number of "permutations" to use in
+    forming the null distribution. When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
     * ``n`` is the total number of observations in `a` and `b`, and
