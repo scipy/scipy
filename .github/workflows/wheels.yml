@@ -262,7 +262,7 @@ jobs:
             ${{ matrix.buildplat[2] }} ${{ matrix.buildplat[3] }}
             ${{ matrix.buildplat[4] }}
 
-      - uses: conda-incubator/setup-miniconda@3.2.0
+      - uses: conda-incubator/setup-miniconda@3.1.1
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org
