@@ -406,7 +406,7 @@ def test_from_matrix_array_like():
     r_expected = Rotation.random(rng=rng)
     r = Rotation.from_matrix(r_expected.as_matrix().tolist())
     assert r_expected.approx_equal(r, atol=1e-12)
-    
+
     # Multiple rotations
     r_expected = Rotation.random(3, rng=rng)
     r = Rotation.from_matrix(r_expected.as_matrix().tolist())
@@ -948,7 +948,7 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 
     # We can only warn on non-lazy backends because we'd need to condition on traced
     # booleans
-    with eager_warns(mat_expected, UserWarning, match="Gimbal lock"):
+    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
         angle_estimates = rotation.as_euler(seq, degrees=True)
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
@@ -978,7 +978,7 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
     mat_expected = rotation.as_matrix()
 
     # We can only warn on non-lazy backends
-    with eager_warns(mat_expected, UserWarning, match="Gimbal lock"):
+    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
         angle_estimates = rotation.as_euler(seq, degrees=True)
     mat_estimated = Rotation.from_euler(seq, angle_estimates, degrees=True).as_matrix()
 
@@ -1006,7 +1006,7 @@ def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    with eager_warns(rot, UserWarning, match="Gimbal lock"):
+    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
         estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
         estimates_quat = rot.as_euler(seq, degrees=True)
     xp_assert_close(
@@ -1035,9 +1035,9 @@ def test_as_euler_degenerate_compare_algorithms(xp, seq_tuple, intrinsic):
         seq = seq.upper()
 
     rot = Rotation.from_euler(seq, angles, degrees=True)
-    with eager_warns(rot, UserWarning, match="Gimbal lock"):
+    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
         estimates_matrix = rot._as_euler_from_matrix(seq, degrees=True)
-    with eager_warns(rot, UserWarning, match="Gimbal lock"):
+    with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
         estimates_quat = rot.as_euler(seq, degrees=True)
     xp_assert_close(
         estimates_matrix[:, [0, 2]], estimates_quat[:, [0, 2]], atol=0, rtol=1e-12
@@ -2316,7 +2316,7 @@ def test_as_davenport_degenerate(xp):
         for order in ['extrinsic', 'intrinsic']:
             ax = ax_lamb if order == 'intrinsic' else ax_lamb[::-1]
             rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
-            with eager_warns(rot, UserWarning, match="Gimbal lock"):
+            with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
                 angles_dav = rot.as_davenport(xp.asarray(ax), order)
             mat_expected = rot.as_matrix()
             rot_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav)

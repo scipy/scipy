@@ -104,7 +104,7 @@ class TestWhiten:
                           [0., 1., 0.34243798],
                           [0., 1., 0.96785929]])
 
-        with eager_warns(obs, RuntimeWarning, match="standard deviation zero"):
+        with eager_warns(RuntimeWarning, match="Some columns have standard...", xp=xp):
             actual = whiten(obs)
         xp_assert_close(actual, desired, rtol=1e-5)
 
