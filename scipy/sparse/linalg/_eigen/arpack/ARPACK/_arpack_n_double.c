@@ -456,8 +456,8 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
             for (k = 0; k < V->ncv; k++)
             {
                 temp = hypot(workl[iheigr+k], workl[iheigi+k]);
-                workl[iheigr+k] = workl[iheigr+k] / temp / temp + sigmar;
-                workl[iheigi+k] = workl[iheigi+k] / temp / temp + sigmai;
+                workl[iheigr+k] =  workl[iheigr+k] / temp / temp + sigmar;
+                workl[iheigi+k] = -workl[iheigi+k] / temp / temp + sigmai;
             }
             // 80
 
@@ -474,7 +474,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
     //  one of inverse subspace iteration. Only used
     //  for MODE = 2.
 
-    if ((rvec) && (howmny == 1) && (TYP == SHIFTI))
+    if ((rvec) && (howmny == 0) && (TYP == SHIFTI))
     {
 
         //  Purify the computed Ritz vectors by adding a
