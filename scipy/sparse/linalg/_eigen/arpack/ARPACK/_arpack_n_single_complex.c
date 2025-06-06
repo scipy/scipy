@@ -173,7 +173,7 @@ cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
             {
                 select[jj] = 1;
                 numcnv += 1;
-                if (jj > V->nconv) { reord = 1; }
+                if (jj > V->nconv - 1) { reord = 1; }
             }
         }
         // 11
