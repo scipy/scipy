@@ -8,17 +8,26 @@ with safe_import():
     from scipy.cluster.vq import kmeans, kmeans2, vq, whiten
 
 
-class HierarchyLinkage(Benchmark):
-    params = ['single', 'complete', 'average', 'weighted', 'centroid',
-              'median', 'ward']
-    param_names = ['method']
+class Linkage(XPBenchmark):
+    method = ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']
+    param_names = (*XPBenchmark.param_names, "method")
+    params = (*XPBenchmark.params, method)
 
     def __init__(self):
-        rnd = np.random.RandomState(0)
-        self.X = rnd.randn(2000, 2)
+        rng = np.random.default_rng(0)
+        self.y_np = rng.standard_normal((2000, 2))
 
-    def time_linkage(self, method):
-        linkage(self.X, method=method)
+    def setup(self, backend, method):
+        super().setup(backend, linkage, static_argnames="method")
+
+        y = self.xp.asarray(self.y_np)
+        self.y = self.synchronize(y)
+
+        if self.warmup:
+            self.func(self.y, method=method)
+
+    def time_linkage(self, backend, method):
+        self.func(self.y, method=method)
 
 
 class IsIsomorphic(XPBenchmark):
