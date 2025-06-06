@@ -5,7 +5,7 @@ from .common import Benchmark, XPBenchmark, is_xslow, safe_import
 
 with safe_import():
     from scipy.cluster.hierarchy import linkage, is_isomorphic
-    from scipy.cluster.vq import kmeans, kmeans2, vq
+    from scipy.cluster.vq import kmeans, kmeans2, vq, whiten
 
 
 class HierarchyLinkage(Benchmark):
@@ -100,3 +100,32 @@ class VQ(Benchmark):
 
     def time_vq(self, k, dtype):
         vq(self.obs, self.cbook)
+
+
+class Whiten(XPBenchmark):
+    # This is very slow and memory intensive, but necessary to
+    # let _most_ backends approach O(n*logn) behaviour.
+    # Note: memory usage = 8 * shape[0] * shape[1]
+    if is_xslow():
+        shape = [(10, 10), (100, 100), (1000, 1000), (10_000, 10_000)]
+    else:
+        shape = [(10, 10), (100, 100)]
+    # Skip cpu backends for shape greater than this. 
+    # They should all have reached O(n*logn) behaviour by then.
+    CPU_MAX_OBS = (1000, 1000)
+
+    param_names = (*XPBenchmark.param_names, "shape")
+    params = (*XPBenchmark.params, shape)
+
+    def setup(self, backend, shape):
+        super().setup(backend, whiten, static_argnames="check_finite")
+
+        rng = np.random.default_rng(0)
+        obs = self.xp.asarray(rng.uniform(0, 100.0, size=shape))
+        self.obs = self.synchronize(obs)
+
+        if self.warmup:
+            self.func(self.obs, check_finite=False)
+
+    def time_whiten(self, backend, shape):
+        self.func(self.obs, check_finite=False)
