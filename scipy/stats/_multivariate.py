@@ -1453,21 +1453,21 @@ for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
 _matt_doc_default_callparams = """\
 mean : array_like, optional
     Mean of the distribution (default: `None`)
-rowcov : array_like, optional
-    Among-row covariance matrix of the distribution (default: ``1``)
-colcov : array_like, optional
-    Among-column covariance matrix of the distribution (default: ``1```)
+row_spread : array_like, optional
+    Row-wise 2nd order raw central moment matrix of the distribution (default: ``1``)
+col_spread : array_like, optional
+    Column-wise 2nd order raw central moment matrix of the distribution (default: ``1```)
 df : scalar, optional
     Degrees of freedom (default: ``1``)
 """
 
 _matt_doc_callparams_note = """\
 If `mean` is set to `None` then a matrix of zeros is used for the mean.
-The dimensions of this matrix are inferred from the shape of `rowcov` and
-`colcov`, if these are provided, or set to ``1`` if ambiguous.
+The dimensions of this matrix are inferred from the shape of `row_spread` and
+`col_spread`, if these are provided, or set to ``1`` if ambiguous.
 
-`rowcov` and `colcov` can be two-dimensional array_likes specifying the
-covariance matrices directly. Alternatively, a one-dimensional array will
+`row_spread` and `col_spread` can be two-dimensional array_likes specifying the
+spread matrices directly. Alternatively, a one-dimensional array will
 be be interpreted as the entries of a diagonal matrix, and a scalar or
 zero-dimensional array will be interpreted as this value times the
 identity matrix.
@@ -1496,16 +1496,16 @@ class matrix_t_gen(multi_rv_generic):
     A matrix t-random variable.
 
     The `mean` keyword specifies the mean.
-    The `rowcov` keyword specifies the among-row covariance matrix.
-    The `colcov` keyword specifies the among-column covariance matrix.
+    The `row_spread` keyword specifies the row-wise spread matrix.
+    The `col_spread` keyword specifies the column-wise spread matrix.
 
     Methods
     -------
-    pdf(x, mean=None, rowcov=None, colcov=None)
+    pdf(x, mean=None, row_spread=None, col_spread=None)
         Probability density function.
-    logpdf(x, mean=None, rowcov=None, colcov=None)
+    logpdf(x, mean=None, row_spread=None, col_spread=None)
         Log of the probability density function.
-    rvs(mean=None, rowcov=1, colcov=1, df=1, size=1, random_state=None)
+    rvs(mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None)
         Draw random samples.
 
     Parameters
@@ -1517,10 +1517,10 @@ class matrix_t_gen(multi_rv_generic):
     -----
     %(_matt_doc_callparams_note)s
 
-    The covariance matrices specified by `rowcov` and `colcov` must be
+    The spread matrices specified by `row_spread` and `col_spread` must be
     (symmetric) positive definite. If the samples in `X` have shape `(m,n)`
-    then `rowcov` must have shape `(m,m)` and `colcov` must have shape `(n,n)`.
-    Covariance matrices must be full rank.
+    then `row_spread` must have shape `(m,m)` and `col_spread` must have shape `(n,n)`.
+    Spread matrices must be full rank.
 
     The probability density function for `matrix_t` is
 
@@ -1569,11 +1569,11 @@ class matrix_t_gen(multi_rv_generic):
         }
 
     where :math:`\mathrm{M}` is the mean,
-    :math:`\Sigma` is the among-row covariance matrix,
-    :math:`\Omega` is the among-column covariance matrix,
+    :math:`\Sigma` is the row-wise spread matrix,
+    :math:`\Omega` is the column-wise matrix,
     and :math:`\mathrm{df}` is the degrees of freedom.
 
-    When :math:`\mathrm{df} = 1` this distribution is known as the matrix 
+    When :math:`\mathrm{df} = 1` this distribution is known as the matrix
     variate Cauchy.
 
     .. versionadded:: 1.16.0
@@ -1605,16 +1605,16 @@ class matrix_t_gen(multi_rv_generic):
            [ 4.1,  5.1]])
     >>> df = 3; df
     3
-    >>> matrix_t.pdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
+    >>> matrix_t.pdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
     0.9972880280135796
 
     Alternatively, the object may be called (as a function) to fix the mean
-    and covariance parameters, returning a "frozen" matrix t
+    and spread parameters, returning a "frozen" matrix t
     random variable:
 
-    >>> rv = matrix_t(mean=None, rowcov=1, colcov=1, df=1)
+    >>> rv = matrix_t(mean=None, row_spread=1, col_spread=1, df=1)
     >>> # Frozen object with the same methods but holding the given
-    >>> # mean and covariance and degrees of freedom fixed.
+    >>> # mean and spreads and degrees of freedom fixed.
     """
 
     def __init__(self, seed=None):
@@ -1623,14 +1623,14 @@ class matrix_t_gen(multi_rv_generic):
             self.__doc__, matrix_t_docdict_params
         )
 
-    def __call__(self, mean=None, rowcov=None, colcov=None, df=None, seed=None):
+    def __call__(self, mean=None, row_spread=None, col_spread=None, df=None, seed=None):
         """Create a frozen matrix t distribution.
 
         See `matrix_t_frozen` for more information.
         """
-        return matrix_t_frozen(mean, rowcov, colcov, df, seed)
+        return matrix_t_frozen(mean, row_spread, col_spread, df, seed)
 
-    def _process_parameters(self, mean, rowcov, colcov, df):
+    def _process_parameters(self, mean, row_spread, col_spread, df):
         """
         Infer dimensionality from mean or covariance matrices.
         Handle defaults. Ensure conformality.
@@ -1639,10 +1639,10 @@ class matrix_t_gen(multi_rv_generic):
         ----------
         mean : ndarray, shape (m,n)
             Mean of the distribution
-        rowcov : ndarray, shape (m,m)
-            Among-row covariance matrix
-        colcov : ndarray, shape (n,n)
-            Among-column covariance matrix
+        row_spread : ndarray, shape (m,m)
+            Row-wise spread matrix
+        col_spread : ndarray, shape (n,n)
+            Column-wise spread matrix
         df : float
             Degrees of freedom
         """
@@ -1656,55 +1656,55 @@ class matrix_t_gen(multi_rv_generic):
             if len(meanshape) != 2:
                 raise ValueError("Array `mean` must be 2D.")
 
-        # Process among-row 2nd moment
-        rowcov = np.asarray(rowcov, dtype=float)
-        if rowcov.ndim == 0:
-            if np.isnan(rowcov).any():
-                rowcov = np.identity(1)
+        # Process row-wise spread
+        row_spread = np.asarray(row_spread, dtype=float)
+        if row_spread.ndim == 0:
+            if np.isnan(row_spread).any():
+                row_spread = np.identity(1)
             if mean is not None:
-                rowcov = rowcov * np.identity(meanshape[0])
+                row_spread = row_spread * np.identity(meanshape[0])
             else:
-                rowcov = rowcov * np.identity(1)
-        elif rowcov.ndim == 1:
-            rowcov = np.diag(rowcov)
-        rowshape = rowcov.shape
+                row_spread = row_spread * np.identity(1)
+        elif row_spread.ndim == 1:
+            row_spread = np.diag(row_spread)
+        rowshape = row_spread.shape
         if 0 in rowshape:
-            raise ValueError("Array `rowcov` has invalid shape.")
+            raise ValueError("Array `row_spread` has invalid shape.")
         if len(rowshape) != 2:
-            raise ValueError("Array `rowcov` must be a scalar or a 2D array.")
+            raise ValueError("Array `row_spread` must be a scalar or a 2D array.")
         if rowshape[0] != rowshape[1]:
-            raise ValueError("Array `rowcov` must be square.")
+            raise ValueError("Array `row_spread` must be square.")
         numrows = rowshape[0]
 
-        # Process among-column 2nd moment
-        colcov = np.asarray(colcov, dtype=float)
-        if colcov.ndim == 0:
-            if np.isnan(colcov).any():
-                colcov = np.identity(1)
+        # Process column-wise spread
+        col_spread = np.asarray(col_spread, dtype=float)
+        if col_spread.ndim == 0:
+            if np.isnan(col_spread).any():
+                col_spread = np.identity(1)
             if mean is not None:
-                colcov = colcov * np.identity(meanshape[1])
+                col_spread = col_spread * np.identity(meanshape[1])
             else:
-                colcov = colcov * np.identity(1)
-        elif colcov.ndim == 1:
-            colcov = np.diag(colcov)
-        colshape = colcov.shape
+                col_spread = col_spread * np.identity(1)
+        elif col_spread.ndim == 1:
+            col_spread = np.diag(col_spread)
+        colshape = col_spread.shape
         if 0 in colshape:
-            raise ValueError("Array `colcov` has invalid shape.")
+            raise ValueError("Array `col_spread` has invalid shape.")
         if len(colshape) != 2:
-            raise ValueError("Array `colcov` must be a scalar or a 2D array.")
+            raise ValueError("Array `col_spread` must be a scalar or a 2D array.")
         if colshape[0] != colshape[1]:
-            raise ValueError("Array `colcov` must be square.")
+            raise ValueError("Array `col_spread` must be square.")
         numcols = colshape[0]
 
-        # Ensure mean and 2nd moments are conformal
+        # Ensure mean and spreads are conformal
         if mean is not None:
             if meanshape[0] != numrows:
                 raise ValueError(
-                    "Arrays `mean` and `rowcov` must have the same number of rows."
+                    "Arrays `mean` and `row_spread` must have the same number of rows."
                 )
             if meanshape[1] != numcols:
                 raise ValueError(
-                    "Arrays `mean` and `colcov` must have the same number of columns."
+                    "Arrays `mean` and `col_spread` must have the same number of columns."
                 )
         else:
             mean = np.zeros((numrows, numcols))
@@ -1718,7 +1718,7 @@ class matrix_t_gen(multi_rv_generic):
         elif df <= 0:
             raise ValueError("Degrees of freedom must be positive.")
 
-        return dims, mean, rowcov, colcov, df
+        return dims, mean, row_spread, col_spread, df
 
     def _process_quantiles(self, X, dims):
         """
@@ -1736,8 +1736,16 @@ class matrix_t_gen(multi_rv_generic):
         return X
 
     def _logpdf(
-            self, dims, X, mean, df, invrowcov, invcolcov, logdetrowcov, logdetcolcov
-        ):
+        self,
+        dims,
+        X,
+        mean,
+        df,
+        invrow_spread,
+        invcol_spread,
+        logdetrow_spread,
+        logdetcol_spread,
+    ):
         """
         Log of the matrix t probability density function.
 
@@ -1751,14 +1759,14 @@ class matrix_t_gen(multi_rv_generic):
             Mean of the distribution
         df : float
             Degrees-of-freedom parameter
-        invrowcov : ndarray, shape (m,m)
-            Inverse of the among-row covariance matrix
-        invcolcov : ndarray, shape (n,n)
-            Inverse of the among-column covariance matrix
-        logdetrowcov : float
-            Log-determinant of the among-row covariance matrix
-        detcolcov : float
-            Log-determinant of the among-column covariance matrix
+        invrow_spread : ndarray, shape (m,m)
+            Inverse of the row-wise spread matrix
+        invcol_spread : ndarray, shape (n,n)
+            Inverse of the column-wise spread matrix
+        logdetrow_spread : float
+            Log-determinant of the row-wise spread matrix
+        detcol_spread : float
+            Log-determinant of the column-wise spread matrix
 
         Notes
         -----
@@ -1773,9 +1781,9 @@ class matrix_t_gen(multi_rv_generic):
         det_arg = np.identity(n) + np.einsum(
             "nij,njk,nkl,nlp->nip",
             X_centered.transpose(0, 2, 1),
-            invrowcov[np.newaxis, ...],
+            invrow_spread[np.newaxis, ...],
             X_centered,
-            invcolcov[np.newaxis, ...],
+            invcol_spread[np.newaxis, ...],
             optimize=True,
         )
         _, logdet = np.linalg.slogdet(det_arg)
@@ -1784,15 +1792,15 @@ class matrix_t_gen(multi_rv_generic):
             scipy.special.multigammaln((df + m + n - 1) / 2, n)
             - scipy.special.multigammaln((df + n - 1) / 2, n)
             - (m * n / 2) * _LOG_PI
-            - (n / 2) * logdetrowcov
-            - (m / 2) * logdetcolcov
+            - (n / 2) * logdetrow_spread
+            - (m / 2) * logdetcol_spread
         )
         retval = log_d_mn + log_f_mn
         if len(X_shape) > 3:
             retval = retval.reshape(X_shape[:-2])
         return retval
 
-    def logpdf(self, X, mean=None, rowcov=1, colcov=1, df=1):
+    def logpdf(self, X, mean=None, row_spread=1, col_spread=1, df=1):
         """Log of the matrix normal probability density function.
 
         Parameters
@@ -1832,25 +1840,32 @@ class matrix_t_gen(multi_rv_generic):
             [ 4.1,  5.1]])
         >>> df = 3; df
         3
-        >>> matrix_t.logpdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
+        >>> matrix_t.logpdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
         -0.002715656044664061
         """
-        dims, mean, rowcov, colcov, df = self._process_parameters(
-            mean, rowcov, colcov, df
+        dims, mean, row_spread, col_spread, df = self._process_parameters(
+            mean, row_spread, col_spread, df
         )
         X = self._process_quantiles(X, dims)
-        rowpsd = _PSD(rowcov, allow_singular=False)
-        colpsd = _PSD(colcov, allow_singular=False)
-        invrowcov = rowpsd.pinv
-        invcolcov = colpsd.pinv
-        logdetrowcov = rowpsd.log_pdet
-        logdetcolcov = colpsd.log_pdet
+        rowpsd = _PSD(row_spread, allow_singular=False)
+        colpsd = _PSD(col_spread, allow_singular=False)
+        invrow_spread = rowpsd.pinv
+        invcol_spread = colpsd.pinv
+        logdetrow_spread = rowpsd.log_pdet
+        logdetcol_spread = colpsd.log_pdet
         out = self._logpdf(
-            dims, X, mean, df, invrowcov, invcolcov, logdetrowcov, logdetcolcov
+            dims,
+            X,
+            mean,
+            df,
+            invrow_spread,
+            invcol_spread,
+            logdetrow_spread,
+            logdetcol_spread,
         )
         return _squeeze_output(out)
 
-    def pdf(self, X, mean=None, rowcov=1, colcov=1, df=1):
+    def pdf(self, X, mean=None, row_spread=1, col_spread=1, df=1):
         """Matrix t probability density function.
 
         Parameters
@@ -1890,13 +1905,13 @@ class matrix_t_gen(multi_rv_generic):
             [ 4.1,  5.1]])
         >>> df = 3; df
         3
-        >>> matrix_t.logpdf(X, mean=M, rowcov=Sigma, colcov=Omega, df=df)
+        >>> matrix_t.logpdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
         0.9972880280135796
         """
-        return np.exp(self.logpdf(X, mean, rowcov, colcov, df))
+        return np.exp(self.logpdf(X, mean, row_spread, col_spread, df))
 
     def rvs(
-        self, mean=None, rowcov=1, colcov=1, df=1, size=1, random_state=None
+        self, mean=None, row_spread=1, col_spread=1, df=1, size=1, random_state=None
     ) -> np.ndarray:
         """Draw random samples from a matrix t distribution.
 
@@ -1918,8 +1933,8 @@ class matrix_t_gen(multi_rv_generic):
         %(_matt_doc_callparams_note)s
         """
         size = int(size)
-        dims, mean, rowcov, colcov, df = self._process_parameters(
-            mean, rowcov, colcov, df
+        dims, mean, row_spread, col_spread, df = self._process_parameters(
+            mean, row_spread, col_spread, df
         )
         random_state = self._get_random_state(random_state)
         # see scipy.stats.matrix_normal.rvs around line 1320
@@ -1927,14 +1942,12 @@ class matrix_t_gen(multi_rv_generic):
             size=(dims[1], size, dims[0])
         ).transpose(1, 2, 0)
         if dims[0] <= dims[1]:
-            rowchol = _cholesky_invwishart_rvs(df, rowcov, size, random_state)
-            colchol = scipy.linalg.cholesky(colcov, lower=True)[np.newaxis, ...]
+            rowchol = _cholesky_invwishart_rvs(df, row_spread, size, random_state)
+            colchol = scipy.linalg.cholesky(col_spread, lower=True)[np.newaxis, ...]
         else:
-            rowchol = scipy.linalg.cholesky(rowcov, lower=True)[np.newaxis, ...]
-            colchol = _cholesky_invwishart_rvs(df, colcov, size, random_state)
-        t_raw = np.einsum(
-            "ijp,ipq,ikq->ijk", rowchol, std_norm, colchol, optimize=True
-        )
+            rowchol = scipy.linalg.cholesky(row_spread, lower=True)[np.newaxis, ...]
+            colchol = _cholesky_invwishart_rvs(df, col_spread, size, random_state)
+        t_raw = np.einsum("ijp,ipq,ikq->ijk", rowchol, std_norm, colchol, optimize=True)
         t_centered = mean[np.newaxis, ...] + t_raw
         if size == 1:
             t_centered = t_centered.reshape(mean.shape)
@@ -1945,25 +1958,32 @@ matrix_t = matrix_t_gen()
 
 
 class matrix_t_frozen:
-    def __init__(self, mean, rowcov, colcov, df, seed=None):
+    def __init__(self, mean, row_spread, col_spread, df, seed=None):
         self._dist = matrix_t_gen(seed)
-        self.dims, self.mean, self.rowcov, self.colcov, self.df = \
-            self._dist._process_parameters(mean, rowcov, colcov, df)
+        self.dims, self.mean, self.row_spread, self.col_spread, self.df = (
+            self._dist._process_parameters(mean, row_spread, col_spread, df)
+        )
         self._random_state = np.random.RandomState(seed)
-        self.rowpsd = _PSD(self.rowcov, allow_singular=False)
-        self.colpsd = _PSD(self.colcov, allow_singular=False)
+        self.rowpsd = _PSD(self.row_spread, allow_singular=False)
+        self.colpsd = _PSD(self.col_spread, allow_singular=False)
 
     def logpdf(self, X):
         X = self._dist._process_quantiles(X, self.dims)
-        rowpsd = _PSD(self.rowcov, allow_singular=False)
-        colpsd = _PSD(self.colcov, allow_singular=False)
-        invrowcov = rowpsd.pinv
-        invcolcov = colpsd.pinv
-        logdetrowcov = rowpsd.log_pdet
-        logdetcolcov = colpsd.log_pdet
+        rowpsd = _PSD(self.row_spread, allow_singular=False)
+        colpsd = _PSD(self.col_spread, allow_singular=False)
+        invrow_spread = rowpsd.pinv
+        invcol_spread = colpsd.pinv
+        logdetrow_spread = rowpsd.log_pdet
+        logdetcol_spread = colpsd.log_pdet
         out = self._dist._logpdf(
-            self.dims, X, self.mean, self.df, invrowcov, invcolcov,
-            logdetrowcov, logdetcolcov
+            self.dims,
+            X,
+            self.mean,
+            self.df,
+            invrow_spread,
+            invcol_spread,
+            logdetrow_spread,
+            logdetcol_spread,
         )
         return _squeeze_output(out)
 
@@ -1972,7 +1992,7 @@ class matrix_t_frozen:
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(
-            self.mean, self.rowcov, self.colcov, self.df, size, random_state
+            self.mean, self.row_spread, self.col_spread, self.df, size, random_state
         )
 
 
@@ -1987,6 +2007,7 @@ for name in ["logpdf", "pdf", "rvs"]:
     method.__doc__ = scipy._lib.doccer.docformat(
         method.__doc__, matrix_t_docdict_params
     )
+
 
 
 def _cholesky_invwishart_rvs(

@@ -504,8 +504,8 @@ class MatrixSampling(Benchmark):
                              size=size, random_state=self.rng)
         
     def time_matrix_t(self, size):
-        stats.matrix_t.rvs(mean=self.M, rowcov=self.U, 
-                           colcov=self.V, df=self.df, size=size, random_state=self.rng)
+        stats.matrix_t.rvs(mean=self.M, row_spread=self.U, col_spread=self.V,
+                           df=self.df, size=size, random_state=self.rng)
 
 
 class BinnedStatisticDD(Benchmark):
