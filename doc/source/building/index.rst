@@ -278,7 +278,7 @@ Building from source to use SciPy
 
 
 
-.. _the-dev-py-interface:
+.. _the-spin-interface:
 
 Building from source for SciPy development
 ``````````````````````````````````````````

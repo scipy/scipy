@@ -3230,7 +3230,6 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([]), [])
 
 
-@skip_xp_backends("dask.array", reason='data-apis/array-api-extra#196')
 class TestCommonAxis:
     # More thorough testing of `axis` in `test_axis_nan_policy`,
     # but those tests aren't run with array API yet. This class

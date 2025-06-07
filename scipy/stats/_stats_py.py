@@ -73,6 +73,7 @@ from scipy._lib._array_api import (
     _asarray,
     array_namespace,
     is_lazy_array,
+    is_dask,
     is_numpy,
     is_cupy,
     xp_size,
@@ -84,6 +85,7 @@ from scipy._lib._array_api import (
     _share_masks,
     xp_swapaxes,
     xp_default_dtype,
+    xp_device,
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -682,7 +684,8 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     a, mask = _put_val_to_limits(a, limits, inclusive, val=0., xp=xp)
     # explicit dtype specification required due to data-apis/array-api-compat#152
     sum = xp.sum(a, axis=axis, dtype=a.dtype)
-    n = xp.sum(xp.asarray(~mask, dtype=a.dtype), axis=axis, dtype=a.dtype)
+    n = xp.sum(xp.asarray(~mask, dtype=a.dtype, device=xp_device(a)), axis=axis,
+               dtype=a.dtype)
     mean = xpx.apply_where(n != 0, (sum, n), operator.truediv, fill_value=xp.nan)
     return mean[()] if mean.ndim == 0 else mean
 
@@ -1122,7 +1125,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 
     a = xp_promote(a, force_floating=True, xp=xp)
 
-    order = xp.asarray(order, dtype=a.dtype)
+    order = xp.asarray(order, dtype=a.dtype, device=xp_device(a))
     if xp_size(order) == 0:
         # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
         # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
@@ -1169,7 +1172,10 @@ def _demean(a, mean, axis, *, xp, precision_warning=True):
 
     n = _length_nonmasked(a, axis, xp=xp)
     with np.errstate(invalid='ignore'):
-        precision_loss = xp.any(xp.asarray(rel_diff < eps) & xp.asarray(n > 1))
+        # Old NumPy doesn't accept `device` arg
+        device = {} if xp is np and np.__version__ < '2.0' else {'device': xp_device(a)}
+        precision_loss = xp.any(xp.asarray(rel_diff < eps, **device)
+                                & xp.asarray(n > 1, **device))
 
     if precision_loss:
         message = ("Precision loss occurred in moment calculation due to "
@@ -1201,8 +1207,8 @@ def _moment(a, order, axis, *, mean=None, xp=None):
         shape = list(a.shape)
         del shape[axis]
 
-        temp = (xp.ones(shape, dtype=dtype) if order == 0
-                else xp.zeros(shape, dtype=dtype))
+        temp = (xp.ones(shape, dtype=dtype, device=xp_device(a)) if order == 0
+                else xp.zeros(shape, dtype=dtype, device=xp_device(a)))
         return temp[()] if temp.ndim == 0 else temp
 
     # Exponentiation by squares: form exponent sequence
@@ -1240,7 +1246,8 @@ def _var(x, axis=0, ddof=0, mean=None, xp=None):
     var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
         n = _length_nonmasked(x, axis, xp=xp)
-        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
+        n = xp.asarray(n, dtype=x.dtype, device=xp_device(x))
+        var *= (n / (n-ddof))  # to avoid error on division by zero
     return var
 
 
@@ -1546,7 +1553,8 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         raise ValueError("The input must not be empty.")
 
     # use xp.astype when data-apis/array-api-compat#226 is resolved
-    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64)
+    n = xp.asarray(_length_nonmasked(a, axis, xp=xp), dtype=xp.int64,
+                   device=xp_device(a))
     n = n[()] if n.ndim == 0 else n
     mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
     m = xp.mean(a, axis=axis)
@@ -1667,7 +1675,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = skew(a, axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype)
+    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 8).set(xp.nan)
     if xp.any(xp.isnan(n)):
         message = ("`skewtest` requires at least 8 valid observations;"
@@ -1772,7 +1780,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype)
+    n = xp.asarray(_length_nonmasked(a, axis), dtype=b2.dtype, device=xp_device(a))
     n = xpx.at(n, n < 5).set(xp.nan)
     if xp.any(xp.isnan(n)):
         message = ("`kurtosistest` requires at least 5 valid observations; "
@@ -1876,7 +1884,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     k, _ = kurtosistest(a, axis, _no_deco=True)
     statistic = s*s + k*k
 
-    chi2 = _SimpleChi2(xp.asarray(2., dtype=statistic.dtype))
+    chi2 = _SimpleChi2(xp.asarray(2., dtype=statistic.dtype, device=xp_device(a)))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
     statistic = statistic[()] if statistic.ndim == 0 else statistic
@@ -1952,10 +1960,10 @@ def jarque_bera(x, *, axis=None):
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
 
-    n = xp.asarray(_length_nonmasked(x, axis), dtype=mu.dtype)
+    n = xp.asarray(_length_nonmasked(x, axis), dtype=mu.dtype, device=xp_device(x))
     statistic = n / 6 * (s**2 + k**2 / 4)
 
-    chi2 = _SimpleChi2(xp.asarray(2., dtype=mu.dtype))
+    chi2 = _SimpleChi2(xp.asarray(2., dtype=mu.dtype, device=xp_device(x)))
     pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
     statistic = statistic[()] if statistic.ndim == 0 else statistic
@@ -4221,8 +4229,8 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     xp = array_namespace(r)
 
     ones = xp.ones_like(r)
-    n = xp.asarray(n, dtype=r.dtype)
-    confidence_level = xp.asarray(confidence_level, dtype=r.dtype)
+    n = xp.asarray(n, dtype=r.dtype, device=xp_device(r))
+    confidence_level = xp.asarray(confidence_level, dtype=r.dtype, device=xp_device(r))
 
     with np.errstate(divide='ignore', invalid='ignore'):
         zr = xp.atanh(r)
@@ -4247,6 +4255,10 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         rhi = ones
 
     mask = (n <= 3)
+    if mask.ndim == 0:
+        # This is Array API legal, but Dask doesn't like it.
+        mask = xp.broadcast_to(mask, rlo.shape)
+
     rlo = xpx.at(rlo)[mask].set(-1)
     rhi = xpx.at(rhi)[mask].set(1)
 
@@ -4370,9 +4382,8 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-@xp_capabilities(skip_backends = [('dask.array', 'data-apis/array-api-extra#196')],
-                 cpu_only=True, exceptions=['cupy'],
-                 jax_jit=False, allow_dask_compute=True)
+# Missing special.betainc on torch
+@xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -4689,10 +4700,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     const_x = xp.all(x == x[..., 0:1], axis=-1)
     const_y = xp.all(y == y[..., 0:1], axis=-1)
     const_xy = const_x | const_y
-    if xp.any(const_xy):
+
+    any_const_xy = xp.any(const_xy)
+    lazy = is_lazy_array(const_xy)
+    if not lazy and any_const_xy:
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
+    if lazy or any_const_xy:
         x = xp.where(const_x[..., xp.newaxis], xp.nan, x)
         y = xp.where(const_y[..., xp.newaxis], xp.nan, y)
 
@@ -4747,16 +4762,17 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         normxm = xmax * xp_vector_norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * xp_vector_norm(ym/ymax, axis=axis, keepdims=True)
 
-    nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
-    nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
-    nconst_xy = nconst_x | nconst_y
-    if xp.any(nconst_xy & (~const_xy)):
-        # If all the values in x (likewise y) are very close to the mean,
-        # the loss of precision that occurs in the subtraction xm = x - xmean
-        # might result in large errors in r.
-        msg = ("An input array is nearly constant; the computed "
-               "correlation coefficient may be inaccurate.")
-        warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
+    if not lazy:
+        nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
+        nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
+        nconst_xy = nconst_x | nconst_y
+        if xp.any(nconst_xy & (~const_xy)):
+            # If all the values in x (likewise y) are very close to the mean,
+            # the loss of precision that occurs in the subtraction xm = x - xmean
+            # might result in large errors in r.
+            msg = ("An input array is nearly constant; the computed "
+                "correlation coefficient may be inaccurate.")
+            warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
         r = xp.vecdot(xm / normxm, ym / normym, axis=axis)
@@ -4768,13 +4784,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    ab = xp.asarray(n/2 - 1)
+    ab = xp.asarray(n/2 - 1, dtype=dtype, device=xp_device(x))
     dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
     pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     mask = (n == 2)   #  return exactly 1.0 or -1.0 values for n == 2 case as promised
-    def special_case(r): return xp.where(xp.isnan(r), xp.nan, xp.ones_like(r))
-    r = xpx.apply_where(mask, (r,), xp.round, fill_value=r)
+    # data-apis/array-api-extra#196
+    mxp = array_namespace(r._meta) if is_dask(xp) else xp    
+    def special_case(r):
+        return mxp.where(mxp.isnan(r), mxp.nan, mxp.ones_like(r))
+    r = xpx.apply_where(mask, r, mxp.round, fill_value=r)
     pvalue = xpx.apply_where(mask, (r,), special_case, fill_value=pvalue)
 
     r = r[()] if r.ndim == 0 else r
@@ -6177,6 +6196,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
 
     """
     xp = array_namespace(a)
+    a, popmean = xp_promote(a, popmean, force_floating=True, xp=xp)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = _length_nonmasked(a, axis)
@@ -6203,12 +6223,12 @@ def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sid
         t = xp.divide(d, denom)
         t = t[()] if t.ndim == 0 else t
 
-    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype, device=xp_device(a)))
     prob = _get_pvalue(t, dist, alternative, xp=xp)
     prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
-    df = xp.broadcast_to(xp.asarray(df), t.shape)
+    df = xp.broadcast_to(xp.asarray(df, device=xp_device(a)), t.shape)
     df = df[()] if df.ndim == 0 else df
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
@@ -6227,7 +6247,7 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
 
-    confidence_level = xp.asarray(confidence_level, dtype=dtype)
+    confidence_level = xp.asarray(confidence_level, dtype=dtype, device=xp_device(t))
     inf = xp.asarray(xp.inf, dtype=dtype)
 
     if alternative < 0:  # 'less'
@@ -6240,11 +6260,11 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
         tail_probability = (1 - confidence_level)/2
         p = xp.stack((tail_probability, 1-tail_probability))
         # axis of p must be the zeroth and orthogonal to all the rest
-        p = xp.reshape(p, tuple([2] + [1]*xp.asarray(df).ndim))
+        p = xp.reshape(p, tuple([2] + [1]*xp.asarray(df, device=xp_device(t)).ndim))
         ci = special.stdtrit(df, p)
         low, high = ci[0, ...], ci[1, ...]
     else:  # alternative is NaN when input is empty (see _axis_nan_policy)
-        nan = xp.asarray(xp.nan)
+        nan = xp.asarray(xp.nan, device=xp_device(t))
         p, nans = xp.broadcast_arrays(t, nan)
         low, high = nans, nans
 
@@ -6262,7 +6282,7 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative, xp=None):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = xp.divide(d, denom)
 
-    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype, device=xp_device(t)))
     prob = _get_pvalue(t, dist, alternative, xp=xp)
     prob = prob[()] if prob.ndim == 0 else prob
 
@@ -7332,8 +7352,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
 
 def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
-    xp = array_namespace(f_obs, f_exp)
-    f_obs, f_exp = xp_promote(f_obs, f_exp, force_floating=True, xp=xp)
+    xp = array_namespace(f_obs, f_exp, ddof)
+    f_obs, f_exp, ddof = xp_promote(f_obs, f_exp, ddof,
+                                    force_floating=True, xp=xp)
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
@@ -7395,7 +7416,8 @@ def _power_divergence(f_obs, f_exp, ddof, axis, lambda_, sum_check=True):
 
     stat = xp.sum(terms, axis=axis)
 
-    num_obs = xp.asarray(_length_nonmasked(terms, axis))
+    num_obs = xp.asarray(_length_nonmasked(terms, axis), device=xp_device(terms),
+                         dtype=f_obs.dtype)
 
     df = num_obs - 1 - ddof
     chi2 = _SimpleChi2(df)
@@ -9032,7 +9054,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None, *, axis=0):
         return SignificanceResult(NaN, NaN)
 
     n = _length_nonmasked(pvalues, axis)
-    n = xp.asarray(n, dtype=pvalues.dtype)
+    n = xp.asarray(n, dtype=pvalues.dtype, device=xp_device(pvalues))
 
     if method == 'fisher':
         statistic = -2 * xp.sum(xp.log(pvalues), axis=axis)
@@ -10946,7 +10968,7 @@ def _xp_var(x, /, *, axis=None, correction=0, keepdims=False, nan_policy='propag
         # axis = range(x.ndim) if axis is None else axis
         # n = math.prod(x.shape[i] for i in axis) if iterable(axis) else x.shape[axis]
 
-        n = xp.asarray(n, dtype=var.dtype)
+        n = xp.asarray(n, dtype=var.dtype, device=xp_device(x))
 
         if nan_policy == 'omit':
             nan_mask = xp.astype(xp.isnan(x), var.dtype)
