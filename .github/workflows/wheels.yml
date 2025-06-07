@@ -248,9 +248,7 @@ jobs:
           
           copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
 
-
           set "PKG_CONFIG_PATH=%GITHUB_WORKSPACE%"
-  
 
           set "LLVM_LIB_DIRS=C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib"
           set "LIB=%LLVM_LIB_DIRS%;%LIB%"
