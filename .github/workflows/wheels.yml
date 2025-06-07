@@ -87,8 +87,8 @@ jobs:
         # - [macos-13, macosx, x86_64, accelerate, "14.0"]
         # - [macos-14, macosx, arm64, openblas, "12.3"]
         # - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2022, win_amd64, AMD64, ""]
-        - [windows-11-arm, win_arm64, ARM64, "", ""]
+        - [windows-2022, win, AMD64, ""]
+        - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp312", "3.12"]]
         # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -115,7 +115,7 @@ jobs:
           # mingw-w64
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-        if: ${{ matrix.buildplat[1] == 'win_amd64' }}
+        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
 
       - name: windows - set PKG_CONFIG_PATH
         if: ${{ runner.os == 'Windows' }}
@@ -213,55 +213,38 @@ jobs:
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
+      - name: Build wheels
+        if: matrix.buildplat[1] != 'win' && matrix.buildplat[2] != 'ARM64' # Skip for win_arm64 for manual build
+        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
+        env:
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ENABLE: cpython-freethreading cpython-prerelease
+
       - name: Install LLVM for win_arm64
-        if: matrix.buildplat[1] == 'win_arm64'
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         uses: KyleMayes/install-llvm-action@v2
         id: install_llvm
         with:
           version: 20.1.6
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
-          env: false # Do not set CC/CXX by the action
-
-      - name: Build wheels
-        if: matrix.buildplat[1] != 'win_arm64' # Skip for win_arm64, handled manually below
-        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
-        env:
-          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
-          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_ENABLE: cpython-freethreading cpython-prerelease
-          CIBW_PLATFORM: ${{ (matrix.buildplat[1] == 'win_arm64' && 'windows') || 'auto' }}
+          env: false # Do not set CC/CXX by the action          
 
       - name: Build wheel for win_arm64 manually
-        if: matrix.buildplat[1] == 'win_arm64'
+        if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: cmd
         run: |
           echo "Attempting to initialize MSVC ARM64 environment..."
           CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
 
-          echo "Setting up environment for win_arm64 manual build"
           pip install build wheel delvewheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
-
-          echo "Generating scipy-openblas.pc"
           python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
           
-          echo "Setting VCPKG_ROOT..."
           set VCPKG_ROOT=C:\vcpkg
-          echo "VCPKG_ROOT is %VCPKG_ROOT%"
-
           vcpkg install pkgconf
-
-          echo "Adding pkgconf to PATH..."
           set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
-          echo "Updated PATH is %PATH%"
-
-          echo "Copying pkgconf.exe to pkg-config.exe"
           copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
-
-          echo "Listing contents of C:\Program Files\LLVM\lib\"
-          dir "C:\Program Files\LLVM\lib\"
-
-          echo "Copying FortranRuntime.static.lib to FortranRuntime.lib"
+          
           copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
 
           echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
@@ -270,15 +253,10 @@ jobs:
           set "PKG_CONFIG_PATH=%PKG_CONFIG_PATH_VALUE%"
           echo "PKG_CONFIG_PATH is %PKG_CONFIG_PATH%"
 
-          echo "Original LIB: %LIB%"
-          echo "Original LIBPATH: %LIBPATH%"
           set "LLVM_LIB_DIRS=C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib"
           set "LIB=%LLVM_LIB_DIRS%;%LIB%"
           set "LIBPATH=%LLVM_LIB_DIRS%;%LIBPATH%"
-          echo "Updated LIB: %LIB%"
-          echo "Updated LIBPATH: %LIBPATH%"
 
-          echo "Setting compiler environment variables..."
           set CC=clang-cl
           set CXX=clang-cl
           set FC=flang
@@ -286,14 +264,6 @@ jobs:
           echo "CXX is %CXX%"
           echo "FC is %FC%"
 
-          echo "Verifying selected C compiler (CC):"
-          "%CC%" --version || echo "Specified CC (%CC%) --version failed"
-          echo "Verifying selected CXX compiler (CXX):"
-          "%CXX%" --version || echo "Specified CXX (%CXX%) --version failed"
-          echo "Verifying selected Fortran compiler (FC=flang from action-installed LLVM):"
-          flang --version || echo "flang from action-installed LLVM --version failed"
-
-          echo "Building wheel for win_arm64..."
           python -m build --wheel --no-isolation -o wheelhouse .
 
       - name: Rename macOS wheels
@@ -323,7 +293,7 @@ jobs:
           python-version: "3.11"
           miniforge-version: latest
           conda-remove-defaults: "true"
-          architecture: ${{ matrix.buildplat[1] == 'win_arm64' && 'x64' || '' }}
+          architecture: ${{ (matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64') && 'x64' || '' }}
 
       - name: Upload wheels
         if: success()
