@@ -220,6 +220,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
 
+      # can be remove after https://github.com/actions/partner-runner-images/issues/90
       - name: Install LLVM for win_arm64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         uses: KyleMayes/install-llvm-action@v2
@@ -229,6 +230,7 @@ jobs:
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
           env: false # Do not set CC/CXX by the action          
 
+      # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
       - name: Build wheel for win_arm64 manually
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: cmd
@@ -246,11 +248,7 @@ jobs:
           
           copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
 
-          echo "Original GITHUB_WORKSPACE: %GITHUB_WORKSPACE%"
-          set GITHUB_WORKSPACE_PATH_TEMP=%GITHUB_WORKSPACE%
-          for /f "delims=" %%i in ('powershell -Command "$env:GITHUB_WORKSPACE_PATH_TEMP.Replace('\','/')"') do set PKG_CONFIG_PATH_VALUE=%%i
-          set "PKG_CONFIG_PATH=%PKG_CONFIG_PATH_VALUE%"
-          echo "PKG_CONFIG_PATH is %PKG_CONFIG_PATH%"
+
 
           set "LLVM_LIB_DIRS=C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib"
           set "LIB=%LLVM_LIB_DIRS%;%LIB%"
