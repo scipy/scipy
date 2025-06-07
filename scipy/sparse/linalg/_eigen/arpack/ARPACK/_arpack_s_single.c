@@ -155,9 +155,9 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
     rnorm = workl[ih];
     if (V->bmat)
     {
-        bnorm2 = rnorm;
-    } else {
         bnorm2 = snrm2_(&V->n, workd, &int1);
+    } else {
+        bnorm2 = rnorm;
     }
 
     if (rvec) {
@@ -220,7 +220,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         // Initialize the eigenvector matrix Q to the identity.
 
         tmp_int = V->ncv - 1;
-        scopy_(&tmp_int, &workl[ih], &int1, &workl[ihb], &int1);
+        scopy_(&tmp_int, &workl[ih+1], &int1, &workl[ihb], &int1);
         scopy_(&V->ncv, &workl[ih+ldh], &int1, &workl[ihd], &int1);
 
         ssteqr_("I", &V->ncv, &workl[ihd], &workl[ihb], &workl[iq], &ldq, &workl[iw], &ierr);
@@ -255,7 +255,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
                         leftptr += 1;
 
-                    } else if (!(select[rightptr - 1])) {
+                    } else if (!(select[rightptr])) {
 
                         // Search, from the right, the first converged Ritz value
 
@@ -510,7 +510,7 @@ ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
             V->info = -13;
         }
 
-        if (V->info != 0)
+        if (V->info < 0)
         {
             V->ido = ido_DONE;
             return;
@@ -524,34 +524,32 @@ ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
 
         // Zero out internal workspace
         for (j = 0; j < (V->ncv)*((V->ncv) + 8); j++) { workl[j] = 0.0; }
-
-
-        // Pointer into WORKL for address of H, RITZ, BOUNDS, Q
-        // etc... and the remaining workspace.
-        // Also update pointer to be used on output.
-        // Memory is laid out as follows:
-        // workl(1:2*ncv) := generated tridiagonal matrix
-        // workl(2*ncv+1:2*ncv+ncv) := ritz values
-        // workl(3*ncv+1:3*ncv+ncv) := computed error bounds
-        // workl(4*ncv+1:4*ncv+ncv*ncv) := rotation matrix Q
-        // workl(4*ncv+ncv*ncv+1:7*ncv+ncv*ncv) := workspace
-
-        ldh = V->ncv;
-        ldq = V->ncv;
-        ih = 0;
-        ritz = ih + 2*ldh;
-        bounds = ritz + V->ncv;
-        iq = bounds + V->ncv;
-        iw = iq + (V->ncv)*(V->ncv);
-        next = iw + 3*(V->ncv);
-
-        ipntr[3] = next;
-        ipntr[4] = ih;
-        ipntr[5] = ritz;
-        ipntr[6] = bounds;
-        ipntr[10] = iw;
-
     }
+
+    // Pointer into WORKL for address of H, RITZ, BOUNDS, Q
+    // etc... and the remaining workspace.
+    // Also update pointer to be used on output.
+    // Memory is laid out as follows:
+    // workl(1:2*ncv) := generated tridiagonal matrix
+    // workl(2*ncv+1:2*ncv+ncv) := ritz values
+    // workl(3*ncv+1:3*ncv+ncv) := computed error bounds
+    // workl(4*ncv+1:4*ncv+ncv*ncv) := rotation matrix Q
+    // workl(4*ncv+ncv*ncv+1:7*ncv+ncv*ncv) := workspace
+
+    ldh = V->ncv;
+    ldq = V->ncv;
+    ih = 0;
+    ritz = ih + 2*ldh;
+    bounds = ritz + V->ncv;
+    iq = bounds + V->ncv;
+    iw = iq + (V->ncv)*(V->ncv);
+    next = iw + 3*(V->ncv);
+
+    ipntr[3] = next;
+    ipntr[4] = ih;
+    ipntr[5] = ritz;
+    ipntr[6] = bounds;
+    ipntr[10] = iw;
 
     // Carry out the Implicitly restarted Lanczos Iteration.
     ssaup2(V, resid, v, ldv, &workl[ih], ldh, &workl[ritz], &workl[bounds],
@@ -577,8 +575,8 @@ ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
        float* q, int ldq, float* workl, int* ipntr, float* workd)
 {
     int int1 = 1, j, tmp_int, nevd2, nevm2;
-    const float eps23 = powf(ulp, 2.0 / 3.0);
-    float temp = 0.0;
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
+    float temp = 0.0f;
     // Initialize to silence the compiler warning
     enum ARPACK_which temp_which = which_LM;
 
@@ -701,8 +699,7 @@ LINE20:
 
     // Compute the eigenvalues and corresponding error bounds
     // of the current symmetric tridiagonal matrix.
-
-    sseigt(V->aup2_rnorm, V->nev, h, ldh, ritz, bounds, workl, &V->info);
+    sseigt(V->aup2_rnorm, V->aup2_kplusp, h, ldh, ritz, bounds, workl, &V->info);
 
     if (V->info != 0)
     {
@@ -778,11 +775,12 @@ LINE20:
             if (V->nev > 1)
             {
                 V->np = V->aup2_kplusp - V->aup2_nev0;
+
                 tmp_int = (nevd2 < V->np ? nevd2 : V->np);
                 int tmp_int2 = V->aup2_kplusp - tmp_int;
-                int tmp_int3 = (tmp_int2 > V->aup2_nev0 ? tmp_int2 : V->aup2_nev0);
-                sswap_(&tmp_int, &ritz[nevm2], &int1, &ritz[tmp_int3], &int1);
-                sswap_(&tmp_int, &bounds[nevm2], &int1, &bounds[tmp_int3], &int1);
+
+                sswap_(&tmp_int, &ritz[nevm2], &int1, &ritz[tmp_int2], &int1);
+                sswap_(&tmp_int, &bounds[nevm2], &int1, &bounds[tmp_int2], &int1);
             }
 
         } else {
@@ -864,7 +862,6 @@ LINE20:
             V->info = 1;
         }
 
-
         // No shifts to apply.
 
         if ((V->np ==  0) && (V->nconv < V->aup2_nev0))
@@ -893,6 +890,9 @@ LINE20:
         {
             V->nev = 2;
         }
+        V->np = V->aup2_kplusp - V->nev;
+
+        // If the size of NEV was just increased resort the eigenvalues.
 
         if (nevbef < V->nev)
         {
@@ -964,7 +964,7 @@ LINE100:
 
     if (V->bmat)
     {
-        V->aup2_rnorm = sqrt(fabsf(sdot_(&V->n, resid, &int1, workd, &int1)));
+        V->aup2_rnorm = sqrtf(fabsf(sdot_(&V->n, resid, &int1, workd, &int1)));
     } else {
         V->aup2_rnorm = snrm2_(&V->n, resid, &int1);
     }
@@ -983,8 +983,8 @@ LINE100:
 void
 ssconv(int n, float *ritz, float *bounds, float tol, int* nconv)
 {
-    const float eps23 = powf(ulp, 2.0 / 3.0);
-    float temp = 0.0;
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
+    float temp = 0.0f;
 
     *nconv = 0;
     // Convergence test
@@ -1017,7 +1017,7 @@ ssaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, floa
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
-    const float sq2o2 = sqrt(2.0) / 2.0;
+    const float sq2o2 = sqrtf(2.0) / 2.0;
 
     int int1 = 1;
     float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0, temp1;
@@ -1039,7 +1039,6 @@ ssaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, floa
         V->aitr_orth1 = 0;
         V->aitr_orth2 = 0;
         V->aitr_restart = 0;
-        V->aitr_j = V->nev;
     }
 
     // When in reverse communication mode one of:
@@ -1190,10 +1189,10 @@ LINE65:
         // is the inv(B)-norm of A*v_{j}.
 
         V->aitr_wnorm = sdot_(&n, resid, &int1, &workd[ivj], &int1);
-        V->aitr_wnorm = sqrt(fabsf(V->aitr_wnorm));
+        V->aitr_wnorm = sqrtf(fabsf(V->aitr_wnorm));
     } else if (V->bmat) {
         V->aitr_wnorm = sdot_(&n, resid, &int1, &workd[ipj], &int1);
-        V->aitr_wnorm = sqrt(fabsf(V->aitr_wnorm));
+        V->aitr_wnorm = sqrtf(fabsf(V->aitr_wnorm));
     } else {
         V->aitr_wnorm = snrm2_(&n, resid, &int1);
     }
@@ -1218,7 +1217,6 @@ LINE65:
     //  RESID contains OP*v_{j}. See STEP 3.
 
     sgemv_("N", &n, &tmp_int, &dblm1, v, &ldv, &workd[irj], &int1, &dbl1, resid, &int1);
-
 
     // Extend H to have j rows and columns.
 
@@ -1260,7 +1258,7 @@ LINE70:
     if (V->bmat)
     {
         *rnorm = sdot_(&n, resid, &int1, &workd[ipj], &int1);
-        *rnorm = sqrt(fabsf(*rnorm));
+        *rnorm = sqrtf(fabsf(*rnorm));
     } else {
         *rnorm = snrm2_(&n, resid, &int1);
     }
@@ -1331,7 +1329,7 @@ LINE90:
     if (V->bmat)
     {
         V->aitr_rnorm1 = sdot_(&n, resid, &int1, &workd[ipj], &int1);
-        V->aitr_rnorm1 = sqrt(fabsf(V->aitr_rnorm1));
+        V->aitr_rnorm1 = sqrtf(fabsf(V->aitr_rnorm1));
     } else {
         V->aitr_rnorm1 = snrm2_(&n, resid, &int1);
     }
@@ -1407,14 +1405,12 @@ void
 ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int ldh,
        float* resid, float* q, int ldq, float* workd)
 {
-    int i, iend, istart, itop, jj, kplusp, tmp_int, int1 = 1;
-    float a1, a2, a3, a4, c, f, g, h11, h12, h22, r, s, sigma, tst1;
+    int i, iend, istart, jj, kplusp, tmp_int, int1 = 1;
+    float a1, a2, a3, a4, c, f, g, h11, h12, r, s, sigma, tst1;
     float dbl0 = 0.0, dbl1 = 1.0;
 
-    itop = 0;
     iend = 0;
     kplusp = *kev + np;
-
 
     // Initialize Q to the identity to accumulate
     // the rotations and reflections
@@ -1459,7 +1455,6 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
             // We have a valid block [istart, iend] inclusive
             h11 = h[istart + ldh];
             h12 = h[istart + 1];
-            h22 = h[istart + 1 + ldh];
 
             f = h11 - sigma;
             g = h12;
@@ -1630,8 +1625,8 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
        float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd)
 {
     int jj, int1 = 1;
-    const float sq2o2 = sqrt(2.0) / 2.0;
-    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0;
+    const float sq2o2 = sqrtf(2.0f) / 2.0f;
+    float dbl1 = 1.0f, dbl0 = 0.0f, dblm1 = -1.0f;
 
     if (V->ido == ido_FIRST)
     {
@@ -1648,6 +1643,8 @@ sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
             // Request a random vector from the user into resid
             V->ido = ido_RANDOM;
             return;
+        } else {
+            V->ido = ido_RANDOM;
         }
     }
 
@@ -1702,7 +1699,7 @@ LINE20:
     if (V->bmat)
     {
         V->getv0_rnorm0 = sdot_(&n, resid, &int1, workd, &int1);
-        V->getv0_rnorm0 = sqrt(fabsf(V->getv0_rnorm0));
+        V->getv0_rnorm0 = sqrtf(fabsf(V->getv0_rnorm0));
     } else {
         V->getv0_rnorm0 = snrm2_(&n, resid, &int1);
     }
@@ -1750,7 +1747,7 @@ LINE40:
     if (V->bmat)
     {
         *rnorm = sdot_(&n, resid, &int1, workd, &int1);
-        *rnorm = sqrt(fabsf(*rnorm));
+        *rnorm = sqrtf(fabsf(*rnorm));
     } else {
         *rnorm = snrm2_(&n, resid, &int1);
     }
@@ -1819,7 +1816,7 @@ ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float
         j = 0;
         for (i = igap; i < n; i++)
         {
-            while (f(x1[j], x2[j]))
+            while (f(x1[j], x1[j+igap]))
             {
                 if (j < 0) { break; }
                 temp = x1[j];
@@ -1898,24 +1895,24 @@ ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na
 void
 sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
 {
-    int ione = 1, izero = 0;
-    float done = 1.0;
+    int int1 = 1, int0 = 0;
     float eps2 = powf(ulp, 2.0);
     float safmin = unfl;
-    float safmax = (1.0 / safmin);
-    float ssfmax = sqrt(safmax) / 3.0;
-    float ssfmin = sqrt(safmin) / eps2;
+    float safmax = (1.0f / safmin);
+    float ssfmax = sqrtf(safmax) / 3.0f;
+    float ssfmin = sqrtf(safmin) / eps2;
 
     int nmaxit, jtot, i, ii, j, k, l1, m = 0, tmp_int = 0, l, lsv, lend, lendsv, iscale;
-    float anorm = 0.0, rt1 = 0.0, rt2 = 0.0, c = 0.0, s = 0.0, g = 0.0, r = 0.0, p = 0.0;
+    float anorm = 0.0f, rt1 = 0.0f, rt2 = 0.0f, c = 0.0f, s = 0.0f, g = 0.0f, r = 0.0f, p = 0.0f;
     float b, f, tst;
 
     *info = 0;
-    if (n == 0){ return; }
+    if (n == 0) { return; }
+    if (n == 1) { z[0] = 1.0f; return; }
 
     // Set z as the last row of identity matrix
-    for (i = 0; i < n-1; i++) { z[i] = 0.0; }
-    z[n-1] = 1.0;
+    for (i = 0; i < n-1; i++) { z[i] = 0.0f; }
+    z[n-1] = 1.0f;
 
     nmaxit = n*30;
     jtot = 0;
@@ -1924,64 +1921,64 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
     //  for each block, according to whether top or bottom diagonal
     //  element is smaller.
 
-    l1 = 0;
+    l1 = 1;
 
     while (jtot < nmaxit)
     {
-        if (l1 >= n) { break; }
+        if (l1 > n) { break; }
 
-        if (l1 > 0) { e[l1 - 1] = 0.0; }
-        if (l1 < n - 1)
+        if (l1 > 1) { e[l1 - 1] = 0.0f; }
+        if (l1 <= n - 1)
         {
-            for (m = l1; m < n -1; m++)
+            for (m = l1; m <= n - 1; m++)
             {
-                tst = fabsf(e[m]);
-                if (tst == 0.0) { break; }
-                if (tst <= (sqrt(fabsf(d[m]))*sqrt(fabsf(d[m+1])))*ulp)
+                tst = fabsf(e[m - 1]);
+                if (tst == 0.0f) { break; }
+                if (tst <= (sqrtf(fabsf(d[m-1]))*sqrtf(fabsf(d[m])))*ulp)
                 {
-                    e[m] = 0.0;
+                    e[m-1] = 0.0f;
                     break;
                 }
-                if (m == n - 2)
-                {
-                    // No break condition
-                    m = n - 1;
-                }
+                if (m == n - 1) {  m = n; break; }  // No break condition
             }
             // 20
+        } else {
+            m = n;
         }
         // 30
 
-        // m will mark the splitting point
+        // m will mark the splitting point, if any.
         l = l1;
         lsv = l;
         lend = m;
         lendsv = lend;
         l1 = m + 1;
+
+        // Scalar block, skipping
         if (lend == l) { continue; }
 
         // Scale submatrix in rows and columns L to LEND
         tmp_int = lend - l + 1;
-        anorm = slanst_("M", &tmp_int, &d[l], &e[l]);
+        anorm = slanst_("M", &tmp_int, &d[l-1], &e[l-1]);
         iscale = 0;
 
-        if (anorm == 0.0) { continue; }
+        if (anorm == 0.0f) { continue; }
 
         if (anorm > ssfmax)
         {
             iscale = 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &d[l], &n, info);
+            slascl_("G", &int0, &int0, &anorm, &ssfmax, &tmp_int, &int1, &d[l-1], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmax, &tmp_int, &ione, &e[l], &n, info);
+            slascl_("G", &int0, &int0, &anorm, &ssfmax, &tmp_int, &int1, &e[l-1], &n, info);
         } else if (anorm < ssfmin) {
             iscale = 2;
-            slascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &d[l], &n, info);
+            slascl_("G", &int0, &int0, &anorm, &ssfmin, &tmp_int, &int1, &d[l-1], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &anorm, &ssfmin, &tmp_int, &ione, &e[l], &n, info);
+            slascl_("G", &int0, &int0, &anorm, &ssfmin, &tmp_int, &int1, &e[l-1], &n, info);
         }
         // Choose between QL and QR iteration
 
-        if (fabsf(d[lend]) < fabsf(d[l]))
+        if (fabsf(d[lend-1]) < fabsf(d[l-1]))
         {
             lend = lsv;
             l = lendsv;
@@ -1997,75 +1994,78 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 {
                     for (m = l; m < lend; m++)
                     {
-                        tst = powf(fabsf(e[m]), 2.0);
-                        if (tst <= (eps2*fabsf(d[m]))*fabsf(d[m+1]) + safmin) { break; }
-                        if (m == lend-1) { m = lend; }  // No break
+                        tst = fabsf(e[m-1]);
+                        tst = tst*tst;
+                        if (tst <= (eps2*fabsf(d[m - 1]))*fabsf(d[m]) + safmin) { break; }
+                        if (m == lend - 1) { m = lend; break; }  // No break condition
                     }
-                    // 50
-                    // 60
-                    if (m < lend) { e[m] = 0.0; }
+                    // 50, 60
+                } else {
+                    m = lend;
+                }
+                if (m < lend) { e[m - 1] = 0.0f; }
 
-                    p = d[l];
-                    if (m == l)
-                    {
+                p = d[l - 1];
+                if (m == l)
+                {
                         // 80
                         // Eigenvalue found
-                        d[l] = p;
+                        d[l - 1] = p;
                         l += 1;
-                        if (l > lend) { break; }
-                        continue;
-                    }
+                        if (l <= lend) { continue; }  // Top of QL iteration
+                        break;  // go to 140 undo scaling
                 }
                 // If remaining matrix is 2x2, use dlaev2 to compute its eigensystem
                 if (m == l + 1)
                 {
-                    slaev2_(&d[l], &e[l], &d[l+1], &rt1, &rt2, &c, &s);
-                    work[l] = c;
-                    work[n-1+l] = s;
-                    tst    = z[l+1];
-                    z[l+1] = c*tst - s*z[l];
-                    z[l]   = s*tst + c*z[l];
-                    d[l]   = rt1;
-                    d[l+1] = rt2;
-                    e[l]   = 0.0;
-
+                    slaev2_(&d[l - 1], &e[l - 1], &d[l], &rt1, &rt2, &c, &s);
+                    work[l - 1] = c;
+                    work[n - 1 + l - 1] = s;
+                    tst    = z[l];
+                    z[l]   = c*tst - s*z[l-1];
+                    z[l-1] = s*tst + c*z[l-1];
+                    d[l-1] = rt1;
+                    d[l]   = rt2;
+                    e[l-1] = 0.0f;
                     l += 2;
-                    if (l > lend) { break; }  // go to 140
-                    continue;  // go to 40
+                    if (l <= lend) { continue; }  // go to 40
+                    break;  // go to 140
                 }
+
                 if (jtot == nmaxit) { break; } // go to 140
                 jtot += 1;
 
                 // Form shift
-                g = (d[l+1]- p) / (2.0 * e[l]);
+                g = (d[l]- p) / (2.0 * e[l-1]);
                 r = hypotf(g, 1.0);
-                g = d[m] - p + (e[l] / (g + copysign(r, g)));
+                g = d[m-1] - p + (e[l-1] / (g + copysign(r, g)));
 
                 s = 1.0;
                 c = 1.0;
                 p = 0.0;
 
                 // Inner loop
-                for (i = m - 1; i > l-1; i--)
+                for (i = m - 1; i >= l; i--)
                 {
-                    f = s * e[i];
-                    b = c * e[i];
+                    f = s * e[i-1];
+                    b = c * e[i-1];
                     slartg_(&g, &f, &c, &s, &r);
-                    if (i != m - 1) { e[i+1] = r; }
-                    g = d[i+1] - p;
-                    r = (d[i] - g)*s + 2.0*c*b;
+                    if (i != m - 1) { e[i] = r; }
+                    g = d[i] - p;
+                    r = (d[i-1] - g)*s + 2.0f*c*b;
                     p = s*r;
-                    d[i+1] = g + p;
+                    d[i] = g + p;
                     g = c*r - b;
-                    work[i] = c;
-                    work[n-1+i] = -s;
+                    work[i-1] = c;
+                    work[n-1+i-1] = -s;
                 }
                 // 70
                 tmp_int = m - l + 1;
-                slasr_("R", "V", "B", &ione, &tmp_int, &work[l], &work[n-1+l], &z[l], &ione);
+                slasr_("R", "V", "B", &int1, &tmp_int, &work[l-1], &work[n-1+l-1], &z[l-1], &int1);
 
-                d[l] = d[l] - p;
-                e[l] = g;
+                d[l-1] = d[l-1] - p;
+                e[l-1] = g;
+
             }
         } else {
             // QR Iteration
@@ -2077,96 +2077,105 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 {
                     for (m = l; m > lend; m--)
                     {
-                        tst = powf(fabsf(e[m-1]), 2.0);
-                        if (tst <= (eps2*fabsf(d[m]))*fabsf(d[m-1]) + safmin) { break; }
-                        if (m == lend+1) { m = lend; }  // No break
+                        tst = fabsf(e[m-2]);
+                        tst = tst*tst;
+                        if (tst <= (eps2*fabsf(d[m-1]))*fabsf(d[m-2]) + safmin) { break; }
+                        if (m == lend+1) { m = lend; break; }  // No break
                     }
-                    // 100
-                    // 110
-                    if (m > lend) { e[m-1] = 0.0; }
-                    p = d[l];
-                    if (m == l)
-                    {
-                        // 130
-                        // Eigenvalue found
-                        d[l] = p;
-                        l -= 1;
-                        if (l < lend) { break; }
-                        continue;
-                    }
+                } else {
+                    m = lend;
+                }
+                // 100, 110
+
+                if (m > lend) { e[m-2] = 0.0f; }
+                p = d[l-1];
+                if (m == l)
+                {
+                    // 130
+                    // Eigenvalue found
+                    d[l-1] = p;
+                    l -= 1;
+                    if (l >= lend) { continue; } // Top of QR iteration
+                    break; // go to 140 undo scaling
                 }
                 // If remaining matrix is 2x2, use dlaev2 to compute its eigensystem
                 if (m == l - 1)
                 {
-                    slaev2_(&d[l-1], &e[l-1], &d[l], &rt1, &rt2, &c, &s);
-                    tst = z[l];
-                    z[l]   = c*tst - s*z[l-1];
-                    z[l-1] = s*tst + c*z[l-1];
-                    d[l-1] = rt1;
-                    d[l]   = rt2;
-                    e[l-1] = 0.0;
-
+                    slaev2_(&d[l-2], &e[l-2], &d[l-1], &rt1, &rt2, &c, &s);
+                    tst    = z[l-1];
+                    z[l-1] = c*tst - s*z[l-2];
+                    z[l-2] = s*tst + c*z[l-2];
+                    d[l-2] = rt1;
+                    d[l-1] = rt2;
+                    e[l-2] = 0.0f;
                     l -= 2;
-                    if (l < lend) { break; }
-                    continue;
+
+                    if (l >= lend) { continue; } // Top of QR iteration
+                    break; // go to 140 undo scaling
                 }
-                if (jtot == nmaxit) { break; }
+
+                if (jtot == nmaxit) { break; }  // go to 140
                 jtot += 1;
 
                 // Form the shift
-                g = (d[l-1] - p) / (2.0*e[l-1]);
-                r = hypotf(g, done);
-                g = d[m] - p + (e[l-1] / (g + copysign(r, g)));
+                g = (d[l-2] - p) / (2.0f*e[l-2]);
+                r = hypotf(g, 1.0f);
+                g = d[m-1] - p + (e[l-2] / (g + copysignf(r, g)));
 
-                s = 1.0;
-                c = 1.0;
-                p = 0.0;
+                s = 1.0f;
+                c = 1.0f;
+                p = 0.0f;
 
                 // Inner loop
                 for (i = m; i < l; i++)
                 {
-                    f = s * e[i];
-                    b = c * e[i];
+                    f = s * e[i-1];
+                    b = c * e[i-1];
                     slartg_(&g, &f, &c, &s, &r);
-                    if (i != m) { e[i-1] = r; }
-                    g = d[i] - p;
-                    r = (d[i+1] - g)*s + 2.0*c*b;
+                    if (i != m) { e[i-2] = r; }
+                    g = d[i-1] - p;
+                    r = (d[i] - g)*s + 2.0f*c*b;
                     p = s*r;
-                    d[i] = g + p;
+                    d[i-1] = g + p;
                     g = c*r - b;
 
                     // Save rotations
-                    work[i] = c;
-                    work[n-1+i] = s;
+                    work[i-1] = c;
+                    work[n-1+i-1] = s;
                 }
                 // 120
                 // Apply saved rotations.
                 tmp_int = l - m + 1;
-                slasr_("R", "V", "F", &ione, &tmp_int, &work[m], &work[n-1+m], &z[m], &ione);
+                slasr_("R", "V", "F", &int1, &tmp_int, &work[m-1], &work[n-1+m-1], &z[m-1], &int1);
 
-                d[l] = d[l] - p;
-                e[l - 1] = g;
+                d[l-1] = d[l-1] - p;
+                e[l - 2] = g;
+
             }
         }
-        // 140 Still in the outer while loop; it breaks at the entrance
+        // 140 Still in the outer while loop; it breaks at the top
 
         // Undo scaling if necessary
+        tmp_int = lendsv-lsv+1;
         if (iscale == 1)
         {
-            tmp_int = lendsv-lsv+1;
-            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
+
+            slascl_("G", &int0, &int0, &ssfmax, &anorm, &tmp_int, &int1, &d[lsv-1], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &ssfmax, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
+            slascl_("G", &int0, &int0, &ssfmax, &anorm, &tmp_int, &int1, &e[lsv-1], &n, info);
+
         } else if (iscale == 2) {
-            tmp_int = lendsv-lsv+1;
-            slascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &d[lsv], &n, info);
+
+            slascl_("G", &int0, &int0, &ssfmin, &anorm, &tmp_int, &int1, &d[lsv-1], &n, info);
             tmp_int -= 1;
-            slascl_("G", &izero, &izero, &ssfmin, &anorm, &tmp_int, &ione, &e[lsv], &n, info);
+            slascl_("G", &int0, &int0, &ssfmin, &anorm, &tmp_int, &int1, &e[lsv-1], &n, info);
+
         }
+
         // Check for no convergence to an eigenvalue after a total of n*maxit iterations
         if (jtot >= nmaxit)
         {
-            for (i = 0; i < n-1; i++) { if (e[i] != 0.0) { *info += 1; } }
+            for (i = 0; i < n-1; i++) { if (e[i] != 0.0f) { *info += 1; } }
             return;  // 150
         }
     }
