@@ -49,8 +49,8 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
        double* workl)
 {
     const double eps23 = pow(ulp, 2.0 / 3.0);
-    int ibd, iconj, ih, iheigr, iheigi, ihbds, iuptri, invsub, iri, irr, iwev, j, jj;
-    int bounds, k, ldh, ldq, np, numcnv, reord, ritzr, ritzi, wrr, wri;
+    int ibd, iconj, ih, iheigr, iheigi, ihbds, iuptri, invsub, iri, irr, j, jj;
+    int bounds, k, ldh, ldq, np, numcnv, reord, ritzr, ritzi;
     int iwork[1] = { 0 };
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0, outncv;
     double conds, rnorm, sep, temp, temp1, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
@@ -126,9 +126,6 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
     ipntr[10] = ihbds;
     ipntr[11] = iuptri;
     ipntr[12] = invsub;
-    wrr = 0;
-    wri = V->ncv;
-    iwev = wri + V->ncv;
 
     //  irr points to the REAL part of the Ritz
     //      values computed by _neigh before
@@ -523,7 +520,7 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 void
 dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl)
 {
-    int bounds, ih, iq, iw, j, ldh, ldq, nev0, next, iritzi, iritzr;
+    int bounds, ih, iq, iw, j, ldh, ldq, next, iritzi, iritzr;
 
     if (V->ido == ido_FIRST)
     {
@@ -558,7 +555,6 @@ dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
             V->tol = ulp;
         }
         V->np = V->ncv - V->nev;
-        nev0 = V->nev;
 
         for (j = 0; j < 3 * (V->ncv)*(V->ncv) + 6*(V->ncv); j++)
         {
