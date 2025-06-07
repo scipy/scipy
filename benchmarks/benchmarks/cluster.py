@@ -10,23 +10,24 @@ with safe_import():
 
 class Linkage(XPBenchmark):
     method = ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']
-    param_names = (*XPBenchmark.param_names, "method")
-    params = (*XPBenchmark.params, method)
+    param_names = (*XPBenchmark.param_names, "size", "method")
+    if is_xslow():
+        size = [100, 180, 325, 585, 1054, 1898, 3420, 6162, 11101, 20000]
+    else:
+        size = [2000]
+    params = (*XPBenchmark.params, size, method)
 
-    def __init__(self):
-        rng = np.random.default_rng(0)
-        self.y_np = rng.standard_normal((2000, 2))
-
-    def setup(self, backend, method):
+    def setup(self, backend, size, method):
         super().setup(backend, linkage, static_argnames="method")
 
-        y = self.xp.asarray(self.y_np)
+        rng = np.random.default_rng(0)
+        y = self.xp.asarray(rng.standard_normal((size, 2)))
         self.y = self.synchronize(y)
 
         if self.warmup:
             self.func(self.y, method=method)
 
-    def time_linkage(self, backend, method):
+    def time_linkage(self, backend, size, method):
         self.func(self.y, method=method)
 
 
@@ -112,9 +113,11 @@ class VQ(Benchmark):
 
 
 class Whiten(XPBenchmark):
-    shape = [(10, 10), (100, 100)]
     if is_xslow():
-        shape += [(1000, 1000), (10_000, 10_000)]
+        shape = [(10, 10), (32, 32), (100, 100), (320, 320),
+                 (1000, 1000), (3200, 3200), (10_000, 10_000)]
+    else:
+        shape = [(10, 10), (100, 100)]
 
     param_names = (*XPBenchmark.param_names, "shape")
     params = (*XPBenchmark.params, shape)
