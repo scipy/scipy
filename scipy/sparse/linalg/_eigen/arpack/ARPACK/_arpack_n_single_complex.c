@@ -37,7 +37,7 @@ cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
        int* ipntr, ARPACK_CPLXF_TYPE* workd, ARPACK_CPLXF_TYPE* workl, float* rwork)
 {
     const float eps23 = pow(ulp, 2.0 / 3.0);
-    int ibd, ih, iheig, ihbds, iuptri, invsub, iq, irz, iwev, j, jj;
+    int ibd, ih, iheig, ihbds, iuptri, invsub, irz, iwev, j, jj;
     int bounds, k, ldh, ldq, np, numcnv, outncv, reord, ritz, wr;
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0;
     float conds, sep, temp1, rtemp;
@@ -107,7 +107,6 @@ cneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
     ih     = ipntr[4];
     ritz   = ipntr[5];
-    iq     = ipntr[6];
     bounds = ipntr[7];
     ldh = V->ncv;
     ldq = V->ncv;
@@ -441,7 +440,7 @@ cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
        ARPACK_CPLXF_TYPE* v, int ldv, int* ipntr, ARPACK_CPLXF_TYPE* workd,
        ARPACK_CPLXF_TYPE* workl, float* rwork)
 {
-    int bounds, ierr = 0, ih, iq, iw, ldh, ldq, nev0, next, iritz;
+    int bounds, ierr = 0, ih, iq, iw, ldh, ldq, next, iritz;
 
     if (V->ido == ido_FIRST)
     {
@@ -486,7 +485,6 @@ cnaupd(struct ARPACK_arnoldi_update_vars_s *V, ARPACK_CPLXF_TYPE* resid,
         //  size of the invariant subspace desired.
 
         V->np = V->ncv - V->nev;
-        nev0 = V->nev;
 
         for (int j = 0; j < 3 * (V->ncv*V->ncv) + 6*V->ncv; j++)
         {
