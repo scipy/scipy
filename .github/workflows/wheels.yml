@@ -233,6 +233,8 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: cmd
         run: |
+          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
+
           pip install build
           pip install -r requirements/build.txt -r requirements/openblas.txt
           python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
@@ -257,9 +259,6 @@ jobs:
           set CC=clang-cl
           set CXX=clang-cl
           set FC=flang
-          echo "CC is %CC%"
-          echo "CXX is %CXX%"
-          echo "FC is %FC%"
 
           python -m build --wheel --no-isolation -o wheelhouse .
 
