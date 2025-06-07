@@ -218,6 +218,7 @@ jobs:
         uses: KyleMayes/install-llvm-action@v2
         id: install_llvm
         with:
+          version: 20.1.6
           force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
           env: false # Do not set CC/CXX by the action
 
