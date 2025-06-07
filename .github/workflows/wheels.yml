@@ -87,7 +87,7 @@ jobs:
         # - [macos-13, macosx, x86_64, accelerate, "14.0"]
         # - [macos-14, macosx, arm64, openblas, "12.3"]
         # - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2022, win, AMD64, ""]
+        # - [windows-2022, win, AMD64, ""]
         - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp312", "3.12"]]
         # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
@@ -233,10 +233,6 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: cmd
         run: |
-          echo "Attempting to initialize MSVC ARM64 environment..."
-          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
-
-          pip install build wheel delvewheel
           pip install -r requirements/build.txt -r requirements/openblas.txt
           python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
           
