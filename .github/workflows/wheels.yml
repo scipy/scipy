@@ -79,18 +79,18 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64, "", ""]
-        - [ubuntu-22.04, musllinux, x86_64, "", ""]
-        - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
-        - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
-        - [macos-13, macosx, x86_64, openblas, "10.14"]
-        - [macos-13, macosx, x86_64, accelerate, "14.0"]
-        - [macos-14, macosx, arm64, openblas, "12.3"]
-        - [macos-14, macosx, arm64, accelerate, "14.0"]
+        # - [ubuntu-22.04, manylinux, x86_64, "", ""]
+        # - [ubuntu-22.04, musllinux, x86_64, "", ""]
+        # - [ubuntu-24.04-arm, manylinux, aarch64, "", ""]
+        # - [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+        # - [macos-13, macosx, x86_64, openblas, "10.14"]
+        # - [macos-13, macosx, x86_64, accelerate, "14.0"]
+        # - [macos-14, macosx, arm64, openblas, "12.3"]
+        # - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2022, win_amd64, AMD64, ""]
         - [windows-11-arm, win_arm64, ARM64, "", ""]
-        # python: [["cp312", "3.12"]]
-        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
+        python: [["cp312", "3.12"]]
+        # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -210,16 +210,13 @@ jobs:
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
-      - name: Install LLVM and Clang (WOA64)
+      - name: Install LLVM for win_arm64
         if: matrix.buildplat[1] == 'win_arm64'
         uses: KyleMayes/install-llvm-action@v2
         id: install_llvm
         with:
-          version: "20.1.6" # This version is used for outputs.version
-          arch: "arm64"
-          # force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
-          # directory input removed, will default to C:\Program Files\LLVM on Windows
-          env: false # Do not set CC/CXX by the action, we manage it
+          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
+          env: false # Do not set CC/CXX by the action
 
       - name: Build wheels
         if: matrix.buildplat[1] != 'win_arm64' # Skip for win_arm64, handled manually below
