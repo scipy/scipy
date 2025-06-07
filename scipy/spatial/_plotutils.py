@@ -1,5 +1,5 @@
 import numpy as np
-from scipy._lib.decorator import decorator as _decorator
+from scipy._lib.decorator import decoratorx as _decorator
 
 __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
