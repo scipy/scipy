@@ -16,7 +16,6 @@ arpack_sources = [
 
 arpack_lib = static_library('_arpack',
   arpack_sources,
-  c_args: ['-Wall', '-Wextra', '-Wpedantic'],
   dependencies: [m_dep, lapack_dep, blas_dep],
 )
 
