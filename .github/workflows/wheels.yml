@@ -233,6 +233,7 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: cmd
         run: |
+          pip install build
           pip install -r requirements/build.txt -r requirements/openblas.txt
           python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
           
