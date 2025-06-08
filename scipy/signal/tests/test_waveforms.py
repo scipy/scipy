@@ -390,6 +390,25 @@ class TestSawtoothWaveform:
         waveform = waveforms.sawtooth(1)
         assert waveform.dtype == np.float64
 
+    def test_small_negative(self):
+        # gh-22940 regression
+        assert waveforms.sawtooth(-np.finfo(float).smallest_normal) == 1
+
+    def test_broadcast(self):
+        t = np.array([[1,2,3],[4,5,6]])
+        w = np.array([[[0.1]],[[0.9]]])
+
+        wbroad = waveforms.sawtooth(t, w)
+        w1 = waveforms.sawtooth(t, w.flat[0])
+        w2 = waveforms.sawtooth(t, w.flat[1])
+
+        xp_assert_equal(wbroad, np.stack((w1, w2)))
+
+    def test_bad_width(self):
+        waveform = waveforms.sawtooth(0, [0, 0.9, 1, -0.1, 1.1, np.nan, np.inf])
+        assert all(np.isfinite(waveform[:3]))
+        assert all(np.isnan(waveform[3:]))
+
 
 class TestSquareWaveform:
     def test_dtype(self):
