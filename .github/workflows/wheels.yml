@@ -211,9 +211,9 @@ jobs:
         run: |
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
-
+      
       - name: Build wheels
-        if: matrix.buildplat[1] != 'win' && matrix.buildplat[2] != 'ARM64' # Skip for win_arm64 for manual build
+        if: matrix.buildplat[1] != 'win' || matrix.buildplat[2] != 'ARM64' # win_arm64 build configured separately
         uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
@@ -227,32 +227,30 @@ jobs:
         run: |
           Invoke-WebRequest https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe -UseBasicParsing -OutFile LLVM-woa64.exe
           Start-Process -FilePath ".\LLVM-woa64.exe" -ArgumentList "/S" -Wait
-          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append        
+          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
-      - name: Build wheel for win_arm64 manually
+      - name: Build wheels for win_arm64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        shell: cmd
-        run: |
-          CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
-
-          pip install build
-          pip install -r requirements/build.txt -r requirements/openblas.txt
-          python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
-          
-          set VCPKG_ROOT=C:\vcpkg
-          vcpkg install pkgconf
-          set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
-          set PKG_CONFIG_PATH=%GITHUB_WORKSPACE%
-          copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
-          
-          copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
-
-          set CC=clang-cl
-          set CXX=clang-cl
-          set FC=flang
-
-          python -m build --wheel --no-isolation -o wheelhouse .
+        uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
+        env:
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_ENABLE: cpython-freethreading cpython-prerelease
+          CIBW_ENVIRONMENT_WINDOWS: >
+            PATH="C:\\vcpkg\\installed\\arm64-windows\\tools\\pkgconf;$PATH"
+            CC=clang-cl
+            CXX=clang-cl
+            FC=flang
+            PKG_CONFIG_PATH=$GITHUB_WORKSPACE
+            TARGET_ARCH=${{ matrix.buildplat[2] }}
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            pip install wheel delvewheel &&
+            pip install -r requirements/build.txt -r requirements/openblas.txt &&
+            python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc &&
+            vcpkg install pkgconf &&
+            copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
+            copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
