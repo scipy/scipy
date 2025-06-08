@@ -369,7 +369,7 @@ Authors
 * Matthew H Flamm (1)
 * Karthik Viswanath Ganti (1) +
 * Neil Girdhar (1)
-* Ralf Gommers (157)
+* Ralf Gommers (158)
 * Rohit Goswami (4)
 * Saarthak Gupta (4) +
 * Matt Haberland (325)
@@ -413,7 +413,7 @@ Authors
 * Victor PM (10) +
 * pmav99 (1) +
 * Ilhan Polat (73)
-* Tyler Reddy (91)
+* Tyler Reddy (96)
 * Érico Nogueira Rolim (1) +
 * Pamphile Roy (10)
 * Mikhail Ryazanov (6)
@@ -640,7 +640,7 @@ Issues closed for 1.16.0
 * `#22965 <https://github.com/scipy/scipy/issues/22965>`__: BUG: The attribute "nit" is not found when using the callback...
 * `#22981 <https://github.com/scipy/scipy/issues/22981>`__: Bug with freqz when specifying worN after #22886
 * `#23035 <https://github.com/scipy/scipy/issues/23035>`__: TST: theilsope & siegelslope-related tests are failing on PyPy3.11...
-* `#23036 <https://github.com/scipy/scipy/issues/23036>`__: BUG: scipy.signal.csd doesn't zero-pad for different size inputs...
+* `#23036 <https://github.com/scipy/scipy/issues/23036>`__: BUG: signal.csd: doesn't zero-pad for different size inputs in...
 * `#23038 <https://github.com/scipy/scipy/issues/23038>`__: DOC: ``linalg.toeplitz`` does not support batching like the ``1.16.0rc1``...
 * `#23046 <https://github.com/scipy/scipy/issues/23046>`__: ENH: ``vectorized_filter``\ : special case of scalar ``size``...
 * `#23061 <https://github.com/scipy/scipy/issues/23061>`__: DOC: Wrong SPDX identifier for OpenBLAS and LAPACK
@@ -1111,3 +1111,4 @@ Pull requests for 1.16.0
 * `#23099 <https://github.com/scipy/scipy/pull/23099>`__: MAINT: fix SPDX license expressions for LAPACK, OpenBLAS, GCC
 * `#23106 <https://github.com/scipy/scipy/pull/23106>`__: TST: CI broken vs pytest 8.4.0
 * `#23110 <https://github.com/scipy/scipy/pull/23110>`__: BUG: spatial.distance: yule implementation in ``distance_metrics.h``
+* `#23113 <https://github.com/scipy/scipy/pull/23113>`__: DOC: improve docs for ``-Duse-system-libraries`` build option
