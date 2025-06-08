@@ -223,7 +223,6 @@ jobs:
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Build wheels
-        # if: matrix.buildplat[1] != 'win' && matrix.buildplat[2] != 'ARM64' # Skip for win_arm64 for manual build
         uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
@@ -238,41 +237,12 @@ jobs:
             PKG_CONFIG_PATH=$GITHUB_WORKSPACE
             TARGET_ARCH=${{ matrix.buildplat[2] }}
           CIBW_BEFORE_BUILD_WINDOWS: >
-            echo "Initial PATH: %PATH%" &&
-            echo "Initial PKG_CONFIG_PATH: %PKG_CONFIG_PATH%" &&
-            echo "Initial VCPKG_ROOT: %VCPKG_ROOT%" &&
-            CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64 &&
             pip install build wheel delvewheel &&
             pip install -r requirements/build.txt -r requirements/openblas.txt &&
             python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc &&
             vcpkg install pkgconf &&
             copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
             copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
-
-      # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
-      # - name: Build wheel for win_arm64 manually
-      #   if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-      #   shell: cmd
-      #   run: |
-      #     CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
-
-      #     pip install build
-      #     pip install -r requirements/build.txt -r requirements/openblas.txt
-      #     python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc
-          
-      #     set VCPKG_ROOT=C:\vcpkg
-      #     vcpkg install pkgconf
-      #     set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
-      #     set PKG_CONFIG_PATH=%GITHUB_WORKSPACE%
-      #     copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
-          
-      #     copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
-
-      #     set CC=clang-cl
-      #     set CXX=clang-cl
-      #     set FC=flang
-
-      #     python -m build --wheel --no-isolation -o wheelhouse .
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
