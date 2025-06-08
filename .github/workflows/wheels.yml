@@ -230,17 +230,19 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
           CIBW_ENVIRONMENT_WINDOWS: >
-            PATH="C:\vcpkg\installed\arm64-windows\tools\pkgconf;$PATH"
+            PATH="C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%"
+            VCPKG_ROOT=C:\vcpkg
             CC=clang-cl
             CXX=clang-cl
             FC=flang
-            PKG_CONFIG_PATH=$GITHUB_WORKSPACE
+            PKG_CONFIG_PATH=%GITHUB_WORKSPACE%
           CIBW_BEFORE_BUILD_WINDOWS: >
+            echo "Initial PATH: %PATH%" &&
+            echo "Initial PKG_CONFIG_PATH: %PKG_CONFIG_PATH%" &&
             CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64 &&
             pip install build &&
             pip install -r requirements/build.txt -r requirements/openblas.txt &&
             python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc &&
-            set VCPKG_ROOT=C:\vcpkg &&
             vcpkg install pkgconf &&
             copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
             copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
