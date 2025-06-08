@@ -88,7 +88,7 @@ jobs:
         # - [macos-14, macosx, arm64, openblas, "12.3"]
         # - [macos-14, macosx, arm64, accelerate, "14.0"]
         - [windows-2022, win, AMD64, ""]
-        - [windows-11-arm, win, ARM64, "", ""]
+        # - [windows-11-arm, win, ARM64, "", ""]
         python: [["cp312", "3.12"]]
         # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -214,7 +214,7 @@ jobs:
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
       
       - name: Build wheels
-        if: matrix.buildplat[1] != 'win' && matrix.buildplat[2] != 'ARM64' # win_arm64 build configured separately
+        if: matrix.buildplat[1] != 'win' || matrix.buildplat[2] != 'ARM64' # win_arm64 build configured separately
         uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
