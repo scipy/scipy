@@ -235,7 +235,7 @@ jobs:
             CXX=clang-cl
             FC=flang
             PKG_CONFIG_PATH=$GITHUB_WORKSPACE
-          CIBW_BEFORE_BUILD_WINDOWS: >
+          CIBW_BEFORE_BUILD_WINDOWS: |
             CALL "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" arm64
             pip install build
             pip install -r requirements/build.txt -r requirements/openblas.txt
