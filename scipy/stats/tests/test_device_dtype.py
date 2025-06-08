@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from scipy import stats
 
-from scipy._lib._array_api import xp_device, is_array_api_strict, is_dask, is_torch
+from scipy._lib._array_api import xp_device, is_array_api_strict, is_torch
 from scipy.stats._stats_py import _xp_mean, _xp_var
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -197,9 +197,6 @@ def test_zscore(fun, dtype, xp, devices):
                                     'power_divergence'])
 @pytest.mark.parametrize('dtype', dtypes)
 def test_hypothesis_tests(f_name, dtype, xp, devices):
-    if is_dask(xp) and f_name == 'pearsonr':
-        pytest.skip("dtype inference failing in xpx.apply_where")
-
     dtype = getattr(xp, dtype)
     for device in devices:
         f = getattr(stats, f_name)
