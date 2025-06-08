@@ -244,15 +244,10 @@ jobs:
           set VCPKG_ROOT=C:\vcpkg
           vcpkg install pkgconf
           set PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%
+          set PKG_CONFIG_PATH=%GITHUB_WORKSPACE%
           copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe
           
           copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
-
-          set "PKG_CONFIG_PATH=%GITHUB_WORKSPACE%"
-
-          set "LLVM_LIB_DIRS=C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib"
-          set "LIB=%LLVM_LIB_DIRS%;%LIB%"
-          set "LIBPATH=%LLVM_LIB_DIRS%;%LIBPATH%"
 
           set CC=clang-cl
           set CXX=clang-cl
