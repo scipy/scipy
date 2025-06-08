@@ -260,12 +260,9 @@ Expired Deprecations
   must be specified separately as ``x`` and ``y``.
 - Support for NumPy masked arrays has been removed from
   `scipy.stats.power_divergence` and `scipy.stats.chisquare`.
-- The deprecated ``scipy.optimize.slsqp.zeros`` function has been removed.
-- Several deprecated unintentionally-public helper functions in `scipy.sparse`
-  have been removed as detailed at
-  `<https://github.com/scipy/scipy-stubs/pull/557>`__.
-- Most of the deprecated functions in ``scipy.interpolate.dfitpack``
-  have been removed.
+- A significant number of functions from non-public namespaces
+  (e.g., ``scipy.sparse.base``, ``scipy.interpolate.dfitpack``) were cleaned
+  up. They were previously already emitting deprecation warnings.
 
 
 ******************************
