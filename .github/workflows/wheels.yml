@@ -223,12 +223,11 @@ jobs:
       # can be remove after https://github.com/actions/partner-runner-images/issues/90
       - name: Install LLVM for win_arm64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
-        uses: KyleMayes/install-llvm-action@v2
-        id: install_llvm
-        with:
-          version: 20.1.6
-          force-url: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe
-          env: false # Do not set CC/CXX by the action          
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.6/LLVM-20.1.6-woa64.exe -UseBasicParsing -OutFile LLVM-woa64.exe
+          Start-Process -FilePath ".\LLVM-woa64.exe" -ArgumentList "/S" -Wait
+          echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
       - name: Build wheel for win_arm64 manually
