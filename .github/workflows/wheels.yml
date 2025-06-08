@@ -230,12 +230,13 @@ jobs:
           $GithubWorkspace = $env:GITHUB_WORKSPACE.Replace("\","/")
           $LlvmLibDirs = "C:\Program Files\LLVM\lib\clang\20\lib\windows;C:\Program Files\LLVM\lib"
 
+          # Ensure values with spaces are quoted for CIBW_ENVIRONMENT
           $CibwEnv = @(
             "CC=clang-cl",
             "CXX=clang-cl",
             "FC=flang",
-            "PKG_CONFIG_PATH=$GithubWorkspace",
-            "LLVM_LIB_DIRS_FOR_CIBW=$LlvmLibDirs"
+            "PKG_CONFIG_PATH=""$GithubWorkspace""",  # Quote value
+            "LLVM_LIB_DIRS_FOR_CIBW=""$LlvmLibDirs""" # Quote value
           )
           echo "CIBW_ENVIRONMENT=$($CibwEnv -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
