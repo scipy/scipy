@@ -236,6 +236,7 @@ jobs:
             CXX=clang-cl
             FC=flang
             PKG_CONFIG_PATH=$GITHUB_WORKSPACE
+            TARGET_ARCH=${{ matrix.buildplat[2] }}
           CIBW_BEFORE_BUILD_WINDOWS: >
             echo "Initial PATH: %PATH%" &&
             echo "Initial PKG_CONFIG_PATH: %PKG_CONFIG_PATH%" &&
