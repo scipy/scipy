@@ -249,10 +249,9 @@ def roots_jacobi(n, alpha, beta, mu=False):
 
     Example 
     >>> from scipy.special import roots_jacobi
+    >>> roots_jacobi(3, 0.5, 0.5)
+    (array([-0.70710678,  0.        ,  0.70710678]), array([0.39269908, 0.78539816, 0.39269908]))
 
-    >>> x, w = roots_jacobi(3, 0.5, 0.5)
-    >>> print("Sample points:", x)
-    >>> print("Weights:", w)
 
     """
     m = int(n)
