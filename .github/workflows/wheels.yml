@@ -230,14 +230,12 @@ jobs:
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
           CIBW_ENVIRONMENT_WINDOWS: >
             PATH="C:\\vcpkg\\installed\\arm64-windows\\tools\\pkgconf;$PATH"
-            VCPKG_ROOT=C:\\vcpkg
             CC=clang-cl
             CXX=clang-cl
             FC=flang
-            PKG_CONFIG_PATH=$GITHUB_WORKSPACE
             TARGET_ARCH=${{ matrix.buildplat[2] }}
           CIBW_BEFORE_BUILD_WINDOWS: >
-            pip install build wheel delvewheel &&
+            pip install wheel delvewheel &&
             pip install -r requirements/build.txt -r requirements/openblas.txt &&
             python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc &&
             vcpkg install pkgconf &&
