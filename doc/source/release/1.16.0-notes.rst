@@ -191,9 +191,14 @@ New features
   `~scipy.stats.power_divergence`, `~scipy.stats.chisquare`,
   `~scipy.stats.pointbiserialr`, `~scipy.stats.kendalltau`,
   `~scipy.stats.weightedtau`, `~scipy.stats.theilslopes`,
-  `~scipy.stats.siegelslopes`, and `~scipy.stats.boxcox_llf`.
+  `~scipy.stats.siegelslopes`, `~scipy.stats.boxcox_llf`, and
+  `~scipy.stats.linregress`.
+- Support for ``keepdims`` and ``nan_policy`` keywords was added to
+  `~scipy.stats.gstd`.
 - The performance of `scipy.stats.special_ortho_group` and `scipy.stats.pearsonr`
   was improved.
+- Support for an ``rng`` keyword argument was added to the ``logcdf`` and
+  ``cdf`` methods of ``multivariate_normal_gen`` and ``multivariate_normal_frozen``.
 
 
 **************************
@@ -255,6 +260,9 @@ Expired Deprecations
   must be specified separately as ``x`` and ``y``.
 - Support for NumPy masked arrays has been removed from
   `scipy.stats.power_divergence` and `scipy.stats.chisquare`.
+- A significant number of functions from non-public namespaces
+  (e.g., ``scipy.sparse.base``, ``scipy.interpolate.dfitpack``) were cleaned
+  up. They were previously already emitting deprecation warnings.
 
 
 ******************************
@@ -267,6 +275,9 @@ Backwards incompatible changes
   to the rules specified in :ref:`linalg_batch`.
 - `scipy.stats.bootstrap` now explicitly broadcasts elements of ``data`` to the
   same shape (ignoring ``axis``) before performing the calculation.
+- Several submodule names are no longer available via ``from scipy.signal import *``,
+  but may still be imported directly, as detailed at
+  `<https://github.com/scipy/scipy-stubs/pull/549>`__.
 
 
 ***********************************
@@ -343,7 +354,7 @@ Authors
 * Richard Strong Bowen (2) +
 * Jake Bowhay (126)
 * Matthew Brett (1)
-* Dietrich Brunn (52)
+* Dietrich Brunn (53)
 * Evgeni Burovski (252)
 * Christine P. Chai (12) +
 * Gayatri Chakkithara (1) +
@@ -358,10 +369,10 @@ Authors
 * Matthew H Flamm (1)
 * Karthik Viswanath Ganti (1) +
 * Neil Girdhar (1)
-* Ralf Gommers (153)
+* Ralf Gommers (158)
 * Rohit Goswami (4)
 * Saarthak Gupta (4) +
-* Matt Haberland (320)
+* Matt Haberland (325)
 * Sasha Hafner (1) +
 * Joren Hammudoglu (9)
 * Chengyu Han (1) +
@@ -370,13 +381,14 @@ Authors
 * Yongcai Huang (2) +
 * Lukas Huber (1) +
 * Yuji Ikeda (2) +
-* Guido Imperiale (103) +
+* Guido Imperiale (104) +
 * Robert Kern (2)
 * Harin Khakhi (2) +
 * Agriya Khetarpal (4)
 * Kirill R. (2) +
 * Tetsuo Koyama (1)
 * Jigyasu Krishnan (1) +
+* Abhishek Kumar (2) +
 * Pratham Kumar (3) +
 * David Kun (1) +
 * Eric Larson (3)
@@ -389,6 +401,7 @@ Authors
 * Panos Mavrogiorgos (1) +
 * Nikolay Mayorov (2)
 * Melissa Weber Mendonça (10)
+* Michał Górny (1)
 * Miguel Cárdenas (2) +
 * Swastik Mishra (1) +
 * Sturla Molden (2)
@@ -400,7 +413,7 @@ Authors
 * Victor PM (10) +
 * pmav99 (1) +
 * Ilhan Polat (73)
-* Tyler Reddy (66)
+* Tyler Reddy (96)
 * Érico Nogueira Rolim (1) +
 * Pamphile Roy (10)
 * Mikhail Ryazanov (6)
@@ -410,7 +423,7 @@ Authors
 * Neil Schemenauer (2) +
 * Daniel Schmitz (20)
 * Martin Schuck (1) +
-* Dan Schult (32)
+* Dan Schult (33)
 * Tomer Sery (19)
 * Adrian Seyboldt (1) +
 * Scott Shambaugh (4)
@@ -443,11 +456,12 @@ Authors
 * Austin Zhang (1) +
 * William Zijie Zhang (1) +
 * Zaikun Zhang (1) +
+* Zhenyu Zhu (1) +
 * Eric Zitong Zhou (11) +
 * Case Zumbrum (2) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (45)
 
-    A total of 121 people contributed to this release.
+    A total of 124 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -625,6 +639,13 @@ Issues closed for 1.16.0
 * `#22956 <https://github.com/scipy/scipy/issues/22956>`__: BUG: special._ufuncs._ncx2_pdf: interpreter crash with extreme...
 * `#22965 <https://github.com/scipy/scipy/issues/22965>`__: BUG: The attribute "nit" is not found when using the callback...
 * `#22981 <https://github.com/scipy/scipy/issues/22981>`__: Bug with freqz when specifying worN after #22886
+* `#23035 <https://github.com/scipy/scipy/issues/23035>`__: TST: theilsope & siegelslope-related tests are failing on PyPy3.11...
+* `#23036 <https://github.com/scipy/scipy/issues/23036>`__: BUG: signal.csd: doesn't zero-pad for different size inputs in...
+* `#23038 <https://github.com/scipy/scipy/issues/23038>`__: DOC: ``linalg.toeplitz`` does not support batching like the ``1.16.0rc1``...
+* `#23046 <https://github.com/scipy/scipy/issues/23046>`__: ENH: ``vectorized_filter``\ : special case of scalar ``size``...
+* `#23061 <https://github.com/scipy/scipy/issues/23061>`__: DOC: Wrong SPDX identifier for OpenBLAS and LAPACK
+* `#23068 <https://github.com/scipy/scipy/issues/23068>`__: BUG: sparse: ``!=`` operator with csr matrices
+* `#23109 <https://github.com/scipy/scipy/issues/23109>`__: BUG: spatial.distance.cdist: wrong result in Yule metric
 
 ************************
 Pull requests for 1.16.0
@@ -1066,6 +1087,7 @@ Pull requests for 1.16.0
 * `#22982 <https://github.com/scipy/scipy/pull/22982>`__: BUG: signal: fix incorrect vendoring of ``npp_polyval``
 * `#22984 <https://github.com/scipy/scipy/pull/22984>`__: MAINT: special: remove test_compiles_in_cupy
 * `#22987 <https://github.com/scipy/scipy/pull/22987>`__: DOC: sparse: sparray migration guide updates
+* `#22991 <https://github.com/scipy/scipy/pull/22991>`__: DOC: update SciPy 1.16.0 release notes
 * `#22992 <https://github.com/scipy/scipy/pull/22992>`__: ENH: ``signal.cspline1d_eval,qspline1d_eval`` throw exception...
 * `#22994 <https://github.com/scipy/scipy/pull/22994>`__: DOC: signal.csd: Small fixes to docstr
 * `#22997 <https://github.com/scipy/scipy/pull/22997>`__: CI: temporarily disable free-threaded job with parallel-threads
@@ -1074,3 +1096,19 @@ Pull requests for 1.16.0
 * `#23000 <https://github.com/scipy/scipy/pull/23000>`__: ENH/DOC/TST: ``cluster.vq``\ : use ``xp_capabilities``
 * `#23001 <https://github.com/scipy/scipy/pull/23001>`__: DOC: ``special``\ : update top-level docs to reflect ``xp_capabilities``
 * `#23005 <https://github.com/scipy/scipy/pull/23005>`__: BUG: sparse: fix mean/sum change in return of np.matrix for sparse...
+* `#23010 <https://github.com/scipy/scipy/pull/23010>`__: DOC: edit and extend the release notes for 1.16.0
+* `#23013 <https://github.com/scipy/scipy/pull/23013>`__: MAINT: version pins/prep for 1.16.0rc1
+* `#23014 <https://github.com/scipy/scipy/pull/23014>`__: DOC: .mailmap updates for 1.16.0rc1
+* `#23029 <https://github.com/scipy/scipy/pull/23029>`__: DOC: add documentation for the new ``use-system-libraries`` build...
+* `#23031 <https://github.com/scipy/scipy/pull/23031>`__: REL: set 1.16.0rc2 unreleased
+* `#23040 <https://github.com/scipy/scipy/pull/23040>`__: DOC: linalg: adjust release note wording
+* `#23044 <https://github.com/scipy/scipy/pull/23044>`__: TST: update all ``result_to_tuple=`` callables to accept two...
+* `#23047 <https://github.com/scipy/scipy/pull/23047>`__: BUG: signal.csd: Zero-pad for different size inputs
+* `#23048 <https://github.com/scipy/scipy/pull/23048>`__: MAINT: ndimage.vectorized_filter: fix behavior of axes when length...
+* `#23051 <https://github.com/scipy/scipy/pull/23051>`__: MAINT/ENH: ndimage.vectorized_filter: adjust scalar size to match...
+* `#23086 <https://github.com/scipy/scipy/pull/23086>`__: CI: update windows-2019 runner image to windows-2022
+* `#23091 <https://github.com/scipy/scipy/pull/23091>`__: BUG: sparse: correct eq and ne with different shapes. (and add...
+* `#23099 <https://github.com/scipy/scipy/pull/23099>`__: MAINT: fix SPDX license expressions for LAPACK, OpenBLAS, GCC
+* `#23106 <https://github.com/scipy/scipy/pull/23106>`__: TST: CI broken vs pytest 8.4.0
+* `#23110 <https://github.com/scipy/scipy/pull/23110>`__: BUG: spatial.distance: yule implementation in ``distance_metrics.h``
+* `#23113 <https://github.com/scipy/scipy/pull/23113>`__: DOC: improve docs for ``-Duse-system-libraries`` build option

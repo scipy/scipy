@@ -27,9 +27,9 @@ requires = [
     "Cython>=3.0.8,<3.2.0",
     # The upper bound on pybind11 is pre-emptive only
     "pybind11>=2.13.2,<2.14.0",
-    # The upper bound on pythran is pre-emptive only; 0.17.0
+    # The upper bound on pythran is pre-emptive only; 0.18.0
     # is released/working at the time of writing
-    "pythran>=0.14.0,<0.18.0",
+    "pythran>=0.14.0,<0.19.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
