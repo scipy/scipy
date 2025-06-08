@@ -247,6 +247,13 @@ def roots_jacobi(n, alpha, beta, mu=False):
         Handbook of Mathematical Functions with Formulas,
         Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Example 
+    >>> from scipy.special import roots_jacobi
+
+    >>> x, w = roots_jacobi(3, 0.5, 0.5)
+    >>> print("Sample points:", x)
+    >>> print("Weights:", w)
+
     """
     m = int(n)
     if n < 1 or n != m:
