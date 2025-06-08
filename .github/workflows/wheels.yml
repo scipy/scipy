@@ -230,12 +230,12 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENABLE: cpython-freethreading cpython-prerelease
           CIBW_ENVIRONMENT_WINDOWS: >
-            PATH="C:\vcpkg\installed\arm64-windows\tools\pkgconf;%PATH%"
+            PATH="C:\vcpkg\installed\arm64-windows\tools\pkgconf;$PATH"
             VCPKG_ROOT=C:\vcpkg
             CC=clang-cl
             CXX=clang-cl
             FC=flang
-            PKG_CONFIG_PATH=%GITHUB_WORKSPACE%
+            PKG_CONFIG_PATH=$GITHUB_WORKSPACE
           CIBW_BEFORE_BUILD_WINDOWS: >
             echo "Initial PATH: %PATH%" &&
             echo "Initial PKG_CONFIG_PATH: %PKG_CONFIG_PATH%" &&
