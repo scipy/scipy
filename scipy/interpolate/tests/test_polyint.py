@@ -780,11 +780,14 @@ class TestCubicSpline:
             S = CubicSpline(x, Y, axis=1, bc_type='periodic')
             self.check_correctness(S, 'periodic', 'periodic')
 
-    def test_periodic_eval(self):
-        x = np.linspace(0, 2 * np.pi, 10)
-        y = np.cos(x)
+    def test_periodic_eval(self, xp):
+        x = xp.linspace(0, 2 * xp.pi, 10)
+        y = xp.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
-        assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
+        assert_almost_equal(S(1), S(1 + 2 * xp.pi), decimal=15)
+
+        S = CubicSpline(x, y)
+        assert_almost_equal(S(x), xp.cos(x), decimal=15)
 
     def test_second_derivative_continuity_gh_11758(self):
         # gh-11758: C2 continuity fail
@@ -885,10 +888,10 @@ class TestCubicSpline:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
-def test_CubicHermiteSpline_correctness():
-    x = [0, 2, 7]
-    y = [-1, 2, 3]
-    dydx = [0, 3, 7]
+def test_CubicHermiteSpline_correctness(xp):
+    x = xp.asarray([0, 2, 7])
+    y = xp.asarray([-1, 2, 3])
+    dydx = xp.asarray([0, 3, 7])
     s = CubicHermiteSpline(x, y, dydx)
     xp_assert_close(s(x), y, check_shape=False, check_dtype=False, rtol=1e-15)
     xp_assert_close(s(x, 1), dydx, check_shape=False, check_dtype=False, rtol=1e-15)
