@@ -16,7 +16,7 @@ BLAS/LAPACK on Linux distros, and can be dynamically switched between
 implementations on conda-forge), use::
 
     $ # for a development build
-    $ spin build -C-Dblas=blas -C-Dlapack=lapack
+    $ spin build -S-Dblas=blas -S-Dlapack=lapack
 
     $ # to build and install a wheel
     $ python -m build -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
