@@ -5,7 +5,8 @@ from typing import Literal
 import numpy as np
 
 from scipy.linalg import solve, solve_banded
-from scipy._lib._array_api import array_namespace, concat_1d
+from scipy._lib._array_api import array_namespace
+from scipy._lib.array_api_compat import numpy as np_compat
 
 from . import PPoly
 from ._polyint import _isscalar
@@ -744,7 +745,7 @@ class CubicSpline(CubicHermiteSpline):
 
     def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         xp = array_namespace(x, y)
-        x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np)
+        x, dx, y, axis, _ = prepare_input(x, y, axis, xp=np_compat)
         n = len(x)
 
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
