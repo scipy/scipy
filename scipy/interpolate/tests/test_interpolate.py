@@ -836,52 +836,53 @@ class TestLagrange:
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
+@xfail_xp_backends("array_api_strict", reason="fancy indexing __setitem__")
 class TestAkima1DInterpolator:
-    def test_eval(self):
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+    def test_eval(self, xp):
+        x = xp.arange(0., 11.)
+        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y)
-        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+        xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
             8.6, 9.9, 10.])
-        yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+        yi = xp.asarray([0., 1.375, 2., 1.5, 1.953125, 2.484375,
             4.1363636363636366866103344, 5.9803623910336236590978842,
             5.5067291516462386624652936, 5.2031367459745245795943447,
             4.1796554159017080820603951, 3.4110386597938129327189927,
             3.])
         xp_assert_close(ak(xi), yi)
 
-    def test_eval_mod(self):
+    def test_eval_mod(self, xp):
         # Reference values generated with the following MATLAB code:
         # format longG
         # x = 0:10; y = [0. 2. 1. 3. 2. 6. 5.5 5.5 2.7 5.1 3.];
         # xi = [0. 0.5 1. 1.5 2.5 3.5 4.5 5.1 6.5 7.2 8.6 9.9 10.];
         # makima(x, y, xi)
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        x = xp.arange(0., 11.)
+        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         ak = Akima1DInterpolator(x, y, method="makima")
-        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+        xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
                        8.6, 9.9, 10.])
-        yi = np.array([
+        yi = xp.asarray([
             0.0, 1.34471153846154, 2.0, 1.44375, 1.94375, 2.51939102564103,
             4.10366931918656, 5.98501550899192, 5.51756330960439, 5.1757231914014,
             4.12326636931311, 3.32931513157895, 3.0])
         xp_assert_close(ak(xi), yi)
 
-    def test_eval_2d(self):
-        x = np.arange(0., 11.)
-        y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
-        y = np.column_stack((y, 2. * y))
+    def test_eval_2d(self, xp):
+        x = xp.arange(0., 11.)
+        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        y = xp.stack((y, 2. * y), axis=1)
         ak = Akima1DInterpolator(x, y)
-        xi = np.array([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
+        xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
                        8.6, 9.9, 10.])
-        yi = np.array([0., 1.375, 2., 1.5, 1.953125, 2.484375,
+        yi = xp.asarray([0., 1.375, 2., 1.5, 1.953125, 2.484375,
                        4.1363636363636366866103344,
                        5.9803623910336236590978842,
                        5.5067291516462386624652936,
                        5.2031367459745245795943447,
                        4.1796554159017080820603951,
                        3.4110386597938129327189927, 3.])
-        yi = np.column_stack((yi, 2. * yi))
+        yi = xp.stack((yi, 2. * yi), axis=1)
         xp_assert_close(ak(xi), yi)
 
     def test_eval_3d(self):
@@ -909,19 +910,19 @@ class TestAkima1DInterpolator:
         yi[:, 1, 1] = 4. * yi_
         xp_assert_close(ak(xi), yi)
 
-    def test_linear_interpolant_edge_case_1d(self):
-        x = np.array([0.0, 1.0], dtype=float)
-        y = np.array([0.5, 1.0])
+    def test_linear_interpolant_edge_case_1d(self, xp):
+        x = xp.asarray([0.0, 1.0], dtype=xp.float64)
+        y = xp.asarray([0.5, 1.0])
         akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
-        xp_assert_close(akima(0.45), np.array(0.725))
+        xp_assert_close(akima(0.45), xp.asarray(0.725))
 
-    def test_linear_interpolant_edge_case_2d(self):
-        x = np.array([0., 1.])
-        y = np.column_stack((x, 2. * x, 3. * x, 4. * x))
+    def test_linear_interpolant_edge_case_2d(self, xp):
+        x = xp.asarray([0., 1.])
+        y = xp.stack((x, 2. * x, 3. * x, 4. * x), axis=1)
 
         ak = Akima1DInterpolator(x, y)
-        xi = np.array([0.5, 1.])
-        yi = np.array([[0.5, 1., 1.5, 2. ],
+        xi = xp.asarray([0.5, 1.])
+        yi = xp.asarray([[0.5, 1., 1.5, 2. ],
                        [1., 2., 3., 4.]])
         xp_assert_close(ak(xi), yi)
 
@@ -952,15 +953,14 @@ class TestAkima1DInterpolator:
         ak = Akima1DInterpolator(x, y.transpose(2, 1, 0), axis=2)
         xp_assert_close(ak(xi), yi.transpose(2, 1, 0))
 
-
-    def test_degenerate_case_multidimensional(self):
+    def test_degenerate_case_multidimensional(self, xp):
         # This test is for issue #5683.
-        x = np.array([0, 1, 2])
-        y = np.vstack((x, x**2)).T
+        x = xp.asarray([0, 1, 2])
+        y = xp.stack((x, x**2)).T
         ak = Akima1DInterpolator(x, y)
-        x_eval = np.array([0.5, 1.5])
+        x_eval = xp.asarray([0.5, 1.5])
         y_eval = ak(x_eval)
-        xp_assert_close(y_eval, np.vstack((x_eval, x_eval**2)).T)
+        xp_assert_close(y_eval, xp.stack((x_eval, x_eval**2)).T)
 
     def test_extend(self):
         x = np.arange(0., 11.)

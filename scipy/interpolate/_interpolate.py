@@ -10,7 +10,7 @@ import scipy.special as spec
 from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
-from scipy._lib._array_api import array_namespace, concat_1d
+from scipy._lib._array_api import array_namespace
 
 from . import _fitpack_py
 from ._polyint import _Interpolator1D
