@@ -18,9 +18,8 @@ static void dsapps(int, int*, int, double*, double*, int, double*, int, double*,
 static void dsgets(struct ARPACK_arnoldi_update_vars_d*, int*, int*, double*, double*, double*);
 static void dgetv0(struct ARPACK_arnoldi_update_vars_d *, int, int, int, double*, int, double*, double*, int*, double*);
 static void dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, double* x2);
-static void dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a);
+static void dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a, const int lda);
 static void dstqrb(int n, double* d, double* e, double* z, double* work, int* info);
-
 
 enum ARPACK_seupd_type {
     REGULAR,
@@ -54,7 +53,11 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         ierr = -2;
     } else if ((V->ncv <= V->nev) || (V->ncv > V->n)) {
         ierr = -3;
-    } else if ((V->which > 5) || (V->which < 0)) {
+    } else if ((V->which != 0) &&
+               (V->which != 1) &&
+               (V->which != 6) &&
+               (V->which != 7) &&
+               (V->which != 8)) {
         ierr = -5;
     } else if ((V->bmat != 0) && (V->bmat != 1)) {
         ierr = -6;
@@ -282,11 +285,11 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
                     }
                 } while (leftptr < rightptr);
             }
-
-            // Load the converged Ritz values into D.
-
-            dcopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
         }
+
+        // Load the converged Ritz values into D.
+
+        dcopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
 
     } else {
 
@@ -307,7 +310,7 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         // bounds. Not necessary if only Ritz values are desired.
 
         if (rvec) {
-            dsesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq]);
+            dsesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq], ldq);
         } else {
             dcopy_(&V->ncv, &workl[bounds], &int1, &workl[ihb], &int1);
         }
@@ -360,7 +363,7 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         dcopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
         dsortr(which_LA, 1, V->nconv, &workl[ihd], &workl[iw]);
         if (rvec) {
-            dsesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq]);
+            dsesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq], ldq);
         } else {
             dcopy_(&V->ncv, &workl[bounds], &int1, &workl[ihb], &int1);
             temp = bnorm2 / rnorm;
@@ -440,7 +443,7 @@ dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
         {
             if (TYP == SHIFTI)
             {
-                workl[ihb + k] = fabs(workl[ihd + k]) / pow(workl[iw + k], 2.0);
+                workl[ihb + k] = fabs(workl[ihb + k]) / pow(workl[iw + k], 2.0);
             } else if (TYP == BUCKLE) {
                 workl[ihb + k] = sigma * fabs(workl[ihb + k]) / pow(workl[iw + k] - 1.0, 2.0);
             } else if (TYP == CAYLEY) {
@@ -496,7 +499,11 @@ dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv
             V->info = -3;
         } else if (V->maxiter <= 0) {
             V->info = -4;
-        } else if ((V->which < 0) || (V->which > 5)) {
+        } else if ((V->which != 0) &&
+            (V->which != 1) &&
+            (V->which != 6) &&
+            (V->which != 7) &&
+            (V->which != 8)) {
             V->info = -5;
         } else if ((V->bmat != 0) && (V->bmat != 1)) {
             V->info = -6;
@@ -997,6 +1004,7 @@ dsconv(int n, double *ritz, double *bounds, double tol, int* nconv)
     return;
 }
 
+
 void
 dseigt(double rnorm, int n, double* h, int ldh, double* eig, double* bounds,
        double* workl, int* ierr)
@@ -1071,7 +1079,6 @@ LINE1000:
         // a j-step Arnoldi factorization is present.
 
     if (*rnorm > 0.0) { goto LINE40; }
-
 
         // Invariant subspace found, generate a new starting
         // vector which is orthogonal to the current Arnoldi
@@ -1348,7 +1355,7 @@ LINE90:
 
         // Another step of iterative refinement step is required.
 
-         *rnorm = V->aitr_rnorm1;
+        *rnorm = V->aitr_rnorm1;
         V->aitr_iter += 1;
         if (V->aitr_iter < 2) { goto LINE80; }
 
@@ -1406,8 +1413,8 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
        double* resid, double* q, int ldq, double* workd)
 {
     int i, iend, istart, jj, kplusp, tmp_int, int1 = 1;
-    double a1, a2, a3, a4, c, f, g, h11, h12, r, s, sigma, tst1;
-    double dbl0 = 0.0, dbl1 = 1.0;
+    double a1, a2, a3, a4, c, f, g, r, s, sigma, tst1;
+    double dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
 
     iend = 0;
     kplusp = *kev + np;
@@ -1435,9 +1442,10 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
         istart = 0;
         while (istart < kplusp - 1)
         {
+
             for (iend = istart; iend < kplusp - 1; iend++)
             {
-                tst1 = fabs(h[iend]) + fabs(h[iend + 1 + ldh]);
+                tst1 = fabs(h[iend + ldh]) + fabs(h[iend + 1 + ldh]);
                 if (h[iend + 1] <= ulp * tst1)
                 {
                     h[iend + 1] = 0.0;
@@ -1445,19 +1453,21 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
                 }
             }
 
-            // Scalar block, skipping
+            // Scalar block, skipping, correct the sign if necessary
             if (istart == iend)
             {
                 istart += 1;
+                if (h[iend] < 0.0)
+                {
+                    h[iend] = -h[iend];
+                    dscal_(&kplusp, &dblm1, &q[ldq*(iend)], &int1);
+                }
                 continue;
             }
 
             // We have a valid block [istart, iend] inclusive
-            h11 = h[istart + ldh];
-            h12 = h[istart + 1];
-
-            f = h11 - sigma;
-            g = h12;
+            f = h[istart + ldh] - sigma;
+            g = h[istart + 1];
 
             for (i = istart; i < iend; i++)
             {
@@ -1481,28 +1491,34 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
                 dlartgp_(&f, &g, &c, &s, &r);
                 if (i > istart)
                 {
-
+                    h[i] = r;
                 }
-                a1 = c*h[i + ldh]     + s*h[i+1];
-                a2 = c*h[i + 1]       + s*h[i+1 + ldh];
-                a4 = c*h[i + 1 + ldh] - s*h[i+1];
+                a1 = c*h[i + ldh]     + s*h[i + 1];
+                a2 = c*h[i + 1]       + s*h[i + 1 + ldh];
+                a4 = c*h[i + 1 + ldh] - s*h[i + 1];
                 a3 = c*h[i + 1]       - s*h[i + ldh];
                 h[i + ldh]     = c*a1 + s*a2;              // h[i  , i  ]
                 h[i + 1 + ldh] = c*a4 - s*a3;              // h[i+1, i+1]
                 h[i + 1]       = c*a3 + s*a4;              // h[i+1, i  ]
 
                 // Accumulate the rotation also in Q
-                tmp_int = (i+jj+2 > kplusp ? kplusp : i + jj + 2);
+                tmp_int = (i + jj + 2 > kplusp ? kplusp : i + jj + 2);
                 drot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i+1)], &int1, &c, &s);
 
-                if (i < iend-1)
+                if (i < iend - 1)
                 {
                     // g is the bulge created by the rotation
                     f = h[i + 1];
                     g = s*h[i + 2];
+                    h[i + 2] = c*h[i + 2];
                 }
             }
             istart = iend + 1;
+            if (h[iend] < 0.0)
+            {
+                h[iend] = -h[iend];
+                dscal_(&kplusp, &dblm1, &q[ldq*(iend)], &int1);
+            }
         }
     }
     // 90
@@ -1538,8 +1554,8 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
     for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
-        dgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i)], &int1, &dbl0, workd, &int1);
-        dcopy_(&n, workd, &int1, &v[ldv*(kplusp-i)], &int1);
+        dgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i-1)], &int1, &dbl0, workd, &int1);
+        dcopy_(&n, workd, &int1, &v[ldv*(kplusp-i-1)], &int1);
     }
     // 130
 
@@ -1573,7 +1589,8 @@ dsapps(int n, int* kev, int np, double* shift, double* v, int ldv, double* h, in
 
 
 void
-dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz, double* bounds, double* shifts)
+dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz,
+       double* bounds, double* shifts)
 {
     int kevd2, tmp1, tmp2, int1 = 1;
     if (V->which == which_BE)
@@ -1618,6 +1635,7 @@ dsgets(struct ARPACK_arnoldi_update_vars_d *V, int* kev, int* np, double* ritz, 
         dcopy_(np, ritz, &int1, shifts, &int1);
     }
 }
+
 
 void
 dgetv0(struct ARPACK_arnoldi_update_vars_d *V, int initv, int n, int j,
@@ -1838,7 +1856,7 @@ dsortr(const enum ARPACK_which w, const int apply, const int n, double* x1, doub
 
 
 void
-dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a)
+dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int na, double* a, const int lda)
 {
     int i, igap, j, int1 = 1;
     double temp;
@@ -1879,7 +1897,7 @@ dsesrt(const enum ARPACK_which w, const int apply, const int n, double* x, int n
 
                 if (apply)
                 {
-                    dswap_(&na, &a[j], &int1, &a[j+igap], &int1);
+                    dswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
                 }
                 j -= igap;
             }
@@ -1920,13 +1938,17 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
     //  for each block, according to whether top or bottom diagonal
     //  element is smaller.
 
+    // Translation Note:
+    // All indices are 1-based, since the F77 code is very complicated.
+    // Instead array indices are decremented where necessary.
+
     l1 = 1;
 
     while (jtot < nmaxit)
     {
         if (l1 > n) { break; }
 
-        if (l1 > 1) { e[l1 - 1] = 0.0; }
+        if (l1 > 1) { e[l1 - 2] = 0.0; }
         if (l1 <= n - 1)
         {
             for (m = l1; m <= n - 1; m++)
@@ -1938,7 +1960,6 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
                     e[m-1] = 0.0;
                     break;
                 }
-                if (m == n - 1) {  m = n; break; }  // No break condition
             }
             // 20
         } else {
@@ -1958,7 +1979,7 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
 
         // Scale submatrix in rows and columns L to LEND
         tmp_int = lend - l + 1;
-        anorm = dlanst_("M", &tmp_int, &d[l-1], &e[l-1]);
+        anorm = dlanst_("I", &tmp_int, &d[l-1], &e[l-1]);
         iscale = 0;
 
         if (anorm == 0.0) { continue; }
@@ -2085,7 +2106,6 @@ dstqrb(int n, double* d, double* e, double* z, double* work, int* info)
                     m = lend;
                 }
                 // 100, 110
-
                 if (m > lend) { e[m-2] = 0.0; }
                 p = d[l-1];
                 if (m == l)

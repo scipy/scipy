@@ -18,9 +18,8 @@ static void ssapps(int, int*, int, float*, float*, int, float*, int, float*, flo
 static void ssgets(struct ARPACK_arnoldi_update_vars_s*, int*, int*, float*, float*, float*);
 static void sgetv0(struct ARPACK_arnoldi_update_vars_s *, int, int, int, float*, int, float*, float*, int*, float*);
 static void ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float* x2);
-static void ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a);
+static void ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a, const int lda);
 static void sstqrb(int n, float* d, float* e, float* z, float* work, int* info);
-
 
 enum ARPACK_seupd_type {
     REGULAR,
@@ -35,11 +34,11 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
        float* d, float* z, int ldz, float sigma, float* resid, float* v,
        int ldv, int* ipntr, float* workd, float* workl)
 {
-    const float eps23 = powf(ulp, 2.0 / 3.0);
+    const float eps23 = powf(ulp, 2.0f / 3.0f);
     int j, jj, k;
     int ibd, ih, ihb, ihd, iq, irz, iw, ldh, ldq, ritz, bounds, next, np;
     int ierr = 0, int1 = 1, tmp_int = 0, numcnv, reord;
-    float bnorm2, rnorm, temp, temp1, dbl1 = 1.0;
+    float bnorm2, rnorm, temp, temp1, dbl1 = 1.0f;
 
     if (V->nconv == 0) { return; }
 
@@ -54,7 +53,11 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         ierr = -2;
     } else if ((V->ncv <= V->nev) || (V->ncv > V->n)) {
         ierr = -3;
-    } else if ((V->which > 5) || (V->which < 0)) {
+    } else if ((V->which != 0) &&
+               (V->which != 1) &&
+               (V->which != 6) &&
+               (V->which != 7) &&
+               (V->which != 8)) {
         ierr = -5;
     } else if ((V->bmat != 0) && (V->bmat != 1)) {
         ierr = -6;
@@ -282,11 +285,11 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
                     }
                 } while (leftptr < rightptr);
             }
-
-            // Load the converged Ritz values into D.
-
-            scopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
         }
+
+        // Load the converged Ritz values into D.
+
+        scopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
 
     } else {
 
@@ -307,7 +310,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         // bounds. Not necessary if only Ritz values are desired.
 
         if (rvec) {
-            ssesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq]);
+            ssesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq], ldq);
         } else {
             scopy_(&V->ncv, &workl[bounds], &int1, &workl[ihb], &int1);
         }
@@ -332,15 +335,15 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         {
             for (int k = 0; k < V->ncv; k++)
             {
-                workl[ihd + k] = 1.0 / workl[ihd + k] + sigma;
+                workl[ihd + k] = 1.0f / workl[ihd + k] + sigma;
             }
         } else if (TYP == BUCKLE) {
             for (int k = 0; k < V->ncv; k++) {
-                workl[ihd + k] = sigma * workl[ihd + k] / (workl[ihd + k] - 1.0);
+                workl[ihd + k] = sigma * workl[ihd + k] / (workl[ihd + k] - 1.0f);
             }
         } else if (TYP == CAYLEY) {
             for (int k = 0; k < V->ncv; k++) {
-                workl[ihd + k] = sigma * (workl[ihd + k] + 1.0) / (workl[ihd + k] - 1.0);
+                workl[ihd + k] = sigma * (workl[ihd + k] + 1.0f) / (workl[ihd + k] - 1.0f);
             }
         }
 
@@ -360,7 +363,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         scopy_(&V->nconv, &workl[ihd], &int1, d, &int1);
         ssortr(which_LA, 1, V->nconv, &workl[ihd], &workl[iw]);
         if (rvec) {
-            ssesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq]);
+            ssesrt(which_LA, rvec, V->nconv, d, V->ncv, &workl[iq], ldq);
         } else {
             scopy_(&V->ncv, &workl[bounds], &int1, &workl[ihb], &int1);
             temp = bnorm2 / rnorm;
@@ -397,9 +400,9 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
         for (int j = 0; j < V->ncv - 1; j++)
         {
-            workl[ihb + j] = 0.0;
+            workl[ihb + j] = 0.0f;
         }
-        workl[ihb + V->ncv - 1] = 1.0;
+        workl[ihb + V->ncv - 1] = 1.0f;
         sorm2r_("L", "T", &V->ncv, &int1, &V->nconv, &workl[iq], &ldq, &workl[iw + V->ncv], &workl[ihb], &V->ncv, &temp, &ierr);
 
         //  Make a copy of the last row into
@@ -440,7 +443,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
         {
             if (TYP == SHIFTI)
             {
-                workl[ihb + k] = fabsf(workl[ihd + k]) / powf(workl[iw + k], 2.0f);
+                workl[ihb + k] = fabsf(workl[ihb + k]) / powf(workl[iw + k], 2.0f);
             } else if (TYP == BUCKLE) {
                 workl[ihb + k] = sigma * fabsf(workl[ihb + k]) / powf(workl[iw + k] - 1.0f, 2.0f);
             } else if (TYP == CAYLEY) {
@@ -465,7 +468,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
     {
         for (k = 0; k < V->nconv; k++)
         {
-            workl[iw + k] = workl[iw + V->ncv + k] / (workl[iw + k] - 1.0);
+            workl[iw + k] = workl[iw + V->ncv + k] / (workl[iw + k] - 1.0f);
         }
         // 120
     }
@@ -496,7 +499,11 @@ ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
             V->info = -3;
         } else if (V->maxiter <= 0) {
             V->info = -4;
-        } else if ((V->which < 0) || (V->which > 5)) {
+        } else if ((V->which != 0) &&
+            (V->which != 1) &&
+            (V->which != 6) &&
+            (V->which != 7) &&
+            (V->which != 8)) {
             V->info = -5;
         } else if ((V->bmat != 0) && (V->bmat != 1)) {
             V->info = -6;
@@ -516,14 +523,14 @@ ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
             return;
         }
 
-        if (V->tol <= 0.0) { V->tol = ulp; }
+        if (V->tol <= 0.0f) { V->tol = ulp; }
 
         // NP is the number of additional steps to
         // extend the length NEV Lanczos factorization.
         V->np = V->ncv - V->nev;
 
         // Zero out internal workspace
-        for (j = 0; j < (V->ncv)*((V->ncv) + 8); j++) { workl[j] = 0.0; }
+        for (j = 0; j < (V->ncv)*((V->ncv) + 8); j++) { workl[j] = 0.0f; }
     }
 
     // Pointer into WORKL for address of H, RITZ, BOUNDS, Q
@@ -618,7 +625,7 @@ ssaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
         V->getv0_itry = 1;
         sgetv0(V, V->aup2_initv, V->n, 0, v, ldv, resid, &V->aup2_rnorm, ipntr, workd);
         if (V->ido != ido_DONE) { return; }
-        if (V->aup2_rnorm == 0.0)
+        if (V->aup2_rnorm == 0.0f)
         {
             V->info = -9;
             V->ido = ido_DONE;
@@ -743,7 +750,7 @@ LINE20:
     tmp_int = V->np;
     for (j = 0; j < tmp_int; j++)
     {
-        if (bounds[j] == 0.0)
+        if (bounds[j] == 0.0f)
         {
             V->np -= 1;
             V->nev += 1;
@@ -886,7 +893,7 @@ LINE20:
         if ((V->nev == 1) && (V->aup2_kplusp >= 6))
         {
             V->nev = V->aup2_kplusp / 2;
-        } else if ((V->nev == 1) && (V->aup2_kplusp > 3))
+        } else if ((V->nev == 1) && (V->aup2_kplusp > 2))
         {
             V->nev = 2;
         }
@@ -997,6 +1004,7 @@ ssconv(int n, float *ritz, float *bounds, float tol, int* nconv)
     return;
 }
 
+
 void
 sseigt(float rnorm, int n, float* h, int ldh, float* eig, float* bounds,
        float* workl, int* ierr)
@@ -1017,10 +1025,10 @@ ssaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, floa
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
     int i, infol, ipj, irj, ivj, jj, n, tmp_int;
-    const float sq2o2 = sqrtf(2.0) / 2.0;
+    const float sq2o2 = sqrtf(2.0f) / 2.0f;
 
     int int1 = 1;
-    float dbl1 = 1.0, dbl0 = 0.0, dblm1 = -1.0, temp1;
+    float dbl1 = 1.0f, dbl0 = 0.0f, dblm1 = -1.0f, temp1;
 
     n = V->n;  // n is constant, this is just for typing convenience
     ipj = 0;
@@ -1070,8 +1078,7 @@ LINE1000:
         // Check for exact zero. Equivalent to determining whether
         // a j-step Arnoldi factorization is present.
 
-    if (*rnorm > 0.0) { goto LINE40; }
-
+    if (*rnorm > 0.0f) { goto LINE40; }
 
         // Invariant subspace found, generate a new starting
         // vector which is orthogonal to the current Arnoldi
@@ -1115,7 +1122,7 @@ LINE40:
     scopy_(&n, resid, &int1, &v[ldv*(V->aitr_j)], &int1);
     if (*rnorm >= unfl)
     {
-        temp1 = 1.0 / *rnorm;
+        temp1 = 1.0f / *rnorm;
         sscal_(&n, &temp1, &v[ldv*(V->aitr_j)], &int1);
         sscal_(&n, &temp1, &workd[ipj], &int1);
     } else {
@@ -1224,7 +1231,7 @@ LINE65:
 
     if ((V->aitr_j == 0) || (V->aitr_restart))
     {
-        h[V->aitr_j] = 0.0;
+        h[V->aitr_j] = 0.0f;
     } else {
         h[V->aitr_j] = *rnorm;
     }
@@ -1299,7 +1306,7 @@ LINE80:
 
     if ((V->aitr_j == 0) || (V->aitr_restart))
     {
-        h[V->aitr_j] = 0.0;
+        h[V->aitr_j] = 0.0f;
     }
     h[V->aitr_j + ldh] += workd[irj + V->aitr_j];
 
@@ -1348,7 +1355,7 @@ LINE90:
 
         // Another step of iterative refinement step is required.
 
-         *rnorm = V->aitr_rnorm1;
+        *rnorm = V->aitr_rnorm1;
         V->aitr_iter += 1;
         if (V->aitr_iter < 2) { goto LINE80; }
 
@@ -1356,9 +1363,9 @@ LINE90:
 
         for (jj = 0; jj < n; jj++)
         {
-            resid[jj] = 0.0;
+            resid[jj] = 0.0f;
         }
-        *rnorm = 0.0;
+        *rnorm = 0.0f;
     }
 
     // Branch here directly if iterative refinement
@@ -1374,7 +1381,7 @@ LINE100:
     // If not perform a similarity transformation on H(1:j,1:j)
     // and scale v(:,j) by -1.
 
-    if (h[V->aitr_j] < 0.0)
+    if (h[V->aitr_j] < 0.0f)
     {
         h[V->aitr_j] = -h[V->aitr_j];
         if (V->aitr_j < k + np - 1)
@@ -1406,8 +1413,8 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
        float* resid, float* q, int ldq, float* workd)
 {
     int i, iend, istart, jj, kplusp, tmp_int, int1 = 1;
-    float a1, a2, a3, a4, c, f, g, h11, h12, r, s, sigma, tst1;
-    float dbl0 = 0.0, dbl1 = 1.0;
+    float a1, a2, a3, a4, c, f, g, r, s, sigma, tst1;
+    float dbl0 = 0.0f, dbl1 = 1.0f, dblm1 = -1.0f;
 
     iend = 0;
     kplusp = *kev + np;
@@ -1435,29 +1442,32 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
         istart = 0;
         while (istart < kplusp - 1)
         {
+
             for (iend = istart; iend < kplusp - 1; iend++)
             {
-                tst1 = fabsf(h[iend]) + fabsf(h[iend + 1 + ldh]);
+                tst1 = fabsf(h[iend + ldh]) + fabsf(h[iend + 1 + ldh]);
                 if (h[iend + 1] <= ulp * tst1)
                 {
-                    h[iend + 1] = 0.0;
+                    h[iend + 1] = 0.0f;
                     break;
                 }
             }
 
-            // Scalar block, skipping
+            // Scalar block, skipping, correct the sign if necessary
             if (istart == iend)
             {
                 istart += 1;
+                if (h[iend] < 0.0f)
+                {
+                    h[iend] = -h[iend];
+                    sscal_(&kplusp, &dblm1, &q[ldq*(iend)], &int1);
+                }
                 continue;
             }
 
             // We have a valid block [istart, iend] inclusive
-            h11 = h[istart + ldh];
-            h12 = h[istart + 1];
-
-            f = h11 - sigma;
-            g = h12;
+            f = h[istart + ldh] - sigma;
+            g = h[istart + 1];
 
             for (i = istart; i < iend; i++)
             {
@@ -1481,28 +1491,34 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
                 slartgp_(&f, &g, &c, &s, &r);
                 if (i > istart)
                 {
-
+                    h[i] = r;
                 }
-                a1 = c*h[i + ldh]     + s*h[i+1];
-                a2 = c*h[i + 1]       + s*h[i+1 + ldh];
-                a4 = c*h[i + 1 + ldh] - s*h[i+1];
+                a1 = c*h[i + ldh]     + s*h[i + 1];
+                a2 = c*h[i + 1]       + s*h[i + 1 + ldh];
+                a4 = c*h[i + 1 + ldh] - s*h[i + 1];
                 a3 = c*h[i + 1]       - s*h[i + ldh];
                 h[i + ldh]     = c*a1 + s*a2;              // h[i  , i  ]
                 h[i + 1 + ldh] = c*a4 - s*a3;              // h[i+1, i+1]
                 h[i + 1]       = c*a3 + s*a4;              // h[i+1, i  ]
 
                 // Accumulate the rotation also in Q
-                tmp_int = (i+jj+2 > kplusp ? kplusp : i + jj + 2);
+                tmp_int = (i + jj + 2 > kplusp ? kplusp : i + jj + 2);
                 srot_(&tmp_int, &q[ldq*i], &int1, &q[ldq*(i+1)], &int1, &c, &s);
 
-                if (i < iend-1)
+                if (i < iend - 1)
                 {
                     // g is the bulge created by the rotation
                     f = h[i + 1];
                     g = s*h[i + 2];
+                    h[i + 2] = c*h[i + 2];
                 }
             }
             istart = iend + 1;
+            if (h[iend] < 0.0f)
+            {
+                h[iend] = -h[iend];
+                sscal_(&kplusp, &dblm1, &q[ldq*(iend)], &int1);
+            }
         }
     }
     // 90
@@ -1516,7 +1532,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
         tst1 = fabsf(h[i + ldh]) + fabsf(h[i+1 + ldh]);
         if (h[i+1] <= ulp*tst1)
         {
-            h[i+1] = 0.0;
+            h[i+1] = 0.0f;
         }
     }
     // 100
@@ -1525,7 +1541,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
     // temporarily store the result in WORKD(N+1:2*N).
     // This is not necessary if h(kev+1,1) = 0.
 
-    if (h[*kev] > 0.0)
+    if (h[*kev] > 0.0f)
     {
         sgemv_("N", &n, &kplusp, &dbl1, v, &ldv, &q[ldq*(*kev)], &int1, &dbl0, &workd[n], &int1);
     }
@@ -1538,8 +1554,8 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
     for (i = 0; i < *kev; i++)
     {
         tmp_int = kplusp - i;
-        sgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i)], &int1, &dbl0, workd, &int1);
-        scopy_(&n, workd, &int1, &v[ldv*(kplusp-i)], &int1);
+        sgemv_("N", &n, &tmp_int, &dbl1, v, &ldv, &q[ldq*(*kev-i-1)], &int1, &dbl0, workd, &int1);
+        scopy_(&n, workd, &int1, &v[ldv*(kplusp-i-1)], &int1);
     }
     // 130
 
@@ -1551,7 +1567,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
     }
     // 140
 
-    if (h[*kev] > 0.0)
+    if (h[*kev] > 0.0f)
     {
         scopy_(&n, &workd[n], &int1, &v[ldv*(*kev)], &int1);
     }
@@ -1563,7 +1579,7 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
     //    betak = e_{kev+1}'*H*e_{kev}
 
     sscal_(&n, &q[kplusp-1 + (*kev-1)*ldq], resid, &int1);
-    if (h[*kev] > 0.0)
+    if (h[*kev] > 0.0f)
     {
         saxpy_(&n, &h[*kev], &v[ldv*(*kev)], &int1, resid, &int1);
     }
@@ -1573,7 +1589,8 @@ ssapps(int n, int* kev, int np, float* shift, float* v, int ldv, float* h, int l
 
 
 void
-ssgets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np, float* ritz, float* bounds, float* shifts)
+ssgets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np, float* ritz,
+       float* bounds, float* shifts)
 {
     int kevd2, tmp1, tmp2, int1 = 1;
     if (V->which == which_BE)
@@ -1772,8 +1789,8 @@ LINE40:
 
         //  Iterative refinement step "failed"
 
-        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0; }
-        *rnorm = 0.0;
+        for (jj = 0; jj < n; jj++) { resid[jj] = 0.0f; }
+        *rnorm = 0.0f;
         V->info = -1;
     }
 
@@ -1839,7 +1856,7 @@ ssortr(const enum ARPACK_which w, const int apply, const int n, float* x1, float
 
 
 void
-ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a)
+ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na, float* a, const int lda)
 {
     int i, igap, j, int1 = 1;
     float temp;
@@ -1880,7 +1897,7 @@ ssesrt(const enum ARPACK_which w, const int apply, const int n, float* x, int na
 
                 if (apply)
                 {
-                    sswap_(&na, &a[j], &int1, &a[j+igap], &int1);
+                    sswap_(&na, &a[lda*j], &int1, &a[lda*(j+igap)], &int1);
                 }
                 j -= igap;
             }
@@ -1896,7 +1913,7 @@ void
 sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
 {
     int int1 = 1, int0 = 0;
-    float eps2 = powf(ulp, 2.0);
+    float eps2 = powf(ulp, 2.0f);
     float safmin = unfl;
     float safmax = (1.0f / safmin);
     float ssfmax = sqrtf(safmax) / 3.0f;
@@ -1921,13 +1938,17 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
     //  for each block, according to whether top or bottom diagonal
     //  element is smaller.
 
+    // Translation Note:
+    // All indices are 1-based, since the F77 code is very complicated.
+    // Instead array indices are decremented where necessary.
+
     l1 = 1;
 
     while (jtot < nmaxit)
     {
         if (l1 > n) { break; }
 
-        if (l1 > 1) { e[l1 - 1] = 0.0f; }
+        if (l1 > 1) { e[l1 - 2] = 0.0f; }
         if (l1 <= n - 1)
         {
             for (m = l1; m <= n - 1; m++)
@@ -1939,7 +1960,6 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                     e[m-1] = 0.0f;
                     break;
                 }
-                if (m == n - 1) {  m = n; break; }  // No break condition
             }
             // 20
         } else {
@@ -1959,7 +1979,7 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
 
         // Scale submatrix in rows and columns L to LEND
         tmp_int = lend - l + 1;
-        anorm = slanst_("M", &tmp_int, &d[l-1], &e[l-1]);
+        anorm = slanst_("I", &tmp_int, &d[l-1], &e[l-1]);
         iscale = 0;
 
         if (anorm == 0.0f) { continue; }
@@ -2036,13 +2056,13 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 jtot += 1;
 
                 // Form shift
-                g = (d[l]- p) / (2.0 * e[l-1]);
-                r = hypotf(g, 1.0);
-                g = d[m-1] - p + (e[l-1] / (g + copysign(r, g)));
+                g = (d[l]- p) / (2.0f * e[l-1]);
+                r = hypotf(g, 1.0f);
+                g = d[m-1] - p + (e[l-1] / (g + copysignf(r, g)));
 
-                s = 1.0;
-                c = 1.0;
-                p = 0.0;
+                s = 1.0f;
+                c = 1.0f;
+                p = 0.0f;
 
                 // Inner loop
                 for (i = m - 1; i >= l; i--)
@@ -2086,7 +2106,6 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                     m = lend;
                 }
                 // 100, 110
-
                 if (m > lend) { e[m-2] = 0.0f; }
                 p = d[l-1];
                 if (m == l)
@@ -2118,7 +2137,7 @@ sstqrb(int n, float* d, float* e, float* z, float* work, int* info)
                 jtot += 1;
 
                 // Form the shift
-                g = (d[l-2] - p) / (2.0f*e[l-2]);
+                g = (d[l-2] - p) / (2.0*e[l-2]);
                 r = hypotf(g, 1.0f);
                 g = d[m-1] - p + (e[l-2] / (g + copysignf(r, g)));
 
