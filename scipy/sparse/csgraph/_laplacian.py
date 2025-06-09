@@ -20,7 +20,7 @@ def laplacian(
     form="array",
     dtype=None,
     symmetrized=False,
-    variant="unsigned",
+    variant="repelling",
 ):
     """
     Return the Laplacian of a directed graph.
@@ -70,15 +70,18 @@ def laplacian(
         sparse matrices unless the sparsity pattern is symmetric or
         `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
-    variant : 'unsigned', or 'opposing'
-        Specifies the method used to compute vertex degrees:
+    variant : 'repelling', 'opposing' or 'unsigned'
+        Specifies the method used to compute vertex degrees.
+        Detailed discussions on the reasoning behind each type of variant can be found in [2].:
 
-        * 'unsigned' is standard degree calculation using edge weights;
+        * 'repelling' is standard degree calculation using edge weights.
         * 'opposing' computes the degree using absolute values of edge weights.
           This prevents cancellation of positive and negative edge weights in
-          signed graphs, as described in [2].
+          signed graphs, as described in [3].
+        * 'unsigned' discards the sign of edge weights.
+          This removes all the information contained in the sign.
 
-        Default: 'unsigned'.
+        Default: 'repelling'.
 
     Returns
     -------
@@ -125,8 +128,13 @@ def laplacian(
     References
     ----------
     .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
-    .. [2] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch
-           and Jürgen Lerner and Ernesto W. De Luca and Sahin Albayrak. (2010).
+    .. [2] Shi, Guodong and Altafini, Claudio and Baras, John S. (2019).
+           Dynamics over Signed Networks,
+           SIAM Review 61(2), 229-257
+           https://doi.org/10.1137/17M1134172
+    .. [3] Jérôme Kunegis and Stephan Schmidt and Andreas Lommatzsch
+           and Jürgen Lerner and Ernesto W. De Luca
+           and Sahin Albayrak. (2010).
            Spectral Analysis of Signed Graphs for Clustering,
            Prediction and Visualization.
            In Proceedings of the 2010 SIAM International Conference
@@ -298,24 +306,37 @@ def laplacian(
            [ 1,  0,  1],
            [-1,  1,  0]])
 
-    By default, positive and negative edge weights cancel during degree computation:
+    Setting variant="repelling" (default),
+    positive and negative edge weights cancel during degree computation:
 
-    >>> L_signed, d_signed = csgraph.laplacian(G, return_diag=True)
-    >>> L_signed
+    >>> L_repelling, d_repelling = csgraph.laplacian(G, return_diag=True)
+    >>> L_repelling
     array([[ 0, -1,  1],
            [-1,  2, -1],
            [ 1, -1,  0]])
-    >>> d_signed
+    >>> d_repelling
     array([0, 2, 0])
 
     Setting variant="opposing" prevents cancellation by summing absolute edge weights:
 
-    >>> L_abs, d_abs = csgraph.laplacian(G, return_diag=True, variant="opposing")
-    >>> L_abs
+    >>> L_opposing, d_opposing = csgraph.laplacian(G, return_diag=True, variant="opposing")
+    >>> L_opposing
     array([[ 2, -1, 1],
            [-1,  2, -1],
            [1, -1,  2]])
-    >>> d_abs
+    >>> d_opposing
+    array([2, 2, 2])
+
+    Setting variant="unsigned" discards the sign of edge weights
+    and computes the Laplacian using absolute edge weights
+    This is same as csgraph.laplacian(np.abs(G), return_diag=True, variant="repelling"):
+
+    >>> L_unsigned, d_unsigned = csgraph.laplacian(G, return_diag=True, variant="unsigned")
+    >>> L_unsigned
+    array([[ 2, -1, -1],
+           [-1,  2, -1],
+           [-1, -1,  2]])
+    >>> d_unsigned
     array([2, 2, 2])
 
     The Laplacian matrix is used for
@@ -459,18 +480,22 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, v
     if dtype is None:
         dtype = graph.dtype
 
+    if variant == "unsigned":
+        # Discard the sign of edge weights.
+        graph = np.abs(graph)
+
     graph_sum = np.asarray(graph.sum(axis=axis)).ravel()
     if symmetrized:
         graph_sum += np.asarray(graph.sum(axis=1 - axis)).ravel()
     graph_diagonal = graph.diagonal()
 
-    if variant == "unsigned":
+    if variant == "repelling" or variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
     elif variant == "opposing":
-        # Normalization affects only the diagonal (unsigned) computation, not the rest.
-        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
         graph_abs = np.abs(graph)
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
@@ -524,12 +549,16 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
             needs_copy = True
 
     if variant == "unsigned":
+        # Discard the sign of edge weights.
+        m = np.abs(m)
+
+    if variant == "repelling" or variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     elif variant == "opposing":
-        # Normalization affects only the diagonal (unsigned) computation, not the rest.
-        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
         m_abs = np.abs(m)
         m_diagonal_abs = np.abs(m.diagonal())
         w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
@@ -570,18 +599,22 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, va
     if dtype is None:
         dtype = m.dtype
 
+    if variant == "unsigned":
+        # Discard the sign of edge weights.
+        m = np.abs(m)
+
     graph_sum = m.sum(axis=axis)
     if symmetrized:
         graph_sum += m.sum(axis=1 - axis)
     graph_diagonal = m.diagonal()
 
-    if variant == "unsigned":
+    if variant == "repelling" or variant == "unsigned":
         diag = graph_sum - graph_diagonal
         if symmetrized:
             diag -= graph_diagonal
     elif variant == "opposing":
-        # Normalization affects only the diagonal (unsigned) computation, not the rest.
-        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
         graph_abs = np.abs(graph)
         graph_diagonal_abs = np.abs(graph_diagonal)
         diag = np.asarray(graph_abs.sum(axis=axis)).ravel() - graph_diagonal_abs
@@ -638,12 +671,16 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
     np.fill_diagonal(m, 0)
 
     if variant == "unsigned":
+        # Discard the sign of edge weights.
+        m = np.abs(m)
+
+    if variant == "repelling" or variant == "unsigned":
         if symmetrized:
             m += m.T.conj()
         w = m.sum(axis=axis)
     elif variant == "opposing":
-        # Normalization affects only the diagonal (unsigned) computation, not the rest.
-        # abs before symmetrize (for unsigned), seems implied by Kunegis et al (2010).
+        # Normalization affects only the diagonal computation, not the rest.
+        # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
         m_abs = np.abs(m)
         w = m_abs.sum(axis=axis)
         if symmetrized:
