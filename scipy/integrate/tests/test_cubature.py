@@ -222,7 +222,9 @@ def _eval_indefinite_integral(F, a, b, xp):
 
     out = 0
     for ind in itertools.product(range(2), repeat=ndim):
-        selected_points = xp.asarray([points[i, j] for i, j in zip(ind, range(ndim))])
+        selected_points = xp.asarray(
+            [float(points[i, j]) for i, j in zip(ind, range(ndim))]
+        )
         out += pow(-1, sum(ind) + ndim) * F(selected_points)
 
     return out

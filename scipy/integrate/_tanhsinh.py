@@ -97,13 +97,10 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: ``eps**0.75``, where ``eps`` is the precision of
-        the result dtype), respectively.  Iteration will stop when
-        ``res.error < atol`` or  ``res.error < res.integral * rtol``. The error
-        estimate is as described in [1]_ Section 5 but with a lower bound of
-        ``eps * res.integral``. While not theoretically rigorous or
-        conservative, it is said to work well in practice. Must be non-negative
-        and finite if `log` is False, and must be expressed as the log of a
-        non-negative and finite number if `log` is True.
+        the result dtype), respectively. Must be non-negative and finite if
+        `log` is False, and must be expressed as the log of a non-negative and
+        finite number if `log` is True. Iteration will stop when
+        ``res.error < atol`` or  ``res.error < res.integral * rtol``.
     preserve_shape : bool, default: False
         In the following, "arguments of `f`" refers to the array ``xi`` and
         any arrays within ``argsi``. Let ``shape`` be the broadcasted shape
@@ -174,6 +171,12 @@ def tanhsinh(f, a, b, *, args=(), log=False, maxlevel=None, minlevel=2,
     Implements the algorithm as described in [1]_ with minor adaptations for
     finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
+
+    Two error estimation schemes are described in [1]_ Section 5: one attempts to
+    detect and exploit quadratic convergence; the other simply compares the integral
+    estimates at successive levels. While neither is theoretically rigorous or
+    conservative, both work well in practice. Our error estimate uses the minimum of
+    these two schemes with a lower bound of ``eps * res.integral``.
 
     Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval during iterations, but the values returned by
@@ -771,8 +774,8 @@ def _estimate_error(work, xp):
         d4 = work.d4
         d5 = log_e1 + xp.real(work.Sn)
         temp = xp.where(d1 > -xp.inf, d1 ** 2 / d2, -xp.inf)
-        ds = xp.stack([temp, 2 * d1, d3, d4, d5])
-        aerr = xp.max(ds, axis=0)
+        ds = xp.stack([temp, 2 * d1, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
         rerr = aerr - xp.real(work.Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
@@ -782,8 +785,8 @@ def _estimate_error(work, xp):
         d4 = work.d4
         d5 = e1 * xp.abs(work.Sn)
         temp = xp.where(d1 > 0, d1**(xp.log(d1)/xp.log(d2)), 0)
-        ds = xp.stack([temp, d1**2, d3, d4, d5])
-        aerr = xp.max(ds, axis=0)
+        ds = xp.stack([temp, d1**2, d3, d4])
+        aerr = xp.clip(xp.max(ds, axis=0), d5, d1)
         rerr = aerr/xp.abs(work.Sn)
 
     return rerr, aerr
@@ -1177,6 +1180,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
     # Branch for direct sum evaluation / integral approximation / invalid input
     i0 = ~valid_abstep                     # invalid
+    i0b = b < a                            # zero
     i1 = (nterms + 1 <= maxterms) & ~i0    # direct sum evaluation
     i2 = xp.isfinite(a) & ~i1 & ~i0        # infinite sum to the right
     i3 = xp.isfinite(b) & ~i2 & ~i1 & ~i0  # infinite sum to the left
@@ -1185,6 +1189,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
     if xp.any(i0):
         S[i0], E[i0] = xp.nan, xp.nan
         status[i0] = -1
+
+        S[i0b], E[i0b] = zero, zero
+        status[i0b] = 0
 
     if xp.any(i1):
         args_direct = [arg[i1] for arg in args]
@@ -1304,7 +1311,7 @@ def _integral_bound(f, a, b, step, args, constants, xp):
         tol = special.logsumexp(xp.stack((tol, rtol + lb.integral)), axis=0)
     else:
         tol = tol + rtol*lb.integral
-    i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
+    i_skip = lb.status == -3  # avoid unnecessary f_evals if integral is divergent
     tol[i_skip] = xp.nan
     status = lb.status
 

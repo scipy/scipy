@@ -13,11 +13,9 @@ from scipy.differentiate import derivative, jacobian, hessian
 from scipy.differentiate._differentiate import _EERRORINCREASE
 
 array_api_strict_skip_reason = 'Array API does not support fancy indexing assignment.'
-jax_skip_reason = 'JAX arrays do not support item assignment.'
 
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestDerivative:
 
@@ -213,12 +211,13 @@ class TestDerivative:
         # test that `step_direction` works as expected
         def f(x):
             y = xp.exp(x)
-            y[(x < 0) + (x > 2)] = xp.nan
+            y = xpx.at(y)[(x < 0) + (x > 2)].set(xp.nan)
             return y
 
         x = xp.linspace(0, 2, 10)
         step_direction = xp.zeros_like(x)
-        step_direction[x < 0.6], step_direction[x > 1.4] = 1, -1
+        step_direction = xpx.at(step_direction)[x < 0.6].set(1)
+        step_direction = xpx.at(step_direction)[x > 1.4].set(-1)
         res = derivative(f, x, step_direction=step_direction)
         xp_assert_close(res.df, xp.exp(x))
         assert xp.all(res.success)
@@ -473,7 +472,6 @@ class JacobianHessianTest:
 
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestJacobian(JacobianHessianTest):
     jh_func = jacobian
@@ -600,7 +598,7 @@ class TestJacobian(JacobianHessianTest):
             ref[attr] = xp.squeeze(
                 ref_attr,
                 axis=tuple(ax for ax, size in enumerate(ref_attr.shape) if size == 1)
-            )            
+            )
             rtol = 1.5e-5 if res[attr].dtype == xp.float32 else 1.5e-14
             xp_assert_close(res[attr], ref[attr], rtol=rtol)
 
@@ -612,10 +610,10 @@ class TestJacobian(JacobianHessianTest):
         eps = 1e-7  # torch needs wiggle room?
 
         def f(x):
-            x[0, x[0] < b[0]] = xp.nan
-            x[0, x[0] > b[0] + 0.25] = xp.nan
-            x[1, x[1] > b[1]] = xp.nan
-            x[1, x[1] < b[1] - 0.1-eps] = xp.nan
+            x = xpx.at(x)[0, x[0] < b[0]].set(xp.nan)
+            x = xpx.at(x)[0, x[0] > b[0] + 0.25].set(xp.nan)
+            x = xpx.at(x)[1, x[1] > b[1]].set(xp.nan)
+            x = xpx.at(x)[1, x[1] < b[1] - 0.1-eps].set(xp.nan)
             return TestJacobian.f5(x, xp)
 
         dir = [1, -1, 0]
@@ -629,7 +627,6 @@ class TestJacobian(JacobianHessianTest):
 
 
 @pytest.mark.skip_xp_backends('array_api_strict', reason=array_api_strict_skip_reason)
-@pytest.mark.skip_xp_backends('jax.numpy',reason=jax_skip_reason)
 @pytest.mark.skip_xp_backends('dask.array', reason='boolean indexing assignment')
 class TestHessian(JacobianHessianTest):
     jh_func = hessian

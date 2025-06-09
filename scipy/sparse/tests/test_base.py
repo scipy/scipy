@@ -39,7 +39,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         csc_array, csr_array, dok_array,
         coo_array, lil_array, dia_array, bsr_array,
-        eye, issparse, SparseEfficiencyWarning, sparray)
+        eye, issparse, SparseEfficiencyWarning, sparray, spmatrix)
 from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
@@ -432,6 +432,13 @@ class _TestCommon:
             pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
             check(dtype)
+
+    def test_eq_ne_different_shapes(self):
+        if self.datsp.format not in ['bsr', 'csc', 'csr']:
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
+        # Is this what we want? numpy raises when shape differs. we return False.
+        assert (self.datsp == self.datsp.T) is False
+        assert (self.datsp != self.datsp.T) is True
 
     def test_lt(self):
         sup = suppress_warnings()
@@ -1023,10 +1030,8 @@ class _TestCommon:
                 assert_array_almost_equal(dat.sum(), datsp.sum())
                 assert_equal(dat.sum().dtype, datsp.sum().dtype)
                 assert_(np.isscalar(datsp.sum(axis=None)))
-                assert_array_almost_equal(dat.sum(axis=None),
-                                          datsp.sum(axis=None))
-                assert_equal(dat.sum(axis=None).dtype,
-                             datsp.sum(axis=None).dtype)
+                assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
+                assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
                 assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
                 assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
                 assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
@@ -1035,6 +1040,8 @@ class _TestCommon:
                 assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
                 assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
                 assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
+                assert_array_almost_equal(dat.sum(axis=(0, 1)), datsp.sum(axis=(0, 1)))
+                assert_equal(dat.sum(axis=(0, 1)).dtype, datsp.sum(axis=(0, 1)).dtype)
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
@@ -1047,10 +1054,15 @@ class _TestCommon:
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        assert_raises(ValueError, datsp.sum, axis=3)
-        assert_raises(TypeError, datsp.sum, axis=(0, 1))
-        assert_raises(TypeError, datsp.sum, axis=1.5)
-        assert_raises(ValueError, datsp.sum, axis=1, out=out)
+        with assert_raises(ValueError, match="axis out of range"):
+            datsp.sum(axis=3)
+        with assert_raises(ValueError, match="axis out of range"):
+            datsp.sum(axis=(0, 3))
+        with assert_raises(TypeError, match="axis must be an integer"):
+            datsp.sum(axis=1.5)
+        # error msg varies by sparray (1d result) or spmatrix (2d result)
+        with assert_raises(ValueError, match="do.*n.t match.*shape|wrong.*dimensions"):
+            datsp.mean(axis=1, out=out)
 
     def test_sum_dtype(self):
         dat = array([[0, 1, 2],
@@ -1090,9 +1102,9 @@ class _TestCommon:
         assert_array_almost_equal(dat_out, datsp_out)
 
         # check that wrong shape out parameter raises
-        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+        with assert_raises(ValueError, match="output parameter"):
             datsp.sum(out=array([0]))
-        with assert_raises(ValueError, match="output parameter.*wrong.*dimension"):
+        with assert_raises(ValueError, match="output parameter"):
             datsp.sum(out=array([[0]] if self.is_array_test else 0))
 
     def test_numpy_sum(self):
@@ -1107,6 +1119,21 @@ class _TestCommon:
 
         assert_array_almost_equal(dat_sum, datsp_sum)
         assert_equal(dat_sum.dtype, datsp_sum.dtype)
+
+    def test_sum_mean_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+
+        assert isscalarlike(datsp.sum())
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        assert isinstance(datsp.sum(axis=0), matrix_or_array)
+        assert isinstance(datsp.sum(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.mean())
+        assert isinstance(datsp.mean(axis=0), matrix_or_array)
+        assert isinstance(datsp.mean(axis=1), matrix_or_array)
 
     def test_mean(self):
         keep = not self.is_array_test
@@ -1139,21 +1166,31 @@ class _TestCommon:
                 dat.mean(axis=-1, keepdims=keep), datsp.mean(axis=-1)
             )
             assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
+            assert_array_almost_equal(
+                dat.mean(axis=(0, 1), keepdims=keep), datsp.mean(axis=(0, 1))
+            )
+            assert_equal(dat.mean(axis=(0, 1)).dtype, datsp.mean(axis=(0, 1)).dtype)
+
 
         for dtype in self.checked_dtypes:
             check(dtype)
 
-    def test_mean_invalid_params(self):
+    def test_mean_invalid_param(self):
         out = self.asdense(np.zeros((1, 3)))
         dat = array([[0, 1, 2],
                      [3, -4, 5],
                      [-6, 7, 9]])
         datsp = self.spcreator(dat)
 
-        assert_raises(ValueError, datsp.mean, axis=3)
-        assert_raises(TypeError, datsp.mean, axis=(0, 1))
-        assert_raises(TypeError, datsp.mean, axis=1.5)
-        assert_raises(ValueError, datsp.mean, axis=1, out=out)
+        with assert_raises(ValueError, match="axis out of range"):
+            datsp.mean(axis=3)
+        with assert_raises(ValueError, match="axis out of range"):
+            datsp.mean(axis=(0, 3))
+        with assert_raises(TypeError, match="axis must be an integer"):
+            datsp.mean(axis=1.5)
+        # error msg varies by sparray (1d result) or spmatrix (2d result)
+        with assert_raises(ValueError, match="do.*n.t match.*shape|wrong.*dimensions"):
+            datsp.mean(axis=1, out=out)
 
     def test_mean_dtype(self):
         dat = array([[0, 1, 2],
@@ -1651,7 +1688,10 @@ class _TestCommon:
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
-                sp_mult = i.multiply(j)
+                try:
+                    sp_mult = i.multiply(j)
+                except ValueError:
+                    continue
                 if issparse(sp_mult):
                     assert_almost_equal(sp_mult.toarray(), dense_mult)
                 else:
@@ -2068,8 +2108,8 @@ class _TestCommon:
 
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
-                           "Taking maximum .minimum. with > 0 .< 0. number "
-                           "results to a dense matrix")
+                           "Taking (maximum|minimum) with a (positive|negative) number "
+                           "results in a dense matrix")
 
                 max_s = A.maximum(B)
                 min_s = A.minimum(B)
@@ -3710,9 +3750,11 @@ class _TestMinMax:
         X = self.spcreator(np.arange(1, 10).reshape(3, 3))
         assert_equal(X.min(), 1)
         assert_equal(X.min().dtype, X.dtype)
+        assert_equal(X.min(explicit=True), 1)
 
         X = -X
         assert_equal(X.max(), -1)
+        assert_equal(X.max(explicit=True), -1)
 
         # and a fully sparse matrix
         Z = self.spcreator(np.zeros((1, 1)))
@@ -3787,6 +3829,7 @@ class _TestMinMax:
             assert_array_equal(
                 X.min(axis=axis).toarray(), D.min(axis=axis, keepdims=keep)
             )
+        assert_equal(X.max(axis=(0, 1)), D.max(axis=(0, 1), keepdims=keep))
 
         for axis in axes_even:
             expected_max = D[-1, :]
@@ -3834,6 +3877,38 @@ class _TestMinMax:
             assert_equal(X.max(axis=axis, explicit=ex).toarray(), D.max(axis=axis))
             assert_equal(X.min(axis=axis, explicit=ex).toarray(), D.min(axis=axis))
 
+    def test_minmax_container_type(self):
+        dat = array([[0, 1, 2],
+                     [3, -4, 5],
+                     [-6, 7, 9]])
+        datsp = self.spcreator(dat)
+        matrix_or_array = ndarray if self.is_array_test else np.matrix
+        spmatrix_or_sparray = sparray if self.is_array_test else spmatrix
+
+        assert isscalarlike(datsp.min())
+        assert isinstance(datsp.min(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.min(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.max())
+        assert isinstance(datsp.max(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.max(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmin())
+        assert isinstance(datsp.nanmin(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmin(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.nanmax())
+        assert isinstance(datsp.nanmax(axis=0), spmatrix_or_sparray)
+        assert isinstance(datsp.nanmax(axis=1), spmatrix_or_sparray)
+
+        assert isscalarlike(datsp.argmin())
+        assert isinstance(datsp.argmin(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmin(axis=1), matrix_or_array)
+
+        assert isscalarlike(datsp.argmax())
+        assert isinstance(datsp.argmax(axis=0), matrix_or_array)
+        assert isinstance(datsp.argmax(axis=1), matrix_or_array)
+
     def test_nanminmax(self):
         D = self.asdense(np.arange(50).reshape(5,10), dtype=float)
         D[1, :] = 0
@@ -3852,6 +3927,10 @@ class _TestMinMax:
         assert np.isscalar(X_nan_minimum)
         assert X_nan_minimum == np.nanmin(D)
 
+        X_nan_minimum = X.nanmin(axis=(0, 1))
+        assert np.isscalar(X_nan_minimum)
+        assert X_nan_minimum == np.nanmin(D, axis=(0, 1))
+
         axes = [-2, -1, 0, 1]
         for axis in axes:
             X_nan_maxima = X.nanmax(axis=axis)
@@ -3869,11 +3948,12 @@ class _TestMinMax:
         datsp = self.spcreator(dat)
 
         for fname in ('min', 'max'):
+            datfunc = getattr(dat, fname)
             func = getattr(datsp, fname)
             assert_raises(ValueError, func, axis=3)
-            assert_raises(TypeError, func, axis=(0, 1))
             assert_raises(TypeError, func, axis=1.5)
             assert_raises(ValueError, func, axis=1, out=1)
+            assert_equal(func(axis=(0, 1)), datfunc(axis=(0, 1)))
 
     def test_numpy_minmax(self):
         # See gh-5987
@@ -3922,6 +4002,13 @@ class _TestMinMax:
 
             assert_equal(mat.argmax(axis=1), np.argmax(D, axis=1))
             assert_equal(mat.argmin(axis=1), np.argmin(D, axis=1))
+
+        # full matrix with explicit=True
+        mat = self.spcreator(self.asdense(D5))
+        assert_equal(mat.argmax(explicit=True), 5)
+        assert_equal((-mat).argmax(explicit=True), 2)
+        assert_equal(mat.argmin(explicit=True), 2)
+        assert_equal((-mat).argmin(explicit=True), 5)
 
         # zero-size matrices
         D6 = self.spcreator(np.empty((0, 5)))
@@ -4938,6 +5025,45 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         m.setdiag((3,), k=3)
         assert_equal(m.offsets.dtype, np.int64)
 
+    def ill_cases(self):
+        # Ill-formed inputs and reference 2 x 2 outputs for testing _getnnz()
+        # and tocsr(): list of tuples (data, offsets, nnz, dense array)
+
+        d1 = [[1]]        # diagonal shorter than width
+        d3 = [[1, 2, 3]]  # diagonal longer than width
+
+        return [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
+                (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
+                (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
+                (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
+                (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
+                (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
+                (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
+                (d3, [-3], 0, [[0, 0], [0, 0]]),  # all below
+                # empty
+                (None, None, 0, [[0, 0], [0, 0]]),
+                # explicit zeros
+                ([[0, 0]], [0], 2, [[0, 0], [0, 0]]),
+                # overfilled shorter-diagonal, out of order
+                (np.arange(1, 1 + 7).reshape((7, 1)),
+                 [0, 1, 2, 3, -1, -2, -3],
+                 2, [[1, 0], [5, 0]]),
+                # overfilled longer-diagonal, out of order
+                (np.arange(1, 1 + 7 * 3).reshape((7, 3)),
+                 [0, 1, 2, 3, -1, -2, -3],
+                 4, [[1, 5], [13, 2]])]
+
+    def test_getnnz(self):
+        for data, ofsets, nnz, ref in self.ill_cases():
+            for shape in [(2, 2), (0, 2), (2, 0)]:
+                if data is None:
+                    A = dia_array(shape)
+                else:
+                    A = dia_array((data, ofsets), shape=shape)
+                if 0 in shape:
+                    nnz = 0
+                assert A._getnnz() == nnz
+
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
         pass
@@ -4969,6 +5095,40 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
 
+    def test_add_sparse(self):
+        # test format and cases not covered by common add tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp + Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A + B)
+
+        Csp = Bsp + Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B + A)
+
+    def test_sub_sparse(self):
+        # test format and cases not covered by common sub tests
+        A = diag([1, 2])
+        B = A + diag([3], 1)
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+
+        Csp = Asp - Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), A - B)
+
+        Csp = Bsp - Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), B - A)
+
+        Bsp = Bsp.asformat('csr')
+        assert_array_equal((Asp - Bsp).toarray(), A - B)
+        assert_array_equal((Bsp - Asp).toarray(), B - A)
+
     def test_mul_scalar(self):
         # repro for gh-20434
         m = self.dia_container([[1, 2], [0, 4]])
@@ -4979,6 +5139,50 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         res2 = m.multiply(3)
         assert isinstance(res2, m.__class__)
         assert_array_equal(res2.toarray(), [[3, 6], [0, 12]])
+
+    def test_matmul_dia(self):
+        # test DIA structure of DIA @ DIA:
+
+        # that all and only needed elements are used and produced
+        A = array([[1, 2, 3],
+                   [4, 5, 6]])
+        B = array([[11, 12],
+                   [13, 14],
+                   [15, 16]])
+        Asp = dia_matrix(A)
+        Bsp = dia_matrix(B)
+        Asp.data[Asp.data == 0] = -1  # poison outside elements
+        Bsp.data[Bsp.data == 0] = -1
+        assert_array_equal(Asp.toarray(), A)
+        assert_array_equal(Bsp.toarray(), B)
+
+        C = A @ B
+        Csp = Asp @ Bsp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-1, 0, 1])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        C = B @ A
+        Csp = Bsp @ Asp
+        assert isinstance(Csp, dia_matrix)
+        assert_array_equal(Csp.toarray(), C)
+        assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
+        assert_array_equal(Csp.data, dia_matrix(C).data)
+
+        # short data and that order of input offsets doesn't matter
+        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+
+        Csp = Asp @ Bsp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 35., 0.],
+                                      [6., 14., 27.]])
+
+        Csp = Bsp @ Asp
+        assert_array_equal(Csp.offsets, array([-3, 0]))
+        assert_array_equal(Csp.data, [[24., 0., 0.],
+                                      [27., 6., 14.]])
 
 
 class TestDIAMatrix(_MatrixMixin, TestDIA):

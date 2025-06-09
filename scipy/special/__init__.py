@@ -785,10 +785,7 @@ from . import _ufuncs
 from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
-from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,
-    chdtr, chdtrc, betainc, betaincc, stdtr, stdtrit)
+from ._support_alternative_backends import *
 
 from . import _basic
 from ._basic import *
@@ -842,13 +839,3 @@ __all__ += [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
-
-
-def _get_include():
-    """This function is for development purposes only.
-
-    This function could disappear or its behavior could change at any time.
-    """
-    import os
-    return os.path.dirname(__file__)
-

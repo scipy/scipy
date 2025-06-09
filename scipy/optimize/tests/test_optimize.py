@@ -35,10 +35,10 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
 from scipy._lib._array_api_no_0d import xp_assert_equal
-from scipy._lib._array_api import make_skip_xp_backends
+from scipy._lib._array_api import make_xp_test_case
 from scipy._lib._util import MapWrapper
 
-skip_xp_backends = pytest.mark.skip_xp_backends
+lazy_xp_modules = [optimize]
 
 
 def test_check_grad():
@@ -2475,20 +2475,20 @@ def test_powell_output():
 
 
 class TestRosen:
-    @make_skip_xp_backends(optimize.rosen)
+    @make_xp_test_case(optimize.rosen)
     def test_rosen(self, xp):
         # integer input should be promoted to the default floating type
         x = xp.asarray([1, 1, 1])
         xp_assert_equal(optimize.rosen(x),
                         xp.asarray(0.))
 
-    @make_skip_xp_backends(optimize.rosen_der)
+    @make_xp_test_case(optimize.rosen_der)
     def test_rosen_der(self, xp):
         x = xp.asarray([1, 1, 1, 1])
         xp_assert_equal(optimize.rosen_der(x),
                         xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
 
-    @make_skip_xp_backends(optimize.rosen_hess, optimize.rosen_hess_prod)
+    @make_xp_test_case(optimize.rosen_hess, optimize.rosen_hess_prod)
     def test_hess_prod(self, xp):
         one = xp.asarray(1.)
 

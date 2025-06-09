@@ -8,6 +8,7 @@ from scipy._lib._util import _RichResult
 from scipy import special
 
 # Todo:
+# Avoid special-casing key 'n' in _lib._elementwise_iterative_method::_check_termination
 # Rearrange termination condition to allow absolute and relative tolerances?
 # Interpret/return |f_n - f_{n-1}| as an error estimate?
 # Return gracefully for size=0 arrays

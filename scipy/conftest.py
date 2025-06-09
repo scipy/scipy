@@ -14,7 +14,7 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API, SCIPY_DEVICE, array_namespace, default_xp,
-    is_cupy, is_dask, is_jax,
+    is_cupy, is_dask, is_jax, is_torch,
 )
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib.array_api_extra.testing import patch_lazy_xp_functions
@@ -216,7 +216,7 @@ if SCIPY_ARRAY_API:
 
     # by default, use all available backends
     if (
-        isinstance(SCIPY_ARRAY_API, str) 
+        isinstance(SCIPY_ARRAY_API, str)
         and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
     ):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
@@ -285,7 +285,7 @@ skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
 
 def _backends_kwargs_from_request(request, skip_or_xfail):
     """A helper for {skip,xfail}_xp_backends.
-    
+
     Return dict of {backend to skip/xfail: top reason to skip/xfail it}
     """
     markers = list(request.node.iter_markers(f'{skip_or_xfail}_xp_backends'))
@@ -304,21 +304,20 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                              f"must be a subset of {list(xp_known_backends)}")
 
         if marker.kwargs.get('np_only', False):
-            reason = marker.kwargs.get(
-                "reason", "do not run with non-NumPy backends")
+            reason = marker.kwargs.get("reason") or "do not run with non-NumPy backends"
             for backend in xp_skip_np_only_backends - exceptions:
                 reasons[backend].append(reason)
 
         elif marker.kwargs.get('cpu_only', False):
-            reason = marker.kwargs.get(
-                "reason", "no array-agnostic implementation or delegation available "
-                          "for this backend and device")
+            reason = marker.kwargs.get("reason") or (
+                "no array-agnostic implementation or delegation available "
+                "for this backend and device")
             for backend in xp_skip_cpu_only_backends - exceptions:
                 reasons[backend].append(reason)
 
         elif marker.kwargs.get('eager_only', False):
-            reason = marker.kwargs.get(
-                "reason", "eager checks not executed on lazy backends")
+            reason = marker.kwargs.get("reason") or (
+                "eager checks not executed on lazy backends")
             for backend in xp_skip_eager_only_backends - exceptions:
                 reasons[backend].append(reason)
 
@@ -328,8 +327,8 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
             if backend not in xp_known_backends:
                 raise ValueError(f"Unknown backend: {backend}; "
                                  f"must be one of {list(xp_known_backends)}")
-            reason = marker.kwargs.get(
-                "reason", f"do not run with array API backend: {backend}")
+            reason = marker.kwargs.get("reason") or (
+                f"do not run with array API backend: {backend}")
             # reason overrides the ones from cpu_only, np_only, and eager_only.
             # This is regardless of order of appearence of the markers.
             reasons[backend].insert(0, reason)
@@ -343,7 +342,7 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
                 f"Please specify only one backend per marker: {marker.args}"
             )
 
-    return {backend: backend_reasons[0] 
+    return {backend: backend_reasons[0]
             for backend, backend_reasons in reasons.items()
             if backend_reasons}
 
@@ -403,9 +402,10 @@ def skip_or_xfail_xp_backends(request: pytest.FixtureRequest,
         request, skip_or_xfail=skip_or_xfail
     )
     xp = request.param
-    skip_or_xfail = getattr(pytest, skip_or_xfail)
-    reason = skip_xfail_reasons.get(xp.__name__)
-    if reason:
+    if xp.__name__ in skip_xfail_reasons:
+        reason = skip_xfail_reasons[xp.__name__]
+        assert reason  # Default reason applied above
+        skip_or_xfail = getattr(pytest, skip_or_xfail)
         skip_or_xfail(reason=reason)
 
 
@@ -440,6 +440,10 @@ def devices(xp):
         # verbose to skip the test for each jit-capable function and run it for
         # those that only support eager mode.
         pytest.xfail(reason="jax-ml/jax#26000")
+    if is_torch(xp):
+        devices = xp.__array_namespace_info__().devices()
+        # open an issue about this - cannot branch based on `any`/`all`?
+        return (device for device in devices if device.type != 'meta')
 
     return xp.__array_namespace_info__().devices() + [None]
 
@@ -465,7 +469,7 @@ hypothesis.settings.register_profile(
 )
 
 # Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
-# In the future, it would be good to work the choice into dev.py.
+# In the future, it would be good to work the choice into `.spin/cmds.py`.
 SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
                                           "deterministic")
 hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
@@ -493,14 +497,8 @@ if HAVE_SCPDT:
             known_warnings[name] = dict(category=RuntimeWarning,
                                         message='divide by zero')
 
-        # Deprecated stuff in scipy.signal and elsewhere
-        deprecated = [
-            'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
-            'scipy.signal.ricker',
-            'scipy.integrate.simpson',
-            'scipy.interpolate.interp2d',
-            'scipy.linalg.kron',
-        ]
+        # Deprecated stuff
+        deprecated = []
         for name in deprecated:
             known_warnings[name] = dict(category=DeprecationWarning)
 
@@ -611,12 +609,25 @@ if HAVE_SCPDT:
         # equivalent to "pytest --ignore=path/to/file"
         "scipy/special/_precompute",
         "scipy/interpolate/_interpnd_info.py",
+        "scipy/interpolate/_rbfinterp_pythran.py",
+        "scipy/_build_utils/tempita.py",
         "scipy/_lib/array_api_compat",
         "scipy/_lib/highs",
         "scipy/_lib/unuran",
         "scipy/_lib/_gcutils.py",
         "scipy/_lib/doccer.py",
         "scipy/_lib/_uarray",
+        "scipy/linalg/_cython_signature_generator.py",
+        "scipy/linalg/_generate_pyx.py",
+        "scipy/linalg/_linalg_pythran.py",
+        "scipy/linalg/_matfuncs_sqrtm_triu.py",
+        "scipy/ndimage/utils/generate_label_testvectors.py",
+        "scipy/optimize/_group_columns.py",
+        "scipy/optimize/_max_len_seq_inner.py",
+        "scipy/signal/_max_len_seq_inner.py",
+        "scipy/sparse/_generate_sparsetools.py",
+        "scipy/special/_generate_pyx.py",
+        "scipy/stats/_stats_pythran.py",
     ]
 
     dt_config.pytest_extra_xfail = {

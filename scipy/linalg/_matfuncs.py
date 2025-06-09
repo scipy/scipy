@@ -146,7 +146,7 @@ def fractional_matrix_power(A, t):
 
 
 @_apply_over_batch(('A', 2))
-def logm(A, disp=True):
+def logm(A, disp=_NoValue):
     """
     Compute matrix logarithm.
 
@@ -160,6 +160,11 @@ def logm(A, disp=True):
     disp : bool, optional
         Emit warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(expm(logm(A)) - A, 1) / norm(A, 1)``.
 
     Returns
     -------
@@ -201,6 +206,12 @@ def logm(A, disp=True):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
     A = np.asarray(A)  # squareness checked in `_logm`
     # Avoid circular import ... this is OK, right?
     import scipy.linalg._matfuncs_inv_ssq
@@ -413,14 +424,19 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
     A : ndarray
         Input with last two dimensions are square ``(..., n, n)``.
     disp : bool, optional
-        Deprecated keyword. It will be removed in 1.20.0.
+        Print warning if error in the result is estimated large
+        instead of returning estimated error. (Default: True)
 
         .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(X @ X - A, 'fro')**2 / norm(A, 'fro')``
 
     blocksize : integer, optional
-        Deprecated keyword. It has no effect and will be removed in 1.18.0.
 
         .. deprecated:: 1.16.0
+            The `blocksize` argument is deprecated as it is unused by the algorithm
+            and will be removed in SciPy 1.18.0.
 
     Returns
     -------
@@ -471,6 +487,17 @@ def sqrtm(A, disp=_NoValue, blocksize=_NoValue):
            [ 1.,  4.]])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated and will be removed in SciPy "
+                      "1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+    if blocksize is not _NoValue:
+        warnings.warn("The `blocksize` argument is deprecated and will be removed in "
+                      "SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     a = np.asarray(A)
     if a.size == 1 and a.ndim < 2:
         return np.array([[np.exp(a.item())]])
@@ -864,7 +891,7 @@ def funm(A, func, disp=True):
 
 
 @_apply_over_batch(('A', 2))
-def signm(A, disp=True):
+def signm(A, disp=_NoValue):
     """
     Matrix sign function.
 
@@ -877,6 +904,11 @@ def signm(A, disp=True):
     disp : bool, optional
         Print warning if error in the result is estimated large
         instead of returning estimated error. (Default: True)
+
+        .. deprecated:: 1.16.0
+            The `disp` argument is deprecated and will be
+            removed in SciPy 1.18.0. The previously returned error estimate
+            can be computed as ``norm(signm @ signm - signm, 1)``.
 
     Returns
     -------
@@ -897,6 +929,13 @@ def signm(A, disp=True):
     array([-1.+0.j,  1.+0.j,  1.+0.j])
 
     """
+    if disp is _NoValue:
+        disp = True
+    else:
+        warnings.warn("The `disp` argument is deprecated "
+                      "and will be removed in SciPy 1.18.0.",
+                      DeprecationWarning, stacklevel=2)
+
     A = _asarray_square(A)
 
     def rounded_sign(x):
@@ -947,7 +986,7 @@ def signm(A, disp=True):
 @_apply_over_batch(('a', 2), ('b', 2))
 def khatri_rao(a, b):
     r"""
-    Khatri-rao product
+    Khatri-Rao product of two matrices.
 
     A column-wise Kronecker product of two matrices
 
