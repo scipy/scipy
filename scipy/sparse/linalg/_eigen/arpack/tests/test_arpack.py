@@ -399,7 +399,6 @@ class NonSymmetricParams:
 
 
 @pytest.mark.iterations(1)
-@pytest.mark.thread_unsafe
 def test_symmetric_modes(num_parallel_threads):
     assert num_parallel_threads == 1
     params = SymmetricParams()
@@ -578,7 +577,6 @@ def test_linearoperator_deallocation():
         pass
 
 
-@pytest.mark.thread_unsafe
 def test_parallel_threads():
     results = []
     v0 = np.random.rand(50)
@@ -611,9 +609,14 @@ def test_reentering():
         return v.real / w[0].real
     A = LinearOperator(matvec=A_matvec, dtype=float, shape=(50, 50))
 
+    # ================= Old Fortran tests ==================
     # The Fortran code is not reentrant, so this fails (gracefully, not crashing)
-    assert_raises(RuntimeError, eigs, A, k=1)
-    assert_raises(RuntimeError, eigsh, A, k=1)
+    # assert_raises(RuntimeError, eigs, A, k=1)
+    # assert_raises(RuntimeError, eigsh, A, k=1)
+    #
+    # These should not crash upon reentrance
+    eigs(A, k=1)
+    eigsh(A, k=1)
 
 
 def test_regression_arpackng_1315():
