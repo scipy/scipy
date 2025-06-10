@@ -16,6 +16,9 @@ from scipy.interpolate import (
     make_interp_spline)
 from scipy._lib._testutils import _run_concurrent_barrier
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
                 extra_args=None):
