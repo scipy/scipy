@@ -842,16 +842,18 @@ class TestLagrange:
 @skip_xp_backends(cpu_only=True)
 class TestAkima1DInterpolator:
     def test_eval(self, xp):
-        x = xp.arange(0., 11.)
-        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y = xp.asarray(
+            [0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.], dtype=xp.float64
+        )
         ak = Akima1DInterpolator(x, y)
         xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
-            8.6, 9.9, 10.])
+            8.6, 9.9, 10.], dtype=xp.float64)
         yi = xp.asarray([0., 1.375, 2., 1.5, 1.953125, 2.484375,
             4.1363636363636366866103344, 5.9803623910336236590978842,
             5.5067291516462386624652936, 5.2031367459745245795943447,
             4.1796554159017080820603951, 3.4110386597938129327189927,
-            3.])
+            3.], dtype=xp.float64)
         xp_assert_close(ak(xi), yi)
 
     def test_eval_mod(self, xp):
@@ -860,31 +862,35 @@ class TestAkima1DInterpolator:
         # x = 0:10; y = [0. 2. 1. 3. 2. 6. 5.5 5.5 2.7 5.1 3.];
         # xi = [0. 0.5 1. 1.5 2.5 3.5 4.5 5.1 6.5 7.2 8.6 9.9 10.];
         # makima(x, y, xi)
-        x = xp.arange(0., 11.)
-        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y = xp.asarray(
+            [0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.], dtype=xp.float64
+        )
         ak = Akima1DInterpolator(x, y, method="makima")
         xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
-                       8.6, 9.9, 10.])
+                       8.6, 9.9, 10.], dtype=xp.float64)
         yi = xp.asarray([
             0.0, 1.34471153846154, 2.0, 1.44375, 1.94375, 2.51939102564103,
             4.10366931918656, 5.98501550899192, 5.51756330960439, 5.1757231914014,
-            4.12326636931311, 3.32931513157895, 3.0])
+            4.12326636931311, 3.32931513157895, 3.0], dtype=xp.float64)
         xp_assert_close(ak(xi), yi)
 
     def test_eval_2d(self, xp):
-        x = xp.arange(0., 11.)
-        y = xp.asarray([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
+        x = xp.arange(0., 11., dtype=xp.float64)
+        y = xp.asarray(
+            [0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.], dtype=xp.float64
+        )
         y = xp.stack((y, 2. * y), axis=1)
         ak = Akima1DInterpolator(x, y)
         xi = xp.asarray([0., 0.5, 1., 1.5, 2.5, 3.5, 4.5, 5.1, 6.5, 7.2,
-                       8.6, 9.9, 10.])
+                       8.6, 9.9, 10.], dtype=xp.float64)
         yi = xp.asarray([0., 1.375, 2., 1.5, 1.953125, 2.484375,
                        4.1363636363636366866103344,
                        5.9803623910336236590978842,
                        5.5067291516462386624652936,
                        5.2031367459745245795943447,
                        4.1796554159017080820603951,
-                       3.4110386597938129327189927, 3.])
+                       3.4110386597938129327189927, 3.], dtype=xp.float64)
         yi = xp.stack((yi, 2. * yi), axis=1)
         xp_assert_close(ak(xi), yi)
 
@@ -917,7 +923,7 @@ class TestAkima1DInterpolator:
         x = xp.asarray([0.0, 1.0], dtype=xp.float64)
         y = xp.asarray([0.5, 1.0])
         akima = Akima1DInterpolator(x, y, axis=0, extrapolate=None)
-        xp_assert_close(akima(0.45), xp.asarray(0.725))
+        xp_assert_close(akima(0.45), xp.asarray(0.725, dtype=xp.float64))
 
     def test_linear_interpolant_edge_case_2d(self, xp):
         x = xp.asarray([0., 1.])
@@ -925,8 +931,9 @@ class TestAkima1DInterpolator:
 
         ak = Akima1DInterpolator(x, y)
         xi = xp.asarray([0.5, 1.])
-        yi = xp.asarray([[0.5, 1., 1.5, 2. ],
-                       [1., 2., 3., 4.]])
+        yi = xp.asarray([[0.5, 1., 1.5, 2.],
+                         [1., 2., 3., 4.]], dtype=xp.float64
+        )
         xp_assert_close(ak(xi), yi)
 
         ak = Akima1DInterpolator(x, y.T, axis=1)
@@ -958,10 +965,10 @@ class TestAkima1DInterpolator:
 
     def test_degenerate_case_multidimensional(self, xp):
         # This test is for issue #5683.
-        x = xp.asarray([0, 1, 2])
+        x = xp.asarray([0, 1, 2], dtype=xp.float64)
         y = xp.stack((x, x**2)).T
         ak = Akima1DInterpolator(x, y)
-        x_eval = xp.asarray([0.5, 1.5])
+        x_eval = xp.asarray([0.5, 1.5], dtype=xp.float64)
         y_eval = ak(x_eval)
         xp_assert_close(y_eval, xp.stack((x_eval, x_eval**2)).T)
 
@@ -1255,8 +1262,10 @@ class TestPPoly:
         c = xp.asarray([[1, 4], [2, 5], [3, 6]])
         x = xp.asarray([0, 0.5, 1])
         p = PPoly(c, x)
-        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3))
-        xp_assert_close(p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6))
+        xp_assert_close(p(0.3), xp.asarray(1*0.3**2 + 2*0.3 + 3, dtype=xp.float64))
+        xp_assert_close(
+            p(0.7), xp.asarray(4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6, dtype=xp.float64)
+        )
 
     def test_periodic(self, xp):
         c = xp.asarray([[1, 4], [2, 5], [3, 6]])
@@ -1264,12 +1273,14 @@ class TestPPoly:
         p = PPoly(c, x, extrapolate='periodic')
 
         xp_assert_close(p(1.3),
-                        xp.asarray(1 * 0.3 ** 2 + 2 * 0.3 + 3))
-        xp_assert_close(p(-0.3),
-                        xp.asarray(4 * (0.7 - 0.5) ** 2 + 5 * (0.7 - 0.5) + 6))
+                        xp.asarray(1 * 0.3 ** 2 + 2 * 0.3 + 3, dtype=xp.float64))
+        xp_assert_close(
+            p(-0.3),
+            xp.asarray(4 * (0.7 - 0.5) ** 2 + 5 * (0.7 - 0.5) + 6, dtype=xp.float64)
+        )
 
-        xp_assert_close(p(1.3, 1), xp.asarray(2 * 0.3 + 2))
-        xp_assert_close(p(-0.3, 1), xp.asarray(8 * (0.7 - 0.5) + 5))
+        xp_assert_close(p(1.3, 1), xp.asarray(2 * 0.3 + 2, dtype=xp.float64))
+        xp_assert_close(p(-0.3, 1), xp.asarray(8 * (0.7 - 0.5) + 5, dtype=xp.float64))
 
     def test_read_only(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
@@ -1463,15 +1474,17 @@ class TestPPoly:
     def test_antiderivative_simple(self, xp):
         # [ p1(x) = 3*x**2 + 2*x + 1,
         #   p2(x) = 1.6875]
-        c = xp.asarray([[3, 2, 1], [0, 0, 1.6875]]).T
+        c = xp.asarray([[3, 2, 1], [0, 0, 1.6875]], dtype=xp.float64).T
         # [ pp1(x) = x**3 + x**2 + x,
         #   pp2(x) = 1.6875*(x - 0.25) + pp1(0.25)]
-        ic = xp.asarray([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]]).T
+        ic = xp.asarray([[1, 1, 1, 0], [0, 0, 1.6875, 0.328125]], dtype=xp.float64).T
         # [ ppp1(x) = (1/4)*x**4 + (1/3)*x**3 + (1/2)*x**2,
         #   ppp2(x) = (1.6875/2)*(x - 0.25)**2 + pp1(0.25)*x + ppp1(0.25)]
         iic = xp.asarray([[1/4, 1/3, 1/2, 0, 0],
-                          [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]]).T
-        x = xp.asarray([0, 0.25, 1])
+                          [0, 0, 1.6875/2, 0.328125, 0.037434895833333336]],
+                         dtype=xp.float64
+        ).T
+        x = xp.asarray([0, 0.25, 1], dtype=xp.float64)
 
         pp = PPoly(c, x)
         ipp = pp.antiderivative()
@@ -1762,20 +1775,22 @@ class TestBPoly:
         x = xp.asarray([0, 1])
         c = xp.asarray([[3]])
         bp = BPoly(c, x)
-        xp_assert_close(bp(0.1), xp.asarray(3.))
+        xp_assert_close(bp(0.1), xp.asarray(3., dtype=xp.float64))
 
     def test_simple2(self, xp):
         x = xp.asarray([0, 1])
         c = xp.asarray([[3], [1]])
         bp = BPoly(c, x)   # 3*(1-x) + 1*x
-        xp_assert_close(bp(0.1), xp.asarray(3*0.9 + 1.*0.1))
+        xp_assert_close(bp(0.1), xp.asarray(3*0.9 + 1.*0.1, dtype=xp.float64))
 
     def test_simple3(self, xp):
         x = xp.asarray([0, 1])
         c = xp.asarray([[3], [1], [4]])
         bp = BPoly(c, x)   # 3 * (1-x)**2 + 2 * x (1-x) + 4 * x**2
-        xp_assert_close(bp(0.2),
-                        xp.asarray(3 * 0.8*0.8 + 1 * 2*0.2*0.8 + 4 * 0.2*0.2))
+        xp_assert_close(
+            bp(0.2),
+            xp.asarray(3 * 0.8*0.8 + 1 * 2*0.2*0.8 + 4 * 0.2*0.2, dtype=xp.float64)
+        )
 
     def test_simple4(self, xp):
         x = xp.asarray([0, 1])
@@ -1785,7 +1800,7 @@ class TestBPoly:
                         xp.asarray(    0.7**3 +
                                    3 * 0.7**2 * 0.3 +
                                    3 * 0.7 * 0.3**2 +
-                                   2 * 0.3**3)
+                                   2 * 0.3**3, dtype=xp.float64)
         )
 
     def test_simple5(self, xp):
@@ -1797,7 +1812,7 @@ class TestBPoly:
                                  4 * 0.7**3 * 0.3 +
                              8 * 6 * 0.7**2 * 0.3**2 +
                              2 * 4 * 0.7 * 0.3**3 +
-                                 0.3**4)
+                                 0.3**4, dtype=xp.float64)
         )
 
     def test_periodic(self, xp):
@@ -1806,11 +1821,11 @@ class TestBPoly:
         # [3*(1-x)**2, 2*((x-1)/2)**2]
         bp = BPoly(c, x, extrapolate='periodic')
 
-        xp_assert_close(bp(3.4), xp.asarray(3 * 0.6**2))
-        xp_assert_close(bp(-1.3), xp.asarray(2 * (0.7/2)**2))
+        xp_assert_close(bp(3.4), xp.asarray(3 * 0.6**2, dtype=xp.float64))
+        xp_assert_close(bp(-1.3), xp.asarray(2 * (0.7/2)**2, dtype=xp.float64))
 
-        xp_assert_close(bp(3.4, 1), xp.asarray(-6 * 0.6))
-        xp_assert_close(bp(-1.3, 1), xp.asarray(2 * (0.7/2)))
+        xp_assert_close(bp(3.4, 1), xp.asarray(-6 * 0.6, dtype=xp.float64))
+        xp_assert_close(bp(-1.3, 1), xp.asarray(2 * (0.7/2), dtype=xp.float64))
 
     def test_descending(self):
         rng = np.random.RandomState(0)
@@ -1865,8 +1880,9 @@ class TestBPoly:
         bp = BPoly(c, x)
         xval = 0.1
         s = xval / 2  # s = (x - xa) / (xb - xa)
-        xp_assert_close(bp(xval),
-                        xp.asarray(3 * (1-s)*(1-s) + 1 * 2*s*(1-s) + 4 * s*s)
+        xp_assert_close(
+            bp(xval),
+            xp.asarray(3 * (1-s)*(1-s) + 1 * 2*s*(1-s) + 4 * s*s, dtype=xp.float64)
         )
 
     def test_two_intervals(self, xp):
@@ -1874,8 +1890,8 @@ class TestBPoly:
         c = xp.asarray([[3, 0], [0, 0], [0, 2]])
         bp = BPoly(c, x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
 
-        xp_assert_close(bp(0.4), xp.asarray(3 * 0.6*0.6))
-        xp_assert_close(bp(1.7), xp.asarray(2 * (0.7/2)**2))
+        xp_assert_close(bp(0.4), xp.asarray(3 * 0.6*0.6, dtype=xp.float64))
+        xp_assert_close(bp(1.7), xp.asarray(2 * (0.7/2)**2, dtype=xp.float64))
 
     def test_extrapolate_attr(self):
         x = [0, 2]
@@ -1900,15 +1916,15 @@ class TestBPolyCalculus:
         c = xp.asarray([[3, 0], [0, 0], [0, 2]])
         bp = BPoly(c, x)  # [3*(1-x)**2, 2*((x-1)/2)**2]
         bp_der = bp.derivative()
-        xp_assert_close(bp_der(0.4), xp.asarray(-6*(0.6)))
-        xp_assert_close(bp_der(1.7), xp.asarray(0.7))
+        xp_assert_close(bp_der(0.4), xp.asarray(-6*(0.6), dtype=xp.float64))
+        xp_assert_close(bp_der(1.7), xp.asarray(0.7, dtype=xp.float64))
 
         # derivatives in-place
         xp_assert_close(xp.stack([bp(0.4, nu) for nu in [1, 2, 3]]),
-                        xp.asarray([-6*(1-0.4), 6., 0.])
+                        xp.asarray([-6*(1-0.4), 6., 0.], dtype=xp.float64)
         )
         xp_assert_close(xp.stack([bp(1.7, nu) for nu in [1, 2, 3]]),
-                        xp.asarray([0.7, 1., 0])
+                        xp.asarray([0.7, 1., 0], dtype=xp.float64)
         )
 
     def test_derivative_ppoly(self, xp):
@@ -1955,7 +1971,7 @@ class TestBPolyCalculus:
         bp = BPoly(c, x)
         bi = bp.antiderivative()
 
-        xx = xp.linspace(0, 3, 11)
+        xx = xp.linspace(0, 3, 11, dtype=xp.float64)
         xp_assert_close(bi(xx),
                         xp.where(xx < 1, xx**2 / 2.,
                                          0.5 * xx * (xx/2. - 1) + 3./4),

@@ -785,7 +785,7 @@ class TestCubicSpline:
             self.check_correctness(S, 'periodic', 'periodic')
 
     def test_periodic_eval(self, xp):
-        x = xp.linspace(0, 2 * xp.pi, 10)
+        x = xp.linspace(0, 2 * xp.pi, 10, dtype=xp.float64)
         y = xp.cos(x)
         S = CubicSpline(x, y, bc_type='periodic')
         assert_almost_equal(S(1), S(1 + 2 * xp.pi), decimal=15)
