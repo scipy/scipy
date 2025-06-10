@@ -153,11 +153,12 @@ class CubicHermiteSpline(PPoly):
         slope = xp.diff(y, axis=0) / dxr
         t = (dydx[:-1, ...] + dydx[1:, ...] - 2 * slope) / dxr
 
-        c = xp.empty((4, x.shape[0] - 1) + y.shape[1:], dtype=t.dtype)
-        c[0, ...] = t / dxr
-        c[1, ...] = (slope - dydx[:-1, ...]) / dxr - t
-        c[2, ...] = dydx[:-1, ...]
-        c[3, ...] = y[:-1, ...]
+        c = xp.stack((
+           t / dxr,
+           (slope - dydx[:-1, ...]) / dxr - t,
+           dydx[:-1, ...],
+           y[:-1, ...]
+        ))
 
         super().__init__(c, x, extrapolate=extrapolate)
         self.axis = axis
