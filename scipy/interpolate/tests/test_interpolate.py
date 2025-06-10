@@ -837,6 +837,7 @@ class TestLagrange:
 
 
 @xfail_xp_backends("array_api_strict", reason="fancy indexing __setitem__")
+@skip_xp_backends(cpu_only=True)
 class TestAkima1DInterpolator:
     def test_eval(self, xp):
         x = xp.arange(0., 11.)
@@ -1035,6 +1036,7 @@ def test_complex(method):
         _run_concurrent_barrier(10, worker_fn, ak, x_ext)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestPPolyCommon:
     # test basic functionality for PPoly and BPoly
     def test_sort_check(self, xp):
@@ -1245,6 +1247,7 @@ class TestPolySubclassing:
         assert bp.__class__ == self.B
 
 
+@skip_xp_backends(cpu_only=True)
 class TestPPoly:
     def test_simple(self, xp):
         c = xp.asarray([[1, 4], [2, 5], [3, 6]])
@@ -1751,6 +1754,7 @@ class TestPPoly:
                 xp_assert_close(pp.roots(), np.asarray([1.0, -1.0]))
 
 
+@skip_xp_backends(cpu_only=True)
 class TestBPoly:
     def test_simple(self, xp):
         x = xp.asarray([0, 1])
@@ -1887,6 +1891,7 @@ class TestBPoly:
                 assert not np.isnan(bp_d([-0.1, 2.1])).any()
 
 
+@skip_xp_backends(cpu_only=True)
 class TestBPolyCalculus:
     def test_derivative(self, xp):
         x = xp.asarray([0, 1, 3])
@@ -2049,6 +2054,7 @@ class TestBPolyCalculus:
                         atol=1e-12, rtol=1e-12)
 
 
+@skip_xp_backends(cpu_only=True)
 class TestPolyConversions:
     def test_bp_from_pp(self, xp):
         x = xp.asarray([0, 1, 3])
