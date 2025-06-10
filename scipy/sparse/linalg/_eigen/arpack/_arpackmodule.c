@@ -953,14 +953,14 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     PyArrayObject* ap_workl = NULL;
 
     // Process input arguments
-    if (!PyArg_ParseTuple(args, "O!iiO!O!O!fO!O!O!O!O!",
+    if (!PyArg_ParseTuple(args, "O!iiO!O!O!dO!O!O!O!O!",
         &PyDict_Type, (PyObject **)&input_dict,  // O!
         &want_ev,                                // i
         &howmny,                                 // i
         &PyArray_Type, (PyObject **)&ap_select,  // O!
         &PyArray_Type, (PyObject **)&ap_d,       // O!
         &PyArray_Type, (PyObject **)&ap_z,       // O!
-        &sigma,                                  // f
+        &sigma,                                  // d
         &PyArray_Type, (PyObject **)&ap_resid,   // O!
         &PyArray_Type, (PyObject **)&ap_v,       // O!
         &PyArray_Type, (PyObject **)&ap_ipntr,   // O!
