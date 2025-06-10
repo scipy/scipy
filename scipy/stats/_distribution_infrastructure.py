@@ -5100,6 +5100,30 @@ class Mixture(_ProbabilityDistribution):
     .. [1] Mixture distribution, *Wikipedia*,
            https://en.wikipedia.org/wiki/Mixture_distribution
 
+
+    Examples
+    --------
+    A mixture of normal distributions:
+
+    >>> mixture = stats.Mixture([stats.Normal(mu=1, sigma=5), stats.Normal(mu=2, sigma=1), stats.Normal(mu=-3, sigma=0.5)], weights=[0.2, 0.5, 0.3])
+    >>> pdf_xs = np.arange(-10, 10, 0.1)
+    >>> plt.plot(pdf_xs, mixture.pdf(pdf_xs))
+    >>> plt.title('PDF of normal distribution mixture')
+    >>> plt.show()
+    >>> print(f'Mean: {mixture.mean():.2f}, median: {mixture.median():.2f}, mode: {mixture.mode():.2f}')
+    Mean: 0.30, median: 1.14, mode: 2.00
+
+    A mixture of `ContinuousDistribution` objects generated from `stats.make_distribution`:
+
+    >>> mixture = stats.Mixture([stats.make_distribution(stats.loguniform)(a=1, b=3), stats.make_distribution(stats.laplace)()], weights=[0.2, 0.8])
+    >>> pdf_xs = np.arange(-10, 10, 0.1)
+    >>> plt.plot(pdf_xs, mixture.pdf(pdf_xs))
+    >>> plt.title('PDF of loguniform and laplace mixture')
+    >>> print(f'Mean: {mixture.mean():.2f}, median: {mixture.median():.2f}, mode: {mixture.mode():.2f}')
+    >>> plt.show()
+    Mean: 0.36, median: 0.29, mode: 1.00
+
+
     """
     # Todo:
     # Add support for array shapes, weights
