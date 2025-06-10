@@ -5105,6 +5105,9 @@ class Mixture(_ProbabilityDistribution):
     --------
     A mixture of normal distributions:
 
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
     >>> mixture = stats.Mixture([stats.Normal(mu=1, sigma=5), stats.Normal(mu=2, sigma=1), stats.Normal(mu=-3, sigma=0.5)], weights=[0.2, 0.5, 0.3])
     >>> pdf_xs = np.arange(-10, 10, 0.1)
     >>> plt.plot(pdf_xs, mixture.pdf(pdf_xs))
