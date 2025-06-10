@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from pytest import raises as assert_raises
 import pytest
 
-from numpy import dot, conj, random
+from numpy import dot, conj
 from scipy.linalg import eig, eigh
 from scipy.sparse import csc_array, csr_array, diags_array, random_array
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
