@@ -108,10 +108,10 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     // Check for dtype compatibility & array flags
     int typenum = PyArray_TYPE(ap_Am);
-    bool dtype_ok = (typenum == NPY_FLOAT)
-                     || (typenum == NPY_DOUBLE)
-                     || (typenum == NPY_CFLOAT)
-                     || (typenum == NPY_CDOUBLE);
+    bool dtype_ok = (typenum == NPY_FLOAT32)
+                     || (typenum == NPY_FLOAT64)
+                     || (typenum == NPY_COMPLEX64)
+                     || (typenum == NPY_COMPLEX128);
     if(!dtype_ok || !PyArray_ISALIGNED(ap_Am)) {
         PyErr_SetString(PyExc_TypeError, "Expected a real or complex array.");
         return NULL;
@@ -152,17 +152,17 @@ _linalg_solve(PyObject* Py_UNUSED(dummy), PyObject* args) {
 
     void *buf = PyArray_DATA(ap_x);
     switch(typenum) {
-        case(NPY_FLOAT):
+        case(NPY_FLOAT32):
             _solve<float>(ap_Am, ap_b, (float *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_DOUBLE):
+        case(NPY_FLOAT64):
             _solve<double>(ap_Am, ap_b, (double *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_CFLOAT):
-            _solve<npy_cfloat>(ap_Am, ap_b, (npy_cfloat *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+        case(NPY_COMPLEX64):
+            _solve<npy_complex64>(ap_Am, ap_b, (npy_complex64 *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
-        case(NPY_CDOUBLE):
-            _solve<npy_cdouble>(ap_Am, ap_b, (npy_cdouble *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
+        case(NPY_COMPLEX128):
+            _solve<npy_complex128>(ap_Am, ap_b, (npy_complex128 *)buf, structure, transposed, overwrite_a, &isIllconditioned, &isSingular, &info);
             break;
         default:
             PYERR(PyExc_RuntimeError, "Unknown array type.")
