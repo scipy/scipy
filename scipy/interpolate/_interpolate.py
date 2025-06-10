@@ -1287,8 +1287,8 @@ class PPoly(_PPolyBase):
             raise TypeError(f".from_bernstein_basis only accepts BPoly instances. "
                             f"Got {type(bp)} instead.")
 
-        dx = np.diff(bp.x)
-        k = bp.c.shape[0] - 1  # polynomial order
+        dx = np.diff(bp._x)
+        k = bp._c.shape[0] - 1  # polynomial order
 
         rest = (None,)*(bp.c.ndim-2)
 
@@ -1598,14 +1598,14 @@ class BPoly(_PPolyBase):
             raise TypeError(f".from_power_basis only accepts PPoly instances. "
                             f"Got {type(pp)} instead.")
 
-        dx = np.diff(pp.x)
-        k = pp.c.shape[0] - 1   # polynomial order
+        dx = np.diff(pp._x)
+        k = pp._c.shape[0] - 1   # polynomial order
 
-        rest = (None,)*(pp.c.ndim-2)
+        rest = (None,)*(pp._c.ndim-2)
 
         c = np.zeros_like(pp._c)
         for a in range(k+1):
-            factor = pp._c[a] / comb(k, k-a) * dx[(slice(None),)+rest]**(k-a)
+            factor = pp._c[a] / comb(k, k-a) * dx[(slice(None),) + rest]**(k-a)
             for j in range(k-a, k+1):
                 c[j] += factor * comb(j, k-a)
 
