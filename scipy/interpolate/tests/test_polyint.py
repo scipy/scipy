@@ -667,6 +667,7 @@ class TestPCHIP:
         xp_assert_close(r, np.asarray([0.5]))
 
 
+@skip_xp_backends(cpu_only=True)
 class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
@@ -893,6 +894,7 @@ class TestCubicSpline:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
+@skip_xp_backends(cpu_only=True)
 def test_CubicHermiteSpline_correctness(xp):
     x = xp.asarray([0, 2, 7])
     y = xp.asarray([-1, 2, 3])
