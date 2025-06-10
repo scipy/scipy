@@ -1,9 +1,3 @@
-__usage__ = """
-To run tests locally:
-  python tests/test_arpack.py [-l<int>] [-v<int>]
-
-"""
-
 import threading
 import itertools
 
@@ -189,7 +183,7 @@ def argsort_which(eigenvalues, typ, k, which,
 
 
 def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
-              mattype=np.asarray, OPpart=None, mode='normal'):
+              mattype=np.asarray, OPpart=None, mode='normal', rng=None):
     general = ('bmat' in d)
 
     if symmetric:
@@ -220,7 +214,7 @@ def eval_evec(symmetric, d, typ, k, which, v0=None, sigma=None,
     exact_eval = exact_eval[ind]
 
     # compute arpack eigenvalues
-    kwargs = dict(which=which, v0=v0, sigma=sigma)
+    kwargs = dict(which=which, v0=v0, sigma=sigma, rng=rng)
     if eigs_func is eigsh:
         kwargs['mode'] = mode
     else:
@@ -399,44 +393,38 @@ class NonSymmetricParams:
 
 
 @pytest.mark.iterations(1)
-def test_symmetric_modes(num_parallel_threads):
+@pytest.mark.parametrize("sigma, mode", [(None, 'normal'), (0.5, 'normal'),
+                                         (0.5, 'buckling'), (0.5, 'cayley')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA', 'BE'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+def test_symmetric_modes(num_parallel_threads, D, typ, which, mattype,
+                         sigma, mode):
     assert num_parallel_threads == 1
-    params = SymmetricParams()
+    rng = np.random.default_rng(1749531508689996)
     k = 2
-    symmetric = True
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for (sigma, modes) in params.sigmas_modes.items():
-                        for mode in modes:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, None, mode)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, None, mode, rng=rng)
 
 
-def test_hermitian_modes():
-    params = SymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.5])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'SM', 'LA', 'SA'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", SymmetricParams().complex_test_cases)
+def test_hermitian_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749531706842957)
     k = 2
-    symmetric = True
-    for D in params.complex_test_cases:
-        for typ in 'FD':
-            for which in params.which:
-                if which == 'BE':
-                    continue  # BE invalid for complex
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_modes:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(True, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_symmetric_starting_vector():
-    params = SymmetricParams()
-    symmetric = True
-    for k in [1, 2, 3, 4, 5]:
-        for D in params.real_test_cases:
-            for typ in 'fd':
-                v0 = random.rand(len(D['v0'])).astype(typ)
-                eval_evec(symmetric, D, typ, k, 'LM', v0)
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", SymmetricParams().real_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4, 5])
+def test_symmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(1749532110418901)
+    v0 = rng.uniform(size=len(D['v0'])).astype(typ)
+    eval_evec(True, D, typ, k, 'LM', v0, rng=rng)
 
 
 def test_symmetric_no_convergence():
@@ -454,57 +442,39 @@ def test_symmetric_no_convergence():
         assert_allclose(dot(m, v), w * v, rtol=rtol, atol=atol)
 
 
-def test_real_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma, OPpart", [(None, None), (0.1, 'r'),
+                                            (0.1 + 0.1j, 'r'), (0.1 + 0.1j, 'i')])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['f', 'd'])
+@pytest.mark.parametrize("D", NonSymmetricParams().real_test_cases)
+def test_real_nonsymmetric_modes(D, typ, which, mattype,
+                                 sigma, OPpart):
+    rng = np.random.default_rng(174953334412726)
     k = 2
-    symmetric = False
-    for D in params.real_test_cases:
-        for typ in 'fd':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma, OPparts in params.sigmas_OPparts.items():
-                        for OPpart in OPparts:
-                            eval_evec(symmetric, D, typ, k, which,
-                                      None, sigma, mattype, OPpart)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, OPpart, rng=rng)
 
 
-def test_complex_nonsymmetric_modes():
-    params = NonSymmetricParams()
+@pytest.mark.parametrize("sigma", [None, 0.1, 0.1 + 0.1j])
+@pytest.mark.parametrize("mattype", [csr_array, aslinearoperator, np.asarray])
+@pytest.mark.parametrize("which", ['LM', 'LR', 'LI'])
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+def test_complex_nonsymmetric_modes(D, typ, which, mattype, sigma):
+    rng = np.random.default_rng(1749533536274527)
     k = 2
-    symmetric = False
-    for D in params.complex_test_cases:
-        for typ in 'DF':
-            for which in params.which:
-                for mattype in params.mattypes:
-                    for sigma in params.sigmas_OPparts:
-                        eval_evec(symmetric, D, typ, k, which,
-                                  None, sigma, mattype)
+    eval_evec(False, D, typ, k, which, None, sigma, mattype, rng=rng)
 
 
-def test_standard_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
-
-
-def test_general_nonsymmetric_starting_vector():
-    params = NonSymmetricParams()
-    sigma = None
-    symmetric = False
-    for k in [1, 2, 3, 4]:
-        for d in params.complex_test_cases:
-            for typ in 'FD':
-                A = d['mat']
-                n = A.shape[0]
-                v0 = random.rand(n).astype(typ)
-                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
+@pytest.mark.parametrize("typ", ['F', 'D'])
+@pytest.mark.parametrize("D", NonSymmetricParams().complex_test_cases)
+@pytest.mark.parametrize("k", [1, 2, 3, 4])
+def test_nonsymmetric_starting_vector(k, D, typ):
+    rng = np.random.default_rng(174953366983161)
+    A = D['mat']
+    n = A.shape[0]
+    v0 = rng.uniform(size=n).astype(typ)
+    eval_evec(False, D, typ, k, "LM", v0, sigma=None, rng=rng)
 
 
 def test_standard_nonsymmetric_no_convergence():
