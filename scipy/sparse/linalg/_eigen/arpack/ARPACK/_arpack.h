@@ -1,10 +1,6 @@
 #ifndef _ARPACK_H
 #define _ARPACK_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
 #include <math.h>
 #include <complex.h>
 
@@ -12,15 +8,11 @@ extern "C"
     // MSVC definitions
     typedef _Dcomplex ARPACK_CPLX_TYPE;
     typedef _Fcomplex ARPACK_CPLXF_TYPE;
-    #define ARPACK_cplx(real, imag) ((_Dcomplex){real, imag})
-    #define ARPACK_cplxf(real, imag) ((_Fcomplex){real, imag})
 
 #else
     // C99 compliant compilers
     typedef double complex ARPACK_CPLX_TYPE;
     typedef float complex ARPACK_CPLXF_TYPE;
-    #define ARPACK_cplx(real, imag) ((real) + (imag)*I)
-    #define ARPACK_cplxf(real, imag) ((real) + (imag)*I)
 
 #endif
 
@@ -186,12 +178,5 @@ void dsaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, in
 
 void sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select, float* d, float* z, int ldz, float sigma, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl);
 void dseupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select, double* d, double* z, int ldz, double sigma, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl);
-
-#undef ARPACK_cplx
-#undef ARPACK_cplxf
-
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif /* __cplusplus */
 
 #endif /* ifndef */
