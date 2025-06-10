@@ -836,6 +836,7 @@ class TestLagrange:
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
+@xfail_xp_backends("jax.numpy", reason="immutable arrays")
 @xfail_xp_backends("array_api_strict", reason="fancy indexing __setitem__")
 @skip_xp_backends(cpu_only=True)
 class TestAkima1DInterpolator:
