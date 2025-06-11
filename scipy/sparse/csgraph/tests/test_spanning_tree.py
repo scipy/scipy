@@ -1,5 +1,6 @@
 """Test the minimum spanning tree function"""
 import numpy as np
+import pytest
 from numpy.testing import assert_
 import numpy.testing as npt
 from scipy.sparse import csr_array
@@ -64,3 +65,32 @@ def test_minimum_spanning_tree():
 
         npt.assert_array_equal(mintree.toarray(), expected,
             'Incorrect spanning tree found.')
+
+@pytest.mark.parametrize("dtype", [np.int32, np.int64])
+def test_mst_with_various_index_dtypes(dtype):
+    # Row indices
+    indptr = np.array([0, 2, 4, 5], dtype=dtype)
+    indices = np.array([1, 2, 0, 2, 1], dtype=dtype)
+    data = np.array([2, 0, 2, 3, 3], dtype=float)
+
+    graph = csr_array((data, indices, indptr), shape=(3, 3))
+
+    # Check whether the dtype of indices is as expected
+    assert graph.indices.dtype == dtype
+    assert graph.indptr.dtype == dtype
+
+    # Compute MST
+    mst = minimum_spanning_tree(graph)
+
+    # Check whether the dtype of indices is as expected
+    assert mst.indices.dtype == dtype
+    assert mst.indptr.dtype == dtype
+
+    # Expected MST has 2 edges: (0->1, weight 2)
+    expected = np.array([
+        [0, 2, 0],
+        [0, 0, 0],
+        [0, 0, 0]
+    ], dtype=float)
+
+    npt.assert_array_almost_equal(mst.toarray(), expected)
