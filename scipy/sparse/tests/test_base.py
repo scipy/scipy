@@ -4356,31 +4356,70 @@ class TestCSR(sparse_test_class()):
     def test_has_canonical_format(self):
         "Ensure has_canonical_format memoizes state for sum_duplicates"
 
-        M = self.csr_container((np.array([2]), np.array([0]), np.array([0, 1])))
+        info_no_dups = (np.array([2]), np.array([0]), np.array([0, 1]))
+        info_with_dups = (np.array([1, 1]), np.array([0, 0]), np.array([0, 2]))
+
+        M = self.csr_container(info_no_dups)
         assert_equal(True, M.has_canonical_format)
 
-        indices = np.array([0, 0])  # contains duplicate
-        data = np.array([1, 1])
-        indptr = np.array([0, 2])
-
-        M = self.csr_container((data, indices, indptr)).copy()
+        M = self.csr_container(info_with_dups).copy()
         assert_equal(False, M.has_canonical_format)
         assert isinstance(M.has_canonical_format, bool)
 
-        # set by deduplicating
+        # set flag by deduplicating
         M.sum_duplicates()
         assert_equal(True, M.has_canonical_format)
         assert_equal(1, len(M.indices))
 
-        M = self.csr_container((data, indices, indptr)).copy()
-        # set manually (although underlyingly duplicated)
+        # manually set flag True (although underlyingly duplicated)
+        M = self.csr_container(info_with_dups).copy()
         M.has_canonical_format = True
         assert_equal(True, M.has_canonical_format)
         assert_equal(2, len(M.indices))  # unaffected content
-
         # ensure deduplication bypassed when has_canonical_format == True
         M.sum_duplicates()
-        assert_equal(2, len(M.indices))  # unaffected content
+        assert_equal(2, len(M.indices))  # still has duplicates!!!!
+        # ensure deduplication reenabled when has_canonical_format == False
+        M.has_canonical_format = False
+        M.sum_duplicates()
+        assert_equal(1, len(M.indices))
+        assert_equal(True, M.has_canonical_format)
+
+        # manually set flag False (although underlyingly canonical)
+        M.has_canonical_format = False
+        assert_equal(False, M.has_canonical_format)
+        Mcheck = self.csr_container((M.data, M.indices, M.indptr))
+        assert_equal(True, Mcheck.has_canonical_format)
+        # sum_duplicates does not complain when no work to do
+        M.sum_duplicates()
+        assert_equal(True, M.has_canonical_format)
+
+        # check assignments maintain canonical format
+        M = self.csr_container((np.array([2]), np.array([2]), np.array([0, 1, 1, 1])))
+        assert_equal(M.shape, (3, 3))
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
+            M[0, 1] = 2
+            M[1, :] *= 5
+            M[0, 2] = 3
+        assert_equal(True, M.has_canonical_format)
+        Mcheck = self.csr_container((M.data, M.indices, M.indptr))
+        assert_equal(True, Mcheck.has_canonical_format)
+
+        # resetting index arrays before accessing M.has_canonical_format is OK
+        M = self.csr_container(info_no_dups)
+        M.data, M.indices, M.indptr = info_with_dups
+        assert_equal(False, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # dups and has_canonical_format is False
+
+        # but reset after accessing M.has_canonical_format can break flag
+        M = self.csr_container(info_no_dups)
+        M.has_canonical_format  # underlying attr is set here
+        M.data, M.indices, M.indptr = info_with_dups
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # dups but has_canonical_format is True
+        M.sum_duplicates()
+        assert_equal(2, len(M.indices))  # still has duplicates!!!!
 
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
@@ -4938,6 +4977,51 @@ class TestCOO(sparse_test_class(getset=False,
         csc = coo.tocsc()
         assert_equal(csc.nnz + 2, coo.nnz)
 
+    def test_has_canonical_format(self):
+        "Ensure has_canonical_format memoizes state for sum_duplicates"
+
+        A = self.coo_container((2, 3))
+        assert_equal(A.has_canonical_format, True)
+
+        A_array = np.array([[0, 2, 0]])
+        A_coords_form = (np.array([2]), (np.array([0]), np.array([1])))
+        A_coords_dups = (np.array([1, 1]), (np.array([0, 0]), np.array([1, 1])))
+
+        A = self.coo_container(A_array)
+        assert A.has_canonical_format is True
+        A = self.coo_container(A_coords_form)
+        assert A.has_canonical_format is False
+        A.sum_duplicates()
+        assert A.has_canonical_format is True
+
+        A = self.coo_container(A, copy=True)
+        assert A.has_canonical_format is True
+        A = self.coo_container(A, copy=False)
+        assert A.has_canonical_format is False
+        A.sum_duplicates()
+        assert A.has_canonical_format is True
+
+        A = self.coo_container(A_coords_dups)
+        assert A.has_canonical_format is False
+        assert_equal(A.nnz, 2)  # duplicates
+        A.sum_duplicates()
+        assert A.has_canonical_format is True
+        assert_equal(A.nnz, 1)
+
+        # manually set
+        A.has_canonical_format = False
+        assert_equal(A.has_canonical_format, False)
+        assert_equal(A.nnz, 1)  # incorrectly False
+        A.sum_duplicates()  # check flag updated
+        assert_equal(A.has_canonical_format, True)
+
+        A = self.coo_container(A_coords_dups)
+        A.has_canonical_format = True
+        assert_equal(A.has_canonical_format, True)
+        assert_equal(A.nnz, 2)  # incorrectly True
+        A.sum_duplicates()  # check dups not removed due to flag
+        assert_equal(A.nnz, 2)  # still has duplicates!!!!
+
     def test_eliminate_zeros(self):
         data = array([1, 0, 0, 0, 2, 0, 3, 0])
         row = array([0, 0, 0, 1, 1, 1, 1, 1])
@@ -5346,6 +5430,63 @@ class TestBSR(sparse_test_class(getset=False,
         assert_equal(m.nnz, 0)
         assert_array_equal(m.data.shape, (0, 2, 3))
         assert_array_equal(m.toarray(), np.zeros((12, 12)))
+
+    def test_has_canonical_format(self):
+        "Ensure has_canonical_format memoizes state for sum_duplicates"
+
+        A = np.array([[2, 3, 2], [0, 2, 1], [-4, 0, 2]])
+        M = self.bsr_container(A)
+        assert_equal(True, M.has_canonical_format)
+
+        indices = np.array([0, 0])  # contains duplicate
+        data = np.array([A, A*0])
+        indptr = np.array([0, 2])
+
+        M = self.bsr_container((data, indices, indptr)).copy()
+        assert_equal(False, M.has_canonical_format)
+        assert isinstance(M.has_canonical_format, bool)
+        # set flag by deduplicating
+        M.sum_duplicates()
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(1, len(M.indices))
+
+        # manually set flag True (although underlyingly duplicated)
+        M = self.bsr_container((data, indices, indptr)).copy()
+        M.has_canonical_format = True
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # unaffected content
+        # ensure deduplication bypassed when has_canonical_format == True
+        M.sum_duplicates()
+        assert_equal(2, len(M.indices))  # still has duplicates!!!!
+        # ensure deduplication reenabled when has_canonical_format == False
+        M.has_canonical_format = False
+        M.sum_duplicates()
+        assert_equal(1, len(M.indices))
+        assert_equal(True, M.has_canonical_format)
+
+        # manually set flag False (although underlyingly canonical)
+        M = self.bsr_container(A)
+        M.has_canonical_format = False
+        assert_equal(False, M.has_canonical_format)
+        assert_equal(1, len(M.indices))
+        # sum_duplicates does not complain when no work to do
+        M.sum_duplicates()
+        assert_equal(True, M.has_canonical_format)
+
+        # manually reset index arrays before accessing M.has_canonical_format is OK
+        M = self.bsr_container(A)
+        M.data, M.indices, M.indptr = data, indices, indptr
+        assert_equal(False, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # dups and has_canonical_format is False
+
+        # but reset after accessing M.has_canonical_format can break flag
+        M = self.bsr_container(A)
+        M.has_canonical_format  # underlying attr is set here
+        M.data, M.indices, M.indptr = data, indices, indptr
+        assert_equal(True, M.has_canonical_format)
+        assert_equal(2, len(M.indices))  # dups but has_canonical_format is True
+        M.sum_duplicates()
+        assert_equal(2, len(M.indices))  # still has duplicates!!!!
 
     def test_bsr_matvec(self):
         A = self.bsr_container(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
