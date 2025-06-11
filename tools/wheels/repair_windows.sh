@@ -4,13 +4,11 @@ WHEEL="$1"
 DEST_DIR="$2"
 OPENBLAS_DIR=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
 
-# Determine the strip command based on TARGET_ARCH
 # TARGET_ARCH should be set by the CI environment (e.g., ARM64, AMD64)
 TARGET_ARCH="${TARGET_ARCH:-}" # Default to empty string if not set
-STRIP_COMMAND="strip"
 if [ "$TARGET_ARCH" = "ARM64" ]; then
-  STRIP_COMMAND="llvm-strip"
-  echo "Using llvm-strip for ARM64 target."
+  echo "Skip wheel repair for ARM64 target."
+  exit 0
 else
   echo "Using default strip command."
 fi
@@ -29,7 +27,7 @@ pushd scipy*
 # building with mingw.
 # We therefore find each PYD in the directory structure and strip them.
 
-for f in $(find ./scipy* -name '*.pyd'); do $STRIP_COMMAND $f; done
+for f in $(find ./scipy* -name '*.pyd'); do strip $f; done
 
 # now repack the wheel and overwrite the original
 wheel pack .
