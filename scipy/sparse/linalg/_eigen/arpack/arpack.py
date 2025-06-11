@@ -371,7 +371,7 @@ class _ArpackParams:
             'bmat': 0,
             'info': info,
             'iter': 0,
-            'maxiter': maxiter,
+            'maxiter': int(maxiter),
             'mode': mode,
             'n': n,
             'nconv': 0,
