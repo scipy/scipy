@@ -234,10 +234,10 @@ jobs:
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
         shell: pwsh
         run: |
-          $env:CC = "clang-cl"
-          $env:CCX = "clang-cl"
-          $env:FC = "flang"
-          $env:TARGET_ARCH = "${{ matrix.buildplat[2] }}"
+          echo "CC=clang-cl" >> "$GITHUB_ENV"
+          echo "CCX=clang-cl" >> "$GITHUB_ENV"
+          echo "FC=flang" >> "$GITHUB_ENV"
+          echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> "$GITHUB_ENV"
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
       - name: Build wheels for win_arm64
