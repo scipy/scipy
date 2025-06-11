@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_
 import numpy.testing as npt
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, coo_array
 from scipy.sparse.csgraph import minimum_spanning_tree
 
 
@@ -68,6 +68,7 @@ def test_minimum_spanning_tree():
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
 def test_mst_with_various_index_dtypes(dtype):
+    #CSR array
     # Row indices
     indptr = np.array([0, 2, 4, 5], dtype=dtype)
     indices = np.array([1, 2, 0, 2, 1], dtype=dtype)
@@ -92,5 +93,34 @@ def test_mst_with_various_index_dtypes(dtype):
         [0, 0, 0],
         [0, 0, 0]
     ], dtype=float)
+
+    npt.assert_array_almost_equal(mst.toarray(), expected)
+
+    # COO array
+    data = np.array([1.0, 4.0, 3.0, 2.0, 5.0], dtype=float)
+    row = np.array([0, 1, 2, 3, 4], dtype=dtype)
+    col = np.array([1, 2, 3, 4, 5], dtype=dtype)
+
+    # Build COO graph with (9, 9) shape
+    adj = coo_array((data, (row, col)), shape=(9, 9))
+
+    # Check whether the dtype of indices is as expected
+    assert adj.row.dtype == dtype
+    assert adj.col.dtype == dtype
+
+    # Compute MST
+    mst = minimum_spanning_tree(adj)
+
+    # Check whether the dtype of indices is as expected
+    assert mst.indices.dtype == dtype
+    assert mst.indptr.dtype == dtype
+
+    # Expected MST will include all 5 edges since graph is disconnected elsewhere
+    expected = np.zeros((9, 9), dtype=float)
+    expected[0, 1] = 1.0
+    expected[1, 2] = 4.0
+    expected[2, 3] = 3.0
+    expected[3, 4] = 2.0
+    expected[4, 5] = 5.0
 
     npt.assert_array_almost_equal(mst.toarray(), expected)
