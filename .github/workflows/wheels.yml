@@ -237,7 +237,7 @@ jobs:
           $env:CC = "clang-cl"
           $env:CCX = "clang-cl"
           $env:FC = "flang"
-          $env:TARGET_ARCH = "${{ matrix.buildplat[2] }}""
+          $env:TARGET_ARCH = "${{ matrix.buildplat[2] }}"
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
       - name: Build wheels for win_arm64
