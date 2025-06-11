@@ -239,7 +239,6 @@ jobs:
           echo "FC=flang" >> $env:GITHUB_ENV
           echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
           echo "PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;$env:PATH" >> $env:GITHUB_ENV
-#          echo "PKG_CONFIG_PATH=$GITHUB_WORKSPACE" >> $env:GITHUB_ENV
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
       - name: Build wheels for win_arm64
@@ -251,7 +250,6 @@ jobs:
           CIBW_ENABLE: cpython-freethreading cpython-prerelease            
           CIBW_BEFORE_BUILD_WINDOWS: >
             bash {project}/tools/wheels/cibw_before_build_win.sh {project} &&
-            pip install -r requirements/build.txt &&
             vcpkg install pkgconf &&
             copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
             copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"

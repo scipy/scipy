@@ -20,6 +20,10 @@ fi
 pushd $DEST_DIR
 mkdir -p tmp
 pushd tmp
+
+echo "Wheel size before stripping PYDs:"
+ls -l $WHEEL
+
 wheel unpack $WHEEL
 pushd scipy*
 
@@ -29,17 +33,16 @@ pushd scipy*
 # building with mingw.
 # We therefore find each PYD in the directory structure and strip them.
 
-echo "Wheel size before stripping PYDs:"
-ls -l $WHEEL
+
 
 for f in $(find ./scipy* -name '*.pyd'); do $STRIP_COMMAND $f; done
-
-echo "Wheel size after stripping PYDs:"
-ls -l $WHEEL
 
 # now repack the wheel and overwrite the original
 wheel pack .
 mv -fv *.whl $WHEEL
+
+echo "Wheel size after stripping PYDs:"
+ls -l $WHEEL
 
 cd $DEST_DIR
 rm -rf tmp
