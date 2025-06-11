@@ -34,12 +34,12 @@ ls -l $WHEEL
 
 for f in $(find ./scipy* -name '*.pyd'); do $STRIP_COMMAND $f; done
 
+echo "Wheel size after stripping PYDs:"
+ls -l $WHEEL
+
 # now repack the wheel and overwrite the original
 wheel pack .
 mv -fv *.whl $WHEEL
-
-echo "Wheel size after stripping PYDs and repacking:"
-ls -l $WHEEL
 
 cd $DEST_DIR
 rm -rf tmp
