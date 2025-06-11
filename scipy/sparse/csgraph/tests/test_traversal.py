@@ -145,4 +145,3 @@ def test_int64_indices(tree_func, directed):
     assert g.indices.dtype == np.int64
     tree = tree_func(g, 0, directed=directed)
     assert_array_almost_equal(csgraph_to_dense(tree), [[0, 1], [0, 0]])
-
