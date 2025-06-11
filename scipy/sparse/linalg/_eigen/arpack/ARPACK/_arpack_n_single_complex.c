@@ -1414,7 +1414,7 @@ cnapps(int n, int* kev, int np, ARPACK_CPLXF_TYPE* shift, ARPACK_CPLXF_TYPE* v,
 
     for (j = 0; j < *kev; j++)
     {
-        if ((crealf(h[j+1 + ldh*j]) < 0.0) && (cimagf(h[j+1 + ldh*j]) != 0.0))
+        if ((crealf(h[j+1 + ldh*j]) < 0.0) || (cimagf(h[j+1 + ldh*j]) != 0.0))
         {
             tmp_dbl = cabsf(h[j+1 + ldh*j]);
             t = ARPACK_cplxf(crealf(h[j+1 + ldh*j]) / tmp_dbl,
@@ -1529,7 +1529,7 @@ cneigh(float* rnorm, int n, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* ri
 
     if (*ierr != 0) { return; }
 
-    ccopy_(&n, &q[n-1], &ldq, bounds, &int1);
+    ccopy_(&n, &q[n-2], &ldq, bounds, &int1);
 
     //  2. Compute the eigenvectors of the full Schur form T and
     //     apply the Schur vectors to get the corresponding
@@ -1554,7 +1554,7 @@ cneigh(float* rnorm, int n, ARPACK_CPLXF_TYPE* h, int ldh, ARPACK_CPLXF_TYPE* ri
 
     //  Compute the Ritz estimates
 
-    ccopy_(&n, &q[n-1], &ldq, bounds, &int1);
+    ccopy_(&n, &q[n-1], &n, bounds, &int1);
     csscal_(&n, rnorm, bounds, &int1);
 
     return;

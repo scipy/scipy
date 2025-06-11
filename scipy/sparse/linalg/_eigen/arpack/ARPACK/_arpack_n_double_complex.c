@@ -1414,7 +1414,7 @@ znapps(int n, int* kev, int np, ARPACK_CPLX_TYPE* shift, ARPACK_CPLX_TYPE* v,
 
     for (j = 0; j < *kev; j++)
     {
-        if ((creal(h[j+1 + ldh*j]) < 0.0) && (cimag(h[j+1 + ldh*j]) != 0.0))
+        if ((creal(h[j+1 + ldh*j]) < 0.0) || (cimag(h[j+1 + ldh*j]) != 0.0))
         {
             tmp_dbl = cabs(h[j+1 + ldh*j]);
             t = ARPACK_cplx(creal(h[j+1 + ldh*j]) / tmp_dbl,
@@ -1529,7 +1529,7 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
 
     if (*ierr != 0) { return; }
 
-    zcopy_(&n, &q[n-1], &ldq, bounds, &int1);
+    zcopy_(&n, &q[n-2], &ldq, bounds, &int1);
 
     //  2. Compute the eigenvectors of the full Schur form T and
     //     apply the Schur vectors to get the corresponding
@@ -1554,7 +1554,7 @@ zneigh(double* rnorm, int n, ARPACK_CPLX_TYPE* h, int ldh, ARPACK_CPLX_TYPE* rit
 
     //  Compute the Ritz estimates
 
-    zcopy_(&n, &q[n-1], &ldq, bounds, &int1);
+    zcopy_(&n, &q[n-1], &n, bounds, &int1);
     zdscal_(&n, rnorm, bounds, &int1);
 
     return;
