@@ -3001,6 +3001,7 @@ class TestVectorizedFilter:
 
         ref = ndimage.vectorized_filter(img, xp.mean, size=(2,), axes=(0,))
         res = ndimage.vectorized_filter(img, xp.mean, size=2, axes=0)
+        xp_assert_close(res, ref)
 
     def test_gh23046_fix(self, xp):
         # While investigating the feasibility of gh-23046, I noticed a bug when the

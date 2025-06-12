@@ -1,6 +1,7 @@
 exclude = [
   "scipy/_build_utils/tempita/*",
   "scipy/_lib/_docscrape.py",
+  "scipy/_lib/decorator.py",
   "scipy/_lib/pyprima",
   "scipy/datasets/_registry.py",
 ]
