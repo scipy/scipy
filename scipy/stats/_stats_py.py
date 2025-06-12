@@ -39,10 +39,8 @@ from scipy import sparse
 from scipy.spatial import distance_matrix
 
 from scipy.optimize import milp, LinearConstraint
-from scipy._lib._util import (check_random_state, _get_nan,
-                              _rename_parameter, _contains_nan,
-                              normalize_axis_index, np_vecdot, AxisError)
-from scipy._lib.deprecation import _deprecate_positional_args
+from scipy._lib._util import (_get_nan, _rename_parameter, _contains_nan,
+                              normalize_axis_index, np_vecdot,)
 
 import scipy.special as special
 # Import unused here but needs to stay until end of deprecation periode
@@ -55,13 +53,10 @@ from ._stats_mstats_common import _find_repeats, theilslopes, siegelslopes
 from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 from dataclasses import dataclass, field
-from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
-                          monte_carlo_test, permutation_test, bootstrap,
-                          _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate, _broadcast_shapes,
+                          monte_carlo_test, permutation_test, bootstrap,)
+from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_shapes,
                                _broadcast_array_shapes_remove_axis, SmallSampleWarning,
                                too_small_1d_not_omit, too_small_1d_omit,
                                too_small_nd_not_omit, too_small_nd_omit)
@@ -130,24 +125,6 @@ def _chk_asarray(a, axis, *, xp=None):
         a = xp.reshape(a, (-1,))
 
     return a, outaxis
-
-
-def _chk2_asarray(a, b, axis):
-    if axis is None:
-        a = np.ravel(a)
-        b = np.ravel(b)
-        outaxis = 0
-    else:
-        a = np.asarray(a)
-        b = np.asarray(b)
-        outaxis = axis
-
-    if a.ndim == 0:
-        a = np.atleast_1d(a)
-    if b.ndim == 0:
-        b = np.atleast_1d(b)
-
-    return a, b, outaxis
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -6469,18 +6446,11 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-_ttest_ind_dep_msg = "Use ``method`` to perform a permutation test."
-
-
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"])
-@_deprecate_positional_args(version='1.17.0',
-                            deprecated_args={'permutations', 'random_state'},
-                            custom_message=_ttest_ind_dep_msg)
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
-              permutations=None, random_state=None, alternative="two-sided",
-              trim=0, method=None):
+              alternative="two-sided", trim=0, method=None):
     """
     Calculate the T-test for the means of *two independent* samples of scores.
 
@@ -6512,39 +6482,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
-        The 'omit' option is not currently available for permutation tests or
-        one-sided asymptotic tests.
-
-    permutations : non-negative int, np.inf, or None (default), optional
-        If 0 or None (default), use the t-distribution to calculate p-values.
-        Otherwise, `permutations` is  the number of random permutations that
-        will be used to estimate p-values using a permutation test. If
-        `permutations` equals or exceeds the number of distinct partitions of
-        the pooled data, an exact test is performed instead (i.e. each
-        distinct partition is used exactly once). See Notes for details.
-
-        .. deprecated:: 1.17.0
-            `permutations` is deprecated and will be removed in SciPy 1.7.0.
-            Use the `n_resamples` argument of `PermutationMethod`, instead,
-            and pass the instance as the `method` argument.
-
-    random_state : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-
-        Pseudorandom number generator state used to generate permutations
-        (used only when `permutations` is not None).
-
-        .. deprecated:: 1.17.0
-            `random_state` is deprecated and will be removed in SciPy 1.7.0.
-            Use the `rng` argument of `PermutationMethod`, instead,
-            and pass the instance as the `method` argument.
+        The 'omit' option is not currently available for one-sided asymptotic tests.
 
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
@@ -6587,7 +6525,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
             The p-value associated with the given alternative.
         df : float or ndarray
             The number of degrees of freedom used in calculation of the
-            t-statistic. This is always NaN for a permutation t-test.
+            t-statistic.
 
             .. versionadded:: 1.11.0
 
@@ -6598,8 +6536,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
             population means for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
             fields ``low`` and ``high``.
-            When a permutation t-test is performed, the confidence interval
-            is not computed, and fields ``low`` and ``high`` contain NaN.
 
             .. versionadded:: 1.11.0
 
@@ -6623,11 +6559,10 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
     By default, the p-value is determined by comparing the t-statistic of the
     observed data against a theoretical t-distribution.
 
-    (In the following, note that the argument `permutations` itself is
-    deprecated, but a nearly identical test may be performed by creating
-    an instance of `scipy.stats.PermutationMethod` with ``n_resamples=permutuations``
-    and passing it as the `method` argument.)
-    When ``1 < permutations < binom(n, k)``, where
+    It is also possible to compute the test statistic using a permutation test by
+    passing ``method=scipy.stats.PermutationMethod(n_resamples=permutations)``,
+    where ``permutations`` is the desired number of "permutations" to use in
+    forming the null distribution. When ``1 < permutations < binom(n, k)``, where
 
     * ``k`` is the number of observations in `a`,
     * ``n`` is the total number of observations in `a` and `b`, and
@@ -6635,7 +6570,7 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     the data are pooled (concatenated), randomly assigned to either group `a`
     or `b`, and the t-statistic is calculated. This process is performed
-    repeatedly (`permutation` times), generating a distribution of the
+    repeatedly (``permutations`` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value.
     Specifically, the p-value reported is the "achieved significance level"
@@ -6778,27 +6713,6 @@ def ttest_ind(a, b, *, axis=0, equal_var=True, nan_policy='propagate',
 
     alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
 
-    # This probably should be deprecated and replaced with a `method` argument
-    if permutations is not None and permutations != 0:
-        message = "Use of `permutations` is compatible only with NumPy arrays."
-        if not is_numpy(xp):
-            raise NotImplementedError(message)
-
-        message = "Use of `permutations` is incompatible with with use of `trim`."
-        if trim != 0:
-            raise NotImplementedError(message)
-
-        t, prob = _permutation_ttest(a, b, permutations=permutations,
-                                     axis=axis, equal_var=equal_var,
-                                     nan_policy=nan_policy,
-                                     random_state=random_state,
-                                     alternative=alternative)
-        df, denom, estimate = NaN, NaN, NaN
-
-        # _axis_nan_policy decorator doesn't play well with strings
-        return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
-                           standard_error=denom, estimate=estimate)
-
     n1 = _length_nonmasked(a, axis)
     n2 = _length_nonmasked(b, axis)
 
@@ -6916,148 +6830,6 @@ def _calculate_winsorized_variance(a, g, axis):
     # replace computed variances with `np.nan`.
     var_win[nans_indices] = np.nan
     return var_win
-
-
-def _permutation_distribution_t(data, permutations, size_a, equal_var,
-                                random_state=None):
-    """Generation permutation distribution of t statistic"""
-
-    random_state = check_random_state(random_state)
-
-    # prepare permutation indices
-    size = data.shape[-1]
-    # number of distinct combinations
-    n_max = special.comb(size, size_a)
-
-    if permutations < n_max:
-        perm_generator = (random_state.permutation(size)
-                          for i in range(permutations))
-    else:
-        permutations = n_max
-        perm_generator = (np.concatenate(z)
-                          for z in _all_partitions(size_a, size-size_a))
-
-    t_stat = []
-    for indices in _batch_generator(perm_generator, batch=50):
-        # get one batch from perm_generator at a time as a list
-        indices = np.array(indices)
-        # generate permutations
-        data_perm = data[..., indices]
-        # move axis indexing permutations to position 0 to broadcast
-        # nicely with t_stat_observed, which doesn't have this dimension
-        data_perm = np.moveaxis(data_perm, -2, 0)
-
-        a = data_perm[..., :size_a]
-        b = data_perm[..., size_a:]
-        t_stat.append(_calc_t_stat(a, b, equal_var))
-
-    t_stat = np.concatenate(t_stat, axis=0)
-
-    return t_stat, permutations, n_max
-
-
-def _calc_t_stat(a, b, equal_var, axis=-1):
-    """Calculate the t statistic along the given dimension."""
-    na = a.shape[axis]
-    nb = b.shape[axis]
-    avg_a = np.mean(a, axis=axis)
-    avg_b = np.mean(b, axis=axis)
-    var_a = _var(a, axis=axis, ddof=1)
-    var_b = _var(b, axis=axis, ddof=1)
-
-    if not equal_var:
-        _, denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)
-    else:
-        _, denom = _equal_var_ttest_denom(var_a, na, var_b, nb)
-
-    return (avg_a-avg_b)/denom
-
-
-def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
-                       nan_policy='propagate', random_state=None,
-                       alternative="two-sided"):
-    """
-    Calculates the T-test for the means of TWO INDEPENDENT samples of scores
-    using permutation methods.
-
-    This test is similar to `stats.ttest_ind`, except it doesn't rely on an
-    approximate normality assumption since it uses a permutation test.
-    This function is only called from ttest_ind when permutations is not None.
-
-    Parameters
-    ----------
-    a, b : array_like
-        The arrays must be broadcastable, except along the dimension
-        corresponding to `axis` (the zeroth, by default).
-    axis : int, optional
-        The axis over which to operate on a and b.
-    permutations : int, optional
-        Number of permutations used to calculate p-value. If greater than or
-        equal to the number of distinct permutations, perform an exact test.
-    equal_var : bool, optional
-        If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
-        an ordinary t-test is conducted.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-        Pseudorandom number generator state used for generating random
-        permutations.
-
-    Returns
-    -------
-    statistic : float or array
-        The calculated t-statistic.
-    pvalue : float or array
-        The p-value.
-
-    """
-    if permutations < 0 or (np.isfinite(permutations) and
-                            int(permutations) != permutations):
-        raise ValueError("Permutations must be a non-negative integer.")
-
-    random_state = check_random_state(random_state)
-
-    t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
-
-    na = a.shape[axis]
-    mat = _broadcast_concatenate((a, b), axis=axis)
-    mat = np.moveaxis(mat, axis, -1)
-
-    t_stat, permutations, n_max = _permutation_distribution_t(
-        mat, permutations, size_a=na, equal_var=equal_var,
-        random_state=random_state)
-
-    compare = {"less": np.less_equal,
-               "greater": np.greater_equal,
-               "two-sided": lambda x, y: (x <= -np.abs(y)) | (x >= np.abs(y))}
-
-    # Calculate the p-values
-    cmps = compare[alternative](t_stat, t_stat_observed)
-    # Randomized test p-value calculation should use biased estimate; see e.g.
-    # https://www.degruyter.com/document/doi/10.2202/1544-6115.1585/
-    adjustment = 1 if n_max > permutations else 0
-    pvalues = (cmps.sum(axis=0) + adjustment) / (permutations + adjustment)
-
-    # nans propagate naturally in statistic calculation, but need to be
-    # propagated manually into pvalues
-    if nan_policy == 'propagate' and np.isnan(t_stat_observed).any():
-        if np.ndim(pvalues) == 0:
-            pvalues = np.float64(np.nan)
-        else:
-            pvalues[np.isnan(t_stat_observed)] = np.nan
-
-    return (t_stat_observed, pvalues)
-
-
-def _get_len(a, axis, msg):
-    try:
-        n = a.shape[axis]
-    except IndexError:
-        raise AxisError(axis, a.ndim, msg) from None
-    return n
 
 
 @xp_capabilities(cpu_only=True, exceptions=["cupy", "jax.numpy"],
@@ -10936,7 +10708,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
             for i in axes:
                 final_shape[i] = 1
 
-        res = xp.reshape(res, final_shape)
+        res = xp.reshape(res, tuple(final_shape))
 
     return res[()] if res.ndim == 0 else res
 
