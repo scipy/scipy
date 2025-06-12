@@ -31,7 +31,7 @@ enum ARPACK_neupd_type {
 
 
 void
-zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
+ARPACK_zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
        ARPACK_CPLX_TYPE* d, ARPACK_CPLX_TYPE* z, int ldz, ARPACK_CPLX_TYPE sigma,
        ARPACK_CPLX_TYPE* workev, ARPACK_CPLX_TYPE* resid, ARPACK_CPLX_TYPE* v, int ldv,
        int* ipntr, ARPACK_CPLX_TYPE* workd, ARPACK_CPLX_TYPE* workl, double* rwork)
@@ -436,7 +436,7 @@ zneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 
 
 void
-znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
+ARPACK_znaupd(struct ARPACK_arnoldi_update_vars_d *V, ARPACK_CPLX_TYPE* resid,
        ARPACK_CPLX_TYPE* v, int ldv, int* ipntr, ARPACK_CPLX_TYPE* workd,
        ARPACK_CPLX_TYPE* workl, double* rwork)
 {
