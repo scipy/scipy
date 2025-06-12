@@ -33,7 +33,7 @@ gmpy2 = "*"
 ccache = ">=4.10.1,<5"
 
 [feature.build.tasks]
-build = { cmd = "spin build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }
+build = { cmd = "spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }
 wheel = { cmd = "python -m build -wnx -Cbuild-dir=build-whl && cp dist/*.whl ../../wheelhouse/", cwd = "../.." }
 
 [feature.test.tasks]

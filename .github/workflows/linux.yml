@@ -140,7 +140,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        spin test -j2 -- --durations 10 --timeout=60
+        spin test -j3 -- --durations 10 --timeout=60
 
   #################################################################################
   test_venv_install:
@@ -192,7 +192,7 @@ jobs:
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
-        python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
+        python -m pip install . --no-build-isolation
 
         # Basic tests
         cd ..
@@ -223,13 +223,13 @@ jobs:
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
-          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis
-          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
+          python3-dbg -m pytest --pyargs scipy -n4 --durations=10 -m "not slow"
 
   #################################################################################
   gcc9:
@@ -267,7 +267,7 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python -m pip install dist/scipy*.whl
 
       - name: Install test dependencies
@@ -280,7 +280,7 @@ jobs:
           # can't be in source directory
           pushd $RUNNER_TEMP
           export PYTHONOPTIMIZE=2
-          python -m pytest --pyargs scipy -n2 --durations=10
+          python -m pytest --pyargs scipy -n4 --durations=10
           popd
 
   #################################################################################
@@ -436,7 +436,7 @@ jobs:
 
       - name: Build wheel and install
         run: |
-          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas
           python3.11 -m pip install dist/*.whl
 
       - name: Install test dependencies
@@ -497,7 +497,7 @@ jobs:
     - name: Run tests (full)
       if: ${{ matrix.parallel == '0'}}
       run: |
-        spin test -j2 -m full --durations=10
+        spin test -j4 -m full --durations=10
 
     - name: Run tests (fast, with pytest-run-parallel)
       if: ${{ matrix.parallel == '1'}}
