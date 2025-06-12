@@ -109,22 +109,6 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: win_amd64 - install rtools
-        run: |
-          # mingw-w64
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
-
-      - name: windows - set PKG_CONFIG_PATH
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          $env:CIBW = "${{ github.workspace }}"
-          # It seems somewhere in the env passing, `\` is not
-          # passed through, so convert it to '/'
-          $env:CIBW=$env:CIBW.replace("\","/")
-          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$env:CIBW" >> $env:GITHUB_ENV
-
       - name: Setup macOS
         if: startsWith( matrix.buildplat[0], 'macos-' )
         run: |
@@ -211,14 +195,30 @@ jobs:
         run: |
           CIBW="pip; args: --no-build-isolation"
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
-      
-      - name: Build wheels
-        if: matrix.buildplat[1] != 'win' || matrix.buildplat[2] != 'ARM64' # win_arm64 build configured separately
-        uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
-        env:
-          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
-          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_ENABLE: cpython-freethreading cpython-prerelease
+
+      - name: Windows - set environment variables
+        if: matrix.buildplat[1] == 'win'
+        shell: pwsh
+        run: |
+          # Common Windows settings
+          $workspacePath = "${{ github.workspace }}".Replace("\","/")
+          echo "CIBW_ENVIRONMENT=PKG_CONFIG_PATH=$workspacePath" >> $env:GITHUB_ENV
+
+          # ARM64 specific settings
+          if ('${{ matrix.buildplat[1] }}' -eq 'win' -and '${{ matrix.buildplat[2] }}' -eq 'ARM64') {
+            echo "CC=clang-cl" >> $env:GITHUB_ENV
+            echo "CXX=clang-cl" >> $env:GITHUB_ENV
+            echo "FC=flang" >> $env:GITHUB_ENV
+            echo "TARGET_ARCH=${{ matrix.buildplat[2] }}" >> $env:GITHUB_ENV
+            echo "PATH=C:\vcpkg\installed\arm64-windows\tools\pkgconf;$($env:PATH)" >> $env:GITHUB_ENV
+          }
+
+      - name: Install rtools for win_amd64
+        if: ${{ matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'AMD64' }}
+        run: |
+          # mingw-w64
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
       # can be remove after https://github.com/actions/partner-runner-images/issues/90
       - name: Install LLVM for win_arm64
@@ -230,27 +230,22 @@ jobs:
           echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # pkgconf and FortranRuntime hacks may be removed after fixes in according libraries
-      - name: Build wheels for win_arm64
+      - name: Set CIBW_BEFORE_BUILD_WINDOWS for win_arm64
         if: matrix.buildplat[1] == 'win' && matrix.buildplat[2] == 'ARM64'
+        shell: pwsh
+        run: |
+          $CIBW_COMMAND = "bash {project}/tools/wheels/cibw_before_build_win.sh {project} && " +
+                          "vcpkg install pkgconf && " +
+                          "copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe && " +
+                          "copy `"C:\Program Files\LLVM\lib\FortranRuntime.static.lib`" `"C:\Program Files\LLVM\lib\FortranRuntime.lib`""
+          echo "CIBW_BEFORE_BUILD_WINDOWS=$CIBW_COMMAND" >> $env:GITHUB_ENV
+
+      - name: Build wheels
         uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
-          CIBW_ENABLE: cpython-freethreading cpython-prerelease
-          CIBW_ENVIRONMENT_WINDOWS: >
-            PATH="C:\\vcpkg\\installed\\arm64-windows\\tools\\pkgconf;$PATH"
-            CC=clang-cl
-            CXX=clang-cl
-            FC=flang
-            PKG_CONFIG_PATH=$GITHUB_WORKSPACE
-            TARGET_ARCH=${{ matrix.buildplat[2] }}
-          CIBW_BEFORE_BUILD_WINDOWS: >
-            pip install wheel delvewheel &&
-            pip install -r requirements/build.txt -r requirements/openblas.txt &&
-            python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > %GITHUB_WORKSPACE%\scipy-openblas.pc &&
-            vcpkg install pkgconf &&
-            copy C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkgconf.exe C:\vcpkg\installed\arm64-windows\tools\pkgconf\pkg-config.exe &&
-            copy "C:\Program Files\LLVM\lib\FortranRuntime.static.lib" "C:\Program Files\LLVM\lib\FortranRuntime.lib"
+          CIBW_ENABLE: cpython-freethreading cpython-prerelease          
 
       - name: Rename macOS wheels
         if: startsWith( matrix.buildplat[0], 'macos-' )
