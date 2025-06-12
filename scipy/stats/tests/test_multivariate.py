@@ -1820,7 +1820,8 @@ class TestMatrixT:
         assert_allclose(m, mT.T, atol=atol)
         assert_allclose(m.T, mT, atol=atol)
 
-    def test_against_multivariate_t(self):
+    @pytest.mark.parametrize("shape_case", ["row", "col"])
+    def test_against_multivariate_t(self, shape_case):
         r"""
         Gupta and Nagar (2000) p.133f
         When the number of rows or the number of columns equals 1 the
@@ -1834,15 +1835,32 @@ class TestMatrixT:
         """
         atol = 1e-6
         df = 5
-        num_rows = 1
-        num_cols = 3
+        # num_rows = 1
+        # num_cols = 3
+        # M = np.full((num_rows, num_cols), 0.3)
+
+        # col_spread = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+        # V = col_spread / df
+
+        if shape_case == "row":
+            num_rows = 1
+            num_cols = 3    
+            row_spread = 1
+            col_spread = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+            shape = col_spread / df
+        else:  # shape_case == "col"
+            num_rows = 3
+            num_cols = 1
+            row_spread = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
+            col_spread=1
+            shape = row_spread / df
+
         M = np.full((num_rows, num_cols), 0.3)
 
-        col_spread = np.array([[1, 0.3, 0.2], [0.3, 1, 0.4], [0.2, 0.4, 1]])
-        V = col_spread / df
-
-        t_mat = matrix_t(mean=M, col_spread=col_spread, df=df)
-        t_mvt = multivariate_t(loc=M.squeeze(), shape=V, df=df)
+        t_mat = matrix_t(
+            mean=M, row_spread=row_spread, col_spread=col_spread, df=df
+        )
+        t_mvt = multivariate_t(loc=M.squeeze(), shape=shape, df=df)
 
         X = t_mat.rvs(size=3, random_state=42)
         t_mat_logpdf = t_mat.logpdf(X)
