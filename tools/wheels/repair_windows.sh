@@ -35,9 +35,8 @@ else
   wheel pack .
   mv -fv *.whl $WHEEL
 
-  popd # Back from tmp directory
+  cd $DEST_DIR
   rm -rf tmp
-  popd # Back from DEST_DIR
 fi
 
 delvewheel repair --add-path $OPENBLAS_DIR --no-dll libsf_error_state.dll -w $DEST_DIR $WHEEL
