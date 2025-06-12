@@ -21,7 +21,7 @@ static PyObject* arpack_error;
 // The following macros are used to define the field names in the ARPACK struct.
 #define STRUCT_INEXACT_FIELD_NAMES X(tol) X(getv0_rnorm0) X(aitr_betaj) X(aitr_rnorm1) X(aitr_wnorm) X(aup2_rnorm)
 #define STRUCT_INT_FIELD_NAMES X(ido) X(which) X(bmat) X(info) X(iter) X(maxiter) X(mode) \
-                               X(n) X(nconv) X(ncv) X(nev) X(np) X(numop) X(numpb) X(numreo) \
+                               X(n) X(nconv) X(ncv) X(nev) X(np) \
                                X(shift) X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
                                X(aitr_iter) X(aitr_j) X(aitr_orth1) X(aitr_orth2) X(aitr_restart) \
                                X(aitr_step3) X(aitr_step4) X(aitr_ierr) X(aup2_initv) X(aup2_iter) \
@@ -87,7 +87,7 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    snaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+    ARPACK_snaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -171,7 +171,7 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    dnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+    ARPACK_dnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -260,7 +260,7 @@ cnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    cnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
+    ARPACK_cnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -347,7 +347,7 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    znaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
+    ARPACK_znaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -452,7 +452,7 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
 
-    sneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
+    ARPACK_sneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
     Py_RETURN_NONE;
 
@@ -533,7 +533,7 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         STRUCT_INT_FIELD_NAMES
     #undef X
 
-    dneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
+    ARPACK_dneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
     Py_RETURN_NONE;
 
@@ -612,7 +612,7 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         STRUCT_INT_FIELD_NAMES
     #undef X
 
-    cneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
+    ARPACK_cneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
 
     Py_RETURN_NONE;
 }
@@ -690,7 +690,7 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         STRUCT_INT_FIELD_NAMES
     #undef X
 
-    zneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
+    ARPACK_zneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
 
     Py_RETURN_NONE;
 }
@@ -753,7 +753,7 @@ ssaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    ssaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+    ARPACK_ssaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -836,7 +836,7 @@ dsaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
     // Call ARPACK function
-    dsaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
+    ARPACK_dsaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
     #define X(name) do { \
@@ -931,7 +931,7 @@ sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     #undef X
 
 
-    sseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
+    ARPACK_sseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
 
     Py_RETURN_NONE;
 }
@@ -1003,7 +1003,7 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         STRUCT_INT_FIELD_NAMES
     #undef X
 
-    dseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
+    ARPACK_dseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
 
     Py_RETURN_NONE;
 }
