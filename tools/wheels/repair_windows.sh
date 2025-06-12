@@ -18,7 +18,6 @@ else
   pushd $DEST_DIR
   mkdir -p tmp
   pushd tmp
-
   wheel unpack $WHEEL
   pushd scipy*
 
@@ -27,9 +26,8 @@ else
   # containing extra data at the end of the binary, which frequently occurs when
   # building with mingw.
   # We therefore find each PYD in the directory structure and strip them.
-  for f in $(find ./scipy* -name '*.pyd'); do strip $f; done
 
-  popd # Back from scipy* directory
+  for f in $(find ./scipy* -name '*.pyd'); do strip $f; done
 
   # now repack the wheel and overwrite the original
   wheel pack .
