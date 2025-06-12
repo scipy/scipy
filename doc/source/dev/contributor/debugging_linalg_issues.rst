@@ -170,7 +170,7 @@ in the exact same way as in `SciPy's conda-forge build recipe
     $ mamba env create -f environment.yml
     $ mamba activate scipy-dev
     $ mamba install "libblas=*=*netlib"  # necessary, we need to build against blas/lapack
-    $ spin build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true
+    $ spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true
     $ spin test -s linalg  # run tests to verify
     $ mamba install "libblas=*=*mkl"
     $ spin test -s linalg
@@ -222,7 +222,7 @@ source.
 
 Once you have everything set up, the development experience is::
 
-    $ spin build -C-Dblas=flexiblas -C-Dlapack=flexiblas
+    $ spin build -S-Dblas=flexiblas -S-Dlapack=flexiblas
     $ FLEXIBLAS=NETLIB spin test -s linalg
     $ FLEXIBLAS=OpenBLAS spin test -s linalg
     # Or export the environment variable to make the selection stick:
@@ -277,7 +277,7 @@ We're now ready to build SciPy against FlexiBLAS::
 
     $ export PKG_CONFIG_PATH=$PWD/flexiblas-setup/built-libs/lib/pkgconfig/
     $ cd scipy
-    $ spin build -C-Dblas=flexiblas -C-Dlapack=flexiblas
+    $ spin build -S-Dblas=flexiblas -S-Dlapack=flexiblas
     ...
     Run-time dependency flexiblas found: YES 3.4.2
 

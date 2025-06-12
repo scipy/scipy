@@ -96,7 +96,7 @@ jobs:
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          spin build -C-Duse-pythran=false -C--vsenv
+          spin build -S-Duse-pythran=false -S--vsenv
 
       # "import scipy; scipy.test();" fails because
       # scipy/sparse/linalg/_eigen/arpack crashes.

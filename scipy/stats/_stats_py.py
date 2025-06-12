@@ -10708,7 +10708,7 @@ def _xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propa
             for i in axes:
                 final_shape[i] = 1
 
-        res = xp.reshape(res, final_shape)
+        res = xp.reshape(res, tuple(final_shape))
 
     return res[()] if res.ndim == 0 else res
 
