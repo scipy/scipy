@@ -30,7 +30,7 @@ enum ARPACK_seupd_type {
 
 
 void
-sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
+ARPACK_sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
        float* d, float* z, int ldz, float sigma, float* resid, float* v,
        int ldv, int* ipntr, float* workd, float* workl)
 {
@@ -483,7 +483,7 @@ sseupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 
 
 void
-ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
+ARPACK_ssaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
        int* ipntr, float* workd, float* workl)
 {
 
