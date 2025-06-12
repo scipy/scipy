@@ -647,7 +647,7 @@ class BaseQRinsert(BaseQRdeltas):
             else:
                 u = rng.random((a.shape[0], p))
         else:
-            ValueError('which should be either "row" or "col"')
+            raise ValueError('which should be either "row" or "col"')
 
         if np.iscomplexobj(self.dtype.type(1)):
             b = rng.random(u.shape)
@@ -1684,7 +1684,7 @@ def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
         q = rng.random(q_shape) + 1j*rng.random(q_shape)
         u = rng.random(u_shape) + 1j*rng.random(u_shape)
     else:
-        ValueError("form_qTu doesn't support this dtype")
+        raise ValueError("form_qTu doesn't support this dtype")
 
     q = np.require(q, dtype, q_order)
     if u_order != 'A':
