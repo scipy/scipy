@@ -29,21 +29,9 @@ enum ARPACK_neupd_type {
     IMAGPART
 };
 
-/* rvec : bool
- * howmny: int, {0, 1, 2} possible values
- * select: int[ncv], bool valued
- * dr: double[nev + 1], real part of the Ritz values
- * di: double[nev + 1], imaginary part of the Ritz values
- * z: double[(nev + 1) * n], the eigenvectors of the matrix
- * ldz: int, leading dimension of z
- * sigmar: double, real part of the shift
- * sigmai: double, imaginary part of the shift
- * workev: double[3*ncv], workspace
- * -------------
- *
- * */
+
 void
-dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
+ARPACK_dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select,
        double* dr, double* di, double* z, int ldz, double sigmar, double sigmai,
        double* workev, double* resid, double* v, int ldv, int* ipntr, double* workd,
        double* workl)
@@ -518,7 +506,8 @@ dneupd(struct ARPACK_arnoldi_update_vars_d *V, int rvec, int howmny, int* select
 }
 
 void
-dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v, int ldv, int* ipntr, double* workd, double* workl)
+ARPACK_dnaupd(struct ARPACK_arnoldi_update_vars_d *V, double* resid, double* v,
+              int ldv, int* ipntr, double* workd, double* workl)
 {
     int bounds, ih, iq, iw, j, ldh, ldq, next, iritzi, iritzr;
 

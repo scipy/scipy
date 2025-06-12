@@ -29,21 +29,9 @@ enum ARPACK_neupd_type {
     IMAGPART
 };
 
-/* rvec : bool
- * howmny: int, {0, 1, 2} possible values
- * select: int[ncv], bool valued
- * dr: double[nev + 1], real part of the Ritz values
- * di: double[nev + 1], imaginary part of the Ritz values
- * z: double[(nev + 1) * n], the eigenvectors of the matrix
- * ldz: int, leading dimension of z
- * sigmar: double, real part of the shift
- * sigmai: double, imaginary part of the shift
- * workev: double[3*ncv], workspace
- * -------------
- *
- * */
+
 void
-sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
+ARPACK_sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
        float* dr, float* di, float* z, int ldz, float sigmar, float sigmai,
        float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd,
        float* workl)
@@ -518,7 +506,8 @@ sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select
 }
 
 void
-snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv, int* ipntr, float* workd, float* workl)
+ARPACK_snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v,
+              int ldv, int* ipntr, float* workd, float* workl)
 {
     int bounds, ih, iq, iw, j, ldh, ldq, next, iritzi, iritzr;
 
