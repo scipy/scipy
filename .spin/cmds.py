@@ -35,9 +35,9 @@ PROJECT_MODULE = "scipy"
 @click.option(
     '--release', '-r', default=False, is_flag=True, help="Release build")
 @click.option(
-    '--setup-args', '-C', default=[], multiple=True,
+    '--setup-args', '-S', default=[], multiple=True,
     help=("Pass along one or more arguments to `meson setup` "
-            "Repeat the `-C` in case of multiple arguments."))
+            "Repeat the `-S` in case of multiple arguments."))
 @click.option(
     '--show-build-log', default=False, is_flag=True,
     help="Show build output rather than using a log file")
