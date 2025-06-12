@@ -4,7 +4,7 @@ WHEEL="$1"
 DEST_DIR="$2"
 OPENBLAS_DIR=$(python -c"import scipy_openblas32 as sop; print(sop.get_lib_dir())")
 
-# Determine the strip command based on TARGET_ARCH
+# Skip the strip command based on TARGET_ARCH
 # TARGET_ARCH should be set by the CI environment (e.g., ARM64, AMD64)
 TARGET_ARCH="${TARGET_ARCH:-}" # Default to empty string if not set
 
