@@ -72,7 +72,8 @@ def laplacian(
         Default: False, for backward compatibility.
     variant : 'repelling', 'opposing' or 'unsigned'
         Specifies the method used to compute vertex degrees.
-        Detailed discussions on the reasoning behind each type of variant can be found in [2].:
+        Detailed discussions on the reasoning behind each type of variant
+        can be found in [2].:
 
         * 'repelling' is standard degree calculation using edge weights.
         * 'opposing' computes the degree using absolute values of edge weights.
@@ -319,7 +320,11 @@ def laplacian(
 
     Setting variant="opposing" prevents cancellation by summing absolute edge weights:
 
-    >>> L_opposing, d_opposing = csgraph.laplacian(G, return_diag=True, variant="opposing")
+    >>> L_opposing, d_opposing = csgraph.laplacian(
+            G,
+            return_diag=True,
+            variant="opposing",
+        )
     >>> L_opposing
     array([[ 2, -1, 1],
            [-1,  2, -1],
@@ -331,7 +336,11 @@ def laplacian(
     and computes the Laplacian using absolute edge weights
     This is same as csgraph.laplacian(np.abs(G), return_diag=True, variant="repelling"):
 
-    >>> L_unsigned, d_unsigned = csgraph.laplacian(G, return_diag=True, variant="unsigned")
+    >>> L_unsigned, d_unsigned = csgraph.laplacian(
+            G,
+            return_diag=True,
+            variant="unsigned",
+        )
     >>> L_unsigned
     array([[ 2, -1, -1],
            [-1,  2, -1],
