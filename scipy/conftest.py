@@ -135,7 +135,9 @@ if not PARALLEL_RUN_AVAILABLE:
 # Array API backend handling
 xp_known_backends = {'numpy', 'array_api_strict', 'torch', 'cupy', 'jax.numpy',
                      'dask.array'}
-xp_available_backends = {'numpy': np}
+xp_available_backends = [
+    pytest.param(np, id='numpy', marks=pytest.mark.array_api_backends)
+]
 xp_skip_cpu_only_backends = set()
 xp_skip_eager_only_backends = set()
 
@@ -143,7 +145,9 @@ if SCIPY_ARRAY_API:
     # fill the dict of backends with available libraries
     try:
         import array_api_strict
-        xp_available_backends.update({'array_api_strict': array_api_strict})
+        xp_available_backends.append(
+            pytest.param(array_api_strict, id='array_api_strict',
+                         marks=pytest.mark.array_api_backends))
         if _pep440.parse(array_api_strict.__version__) < _pep440.Version('2.3'):
             raise ImportError("array-api-strict must be >= version 2.3")
         array_api_strict.set_array_api_strict_flags(
@@ -154,7 +158,9 @@ if SCIPY_ARRAY_API:
 
     try:
         import torch  # type: ignore[import-not-found]
-        xp_available_backends.update({'torch': torch})
+        xp_available_backends.append(
+            pytest.param(torch, id='torch',
+            marks=pytest.mark.array_api_backends))
         torch.set_default_device(SCIPY_DEVICE)
         if SCIPY_DEVICE != "cpu":
             xp_skip_cpu_only_backends.add('torch')
@@ -175,7 +181,9 @@ if SCIPY_ARRAY_API:
         import cupy  # type: ignore[import-not-found]
         # Note: cupy disregards SCIPY_DEVICE and always runs on cuda.
         # It will fail to import if you don't have CUDA hardware and drivers.
-        xp_available_backends.update({'cupy': cupy})
+        xp_available_backends.append(
+            pytest.param(cupy, id='cupy',
+            marks=pytest.mark.array_api_backends))
         xp_skip_cpu_only_backends.add('cupy')
 
         # this is annoying in CuPy 13.x
@@ -189,7 +197,13 @@ if SCIPY_ARRAY_API:
 
     try:
         import jax.numpy  # type: ignore[import-not-found]
-        xp_available_backends.update({'jax.numpy': jax.numpy})
+        
+        xp_available_backends.append(
+            pytest.param(jax.numpy, id='jax.numpy',
+            marks=[pytest.mark.array_api_backends,
+                   # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
+                   pytest.mark.thread_unsafe]))
+
         jax.config.update("jax_enable_x64", True)
         jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
         if SCIPY_DEVICE != "cpu":
@@ -202,7 +216,13 @@ if SCIPY_ARRAY_API:
 
     try:
         import dask.array as da
-        xp_available_backends.update({'dask.array': da})
+
+        xp_available_backends.append(
+            pytest.param(da, id='dask.array',
+            marks=[pytest.mark.array_api_backends,
+                   # Uses xpx.testing.patch_lazy_xp_functions to monkey-patch module
+                   pytest.mark.thread_unsafe]))
+
         # Dask can wrap around cupy. However, this is untested in scipy
         # (and will almost surely not work as delegation will misbehave).
 
@@ -214,33 +234,29 @@ if SCIPY_ARRAY_API:
     except ImportError:
         pass
 
+    xp_available_backend_ids = {p.id for p in xp_available_backends}
+    assert not xp_available_backend_ids - xp_known_backends
+
     # by default, use all available backends
     if (
         isinstance(SCIPY_ARRAY_API, str)
         and SCIPY_ARRAY_API.lower() not in ("1", "true", "all")
     ):
-        SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
-        if SCIPY_ARRAY_API_ != ['all']:
-            # only select a subset of backend by filtering out the dict
-            try:
-                xp_available_backends = {
-                    backend: xp_available_backends[backend]
-                    for backend in SCIPY_ARRAY_API_
-                }
-            except KeyError:
+        SCIPY_ARRAY_API_ = set(json.loads(SCIPY_ARRAY_API))
+        if SCIPY_ARRAY_API_ != {'all'}:
+            if SCIPY_ARRAY_API_ - xp_available_backend_ids:
                 msg = ("'--array-api-backend' must be in "
-                       f"{list(xp_available_backends)}; got {SCIPY_ARRAY_API_}")
+                       f"{xp_available_backend_ids}; got {SCIPY_ARRAY_API_}")
                 raise ValueError(msg)
+            # Only select a subset of backends
+            xp_available_backends = [
+                param for param in xp_available_backends
+                if param.id in SCIPY_ARRAY_API_
+            ]
 
-assert not set(xp_available_backends) - xp_known_backends
-xp_skip_np_only_backends = set(xp_available_backends) - {"numpy"}
 
-
-@pytest.fixture(params=[
-    pytest.param(v, id=k, marks=pytest.mark.array_api_backends)
-    for k, v in xp_available_backends.items()
-])
-def xp(request, monkeypatch):
+@pytest.fixture(params=xp_available_backends)
+def xp(request):
     """Run the test that uses this fixture on each available array API library.
 
     You can select all and only the tests that use the `xp` fixture by
@@ -263,17 +279,15 @@ def xp(request, monkeypatch):
     xp = array_namespace(xp.empty(0))
 
     if SCIPY_ARRAY_API:
-        # If request.param==jax.numpy, wrap tested functions in jax.jit
-        patch_lazy_xp_functions(
-            xp=request.param, request=request, monkeypatch=monkeypatch
-        )
-
-        # Throughout all calls to assert_almost_equal, assert_array_almost_equal, and
-        # xp_assert_* functions, test that the array namespace is xp in both the
-        # expected and actual arrays. This is to detect the case where both arrays are
-        # erroneously just plain numpy while xp is something else.
-        with default_xp(xp):
-            yield xp
+        # If xp==jax.numpy, wrap tested functions in jax.jit
+        # If xp==dask.array, wrap tested functions to test that graph is not computed
+        with patch_lazy_xp_functions(request=request, xp=request.param):
+            # Throughout all calls to assert_almost_equal, assert_array_almost_equal,
+            # and xp_assert_* functions, test that the array namespace is xp in both
+            # the expected and actual arrays. This is to detect the case where both
+            # arrays are erroneously just plain numpy while xp is something else.
+            with default_xp(xp):
+                yield xp
     else:
         yield xp
 
@@ -305,8 +319,9 @@ def _backends_kwargs_from_request(request, skip_or_xfail):
 
         if marker.kwargs.get('np_only', False):
             reason = marker.kwargs.get("reason") or "do not run with non-NumPy backends"
-            for backend in xp_skip_np_only_backends - exceptions:
-                reasons[backend].append(reason)
+            for backend, backend_reasons in reasons.items():
+                if backend != 'numpy' and backend not in exceptions:
+                    backend_reasons.append(reason)
 
         elif marker.kwargs.get('cpu_only', False):
             reason = marker.kwargs.get("reason") or (
