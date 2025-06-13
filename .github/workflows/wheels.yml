@@ -212,7 +212,7 @@ jobs:
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@cf078b0954f3fd08b8445a7bf2c3fb83ab3bb971 # v3.0.0b4
+        uses: pypa/cibuildwheel@3c5ff0988806752c5a6502c845f9edc2d98095d6 # v3.0.0rc3
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
