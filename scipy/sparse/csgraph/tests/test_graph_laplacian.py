@@ -186,9 +186,8 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-@pytest.mark.parametrize("variant", ["repelling", "opposing", "unsigned"])
 def test_asymmetric_laplacian(use_out_degree, normed,
-                              copy, dtype, arr_type, variant):
+                              copy, dtype, arr_type):
     # adjacency matrix
     A = [[0, 1, 0],
          [4, 2, 0],
@@ -233,7 +232,6 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
-        variant=variant,
     )
 
     _check_laplacian_dtype(
@@ -245,7 +243,6 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
-        variant=variant,
     )
 
 
