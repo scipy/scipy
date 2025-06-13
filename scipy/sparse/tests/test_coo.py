@@ -122,9 +122,9 @@ def test_1d_tuple_constructor_with_shape():
 def test_non_subscriptability():
     coo_2d = coo_array((2, 2))
 
-    with pytest.raises(TypeError,
-                       match="coo_array assignment is not implemented yet"):
-        coo_2d[0, 0] = 1
+    #with pytest.raises(TypeError,
+    #                   match="coo_array assignment is not implemented yet"):
+    coo_2d[0, 0] = 1
 
     # should not raise
     coo_2d[0, :]
@@ -1130,13 +1130,13 @@ def test_1d_coo_get():
     assert B[0] == 0
     assert B[4] == 4
 
-    np.testing.assert_equal(B[1:3].toarray(), B.toarray()[1:3])
-    np.testing.assert_equal(B[:3].toarray(), B.toarray()[:3])
-    np.testing.assert_equal(B[1:].toarray(), B.toarray()[1:])
-    np.testing.assert_equal(B[1:5:2].toarray(), B.toarray()[1:5:2])
+    assert_equal(B[1:3].toarray(), B.toarray()[1:3])
+    assert_equal(B[:3].toarray(), B.toarray()[:3])
+    assert_equal(B[1:].toarray(), B.toarray()[1:])
+    assert_equal(B[1:5:2].toarray(), B.toarray()[1:5:2])
 
-    np.testing.assert_equal(B[[1, 3, 4]].toarray(), B.toarray()[[1, 3, 4]])
-    np.testing.assert_equal(B[[3, 4, 1]].toarray(), B.toarray()[[3, 4, 1]])
+    assert_equal(B[[1, 3, 4]].toarray(), B.toarray()[[1, 3, 4]])
+    assert_equal(B[[3, 4, 1]].toarray(), B.toarray()[[3, 4, 1]])
 
 
 def test_2d_coo_get():
@@ -1145,17 +1145,17 @@ def test_2d_coo_get():
     assert B[0, 0] == 0
     assert B[3, 4] == 19
 
-    np.testing.assert_equal(B[1:3, 0].toarray(), B.toarray()[1:3, 0])
-    np.testing.assert_equal(B[2, 1:3].toarray(), B.toarray()[2, 1:3])
-    np.testing.assert_equal(B[:2, 1:5:3].toarray(), B.toarray()[:2, 1:5:3])
+    assert_equal(B[1:3, 0].toarray(), B.toarray()[1:3, 0])
+    assert_equal(B[2, 1:3].toarray(), B.toarray()[2, 1:3])
+    assert_equal(B[:2, 1:5:3].toarray(), B.toarray()[:2, 1:5:3])
 
-    np.testing.assert_equal(B[[1, 3], 0].toarray(), B.toarray()[[1,3], 0])
-    np.testing.assert_equal(B[2:, [1, 3]].toarray(), B.toarray()[2:, [1,3]])
-    np.testing.assert_equal(B[np.array([1, 3]), 0].toarray(), B.toarray()[[1,3], 0])
-    np.testing.assert_equal(B[2:, np.array([1, 3])].toarray(), B.toarray()[2:, [1,3]])
+    assert_equal(B[[1, 3], 0].toarray(), B.toarray()[[1,3], 0])
+    assert_equal(B[2:, [1, 3]].toarray(), B.toarray()[2:, [1,3]])
+    assert_equal(B[np.array([1, 3]), 0].toarray(), B.toarray()[[1,3], 0])
+    assert_equal(B[2:, np.array([1, 3])].toarray(), B.toarray()[2:, [1,3]])
 
-    np.testing.assert_equal(B[:, 0].toarray(), B.toarray()[:, 0])
-    np.testing.assert_equal(B[0, :].toarray(), B.toarray()[0, :])
+    assert_equal(B[:, 0].toarray(), B.toarray()[:, 0])
+    assert_equal(B[0, :].toarray(), B.toarray()[0, :])
 
 
 def test_3d_coo_get():
@@ -1163,12 +1163,232 @@ def test_3d_coo_get():
     assert A[0, 0, 0] == 0
     assert A[3, 4, 5] == 119
 
-    np.testing.assert_equal(A[0, 1:3, 0].toarray(), A.toarray()[0, 1:3, 0])
-    np.testing.assert_equal(A[0, 1:3, 3].toarray(), A.toarray()[0, 1:3, 3])
-    np.testing.assert_equal(A[:3, 1:5:2, 2:].toarray(), A.toarray()[:3, 1:5:2, 2:])
+    assert_equal(A[0, 1:3, 0].toarray(), A.toarray()[0, 1:3, 0])
+    assert_equal(A[0, 1:3, 3].toarray(), A.toarray()[0, 1:3, 3])
+    assert_equal(A[:3, 1:5:2, 2:].toarray(), A.toarray()[:3, 1:5:2, 2:])
 
-    np.testing.assert_equal(A[[1, 3], 0, 0].toarray(), A.toarray()[[1, 3], 0, 0])
-    np.testing.assert_equal(A[:2, 1:3, [1, 3]].toarray(), A.toarray()[:2, 1:3, [1, 3]])
+    assert_equal(A[[1, 3], 0, 0].toarray(), A.toarray()[[1, 3], 0, 0])
+    assert_equal(A[:2, 1:3, [1, 3]].toarray(), A.toarray()[:2, 1:3, [1, 3]])
 
-    np.testing.assert_equal(A[0, :, 0].toarray(), A.toarray()[0, :, 0])
-    np.testing.assert_equal(A[:, :, 0].toarray(), A.toarray()[:, :, 0])
+    assert_equal(A[0, :, 0].toarray(), A.toarray()[0, :, 0])
+    assert_equal(A[:, :, 0].toarray(), A.toarray()[:, :, 0])
+
+
+def test_newaxis_get():
+    A = coo_array(np.arange(4 * 5 * 6).reshape((4, 5, 6)))
+    assert_equal(A[:5, 3:, 1].toarray(), A.toarray()[:5, 3:, 1])
+    assert_equal(A[None, :5, 1:3, None, 1].toarray(), A.toarray()[None, :5, 1:3, None, 1])
+    assert_equal(A[None, :5, 3:, 1, None].toarray(), A.toarray()[None, :5, 3:, 1, None])
+    assert_equal(A[None, :5, ..., None].toarray(), A.toarray()[None, :5, ..., None])
+
+
+def test_newaxis_set():
+    D = np.arange(4 * 5 * 6).reshape((4, 5, 6))
+    A = coo_array(D)
+
+    A[None, 3:, 1] = D[None, 3:, 1] = 5
+    assert_equal(A.toarray(), D)
+    A[3:, 1, None] = D[3:, 1, None] = 7
+    assert_equal(A.toarray(), D)
+    A[3:, None, 1] = D[3:, None, 1] = 3
+    assert_equal(A.toarray(), D)
+
+
+def test_1d_coo_set():
+    D = np.arange(9)
+    A = coo_array(D)
+
+    A[0] = D[0] = -1
+    assert_equal(A.toarray(), D)
+    A[4] = D[4] = -2
+    assert_equal(A.toarray(), D)
+
+    A[1:3] = D[1:3] = [-2, -3]
+    assert_equal(A.toarray(), D)
+    A[:3] = D[:3] = [-7, -8, -9]
+    assert_equal(A.toarray(), D)
+    A[1:] = D[1:] = -D[1:]
+    assert_equal(A.toarray(), D)
+    A[1:5:2] = D[1:5:2] = -D[1:5:2]
+    assert_equal(A.toarray(), D)
+
+    A[[1, 3, 4]] = D[[1, 3, 4]] = -D[[1, 3, 4]]
+    assert_equal(A.toarray(), D)
+    A[[3, 4, 1]] = D[[3, 4, 1]] = -D[[1, 2, 3]]
+    assert_equal(A.toarray(), D)
+
+
+D = np.arange(4 * 5).reshape((4, 5))
+A = coo_array(D)
+
+keys = [
+    # all int
+    (1, 3),
+    (-1, -3),
+    # slices and ints
+    (slice(1, 3, None), 0),
+    (2, slice(1, 3, None)),
+    (slice(1, 3, None), slice(1, 5, 3)),
+    (slice(None, None, -1), 2),
+    (1, slice(None)),
+    (Ellipsis,),
+    # array indexing
+    ([1, 3], 0),
+    (2, [1, 2]),
+    (np.array([1, 3]), slice(1, None)),
+    (slice(2), np.array([1, 2, 3])),
+    # fancy array indexing
+    (np.array([1, 3]), np.array([0, 2])),
+]
+
+@pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
+def test_2d_coo_set(A, D, idx):
+    D[idx] = A[idx] = -D[idx]
+    print(f"A:{A.coords=}\n{A.data=}\n{A.toarray()=}")
+    assert_equal(A.toarray(), D)
+
+
+D = np.arange(4 * 5 * 6).reshape((4, 5, 6))
+A = coo_array(D)
+
+keys = [
+    # all ints
+    (0, 0, 0),
+    (3, -4, 5),
+    # slices and ints
+    (0, slice(1, 3), 0),
+    (slice(3, None), 3, slice(2)),
+    (slice(2), slice(1, 5, 2), slice(1, None)),
+    (slice(None, None, -1), slice(None), slice(1, 5, 2)),
+    (Ellipsis),
+    # array indexing
+    (2, [1, 2], slice(3)),
+    (np.array([1, 3]), slice(1, None), 0),
+    (np.array([1, 3]), slice(1, None), [0]),
+    # fancy array indexing
+    (np.array([1, 3]), slice(1, None), np.array([2, 4])),
+    (2, np.array([1, 3]), np.array([2, 4])),
+    (np.array([1, 3]), np.array([2, 4]), 1),
+    (np.array([1, 3]), np.array([2, 4]), [2]),
+]
+
+@pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
+def test_3d_coo_set(A, D, idx):
+    print(f"PRELIM: {A[idx].shape=} {D[idx].shape=}")
+    D[idx] = A[idx] = -99
+    print(f"{A.toarray()=}\n{D=}")
+    assert_equal(A.toarray(), D)
+
+
+#D = np.arange(4 * 5 * 6 * 4 * 6).reshape((4, 5, 6, 4, 6))
+D = np.arange(4 * 6 * 6 * 3 * 4).reshape((4, 6, 6, 3, 4))
+A = coo_array(D)
+
+keys = [
+    # multidimensional
+    ("all-ints", (1, 2, 1)),
+    ("ellipsis-first", (..., 0)),
+    ("ellipsis-last", (1, ...)),
+    ("ellipsis-middle", (1, ..., 0)),
+    # slices and ints
+    ("split-ints", (slice(None, 4, None), 2, 1, slice(None, None, None), 1)),
+    ("contiguous-ints-last", (slice(4, None, None), slice(None, None, None), 2, 1, 1)),
+    ("contiguous-ints-first", (2, 1, 1, slice(4, None, None), slice(None, None, None))),
+    ("empty-slice", (slice(4, 4, None), slice(None, None, None), 2, 1, 1)),
+    # slices and arrays and ints
+    ("split-2d-arrays-and-ints",
+        (slice(None, 4, None), [[2, 1, 1], [2, 1, 2]], [[2, 1, 0], [3, 4, 0]],
+         slice(None, None, None), 0)
+    ),
+    ("contiguous-2d-arrays-and-ints",
+        (slice(None, 4, None), [[2, 1, 0], [2, 1, 2]], [[2, 1, 0], [3, 4, 0]],
+         1, slice(None, None, None))
+    ),
+    ("split-1d-arrays-and-ints",
+        (slice(None, 4, None), [2, 1, 0], [2, 1, 0], slice(None, None, None), 1)
+    ),
+    ("split-ints-broadcast-arrays-slice-step-not-1",
+        (0, slice(1, 4, 2), 1, [[2, 1, 0]], [[2], [1], [0]])
+    ),
+    ("contiguous-broadcast-arrays",
+        (slice(None, 3, None), slice(1, 4, 2), 1, [[2, 1, 0]], [[2], [1], [0]])
+    ),
+    ("contiguous-arrays-first",
+        ([[2, 1, 0]], [[2], [1], [0]], 0, slice(1, 4, 2), slice(None, 3, None))
+    ),
+    ("split-arrays-some-first-some-last",
+        ([[2, 1, 0]], slice(1, 4, 2), slice(None, 3, None), 0, [[2], [1], [0]])
+    ),
+    # test that we are not creating duplicate entries for duplicate values in array index
+    ("duplicate-array-entries-split-arrays",
+        (slice(None, 4, None), [[2, 1, 0], [2, 1, 1]], [[2, 1, 0], [3, 4, 4]],
+         slice(None, None, None), 1)
+    ),
+    ("duplicate-array-entries-contiguous-broadcast-arrays",
+        (slice(1, 4, 2), 0, 1, [[2, 1, 1]], [[2], [1], [1]])
+    ),
+    ]
+
+@pytest.mark.parametrize(["A", "D", "ix", "msg"], [(A, D, ix, msg) for msg, ix in keys])
+def test_5d_coo_set(A, D, ix, msg):
+    print(f"PRELIM: {A[ix].shape=} {D[ix].shape=}")
+    D[ix] = A[ix] = -99
+#    print(f"{A.toarray()=}\n{D=}")
+    print(f"{(A == -99).nonzero()=}")
+    print(f"{(A==-99).nonzero()[0].shape=}")
+    print(f"{(D == -99).nonzero()=}")
+    print(f"{(D==-99).nonzero()[0].shape=}")
+    assert_equal(A.toarray(), D, err_msg=f"\nTest of: {msg}\n")
+
+
+def test_bool_get():
+    D = np.arange(4 * 6 * 6 * 3 * 4).reshape((4, 6, 6, 3, 4))
+    A = coo_array(D)
+
+    assert_equal(A[D > 500].toarray(), D[D > 500])
+    assert_equal(A[D > 5000].toarray(), D[D > 5000])
+    assert_equal(A[D > -1].toarray(), D[D > -1])
+
+    assert_equal(A[A > 500].toarray(), D[D > 500])
+    assert_equal(A[A > 5000].toarray(), D[D > 5000])
+    assert_equal(A[A < -1].toarray(), D[D < -1])
+
+    bool0 = A[:, 0, 0, 0, 0] > 50
+    bool1 = A[0, :, 0, 0, 0] > 50
+
+    idx = (bool0, slice(2, 3, None), [1], slice(None, 2, 2), bool0)
+    idxnp = (bool0.toarray(), slice(2, 3, 1), [1], slice(0, 2, 2), bool0.toarray())
+    result = D[idxnp]
+    assert_equal(A[idx].toarray(), result)
+    assert_equal(A[idxnp].toarray(), result)
+
+    idx = (slice(2, 3, None), bool1, bool1, slice(None, 2, 2), [1])
+    idxnp = (slice(2, 3, None), bool1.toarray(), bool1.toarray(), slice(None, 2, 2), [1])
+    result = D[idxnp]
+    assert_equal(A[idx].toarray(), result)
+
+
+def test_bool_set():
+    D_orig = np.arange(4 * 6 * 6 * 3 * 4).reshape((4, 6, 6, 3, 4))
+    A_orig = coo_array(D_orig)
+
+    A, D = A_orig.copy(), D_orig.copy()
+    D[D > 500] = A[A > 500] = -33
+    assert_equal(A.toarray(), D)
+
+    A, D = A_orig.copy(), D_orig.copy()
+    D[D > 500] = A[A > 500] = -77
+    assert_equal(A.toarray(), D)
+
+    A, D = A_orig.copy(), D_orig.copy()
+    bool0 = A[:, 0, 0, 0, 0] > 50
+    bool1 = A[0, :, 0, 0, 0] > 50
+    idx = (bool0, slice(2, 3, None), [1], slice(None, 2, 2), bool0)
+    idxnp = (bool0.toarray(), slice(2, 3, 1), [1], slice(0, 2, 2), bool0.toarray())
+
+    D[idxnp] = A[idx] = -55
+    assert_equal(A.toarray(), D)
+
+    A, D = A_orig.copy(), D_orig.copy()
+    D[idxnp] = A[idxnp] = -88
+    assert_equal(A.toarray(), D)
