@@ -321,10 +321,10 @@ def laplacian(
     Setting variant="opposing" prevents cancellation by summing absolute edge weights:
 
     >>> L_opposing, d_opposing = csgraph.laplacian(
-            G,
-            return_diag=True,
-            variant="opposing",
-        )
+    ...     G,
+    ...     return_diag=True,
+    ...     variant="opposing",
+    ... )
     >>> L_opposing
     array([[ 2, -1, 1],
            [-1,  2, -1],
@@ -337,10 +337,10 @@ def laplacian(
     This is same as csgraph.laplacian(np.abs(G), return_diag=True, variant="repelling"):
 
     >>> L_unsigned, d_unsigned = csgraph.laplacian(
-            G,
-            return_diag=True,
-            variant="unsigned",
-        )
+    ...     G,
+    ...     return_diag=True,
+    ...     variant="unsigned",
+    ... )
     >>> L_unsigned
     array([[ 2, -1, -1],
            [-1,  2, -1],
