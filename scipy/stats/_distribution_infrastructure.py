@@ -1319,7 +1319,6 @@ def _combine_docs(dist_family, *, include_examples=True):
     fields.remove('index')
     if not include_examples:
         fields.remove('Examples')
-
     doc = ClassDoc(dist_family)
     superdoc = ClassDoc(UnivariateDistribution)
     for field in fields:
@@ -1528,7 +1527,8 @@ class UnivariateDistribution(_ProbabilityDistribution):
 
     Attributes
     ----------
-    All parameters are available as attributes.
+    tol, validation_policy, cache_policy :
+        All parameters are available as attributes.
 
     Methods
     -------
