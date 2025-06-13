@@ -265,7 +265,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
-    double **splvals = NULL, icoor[NPY_MAXDIMS];
+    double **splvals = NULL, icoor[NPY_MAXDIMS], tmp;
     npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     NI_Iterator io, ic;
     npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
@@ -420,10 +420,16 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             /* do an affine transformation: */
             npy_double *p = matrix;
             for(hh = 0; hh < irank; hh++) {
-                icoor[hh] = 0.0;
-                for(ll = 0; ll < orank; ll++)
-                    icoor[hh] += io.coordinates[ll] * *p++;
-                icoor[hh] += shift[hh];
+                tmp = shift[hh];
+                ll = 0;
+                for (; ll + 1 < orank; ll += 2) {
+                    tmp += io.coordinates[ll] * *p++;
+                    tmp += io.coordinates[ll + 1] * *p++;
+                }
+                if (ll < orank) {
+                    tmp += io.coordinates[ll] * *p++;
+                }
+                icoor[hh] = tmp;
             }
         } else if (coordinates) {
             /* mapping is from an coordinates array: */
@@ -508,7 +514,9 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
                         edge_offsets[hh] = NULL;
                     }
                 }
-                get_spline_interpolation_weights(cc, order, splvals[hh]);
+                if(order!=0){
+                    get_spline_interpolation_weights(cc, order, splvals[hh]);
+                }
             } else {
                 /* we use the constant border condition: */
                 constant = 1;

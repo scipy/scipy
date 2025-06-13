@@ -7,7 +7,7 @@ from scipy._lib._util import _apply_over_batch
 
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'hadamard', 'leslie', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix']
 
@@ -337,60 +337,6 @@ def leslie(f, s):
     a[0] = f
     a[list(range(1, n)), list(range(0, n - 1))] = s
     return a
-
-
-def kron(a, b):
-    """
-    Kronecker product.
-
-    .. deprecated:: 1.15.0
-        `kron` has been deprecated in favour of `numpy.kron` and will be
-        removed in SciPy 1.17.0.
-
-    The result is the block matrix::
-
-        a[0,0]*b    a[0,1]*b  ... a[0,-1]*b
-        a[1,0]*b    a[1,1]*b  ... a[1,-1]*b
-        ...
-        a[-1,0]*b   a[-1,1]*b ... a[-1,-1]*b
-
-    Parameters
-    ----------
-    a : (M, N) ndarray
-        Input array
-    b : (P, Q) ndarray
-        Input array
-
-    Returns
-    -------
-    A : (M*P, N*Q) ndarray
-        Kronecker product of `a` and `b`.
-
-    Examples
-    --------
-    >>> from numpy import array
-    >>> from scipy.linalg import kron
-    >>> kron(array([[1,2],[3,4]]), array([[1,1,1]]))
-    array([[1, 1, 1, 2, 2, 2],
-           [3, 3, 3, 4, 4, 4]])
-
-    """
-    msg = ("`kron` has been deprecated in favour of `numpy.kron` in SciPy"
-           " 1.15.0 and will be removed in SciPy 1.17.0.")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    # accommodate empty arrays
-    if a.size == 0 or b.size == 0:
-        m = a.shape[0] * b.shape[0]
-        n = a.shape[1] * b.shape[1]
-        return np.empty_like(a, shape=(m, n))
-
-    if not a.flags['CONTIGUOUS']:
-        a = np.reshape(a, a.shape)
-    if not b.flags['CONTIGUOUS']:
-        b = np.reshape(b, b.shape)
-    o = np.outer(a, b)
-    o = o.reshape(a.shape + b.shape)
-    return np.concatenate(np.concatenate(o, axis=1), axis=1)
 
 
 def block_diag(*arrs):
