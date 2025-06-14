@@ -388,7 +388,7 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
   <ftype3> dimension(*),intent(in) :: x
 
-  integer optional, intent(in),check(incx>0) :: incx = 1
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
 
   integer optional,intent(in),depend(x) :: offx=0
   check(offx>=0 && offx<len(x)) :: offx
@@ -410,7 +410,7 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
 
   <ftype4> dimension(*),intent(in) :: x
 
-  integer optional, intent(in),check(incx>0) :: incx = 1
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
 
   integer optional,intent(in),depend(x) :: offx=0
   check(offx>=0 && offx<len(x)) :: offx
