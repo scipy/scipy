@@ -409,6 +409,14 @@ class TestSawtoothWaveform:
         assert all(np.isfinite(waveform[:3]))
         assert all(np.isnan(waveform[3:]))
 
+    def test_nonfinite_t(self):
+        # where t is nan or inf, output is nan
+        waveform = waveforms.sawtooth([0, 1, 2, np.nan, np.inf])
+        assert all(np.isfinite(waveform[:3]))
+        assert all(np.isnan(waveform[3:]))
+
+        # check both t and width invalid => nan
+        assert np.isnan(waveforms.sawtooth(np.inf, 1.1))
 
 class TestSquareWaveform:
     def test_dtype(self):
