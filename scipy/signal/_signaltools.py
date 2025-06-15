@@ -27,9 +27,10 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, is_numpy, xp_copy, xp_size
+    array_namespace, is_torch, is_numpy, xp_copy, xp_size, xp_default_dtype
 
 )
+from scipy._lib.array_api_compat import is_array_api_obj
 import scipy._lib.array_api_compat.numpy as np_compat
 import scipy._lib.array_api_extra as xpx
 
@@ -1072,7 +1073,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = xp.reshape(ret, shape_ret)
+    ret = xp.reshape(ret, tuple(shape_ret))
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -2653,10 +2654,10 @@ def hilbert2(x, N=None):
     return x
 
 
-def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
+def envelope(z, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
-             axis: int = -1) -> np.ndarray:
+             axis: int = -1):
     r"""Compute the envelope of a real- or complex-valued signal.
 
     Parameters
@@ -2899,7 +2900,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     if xp.isdtype(z.dtype, 'complex floating'):
         Z = sp_fft.fft(z)
     else:  # avoid calculating negative frequency bins for real signals:
-        Z = xp.zeros_like(z, dtype=sp_fft.rfft(z.flat[:1]).dtype)
+        dt = sp_fft.rfft(z[..., :1]).dtype
+        Z = xp.zeros_like(z, dtype=dt)
         Z[..., :n//2 + 1] = sp_fft.rfft(z)
         if bp.start > 0:  # make signal analytic within bp_in band:
             Z[..., bp] *= 2
@@ -2911,7 +2913,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         bp_shift = slice(bp.start + n//2, bp.stop + n//2)
         z_bb = sp_fft.ifft(sp_fft.fftshift(Z, axes=-1)[..., bp_shift], n=n_out) * fak
 
-    z_env = xp.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
+    z_env = xp.abs(z_bb) if not squared else xp.real(z_bb) ** 2 + xp.imag(z_bb) ** 2
     z_env = xp.moveaxis(z_env, -1, axis)
 
     # Calculate the residual from the input bandpass filter:
@@ -3629,7 +3631,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     spectrum without antialiasing filter, which is a periodic continuation of the input
     spectrum. The blue x's and orange dots depict the FFT values of the signal created
     by the naive approach as well as this function's result.
-    
+
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
     >>> from scipy.fft import fftshift, fftfreq, fft, rfft, irfft
@@ -3672,7 +3674,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     ...     ax1.grid()
     ...     fig.legend(loc='outside lower center', ncols=4)    
     >>> plt.show()
-    
+
     The first figure shows that upsampling an odd number of samples produces identical
     results. The second figure illustrates that the signal produced with the naive
     approach (dashed blue line) from an even number of samples does not touch all
@@ -3739,7 +3741,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     illustrates that for some use cases, adpating the `resample_poly` parameters may
     be beneficial. `resample` has a big advantage in this regard: It uses the ideal
     antialiasing filter with the maximum bandwidth by default.
-    
+
     Note that the doubled spectral magnitude at the Nyqist frequency of 64 Hz is due the
     even number of ``n1=128`` output samples, which requires a special treatment as 
     discussed in the previous example. 
@@ -3766,13 +3768,14 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
                              "is not equal to number of frequency bins!")
         W = xp.asarray(window, copy=True)  # prevent modifying the function parameters
     else:
-        W = sp_fft.fftshift(get_window(window, n_x))
+        W = sp_fft.fftshift(get_window(window, n_x, xp=xp))
+        W = xp.astype(W, xp_default_dtype(xp))   # get_window always returns float64
 
     if domain == 'time' and not xp.isdtype(x.dtype, 'complex floating'):  # use rfft():
         X = sp_fft.rfft(x)
         if W is not None:  # fold window, i.e., W1[l] = (W[l] + W[-l]) / 2 for l > 0
             n_X = X.shape[-1]
-            W[1:n_X] += W[:-n_X:-1]
+            W[1:n_X] += xp.flip(W[-n_X+1:])  #W[:-n_X:-1]
             W[1:n_X] /= 2
             X *= W[:n_X]  # apply window
         X = X[..., :m2]  # extract relevant data
@@ -3926,7 +3929,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     >>> plt.show()
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+
+    x = xp.asarray(x)
     if up != int(up):
         raise ValueError("up must be an integer")
     if down != int(down):
@@ -3945,31 +3950,29 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     up //= g_
     down //= g_
     if up == down == 1:
-        return x.copy()
+        return xp.asarray(x, copy=True)
     n_in = x.shape[axis]
     n_out = n_in * up
     n_out = n_out // down + bool(n_out % down)
 
-    if isinstance(window, (list | np.ndarray)):
-        window = np.array(window)  # use array to force a copy (we modify it)
+    if isinstance(window, list) or is_array_api_obj(window):
+        window = xp.asarray(window, copy=True)  # force a copy (we modify `window`)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
-        half_len = (window.size - 1) // 2
+        half_len = (xp_size(window) - 1) // 2
         h = window
     else:
         # Design a linear-phase low-pass FIR filter
         max_rate = max(up, down)
         f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
         half_len = 10 * max_rate  # reasonable cutoff for sinc-like function
-        if np.issubdtype(x.dtype, np.complexfloating):
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window).astype(x.dtype)  # match dtype of x
-        elif np.issubdtype(x.dtype, np.floating):
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window).astype(x.dtype)  # match dtype of x
+        if xp.isdtype(x.dtype, ("real floating", "complex floating")):
+            h = firwin(2 * half_len + 1, f_c, window=window)
+            h = xp.asarray(h, dtype=x.dtype)    # match dtype of x
         else:
-            h = firwin(2 * half_len + 1, f_c,
-                       window=window)
+            h = firwin(2 * half_len + 1, f_c, window=window)
+            h = xp.asarray(h)
+
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -3977,16 +3980,20 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0),
     n_post_pad = 0
     n_pre_remove = (half_len + n_pre_pad) // down
     # We should rarely need to do this given our filter lengths...
-    while _output_len(len(h) + n_pre_pad + n_post_pad, n_in,
+    while _output_len(h.shape[0] + n_pre_pad + n_post_pad, n_in,
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
-    h = np.concatenate((np.zeros(n_pre_pad, dtype=h.dtype), h,
-                        np.zeros(n_post_pad, dtype=h.dtype)))
+    h = xp.concat((xp.zeros(n_pre_pad, dtype=h.dtype), h,
+                   xp.zeros(n_post_pad, dtype=h.dtype)))
     n_pre_remove_end = n_pre_remove + n_out
 
+    # XXX consider using stats.quantile, which is natively Array API compatible
+    def _median(x, *args, **kwds):
+        return xp.asarray(np.median(np.asarray(x), *args, **kwds))
+
     # Remove background depending on the padtype option
-    funcs = {'mean': np.mean, 'median': np.median,
-             'minimum': np.amin, 'maximum': np.amax}
+    funcs = {'mean': xp.mean, 'median': _median,
+             'minimum': xp.min, 'maximum': xp.max}
     upfirdn_kwargs = {'mode': 'constant', 'cval': 0}
     if padtype in funcs:
         background_values = funcs[padtype](x, axis=axis, keepdims=True)
@@ -4841,6 +4848,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     if edge > 0:
         # Slice the actual signal from the extended signal.
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
+        if is_torch(xp):
+            y = y.copy()    #  pytorch/pytorch#59786 : no negative strides in pytorch
 
     return xp.asarray(y)
 

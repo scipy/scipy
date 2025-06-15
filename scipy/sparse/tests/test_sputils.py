@@ -131,19 +131,18 @@ class TestSparseUtils:
         for ax in [5, -5, (0, 5), (-5, 0)]:
             with assert_raises(ValueError, match="out of range"):
                 sputils.validateaxis(ax, ndim=2)
-        for axis in (0, 1, None):
+        for axis in ((0,), (1,), None):
             assert sputils.validateaxis(axis, ndim=2) == axis
-        convert_axis_2d = {-2: 0, -1: 1, (0, 1): None, (0, -1): None}
-        for axis, canonical_axis in convert_axis_2d.items():
+        axis_2d = {-2: (0,), -1: (1,), 0: (0,), 1: (1,), (0, 1): None, (0, -1): None}
+        for axis, canonical_axis in axis_2d.items():
             assert sputils.validateaxis(axis, ndim=2) == canonical_axis
 
         # ndim 4
-        for axis in (2, 3, (2, 3), (2, 1), (0, 3)):
+        for axis in ((2,), (3,), (2, 3), (2, 1), (0, 3)):
             assert sputils.validateaxis(axis, ndim=4) == axis
-        convert_axis_4d = {-4: 0, -3: 1, (3, -4): (3, 0)}
-        for axis, canonical_axis in convert_axis_4d.items():
+        axis_4d = {-4: (0,), -3: (1,), 2: (2,), 3: (3,), (3, -4): (3, 0)}
+        for axis, canonical_axis in axis_4d.items():
             sputils.validateaxis(axis, ndim=4) == canonical_axis
-
 
     @pytest.mark.parametrize("container", [csr_array, bsr_array])
     def test_safely_cast_index_compressed(self, container):

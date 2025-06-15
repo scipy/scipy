@@ -20,8 +20,7 @@ blas-devel = "*"
 numpy = ">=2.0.0"
 pybind11 = ">=2.13.1"
 pythran = ">=0.15.0"
-rich-click = "*"
-pydevtool = "*"
+spin = "*"
 # Add test dependencies to default list of dependencies so they show up in every
 # environment without having to also see the test task in those other envs
 pytest = "*"
@@ -34,11 +33,11 @@ gmpy2 = "*"
 ccache = ">=4.10.1,<5"
 
 [feature.build.tasks]
-build = { cmd = "python dev.py build -C-Dblas=blas -C-Dlapack=lapack -C-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }
+build = { cmd = "spin build -S-Dblas=blas -S-Dlapack=lapack -S-Duse-g77-abi=true", cwd = "../..", env = { CC = "ccache $CC", CXX = "ccache $CXX", FC = "ccache $FC" } }
 wheel = { cmd = "python -m build -wnx -Cbuild-dir=build-whl && cp dist/*.whl ../../wheelhouse/", cwd = "../.." }
 
 [feature.test.tasks]
-test = { cmd = "python dev.py test", cwd = "../.." }
+test = { cmd = "spin test", cwd = "../.." }
 
 # BLAS/LAPACK features
 [feature.openblas.dependencies]
@@ -52,7 +51,7 @@ mkl = ">=2023.2.0,<2025"
 
 # CPU/CUDA features
 [feature.cpu.tasks]
-test-cpu = { cmd = "python dev.py test -b all", cwd = "../.." }
+test-cpu = { cmd = "spin test -b all", cwd = "../.." }
 
 [feature.cuda]
 platforms = ["linux-64"]
@@ -62,7 +61,7 @@ system-requirements = { cuda = "12" }
 cuda-version = ">=12.0,<13"
 
 [feature.cuda.tasks]
-test-cuda = { cmd = "python dev.py test -b all", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+test-cuda = { cmd = "spin test -b all", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
 
 
 # Array libraries we have support for
@@ -70,7 +69,7 @@ test-cuda = { cmd = "python dev.py test -b all", cwd = "../..", env = { SCIPY_DE
 platforms = ["linux-64"]
 
 [feature.torch-base.tasks]
-test-torch = { cmd = "python dev.py test -b torch", cwd = "../.." }
+test-torch = { cmd = "spin test -b torch", cwd = "../.." }
 
 [feature.torch-cpu.dependencies]
 pytorch-cpu = "*"
@@ -79,7 +78,7 @@ pytorch-cpu = "*"
 pytorch-gpu = "*"
 
 [feature.torch-cuda.tasks]
-test-torch-cuda = { cmd = "python dev.py test -b torch", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+test-torch-cuda = { cmd = "spin test -b torch", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
 
 
 [feature.cupy]
@@ -89,7 +88,7 @@ platforms = ["linux-64"]
 cupy = "*"
 
 [feature.cupy.tasks]
-test-cupy = { cmd = "python dev.py test -b cupy", cwd = "../.." }
+test-cupy = { cmd = "spin test -b cupy", cwd = "../.." }
 
 
 [feature.jax-cpu]
@@ -108,16 +107,16 @@ jax = "*"
 jaxlib = { version = "*", build = "*cuda*" }
 
 [feature.jax-base.tasks]
-test-jax = { cmd = "python dev.py test -b jax.numpy", cwd = "../.." }
+test-jax = { cmd = "spin test -b jax.numpy", cwd = "../.." }
 
 [feature.jax-cuda.tasks]
-test-jax-cuda = { cmd = "python dev.py test -b jax.numpy", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
+test-jax-cuda = { cmd = "spin test -b jax.numpy", cwd = "../..", env = { SCIPY_DEVICE = "cuda" } }
 
 [feature.array_api_strict.dependencies]
 array-api-strict = "*"
 
 [feature.array_api_strict.tasks]
-test-strict = { cmd = "python dev.py test -b array_api_strict", cwd = "../.." }
+test-strict = { cmd = "spin test -b array_api_strict", cwd = "../.." }
 
 
 [environments]
