@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'kaiser_beta', 'kaiser_atten', 'kaiserord',
-    'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase',
+    'firwin', 'firwin2', 'remez', 'remezord', 'firls', 'minimum_phase',
     'firwin_2d',
 ]
 
