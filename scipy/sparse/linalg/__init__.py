@@ -33,6 +33,7 @@ Matrix norms
 
    norm -- Norm of a sparse matrix
    onenormest -- Estimate the 1-norm of a sparse matrix
+   rinvnormest -- Estimate the 1- or inf-norm of the inverse of a sparse matrix
 
 Solving linear problems
 -----------------------
@@ -135,6 +136,7 @@ from ._interface import *
 from ._eigen import *
 from ._matfuncs import *
 from ._onenormest import *
+from ._rinvnormest import *
 from ._norm import *
 from ._expm_multiply import *
 from ._funm_multiply_krylov import *
