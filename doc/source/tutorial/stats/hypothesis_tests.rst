@@ -22,6 +22,7 @@ more detailed examples, see the following sections.
     hypothesis_kendalltau.md
     hypothesis_kurtosistest.md
     hypothesis_levene.md
+    hypothesis_mwu.md
     hypothesis_normaltest.md
     hypothesis_odds_ratio.md
     hypothesis_pearsonr.md
