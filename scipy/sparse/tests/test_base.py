@@ -5178,6 +5178,28 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
 
+    def test_tocsr(self):
+        # test bound checks (other pathological cases are tested by
+        # TestConstructUtils::test_spdiags, and normal operation is ensured by
+        # many other tests here using .toarray())
+        d1 = [[1]]        # diagonal shorter than width
+        d3 = [[1, 2, 3]]  # diagonal longer than width
+
+        cases = [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
+                 (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
+                 (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
+                 (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
+                 (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
+                 (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
+                 (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
+                 (d3, [-3], 0, [[0, 0], [0, 0]])]  # all below
+
+        for d, o, n, r in cases:
+            A = self.dia_container((d, o), shape=(2, 2)).tocsr()
+            assert A.nnz == n
+            B = np.array(r)
+            assert_array_equal(A.toarray(), B)
+
     def test_add_sparse(self):
         # test format and cases not covered by common add tests
         A = diag([1, 2])
