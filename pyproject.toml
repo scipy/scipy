@@ -123,7 +123,7 @@ tracker = "https://github.com/scipy/scipy/issues"
 package = 'scipy'
 
 [tool.meson-python.args]
-install = ['--skip-subprojects']
+install = ['--skip-subprojects=highs']
 
 [tool.cibuildwheel]
 skip = ["*_i686", "*_ppc64le", "*_s390x", "*_universal2"]
