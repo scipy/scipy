@@ -44,7 +44,6 @@ from scipy.cluster.hierarchy import (
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, optimal_leaf_ordering, _reorder_leaves,
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
-from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
 from scipy._lib._array_api import (eager_warns, make_xp_test_case, 
