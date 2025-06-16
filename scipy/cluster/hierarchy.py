@@ -3124,19 +3124,9 @@ def set_link_color_palette(palette):
     global _link_line_colors
     _link_line_colors = palette
 
-def _is_permutation(l, n):
+def _is_permutation(l, n, xp):
     # if list l is a permutation of numbers from 0 to n-1
-    l = np.asarray(l, dtype='int64')
-    if l.shape[0] != n:
-        return False
-    used = [False for i in range(n)]
-    for i in l:
-        if i < 0 or i >= n:
-            return False
-        used[i] = True
-    if False in used:
-        return False
-    return True
+    return l.shape[0] == n and xpx.setdiff1d(xp.arange(n), l, xp=xp).shape[0] == 0
 
 
 def _reorder_leaves(Z, leaves_order, xp):
@@ -3146,12 +3136,12 @@ def _reorder_leaves(Z, leaves_order, xp):
 
     Parameters
     ----------
-    Z : ndarray
+    Z : array
         The linkage matrix encoding the hierarchical clustering to
         render as a dendrogram. See the ``linkage`` function for more
         information on the format of ``Z``.
-    leaves_order : iterable
-        Iterable of length ``Z.shape[0] + 1``, which specifies the desired
+    leaves_order : 1-D array
+        1-D array of length ``Z.shape[0] + 1``, which specifies the desired
         order of leaves in a new dendrogram (encoded by Z)
 
     Returns
@@ -3164,9 +3154,8 @@ def _reorder_leaves(Z, leaves_order, xp):
     ValueError
         If it is not possible to reorder linkage matrix in a desired way
     """
-
     # Do simple parameter corectness check first
-    if not _is_permutation(leaves_order, Z.shape[0] + 1):
+    if not _is_permutation(leaves_order, Z.shape[0] + 1, xp=xp):
         raise ValueError("provided leaves order should be a permutation "
                          "of indices of the original leaves of the dendrogram")
 
@@ -3183,11 +3172,15 @@ def _reorder_leaves(Z, leaves_order, xp):
     height = xp.zeros(n - 1, dtype=xp.float64)
     num_leaves = xp.ones(2 * n - 1)
     for i in range(n - 1):
-        ch[i, ...] = xp.asarray([int(Z[i, ...][0]), int(Z[i, ...][1])])
-        p[int(Z[i, 0])] = i + n
-        p[int(Z[i, 1])] = i + n
-        height[i] = Z[i, ...][2]
-        num_leaves[n+i] = num_leaves[int(Z[i, ...][0])] + num_leaves[int(Z[i, ...][1])]
+        xpx.at(ch)[i, ...].set(
+            xp.asarray([int(Z[i, ...][0]), int(Z[i, ...][1])], dtype=xp.int32)
+        )
+        xpx.at(p)[int(Z[i, 0])].set(i + n)
+        xpx.at(p)[int(Z[i, 1])].set(i + n)
+        xpx.at(height)[i].set(Z[i, ...][2])
+        xpx.at(num_leaves)[n+i].set(
+            num_leaves[int(Z[i, ...][0])] + num_leaves[int(Z[i, ...][1])]
+        )
 
     stack = []
     cnt = 0
@@ -3200,13 +3193,13 @@ def _reorder_leaves(Z, leaves_order, xp):
     _right = -1
     while l_pointer <= n:
         if v < n:  # v is a leaf
-            color[v] = 1   # tiny trick
+            xpx.at(color)[v].set(1)   # tiny trick
         if color[v] == 0:  # left subtree of v in F must've been already processed by now  # noqa: E501
             if not(color[_left] == 2 and color[_right] == 0):
                 raise ValueError("Provided permutation results in a crossing!")
             color[v] = 1
             l_pointer += 1
-            v = leaves_order[l_pointer]
+            v = int(leaves_order[l_pointer])
             continue
         # otherwise color[v] == 1
         if v >= n and not(color[_left] == 2 and color[_right] == 2):
@@ -3531,8 +3524,9 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     >>> dn2 = hierarchy.dendrogram(Z, ax = axes[1], leaves_order = [3,2,1,0,6,4,5])
     >>> plt.show()
     """
-    xp = array_namespace(Z)
+    xp = array_namespace(Z, leaves_order)
     Z = _asarray(Z, order='C', xp=xp)
+    leaves_order = _asarray(leaves_order, dtype=xp.int64, xp=xp)
     if leaves_order is not None:
         Z = _reorder_leaves(Z, leaves_order, xp=xp)
 
