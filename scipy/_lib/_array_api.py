@@ -129,21 +129,26 @@ def xp_asarray(
         # it will not respect copy=False.
         array = np.array(array, order=order, dtype=dtype, copy=copy, subok=True)
     elif is_numpy(xp):
-        # Convert to NumPy array. Raise if copy is necessary and copy=False;
-        # otherwise, don't copy yet.
-        array = np_compat.from_dlpack(array, copy=None if copy is True else copy)
-        # Now apply all the options
-        array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
-    else:
-        # data-apis/array-api-compat#204
         try:
+            array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
+        except:
+            # Convert to NumPy array. Raise if copy is necessary and copy=False;
+            # otherwise, don't copy yet.
+            array = np_compat.from_dlpack(array, copy=None if copy is True else copy)
+            # Now apply all the options
+            array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
+    else:
+        try:
+            array = xp.asarray(array, dtype=dtype, copy=copy)
+        # data-apis/array-api-compat#204
+        except:
             array = xp.from_dlpack(array) # data-apis/array-api-compat#204
             # xp.from_dlpack(array, copy=None if copy is True else copy)
             array = xp.asarray(array, dtype=dtype, copy=copy)
-        except TypeError:
-            xp = array_namespace(xp.empty(0))
-            array = xp.from_dlpack(array, copy=None if copy is True else copy)
-            array = xp.asarray(array, dtype=dtype, copy=copy)
+        # except TypeError:
+        #     xp = array_namespace(xp.empty(0))
+        #     array = xp.from_dlpack(array, copy=None if copy is True else copy)
+        #     array = xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
         _check_finite(array, xp)

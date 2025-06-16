@@ -2790,7 +2790,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X)
-    X = xp_asarray(X, order='C', dtype=np.float64, xp=np)
+    X = xp_asarray(X, order='C', dtype=xp.float64, xp=xp)
 
     if X.ndim != 2:
         raise TypeError('The observation matrix X must be an n by m array.')
