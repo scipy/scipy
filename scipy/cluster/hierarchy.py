@@ -3183,17 +3183,17 @@ def _reorder_leaves(Z, leaves_order, xp):
     height = xp.zeros(n - 1, dtype=xp.float64)
     num_leaves = xp.ones(2 * n - 1)
     for i in range(n - 1):
-        ch[i] = xp.asarray([int(Z[i][0]), int(Z[i][1])])
+        ch[i, ...] = xp.asarray([int(Z[i, ...][0]), int(Z[i, ...][1])])
         p[int(Z[i, 0])] = i + n
         p[int(Z[i, 1])] = i + n
-        height[i] = Z[i][2]
-        num_leaves[n+i] = num_leaves[int(Z[i][0])] + num_leaves[int(Z[i][1])]
+        height[i] = Z[i, ...][2]
+        num_leaves[n+i] = num_leaves[int(Z[i, ...][0])] + num_leaves[int(Z[i, ...][1])]
 
     stack = []
     cnt = 0
     new_node_number = n
     l_pointer = 0          # goes through leaves_order
-    v = leaves_order[0]    # v is a vertex which goes through T
+    v = int(leaves_order[0])    # v is a vertex which goes through T
     color = xp.zeros(2*n)  # 0 - unprocessed, 1 - on stack (waiting), 2 - fully processed  # noqa: E501
     # note that v is a left child in F iff. color[p[v]] == 0 (during the algorithm)
     _left = -1
@@ -3222,24 +3222,26 @@ def _reorder_leaves(Z, leaves_order, xp):
                 new_node_number += 1
             stack.append(new_node)
             _left = v
-            v = p[v]
-            _temp = list(ch[v-n])
+            v = int(p[v])
+            _temp = list(ch[v - n, ...])
             _temp.remove(_left)
             _right = _temp[0]
             continue
         else:  # v is the right son in F
             left_pair = stack.pop()
             if v >= n:
-                new_Z[cnt] = [
-                    left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]
-                ]
+                new_Z[cnt, ...] = xp.asarray(
+                    [left_pair, new_node_number, height[p[v]-n], num_leaves[p[v]]]
+                )
                 new_node_number += 1
             else:
-                new_Z[cnt] = [left_pair, v, height[p[v]-n], num_leaves[p[v]]]
+                new_Z[cnt, ...] = xp.asarray(
+                    [left_pair, v, height[p[v]-n], num_leaves[p[v]]]    
+                )
             cnt += 1
             _right = v
-            v = p[v]
-            _temp = list(ch[v-n])
+            v = int(p[v])
+            _temp = list(ch[v - n, ...])
             _temp.remove(_right)
             _left = _temp[0]
             continue
