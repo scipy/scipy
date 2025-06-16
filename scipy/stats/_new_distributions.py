@@ -25,7 +25,8 @@ class Normal(ContinuousDistribution):
     -----
 
     This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+    :class:`ContinuousDistribution <scipy.stats._distribution_infrastructure.UnivariateDistribution>`
+    class.
 
     """
     # `ShiftedScaledDistribution` allows this to be generated automatically from
@@ -298,7 +299,8 @@ class Uniform(ContinuousDistribution):
     -----
 
     This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.ContinuousDistribution` class.
+    :class:`ContinuousDistribution <scipy.stats._distribution_infrastructure.UnivariateDistribution>`
+    class.
 
     """
 
@@ -403,7 +405,8 @@ class Binomial(DiscreteDistribution):
     -----
 
     This distribution is a subclass of the
-    :class:`~._distribution_infrastructure.DiscreteDistribution` class.
+    :class:`DiscreteDistribution <scipy.stats._distribution_infrastructure.UnivariateDistribution>`
+    class.
 
     """
     _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
