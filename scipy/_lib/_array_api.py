@@ -41,7 +41,7 @@ from scipy._lib._array_api_override import (
 from scipy._lib._docscrape import FunctionDoc
 
 __all__ = [
-    '_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
+    'xp_asarray', 'array_namespace', 'assert_almost_equal', 'assert_array_almost_equal',
     'default_xp', 'eager_warns', 'is_lazy_array', 'is_marray',
     'is_array_api_strict', 'is_complex', 'is_cupy', 'is_jax', 'is_numpy', 'is_torch',
     'np_compat',
@@ -63,7 +63,7 @@ def _check_finite(array: Array, xp: ModuleType) -> None:
         msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
-def _asarray(
+def xp_asarray(
         array: ArrayLike,
         dtype: Any = None,
         order: Literal['K', 'A', 'C', 'F'] | None = None,
@@ -214,11 +214,11 @@ def xp_copy(x: Array, *, xp: ModuleType | None = None) -> Array:
     `subok` and `order` keywords are not used.
     """
     # Note: for older NumPy versions, `np.asarray` did not support the `copy` kwarg,
-    # so this uses our other helper `_asarray`.
+    # so this uses our other helper `xp_asarray`.
     if xp is None:
         xp = array_namespace(x)
 
-    return _asarray(x, copy=True, xp=xp)
+    return xp_asarray(x, copy=True, xp=xp)
 
 
 _default_xp_ctxvar: ContextVar[ModuleType] = ContextVar("_default_xp")
@@ -505,7 +505,7 @@ def xp_result_type(*args, force_floating=False, xp):
     Typically, this function will be called shortly after `array_namespace`
     on a subset of the arguments passed to `array_namespace`.
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+    args = [(xp_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]
     args_not_none = [arg for arg in args if arg is not None]
     if force_floating:
@@ -553,12 +553,13 @@ def xp_promote(*args, broadcast=False, force_floating=False, xp):
     --------
     xp_result_type
     """
-    args = [(_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
+    args = [(xp_asarray(arg, subok=True, xp=xp) if np.iterable(arg) else arg)
             for arg in args]  # solely to prevent double conversion of iterable to array
 
     dtype = xp_result_type(*args, force_floating=force_floating, xp=xp)
 
-    args = [(_asarray(arg, dtype=dtype, subok=True, xp=xp) if arg is not None else arg)
+    args = [(xp_asarray(arg, dtype=dtype, subok=True, xp=xp)
+             if arg is not None else arg)
             for arg in args]
 
     if not broadcast:

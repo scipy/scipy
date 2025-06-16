@@ -67,7 +67,7 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
+from scipy._lib._array_api import (xp_asarray, array_namespace, is_lazy_array,
                                    xp_capabilities, xp_copy, xp_size)
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
@@ -136,7 +136,7 @@ def whiten(obs, check_finite=None):
     xp = array_namespace(obs)
     if check_finite is None:
         check_finite = not is_lazy_array(obs)
-    obs = _asarray(obs, check_finite=check_finite, xp=xp)
+    obs = xp_asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     std_dev = xpx.at(std_dev, zero_std_mask).set(1.0)
