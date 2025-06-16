@@ -1,5 +1,3 @@
-from __future__ import annotations
-from typing import TYPE_CHECKING, Any, cast
 import numpy as np
 import numpy.typing as npt
 import math
@@ -10,7 +8,7 @@ from collections.abc import Callable
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib._array_api import _asarray, array_namespace, xp_broadcast_promote
+from scipy._lib._array_api import _asarray, array_namespace, xp_result_type
 
 
 __all__ = ['fixed_quad', 'romb',
@@ -126,7 +124,7 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     # Cannot just use the broadcasted arrays that are returned
     # because trapezoid does not follow normal broadcasting rules
     # cf. https://github.com/scipy/scipy/pull/21524#issuecomment-2354105942
-    result_dtype = xp_broadcast_promote(y, force_floating=True, xp=xp)[0].dtype
+    result_dtype = xp_result_type(y, force_floating=True, xp=xp)
     nd = y.ndim
     slice1 = [slice(None)]*nd
     slice2 = [slice(None)]*nd
@@ -136,11 +134,16 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
         d = dx
     else:
         x = _asarray(x, xp=xp, subok=True)
-        # reshape to correct shape
-        shape = [1] * y.ndim
-        shape[axis] = y.shape[axis]
-        x = xp.reshape(x, shape)
-        d = x[tuple(slice1)] - x[tuple(slice2)]
+        if x.ndim == 1:
+            d = x[1:] - x[:-1]
+            # make d broadcastable to y
+            slice3 = [None] * nd
+            slice3[axis] = slice(None)
+            d = d[tuple(slice3)]
+        else:
+            # if x is n-D it should be broadcastable to y
+            x = xp.broadcast_to(x, y.shape)
+            d = x[tuple(slice1)] - x[tuple(slice2)]
     try:
         ret = xp.sum(
             d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0,
@@ -157,22 +160,6 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     return ret
 
 
-if TYPE_CHECKING:
-    # workaround for mypy function attributes see:
-    # https://github.com/python/mypy/issues/2087#issuecomment-462726600
-    from typing import Protocol
-
-    class CacheAttributes(Protocol):
-        cache: dict[int, tuple[Any, Any]]
-else:
-    CacheAttributes = Callable
-
-
-def cache_decorator(func: Callable) -> CacheAttributes:
-    return cast(CacheAttributes, func)
-
-
-@cache_decorator
 def _cached_roots_legendre(n):
     """
     Cache roots_legendre results to speed up calls of the fixed_quad
@@ -391,7 +378,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-def simpson(y, *, x=None, dx=1.0, axis=-1):
+def simpson(y, x=None, *, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -907,7 +894,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
                 width = show[1]
             except (TypeError, IndexError):
                 width = 8
-            formstr = "%%%d.%df" % (width, precis)
+            formstr = f"%{width}.{precis}f"
 
             title = "Richardson Extrapolation Table for Romberg Integration"
             print(title, "=" * len(title), sep="\n", end="\n")

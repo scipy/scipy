@@ -107,20 +107,19 @@ __all__ = [
 
 import math
 import warnings
-import numpy as np
 import dataclasses
-
 from collections.abc import Callable
 from functools import partial
-from scipy._lib._util import _asarray_validated
+
+import numpy as np
+
+from scipy._lib._array_api import _asarray
+from scipy._lib._util import _asarray_validated, _transition_to_rng
+from scipy._lib import array_api_extra as xpx
 from scipy._lib.deprecation import _deprecated
-
-from . import _distance_wrap
-from . import _hausdorff
-from ..linalg import norm
-from ..special import rel_entr
-
-from . import _distance_pybind
+from scipy.linalg import norm
+from scipy.special import rel_entr
+from . import _hausdorff, _distance_pybind, _distance_wrap
 
 
 def _copy_array_if_base_present(a):
@@ -222,9 +221,8 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError(
-            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
-        )
+        raise ValueError(f"Weights must have same size as input vector. "
+                         f"{w.shape[0]} vs. {n}")
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
@@ -236,11 +234,10 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
         if m <= n:
             # There are fewer observations than the dimension of
             # the observations.
-            raise ValueError("The number of observations (%d) is too "
-                             "small; the covariance matrix is "
-                             "singular. For observations with %d "
-                             "dimensions, at least %d observations "
-                             "are required." % (m, n, n + 1))
+            raise ValueError(
+                f"The number of observations ({m}) is too small; "
+                f"the covariance matrix is singular. For observations "
+                f"with {n} dimensions, at least {n + 1} observations are required.")
         if isinstance(X, tuple):
             X = np.vstack(X)
         CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
@@ -309,7 +306,8 @@ def _validate_weights(w, dtype=np.float64):
     return w
 
 
-def directed_hausdorff(u, v, seed=0):
+@_transition_to_rng('seed', position_num=2, replace_doc=False)
+def directed_hausdorff(u, v, rng=0):
     """
     Compute the directed Hausdorff distance between two 2-D arrays.
 
@@ -321,9 +319,35 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None, optional
-        Local `numpy.random.RandomState` seed. Default is 0, a random
-        shuffling of u and v that guarantees reproducibility.
+    rng : int or `numpy.random.Generator` or None, optional
+        Pseudorandom number generator state. Default is 0 so the
+        shuffling of `u` and `v` is reproducible.
+
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used.
+
+        If this argument is passed by position or `seed` is passed by keyword,
+        legacy behavior for the argument `seed` applies:
+
+        - If `seed` is None, a new ``RandomState`` instance is used. The state is
+          initialized using data from ``/dev/urandom`` (or the Windows analogue)
+          if available or from the system clock otherwise.
+        - If `seed` is an int, a new ``RandomState`` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a ``Generator`` or ``RandomState`` instance, then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to `rng`.
+            For an interim period, both keywords will continue to work, although only
+            one may be specified at a time. After the interim period, function calls
+            using the `seed` keyword will emit warnings. The behavior of both `seed`
+            and `rng` are outlined above, but only the `rng` keyword should be used in
+            new code.
 
     Returns
     -------
@@ -406,7 +430,7 @@ def directed_hausdorff(u, v, seed=0):
     if u.shape[1] != v.shape[1]:
         raise ValueError('u and v need to have the same '
                          'number of columns')
-    result = _hausdorff.directed_hausdorff(u, v, seed)
+    result = _hausdorff.directed_hausdorff(u, v, rng)
     return result
 
 
@@ -2268,14 +2292,34 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+    X = _asarray(X)
+    if X.ndim != 2:
+        raise ValueError('A 2-dimensional array must be passed. '
+                         f'(Shape was {X.shape}).')
+
+    n = X.shape[0]
+    return xpx.lazy_apply(_np_pdist, X, out,
+                          # lazy_apply doesn't support Array kwargs
+                          kwargs.pop('w', None),
+                          kwargs.pop('V', None),
+                          kwargs.pop('VI', None),
+                          # See src/distance_pybind.cpp::pdist
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
+                          as_numpy=True, metric=metric, **kwargs)
+
+
+def _np_pdist(X, out, w, V, VI, metric='euclidean', **kwargs):
+
     X = _asarray_validated(X, sparse_ok=False, objects_ok=True, mask_ok=True,
                            check_finite=False)
+    m, n = X.shape
 
-    s = X.shape
-    if len(s) != 2:
-        raise ValueError('A 2-dimensional array must be passed.')
-
-    m, n = s
+    if w is not None:
+        kwargs["w"] = w
+    if V is not None:
+        kwargs["V"] = V
+    if VI is not None:
+        kwargs["VI"] = VI
 
     if callable(metric):
         mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
@@ -2595,7 +2639,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     throw : bool, optional
         Throws an exception if the variable passed is not a valid
         condensed distance matrix.
-    name : bool, optional
+    name : str, optional
         Used when referencing the offending variable in the
         warning or exception message.
 
@@ -2623,34 +2667,25 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     False
 
     """
-    y = np.asarray(y, order='c')
-    valid = True
+    y = _asarray(y)
+    name_str = f"'{name}' " if name else ""
     try:
         if len(y.shape) != 1:
-            if name:
-                raise ValueError(f"Condensed distance matrix '{name}' must "
-                                 "have shape=1 (i.e. be one-dimensional).")
-            else:
-                raise ValueError('Condensed distance matrix must have shape=1 '
-                                 '(i.e. be one-dimensional).')
+            raise ValueError(f"Condensed distance matrix {name_str}must "
+                             "have shape=1 (i.e. be one-dimensional).")
         n = y.shape[0]
         d = int(np.ceil(np.sqrt(n * 2)))
         if (d * (d - 1) / 2) != n:
-            if name:
-                raise ValueError(f"Length n of condensed distance matrix '{name}' "
-                                 "must be a binomial coefficient, i.e."
-                                 "there must be a k such that (k \\choose 2)=n)!")
-            else:
-                raise ValueError('Length n of condensed distance matrix must '
-                                 'be a binomial coefficient, i.e. there must '
-                                 'be a k such that (k \\choose 2)=n)!')
+            raise ValueError(f"Length n of condensed distance matrix {name_str}"
+                             "must be a binomial coefficient, i.e. "
+                             "there must be a k such that (k \\choose 2)=n)!")
     except Exception as e:
         if throw:
             raise
         if warning:
             warnings.warn(str(e), stacklevel=2)
-        valid = False
-    return valid
+        return False
+    return True
 
 
 def num_obs_dm(d):
@@ -2672,7 +2707,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2702,13 +2737,13 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)
     4
     """
-    Y = np.asarray(Y, order='c')
+    Y = _asarray(Y)
     is_valid_y(Y, throw=True, name='Y')
     k = Y.shape[0]
     if k == 0:

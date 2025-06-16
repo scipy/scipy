@@ -3,10 +3,11 @@ import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
+from scipy._lib._util import _apply_over_batch
 
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'hadamard', 'leslie', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix']
 
@@ -27,19 +28,17 @@ def toeplitz(c, r=None):
     Parameters
     ----------
     c : array_like
-        First column of the matrix.  Whatever the actual shape of `c`, it
-        will be converted to a 1-D array.
+        First column of the matrix.
     r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
-        ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
-        converted to a 1-D array.
+        ``[c[0], r[1:]]``.
 
         .. warning::
 
             Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` aruments
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
             before passing them to `toeplitz`.
 
     Returns
@@ -81,7 +80,7 @@ def toeplitz(c, r=None):
     if c.ndim > 1 or r.ndim > 1:
         msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
                "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` aruments before passing them to `toeplitz`.")
+               "this warning, `ravel` arguments before passing them to `toeplitz`.")
         warnings.warn(msg, FutureWarning, stacklevel=2)
 
     c, r = c.ravel(), r.ravel()
@@ -271,6 +270,7 @@ def hadamard(n, dtype=int):
     return H
 
 
+@_apply_over_batch(("f", 1), ("s", 1))
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -281,35 +281,28 @@ def leslie(f, s):
 
     Parameters
     ----------
-    f : (..., N,) array_like
+    f : (N,) array_like
         The "fecundity" coefficients.
-    s : (..., N-1,) array_like
-        The "survival" coefficients. The length of each slice of `s` (along the last
-        axis) must be one less than the length of `f`, and it must be at least 1.
+    s : (N-1,) array_like
+        The "survival" coefficients. The length of `s` must be one less
+        than the length of `f`, and it must be at least 1.
 
     Returns
     -------
-    L : (..., N, N) ndarray
+    L : (N, N) ndarray
         The array is zero except for the first row,
         which is `f`, and the first sub-diagonal, which is `s`.
-        For 1-D input, the data-type of the array will be the data-type of
+        The data-type of the array will be the data-type of
         ``f[0]+s[0]``.
 
     Notes
     -----
-    .. versionadded:: 0.8.0
-
     The Leslie matrix is used to model discrete-time, age-structured
     population growth [1]_ [2]_. In a population with `n` age classes, two sets
     of parameters define a Leslie matrix: the `n` "fecundity coefficients",
     which give the number of offspring per-capita produced by each age
     class, and the `n` - 1 "survival coefficients", which give the
     per-capita survival rate of each age class.
-
-    N-dimensional input are treated as a batches of coefficient arrays: each
-    slice along the last axis of the input arrays is a 1-D coefficient array,
-    and each slice along the last two dimensions of the output is the
-    corresponding Leslie matrix.
 
     References
     ----------
@@ -339,12 +332,6 @@ def leslie(f, s):
         raise ValueError("The length of s must be at least 1.")
 
     n = f.shape[-1]
-
-    if f.ndim > 1 or s.ndim > 1:
-        from scipy.stats._resampling import _vectorize_statistic
-        _leslie_nd = _vectorize_statistic(leslie)
-        return np.moveaxis(_leslie_nd(f, s, axis=-1), [0, 1], [-2, -1])
-
     tmp = f[0] + s[0]
     a = np.zeros((n, n), dtype=tmp.dtype)
     a[0] = f
@@ -352,65 +339,11 @@ def leslie(f, s):
     return a
 
 
-def kron(a, b):
-    """
-    Kronecker product.
-
-    .. deprecated:: 1.15.0
-        `kron` has been deprecated in favour of `numpy.kron` and will be
-        removed in SciPy 1.17.0.
-
-    The result is the block matrix::
-
-        a[0,0]*b    a[0,1]*b  ... a[0,-1]*b
-        a[1,0]*b    a[1,1]*b  ... a[1,-1]*b
-        ...
-        a[-1,0]*b   a[-1,1]*b ... a[-1,-1]*b
-
-    Parameters
-    ----------
-    a : (M, N) ndarray
-        Input array
-    b : (P, Q) ndarray
-        Input array
-
-    Returns
-    -------
-    A : (M*P, N*Q) ndarray
-        Kronecker product of `a` and `b`.
-
-    Examples
-    --------
-    >>> from numpy import array
-    >>> from scipy.linalg import kron
-    >>> kron(array([[1,2],[3,4]]), array([[1,1,1]]))
-    array([[1, 1, 1, 2, 2, 2],
-           [3, 3, 3, 4, 4, 4]])
-
-    """
-    msg = ("`kron` has been deprecated in favour of `numpy.kron` in SciPy"
-           " 1.15.0 and will be removed in SciPy 1.17.0.")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    # accommodate empty arrays
-    if a.size == 0 or b.size == 0:
-        m = a.shape[0] * b.shape[0]
-        n = a.shape[1] * b.shape[1]
-        return np.empty_like(a, shape=(m, n))
-
-    if not a.flags['CONTIGUOUS']:
-        a = np.reshape(a, a.shape)
-    if not b.flags['CONTIGUOUS']:
-        b = np.reshape(b, b.shape)
-    o = np.outer(a, b)
-    o = o.reshape(a.shape + b.shape)
-    return np.concatenate(np.concatenate(o, axis=1), axis=1)
-
-
 def block_diag(*arrs):
     """
-    Create a block diagonal matrix from provided arrays.
+    Create a block diagonal array from provided arrays.
 
-    Given the inputs `A`, `B` and `C`, the output will have these
+    For example, given 2-D inputs `A`, `B` and `C`, the output will have these
     arrays arranged on the diagonal::
 
         [[A, 0, 0],
@@ -419,15 +352,17 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n` is
-        treated as a 2-D array with shape ``(1,n)``.
+    A, B, C, ... : array_like
+        Input arrays.  A 1-D array or array_like sequence of length ``n`` is
+        treated as a 2-D array with shape ``(1, n)``. Any dimensions before
+        the last two are treated as batch dimensions; see :ref:`linalg_batch`.
 
     Returns
     -------
     D : ndarray
-        Array with `A`, `B`, `C`, ... on the diagonal. `D` has the
-        same dtype as `A`.
+        Array with `A`, `B`, `C`, ... on the diagonal of the last two
+        dimensions. `D` has the same dtype as the result type of the
+        inputs.
 
     Notes
     -----
@@ -435,7 +370,8 @@ def block_diag(*arrs):
     block diagonal matrix.
 
     Empty sequences (i.e., array-likes of zero size) will not be ignored.
-    Noteworthy, both [] and [[]] are treated as matrices with shape ``(1,0)``.
+    Noteworthy, both ``[]`` and ``[[]]`` are treated as matrices with shape
+    ``(1,0)``.
 
     Examples
     --------
@@ -472,18 +408,16 @@ def block_diag(*arrs):
         arrs = ([],)
     arrs = [np.atleast_2d(a) for a in arrs]
 
-    bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
-    if bad_args:
-        raise ValueError("arguments in the following positions "
-                         f"have dimension greater than 2: {bad_args}")
-
-    shapes = np.array([a.shape for a in arrs])
+    batch_shapes = [a.shape[:-2] for a in arrs]
+    batch_shape = np.broadcast_shapes(*batch_shapes)
+    arrs = [np.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
+    block_shapes = np.array([a.shape[-2:] for a in arrs])
+    out = np.zeros(batch_shape + tuple(np.sum(block_shapes, axis=0)), dtype=out_dtype)
 
     r, c = 0, 0
-    for i, (rr, cc) in enumerate(shapes):
-        out[r:r + rr, c:c + cc] = arrs[i]
+    for i, (rr, cc) in enumerate(block_shapes):
+        out[..., r:r + rr, c:c + cc] = arrs[i]
         r += rr
         c += cc
     return out

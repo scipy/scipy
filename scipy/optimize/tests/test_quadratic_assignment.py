@@ -144,14 +144,14 @@ class QAPCommonTests:
         seed_cost = np.array([4, 8, 10])
         seed = np.asarray([seed_cost, opt_perm[seed_cost]]).T
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={'partial_match': seed})
+                                   options={'partial_match': seed, "rng": rng})
         assert_(11156 <= res.fun < 21000)
         assert_equal(res.col_ind[seed_cost], opt_perm[seed_cost])
 
         # check performance when partial match is the global optimum
         seed = np.asarray([np.arange(len(A)), opt_perm]).T
         res = quadratic_assignment(A, B, method=self.method,
-                                   options={'partial_match': seed})
+                                   options={'partial_match': seed, "rng": rng})
         assert_equal(res.col_ind, seed[:, 1].T)
         assert_equal(res.fun, 11156)
         assert_equal(res.nit, 0)
@@ -163,6 +163,7 @@ class QAPCommonTests:
         assert_equal(res.nit, 0)
         assert_equal(res.fun, 0)
 
+    @pytest.mark.thread_unsafe
     def test_unknown_options(self):
         A, B, opt_perm = chr12c()
 
@@ -171,6 +172,7 @@ class QAPCommonTests:
                                  options={"ekki-ekki": True})
         assert_warns(OptimizeWarning, f)
 
+    @pytest.mark.thread_unsafe
     def test_deprecation_future_warnings(self):
         # May be removed after SPEC-7 transition is complete in SciPy 1.17
         A = np.arange(16).reshape((4, 4))

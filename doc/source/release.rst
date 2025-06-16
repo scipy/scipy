@@ -8,6 +8,11 @@ see the `commit logs <https://github.com/scipy/scipy/commits/>`_.
 .. toctree::
    :maxdepth: 1
 
+   release/1.17.0-notes
+   release/1.16.0-notes
+   release/1.15.3-notes
+   release/1.15.2-notes
+   release/1.15.1-notes
    release/1.15.0-notes
    release/1.14.1-notes
    release/1.14.0-notes

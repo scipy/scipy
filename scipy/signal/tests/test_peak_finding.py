@@ -429,6 +429,7 @@ class TestPeakProminences:
         with raises(ValueError, match='wlen'):
             peak_prominences(np.arange(10), [3, 5], wlen=1)
 
+    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.
@@ -525,6 +526,7 @@ class TestPeakWidths:
             # prominence data contains None
             peak_widths([1, 2, 1], [1], prominence_data=(None, None, None))
 
+    @pytest.mark.thread_unsafe
     def test_warnings(self):
         """
         Verify that appropriate warnings are raised.
@@ -861,8 +863,8 @@ class TestFindPeaksCwt:
         """
         noise_amp = 1.0
         num_points = 100
-        np.random.seed(181819141)
-        test_data = (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+        rng = np.random.RandomState(181819141)
+        test_data = (rng.rand(num_points) - 0.5)*(2*noise_amp)
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         assert len(found_locs) == 0
@@ -884,8 +886,8 @@ class TestFindPeaksCwt:
         test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
         widths = np.arange(0.1, max(sigmas), 0.2)
         noise_amp = 0.05
-        np.random.seed(18181911)
-        test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+        rng = np.random.RandomState(18181911)
+        test_data += (rng.rand(num_points) - 0.5)*(2*noise_amp)
 
         # Possibly contrived negative region to throw off peak finding
         # when window_size is too large

@@ -258,4 +258,71 @@ void coo_matmat_dense(const npy_int64 nnz,
     }
 }
 
+
+/*
+ *
+ * Input Arguments:
+ *   npy_int64  nnz           - number of nonzeros in A
+ *   npy_int64  n_dim         - number of dimensions of A
+ *   npy_int64  n_col_B       - number of columns in B
+ *   I  shape_B[]             - shape of B
+ *   I  shape_Y[]             - shape of result Y
+ *   I  A_coords[]            - flattened coordinates of A of shape (n_dim * nnz)
+ *   T  Ax[nnz]               - nonzero values of A
+ *   T  Bx[]                  - input tensor B flattened
+ *
+ * Output Arguments:
+ *   T  Yx[]                  - output tensor flattened
+ *
+ * Notes:
+ *   Output array Yx must be preallocated
+ * 
+ */
+template <class I, class T>
+void coo_matmat_dense_nd(const npy_int64 nnz,
+                         const npy_int64 n_dim,
+                         const npy_int64 n_col_B,
+                         const I shape_B[],
+                         const I shape_Y[],
+                         const I A_coords[],
+                         const T Ax[],
+                         const T Bx[],
+                         T Yx[])
+{
+    std::vector<npy_int64> strides_B(n_dim);
+    std::vector<npy_int64> strides_Y(n_dim);
+    std::vector<npy_int64> dim_nnz(n_dim);
+
+    strides_B[n_dim - 1] = 1;
+    strides_Y[n_dim - 1] = 1;
+    dim_nnz[n_dim - 1] = (n_dim - 1) * nnz;
+    for (npy_int64 i = n_dim - 2; i >= 0; --i) {
+        strides_B[i] = strides_B[i + 1] * shape_B[i + 1];
+        strides_Y[i] = strides_Y[i + 1] * shape_Y[i + 1];
+        dim_nnz[i] = i * nnz;
+    }
+    
+    // Iterate over all non-zero elements
+    for (npy_int64 n = 0; n < nnz; ++n) {
+        const T x = Ax[n];
+        if (x != 0) {
+            // Compute the offset in the output tensor Y
+            npy_int64 src_offset = 0;
+            npy_int64 dst_offset = 0;
+            for (npy_int64 dim = 0; dim < n_dim-2; ++dim) {
+                src_offset += A_coords[dim_nnz[dim] + n] * strides_B[dim];
+                dst_offset += A_coords[dim_nnz[dim] + n] * strides_Y[dim];
+            }
+           
+            dst_offset += n_col_B * A_coords[dim_nnz[n_dim - 2] + n];
+            src_offset += n_col_B * A_coords[dim_nnz[n_dim - 1] + n];
+            
+            // Multiply and accumulate in the output tensor Y
+            for (npy_int64 i = 0; i < n_col_B; ++i) {
+                Yx[dst_offset + i] += x * Bx[src_offset + i];
+            }
+        }
+    }
+}
+
 #endif

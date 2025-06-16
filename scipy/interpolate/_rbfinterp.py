@@ -132,7 +132,7 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
 
 
 class RBFInterpolator:
-    """Radial basis function (RBF) interpolation in N dimensions.
+    """Radial basis function interpolator in N ≥ 1 dimensions.
 
     Parameters
     ----------

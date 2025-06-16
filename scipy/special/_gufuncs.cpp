@@ -1,5 +1,6 @@
-#include "xsf/numpy.h"
+#include <xsf/numpy.h>
 
+#include "sf_error.h"
 #include "xsf_special.h"
 
 extern const char *lpn_all_doc;
@@ -11,7 +12,25 @@ extern const char *rctj_doc;
 extern const char *rcty_doc;
 extern const char *sph_harm_all_doc;
 
-static PyModuleDef _gufuncs_def = {PyModuleDef_HEAD_INIT, "_gufuncs", NULL, -1, NULL, NULL, NULL, NULL, NULL};
+// Control error handling policy state
+static PyObject* _set_action(PyObject* self, PyObject* args) {
+    sf_error_t code;
+    sf_action_t action;
+
+    if (!PyArg_ParseTuple(args, "ii", &code, &action)) {
+	return NULL;
+    }
+
+    sf_error_set_action(code, action);
+    Py_RETURN_NONE;
+}
+
+static PyMethodDef _methods[] = {
+    {"_set_action", _set_action, METH_VARARGS, NULL},
+    {NULL, NULL, 0, NULL}
+};
+
+static PyModuleDef _gufuncs_def = {PyModuleDef_HEAD_INIT, "_gufuncs", NULL, -1, _methods, NULL, NULL, NULL, NULL};
 
 template <size_t NOut>
 void legendre_map_dims(const npy_intp *dims, npy_intp *new_dims) {

@@ -66,8 +66,8 @@ FREE_THREADED_BUILD="$(python -c"import sysconfig; print(bool(sysconfig.get_conf
 if [[ $FREE_THREADED_BUILD == "True" ]]; then
     python -m pip install -U --pre pip
     python -m pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy cython
-    # python -m pip install git+https://github.com/serge-sans-paille/pythran
-    python -m pip install ninja meson-python pybind11 pythran
+    python -m pip install git+https://github.com/serge-sans-paille/pythran
+    python -m pip install ninja meson-python pybind11
 fi
 
 # Install Openblas

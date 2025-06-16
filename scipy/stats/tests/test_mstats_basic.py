@@ -1567,9 +1567,9 @@ class TestCompareWithStats:
     def generate_xy_sample(self, n):
         # This routine generates numpy arrays and corresponding masked arrays
         # with the same data, but additional masked values
-        np.random.seed(1234567)
-        x = np.random.randn(n)
-        y = x + np.random.randn(n)
+        rng = np.random.RandomState(1234567)
+        x = rng.randn(n)
+        y = x + rng.randn(n)
         xm = np.full(len(x) + 5, 1e16)
         ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x

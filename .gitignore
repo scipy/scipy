@@ -56,8 +56,9 @@ _configtest.c
 
 # Python files #
 ################
-# build directory
+# build directories
 build
+build-*
 # sphinx build directory
 doc/_build
 # cython files
@@ -85,7 +86,6 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/
 .mesonpy/
 
 # doit
@@ -151,7 +151,9 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.github/workflows/.pixi
 .openblas
+scipy-openblas.pc
 scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
@@ -247,7 +249,7 @@ scipy/signal/_bspline_util.c
 scipy/sparse/_csparsetools.c
 scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c
-scipy/sparse/csgraph/_shortest_path.c
+scipy/sparse/csgraph/_shortest_path.cxx
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
 scipy/sparse/csgraph/_flow.c
@@ -322,5 +324,3 @@ scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
-scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
-scipy/optimize/_highs/cython/src/_highs_constants.cxx

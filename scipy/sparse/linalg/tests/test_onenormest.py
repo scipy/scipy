@@ -232,20 +232,21 @@ class TestOnenormest:
 
 class TestAlgorithm_2_2:
 
+    @pytest.mark.thread_unsafe
     def test_randn_inv(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 20
         nsamples = 100
         for i in range(nsamples):
 
             # Choose integer t uniformly between 1 and 3 inclusive.
-            t = np.random.randint(1, 4)
+            t = rng.randint(1, 4)
 
             # Choose n uniformly between 10 and 40 inclusive.
-            n = np.random.randint(10, 41)
+            n = rng.randint(10, 41)
 
             # Sample the inverse of a matrix with random normal entries.
-            A = scipy.linalg.inv(np.random.randn(n, n))
+            A = scipy.linalg.inv(rng.randn(n, n))
 
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)

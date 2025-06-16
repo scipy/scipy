@@ -10,3 +10,7 @@ option('use-pythran', type: 'boolean', value: true,
         description: 'If set to false, disables using Pythran (it falls back ' +
                      'to either pure Python code or Cython code, depending on ' +
                      'the implementation).')
+option('use-system-libraries', type: 'array',
+        choices : ['none', 'all', 'auto', 'boost.math', 'qhull'], value : ['none'],
+        description: 'Choose which system libraries for subprojects ' +
+                     'if they are available.')

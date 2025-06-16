@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -39,7 +39,7 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
@@ -57,7 +57,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have
@@ -68,14 +68,14 @@ jobs:
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `macOS Tests-3.10-ccache-macos-` which is not
+        # This evaluates to `macOS Tests-3.11-ccache-macos-` which is not
         # unique. As the CI matrix is expanded, this will need to be updated to
         # be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
 
     - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@a4260408e20b96e80095f42ff7f1a15b27dd94ca # v3.0.4
+      uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
       with:
         python-version: ${{ matrix.python-version }}
         channels: conda-forge
@@ -92,7 +92,7 @@ jobs:
       shell: bash
 
     - name: Cache conda
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       env:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 1
@@ -115,21 +115,24 @@ jobs:
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
 
-        # Python.org installers still use 10.9, so let's use that too. Note
-        # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
-        # this number in the future (if needed) should not be a problem.
-        # Conda-forge is still at 10.9, see:
-        # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
-        export MACOSX_DEPLOYMENT_TARGET=10.9
-        export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python dev.py build
+        # configure system boost
+        mamba install libboost-headers=1.88.0
+        export BOOST_INCLUDEDIR=${{ env.CONDA }}/envs/scipy-dev/include/boost
+        export BOOST_LIBRARYDIR=${{ env.CONDA }}/envs/scipy-dev/lib
+        rm -rf subprojects/boost_math  # so will fail if system boost doesn't work
+
+        # configure system qhull
+        mamba install qhull=2020.2
+        rm -rf subprojects/qhull_r  # so will fail if system qhull doesn't work
+
+        CC="ccache $CC" spin build --use-system-libraries
 
     - name: Test SciPy
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        python dev.py -n test -j2
+        spin test -j2
 
     - name: Ccache statistics
       shell: bash -l {0}
@@ -138,7 +141,7 @@ jobs:
 
 
   test_scipy_openblas:
-    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
+    name: M1 & OpenBLAS, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -151,12 +154,11 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
-
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -164,7 +166,7 @@ jobs:
     - name: Build and Install SciPy
       run: |
         sudo xcode-select -s /Applications/Xcode_15.2.app
-        
+
         git submodule update --init
         GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
@@ -173,42 +175,42 @@ jobs:
         # Ensure we have gfortran dylib
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
-    
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+
+        pip install meson cython pythran pybind11 ninja numpy spin
         pip install -r requirements/openblas.txt
-        python dev.py build --with-scipy-openblas
+        spin build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
-        python dev.py -n test 
+        spin test
 
 
   test_meson_accelerate:
-    name: Accelerate, fast, py3.11/npAny, dev.py
+    name: Accelerate, fast, py3.11/npAny, spin
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
     - name: Build and Install SciPy
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.2.app
+        sudo xcode-select -s /Applications/Xcode_16.app
 
         git submodule update --init
         GFORTRAN_LOC=$(which gfortran-13)
@@ -219,8 +221,8 @@ jobs:
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
-        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build --with-accelerate
+        pip install meson cython pythran pybind11 ninja numpy spin
+        spin build --with-accelerate
 
         pip install pooch pytest hypothesis
-        python dev.py -n test
+        spin test

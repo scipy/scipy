@@ -3,7 +3,7 @@ Test SciPy functions versus mpmath, if available.
 
 """
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, suppress_warnings
 from numpy import pi
 import pytest
 import itertools
@@ -321,6 +321,7 @@ def test_lpmv():
 # beta
 # ------------------------------------------------------------------------------
 
+@pytest.mark.slow
 @check_version(mpmath, '0.15')
 def test_beta():
     np.random.seed(1234)
@@ -670,6 +671,14 @@ def test_lambertw_smallz():
 # ------------------------------------------------------------------------------
 # Systematic tests
 # ------------------------------------------------------------------------------
+
+# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
+# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
+# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
+# and sph_harm_y respectively. The deprecated functions listed above are
+# implemented as shims around their respective replacements. The replacements
+# are tested separately, but tests for the deprecated functions remain to
+# verify the correctness of the shims.
 
 HYPERKW = dict(maxprec=200, maxterms=200)
 
@@ -1321,7 +1330,7 @@ class TestSystematic:
         assert_mpmath_equal(
             sc.gamma,
             exception_to_nan(mpmath.gamma),
-            [ComplexArg()], 
+            [ComplexArg()],
             rtol=5e-13,
         )
 
@@ -1659,7 +1668,9 @@ class TestSystematic:
     def test_legenp(self):
         def lpnm(n, m, z):
             try:
-                v = sc.lpmn(m, n, z)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    v = sc.lpmn(m, n, z)[0][-1,-1]
             except ValueError:
                 return np.nan
             if abs(v) > 1e306:
@@ -1710,7 +1721,9 @@ class TestSystematic:
     def test_legenp_complex_2(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -1738,7 +1751,9 @@ class TestSystematic:
     def test_legenp_complex_3(self):
         def clpnm(n, m, z):
             try:
-                return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
+                with suppress_warnings() as sup:
+                    sup.filter(category=DeprecationWarning)
+                    return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
             except ValueError:
                 return np.nan
 
@@ -2009,7 +2024,9 @@ class TestSystematic:
         def spherharm(l, m, theta, phi):
             if m > l:
                 return np.nan
-            return sc.sph_harm(m, l, phi, theta)
+            with suppress_warnings() as sup:
+                sup.filter(category=DeprecationWarning)
+                return sc.sph_harm(m, l, phi, theta)
         assert_mpmath_equal(
             spherharm,
             mpmath.spherharm,

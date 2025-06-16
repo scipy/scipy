@@ -4,13 +4,13 @@ import pytest
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
+from numpy.exceptions import ComplexWarning
 
 from scipy.sparse import (
         bsr_array, csc_array, dia_array, lil_array,
         coo_array, csr_array, dok_array,
     )
 from scipy.sparse._sputils import supported_dtypes, matrix
-from scipy._lib._util import ComplexWarning
 
 
 sup_complex = np.testing.suppress_warnings()
@@ -41,6 +41,16 @@ def datsp_math_dtypes(dat1d):
 def test_no_1d_support_in_init(spcreator):
     with pytest.raises(ValueError, match="arrays don't support 1D input"):
         spcreator([0, 1, 2, 3])
+
+
+# Test init with nD dense input
+# sparrays which do not yet support nD
+@pytest.mark.parametrize(
+    "spcreator", [csr_array, dok_array, bsr_array, csc_array, dia_array, lil_array]
+)
+def test_no_nd_support_in_init(spcreator):
+    with pytest.raises(ValueError, match="arrays don't.*support 3D"):
+        spcreator(np.ones((3, 2, 4)))
 
 
 # Main tests class
@@ -126,13 +136,13 @@ class TestCommon1D:
         dat = np.array([0, 1, 2])
         datsp = spcreator(dat)
 
-        with pytest.raises(ValueError, match='axis must be None, -1 or 0'):
+        with pytest.raises(ValueError, match='axis out of range'):
             datsp.sum(axis=1)
-        with pytest.raises(TypeError, match='Tuples are not accepted'):
-            datsp.sum(axis=(0, 1))
+        with pytest.raises(ValueError, match='axis out of range'):
+            datsp.sum(axis=(0, 3))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.sum(axis=1.5)
-        with pytest.raises(ValueError, match='dimensions do not match'):
+        with pytest.raises(ValueError, match='output parameter.*wrong.*dimension'):
             datsp.sum(axis=0, out=out)
 
     def test_numpy_sum(self, spcreator):
@@ -166,11 +176,11 @@ class TestCommon1D:
         datsp = spcreator(dat)
         with pytest.raises(ValueError, match='axis out of range'):
             datsp.mean(axis=3)
-        with pytest.raises(TypeError, match='Tuples are not accepted'):
-            datsp.mean(axis=(0, 1))
+        with pytest.raises(ValueError, match='axis out of range'):
+            datsp.mean(axis=(0, 3))
         with pytest.raises(TypeError, match='axis must be an integer'):
             datsp.mean(axis=1.5)
-        with pytest.raises(ValueError, match='dimensions do not match'):
+        with pytest.raises(ValueError, match='out.*not match shape'):
             datsp.mean(axis=1, out=out)
 
     def test_sum_dtype(self, spcreator):
@@ -199,16 +209,21 @@ class TestCommon1D:
         dat = np.array([0, 1, 2])
         datsp = spcreator(dat)
 
-        dat_out = np.array([0])
-        datsp_out = np.array([0])
+        dat_out = np.array(0)
+        datsp_out = np.array(0)
 
-        dat.mean(out=dat_out, keepdims=True)
+        dat.mean(out=dat_out)
         datsp.mean(out=datsp_out)
         assert_allclose(dat_out, datsp_out)
 
-        dat.mean(axis=0, out=dat_out, keepdims=True)
+        dat.mean(axis=0, out=dat_out)
         datsp.mean(axis=0, out=datsp_out)
         assert_allclose(dat_out, datsp_out)
+
+        with pytest.raises(ValueError, match="output parameter.*dimension"):
+            datsp.mean(out=np.array([0]))
+        with pytest.raises(ValueError, match="output parameter.*dimension"):
+            datsp.mean(out=np.array([[0]]))
 
     def test_numpy_mean(self, spcreator):
         dat = np.array([0, 1, 2])
@@ -220,6 +235,7 @@ class TestCommon1D:
         assert_allclose(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_array(self, spcreator):
         A = np.array([2, 3, 4])
@@ -229,6 +245,7 @@ class TestCommon1D:
         assert_equal(spcreator(A).toarray(), A)
         assert_equal(spcreator(A, dtype='int16').toarray(), A.astype('int16'))
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_list(self, spcreator):
         A = [2, 3, 4]
@@ -240,6 +257,7 @@ class TestCommon1D:
             spcreator(A, dtype='int16').toarray(), np.array(A).astype('int16')
         )
 
+    @pytest.mark.thread_unsafe
     @sup_complex
     def test_from_sparse(self, spcreator):
         D = np.array([1, 0, 0])

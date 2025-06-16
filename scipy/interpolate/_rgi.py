@@ -28,8 +28,9 @@ def _check_points(points):
                 p = np.flip(p)
             else:
                 raise ValueError(
-                    "The points in dimension %d must be strictly "
-                    "ascending or descending" % i)
+                    f"The points in dimension {i} must be strictly ascending or "
+                    f"descending"
+                )
         # see https://github.com/scipy/scipy/issues/17716
         p = np.ascontiguousarray(p)
         grid.append(p)
@@ -38,20 +39,22 @@ def _check_points(points):
 
 def _check_dimensionality(points, values):
     if len(points) > values.ndim:
-        raise ValueError("There are %d point arrays, but values has %d "
-                         "dimensions" % (len(points), values.ndim))
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has "
+            f"{values.ndim} dimensions"
+        )
     for i, p in enumerate(points):
         if not np.asarray(p).ndim == 1:
-            raise ValueError("The points in dimension %d must be "
-                             "1-dimensional" % i)
+            raise ValueError(f"The points in dimension {i} must be 1-dimensional")
         if not values.shape[i] == len(p):
-            raise ValueError("There are %d points and %d values in "
-                             "dimension %d" % (len(p), values.shape[i], i))
+            raise ValueError(
+                f"There are {len(p)} points and {values.shape[i]} values in "
+                f"dimension {i}"
+            )
 
 
 class RegularGridInterpolator:
-    """
-    Interpolator on a regular or rectilinear grid in arbitrary dimensions.
+    """Interpolator of specified order on a rectilinear grid in N ≥ 1 dimensions.
 
     The data must be defined on a rectilinear grid; that is, a rectangular
     grid with even or uneven spacing. Linear, nearest-neighbor, spline
@@ -153,6 +156,11 @@ class RegularGridInterpolator:
     Alternatively, you may instead use the legacy methods, "slinear_legacy",
     "cubic_legacy" and "quintic_legacy". These methods allow faster construction
     but evaluations will be much slower.
+
+    **Rounding rule at half points with `nearest` method**
+
+    The rounding rule with the `nearest` method at half points is rounding *down*.
+
 
     Examples
     --------
@@ -459,8 +467,9 @@ class RegularGridInterpolator:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
                                       np.all(p <= self.grid[i][-1])):
-                    raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension %d" % i)
+                    raise ValueError(
+                        f"One of the requested xi is out of bounds in dimension {i}"
+                    )
             out_of_bounds = None
         else:
             out_of_bounds = self._find_out_of_bounds(xi.T)
@@ -611,13 +620,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data is
         accepted.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
-
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 
@@ -710,8 +712,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
-        raise ValueError("There are %d point arrays, but values has %d "
-                         "dimensions" % (len(points), ndim))
+        raise ValueError(
+            f"There are {len(points)} point arrays, but values has {ndim} dimensions"
+        )
     if len(points) != ndim and method == 'splinef2d':
         raise ValueError("The method splinef2d can only be used for "
                          "scalar data with one point per coordinate")
@@ -722,16 +725,18 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     # sanity check requested xi
     xi = _ndim_coords_from_arrays(xi, ndim=len(grid))
     if xi.shape[-1] != len(grid):
-        raise ValueError("The requested sample points xi have dimension "
-                         "%d, but this RegularGridInterpolator has "
-                         "dimension %d" % (xi.shape[-1], len(grid)))
+        raise ValueError(
+            f"The requested sample points xi have dimension {xi.shape[-1]}, "
+            f"but this RegularGridInterpolator has dimension {len(grid)}"
+        )
 
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
                                   np.all(p <= grid[i][-1])):
-                raise ValueError("One of the requested xi is out of bounds "
-                                 "in dimension %d" % i)
+                raise ValueError(
+                    f"One of the requested xi is out of bounds in dimension {i}"
+                )
 
     # perform interpolation
     if method in RegularGridInterpolator._ALL_METHODS:

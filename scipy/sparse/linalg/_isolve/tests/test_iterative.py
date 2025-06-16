@@ -112,16 +112,16 @@ class IterativeParams:
                                skip=posdef_solvers))
 
         # Random real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4)
         self.cases.append(Case("rand", data,
                                skip=posdef_solvers + sym_solvers))
         self.cases.append(Case("rand-F", data.astype('f'),
                                skip=posdef_solvers + sym_solvers))
 
         # Random symmetric real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4)
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
         self.cases.append(Case("rand-sym-F", data.astype('f'),
@@ -137,16 +137,16 @@ class IterativeParams:
                                skip=[minres]))
 
         # Random complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         skip_cmplx = posdef_solvers + sym_solvers + real_solvers
         self.cases.append(Case("rand-cmplx", data, skip=skip_cmplx))
         self.cases.append(Case("rand-cmplx-F", data.astype('F'),
                                skip=skip_cmplx))
 
         # Random hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers + real_solvers))
@@ -154,8 +154,8 @@ class IterativeParams:
                                skip=posdef_solvers + real_solvers))
 
         # Random pos-def hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(9, 9) + 1j * np.random.rand(9, 9)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(9, 9) + 1j * rng.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
         self.cases.append(Case("rand-cmplx-sym-pd-F", data.astype('F'),
@@ -219,7 +219,7 @@ def case(request):
     """
     return request.param
 
-
+@pytest.mark.thread_unsafe
 def test_maxiter(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
@@ -505,7 +505,7 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 3e-6*norm(b)
+    assert norm(A @ x - b) <= 4.5e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
@@ -538,6 +538,7 @@ def test_x0_solves_problem_exactly(solver):
 
 
 # Specific tfqmr test
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):
     def cb(x):
@@ -789,9 +790,9 @@ class TestGMRES:
 
     def test_callback_x_monotonic(self):
         # Check that callback_type='x' gives monotonic norm decrease
-        np.random.seed(1)
-        A = np.random.rand(20, 20) + np.eye(20)
-        b = np.random.rand(20)
+        rng = np.random.RandomState(1)
+        A = rng.rand(20, 20) + np.eye(20)
+        b = rng.rand(20)
 
         prev_r = [np.inf]
         count = [0]

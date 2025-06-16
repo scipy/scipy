@@ -1,15 +1,13 @@
-from __future__ import annotations
-
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import inspect
 
 from scipy._lib._util import (check_random_state, _rename_parameter, rng_integers,
                               _transition_to_rng)
-from scipy._lib._array_api import array_namespace, is_numpy, xp_moveaxis_to_end
+from scipy._lib._array_api import array_namespace, is_numpy, xp_result_type
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -185,20 +183,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if n_samples == 0:
         raise ValueError("`data` must contain at least one sample.")
 
-    message = ("Ignoring the dimension specified by `axis`, arrays in `data` do not "
-               "have the same shape. Beginning in SciPy 1.16.0, `bootstrap` will "
-               "explicitly broadcast elements of `data` to the same shape (ignoring "
-               "`axis`) before performing the calculation. To avoid this warning in "
-               "the meantime, ensure that all samples have the same shape (except "
-               "potentially along `axis`).")
-    data = [np.atleast_1d(sample) for sample in data]
-    reduced_shapes = set()
-    for sample in data:
-        reduced_shape = list(sample.shape)
-        reduced_shape.pop(axis)
-        reduced_shapes.add(tuple(reduced_shape))
-    if len(reduced_shapes) != 1:
-        warnings.warn(message, FutureWarning, stacklevel=3)
+    data = _broadcast_arrays(data, axis_int)
 
     data_iv = []
     for sample in data:
@@ -333,15 +318,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
          Each element of `data` is a sample containing scalar observations from an
          underlying distribution. Elements of `data` must be broadcastable to the
          same shape (with the possible exception of the dimension specified by `axis`).
-
-         .. versionchanged:: 1.14.0
-             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
-             elements of `data` are not the same (with the exception of the dimension
-             specified by `axis`).
-             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
-             elements to the same shape (except along `axis`) before performing
-             the calculation.
-
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
         `statistic` must be a callable that accepts ``len(data)`` samples
@@ -722,6 +698,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in signature
 
     xp = array_namespace(*data)
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
 
     if not vectorized:
         if is_numpy(xp):
@@ -737,7 +714,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -755,10 +732,6 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     alternative = alternative.lower()
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
-
-    # Infer the desired p-value dtype based on the input types
-    min_float = getattr(xp, 'float16', xp.float32)
-    dtype = xp.result_type(*data_iv, min_float)
 
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int, dtype, xp)
@@ -969,7 +942,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = xp.concat(null_distribution)
-    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
+    null_distribution = xp.reshape(null_distribution, (-1,) + (1,)*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
@@ -2123,6 +2096,7 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
+
     """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
@@ -2158,13 +2132,44 @@ class MonteCarloMethod(ResamplingMethod):
         samples are drawn from the standard normal distribution, so
         ``rvs = (rng.normal, rng.normal)`` where
         ``rng = np.random.default_rng()``.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
     """
     rvs: object = None
+    rng: object = None
+
+    def __init__(self, n_resamples=9999, batch=None, rvs=None, rng=None):
+        if (rvs is not None) and (rng is not None):
+            message = 'Use of `rvs` and `rng` are mutually exclusive.'
+            raise ValueError(message)
+
+        self.n_resamples = n_resamples
+        self.batch = batch
+        self.rvs = rvs
+        self.rng = rng
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
         return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    rvs=self.rvs)
+                    rvs=self.rvs, rng=self.rng)
+
+
+_rs_deprecation = ("Use of attribute `random_state` is deprecated and replaced by "
+                   "`rng`. Support for `random_state` will be removed in SciPy 1.19.0. "
+                   "To silence this warning and ensure consistent behavior in SciPy "
+                   "1.19.0, control the RNG using attribute `rng`. Values set using "
+                   "attribute `rng` will be validated by `np.random.default_rng`, so "
+                   "the behavior corresponding with a given value may change compared "
+                   "to use of `random_state`. For example, 1) `None` will result in "
+                   "unpredictable random numbers, 2) an integer will result in a "
+                   "different stream of random numbers, (with the same distribution), "
+                   "and 3) `np.random` or `RandomState` instances will result in an "
+                   "error. See the documentation of `default_rng` for more "
+                   "information.")
 
 
 @dataclass
@@ -2184,24 +2189,73 @@ class PermutationMethod(ResamplingMethod):
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator used to perform resampling.
 
-        Pseudorandom number generator state used to generate resamples.
+        If `rng` is passed by keyword to the initializer or the `rng` attribute is used
+        directly, types other than `numpy.random.Generator` are passed to
+        `numpy.random.default_rng` to instantiate a ``Generator`` before use.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable behavior.
 
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then that instance is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
+        If this argument is passed by position, if `random_state` is passed by keyword
+        into the initializer, or if the `random_state` attribute is used directly,
+        legacy behavior for `random_state` applies:
+
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this attribute name was changed from
+            `random_state` to `rng`. For an interim period, both names will continue to
+            work, although only one may be specified at a time. After the interim
+            period, uses of `random_state` will emit warnings. The behavior of both
+            `random_state` and `rng` are outlined above, but only `rng` should be used
+            in new code.
+
     """
-    random_state: object = None
+    rng: object  # type: ignore[misc]
+    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
+
+    @property
+    def random_state(self):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, val):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        self._random_state = val
+
+    @property  # type: ignore[no-redef]
+    def rng(self):  # noqa: F811
+        return self._rng
+
+    def __init__(self, n_resamples=9999, batch=None, random_state=None, *, rng=None):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
+        #               DeprecationWarning, stacklevel=2)
+        self._rng = rng
+        self._random_state = random_state
+        super().__init__(n_resamples=n_resamples, batch=batch)
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
-        return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    random_state=self.random_state)
+        d = dict(n_resamples=self.n_resamples, batch=self.batch)
+        if self.rng is not None:
+            d['rng'] = self.rng
+        if self.random_state is not None:
+            d['random_state'] = self.random_state
+        return d
 
 
 @dataclass
@@ -2220,27 +2274,79 @@ class BootstrapMethod(ResamplingMethod):
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator used to perform resampling.
 
-        Pseudorandom number generator state used to generate resamples.
+        If `rng` is passed by keyword to the initializer or the `rng` attribute is used
+        directly, types other than `numpy.random.Generator` are passed to
+        `numpy.random.default_rng` to instantiate a ``Generator``  before use.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable behavior.
 
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then that instance is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
+        If this argument is passed by position, if `random_state` is passed by keyword
+        into the initializer, or if the `random_state` attribute is used directly,
+        legacy behavior for `random_state` applies:
 
-    method : {'bca', 'percentile', 'basic'}
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this attribute name was changed from
+            `random_state` to `rng`. For an interim period, both names will continue to
+            work, although only one may be specified at a time. After the interim
+            period, uses of `random_state` will emit warnings. The behavior of both
+            `random_state` and `rng` are outlined above, but only `rng` should be used
+            in new code.
+
+    method : {'BCa', 'percentile', 'basic'}
         Whether to use the 'percentile' bootstrap ('percentile'), the 'basic'
         (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
         accelerated bootstrap ('BCa', default).
+
     """
-    random_state: object = None
+    rng: object  # type: ignore[misc]
+    _rng: object = field(init=False, repr=False, default=None)  # type: ignore[assignment]
     method: str = 'BCa'
+
+    @property
+    def random_state(self):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        return self._random_state
+
+    @random_state.setter
+    def random_state(self, val):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation, DeprecationWarning, stacklevel=2)
+        self._random_state = val
+
+    @property  # type: ignore[no-redef]
+    def rng(self):  # noqa: F811
+        return self._rng
+
+    def __init__(self, n_resamples=9999, batch=None, random_state=None,
+                 method='BCa', *, rng=None):
+        # Uncomment in SciPy 1.17.0
+        # warnings.warn(_rs_deprecation.replace('attribute', 'argument'),
+        #               DeprecationWarning, stacklevel=2)
+        self._rng = rng  # don't validate with `default_rng`
+        self._random_state = random_state
+        self.method = method
+        super().__init__(n_resamples=n_resamples, batch=batch)
 
     def _asdict(self):
         # `dataclasses.asdict` deepcopies; we don't want that.
-        return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    random_state=self.random_state, method=self.method)
+        d = dict(n_resamples=self.n_resamples, batch=self.batch,
+                 method=self.method)
+        if self.rng is not None:
+            d['rng'] = self.rng
+        if self.random_state is not None:
+            d['random_state'] = self.random_state
+        return d

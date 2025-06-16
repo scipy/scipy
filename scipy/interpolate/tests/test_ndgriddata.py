@@ -246,6 +246,7 @@ class TestNearestNDInterpolator:
         with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         npts, nd = 50, 3
         x = np.arange(npts * nd).reshape((npts, nd))
@@ -262,9 +263,9 @@ class TestNDInterpolators:
     @parametrize_interpolators
     def test_broadcastable_input(self, interpolator):
         # input data
-        np.random.seed(0)
-        x = np.random.random(10)
-        y = np.random.random(10)
+        rng = np.random.RandomState(0)
+        x = rng.random(10)
+        y = rng.random(10)
         z = np.hypot(x, y)
 
         # x-y grid for interpolation
@@ -291,13 +292,13 @@ class TestNDInterpolators:
     @parametrize_interpolators
     def test_read_only(self, interpolator):
         # input data
-        np.random.seed(0)
-        xy = np.random.random((10, 2))
+        rng = np.random.RandomState(0)
+        xy = rng.random((10, 2))
         x, y = xy[:, 0], xy[:, 1]
         z = np.hypot(x, y)
 
         # interpolation points
-        XY = np.random.random((50, 2))
+        XY = rng.random((50, 2))
 
         xy.setflags(write=False)
         z.setflags(write=False)

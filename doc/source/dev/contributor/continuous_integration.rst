@@ -56,12 +56,6 @@ CircleCI
 * ``run_benchmarks``: verify how the changes impact performance
 * ``refguide_check``: doctests from examples and benchmarks
 
-CirrusCI
---------
-* ``Tests``: test suite for specific architecture like
-  ``musllinux, arm, aarch``
-* ``Wheels``: build and upload some wheels
-
 .. _skip-ci:
 
 Skipping
@@ -79,7 +73,6 @@ Skipping CI can be achieved by adding a special text in the commit message:
 
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
-* ``[skip cirrus]``: will skip CirrusCI
 * ``[docs only]``: will skip *all but* the CircleCI checks and the linter
 * ``[lint only]``: will skip *all but* the linter
 * ``[skip ci]``: will skip *all* CI
@@ -88,7 +81,7 @@ Of course, you can combine these to skip multiple workflows.
 
 This skip information should be placed on a new line. In this example, we
 just updated a ``.rst`` file in the documentation and ask to skip all but the
-relevant docs checks (skip Cirrus and GitHub Actions' workflows)::
+relevant docs checks (skip GitHub Actions' workflows)::
 
     DOC: improve QMCEngine examples.
 

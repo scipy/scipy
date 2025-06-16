@@ -42,6 +42,7 @@ def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
+    arrays = tuple(arrays)
     if not arrays:
         return arrays
     xp = array_namespace(*arrays) if xp is None else xp
@@ -402,16 +403,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     override.update(temp)
 
     if result_to_tuple is None:
-        def result_to_tuple(res):
+        def result_to_tuple(res, _):
             return res
-
-    # The only `result_to_tuple` that needs the second argument (number of
-    # outputs) is the one for `moment`, and this was realized very late.
-    # Rather than changing all `result_to_tuple` definitions, we wrap them
-    # here to accept a second argument if they don't already.
-    if len(inspect.signature(result_to_tuple).parameters) == 1:
-        def result_to_tuple(res, _, f=result_to_tuple):
-            return f(res)
 
     if not callable(too_small):
         def is_too_small(samples, *ts_args, axis=-1, **ts_kwargs):
@@ -531,7 +524,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     reduced_axes = tuple(range(n_dims))
                 samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
-                samples = _broadcast_arrays(samples, axis=axis)
+                # don't ignore any axes when broadcasting if paired
+                samples = _broadcast_arrays(samples, axis=axis if not paired else None)
                 axis = np.atleast_1d(axis)
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
@@ -553,11 +547,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
                 if nan_policy != 'propagate' or override['nan_propagation']:
-                    contains_nan = [_contains_nan(sample, nan_policy)[0]
+                    contains_nan = [_contains_nan(sample, nan_policy)
                                     for sample in samples]
                 else:
                     # Behave as though there are no NaNs (even if there are)
-                    contains_nan = [False]*len(samples)
+                    contains_nan = [False] * len(samples)
 
                 # Addresses nan_policy == "propagate"
                 if any(contains_nan) and (nan_policy == 'propagate'
@@ -605,11 +599,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # each separate sample begins
             lengths = np.array([sample.shape[axis] for sample in samples])
             split_indices = np.cumsum(lengths)
-            x = _broadcast_concatenate(samples, axis)
+            x = _broadcast_concatenate(samples, axis, paired=paired)
 
             # Addresses nan_policy == "raise"
             if nan_policy != 'propagate' or override['nan_propagation']:
-                contains_nan, _ = _contains_nan(x, nan_policy)
+                contains_nan = _contains_nan(x, nan_policy)
             else:
                 contains_nan = False  # behave like there are no NaNs
 

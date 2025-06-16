@@ -3,9 +3,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import is_numpy
 from scipy._lib._array_api_no_0d import xp_assert_close, xp_assert_equal
 from scipy import stats, special
 from scipy.optimize import root
@@ -81,15 +80,15 @@ def test_bootstrap_iv():
 @pytest.mark.parametrize("axis", [0, 1, 2])
 def test_bootstrap_batch(method, axis):
     # for one-sample statistics, batch size shouldn't affect the result
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
 
-    x = np.random.rand(10, 11, 12)
+    x = rng.rand(10, 11, 12)
     # SPEC-007 leave one call with random_state to ensure it still works
     res1 = bootstrap((x,), np.mean, batch=None, method=method,
                      random_state=0, axis=axis, n_resamples=100)
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
     res2 = bootstrap((x,), np.mean, batch=10, method=method,
-                     axis=axis, n_resamples=100)
+                     axis=axis, n_resamples=100, random_state=rng)
 
     assert_equal(res2.confidence_interval.low, res1.confidence_interval.low)
     assert_equal(res2.confidence_interval.high, res1.confidence_interval.high)
@@ -99,10 +98,10 @@ def test_bootstrap_batch(method, axis):
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_paired(method):
     # test that `paired` works as expected
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
     n = 100
-    x = np.random.rand(n)
-    y = np.random.rand(n)
+    x = rng.rand(n)
+    y = rng.rand(n)
 
     def my_statistic(x, y, axis=-1):
         return ((x-y)**2).mean(axis=axis)
@@ -130,7 +129,7 @@ def test_bootstrap_vectorized(method, axis, paired):
     # CI and standard_error of each axis-slice is the same as those of the
     # original 1d sample
 
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
 
     def my_statistic(x, y, z, axis=-1):
         return x.mean(axis=axis) + y.mean(axis=axis) + z.mean(axis=axis)
@@ -138,9 +137,9 @@ def test_bootstrap_vectorized(method, axis, paired):
     shape = 10, 11, 12
     n_samples = shape[axis]
 
-    x = np.random.rand(n_samples)
-    y = np.random.rand(n_samples)
-    z = np.random.rand(n_samples)
+    x = rng.rand(n_samples)
+    y = rng.rand(n_samples)
+    z = rng.rand(n_samples)
     res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
                      rng=0, axis=0, n_resamples=100)
     assert (res1.bootstrap_distribution.shape
@@ -222,11 +221,6 @@ def test_bootstrap_against_R(method, expected):
     res = bootstrap((x,), np.mean, n_resamples=1000000, method=method,
                     rng=0)
     assert_allclose(res.confidence_interval, expected, rtol=0.005)
-
-
-tests_against_itself_1samp = {"basic": 1780,
-                              "percentile": 1784,
-                              "BCa": 1784}
 
 
 def test_multisample_BCa_against_R():
@@ -312,6 +306,11 @@ def test_BCa_acceleration_against_reference():
     assert_allclose(a_hat, 0.011008228344026734)
 
 
+tests_against_itself_1samp = {"basic": 1789,
+                              "percentile": 1790,
+                              "BCa": 1789}
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
@@ -320,7 +319,7 @@ def test_bootstrap_against_itself_1samp(method, expected):
     # to check for unintended changes in behavior. The test also makes sure
     # that bootstrap works with multi-sample statistics and that the
     # `axis` argument works as expected / function is vectorized.
-    np.random.seed(0)
+    rng = np.random.default_rng(9123847)
 
     n = 100  # size of sample
     n_resamples = 999  # number of bootstrap resamples used to form each CI
@@ -332,14 +331,15 @@ def test_bootstrap_against_itself_1samp(method, expected):
 
     # Do the same thing 2000 times. (The code is fully vectorized.)
     n_replications = 2000
-    data = dist.rvs(size=(n_replications, n))
+    data = dist.rvs(size=(n_replications, n), random_state=rng)
     res = bootstrap((data,),
                     statistic=np.mean,
                     confidence_level=confidence_level,
                     n_resamples=n_resamples,
                     batch=50,
                     method=method,
-                    axis=-1)
+                    axis=-1,
+                    rng=rng)
     ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
@@ -364,7 +364,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
     # to check for unintended changes in behavior. The test also makes sure
     # that bootstrap works with multi-sample statistics and that the
     # `axis` argument works as expected / function is vectorized.
-    np.random.seed(0)
+    rng = np.random.RandomState(0)
 
     n1 = 100  # size of sample 1
     n2 = 120  # size of sample 2
@@ -384,15 +384,16 @@ def test_bootstrap_against_itself_2samp(method, expected):
 
     # Do the same thing 1000 times. (The code is fully vectorized.)
     n_replications = 1000
-    data1 = dist1.rvs(size=(n_replications, n1))
-    data2 = dist2.rvs(size=(n_replications, n2))
+    data1 = dist1.rvs(size=(n_replications, n1), random_state=rng)
+    data2 = dist2.rvs(size=(n_replications, n2), random_state=rng)
     res = bootstrap((data1, data2),
                     statistic=my_stat,
                     confidence_level=confidence_level,
                     n_resamples=n_resamples,
                     batch=50,
                     method=method,
-                    axis=-1)
+                    axis=-1,
+                    random_state=rng)
     ci = res.confidence_interval
 
     # ci contains vectors of lower and upper confidence interval bounds
@@ -418,10 +419,10 @@ def test_bootstrap_vectorized_3samp(method, axis):
             assert sample.ndim == 1
         return statistic(*data, axis=0)
 
-    np.random.seed(0)
-    x = np.random.rand(4, 5)
-    y = np.random.rand(4, 5)
-    z = np.random.rand(4, 5)
+    rng = np.random.RandomState(0)
+    x = rng.rand(4, 5)
+    y = rng.rand(4, 5)
+    z = rng.rand(4, 5)
     res1 = bootstrap((x, y, z), statistic, vectorized=True,
                      axis=axis, n_resamples=100, method=method, rng=0)
     res2 = bootstrap((x, y, z), statistic_1d, vectorized=False,
@@ -443,8 +444,8 @@ def test_bootstrap_vectorized_1samp(method, axis):
         assert x.ndim == 1
         return statistic(x, axis=0)
 
-    np.random.seed(0)
-    x = np.random.rand(4, 5)
+    rng = np.random.RandomState(0)
+    x = rng.rand(4, 5)
     res1 = bootstrap((x,), statistic, vectorized=True, axis=axis,
                      n_resamples=100, batch=None, method=method,
                      rng=0)
@@ -625,9 +626,9 @@ def test_percentile_along_axis():
     # _percentile_along_axis gets the q corresponding with each axis slice
 
     shape = 10, 20
-    np.random.seed(0)
-    x = np.random.rand(*shape)
-    q = np.random.rand(*shape[:-1]) * 100
+    rng = np.random.RandomState(0)
+    x = rng.rand(*shape)
+    q = rng.rand(*shape[:-1]) * 100
     y = _resampling._percentile_along_axis(x, q)
 
     for i in range(shape[0]):
@@ -653,10 +654,10 @@ def test_vectorize_statistic(axis):
     # vectorize the non-vectorized statistic
     statistic2 = _resampling._vectorize_statistic(statistic_1d)
 
-    np.random.seed(0)
-    x = np.random.rand(4, 5, 6)
-    y = np.random.rand(4, 1, 6)
-    z = np.random.rand(1, 5, 6)
+    rng = np.random.RandomState(0)
+    x = rng.rand(4, 5, 6)
+    y = rng.rand(4, 1, 6)
+    z = rng.rand(1, 5, 6)
 
     res1 = statistic(x, y, z, axis=axis)
     res2 = statistic2(x, y, z, axis=axis)
@@ -683,7 +684,7 @@ def test_vector_valued_statistic(method):
                            np.std(data, axis, ddof=1)])
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    n_resamples=9999, batch=200)
+                    n_resamples=9999, batch=200, random_state=rng)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
@@ -746,13 +747,11 @@ def test_gh_20850():
     stats.bootstrap((x.T, y.T), statistic, axis=1)
     # But even when the shapes *are* the same along axis, the lengths
     # along other dimensions have to be the same (or `bootstrap` warns).
-    message = "Ignoring the dimension specified by `axis`..."
-    with pytest.warns(FutureWarning, match=message):
+    message = "Array shapes are incompatible for broadcasting."
+    with pytest.raises(ValueError, match=message):
         stats.bootstrap((x, y[:10, 0]), statistic)  # this won't work after 1.16
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
-    with pytest.warns(FutureWarning, match=message):
-        stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
+    stats.bootstrap((x, y[:10, 0:1]), statistic)  # this will
+    stats.bootstrap((x.T, y.T[0:1, :10]), statistic, axis=1)  # this will
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
@@ -773,7 +772,6 @@ class TestMonteCarloHypothesisTest:
             # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
         return statistic
 
-    @array_api_compatible
     def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
 
@@ -840,7 +838,6 @@ class TestMonteCarloHypothesisTest:
         except ValueError as e:
             assert str(e).startswith(message)
 
-    @array_api_compatible
     def test_input_validation_xp(self, xp):
         def non_vectorized_statistic(x):
             return xp.mean(x)
@@ -857,19 +854,17 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test(sample, stats.norm.rvs, xp.mean, vectorized=False)
 
     @pytest.mark.xslow
-    @array_api_compatible
     def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
         rng = np.random.default_rng(23492340193)
         x = xp.asarray(rng.standard_normal(size=10))
 
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return self.get_statistic(xp_test)(x, axis=axis)
+            return self.get_statistic(xp)(x, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
@@ -896,7 +891,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_equal(res1.pvalue, res3.pvalue)
         xp_assert_equal(res2.pvalue, res3.pvalue)
 
-    @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
     def test_axis_dtype(self, axis, xp):
         # test that Nd-array samples are handled correctly for valid values
@@ -919,8 +913,7 @@ class TestMonteCarloHypothesisTest:
         expected = stats.ttest_1samp(x, popmean=0., axis=axis)
 
         x = xp.asarray(x, dtype=dtype)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, dtype=dtype, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, vectorized=True,
@@ -931,7 +924,6 @@ class TestMonteCarloHypothesisTest:
         xp_assert_close(res.statistic, ref_statistic)
         xp_assert_close(res.pvalue, ref_pvalue, atol=self.atol)
 
-    @array_api_compatible
     @pytest.mark.parametrize('alternative', ("two-sided", "less", "greater"))
     def test_alternative(self, alternative, xp):
         # test that `alternative` is working as expected
@@ -941,8 +933,7 @@ class TestMonteCarloHypothesisTest:
         ref = stats.ttest_1samp(x, 0., alternative=alternative)
 
         x = xp.asarray(x)
-        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
-        statistic = self.get_statistic(xp_test)
+        statistic = self.get_statistic(xp)
         rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, alternative=alternative)
@@ -1096,7 +1087,7 @@ class TestMonteCarloHypothesisTest:
         data = rng.random(size=(2, 5)), rng.random(size=7)  # broadcastable
         rvs = rng.normal, rng.normal
         def statistic(x, y, axis):
-            return stats.ttest_ind(x, y, axis).statistic
+            return stats.ttest_ind(x, y, axis=axis).statistic
 
         res = stats.monte_carlo_test(data, rvs, statistic, axis=-1)
         ref = stats.ttest_ind(data[0], [data[1]], axis=-1)
@@ -1522,35 +1513,6 @@ class TestPermutationTest:
 
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
-
-    @pytest.mark.parametrize('alternative', ('less', 'greater'))
-    # Different conventions for two-sided p-value here VS ttest_ind.
-    # Eventually, we can add multiple options for the two-sided alternative
-    # here in permutation_test.
-    @pytest.mark.parametrize('permutations', (30, 1e9))
-    @pytest.mark.parametrize('axis', (0, 1, 2))
-    def test_against_permutation_ttest(self, alternative, permutations, axis):
-        # check that this function and ttest_ind with permutations give
-        # essentially identical results.
-
-        x = np.arange(3*4*5).reshape(3, 4, 5)
-        y = np.moveaxis(np.arange(4)[:, None, None], 0, axis)
-
-        rng1 = np.random.default_rng(4337234444626115331)
-        res1 = stats.ttest_ind(x, y, permutations=permutations, axis=axis,
-                               random_state=rng1, alternative=alternative)
-
-        def statistic(x, y, axis):
-            return stats.ttest_ind(x, y, axis=axis).statistic
-
-        rng2 = np.random.default_rng(4337234444626115331)
-        res2 = permutation_test((x, y), statistic, vectorized=True,
-                                n_resamples=permutations,
-                                alternative=alternative, axis=axis,
-                                rng=rng2)
-
-        assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
-        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     # -- Independent (Unpaired) Sample Tests -- #
 
@@ -2028,3 +1990,11 @@ def test_parameter_vectorized(fun_name):
         return np.mean(x)
     fun(statistic=statistic, vectorized=None, **options)
     fun(statistic=statistic, vectorized=False, **options)
+
+
+class TestMonteCarloMethod:
+    def test_rvs_and_random_state(self):
+        message = "Use of `rvs` and `rng` are mutually exclusive."
+        rng = np.random.default_rng(34982345)
+        with pytest.raises(ValueError, match=message):
+            stats.MonteCarloMethod(rvs=rng.random, rng=rng)

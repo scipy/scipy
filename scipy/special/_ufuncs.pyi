@@ -265,6 +265,7 @@ _kolmogp: np.ufunc
 _lambertw: np.ufunc
 _lanczos_sum_expg_scaled: np.ufunc
 _lgam1p: np.ufunc
+_log1mexp: np.ufunc
 _log1pmx: np.ufunc
 _riemann_zeta: np.ufunc
 _scaled_exp1: np.ufunc

@@ -3,7 +3,8 @@ import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import array_namespace, xp_sign
+from scipy._lib._array_api import array_namespace, xp_copy, xp_promote
+import scipy._lib.array_api_extra as xpx
 
 _EERRORINCREASE = -1  # used in derivative
 
@@ -400,11 +401,11 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
     # that `hdir` can be broadcasted to the final shape. Same with `h0`.
     hdir = xp.broadcast_to(hdir, shape)
     hdir = xp.reshape(hdir, (-1,))
-    hdir = xp.astype(xp_sign(hdir), dtype)
+    hdir = xp.astype(xp.sign(hdir), dtype)
     h0 = xp.broadcast_to(h0, shape)
     h0 = xp.reshape(h0, (-1,))
     h0 = xp.astype(h0, dtype)
-    h0[h0 <= 0] = xp.asarray(xp.nan, dtype=dtype)
+    h0 = xpx.at(h0)[h0 <= 0].set(xp.nan)
 
     status = xp.full_like(x, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
@@ -425,7 +426,11 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
                        df_last=xp.nan, error_last=xp.nan, fac=fac,
                        atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                        status=status, dtype=dtype, terms=(order+1)//2,
-                       hdir=hdir, il=il, ic=ic, ir=ir, io=io)
+                       hdir=hdir, il=il, ic=ic, ir=ir, io=io,
+                       # Store the weights in an object so they can't get compressed
+                       # Using RichResult to allow dot notation, but a dict would work
+                       diff_state=_RichResult(central=[], right=[], fac=None))
+
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepended automatically.
@@ -473,9 +478,9 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
         x_eval = xp.zeros((work.hdir.shape[0], n_new), dtype=work.dtype)
         il, ic, ir = work.il, work.ic, work.ir
-        x_eval[ir] = work.x[ir][:, xp.newaxis] + hr[ir]
-        x_eval[ic] = work.x[ic][:, xp.newaxis] + hc[ic]
-        x_eval[il] = work.x[il][:, xp.newaxis] - hr[il]
+        x_eval = xpx.at(x_eval)[ir].set(work.x[ir][:, xp.newaxis] + hr[ir])
+        x_eval = xpx.at(x_eval)[ic].set(work.x[ic][:, xp.newaxis] + hc[ic])
+        x_eval = xpx.at(x_eval)[il].set(work.x[il][:, xp.newaxis] - hr[il])
         return x_eval
 
     def post_func_eval(x, f, work):
@@ -525,14 +530,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
             fo = xp.concat((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
         work.fs = xp.zeros((ic.shape[0], work.fs.shape[-1] + 2*n_new), dtype=work.dtype)
-        work.fs[ic] = work_fc
-        work.fs[io] = work_fo
+        work.fs = xpx.at(work.fs)[ic].set(work_fc)
+        work.fs = xpx.at(work.fs)[io].set(work_fo)
 
         wc, wo = _derivative_weights(work, n, xp)
         work.df_last = xp.asarray(work.df, copy=True)
-        work.df[ic] = fc @ wc / work.h[ic]
-        work.df[io] = fo @ wo / work.h[io]
-        work.df[il] *= -1
+        work.df = xpx.at(work.df)[ic].set(fc @ wc / work.h[ic])
+        work.df = xpx.at(work.df)[io].set(fo @ wo / work.h[io])
+        work.df = xpx.at(work.df)[il].multiply(-1)
 
         work.h /= work.fac
         work.error_last = work.error
@@ -550,13 +555,14 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         stop = xp.astype(xp.zeros_like(work.df), xp.bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
-        work.status[i] = eim._ECONVERGED
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(eim._ECONVERGED)
+        stop = xpx.at(stop)[i].set(True)
 
         if work.nit > 0:
             i = ~((xp.isfinite(work.x) & xp.isfinite(work.df)) | stop)
-            work.df[i], work.status[i] = xp.nan, eim._EVALUEERR
-            stop[i] = True
+            work.df = xpx.at(work.df)[i].set(xp.nan)
+            work.status = xpx.at(work.status)[i].set(eim._EVALUEERR)
+            stop = xpx.at(stop)[i].set(True)
 
         # With infinite precision, there is a step size below which
         # all smaller step sizes will reduce the error. But in floating point
@@ -566,8 +572,8 @@ def derivative(f, x, *, args=(), tolerances=None, maxiter=10,
         # detecting a step size that minimizes the total error, but this
         # heuristic seems simple and effective.
         i = (work.error > work.error_last*10) & ~stop
-        work.status[i] = _EERRORINCREASE
-        stop[i] = True
+        work.status = xpx.at(work.status)[i].set(_EERRORINCREASE)
+        stop = xpx.at(stop)[i].set(True)
 
         return stop
 
@@ -654,12 +660,14 @@ def _derivative_weights(work, n, xp):
     # precision) cached `_derivative_weights.fac`, and the weights will
     # need to be recalculated. This could be fixed, but it's late, and of
     # low consequence.
-    if fac != _derivative_weights.fac:
-        _derivative_weights.central = []
-        _derivative_weights.right = []
-        _derivative_weights.fac = fac
 
-    if len(_derivative_weights.central) != 2*n + 1:
+    diff_state = work.diff_state
+    if fac != diff_state.fac:
+        diff_state.central = []
+        diff_state.right = []
+        diff_state.fac = fac
+
+    if len(diff_state.central) != 2*n + 1:
         # Central difference weights. Consider refactoring this; it could
         # probably be more compact.
         # Note: Using NumPy here is OK; we convert to xp-type at the end
@@ -680,7 +688,7 @@ def _derivative_weights(work, n, xp):
 
         # Cache the weights. We only need to calculate them once unless
         # the step factor changes.
-        _derivative_weights.central = weights
+        diff_state.central = weights
 
         # One-sided difference weights. The left one-sided weights (with
         # negative steps) are simply the negative of the right one-sided
@@ -695,13 +703,10 @@ def _derivative_weights(work, n, xp):
         b[1] = 1
         weights = np.linalg.solve(A, b)
 
-        _derivative_weights.right = weights
+        diff_state.right = weights
 
-    return (xp.asarray(_derivative_weights.central, dtype=work.dtype),
-            xp.asarray(_derivative_weights.right, dtype=work.dtype))
-_derivative_weights.central = []
-_derivative_weights.right = []
-_derivative_weights.fac = None
+    return (xp.asarray(diff_state.central, dtype=work.dtype),
+            xp.asarray(diff_state.right, dtype=work.dtype))
 
 
 def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
@@ -799,26 +804,46 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     Notes
     -----
     Suppose we wish to evaluate the Jacobian of a function
-    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`, and assign to variables
+    :math:`f: \mathbf{R}^m \rightarrow \mathbf{R}^n`. Assign to variables
     ``m`` and ``n`` the positive integer values of :math:`m` and :math:`n`,
-    respectively. If we wish to evaluate the Jacobian at a single point,
-    then:
+    respectively, and let ``...`` represent an arbitrary tuple of integers.
+    If we wish to evaluate the Jacobian at a single point, then:
 
     - argument `x` must be an array of shape ``(m,)``
-    - argument `f` must be vectorized to accept an array of shape ``(m, p)``.
-      The first axis represents the :math:`m` inputs of :math:`f`; the second
-      is for evaluating the function at multiple points in a single call.
-    - argument `f` must return an array of shape ``(n, p)``. The first
-      axis represents the :math:`n` outputs of :math:`f`; the second
-      is for the result of evaluating the function at multiple points.
+    - argument `f` must be vectorized to accept an array of shape ``(m, ...)``.
+      The first axis represents the :math:`m` inputs of :math:`f`; the remainder
+      are for evaluating the function at multiple points in a single call.
+    - argument `f` must return an array of shape ``(n, ...)``. The first
+      axis represents the :math:`n` outputs of :math:`f`; the remainder
+      are for the result of evaluating the function at multiple points.
     - attribute ``df`` of the result object will be an array of shape ``(n, m)``,
       the Jacobian.
 
     This function is also vectorized in the sense that the Jacobian can be
     evaluated at ``k`` points in a single call. In this case, `x` would be an
     array of shape ``(m, k)``, `f` would accept an array of shape
-    ``(m, k, p)`` and return an array of shape ``(n, k, p)``, and the ``df``
+    ``(m, k, ...)`` and return an array of shape ``(n, k, ...)``, and the ``df``
     attribute of the result would have shape ``(n, m, k)``.
+
+    Suppose the desired callable ``f_not_vectorized`` is not vectorized; it can
+    only accept an array of shape ``(m,)``. A simple solution to satisfy the required
+    interface is to wrap ``f_not_vectorized`` as follows::
+
+        def f(x):
+            return np.apply_along_axis(f_not_vectorized, axis=0, arr=x)
+
+    Alternatively, suppose the desired callable ``f_vec_q`` is vectorized, but
+    only for 2-D arrays of shape ``(m, q)``. To satisfy the required interface,
+    consider::
+
+        def f(x):
+            m, batch = x.shape[0], x.shape[1:]  # x.shape is (m, ...)
+            x = np.reshape(x, (m, -1))  # `-1` is short for q = prod(batch)
+            res = f_vec_q(x)  # pass shape (m, q) to function
+            n = res.shape[0]
+            return np.reshape(res, (n,) + batch)  # return shape (n, ...)
+
+    Then pass the wrapped callable ``f`` as the first argument of `jacobian`.
 
     References
     ----------
@@ -882,30 +907,32 @@ def jacobian(f, x, *, tolerances=None, maxiter=10, order=8, initial_step=0.5,
     True
 
     """
-    x = np.asarray(x)
-    int_dtype = np.issubdtype(x.dtype, np.integer)
-    x0 = np.asarray(x, dtype=float) if int_dtype else x
+    xp = array_namespace(x)
+    x0 = xp_promote(x, force_floating=True, xp=xp)
 
     if x0.ndim < 1:
         message = "Argument `x` must be at least 1-D."
         raise ValueError(message)
 
     m = x0.shape[0]
-    i = np.arange(m)
+    i = xp.arange(m)
 
     def wrapped(x):
         p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
-        new_dims = (1,) if x.ndim == x0.ndim else (1, -1)
+
         new_shape = (m, m) + x0.shape[1:] + p
-        xph = np.expand_dims(x0, new_dims)
-        xph = np.broadcast_to(xph, new_shape).copy()
-        xph[i, i] = x
+        xph = xp.expand_dims(x0, axis=1)
+        if x.ndim != x0.ndim:
+            xph = xp.expand_dims(xph, axis=-1)
+        xph = xp_copy(xp.broadcast_to(xph, new_shape), xp=xp)
+        xph = xpx.at(xph)[i, i].set(x)
         return f(xph)
 
     res = derivative(wrapped, x, tolerances=tolerances,
                      maxiter=maxiter, order=order, initial_step=initial_step,
                      step_factor=step_factor, preserve_shape=True,
                      step_direction=step_direction)
+
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
 
@@ -1069,9 +1096,10 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     atol = tolerances.get('atol', None)
     rtol = tolerances.get('rtol', None)
 
-    x = np.asarray(x)
-    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
-    finfo = np.finfo(dtype)
+    xp = array_namespace(x)
+    x0 = xp_promote(x, force_floating=True, xp=xp)
+
+    finfo = xp.finfo(x0.dtype)
     rtol = finfo.eps**0.5 if rtol is None else rtol  # keep same as `derivative`
 
     # tighten the inner tolerance to make the inner error negligible
@@ -1091,8 +1119,9 @@ def hessian(f, x, *, tolerances=None, maxiter=10,
     nfev = []  # track inner function evaluations
     res = jacobian(df, x, tolerances=tolerances, **kwargs)  # jacobian of jacobian
 
-    nfev = np.cumsum(nfev, axis=0)
-    res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
+    nfev = xp.cumulative_sum(xp.stack(nfev), axis=0)
+    res_nit = xp.astype(res.nit[xp.newaxis, ...], xp.int64)  # appease torch
+    res.nfev = xp.take_along_axis(nfev, res_nit, axis=0)[0]
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit

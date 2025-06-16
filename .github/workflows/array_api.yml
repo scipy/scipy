@@ -15,22 +15,8 @@ permissions:
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
   INSTALLDIR: "build-install"
-  XP_TESTS: >-
-    -t scipy.cluster
-    -t scipy.constants
-    -t scipy.fft
-    -t scipy.special.tests.test_logsumexp
-    -t scipy.special.tests.test_support_alternative_backends
-    -t scipy._lib.tests.test_array_api
-    -t scipy._lib.tests.test__util
-    -t scipy.differentiate.tests.test_differentiate
-    -t scipy.integrate.tests.test_tanhsinh
-    -t scipy.integrate.tests.test_cubature
-    -t scipy.optimize.tests.test_chandrupatla
-    -t scipy.optimize.tests.test_optimize
-    -t scipy.stats
-    -t scipy.ndimage
-    -t scipy.integrate.tests.test_quadrature
+  # Only run tests that use the `xp` fixture
+  XP_TESTS: -m array_api_backends
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -41,8 +27,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  pytorch_cpu:
-    name: Linux PyTorch/JAX/xp-strict CPU
+  xp_cpu:
+    name: Linux PyTorch/JAX/Dask/xp-strict CPU
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -50,19 +36,19 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.11']
+        python-version: ['3.12']
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
+      uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'  # not using a path to also cache pytorch
@@ -74,7 +60,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict==2.1.0
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click pooch hypothesis array-api-strict spin
 
     - name: Install PyTorch CPU
       run: |
@@ -83,6 +69,14 @@ jobs:
     - name: Install JAX
       run: |
         python -m pip install "jax[cpu]"
+
+    - name: Install Dask
+      run: |
+        python -m pip install dask[array]
+
+    - name: Install MArray
+      run: |
+        python -m pip install marray
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -94,7 +88,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+      uses:  actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
@@ -104,10 +98,15 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build
+        spin build
 
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
         # expand as more modules are supported by adding to `XP_TESTS` above
-        python dev.py --no-build test -b all $XP_TESTS -- --durations 3 --timeout=60
+        spin test -b all $XP_TESTS -- --durations 3 --timeout=60
+
+    - name: Test SciPy with torch/float32
+      run: |
+        export SCIPY_DEFAULT_DTYPE="float32"
+        spin test -b torch $XP_TESTS -- --durations 3 --timeout=60

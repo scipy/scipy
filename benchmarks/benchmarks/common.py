@@ -105,7 +105,7 @@ def run_monitored_wait4(code):
     max_rss_bytes = get_max_rss_bytes(rusage)
 
     if returncode != 0:
-        raise AssertionError("Running failed:\n%s" % code)
+        raise AssertionError(f"Running failed:\n{code}")
 
     return duration, max_rss_bytes
 
@@ -136,7 +136,7 @@ def run_monitored_proc(code):
         if ret is not None:
             break
 
-        with open('/proc/%d/status' % process.pid) as f:
+        with open(f'/proc/{process.pid}/status') as f:
             procdata = f.read()
 
         m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
@@ -151,7 +151,7 @@ def run_monitored_proc(code):
     duration = time.time() - start
 
     if process.returncode != 0:
-        raise AssertionError("Running failed:\n%s" % code)
+        raise AssertionError(f"Running failed:\n{code}")
 
     return duration, peak_memusage
 

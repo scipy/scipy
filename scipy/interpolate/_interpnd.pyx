@@ -336,30 +336,32 @@ class LinearNDInterpolator(NDInterpolatorBase):
         eps = 100 * DBL_EPSILON
         eps_broad = sqrt(DBL_EPSILON)
 
-        with nogil:
-            for i in range(xi.shape[0]):
+        # NOTE: a nogil block segfaults here with Python 3.10
+        # and 3.11 on x86_64 Ubuntu Linux with gcc 9.x and 11.x
+        # and therefore nogil was disabled to fix gh-21885
+        for i in range(xi.shape[0]):
 
-                # 1) Find the simplex
+            # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(&info, c,
-                                               &xi[0,0] + i*ndim,
-                                               &start, eps, eps_broad)
+            isimplex = qhull._find_simplex(&info, c,
+                                           &xi[0,0] + i*ndim,
+                                           &start, eps, eps_broad)
 
-                # 2) Linear barycentric interpolation
+            # 2) Linear barycentric interpolation
 
-                if isimplex == -1:
-                    # don't extrapolate
-                    for k in range(nvalues):
-                        out[i,k] = fill_value
-                    continue
-
+            if isimplex == -1:
+                # don't extrapolate
                 for k in range(nvalues):
-                    out[i,k] = 0
+                    out[i,k] = fill_value
+                continue
 
-                for j in range(ndim+1):
-                    for k in range(nvalues):
-                        m = simplices[isimplex,j]
-                        out[i,k] = out[i,k] + c[j] * values[m,k]
+            for k in range(nvalues):
+                out[i,k] = 0
+
+            for j in range(ndim+1):
+                for k in range(nvalues):
+                    m = simplices[isimplex,j]
+                    out[i,k] = out[i,k] + c[j] * values[m,k]
 
         return out
 
@@ -820,9 +822,7 @@ cdef double_or_complex _clough_tocher_2d_single(const qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """CloughTocher2DInterpolator(points, values, tol=1e-6).
-
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
+    """Piecewise cubic, C1 smooth, curvature-minimizing interpolator in N=2 dimensions.
 
     .. versionadded:: 0.9
 
@@ -884,7 +884,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> Z = interp(X, Y)
     >>> plt.pcolormesh(X, Y, Z, shading='auto')
     >>> plt.plot(x, y, "ok", label="input point")
-    >>> plt.legend()
+    >>> plt.legend(loc="upper right")
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()

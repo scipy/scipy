@@ -6,7 +6,8 @@ from functools import partial
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
-from scipy._lib._util import _lazywhere, rng_integers
+from scipy._lib._util import rng_integers
+import scipy._lib.array_api_extra as xpx
 from scipy.interpolate import interp1d
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -214,11 +215,11 @@ class betabinom_gen(rv_discrete):
 
     `betabinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
 
+    %(after_notes)s
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Beta-binomial_distribution
-
-    %(after_notes)s
 
     .. versionadded:: 1.4.0
 
@@ -420,11 +421,11 @@ class betanbinom_gen(rv_discrete):
 
     `betanbinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
 
+    %(after_notes)s
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Beta_negative_binomial_distribution
-
-    %(after_notes)s
 
     .. versionadded:: 1.12.0
 
@@ -460,18 +461,18 @@ class betanbinom_gen(rv_discrete):
         # BetaNegativeBinomialDistribution[a, b, n]
         def mean(n, a, b):
             return n * b / (a - 1.)
-        mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
+        mu = xpx.apply_where(a > 1, (n, a, b), mean, fill_value=np.inf)
         def var(n, a, b):
             return (n * b * (n + a - 1.) * (a + b - 1.)
                     / ((a - 2.) * (a - 1.)**2.))
-        var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
+        var = xpx.apply_where(a > 2, (n, a, b), var, fill_value=np.inf)
         g1, g2 = None, None
         def skew(n, a, b):
             return ((2 * n + a - 1.) * (2 * b + a - 1.)
                     / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
                     / (a - 2.)))
         if 's' in moments:
-            g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
+            g1 = xpx.apply_where(a > 3, (n, a, b), skew, fill_value=np.inf)
         def kurtosis(n, a, b):
             term = (a - 2.)
             term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
@@ -487,7 +488,7 @@ class betanbinom_gen(rv_discrete):
             # scipy's Fisher kurtosis
             return term * term_2 / denominator - 3.
         if 'k' in moments:
-            g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
+            g2 = xpx.apply_where(a > 4, (n, a, b), kurtosis, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -867,14 +868,13 @@ class nhypergeom_gen(rv_discrete):
         return _rvs1(M, n, r, size=size, random_state=random_state)
 
     def _logpmf(self, k, M, n, r):
-        cond = ((r == 0) & (k == 0))
-        result = _lazywhere(~cond, (k, M, n, r),
-                            lambda k, M, n, r:
-                                (-betaln(k+1, r) + betaln(k+r, 1) -
-                                 betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1) +
-                                 betaln(n+1, M-n+1) - betaln(M+1, 1)),
-                            fillvalue=0.0)
-        return result
+        return xpx.apply_where(
+            (r != 0) | (k != 0), (k, M, n, r),
+            lambda k, M, n, r:
+                (-betaln(k+1, r) + betaln(k+r, 1)
+                 - betaln(n-k+1, M-r-n+1) + betaln(M-r-k+1, 1)
+                 + betaln(n+1, M-n+1) - betaln(M+1, 1)),
+            fill_value=0.0)
 
     def _pmf(self, k, M, n, r):
         # same as the following but numerically more precise
@@ -1019,8 +1019,8 @@ class poisson_gen(rv_discrete):
         var = mu
         tmp = np.asarray(mu)
         mu_nonzero = tmp > 0
-        g1 = _lazywhere(mu_nonzero, (tmp,), lambda x: sqrt(1.0/x), np.inf)
-        g2 = _lazywhere(mu_nonzero, (tmp,), lambda x: 1.0/x, np.inf)
+        g1 = xpx.apply_where(mu_nonzero, tmp, lambda x: sqrt(1.0/x), fill_value=np.inf)
+        g2 = xpx.apply_where(mu_nonzero, tmp, lambda x: 1.0/x, fill_value=np.inf)
         return mu, var, g1, g2
 
 
@@ -1056,7 +1056,7 @@ class planck_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_):
         return lambda_ > 0
@@ -1352,10 +1352,10 @@ class zipf_gen(rv_discrete):
         return Pk
 
     def _munp(self, n, a):
-        return _lazywhere(
+        return xpx.apply_where(
             a > n + 1, (a, n),
             lambda a, n: special.zeta(a - n, 1) / special.zeta(a, 1),
-            np.inf)
+            fill_value=np.inf)
 
 
 zipf = zipf_gen(a=1, name='zipf', longname='A Zipf')
@@ -1371,20 +1371,20 @@ def _gen_harmonic_leq1(n, a):
     """Generalized harmonic number, a <= 1"""
     if not np.size(n):
         return n
-    n_max = np.max(n)  # loop starts at maximum of all n
+    n_max = np.nanmax(n)  # loop starts at maximum of all n
     out = np.zeros_like(a, dtype=float)
     # add terms of harmonic series; starting from smallest to avoid roundoff
     for i in np.arange(n_max, 0, -1, dtype=float):
         mask = i <= n  # don't add terms after nth
         out[mask] += 1/i**a[mask]
+    out[np.isnan(n)] = np.nan
     return out
 
 
 def _gen_harmonic(n, a):
     """Generalized harmonic number"""
     n, a = np.broadcast_arrays(n, a)
-    return _lazywhere(a > 1, (n, a),
-                      f=_gen_harmonic_gt1, f2=_gen_harmonic_leq1)
+    return xpx.apply_where(a > 1, (n, a), _gen_harmonic_gt1, _gen_harmonic_leq1)
 
 
 class zipfian_gen(rv_discrete):
@@ -1450,10 +1450,11 @@ class zipfian_gen(rv_discrete):
         return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
+        k = np.floor(k)
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
 
     def _sf(self, k, a, n):
-        k = k + 1  # # to match SciPy convention
+        k = np.floor(k + 1)  # # to match SciPy convention
         # see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/Zipf.pdf
         return ((k**a*(_gen_harmonic(n, a) - _gen_harmonic(k, a)) + 1)
                 / (k**a*_gen_harmonic(n, a)))
@@ -1512,13 +1513,13 @@ class dlaplace_gen(rv_discrete):
     def _cdf(self, x, a):
         k = floor(x)
 
-        def f(k, a):
+        def f1(k, a):
             return 1.0 - exp(-a * k) / (exp(a) + 1)
 
         def f2(k, a):
             return exp(a * (k + 1)) / (exp(a) + 1)
 
-        return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
+        return xpx.apply_where(k >= 0, (k, a), f1, f2)
 
     def _ppf(self, q, a):
         const = 1 + exp(a)
@@ -1871,9 +1872,9 @@ class _nchypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N, odds):
         M, n = np.asarray(M), np.asarray(n),
         N, odds = np.asarray(N), np.asarray(odds)
-        cond1 = (M.astype(int) == M) & (M >= 0)
-        cond2 = (n.astype(int) == n) & (n >= 0)
-        cond3 = (N.astype(int) == N) & (N >= 0)
+        cond1 = (~np.isnan(M)) & (M.astype(int) == M) & (M >= 0)
+        cond2 = (~np.isnan(n)) & (n.astype(int) == n) & (n >= 0)
+        cond3 = (~np.isnan(N)) & (N.astype(int) == N) & (N >= 0)
         cond4 = odds > 0
         cond5 = N <= M
         cond6 = n <= M
@@ -1883,6 +1884,8 @@ class _nchypergeom_gen(rv_discrete):
 
         @_vectorize_rvs_over_shapes
         def _rvs1(M, n, N, odds, size, random_state):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.full(size, np.nan)
             length = np.prod(size)
             urn = _PyStochasticLib3()
             rv_gen = getattr(urn, self.rvs_name)
@@ -1900,15 +1903,19 @@ class _nchypergeom_gen(rv_discrete):
 
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
+            if np.isnan(x) | np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.probability(x)
 
         return _pmf1(x, M, n, N, odds)
 
-    def _stats(self, M, n, N, odds, moments):
+    def _stats(self, M, n, N, odds, moments='mv'):
 
         @np.vectorize
         def _moments1(M, n, N, odds):
+            if np.isnan(M) | np.isnan(n) | np.isnan(N):
+                return np.nan, np.nan
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 

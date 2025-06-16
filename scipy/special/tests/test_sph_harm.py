@@ -47,11 +47,15 @@ class TestSphHarm:
 
         np.testing.assert_allclose(y_actual, y_desired, rtol=1e-05)
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_first_harmonics():
     # Test against explicit representations of the first four
     # spherical harmonics which use `theta` as the azimuthal angle,
     # `phi` as the polar angle, and include the Condon-Shortley
     # phase.
+
+    # sph_harm is deprecated and is implemented as a shim around sph_harm_y.
+    # This test is maintained to verify the correctness of the shim.
 
     # Notation is Ymn
     def Y00(theta, phi):

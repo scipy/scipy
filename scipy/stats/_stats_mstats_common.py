@@ -2,6 +2,7 @@ import warnings
 import numpy as np
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
+from ._axis_nan_policy import _axis_nan_policy_factory
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
 
 __all__ = ['_find_repeats', 'theilslopes', 'siegelslopes']
@@ -14,6 +15,14 @@ SiegelslopesResult = _make_tuple_bunch('SiegelslopesResult',
                                        ['slope', 'intercept'])
 
 
+def _n_samples_optional_x(kwargs):
+    return 2 if kwargs.get('x', None) is not None else 1
+
+
+@_axis_nan_policy_factory(TheilslopesResult, default_axis=None, n_outputs=4,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
@@ -131,7 +140,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     else:
         x = np.array(x, dtype=float, copy=True).ravel()
         if len(x) != len(y):
-            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -192,6 +203,10 @@ def _find_repeats(arr):
     return unique[atleast2], freq[atleast2]
 
 
+@_axis_nan_policy_factory(SiegelslopesResult, default_axis=None, n_outputs=2,
+                          n_samples=_n_samples_optional_x,
+                          result_to_tuple=lambda x, _: tuple(x), paired=True,
+                          too_small=1)
 def siegelslopes(y, x=None, method="hierarchical"):
     r"""
     Computes the Siegel estimator for a set of points (x, y).
@@ -296,8 +311,12 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
+            raise ValueError("Array shapes are incompatible for broadcasting.")
+    if len(x) < 2:
+        raise ValueError("`x` and `y` must have length at least 2.")
+
     dtype = np.result_type(x, y, np.float32)  # use at least float32
     y, x = y.astype(dtype), x.astype(dtype)
     medslope, medinter = siegelslopes_pythran(y, x, method)
+    medslope, medinter = np.asarray(medslope)[()], np.asarray(medinter)[()]
     return SiegelslopesResult(slope=medslope, intercept=medinter)

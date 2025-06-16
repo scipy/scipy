@@ -1,9 +1,12 @@
+from dataclasses import dataclass
 from itertools import permutations
-import numpy as np
 import math
+import threading
+
+import numpy as np
+
 from ._continuous_distns import norm
 import scipy.stats
-from dataclasses import dataclass
 
 
 @dataclass
@@ -304,6 +307,8 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
                         method='exact')
 
     """
+    if not hasattr(_pagel_state, 'state'):
+        _pagel_state.state = _PageL()
 
     # Possible values of the method parameter and the corresponding function
     # used to evaluate the p value
@@ -405,8 +410,8 @@ def _l_p_exact(L, m, n):
     # [1] uses m, n; [5] uses n, k.
     # Switch convention here because exact calculation code references [5].
     L, n, k = int(L), int(m), int(n)
-    _pagel_state.set_k(k)
-    return _pagel_state.sf(L, n)
+    _pagel_state.state.set_k(k)
+    return _pagel_state.state.sf(L, n)
 
 
 class _PageL:
@@ -476,4 +481,6 @@ class _PageL:
 
 
 # Maintain state for faster repeat calls to page_trend_test w/ method='exact'
-_pagel_state = _PageL()
+# _PageL() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside page_trend_test().
+_pagel_state = threading.local()

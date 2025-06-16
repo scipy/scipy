@@ -101,25 +101,39 @@ variable is set:
 - `scipy.fft`
 - `scipy.io`
 - `scipy.ndimage`
+- `scipy.special`
+- `scipy.stats`
 
-Support is provided in `scipy.special` for the following functions:
-`scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
-`scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
-`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
-`scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
-`scipy.special.logit`, `scipy.special.expit`, `scipy.special.entr`,
-`scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
-and `scipy.special.chdtrc`.
+Individual functions in the above modules provide a capability table in the
+documentation like the one below. If the table is absent, the function does not
+yet support backends other than NumPy.
 
-Support is provided in `scipy.stats` for the following functions:
-`scipy.stats.describe`, `scipy.stats.moment`, `scipy.stats.skew`,
-`scipy.stats.kurtosis`, `scipy.stats.kstat`, `scipy.stats.kstatvar`,
-`scipy.stats.circmean`, `scipy.stats.circvar`, `scipy.stats.circstd`,
-`scipy.stats.entropy`, `scipy.stats.variation` , `scipy.stats.sem`,
-`scipy.stats.ttest_1samp`, `scipy.stats.pearsonr`, `scipy.stats.chisquare`,
-`scipy.stats.skewtest`, `scipy.stats.kurtosistest`, `scipy.stats.normaltest`,
-`scipy.stats.jarque_bera`, `scipy.stats.bartlett`, `scipy.stats.power_divergence`,
-and `scipy.stats.monte_carlo_test`.
+
+Example capabilities table
+--------------------------
+
+=========  =========  =========
+Library    CPU        GPU
+=========  =========  =========
+NumPy      ✅         n/a
+CuPy       n/a        ✅
+PyTorch    ✅         ✅
+JAX        ⚠️ no JIT  ⛔
+Dask       ⛔         n/a
+=========  =========  =========
+
+In the example above, the feature has some support for NumPy, CuPy, PyTorch, and JAX
+arrays, but no support for Dask arrays. Some backends, like JAX and PyTorch, natively
+support multiple devices (CPU and GPU), but SciPy support for such arrays may be
+limited; for instance, this SciPy feature is only expected to work with JAX arrays
+located on the CPU. Additionally, some backends can have major caveats; in the example
+the function will fail when running inside ``jax.jit``.
+Additional caveats may be listed in the docstring of the function.
+
+While the elements of the table marked with "n/a" are inherently out of scope, we are
+continually working on filling in the rest.
+Dask wrapping around backends other than NumPy (notably, CuPy) is currently out of scope
+but it may change in the future.
 
 Please see `the tracker issue`_ for updates.
 
@@ -236,20 +250,19 @@ large and hard-to-detect performance bottleneck.
 Adding tests
 ------------
 
+To run a test on multiple array backends, you should add the ``xp`` fixture to it,
+which is valued to the currently tested array namespace.
+
 The following pytest markers are available:
 
-* ``array_api_compatible -> xp``: use a parametrisation to run a test on
-  multiple array backends.
-* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+* ``skip_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   skip certain backends or categories of backends.
-  ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
-  marker for the skips to apply. See the fixture's docstring in ``scipy.conftest``
-  for information on how use this marker to skip tests.
-* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, exceptions=None)``:
+  See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
+  to use this marker to skip tests.
+* ``xfail_xp_backends(backend=None, reason=None, np_only=False, cpu_only=False, eager_only=False, exceptions=None)``:
   xfail certain backends or categories of backends.
-  ``@pytest.mark.usefixtures("xfail_xp_backends")`` must be used alongside this
-  marker for the xfails to apply. See the fixture's docstring in ``scipy.conftest``
-  for information on how use this marker to xfail tests.
+  See docstring of ``scipy.conftest.skip_or_xfail_xp_backends`` for information on how
+  to use this marker to xfail tests.
 * ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
   are invalid when ``SCIPY_ARRAY_API`` is enabled. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
@@ -262,29 +275,33 @@ The following pytest markers are available:
   causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
   default and only behavior, these tests (and the decorator itself) will be
   removed.
+* ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
+  all tests that use it. This is useful e.g. to select all and only such tests::
+
+    spin test -b all -m array_api_backends
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
 
+When these assertions are executed within a test that uses the ``xp`` fixture, they
+enforce that the namespaces of both the actual and desired arrays match the namespace
+which was set by the fixture. Tests without the ``xp`` fixture infer the namespace from
+the desired array. This machinery can be overridden by explicitly passing the ``xp=``
+parameter to the assertion functions.
+
 The following examples demonstrate how to use the markers::
 
-  from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
+  from scipy.conftest import skip_xp_invalid_arg
   from scipy._lib._array_api import xp_assert_close
   ...
   @pytest.mark.skip_xp_backends(np_only=True, reason='skip reason')
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
       xp_assert_close(toto(a, b), a)
   ...
-  @pytest.mark.skip_xp_backends('array_api_strict',
-                                reason='skip reason 1')
-  @pytest.mark.skip_xp_backends('cupy',
-                                reason='skip reason 2')
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
+  @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
+  @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
   def test_toto2(self, xp):
       ...
   ...
@@ -293,54 +310,60 @@ The following examples demonstrate how to use the markers::
   def test_toto_masked_array(self):
       ...
 
-Passing a custom reason to ``reason`` when ``cpu_only=True`` is unsupported
-since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
-the reason for using ``cpu_only`` is likely just that compiled code is used
-in the function(s) being tested.
-
 Passing names of backends into ``exceptions`` means that they will not be skipped
-by ``cpu_only=True``. This is useful when delegation is implemented for some,
-but not all, non-CPU backends, and the CPU code path requires conversion to NumPy
-for compiled code::
+by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
+is implemented for some, but not all, non-CPU backends, and the CPU code path
+requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.
   # All libraries using a non-CPU device will also be skipped, apart from
   # JAX, for which delegation is implemented (hence non-CPU execution is supported).
-  @pytest.mark.skip_xp_backends(cpu_only, exceptions=['jax.numpy'])
+  @pytest.mark.skip_xp_backends(cpu_only=True, exceptions=['jax.numpy'])
   @pytest.mark.skip_xp_backends('array_api_strict', reason='skip reason 1')
   @pytest.mark.skip_xp_backends('cupy', reason='skip reason 2')
-  @pytest.mark.usefixtures("skip_xp_backends")
-  @array_api_compatible
   def test_toto(self, xp):
       ...
 
-When every test function in a file has been updated for array API
-compatibility, one can reduce verbosity by telling ``pytest`` to apply the
-markers to every test function using ``pytestmark``::
-
-    from scipy.conftest import array_api_compatible
-
-    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-    skip_xp_backends = pytest.mark.skip_xp_backends
-    ...
-    @skip_xp_backends(np_only=True, reason='skip reason')
-    def test_toto1(self, xp):
-        ...
-
-After applying these markers, ``dev.py test`` can be used with the new option
+After applying these markers, ``spin test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b torch -s cluster
+  spin test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
+backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.
+
+
+Testing the JAX JIT compiler
+----------------------------
+The `JAX JIT compiler <https://jax.readthedocs.io/en/latest/jit-compilation.html>`_
+introduces special restrictions to all code wrapped by `@jax.jit`, which are not
+present when running JAX in eager mode. Notably, boolean masks in `__getitem__`
+and `.at` aren't supported, and you can't materialize the arrays by applying
+`bool()`, `float()`, `np.asarray()` etc. to them.
+
+To properly test scipy with JAX, you need to wrap the tested scipy functions
+with `@jax.jit` before they are called by the unit tests.
+To achieve this, you should tag them as follows in your test module::
+
+  from scipy._lib._lazy_testing import lazy_xp_function
+  from scipy.mymodule import toto
+
+  lazy_xp_function(toto)
+
+  def test_toto(xp):
+      a = xp.asarray([1, 2, 3])
+      b = xp.asarray([0, 2, 5])
+      # When xp==jax.numpy, toto is wrapped with @jax.jit
+      xp_assert_close(toto(a, b), a)
+
+See full documentation in `scipy/_lib/_lazy_testing.py`.
 
 
 Additional information

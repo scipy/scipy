@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
@@ -172,9 +172,6 @@ class TestBlockDiag:
         a = block_diag([2, 3], 4)
         assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, block_diag, [[[1]]])
-
     def test_no_args(self):
         a = block_diag()
         assert_equal(a.ndim, 2)
@@ -208,35 +205,6 @@ class TestBlockDiag:
                                [0, 0, 2, 3, 0, 0],
                                [0, 0, 4, 5, 0, 0],
                                [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-    def test_dep(self):
-        with pytest.deprecated_call(match="`kron`"):
-            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
 
 
 class TestHelmert:
@@ -503,8 +471,7 @@ def test_invpascal():
         # precision when n is greater than 18.  Instead we'll cast both to
         # object arrays, and then multiply.
         e = ip.astype(object).dot(p.astype(object))
-        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
-                                              (n, kind, exact))
+        assert_array_equal(e, eye(n), err_msg=f"n={n}  kind={kind!r} exact={exact!r}")
 
     kinds = ['symmetric', 'lower', 'upper']
 

@@ -63,6 +63,7 @@ Filtering
    sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
+   envelope      -- Compute the envelope of a real- or complex-valued signal.
 
    decimate      -- Downsample a signal.
    detrend       -- Remove linear and/or constant trends from data.
@@ -86,9 +87,12 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
+   firwin_2d        -- Windowed FIR filter design, with frequency response for 
+                    -- 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
+   sosfreqz      -- Digital filter frequency response for SOS format filter (legacy).
    freqz_sos     -- Digital filter frequency response for SOS format filter.
    freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    gammatone     -- FIR and IIR gammatone filter design.
@@ -265,9 +269,11 @@ Spectral analysis
    ShortTimeFFT   -- Interface for calculating the \
                      :ref:`Short Time Fourier Transform <tutorial_stft>` and \
                      its inverse.
+   closest_STFT_dual_window -- Calculate the STFT dual window of a given window \
+                               closest to a desired dual window.
    stft           -- Compute the Short Time Fourier Transform (legacy).
    istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
-   check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction (legacy).
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
 Chirp Z-transform and Zoom FFT
@@ -288,28 +294,15 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+# bring in the public functionality from private namespaces
 
-from . import _sigtools, windows
-from ._waveforms import *
-from ._max_len_seq import max_len_seq
-from ._upfirdn import upfirdn
+# mypy: ignore-errors
 
-from ._spline import (
-    sepfir2d
-)
+from ._support_alternative_backends import *
+from . import _support_alternative_backends
+__all__ = _support_alternative_backends.__all__
+del _support_alternative_backends, _signal_api, _delegators  # noqa: F821
 
-from ._spline_filters import *
-from ._filter_design import *
-from ._fir_filter_design import *
-from ._ltisys import *
-from ._lti_conversion import *
-from ._signaltools import *
-from ._savitzky_golay import savgol_coeffs, savgol_filter
-from ._spectral_py import *
-from ._short_time_fft import *
-from ._peak_finding import *
-from ._czt import *
-from .windows import get_window  # keep this one in signal namespace
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
@@ -317,9 +310,6 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
-__all__ = [
-    s for s in dir() if not s.startswith("_")
-]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

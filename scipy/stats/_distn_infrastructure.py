@@ -13,7 +13,8 @@ from itertools import zip_longest
 
 from scipy._lib import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, _lazywhere
+from scipy._lib._util import check_random_state
+import scipy._lib.array_api_extra as xpx
 
 from scipy.special import comb, entr
 
@@ -26,7 +27,7 @@ from scipy import optimize
 from scipy import integrate
 
 # to approximate the pdf of a continuous distribution given its cdf
-from scipy._lib._finite_differences import _derivative
+from scipy.stats._finite_differences import _derivative
 
 # for scipy.stats.entropy. Attempts to import just that function or file
 # have cause import problems
@@ -167,9 +168,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability density function (``pdf``):
@@ -298,9 +303,13 @@ Examples
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
 
-Calculate the first four moments:
+Get the support:
 
 %(set_vals_stmt)s
+>>> lb, ub = %(name)s.support(%(shapes)s)
+
+Calculate the first four moments:
+
 >>> mean, var, skew, kurt = %(name)s.stats(%(shapes)s, moments='mvsk')
 
 Display the probability mass function (``pmf``):
@@ -1608,6 +1617,8 @@ class _ShapeInfo:
                  inclusive=(True, True)):
         self.name = name
         self.integrality = integrality
+        self.endpoints = domain
+        self.inclusive = inclusive
 
         domain = list(domain)
         if np.isfinite(domain[0]) and not inclusive[0]:
@@ -1686,6 +1697,14 @@ class rv_continuous(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------
@@ -2002,16 +2021,18 @@ class rv_continuous(rv_generic):
     def _logcdf(self, x, *args):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
-            return _lazywhere(x < median, (x,) + args,
-                              f=lambda x, *args: np.log(self._cdf(x, *args)),
-                              f2=lambda x, *args: np.log1p(-self._sf(x, *args)))
+            return xpx.apply_where(
+                x < median, (x,) + args,
+                lambda x, *args: np.log(self._cdf(x, *args)),
+                lambda x, *args: np.log1p(-self._sf(x, *args)))
 
     def _logsf(self, x, *args):
         median = self._ppf(0.5, *args)
         with np.errstate(divide='ignore'):
-            return _lazywhere(x > median, (x,) + args,
-                              f=lambda x, *args: np.log(self._sf(x, *args)),
-                              f2=lambda x, *args: np.log1p(-self._cdf(x, *args)))
+            return xpx.apply_where(
+                x > median, (x,) + args,
+                lambda x, *args: np.log(self._sf(x, *args)),
+                lambda x, *args: np.log1p(-self._cdf(x, *args)))
 
     # generic _argcheck, _sf, _ppf, _isf, _rvs are defined
     # in rv_generic
@@ -2449,7 +2470,7 @@ class rv_continuous(rv_generic):
         args = list(args)
         Nargs = len(args)
         fixedn = []
-        names = ['f%d' % n for n in range(Nargs - 2)] + ['floc', 'fscale']
+        names = [f'f{n}' for n in range(Nargs - 2)] + ['floc', 'fscale']
         x0 = []
         for n, key in enumerate(names):
             if key in kwds:
@@ -3040,7 +3061,7 @@ class rv_continuous(rv_generic):
         cdf1 = self.cdf(x1, *args, loc=loc, scale=scale)
         # Possible optimizations (needs investigation-these might not be
         # better):
-        # * Use _lazywhere instead of np.where
+        # * Use xpx.apply_where instead of np.where
         # * Instead of cdf1 > 0.5, compare x1 to the median.
         result = np.where(cdf1 > 0.5,
                           (self.sf(x1, *args, loc=loc, scale=scale)
@@ -3183,6 +3204,14 @@ class rv_discrete(rv_generic):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+
+    Attributes
+    ----------
+    a, b : float, optional
+        Lower/upper bound of the support of the unshifted/unscaled distribution.
+        This value is unaffected by the `loc` and `scale` parameters.
+        To calculate the support of the shifted/scaled distribution,
+        use the `support` method.
 
     Methods
     -------

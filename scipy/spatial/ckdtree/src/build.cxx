@@ -13,6 +13,10 @@
 #include <stdexcept>
 #include <ios>
 
+#if defined(__cplusplus)
+using std::isinf;
+#endif
+
 #define tree_buffer_root(buf) (&(buf)[0][0])
 
 static ckdtree_intp_t
@@ -48,7 +52,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
     }
     else {
 
-        if (CKDTREE_LIKELY(_compact)) {
+        if (_compact) {
             /* Recompute hyperrectangle bounds. This should lead to a more
              * compact kd-tree but comes at the expense of larger construction
              * time. However, construction time is usually dwarfed by the
@@ -103,7 +107,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
             return partition_ptr - indices;
         };
 
-        if (CKDTREE_LIKELY(_median)) {
+        if (_median) {
             /* split on median to create a balanced tree
              * adopted from scikit-learn
              */
@@ -139,7 +143,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
             p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
 
-        if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
+        if (p == start_idx || p == end_idx) {
             // All children are equal in this dimension, try again with new bounds
             assert(!_compact);
             self->tree_buffer->pop_back();
@@ -156,7 +160,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
             return build(self, start_idx, end_idx, tmp_maxes, tmp_mins, _median, _compact);
         }
 
-        if (CKDTREE_LIKELY(_compact)) {
+        if (_compact) {
             _less = build(self, start_idx, p, maxes, mins, _median, _compact);
             _greater = build(self, p, end_idx, maxes, mins, _median, _compact);
         }

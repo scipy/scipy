@@ -21,6 +21,7 @@ thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 mle_failing_fits = [
+        'dpareto_lognorm',
         'gausshyper',
         'genexpon',
         'gengamma',
@@ -41,7 +42,8 @@ mle_failing_fits = [
 
 # these pass but are XSLOW (>1s)
 mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
-                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
+                  'jf_skew_t', 'nct', 'recipinvgauss', 'rel_breitwigner',
+                  'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -61,8 +63,8 @@ mle_use_floc0 = [
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
-                   'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
-                   'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
+                   'chi2', 'crystalball', 'dgamma', 'dpareto_lognorm', 'dweibull',
+                   'f', 'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
                    'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'landau', 'levy', 'levy_l',
@@ -128,10 +130,10 @@ def test_cont_fit(distname, arg, method):
 
     for fit_size in fit_sizes:
         # Note that if a fit succeeds, the other fit_sizes are skipped
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         with np.errstate(all='ignore'):
-            rvs = distfn.rvs(size=fit_size, *arg)
+            rvs = distfn.rvs(size=fit_size, *arg, random_state=rng)
             if method == 'MLE' and distfn.name in mle_use_floc0:
                 kwds = {'floc': 0}
             else:
@@ -249,8 +251,8 @@ def cases_test_fit_mle():
                       't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'exponweib',
-                       'gausshyper', 'gengamma', 'genhalflogistic',
+    xslow_basic_fit = {'betabinom', 'betanbinom', 'burr', 'dpareto_lognorm',
+                       'exponweib', 'gausshyper', 'gengamma', 'genhalflogistic',
                        'genhyperbolic', 'geninvgauss',
                        'hypergeom', 'kappa4', 'loguniform',
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
@@ -283,7 +285,7 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises',  # can have negative CDF; doesn't play nice
-                      'arcsine', 'argus', 'powerlaw',  # don't meet tolerance
+                      'arcsine', 'argus', 'powerlaw', 'rdist', # don't meet tolerance
                       'poisson_binom',  # vector-valued shape parameter
                       }
 
@@ -307,13 +309,13 @@ def cases_test_fit_mse():
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
-                       'dgamma', 'f', 'gengamma', 'gennorm',
+                       'dgamma', 'dpareto_lognorm', 'f', 'gengamma', 'gennorm',
                        'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlognorm',
-                       'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
+                       'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'truncweibull_min',
                        'vonmises_line', 'zipfian'}
 

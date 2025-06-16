@@ -32,11 +32,6 @@
             "cephes_lgam1p": "d->d"
         }
     },
-    "_log1pmx": {
-        "xsf_wrappers.h": {
-            "cephes_log1pmx": "d->d"
-        }
-    },
     "_sf_error_test_function": {
         "sf_error.pxd": {
             "_sf_error_test_function": "i->i"
@@ -55,11 +50,6 @@
     "_struve_power_series": {
         "xsf_wrappers.h": {
             "cephes__struve_power_series": "ddp*d->d"
-        }
-    },
-    "voigt_profile" : {
-        "_faddeeva.h++" : {
-            "faddeeva_voigt_profile": "ddd->d"
         }
     },
     "agm": {
@@ -179,12 +169,6 @@
         "_cdflib_wrappers.pxd": {
             "chndtrix": "ddd->d"        }
     },
-    "dawsn": {
-        "_faddeeva.h++": {
-            "faddeeva_dawsn": "d->d",
-            "faddeeva_dawsn_complex": "D->D"
-        }
-    },
     "_factorial": {
 	"_factorial.pxd": {
 	    "_factorial": "d->d"
@@ -223,34 +207,6 @@
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
-        }
-    },
-    "erf": {
-        "_faddeeva.h++": {
-            "faddeeva_erf": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_erf": "d->d"
-        }
-    },
-    "erfc": {
-        "_faddeeva.h++": {
-            "faddeeva_erfc_complex": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_erfc": "d->d"
-        }
-    },
-    "erfcx": {
-        "_faddeeva.h++": {
-            "faddeeva_erfcx": "d->d",
-            "faddeeva_erfcx_complex": "D->D"
-        }
-    },
-    "erfi": {
-        "_faddeeva.h++": {
-            "faddeeva_erfi": "d->d",
-            "faddeeva_erfi_complex": "D->D"
         }
     },
     "erfinv": {
@@ -363,24 +319,6 @@
             "eval_sh_legendre[double complex]": "dD->D",
             "eval_sh_legendre[double]": "dd->d",
             "eval_sh_legendre_l": "pd->d"
-        }
-    },
-    "exp10": {
-        "xsf_wrappers.h": {
-            "cephes_exp10": "d->d"
-        }
-    },
-    "exp2": {
-        "xsf_wrappers.h": {
-            "cephes_exp2": "d->d"
-        }
-    },
-    "expm1": {
-        "_cunity.pxd": {
-            "cexpm1": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_expm1": "d->d"
         }
     },
     "expn": {
@@ -537,20 +475,6 @@
             "landau_isf_double": "ddd->d"
         }
     },
-    "log1p": {
-        "_cunity.pxd": {
-            "clog1p": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "cephes_log1p": "d->d"
-        }
-    },
-    "log_ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "d->d",
-            "faddeeva_log_ndtr_complex": "D->D"
-        }
-    },
     "lpmv": {
         "xsf_wrappers.h": {
             "pmv_wrap": "ddd->d"
@@ -615,8 +539,9 @@
             "ncfdtrinc": "dddd->d"        }
     },
     "nctdtr": {
-        "_cdflib_wrappers.pxd": {
-            "nctdtr": "ddd->d"        }
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"    }
     },
     "nctdtridf": {
         "_cdflib_wrappers.pxd": {
@@ -629,16 +554,9 @@
         }
     },
     "nctdtrit": {
-        "_cdflib_wrappers.pxd": {
-            "nctdtrit": "ddd->d"
-        }
-    },
-    "ndtr": {
-        "_faddeeva.h++": {
-            "faddeeva_ndtr": "D->D"
-        },
-        "xsf_wrappers.h": {
-            "xsf_ndtr": "d->d"
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
         }
     },
     "ndtri": {
@@ -792,27 +710,10 @@
             "xsf_tukeylambdacdf": "dd->d"
         }
     },
-    "wofz": {
-        "_faddeeva.h++": {
-            "faddeeva_w": "D->D"
-        }
-    },
     "wrightomega": {
         "_wright.h++": {
             "wrightomega": "D->D",
             "wrightomega_real": "d->d"
-        }
-    },
-    "xlog1py": {
-        "_xlogy.pxd": {
-            "xlog1py[double]": "dd->d",
-            "xlog1py[double_complex]": "DD->D"
-        }
-    },
-    "xlogy": {
-        "_xlogy.pxd": {
-            "xlogy[double]": "dd->d",
-            "xlogy[double_complex]": "DD->D"
         }
     },
     "yn": {
@@ -936,22 +837,10 @@
             "ncf_kurtosis_excess_double": "ddd->d"
         }
     },
-    "_nct_cdf": {
-        "boost_special_functions.h++": {
-            "nct_cdf_float": "fff->f",
-            "nct_cdf_double": "ddd->d"
-        }
-    },
     "_nct_pdf": {
         "boost_special_functions.h++": {
             "nct_pdf_float": "fff->f",
             "nct_pdf_double": "ddd->d"
-        }
-    },
-    "_nct_ppf": {
-        "boost_special_functions.h++": {
-            "nct_ppf_float": "fff->f",
-            "nct_ppf_double": "ddd->d"
         }
     },
     "_nct_sf": {

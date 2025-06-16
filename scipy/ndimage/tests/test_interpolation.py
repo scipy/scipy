@@ -3,10 +3,10 @@ import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
+    _asarray, assert_array_almost_equal,
+    is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
-    assert_array_almost_equal,
 )
-from scipy._lib._array_api import is_cupy, is_jax, _asarray, array_namespace
 
 import pytest
 from pytest import raises as assert_raises
@@ -14,10 +14,9 @@ import scipy.ndimage as ndimage
 
 from . import types
 
-from scipy.conftest import array_api_compatible
 skip_xp_backends = pytest.mark.skip_xp_backends
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends"),
-              skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'],)]
+xfail_xp_backends = pytest.mark.xfail_xp_backends
+pytestmark = [skip_xp_backends(cpu_only=True, exceptions=['cupy', 'jax.numpy'])]
 
 
 eps = 1e-12
@@ -91,14 +90,13 @@ class TestBoundaries:
         np_data = np.arange(-6, 7, dtype=np.float64)
         data = xp.asarray(np_data)
         x = xp.asarray(np.linspace(-8, 15, num=1000))
-        newaxis = array_namespace(x).newaxis
-        y = ndimage.map_coordinates(data, x[newaxis, ...], order=order, mode=mode)
+        y = ndimage.map_coordinates(data, x[xp.newaxis, ...], order=order, mode=mode)
 
         # compute expected value using explicit padding via np.pad
         npad = 32
         pad_mode = ndimage_to_numpy_mode.get(mode)
         padded = xp.asarray(np.pad(np_data, npad, mode=pad_mode))
-        coords = xp.asarray(npad + x)[newaxis, ...]
+        coords = xp.asarray(npad + x)[xp.newaxis, ...]
         expected = ndimage.map_coordinates(padded, coords, order=order, mode=mode)
 
         atol = 1e-5 if mode == 'grid-constant' else 1e-12
@@ -121,7 +119,8 @@ class TestSpline:
         out = ndimage.spline_filter(data, order=order)
         assert_array_almost_equal(out, xp.asarray([1]))
 
-    @skip_xp_backends(np_only=True, reason='output=dtype is numpy-specific')
+    @skip_xp_backends(np_only=True, exceptions=["cupy"],
+                      reason='output=dtype is numpy-specific')
     def test_spline03(self, dtype, order, xp):
         dtype = getattr(xp, dtype)
         data = xp.ones([], dtype=dtype)
@@ -199,8 +198,7 @@ class TestGeometricTransform:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
 
@@ -294,54 +292,58 @@ class TestGeometricTransform:
         assert_array_almost_equal(out, xp.asarray([1, 2, 3, 4], dtype=out.dtype))
 
     def test_geometric_transform15(self, order, xp):
-        data = [1, 2, 3, 4]
+        data = xp.asarray([1, 2, 3, 4])
 
         def mapping(x):
             return (x[0] / 2,)
 
         out = ndimage.geometric_transform(data, mapping, [8], order=order)
-        assert_array_almost_equal(out[::2], [1, 2, 3, 4])
+        assert_array_almost_equal(out[::2], xp.asarray([1, 2, 3, 4]))
 
     def test_geometric_transform16(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9.0, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0], x[1] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (3, 2),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 3], [5, 7], [9, 11]])
+        assert_array_almost_equal(out, xp.asarray([[1, 3], [5, 7], [9, 11]]))
 
     def test_geometric_transform17(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] * 2, x[1])
 
         out = ndimage.geometric_transform(data, mapping, (1, 4),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 2, 3, 4]])
+        assert_array_almost_equal(out, xp.asarray([[1, 2, 3, 4]]))
 
     def test_geometric_transform18(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] * 2, x[1] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (1, 2),
                                           order=order)
-        assert_array_almost_equal(out, [[1, 3]])
+        assert_array_almost_equal(out, xp.asarray([[1, 3]]))
 
     def test_geometric_transform19(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0], x[1] / 2)
@@ -354,6 +356,7 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] / 2, x[1])
@@ -366,6 +369,7 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (x[0] / 2, x[1] / 2)
@@ -375,9 +379,10 @@ class TestGeometricTransform:
         assert_array_almost_equal(out[::2, ::2], data)
 
     def test_geometric_transform22(self, order, xp):
-        data = xp.asarray([[1, 2, 3, 4],
-                           [5, 6, 7, 8],
-                           [9, 10, 11, 12]], dtype=xp.float64)
+        data = [[1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12]]
+        data = xp.asarray(data, dtype=xp.float64)
 
         def mapping1(x):
             return (x[0] / 2, x[1] / 2)
@@ -395,18 +400,19 @@ class TestGeometricTransform:
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x):
             return (1, x[0] * 2)
 
         out = ndimage.geometric_transform(data, mapping, (2,), order=order)
-        out = out.astype(np.int32)
-        assert_array_almost_equal(out, [5, 7])
+        assert_array_almost_equal(out, xp.asarray([5, 7]))
 
     def test_geometric_transform24(self, order, xp):
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
+        data = xp.asarray(data)
 
         def mapping(x, a, b):
             return (a, x[0] * b)
@@ -414,7 +420,7 @@ class TestGeometricTransform:
         out = ndimage.geometric_transform(
             data, mapping, (2,), order=order, extra_arguments=(1,),
             extra_keywords={'b': 2})
-        assert_array_almost_equal(out, [5, 7])
+        assert_array_almost_equal(out, xp.asarray([5, 7]))
 
 
 @skip_xp_backends("cupy", reason="CuPy does not have geometric_transform")
@@ -450,7 +456,7 @@ class TestGeometricTransformExtra:
         x = np.arange(144, dtype=float).reshape(12, 12)
         npad = 24
         pad_mode = ndimage_to_numpy_mode.get(mode)
-        x_padded = np.pad(x, npad, mode=pad_mode) 
+        x_padded = np.pad(x, npad, mode=pad_mode)
 
         x = xp.asarray(x)
         x_padded = xp.asarray(x_padded)
@@ -509,8 +515,7 @@ class TestMapCoordinates:
         expected = xp.asarray([[0, 0, 0, 0],
                                [0, 4, 1, 3],
                                [0, 7, 6, 8]])
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data = data - 1j * data
             expected = expected - 1j * expected
 
@@ -596,6 +601,7 @@ class TestMapCoordinates:
         assert out.dtype is np.dtype('f')
         assert_array_almost_equal(out, xp.asarray([[1]]))
 
+    @pytest.mark.skip_xp_backends(cpu_only=True)
     @pytest.mark.skipif('win32' in sys.platform or np.intp(0).itemsize < 8,
                         reason='do not run on 32 bit or windows '
                                '(no sparse memory)')
@@ -650,8 +656,7 @@ class TestAffineTransform:
         expected = xp.asarray([[0, 1, 1, 1],
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.affine_transform(data, xp.asarray([[1, 0], [0, 1]]),
@@ -796,11 +801,9 @@ class TestAffineTransform:
                                        (3, 4), order=order)
         assert_array_almost_equal(out, data)
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8394")
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform20(self, order, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8394")
-
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
@@ -809,11 +812,9 @@ class TestAffineTransform:
                                        order=order)
         assert_array_almost_equal(out, xp.asarray([1, 3]))
 
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8394")
     @pytest.mark.parametrize('order', range(0, 6))
     def test_affine_transform21(self, order, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8394")
-
         data = [[1, 2, 3, 4],
                 [5, 6, 7, 8],
                 [9, 10, 11, 12]]
@@ -875,9 +876,8 @@ class TestAffineTransform:
         tform_original = xp.eye(2)
         offset_original = -xp.ones((2, 1))
 
-        concat = array_namespace(tform_original, offset_original).concat
-        tform_h1 = concat((tform_original, offset_original), axis=1)  # hstack
-        tform_h2 = concat( (tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
+        tform_h1 = xp.concat((tform_original, offset_original), axis=1)  # hstack
+        tform_h2 = xp.concat((tform_h1, xp.asarray([[0.0, 0, 1]])), axis=0)  # vstack
 
         offs = [float(x) for x in xp.reshape(offset_original, (-1,))]
 
@@ -893,17 +893,14 @@ class TestAffineTransform:
                                                        [0, 4, 1, 3],
                                                        [0, 7, 6, 8]]))
 
+    @xfail_xp_backends("cupy", reason="does not raise")
     def test_affine_transform27(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("CuPy does not raise")
-
         # test valid homogeneous transformation matrix
         data = xp.asarray([[4, 1, 3, 2],
                            [7, 6, 8, 5],
                            [3, 5, 3, 6]])
-        concat = array_namespace(data).concat
-        tform_h1 = concat( (xp.eye(2), -xp.ones((2, 1))) , axis=1)  # vstack
-        tform_h2 = concat((tform_h1, xp.asarray([[5.0, 2, 1]])), axis=0)  # hstack
+        tform_h1 = xp.concat((xp.eye(2), -xp.ones((2, 1))) , axis=1)  # vstack
+        tform_h2 = xp.concat((tform_h1, xp.asarray([[5.0, 2, 1]])), axis=0)  # hstack
 
         assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
 
@@ -1038,8 +1035,7 @@ class TestShift:
         expected = xp.asarray([[0, 1, 1, 1],
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.shift(data, [0, 1], order=order)
@@ -1057,8 +1053,7 @@ class TestShift:
                                [0, 1, 1, 1],
                                [0, 1, 1, 1]], dtype=dtype)
 
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if np_compat.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         cval = 5.0
@@ -1237,8 +1232,7 @@ class TestZoom:
         data = xp.asarray([[1, 2, 3, 4],
                            [5, 6, 7, 8],
                            [9, 10, 11, 12]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
@@ -1306,6 +1300,7 @@ class TestZoom:
         )
 
     @pytest.mark.parametrize('mode', ['constant', 'wrap'])
+    @pytest.mark.thread_unsafe
     def test_zoom_grid_mode_warnings(self, mode, xp):
         # Warn on use of non-grid modes when grid_mode is True
         x = xp.reshape(xp.arange(9, dtype=xp.float64), (3, 3))
@@ -1313,7 +1308,8 @@ class TestZoom:
                           match="It is recommended to use mode"):
             ndimage.zoom(x, 2, mode=mode, grid_mode=True),
 
-    @skip_xp_backends(np_only=True, reason='inplace output= is numpy-specific')
+    @skip_xp_backends("dask.array", reason="output=array requires buffer view")
+    @skip_xp_backends("jax.numpy", reason="output=array requires buffer view")
     def test_zoom_output_shape(self, xp):
         """Ticket #643"""
         x = xp.reshape(xp.arange(12), (3, 4))
@@ -1326,6 +1322,23 @@ class TestZoom:
         actual = ndimage.zoom(a, np.array(factor))
         expected = ndimage.zoom(a, factor)
         xp_assert_close(actual, expected)
+
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    def test_zoom_1_gh20999(self, xp):
+        # gh-20999 reported that zoom with `zoom=1` (or sequence of ones)
+        # introduced noise. Check that this is resolved.
+        x = xp.eye(3)
+        xp_assert_equal(ndimage.zoom(x, 1), x)
+        xp_assert_equal(ndimage.zoom(x, (1, 1)), x)
+
+    @xfail_xp_backends("cupy", reason="CuPy `zoom` needs similar fix.")
+    @skip_xp_backends("jax.numpy", reason="read-only backend")
+    @xfail_xp_backends("dask.array", reason="numpy round-trip")
+    def test_zoom_1_gh20999_output(self, xp):
+        x = xp.eye(3)
+        output = xp.zeros_like(x)
+        ndimage.zoom(x, 1, output=output)
+        xp_assert_equal(output, x)
 
 
 class TestRotate:
@@ -1362,8 +1375,7 @@ class TestRotate:
                                [0, 1, 0],
                                [0, 1, 0],
                                [0, 0, 0]], dtype=dtype)
-        isdtype = array_namespace(data).isdtype
-        if isdtype(data.dtype, 'complex floating'):
+        if xp.isdtype(data.dtype, 'complex floating'):
             data -= 1j * data
             expected -= 1j * expected
         out = ndimage.rotate(data, 90, order=order)
@@ -1417,14 +1429,13 @@ class TestRotate:
         data = xp.asarray([[[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        data = permute_dims(data, (2, 1, 0))
+        data = xp.permute_dims(data, (2, 1, 0))
         expected = xp.asarray([[[0, 0, 0],
                                 [0, 1, 0],
                                 [0, 1, 0],
                                 [0, 0, 0],
                                 [0, 0, 0]]] * 2, dtype=xp.float64)
-        expected = permute_dims(expected, (2, 1, 0))
+        expected = xp.permute_dims(expected, (2, 1, 0))
         out = ndimage.rotate(data, 90, axes=(0, 1), order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1433,13 +1444,11 @@ class TestRotate:
         data = xp.asarray([[[0, 0, 0, 0, 0],
                             [0, 1, 1, 0, 0],
                             [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        data = permute_dims(data, (2, 1, 0))  # == np.transpose
+        data = xp.permute_dims(data, (2, 1, 0))  # == np.transpose
         expected = xp.asarray([[[0, 0, 1, 0, 0],
                                 [0, 0, 1, 0, 0],
                                 [0, 0, 0, 0, 0]]] * 2, dtype=xp.float64)
-        permute_dims = array_namespace(data).permute_dims
-        expected = permute_dims(expected, (2, 1, 0))
+        expected = xp.permute_dims(expected, (2, 1, 0))
         out = ndimage.rotate(data, 90, axes=(0, 1), reshape=False, order=order)
         assert_array_almost_equal(out, expected)
 
@@ -1474,10 +1483,9 @@ class TestRotate:
         #assert_array_almost_equal(out, expected)
         xp_assert_close(out, expected, rtol=1e-6, atol=2e-6)
 
-    def test_rotate_exact_180(self, xp):
-        if is_cupy(xp):
-            pytest.xfail("https://github.com/cupy/cupy/issues/8400")
 
-        a = np.tile(xp.arange(5), (5, 1))
+    @xfail_xp_backends("cupy", reason="https://github.com/cupy/cupy/issues/8400")
+    def test_rotate_exact_180(self, xp):
+        a = xp.asarray(np.tile(np.arange(5), (5, 1)))
         b = ndimage.rotate(ndimage.rotate(a, 180), -180)
         xp_assert_equal(a, b)

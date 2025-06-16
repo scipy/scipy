@@ -11,6 +11,7 @@ from importlib import import_module
 
 import pytest
 
+import numpy as np
 import scipy
 
 from scipy.conftest import xp_available_backends
@@ -50,7 +51,6 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "linalg.lapack",
     "linalg.cython_lapack",
     "linalg.interpolative",
-    "misc",
     "ndimage",
     "odr",
     "optimize",
@@ -123,6 +123,7 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.matfuncs',
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
+    'scipy.misc',
     'scipy.misc.common',
     'scipy.misc.doccer',
     'scipy.ndimage.filters',
@@ -222,6 +223,7 @@ SKIP_LIST = [
 # while attempting to import each discovered package.
 # For now, `ignore_errors` only ignores what is necessary, but this could be expanded -
 # for example, to all errors from private modules or git subpackages - if desired.
+@pytest.mark.thread_unsafe
 def test_all_modules_are_expected():
     """
     Test that we don't add anything that looks like a new public module by
@@ -242,14 +244,16 @@ def test_all_modules_are_expected():
 
     modnames = []
 
-    for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
-                                               prefix=scipy.__name__ + '.',
-                                               onerror=ignore_errors):
-        if is_unexpected(modname) and modname not in SKIP_LIST:
-            # We have a name that is new.  If that's on purpose, add it to
-            # PUBLIC_MODULES.  We don't expect to have to add anything to
-            # PRIVATE_BUT_PRESENT_MODULES.  Use an underscore in the name!
-            modnames.append(modname)
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,"scipy.misc")
+        for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
+                                                   prefix=scipy.__name__ + '.',
+                                                   onerror=ignore_errors):
+            if is_unexpected(modname) and modname not in SKIP_LIST:
+                # We have a name that is new.  If that's on purpose, add it to
+                # PUBLIC_MODULES.  We don't expect to have to add anything to
+                # PRIVATE_BUT_PRESENT_MODULES.  Use an underscore in the name!
+                modnames.append(modname)
 
     if modnames:
         raise AssertionError(f'Found unexpected modules: {modnames}')
@@ -291,8 +295,10 @@ def test_all_modules_are_expected_2():
                         members.append(fullobjname)
 
         return members
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, "scipy.misc")
+        unexpected_members = find_unexpected_members("scipy")
 
-    unexpected_members = find_unexpected_members("scipy")
     for modname in PUBLIC_MODULES:
         unexpected_members.extend(find_unexpected_members(modname))
 
@@ -338,6 +344,7 @@ def test_api_importable():
                              f"{module_names}")
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize(("module_name", "correct_module"),
                          [('scipy.constants.codata', None),
                           ('scipy.constants.constants', None),
@@ -350,8 +357,10 @@ def test_api_importable():
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),
                           ('scipy.integrate.vode', None),
+                          ('scipy.interpolate.dfitpack', None),
                           ('scipy.interpolate.fitpack', None),
                           ('scipy.interpolate.fitpack2', None),
+                          ('scipy.interpolate.interpnd', None),
                           ('scipy.interpolate.interpolate', None),
                           ('scipy.interpolate.ndgriddata', None),
                           ('scipy.interpolate.polyint', None),
@@ -380,7 +389,6 @@ def test_api_importable():
                           ('scipy.linalg.matfuncs', None),
                           ('scipy.linalg.misc', None),
                           ('scipy.linalg.special_matrices', None),
-                          ('scipy.misc.common', None),
                           ('scipy.ndimage.filters', None),
                           ('scipy.ndimage.fourier', None),
                           ('scipy.ndimage.interpolation', None),
@@ -406,9 +414,21 @@ def test_api_importable():
                           ('scipy.signal.ltisys', None),
                           ('scipy.signal.signaltools', None),
                           ('scipy.signal.spectral', None),
+                          ('scipy.signal.spline', None),
                           ('scipy.signal.waveforms', None),
                           ('scipy.signal.wavelets', None),
                           ('scipy.signal.windows.windows', 'windows'),
+                          ('scipy.sparse.base', None),
+                          ('scipy.sparse.bsr', None),
+                          ('scipy.sparse.compressed', None),
+                          ('scipy.sparse.construct', None),
+                          ('scipy.sparse.coo', None),
+                          ('scipy.sparse.csc', None),
+                          ('scipy.sparse.csr', None),
+                          ('scipy.sparse.data', None),
+                          ('scipy.sparse.dia', None),
+                          ('scipy.sparse.dok', None),
+                          ('scipy.sparse.extract', None),
                           ('scipy.sparse.lil', None),
                           ('scipy.sparse.linalg.dsolve', 'linalg'),
                           ('scipy.sparse.linalg.eigen', 'linalg'),
@@ -459,34 +479,5 @@ def test_private_but_present_deprecation(module_name, correct_module):
     # Attributes that were not in `module_name` get an error notifying the user
     # that the attribute is not in `module_name` and that `module_name` is deprecated.
     message = f"`{module_name}` is deprecated..."
-    with pytest.raises(AttributeError, match=message):
-        getattr(module, "ekki")
-
-
-def test_misc_doccer_deprecation():
-    # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
-    # for imports from private modules were misleading.
-    # Check that this is resolved.
-    # `test_private_but_present_deprecation` cannot be used since `correct_import`
-    # is a different subpackage (`_lib` instead of `misc`).
-    module = import_module('scipy.misc.doccer')
-    correct_import = import_module('scipy._lib.doccer')
-
-    # Attributes that were formerly in `scipy.misc.doccer` can still be imported from
-    # `scipy.misc.doccer`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is in `scipy._lib.doccer` or not.
-    for attr_name in module.__all__:
-        attr = getattr(correct_import, attr_name, None)
-        if attr is None:
-            message = f"`scipy.misc.{attr_name}` is deprecated..."
-        else:
-            message = f"Please import `{attr_name}` from the `scipy._lib.doccer`..."
-        with pytest.deprecated_call(match=message):
-            getattr(module, attr_name)
-
-    # Attributes that were not in `scipy.misc.doccer` get an error
-    # notifying the user that the attribute is not in `scipy.misc.doccer`
-    # and that `scipy.misc.doccer` is deprecated.
-    message = "`scipy.misc.doccer` is deprecated..."
     with pytest.raises(AttributeError, match=message):
         getattr(module, "ekki")

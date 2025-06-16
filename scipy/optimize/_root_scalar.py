@@ -278,7 +278,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
         raise ValueError(f'Unknown solver {meth}') from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
-        if not isinstance(bracket, (list, tuple, np.ndarray)):
+        if not isinstance(bracket, list | tuple | np.ndarray):
             raise ValueError(f'Bracket needed for {method}')
 
         a, b = bracket[:2]

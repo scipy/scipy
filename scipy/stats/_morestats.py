@@ -1,6 +1,6 @@
-from __future__ import annotations
 import math
 import warnings
+import threading
 from collections import namedtuple
 
 import numpy as np
@@ -11,18 +11,24 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
+    is_marray,
     xp_size,
-    xp_moveaxis_to_end,
     xp_vector_norm,
+    xp_promote,
+    xp_result_type,
+    xp_device,
+    xp_ravel,
+    _length_nonmasked,
 )
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
+from ._stats_py import (_get_pvalue, SignificanceResult,  # noqa:F401
                         _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
@@ -222,7 +228,7 @@ def mvsdist(data):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2, *, axis=None):
     r"""
@@ -309,7 +315,7 @@ def kstat(data, n=2, *, axis=None):
         data = xp.reshape(data, (-1,))
         axis = 0
 
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -327,7 +333,7 @@ def kstat(data, n=2, *, axis=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
@@ -375,7 +381,7 @@ def kstatvar(data, n=2, *, axis=None):
     if axis is None:
         data = xp.reshape(data, (-1,))
         axis = 0
-    N = data.shape[axis]
+    N = _length_nonmasked(data, axis, xp=xp)
 
     if n == 1:
         return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
@@ -854,26 +860,24 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     return svals, ppcc
 
 
-def _log_mean(logx):
+def _log_mean(logx, axis):
     # compute log of mean of x from log(x)
-    res = special.logsumexp(logx, axis=0) - math.log(logx.shape[0])
-    return res
+    return (
+        special.logsumexp(logx, axis=axis, keepdims=True)
+        - math.log(logx.shape[axis])
+    )
 
 
-def _log_var(logx, xp):
+def _log_var(logx, xp, axis):
     # compute log of variance of x from log(x)
-    logmean = _log_mean(logx)
-    # get complex dtype with component dtypes same as `logx` dtype;
-    # see data-apis/array-api#841
-    dtype = xp.result_type(logx.dtype, xp.complex64)
-    pij = xp.full(logx.shape, pi * 1j, dtype=dtype)
-    logxmu = special.logsumexp(xp.stack((logx, logmean + pij)), axis=0)
-    res = (xp.real(xp.asarray(special.logsumexp(2 * logxmu, axis=0)))
-           - math.log(logx.shape[0]))
-    return res
+    logmean = xp.broadcast_to(_log_mean(logx, axis=axis), logx.shape)
+    ones = xp.ones_like(logx)
+    logxmu, _ = special.logsumexp(xp.stack((logx, logmean), axis=0), axis=0,
+                                  b=xp.stack((ones, -ones), axis=0), return_sign=True)
+    return special.logsumexp(2 * logxmu, axis=axis) - math.log(logx.shape[axis])
 
 
-def boxcox_llf(lmb, data):
+def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
     r"""The boxcox log-likelihood function.
 
     Parameters
@@ -884,6 +888,26 @@ def boxcox_llf(lmb, data):
         Data to calculate Box-Cox log-likelihood for.  If `data` is
         multi-dimensional, the log-likelihood is calculated along the first
         axis.
+    axis : int, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in a
+        corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    nan_policy : {'propagate', 'omit', 'raise'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with size one. With this option,
+        the result will broadcast correctly against the input array.
 
     Returns
     -------
@@ -897,14 +921,17 @@ def boxcox_llf(lmb, data):
 
     Notes
     -----
-    The Box-Cox log-likelihood function is defined here as
+    The Box-Cox log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = (\lambda - 1) \sum_i(\log(x_i)) -
-              N/2 \log(\sum_i (y_i - \bar{y})^2 / N),
+        l = (\lambda - 1) \sum_i^N \log(x_i) -
+              \frac{N}{2} \log\left(\sum_i^N (y_i - \bar{y})^2 / N\right),
 
-    where ``y`` is the Box-Cox transformed input data ``x``.
+    where :math:`N` is the number of data points ``data`` and :math:`y` is the Box-Cox
+    transformed input data.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     Examples
     --------
@@ -953,32 +980,40 @@ def boxcox_llf(lmb, data):
     >>> plt.show()
 
     """
-    xp = array_namespace(data)
-    data = xp.asarray(data)
-    N = data.shape[0]
-    if N == 0:
-        return xp.nan
+    # _axis_nan_policy decorator does not currently support these for non-NumPy arrays
+    kwargs = {}
+    if keepdims is not False:
+        kwargs[keepdims] = keepdims
+    if nan_policy != 'propagate':
+        kwargs[nan_policy] = nan_policy
+    return _boxcox_llf(data, lmb=lmb, axis=axis, **kwargs)
 
-    dt = data.dtype
-    if xp.isdtype(dt, 'integral'):
-        data = xp.asarray(data, dtype=xp.float64)
-        dt = xp.float64
-    
+
+@_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
+                          result_to_tuple=lambda x, _: (x,))
+def _boxcox_llf(data, axis=0, *, lmb):
+    xp = array_namespace(data)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
+    N = data.shape[axis]
+    if N == 0:
+        return _get_nan(data, xp=xp)
+
     logdata = xp.log(data)
 
     # Compute the variance of the transformed data.
     if lmb == 0:
-        logvar = xp.log(xp.var(logdata, axis=0))
+        logvar = xp.log(xp.var(logdata, axis=axis))
     else:
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
-        logvar = _log_var(logx, xp) - 2 * math.log(abs(lmb))
+        logvar = _log_var(logx, xp, axis) - 2 * math.log(abs(lmb))
 
-    res = (lmb - 1) * xp.sum(logdata, axis=0) - N/2 * logvar
-    res = xp.astype(res, dt)
+    res = (lmb - 1) * xp.sum(logdata, axis=axis) - N/2 * logvar
+    res = xp.astype(res, data.dtype, copy=False)  # compensate for NumPy <2.0
     res = res[()] if res.ndim == 0 else res
     return res
 
@@ -1082,10 +1117,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     Notes
     -----
-    The Box-Cox transform is given by::
+    The Box-Cox transform is given by:
 
-        y = (x**lmbda - 1) / lmbda,  for lmbda != 0
-            log(x),                  for lmbda = 0
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{x^\lambda - 1}{\lambda}, &\text{for } \lambda \neq 0
+        \log(x),                       &\text{for } \lambda = 0
+        \end{cases}
 
     `boxcox` requires the input data to be positive.  Sometimes a Box-Cox
     transformation provides a shift parameter to achieve this; `boxcox` does
@@ -1097,9 +1137,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     .. math::
 
-        llf(\hat{\lambda}) - llf(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
+        l(\hat{\lambda}) - l(\lambda) < \frac{1}{2}\chi^2(1 - \alpha, 1),
 
-    with ``llf`` the log-likelihood function and :math:`\chi^2` the chi-squared
+    with :math:`l` the log-likelihood function and :math:`\chi^2` the chi-squared
     function.
 
     References
@@ -1538,12 +1578,24 @@ def yeojohnson(x, lmbda=None):
 
     Notes
     -----
-    The Yeo-Johnson transform is given by::
+    The Yeo-Johnson transform is given by:
 
-        y = ((x + 1)**lmbda - 1) / lmbda,                for x >= 0, lmbda != 0
-            log(x + 1),                                  for x >= 0, lmbda = 0
-            -((-x + 1)**(2 - lmbda) - 1) / (2 - lmbda),  for x < 0, lmbda != 2
-            -log(-x + 1),                                for x < 0, lmbda = 2
+    .. math::
+
+        y =
+        \begin{cases}
+        \frac{(x + 1)^\lambda - 1}{\lambda},
+        &\text{for } x \geq 0, \lambda \neq 0
+        \\
+        \log(x + 1),
+        &\text{for } x \geq 0, \lambda = 0
+        \\
+        -\frac{(-x + 1)^{2 - \lambda} - 1}{2 - \lambda},
+        &\text{for } x < 0, \lambda \neq 2
+        \\
+        -\log(-x + 1),
+        &\text{for } x < 0, \lambda = 2
+        \end{cases}
 
     Unlike `boxcox`, `yeojohnson` does not require the input data to be
     positive.
@@ -1651,15 +1703,18 @@ def yeojohnson_llf(lmb, data):
 
     Notes
     -----
-    The Yeo-Johnson log-likelihood function is defined here as
+    The Yeo-Johnson log-likelihood function :math:`l` is defined here as
 
     .. math::
 
-        llf = -N/2 \log(\hat{\sigma}^2) + (\lambda - 1)
-              \sum_i \text{ sign }(x_i)\log(|x_i| + 1)
+        l = -\frac{N}{2} \log(\hat{\sigma}^2) + (\lambda - 1)
+              \sum_i^N \text{sign}(x_i) \log(|x_i| + 1)
 
-    where :math:`\hat{\sigma}^2` is estimated variance of the Yeo-Johnson
-    transformed input data ``x``.
+    where :math:`N` is the number of data points :math:`x`=``data`` and
+    :math:`\hat{\sigma}^2` is the estimated variance of the Yeo-Johnson transformed
+    input data :math:`x`.
+    This corresponds to the *profile log-likelihood* of the original data :math:`x`
+    with some constant terms dropped.
 
     .. versionadded:: 1.2.0
 
@@ -2629,7 +2684,9 @@ class _ABW:
 
 
 # Maintain state for faster repeat calls to ansari w/ method='exact'
-_abw_state = _ABW()
+# _ABW() is calculated once per thread and stored as an attribute on
+# this thread-local variable inside ansari().
+_abw_state = threading.local()
 
 
 @_axis_nan_policy_factory(AnsariResult, n_samples=2)
@@ -2740,6 +2797,10 @@ def ansari(x, y, alternative='two-sided'):
     if alternative not in {'two-sided', 'greater', 'less'}:
         raise ValueError("'alternative' must be 'two-sided',"
                          " 'greater', or 'less'.")
+
+    if not hasattr(_abw_state, 'a'):
+        _abw_state.a = _ABW()
+
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
@@ -2760,14 +2821,14 @@ def ansari(x, y, alternative='two-sided'):
         warnings.warn("Ties preclude use of exact statistic.", stacklevel=2)
     if exact:
         if alternative == 'two-sided':
-            pval = 2.0 * np.minimum(_abw_state.cdf(AB, n, m),
-                                    _abw_state.sf(AB, n, m))
+            pval = 2.0 * np.minimum(_abw_state.a.cdf(AB, n, m),
+                                    _abw_state.a.sf(AB, n, m))
         elif alternative == 'greater':
             # AB statistic is _smaller_ when ratio of scales is larger,
             # so this is the opposite of the usual calculation
-            pval = _abw_state.cdf(AB, n, m)
+            pval = _abw_state.a.cdf(AB, n, m)
         else:
-            pval = _abw_state.sf(AB, n, m)
+            pval = _abw_state.a.sf(AB, n, m)
         return AnsariResult(AB, min(1.0, pval))
 
     # otherwise compute normal approximation
@@ -2877,27 +2938,32 @@ def bartlett(*samples, axis=0):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
-    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
+    if axis is None:
+        samples = [xp_ravel(sample) for sample in samples]
+    else:
+        samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+        samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+                     dtype=sample.dtype, device=xp_device(sample))
+          for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
     Ni = xp.concat(Ni, axis=0)
+    Ni = xpx.at(Ni)[Ni == 0].set(xp.nan)
     ssq = xp.concat(ssq, axis=0)
-    # sum dtype can be removed when 2023.12 rules kick in
     dtype = Ni.dtype
-    Ntot = xp.sum(Ni, axis=0, dtype=dtype)
+    Ntot = xp.sum(Ni, axis=0)
     spsq = xp.sum((Ni - 1)*ssq, axis=0, dtype=dtype) / (Ntot - k)
     numer = ((Ntot - k) * xp.log(spsq)
              - xp.sum((Ni - 1)*xp.log(ssq), axis=0, dtype=dtype))
     denom = (1 + 1/(3*(k - 1))
-             * ((xp.sum(1/(Ni - 1), axis=0, dtype=dtype)) - 1/(Ntot - k)))
+             * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
-    chi2 = _SimpleChi2(xp.asarray(k-1))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(T)))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
     T = xp.clip(T, min=0., max=xp.inf)
@@ -3443,7 +3509,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
-def wilcoxon_result_unpacker(res):
+def wilcoxon_result_unpacker(res, _):
     if hasattr(res, 'zstatistic'):
         return res.statistic, res.pvalue, res.zstatistic
     else:
@@ -3577,13 +3643,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       and ``method='exact'`` is preferred (at the cost of additional
       execution time).
 
-    - The default, ``method='auto'``, selects between the two: when
-      ``len(d) <= 50`` and there are no zeros and no ties, the exact method
-      is used; if the sample size is small and there are zeros or ties, the
-      p-value is computed using `permutation_test`;
-      otherwise, the approximate method is used. The p-value computed by
-      the permutation test is deterministic since it is only used if the
-      sample size is small enough to iterate over all possible outcomes.
+    - The default, ``method='auto'``, selects between the two:
+      ``method='exact'`` is used when ``len(d) <= 50``, and
+      ``method='asymptotic'`` is used otherwise.
 
     The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
@@ -3592,9 +3654,20 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     for more accurate comparison against the standard normal, but still,
     for finite sample sizes, the standard normal is only an approximation of
     the true null distribution of the z-statistic. For such situations, the
-    `method` parameter also accepts instances `PermutationMethod`. In this
+    `method` parameter also accepts instances of `PermutationMethod`. In this
     case, the p-value is computed using `permutation_test` with the provided
     configuration options and other appropriate settings.
+
+    The presence of ties and zeros affects the resolution of ``method='auto'``
+    accordingly: exhasutive permutations are performed when ``len(d) <= 13``,
+    and the asymptotic method is used otherwise. Note that they asymptotic
+    method may not be very accurate even for ``len(d) > 14``; the threshold
+    was chosen as a compromise between execution time and accuracy under the
+    constraint that the results must be deterministic. Consider providing an
+    instance of `PermutationMethod` method manually, choosing the
+    ``n_resamples`` parameter to balance time constraints and accuracy
+    requirements.
+
     Please also note that in the edge case that all elements of ``d`` are zero,
     the p-value relying on the normal approximaton cannot be computed (NaN)
     if ``zero_method='wilcox'`` or ``zero_method='pratt'``.
@@ -3857,16 +3930,15 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):
         if d.size == 0:
-            raise ValueError("Sample %d is empty. All samples must "
-                             "contain at least one value." % (k + 1))
+            raise ValueError(f"Sample {k + 1} is empty. All samples must "
+                             f"contain at least one value.")
         if d.ndim != 1:
-            raise ValueError("Sample %d has %d dimensions.  All "
-                             "samples must be one-dimensional sequences." %
-                             (k + 1, d.ndim))
+            raise ValueError(f"Sample {k + 1} has {d.ndim} dimensions. "
+                             f"All samples must be one-dimensional sequences.")
 
     cdata = np.concatenate(data)
-    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
-    if contains_nan and nan_policy == 'propagate':
+    contains_nan = _contains_nan(cdata, nan_policy)
+    if nan_policy == 'propagate' and contains_nan:
         return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
@@ -3907,10 +3979,11 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
         # check for that case here.
         zero_cols = np.nonzero((table == 0).all(axis=0))[0]
         if len(zero_cols) > 0:
-            msg = ("All values in sample %d are equal to the grand "
-                   "median (%r), so they are ignored, resulting in an "
-                   "empty sample." % (zero_cols[0] + 1, grand_median))
-            raise ValueError(msg)
+            raise ValueError(
+                f"All values in sample {zero_cols[0] + 1} are equal to the grand "
+                f"median ({grand_median!r}), so they are ignored, resulting in an "
+                f"empty sample."
+            )
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
@@ -3920,9 +3993,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, period, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
-    if xp.isdtype(samples.dtype, 'integral'):
-        dtype = xp.asarray(1.).dtype  # get default float type
-        samples = xp.asarray(samples, dtype=dtype)
+    samples = xp_promote(samples, force_floating=True, xp=xp)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
@@ -3935,7 +4006,7 @@ def _circfuncs_common(samples, period, xp=None):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
@@ -4028,7 +4099,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
@@ -4122,7 +4193,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
@@ -4353,11 +4424,17 @@ def directional_stats(samples, *, axis=0, normalize=True):
     """
     xp = array_namespace(samples)
     samples = xp.asarray(samples)
-    
+
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {tuple(samples.shape)}")
     samples = xp.moveaxis(samples, axis, 0)
+
+    if is_marray(xp):
+        _xp = array_namespace(samples.mask)
+        mask = _xp.any(samples.mask, axis=-1, keepdims=True)
+        samples = xp.asarray(samples.data, mask=mask)
+
     if normalize:
         vectornorms = xp_vector_norm(samples, axis=-1, keepdims=True, xp=xp)
         samples = samples/vectornorms

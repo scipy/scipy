@@ -163,6 +163,14 @@ class TestSobolIndices:
             rng=rng
         )
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+        # Ideally should be exactly equal but since f_ishigami
+        # uses floating point operations, so exact equality
+        # might not be possible (due to flakiness in computation).
+        # So, assert_allclose is used with default parameters
+        # Regression test for https://github.com/scipy/scipy/issues/21383
+        assert_allclose(f_ishigami(A).reshape(1, -1), func['f_A'])
+        assert_allclose(f_ishigami(B).reshape(1, -1), func['f_B'])
+        assert_allclose(f_ishigami(AB).reshape((3, 1, -1)), func['f_AB'])
 
     def test_method(self, ishigami_ref_indices):
         def jansen_sobol(f_A, f_B, f_AB):

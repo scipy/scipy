@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import suppress_warnings
+import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
     assert_almost_equal, xp_assert_equal, xp_assert_close
@@ -186,6 +187,7 @@ class TestPlacePoles:
         assert fsf.rtol == 0
         assert fsf.nb_iter == 0
 
+    @pytest.mark.thread_unsafe
     def test_errors(self):
         # Test input mistakes from user
         A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)

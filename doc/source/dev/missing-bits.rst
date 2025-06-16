@@ -26,10 +26,10 @@ Coding Style and Guidelines
 ---------------------------
 Note that docstrings should be generally made up of ASCII characters
 in spite of being Unicode. The following code block from the file
-``tools/unicode-check.py`` tells the linter which additional characters
+``tools/check_unicode.py`` tells the linter which additional characters
 are allowed:
 
-.. literalinclude:: ../../../tools/unicode-check.py
+.. literalinclude:: ../../../tools/check_unicode.py
     :start-after: # BEGIN_INCLUDE_RST
     :end-before: # END_INCLUDE_RST
     :lineno-match:

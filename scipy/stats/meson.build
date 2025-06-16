@@ -31,18 +31,6 @@ py3.extension_module('_ansari_swilk_statistics',
   subdir: 'scipy/stats'
 )
 
-py3.extension_module('_mvn',
-  [f2py_gen.process('mvn.pyf'), 'mvndst.f'],
-  # Wno-surprising is to suppress a pointless warning with GCC 10-12
-  # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
-  fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
-  dependencies: [fortranobject_dep],
-  link_args: version_link_args,
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/stats'
-)
-
 py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
@@ -103,6 +91,16 @@ else
 endif
 
 
+py3.extension_module('_qmvnt_cy',
+  cython_gen_cpp.process('_qmvnt_cy.pyx'),
+  cpp_args: cython_cpp_args,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
+
 py3.install_sources([
     '__init__.py',
     '_axis_nan_policy.py',
@@ -112,6 +110,7 @@ py3.install_sources([
     '_censored_data.py',
     '_common.py',
     '_constants.py',
+    '_continued_fraction.py',
     '_continuous_distns.py',
     '_correlation.py',
     '_covariance.py',
@@ -121,6 +120,7 @@ py3.install_sources([
     '_distribution_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
+    '_finite_differences.py',
     '_fit.py',
     '_hypotests.py',
     '_kde.py',
@@ -133,12 +133,12 @@ py3.install_sources([
     '_multicomp.py',
     '_multivariate.py',
     '_new_distributions.py',
-    '_new_distribution_docs.json',
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_probability_distribution.py',
     '_qmc.py',
     '_qmvnt.py',
+    '_quantile.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',

@@ -7,30 +7,17 @@ import numbers
 from collections import namedtuple
 import inspect
 import math
-from typing import (
-    TYPE_CHECKING,
-    TypeVar,
-)
+from types import ModuleType
+from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy, xp_size
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
+                                   is_marray, xp_size, xp_result_device, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
+from scipy._lib._sparse import issparse
 
+from numpy.exceptions import AxisError
 
-AxisError: type[Exception]
-ComplexWarning: type[Warning]
-VisibleDeprecationWarning: type[Warning]
-
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import (
-        AxisError, ComplexWarning, VisibleDeprecationWarning,
-        DTypePromotionError
-    )
-else:
-    from numpy import (  # type: ignore[attr-defined, no-redef]
-        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
-    )
-    DTypePromotionError = TypeError  # type: ignore
 
 np_long: type
 np_ulong: type
@@ -69,97 +56,19 @@ else:
     except TypeError:
         copy_if_needed = False
 
+
+_RNG: TypeAlias = np.random.Generator | np.random.RandomState
+SeedType: TypeAlias = IntNumber | _RNG | None
+
+GeneratorType = TypeVar("GeneratorType", bound=_RNG)
+
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
-if TYPE_CHECKING:
-    SeedType = IntNumber | np.random.Generator | np.random.RandomState | None
-    GeneratorType = TypeVar("GeneratorType",
-                            bound=np.random.Generator|np.random.RandomState)
-
 try:
     from numpy.random import Generator as Generator
 except ImportError:
     class Generator:  # type: ignore[no-redef]
         pass
-
-
-def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
-    """Return elements chosen from two possibilities depending on a condition
-
-    Equivalent to ``f(*arrays) if cond else fillvalue`` performed elementwise.
-
-    Parameters
-    ----------
-    cond : array
-        The condition (expressed as a boolean array).
-    arrays : tuple of array
-        Arguments to `f` (and `f2`). Must be broadcastable with `cond`.
-    f : callable
-        Where `cond` is True, output will be ``f(arr1[cond], arr2[cond], ...)``
-    fillvalue : object
-        If provided, value with which to fill output array where `cond` is
-        not True.
-    f2 : callable
-        If provided, output will be ``f2(arr1[cond], arr2[cond], ...)`` where
-        `cond` is not True.
-
-    Returns
-    -------
-    out : array
-        An array with elements from the output of `f` where `cond` is True
-        and `fillvalue` (or elements from the output of `f2`) elsewhere. The
-        returned array has data type determined by Type Promotion Rules
-        with the output of `f` and `fillvalue` (or the output of `f2`).
-
-    Notes
-    -----
-    ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
-    `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
-    onle where `cond` ``is True.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
-    >>> def f(a, b):
-    ...     return a*b
-    >>> _lazywhere(a > 2, (a, b), f, np.nan)
-    array([ nan,  nan,  21.,  32.])
-
-    """
-    xp = array_namespace(cond, *arrays)
-
-    if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
-        raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
-
-    args = xp.broadcast_arrays(cond, *arrays)
-    bool_dtype = xp.asarray([True]).dtype  # numpy 1.xx doesn't have `bool`
-    cond, arrays = xp.astype(args[0], bool_dtype, copy=False), args[1:]
-
-    temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
-
-    if f2 is None:
-        # If `fillvalue` is a Python scalar and we convert to `xp.asarray`, it gets the
-        # default `int` or `float` type of `xp`, so `result_type` could be wrong.
-        # `result_type` should/will handle mixed array/Python scalars;
-        # remove this special logic when it does.
-        if type(fillvalue) in {bool, int, float, complex}:
-            with np.errstate(invalid='ignore'):
-                dtype = (temp1 * fillvalue).dtype
-        else:
-           dtype = xp.result_type(temp1.dtype, fillvalue)
-        out = xp.full(cond.shape, dtype=dtype,
-                      fill_value=xp.asarray(fillvalue, dtype=dtype))
-    else:
-        ncond = ~cond
-        temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
-        dtype = xp.result_type(temp1, temp2)
-        out = xp.empty(cond.shape, dtype=dtype)
-        out[ncond] = temp2
-
-    out[cond] = temp1
-
-    return out
 
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
@@ -526,8 +435,7 @@ def _asarray_validated(a, check_finite=True,
 
     """
     if not sparse_ok:
-        import scipy.sparse
-        if scipy.sparse.issparse(a):
+        if issparse(a):
             msg = ('Sparse arrays/matrices are not supported by this function. '
                    'Perhaps one of the `scipy.sparse.linalg` functions '
                    'would work instead.')
@@ -659,6 +567,32 @@ class _FunctionWrapper:
         return self.f(x, *self.args)
 
 
+class _ScalarFunctionWrapper:
+    """
+    Object to wrap scalar user function, allowing picklability
+    """
+    def __init__(self, f, args=None):
+        self.f = f
+        self.args = [] if args is None else args
+        self.nfev = 0
+
+    def __call__(self, x):
+        # Send a copy because the user may overwrite it.
+        # The user of this class might want `x` to remain unchanged.
+        fx = self.f(np.copy(x), *self.args)
+        self.nfev += 1
+
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
+
 class MapWrapper:
     """
     Parallelisation wrapper for working with map-like callables, such as
@@ -731,6 +665,29 @@ class MapWrapper:
             # wrong number of arguments
             raise TypeError("The map-like callable must be of the"
                             " form f(func, iterable)") from e
+
+
+def _workers_wrapper(func):
+    """
+    Wrapper to deal with setup-cleanup of workers outside a user function via a
+    ContextManager. It saves having to do the setup/tear down with within that
+    function, which can be messy.
+    """
+    @functools.wraps(func)
+    def inner(*args, **kwds):
+        kwargs = kwds.copy()
+        if 'workers' not in kwargs:
+            _workers = map
+        elif 'workers' in kwargs and kwargs['workers'] is None:
+            _workers = map
+        else:
+            _workers = kwargs['workers']
+
+        with MapWrapper(_workers) as mf:
+            kwargs['workers'] = mf
+            return func(*args, **kwargs)
+
+    return inner
 
 
 def rng_integers(gen, low, high=None, size=None, dtype='int64',
@@ -877,77 +834,37 @@ def _first_nonnan(a, axis):
     return np.take_along_axis(a, k, axis=axis)
 
 
-def _nan_allsame(a, axis, keepdims=False):
-    """
-    Determine if the values along an axis are all the same.
-
-    nan values are ignored.
-
-    `a` must be a numpy array.
-
-    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
-
-    For an axis of length 0, the result is True.  That is, we adopt the
-    convention that ``allsame([])`` is True. (There are no values in the
-    input that are different.)
-
-    `True` is returned for slices that are all nan--not because all the
-    values are the same, but because this is equivalent to ``allsame([])``.
-
-    Examples
-    --------
-    >>> from numpy import nan, array
-    >>> a = array([[ 3.,  3., nan,  3.],
-    ...            [ 1., nan,  2.,  4.],
-    ...            [nan, nan,  9., -1.],
-    ...            [nan,  5.,  4.,  3.],
-    ...            [ 2.,  2.,  2.,  2.],
-    ...            [nan, nan, nan, nan]])
-    >>> _nan_allsame(a, axis=1, keepdims=True)
-    array([[ True],
-           [False],
-           [False],
-           [False],
-           [ True],
-           [ True]])
-    """
-    if axis is None:
-        if a.size == 0:
-            return True
-        a = a.ravel()
-        axis = 0
-    else:
-        shp = a.shape
-        if shp[axis] == 0:
-            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
-            return np.full(shp, fill_value=True, dtype=bool)
-    a0 = _first_nonnan(a, axis=axis)
-    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
-
-
-def _contains_nan(a, nan_policy='propagate', policies=None, *,
-                  xp_omit_okay=False, xp=None):
+def _contains_nan(
+    a: Array,
+    nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
+    *,
+    xp_omit_okay: bool = False,
+    xp: ModuleType | None = None,
+) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not
     # handle non-NumPy arrays, most functions that call `_contains_nan` want
     # it to raise an error if `nan_policy='omit'` and `xp` is not `np`.
     # Some functions support `nan_policy='omit'` natively, so setting this to
     # `True` prevents the error from being raised.
+    policies = {"propagate", "raise", "omit"}
+    if nan_policy not in policies:
+        msg = f"nan_policy must be one of {policies}."
+        raise ValueError(msg)
+
+    if xp_size(a) == 0:
+        return False
+
     if xp is None:
         xp = array_namespace(a)
-    not_numpy = not is_numpy(xp)
 
-    if policies is None:
-        policies = {'propagate', 'raise', 'omit'}
-    if nan_policy not in policies:
-        raise ValueError(f"nan_policy must be one of {set(policies)}.")
-
-    inexact = (xp.isdtype(a.dtype, "real floating")
-               or xp.isdtype(a.dtype, "complex floating"))
-    if xp_size(a) == 0:
-        contains_nan = False
-    elif inexact:
-        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+    if xp.isdtype(a.dtype, "real floating"):
+        # Faster and less memory-intensive than xp.any(xp.isnan(a)), and unlike other
+        # reductions, `max`/`min` won't return NaN unless there is a NaN in the data.
         contains_nan = xp.isnan(xp.max(a))
+    elif xp.isdtype(a.dtype, "complex floating"):
+        # Typically `real` and `imag` produce views; otherwise, `xp.any(xp.isnan(a))`
+        # would be more efficient.
+        contains_nan = xp.isnan(xp.max(xp.real(a))) | xp.isnan(xp.max(xp.imag(a)))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
@@ -957,16 +874,27 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *,
                 break
     else:
         # Only `object` and `inexact` arrays can have NaNs
-        contains_nan = False
+        return False
 
-    if contains_nan and nan_policy == 'raise':
-        raise ValueError("The input contains nan values")
+    # The implicit call to bool(contains_nan) must happen after testing
+    # nan_policy to prevent lazy and device-bound xps from raising in the
+    # default policy='propagate' case.
+    if nan_policy == 'raise':
+        if is_lazy_array(a):
+            msg = "nan_policy='raise' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "The input contains nan values"
+            raise ValueError(msg)
+    elif nan_policy == 'omit' and not xp_omit_okay and not is_numpy(xp):
+        if is_lazy_array(a):
+            msg = "nan_policy='omit' is not supported for lazy arrays."
+            raise TypeError(msg)
+        if contains_nan:
+            msg = "nan_policy='omit' is incompatible with non-NumPy arrays."
+            raise ValueError(msg)
 
-    if not xp_omit_okay and not_numpy and contains_nan and nan_policy=='omit':
-        message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
-        raise ValueError(message)
-
-    return contains_nan, nan_policy
+    return contains_nan
 
 
 def _rename_parameter(old_name, new_name, dep_version=None):
@@ -1033,17 +961,16 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data, xp=None):
+def _get_nan(*data, shape=(), xp=None):
     xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [xp.asarray(item) for item in data]
-    try:
-        min_float = getattr(xp, 'float16', xp.float32)
-        dtype = xp.result_type(*data, min_float)  # must be at least a float
-    except DTypePromotionError:
-        # fallback to float64
-        dtype = xp.float64
-    return xp.asarray(xp.nan, dtype=dtype)[()]
+    dtype = xp_result_type(*data, force_floating=True, xp=xp)
+    device = xp_result_device(*data)
+    res = xp.full(shape, xp.nan, dtype=dtype, device=device)
+    if not shape:
+        res = res[()]
+    # whenever mdhaber/marray#89 is resolved, could just return `res`
+    return res.data if is_marray(xp) else res
 
 
 def normalize_axis_index(axis, ndim):
@@ -1176,3 +1103,125 @@ def _dict_formatter(d, n=0, mplus=1, sorter=None):
                              formatter={'float_kind': _float_formatter_10}):
             s = str(d)
     return s
+
+
+_batch_note = """
+The documentation is written assuming array arguments are of specified
+"core" shapes. However, array argument(s) of this function may have additional
+"batch" dimensions prepended to the core shape. In this case, the array is treated
+as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+"""
+
+
+def _apply_over_batch(*argdefs):
+    """
+    Factory for decorator that applies a function over batched arguments.
+
+    Array arguments may have any number of core dimensions (typically 0,
+    1, or 2) and any broadcastable batch shapes. There may be any
+    number of array outputs of any number of dimensions. Assumptions
+    right now - which are satisfied by all functions of interest in `linalg` -
+    are that all array inputs are consecutive keyword or positional arguments,
+    and that the wrapped function returns either a single array or a tuple of
+    arrays. It's only as general as it needs to be right now - it can be extended.
+
+    Parameters
+    ----------
+    *argdefs : tuple of (str, int)
+        Definitions of array arguments: the keyword name of the argument, and
+        the number of core dimensions.
+
+    Example:
+    --------
+    `linalg.eig` accepts two matrices as the first two arguments `a` and `b`, where
+    `b` is optional, and returns one array or a tuple of arrays, depending on the
+    values of other positional or keyword arguments. To generate a wrapper that applies
+    the function over batches of `a` and optionally `b` :
+
+    >>> _apply_over_batch(('a', 2), ('b', 2))
+    """
+    names, ndims = list(zip(*argdefs))
+    n_arrays = len(names)
+
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            args = list(args)
+
+            # Ensure all arrays in `arrays`, other arguments in `other_args`/`kwargs`
+            arrays, other_args = args[:n_arrays], args[n_arrays:]
+            for i, name in enumerate(names):
+                if name in kwargs:
+                    if i + 1 <= len(args):
+                        raise ValueError(f'{f.__name__}() got multiple values '
+                                         f'for argument `{name}`.')
+                    else:
+                        arrays.append(kwargs.pop(name))
+
+            # Determine core and batch shapes
+            batch_shapes = []
+            core_shapes = []
+            for i, (array, ndim) in enumerate(zip(arrays, ndims)):
+                array = None if array is None else np.asarray(array)
+                shape = () if array is None else array.shape
+
+                if ndim == "1|2":  # special case for `solve`, etc.
+                    ndim = 2 if array.ndim >= 2 else 1
+
+                arrays[i] = array
+                batch_shapes.append(shape[:-ndim] if ndim > 0 else shape)
+                core_shapes.append(shape[-ndim:] if ndim > 0 else ())
+
+            # Early exit if call is not batched
+            if not any(batch_shapes):
+                return f(*arrays, *other_args, **kwargs)
+
+            # Determine broadcasted batch shape
+            batch_shape = np.broadcast_shapes(*batch_shapes)  # Gives OK error message
+
+            # Broadcast arrays to appropriate shape
+            for i, (array, core_shape) in enumerate(zip(arrays, core_shapes)):
+                if array is None:
+                    continue
+                arrays[i] = np.broadcast_to(array, batch_shape + core_shape)
+
+            # Main loop
+            results = []
+            for index in np.ndindex(batch_shape):
+                result = f(*(array[index] for array in arrays), *other_args, **kwargs)
+                # Assume `result` is either a tuple or single array. This is easily
+                # generalized by allowing the contributor to pass an `unpack_result`
+                # callable to the decorator factory.
+                result = (result,) if not isinstance(result, tuple) else result
+                results.append(result)
+            results = list(zip(*results))
+
+            # Reshape results
+            for i, result in enumerate(results):
+                result = np.stack(result)
+                core_shape = result.shape[1:]
+                results[i] = np.reshape(result, batch_shape + core_shape)
+
+            # Assume `result` should be a single array if there is only one element or
+            # a `tuple` otherwise. This is easily generalized by allowing the
+            # contributor to pass an `pack_result` callable to the decorator factory.
+            return results[0] if len(results) == 1 else results
+
+        doc = FunctionDoc(wrapper)
+        doc['Extended Summary'].append(_batch_note.rstrip())
+        wrapper.__doc__ = str(doc).split("\n", 1)[1]  # remove signature
+
+        return wrapper
+    return decorator
+
+
+def np_vecdot(x1, x2, /, *, axis=-1):
+    # `np.vecdot` has advantages (e.g. see gh-22462), so let's use it when
+    # available. As functions are translated to Array API, `np_vecdot` can be
+    # replaced with `xp.vecdot`.
+    if np.__version__ > "2.0":
+        return np.vecdot(x1, x2, axis=axis)
+    else:
+        # of course there are other fancy ways of doing this (e.g. `einsum`)
+        # but let's keep it simple since it's temporary
+        return np.sum(x1 * x2, axis=axis)

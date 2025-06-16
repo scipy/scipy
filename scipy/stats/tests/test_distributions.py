@@ -5,6 +5,7 @@ import warnings
 import re
 import sys
 import pickle
+import threading
 from pathlib import Path
 import os
 import json
@@ -66,7 +67,7 @@ def test_distributions_submodule():
     continuous = [dist[0] for dist in distcont]    # continuous dist names
     discrete = [dist[0] for dist in distdiscrete]  # discrete dist names
     other = ['rv_discrete', 'rv_continuous', 'rv_histogram',
-             'entropy', 'trapz']
+             'entropy']
     expected = continuous + discrete + other
 
     # need to remove, e.g.,
@@ -1365,25 +1366,27 @@ class TestGennorm:
         assert_almost_equal(pdf1, pdf2)
 
     def test_rvs(self):
-        np.random.seed(0)
+        rng = np.random.RandomState(0)
         # 0 < beta < 1
         dist = stats.gennorm(0.5)
-        rvs = dist.rvs(size=1000)
+        rvs = dist.rvs(size=1000, random_state=rng)
         assert stats.kstest(rvs, dist.cdf).pvalue > 0.1
         # beta = 1
         dist = stats.gennorm(1)
-        rvs = dist.rvs(size=1000)
-        rvs_laplace = stats.laplace.rvs(size=1000)
+        rvs = dist.rvs(size=1000, random_state=rng)
+        rvs_laplace = stats.laplace.rvs(size=1000, random_state=rng)
         assert stats.ks_2samp(rvs, rvs_laplace).pvalue > 0.1
         # beta = 2
         dist = stats.gennorm(2)
-        rvs = dist.rvs(size=1000)
-        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000)
+        dist.random_state = rng
+        rvs = dist.rvs(size=1000, random_state=rng)
+        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000, random_state=rng)
         assert stats.ks_2samp(rvs, rvs_norm).pvalue > 0.1
 
     def test_rvs_broadcasting(self):
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
         dist = stats.gennorm([[0.5, 1.], [2., 5.]])
+        dist.random_state = rng
         rvs = dist.rvs(size=[1000, 2, 2])
         assert stats.kstest(rvs[:, 0, 0], stats.gennorm(0.5).cdf)[1] > 0.1
         assert stats.kstest(rvs[:, 0, 1], stats.gennorm(1.0).cdf)[1] > 0.1
@@ -2601,16 +2604,13 @@ class TestPareto:
         expected = (scale/x)**b   # 2.25e-18
         assert_allclose(p, expected)
 
-    @pytest.fixture(scope='function')
-    def rng(self):
-        return np.random.default_rng(1234)
-
     @pytest.mark.filterwarnings("ignore:invalid value encountered in "
                                 "double_scalars")
     @pytest.mark.parametrize("rvs_shape", [1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
-    def test_fit(self, rvs_shape, rvs_loc, rvs_scale, rng):
+    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
+        rng = np.random.default_rng(1234)
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
 
@@ -2641,7 +2641,8 @@ class TestPareto:
                               if False in p])
     @np.errstate(invalid="ignore")
     def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
-                                    fix_shape, fix_loc, fix_scale, rng):
+                                    fix_shape, fix_loc, fix_scale):
+        rng = np.random.default_rng(1234)
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
 
@@ -2673,7 +2674,8 @@ class TestPareto:
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
-    def test_negative_data(self, rng):
+    def test_negative_data(self):
+        rng = np.random.default_rng(1234)
         data = stats.pareto.rvs(loc=-130, b=1, size=100, random_state=rng)
         assert_array_less(data, 0)
         # The purpose of this test is to make sure that no runtime warnings are
@@ -3344,6 +3346,22 @@ class TestInvgauss:
                                          (1e100, 3.32448280139689)])
     def test_entropy(self, mu, ref):
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
+
+    def test_mu_inf_gh13666(self):
+        # invgauss methods should return correct result when mu=inf
+        # invgauss as mu -> oo is invgamma with shape and scale 0.5;
+        # see gh-13666 and gh-22496
+        dist = stats.invgauss(mu=np.inf)
+        dist0 = stats.invgamma(0.5, scale=0.5)
+        x, p = 1., 0.5
+        assert_allclose(dist.logpdf(x), dist0.logpdf(x))
+        assert_allclose(dist.pdf(x), dist0.pdf(x))
+        assert_allclose(dist.logcdf(x), dist0.logcdf(x))
+        assert_allclose(dist.cdf(x), dist0.cdf(x))
+        assert_allclose(dist.logsf(x), dist0.logsf(x))
+        assert_allclose(dist.sf(x), dist0.sf(x))
+        assert_allclose(dist.ppf(p), dist0.ppf(p))
+        assert_allclose(dist.isf(p), dist0.isf(p))
 
 
 class TestLandau:
@@ -4168,9 +4186,9 @@ class TestSkewCauchy:
         # qsgt(cdf, mu=0, lambda=lambda, sigma=1, q=1/2, mean.cent=FALSE,
         #      var.adj = sqrt(2))
 
-        np.random.seed(0)
-        a = np.random.rand(10) * 2 - 1
-        x = np.random.rand(10) * 10 - 5
+        rng = np.random.RandomState(0)
+        a = rng.rand(10) * 2 - 1
+        x = rng.rand(10) * 10 - 5
         pdf = [0.039473975217333909, 0.305829714049903223, 0.24140158118994162,
                0.019585772402693054, 0.021436553695989482, 0.00909817103867518,
                0.01658423410016873, 0.071083288030394126, 0.103250045941454524,
@@ -4284,22 +4302,24 @@ class TestSkewNorm:
                                   stats.norm.pdf(x))
 
     def test_rvs(self):
+        rng = check_random_state(1234)
         shape = (3, 4, 5)
-        x = stats.skewnorm.rvs(a=0.75, size=shape, random_state=self.rng)
+        x = stats.skewnorm.rvs(a=0.75, size=shape, random_state=rng)
         assert_equal(shape, x.shape)
 
-        x = stats.skewnorm.rvs(a=-3, size=shape, random_state=self.rng)
+        x = stats.skewnorm.rvs(a=-3, size=shape, random_state=rng)
         assert_equal(shape, x.shape)
 
     def test_moments(self):
+        rng = check_random_state(1234)
         X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2,
-                               random_state=self.rng)
+                               random_state=rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
 
         X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2,
-                               random_state=self.rng)
+                               random_state=rng)
         expected = [np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)]
         computed = stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk')
         assert_array_almost_equal(computed, expected, decimal=2)
@@ -5145,8 +5165,8 @@ class TestBetaPrime:
         # Testing for gh-18634 revealed that `betaprime` raised a
         # NotImplementedError for higher moments. Check that this is
         # resolved. Parameters are arbitrary but lie on either side of the
-        # moment order (5) to test both branches of `_lazywhere`. Reference
-        # values produced with Mathematica, e.g.
+        # moment order (5) to test both branches of `xpx.apply_where`.
+        # Reference values produced with Mathematica, e.g.
         # `Moment[BetaPrimeDistribution[2,7],5]`
         ref = [np.inf, 0.867096912929055]
         res = stats.betaprime(2, [4.2, 7.1]).moment(5)
@@ -5742,6 +5762,7 @@ class TestLevyStable:
             ),
         ]
     )
+    @pytest.mark.thread_unsafe
     def test_pdf_nolan_samples(
             self, nolan_pdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -5957,6 +5978,7 @@ class TestLevyStable:
             ),
         ]
     )
+    @pytest.mark.thread_unsafe
     def test_cdf_nolan_samples(
             self, nolan_cdf_sample_data, pct_range, alpha_range, beta_range
     ):
@@ -6307,7 +6329,11 @@ class TestLevyStable:
             expected,
         )
 
-    def test_frozen_parameterization_gh20821(self):
+    @pytest.fixture
+    def levy_stable_lock(self):
+        return threading.Lock()
+
+    def test_frozen_parameterization_gh20821(self, levy_stable_lock):
         # gh-20821 reported that frozen distributions ignore the parameterization.
         # Check that this is resolved and that the frozen distribution's
         # parameterization can be changed independently of stats.levy_stable
@@ -6316,37 +6342,39 @@ class TestLevyStable:
         unfrozen = stats.levy_stable
         frozen = stats.levy_stable(**shapes)
 
-        unfrozen.parameterization = "S0"
-        frozen.parameterization = "S1"
-        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
-        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
-        assert not np.any(frozen_a == unfrozen_a)
+        with levy_stable_lock:
+            unfrozen.parameterization = "S0"
+            frozen.parameterization = "S1"
+            unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+            frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+            assert not np.any(frozen_a == unfrozen_a)
 
-        unfrozen.parameterization = "S1"
-        frozen.parameterization = "S0"
-        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
-        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
-        assert_equal(frozen_b, unfrozen_a)
-        assert_equal(unfrozen_b, frozen_a)
+            unfrozen.parameterization = "S1"
+            frozen.parameterization = "S0"
+            unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+            frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+            assert_equal(frozen_b, unfrozen_a)
+            assert_equal(unfrozen_b, frozen_a)
 
-    def test_frozen_parameterization_gh20821b(self):
+    def test_frozen_parameterization_gh20821b(self, levy_stable_lock):
         # Check that the parameterization of the frozen distribution is that of
         # the unfrozen distribution at the time of freezing
         rng = np.random.default_rng
         shapes = dict(alpha=1.9, beta=0.1, loc=0.0, scale=1.0)
         unfrozen = stats.levy_stable
 
-        unfrozen.parameterization = "S0"
-        frozen = stats.levy_stable(**shapes)
-        unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
-        frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
-        assert_equal(frozen_a, unfrozen_a)
+        with levy_stable_lock:
+            unfrozen.parameterization = "S0"
+            frozen = stats.levy_stable(**shapes)
+            unfrozen_a = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+            frozen_a = frozen.rvs(size=10, random_state=rng(329823498))
+            assert_equal(frozen_a, unfrozen_a)
 
-        unfrozen.parameterization = "S1"
-        frozen = stats.levy_stable(**shapes)
-        unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
-        frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
-        assert_equal(frozen_b, unfrozen_b)
+            unfrozen.parameterization = "S1"
+            frozen = stats.levy_stable(**shapes)
+            unfrozen_b = unfrozen.rvs(**shapes, size=10, random_state=rng(329823498))
+            frozen_b = frozen.rvs(size=10, random_state=rng(329823498))
+            assert_equal(frozen_b, unfrozen_b)
 
 
 class TestArrayArgument:  # test for ticket:992
@@ -6994,6 +7022,7 @@ class TestExpect:
         assert_allclose(res,
                         sum(_ for _ in range(lo, hi)) / (hi - lo), atol=1e-15)
 
+    @pytest.mark.thread_unsafe
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
         assert_warns(RuntimeWarning, stats.zipf.expect,
@@ -7921,24 +7950,6 @@ class TestTrapezoid:
 
         assert_allclose(v, res.T.reshape(v.shape), atol=1e-15)
 
-    def test_trapz(self):
-        # Basic test for alias
-        x = np.linspace(0, 1, 10)
-        with pytest.deprecated_call(match="`trapz.pdf` is deprecated"):
-            result = stats.trapz.pdf(x, 0, 1)
-        assert_almost_equal(result, stats.uniform.pdf(x))
-
-    @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
-                                        'sf', 'logsf', 'ppf', 'isf'])
-    def test_trapz_deprecation(self, method):
-        c, d = 0.2, 0.8
-        expected = getattr(stats.trapezoid, method)(1, c, d)
-        with pytest.deprecated_call(
-            match=f"`trapz.{method}` is deprecated",
-        ):
-            result = getattr(stats.trapz, method)(1, c, d)
-        assert result == expected
-
 
 class TestTriang:
     def test_edge_cases(self):
@@ -8520,9 +8531,9 @@ def test_nan_arguments_gh_issue_1362():
 
 
 def test_frozen_fit_ticket_1536():
-    np.random.seed(5678)
+    rng = np.random.default_rng(5678)
     true = np.array([0.25, 0., 0.5])
-    x = stats.lognorm.rvs(true[0], true[1], true[2], size=100)
+    x = stats.lognorm.rvs(true[0], true[1], true[2], size=100, random_state=rng)
 
     with np.errstate(divide='ignore'):
         params = np.array(stats.lognorm.fit(x, floc=0.))
@@ -8538,10 +8549,10 @@ def test_frozen_fit_ticket_1536():
     params = np.array(stats.lognorm.fit(x, f0=0.25, floc=0))
     assert_almost_equal(params, true, decimal=2)
 
-    np.random.seed(5678)
+    rng = np.random.default_rng(5678)
     loc = 1
     floc = 0.9
-    x = stats.norm.rvs(loc, 2., size=100)
+    x = stats.norm.rvs(loc, 2., size=100, random_state=rng)
     params = np.array(stats.norm.fit(x, floc=floc))
     expected = np.array([floc, np.sqrt(((x-floc)**2).mean())])
     assert_almost_equal(params, expected, decimal=4)
@@ -8549,8 +8560,8 @@ def test_frozen_fit_ticket_1536():
 
 def test_regression_ticket_1530():
     # Check the starting value works for Cauchy distribution fit.
-    np.random.seed(654321)
-    rvs = stats.cauchy.rvs(size=100)
+    rng = np.random.default_rng(654321)
+    rvs = stats.cauchy.rvs(size=100, random_state=rng)
     params = stats.cauchy.fit(rvs)
     expected = (0.045, 1.142)
     assert_almost_equal(params, expected, decimal=1)
@@ -8558,8 +8569,8 @@ def test_regression_ticket_1530():
 
 def test_gh_pr_4806():
     # Check starting values for Cauchy distribution fit.
-    np.random.seed(1234)
-    x = np.random.randn(42)
+    rng = np.random.RandomState(1234)
+    x = rng.randn(42)
     for offset in 10000.0, 1222333444.0:
         loc, scale = stats.cauchy.fit(x + offset)
         assert_allclose(loc, offset, atol=1.0)
@@ -9251,6 +9262,28 @@ def test_genextreme_give_no_warnings():
         assert_equal(number_of_warnings_thrown, 0)
 
 
+def test_moments_gh22400():
+    # Regression test for gh-22400
+    # Check for correct results at c=0 with no warnings. While we're at it,
+    # check that NaN and sufficiently negative input produce NaNs, and output
+    # with `c=1` also agrees with reference values.
+    res = np.asarray(stats.genextreme.stats([0.0, np.nan, 1, -1.5], moments='mvsk'))
+
+    # Reference values for c=0 (Wikipedia)
+    mean = np.euler_gamma
+    var = np.pi**2 / 6
+    skew = 12 * np.sqrt(6) * special.zeta(3) / np.pi**3
+    kurt = 12 / 5
+    ref_0 = [mean, var, skew, kurt]
+    ref_1 = ref_3 = [np.nan]*4
+    ref_2 = [0, 1, -2, 6]  # Wolfram Alpha, MaxStableDistribution[0, 1, -1]
+
+    assert_allclose(res[:, 0], ref_0, rtol=1e-14)
+    assert_equal(res[:, 1], ref_1)
+    assert_allclose(res[:, 2], ref_2, rtol=1e-14)
+    assert_equal(res[:, 3], ref_3)
+
+
 def test_genextreme_entropy():
     # regression test for gh-5181
     euler_gamma = 0.5772156649015329
@@ -9918,6 +9951,15 @@ class TestWrapCauchy:
         assert_allclose(p[0], np.arctan(cr*np.tan(x1/2))/np.pi)
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
+    @pytest.mark.parametrize('c', [1e-10, 1e-1])
+    @pytest.mark.parametrize('loc', [-100, -2*np.pi, -np.pi, 0, np.pi, 2*np.pi, 100])
+    @pytest.mark.parametrize('scale', [1e-10, 1, 1e10])
+    def test_rvs_lie_on_circle(self, c, loc, scale):
+        # Check that the random variates lie in range [0, 2*pi]
+        x = stats.wrapcauchy.rvs(c=c, loc=loc, scale=scale, size=1000)
+        assert np.all(x >= 0)
+        assert np.all(x <= 2 * np.pi)
+
 
 def test_rvs_no_size_error():
     # _rvs methods must have parameter `size`; see gh-11394
@@ -10303,6 +10345,24 @@ class TestIrwinHall:
         # W|A returns 1 for CDF @ x=9.9
         ref = 36287999999999999/36288000000000000
         assert_array_max_ulp(self.ih10.sf(1/10), ref, maxulp=10)
+
+
+class TestDParetoLognorm:
+    def test_against_R(self):
+        # Test against R implementation in `distributionsrd`
+        # library(distributionsrd)
+        # options(digits=16)
+        # x = 1.1
+        # b = 2
+        # a = 1.5
+        # m = 3
+        # s = 1.2
+        # ddoubleparetolognormal(x, b, a, m, s)
+        # pdoubleparetolognormal(x, b, a, m, s)
+        x, m, s, a, b = 1.1, 3, 1.2, 1.5, 2
+        dist = stats.dpareto_lognorm(m, s, a, b)
+        np.testing.assert_allclose(dist.pdf(x), 0.02490187219085912)
+        np.testing.assert_allclose(dist.cdf(x), 0.01664024173822796)
 
 
 # Cases are (distribution name, log10 of smallest probability mass to test,

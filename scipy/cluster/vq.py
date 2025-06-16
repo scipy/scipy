@@ -67,9 +67,8 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import (
-    _asarray, array_namespace, xp_size, xp_copy
-)
+from scipy._lib._array_api import (_asarray, array_namespace, is_lazy_array,
+                                   xp_capabilities, xp_copy, xp_size)
 from scipy._lib._util import (check_random_state, rng_integers,
                               _transition_to_rng)
 from scipy._lib import array_api_extra as xpx
@@ -86,7 +85,8 @@ class ClusterError(Exception):
     pass
 
 
-def whiten(obs, check_finite=True):
+@xp_capabilities()
+def whiten(obs, check_finite=None):
     """
     Normalize a group of observations on a per feature basis.
 
@@ -100,19 +100,19 @@ def whiten(obs, check_finite=True):
     ----------
     obs : ndarray
         Each row of the array is an observation.  The
-        columns are the features seen during each observation.
+        columns are the features seen during each observation::
 
-        >>> #         f0    f1    f2
-        >>> obs = [[  1.,   1.,   1.],  #o0
-        ...        [  2.,   2.,   2.],  #o1
-        ...        [  3.,   3.,   3.],  #o2
-        ...        [  4.,   4.,   4.]]  #o3
+            #        f0  f1  f2
+            obs = [[ 1., 1., 1.],  #o0
+                   [ 2., 2., 2.],  #o1
+                   [ 3., 3., 3.],  #o2
+                   [ 4., 4., 4.]]  #o3
 
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-        Default: True
+        Default: True for eager backends and False for lazy ones.
 
     Returns
     -------
@@ -134,17 +134,21 @@ def whiten(obs, check_finite=True):
 
     """
     xp = array_namespace(obs)
+    if check_finite is None:
+        check_finite = not is_lazy_array(obs)
     obs = _asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
-    if xp.any(zero_std_mask):
-        std_dev[zero_std_mask] = 1.0
+    std_dev = xpx.at(std_dev, zero_std_mask).set(1.0)
+    if check_finite and xp.any(zero_std_mask):
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
                       RuntimeWarning, stacklevel=2)
     return obs / std_dev
 
 
+@xp_capabilities(cpu_only=True, reason="uses spatial.distance.cdist",
+                 jax_jit=False, allow_dask_compute=True)
 def vq(obs, code_book, check_finite=True):
     """
     Assign codes from a code book to observations.
@@ -168,13 +172,12 @@ def vq(obs, code_book, check_finite=True):
     code_book : ndarray
         The code book is usually generated using the k-means algorithm.
         Each row of the array holds a different code, and the columns are
-        the features of the code.
+        the features of the code::
 
-         >>> #              f0    f1    f2   f3
-         >>> code_book = [
-         ...             [  1.,   2.,   3.,   4.],  #c0
-         ...             [  1.,   2.,   3.,   4.],  #c1
-         ...             [  1.,   2.,   3.,   4.]]  #c2
+            #              f0  f1  f2  f3
+            code_book = [[ 1., 2., 3., 4.],  #c0
+                         [ 1., 2., 3., 4.],  #c1
+                         [ 1., 2., 3., 4.]]  #c2
 
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
@@ -208,10 +211,9 @@ def vq(obs, code_book, check_finite=True):
     code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
     ct = xp.result_type(obs, code_book)
 
-    c_obs = xp.astype(obs, ct, copy=False)
-    c_code_book = xp.astype(code_book, ct, copy=False)
-
     if xp.isdtype(ct, kind='real floating'):
+        c_obs = xp.astype(obs, ct, copy=False)
+        c_code_book = xp.astype(code_book, ct, copy=False)
         c_obs = np.asarray(c_obs)
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)
@@ -310,25 +312,24 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
     code_book = guess
     diff = xp.inf
     prev_avg_dists = deque([diff], maxlen=2)
+
+    np_obs = np.asarray(obs)
     while diff > thresh:
         # compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book, check_finite=False)
         prev_avg_dists.append(xp.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
-        obs = np.asarray(obs)
         obs_code = np.asarray(obs_code)
-        code_book, has_members = _vq.update_cluster_means(obs, obs_code,
+        code_book, has_members = _vq.update_cluster_means(np_obs, obs_code,
                                                           code_book.shape[0])
-        obs = xp.asarray(obs)
-        obs_code = xp.asarray(obs_code)
-        code_book = xp.asarray(code_book)
-        has_members = xp.asarray(has_members)
         code_book = code_book[has_members]
+        code_book = xp.asarray(code_book)
         diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 @_transition_to_rng("seed")
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
            *, rng=None):
@@ -480,7 +481,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     if k != guess:
         raise ValueError("If k_or_guess is a scalar, it must be an integer.")
     if k < 1:
-        raise ValueError("Asked for %d clusters." % k)
+        raise ValueError(f"Asked for {k} clusters.")
 
     rng = check_random_state(rng)
 
@@ -609,15 +610,16 @@ def _kpp(data, k, rng, xp):
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[rng_integers(rng, data.shape[0]), :]
-
+            data_idx = rng_integers(rng, data.shape[0])
         else:
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = rng.uniform()
             cumprobs = np.asarray(cumprobs)
-            init[i, :] = data[np.searchsorted(cumprobs, r), :]
+            data_idx = int(np.searchsorted(cumprobs, r))
+
+        init = xpx.at(init)[i, :].set(data[data_idx, :])
 
     if ndim == 1:
         init = init[:, 0]
@@ -643,6 +645,7 @@ def _missing_raise():
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
+@xp_capabilities(cpu_only=True, jax_jit=False, allow_dask_compute=True)
 @_transition_to_rng("seed")
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             missing='warn', check_finite=True, *, rng=None):
@@ -799,8 +802,9 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         nc = int(code_book)
 
         if nc < 1:
-            raise ValueError("Cannot ask kmeans2 for %d clusters"
-                             " (k was %s)" % (nc, code_book))
+            raise ValueError(
+                f"Cannot ask kmeans2 for {nc} clusters (k was {code_book})"
+            )
         elif nc != code_book:
             warnings.warn("k was not an integer, was converted.", stacklevel=2)
 
@@ -814,7 +818,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     data = np.asarray(data)
     code_book = np.asarray(code_book)
-    for i in range(iter):
+    for _ in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids

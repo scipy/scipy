@@ -44,6 +44,11 @@ All functions
 .. autosummary::
    :toctree: generated/
 
+   sgbcon
+   dgbcon
+   cgbcon
+   zgbcon
+
    sgbsv
    dgbsv
    cgbsv
@@ -345,6 +350,9 @@ All functions
    chetrf_lwork
    zhetrf_lwork
 
+   chetri
+   zhetri
+
    chetrs
    zhetrs
 
@@ -353,6 +361,11 @@ All functions
 
    slamch
    dlamch
+
+   slangb
+   dlangb
+   clangb
+   zlangb
 
    slange
    dlange
@@ -570,6 +583,9 @@ All functions
    sstev
    dstev
 
+   sstevd
+   dstevd
+
    ssycon
    dsycon
    csycon
@@ -667,6 +683,11 @@ All functions
    dsytrf_lwork
    csytrf_lwork
    zsytrf_lwork
+
+   ssytri
+   dsytri
+   csytri
+   zsytri
 
    ssytrs
    dsytrs
@@ -1026,8 +1047,7 @@ def _compute_lwork(routine, *args, **kwargs):
     int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
-        raise ValueError("Internal work array size computation failed: "
-                         "%d" % (ret[-1],))
+        raise ValueError(f"Internal work array size computation failed: {ret[-1]}")
 
     if len(ret) == 2:
         return _check_work_float(ret[0].real, dtype, int_dtype)
@@ -1059,3 +1079,28 @@ def _check_work_float(value, dtype, int_dtype):
                              " cannot be performed with standard 64-bit"
                              " LAPACK.")
     return value
+
+
+# The numpy facilities for type-casting checks are too slow for small sized
+# arrays and eat away the time budget for the checkups. Here we set a
+# precomputed dict container of the numpy.can_cast() table.
+
+# It can be used to determine quickly what a dtype can be cast to LAPACK
+# compatible types, i.e., 'float32, float64, complex64, complex128'.
+# Then it can be checked via "casting_dict[arr.dtype.char]"
+
+_lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
+                    for x in np.typecodes['All']}
+
+def _normalize_lapack_dtype(a, overwrite_a):
+    """Make sure an input array has a LAPACK-compatible dtype, cast and copy otherwise.
+    """
+    if a.dtype.char not in 'fdFD':
+        dtype_char = _lapack_cast_dict[a.dtype.char]
+        if not dtype_char:  # No casting possible
+            raise TypeError(f'The dtype {a.dtype} cannot be cast '
+                            'to float(32, 64) or complex(64, 128).')
+
+        a = a.astype(dtype_char[0])  # makes a copy, free to scratch
+        overwrite_a = True
+    return a, overwrite_a

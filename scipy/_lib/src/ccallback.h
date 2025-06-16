@@ -244,7 +244,7 @@ fail:
 static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures,
                              PyObject *callback_obj, int flags)
 {
-    static PyTypeObject *lowlevelcallable_type = NULL;
+    static SCIPY_TLS PyTypeObject *lowlevelcallable_type = NULL;
     PyObject *callback_obj2 = NULL;
     PyObject *capsule = NULL;
 

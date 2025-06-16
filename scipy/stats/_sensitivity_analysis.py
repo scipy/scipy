@@ -1,10 +1,6 @@
-from __future__ import annotations
-
 import inspect
 from dataclasses import dataclass
-from typing import (
-    Literal, Protocol, TYPE_CHECKING
-)
+from typing import TYPE_CHECKING, Any
 from collections.abc import Callable
 
 import numpy as np
@@ -18,7 +14,7 @@ from scipy._lib._util import _transition_to_rng
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import DecimalNumber, IntNumber, SeedType
+    from scipy._lib._util import DecimalNumber, IntNumber
 
 
 __all__ = [
@@ -26,7 +22,7 @@ __all__ = [
 ]
 
 
-def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
+def f_ishigami(x: "npt.ArrayLike") -> "npt.NDArray[np.inexact[Any]]":
     r"""Ishigami function.
 
     .. math::
@@ -60,10 +56,10 @@ def f_ishigami(x: npt.ArrayLike) -> np.ndarray:
 
 
 def sample_A_B(
-    n: IntNumber,
-    dists: list[PPFDist],
-    rng: SeedType = None
-) -> np.ndarray:
+    n,
+    dists,
+    rng=None
+):
     """Sample two matrices A and B.
 
     Uses a Sobol' sequence with 2`d` columns to have 2 uncorrelated matrices.
@@ -177,8 +173,8 @@ class SobolResult:
 
     def bootstrap(
         self,
-        confidence_level: DecimalNumber = 0.95,
-        n_resamples: IntNumber = 999
+        confidence_level: "DecimalNumber" = 0.95,
+        n_resamples: "IntNumber" = 999
     ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
@@ -240,23 +236,15 @@ class SobolResult:
             first_order=first_order, total_order=total_order
         )
 
-
-class PPFDist(Protocol):
-    @property
-    def ppf(self) -> Callable[..., float]:
-        ...
-
-
 @_transition_to_rng('random_state', replace_doc=False)
 def sobol_indices(
     *,
-    func: Callable[[np.ndarray], npt.ArrayLike] |
-          dict[Literal['f_A', 'f_B', 'f_AB'], np.ndarray],
-    n: IntNumber,
-    dists: list[PPFDist] | None = None,
-    method: Callable | Literal['saltelli_2010'] = 'saltelli_2010',
-    rng: SeedType = None
-) -> SobolResult:
+    func,
+    n,
+    dists=None,
+    method='saltelli_2010',
+    rng=None
+):
     r"""Global sensitivity indices of Sobol'.
 
     Parameters
@@ -610,7 +598,7 @@ def sobol_indices(
     n = n_
 
     if not callable(method):
-        indices_methods: dict[str, Callable] = {
+        indices_methods = {
             "saltelli_2010": saltelli_2010,
         }
         try:
@@ -676,9 +664,9 @@ def sobol_indices(
             "should have a shape ``(d, s, n)``."
         )
         try:
-            f_A, f_B, f_AB = np.atleast_2d(
+            f_A, f_B, f_AB = map(lambda arr: arr.copy(), np.atleast_2d(
                 func['f_A'], func['f_B'], func['f_AB']
-            )
+            ))
         except KeyError as exc:
             raise ValueError(message) from exc
 

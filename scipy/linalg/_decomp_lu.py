@@ -6,17 +6,18 @@ from numpy import asarray, asarray_chkfinite
 import numpy as np
 from itertools import product
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
-from .lapack import get_lapack_funcs
+from .lapack import get_lapack_funcs, _normalize_lapack_dtype
 from ._decomp_lu_cython import lu_dispatcher
 
-lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
-                    for x in np.typecodes['All']}
 
 __all__ = ['lu', 'lu_solve', 'lu_factor']
 
 
+@_apply_over_batch(('a', 2))
 def lu_factor(a, overwrite_a=False, check_finite=True):
     """
     Compute pivoted LU decomposition of a matrix.
@@ -118,11 +119,15 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('illegal value in %dth argument of '
-                         'internal getrf (lu_factor)' % -info)
+        raise ValueError(
+            f'illegal value in {-info}th argument of internal getrf (lu_factor)'
+        )
     if info > 0:
-        warn("Diagonal number %d is exactly zero. Singular matrix." % info,
-             LinAlgWarning, stacklevel=2)
+        warn(
+            f"Diagonal number {info} is exactly zero. Singular matrix.",
+            LinAlgWarning,
+            stacklevel=2
+        )
     return lu, piv
 
 
@@ -175,6 +180,12 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     """
     (lu, piv) = lu_and_piv
+    return _lu_solve(lu, piv, b, trans=trans, overwrite_b=overwrite_b,
+                     check_finite=check_finite)
+
+
+@_apply_over_batch(('lu', 2), ('piv', 1), ('b', '1|2'))
+def _lu_solve(lu, piv, b, trans, overwrite_b, check_finite):
     if check_finite:
         b1 = asarray_chkfinite(b)
     else:
@@ -194,8 +205,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
     if info == 0:
         return x
-    raise ValueError('illegal value in %dth argument of internal gesv|posv'
-                     % -info)
+    raise ValueError(f'illegal value in {-info}th argument of internal gesv|posv')
 
 
 def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
@@ -299,14 +309,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
         raise ValueError('The input array must be at least two-dimensional.')
 
     # Also check if dtype is LAPACK compatible
-    if a1.dtype.char not in 'fdFD':
-        dtype_char = lapack_cast_dict[a1.dtype.char]
-        if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype {a1.dtype} cannot be cast '
-                            'to float(32, 64) or complex(64, 128).')
-
-        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
-        overwrite_a = True
+    a1, overwrite_a = _normalize_lapack_dtype(a1, overwrite_a)
 
     *nd, m, n = a1.shape
     k = min(m, n)

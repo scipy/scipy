@@ -83,9 +83,10 @@ def compare_coeffs_to_alt(window_length, order):
     for pos in [None] + list(range(window_length)):
         h1 = savgol_coeffs(window_length, order, pos=pos, use='dot')
         h2 = alt_sg_coeffs(window_length, order, pos=pos)
-        xp_assert_close(h1, h2, atol=1e-10,
-                        err_msg=("window_length = %d, order = %d, pos = %s" %
-                                 (window_length, order, pos)))
+        xp_assert_close(
+            h1, h2, atol=1e-10,
+            err_msg=f"window_length = {window_length}, order = {order}, pos = {pos}"
+        )
 
 
 def test_sg_coeffs_compare():

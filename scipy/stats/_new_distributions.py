@@ -1,16 +1,14 @@
 import sys
-import json
-import os
 
 import numpy as np
 from numpy import inf
 
 from scipy import special
 from scipy.stats._distribution_infrastructure import (
-    ContinuousDistribution, _RealDomain, _RealParameter, _Parameterization,
-    _combine_docs)
+    ContinuousDistribution, DiscreteDistribution, _RealInterval, _IntegerInterval,
+    _RealParameter, _Parameterization, _combine_docs)
 
-__all__ = ['Normal']
+__all__ = ['Normal', 'Uniform', 'Binomial']
 
 
 class Normal(ContinuousDistribution):
@@ -27,9 +25,9 @@ class Normal(ContinuousDistribution):
     # `ShiftedScaledDistribution` allows this to be generated automatically from
     # an instance of `StandardNormal`, but the normal distribution is so frequently
     # used that it's worth a bit of code duplication to get better performance.
-    _mu_domain = _RealDomain(endpoints=(-inf, inf))
-    _sigma_domain = _RealDomain(endpoints=(0, inf))
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _mu_domain = _RealInterval(endpoints=(-inf, inf))
+    _sigma_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
 
     _mu_param = _RealParameter('mu',  symbol=r'\mu', domain=_mu_domain,
                                typical=(-1, 1))
@@ -86,7 +84,10 @@ class Normal(ContinuousDistribution):
 
     def _logentropy_formula(self, *, mu, sigma, **kwargs):
         lH0 = StandardNormal._logentropy_formula(self)
-        lls = np.log(np.log(abs(sigma))+0j)
+        with np.errstate(divide='ignore'):
+            # sigma = 1 -> log(sigma) = 0 -> log(log(sigma)) = -inf
+            # Silence the unnecessary runtime warning
+            lls = np.log(np.log(abs(sigma))+0j)
         return special.logsumexp(np.broadcast_arrays(lH0, lls), axis=0)
 
     def _median_formula(self, *, mu, sigma, **kwargs):
@@ -113,7 +114,7 @@ class Normal(ContinuousDistribution):
             # exact is faster (and obviously more accurate) for reasonable orders
             return sigma**order * special.factorial2(int(order) - 1, exact=True)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, *, mu, sigma, **kwargs):
+    def _sample_formula(self, full_shape, rng, *, mu, sigma, **kwargs):
         return rng.normal(loc=mu, scale=sigma, size=full_shape)[()]
 
 
@@ -131,7 +132,7 @@ class StandardNormal(Normal):
         f(x) = \frac{1}{\sqrt{2 \pi}} \exp \left( -\frac{1}{2} x^2 \right)
 
     """
-    _x_support = _RealDomain(endpoints=(-inf, inf))
+    _x_support = _RealInterval(endpoints=(-inf, inf))
     _x_param = _RealParameter('x', domain=_x_support, typical=(-5, 5))
     _variable = _x_param
     _parameterizations = []
@@ -195,7 +196,7 @@ class StandardNormal(Normal):
     def _moment_standardized_formula(self, order, **kwargs):
         return self._moment_raw_formula(order, **kwargs)
 
-    def _sample_formula(self, sample_shape, full_shape, rng, **kwargs):
+    def _sample_formula(self, full_shape, rng, **kwargs):
         return rng.normal(size=full_shape)[()]
 
 
@@ -216,11 +217,11 @@ class _LogUniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(0, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _log_a_domain = _RealDomain(endpoints=(-inf, inf))
-    _log_b_domain = _RealDomain(endpoints=('log_a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(True, True))
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _log_a_domain = _RealInterval(endpoints=(-inf, inf))
+    _log_b_domain = _RealInterval(endpoints=('log_a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -266,8 +267,7 @@ class _LogUniform(ContinuousDistribution):
         return t1 * t2
 
 
-# currently for testing only
-class _Uniform(ContinuousDistribution):
+class Uniform(ContinuousDistribution):
     r"""Uniform distribution.
 
     The probability density function of the uniform distribution is:
@@ -279,9 +279,9 @@ class _Uniform(ContinuousDistribution):
 
     """
 
-    _a_domain = _RealDomain(endpoints=(-inf, inf))
-    _b_domain = _RealDomain(endpoints=('a', inf))
-    _x_support = _RealDomain(endpoints=('a', 'b'), inclusive=(False, False))
+    _a_domain = _RealInterval(endpoints=(-inf, inf))
+    _b_domain = _RealInterval(endpoints=('a', inf))
+    _x_support = _RealInterval(endpoints=('a', 'b'), inclusive=(True, True))
 
     _a_param = _RealParameter('a', domain=_a_domain, typical=(1e-3, 0.9))
     _b_param = _RealParameter('b', domain=_b_domain, typical=(1.1, 1e3))
@@ -301,40 +301,152 @@ class _Uniform(ContinuousDistribution):
         kwargs.update(dict(a=a, b=b, ab=ab))
         return kwargs
 
-    def _pdf_formula(self, x, *, ab, **kwargs):
-        return np.full(x.shape, 1/ab)
+    def _logpdf_formula(self, x, *, ab, **kwargs):
+        return np.where(np.isnan(x), np.nan, -np.log(ab))
 
-    def _icdf_formula(self, x, a, b, ab, **kwargs):
-        return a + ab*x
+    def _pdf_formula(self, x, *, ab, **kwargs):
+        return np.where(np.isnan(x), np.nan, 1/ab)
+
+    def _logcdf_formula(self, x, *, a, ab, **kwargs):
+        with np.errstate(divide='ignore'):
+            return np.log(x - a) - np.log(ab)
+
+    def _cdf_formula(self, x, *, a, ab, **kwargs):
+        return (x - a) / ab
+
+    def _logccdf_formula(self, x, *, b, ab, **kwargs):
+        with np.errstate(divide='ignore'):
+            return np.log(b - x) - np.log(ab)
+
+    def _ccdf_formula(self, x, *, b, ab, **kwargs):
+        return (b - x) / ab
+
+    def _icdf_formula(self, p, *, a, ab, **kwargs):
+        return a + ab*p
+
+    def _iccdf_formula(self, p, *, b, ab, **kwargs):
+        return b - ab*p
+
+    def _entropy_formula(self, *, ab, **kwargs):
+        return np.log(ab)
 
     def _mode_formula(self, *, a, b, ab, **kwargs):
         return a + 0.5*ab
 
+    def _median_formula(self, *, a, b, ab, **kwargs):
+        return a + 0.5*ab
+
+    def _moment_raw_formula(self, order, a, b, ab, **kwargs):
+        np1 = order + 1
+        return (b**np1 - a**np1) / (np1 * ab)
+
+    def _moment_central_formula(self, order, ab, **kwargs):
+        return ab**2/12 if order == 2 else None
+
+    _moment_central_formula.orders = [2]  # type: ignore[attr-defined]
+
+    def _sample_formula(self, full_shape, rng, a, b, ab, **kwargs):
+        try:
+            return rng.uniform(a, b, size=full_shape)[()]
+        except OverflowError:  # happens when there are NaNs
+            return rng.uniform(0, 1, size=full_shape)*ab + a
+
+
+class _Gamma(ContinuousDistribution):
+    # Gamma distribution for testing only
+    _a_domain = _RealInterval(endpoints=(0, inf))
+    _x_support = _RealInterval(endpoints=(0, inf), inclusive=(False, False))
+
+    _a_param = _RealParameter('a', domain=_a_domain, typical=(0.1, 10))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0.1, 10))
+
+    _parameterizations = [_Parameterization(_a_param)]
+    _variable = _x_param
+
+    def _pdf_formula(self, x, *, a, **kwargs):
+        return x ** (a - 1) * np.exp(-x) / special.gamma(a)
+
+
+class Binomial(DiscreteDistribution):
+    r"""Binomial distribution with prescribed success probability and number of trials
+
+    The probability density function of the binomial distribution is:
+
+    .. math::
+
+        f(x) = {n \choose x} p^x (1 - p)^{n-x}
+
+    """
+    _n_domain = _IntegerInterval(endpoints=(0, inf), inclusive=(False, False))
+    _p_domain = _RealInterval(endpoints=(0, 1), inclusive=(False, False))
+    _x_support = _IntegerInterval(endpoints=(0, 'n'), inclusive=(True, True))
+
+    _n_param = _RealParameter('n', domain=_n_domain, typical=(10, 20))
+    _p_param = _RealParameter('p', domain=_p_domain, typical=(0.25, 0.75))
+    _x_param = _RealParameter('x', domain=_x_support, typical=(0, 10))
+
+    _parameterizations = [_Parameterization(_n_param, _p_param)]
+    _variable = _x_param
+
+    def __init__(self, *, n, p, **kwargs):
+        super().__init__(n=n, p=p, **kwargs)
+
+    def _pmf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_pmf(x, n, p)
+
+    def _logpmf_formula(self, x, *, n, p, **kwargs):
+        # This implementation is from the ``scipy.stats.binom`` and could be improved
+        # by using a more numerically sound implementation of the absolute value of
+        # the binomial coefficient.
+        combiln = (
+            special.gammaln(n+1) - (special.gammaln(x+1) + special.gammaln(n-x+1))
+        )
+        return combiln + special.xlogy(x, p) + special.xlog1py(n-x, -p)
+
+    def _cdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_cdf(x, n, p)
+
+    def _ccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_sf(x, n, p)
+
+    def _icdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_ppf(x, n, p)
+
+    def _iccdf_formula(self, x, *, n, p, **kwargs):
+        return special._ufuncs._binom_isf(x, n, p)
+
+    def _mode_formula(self, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Mode
+        mode = np.floor((n+1)*p)
+        mode = np.where(p == 1, mode - 1, mode)
+        return mode[()]
+
+    def _moment_raw_formula(self, order, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
+        if order == 1:
+            return n*p
+        if order == 2:
+            return n*p*(1 - p + n*p)
+        return None
+    _moment_raw_formula.orders = [1, 2]  # type: ignore[attr-defined]
+
+    def _moment_central_formula(self, order, *, n, p, **kwargs):
+        # https://en.wikipedia.org/wiki/Binomial_distribution#Higher_moments
+        if order == 1:
+            return np.zeros_like(n)
+        if order == 2:
+            return n*p*(1 - p)
+        if order == 3:
+            return n*p*(1 - p)*(1 - 2*p)
+        if order == 4:
+            return n*p*(1 - p)*(1 + (3*n - 6)*p*(1 - p))
+        return None
+    _moment_central_formula.orders = [1, 2, 3, 4]  # type: ignore[attr-defined]
+
 
 # Distribution classes need only define the summary and beginning of the extended
 # summary portion of the class documentation. All other documentation, including
-# examples, is generated automatically. This may be time-consuming for distributions
-# with slow methods, so we generate the documentation offline and store it as a static
-# `_new_distributions_docs.json` file. After making updates to the documentation of
-# a class, execute this file as a script to re-generate `_new_distribution_docs.json`.
-# Improvements to this system are welcome.
-_docfile = "_new_distribution_docs.json"
-_docdir = os.path.dirname(__file__)
-_docpath = os.path.abspath(os.path.join(_docdir, _docfile))
+# examples, is generated automatically.
 _module = sys.modules[__name__].__dict__
-
-if __name__ == "__main__":
-    # When executed as a script, generate the complete docstring for each distribution
-    # class (`_combine_docs`), store them in a dictionary, and write to a file.
-    docs = {}
-    for dist_name in __all__:
-        docs[dist_name] = _combine_docs(_module[dist_name])
-    with open(_docpath, 'w') as f:
-        json.dump(docs, f, indent="    ")
-
-# When imported, load the dictionary from the file, and assign to each distribution
-# class's `__doc__` attribute the corresponding docstring.
-with open(_docpath) as f:
-    docs = json.load(f)
-    for dist_name in __all__:
-        _module[dist_name].__doc__ = docs[dist_name]
+for dist_name in __all__:
+    _module[dist_name].__doc__ = _combine_docs(_module[dist_name])

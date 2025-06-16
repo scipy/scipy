@@ -18,10 +18,12 @@ jobs:
       message: ${{ steps.skip_check.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        if: ${{ !contains(github.actor, 'nektos/act') }}
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Check for skips
         id: skip_check
         # the lint workflow is not currently skipped with [docs only].
@@ -29,10 +31,14 @@ jobs:
         # and changing the output here based on the combination of tags (if desired).
         run: |
           set -xe
-          COMMIT_MSG=$(git log --no-merges -1)
           RUN="1"
-          if [[ "$COMMIT_MSG" == *"[lint only]"* || "$COMMIT_MSG" == *"[docs only]"* ]]; then
-              RUN="0"
+          # For running a job locally with Act (https://github.com/nektos/act),
+          # always run the job rather than skip based on commit message
+          if [[ $ACT != true ]]; then
+            COMMIT_MSG=$(git log --no-merges -1)
+            if [[ "$COMMIT_MSG" == *"[lint only]"* || "$COMMIT_MSG" == *"[docs only]"* ]]; then
+                RUN="0"
+            fi
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
-          echo github.ref ${{ github.ref }}
+          echo github.ref $GITHUB_REF

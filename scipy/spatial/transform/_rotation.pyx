@@ -3,7 +3,7 @@
 import re
 import warnings
 import numpy as np
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 from ._rotation_groups import create_group
 
 cimport numpy as np
@@ -15,12 +15,20 @@ np.import_array()
 
 # utilities for empty array initialization
 cdef inline double[:] _empty1(int n) noexcept:
+    if n == 0:
+        return array(shape=(1,), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2, n3), itemsize=sizeof(double), format=b"d")[:0]
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
 cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
+    if n1 == 0:
+        return array(shape=(1, n2), itemsize=sizeof(double), format=b"d")[:0]
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
@@ -448,7 +456,8 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
 ) noexcept:
-    cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
+    cdef Py_ssize_t n = q.shape[0] if p.shape[0] == 1 else p.shape[0]
+         
     cdef double[:, :] product = _empty2(n, 4)
 
     # dealing with broadcasting
@@ -463,6 +472,10 @@ cdef inline double[:, :] _compose_quat(
             _compose_quat_single(p[ind], q[ind], product[ind])
 
     return product
+
+def compose_quat(p, q):
+    """Composition of quaternions."""
+    return _compose_quat(p, q)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -554,6 +567,7 @@ cdef class Rotation:
     - Rotation Vectors
     - Modified Rodrigues Parameters
     - Euler Angles
+    - Davenport Angles (Generalized Euler Angles)
 
     The following operations on rotations are supported:
 
@@ -832,8 +846,7 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if (quat.ndim not in [1, 2]
-            or quat.shape[len(quat.shape) - 1] != 4
-            or quat.shape[0] == 0):
+            or quat.shape[len(quat.shape) - 1] != 4):
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              f"got {quat.shape}.")
 
@@ -1005,9 +1018,12 @@ cdef class Rotation:
     def from_matrix(cls, matrix):
         """Initialize from rotation matrix.
 
-        Rotations in 3 dimensions can be represented with 3 x 3 proper
-        orthogonal matrices [1]_. If the input is not proper orthogonal,
-        an approximation is created using the method described in [2]_.
+        Rotations in 3 dimensions can be represented with 3 x 3 orthogonal
+        matrices [1]_. If the input is not orthogonal, an approximation is
+        created by orthogonalizing the input matrix using the method described
+        in [2]_, and then converting the orthogonal rotation matrices to
+        quaternions using the algorithm described in [3]_. Matrices must be
+        right-handed.
 
         Parameters
         ----------
@@ -1024,7 +1040,8 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Rotation_matrix#In_three_dimensions
-        .. [2] F. Landis Markley, "Unit Quaternion from Rotation Matrix",
+        .. [2] https://en.wikipedia.org/wiki/Orthogonal_Procrustes_problem
+        .. [3] F. Landis Markley, "Unit Quaternion from Rotation Matrix",
                Journal of guidance, control, and dynamics vol. 31.2, pp.
                440-442, 2008.
 
@@ -1039,6 +1056,8 @@ cdef class Rotation:
         ... [0, -1, 0],
         ... [1, 0, 0],
         ... [0, 0, 1]])
+        >>> r.single
+        True
         >>> r.as_matrix().shape
         (3, 3)
 
@@ -1057,6 +1076,10 @@ cdef class Rotation:
         ... ]])
         >>> r.as_matrix().shape
         (2, 3, 3)
+        >>> r.single
+        False
+        >>> len(r)
+        2
 
         If input matrices are not special orthogonal (orthogonal with
         determinant equal to +1), then a special orthogonal estimate is stored:
@@ -1066,15 +1089,15 @@ cdef class Rotation:
         ... [0.5, 0, 0],
         ... [0, 0, 0.5]])
         >>> np.linalg.det(a)
-        0.12500000000000003
+        0.125
         >>> r = R.from_matrix(a)
         >>> matrix = r.as_matrix()
         >>> matrix
-        array([[-0.38461538, -0.92307692,  0.        ],
-               [ 0.92307692, -0.38461538,  0.        ],
-               [ 0.        ,  0.        ,  1.        ]])
+        array([[ 0., -1.,  0.],
+               [ 1.,  0.,  0.],
+               [ 0.,  0.,  1.]])
         >>> np.linalg.det(matrix)
-        1.0000000000000002
+        1.0
 
         It is also possible to have a stack containing a single rotation:
 
@@ -1095,8 +1118,10 @@ cdef class Rotation:
 
         .. versionadded:: 1.4.0
         """
+        cdef int ind
+
         is_single = False
-        matrix = np.asarray(matrix, dtype=float)
+        matrix = np.array(matrix, dtype=float)
 
         if (matrix.ndim not in [2, 3] or
             matrix.shape[len(matrix.shape)-2:] != (3, 3)):
@@ -1106,13 +1131,40 @@ cdef class Rotation:
         # If a single matrix is given, convert it to 3D 1 x 3 x 3 matrix but
         # set self._single to True so that we can return appropriate objects in
         # the `to_...` methods
-        cdef double[:, :, :] cmatrix
         if matrix.shape == (3, 3):
-            cmatrix = matrix[None, :, :]
+            matrix = matrix[np.newaxis, :, :]
             is_single = True
-        else:
-            cmatrix = matrix
 
+        # Calculate the determinant of the rotation matrix
+        # (should be positive for right-handed rotations)
+        dets = np.linalg.det(matrix)
+        if np.any(dets <= 0):
+            ind = np.where(dets <= 0)[0][0]
+            raise ValueError("Non-positive determinant (left-handed or null "
+                             f"coordinate frame) in rotation matrix {ind}: "
+                             f"{matrix[ind]}.")
+
+        # Gramian orthogonality check
+        # (should be the identity matrix for orthogonal matrices)
+        # Note that we have already ruled out left-handed cases above
+        gramians = matrix @ np.transpose(matrix, (0, 2, 1))
+        is_orthogonal = np.all(np.isclose(gramians, np.eye(3), atol=1e-12),
+                                axis=(1, 2))
+        indices_to_orthogonalize = np.where(~is_orthogonal)[0]
+
+        # Orthogonalize the rotation matrices where necessary
+        if len(indices_to_orthogonalize) > 0:
+            # Exact solution to the orthogonal Procrustes problem using singular
+            # value decomposition
+            U, _, Vt = np.linalg.svd(matrix[indices_to_orthogonalize, :, :])
+            matrix[indices_to_orthogonalize, :, :] = U @ Vt
+
+        # Convert the orthogonal rotation matrices to quaternions using the
+        # algorithm described in [3]_. This will also apply another
+        # orthogonalization step to correct for any small errors in the matrices
+        # that skipped the SVD step above.
+        cdef double[:, :, :] cmatrix
+        cmatrix = matrix
         cdef Py_ssize_t num_rotations = cmatrix.shape[0]
         cdef Py_ssize_t i, j, k
         cdef double[:] decision = _empty1(4)
@@ -2528,17 +2580,9 @@ cdef class Rotation:
             raise ValueError("Expected input of shape (3,) or (P, 3), "
                              "got {}.".format(vectors.shape))
 
-        single_vector = False
-        if vectors.shape == (3,):
-            single_vector = True
-            vectors = vectors[None, :]
-
-        matrix = self.as_matrix()
-        if self._single:
-            matrix = matrix[None, :, :]
-
-        n_vectors = vectors.shape[0]
-        n_rotations = len(self._quat)
+        cdef bint single_vector = vectors.ndim == 1
+        cdef Py_ssize_t n_vectors = 1 if single_vector else len(vectors)
+        cdef Py_ssize_t n_rotations = 1 if self.single else len(self)
 
         if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
             raise ValueError("Expected equal numbers of rotations and vectors "
@@ -2546,15 +2590,25 @@ cdef class Rotation:
                              "{} rotations and {} vectors.".format(
                                 n_rotations, n_vectors))
 
-        if inverse:
-            result = np.einsum('ikj,ik->ij', matrix, vectors)
-        else:
-            result = np.einsum('ijk,ik->ij', matrix, vectors)
+        cdef np.ndarray matrix = self.as_matrix()
 
-        if self._single and single_vector:
-            return result[0]
-        else:
-            return result
+        if inverse:
+            matrix = np.swapaxes(matrix, -1, -2)
+
+        if single_vector:
+            return np.matmul(matrix, vectors)
+
+        if self.single:
+            matrix = matrix[None, :, :]
+
+        if n_rotations == 1:
+            # Single rotation/many vectors, use matmul for speed: The axes argument
+            # is such that the input arguments don't need to be transposed and the
+            # output argument is contineous in memory.
+            return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
+
+        # for stacks of matrices einsum is faster
+        return np.einsum('ijk,ik->ij', matrix, vectors)
 
     @cython.embedsignature(True)
     def __mul__(Rotation self, Rotation other):
@@ -2901,6 +2955,9 @@ cdef class Rotation:
         >>> r.mean().as_euler('zyx', degrees=True)
         array([0.24945696, 0.25054542, 0.24945696])
         """
+        if self._quat.shape[0] == 0:
+            raise ValueError("Mean of an empty rotation set is undefined.")
+            
         if weights is None:
             weights = np.ones(len(self))
         else:
@@ -3185,7 +3242,8 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def random(cls, num=None, random_state=None):
+    @_transition_to_rng('random_state', position_num=2)
+    def random(cls, num=None, rng=None):
         """Generate uniformly distributed rotations.
 
         Parameters
@@ -3193,15 +3251,11 @@ cdef class Rotation:
         num : int or None, optional
             Number of random rotations to generate. If None (default), then a
             single rotation is generated.
-        random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
-
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+        rng : `numpy.random.Generator`, optional
+            Pseudorandom number generator state. When `rng` is None, a new
+            `numpy.random.Generator` is created using entropy from the
+            operating system. Types other than `numpy.random.Generator` are
+            passed to `numpy.random.default_rng` to instantiate a `Generator`.
 
         Returns
         -------
@@ -3238,12 +3292,12 @@ cdef class Rotation:
         scipy.stats.special_ortho_group
 
        """
-        random_state = check_random_state(random_state)
+        rng = check_random_state(rng)
 
         if num is None:
-            sample = random_state.normal(size=4)
+            sample = rng.normal(size=4)
         else:
-            sample = random_state.normal(size=(num, 4))
+            sample = rng.normal(size=(num, 4))
 
         return cls(sample)
 
@@ -3619,6 +3673,12 @@ cdef class Rotation:
         else:
             return cls.from_matrix(C), rssd
 
+    def __repr__(Rotation self):
+        m = f"{self.as_matrix()!r}".splitlines()
+        # bump indent (+21 characters)
+        m[1:] = [" " * 21 + m[i] for i in range(1, len(m))]
+        return "Rotation.from_matrix(" + "\n".join(m) + ")"
+
 class Slerp:
     """Spherical Linear Interpolation of Rotations.
 
@@ -3700,7 +3760,7 @@ class Slerp:
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
 
-        if rotations.single or len(rotations) == 1:
+        if rotations.single or len(rotations) <= 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         times = np.asarray(times)

@@ -7,8 +7,12 @@ py3.extension_module('_rotation',
   subdir: 'scipy/spatial/transform'
 )
 
-py3.install_sources(
-  '_rotation.pyi',
+py3.extension_module('_rigid_transform',
+  [cython_gen.process('_rigid_transform.pyx')],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
   subdir: 'scipy/spatial/transform'
 )
 

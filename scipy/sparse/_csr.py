@@ -168,7 +168,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, i, i + 1, 0, N)
         return self.__class__((data, indices, indptr), shape=(1, N),
@@ -184,7 +184,7 @@ class _csr_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         indptr, indices, data = get_csr_submatrix(
             M, N, self.indptr, self.indices, self.data, 0, M, i, i + 1)
         return self.__class__((data, indices, indptr), shape=(M, 1),

@@ -2,18 +2,21 @@
 # Author: Joris Vankerschaver 2013
 #
 import math
+import warnings
+import threading
 import numpy as np
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
 from scipy import special
-from scipy._lib._util import check_random_state, _lazywhere
+import scipy._lib.array_api_extra as xpx
+from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot, get_blas_funcs
 from ._continuous_distns import norm, invgamma
 from ._discrete_distns import binom
-from . import _mvn, _covariance, _rcont
-from ._qmvnt import _qmvt
+from . import _covariance, _rcont
+from ._qmvnt import _qmvt, _qmvn, _qauto
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
 
@@ -38,6 +41,7 @@ __all__ = ['multivariate_normal',
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
 _LOG_PI = np.log(np.pi)
+MVN_LOCK = threading.Lock()
 
 
 _doc_random_state = """\
@@ -391,14 +395,14 @@ class multivariate_normal_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, mvn_docdict_params)
 
-    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None):
+    def __call__(self, mean=None, cov=1, allow_singular=False, seed=None, **kwds):
         """Create a frozen multivariate normal distribution.
 
         See `multivariate_normal_frozen` for more information.
         """
         return multivariate_normal_frozen(mean, cov,
                                           allow_singular=allow_singular,
-                                          seed=seed)
+                                          seed=seed, **kwds)
 
     def _process_parameters(self, mean, cov, allow_singular=True):
         """
@@ -470,8 +474,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = cov.reshape(1, 1)
 
         if mean.ndim != 1 or mean.shape[0] != dim:
-            raise ValueError("Array 'mean' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'mean' must be a vector of length {dim}.")
         if cov.ndim == 0:
             cov = cov * np.eye(dim)
         elif cov.ndim == 1:
@@ -482,13 +485,12 @@ class multivariate_normal_gen(multi_rv_generic):
                 msg = ("Array 'cov' must be square if it is two dimensional,"
                        f" but cov.shape = {str(cov.shape)}.")
             else:
-                msg = ("Dimension mismatch: array 'cov' is of shape %s,"
-                       " but 'mean' is a vector of length %d.")
-                msg = msg % (str(cov.shape), len(mean))
+                msg = (f"Dimension mismatch: array 'cov' is of shape {cov.shape}, "
+                       f"but 'mean' is a vector of length {len(mean)}.")
             raise ValueError(msg)
         elif cov.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % cov.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {cov.ndim}")
 
         return dim, mean, cov
 
@@ -592,7 +594,7 @@ class multivariate_normal_gen(multi_rv_generic):
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
-    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit):
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps, lower_limit, rng):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -612,6 +614,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Notes
         -----
@@ -629,6 +634,7 @@ class multivariate_normal_gen(multi_rv_generic):
         # ensuring that lower bounds are indeed lower when passed, then
         # set signs of resulting CDF manually.
         b, a = np.broadcast_arrays(x, lower)
+        b, a = b - mean, a - mean  # _qmvn only accepts zero mean
         i_swap = b < a
         signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
         a, b = a.copy(), b.copy()
@@ -636,16 +642,19 @@ class multivariate_normal_gen(multi_rv_generic):
         n = x.shape[-1]
         limits = np.concatenate((a, b), axis=-1)
 
-        # mvnun expects 1-d arguments, so process points sequentially
+        # qmvn expects 1-d arguments, so process points sequentially
+        # XXX: if cov.ndim == 2 and limits.ndim == 1, can avoid apply_along_axis
         def func1d(limits):
-            return _mvn.mvnun(limits[:n], limits[n:], mean, cov,
-                              maxpts, abseps, releps)[0]
+            # res0 = _qmvn(maxpts, cov, limits[:n], limits[n:], rng)[0]
+            res = _qauto(_qmvn, cov, limits[:n], limits[n:],
+                         rng, error=abseps, limit=maxpts, n_batches=10)
+            return np.squeeze(res[0])
 
         out = np.apply_along_axis(func1d, -1, limits) * signs
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-               abseps=1e-5, releps=1e-5, *, lower_limit=None):
+               abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Log of the multivariate normal cumulative distribution function.
 
         Parameters
@@ -663,6 +672,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -682,7 +694,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+
+        rng = self._get_random_state(rng)
+        cdf = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
@@ -690,7 +704,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return out
 
     def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
-            abseps=1e-5, releps=1e-5, *, lower_limit=None):
+            abseps=1e-5, releps=1e-5, *, lower_limit=None, rng=None):
         """Multivariate normal cumulative distribution function.
 
         Parameters
@@ -708,6 +722,9 @@ class multivariate_normal_gen(multi_rv_generic):
         lower_limit : array_like, optional
             Lower limit of integration of the cumulative distribution function.
             Default is negative infinity. Must be broadcastable with `x`.
+        rng : Generator, optional
+            an instance of ``np.random.Generator``, which is used internally
+            for QMC integration.
 
         Returns
         -------
@@ -727,7 +744,8 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         if not maxpts:
             maxpts = 1000000 * dim
-        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit)
+        rng = self._get_random_state(rng)
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps, lower_limit, rng)
         return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
@@ -925,19 +943,20 @@ class multivariate_normal_frozen(multi_rv_frozen):
     def pdf(self, x):
         return np.exp(self.logpdf(x))
 
-    def logcdf(self, x, *, lower_limit=None):
-        cdf = self.cdf(x, lower_limit=lower_limit)
+    def logcdf(self, x, *, lower_limit=None, rng=None):
+        cdf = self.cdf(x, lower_limit=lower_limit, rng=rng)
         # the log of a negative real is complex, and cdf can be negative
         # if lower limit is greater than upper limit
         cdf = cdf + 0j if np.any(cdf < 0) else cdf
         out = np.log(cdf)
         return out
 
-    def cdf(self, x, *, lower_limit=None):
+    def cdf(self, x, *, lower_limit=None, rng=None):
         x = self._dist._process_quantiles(x, self.dim)
+        rng = self._dist._get_random_state(rng)
         out = self._dist._cdf(x, self.mean, self.cov_object.covariance,
                               self.maxpts, self.abseps, self.releps,
-                              lower_limit)
+                              lower_limit, rng)
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
@@ -2011,8 +2030,8 @@ class wishart_gen(multi_rv_generic):
             raise ValueError("Array 'scale' must be square if it is two dimensional,"
                              f" but scale.scale = {str(scale.shape)}.")
         elif scale.ndim > 2:
-            raise ValueError("Array 'scale' must be at most two-dimensional,"
-                             " but scale.ndim = %d" % scale.ndim)
+            raise ValueError(f"Array 'scale' must be at most two-dimensional, "
+                             f"but scale.ndim = {scale.ndim}")
 
         dim = scale.shape[0]
 
@@ -2052,9 +2071,9 @@ class wishart_gen(multi_rv_generic):
                     "Quantiles must be square in the first two dimensions "
                     f"if they are three dimensional, but x.shape = {str(x.shape)}.")
         elif x.ndim > 3:
-            raise ValueError("Quantiles must be at most two-dimensional with"
-                             " an additional dimension for multiple"
-                             "components, but x.ndim = %d" % x.ndim)
+            raise ValueError(f"Quantiles must be at most two-dimensional with an "
+                             f"additional dimension for multiple components, "
+                             f"but x.ndim = {x.ndim}")
 
         # Now we have 3-dim array; should have shape [dim, dim, *]
         if not x.shape[0:2] == (dim, dim):
@@ -3257,16 +3276,26 @@ class multinomial_gen(multi_rv_generic):
         """
         return multinomial_frozen(n, p, seed)
 
-    def _process_parameters(self, n, p, eps=1e-15):
+    def _process_parameters(self, n, p):
         """Returns: n_, p_, npcond.
 
         n_ and p_ are arrays of the correct shape; npcond is a boolean array
         flagging values out of the domain.
         """
+        eps = np.finfo(np.result_type(np.asarray(p), np.float32)).eps * 10
         p = np.array(p, dtype=np.float64, copy=True)
         p_adjusted = 1. - p[..., :-1].sum(axis=-1)
-        i_adjusted = np.abs(p_adjusted) > eps
+        # only make adjustment when it's significant
+        i_adjusted = np.abs(1 - p.sum(axis=-1)) > eps
         p[i_adjusted, -1] = p_adjusted[i_adjusted]
+
+        if np.any(i_adjusted):
+            message = ("Some rows of `p` do not sum to 1.0 within tolerance of "
+                       f"{eps=}. Currently, the last element of these rows is adjusted "
+                       "to compensate, but this condition will produce NaNs "
+                       "beginning in SciPy 1.18.0. Please ensure that rows of `p` sum "
+                       "to 1.0 to avoid futher disruption.")
+            warnings.warn(message, FutureWarning, stacklevel=3)
 
         # true for bad p
         pcond = np.any(p < 0, axis=-1)
@@ -3291,9 +3320,9 @@ class multinomial_gen(multi_rv_generic):
             raise ValueError("x must be an array.")
 
         if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
-            raise ValueError("Size of each quantile should be size of p: "
-                             "received %d, but expected %d." %
-                             (xx.shape[-1], p.shape[-1]))
+            raise ValueError(f"Size of each quantile should be size of p: "
+                             f"received {xx.shape[-1]}, but expected "
+                             f"{p.shape[-1]}.")
 
         # true for x out of the domain
         cond = np.any(xx != x, axis=-1)
@@ -3558,20 +3587,13 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Notes
     -----
-    This class is wrapping the random_rot code from the MDP Toolkit,
-    https://github.com/mdp-toolkit/mdp-toolkit
+    The ``rvs`` method returns a random rotation matrix drawn from the Haar
+    distribution, the only uniform distribution on SO(N). The algorithm generates
+    a Haar-distributed orthogonal matrix in O(N) using the ``rvs`` method of
+    `ortho_group`, then adjusts the matrix to ensure that the determinant is +1.
 
-    Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(N)).
-    The algorithm is described in the paper
-    Stewart, G.W., "The efficient generation of random orthogonal
-    matrices with an application to condition estimators", SIAM Journal
-    on Numerical Analysis, 17(3), pp. 403-409, 1980.
-    For more information see
-    https://en.wikipedia.org/wiki/Orthogonal_matrix#Randomization
-
-    See also the similar `ortho_group`. For a random rotation in three
-    dimensions, see `scipy.spatial.transform.Rotation.random`.
+    For a random rotation in three dimensions, see
+    `scipy.spatial.transform.Rotation.random`.
 
     Examples
     --------
@@ -3617,9 +3639,9 @@ class special_ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("""Dimension of rotation must be specified,
-                                and must be a scalar greater than 1.""")
+                                and must be a scalar nonnegative integer.""")
 
         return dim
 
@@ -3641,55 +3663,11 @@ class special_ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        size = int(size)
-        size = (size,) if size > 1 else ()
-
-        dim = self._process_parameters(dim)
-
-        # H represents a (dim, dim) matrix, while D represents the diagonal of
-        # a (dim, dim) diagonal matrix. The algorithm that follows is
-        # broadcasted on the leading shape in `size` to vectorize along
-        # samples.
-        H = np.empty(size + (dim, dim))
-        H[..., :, :] = np.eye(dim)
-        D = np.empty(size + (dim,))
-
-        for n in range(dim-1):
-
-            # x is a vector with length dim-n, xrow and xcol are views of it as
-            # a row vector and column vector respectively. It's important they
-            # are views and not copies because we are going to modify x
-            # in-place.
-            x = random_state.normal(size=size + (dim-n,))
-            xrow = x[..., None, :]
-            xcol = x[..., :, None]
-
-            # This is the squared norm of x, without vectorization it would be
-            # dot(x, x), to have proper broadcasting we use matmul and squeeze
-            # out (convert to scalar) the resulting 1x1 matrix
-            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
-
-            x0 = x[..., 0].copy()
-            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
-            x[..., 0] += D[..., n]*np.sqrt(norm2)
-
-            # In renormalizing x we have to append an additional axis with
-            # [..., None] to broadcast the scalar against the vector x
-            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
-
-            # Householder transformation, without vectorization the RHS can be
-            # written as outer(H @ x, x) (apart from the slicing)
-            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
-
-        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
-
-        # Without vectorization this could be written as H = diag(D) @ H,
-        # left-multiplication by a diagonal matrix amounts to multiplying each
-        # row of H by an element of the diagonal, so we add a dummy axis for
-        # the column index
-        H *= D[..., :, None]
-        return H
-
+        q = ortho_group.rvs(dim, size, random_state)
+        dets = np.linalg.det(q)
+        if dim:
+            q[..., 0, :] /= dets[..., np.newaxis]
+        return q
 
 special_ortho_group = special_ortho_group_gen()
 
@@ -3804,9 +3782,9 @@ class ortho_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -3881,6 +3859,7 @@ class random_correlation_gen(multi_rv_generic):
     r"""A random correlation matrix.
 
     Return a random correlation matrix, given a vector of eigenvalues.
+    The returned matrix is symmetric positive semidefinite with unit diagonal.
 
     The `eigs` keyword specifies the eigenvalues of the correlation matrix,
     and implies the dimension.
@@ -3893,7 +3872,8 @@ class random_correlation_gen(multi_rv_generic):
     Parameters
     ----------
     eigs : 1d ndarray
-        Eigenvalues of correlation matrix
+        Eigenvalues of correlation matrix. All eigenvalues need to be non-negative and
+        need to sum to the number of eigenvalues.
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -4159,7 +4139,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices, must be greater than 1.
+        Dimension of matrices.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -4216,9 +4196,9 @@ class unitary_group_gen(multi_rv_generic):
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
-        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+        if dim is None or not np.isscalar(dim) or dim < 0 or dim != int(dim):
             raise ValueError("Dimension of rotation must be specified,"
-                             "and must be a scalar greater than 1.")
+                             "and must be a scalar nonnegative integer.")
 
         return dim
 
@@ -4652,7 +4632,7 @@ class multivariate_t_gen(multi_rv_generic):
 
         # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
-        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
+        return xpx.apply_where(df >= threshold, (dim, df), asymptotic, regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
@@ -4763,8 +4743,7 @@ class multivariate_t_gen(multi_rv_generic):
             shape = shape.reshape(1, 1)
 
         if loc.ndim != 1 or loc.shape[0] != dim:
-            raise ValueError("Array 'loc' must be a vector of length %d." %
-                             dim)
+            raise ValueError(f"Array 'loc' must be a vector of length {dim}.")
         if shape.ndim == 0:
             shape = shape * np.eye(dim)
         elif shape.ndim == 1:
@@ -4780,8 +4759,8 @@ class multivariate_t_gen(multi_rv_generic):
                 msg = msg % (str(shape.shape), len(loc))
             raise ValueError(msg)
         elif shape.ndim > 2:
-            raise ValueError("Array 'cov' must be at most two-dimensional,"
-                             " but cov.ndim = %d" % shape.ndim)
+            raise ValueError(f"Array 'cov' must be at most two-dimensional, "
+                             f"but cov.ndim = {shape.ndim}")
 
         # Process degrees of freedom.
         if df is None:
@@ -5967,7 +5946,7 @@ alpha : array_like
     determines the dimensionality of the distribution. Each entry must be
     strictly positive.
 n : int or array_like
-    The number of trials. Each element must be a strictly positive integer.
+    The number of trials. Each element must be a non-negative integer.
 """
 
 _dirichlet_mn_doc_frozen_callparams = ""
@@ -6009,8 +5988,8 @@ def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
         raise ValueError("`alpha` must contain only positive values.")
 
     n_int = np.floor(n)
-    if np.any(n <= 0) or np.any(n != n_int):
-        raise ValueError("`n` must be a positive integer.")
+    if np.any(n < 0) or np.any(n != n_int):
+        raise ValueError("`n` must be a non-negative integer.")
     n = n_int
 
     sum_alpha = np.sum(alpha, axis=-1)

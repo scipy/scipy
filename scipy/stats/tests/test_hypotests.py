@@ -14,7 +14,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     _cdf_cvm, cramervonmises_2samp,
                                     _pval_cvm_2samp_exact, barnard_exact,
                                     boschloo_exact)
-from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
+from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state, _MWU
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
@@ -202,12 +202,12 @@ class TestMannWhitneyU:
     def test_auto(self):
         # Test that default method ('auto') chooses intended method
 
-        np.random.seed(1)
+        rng = np.random.RandomState(1)
         n = 8  # threshold to switch from exact to asymptotic
 
         # both inputs are smaller than threshold; should use exact
-        x = np.random.rand(n-1)
-        y = np.random.rand(n-1)
+        x = rng.rand(n-1)
+        y = rng.rand(n-1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -215,8 +215,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # one input is smaller than threshold; should use exact
-        x = np.random.rand(n-1)
-        y = np.random.rand(n+1)
+        x = rng.rand(n-1)
+        y = rng.rand(n+1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -231,8 +231,8 @@ class TestMannWhitneyU:
         assert auto.pvalue != asymptotic.pvalue
 
         # both inputs are larger than threshold; should use asymptotic
-        x = np.random.rand(n+1)
-        y = np.random.rand(n+1)
+        x = rng.rand(n+1)
+        y = rng.rand(n+1)
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
         exact = mannwhitneyu(x, y, method='exact')
@@ -241,8 +241,8 @@ class TestMannWhitneyU:
 
         # both inputs are smaller than threshold, but there is a tie
         # should use asymptotic
-        x = np.random.rand(n-1)
-        y = np.random.rand(n-1)
+        x = rng.rand(n-1)
+        y = rng.rand(n-1)
         y[3] = x[3]
         auto = mannwhitneyu(x, y)
         asymptotic = mannwhitneyu(x, y, method='asymptotic')
@@ -367,44 +367,46 @@ class TestMannWhitneyU:
 
     def test_exact_distribution(self):
         # I considered parametrize. I decided against it.
+        setattr(_mwu_state, 's', _MWU(0, 0))
+
         p_tables = {3: self.pn3, 4: self.pn4, 5: self.pm5, 6: self.pm6}
         for n, table in p_tables.items():
             for m, p in table.items():
                 # check p-value against table
                 u = np.arange(0, len(p))
-                _mwu_state.set_shapes(m, n)
-                assert_allclose(_mwu_state.cdf(k=u), p, atol=1e-3)
+                _mwu_state.s.set_shapes(m, n)
+                assert_allclose(_mwu_state.s.cdf(k=u), p, atol=1e-3)
 
                 # check identity CDF + SF - PMF = 1
                 # ( In this implementation, SF(U) includes PMF(U) )
                 u2 = np.arange(0, m*n+1)
-                assert_allclose(_mwu_state.cdf(k=u2)
-                                + _mwu_state.sf(k=u2)
-                                - _mwu_state.pmf(k=u2), 1)
+                assert_allclose(_mwu_state.s.cdf(k=u2)
+                                + _mwu_state.s.sf(k=u2)
+                                - _mwu_state.s.pmf(k=u2), 1)
 
                 # check symmetry about mean of U, i.e. pmf(U) = pmf(m*n-U)
-                pmf = _mwu_state.pmf(k=u2)
+                pmf = _mwu_state.s.pmf(k=u2)
                 assert_allclose(pmf, pmf[::-1])
 
                 # check symmetry w.r.t. interchange of m, n
-                _mwu_state.set_shapes(n, m)
-                pmf2 = _mwu_state.pmf(k=u2)
+                _mwu_state.s.set_shapes(n, m)
+                pmf2 = _mwu_state.s.pmf(k=u2)
                 assert_allclose(pmf, pmf2)
 
     def test_asymptotic_behavior(self):
-        np.random.seed(0)
+        rng = np.random.default_rng(12543)
 
         # for small samples, the asymptotic test is not very accurate
-        x = np.random.rand(5)
-        y = np.random.rand(5)
+        x = rng.random(5)
+        y = rng.random(5)
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
 
         # for large samples, they agree reasonably well
-        x = np.random.rand(40)
-        y = np.random.rand(40)
+        x = rng.random(40)
+        y = rng.random(40)
         res1 = mannwhitneyu(x, y, method="exact")
         res2 = mannwhitneyu(x, y, method="asymptotic")
         assert res1.statistic == res2.statistic
@@ -628,22 +630,25 @@ class TestMannWhitneyU:
         m, n = 5, 11
         x = rng.random(size=m)
         y = rng.random(size=n)
-        _mwu_state.reset()  # reset cache
+
+        setattr(_mwu_state, 's', _MWU(0, 0))
+        _mwu_state.s.reset()  # reset cache
+
         res = stats.mannwhitneyu(x, y, method='exact')
-        shape = _mwu_state.configurations.shape
+        shape = _mwu_state.s.configurations.shape
         assert shape[-1] == min(res.statistic, m*n - res.statistic) + 1
         stats.mannwhitneyu(y, x, method='exact')
-        assert shape == _mwu_state.configurations.shape  # same when sizes are reversed
+        assert shape == _mwu_state.s.configurations.shape  # same with reversed sizes
 
         # Also, we weren't exploiting the symmetry of the null distribution
         # to its full potential. Ensure that the null distribution is not
         # evaluated explicitly for `k > m*n/2`.
-        _mwu_state.reset()  # reset cache
+        _mwu_state.s.reset()  # reset cache
         stats.mannwhitneyu(x, 0*y, method='exact', alternative='greater')
-        shape = _mwu_state.configurations.shape
+        shape = _mwu_state.s.configurations.shape
         assert shape[-1] == 1  # k is smallest possible
         stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
-        assert shape == _mwu_state.configurations.shape
+        assert shape == _mwu_state.s.configurations.shape
 
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_permutation_method(self, alternative):
@@ -855,8 +860,9 @@ class TestSomersD(_TestPythranFunc):
         shape = 4, 6
         size = np.prod(shape)
 
-        np.random.seed(0)
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size).reshape(shape)
+        rng = np.random.RandomState(0)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size,
+                                  random_state=rng).reshape(shape)
         res = stats.somersd(s)
 
         s2 = np.insert(s, 2, np.zeros(shape[1]), axis=0)
@@ -884,9 +890,10 @@ class TestSomersD(_TestPythranFunc):
         shape = 4, 6
         size = np.prod(shape)
 
-        np.random.seed(0)
+        rng = np.random.default_rng(0)
         # start with a valid contingency table
-        s = stats.multinomial.rvs(N, p=np.ones(size)/size).reshape(shape)
+        s = stats.multinomial.rvs(N, p=np.ones(size)/size,
+                                  random_state=rng).reshape(shape)
 
         s5 = s - 2
         message = "All elements of the contingency table must be non-negative"
@@ -998,6 +1005,7 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
+    @pytest.mark.thread_unsafe
     def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
@@ -1370,18 +1378,18 @@ class TestCvm_2samp:
     def test_large_sample(self):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan
-        np.random.seed(4367)
-        x = distributions.norm.rvs(size=1000000)
-        y = distributions.norm.rvs(size=900000)
+        rng = np.random.default_rng(4367)
+        x = distributions.norm.rvs(size=1000000, random_state=rng)
+        y = distributions.norm.rvs(size=900000, random_state=rng)
         r = cramervonmises_2samp(x, y)
         assert_(0 < r.pvalue < 1)
         r = cramervonmises_2samp(x, y+0.1)
         assert_(0 < r.pvalue < 1)
 
     def test_exact_vs_asymptotic(self):
-        np.random.seed(0)
-        x = np.random.rand(7)
-        y = np.random.rand(8)
+        rng = np.random.RandomState(0)
+        x = rng.rand(7)
+        y = rng.rand(8)
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='asymptotic')
         assert_equal(r1.statistic, r2.statistic)
@@ -1635,6 +1643,11 @@ class TestTukeyHSD:
         with assert_raises(ValueError, match="...must be greater than one"):
             stats.tukey_hsd([], [2, 5], [4, 5, 6])
 
+    def test_equal_var_input_validation(self):
+        msg = "Expected a boolean value for 'equal_var'"
+        with assert_raises(TypeError, match=msg):
+            stats.tukey_hsd([1, 2, 3], [2, 5], [6, 7], equal_var="False")
+
     @pytest.mark.parametrize("nargs", (0, 1))
     def test_not_enough_treatments(self, nargs):
         with assert_raises(ValueError, match="...more than 1 treatment."):
@@ -1653,6 +1666,127 @@ class TestTukeyHSD:
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[0, 1])
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
 
+
+class TestGamesHowell:
+    # data with unequal variances
+    data_same_size = ([24., 23., 31., 51.],
+                      [34., 18., 18., 26.],
+                      [17., 68., 59.,  7.])
+
+    data_diff_size = ([30., 23., 51.],
+                      [-81., 71., -27., 63.],
+                      [42., 11., 29., 19., 50.],
+                      [23., 22., 20., 18., 9.])
+
+    spss_same_size = """
+            Mean Diff      Lower Bound         Upper Bound         Sig
+    0 - 1   8.25000000    -16.5492749527311    33.0492749527311    0.558733632413559
+    0 - 2  -5.50000000    -63.6702454316458    52.6702454316458    0.941147750599221
+    1 - 2  -13.7500000    -74.3174374251372    46.8174374251372    0.682983914946841
+    """
+
+    spss_diff_size = """
+             Mean Diff       Lower Bound        Upper Bound         Sig
+    0 - 1	 28.16666667    -141.985416377670   198.318749711003	0.8727542747886180
+    0 - 2	 4.466666667	-37.2830676783904   46.2164010117237	0.9752628408671710
+    0 - 3	 16.26666667	-35.0933112382470   67.6266445715803	0.4262506151302880
+    1 - 2	-23.70000000	-195.315617201249   147.915617201249	0.9148950609000590
+    1 - 3	-11.90000000	-188.105478728519   164.305478728519	0.9861432250093960
+    2 - 3	 11.80000000	-16.2894857524254	39.8894857524254    0.4755344436335670
+    """
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, spss_same_size),
+                            (data_diff_size, spss_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_spss(self, data, res_expect_str):
+        """
+        DATA LIST LIST /Group (F1.0) Value (F8.2).
+        BEGIN DATA
+        0 24
+        0 23
+        0 31
+        0 51
+        1 34
+        1 18
+        1 18
+        1 26
+        2 17
+        2 68
+        2 59
+        2 7
+        END DATA.
+
+        ONEWAY Value BY Group
+            /MISSING ANALYSIS
+            /POSTHOC=GH ALPHA(0.05).
+        """
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ").split()[7:],
+            dtype=float).reshape(-1, 6)
+        res_games = stats.tukey_hsd(*data, equal_var=False)
+        conf = res_games.confidence_interval()
+        # loop over the comparisons
+        for i, j, s, l, h, p in res_expect:
+            i, j = int(i), int(j)
+            assert_allclose(res_games.statistic[i, j], s, atol=1e-8)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-8)
+            assert_allclose(conf.low[i, j], l, atol=1e-6)
+            assert_allclose(conf.high[i, j], h, atol=1e-5)
+
+    r_same_size = """
+                  q value             Pr(>|q|)
+    1 - 0 == 0   -1.5467805948856344  0.55873362851759
+    2 - 0 == 0    0.4726721776628535  0.94114775035993
+    2 - 1 == 0    1.246837541297872   0.68298393799782
+    """
+
+    r_diff_size = """
+                 q value             Pr(>|q|)
+    1 - 0 == 0  -1.0589317485313876  0.87275427357438
+    2 - 0 == 0  -0.5716222106144833  0.97526284087419
+    3 - 0 == 0  -2.6209678382077000  0.42625067714691
+    2 - 1 == 0   0.8971899898179028  0.91489506061850
+    3 - 1 == 0   0.4579447210555352  0.98614322544695
+    3 - 2 == 0  -2.198800177874794   0.47553444364614
+    """
+
+    @pytest.mark.parametrize("data, res_expect_str",
+                            ((data_same_size, r_same_size),
+                            (data_diff_size, r_diff_size)),
+                            ids=["equal size sample",
+                                 "unequal sample size"])
+    def test_compare_r(self, data, res_expect_str):
+        """
+        games-howell is provided by PMCMRplus package
+        https://search.r-project.org/CRAN/refmans/PMCMRplus/html/gamesHowellTest.html
+        > library("PMCMRplus")
+        > options(digits=16)
+        > table = data.frame(
+            values = c(24., 23., 31., 51., 34., 18., 18., 26., 17., 68., 59.,  7.),
+            groups = c("0", "0", "0", "0", "1", "1", "1", "1", "2", "2", "2", "2")
+          )
+        > table$groups = as.factor(table$groups)
+        > fit <-aov(values ~ groups, table)
+        > res = gamesHowellTest(fit)
+        > summary(res)
+        """
+        res_expect = np.asarray(
+            res_expect_str.replace(" - ", " ")
+            .replace(" == ", " ").split()[3:],
+            dtype=float).reshape(-1, 5)
+        res_games = stats.tukey_hsd(*data, equal_var=False)
+        # loop over the comparisons
+        # note confidence intervals are not provided by PMCMRplus
+        for j, i, _, _, p in res_expect:
+            i, j = int(i), int(j)
+            assert_allclose(res_games.pvalue[i, j], p, atol=1e-7)
+
+    # Data validation test has been covered by TestTukeyHSD
+    # like empty, 1d, inf, and lack of tretments
+    # because games_howell leverage _tukey_hsd_iv()
 
 class TestPoissonMeansTest:
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
@@ -1817,19 +1951,19 @@ class TestBWSTest:
         x, y = rng.random(size=(2, 10))
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res1 = stats.bws_test(x, y, method=method)
 
         assert len(res1.null_distribution) == 10
 
         rng = np.random.default_rng(1520514347193347862)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res2 = stats.bws_test(x, y, method=method)
 
         assert_allclose(res1.null_distribution, res2.null_distribution)
 
         rng = np.random.default_rng(5205143471933478621)
-        method = stats.PermutationMethod(n_resamples=10, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=10, rng=rng)
         res3 = stats.bws_test(x, y, method=method)
 
         assert not np.allclose(res3.null_distribution, res1.null_distribution)

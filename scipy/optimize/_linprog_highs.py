@@ -17,75 +17,55 @@ import inspect
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
-from ._highs._highs_wrapper import _highs_wrapper
-from ._highs._highs_constants import (
-    CONST_INF,
-    MESSAGE_LEVEL_NONE,
-    HIGHS_OBJECTIVE_SENSE_MINIMIZE,
-
-    MODEL_STATUS_NOTSET,
-    MODEL_STATUS_LOAD_ERROR,
-    MODEL_STATUS_MODEL_ERROR,
-    MODEL_STATUS_PRESOLVE_ERROR,
-    MODEL_STATUS_SOLVE_ERROR,
-    MODEL_STATUS_POSTSOLVE_ERROR,
-    MODEL_STATUS_MODEL_EMPTY,
-    MODEL_STATUS_OPTIMAL,
-    MODEL_STATUS_INFEASIBLE,
-    MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE,
-    MODEL_STATUS_UNBOUNDED,
-    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
-    as MODEL_STATUS_RDOVUB,
-    MODEL_STATUS_REACHED_OBJECTIVE_TARGET,
-    MODEL_STATUS_REACHED_TIME_LIMIT,
-    MODEL_STATUS_REACHED_ITERATION_LIMIT,
-
-    HIGHS_SIMPLEX_STRATEGY_DUAL,
-
-    HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
-
-    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
-    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
-    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
-    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+from ._highspy._highs_wrapper import _highs_wrapper
+from ._highspy._core import(
+    kHighsInf,
+    HighsDebugLevel,
+    ObjSense,
+    HighsModelStatus,
+    simplex_constants as s_c,  # [1]
 )
-from scipy.sparse import csc_matrix, vstack, issparse
+from scipy.sparse import csc_array, vstack, issparse
 
+# [1]: Directly importing from "._highspy._core.simplex_constants"
+# causes problems when reloading.
+# See https://github.com/scipy/scipy/pull/22869 for details.
 
 def _highs_to_scipy_status_message(highs_status, highs_message):
     """Converts HiGHS status number/message to SciPy status number/message"""
 
     scipy_statuses_messages = {
         None: (4, "HiGHS did not provide a status code. "),
-        MODEL_STATUS_NOTSET: (4, ""),
-        MODEL_STATUS_LOAD_ERROR: (4, ""),
-        MODEL_STATUS_MODEL_ERROR: (2, ""),
-        MODEL_STATUS_PRESOLVE_ERROR: (4, ""),
-        MODEL_STATUS_SOLVE_ERROR: (4, ""),
-        MODEL_STATUS_POSTSOLVE_ERROR: (4, ""),
-        MODEL_STATUS_MODEL_EMPTY: (4, ""),
-        MODEL_STATUS_RDOVUB: (4, ""),
-        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (4, ""),
-        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully. "),
-        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached. "),
-        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
-        MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
-        MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
-        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "
-                                               "or infeasible. ")}
+        HighsModelStatus.kNotset: (4, ""),
+        HighsModelStatus.kLoadError: (4, ""),
+        HighsModelStatus.kModelError: (2, ""),
+        HighsModelStatus.kPresolveError: (4, ""),
+        HighsModelStatus.kSolveError: (4, ""),
+        HighsModelStatus.kPostsolveError: (4, ""),
+        HighsModelStatus.kModelEmpty: (4, ""),
+        HighsModelStatus.kObjectiveBound: (4, ""),
+        HighsModelStatus.kObjectiveTarget: (4, ""),
+        HighsModelStatus.kOptimal: (0, "Optimization terminated successfully. "),
+        HighsModelStatus.kTimeLimit: (1, "Time limit reached. "),
+        HighsModelStatus.kIterationLimit: (1, "Iteration limit reached. "),
+        HighsModelStatus.kInfeasible: (2, "The problem is infeasible. "),
+        HighsModelStatus.kUnbounded: (3, "The problem is unbounded. "),
+        HighsModelStatus.kUnboundedOrInfeasible: (4, "The problem is unbounded "
+                                                  "or infeasible. ")}
     unrecognized = (4, "The HiGHS status code was not recognized. ")
     scipy_status, scipy_message = (
         scipy_statuses_messages.get(highs_status, unrecognized))
+    hstat = int(highs_status) if highs_status is not None else None
     scipy_message = (f"{scipy_message}"
-                     f"(HiGHS Status {highs_status}: {highs_message})")
+                     f"(HiGHS Status {hstat}: {highs_message})")
     return scipy_status, scipy_message
 
 
 def _replace_inf(x):
-    # Replace `np.inf` with CONST_INF
+    # Replace `np.inf` with kHighsInf
     infs = np.isinf(x)
     with np.errstate(invalid="ignore"):
-        x[infs] = np.sign(x[infs])*CONST_INF
+        x[infs] = np.sign(x[infs])*kHighsInf
     return x
 
 
@@ -312,11 +292,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
         'simplex_dual_edge_weight_strategy',
-        choices={'dantzig': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
-                 'devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
-                 'steepest-devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
-                 'steepest':
-                 HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+        choices={'dantzig': \
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
+                 'devex': \
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
+                 'steepest-devex': \
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
+                 'steepest': \
+                 s_c.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
                  None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
@@ -335,14 +318,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         A = vstack((A_ub, A_eq))
     else:
         A = np.vstack((A_ub, A_eq))
-    A = csc_matrix(A)
+    A = csc_array(A)
 
     options = {
         'presolve': presolve,
-        'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
+        'sense': ObjSense.kMinimize,
         'solver': solver,
         'time_limit': time_limit,
-        'highs_debug_level': MESSAGE_LEVEL_NONE,
+        'highs_debug_level': HighsDebugLevel.kHighsDebugLevelNone,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
@@ -351,8 +334,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
-        'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+        'simplex_strategy': s_c.SimplexStrategy.kSimplexStrategyDual,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
@@ -402,7 +384,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     status, message = _highs_to_scipy_status_message(highs_status,
                                                      highs_message)
 
-    x = np.array(res['x']) if 'x' in res else None
+    x = res['x'] # is None if not set
     sol = {'x': x,
            'slack': slack,
            'con': con,
@@ -424,7 +406,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             }),
            'fun': res.get('fun'),
            'status': status,
-           'success': res['status'] == MODEL_STATUS_OPTIMAL,
+           'success': res['status'] == HighsModelStatus.kOptimal,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),

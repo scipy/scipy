@@ -21,10 +21,11 @@ import warnings
 import operator
 import numpy as np
 
-from scipy.interpolate._bsplines import (
+from ._bsplines import (
     _not_a_knot, make_interp_spline, BSpline, fpcheck, _lsq_solve_qr
 )
-from scipy.interpolate._bspl import _qr_reduce, _fpback, _fpknot
+from . import _dierckx      # type: ignore[attr-defined]
+
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -56,7 +57,11 @@ def _get_residuals(x, y, t, k, w):
     _, _, c = _lsq_solve_qr(x, y, t, k, w)
     c = np.ascontiguousarray(c)
     spl = BSpline(t, c, k)
-    return _compute_residuals(w2, spl(x), y)
+    residuals = _compute_residuals(w2, spl(x), y)
+    fp = residuals.sum()
+    if np.isnan(fp):
+        raise ValueError(_iermesg[1])
+    return residuals, fp
 
 
 def _compute_residuals(w2, splx, y):
@@ -81,7 +86,7 @@ def add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    new_knot = _fpknot(x, t, k, residuals)
+    new_knot = _dierckx.fpknot(x, t, k, residuals)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
@@ -138,7 +143,7 @@ def _validate_inputs(x, y, w, k, s, xb, xe, parametric):
 
 
 def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
-    """Replicate FITPACK's constructing the knot vector.
+    """Generate knot vectors until the Least SQuares (LSQ) criterion is satified.
 
     Parameters
     ----------
@@ -225,10 +230,10 @@ def generate_knots(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
         x, y, w, k, s, xb, xe, parametric=np.ndim(y) == 2
     )
 
-    yield from _generate_knots_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, nest=nest)
+    yield from _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
 
 
-def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None):
+def _generate_knots_impl(x, y, w, xb, xe, k, s, nest):
 
     acc = s * TOL
     m = x.size    # the number of data points
@@ -257,8 +262,7 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
 
         # construct the LSQ spline with this set of knots
         fpold = fp
-        residuals = _get_residuals(x, y, t, k, w=w)
-        fp = residuals.sum()
+        residuals, fp = _get_residuals(x, y, t, k, w=w)
         fpms = fp - s
 
         # c  test whether the approximation sinf(x) is an acceptable solution.
@@ -299,7 +303,7 @@ def _generate_knots_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, nest=None)
 
             # recompute if needed
             if j < nplus - 1:
-                residuals = _get_residuals(x, y, t, k, w=w)
+                residuals, _ = _get_residuals(x, y, t, k, w=w)
 
     # this should never be reached
     return
@@ -355,6 +359,9 @@ def disc(t, k):
     disc : ndarray, shape(n-2*k-1, k+2)
         The jumps of the k-th derivatives of b-splines at internal knots,
         ``t[k+1], ...., t[n-k-1]``.
+    offset : ndarray, shape(2-2*k-1,)
+        Offsets
+    nc : int
 
     Notes
     -----
@@ -401,7 +408,7 @@ def disc(t, k):
     matr *= (delta/ nrint)**k
 
     # make it packed
-    offset = np.array([i for i in range(nrint-1)])
+    offset = np.array([i for i in range(nrint-1)], dtype=np.int64)
     nc = n - k - 1
     return matr, offset, nc
 
@@ -475,7 +482,7 @@ class F:
         AA[:nc, :nz] = R[:nc, :]
         # AA[nc:, :] = b.a / p  # done in __call__(self, p)
         self.AA  = AA
-        self.offset = np.r_[np.arange(nc, dtype=np.intp), b_offset]
+        self.offset = np.r_[np.arange(nc, dtype=np.int64), b_offset]
 
         self.nc = nc
         self.b = b
@@ -494,10 +501,10 @@ class F:
         QY = self.YY.copy()
 
         # heavy lifting happens here, in-place
-        _qr_reduce(AB, offset, nc, QY, startrow=nc)
+        _dierckx.qr_reduce(AB, offset, nc, QY, startrow=nc)
 
         # solve for the coefficients
-        c = _fpback(AB, nc, QY)
+        c = _dierckx.fpback(AB, nc, QY)
 
         spl = BSpline(self.t, c, self.k)
         residuals = _compute_residuals(self.w**2, spl(self.x), self.y)
@@ -532,11 +539,15 @@ class Bunch:
         self.__dict__.update(**kwargs)
 
 
-_iermesg = {
-2: """error. a theoretically impossible result was found during
+_iermesg1 = """error. a theoretically impossible result was found during
 the iteration process for finding a smoothing spline with
 fp = s. probably causes : s too small.
-there is an approximation returned but the corresponding
+"""
+
+_iermesg = {
+1: _iermesg1 + """the weighted sum of squared residuals is becoming NaN
+""",
+2: _iermesg1 + """there is an approximation returned but the corresponding
 weighted sum of squared residuals does not satisfy the
 condition abs(fp-s)/s < tol.
 """,
@@ -643,7 +654,7 @@ def root_rati(f, p0, bracket, acc):
     return Bunch(converged=converged, root=p, iterations=it, ier=ier)
 
 
-def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
+def _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest):
     """Shared infra for make_splrep and make_splprep.
     """
     acc = s * TOL
@@ -655,12 +666,12 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
         nest = max(m + k + 1, 2*k + 3)
     else:
         if nest < 2*(k + 1):
-            raise ValueError(f"`nest` too small: {nest = } < 2*(k+1) = {2*(k+1)}.")    
+            raise ValueError(f"`nest` too small: {nest = } < 2*(k+1) = {2*(k+1)}.")
         if t is not None:
             raise ValueError("Either supply `t` or `nest`.")
 
     if t is None:
-        gen = _generate_knots_impl(x, y, w=w, k=k, s=s, xb=xb, xe=xe, nest=nest)
+        gen = _generate_knots_impl(x, y, w, xb, xe, k, s, nest)
         t = list(gen)[-1]
     else:
         fpcheck(x, t, k)
@@ -681,13 +692,11 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
     # ### bespoke solver ####
     # initial conditions
     # f(p=inf) : LSQ spline with knots t   (XXX: reuse R, c)
-    residuals = _get_residuals(x, y, t, k, w=w)
-    fp = residuals.sum()
+    _, fp = _get_residuals(x, y, t, k, w=w)
     fpinf = fp - s
 
     # f(p=0): LSQ spline without internal knots
-    residuals = _get_residuals(x, y, np.array([xb]*(k+1) + [xe]*(k+1)), k, w)
-    fp0 = residuals.sum()
+    _, fp0 = _get_residuals(x, y, np.array([xb]*(k+1) + [xe]*(k+1)), k, w)
     fp0 = fp0 - s
 
     # solve
@@ -708,7 +717,7 @@ def _make_splrep_impl(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=
 
 
 def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
-    r"""Find the B-spline representation of a 1D function.
+    r"""Create a smoothing B-spline function with bounded error, minimizing derivative jumps.
 
     Given the set of data points ``(x[i], y[i])``, determine a smooth spline
     approximation of degree ``k`` on the interval ``xb <= x <= xe``.
@@ -732,7 +741,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
         especially with small `s` values.
     s : float, optional
         The smoothing condition. The amount of smoothness is determined by
-        satisfying the conditions::
+        satisfying the LSQ (least-squares) constraint::
 
             sum((w * (g(x)  - y))**2 ) <= s
 
@@ -825,7 +834,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
     for a spline function :math:`g(x)` with a _fixed_ knot vector ``t``.
 
     .. versionadded:: 1.15.0
-    """
+    """  # noqa:E501
     if s == 0:
         if t is not None or w is not None or nest is not None:
             raise ValueError("s==0 is for interpolation only")
@@ -833,7 +842,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
     x, y, w, k, s, xb, xe = _validate_inputs(x, y, w, k, s, xb, xe, parametric=False)
 
-    spl = _make_splrep_impl(x, y, w=w, xb=xb, xe=xe, k=k, s=s, t=t, nest=nest)
+    spl = _make_splrep_impl(x, y, w, xb, xe, k, s, t, nest)
 
     # postprocess: squeeze out the last dimension: was added to simplify the internals.
     spl.c = spl.c[:, 0]
@@ -842,7 +851,7 @@ def make_splrep(x, y, *, w=None, xb=None, xe=None, k=3, s=0, t=None, nest=None):
 
 def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=None):
     r"""
-    Find a smoothed B-spline representation of a parametric N-D curve.
+    Create a smoothing parametric B-spline curve with bounded error, minimizing derivative jumps.
 
     Given a list of N 1D arrays, `x`, which represent a curve in
     N-dimensional space parametrized by `u`, find a smooth approximating
@@ -961,7 +970,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
         20 (1982) 171-184.
     .. [2] P. Dierckx, "Curve and surface fitting with splines", Monographs on
         Numerical Analysis, Oxford University Press, 1993.
-    """
+    """  # noqa:E501
     x = np.stack(x, axis=1)
 
     # construct the default parametrization of the curve
@@ -977,7 +986,7 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
 
     u, x, w, k, s, ub, ue = _validate_inputs(u, x, w, k, s, ub, ue, parametric=True)
 
-    spl = _make_splrep_impl(u, x, w=w, xb=ub, xe=ue, k=k, s=s, t=t, nest=nest)
+    spl = _make_splrep_impl(u, x, w, ub, ue, k, s, t, nest)
 
     # posprocess: `axis=1` so that spl(u).shape == np.shape(x)
     # when `x` is a list of 1D arrays (cf original splPrep)
@@ -985,4 +994,3 @@ def make_splprep(x, *, w=None, u=None, ub=None, ue=None, k=3, s=0, t=None, nest=
     spl1 = BSpline(spl.t, cc, spl.k, axis=1)
 
     return spl1, u
-

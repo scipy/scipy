@@ -43,11 +43,11 @@ class TestPolys:
 
     def check_poly(self, func, cls, param_ranges=(), x_range=(), nn=10,
                    nparam=10, nx=10, rtol=1e-8):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         dataset = []
         for n in np.arange(nn):
-            params = [a + (b-a)*np.random.rand(nparam) for a,b in param_ranges]
+            params = [a + (b-a)*rng.rand(nparam) for a,b in param_ranges]
             params = np.asarray(params).T
             if not param_ranges:
                 params = [0]
@@ -56,7 +56,7 @@ class TestPolys:
                     p = (n,) + tuple(p)
                 else:
                     p = (n,)
-                x = x_range[0] + (x_range[1] - x_range[0])*np.random.rand(nx)
+                x = x_range[0] + (x_range[1] - x_range[0])*rng.rand(nx)
                 x[0] = x_range[0]  # always include domain start point
                 x[1] = x_range[1]  # always include domain end point
                 poly = np.poly1d(cls(*p).coef)

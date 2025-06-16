@@ -9,14 +9,6 @@
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
 	shallow = true
-[submodule "HiGHS"]
-	path = scipy/_lib/highs
-	url = https://github.com/scipy/highs
-	shallow = true
-[submodule "scipy/_lib/boost_math"]
-	path = scipy/_lib/boost_math
-	url = https://github.com/boostorg/math.git
-	shallow = true
 [submodule "scipy/_lib/array_api_compat"]
 	path = scipy/_lib/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
@@ -28,4 +20,20 @@
 	url = https://github.com/cobyqa/cobyqa.git
 [submodule "scipy/_lib/array_api_extra"]
 	path = scipy/_lib/array_api_extra
-	url = https://github.com/lucascolley/array-api-extra.git
+	url = https://github.com/data-apis/array-api-extra.git
+# All submodules used as a Meson `subproject` are required to be under the
+# subprojects/ directory - see:
+# https://mesonbuild.com/Subprojects.html#why-must-all-subprojects-be-inside-a-single-directory
+[submodule "subprojects/highs"]
+	path = subprojects/highs
+	url = https://github.com/scipy/HiGHs
+	shallow = true
+
+[submodule "subprojects/boost_math/math"]
+	path = subprojects/boost_math/math
+	url = https://github.com/boostorg/math.git
+	shallow = true
+
+[submodule "subprojects/xsf"]
+	path = subprojects/xsf
+	url = https://github.com/scipy/xsf.git

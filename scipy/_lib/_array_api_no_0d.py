@@ -24,8 +24,6 @@ However, when scalars are not generally the expected NumPy return type,
 it remains preferable to use the assert functions from
 the `scipy._lib._array_api` module, which have less surprising behaviour.
 """
-from __future__ import annotations
-
 from scipy._lib._array_api import array_namespace, is_numpy
 from scipy._lib._array_api import (xp_assert_close as xp_assert_close_base,
                                    xp_assert_equal as xp_assert_equal_base,

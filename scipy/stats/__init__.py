@@ -63,6 +63,7 @@ Continuous distributions
    cosine            -- Cosine
    crystalball       -- Crystalball
    dgamma            -- Double Gamma
+   dpareto_lognorm   -- Double Pareto Lognormal
    dweibull          -- Double Weibull
    erlang            -- Erlang
    expon             -- Exponential
@@ -259,7 +260,6 @@ Summary statistics
    tstd              --
    tsem              --
    variation         -- Coefficient of variation
-   find_repeats
    rankdata
    tiecorrect
    trim_mean
@@ -279,6 +279,7 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
+   quantile
    percentileofscore
    scoreatpercentile
    relfreq
@@ -467,8 +468,16 @@ Random Variables
 .. autosummary::
    :toctree: generated/
 
+   make_distribution
    Normal
+   Uniform
+   Binomial
    Mixture
+   order_statistic
+   truncate
+   abs
+   exp
+   log
 
 Quasi-Monte Carlo
 =================
@@ -638,10 +647,13 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
-from ._distribution_infrastructure import Mixture
-from ._new_distributions import Normal
+from ._distribution_infrastructure import (
+    make_distribution, Mixture, order_statistic, truncate, exp, log, abs
+)
+from ._new_distributions import Normal, Uniform, Binomial
 from ._mgc import multiscale_graphcorr
 from ._correlation import chatterjeexi
+from ._quantile import quantile
 
 
 # Deprecated namespaces, to be removed in v2.0.0

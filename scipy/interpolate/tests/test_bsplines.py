@@ -2,6 +2,8 @@ import os
 import operator
 import itertools
 import math
+import threading
+import copy
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -32,7 +34,7 @@ from scipy.interpolate._ndbspline import make_ndbspl
 
 from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
-from scipy.interpolate import _bspl
+from scipy.interpolate import _dierckx
 
 
 class TestBSpline:
@@ -139,9 +141,9 @@ class TestBSpline:
         xp_assert_close(b(xx), splev(xx, (t, c, k)), atol=1e-14)
 
     def test_rndm_splrep(self):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(20))
-        y = np.random.random(20)
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(20))
+        y = rng.random(20)
 
         tck = splrep(x, y)
         b = BSpline(*tck)
@@ -157,23 +159,25 @@ class TestBSpline:
         xp_assert_close(b(xx), np.ones_like(xx))
 
     def test_vectorization(self):
+        rng = np.random.RandomState(1234)
         n, k = 22, 3
-        t = np.sort(np.random.random(n))
-        c = np.random.random(size=(n, 6, 7))
+        t = np.sort(rng.random(n))
+        c = rng.random(size=(n, 6, 7))
         b = BSpline(t, c, k)
         tm, tp = t[k], t[-k-1]
-        xx = tm + (tp - tm) * np.random.random((3, 4, 5))
+        xx = tm + (tp - tm) * rng.random((3, 4, 5))
         assert b(xx).shape == (3, 4, 5, 6, 7)
 
     def test_len_c(self):
         # for n+k+1 knots, only first n coefs are used.
         # and BTW this is consistent with FITPACK
+        rng = np.random.RandomState(1234)
         n, k = 33, 3
-        t = np.sort(np.random.random(n+k+1))
-        c = np.random.random(n)
+        t = np.sort(rng.random(n+k+1))
+        c = rng.random(n)
 
         # pad coefficients with random garbage
-        c_pad = np.r_[c, np.random.random(k+1)]
+        c_pad = np.r_[c, rng.random(k+1)]
 
         b, b_pad = BSpline(t, c, k), BSpline(t, c_pad, k)
 
@@ -183,16 +187,17 @@ class TestBSpline:
         xp_assert_close(b(xx), splev(xx, (t, c, k)), atol=1e-14)
         xp_assert_close(b(xx), splev(xx, (t, c_pad, k)), atol=1e-14)
 
-    def test_endpoints(self):
+    def test_endpoints(self, num_parallel_threads):
         # base interval is closed
         b = _make_random_spline()
         t, _, k = b.tck
         tm, tp = t[k], t[-k-1]
+        # atol = 1e-9 if num_parallel_threads == 1 else 1e-7
         for extrap in (True, False):
             xp_assert_close(b([tm, tp], extrap),
                             b([tm + 1e-10, tp - 1e-10], extrap), atol=1e-9, rtol=1e-7)
 
-    def test_continuity(self):
+    def test_continuity(self, num_parallel_threads):
         # assert continuity at internal knots
         b = _make_random_spline()
         t, _, k = b.tck
@@ -223,9 +228,9 @@ class TestBSpline:
         assert not np.all(np.isnan(yy))
 
     def test_periodic_extrap(self):
-        np.random.seed(1234)
-        t = np.sort(np.random.random(8))
-        c = np.random.random(4)
+        rng = np.random.RandomState(1234)
+        t = np.sort(rng.random(8))
+        c = rng.random(4)
         k = 3
         b = BSpline(t, c, k, extrapolate='periodic')
         n = t.size - (k + 1)
@@ -267,8 +272,8 @@ class TestBSpline:
         # in agreement with the convention (29)
         k = 2
         t = [-1, -1, 0, 1, 1, 3, 4, 6, 6, 6, 7, 7]
-        np.random.seed(1234)
-        c = np.r_[0, 0, np.random.random(5), 0, 0]
+        rng = np.random.RandomState(1234)
+        c = np.r_[0, 0, rng.random(5), 0, 0]
         b = BSpline(t, c, k)
 
         # b is continuous at x != 6 (triple knot)
@@ -426,11 +431,12 @@ class TestBSpline:
         pos_axis = axis % 4
         sh.insert(pos_axis, n)   # [22, 6, 7, 8] etc
         sh = tuple(sh)
-        c = np.random.random(size=sh)
+        rng = np.random.RandomState(1234)
+        c = rng.random(size=sh)
         b = BSpline(t, c, k, axis=axis)
         assert b.c.shape == (sh[pos_axis],) + sh[:pos_axis] + sh[pos_axis+1:]
 
-        xp = np.random.random((3, 4, 5))
+        xp = rng.random((3, 4, 5))
         assert b(xp).shape == sh[:pos_axis] + xp.shape + sh[pos_axis+1:]
 
         # -c.ndim <= axis < c.ndim
@@ -455,6 +461,7 @@ class TestBSpline:
         spl1 = BSpline(t, c[1], k)
         xp_assert_equal(spl(2.5), [spl0(2.5), spl1(2.5)])
 
+    @pytest.mark.thread_unsafe
     def test_design_matrix_bc_types(self):
         '''
         Splines with different boundary conditions are built on different
@@ -466,9 +473,9 @@ class TestBSpline:
             '''
             To avoid repetition of code the following function is provided.
             '''
-            np.random.seed(1234)
-            x = np.sort(np.random.random_sample(n) * 40 - 20)
-            y = np.random.random_sample(n) * 40 - 20
+            rng = np.random.RandomState(1234)
+            x = np.sort(rng.random_sample(n) * 40 - 20)
+            y = rng.random_sample(n) * 40 - 20
             if bc_type == "periodic":
                 y[0] = y[-1]
 
@@ -501,8 +508,8 @@ class TestBSpline:
     @pytest.mark.parametrize('degree', range(5))
     def test_design_matrix_same_as_BSpline_call(self, extrapolate, degree):
         """Test that design_matrix(x) is equivalent to BSpline(..)(x)."""
-        np.random.seed(1234)
-        x = np.random.random_sample(10 * (degree + 1))
+        rng = np.random.RandomState(1234)
+        x = rng.random_sample(10 * (degree + 1))
         xmin, xmax = np.amin(x), np.amax(x)
         k = degree
         t = np.r_[np.linspace(xmin - 2, xmin - 1, degree),
@@ -527,11 +534,11 @@ class TestBSpline:
 
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 10
         k = 3
-        x = np.sort(np.random.random_sample(n) * 40 - 20)
-        y = np.random.random_sample(n) * 40 - 20
+        x = np.sort(rng.random_sample(n) * 40 - 20)
+        y = rng.random_sample(n) * 40 - 20
 
         bspl = make_interp_spline(x, y, k=k)
         for i in range(1, 4):
@@ -551,11 +558,11 @@ class TestBSpline:
                         atol=1e-14)
 
     def test_design_matrix_asserts(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 10
         k = 3
-        x = np.sort(np.random.random_sample(n) * 40 - 20)
-        y = np.random.random_sample(n) * 40 - 20
+        x = np.sort(rng.random_sample(n) * 40 - 20)
+        y = rng.random_sample(n) * 40 - 20
         bspl = make_interp_spline(x, y, k=k)
         # invalid vector of knots (should be a 1D non-descending array)
         # here the actual vector of knots is reversed, so it is invalid
@@ -571,9 +578,9 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis(self, bc_type):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(20))
-        y = np.random.random(20)
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(20))
+        y = rng.random(20)
         if bc_type == 'periodic':
             y[-1] = y[0]
         cb = CubicSpline(x, y, bc_type=bc_type)
@@ -586,9 +593,9 @@ class TestBSpline:
     @pytest.mark.parametrize('bc_type', ['natural', 'clamped',
                                          'periodic', 'not-a-knot'])
     def test_from_power_basis_complex(self, bc_type):
-        np.random.seed(1234)
-        x = np.sort(np.random.random(20))
-        y = np.random.random(20) + np.random.random(20) * 1j
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random(20))
+        y = rng.random(20) + rng.random(20) * 1j
         if bc_type == 'periodic':
             y[-1] = y[0]
         cb = CubicSpline(x, y, bc_type=bc_type)
@@ -629,6 +636,7 @@ class TestBSpline:
         b = BSpline(t=t, c=c, k=0)
         xp_assert_close(b(xx), np.ones_like(xx) * 3.0)
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to BSpline
         b = _make_random_spline()
@@ -639,6 +647,30 @@ class TestBSpline:
             b(xx)
 
         _run_concurrent_barrier(10, worker_fn, b)
+
+
+    def test_memmap(self, tmpdir):
+        # Make sure that memmaps can be used as t and c atrributes after the
+        # spline has been constructed. This is similar to what happens in a
+        # scikit-learn context, where joblib can create read-only memmap to
+        # share objects between workers. For more details, see
+        # https://github.com/scipy/scipy/issues/22143
+        b = _make_random_spline()
+        xx = np.linspace(0, 1, 10)
+
+        expected = b(xx)
+
+        tid = threading.get_native_id()
+        t_mm = np.memmap(str(tmpdir.join(f't{tid}.dat')), mode='w+',
+                         dtype=b.t.dtype, shape=b.t.shape)
+        t_mm[:] = b.t
+        c_mm = np.memmap(str(tmpdir.join(f'c{tid}.dat')), mode='w+',
+                         dtype=b.c.dtype, shape=b.c.shape)
+        c_mm[:] = b.c
+        b.t = t_mm
+        b.c = c_mm
+
+        xp_assert_close(b(xx), expected)
 
 
 class TestInsert:
@@ -888,9 +920,9 @@ def B_0123(x, der=0):
 
 
 def _make_random_spline(n=35, k=3):
-    np.random.seed(123)
-    t = np.sort(np.random.random(n+k+1))
-    c = np.random.random(n)
+    rng = np.random.RandomState(123)
+    t = np.sort(rng.random(n+k+1))
+    c = rng.random(n)
     return BSpline.construct_fast(t, c, k)
 
 
@@ -1081,12 +1113,13 @@ class TestInterop:
         for b in [self.b, self.b2]:
             # pad the c array (FITPACK convention)
             ct = len(b.t) - len(b.c)
+            b_c = b.c.copy()
             if ct > 0:
-                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+                b_c = np.r_[b_c, np.zeros((ct,) + b_c.shape[1:])]
 
             for n in [1, 2, 3]:
                 bd = splder(b)
-                tck_d = _impl.splder((b.t, b.c, b.k))
+                tck_d = _impl.splder((b.t.copy(), b_c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
@@ -1097,12 +1130,13 @@ class TestInterop:
         for b in [self.b, self.b2]:
             # pad the c array (FITPACK convention)
             ct = len(b.t) - len(b.c)
+            b_c = b.c.copy()
             if ct > 0:
-                b.c = np.r_[b.c, np.zeros((ct,) + b.c.shape[1:])]
+                b_c = np.r_[b_c, np.zeros((ct,) + b_c.shape[1:])]
 
             for n in [1, 2, 3]:
                 bd = splantider(b)
-                tck_d = _impl.splantider((b.t, b.c, b.k))
+                tck_d = _impl.splantider((b.t.copy(), b_c, b.k))
                 xp_assert_close(bd.t, tck_d[0], atol=1e-15)
                 xp_assert_close(bd.c, tck_d[1], atol=1e-15)
                 assert bd.k == tck_d[2]
@@ -1205,17 +1239,17 @@ class TestInterp:
     def test_periodic_random(self, k):
         # tests for both cases (k > n and k <= n)
         n = 5
-        np.random.seed(1234)
-        x = np.sort(np.random.random_sample(n) * 10)
-        y = np.random.random_sample(n) * 100
+        rng = np.random.RandomState(1234)
+        x = np.sort(rng.random_sample(n) * 10)
+        y = rng.random_sample(n) * 100
         y[0] = y[-1]
         b = make_interp_spline(x, y, k=k, bc_type='periodic')
         xp_assert_close(b(x), y, atol=1e-14)
 
     def test_periodic_axis(self):
         n = self.xx.shape[0]
-        np.random.seed(1234)
-        x = np.random.random_sample(n) * 2 * np.pi
+        rng = np.random.RandomState(1234)
+        x = rng.random_sample(n) * 2 * np.pi
         x = np.sort(x)
         x[0] = 0.
         x[-1] = 2 * np.pi
@@ -1229,22 +1263,22 @@ class TestInterp:
 
     def test_periodic_points_exception(self):
         # first and last points should match when periodic case expected
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         k = 5
         n = 8
-        x = np.sort(np.random.random_sample(n))
-        y = np.random.random_sample(n)
+        x = np.sort(rng.random_sample(n))
+        y = rng.random_sample(n)
         y[0] = y[-1] - 1  # to be sure that they are not equal
         with assert_raises(ValueError):
             make_interp_spline(x, y, k=k, bc_type='periodic')
 
     def test_periodic_knots_exception(self):
         # `periodic` case does not work with passed vector of knots
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         k = 3
         n = 7
-        x = np.sort(np.random.random_sample(n))
-        y = np.random.random_sample(n)
+        x = np.sort(rng.random_sample(n))
+        y = rng.random_sample(n)
         t = np.zeros(n + 2 * k)
         with assert_raises(ValueError):
             make_interp_spline(x, y, k, t, 'periodic')
@@ -1269,9 +1303,10 @@ class TestInterp:
         xp_assert_close(b(self.xx), cub(self.xx), atol=1e-14)
 
         # edge case: Cubic interpolation on 3 points
+        rng = np.random.RandomState(1234)
         n = 3
-        x = np.sort(np.random.random_sample(n) * 10)
-        y = np.random.random_sample(n) * 100
+        x = np.sort(rng.random_sample(n) * 10)
+        y = rng.random_sample(n) * 100
         y[0] = y[-1]
         b = make_interp_spline(x, y, k=3, bc_type='periodic')
         cub = CubicSpline(x, y, bc_type='periodic')
@@ -1478,17 +1513,17 @@ class TestInterp:
         xp_assert_close(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
 
     def test_shapes(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         k, n = 3, 22
-        x = np.sort(np.random.random(size=n))
-        y = np.random.random(size=(n, 5, 6, 7))
+        x = np.sort(rng.random(size=n))
+        y = rng.random(size=(n, 5, 6, 7))
 
         b = make_interp_spline(x, y, k)
         assert b.c.shape == (n, 5, 6, 7)
 
         # now throw in some derivatives
-        d_l = [(1, np.random.random((5, 6, 7)))]
-        d_r = [(1, np.random.random((5, 6, 7)))]
+        d_l = [(1, rng.random((5, 6, 7)))]
+        d_r = [(1, rng.random((5, 6, 7)))]
         b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert b.c.shape == (n + k - 1, 5, 6, 7)
 
@@ -1531,10 +1566,10 @@ class TestInterp:
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
         # ... and for N-D values:
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         k, n = 3, 22
-        x = np.sort(np.random.random(size=n))
-        y = np.random.random(size=(n, 5, 6, 7))
+        x = np.sort(rng.random(size=n))
+        y = rng.random(size=(n, 5, 6, 7))
 
         # now throw in some derivatives
         d_l = [(1, np.zeros((5, 6, 7)))]
@@ -1544,10 +1579,10 @@ class TestInterp:
         xp_assert_close(b1.c, b2.c, atol=1e-15)
 
     def test_full_matrix(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         k, n = 3, 7
-        x = np.sort(np.random.random(size=n))
-        y = np.random.random(size=n)
+        x = np.sort(rng.random(size=n))
+        y = rng.random(size=n)
         t = _not_a_knot(x, k)
 
         b = make_interp_spline(x, y, k, t)
@@ -1560,17 +1595,17 @@ class TestInterp:
         left lower and right upper corners checking the
         implementation of Woodbury algorithm.
         '''
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 201
         for k in range(3, 32, 2):
             offset = int((k - 1) / 2)
-            a = np.diagflat(np.random.random((1, n)))
+            a = np.diagflat(rng.random((1, n)))
             for i in range(1, offset + 1):
-                a[:-i, i:] += np.diagflat(np.random.random((1, n - i)))
-                a[i:, :-i] += np.diagflat(np.random.random((1, n - i)))
-            ur = np.random.random((offset, offset))
+                a[:-i, i:] += np.diagflat(rng.random((1, n - i)))
+                a[i:, :-i] += np.diagflat(rng.random((1, n - i)))
+            ur = rng.random((offset, offset))
             a[:offset, -offset:] = ur
-            ll = np.random.random((offset, offset))
+            ll = rng.random((offset, offset))
             a[-offset:, :offset] = ll
             d = np.zeros((k, n))
             for i, j in enumerate(range(offset, -offset - 1, -1)):
@@ -1578,7 +1613,7 @@ class TestInterp:
                     d[i, :j] = np.diagonal(a, offset=j)
                 else:
                     d[i, j:] = np.diagonal(a, offset=j)
-            b = np.random.random(n)
+            b = rng.random(n)
             xp_assert_close(_woodbury_algorithm(d, ur, ll, b, k),
                             np.linalg.solve(a, b), atol=1e-14)
 
@@ -1604,7 +1639,7 @@ def make_interp_full_matr(x, y, t, k):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     c = sl.solve(A, y)
@@ -1628,7 +1663,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
             left = np.searchsorted(t, xval) - 1
 
         # fill a row
-        bb = _bspl.evaluate_all_bspl(t, k, xval, left)
+        bb = _dierckx.evaluate_all_bspl(t, k, xval, left)
         A[j, left-k:left+1] = bb
 
     # have observation matrix, can solve the LSQ problem
@@ -1645,10 +1680,10 @@ class TestLSQ:
     #
     # Test make_lsq_spline
     #
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
     n, k = 13, 3
-    x = np.sort(np.random.random(n))
-    y = np.random.random(n)
+    x = np.sort(rng.random(n))
+    y = rng.random(n)
     t = _augknt(np.linspace(x[0], x[-1], 7), k)
 
     @parametrize_lsq_methods
@@ -1681,7 +1716,7 @@ class TestLSQ:
         assert b.k == b_w.k
 
     def test_weights_same(self):
-        # both methods treat weights 
+        # both methods treat weights
         x, y, t, k = self.x, self.y, self.t, self.k
         w = np.random.default_rng(1234).uniform(size=x.shape[0])
 
@@ -1695,7 +1730,8 @@ class TestLSQ:
     @parametrize_lsq_methods
     def test_multiple_rhs(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
-        y = np.random.random(size=(n, 5, 6, 7))
+        rng = np.random.RandomState(1234)
+        y = rng.random(size=(n, 5, 6, 7))
         b = make_lsq_spline(x, y, t, k, method=method)
         assert b.c.shape == (t.size-k-1, 5, 6, 7)
 
@@ -1703,7 +1739,8 @@ class TestLSQ:
     def test_multiple_rhs_2(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
         nrhs = 3
-        y = np.random.random(size=(n, nrhs))
+        rng = np.random.RandomState(1234)
+        y = rng.random(size=(n, nrhs))
         b = make_lsq_spline(x, y, t, k, method=method)
 
         bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
@@ -1897,7 +1934,7 @@ def _qr_reduce_py(a_p, y, startrow=1):
 
     # convert to packed
     offs = list(range(R.shape[0]))
-    R_p = PackedMatrix(R, np.array(offs), nc)
+    R_p = PackedMatrix(R, np.array(offs, dtype=np.int64), nc)
 
     return R_p, y1
 
@@ -1961,12 +1998,12 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
         y_ = y[:, None]     # _qr_reduce requires `y` a 2D array
-        _bspl._qr_reduce(A, offset, nc, y_)      # modifies arguments in-place
+        _dierckx.qr_reduce(A, offset, nc, y_)      # modifies arguments in-place
 
         # signs may differ
         xp_assert_close(np.minimum(R.todense() + r,
@@ -1976,7 +2013,7 @@ class TestGivensQR:
 
         # sign changes are consistent between Q and R:
         c_full = sl.solve(r, qTy)
-        c_banded = _bspl._fpback(R.a, R.nc, y_)
+        c_banded = _dierckx.fpback(R.a, R.nc, y_)
         xp_assert_close(c_full, c_banded[:, 0], atol=5e-13)
 
     def test_py_vs_compiled(self):
@@ -1990,14 +2027,14 @@ class TestGivensQR:
         assert nc == t.shape[0] - k - 1
 
         offset = a_csr.indices[::(k+1)]
-        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        offset = np.ascontiguousarray(offset, dtype=np.int64)
         A = a_csr.data.reshape(m, k+1)
 
         R = PackedMatrix(A, offset, nc)
         y_ = y[:, None]
 
         RR, yy = _qr_reduce_py(R, y_)
-        _bspl._qr_reduce(A, offset, nc , y_)   # in-place
+        _dierckx.qr_reduce(A, offset, nc , y_)   # in-place
 
         xp_assert_close(RR.a, R.a, atol=1e-15)
         xp_assert_equal(RR.offset, R.offset, check_dtype=False)
@@ -2010,28 +2047,29 @@ class TestGivensQR:
         n = 10
         x, y, t, k = self._get_xyt(n)
         w = np.arange(1, n+1, dtype=float)
-        A, offset, nc = _bspl._data_matrix(x, t, k, w)
+
+        A, offset, nc = _dierckx.data_matrix(x, t, k, w)
 
         m = x.shape[0]
         a_csr = BSpline.design_matrix(x, t, k)
         a_w = (a_csr * w[:, None]).tocsr()
         A_ = a_w.data.reshape((m, k+1))
-        offset_ = a_w.indices[::(k+1)]
+        offset_ = a_w.indices[::(k+1)].astype(np.int64)
 
         xp_assert_close(A, A_, atol=1e-15)
-        xp_assert_equal(offset, offset_, check_dtype=False)
+        xp_assert_equal(offset, offset_)
         assert nc == t.shape[0] - k - 1
 
     def test_fpback(self):
         n = 10
         x, y, t, k = self._get_xyt(n)
         y = np.c_[y, y**2]
-        A, offset, nc = _bspl._data_matrix(x, t, k, w=np.ones_like(x))
+        A, offset, nc = _dierckx.data_matrix(x, t, k, np.ones_like(x))
         R = PackedMatrix(A, offset, nc)
-        _bspl._qr_reduce(A, offset, nc, y)
+        _dierckx.qr_reduce(A, offset, nc, y)
 
         c = fpback(R, y)
-        cc = _bspl._fpback(A, nc, y)
+        cc = _dierckx.fpback(A, nc, y)
 
         xp_assert_close(cc, c, atol=1e-14)
 
@@ -2046,10 +2084,10 @@ class TestSmoothingSpline:
     # test make_smoothing_spline
     #
     def test_invalid_input(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 100
-        x = np.sort(np.random.random_sample(n) * 4 - 2)
-        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
         # ``x`` and ``y`` should have same shapes (1-D array)
         with assert_raises(ValueError):
@@ -2128,7 +2166,9 @@ class TestSmoothingSpline:
         # such tolerance is explained by the fact that the spline is built
         # using an iterative algorithm for minimizing the GCV criteria. These
         # algorithms may vary, so the tolerance should be rather low.
-        xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4)
+        # Not checking dtypes as gcvspl.npz stores little endian arrays, which
+        # result in conflicting dtypes on big endian systems.
+        xp_assert_close(y_compr, y_GCVSPL, atol=1e-4, rtol=1e-4, check_dtype=False)
 
     def test_non_regularized_case(self):
         """
@@ -2136,10 +2176,10 @@ class TestSmoothingSpline:
         is an interpolation spline with natural boundary conditions.
         """
         # create data sample
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 100
-        x = np.sort(np.random.random_sample(n) * 4 - 2)
-        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
         spline_GCV = make_smoothing_spline(x, y, lam=0.)
         spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
@@ -2152,16 +2192,16 @@ class TestSmoothingSpline:
     @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self):
         # create data sample
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 100
-        x = np.sort(np.random.random_sample(n) * 4 - 2)
-        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+        x = np.sort(rng.random_sample(n) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + rng.normal(0., 1.5, n)
 
         spl = make_smoothing_spline(x, y)
 
         # in order not to iterate over all of the indices, we select 10 of
         # them randomly
-        for ind in np.random.choice(range(100), size=10):
+        for ind in rng.choice(range(100), size=10):
             w = np.ones(n)
             w[ind] = 30.
             spl_w = make_smoothing_spline(x, y, w)
@@ -2336,6 +2376,11 @@ class TestNdBSpline:
         assert bspl2(xi).shape == (len(xi), )
         xp_assert_close(bspl2(xi),
                         target, atol=1e-14)
+
+        # test that a nan in -> nan out
+        xi = np.asarray(xi)
+        xi[0, 1] = np.nan
+        xp_assert_equal(np.isnan(bspl2(xi)), np.asarray([True, False, False]))
 
         # now check on a multidim xi
         rng = np.random.default_rng(12345)
@@ -2710,6 +2755,7 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         rng = np.random.default_rng(12345)
         k = 3
@@ -2786,6 +2832,15 @@ class TestMakeND:
         values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
         bspl = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
         xp_assert_close(bspl(xi), values.ravel(), atol=1e-15)
+
+    def test_2D_nans(self):
+        x = np.arange(6)
+        y = np.arange(6) + 0.5
+        y[-1] = np.nan
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+
+        with assert_raises(ValueError):
+            make_ndbspl((x, y), values, k=1)
 
     def _get_sample_2d_data(self):
         # from test_rgi.py::TestIntepN
@@ -3169,7 +3224,7 @@ index 1afb1900f1..d817e51ad8 100644
         knots = list(generate_knots(x, y, k=k, s=1e-7))
         wanted = [[0., 0., 0., 0., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 4., 7., 7., 7., 7.],
-                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], 
+                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
                   [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
         ]
@@ -3231,6 +3286,7 @@ index 1afb1900f1..d817e51ad8 100644
 
         xp_assert_close(tt, t, atol=1e-15)
 
+    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         n = 14
         x = np.arange(n)
@@ -3427,7 +3483,7 @@ class TestMakeSplrep:
 
         t,c,k = splrep(x, y, k=k, s=s)
         assert all(t == tt)
- 
+
         spl = make_splrep(x, y, k=k, s=s)
         xp_assert_close(c[:spl.c.size], spl.c, atol=1e-15)
 
@@ -3461,6 +3517,7 @@ class TestMakeSplrep:
 
         xp_assert_close(spl.c, spl_i.c, atol=1e-15)
 
+    @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
         n = 14
@@ -3475,6 +3532,20 @@ class TestMakeSplrep:
             xp_assert_equal(spl.t, tck[0])
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
                             tck[1], atol=5e-13)
+
+    def test_issue_22704(self):
+        # Reference - https://github.com/scipy/scipy/issues/22704
+        x = np.asarray([20.00, 153.81, 175.57, 202.47, 237.11,
+             253.61, 258.56, 273.40, 284.54, 293.61,
+             298.56, 301.86, 305.57, 307.22, 308.45,
+             310.10, 310.10, 310.50], dtype=np.float64)
+        y = np.asarray([53.00, 49.50, 48.60, 46.80, 43.20,
+             40.32, 39.60, 36.00, 32.40, 28.80,
+             25.20, 21.60, 18.00, 14.40, 10.80,
+             7.20, 3.60, 0.0], dtype=np.float64)
+        w = np.asarray([1.38723] * y.shape[0], dtype=np.float64)
+        with assert_raises(ValueError):
+            make_splrep(x, y, w=w, k=2, s=12)
 
     def test_shape(self):
         # make sure coefficients have the right shape (not extra dims)
@@ -3615,3 +3686,69 @@ class TestMakeSplprep:
         assert spl(u).shape == (1, 8)
         xp_assert_close(spl(u), [x], atol=1e-15)
 
+
+class BatchSpline:
+    # BSpline-line class with reference batch behavior
+    def __init__(self, x, y, axis, *, spline, **kwargs):
+        y = np.moveaxis(y, axis, -1)
+        self._batch_shape = y.shape[:-1]
+        self._splines = [spline(x, yi, **kwargs) for yi in y.reshape(-1, y.shape[-1])]
+        self._axis = axis
+
+    def __call__(self, x):
+        y = [spline(x) for spline in self._splines]
+        y = np.reshape(y, self._batch_shape + x.shape)
+        return np.moveaxis(y, -1, self._axis) if x.shape else y
+
+    def integrate(self, a, b, extrapolate=None):
+        y = [spline.integrate(a, b, extrapolate) for spline in self._splines]
+        return np.reshape(y, self._batch_shape)
+
+    def derivative(self, nu):
+        res = copy.deepcopy(self)
+        res._splines = [spline.derivative(nu) for spline in res._splines]
+        return res
+
+    def antiderivative(self, nu):
+        res = copy.deepcopy(self)
+        res._splines = [spline.antiderivative(nu) for spline in res._splines]
+        return res
+
+
+class TestBatch:
+    @pytest.mark.parametrize('make_spline, kwargs',
+        [(make_interp_spline, {}),
+         (make_smoothing_spline, {}),
+         (make_smoothing_spline, {'lam': 1.0}),
+         (make_lsq_spline, {'method': "norm-eq"}),
+         (make_lsq_spline, {'method': "qr"}),
+         ])
+    @pytest.mark.parametrize('eval_shape', [(), (1,), (3,)])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    def test_batch(self, make_spline, kwargs, axis, eval_shape):
+        rng = np.random.default_rng(4329872134985134)
+        n = 10
+        shape = (2, 3, 4, n)
+        domain = (0, 10)
+
+        x = np.linspace(*domain, n)
+        y = np.moveaxis(rng.random(shape), -1, axis)
+
+        if make_spline == make_lsq_spline:
+            k = 3  # spline degree, if needed
+            t = (x[0],) * (k + 1) + (x[-1],) * (k + 1)  # valid knots, if needed
+            kwargs = kwargs | dict(t=t, k=k)
+
+        res = make_spline(x, y, axis=axis, **kwargs)
+        ref = BatchSpline(x, y, axis=axis, spline=make_spline, **kwargs)
+
+        x = rng.uniform(*domain, size=eval_shape)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        res, ref = res.antiderivative(1), ref.antiderivative(1)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        res, ref = res.derivative(2), ref.derivative(2)
+        np.testing.assert_allclose(res(x), ref(x))
+
+        np.testing.assert_allclose(res.integrate(*domain), ref.integrate(*domain))

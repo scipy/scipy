@@ -1,8 +1,7 @@
-from __future__ import annotations
-
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -11,13 +10,11 @@ from scipy.optimize import minimize_scalar
 from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._stats_py import _var
-from scipy._lib._util import _transition_to_rng
+from scipy._lib._util import _transition_to_rng, DecimalNumber, SeedType
 
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import DecimalNumber, SeedType
-    from typing import Literal, Sequence  # noqa: UP035
 
 
 __all__ = [
@@ -184,8 +181,8 @@ class DunnettResult:
 
 @_transition_to_rng('random_state', replace_doc=False)
 def dunnett(
-    *samples: npt.ArrayLike,  # noqa: D417
-    control: npt.ArrayLike,
+    *samples: "npt.ArrayLike",  # noqa: D417
+    control: "npt.ArrayLike",
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
     rng: SeedType = None
 ) -> DunnettResult:
@@ -349,8 +346,8 @@ def dunnett(
 
 
 def _iv_dunnett(
-    samples: Sequence[npt.ArrayLike],
-    control: npt.ArrayLike,
+    samples: Sequence["npt.ArrayLike"],
+    control: "npt.ArrayLike",
     alternative: Literal['two-sided', 'less', 'greater'],
     rng: SeedType
 ) -> tuple[list[np.ndarray], np.ndarray, SeedType]:

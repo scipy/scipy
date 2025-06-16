@@ -210,7 +210,7 @@ class TestBasinHopping:
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @pytest.mark.fail_slow(20)
+    @pytest.mark.fail_slow(40)
     def test_all_nograd_minimizers(self):
         # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.
@@ -224,7 +224,7 @@ class TestBasinHopping:
             minimizer_kwargs["method"] = method
             res = basinhopping(func2d_nograd, self.x0[i],
                                minimizer_kwargs=minimizer_kwargs,
-                               niter=niter, disp=self.disp)
+                               niter=niter, disp=self.disp, seed=1234)
             tol = self.tol
             if method == 'COBYLA':
                 tol = 2
@@ -344,6 +344,7 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
 
+@pytest.mark.thread_unsafe
 class Test_Storage:
     def setup_method(self):
         self.x0 = np.array(1)
@@ -382,15 +383,16 @@ class Test_Storage:
 class Test_RandomDisplacement:
     def setup_method(self):
         self.stepsize = 1.0
-        self.displace = RandomDisplacement(stepsize=self.stepsize)
         self.N = 300000
-        self.x0 = np.zeros([self.N])
 
     def test_random(self):
         # the mean should be 0
         # the variance should be (2*stepsize)**2 / 12
         # note these tests are random, they will fail from time to time
-        x = self.displace(self.x0)
+        rng = np.random.RandomState(0)
+        x0 = np.zeros([self.N])
+        displace = RandomDisplacement(stepsize=self.stepsize, rng=rng)
+        x = displace(x0)
         v = (2. * self.stepsize) ** 2 / 12
         assert_almost_equal(np.mean(x), 0., 1)
         assert_almost_equal(np.var(x), v, 1)

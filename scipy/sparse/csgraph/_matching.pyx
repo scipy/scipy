@@ -7,8 +7,8 @@ from libc.math cimport INFINITY
 
 
 from scipy.sparse import issparse, csr_array
-from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
-from ._tools import _safe_downcast_indices
+from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy,
+                                   safely_cast_index_arrays)
 
 np.import_array()
 
@@ -142,7 +142,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
     graph = graph.tocsr()
     i, j = graph.shape
-    indices, indptr = _safe_downcast_indices(graph)
+    indices, indptr = safely_cast_index_arrays(graph, ITYPE, msg="csgraph")
     x, y = _hopcroft_karp(indices, indptr, i, j)
     return np.asarray(x if perm_type == 'column' else y)
 
@@ -440,7 +440,7 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     >>> import numpy as np
     >>> from scipy.sparse import random_array
     >>> from scipy.optimize import linear_sum_assignment
-    >>> sparse = random_array((10, 10), random_state=42, density=.5, format='coo') * 10
+    >>> sparse = random_array((10, 10), rng=42, density=.5, format='coo') * 10
     >>> sparse.data = np.ceil(sparse.data)
     >>> dense = sparse.toarray()
     >>> dense = np.full(sparse.shape, np.inf)
@@ -448,10 +448,10 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
     >>> sparse = sparse.tocsr()
     >>> row_ind, col_ind = linear_sum_assignment(dense)
     >>> print(dense[row_ind, col_ind].sum())
-    28.0
+    25.0
     >>> row_ind, col_ind = min_weight_full_bipartite_matching(sparse)
     >>> print(sparse[row_ind, col_ind].sum())
-    28.0
+    25.0
 
     """
     biadjacency = convert_pydata_sparse_to_scipy(biadjacency)
@@ -482,10 +482,13 @@ def min_weight_full_bipartite_matching(biadjacency, maximize=False):
 
     a = np.arange(np.min(biadjacency.shape))
 
-    biadj_indices, biadj_indptr = _safe_downcast_indices(biadjacency)
-    if biadj_indices is not biadjacency.indices:
+    if biadjacency.format not in ("csc", "csr"):
+        biadjacency = biadjacency.tocsc(copy=False) if j < i else biadjacency.tocsr(copy=False)
+
+    indices, indptr = safely_cast_index_arrays(biadjacency, ITYPE, msg="csgraph")
+    if indices is not biadjacency.indices:
         # create a new object without copying data
-        biadjacency = csr_array((biadjacency.data, biadj_indices, biadj_indptr),
+        biadjacency = csr_array((biadjacency.data, indices, indptr),
                                 shape=biadjacency.shape, dtype=biadjacency.dtype)
 
     # The algorithm expects more columns than rows in the graph, so

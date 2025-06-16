@@ -557,12 +557,17 @@ def construct_dist_matrix(graph,
 
     Notes
     -----
-    The predecessor matrix is of the form returned by
+    The predecessor matrix is of the form optionally returned by
     `shortest_path`.  Row i of the predecessor matrix contains
     information on the shortest paths from point i: each entry
     predecessors[i, j] gives the index of the previous node in the path from
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
+
+    It should be noted that `shortest_path` only returns distance matrix
+    by default. With ``return_predecessors=True``, it returns a tuple with
+    distance matrix as its first element and predecessors array as second
+    element.
 
     Examples
     --------
@@ -603,6 +608,9 @@ def construct_dist_matrix(graph,
                            csr_output=False,
                            copy_if_dense=not directed)
     predecessors = np.asarray(predecessors)
+
+    if predecessors.dtype != ITYPE:
+        raise TypeError("Type of predecessors array should be np.int32")
 
     if predecessors.shape != graph.shape:
         raise ValueError("graph and predecessors must have the same shape")
@@ -652,18 +660,3 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                 k2 = k1
             if null_path and i != j:
                 dist[i, j] = null_value
-
-
-def _safe_downcast_indices(A):
-    # check for safe downcasting to ITYPE (==int32 set in parameters.pxi)
-    max_value = np.iinfo(ITYPE).max
-
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for csgraph")
-    if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for csgraph")
-
-    indices = A.indices.astype(ITYPE, copy=False)
-    indptr = A.indptr.astype(ITYPE, copy=False)
-    return indices, indptr

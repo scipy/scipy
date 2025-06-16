@@ -16,6 +16,7 @@ directed_G = np.array([[0, 3, 3, 0, 0],
                        [1, 0, 0, 0, 0],
                        [2, 0, 0, 2, 0]], dtype=float)
 
+# Undirected version of directed_G
 undirected_G = np.array([[0, 3, 3, 1, 2],
                          [3, 0, 0, 2, 4],
                          [3, 0, 0, 0, 0],
@@ -24,6 +25,7 @@ undirected_G = np.array([[0, 3, 3, 1, 2],
 
 unweighted_G = (directed_G > 0).astype(float)
 
+# Correct shortest path lengths for directed_G and undirected_G
 directed_SP = [[0, 3, 3, 5, 7],
                [3, 0, 6, 2, 4],
                [np.inf, np.inf, 0, np.inf, np.inf],
@@ -33,6 +35,35 @@ directed_SP = [[0, 3, 3, 5, 7],
 directed_2SP_0_to_3 = [[-9999, 0, -9999, 1, -9999],
                        [-9999, 0, -9999, 4, 1]]
 
+undirected_SP = np.array([[0, 3, 3, 1, 2],
+                          [3, 0, 6, 2, 4],
+                          [3, 6, 0, 4, 5],
+                          [1, 2, 4, 0, 2],
+                          [2, 4, 5, 2, 0]], dtype=float)
+
+undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
+                                  [np.inf, 0, np.inf, 2, np.inf],
+                                  [np.inf, np.inf, 0, np.inf, np.inf],
+                                  [1, 2, np.inf, 0, 2],
+                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
+
+undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
+undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
+
+# Correct predecessors for directed_G and undirected_G
+directed_pred = np.array([[-9999, 0, 0, 1, 1],
+                          [3, -9999, 0, 1, 1],
+                          [-9999, -9999, -9999, -9999, -9999],
+                          [3, 0, 0, -9999, 1],
+                          [4, 0, 0, 4, -9999]], dtype=float)
+
+undirected_pred = np.array([[-9999, 0, 0, 0, 0],
+                            [1, -9999, 0, 1, 1],
+                            [2, 0, -9999, 0, 0],
+                            [3, 3, 0, -9999, 3],
+                            [4, 4, 0, 4, -9999]], dtype=float)
+
+# Other graphs
 directed_sparse_zero_G = scipy.sparse.csr_array(
     (
         [0, 1, 2, 3, 1],
@@ -60,33 +91,6 @@ undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                         [1, 1, 0, np.inf, np.inf],
                         [np.inf, np.inf, np.inf, 0, 1],
                         [np.inf, np.inf, np.inf, 1, 0]]
-
-directed_pred = np.array([[-9999, 0, 0, 1, 1],
-                          [3, -9999, 0, 1, 1],
-                          [-9999, -9999, -9999, -9999, -9999],
-                          [3, 0, 0, -9999, 1],
-                          [4, 0, 0, 4, -9999]], dtype=float)
-
-undirected_SP = np.array([[0, 3, 3, 1, 2],
-                          [3, 0, 6, 2, 4],
-                          [3, 6, 0, 4, 5],
-                          [1, 2, 4, 0, 2],
-                          [2, 4, 5, 2, 0]], dtype=float)
-
-undirected_SP_limit_2 = np.array([[0, np.inf, np.inf, 1, 2],
-                                  [np.inf, 0, np.inf, 2, np.inf],
-                                  [np.inf, np.inf, 0, np.inf, np.inf],
-                                  [1, 2, np.inf, 0, 2],
-                                  [2, np.inf, np.inf, 2, 0]], dtype=float)
-
-undirected_SP_limit_0 = np.ones((5, 5), dtype=float) - np.eye(5)
-undirected_SP_limit_0[undirected_SP_limit_0 > 0] = np.inf
-
-undirected_pred = np.array([[-9999, 0, 0, 0, 0],
-                            [1, -9999, 0, 1, 1],
-                            [2, 0, -9999, 0, 0],
-                            [3, 3, 0, -9999, 3],
-                            [4, 4, 0, 4, -9999]], dtype=float)
 
 directed_negative_weighted_G = np.array([[0, 0, 0],
                                          [-1, 0, 0],
@@ -196,13 +200,13 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 
 @pytest.mark.parametrize('n', (10, 100, 1000))
 def test_dijkstra_min_only_random(n):
-    np.random.seed(1234)
+    rng = np.random.default_rng(7345782358920239234)
     data = scipy.sparse.random_array((n, n), density=0.5, format='lil',
-                                     random_state=42, dtype=np.float64)
+                                     rng=rng, dtype=np.float64)
     data.setdiag(np.zeros(n, dtype=np.bool_))
     # choose some random vertices
     v = np.arange(n)
-    np.random.shuffle(v)
+    rng.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
                                  directed=True,
@@ -215,6 +219,28 @@ def test_dijkstra_min_only_random(n):
         while p != -9999:
             assert sources[p] == s
             p = pred[p]
+
+
+@pytest.mark.parametrize('n', (10, 100))
+@pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
+@pytest.mark.parametrize('directed', (True, False))
+def test_star_graph(n, method, directed):
+    # Build the star graph
+    star_arr = np.zeros((n, n), dtype=float)
+    star_center_idx = 0
+    star_arr[star_center_idx, :] = star_arr[:, star_center_idx] = range(n)
+    G = scipy.sparse.csr_matrix(star_arr, shape=(n, n))
+    # Build the distances matrix
+    SP_solution = np.zeros((n, n), dtype=float)
+    SP_solution[:] = star_arr[star_center_idx]
+    for idx in range(1, n):
+        SP_solution[idx] += star_arr[idx, star_center_idx]
+    np.fill_diagonal(SP_solution, 0)
+
+    SP = shortest_path(G, method=method, directed=directed)
+    assert_allclose(
+        SP_solution, SP
+    )
 
 
 def test_dijkstra_random():
@@ -255,7 +281,7 @@ def test_gh_17782_segfault():
                 43 33 4.000000000000000e+00
                 44 43 6.028000259399414e+01
     """
-    data = mmread(StringIO(text))
+    data = mmread(StringIO(text), spmatrix=False)
     dijkstra(data, directed=True, return_predecessors=True)
 
 
@@ -306,6 +332,15 @@ def test_construct_shortest_path():
     for method in methods:
         for directed in (True, False):
             check(method, directed)
+
+@pytest.mark.parametrize("directed", [True, False])
+def test_construct_dist_matrix_predecessors_error(directed):
+    SP1, pred = shortest_path(directed_G,
+                                directed=directed,
+                                overwrite=False,
+                                return_predecessors=True)
+    assert_raises(TypeError, construct_dist_matrix,
+                  directed_G, pred.astype(np.int64), directed)
 
 
 def test_unweighted_path():
@@ -419,14 +454,33 @@ def test_yen_directed():
     assert_allclose(predecessors, directed_2SP_0_to_3)
 
 
+def test_yen_dense():
+    dense_undirected_G = np.array([
+                       [0, 3, 3, 1, 2],
+                       [3, 0, 7, 6, 5],
+                       [3, 7, 0, 4, 0],
+                       [1, 6, 4, 0, 2],
+                       [2, 5, 0, 2, 0]], dtype=float)
+    distances = yen(
+                dense_undirected_G,
+                source=0,
+                sink=4,
+                K=5,
+                directed=False,
+            )
+    assert_allclose(distances, [2., 3., 8., 9., 11.])
+
+
 def test_yen_undirected():
     distances = yen(
         undirected_G,
         source=0,
         sink=3,
         K=4,
+        directed=False,
     )
     assert_allclose(distances, [1., 4., 5., 8.])
+
 
 def test_yen_unweighted():
     # Ask for more paths than there are, verify only the available paths are returned
@@ -441,6 +495,7 @@ def test_yen_unweighted():
     assert_allclose(distances, [2., 3.])
     assert_allclose(predecessors, directed_2SP_0_to_3)
 
+
 def test_yen_no_paths():
     distances = yen(
         directed_G,
@@ -449,6 +504,7 @@ def test_yen_no_paths():
         K=1,
     )
     assert distances.size == 0
+
 
 def test_yen_negative_weights():
     distances = yen(

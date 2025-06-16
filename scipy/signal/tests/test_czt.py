@@ -55,13 +55,13 @@ def check_zoom_fft(x):
 def test_1D():
     # Test of 1D version of the transforms
 
-    np.random.seed(0)  # Deterministic randomness
+    rng = np.random.RandomState(0)  # Deterministic randomness
 
     # Random signals
-    lengths = np.random.randint(8, 200, 20)
+    lengths = rng.randint(8, 200, 20)
     np.append(lengths, 1)
     for length in lengths:
-        x = np.random.random(length)
+        x = rng.random(length)
         check_zoom_fft(x)
         check_czt(x)
 
@@ -92,7 +92,7 @@ def test_1D():
     xp_assert_close(y1[2, 0], y2, rtol=1e-13, atol=1e-12)
 
     # Random (not a test condition)
-    x = np.random.rand(101)
+    x = rng.rand(101)
     check_zoom_fft(x)
 
     # Spikes
@@ -111,9 +111,9 @@ def test_1D():
 
 
 def test_large_prime_lengths():
-    np.random.seed(0)  # Deterministic randomness
+    rng = np.random.RandomState(0)  # Deterministic randomness
     for N in (101, 1009, 10007):
-        x = np.random.rand(N)
+        x = rng.rand(N)
         y = fft(x)
         y1 = czt(x)
         xp_assert_close(y, y1, rtol=1e-12)
@@ -121,10 +121,10 @@ def test_large_prime_lengths():
 
 @pytest.mark.slow
 def test_czt_vs_fft():
-    np.random.seed(123)
-    random_lengths = np.random.exponential(100000, size=10).astype('int')
+    rng = np.random.RandomState(123)  # Deterministic randomness
+    random_lengths = rng.exponential(100000, size=10).astype('int')
     for n in random_lengths:
-        a = np.random.randn(n)
+        a = rng.randn(n)
         xp_assert_close(czt(a), fft(a), rtol=1e-11)
 
 

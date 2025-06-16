@@ -4,13 +4,13 @@ import itertools
 
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Any, TYPE_CHECKING
+from typing import Any, TypeAlias
 
 from scipy._lib._array_api import (
     array_namespace,
     xp_size,
     xp_copy,
-    xp_broadcast_promote
+    xp_promote
 )
 from scipy._lib._util import MapWrapper
 
@@ -23,10 +23,7 @@ from scipy.integrate._rules._base import _split_subregion
 
 __all__ = ['cubature']
 
-if TYPE_CHECKING:
-    Array = Any  # To be changed to a Protocol later (see array-api#589)
-else:
-    Array = object
+Array: TypeAlias = Any  # To be changed to an array-api-typing Protocol later
 
 
 @dataclass
@@ -326,7 +323,8 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
 
     # Convert a and b to arrays and convert each point in points to an array, promoting
     # each to a common floating dtype.
-    a, b, *points = xp_broadcast_promote(a, b, *points, force_floating=True)
+    a, b, *points = xp_promote(a, b, *points, broadcast=True, force_floating=True,
+                               xp=xp)
     result_dtype = a.dtype
 
     if xp_size(a) == 0 or xp_size(b) == 0:

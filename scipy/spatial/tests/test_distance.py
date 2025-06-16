@@ -63,6 +63,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     russellrao, seuclidean, sokalmichener,  # noqa: F401
                                     sokalsneath, sqeuclidean, yule)
 from scipy._lib._util import np_long, np_ulong
+from scipy.conftest import skip_xp_invalid_arg
 
 
 @pytest.fixture(params=_METRICS_NAMES, scope="session")
@@ -427,6 +428,7 @@ class TestCdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
+    @pytest.mark.thread_unsafe
     def test_cdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
 
@@ -629,6 +631,7 @@ class TestCdist:
                     y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
+    @pytest.mark.thread_unsafe
     def test_cdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -674,6 +677,7 @@ class TestCdist:
             with maybe_deprecated(metric):
                 cdist(X1, X2, metric, out=out5, **kwargs)
 
+    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -702,6 +706,7 @@ class TestCdist:
         # test that output is numerically equivalent
         assert_allclose(Y1, Y2, rtol=eps, verbose=verbose > 2)
 
+    @pytest.mark.thread_unsafe
     def test_cdist_refcount(self, metric):
         x1 = np.random.rand(10, 10)
         x2 = np.random.rand(10, 10)
@@ -734,6 +739,7 @@ class TestPdist:
                               'int': [np.float32, np.float64],
                               'float32': [np.float64]}
 
+    @pytest.mark.thread_unsafe
     def test_pdist_extra_args(self, metric):
         # Tests that args and kwargs are correctly handled
         X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
@@ -1365,6 +1371,7 @@ class TestPdist:
         right_y = 0.01492537
         assert_allclose(pdist_y, right_y, atol=eps, verbose=verbose > 2)
 
+    @skip_xp_invalid_arg
     def test_pdist_custom_notdouble(self):
         # tests that when using a custom metric the data type is not altered
         class myclass:
@@ -1453,6 +1460,7 @@ class TestPdist:
                     y2 = pdist(new_type(X1), metric=metric)
                     assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
+    @pytest.mark.thread_unsafe
     def test_pdist_out(self, metric):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1492,6 +1500,7 @@ class TestPdist:
             with maybe_deprecated(metric):
                 pdist(X, metric, out=out5, **kwargs)
 
+    @pytest.mark.thread_unsafe
     def test_striding(self, metric):
         # test that striding is handled correct with calls to
         # _copy_array_if_base_present
@@ -1579,6 +1588,7 @@ class TestSomeDistanceFunctions:
         dist = correlation(x, y)
         assert 0 <= dist <= 10 * np.finfo(np.float64).eps
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.filterwarnings('ignore:Casting complex')
     @pytest.mark.parametrize("func", [correlation, cosine])
     def test_corr_dep_complex(self, func):
@@ -2028,6 +2038,7 @@ def test_sqeuclidean_dtypes():
         assert_equal(d.dtype, dtype)
 
 
+@pytest.mark.thread_unsafe
 def test_sokalmichener():
     # Test that sokalmichener has the same result for bool and int inputs.
     p = [True, True, False]
@@ -2042,6 +2053,7 @@ def test_sokalmichener():
     assert_equal(dist1, dist2)
 
 
+@pytest.mark.thread_unsafe
 def test_sokalmichener_with_weight():
     # from: | 1 |   | 0 |
     # to:   | 1 |   | 1 |
@@ -2066,6 +2078,7 @@ def test_sokalmichener_with_weight():
             assert_almost_equal(sokalmichener(a2, a1, [w]), 0.6666666666666666)
 
 
+@pytest.mark.thread_unsafe
 def test_modifies_input(metric):
     # test whether cdist or pdist modifies input arrays
     X1 = np.asarray([[1., 2., 3.],
@@ -2080,6 +2093,7 @@ def test_modifies_input(metric):
     assert_array_equal(X1, X1_copy)
 
 
+@pytest.mark.thread_unsafe
 def test_Xdist_deprecated_args(metric):
     # testing both cdist and pdist deprecated warnings
     X1 = np.asarray([[1., 2., 3.],
@@ -2094,7 +2108,7 @@ def test_Xdist_deprecated_args(metric):
         pdist(X1, metric, 2.)
 
     for arg in ["p", "V", "VI"]:
-        kwargs = {arg: "foo"}
+        kwargs = {arg: np.asarray(1.)}
 
         if ((arg == "V" and metric == "seuclidean")
                 or (arg == "VI" and metric == "mahalanobis")
@@ -2110,6 +2124,7 @@ def test_Xdist_deprecated_args(metric):
                 pdist(X1, metric, **kwargs)
 
 
+@pytest.mark.thread_unsafe
 def test_Xdist_non_negative_weights(metric):
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
@@ -2206,6 +2221,7 @@ def test_gh_17703():
     assert_allclose(actual, expected)
 
 
+@pytest.mark.thread_unsafe
 def test_immutable_input(metric):
     if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
         pytest.skip("not applicable")
@@ -2213,6 +2229,18 @@ def test_immutable_input(metric):
     x.setflags(write=False)
     with maybe_deprecated(metric):
         getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+def test_gh_23109():
+    a = np.array([0, 0, 1, 1])
+    b = np.array([0, 1, 1, 0])
+    w = np.asarray([1.5, 1.2, 0.7, 1.3])
+    expected = yule(a, b, w=w)
+    assert_allclose(expected, 1.1954022988505748)
+    actual = cdist(np.atleast_2d(a),
+                   np.atleast_2d(b),
+                   metric='yule', w=w)
+    assert_allclose(actual, expected)
 
 
 class TestJaccard:

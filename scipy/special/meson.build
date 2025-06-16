@@ -1,4 +1,3 @@
-
 # TODO: 64-bit BLAS and LAPACK
 
 _ufuncs_pxi_pxd_sources = [
@@ -8,7 +7,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
-  fs.copyfile('_cunity.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
@@ -19,33 +17,11 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
-
-if meson.get_compiler('cpp').get_id() in ['msvc', 'clang-cl', 'intel-cl']
-  scipy_export_dll_args = ['-DSCIPY_DLL_EXPORTS']
-  scipy_import_dll_args = ['-DSCIPY_DLL_IMPORTS']
-else
-  scipy_export_dll_args = []
-  scipy_import_dll_args = []
-endif
-
-sf_error_state_lib = shared_library('sf_error_state',
-  ['sf_error_state.c'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  c_args: scipy_export_dll_args,
-  install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special',
-)
-
-sf_error_state_dep = declare_dependency(
-  compile_args: ['-DSP_SPECFUN_ERROR'] + scipy_import_dll_args,
-  link_with: sf_error_state_lib,
-)
 
 ufuncs_sources = [
   '_cosine.c',
@@ -55,10 +31,8 @@ ufuncs_sources = [
 ]
 
 ufuncs_cxx_sources = [
-  '_faddeeva.cxx',
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
-  'Faddeeva.cc',
   'sf_error.cc',
   'wright.cc'
 ]
@@ -72,36 +46,34 @@ cdflib_lib = static_library('cdflib',
 # The -Wno-psabi arg is used to silence a warning that the ABI of
 # passing structure with complex float member changed in GCC 4.4,
 # which is not relevant for scipy.special.
-ufuncs_cpp_args = []
+ufuncs_cpp_args = ['-DSP_SPECFUN_ERROR']
 if meson.get_compiler('cpp').get_id() == 'gcc'
   ufuncs_cpp_args += ['-Wno-psabi']
 endif
 
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [np_dep, sf_error_state_dep],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_gufuncs',
   ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
-  include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [np_dep, sf_error_state_dep],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   cpp_args: ufuncs_cpp_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_specfun',
   [cython_gen_cpp.process('_specfun.pyx')],
-  dependencies: [np_dep],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
@@ -129,6 +101,7 @@ cython_special = custom_target('cython_special',
 )
 
 cython_special_pxd = fs.copyfile('cython_special.pxd')
+_cython_tree += fs.copyfile('__init__.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
@@ -146,19 +119,19 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, Wno_maybe_uninitialized] + scipy_import_dll_args,
-  include_directories: ['../_lib', '../_build_utils/src'],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   dependencies: [
+    xsf_dep,
     lapack_dep,
     npymath_lib,
     np_dep,
-    sf_error_state_dep,
   ],
   link_args: version_link_args,
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
@@ -182,6 +155,7 @@ ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
   '-DCYTHON_EXTERN_C=extern "C"',
+  '-DSP_SPECFUN_ERROR'
 ]
 
 py3.extension_module('_ufuncs_cxx',
@@ -189,24 +163,22 @@ py3.extension_module('_ufuncs_cxx',
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
-  include_directories: ['../_lib/boost_math/include', '../_lib',
-                        '../_build_utils/src'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [np_dep, ellint_dep, sf_error_state_dep],
+  dependencies: [boost_math_dep, xsf_dep, np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
-  c_args: cython_c_args,
-  include_directories: ['../_lib', '../_build_utils/src'],
+  c_args: [cython_c_args],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [lapack_dep, np_dep, sf_error_state_dep],
+  dependencies: [xsf_dep, lapack_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('cython_special',
@@ -218,13 +190,13 @@ py3.extension_module('cython_special',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  include_directories: ['..', '../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [np_dep, npymath_lib, sf_error_state_dep, lapack_dep],
+  dependencies: [xsf_dep, np_dep, npymath_lib, lapack_dep],
   link_with: cdflib_lib,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_comb',
@@ -237,7 +209,7 @@ py3.extension_module('_comb',
 py3.extension_module('_test_internal',
   [cython_gen.process('_test_internal.pyx'), 'dd_real_wrappers.cpp'],
   include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [np_dep],
+  dependencies: [xsf_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
@@ -287,76 +259,10 @@ foreach npz_file: npz_files
   )
 endforeach
 
-# Headers for special functions in `xsf` library are included in
-# both build and install dirs for development purposes. Not public!
-
-xsf_sources = [
-  'xsf/config.h',
-  'xsf/error.h',
-  'xsf/evalpoly.h',
-  'xsf/lambertw.h',
-  'xsf/binom.h',
-  'xsf/trig.h',
-  'xsf/zlog1.h',
-  'xsf/loggamma.h',
-  'xsf/digamma.h',
-  'xsf/wright_bessel.h',
-  'xsf/hyp2f1.h',
-  'xsf/tools.h',
-  'xsf/iv_ratio.h',
-  'xsf/cdflib.h',
-  'xsf/sici.h',
-  'xsf/expint.h'
-]
-
-xsf_cephes_sources = [
-  'xsf/cephes/const.h',
-  'xsf/cephes/polevl.h',
-  'xsf/cephes/beta.h',
-  'xsf/cephes/gamma.h',
-  'xsf/cephes/trig.h',
-  'xsf/cephes/zeta.h',
-  'xsf/cephes/psi.h',
-  'xsf/cephes/lanczos.h',
-  'xsf/cephes/rgamma.h',
-  'xsf/cephes/chbevl.h',
-  'xsf/cephes/poch.h',
-  'xsf/cephes/hyp2f1.h',
-  'xsf/cephes/besselpoly.h',
-  'xsf/cephes/i0.h',
-  'xsf/cephes/i1.h',
-  'xsf/cephes/scipy_iv.h',
-  'xsf/cephes/j0.h',
-  'xsf/cephes/j1.h',
-  'xsf/cephes/jv.h',
-  'xsf/cephes/cbrt.h',
-  'xsf/cephes/airy.h',
-  'xsf/cephes/k0.h',
-  'xsf/cephes/k1.h',
-  'xsf/cephes/kn.h',
-  'xsf/cephes/ndtr.h',
-  'xsf/cephes/igam.h',
-  'xsf/cephes/unity.h',
-  'xsf/cephes/chdtr.h',
-  'xsf/cephes/igami.h',
-  'xsf/cephes/hyperg.h',
-  'xsf/cephes/expn.h',
-  'xsf/cephes/ellie.h',
-  'xsf/cephes/ellik.h',
-  'xsf/cephes/ellpe.h',
-  'xsf/cephes/ellpk.h',
-  'xsf/cephes/igam_asymp_coeff.h',
-  'xsf/cephes/sici.h',
-  'xsf/cephes/shichi.h',
-  'xsf/cephes/sindg.h',
-  'xsf/cephes/tandg.h'
-]
-
-py3.install_sources(xsf_sources, subdir: 'scipy/special/xsf')
-py3.install_sources(xsf_cephes_sources, subdir: 'scipy/special/xsf/cephes')
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',

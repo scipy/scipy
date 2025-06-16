@@ -13,6 +13,21 @@ __all__ = _ndimage_api.__all__
 MODULE_NAME = 'ndimage'
 
 
+def _maybe_convert_arg(arg, xp):
+    """Convert arrays/scalars hiding in the sequence `arg`."""
+    if isinstance(arg, np.ndarray | np.generic):
+        return xp.asarray(arg)
+    elif isinstance(arg, list | tuple):
+        return type(arg)(_maybe_convert_arg(x, xp) for x in arg)
+    else:
+        return arg
+
+
+# Some cupyx.scipy.ndimage functions don't exist or are incompatible with
+# their SciPy counterparts
+CUPY_BLOCKLIST = ['vectorized_filter']
+
+
 def delegate_xp(delegator, module_name):
     def inner(func):
         @functools.wraps(func)
@@ -20,7 +35,7 @@ def delegate_xp(delegator, module_name):
             xp = delegator(*args, **kwds)
 
             # try delegating to a cupyx/jax namesake
-            if is_cupy(xp):
+            if is_cupy(xp) and func.__name__ not in CUPY_BLOCKLIST:
                 # https://github.com/cupy/cupy/issues/8336
                 import importlib
                 cupyx_module = importlib.import_module(f"cupyx.scipy.{module_name}")
@@ -36,7 +51,7 @@ def delegate_xp(delegator, module_name):
                 # XXX: output arrays
                 result = func(*args, **kwds)
 
-                if isinstance(result, (np.ndarray, np.generic)):
+                if isinstance(result, np.ndarray | np.generic):
                     # XXX: np.int32->np.array_0D
                     return xp.asarray(result)
                 elif isinstance(result, int):
@@ -52,10 +67,7 @@ def delegate_xp(delegator, module_name):
                     return result
                 else:
                     # lists/tuples
-                    return type(result)(
-                        xp.asarray(x) if isinstance(x, np.ndarray) else x
-                        for x in result
-                    )
+                    return _maybe_convert_arg(result, xp)
         return wrapper
     return inner
 

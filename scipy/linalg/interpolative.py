@@ -94,14 +94,6 @@ Main functionality:
    estimate_spectral_norm_diff
    estimate_rank
 
-Following support functions are deprecated and will be removed in SciPy 1.17.0:
-
-.. autosummary::
-   :toctree: generated/
-
-   seed
-   rand
-
 
 References
 ==========
@@ -367,7 +359,6 @@ backend routine.
 
 import scipy.linalg._decomp_interpolative as _backend
 import numpy as np
-import warnings
 
 __all__ = [
     'estimate_rank',
@@ -375,11 +366,9 @@ __all__ = [
     'estimate_spectral_norm_diff',
     'id_to_svd',
     'interp_decomp',
-    'rand',
     'reconstruct_interp_matrix',
     'reconstruct_matrix_from_id',
     'reconstruct_skel_matrix',
-    'seed',
     'svd',
 ]
 
@@ -409,44 +398,6 @@ def _is_real(A):
             raise _DTYPE_ERROR
     except AttributeError as e:
         raise _TYPE_ERROR from e
-
-
-def seed(seed=None):
-    """
-    This function, historically, used to set the seed of the randomization algorithms
-    used in the `scipy.linalg.interpolative` functions written in Fortran77.
-
-    The library has been ported to Python and now the functions use the native NumPy
-    generators and this function has no content and returns None. Thus this function
-    should not be used and will be removed in SciPy version 1.17.0.
-    """
-    warnings.warn("`scipy.linalg.interpolative.seed` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
-
-
-def rand(*shape):
-    """
-    This function, historically, used to generate uniformly distributed random number
-    for the randomization algorithms used in the `scipy.linalg.interpolative` functions
-    written in Fortran77.
-
-    The library has been ported to Python and now the functions use the native NumPy
-    generators. Thus this function should not be used and will be removed in the
-    SciPy version 1.17.0.
-
-    If pseudo-random numbers are needed, NumPy pseudo-random generators should be used
-    instead.
-
-    Parameters
-    ----------
-    *shape
-        Shape of output array
-
-    """
-    warnings.warn("`scipy.linalg.interpolative.rand` is deprecated and will be "
-                  "removed in SciPy 1.17.0.", DeprecationWarning, stacklevel=3)
-    rng = np.random.default_rng()
-    return rng.uniform(low=0., high=1.0, size=shape)
 
 
 def interp_decomp(A, eps_or_k, rand=True, rng=None):
@@ -513,9 +464,12 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
-        ``False``, the argument is ignored.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -528,7 +482,7 @@ def interp_decomp(A, eps_or_k, rand=True, rng=None):
         Interpolation coefficients.
     """  # numpy/numpydoc#87  # noqa: E501
     from scipy.sparse.linalg import LinearOperator
-
+    rng = np.random.default_rng(rng)
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):
@@ -754,8 +708,12 @@ def estimate_spectral_norm(A, its=20, rng=None):
         `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -763,6 +721,7 @@ def estimate_spectral_norm(A, its=20, rng=None):
         Spectral norm estimate.
     """
     from scipy.sparse.linalg import aslinearoperator
+    rng = np.random.default_rng(rng)
     A = aslinearoperator(A)
 
     if _is_real(A):
@@ -790,8 +749,12 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
         the `matvec` and `rmatvec` methods (to apply the matrix and its adjoint).
     its : int, optional
         Number of power method iterations.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -799,6 +762,7 @@ def estimate_spectral_norm_diff(A, B, its=20, rng=None):
         Spectral norm estimate of matrix difference.
     """
     from scipy.sparse.linalg import aslinearoperator
+    rng = np.random.default_rng(rng)
     A = aslinearoperator(A)
     B = aslinearoperator(B)
 
@@ -845,9 +809,12 @@ def svd(A, eps_or_k, rand=True, rng=None):
         Whether to use random sampling if `A` is of type :class:`numpy.ndarray`
         (randomized algorithms are always used if `A` is of type
         :class:`scipy.sparse.linalg.LinearOperator`).
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm. If ``rand`` is
-        ``False``, the argument is ignored.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -859,6 +826,7 @@ def svd(A, eps_or_k, rand=True, rng=None):
         2D array right singular vectors.
     """
     from scipy.sparse.linalg import LinearOperator
+    rng = np.random.default_rng(rng)
 
     real = _is_real(A)
 
@@ -936,8 +904,12 @@ def estimate_rank(A, eps, rng=None):
         with the `rmatvec` method (to apply the matrix adjoint).
     eps : float
         Relative error for numerical rank definition.
-    rng : :class:`numpy.random.Generator`
-        NumPy generator for the randomization steps in the algorithm.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rand` is ``False``, the argument is ignored.
 
     Returns
     -------
@@ -946,6 +918,7 @@ def estimate_rank(A, eps, rng=None):
     """
     from scipy.sparse.linalg import LinearOperator
 
+    rng = np.random.default_rng(rng)
     real = _is_real(A)
 
     if isinstance(A, np.ndarray):

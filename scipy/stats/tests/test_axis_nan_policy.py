@@ -56,9 +56,21 @@ def xp_var(*args, **kwargs):
     return stats._stats_py._xp_var(*args, **kwargs)
 
 
+def gstd(*args, **kwargs):
+    kwargs.pop('_no_deco', None)
+    return stats.gstd(*args, **kwargs)
+
+
 def combine_pvalues_weighted(*args, **kwargs):
     return stats.combine_pvalues(args[0], *args[2:], weights=args[1],
                                  method='stouffer', **kwargs)
+
+
+def weightedtau_weighted(x, y, rank, **kwargs):
+    axis = kwargs.get('axis', 0)
+    nan_policy = kwargs.get('nan_policy', 'propagate')
+    rank = stats.rankdata(rank, axis=axis, nan_policy=nan_policy)
+    return stats.weightedtau(x, y, rank, **kwargs)
 
 
 axis_nan_policy_cases = [
@@ -133,6 +145,7 @@ axis_nan_policy_cases = [
     (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
+    (stats.f_oneway, tuple(), {'equal_var': False}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
     (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
@@ -143,6 +156,24 @@ axis_nan_policy_cases = [
     (xp_var, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.chatterjeexi, tuple(), dict(), 2, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.pointbiserialr, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.kendalltau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.weightedtau, tuple(), dict(), 2, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (weightedtau_weighted, tuple(), dict(), 3, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.correlation)),
+    (stats.linregress, tuple(), dict(), 2, 6, True,
+     lambda res: tuple(res) + (res.intercept_stderr,)),
+    (stats.theilslopes, tuple(), dict(), 2, 4, True, tuple),
+    (stats.theilslopes, tuple(), dict(), 1, 4, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 2, 2, True, tuple),
+    (stats.siegelslopes, tuple(), dict(), 1, 2, True, tuple),
+    (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
+    (stats.chisquare, tuple(), dict(), 1, 2, False, None),
+    (stats._morestats._boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -175,6 +206,9 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "One or more sample arguments is too small",
                       "invalid value encountered",
                       "divide by zero encountered",
+                      "`x` and `y` must have length at least 2.",
+                      "Inputs must not be empty.",
+                      "All `x` coordinates are identical.",
 }
 
 # If the message is one of these, results of the function may be inaccurate,
@@ -183,13 +217,13 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
                        "Sample size too small for normal approximation."}
 
 # For some functions, nan_policy='propagate' should not just return NaNs
-override_propagate_funcs = {stats.mode}
+override_propagate_funcs = {stats.mode, weightedtau_weighted, stats.weightedtau}
 
 # For some functions, empty arrays produce non-NaN results
-empty_special_case_funcs = {stats.entropy}
+empty_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 # Some functions don't follow the usual "too small" warning rules
-too_small_special_case_funcs = {stats.entropy}
+too_small_special_case_funcs = {stats.entropy, stats.chisquare, stats.power_divergence}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -301,6 +335,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("axis"), (1,))
 @pytest.mark.parametrize(("data_generator"), ("mixed",))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
@@ -413,7 +448,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                     n_outputs=n_outputs,
                                     nan_policy=nan_policy,
                                     paired=paired, _no_deco=True, **kwds)
-        except (ValueError, RuntimeWarning, ZeroDivisionError) as ea:
+        except (ValueError, RuntimeWarning, ZeroDivisionError, UserWarning) as ea:
             ea_str = str(ea)
             if any([str(ea_str).startswith(msg) for msg in too_small_messages]):
                 res_1da = np.full(n_outputs, np.nan)
@@ -472,6 +507,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
 @pytest.mark.parametrize(("data_generator"),
                          ("all_nans", "all_finite", "mixed", "empty"))
+@pytest.mark.parallel_threads(1)
 def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
@@ -524,7 +560,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
                                    n_outputs=n_outputs, nan_policy=nan_policy,
                                    paired=paired, _no_deco=True, **kwds)
-        except (RuntimeWarning, ValueError, ZeroDivisionError) as ea:
+        except (RuntimeWarning, ValueError, ZeroDivisionError, UserWarning) as ea:
             res1da = None
             ea_str = str(ea)
 
@@ -594,6 +630,8 @@ def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                            stats.differential_entropy}
     if sample_shape == (2, 3, 3, 4) and hypotest in small_sample_raises:
         pytest.skip("Sample too small; test raises error.")
+    if hypotest in {weightedtau_weighted}:
+        pytest.skip("`rankdata` used in testing doesn't support axis tuple.")
     # test if keepdims parameter works correctly
     if not unpacker:
         def unpacker(res):
@@ -787,6 +825,7 @@ def _check_arrays_broadcastable(arrays, axis):
 @pytest.mark.slow
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parallel_threads(1)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
     if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
@@ -828,20 +867,22 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
-                concat = stats._stats_py._broadcast_concatenate(samples, axis)
+                concat = stats._axis_nan_policy._broadcast_concatenate(samples, axis,
+                                                                       paired=paired)
                 with np.testing.suppress_warnings() as sup:
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
                     expected = np.mean(concat, axis=axis) * np.nan
+                    mask = np.isnan(expected)
+                    expected = [np.asarray(expected.copy()) for i in range(n_outputs)]
 
                 if hypotest in empty_special_case_funcs:
                     empty_val = hypotest(*([[]]*len(samples)), *args, **kwds)
-                    expected = np.asarray(expected)
-                    mask = np.isnan(expected)
-                    expected[mask] = empty_val
-                    expected = expected[()]
+                    empty_val = list(unpacker(empty_val))
+                    for i in range(n_outputs):
+                        expected[i][mask] = empty_val[i]
 
-                if expected.size and hypotest not in too_small_special_case_funcs:
+                if expected[0].size and hypotest not in too_small_special_case_funcs:
                     message = (too_small_1d_not_omit if max_axis == 1
                                else too_small_nd_not_omit)
                     with pytest.warns(SmallSampleWarning, match=message):
@@ -854,7 +895,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 res = unpacker(res)
 
                 for i in range(n_outputs):
-                    assert_equal(res[i], expected)
+                    assert_equal(res[i], expected[i])
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable
@@ -865,10 +906,51 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # produce this information.
                 message = "Array shapes are incompatible for broadcasting."
                 with pytest.raises(ValueError, match=message):
-                    stats._stats_py._broadcast_concatenate(samples, axis, paired)
+                    stats._axis_nan_policy._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
 
+
+def paired_non_broadcastable_cases():
+    for case in axis_nan_policy_cases:
+        hypotest, args, kwds, n_samples, n_outputs, paired, unpacker = case
+        if n_samples == 1:  # broadcasting only needed with >1 sample
+            continue
+        yield case
+
+
+@pytest.mark.parametrize("axis", [0, 1])
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker"),
+                         paired_non_broadcastable_cases())
+def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
+                           unpacker, axis):
+    # test for correct error message when shapes are not broadcastable
+    rng = np.random.default_rng(91359824598245)
+    get_samples = True
+    while get_samples:
+        samples = [rng.random(size=rng.integers(2, 100, size=2))
+                   for i in range(n_samples)]
+        # if samples are broadcastable, try again
+        get_samples = _check_arrays_broadcastable(samples, axis=axis)
+
+    message = "Array shapes are incompatible for broadcasting."
+    with pytest.raises(ValueError, match=message):
+        hypotest(*samples, *args, **kwds)
+
+    if not paired:  # there's another test for paired-sample statistics
+        return
+
+    # Previously, paired sample statistics did not raise an error
+    # message when the shapes were broadcastable except along `axis`
+    # https://github.com/scipy/scipy/pull/19578#pullrequestreview-1766857165
+    shape = rng.integers(2, 10, size=2)
+    most_samples = [rng.random(size=shape) for i in range(n_samples-1)]
+    shape = list(shape)
+    shape[axis] += 1
+    other_sample = rng.random(size=shape)
+    with pytest.raises(ValueError, match=message):
+        hypotest(other_sample, *most_samples, *args, **kwds)
 
 def test_masked_array_2_sentinel_array():
     # prepare arrays
@@ -1034,13 +1116,13 @@ def test_mixed_mask_nan_1():
     m, n = 3, 20
     axis = -1
 
-    np.random.seed(0)
-    a = np.random.rand(m, n)
-    b = np.random.rand(m, n)
-    mask_a1 = np.random.rand(m, n) < 0.2
-    mask_a2 = np.random.rand(m, n) < 0.1
-    mask_b1 = np.random.rand(m, n) < 0.15
-    mask_b2 = np.random.rand(m, n) < 0.15
+    rng = np.random.RandomState(0)
+    a = rng.rand(m, n)
+    b = rng.rand(m, n)
+    mask_a1 = rng.rand(m, n) < 0.2
+    mask_a2 = rng.rand(m, n) < 0.1
+    mask_b1 = rng.rand(m, n) < 0.15
+    mask_b2 = rng.rand(m, n) < 0.15
     mask_a1[2, :] = True
 
     a_nans = a.copy()

@@ -21,7 +21,7 @@ features are:
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
 __all__ = ["hb_read", "hb_write"]
@@ -48,7 +48,7 @@ class HBInfo:
 
         Parameters
         ----------
-        m : sparse matrix
+        m : sparse array or matrix
             the HBInfo instance will derive its parameters from m
         title : str
             Title to put in the HB header
@@ -189,9 +189,10 @@ class HBInfo:
         nnon_zeros = _expect_int(line[42:56])
         nelementals = _expect_int(line[56:70])
         if not nelementals == 0:
-            raise ValueError("Unexpected value %d for nltvl (last entry of line 3)"
-                             % nelementals)
-
+            raise ValueError(
+                f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
+            )
+        
         # Fourth line
         line = fid.readline().strip("\n")
 
@@ -282,18 +283,13 @@ class HBInfo:
         """Gives the header corresponding to this instance as a string."""
         header = [self.title.ljust(72) + self.key.ljust(8)]
 
-        header.append("%14d%14d%14d%14d" %
-                      (self.total_nlines, self.pointer_nlines,
-                       self.indices_nlines, self.values_nlines))
-        header.append("%14s%14d%14d%14d%14d" %
-                      (self.mxtype.fortran_format.ljust(14), self.nrows,
-                       self.ncols, self.nnon_zeros, 0))
+        header.append(f"{self.total_nlines:14d}{self.pointer_nlines:14d}{self.indices_nlines:14d}{self.values_nlines:14d}")
+        header.append(f"{self.mxtype.fortran_format.ljust(14):14s}{self.nrows:14d}{self.ncols:14d}{self.nnon_zeros:14d}{0:14d}")
 
         pffmt = self.pointer_format.fortran_format
         iffmt = self.indices_format.fortran_format
         vffmt = self.values_format.fortran_format
-        header.append("%16s%16s%20s" %
-                      (pffmt.ljust(16), iffmt.ljust(16), vffmt.ljust(20)))
+        header.append(f"{pffmt.ljust(16):16s}{iffmt.ljust(16):16s}{vffmt.ljust(20):20s}")
         return "\n".join(header)
 
 
@@ -323,11 +319,7 @@ def _read_hb_data(content, header):
     val = np.fromstring(val_string,
             dtype=header.values_dtype, sep=' ')
 
-    try:
-        return csc_matrix((val, ind-1, ptr-1),
-                          shape=(header.nrows, header.ncols))
-    except ValueError as e:
-        raise e
+    return csc_array((val, ind-1, ptr-1), shape=(header.nrows, header.ncols))
 
 
 def _write_data(m, fid, header):
@@ -466,7 +458,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file):
+def hb_read(path_or_open_file, *, spmatrix=True):
     """Read HB-format file.
 
     Parameters
@@ -474,11 +466,13 @@ def hb_read(path_or_open_file):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
-    data : scipy.sparse.csc_matrix instance
-        The data read from the HB file as a sparse matrix.
+    data : csc_array or csc_matrix
+        The data read from the HB file as a sparse array.
 
     Notes
     -----
@@ -497,8 +491,8 @@ def hb_read(path_or_open_file):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0
@@ -510,10 +504,13 @@ def hb_read(path_or_open_file):
         return hb.read_matrix()
 
     if hasattr(path_or_open_file, 'read'):
-        return _get_matrix(path_or_open_file)
+        data = _get_matrix(path_or_open_file)
     else:
         with open(path_or_open_file) as f:
-            return _get_matrix(f)
+            data = _get_matrix(f)
+    if spmatrix:
+        return csc_matrix(data)
+    return data
 
 
 def hb_write(path_or_open_file, m, hb_info=None):
@@ -524,8 +521,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
-    m : sparse-matrix
-        the sparse matrix to write
+    m : sparse array or matrix
+        the sparse array to write
     hb_info : HBInfo
         contains the meta-data for write
 
@@ -550,8 +547,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     >>> from scipy.sparse import csr_array, eye
     >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-    <Compressed Sparse Column sparse matrix of dtype 'float64'
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
         with 3 stored elements and shape (3, 3)>
         Coords	Values
         (0, 0)	1.0

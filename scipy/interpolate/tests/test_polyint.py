@@ -21,16 +21,16 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
                 extra_args=None):
     if extra_args is None:
         extra_args = {}
-    np.random.seed(1234)
+    rng = np.random.RandomState(1234)
 
     x = [-1, 0, 1, 2, 3, 4]
     s = list(range(1, len(y_shape)+1))
     s.insert(axis % (len(y_shape)+1), 0)
-    y = np.random.rand(*((6,) + y_shape)).transpose(s)
+    y = rng.rand(*((6,) + y_shape)).transpose(s)
 
     xi = np.zeros(x_shape)
     if interpolator_cls is CubicHermiteSpline:
-        dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
+        dydx = rng.rand(*((6,) + y_shape)).transpose(s)
         yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
     else:
         yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
@@ -314,10 +314,12 @@ class TestKrogh:
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         xp_assert_close(cmplx, cmplx2, atol=1e-15)
 
+    @pytest.mark.thread_unsafe
     def test_high_degree_warning(self):
         with pytest.warns(UserWarning, match="40 degrees provided,"):
             KroghInterpolator(np.arange(40), np.ones(40))
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = KroghInterpolator(self.xs, self.ys)
 
@@ -517,6 +519,7 @@ class TestBarycentric:
         # at the nodes
         assert_almost_equal(yi, P.yi.ravel())
 
+    @pytest.mark.thread_unsafe
     def test_repeated_node(self):
         # check that a repeated node raises a ValueError
         # (computing the weights requires division by xi[i] - xi[j])
@@ -526,6 +529,7 @@ class TestBarycentric:
                            match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
 
+    @pytest.mark.thread_unsafe
     def test_concurrency(self):
         P = BarycentricInterpolator(self.xs, self.ys)
 
@@ -537,9 +541,9 @@ class TestBarycentric:
 
 class TestPCHIP:
     def _make_random(self, npts=20):
-        np.random.seed(1234)
-        xi = np.sort(np.random.random(npts))
-        yi = np.random.random(npts)
+        rng = np.random.RandomState(1234)
+        xi = np.sort(rng.random(npts))
+        yi = rng.random(npts)
         return pchip(xi, yi), xi, yi
 
     def test_overshoot(self):
@@ -621,6 +625,7 @@ class TestPCHIP:
             for t in (x[0], x[-1]):
                 assert pp(t, 1) != 0
 
+    @pytest.mark.thread_unsafe
     def test_all_zeros(self):
         x = np.arange(10)
         y = np.zeros_like(x)

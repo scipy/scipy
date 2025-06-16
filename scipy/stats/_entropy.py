@@ -4,12 +4,12 @@ Created on Fri Apr  2 09:06:05 2021
 @author: matth
 """
 
-from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
-from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
-from scipy._lib._array_api import array_namespace, xp_moveaxis_to_end
+from ._axis_nan_policy import _axis_nan_policy_factory
+from scipy._lib._array_api import (array_namespace, xp_promote, xp_device,
+                                   is_marray, _share_masks)
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -20,7 +20,7 @@ __all__ = ['entropy', 'differential_entropy']
         2 if ("qk" in kwgs and kwgs["qk"] is not None)
         else 1
     ),
-    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    n_outputs=1, result_to_tuple=lambda x, _: (x,), paired=True,
     too_small=-1  # entropy doesn't have too small inputs
 )
 def entropy(pk: np.typing.ArrayLike,
@@ -140,19 +140,24 @@ def entropy(pk: np.typing.ArrayLike,
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    xp = array_namespace(pk) if qk is None else array_namespace(pk, qk)
+    xp = array_namespace(pk, qk)
+    pk, qk = xp_promote(pk, qk, broadcast=True, xp=xp)
 
-    pk = xp.asarray(pk)
     with np.errstate(invalid='ignore'):
-        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
+        if qk is not None:
+            pk, qk = _share_masks(pk, qk, xp=xp)
+            qk = qk / xp.sum(qk, axis=axis, keepdims=True)
+        pk = pk / xp.sum(pk, axis=axis, keepdims=True)
+
     if qk is None:
         vec = special.entr(pk)
     else:
-        qk = xp.asarray(qk)
-        pk, qk = _broadcast_arrays((pk, qk), axis=None, xp=xp)  # don't ignore any axes
-        sum_kwargs = dict(axis=axis, keepdims=True)
-        qk = 1.0*qk / xp.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
-        vec = special.rel_entr(pk, qk)
+        if is_marray(xp):  # compensate for mdhaber/marray#97
+            vec = special.rel_entr(pk.data, qk.data)  # type: ignore[union-attr]
+            vec = xp.asarray(vec, mask=pk.mask)  #  type: ignore[union-attr]
+        else:
+            vec = special.rel_entr(pk, qk)
+
     S = xp.sum(vec, axis=axis)
     if base is not None:
         S /= math.log(base)
@@ -170,7 +175,7 @@ def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,),
     too_small=_differential_entropy_is_too_small
 )
 def differential_entropy(
@@ -318,10 +323,8 @@ def differential_entropy(
 
     """
     xp = array_namespace(values)
-    values = xp.asarray(values)
-    if xp.isdtype(values.dtype, "integral"):  # type: ignore[union-attr]
-        values = xp.astype(values, xp.asarray(1.).dtype)
-    values = xp_moveaxis_to_end(values, axis, xp=xp)
+    values = xp_promote(values, force_floating=True, xp=xp)
+    values = xp.moveaxis(values, axis, -1)
     n = values.shape[-1]  # type: ignore[union-attr]
 
     if window_length is None:
@@ -391,7 +394,7 @@ def _van_es_entropy(X, m, *, xp):
     n = X.shape[-1]
     difference = X[..., m:] - X[..., :-m]
     term1 = 1/(n-m) * xp.sum(xp.log((n+1)/m * difference), axis=-1)
-    k = xp.arange(m, n+1, dtype=term1.dtype)
+    k = xp.arange(m, n+1, dtype=term1.dtype, device=xp_device(X))
     return term1 + xp.sum(1/k) + math.log(m) - math.log(n+1)
 
 
@@ -403,10 +406,9 @@ def _ebrahimi_entropy(X, m, *, xp):
 
     differences = X[..., 2 * m:] - X[..., : -2 * m:]
 
-    i = xp.arange(1, n+1, dtype=X.dtype)
-    ci = xp.ones_like(i)*2
-    ci[i <= m] = 1 + (i[i <= m] - 1)/m
-    ci[i >= n - m + 1] = 1 + (n - i[i >= n-m+1])/m
+    i = xp.arange(1, n+1, dtype=X.dtype, device=xp_device(X))
+    ci = xp.where(i <= m, 1 + (i - 1)/m, 2.)
+    ci = xp.where(i >= n - m + 1, 1 + (n - i)/m, ci)
 
     logs = xp.log(n * differences / (ci * m))
     return xp.mean(logs, axis=-1)
@@ -418,8 +420,8 @@ def _correa_entropy(X, m, *, xp):
     n = X.shape[-1]
     X = _pad_along_last_axis(X, m, xp=xp)
 
-    i = xp.arange(1, n+1)
-    dj = xp.arange(-m, m+1)[:, None]
+    i = xp.arange(1, n+1, device=xp_device(X))
+    dj = xp.arange(-m, m+1, device=xp_device(X))[:, None]
     j = i + dj
     j0 = j + m - 1  # 0-indexed version of j
 
