@@ -75,6 +75,7 @@ def test_ElasticRod(n):
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.filterwarnings("ignore:Casting complex values to real")
+@pytest.mark.filterwarnings("ignore:An ill-conditioned matrix")
 @pytest.mark.parametrize("Vdtype", INEXACTDTYPES)
 @pytest.mark.parametrize("Bdtype", ALLDTYPES)
 @pytest.mark.parametrize("BVdtype", INEXACTDTYPES)
@@ -136,6 +137,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = B @ X
     BX = BX.astype(BVdtype)
     # Check scaling-invariance of Cholesky-based orthonormalization
+    # XXX: internally, _b_orthonormalize tries to invert an ill-conditioned matrix
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns
     Xo1 =  sign_align(Xo1, Xo)
@@ -349,6 +351,8 @@ def test_failure_to_run_iterations_nonsymmetric():
     assert np.max(eigenvalues) > 0
 
 
+@pytest.mark.skipif(_IS_32BIT and np.lib.NumpyVersion(np.__version__) < "2.0.0",
+                  reason="Was failing in CI, see gh-23077")
 @pytest.mark.filterwarnings("ignore:The problem size")
 def test_hermitian():
     """Check complex-value Hermitian cases.

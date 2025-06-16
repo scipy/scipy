@@ -10,7 +10,7 @@ from scipy.fft import fft
 from scipy.signal import windows, get_window, resample
 from scipy._lib._array_api import (
      xp_assert_close, xp_assert_equal, array_namespace, is_torch, is_jax, is_cupy,
-     assert_array_almost_equal, SCIPY_DEVICE,
+     assert_array_almost_equal, SCIPY_DEVICE, is_numpy
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -824,7 +824,7 @@ class TestGetWindow:
         sig = xp.arange(128)
 
         win = windows.get_window(('kaiser', 8.0), osfactor // 2, xp=xp)
-        with assert_raises(ValueError, match='must have the same length'):
+        with assert_raises(ValueError, match='^window.shape='):
             resample(sig, len(sig) * osfactor, window=win)
 
     def test_general_cosine(self, xp):
@@ -853,6 +853,15 @@ class TestGetWindow:
                                     0.504551152, 0.], dtype=xp.float64), atol=1e-9)
         xp_assert_close(get_window('lanczos', 6, xp=xp),
                         get_window('sinc', 6, xp=xp))
+
+    def test_xp_default(self, xp):
+        # no explicit xp= argument, default to numpy
+        win = get_window('lanczos', 6)
+        assert isinstance(win, np.ndarray)
+
+        win = get_window('lanczos', 6, xp=xp)
+        if not is_numpy(xp):
+            assert not isinstance(win, np.ndarray)
 
 
 @skip_xp_backends("dask.array", reason="https://github.com/dask/dask/issues/2620")

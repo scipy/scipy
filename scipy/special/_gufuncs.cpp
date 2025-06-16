@@ -1,4 +1,4 @@
-#include "xsf/numpy.h"
+#include <xsf/numpy.h>
 
 #include "sf_error.h"
 #include "xsf_special.h"

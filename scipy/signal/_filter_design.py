@@ -2,22 +2,24 @@
 import math
 import operator
 import warnings
+import builtins
 
 import numpy as np
-from numpy import (atleast_1d, poly, polyval, roots, asarray,
-                   pi, absolute, sqrt, tan, log10,
-                   arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   sinh, concatenate, prod, array)
+from numpy import (atleast_1d, asarray,
+                   pi, absolute, concatenate, array)
 from numpy.polynomial.polynomial import polyval as npp_polyval
-from numpy.polynomial.polynomial import polyvalfromroots
 
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
+from scipy._lib import doccer
 from scipy._lib._util import float_factorial
 from scipy.signal._arraytools import _validate_fs
+from scipy.signal import _polyutils as _pu
 
 import scipy._lib.array_api_extra as xpx
-from scipy._lib._array_api import array_namespace, xp_promote, xp_size
+from scipy._lib._array_api import (
+    array_namespace, xp_promote, xp_size, xp_default_dtype, is_jax, xp_float_to_complex,
+)
 from scipy._lib.array_api_compat import numpy as np_compat
 
 
@@ -58,6 +60,42 @@ def _is_int_type(x):
         return True
 
 
+def _real_dtype_for_complex(dtyp, *, xp):
+    if xp.isdtype(dtyp, 'real floating'):
+        return dtyp
+    if dtyp == xp.complex64:
+        return xp.float32
+    elif dtyp == xp.complex128:
+        return xp.float64
+    else:
+        raise ValueError(f"Unknown dtype {dtyp}.")
+
+
+# https://github.com/numpy/numpy/blob/v2.2.0/numpy/_core/function_base.py#L195-L302
+def _logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, *, xp):
+    if not isinstance(base, float | int) and xp.asarray(base).ndim > 0:
+        # If base is non-scalar, broadcast it with the others, since it
+        # may influence how axis is interpreted.
+        start, stop, base = map(xp.asarray, (start, stop, base))
+        ndmax = xp.broadcast_arrays(start, stop, base).ndim
+        start, stop, base = (
+            xpx.atleast_nd(a, ndim=ndmax)
+            for a in (start, stop, base)
+        )
+        base = xp.expand_dims(base)
+    try:
+        result_dt = xp.result_type(start, stop, base)
+    except ValueError:
+        # all of start, stop and base are python scalars
+        result_dt = xp_default_dtype(xp)
+    y = xp.linspace(start, stop, num=num, endpoint=endpoint, dtype=result_dt)
+
+    yp = xp.pow(base, y)
+    if dtype is None:
+        return yp
+    return xp.astype(yp, dtype, copy=False)
+
+
 def findfreqs(num, den, N, kind='ba'):
     """
     Find array of frequencies for computing the response of an analog filter.
@@ -93,27 +131,42 @@ def findfreqs(num, den, N, kind='ba'):
              3.16227766e-01,   1.00000000e+00,   3.16227766e+00,
              1.00000000e+01,   3.16227766e+01,   1.00000000e+02])
     """
+    xp = array_namespace(num, den)
+    num, den = map(xp.asarray, (num, den))
+
     if kind == 'ba':
-        ep = atleast_1d(roots(den)) + 0j
-        tz = atleast_1d(roots(num)) + 0j
+        ep = xpx.atleast_nd(_pu.polyroots(den, xp=xp), ndim=1, xp=xp)
+        tz = xpx.atleast_nd(_pu.polyroots(num, xp=xp), ndim=1, xp=xp)
     elif kind == 'zp':
-        ep = atleast_1d(den) + 0j
-        tz = atleast_1d(num) + 0j
+        ep = xpx.atleast_nd(den, ndim=1, xp=xp)
+        tz = xpx.atleast_nd(num, ndim=1, xp=xp)
     else:
         raise ValueError("input must be one of {'ba', 'zp'}")
 
-    if len(ep) == 0:
-        ep = atleast_1d(-1000) + 0j
+    ep = xp_float_to_complex(ep, xp=xp)
+    tz = xp_float_to_complex(tz, xp=xp)
 
-    ez = np.r_[ep[ep.imag >= 0], tz[(np.abs(tz) < 1e5) & (tz.imag >= 0)]]
+    if ep.shape[0] == 0:
+        ep = xp.asarray([-1000], dtype=ep.dtype)
 
-    integ = np.abs(ez) < 1e-10
-    hfreq = np.round(np.log10(np.max(3 * np.abs(ez.real + integ) +
-                                     1.5 * ez.imag)) + 0.5)
-    lfreq = np.round(np.log10(0.1 * np.min(np.abs((ez + integ).real) +
-                                           2 * ez.imag)) - 0.5)
+    ez = xp.concat((
+        ep[xp.imag(ep) >= 0],
+        tz[(xp.abs(tz) < 1e5) & (xp.imag(tz) >= 0)]
+    ))
 
-    w = np.logspace(lfreq, hfreq, N)
+    integ = xp.astype(xp.abs(ez) < 1e-10, ez.dtype) # XXX True->1, False->0
+    hfreq = xp.round(
+        xp.log10(xp.max(3*xp.abs(xp.real(ez) + integ) + 1.5*xp.imag(ez))) + 0.5
+    )
+
+    # the fudge factor is for backwards compatibility: round(-1.5) can be -1 or -2
+    # depending on the the floating-point jitter in -1.5
+    fudge = 1e-14 if is_jax(xp) else 0
+    lfreq = xp.round(
+        xp.log10(0.1*xp.min(xp.abs(xp.real(ez + integ)) + 2*xp.imag(ez))) - 0.5 - fudge
+    )
+
+    w = _logspace(lfreq, hfreq, N, xp=xp)
     return w
 
 
@@ -178,16 +231,18 @@ def freqs(b, a, worN=200, plot=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(b, a, worN)
+
     if worN is None:
         # For backwards compatibility
         w = findfreqs(b, a, 200)
     elif _is_int_type(worN):
         w = findfreqs(b, a, worN)
     else:
-        w = atleast_1d(worN)
+        w = xpx.atleast_nd(xp.asarray(worN), ndim=1, xp=xp)
 
     s = 1j * w
-    h = polyval(b, s) / polyval(a, s)
+    h = _pu.polyval(b, s, xp=xp) / _pu.polyval(a, s, xp=xp)
     if plot is not None:
         plot(w, h)
 
@@ -254,8 +309,13 @@ def freqs_zpk(z, p, k, worN=200):
     >>> plt.show()
 
     """
-    k = np.asarray(k)
-    if k.size > 1:
+    xp = array_namespace(z, p)
+    z, p = map(xp.asarray, (z, p))
+
+    # NB: k is documented to be a scalar; for backwards compat we keep allowing it
+    # to be a size-1 array, but it does not influence the namespace calculation.
+    k = xp.asarray(k, dtype=xp_default_dtype(xp))
+    if xp_size(k) > 1:
         raise ValueError('k must be a single scalar gain')
 
     if worN is None:
@@ -266,10 +326,10 @@ def freqs_zpk(z, p, k, worN=200):
     else:
         w = worN
 
-    w = atleast_1d(w)
+    w = xpx.atleast_nd(xp.asarray(w), ndim=1, xp=xp)
     s = 1j * w
-    num = polyvalfromroots(s, z)
-    den = polyvalfromroots(s, p)
+    num = _pu.npp_polyvalfromroots(s, z, xp=xp)
+    den = _pu.npp_polyvalfromroots(s, p, xp=xp)
     h = k * num/den
     return w, h
 
@@ -433,8 +493,16 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     (2, 1024)
 
     """
-    b = atleast_1d(b)
-    a = atleast_1d(a)
+    xp = array_namespace(b, a)
+
+    b, a = map(xp.asarray, (b, a))
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, xp_default_dtype(xp))
+    res_dtype = xp.result_type(b, a)
+    real_dtype = _real_dtype_for_complex(res_dtype, xp=xp)
+
+    b = xpx.atleast_nd(b, ndim=1, xp=xp)
+    a = xpx.atleast_nd(a, ndim=1, xp=xp)
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -452,40 +520,51 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
-        w = np.linspace(0, lastpoint, N,
-                        endpoint=include_nyquist and not whole)
+        w = xp.linspace(0, lastpoint, N,
+                        endpoint=include_nyquist and not whole, dtype=real_dtype)
         n_fft = N if whole else 2 * (N - 1) if include_nyquist else 2 * N
-        if (a.size == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
+        if (xp_size(a) == 1 and (b.ndim == 1 or (b.shape[-1] == 1))
                 and n_fft >= b.shape[0]
                 and n_fft > 0):  # TODO: review threshold acc. to benchmark?
-            if np.isrealobj(b) and np.isrealobj(a):
+ 
+            if (xp.isdtype(b.dtype, "real floating") and
+                xp.isdtype(a.dtype, "real floating")
+            ):
                 fft_func = sp_fft.rfft
             else:
                 fft_func = sp_fft.fft
-            h = fft_func(b, n=n_fft, axis=0)[:N]
+
+            h = fft_func(b, n=n_fft, axis=0)
+            h = h[:min(N, h.shape[0]), ...]
             h /= a
+
             if fft_func is sp_fft.rfft and whole:
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
-                stop = -1 if n_fft % 2 == 1 else -2
-                h_flip = slice(stop, 0, -1)
-                h = np.concatenate((h, h[h_flip].conj()))
+                stop = None if n_fft % 2 == 1 else -1
+                h_flipped = xp.flip(h[1:stop, ...], axis=0)
+                h = xp.concat((h, xp.conj(h_flipped)))
             if b.ndim > 1:
                 # Last axis of h has length 1, so drop it.
                 h = h[..., 0]
                 # Move the first axis of h to the end.
-                h = np.moveaxis(h, 0, -1)
+                h = xp.moveaxis(h, 0, -1)
     else:
-        w = atleast_1d(worN)
+        if isinstance(worN, complex):
+            # backwards compat
+            worN = worN.real
+        w = xpx.atleast_nd(xp.asarray(worN, dtype=res_dtype), ndim=1, xp=xp)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
         del worN
-        w = 2*pi*w/fs
+        w = 2 * pi * w / fs
 
     if h is None:  # still need to compute using freqs w
-        zm1 = exp(-1j * w)
-        h = (npp_polyval(zm1, b, tensor=False) /
-             npp_polyval(zm1, a, tensor=False))
+        zm1 = xp.exp(-1j * w)
+        h = (_pu.npp_polyval(zm1, b, tensor=False, xp=xp) /
+             _pu.npp_polyval(zm1, a, tensor=False, xp=xp))
 
-    w = w*(fs/(2*pi))
+    w = w * (fs / (2 * pi))
 
     if plot is not None:
         plot(w, h)
@@ -576,7 +655,13 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
-    z, p = map(atleast_1d, (z, p))
+    xp = array_namespace(z, p)
+    z, p = map(xp.asarray, (z, p))
+
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    p = xpx.atleast_nd(p, ndim=1, xp=xp)
+    res_dtype = xp.result_type(z, p)
+    res_dtype = xp.float64 if res_dtype in (xp.float64, xp.complex128) else xp.float32
 
     fs = _validate_fs(fs, allow_none=False)
 
@@ -587,15 +672,19 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
 
     if worN is None:
         # For backwards compatibility
-        w = np.linspace(0, lastpoint, 512, endpoint=False)
+        w = xp.linspace(0, lastpoint, 512, endpoint=False, dtype=res_dtype)
     elif _is_int_type(worN):
-        w = np.linspace(0, lastpoint, worN, endpoint=False)
+        w = xp.linspace(0, lastpoint, worN, endpoint=False, dtype=res_dtype)
     else:
-        w = atleast_1d(worN)
-        w = 2*pi*w/fs
+        w = xp.asarray(worN)
+        if xp.isdtype(w.dtype, 'integral'):
+            w = xp.astype(w, xp_default_dtype(xp))
+        w = xpx.atleast_nd(w, ndim=1, xp=xp)
+        w = 2 * pi * w / fs
 
-    zm1 = exp(1j * w)
-    h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
+    zm1 = xp.exp(1j * w)
+    func = _pu.npp_polyvalfromroots
+    h = xp.asarray(k, dtype=res_dtype) * func(zm1, z, xp=xp) / func(zm1, p, xp=xp)
 
     w = w*(fs/(2*pi))
 
@@ -698,7 +787,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
-    c = np.convolve(b, conjugate(a[::-1]))
+    c = np.convolve(b, np.conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
@@ -728,16 +817,19 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     return w, gd
 
 
-def _validate_sos(sos):
+def _validate_sos(sos, xp=None):
     """Helper to validate a SOS input"""
-    sos = np.asarray(sos)
-    sos = np.atleast_2d(sos)
+    if xp is None:
+        xp = np    # backcompat, cf sosfilt, sosfiltfilt
+
+    sos = xp.asarray(sos)
+    sos = xpx.atleast_nd(sos, ndim=2, xp=xp)
     if sos.ndim != 2:
         raise ValueError('sos array must be 2D')
     n_sections, m = sos.shape
     if m != 6:
         raise ValueError('sos array must be shape (n_sections, 6)')
-    if not (sos[:, 3] == 1).all():
+    if not xp.all(sos[:, 3] == 1):
         raise ValueError('sos[:, 3] should be all ones')
     return sos, n_sections
 
@@ -856,13 +948,16 @@ def freqz_sos(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    xp = array_namespace(sos)
+
     fs = _validate_fs(fs, allow_none=False)
 
-    sos, n_sections = _validate_sos(sos)
+    sos, n_sections = _validate_sos(sos, xp)
     if n_sections == 0:
         raise ValueError('Cannot compute frequencies with no sections')
     h = 1.
-    for row in sos:
+    for j in range(sos.shape[0]):
+        row = sos[j, :]
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole, fs=fs)
         h *= rowh
     return w, h
@@ -1131,13 +1226,15 @@ def tf2zpk(b, a):
         array([ -2.5+2.59807621j ,  -2.5-2.59807621j]),
         3.0)
     """
+    xp = array_namespace(b, a)
     b, a = normalize(b, a)
-    b = (b + 0.0) / a[0]
-    a = (a + 0.0) / a[0]
+
+    a, b = xp_promote(a, b, xp=xp, force_floating=True)
+
     k = b[0]
-    b /= b[0]
-    z = roots(b)
-    p = roots(a)
+    b = b / b[0]
+    z = _pu.polyroots(b, xp=xp)
+    p = _pu.polyroots(a, xp=xp)
     return z, p, k
 
 
@@ -1179,18 +1276,26 @@ def zpk2tf(z, p, k):
     >>> zpk2tf(z, p, k)
     (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
-    z = atleast_1d(z)
-    k = atleast_1d(k)
-    if len(z.shape) > 1:
-        temp = poly(z[0])
-        b = np.empty((z.shape[0], z.shape[1] + 1), temp.dtype.char)
-        if len(k) == 1:
+    xp = array_namespace(z, p)
+    z, p, k = map(xp.asarray, (z, p, k))
+
+    z = xpx.atleast_nd(z, ndim=1, xp=xp)
+    k = xpx.atleast_nd(k, ndim=1, xp=xp)
+    if xp.isdtype(k.dtype, 'integral'):
+        k = xp.astype(k, xp_default_dtype(xp))
+
+    if z.ndim > 1:
+        temp = _pu.poly(z[0], xp=xp)
+        b = xp.empty((z.shape[0], z.shape[1] + 1), dtype=temp.dtype)
+        if k.shape[0] == 1:
             k = [k[0]] * z.shape[0]
         for i in range(z.shape[0]):
-            b[i] = k[i] * poly(z[i])
+            b[i] = k[i] * _pu.poly(z[i], xp=xp)
     else:
-        b = k * poly(z)
-    a = atleast_1d(poly(p))
+        b = k * _pu.poly(z, xp=xp)
+
+    a = _pu.poly(p, xp=xp)
+    a = xpx.atleast_nd(xp.asarray(a), ndim=1, xp=xp)
 
     return b, a
 
@@ -1286,17 +1391,20 @@ def sos2tf(sos):
     (   array([0.91256522, 0.91256522, 0.        ]),
         array([1.        , 0.82513043, 0.        ]))
     """
-    sos = np.asarray(sos)
-    result_type = sos.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
+    xp = array_namespace(sos)
+    sos = xp.asarray(sos)
 
-    b = np.array([1], dtype=result_type)
-    a = np.array([1], dtype=result_type)
+    result_type = sos.dtype
+    if xp.isdtype(result_type, 'integral'):
+        result_type = xp_default_dtype(xp)
+
+    b = xp.asarray([1], dtype=result_type)
+    a = xp.asarray([1], dtype=result_type)
+
     n_sections = sos.shape[0]
     for section in range(n_sections):
-        b = np.polymul(b, sos[section, :3])
-        a = np.polymul(a, sos[section, 3:])
+        b = _pu.polymul(b, sos[section, :3], xp=xp)
+        a = _pu.polymul(a, sos[section, 3:], xp=xp)
     return b, a
 
 
@@ -1327,15 +1435,17 @@ def sos2zpk(sos):
 
     .. versionadded:: 0.16.0
     """
-    sos = np.asarray(sos)
+    xp = array_namespace(sos)
+    sos = xp.asarray(sos)
+
     n_sections = sos.shape[0]
-    z = np.zeros(n_sections*2, np.complex128)
-    p = np.zeros(n_sections*2, np.complex128)
+    z = xp.zeros(n_sections*2, dtype=xp.complex128)
+    p = xp.zeros(n_sections*2, dtype=xp.complex128)
     k = 1.
     for section in range(n_sections):
         zpk = tf2zpk(sos[section, :3], sos[section, 3:])
-        z[2*section:2*section+len(zpk[0])] = zpk[0]
-        p[2*section:2*section+len(zpk[1])] = zpk[1]
+        z = xpx.at(z, slice(2*section, 2*section + zpk[0].shape[0])).set(zpk[0])
+        p = xpx.at(p, slice(2*section, 2*section + zpk[1].shape[0])).set(zpk[1])
         k *= zpk[2]
     return z, p, k
 
@@ -1550,6 +1660,12 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     # 4. Further optimizations of the section ordering / pole-zero pairing.
     # See the wiki for other potential issues.
 
+    xp = array_namespace(z, p)
+
+    # convert to numpy, convert back on exit   XXX
+    z, p = map(np.asarray, (z, p))
+    k = np.asarray(k)
+
     if pairing is None:
         pairing = 'minimal' if analog else 'nearest'
 
@@ -1563,9 +1679,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     if len(z) == len(p) == 0:
         if not analog:
-            return np.array([[k, 0., 0., 1., 0., 0.]])
+            return xp.asarray(np.asarray([[k, 0., 0., 1., 0., 0.]]))
         else:
-            return np.array([[0., 0., k, 0., 0., 1.]])
+            return xp.asarray(np.asarray([[0., 0., k, 0., 0., 1.]]))
 
     if pairing != 'minimal':
         # ensure we have the same number of poles and zeros, and make copies
@@ -1676,7 +1792,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     # put gain in first sos
     sos[0][:3] *= k
-    return sos
+    return xp.asarray(sos)
 
 
 def _align_nums(nums, xp):
@@ -1723,26 +1839,6 @@ def _align_nums(nums, xp):
             aligned_nums[index, -num.size:] = num
 
         return aligned_nums
-
-
-def _trim_zeros(filt, trim='fb'):
-    # https://github.com/numpy/numpy/blob/v2.1.0/numpy/lib/_function_base_impl.py#L1874-L1925
-    first = 0
-    trim = trim.upper()
-    if 'F' in trim:
-        for i in filt:
-            if i != 0.:
-                break
-            else:
-                first = first + 1
-    last = filt.shape[0]
-    if 'B' in trim:
-        for i in filt[::-1]:
-            if i != 0.:
-                break
-            else:
-                last = last - 1
-    return filt[first:last]
 
 
 def normalize(b, a):
@@ -1822,7 +1918,7 @@ def normalize(b, a):
         raise ValueError("Denominator must have at least on nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
-    den = _trim_zeros(den, 'f')
+    den = _pu._trim_zeros(den, 'f')
 
     # Normalize transfer function
     num, den = num / den[0], den / den[0]
@@ -2686,18 +2782,22 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
+    xp = array_namespace(Wn)
+    Wn = xp.asarray(Wn)
+    if xp.isdtype(Wn.dtype, 'integral'):
+        Wn = xp.astype(Wn, xp_default_dtype(xp))
+
     fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
-    Wn = asarray(Wn)
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
         Wn = Wn / (fs/2)
 
-    if np.any(Wn <= 0):
+    if xp.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")
 
-    if Wn.size > 1 and not Wn[0] < Wn[1]:
+    if xp_size(Wn) > 1 and not Wn[0] < Wn[1]:
         raise ValueError("Wn[0] must be less than Wn[1]")
 
     try:
@@ -2721,43 +2821,43 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # Get analog lowpass prototype
     if typefunc == buttap:
-        z, p, k = typefunc(N)
+        z, p, k = typefunc(N, xp=xp)
     elif typefunc == besselap:
-        z, p, k = typefunc(N, norm=bessel_norms[ftype])
+        z, p, k = typefunc(N, norm=bessel_norms[ftype], xp=xp)
     elif typefunc == cheb1ap:
         if rp is None:
             raise ValueError("passband ripple (rp) must be provided to "
                              "design a Chebyshev I filter.")
-        z, p, k = typefunc(N, rp)
+        z, p, k = typefunc(N, rp, xp=xp)
     elif typefunc == cheb2ap:
         if rs is None:
             raise ValueError("stopband attenuation (rs) must be provided to "
                              "design an Chebyshev II filter.")
-        z, p, k = typefunc(N, rs)
+        z, p, k = typefunc(N, rs, xp=xp)
     elif typefunc == ellipap:
         if rs is None or rp is None:
             raise ValueError("Both rp and rs must be provided to design an "
                              "elliptic filter.")
-        z, p, k = typefunc(N, rp, rs)
+        z, p, k = typefunc(N, rp, rs, xp=xp)
     else:
         raise NotImplementedError(f"'{ftype}' not implemented in iirfilter.")
 
     # Pre-warp frequencies for digital filter design
     if not analog:
-        if np.any(Wn <= 0) or np.any(Wn >= 1):
+        if xp.any(Wn <= 0) or xp.any(Wn >= 1):
             if fs is not None:
                 raise ValueError("Digital filter critical frequencies must "
                                  f"be 0 < Wn < fs/2 (fs={fs} -> fs/2={fs/2})")
             raise ValueError("Digital filter critical frequencies "
                              "must be 0 < Wn < 1")
         fs = 2.0
-        warped = 2 * fs * tan(pi * Wn / fs)
+        warped = 2 * fs * xp.tan(xp.pi * Wn / fs)
     else:
         warped = Wn
 
     # transform to lowpass, bandpass, highpass, or bandstop
     if btype in ('lowpass', 'highpass'):
-        if np.size(Wn) != 1:
+        if xp_size(Wn) != 1:
             raise ValueError('Must specify a single critical frequency Wn '
                              'for lowpass or highpass filter')
 
@@ -2768,7 +2868,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     elif btype in ('bandpass', 'bandstop'):
         try:
             bw = warped[1] - warped[0]
-            wo = sqrt(warped[0] * warped[1])
+            wo =xp.sqrt(warped[0] * warped[1])
         except IndexError as e:
             raise ValueError('Wn must specify start and stop frequencies for '
                              'bandpass or bandstop filter') from e
@@ -3971,15 +4071,15 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     if type == 'butter':
         GSTOP = 10 ** (0.1 * abs(gstop))
         GPASS = 10 ** (0.1 * abs(gpass))
-        n = (log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat)))
+        n = (np.log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * np.log10(nat)))
     elif type == 'cheby':
         GSTOP = 10 ** (0.1 * abs(gstop))
         GPASS = 10 ** (0.1 * abs(gpass))
-        n = arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) / arccosh(nat)
+        n = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0))) / np.arccosh(nat)
     elif type == 'ellip':
         GSTOP = 10 ** (0.1 * gstop)
         GPASS = 10 ** (0.1 * gpass)
-        arg1 = sqrt((GPASS - 1.0) / (GSTOP - 1.0))
+        arg1 = np.sqrt((GPASS - 1.0) / (GSTOP - 1.0))
         arg0 = 1.0 / nat
         d0 = special.ellipk([arg0 ** 2, 1 - arg0 ** 2])
         d1 = special.ellipk([arg1 ** 2, 1 - arg1 ** 2])
@@ -3989,52 +4089,52 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     return n
 
 
-def _pre_warp(wp, ws, analog):
+def _pre_warp(wp, ws, analog, *, xp):
     # Pre-warp frequencies for digital filter design
     if not analog:
-        passb = np.tan(pi * wp / 2.0)
-        stopb = np.tan(pi * ws / 2.0)
+        passb = xp.tan(xp.pi * wp / 2.0)
+        stopb = xp.tan(xp.pi * ws / 2.0)
     else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
+        passb, stopb = wp, ws
     return passb, stopb
 
 
-def _validate_wp_ws(wp, ws, fs, analog):
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
+def _validate_wp_ws(wp, ws, fs, analog, *, xp):
+    wp = xpx.atleast_nd(wp, ndim=1, xp=xp)
+    ws = xpx.atleast_nd(ws, ndim=1, xp=xp)
+    wp, ws = xp_promote(wp, ws, force_floating=True, xp=xp)
+
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
         wp = 2 * wp / fs
         ws = 2 * ws / fs
 
-    filter_type = 2 * (len(wp) - 1) + 1
+    filter_type = 2 * (wp.shape[0] - 1) + 1
     if wp[0] >= ws[0]:
         filter_type += 1
 
     return wp, ws, filter_type
 
 
-def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
+def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind, *, xp):
     if filter_type == 1:            # low
         nat = stopb / passb
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
 
-       ### breakpoint()
-
+        passb, stopb = np.asarray(passb), np.asarray(stopb)    # XXX fminbound array API
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
                                  args=(0, passb, stopb, gpass, gstop,
                                        filter_kind),
                                  disp=0)
-        passb[0] = wp0
         wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
                                  args=(1, passb, stopb, gpass, gstop,
                                        filter_kind),
                                  disp=0)
-        passb[1] = wp1
+        passb = [float(wp0), float(wp1)]
+        passb, stopb = xp.asarray(passb), xp.asarray(stopb)
         nat = ((stopb * (passb[0] - passb[1])) /
                (stopb ** 2 - passb[0] * passb[1]))
     elif filter_type == 4:          # pass
@@ -4043,13 +4143,13 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
     else:
         raise ValueError(f"should not happen: {filter_type =}.")
 
-    nat = min(abs(nat))
+    nat = xp.min(xp.abs(nat))
     return nat, passb
 
 
-def _postprocess_wn(WN, analog, fs):
-    wn = WN if analog else np.arctan(WN) * 2.0 / pi
-    if len(wn) == 1:
+def _postprocess_wn(WN, analog, fs, *, xp):
+    wn = WN if analog else xp.atan(WN) * 2.0 / xp.pi
+    if wn.shape[0] == 1:
         wn = wn[0]
     if fs is not None:
         wn = wn * fs / 2
@@ -4065,7 +4165,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     Parameters
     ----------
-    wp, ws : float
+    wp, ws : float or array-like
         Passband and stopband edge frequencies.
 
         For digital filters, these are in the same units as `fs`. By default,
@@ -4134,15 +4234,22 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     _validate_gpass_gstop(gpass, gstop)
     fs = _validate_fs(fs, allow_none=True)
-    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
-    passb, stopb = _pre_warp(wp, ws, analog)
-    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
+    passb, stopb = _pre_warp(wp, ws, analog, xp=xp)
+    nat, passb = _find_nat_freq(
+        stopb, passb, gpass, gstop, filter_type, 'butter', xp=xp
+    )
 
-    GSTOP = 10 ** (0.1 * abs(gstop))
-    GPASS = 10 ** (0.1 * abs(gpass))
-    ord = int(ceil(log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * log10(nat))))
+    GSTOP = 10 ** (0.1 * builtins.abs(gstop))
+    GPASS = 10 ** (0.1 * builtins.abs(gpass))
+    ord = int(
+        math.ceil(math.log10((GSTOP - 1.0) / (GPASS - 1.0)) / (2 * math.log10(nat)))
+    )
 
     # Find the Butterworth natural frequency WN (or the "3dB" frequency")
     # to give exactly gpass at passb.
@@ -4161,22 +4268,23 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:  # high
         WN = passb / W0
     elif filter_type == 3:  # stop
-        WN = np.empty(2, float)
-        discr = sqrt((passb[1] - passb[0]) ** 2 +
+        discr = xp.sqrt((passb[1] - passb[0]) ** 2 +
                      4 * W0 ** 2 * passb[0] * passb[1])
-        WN[0] = ((passb[1] - passb[0]) + discr) / (2 * W0)
-        WN[1] = ((passb[1] - passb[0]) - discr) / (2 * W0)
-        WN = np.sort(abs(WN))
+        WN0 = ((passb[1] - passb[0]) + discr) / (2 * W0)
+        WN1 = ((passb[1] - passb[0]) - discr) / (2 * W0)
+        WN = xp.asarray([float(WN0), float(WN1)])
+        WN = xp.sort(xp.abs(WN))
+
     elif filter_type == 4:  # pass
-        W0 = np.array([-W0, W0], float)
+        W0 = xp.asarray([-W0, W0], dtype=xp.float64)
         WN = (-W0 * (passb[1] - passb[0]) / 2.0 +
-              sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
+              xp.sqrt(W0 ** 2 / 4.0 * (passb[1] - passb[0]) ** 2 +
                    passb[0] * passb[1]))
-        WN = np.sort(abs(WN))
+        WN = xp.sort(xp.abs(WN))
     else:
         raise ValueError(f"Bad type: {filter_type}")
 
-    wn = _postprocess_wn(WN, analog, fs)
+    wn = _postprocess_wn(WN, analog, fs, xp=xp)
 
     return ord, wn
 
@@ -4257,19 +4365,22 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
-    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
-    passb, stopb = _pre_warp(wp, ws, analog)
-    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
+    passb, stopb = _pre_warp(wp, ws, analog, xp=xp)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby', xp=xp)
 
-    GSTOP = 10 ** (0.1 * abs(gstop))
-    GPASS = 10 ** (0.1 * abs(gpass))
-    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
-    ord = int(ceil(v_pass_stop / np.arccosh(nat)))
+    GSTOP = 10 ** (0.1 * builtins.abs(gstop))
+    GPASS = 10 ** (0.1 * builtins.abs(gpass))
+    v_pass_stop = math.acosh(math.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(xp.ceil(v_pass_stop / xp.acosh(nat)))
 
     # Natural frequencies are just the passband edges
-    wn = _postprocess_wn(passb, analog, fs)
+    wn = _postprocess_wn(passb, analog, fs, xp=xp)
 
     return ord, wn
 
@@ -4352,21 +4463,24 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
-    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
-    passb, stopb = _pre_warp(wp, ws, analog)
-    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
+    passb, stopb = _pre_warp(wp, ws, analog, xp=xp)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby', xp=xp)
 
-    GSTOP = 10 ** (0.1 * abs(gstop))
-    GPASS = 10 ** (0.1 * abs(gpass))
-    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
-    ord = int(ceil(v_pass_stop / arccosh(nat)))
+    GSTOP = 10 ** (0.1 * builtins.abs(gstop))
+    GPASS = 10 ** (0.1 * builtins.abs(gpass))
+    v_pass_stop = math.acosh(math.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(xp.ceil(v_pass_stop / xp.acosh(nat)))
 
     # Find frequency where analog response is -gpass dB.
     # Then convert back from low-pass prototype to the original filter.
 
-    new_freq = cosh(1.0 / ord * v_pass_stop)
+    new_freq = math.cosh(1.0 / ord * v_pass_stop)
     new_freq = 1.0 / new_freq
 
     if filter_type == 1:
@@ -4374,29 +4488,29 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     elif filter_type == 2:
         nat = passb * new_freq
     elif filter_type == 3:
-        nat = np.empty(2, float)
-        nat[0] = (new_freq / 2.0 * (passb[0] - passb[1]) +
-                  sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
+        nat0 = (new_freq / 2.0 * (passb[0] - passb[1]) +
+                  math.sqrt(new_freq ** 2 * (passb[1] - passb[0]) ** 2 / 4.0 +
                        passb[1] * passb[0]))
-        nat[1] = passb[1] * passb[0] / nat[0]
+        nat1 = passb[1] * passb[0] / nat0
+        nat = xp.asarray([float(nat0), float(nat1)])
     elif filter_type == 4:
-        nat = np.empty(2, float)
-        nat[0] = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
-                  sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
+        nat0 = (1.0 / (2.0 * new_freq) * (passb[0] - passb[1]) +
+                  math.sqrt((passb[1] - passb[0]) ** 2 / (4.0 * new_freq ** 2) +
                        passb[1] * passb[0]))
-        nat[1] = passb[0] * passb[1] / nat[0]
+        nat1 = passb[0] * passb[1] / nat0
+        nat = xp.asarray([float(nat0), float(nat1)])
 
-    wn = _postprocess_wn(nat, analog, fs)
+    wn = _postprocess_wn(nat, analog, fs, xp=xp)
 
     return ord, wn
 
 
-_POW10_LOG10 = np.log(10)
+_POW10_LOG10 = math.log(10)
 
 
 def _pow10m1(x):
     """10 ** x - 1 for x near 0"""
-    return np.expm1(_POW10_LOG10 * x)
+    return math.expm1(_POW10_LOG10 * x)
 
 
 def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
@@ -4475,44 +4589,61 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    xp = array_namespace(wp, ws)
+    wp, ws = map(xp.asarray, (wp, ws))
+
     fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
-    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
-    passb, stopb = _pre_warp(wp, ws, analog)
-    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'ellip')
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog, xp=xp)
+    passb, stopb = _pre_warp(wp, ws, analog, xp=xp)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'ellip', xp=xp)
 
     arg1_sq = _pow10m1(0.1 * gpass) / _pow10m1(0.1 * gstop)
     arg0 = 1.0 / nat
+    arg0 = np.asarray(arg0)
     d0 = special.ellipk(arg0 ** 2), special.ellipkm1(arg0 ** 2)
     d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
-    ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
+    ord = int(np.ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
 
-    wn = _postprocess_wn(passb, analog, fs)
+    wn = _postprocess_wn(passb, analog, fs, xp=xp)
 
     return ord, wn
 
 
-def buttap(N):
+def buttap(N, *, xp=None, device=None):
     """Return (z,p,k) for analog prototype of Nth-order Butterworth filter.
 
     The filter will have an angular (e.g., rad/s) cutoff frequency of 1.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
 
     See Also
     --------
     butter : Filter design function using this prototype
 
     """
+    if xp is None:
+        xp = np_compat
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
-    z = np.array([])
-    m = np.arange(-N+1, N, 2)
+    z = xp.asarray([], device=device)
+    m = xp.arange(-N+1, N, 2, device=device, dtype=xp_default_dtype(xp))
     # Middle value is 0 to ensure an exactly real pole
-    p = -np.exp(1j * pi * m / (2 * N))
+    p = -xp.exp(1j * xp.pi * m / (2 * N))
     k = 1
     return z, p, k
 
 
-def cheb1ap(N, rp):
+def cheb1ap(N, rp, *, xp=None, device=None):
     """
     Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
 
@@ -4521,36 +4652,53 @@ def cheb1ap(N, rp):
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
 
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rp: float
+        The ripple intensity
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
+
     See Also
     --------
     cheby1 : Filter design function using this prototype
 
     """
+    if xp is None:
+        xp = np_compat
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero error
         # Even order filters have DC gain of -rp dB
-        return np.array([]), np.array([]), 10**(-rp/20)
-    z = np.array([])
+        return (
+            xp.asarray([], device=device), xp.asarray([], device=device), 10**(-rp/20)
+        )
+    z = xp.asarray([], device=device)
 
     # Ripple factor (epsilon)
-    eps = np.sqrt(10 ** (0.1 * rp) - 1.0)
-    mu = 1.0 / N * arcsinh(1 / eps)
+    eps = math.sqrt(10 ** (0.1 * rp) - 1.0)
+    mu = 1.0 / N * math.asinh(1 / eps)
 
     # Arrange poles in an ellipse on the left half of the S-plane
-    m = np.arange(-N+1, N, 2)
-    theta = pi * m / (2*N)
-    p = -sinh(mu + 1j*theta)
+    m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    theta = xp.pi * m / (2*N)
+    p = -xp.sinh(mu + 1j*theta)
 
-    k = np.prod(-p, axis=0).real
+    k = xp.real(xp.prod(-p, axis=0))
     if N % 2 == 0:
-        k = k / sqrt(1 + eps * eps)
+        k = k / math.sqrt(1 + eps * eps)
 
     return z, p, k
 
 
-def cheb2ap(N, rs):
+def cheb2ap(N, rs, *, xp=None, device=None):
     """
     Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
@@ -4560,35 +4708,56 @@ def cheb2ap(N, rs):
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the attenuation first reaches ``rs``.
 
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rs : float
+        The attenuation in the stopband
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
+
     See Also
     --------
     cheby2 : Filter design function using this prototype
 
     """
+    if xp is None:
+        xp = np_compat
+
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
-        return np.array([]), np.array([]), 1
+        return xp.asarray([], device=device), xp.asarray([], device=device), 1
 
     # Ripple factor (epsilon)
-    de = 1.0 / sqrt(10 ** (0.1 * rs) - 1)
-    mu = arcsinh(1.0 / de) / N
+    de = 1.0 / math.sqrt(10 ** (0.1 * rs) - 1)
+    mu = math.asinh(1.0 / de) / N
 
     if N % 2:
-        m = np.concatenate((np.arange(-N+1, 0, 2), np.arange(2, N, 2)))
+        m = xp.concat(
+            (xp.arange(-N + 1, 0, 2, dtype=xp_default_dtype(xp), device=device),
+             xp.arange(2, N, 2, dtype=xp_default_dtype(xp), device=device)
+            )
+        )
     else:
-        m = np.arange(-N+1, N, 2)
+        m = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
 
-    z = -conjugate(1j / sin(m * pi / (2.0 * N)))
+    z = -xp.conj(1j / xp.sin(m * xp.pi / (2.0 * N)))
 
     # Poles around the unit circle like Butterworth
-    p = -exp(1j * pi * np.arange(-N+1, N, 2) / (2 * N))
+    m1 = xp.arange(-N+1, N, 2, dtype=xp_default_dtype(xp), device=device)
+    p = -xp.exp(1j * xp.pi * m1 / (2 * N))
     # Warp into Chebyshev II
-    p = sinh(mu) * p.real + 1j * cosh(mu) * p.imag
+    p = math.sinh(mu) * xp.real(p) + 1j * math.cosh(mu) * xp.imag(p)
     p = 1.0 / p
 
-    k = (np.prod(-p, axis=0) / np.prod(-z, axis=0)).real
+    k = xp.real(xp.prod(-p, axis=0) / xp.prod(-z, axis=0))
     return z, p, k
 
 
@@ -4720,7 +4889,7 @@ def _arc_jac_sc1(w, m):
     return zcomplex.imag
 
 
-def ellipap(N, rp, rs):
+def ellipap(N, rp, rs, *, xp=None, device=None):
     """Return (z,p,k) of Nth-order elliptic analog lowpass filter.
 
     The filter is a normalized prototype that has `rp` decibels of ripple
@@ -4728,6 +4897,22 @@ def ellipap(N, rp, rs):
 
     The filter's angular (e.g., rad/s) cutoff frequency is normalized to 1,
     defined as the point at which the gain first drops below ``-rp``.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter
+    rp : float
+        The passband ripple intensity
+    rs : float
+        The stopband attenuation
+    %(xp_device_snippet)s
+
+    Returns
+    -------
+    z, p, k
+        Poles, zeros and gain for the filter prototype
+
 
     See Also
     --------
@@ -4742,25 +4927,34 @@ def ellipap(N, rp, rs):
            https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf
 
     """
+    if xp is None:
+        xp = np_compat
+
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
     elif N == 0:
         # Avoid divide-by-zero warning
         # Even order filters have DC gain of -rp dB
-        return np.array([]), np.array([]), 10**(-rp/20)
+        return (
+            xp.asarray([], device=device),
+            xp.asarray([], device=device),
+            10**(-rp/20)
+        )
     elif N == 1:
-        p = -sqrt(1.0 / _pow10m1(0.1 * rp))
+        p = -math.sqrt(1.0 / _pow10m1(0.1 * rp))
         k = -p
         z = []
-        return asarray(z), asarray(p), k
+        return xp.asarray(z, device=device), xp.asarray(p, device=device), k
 
     eps_sq = _pow10m1(0.1 * rp)
 
-    eps = np.sqrt(eps_sq)
+    eps = math.sqrt(eps_sq)
     ck1_sq = eps_sq / _pow10m1(0.1 * rs)
     if ck1_sq == 0:
         raise ValueError("Cannot design a filter with given rp and rs"
                          " specifications.")
+
+    # do computations with numpy, xp.asarray the return values
 
     val = special.ellipk(ck1_sq), special.ellipkm1(ck1_sq)
 
@@ -4773,9 +4967,9 @@ def ellipap(N, rp, rs):
 
     [s, c, d, phi] = special.ellipj(j * capk / N, m * np.ones(jj))
     snew = np.compress(abs(s) > EPSILON, s, axis=-1)
-    z = 1.0 / (sqrt(m) * snew)
+    z = 1.0 / (np.sqrt(m) * snew)
     z = 1j * z
-    z = np.concatenate((z, conjugate(z)))
+    z = np.concatenate((z, np.conjugate(z)))
 
     r = _arc_jac_sc1(1. / eps, ck1_sq)
     v0 = capk * r / (N * val[0])
@@ -4788,15 +4982,15 @@ def ellipap(N, rp, rs):
             abs(p.imag) > EPSILON * np.sqrt(np.sum(p * np.conjugate(p), axis=0).real),
             p, axis=-1
         )
-        p = np.concatenate((p, conjugate(newp)))
+        p = np.concatenate((p, np.conjugate(newp)))
     else:
-        p = np.concatenate((p, conjugate(p)))
+        p = np.concatenate((p, np.conjugate(p)))
 
     k = (np.prod(-p, axis=0) / np.prod(-z, axis=0)).real
     if N % 2 == 0:
         k = k / np.sqrt(1 + eps_sq)
 
-    return z, p, k
+    return xp.asarray(z, device=device), xp.asarray(p, device=device), float(k)
 
 
 # TODO: Make this a real public function scipy.misc.ff
@@ -4983,24 +5177,24 @@ def _norm_factor(p, k):
     First 10 values are listed in "Bessel Scale Factors" table,
     "Bessel Filters Polynomials, Poles and Circuit Elements 2003, C. Bond."
     """
-    p = asarray(p, dtype=complex)
+    p = np.asarray(p, dtype=np.complex128)
 
     def G(w):
         """
         Gain of filter
         """
-        return abs(k / prod(1j*w - p))
+        return np.abs(k / np.prod(1j*w - p))
 
     def cutoff(w):
         """
         When gain = -3 dB, return 0
         """
-        return G(w) - 1/np.sqrt(2)
+        return G(w) - 1/math.sqrt(2)
 
     return optimize.newton(cutoff, 1.5)
 
 
-def besselap(N, norm='phase'):
+def besselap(N, norm='phase', *, xp=None, device=None):
     """
     Return (z,p,k) for analog prototype of an Nth-order Bessel filter.
 
@@ -5033,6 +5227,8 @@ def besselap(N, norm='phase'):
             Bond. [1]_
 
         .. versionadded:: 0.18.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5075,6 +5271,9 @@ def besselap(N, norm='phase'):
            https://www.ranecommercial.com/legacy/note147.html
 
     """
+    if xp is None:
+        xp = np_compat
+
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
 
@@ -5105,7 +5304,10 @@ def besselap(N, norm='phase'):
         else:
             raise ValueError('normalization not understood')
 
-    return asarray([]), asarray(p, dtype=complex), float(k)
+    z = xp.asarray([], device=device)
+    cdtype = xp.complex128 if z.dtype == xp.float64 else xp.complex64
+    return (xp.asarray([], device=device), xp.asarray(p, dtype=cdtype, device=device), 
+            float(k))
 
 
 def iirnotch(w0, Q, fs=2.0):
@@ -5795,3 +5997,23 @@ bessel_norms = {'bessel': 'phase',
                 'bessel_phase': 'phase',
                 'bessel_delay': 'delay',
                 'bessel_mag': 'mag'}
+
+
+########## complete the docstrings, on import
+_xp_device_snippet = {'xp_device_snippet':
+"""\
+xp : array_namespace, optional
+    Optional array namespace.
+    Should be compatible with the array API standard, or supported by array-api-compat.
+    Default: ``numpy``
+device: any
+    optional device specification for output. Should match one of the
+    supported device specification in ``xp``.
+"""
+}
+
+
+_names = [x for x in ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap"]]
+for name in _names:
+    window = vars()[name]
+    window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)

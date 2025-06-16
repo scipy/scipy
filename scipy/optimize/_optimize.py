@@ -388,7 +388,7 @@ def rosen(x):
     return r
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_der(x):
     """
     The derivative (i.e. gradient) of the Rosenbrock function.
@@ -429,7 +429,7 @@ def rosen_der(x):
     return der
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess(x):
     """
     The Hessian matrix of the Rosenbrock function.
@@ -472,7 +472,7 @@ def rosen_hess(x):
     return H + xpx.create_diagonal(diagonal, xp=xp)
 
 
-@xp_capabilities(skip_backends=[('jax', "JAX doesn't allow item assignment.")])
+@xp_capabilities(skip_backends=[('jax.numpy', "JAX doesn't allow item assignment.")])
 def rosen_hess_prod(x, p):
     """
     Product of the Hessian matrix of the Rosenbrock function with a vector.
@@ -928,15 +928,14 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             iterations += 1
         except _MaxFuncCallError:
             pass
-        finally:
-            ind = np.argsort(fsim)
-            sim = np.take(sim, ind, 0)
-            fsim = np.take(fsim, ind, 0)
-            if retall:
-                allvecs.append(sim[0])
-            intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
-            if _call_callback_maybe_halt(callback, intermediate_result):
-                break
+        ind = np.argsort(fsim)
+        sim = np.take(sim, ind, 0)
+        fsim = np.take(fsim, ind, 0)
+        if retall:
+            allvecs.append(sim[0])
+        intermediate_result = OptimizeResult(x=sim[0], fun=fsim[0])
+        if _call_callback_maybe_halt(callback, intermediate_result):
+            break
 
     x = sim[0]
     fval = np.min(fsim)

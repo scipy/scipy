@@ -46,6 +46,7 @@ jobs:
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          
       - name: Get commit message
         id: commit_message
         run: |
@@ -56,7 +57,6 @@ jobs:
               RUN="1"
           fi
           echo "message=$RUN" >> $GITHUB_OUTPUT
-          echo github.ref ${{ github.ref }}
 
   build_wheels:
     name: Wheel, ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
@@ -77,7 +77,7 @@ jobs:
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
         # should also be able to do multi-archs on a single entry, e.g.
-        # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
+        # [windows-2022, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
         - [ubuntu-22.04, manylinux, x86_64, "", ""]
         - [ubuntu-22.04, musllinux, x86_64, "", ""]
@@ -87,7 +87,7 @@ jobs:
         - [macos-13, macosx, x86_64, accelerate, "14.0"]
         - [macos-14, macosx, arm64, openblas, "12.3"]
         - [macos-14, macosx, arm64, accelerate, "14.0"]
-        - [windows-2019, win, AMD64, "", ""]
+        - [windows-2022, win, AMD64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
@@ -212,7 +212,7 @@ jobs:
           echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
+        uses: pypa/cibuildwheel@3c5ff0988806752c5a6502c845f9edc2d98095d6 # v3.0.0rc3
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
