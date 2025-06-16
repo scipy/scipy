@@ -491,7 +491,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized, v
 
     if variant == "unsigned":
         # Discard the sign of edge weights.
-        graph = np.abs(graph)
+        np.abs(graph.data, out=graph.data)
 
     graph_sum = np.asarray(graph.sum(axis=axis)).ravel()
     if symmetrized:
@@ -559,7 +559,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
 
     if variant == "unsigned":
         # Discard the sign of edge weights.
-        m = np.abs(m)
+        np.abs(m.data, out=m.data)
 
     if variant == "repelling" or variant == "unsigned":
         if symmetrized:
@@ -569,7 +569,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized, varia
         # Normalization affects only the diagonal computation, not the rest.
         # abs before symmetrize (for opposing), seems implied by Kunegis et al (2010).
         m_abs = np.abs(m)
-        m_diagonal_abs = np.abs(m.diagonal())
+        m_diagonal_abs = m_abs.diagonal()
         w = np.asarray(m_abs.sum(axis=axis)).ravel() - m_diagonal_abs
         if symmetrized:
             # m_abs.T == np.abs(m.T.conj())
@@ -610,7 +610,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized, va
 
     if variant == "unsigned":
         # Discard the sign of edge weights.
-        m = np.abs(m)
+        np.abs(m, out=m)
 
     graph_sum = m.sum(axis=axis)
     if symmetrized:
@@ -681,7 +681,7 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized, varian
 
     if variant == "unsigned":
         # Discard the sign of edge weights.
-        m = np.abs(m)
+        np.abs(m, out=m)
 
     if variant == "repelling" or variant == "unsigned":
         if symmetrized:

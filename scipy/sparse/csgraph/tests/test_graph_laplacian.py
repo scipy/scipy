@@ -35,7 +35,7 @@ def _explicit_laplacian(x, normed=False, variant='repelling'):
         if variant == 'repelling' or variant == 'unsigned':
             y[j,j] = x[j,j+1:].sum() + x[j,:j].sum()
         elif variant == 'opposing':
-            y[j,j] = np.abs(x[j,j+1:].sum()) + np.abs(x[j,:j].sum())
+            y[j,j] = np.abs(x[j,j+1:]).sum() + np.abs(x[j,:j]).sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -186,7 +186,8 @@ DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-def test_asymmetric_laplacian(use_out_degree, normed,
+@pytest.mark.parametrize("variant", ["repelling", "opposing", "unsigned"])
+def test_asymmetric_laplacian(variant, use_out_degree, normed,
                               copy, dtype, arr_type):
     # adjacency matrix
     A = [[0, 1, 0],
@@ -232,6 +233,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
+        variant=variant,
     )
 
     _check_laplacian_dtype(
@@ -243,6 +245,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
         copy=copy,
         dtype=dtype,
         arr_type=arr_type,
+        variant=variant,
     )
 
 
