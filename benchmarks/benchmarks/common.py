@@ -162,7 +162,7 @@ class XPBenchmark(Benchmark):
             torch.set_default_dtype(torch.float64)
             try:
                 torch.empty(0, device=device)
-            except RuntimeError:
+            except (RuntimeError, AssertionError):
                 raise SkipNotImplemented(f"{device=} not available")
             torch.set_default_device(device)
 
