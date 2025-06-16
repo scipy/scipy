@@ -63,52 +63,6 @@ def _check_finite(array: Array, xp: ModuleType) -> None:
         msg = "array must not contain infs or NaNs"
         raise ValueError(msg)
 
-def xp_asarray(
-        array: ArrayLike,
-        dtype: Any = None,
-        order: Literal['K', 'A', 'C', 'F'] | None = None,
-        copy: bool | None = None,
-        *,
-        xp: ModuleType | None = None,
-        check_finite: bool = False,
-        subok: bool = False,
-    ) -> Array:
-    """SciPy-specific replacement for `np.asarray` with `order`, `check_finite`, and
-    `subok`.
-
-    Memory layout parameter `order` is not exposed in the Array API standard.
-    `order` is only enforced if the input array implementation
-    is NumPy based, otherwise `order` is just silently ignored.
-
-    `check_finite` is also not a keyword in the array API standard; included
-    here for convenience rather than that having to be a separate function
-    call inside SciPy functions.
-
-    `subok` is included to allow this function to preserve the behaviour of
-    `np.asanyarray` for NumPy based inputs.
-    """
-    if xp is None:
-        xp = array_namespace(array)
-    if is_numpy(xp):
-        # Use NumPy API to support order
-        if copy is True:
-            array = np.array(array, order=order, dtype=dtype, subok=subok)
-        elif subok:
-            array = np.asanyarray(array, order=order, dtype=dtype)
-        else:
-            array = np.asarray(array, order=order, dtype=dtype)
-    else:
-        try:
-            array = xp.asarray(array, dtype=dtype, copy=copy)
-        except TypeError:
-            coerced_xp = array_namespace(xp.asarray(3))
-            array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
-
-    if check_finite:
-        _check_finite(array, xp)
-
-    return array
-
 
 def _resolve_device(array, xp_out, device=None):
     if device is not None:
@@ -181,11 +135,15 @@ def xp_asarray(
         # Now apply all the options
         array = np_compat.asarray(array, order=order, dtype=dtype, copy=copy)
     else:
-        if is_torch(xp):  # data-apis/array-api-compat#204
-            array = xp.from_dlpack(array)
-        else:
+        # data-apis/array-api-compat#204
+        try:
+            array = xp.from_dlpack(array) # data-apis/array-api-compat#204
+            # xp.from_dlpack(array, copy=None if copy is True else copy)
+            array = xp.asarray(array, dtype=dtype, copy=copy)
+        except TypeError:
+            xp = array_namespace(xp.empty(0))
             array = xp.from_dlpack(array, copy=None if copy is True else copy)
-        array = xp.asarray(array, dtype=dtype, copy=copy)
+            array = xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
         _check_finite(array, xp)
