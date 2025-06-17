@@ -3,6 +3,7 @@
 """
 
 import os
+import random
 import zlib
 
 from io import BytesIO
@@ -87,7 +88,7 @@ def test_read():
 
 class TestZlibInputStream:
     def _get_data(self, size):
-        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
+        data = random.randbytes(size)
         compressed_data = zlib.compress(data)
         stream = BytesIO(compressed_data)
         return stream, len(compressed_data), data
@@ -118,8 +119,7 @@ class TestZlibInputStream:
                 check(size, read_size)
 
     def test_read_max_length(self):
-        size = 1234
-        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
+        data = random.randbytes(1234)
         compressed_data = zlib.compress(data)
         compressed_stream = BytesIO(compressed_data + b"abbacaca")
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -130,7 +130,7 @@ class TestZlibInputStream:
         assert_raises(OSError, stream.read, 1)
 
     def test_read_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
+        data = random.randbytes(10)
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -173,7 +173,7 @@ class TestZlibInputStream:
         assert_raises(OSError, stream.read, 12)
 
     def test_seek_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
+        data = random.randbytes(10)
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -197,7 +197,7 @@ class TestZlibInputStream:
     def test_all_data_read_overlap(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tobytes()
+        data = np.arange(33707000, dtype=np.uint8)
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 
@@ -213,7 +213,7 @@ class TestZlibInputStream:
     def test_all_data_read_bad_checksum(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tobytes()
+        data = np.arange(33707000, dtype=np.uint8)
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 
