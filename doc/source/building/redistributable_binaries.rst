@@ -63,11 +63,32 @@ C, C++ and Fortran. This is done for a mix of historical and robustness
 reasons. Distro packagers sometimes have reasons to want to *unvendor* this
 code, ensuring that they only have a single version of a particular library in
 use. We offer a build option, ``-Duse-system-libraries``, to allow them to do
-so, e.g.:
+so in a much easier fashion than can be done by manually patching SciPy.
 
 .. code::
 
     $ python -m build -wnx -Duse-system-libraries=boost.math
+
+This build option causes a dependency lookup *for the exact same version* as is
+bundled in SciPy only. A different system version will not be accepted, the
+build will then fall back to the vendored sources or error out. This is because
+different versions can easily cause failures at build time or at runtime, and
+SciPy's CI does not test with any other versions. This may change in the
+future, however as of now, using a different version requires patching out the
+relevant version check and is strongly discouraged.
+
+Advice for packagers:
+
+1. You should think about this build option as "if I'm already unbundling a
+   library for some compelling reason, this option makes that quite a bit
+   easier".
+2. You should not default to unbundling everything, this will cause diamond
+   dependencies and more build complexity for little gain. Most of these
+   libraries are not maintained as well as SciPy and/or known to not offer a
+   stable API; effectively you'd be adding an extra ``==`` dependency for each
+   library you unbundle. Only do that for a good reason. E.g., it allows you to
+   drop patches, you consider both SciPy and the vendored library in question
+   security-critical, or it's a large gain in binary size.
 
 The build option takes the following values:
 
@@ -81,8 +102,10 @@ The build option takes the following values:
   fall back onto vendored sources.
 - A comma-separated list of dependency names (e.g., ``boost.math,qhull``). If
   given, uses the ``all`` behavior for the named dependencies (and ``none`` for
-  the rest). See ``meson.options`` in the root of the SciPy repository or sdist
-  for all supported options.
+  the rest). Supported options are:
+
+  - ``boost.math`` (since 1.16.0)
+  - ``qhull`` (since 1.16.0)
 
 It's also valid to combine the generic and named-library options above, for
 example ``boost.math,auto`` will apply the ``auto`` behavior to all

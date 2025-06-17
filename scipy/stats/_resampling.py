@@ -942,7 +942,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = xp.concat(null_distribution)
-    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
+    null_distribution = xp.reshape(null_distribution, (-1,) + (1,)*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
