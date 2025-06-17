@@ -34,6 +34,31 @@ except Exception:
 
 
 def pytest_configure(config):
+    """
+    Add pytest markers to avoid PytestUnknownMarkWarning
+
+    This needs to contain all markers that are SciPy-specific, as well as
+    dummy fallbacks for markers defined in optional test packages.
+
+    Note that we need both the registration here *and* in `pytest.ini`.
+    """
+    config.addinivalue_line("markers",
+        "slow: Tests that are very slow.")
+    config.addinivalue_line("markers",
+        "xslow: mark test as extremely slow (not run unless explicitly requested)")
+    config.addinivalue_line("markers",
+        "xfail_on_32bit: mark test as failing on 32-bit platforms")
+    config.addinivalue_line("markers",
+        "array_api_backends: test iterates on all array API backends")
+    config.addinivalue_line("markers",
+        ("skip_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
+         "eager_only=False, exceptions=None): mark the desired skip configuration " +
+         "for the `skip_xp_backends` fixture"))
+    config.addinivalue_line("markers",
+        ("xfail_xp_backends(backends, reason=None, np_only=False, cpu_only=False, " +
+         "eager_only=False, exceptions=None): mark the desired xfail configuration " +
+         "for the `xfail_xp_backends` fixture"))
+
     try:
         import pytest_timeout  # noqa:F401
     except Exception:
