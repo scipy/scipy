@@ -436,7 +436,7 @@ class TestPearsonr:
         x = xp.asarray([0.667, 0.667, 0.667])
         y = xp.asarray([0.123, 0.456, 0.789])
         msg = "An input array is constant"
-        with eager_warns(x, stats.ConstantInputWarning, match=msg):
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -449,7 +449,7 @@ class TestPearsonr:
         x = xp.asarray([2, 2, 2 + np.spacing(2, dtype=npdtype)], dtype=dtype)
         y = xp.asarray([3, 3, 3 + 6*np.spacing(3, dtype=npdtype)], dtype=dtype)
         msg = "An input array is nearly constant; the computed"
-        with eager_warns(x, stats.NearConstantInputWarning, match=msg):
+        with eager_warns(stats.NearConstantInputWarning, match=msg, xp=xp):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             stats.pearsonr(x, y)
@@ -536,7 +536,7 @@ class TestPearsonr:
         x = xp.asarray([0.667, 0.667])
         y = xp.asarray([0.123, 0.456])
         msg = "An input array is constant"
-        with eager_warns(x, stats.ConstantInputWarning, match=msg):
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -731,7 +731,7 @@ class TestPearsonr:
         y0[1, ...] = 2
         x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is constant'
-        with eager_warns(x, stats.ConstantInputWarning, match=message):
+        with eager_warns(stats.ConstantInputWarning, match=message, xp=xp):
             res = stats.pearsonr(x, y, axis=1)
             ci = res.confidence_interval()
             nans = xp.asarray([xp.nan, xp.nan], dtype=xp.float64)
@@ -747,7 +747,7 @@ class TestPearsonr:
         x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
         x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is nearly constant'
-        with eager_warns(x, stats.NearConstantInputWarning, match=message):
+        with eager_warns(stats.NearConstantInputWarning, match=message, xp=xp):
             stats.pearsonr(x, y, axis=1)
 
         # length 2 along axis
@@ -7598,7 +7598,7 @@ class TestAlexanderGovern:
         # Zero variance input, consistent with `stats.pearsonr`
         x1 = np.asarray([0.667, 0.667, 0.667])
         x2 = np.asarray([0.123, 0.456, 0.789])
-        with eager_warns(x1, RuntimeWarning, match="Precision loss occurred..."):
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             res = stats.alexandergovern(x1, x2)
         assert_equal(res.statistic, np.nan)
         assert_equal(res.pvalue, np.nan)
