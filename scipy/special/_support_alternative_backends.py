@@ -279,6 +279,7 @@ _special_funcs = (
     _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc),
     _FuncInfo(_ufuncs.erf, 1),
     _FuncInfo(_ufuncs.erfc, 1),
+    _FuncInfo(_ufuncs.erfinv, 1),
     _FuncInfo(_ufuncs.entr, 1),
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(_ufuncs.i0, 1),
