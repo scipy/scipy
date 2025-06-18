@@ -3469,6 +3469,15 @@ class TestHilbert:
         a0hilb = xp.asarray(a0hilb)
         assert_almost_equal(aan[0, :], a0hilb, 14, err_msg='N regression')
 
+    def test_hilbert_axis_3d(self, xp):
+        a = xp.reshape(xp.arange(3 * 5 * 7, dtype=xp.float64), (3, 5, 7))
+        # test axis
+        aa = hilbert(a, axis=-1)
+        for axis in [0, 1]:
+            aap = hilbert(np.moveaxis(a, -1, axis), axis=axis)
+            aap = np.moveaxis(aap, axis, -1)
+            xp_assert_equal(aa, aap)
+
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_hilbert_types(self, dtype, xp):
         dtype = getattr(xp, dtype)
