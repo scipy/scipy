@@ -262,6 +262,15 @@ _special_funcs = (
     _FuncInfo(_ufuncs.betainc, 3, _needs_betainc),
     _FuncInfo(_ufuncs.betaincc, 3, _needs_betainc, generic_impl=_betaincc),
     _FuncInfo(_ufuncs.betaln, 2),
+    _FuncInfo(_ufuncs.binom, 2,
+              xp_capabilities(
+                  cpu_only=True,
+                  exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")
+                  ],
+              )
+    ),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
     _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc),
     _FuncInfo(_ufuncs.erf, 1),
