@@ -3,7 +3,7 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import assert_warns
+from numpy.testing import assert_array_equal, assert_warns
 from numpy.exceptions import ComplexWarning
 
 from scipy._lib._array_api import (
@@ -334,6 +334,41 @@ class TestRegularGridInterpolator:
         # xi = [(1, 1, 1)]
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
+
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize("ndim", [1, 2, 3])
+    @pytest.mark.parametrize("method", ["linear", "nearest"])
+    def test_length_one_axes(self, dtype, ndim, method):
+        # gh-23171: length-1 axes in all dimensions are legal
+        # for all methods parametrized above
+        xi = np.array([0], dtype=dtype)
+        points = (xi, ) * ndim
+        val = dtype(1/7)
+        fill = dtype(1/42)
+        nshape = (1, ) * ndim
+        values = np.array(val, dtype=dtype)
+        values.shape = nshape
+        interp = RegularGridInterpolator(
+            points, values, method=method, bounds_error=False, fill_value=fill
+        )
+
+        # grid point
+        x0 = np.concatenate(points)
+        # all NaN point
+        x_nan = np.array([np.nan, ]*ndim, dtype=dtype)
+        # single NaN point
+        x_nan_0 = np.copy(x0)
+        x_nan_0[0] = np.nan
+        # out-of-bounds point
+        x_oob = np.copy(x0)
+        x_oob[0] += 1
+
+        sample = np.array([x0, x_nan, x_nan_0, x_oob], dtype=dtype)
+        wanted = np.array([val, np.nan, np.nan, fill], dtype=dtype)
+        result = interp(sample)
+        assert_array_equal(result, wanted)
+
+
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
