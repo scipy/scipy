@@ -2473,7 +2473,7 @@ def deconvolve(signal, divisor):
     return quot, rem
 
 
-def hilbert(x, N=None, axis=-1):
+def hilbert(x, N=None, axis=-1, workers=None):
     r"""FFT-based computation of the analytic signal.
 
     The analytic signal is calculated by filtering out the negative frequencies and
@@ -2491,6 +2491,10 @@ def hilbert(x, N=None, axis=-1):
         Number of Fourier components.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``. See ``scipy.fft.fft()``
+        for more details.
 
     Returns
     -------
@@ -2577,7 +2581,7 @@ def hilbert(x, N=None, axis=-1):
     if N <= 0:
         raise ValueError("N must be positive.")
 
-    Xf = sp_fft.fft(x, N, axis=axis)
+    Xf = sp_fft.fft(x, N, axis=axis, workers=workers)
     h = xp.zeros(N, dtype=Xf.dtype)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
@@ -2590,7 +2594,7 @@ def hilbert(x, N=None, axis=-1):
         ind = [xp.newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[tuple(ind)]
-    x = sp_fft.ifft(Xf * h, axis=axis)
+    x = sp_fft.ifft(Xf * h, axis=axis, workers=workers)
     return x
 
 
