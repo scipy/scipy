@@ -436,7 +436,7 @@ class TestPearsonr:
         x = xp.asarray([0.667, 0.667, 0.667])
         y = xp.asarray([0.123, 0.456, 0.789])
         msg = "An input array is constant"
-        with eager_warns(x, stats.ConstantInputWarning, match=msg):
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -449,7 +449,7 @@ class TestPearsonr:
         x = xp.asarray([2, 2, 2 + np.spacing(2, dtype=npdtype)], dtype=dtype)
         y = xp.asarray([3, 3, 3 + 6*np.spacing(3, dtype=npdtype)], dtype=dtype)
         msg = "An input array is nearly constant; the computed"
-        with eager_warns(x, stats.NearConstantInputWarning, match=msg):
+        with eager_warns(stats.NearConstantInputWarning, match=msg, xp=xp):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             stats.pearsonr(x, y)
@@ -536,7 +536,7 @@ class TestPearsonr:
         x = xp.asarray([0.667, 0.667])
         y = xp.asarray([0.123, 0.456])
         msg = "An input array is constant"
-        with eager_warns(x, stats.ConstantInputWarning, match=msg):
+        with eager_warns(stats.ConstantInputWarning, match=msg, xp=xp):
             r, p = stats.pearsonr(x, y)
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
@@ -731,7 +731,7 @@ class TestPearsonr:
         y0[1, ...] = 2
         x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is constant'
-        with eager_warns(x, stats.ConstantInputWarning, match=message):
+        with eager_warns(stats.ConstantInputWarning, match=message, xp=xp):
             res = stats.pearsonr(x, y, axis=1)
             ci = res.confidence_interval()
             nans = xp.asarray([xp.nan, xp.nan], dtype=xp.float64)
@@ -747,7 +747,7 @@ class TestPearsonr:
         x0[0, 0], y0[1, 1] = 1 + 1e-15, 2 + 1e-15
         x, y = xp.asarray(x0), xp.asarray(y0)
         message = 'An input array is nearly constant'
-        with eager_warns(x, stats.NearConstantInputWarning, match=message):
+        with eager_warns(stats.NearConstantInputWarning, match=message, xp=xp):
             stats.pearsonr(x, y, axis=1)
 
         # length 2 along axis
@@ -2949,7 +2949,7 @@ class TestZmap:
         scores = xp.arange(3)
         compare = xp.ones(3)
         ref = xp.asarray([-xp.inf, xp.nan, xp.inf])
-        with eager_warns(scores, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             res = stats.zmap(scores, compare)
         xp_assert_equal(res, ref)
 
@@ -3037,7 +3037,7 @@ class TestZscore:
 
     def test_zscore_constant_input_1d(self, xp):
         x = xp.asarray([-0.087] * 3)
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z = stats.zscore(x)
         xp_assert_equal(z, xp.full(x.shape, xp.nan))
 
@@ -3045,12 +3045,12 @@ class TestZscore:
     def test_zscore_constant_input_2d(self, xp):
         x = xp.asarray([[10.0, 10.0, 10.0, 10.0],
                         [10.0, 11.0, 12.0, 13.0]])
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z0 = stats.zscore(x, axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -1.0, -1.0, -1.0],
                                         [xp.nan, 1.0, 1.0, 1.0]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z1 = stats.zscore(x, axis=1)
         xp_assert_equal(z1, xp.stack([xp.asarray([xp.nan, xp.nan, xp.nan, xp.nan]),
                                       stats.zscore(x[1, :])]))
@@ -3059,7 +3059,7 @@ class TestZscore:
         xp_assert_equal(z, xp.reshape(stats.zscore(xp.reshape(x, (-1,))), x.shape))
 
         y = xp.ones((3, 6))
-        with eager_warns(y, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z = stats.zscore(y, axis=None)
         xp_assert_equal(z, xp.full(y.shape, xp.nan))
 
@@ -3071,13 +3071,13 @@ class TestZscore:
         s = (3/2)**0.5
         s2 = 2**0.5
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z0 = stats.zscore(x, nan_policy='omit', axis=0)
         xp_assert_close(z0, xp.asarray([[xp.nan, -s, -1.0, xp.nan],
                                         [xp.nan, 0, 1.0, xp.nan],
                                         [xp.nan, s, xp.nan, xp.nan]]))
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred..."):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred...", xp=xp):
             z1 = stats.zscore(x, nan_policy='omit', axis=1)
         xp_assert_close(z1, xp.asarray([[xp.nan, xp.nan, xp.nan, xp.nan],
                                         [-s, 0, s, xp.nan],
@@ -3696,7 +3696,7 @@ class TestSkew(SkewKurtosisTest):
         # Skewness of a constant input should be NaN (gh-16061)
         a = xp.repeat(xp.asarray([-0.27829495]), 10)
 
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred", xp=xp):
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
             xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
             xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
@@ -3807,7 +3807,7 @@ class TestKurtosis(SkewKurtosisTest):
     def test_kurtosis_constant_value(self, xp):
         # Kurtosis of a constant input should be NaN (gh-16061)
         a = xp.asarray([-0.27829495]*10)
-        with eager_warns(a, RuntimeWarning, match="Precision loss occurred"):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred", xp=xp):
             assert xp.isnan(stats.kurtosis(a, fisher=False))
             assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
             assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
@@ -5816,7 +5816,7 @@ class TestTTestInd:
         x = xp.zeros(3)
         y = xp.ones(3)
 
-        with eager_warns(x, RuntimeWarning, match="Precision loss occurred"):
+        with eager_warns(RuntimeWarning, match="Precision loss occurred", xp=xp):
             t, p = stats.ttest_ind(x, y, equal_var=False)
 
         xp_assert_equal(t, xp.asarray(-xp.inf))
@@ -7598,7 +7598,7 @@ class TestAlexanderGovern:
         # Zero variance input, consistent with `stats.pearsonr`
         x1 = np.asarray([0.667, 0.667, 0.667])
         x2 = np.asarray([0.123, 0.456, 0.789])
-        with eager_warns(x1, RuntimeWarning, match="Precision loss occurred..."):
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred..."):
             res = stats.alexandergovern(x1, x2)
         assert_equal(res.statistic, np.nan)
         assert_equal(res.pvalue, np.nan)
