@@ -2864,7 +2864,14 @@ class TestVectorizedFilter:
             assert res.dtype == sum_dtype
 
             output = xp.empty_like(input)
-            res = ndimage.vectorized_filter(input, xp.sum, output=output, **kwargs)
+            res = ndimage.vectorized_filter(
+                input,
+                lambda x, *args, **kw: xp.astype(
+                    xp.sum(x, *args, **kw), x.dtype, copy=False
+                ),
+                output=output,
+                **kwargs
+            )
             xp_assert_close(res, xp.astype(xp.stack(ref), dtype))
             assert res.dtype == dtype
 
