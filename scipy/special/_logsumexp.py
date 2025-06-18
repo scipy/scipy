@@ -1,6 +1,7 @@
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace,
+    xp_capabilities,
     xp_device,
     xp_size,
     xp_promote,
@@ -11,6 +12,7 @@ from scipy._lib import array_api_extra as xpx
 __all__ = ["logsumexp", "softmax", "log_softmax"]
 
 
+@xp_capabilities()
 def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     """Compute the log of the sum of exponentials of input elements.
 
@@ -58,7 +60,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     See Also
     --------
-    numpy.logaddexp, numpy.logaddexp2
+    :data:`numpy.logaddexp`
+    :data:`numpy.logaddexp2`
 
     Notes
     -----
@@ -224,28 +227,34 @@ def _logsumexp(a, b, *, axis, return_sign, xp):
     s = xp.where(s == 0, s, s/m)
 
     # Separate sign/magnitude information
-    sgn = None
-    if return_sign:
-        # Use the numpy>=2.0 convention for sign.
-        # When all array libraries agree, this can become sng = xp.sign(s).
-        sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+    # Originally, this was only performed if `return_sign=True`.
+    # However, this is also needed if any elements of `m < 0` or `s < -1`.
+    # An improvement would be to perform the calculations only on these entries.
 
-        if xp.isdtype(s.dtype, "real floating"):
-            # The log functions need positive arguments
-            s = xp.where(s < -1, -s - 2, s)
-            m = xp.abs(m)
-        else:
-            # `a_max` can have a sign component for complex input
-            sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
+    # Use the numpy>=2.0 convention for sign.
+    # When all array libraries agree, this can become sng = xp.sign(s).
+    sgn = _sign(s + 1, xp=xp) * _sign(m, xp=xp)
+
+    if xp.isdtype(s.dtype, "real floating"):
+        # The log functions need positive arguments
+        s = xp.where(s < -1, -s - 2, s)
+        m = xp.abs(m)
+    else:
+        # `a_max` can have a sign component for complex input
+        sgn = sgn * xp.exp(xp.imag(a_max) * 1.0j)
 
     # Take log and undo shift
     out = xp.log1p(s) + xp.log(m) + a_max
 
-    out = xp.real(out) if return_sign else out
+    if return_sign:
+        out = xp.real(out)
+    elif xp.isdtype(out.dtype, 'real floating'):
+        out = xpx.at(out)[sgn < 0].set(xp.nan)
 
     return out, sgn
 
 
+@xp_capabilities()
 def softmax(x, axis=None):
     r"""Compute the softmax function.
 
@@ -344,6 +353,7 @@ def softmax(x, axis=None):
     return exp_x_shifted / xp.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
+@xp_capabilities()
 def log_softmax(x, axis=None):
     r"""Compute the logarithm of the softmax function.
 

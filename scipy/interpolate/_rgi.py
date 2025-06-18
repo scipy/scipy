@@ -620,13 +620,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data is
         accepted.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
-
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
 

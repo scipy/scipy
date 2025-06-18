@@ -113,6 +113,20 @@ py3.extension_module('_decomp_interpolative',
   subdir: 'scipy/linalg'
 )
 
+# batched linalg inv module
+py3.extension_module('_batched_linalg',
+  [
+    'src/_common_array_utils.hh',
+    'src/_linalg_inv.hh',
+    'src/_npymath.hh',
+    'src/_batched_linalg_module.cc'
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
+  include_directories: ['../_build_utils/src'],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
   linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
@@ -187,6 +201,17 @@ py3.extension_module('_matfuncs_expm',
   [
     '_matfuncs_expm.h',
     '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
+py3.extension_module('_matfuncs_schur_sqrtm',
+  [
+    '_common_array_utils.h',
+    '_matfuncs_sqrtm.h',
+    '_matfuncs_sqrtm.c',
   ],
   dependencies: [np_dep, lapack_dep, blas_dep],
   install: true,

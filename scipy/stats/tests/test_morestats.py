@@ -2,9 +2,11 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
+import contextlib
 import math
-import warnings
+import re
 import sys
+import warnings
 from functools import partial
 
 import numpy as np
@@ -15,7 +17,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
                            suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
-import re
+
 from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
@@ -25,7 +27,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, is_torch
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -364,6 +366,7 @@ class TestAnderson:
         with pytest.raises(ValueError, match=message):
             stats.anderson(x, 'weibull_min')
 
+    @pytest.mark.thread_unsafe
     def test_weibull_warning_error(self):
         # Check for warning message when there are too few observations
         # This is also an example in which an error occurs during fitting
@@ -1801,7 +1804,7 @@ class TestKstat:
     def test_moments_normal_distribution(self, xp):
         rng = np.random.RandomState(32149)
         data = xp.asarray(rng.randn(12345), dtype=xp.float64)
-        moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
+        moments = xp.stack([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
         expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
                               dtype=data.dtype)
@@ -1811,7 +1814,7 @@ class TestKstat:
         m1 = stats.moment(data, order=1)
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
-        xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
+        xp_assert_close(xp.stack((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
     def test_empty_input(self, xp):
@@ -2023,8 +2026,13 @@ class TestBoxcox_llf:
         llf2 = stats.boxcox_llf(lmbda, np.vstack([x, x]).T)
         xp_assert_close(xp.asarray([llf, llf]), xp.asarray(llf2), rtol=1e-12)
 
+    @pytest.mark.thread_unsafe
     def test_empty(self, xp):
-        assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
+        message = "One or more sample arguments is too small..."
+        context = (pytest.warns(SmallSampleWarning, match=message) if is_numpy(xp)
+                   else contextlib.nullcontext())
+        with context:
+            assert xp.isnan(xp.asarray(stats.boxcox_llf(1, xp.asarray([]))))
 
     def test_gh_6873(self, xp):
         # Regression test for gh-6873.
@@ -2039,7 +2047,23 @@ class TestBoxcox_llf:
         llf = stats.boxcox_llf(1e-8, data)
         # The expected value was computed with mpsci, set mpmath.mp.dps=100
         # expect float64 output for integer input
-        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64))
+        xp_assert_close(llf, xp.asarray(-15.32401272869016598, dtype=xp.float64),
+                        rtol=1e-7)
+
+    def test_axis(self, xp):
+        data = xp.asarray([[100, 200], [300, 400]])
+        llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
+        llf_0 = xp.stack([
+            stats.boxcox_llf(1, data[:, 0]),
+            stats.boxcox_llf(1, data[:, 1]),
+        ])
+        xp_assert_close(llf_axis_0, llf_0)
+        llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
+        llf_1 = xp.stack([
+            stats.boxcox_llf(1, data[0, :]),
+            stats.boxcox_llf(1, data[1, :]),
+        ])
+        xp_assert_close(llf_axis_1, llf_1)
 
 
 # This is the data from GitHub user Qukaiyi, given as an example
@@ -2708,11 +2732,11 @@ class TestCircFuncs:
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
         res = circfunc(x, high=360, axis=0)
         ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -3218,16 +3242,18 @@ class TestCommonAxis:
                                       (stats.kstat, {'n': 2}),
                                       (stats.variation, {})])
     def test_axis(self, case, xp):
+        if is_torch(xp) and case[0] == stats.variation:
+            pytest.xfail(reason="copysign doesn't accept scalar array-api-compat#271")
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
         x = xp.asarray(rng.random((6, 7)))
 
         res = fun(x, **kwargs, axis=0)
-        ref = xp.asarray([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
+        ref = xp.stack([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=1)
-        ref = xp.asarray([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
+        ref = xp.stack([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
         xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=None)

@@ -479,7 +479,7 @@ class BenchLeastSquares(Benchmark):
 # `export SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...` to run specific tests
 # `export SCIPY_GLOBAL_BENCH_NUMTRIALS=10` to specify n_iterations, default 100
 #
-# then run `python dev.py bench -S optimize.BenchGlobal`
+# then run `spin bench -s optimize.BenchGlobal`
 # Note that it can take several hours to run; intermediate output
 # can be found under benchmarks/global-bench-results.json
 

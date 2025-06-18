@@ -2693,10 +2693,6 @@ def comb(N, k, *, exact=False, repetition=False):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly.
-
-        .. deprecated:: 1.14.0
-            ``exact=True`` is deprecated for non-integer `N` and `k` and will raise an
-            error in SciPy 1.16.0
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
@@ -2863,15 +2859,9 @@ def _factorialx_array_exact(n, k=1):
     k > 1 corresponds to the multifactorial.
     """
     un = np.unique(n)
-    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
-    # to unify the behaviour, we remove the nan's here; the respective
-    # values will be set separately at the end
-    un = un[~np.isnan(un)]
 
     # Convert to object array if np.int64 can't handle size
-    if np.isnan(n).any():
-        dt = float
-    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+    if k in _FACTORIALK_LIMITS_64BITS.keys():
         if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
             # e.g. k=1: 21! > np.iinfo(np.int64).max
             dt = object
@@ -2912,9 +2902,6 @@ def _factorialx_array_exact(n, k=1):
                 val *= _range_prod(int(prev + 1), int(current), k=k)
                 out[n == current] = val
 
-    if np.isnan(n).any():
-        out = out.astype(np.float64)
-        out[np.isnan(n)] = np.nan
     return out
 
 
@@ -3235,7 +3222,7 @@ def factorial2(n, exact=False, extend="zero"):
     --------
     >>> from scipy.special import factorial2
     >>> factorial2(7, exact=False)
-    array(105.00000000000001)
+    np.float64(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
 

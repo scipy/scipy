@@ -1,79 +1,142 @@
 import functools
 import operator
+from collections.abc import Callable
 from dataclasses import dataclass
 from types import ModuleType
 
 import numpy as np
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_dask, is_marray,
-    xp_promote, SCIPY_ARRAY_API
+    xp_promote, xp_capabilities, SCIPY_ARRAY_API
 )
 import scipy._lib.array_api_extra as xpx
-from . import _basic, _spfun_stats, _ufuncs
-# These are imported so that type checkers know the signatures of the exported
-# functions.
-from ._basic import digamma, polygamma, zeta
-from ._spfun_stats import multigammaln
-from ._ufuncs import (
-    beta, betainc, betaincc, betaln, binom, chdtr, chdtrc, entr, erf, erfc, erfinv,
-    expi, expit, expn, gamma, gammainc, gammaincc, gammaln, i0, i0e, i1, i1e, log_ndtr,
-    logit, ndtr, ndtri, rel_entr, stdtr, stdtrit, xlogy
-)
+from . import _ufuncs
 
 
-__all__ = [
-    'beta', 'betainc', 'betaincc', 'betaln', 'binom', 'chdtr',  # noqa: F822
-    'chdtrc', 'digamma', 'entr', 'erf', 'erfc', 'erfinv', 'expi',  # noqa: F822
-    'expit', 'expn', 'gamma', 'gammainc', 'gammaincc', 'gammaln',  # noqa: F822
-    'i0', 'i0e', 'i1', 'i1e', 'log_ndtr', 'logit', 'multigammaln',  # noqa: F822
-    'ndtr', 'ndtri', 'polygamma', 'rel_entr', 'stdtr', 'stdtrit',  # noqa: F822
-    'xlogy', 'zeta']  # noqa: F822
+@dataclass
+class _FuncInfo:
+    # NumPy-only function. IT MUST BE ELEMENTWISE.
+    func: Callable
+    # Number of arguments, not counting out=
+    # This is for testing purposes only, due to the fact that
+    # inspect.signature() just returns *args for ufuncs.
+    n_args: int
+    # @xp_capabilities decorator, for the purpose of
+    # documentation and unit testing. Omit to indicate
+    # full support for all backends.
+    xp_capabilities: Callable[[Callable], Callable] | None = None
+    # Generic implementation to fall back on if there is no native dispatch
+    # available. This is a function that accepts (main namespace, scipy namespace)
+    # and returns the final callable, or None if not available.
+    generic_impl: Callable[
+        [ModuleType, ModuleType | None], Callable | None
+    ] | None = None
 
+    @property
+    def name(self):
+        return self.func.__name__
 
-array_api_compat_prefix = "scipy._lib.array_api_compat"
+    # These are needed by @lru_cache below
+    def __hash__(self):
+        return hash(self.func)
 
+    def __eq__(self, other):
+        return isinstance(other, _FuncInfo) and self.func == other.func
 
-def get_array_special_func(f_name, f_module, xp):
-    if is_numpy(xp):
-        return getattr(f_module, f_name)
+    @property
+    def wrapper(self):
+        if self.name in globals():
+            # Already initialised. We are likely in a unit test.
+            # Return function potentially overridden by xpx.testing.lazy_xp_function.
+            import scipy.special
+            return getattr(scipy.special, self.name)
 
-    spx = scipy_namespace_for(xp)
-    if spx is not None:
-        f = getattr(spx.special, f_name, None)
+        if SCIPY_ARRAY_API:
+            @functools.wraps(self.func)
+            def wrapped(*args, **kwargs):
+                xp = array_namespace(*args)
+                return self._wrapper_for(xp)(*args, **kwargs)
+
+            # Allow pickling the function. Normally this is done by @wraps,
+            # but in this case it doesn't work because self.func is a ufunc.
+            wrapped.__module__ = "scipy.special"
+            wrapped.__qualname__ = self.name
+            func = wrapped
+        else:
+            func = self.func
+
+        capabilities = self.xp_capabilities or xp_capabilities()
+        # In order to retain a naked ufunc when SCIPY_ARRAY_API is
+        # disabled, xp_capabilities must apply its changes in place.
+        cap_func = capabilities(func)
+        assert cap_func is func
+        return func
+
+    @functools.lru_cache(1000)
+    def _wrapper_for(self, xp):
+        if is_numpy(xp):
+            return self.func
+
+        # If a native implementation is available, use that
+        spx = scipy_namespace_for(xp)
+        f = _get_native_func(xp, spx, self.name)
         if f is not None:
             return f
 
-    # if generic array-API implementation is available, use that;
-    # otherwise, fall back to NumPy/SciPy
-    if f_name in _generic_implementations:
-        f = _generic_implementations[f_name](xp=xp, spx=spx)
-        if f is not None:
-            return f
+        # If generic Array API implementation is available, use that
+        if self.generic_impl is not None:
+            f = self.generic_impl(xp, spx)
+            if f is not None:
+                return f
 
-    def f(*args, **kwargs):
         if is_marray(xp):
-            _f = globals()[f_name]  # Allow nested wrapping
-            data_args = [arg.data for arg in args]
-            out = _f(*data_args, **kwargs)
-            mask = functools.reduce(operator.or_, (arg.mask for arg in args))
-            return xp.asarray(out, mask=mask)
+            # Unwrap the array, apply the function on the wrapped namespace,
+            # and then re-wrap it.
+            # IMPORTANT: this only works because all functions in this module
+            # are elementwise. Otherwise, we would not be able to define a
+            # general rule for mask propagation.
 
-        elif is_dask(xp):
-            # IMPORTANT: map_blocks works only because all ufuncs in this module
+            _f = globals()[self.name]  # Allow nested wrapping
+            def f(*args, _f=_f, xp=xp, **kwargs):
+                data_args = [arg.data for arg in args]
+                out = _f(*data_args, **kwargs)
+                mask = functools.reduce(operator.or_, (arg.mask for arg in args))
+                return xp.asarray(out, mask=mask)
+
+            return f
+
+        if is_dask(xp):
+            # Apply the function to each block of the Dask array.
+            # IMPORTANT: map_blocks works only because all functions in this module
             # are elementwise. It would be a grave mistake to apply this to gufuncs
             # or any other function with reductions, as they would change their
             # output depending on chunking!
 
-            _f = globals()[f_name]  # Allow nested wrapping
-            # Hide dtype kwarg from map_blocks
-            return xp.map_blocks(functools.partial(_f, **kwargs), *args)
+            _f = globals()[self.name]  # Allow nested wrapping
+            def f(*args, _f=_f, xp=xp, **kwargs):
+                # Hide dtype kwarg from map_blocks
+                return xp.map_blocks(functools.partial(_f, **kwargs), *args)
 
-        else:
-            _f = getattr(f_module, f_name)
+            return f
+
+        # As a final resort, use the NumPy/SciPy implementation
+        _f = self.func
+        def f(*args, _f=_f, xp=xp, **kwargs):
+            # TODO use xpx.lazy_apply to add jax.jit support
+            # (but dtype propagation can be non-trivial)
             args = [np.asarray(arg) for arg in args]
             out = _f(*args, **kwargs)
             return xp.asarray(out)
 
+        return f
+
+
+def _get_native_func(xp, spx, f_name):
+    f = getattr(spx.special, f_name, None) if spx else None
+    if f is None and hasattr(xp, 'special'):
+        # Currently dead branch, in anticipation of 'special' Array API extension
+        # https://github.com/data-apis/array-api/issues/725
+        f = getattr(xp.special, f_name, None)
     return f
 
 
@@ -100,17 +163,12 @@ def _rel_entr(xp, spx):
 
 def _xlogy(xp, spx):
     def __xlogy(x, y, *, xp=xp):
+        x, y = xp_promote(x, y, force_floating=True, xp=xp)
         with np.errstate(divide='ignore', invalid='ignore'):
             temp = x * xp.log(y)
         return xp.where(x == 0., 0., temp)
     return __xlogy
 
-
-def _get_native_func(xp, spx, f_name):
-    f = getattr(spx.special, f_name, None) if spx else None
-    if f is None and hasattr(xp, 'special'):
-        f = getattr(xp.special, f_name, None)
-    return f
 
 
 def _chdtr(xp, spx):
@@ -118,7 +176,7 @@ def _chdtr(xp, spx):
     # defined by `get_array_special_func` is that if `gammainc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtr`.
-    gammainc = _get_native_func(xp, spx, 'gammainc')  # noqa: F811
+    gammainc = _get_native_func(xp, spx, 'gammainc')
     if gammainc is None:
         return None
 
@@ -137,7 +195,7 @@ def _chdtrc(xp, spx):
     # defined by `get_array_special_func` is that if `gammaincc`
     # isn't found, we don't want to use the SciPy version; we'll
     # return None here and use the SciPy version of `chdtrc`.
-    gammaincc = _get_native_func(xp, spx, 'gammaincc')  # noqa: F811
+    gammaincc = _get_native_func(xp, spx, 'gammaincc')
     if gammaincc is None:
         return None
 
@@ -150,7 +208,7 @@ def _chdtrc(xp, spx):
 
 
 def _betaincc(xp, spx):
-    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
+    betainc = _get_native_func(xp, spx, 'betainc')
     if betainc is None:
         return None
 
@@ -161,7 +219,7 @@ def _betaincc(xp, spx):
 
 
 def _stdtr(xp, spx):
-    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
+    betainc = _get_native_func(xp, spx, 'betainc')
     if betainc is None:
         return None
 
@@ -174,11 +232,12 @@ def _stdtr(xp, spx):
 
 
 def _stdtrit(xp, spx):
-    betainc = _get_native_func(xp, spx, 'betainc')  # noqa: F811
+    # Need either native stdtr or native betainc
+    stdtr = _get_native_func(xp, spx, 'stdtr') or _stdtr(xp, spx)
     # If betainc is not defined, the root-finding would be done with `xp`
     # despite `stdtr` being evaluated with SciPy/NumPy `stdtr`. Save the
     # conversions: in this case, just evaluate `stdtrit` with SciPy/NumPy.
-    if betainc is None:
+    if stdtr is None:
         return None
 
     from scipy.optimize.elementwise import bracket_root, find_root
@@ -192,81 +251,45 @@ def _stdtrit(xp, spx):
     return __stdtrit
 
 
-_generic_implementations = {'rel_entr': _rel_entr,
-                            'xlogy': _xlogy,
-                            'chdtr': _chdtr,
-                            'chdtrc': _chdtrc,
-                            'betaincc': _betaincc,
-                            'stdtr': _stdtr,
-                            'stdtrit': _stdtrit,
-                            }
+# Inventory of automatically dispatched functions
+# IMPORTANT: these must all be **elementwise** functions!
 
+# PyTorch doesn't implement `betainc`.
+# On torch CPU we can fall back to NumPy, but on GPU it won't work.
+_needs_betainc = xp_capabilities(cpu_only=True, exceptions=['jax.numpy', 'cupy'])
 
-# functools.wraps doesn't work because:
-# 'numpy.ufunc' object has no attribute '__module__'
-def support_alternative_backends(f_name, f_module):
-    func = getattr(f_module, f_name)
-
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        xp = array_namespace(*args)
-        f = get_array_special_func(f_name, f_module, xp)
-        return f(*args, **kwargs)
-
-    if hasattr(func, 'types'):
-        # Some tests use the types attribute to generate test cases.
-        wrapped.types = func.types  # type: ignore
-
-    return wrapped
-
-
-# function name: number of args (for testing purposes)
-@dataclass
-class FunctionInfo:
-    n_args: int
-    module: ModuleType = _ufuncs
-
-
-array_special_func_map = {
-    'logit': FunctionInfo(1),
-    'expit': FunctionInfo(1),
-    'log_ndtr': FunctionInfo(1),
-    'ndtr': FunctionInfo(1),
-    'ndtri': FunctionInfo(1),
-    'digamma': FunctionInfo(1, _basic),
-    'polygamma': FunctionInfo(2, _basic),
-    'multigammaln': FunctionInfo(2, _spfun_stats),
-    'gammaln': FunctionInfo(1),
-    'gamma': FunctionInfo(1),
-    'gammainc': FunctionInfo(2),
-    'gammaincc': FunctionInfo(2),
-    'betaln': FunctionInfo(2),
-    'beta': FunctionInfo(2),
-    'betainc': FunctionInfo(3),
-    'erf': FunctionInfo(1),
-    'erfc': FunctionInfo(1),
-    'erfinv': FunctionInfo(1),
-    'zeta': FunctionInfo(2, _basic),
-    'binom': FunctionInfo(2),
-    'expi': FunctionInfo(1),
-    'expn': FunctionInfo(2),
-    'i0': FunctionInfo(1),
-    'i0e': FunctionInfo(1),
-    'i1': FunctionInfo(1),
-    'i1e': FunctionInfo(1),
-    'entr': FunctionInfo(1),
-    'rel_entr': FunctionInfo(2),
-    'xlogy': FunctionInfo(2),
-    'chdtr': FunctionInfo(2),
-    'chdtrc': FunctionInfo(2),
-    'betaincc': FunctionInfo(3),
-    'stdtr': FunctionInfo(2),
-    'stdtrit': FunctionInfo(2),
-}
-
-globals().update(
-    {f_name: support_alternative_backends(f_name, info.module)
-     if SCIPY_ARRAY_API
-     else getattr(info.module, f_name)
-     for f_name, info in array_special_func_map.items()}
+_special_funcs = (
+    _FuncInfo(_ufuncs.betainc, 3, _needs_betainc),
+    _FuncInfo(_ufuncs.betaincc, 3, _needs_betainc, generic_impl=_betaincc),
+    _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
+    _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc),
+    _FuncInfo(_ufuncs.erf, 1),
+    _FuncInfo(_ufuncs.erfc, 1),
+    _FuncInfo(_ufuncs.entr, 1),
+    _FuncInfo(_ufuncs.expit, 1),
+    _FuncInfo(_ufuncs.i0, 1),
+    _FuncInfo(_ufuncs.i0e, 1),
+    _FuncInfo(_ufuncs.i1, 1),
+    _FuncInfo(_ufuncs.i1e, 1),
+    _FuncInfo(_ufuncs.log_ndtr, 1),
+    _FuncInfo(_ufuncs.logit, 1),
+    _FuncInfo(_ufuncs.gammaln, 1),
+    _FuncInfo(_ufuncs.gammainc, 2),
+    _FuncInfo(_ufuncs.gammaincc, 2),
+    _FuncInfo(_ufuncs.ndtr, 1),
+    _FuncInfo(_ufuncs.ndtri, 1),
+    _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
+    _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr),
+    _FuncInfo(_ufuncs.stdtrit, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],  # needs betainc
+                  skip_backends=[("jax.numpy", "no scipy.optimize support")]),
+              generic_impl=_stdtrit),
+    _FuncInfo(_ufuncs.xlogy, 2, generic_impl=_xlogy),
 )
+
+# Override ufuncs.
+# When SCIPY_ARRAY_API is disabled, this exclusively updates the docstrings in place
+# and populates the xp_capabilities table, while retaining the original ufuncs.
+globals().update({nfo.func.__name__: nfo.wrapper for nfo in _special_funcs})
+__all__ = [nfo.func.__name__ for nfo in _special_funcs]

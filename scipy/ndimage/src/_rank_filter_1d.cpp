@@ -155,13 +155,10 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
                   int mode, T cval, int origin) {
   int i, arr_len_thresh, lim = (win_len - 1) / 2 - origin;
   int lim2 = arr_len - lim;
+  if (lim2 < 0) return;
   int offset;
   Mediator *m = MediatorNew(win_len, rank);
-  T *data = new T[win_len];
-  for (int i = 0; i < win_len; ++i) {
-    data[i] = 0;
-  }
-
+  T *data = new T[win_len]();
 
   switch (mode) {
   case REFLECT:
@@ -227,7 +224,7 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
     break;
   case MIRROR:
     arr_len_thresh = arr_len - 2;
-    for (i = 0; i < lim + 1; i++) {
+    for (i = 0; i < lim; i++) {
       MediatorInsert(data, m, in_arr[arr_len_thresh - i]);
       out_arr[lim2 + i] = data[m->heap[0]];
     }

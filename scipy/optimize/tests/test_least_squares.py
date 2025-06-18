@@ -239,8 +239,6 @@ class BaseMixin:
         assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, x_scale=-1.0, method=self.method)
         assert_raises(ValueError, least_squares, fun_trivial,
-                      2.0, x_scale=None, method=self.method)
-        assert_raises(ValueError, least_squares, fun_trivial,
                       2.0, x_scale=1.0+2.0j, method=self.method)
 
     def test_diff_step(self):
@@ -402,6 +400,7 @@ class BaseMixin:
                                 method=self.method)
             assert_allclose(res.x, x_opt)
 
+    @pytest.mark.parallel_threads(4)  # 0.4 GiB per thread RAM usage
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)
@@ -815,6 +814,17 @@ class TestLM(BaseMixin):
 
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       method='lm', loss='huber')
+    
+    def test_callback_with_lm_method(self):
+        def callback(x):
+            assert(False)  # Dummy callback function
+        
+        with suppress_warnings() as sup:
+            sup.filter(
+                UserWarning,
+                "Callback function specified, but not supported with `lm` method."
+            )
+            least_squares(fun_trivial, x0=[0], method='lm', callback=callback)
 
 
 def test_basic():

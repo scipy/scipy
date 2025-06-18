@@ -331,12 +331,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in
-            SciPy 1.15.0. If you are trying to use the real components of
-            the passed array, use ``np.real`` on `yi`.
-
     x : scalar or array_like
         Of length M.
     der : int or list, optional

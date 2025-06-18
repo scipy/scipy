@@ -173,6 +173,7 @@ axis_nan_policy_cases = [
     (gstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.power_divergence, tuple(), dict(), 1, 2, False, None),
     (stats.chisquare, tuple(), dict(), 1, 2, False, None),
+    (stats._morestats._boxcox_llf, tuple(), dict(lmb=1.5), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -866,8 +867,8 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # After broadcasting, all arrays are the same shape, so
                 # the shape of the output should be the same as a single-
                 # sample statistic. Use np.mean as a reference.
-                concat = stats._stats_py._broadcast_concatenate(samples, axis,
-                                                                paired=paired)
+                concat = stats._axis_nan_policy._broadcast_concatenate(samples, axis,
+                                                                       paired=paired)
                 with np.testing.suppress_warnings() as sup:
                     sup.filter(RuntimeWarning, "Mean of empty slice.")
                     sup.filter(RuntimeWarning, "invalid value encountered")
@@ -905,7 +906,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # produce this information.
                 message = "Array shapes are incompatible for broadcasting."
                 with pytest.raises(ValueError, match=message):
-                    stats._stats_py._broadcast_concatenate(samples, axis, paired)
+                    stats._axis_nan_policy._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
 
