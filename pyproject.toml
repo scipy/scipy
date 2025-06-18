@@ -28,7 +28,7 @@ requires = [
     # Note that building against numpy 1.x works fine too - users and
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
-    "numpy>=2.0.0rc1",
+    "numpy>=2.0.0",
 ]
 
 [project]
