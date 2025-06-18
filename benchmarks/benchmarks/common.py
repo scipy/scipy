@@ -118,20 +118,25 @@ class XPBenchmark(Benchmark):
             # Requires scipy >=1.16
             from scipy._lib._array_api import array_namespace, xp_capabilities_table
             from scipy.conftest import xp_available_backends, xp_known_backends
+
+            if isinstance(xp_available_backends, dict):  # scipy == 1.16
+                backends = xp_available_backends
+            else:  # scipy >= 1.17
+                backends = {p.id: p.values[0] for p in xp_available_backends}
         if array_api_imports.error:
             # On older scipy versions, disregard SCIPY_ARRAY_API
             import numpy as np
             def array_namespace(*args, **kwargs):
                 return np
             xp_capabilities_table = {}
-            xp_available_backends = {"numpy": np}
+            backends = {"numpy": np}
             xp_known_backends = {"numpy"}
 
         # If new backends are added to conftest.py, you need to add them here too
         assert not xp_known_backends - set(n.split(":")[0] for n in self.backends)
 
         try:
-            xp = xp_available_backends[backend]
+            xp = backends[backend]
         except KeyError:
             raise SkipNotImplemented(
                 f"{backend} not available or skipped by SCIPY_ARRAY_API")
