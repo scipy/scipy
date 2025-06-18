@@ -382,6 +382,12 @@ class RigidTransform:
         self._backend = backend_registry[xp]
         self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
+    def __repr__(self):
+        m = f"{self.as_matrix()!r}".splitlines()
+        # bump indent (+27 characters)
+        m[1:] = [" " * 27 + m[i] for i in range(1, len(m))]
+        return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
+
     @classmethod
     def from_matrix(cls, matrix: ArrayLike) -> RigidTransform:
         """Initialize from a 4x4 transformation matrix.
@@ -1140,6 +1146,8 @@ class RigidTransform:
             ...
         TypeError: Single transform has no len().
         """
+        # We don't use self._single here because we also want to raise an error for
+        # Array API backends that call len() on single RigidTransform objects.
         if self.single:
             raise TypeError("Single transform has no len")
         return self._matrix.shape[0]
@@ -1636,10 +1644,9 @@ class RigidTransform:
         >>> np.allclose(tf.rotation.as_matrix(), r.as_matrix())
         True
         """
-        matrix = self._matrix
         if self._single:
-            matrix = matrix[0, ...]
-        return Rotation.from_matrix(matrix[..., :3, :3])
+            return Rotation.from_matrix(self._matrix[0, :3, :3])
+        return Rotation.from_matrix(self._matrix[..., :3, :3])
 
     @property
     def translation(self) -> Array:
@@ -1668,10 +1675,9 @@ class RigidTransform:
         >>> np.allclose(tf.translation, t)
         True
         """
-        matrix = self._matrix
         if self._single:
-            matrix = matrix[0, ...]
-        return matrix[..., :3, 3]
+            return self._matrix[0, :3, 3]
+        return self._matrix[..., :3, 3]
 
     @property
     def single(self) -> bool:
@@ -1686,9 +1692,3 @@ class RigidTransform:
             otherwise.
         """
         return self._single or self._matrix.ndim == 2
-
-    def __repr__(self):
-        m = f"{self.as_matrix()!r}".splitlines()
-        # bump indent (+27 characters)
-        m[1:] = [" " * 27 + m[i] for i in range(1, len(m))]
-        return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
