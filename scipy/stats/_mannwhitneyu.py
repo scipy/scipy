@@ -439,6 +439,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     Under this assumption, the *p*-value would be low enough to reject the
     null hypothesis in favor of the alternative.
 
+    For a more detailed example, see :ref:`hypothesis_mwu`.
     '''
 
     x, y, use_continuity, alternative, axis_int, method = (
