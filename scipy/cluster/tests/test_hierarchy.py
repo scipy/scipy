@@ -46,7 +46,7 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _EUCLIDEAN_METHODS, _LINKAGE_METHODS)
 from scipy.cluster._hierarchy import Heap
 from scipy.spatial.distance import pdist
-from scipy._lib._array_api import (eager_warns, make_xp_test_case, 
+from scipy._lib._array_api import (eager_warns, make_xp_test_case,
                                    xp_assert_close, xp_assert_equal)
 import scipy._lib.array_api_extra as xpx
 
@@ -156,7 +156,7 @@ class TestLinkage:
 
     def test_unsupported_uncondensed_distance_matrix_linkage_warning(self, xp):
         X = xp.asarray([[0, 1], [1, 0]])
-        with eager_warns(X, ClusterWarning):
+        with eager_warns(ClusterWarning, xp=xp):
             linkage(X)
 
     @pytest.mark.parametrize("method", _EUCLIDEAN_METHODS)
@@ -645,7 +645,7 @@ class TestLeavesList:
         to_tree(Z)
         assert_allclose(leaves_list(Z), [0, 1, 2], rtol=1e-15)
 
-    @pytest.mark.parametrize("method", 
+    @pytest.mark.parametrize("method",
         ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward'])
     def test_leaves_list_Q(self, method, xp):
         # Tests leaves_list(Z) on the Q data set

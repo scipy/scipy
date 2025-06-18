@@ -765,6 +765,13 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         np.random.default_rng = orig_fun
 
 
+@contextmanager
+def ignore_warns(expected_warning, *, match=None):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", match, expected_warning)
+        yield
+
+
 def _rng_html_rewrite(func):
     """Rewrite the HTML rendering of ``np.random.default_rng``.
 
