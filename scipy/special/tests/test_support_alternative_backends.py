@@ -35,7 +35,11 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     """
     if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
         # gh-20972
-        or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')):
+        or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')
+        # For betaln, nan mismatches can occur at negative integer a or b of
+        # sufficiently large magnitude.
+        or (is_jax(xp) and f_name == 'betaln')
+    ):
         positive_only = True
     else:
         positive_only = False
@@ -55,7 +59,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
-                                           'rel_entr', 'xlogy')))
+                                           'rel_entr', 'xlogy', 'betaln')))
     ):
         pytest.xfail("dtypes do not match")
 
