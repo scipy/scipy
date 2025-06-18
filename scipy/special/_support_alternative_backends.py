@@ -281,6 +281,7 @@ _special_funcs = (
     _FuncInfo(_ufuncs.erfc, 1),
     _FuncInfo(_ufuncs.erfinv, 1),
     _FuncInfo(_ufuncs.entr, 1),
+    _FuncInfo(_ufuncs.expi, 1),
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(_ufuncs.i0, 1),
     _FuncInfo(_ufuncs.i0e, 1),
