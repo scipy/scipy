@@ -3474,8 +3474,8 @@ class TestHilbert:
         # test axis
         aa = hilbert(a, axis=-1)
         for axis in [0, 1]:
-            aap = hilbert(np.moveaxis(a, -1, axis), axis=axis)
-            aap = np.moveaxis(aap, axis, -1)
+            aap = hilbert(xp.moveaxis(a, -1, axis), axis=axis)
+            aap = xp.moveaxis(aap, axis, -1)
             xp_assert_equal(aa, aap)
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
