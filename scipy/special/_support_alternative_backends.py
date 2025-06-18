@@ -31,6 +31,7 @@ class _FuncInfo:
     generic_impl: Callable[
         [ModuleType, ModuleType | None], Callable | None
     ] | None = None
+    alt_names_map: dict[str, str] | None = None
 
     @property
     def name(self):
@@ -79,7 +80,7 @@ class _FuncInfo:
 
         # If a native implementation is available, use that
         spx = scipy_namespace_for(xp)
-        f = _get_native_func(xp, spx, self.name)
+        f = _get_native_func(xp, spx, self.name, alt_names_map=self.alt_names_map)
         if f is not None:
             return f
 
@@ -131,7 +132,10 @@ class _FuncInfo:
         return f
 
 
-def _get_native_func(xp, spx, f_name):
+def _get_native_func(xp, spx, f_name, *, alt_names_map=None):
+    if alt_names_map is None:
+        alt_names_map = {}
+    f_name = alt_names_map.get(xp.__name__, f_name)
     f = getattr(spx.special, f_name, None) if spx else None
     if f is None and hasattr(xp, 'special'):
         # Currently dead branch, in anticipation of 'special' Array API extension
@@ -288,6 +292,7 @@ _special_funcs = (
     _FuncInfo(_ufuncs.gammaincc, 2),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
+    _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
     _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr),
     _FuncInfo(_ufuncs.stdtrit, 2,
