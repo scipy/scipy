@@ -97,8 +97,8 @@ test-cupy = { cmd = "python dev.py test -b cupy", cwd = "../.." }
 platforms = ["linux-64"]
 
 [feature.jax-cpu.dependencies]
-jax = "*"
-jaxlib = { version = "*", build = "*cpu*" }
+jax = "!=0.6.2"  # https://github.com/jax-ml/jax/issues/29537
+jaxlib = { version = "!=0.6.2", build = "*cpu*" }
 
 [feature.jax-cuda]
 platforms = ["linux-64"]
