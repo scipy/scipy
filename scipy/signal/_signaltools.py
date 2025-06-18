@@ -2476,7 +2476,7 @@ def deconvolve(signal, divisor):
 def hilbert(x, N=None, axis=-1, workers=None):
     r"""FFT-based computation of the analytic signal.
 
-    The analytic signal is calculated by filtering out the negative frequencies and
+    The analytic signal is calculated by zeroing out the negative frequencies and
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
@@ -2488,7 +2488,8 @@ def hilbert(x, N=None, axis=-1, workers=None):
     x : array_like
         Signal data.  Must be real.
     N : int, optional
-        Number of Fourier components.  Default: ``x.shape[axis]``
+        Number of Fourier components. ``x`` is cropped or zero-padded to length
+        ``N`` along ``axis``.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
     workers : int, optional
@@ -2582,19 +2583,19 @@ def hilbert(x, N=None, axis=-1, workers=None):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis, workers=workers)
-    h = xp.zeros(N, dtype=Xf.dtype)
-    if N % 2 == 0:
-        h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
-    else:
-        h[0] = 1
-        h[1:(N + 1) // 2] = 2
-
     if x.ndim > 1:
-        ind = [xp.newaxis] * x.ndim
-        ind[axis] = slice(None)
-        h = h[tuple(ind)]
-    x = sp_fft.ifft(Xf * h, axis=axis, workers=workers)
+         axis = axis % x.ndim
+         ind = [slice(None)] * axis
+    else:
+        ind = []
+    if N % 2 == 0:
+        Xf[tuple(ind + [slice(1, N // 2)])] *= 2.0
+        Xf[tuple(ind + [slice(N // 2 + 1, N)])] = 0.0
+    else:
+        Xf[tuple(ind + [slice(1, (N + 1) // 2)])] *= 2.0
+        Xf[tuple(ind + [slice((N + 1) // 2, N)])] = 0.0
+
+    x = sp_fft.ifft(Xf, axis=axis, workers=workers)
     return x
 
 
