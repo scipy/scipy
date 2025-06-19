@@ -1675,9 +1675,10 @@ class RigidTransform:
         >>> np.allclose(tf.translation, t)
         True
         """
+        xp = array_namespace(self._matrix)
         if self._single:
-            return self._matrix[0, :3, 3]
-        return self._matrix[..., :3, 3]
+            return xp.asarray(self._matrix[0, :3, 3], copy=True)
+        return xp.asarray(self._matrix[..., :3, 3], copy=True)
 
     @property
     def single(self) -> bool:

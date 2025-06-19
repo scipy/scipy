@@ -876,6 +876,9 @@ def test_properties(xp):
     xp_assert_close(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert tf.rotation.approx_equal(r)
     xp_assert_close(tf.translation, t, atol=atol)
+    # Test that we don't return views that would modify the original array
+    xpx.at(tf.translation)[..., 0].set(0.0)
+    xp_assert_close(tf.translation, t, atol=atol)
 
     # Test rotation and translation properties for multiple transforms
     r = Rotation.from_euler('zyx', xp.asarray([[90, 0, 0], [0, 90, 0]]), degrees=True)
@@ -884,6 +887,8 @@ def test_properties(xp):
 
     xp_assert_close(tf.rotation.as_matrix(), r.as_matrix(), atol=atol)
     assert all(tf.rotation.approx_equal(r))
+    xp_assert_close(tf.translation, t, atol=atol)
+    xpx.at(tf.translation)[..., 0].set(0.0)
     xp_assert_close(tf.translation, t, atol=atol)
 
 
