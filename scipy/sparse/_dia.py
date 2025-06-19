@@ -6,7 +6,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from .._lib._util import copy_if_needed
+from .._lib._util import _prune_array, copy_if_needed
 from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
@@ -408,21 +408,28 @@ class _dia_base(_data_matrix):
         if 0 in self.shape or len(self.offsets) == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
 
+        n_rows, n_cols = self.shape
+        max_nnz = self.nnz
         # np.argsort always returns dtype=int, which can cause automatic dtype
-        # expansion for everything else even if not needed (see gh19245);
-        # at the same time, CSR wants common dtype for indices and indptr;
-        # so care should be taken to use appropriate indexing dtype throughout.
-        # Estimate smallest safe dtype for indptr.
-        idx_dtype = self._get_index_dtype(maxval=self.data.size)
+        # expansion for everything else even if not needed (see gh19245), but
+        # CSR wants common dtype for indices, indptr and shape, so care should
+        # be taken to use appropriate indexing dtype throughout.
+        idx_dtype = self._get_index_dtype(maxval=max(max_nnz, n_rows, n_cols))
         order = np.argsort(self.offsets).astype(idx_dtype, copy=False)
-        indices, indptr, data = dia_tocsr(*self.shape, *self.data.shape,
-                                          self.offsets, self.data, order)
-        # If possible, shrink indexing dtype using actual nnz.
-        idx_dtype = self._get_index_dtype(maxval=indptr[-1])
-        indices = indices.astype(idx_dtype, copy=False)
+        csr_data = np.empty(max_nnz, dtype=self.dtype)
+        indices = np.empty(max_nnz, dtype=idx_dtype)
+        indptr = np.empty(1 + n_rows, dtype=idx_dtype)
+        # Conversion eliminates explicit zeros and returns actual nnz.
+        nnz = dia_tocsr(n_rows, n_cols, *self.data.shape,
+                        self.offsets.astype(idx_dtype, copy=False), self.data,
+                        order, csr_data, indices, indptr)
+        # Shrink indexing dtype, if needed, and prune arrays.
+        idx_dtype = self._get_index_dtype(maxval=max(nnz, n_rows, n_cols))
+        csr_data = _prune_array(csr_data[:nnz])
+        indices = _prune_array(indices[:nnz].astype(idx_dtype, copy=False))
         indptr = indptr.astype(idx_dtype, copy=False)
-        out = self._csr_container((data, indices, indptr), shape=self.shape,
-                                  dtype=self.dtype)
+        out = self._csr_container((csr_data, indices, indptr),
+                                  shape=self.shape, dtype=self.dtype)
         out.has_canonical_format = True
         return out
 

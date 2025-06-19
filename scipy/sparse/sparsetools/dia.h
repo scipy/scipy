@@ -227,53 +227,70 @@ void dia_matvecs(const I A_rows,
 }
 
 
+/*
+ * Compute B = A for DIA matrix A, CSR matrix B
+ *
+ *
+ * Input Arguments:
+ *   I  n_rows            - number of rows in A
+ *   I  n_cols            - number of columns in A
+ *   I  n_diags           - number of diagonals in A
+ *   I  L                 - length of each diagonal in A
+ *   I  offsets[n_diags]  - diagonal offsets in A
+ *   T  data[n_diags,L]   - diagonals data of A (in C order)
+ *   I  order[n_diags]    - indices for traversing offsets[] in ascending order
+ *
+ * Output Arguments:
+ *   T  csr_data[max_nnz] - CSR format data array for B
+ *   I  indices[max_nnz]  - CSR format index array for B
+ *   I  indptr[n_rows+1]  - CSR format index pointer array for B
+ *
+ * Return Value:
+ *   I  nnz               - number of (non-zero) values stored in B
+ *
+ * Note:
+ *   Output arrays csr_data, indices and indptr must be preallocated and have
+ *   sufficient size (with max_nnz >= nnz == A.count_nonzero()), then resulting
+ *   arrays csr_data and indices must be truncated to the actual size returned
+ *   as nnz
+ *
+ * Note:
+ *   Output has canonical CSR format (sorted indices and no duplicates)
+ *
+ */
 template <class I, class T>
-void dia_tocsr(const I rows,
-               const I cols,
-               const I diags,
-               const I L,
-               const I offsets[],
-               const T data[],
-               const I order[],
-               std::vector<I>* indices,
-               std::vector<I>* indptr,
-               std::vector<T>* csr_data)
+I dia_tocsr(const I n_rows,
+            const I n_cols,
+            const I n_diags,
+            const I L,
+            const I offsets[],
+            const T data[],
+            const I order[],
+                  T csr_data[],
+                  I indices[],
+                  I indptr[])
 {
-    const I max_j = min(L, cols); // max. output column
-
-    // allocate enough space for output arrays
-    I max_nnz = 0;
-    for (I i = 0; i < diags; ++i) {
-        const I ofs = offsets[i];
-        const I beg = max<I>(0, ofs),
-                end = min(rows + ofs, max_j);
-        max_nnz += max<I>(end - beg, 0); // ignoring out-of-range diagonals (end < beg)
-    }
-    indices->resize(max_nnz);
-    csr_data->resize(max_nnz);
-    indptr->resize(1 + rows, 0);
-
+    const I j_end = min(L, n_cols); // columns limit
+    indptr[0] = 0;
     I nnz = 0;
     // loop over rows
-    for (I i = 0; i < rows; ++i) {
+    for (I i = 0; i < n_rows; ++i) {
         // loop over offsets in ascending order
-        for (I k = 0; k < diags; ++k) {
+        for (I k = 0; k < n_diags; ++k) {
             const I n = order[k], // index of diagonal
                     j = i + offsets[n]; // column
-            if (j < 0 or j >= max_j)
+            if (j < 0 or j >= j_end)
                 continue;
             const T x = (data + npy_intp(L) * n)[j];
             if (x != 0) {
-                (*indices)[nnz] = j;
-                (*csr_data)[nnz] = x;
+                indices[nnz] = j;
+                csr_data[nnz] = x;
                 ++nnz;
             }
         }
-        (*indptr)[1 + i] = nnz;
+        indptr[1 + i] = nnz;
     }
-    // set actual output lengths
-    indices->resize(nnz);
-    csr_data->resize(nnz);
+    return nnz; // actual output lengths
 }
 
 

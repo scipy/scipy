@@ -5151,6 +5151,22 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_getnnz_axis(self):
         pass
 
+    def test_tocsr(self):
+        # test bound checks (other pathological cases are tested by
+        # TestConstructUtils::test_spdiags, and normal operation is ensured by
+        # many other tests here using .toarray())
+        for data, ofsets, _, r in self.ill_cases():
+            for shape in [(2, 2), (0, 2), (2, 0)]:
+                if data is None:
+                    A = self.dia_container(shape)
+                else:
+                    A = self.dia_container((data, ofsets), shape=shape)
+                B = A.tocsr()
+                ref = np.array(r)[:shape[0], :shape[1]]
+                nnz = np.count_nonzero(ref)
+                assert B.nnz == nnz
+                assert_array_equal(B.toarray(), ref)
+
     def test_convert_gh14555(self):
         # regression test for gh-14555
         m = self.dia_container(([[1, 1, 0]], [-1]), shape=(4, 2))
@@ -5177,28 +5193,6 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert csr.indices.dtype == np.int32
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
-
-    def test_tocsr(self):
-        # test bound checks (other pathological cases are tested by
-        # TestConstructUtils::test_spdiags, and normal operation is ensured by
-        # many other tests here using .toarray())
-        d1 = [[1]]        # diagonal shorter than width
-        d3 = [[1, 2, 3]]  # diagonal longer than width
-
-        cases = [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
-                 (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
-                 (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
-                 (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                 (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
-                 (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
-                 (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
-                 (d3, [-3], 0, [[0, 0], [0, 0]])]  # all below
-
-        for d, o, n, r in cases:
-            A = self.dia_container((d, o), shape=(2, 2)).tocsr()
-            assert A.nnz == n
-            B = np.array(r)
-            assert_array_equal(A.toarray(), B)
 
     def test_add_sparse(self):
         # test format and cases not covered by common add tests
