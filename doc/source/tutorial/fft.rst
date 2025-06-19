@@ -107,9 +107,9 @@ are shown graphically below.
     >>> ax[1].set_title('Re y[k]')
     >>> ax[2].set_title('Im y[k]')
     >>> for i in (0, 1, 2):
-    >>>     ax[i].set_xlim(-1, 6)
-    >>>     ax[i].set_ylim(-4, 4)
-    >>>     ax[i].grid()
+    ...     ax[i].set_xlim(-1, 6)
+    ...     ax[i].set_ylim(-4, 4)
+    ...     ax[i].grid()
     >>> plt.show()
 
 
@@ -171,22 +171,22 @@ interest for the FFT of a real signal.
     >>>
     >>> # decorations
     >>> for i in range(len(Fx)):
-    >>>     # expected amplitude at frequency Fx[i]
-    >>>     a = Ax[i] if i > 0 else 2*Ax[i]
-    >>>     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
+    ...     # expected amplitude at frequency Fx[i]
+    ...     a = Ax[i] if i > 0 else 2*Ax[i]
+    ...     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
     >>> ax.set_title(f'N={N}, Fp={Fp} Hz, Fs={Fs} Hz')
     >>> ax.set_xlabel('f [Hz]')
     >>> ax.set_ylabel('2/N |y|')
     >>> ax.grid()
     >>> for i in (1, 2):
-    >>>     axi = fig.add_axes([0.35+0.22*i, 0.4, 0.13, 0.4])
-    >>>     # frequency indices around Fx[i]
-    >>>     k = np.r_[int(Fx[i]/Fp+0.3)-4:int(Fx[i]/Fp+0.8)+5]
-    >>>     axi.scatter(f[k], ya[k], marker='o')
-    >>>     axi.plot(np.outer([1, 1], f[k]), np.outer([0, 1], ya[k]), 'b')
-    >>>     axi.set_xlim(f[k[0]]-Fp/2, f[k[-1]]+Fp/2)
-    >>>     axi.set_ylim(-0.1, 0.9)
-    >>>     axi.grid()
+    ...     axi = fig.add_axes([0.35+0.22*i, 0.4, 0.13, 0.4])
+    ...     # frequency indices around Fx[i]
+    ...     k = np.r_[int(Fx[i]/Fp+0.3)-4:int(Fx[i]/Fp+0.8)+5]
+    ...     axi.scatter(f[k], ya[k], marker='o')
+    ...     axi.plot(np.outer([1, 1], f[k]), np.outer([0, 1], ya[k]), 'b')
+    ...     axi.set_xlim(f[k[0]]-Fp/2, f[k[-1]]+Fp/2)
+    ...     axi.set_ylim(-0.1, 0.9)
+    ...     axi.grid()
     >>> plt.show()
 
 
@@ -808,20 +808,20 @@ as shown in the following example.
     >>>
     >>> # decorations
     >>> for i in range(len(Fx)):
-    >>>     a = 20*np.log10(Ax[i] if i > 0 else 2*Ax[i])
-    >>>     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
+    ...     a = 20*np.log10(Ax[i] if i > 0 else 2*Ax[i])
+    ...     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
     >>> ax.set_ylim(-60.0, 0.0)
     >>> ax.set_title(f'M={M}, N={N}, Fp/M={Fq}, Fp={Fp} Hz, Fs={Fs} Hz')
     >>> ax.set_xlabel('f [Hz]')
     >>> ax.set_ylabel('2/N |y| [dB]')
     >>> ax.grid()
     >>> for i in (1, 2):
-    >>>     axi = fig.add_axes([0.35+0.22*i, 0.45, 0.13, 0.4])
-    >>>     k = np.r_[int(Fx[i]/Fq+0.3)-4*M:int(Fx[i]/Fq+0.8)+4*M+1]
-    >>>     axi.plot(f[k], ya[k])
-    >>>     axi.set_xlim(f[k[0]], f[k[-1]])
-    >>>     axi.set_ylim(-60.0, 0.0)
-    >>>     axi.grid()
+    ...     axi = fig.add_axes([0.35+0.22*i, 0.45, 0.13, 0.4])
+    ...     k = np.r_[int(Fx[i]/Fq+0.3)-4*M:int(Fx[i]/Fq+0.8)+4*M+1]
+    ...     axi.plot(f[k], ya[k])
+    ...     axi.set_xlim(f[k[0]], f[k[-1]])
+    ...     axi.set_ylim(-60.0, 0.0)
+    ...     axi.grid()
     >>> plt.show()
 
 The amplitude of the spectrum is shown in dB, i.e., in 20*log10.
@@ -1008,8 +1008,8 @@ These three windows are applied to a signal as shown below.
     >>>
     >>> # decorations
     >>> for i in range(len(Fx)):
-    >>>     a = 20.0*np.log10(Ax[i] if i > 0 else 2*Ax[i])
-    >>>     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
+    ...     a = 20.0*np.log10(Ax[i] if i > 0 else 2*Ax[i])
+    ...     ax.plot(Fx[i]+np.array([[-6.0, 6.0], [-3.0, 3.0]]), a*np.r_[1.0, 1.0], 'g')
     >>> ax.set_ylim(-120.0, 0.0)
     >>> ax.set_title(f'N={N}, Fp={Fp} Hz, Fs={Fs} Hz')
     >>> ax.set_xlabel('f [Hz]')
