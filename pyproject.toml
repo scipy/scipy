@@ -28,7 +28,7 @@ requires = [
     # Note that building against numpy 1.x works fine too - users and
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
-    "numpy>=2.0.0rc1",
+    "numpy>=2.0.0",
 ]
 
 [project]
@@ -137,7 +137,6 @@ test-requires = [
     "pooch",
     "hypothesis",
 ]
-before-test = "bash {project}/tools/wheels/cibw_before_test.sh {project}"
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
