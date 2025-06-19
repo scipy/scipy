@@ -90,6 +90,13 @@ jobs:
         - [windows-2022, win, AMD64, "", ""]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"], ["cp313t", "3.13"], ["cp314", "cp314-dev"], ["cp314t", "cp314-dev"]]
         # python[0] is used to specify the python versions made by cibuildwheel
+        exclude:
+            # This combination was hanging consistently with CPython 3.14.0b2, retry later
+          - python: ["cp314t", "cp314-dev"]
+            buildplat: [ubuntu-24.04-arm, musllinux, aarch64, "", ""]
+            # This combination was failing repeatedly on pythran codegen, see gh-23187
+          - python: ["cp314t", "cp314-dev"]
+            buildplat: [ubuntu-22.04, musllinux, x86_64, "", ""]
 
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
