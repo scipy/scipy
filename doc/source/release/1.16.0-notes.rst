@@ -2,8 +2,6 @@
 SciPy 1.16.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.16.0 is not released yet!
-
 .. contents::
 
 SciPy 1.16.0 is the culmination of 6 months of hard work. It contains
@@ -46,6 +44,8 @@ Highlights of this release
 - A new class, `scipy.spatial.transform.RigidTransform`, provides functionality
   to convert between different representations of rigid transforms in 3-D
   space.
+- A new function `scipy.ndimage.vectorized_filter` for generic filters that
+  take advantage of a vectorized Python callable was added.
 
 ************
 New features
@@ -302,6 +302,8 @@ Build and packaging related changes
 *************
 Other changes
 *************
+- A new accompanying release of ``scipy-stubs`` (``v1.16.0.0``) is
+  available.
 - The internal dependency of ``scipy._lib`` on ``scipy.sparse`` was removed,
   which reduces the import time of a number of other SciPy submodules.
 - Support for free-threaded CPython was improved: the last known thread-safety
@@ -352,7 +354,7 @@ Authors
 * Florian Bourgey (3) +
 * Charles Bousseau (2) +
 * Richard Strong Bowen (2) +
-* Jake Bowhay (126)
+* Jake Bowhay (127)
 * Matthew Brett (1)
 * Dietrich Brunn (53)
 * Evgeni Burovski (252)
@@ -369,12 +371,12 @@ Authors
 * Matthew H Flamm (1)
 * Karthik Viswanath Ganti (1) +
 * Neil Girdhar (1)
-* Ralf Gommers (158)
+* Ralf Gommers (159)
 * Rohit Goswami (4)
 * Saarthak Gupta (4) +
-* Matt Haberland (325)
+* Matt Haberland (326)
 * Sasha Hafner (1) +
-* Joren Hammudoglu (9)
+* Joren Hammudoglu (11)
 * Chengyu Han (1) +
 * Charles Harris (1)
 * Kim Hsieh (4) +
@@ -385,6 +387,7 @@ Authors
 * Robert Kern (2)
 * Harin Khakhi (2) +
 * Agriya Khetarpal (4)
+* Daniil Kiktenko (1) +
 * Kirill R. (2) +
 * Tetsuo Koyama (1)
 * Jigyasu Krishnan (1) +
@@ -396,6 +399,7 @@ Authors
 * Antony Lee (1)
 * Kieran Leschinski (1) +
 * Thomas Li (2) +
+* Yuxi Long (2) +
 * Christian Lorentzen (2)
 * Loïc Estève (4)
 * Panos Mavrogiorgos (1) +
@@ -413,7 +417,7 @@ Authors
 * Victor PM (10) +
 * pmav99 (1) +
 * Ilhan Polat (73)
-* Tyler Reddy (96)
+* Tyler Reddy (112)
 * Érico Nogueira Rolim (1) +
 * Pamphile Roy (10)
 * Mikhail Ryazanov (6)
@@ -461,7 +465,7 @@ Authors
 * Case Zumbrum (2) +
 * ਗਗਨਦੀਪ ਸਿੰਘ (Gagandeep Singh) (45)
 
-    A total of 124 people contributed to this release.
+    A total of 126 people contributed to this release.
     People with a "+" by their names contributed a patch for the first time.
     This list of names is automatically generated, and may not be fully complete.
 
@@ -485,7 +489,7 @@ Issues closed for 1.16.0
 * `#8367 <https://github.com/scipy/scipy/issues/8367>`__: ENH: stats.mvndst: make thread-safe
 * `#8411 <https://github.com/scipy/scipy/issues/8411>`__: nan with betainc for a=0, b=3 and x=0.5
 * `#8916 <https://github.com/scipy/scipy/issues/8916>`__: ENH: ndimage.generic_filter: slow on large images
-* `#9077 <https://github.com/scipy/scipy/issues/9077>`__: maximum_filter is not symetrical with nans
+* `#9077 <https://github.com/scipy/scipy/issues/9077>`__: maximum_filter is not symmetrical with nans
 * `#9841 <https://github.com/scipy/scipy/issues/9841>`__: ENH: linalg: 0-th dimension must be fixed to 1 but got 2 (real...
 * `#9873 <https://github.com/scipy/scipy/issues/9873>`__: ENH: ndimage: majority voting filter
 * `#10416 <https://github.com/scipy/scipy/issues/10416>`__: ENH: optimize.minimize: slsqp: give better error when work array...
@@ -503,7 +507,7 @@ Issues closed for 1.16.0
 * `#13914 <https://github.com/scipy/scipy/issues/13914>`__: DOC: sparse.csgraph.shortest_path: predecessors array contains...
 * `#13952 <https://github.com/scipy/scipy/issues/13952>`__: fmin_cobyla result violates constraint
 * `#13982 <https://github.com/scipy/scipy/issues/13982>`__: ENH: linalg.eigh_tridiagonal: divide and conquer option
-* `#14394 <https://github.com/scipy/scipy/issues/14394>`__: ENH: optmize.slsqp: return Lagrange multipliers
+* `#14394 <https://github.com/scipy/scipy/issues/14394>`__: ENH: optimize.slsqp: return Lagrange multipliers
 * `#14569 <https://github.com/scipy/scipy/issues/14569>`__: BUG: signal.resample: inconsistency across dtypes
 * `#14915 <https://github.com/scipy/scipy/issues/14915>`__: BUG: optimize.minimize: corruption/segfault with constraints
 * `#15153 <https://github.com/scipy/scipy/issues/15153>`__: BUG: signal.resample: incorrect with ``datetime[ns]`` for ``t``...
@@ -586,6 +590,7 @@ Issues closed for 1.16.0
 * `#22271 <https://github.com/scipy/scipy/issues/22271>`__: Query: empty ``Rotation`` is not allowed in scipy=1.15
 * `#22282 <https://github.com/scipy/scipy/issues/22282>`__: QUERY/DEV: test failure in IDE with ``SCIPY_ARRAY_API``
 * `#22288 <https://github.com/scipy/scipy/issues/22288>`__: QUERY: Pyright raises error/warning in IDE
+* `#22294 <https://github.com/scipy/scipy/issues/22294>`__: DOC: ``source`` now links to top of file, not location within...
 * `#22303 <https://github.com/scipy/scipy/issues/22303>`__: ENH: stats.special_ortho_group: improve and simplify
 * `#22309 <https://github.com/scipy/scipy/issues/22309>`__: DOC: optimize.elementwise.find_minimum: harmonize documented/implemented...
 * `#22328 <https://github.com/scipy/scipy/issues/22328>`__: QUERY: stats.beta.fit: ``FitError`` on reasonable data
@@ -646,6 +651,7 @@ Issues closed for 1.16.0
 * `#23061 <https://github.com/scipy/scipy/issues/23061>`__: DOC: Wrong SPDX identifier for OpenBLAS and LAPACK
 * `#23068 <https://github.com/scipy/scipy/issues/23068>`__: BUG: sparse: ``!=`` operator with csr matrices
 * `#23109 <https://github.com/scipy/scipy/issues/23109>`__: BUG: spatial.distance.cdist: wrong result in Yule metric
+* `#23169 <https://github.com/scipy/scipy/issues/23169>`__: BUG: special.betainc: evaluates incorrectly to nan when ``b=0``
 
 ************************
 Pull requests for 1.16.0
@@ -1108,7 +1114,14 @@ Pull requests for 1.16.0
 * `#23051 <https://github.com/scipy/scipy/pull/23051>`__: MAINT/ENH: ndimage.vectorized_filter: adjust scalar size to match...
 * `#23086 <https://github.com/scipy/scipy/pull/23086>`__: CI: update windows-2019 runner image to windows-2022
 * `#23091 <https://github.com/scipy/scipy/pull/23091>`__: BUG: sparse: correct eq and ne with different shapes. (and add...
+* `#23098 <https://github.com/scipy/scipy/pull/23098>`__: MAINT: 1.16.0rc2 backports
 * `#23099 <https://github.com/scipy/scipy/pull/23099>`__: MAINT: fix SPDX license expressions for LAPACK, OpenBLAS, GCC
 * `#23106 <https://github.com/scipy/scipy/pull/23106>`__: TST: CI broken vs pytest 8.4.0
 * `#23110 <https://github.com/scipy/scipy/pull/23110>`__: BUG: spatial.distance: yule implementation in ``distance_metrics.h``
 * `#23113 <https://github.com/scipy/scipy/pull/23113>`__: DOC: improve docs for ``-Duse-system-libraries`` build option
+* `#23114 <https://github.com/scipy/scipy/pull/23114>`__: DOC: Add missing BLAS Level 2 functions
+* `#23127 <https://github.com/scipy/scipy/pull/23127>`__: DOC: fix linkcode_resolve line-number anchors
+* `#23131 <https://github.com/scipy/scipy/pull/23131>`__: REL: set 1.16.0rc3 unreleased
+* `#23134 <https://github.com/scipy/scipy/pull/23134>`__: BUG: linalg.lapack: fix incorrectly sized work array for {c,z}syrti
+* `#23146 <https://github.com/scipy/scipy/pull/23146>`__: DOC: stats.Mixture: add example
+* `#23170 <https://github.com/scipy/scipy/pull/23170>`__: TST: add all SciPy-specific pytest markers to ``scipy/conftest.py``
