@@ -1,5 +1,57 @@
 #include "propack/_common.h"
 
+
+// ============================================================================
+// Random 64 bit integer generator for floating point number purposes based on
+// https://prng.di.unimi.it/xoshiro256plus.c
+
+static uint64_t rol64(uint64_t x, int k) {
+	return (x << k) | (x >> (64 - k));
+}
+
+static uint64_t xoshiro256p(uint64_t* s) {
+	uint64_t const result = s[0] + s[3];
+	uint64_t const t = s[1] << 17;
+
+	s[2] ^= s[0];
+	s[3] ^= s[1];
+	s[1] ^= s[2];
+	s[0] ^= s[3];
+
+	s[2] ^= t;
+	s[3] = rol64(s[3], 45);
+
+	return result;
+}
+
+double random_double(uint64_t* state) {
+    union {
+        uint64_t u;
+        double d;
+    } x;
+
+    uint64_t r = xoshiro256p(state);
+    r >>= 11;  // top 53 bits
+    x.u = ((uint64_t)1023 << 52) | r;
+    return x.d - 1.0;
+}
+
+float random_float(uint64_t* state) {
+    union {
+        uint32_t u;
+        float f;
+    } x;
+
+    uint32_t r = (uint32_t)(xoshiro256p(state) >> 32);  // top 32 bits, waste half of the bits
+    r >>= 9;  // keep top 23 bits
+    x.u = (127 << 23) | r;
+
+    return x.f - 1.0f;
+}
+
+// ============================================================================
+
+
 void scompute_mu(float* restrict mu, const int j, const float delta, const float eta, int* restrict indices)
 {
     // If exists find peaks higher than delta and check for the skirts of
@@ -211,5 +263,3 @@ void dupdate_nu(
         nu[j-1] = 1.0;
     }
 }
-
-
