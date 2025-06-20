@@ -5110,34 +5110,43 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
     def ill_cases(self):
         # Ill-formed inputs and reference 2 x 2 outputs for testing _getnnz()
-        # and tocsr(): list of tuples (data, offsets, nnz, dense array)
+        # and tocsr(): list of tuples
+        # (data, offsets, nnz, dense array, case description)
 
         d1 = [[1]]        # diagonal shorter than width
         d3 = [[1, 2, 3]]  # diagonal longer than width
 
-        return [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
-                (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
-                (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
-                (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
-                (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d3, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                # empty
-                (None, None, 0, [[0, 0], [0, 0]]),
-                # explicit zeros
-                ([[0, 0]], [0], 2, [[0, 0], [0, 0]]),
-                # overfilled shorter-diagonal, out of order
+        return [(d1, [-1], 1, [[0, 0], [1, 0]],
+                 'shorter diagonal within'),
+                (d1, [1],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal above (but within if full)'),
+                (d1, [3],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements above'),
+                (d1, [-3], 0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements below'),
+                (d3, [-1], 1, [[0, 0], [1, 0]],
+                 'longer diagonal within (only head)'),
+                (d3, [1],  1, [[0, 2], [0, 0]],
+                 'longer diagonal within (only tail)'),
+                (d3, [3],  0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements above'),
+                (d3, [-3], 0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements below'),
+                (None, None, 0, [[0, 0], [0, 0]],
+                 'empty input'),
+                ([[0, 0]], [0], 2, [[0, 0], [0, 0]],
+                 'explicit zeros'),
                 (np.arange(1, 1 + 7).reshape((7, 1)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 2, [[1, 0], [5, 0]]),
-                # overfilled longer-diagonal, out of order
+                 2, [[1, 0], [5, 0]],
+                 'overfilled shorter-diagonal, out of order'),
                 (np.arange(1, 1 + 7 * 3).reshape((7, 3)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 4, [[1, 5], [13, 2]])]
+                 4, [[1, 5], [13, 2]],
+                 'overfilled longer-diagonal, out of order')]
 
     def test_getnnz(self):
-        for data, ofsets, nnz, ref in self.ill_cases():
+        for data, ofsets, nnz, ref, case in self.ill_cases():
             for shape in [(2, 2), (0, 2), (2, 0)]:
                 if data is None:
                     A = self.dia_container(shape)
@@ -5145,7 +5154,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                     A = self.dia_container((data, ofsets), shape=shape)
                 if 0 in shape:
                     nnz = 0
-                assert A._getnnz() == nnz
+                assert A._getnnz() == nnz, 'case: ' + case
 
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
@@ -5155,7 +5164,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         # test bound checks (other pathological cases are tested by
         # TestConstructUtils::test_spdiags, and normal operation is ensured by
         # many other tests here using .toarray())
-        for data, ofsets, _, r in self.ill_cases():
+        for data, ofsets, _, r, case in self.ill_cases():
             for shape in [(2, 2), (0, 2), (2, 0)]:
                 if data is None:
                     A = self.dia_container(shape)
@@ -5165,7 +5174,7 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
                 ref = np.array(r)[:shape[0], :shape[1]]
                 nnz = np.count_nonzero(ref)
                 assert B.nnz == nnz
-                assert_array_equal(B.toarray(), ref)
+                assert_array_equal(B.toarray(), ref, err_msg='case: ' + case)
 
     def test_convert_gh14555(self):
         # regression test for gh-14555
