@@ -1126,7 +1126,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
-        opts = {'disp': False, 'maxiter': self.maxiter}
+        opts = {'maxiter': self.maxiter}
         r = optimize.minimize(self.func, self.startparams,
                               method='L-BFGS-B', jac=self.grad,
                               options=opts)
@@ -1156,7 +1156,7 @@ class TestOptimizeSimple(CheckOptimize):
         # Check that the `ftol` parameter in l_bfgs_b works as expected
         v0 = None
         for tol in [1e-1, 1e-4, 1e-7, 1e-10]:
-            opts = {'disp': False, 'maxiter': self.maxiter, 'ftol': tol}
+            opts = {'maxiter': self.maxiter, 'ftol': tol}
             sol = optimize.minimize(self.func, self.startparams,
                                     method='L-BFGS-B', jac=self.grad,
                                     options=opts)
@@ -1173,7 +1173,7 @@ class TestOptimizeSimple(CheckOptimize):
         # check that the maxls is passed down to the Fortran routine
         sol = optimize.minimize(optimize.rosen, np.array([-1.2, 1.0]),
                                 method='L-BFGS-B', jac=optimize.rosen_der,
-                                options={'disp': False, 'maxls': 1})
+                                options={'maxls': 1})
         assert not sol.success
 
     def test_minimize_l_bfgs_b_maxfun_interruption(self):
