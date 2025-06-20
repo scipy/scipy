@@ -4,11 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'mat_reader_factory', 'loadmat', 'savemat', 'whosmat',
-    'contextmanager', 'docfiller',
-    'MatFile4Reader', 'MatFile4Writer', 'MatFile5Reader', 'MatFile5Writer'
-]
+__all__ = ["loadmat", "savemat", "whosmat"]  # noqa: F822
 
 def __dir__():
     return __all__

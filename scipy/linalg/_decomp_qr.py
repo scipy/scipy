@@ -1,6 +1,8 @@
 """QR decomposition functions."""
 import numpy as np
 
+from scipy._lib._util import _apply_over_batch
+
 # Local imports
 from .lapack import get_lapack_funcs
 from ._misc import _datacopied
@@ -18,11 +20,11 @@ def safecall(f, name, *args, **kwargs):
         kwargs['lwork'] = ret[-2][0].real.astype(np.int_)
     ret = f(*args, **kwargs)
     if ret[-1] < 0:
-        raise ValueError("illegal value in %dth argument of internal %s"
-                         % (-ret[-1], name))
+        raise ValueError(f"illegal value in {-ret[-1]}th argument of internal {name}")
     return ret[:-2]
 
 
+@_apply_over_batch(('a', 2))
 def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
        check_finite=True):
     """
@@ -51,8 +53,11 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the 
-        diagonal of R is non-increasing.
+        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the
+        diagonal of R is non-increasing. Equivalently, albeit less efficiently,
+        an explicit P matrix may be formed explicitly by permuting the rows or columns
+        (depending on the side of the equation on which it is to be used) of
+        an identity matrix. See Examples.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -110,19 +115,27 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     True
     >>> np.allclose(a[:, p4], np.dot(q4, r4))
     True
+    >>> P = np.eye(p4.size)[p4]
+    >>> np.allclose(a, np.dot(q4, r4) @ P)
+    True
+    >>> np.allclose(a @ P.T, np.dot(q4, r4))
+    True
     >>> q4.shape, r4.shape, p4.shape
     ((9, 9), (9, 6), (6,))
 
     >>> q5, r5, p5 = linalg.qr(a, mode='economic', pivoting=True)
     >>> q5.shape, r5.shape, p5.shape
     ((9, 6), (6, 6), (6,))
+    >>> P = np.eye(6)[:, p5]
+    >>> np.allclose(a @ P, np.dot(q5, r5))
+    True
 
     """
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply
     if mode not in ['full', 'qr', 'r', 'economic', 'raw']:
-        raise ValueError("Mode argument should be one of ['full', 'r',"
+        raise ValueError("Mode argument should be one of ['full', 'r', "
                          "'economic', 'raw']")
 
     if check_finite:
@@ -203,6 +216,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     return (Q,) + Rj
 
 
+@_apply_over_batch(('a', 2), ('c', '1|2'))
 def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
                 overwrite_a=False, overwrite_c=False):
     """
@@ -355,6 +369,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     return (cQ,) + raw[1:]
 
 
+@_apply_over_batch(('a', 2))
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     """
     Compute RQ decomposition of a matrix.

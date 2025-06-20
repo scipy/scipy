@@ -3,8 +3,8 @@ c\BeginDoc
 c
 c\Name: dsaitr
 c
-c\Description: 
-c  Reverse communication interface for applying NP additional steps to 
+c\Description:
+c  Reverse communication interface for applying NP additional steps to
 c  a K step symmetric Arnoldi factorization.
 c
 c  Input:  OP*V_{k}  -  V_{k}*H = r_{k}*e_{k}^T
@@ -20,7 +20,7 @@ c  computed and returned.
 c
 c\Usage:
 c  call dsaitr
-c     ( IDO, BMAT, N, K, NP, MODE, RESID, RNORM, V, LDV, H, LDH, 
+c     ( IDO, BMAT, N, K, NP, MODE, RESID, RNORM, V, LDV, H, LDH,
 c       IPNTR, WORKD, INFO )
 c
 c\Arguments
@@ -76,13 +76,13 @@ c          On INPUT the B-norm of r_{k}.
 c          On OUTPUT the B-norm of the updated residual r_{k+p}.
 c
 c  V       Double precision N by K+NP array.  (INPUT/OUTPUT)
-c          On INPUT:  V contains the Arnoldi vectors in the first K 
+c          On INPUT:  V contains the Arnoldi vectors in the first K
 c          columns.
 c          On OUTPUT: V contains the new NP Arnoldi vectors in the next
 c          NP columns.  The first K columns are unchanged.
 c
 c  LDV     Integer.  (INPUT)
-c          Leading dimension of V exactly as declared in the calling 
+c          Leading dimension of V exactly as declared in the calling
 c          program.
 c
 c  H       Double precision (K+NP) by 2 array.  (INPUT/OUTPUT)
@@ -91,26 +91,26 @@ c          with the subdiagonal in the first column starting at H(2,1)
 c          and the main diagonal in the second column.
 c
 c  LDH     Integer.  (INPUT)
-c          Leading dimension of H exactly as declared in the calling 
+c          Leading dimension of H exactly as declared in the calling
 c          program.
 c
 c  IPNTR   Integer array of length 3.  (OUTPUT)
-c          Pointer to mark the starting locations in the WORK for 
+c          Pointer to mark the starting locations in the WORK for
 c          vectors used by the Arnoldi iteration.
 c          -------------------------------------------------------------
 c          IPNTR(1): pointer to the current operand vector X.
 c          IPNTR(2): pointer to the current result vector Y.
-c          IPNTR(3): pointer to the vector B * X when used in the 
+c          IPNTR(3): pointer to the vector B * X when used in the
 c                    shift-and-invert mode.  X is the current operand.
 c          -------------------------------------------------------------
-c          
+c
 c  WORKD   Double precision work array of length 3*N.  (REVERSE COMMUNICATION)
 c          Distributed array to be used in the basic Arnoldi iteration
-c          for reverse communication.  The calling program should not 
+c          for reverse communication.  The calling program should not
 c          use WORKD as temporary workspace during the iteration !!!!!!
 c          On INPUT, WORKD(1:N) = B*RESID where RESID is associated
-c          with the K step Arnoldi factorization. Used to save some 
-c          computation at the first step. 
+c          with the K step Arnoldi factorization. Used to save some
+c          computation at the first step.
 c          On OUTPUT, WORKD(1:N) = B*RESID where RESID is associated
 c          with the K+NP step Arnoldi factorization.
 c
@@ -139,7 +139,7 @@ c     dgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     daxpy   Level 1 BLAS that computes a vector triad.
 c     dscal   Level 1 BLAS that scales a vector.
 c     dcopy   Level 1 BLAS that copies one vector to another .
-c     ddot    Level 1 BLAS that computes the scalar product of two vectors. 
+c     ddot    Level 1 BLAS that computes the scalar product of two vectors.
 c     dnrm2   Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
@@ -147,29 +147,29 @@ c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
 c     Applied Mathematics
-c     Rice University           
-c     Houston, Texas            
-c 
+c     Rice University
+c     Houston, Texas
+c
 c\Revision history:
 c     xx/xx/93: Version ' 2.4'
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: saitr.F   SID: 2.6   DATE OF SID: 8/28/96   RELEASE: 2
 c
 c\Remarks
 c  The algorithm implemented is:
-c  
+c
 c  restart = .false.
-c  Given V_{k} = [v_{1}, ..., v_{k}], r_{k}; 
+c  Given V_{k} = [v_{1}, ..., v_{k}], r_{k};
 c  r_{k} contains the initial residual vector even for k = 0;
-c  Also assume that rnorm = || B*r_{k} || and B*r_{k} are already 
+c  Also assume that rnorm = || B*r_{k} || and B*r_{k} are already
 c  computed by the calling program.
 c
 c  betaj = rnorm ; p_{k+1} = B*r_{k} ;
 c  For  j = k+1, ..., k+np  Do
 c     1) if ( betaj < tol ) stop or restart depending on j.
 c        if ( restart ) generate a new starting vector.
-c     2) v_{j} = r(j-1)/betaj;  V_{j} = [V_{j-1}, v_{j}];  
+c     2) v_{j} = r(j-1)/betaj;  V_{j} = [V_{j-1}, v_{j}];
 c        p_{j} = p_{j}/betaj
 c     3) r_{j} = OP*v_{j} where OP is defined as in dsaupd
 c        For shift-invert mode p_{j} = B*v_{j} is already available.
@@ -184,7 +184,7 @@ c        If (rnorm > 0.717*wnorm) accept step and go back to 1)
 c     5) Re-orthogonalization step:
 c        s = V_{j}'*B*r_{j}
 c        r_{j} = r_{j} - V_{j}*s;  rnorm1 = || r_{j} ||
-c        alphaj = alphaj + s_{j};   
+c        alphaj = alphaj + s_{j};
 c     6) Iterative refinement step:
 c        If (rnorm1 > 0.717*rnorm) then
 c           rnorm = rnorm1
@@ -194,7 +194,7 @@ c           rnorm = rnorm1
 c           If this is the first time in step 6), go to 5)
 c           Else r_{j} lies in the span of V_{j} numerically.
 c              Set r_{j} = 0 and rnorm = 0; go to 1)
-c        EndIf 
+c        EndIf
 c  End Do
 c
 c\EndLib
@@ -202,7 +202,7 @@ c
 c-----------------------------------------------------------------------
 c
       subroutine dsaitr
-     &   (ido, bmat, n, k, np, mode, resid, rnorm, v, ldv, h, ldh, 
+     &   (ido, bmat, n, k, np, mode, resid, rnorm, v, ldv, h, ldh,
      &    ipntr, workd, info)
 c
 c     %----------------------------------------------------%
@@ -242,7 +242,7 @@ c     | Local Scalars |
 c     %---------------%
 c
       logical    first, orth1, orth2, rstart, step3, step4
-      integer    i, ierr, ipj, irj, ivj, iter, itry, j, msglvl, 
+      integer    i, ierr, ipj, irj, ivj, iter, itry, j, msglvl,
      &           infol, jj
       Double precision
      &           rnorm1, wnorm, safmin, temp1
@@ -251,7 +251,7 @@ c
      &           rnorm1, safmin, wnorm
 c
 c     %-----------------------%
-c     | Local Array Arguments | 
+c     | Local Array Arguments |
 c     %-----------------------%
 c
       Double precision
@@ -294,7 +294,7 @@ c
       end if
 c
       if (ido .eq. 0) then
-c 
+c
 c        %-------------------------------%
 c        | Initialize timing statistics  |
 c        | & message level for debugging |
@@ -302,7 +302,7 @@ c        %-------------------------------%
 c
          call arscnd (t0)
          msglvl = msaitr
-c 
+c
 c        %------------------------------%
 c        | Initial call to this routine |
 c        %------------------------------%
@@ -313,14 +313,14 @@ c
          rstart = .false.
          orth1  = .false.
          orth2  = .false.
-c 
+c
 c        %--------------------------------%
 c        | Pointer to the current step of |
 c        | the factorization to build     |
 c        %--------------------------------%
 c
          j      = k + 1
-c 
+c
 c        %------------------------------------------%
 c        | Pointers used for reverse communication  |
 c        | when using WORKD.                        |
@@ -330,7 +330,7 @@ c
          irj    = ipj   + n
          ivj    = irj   + n
       end if
-c 
+c
 c     %-------------------------------------------------%
 c     | When in reverse communication mode one of:      |
 c     | STEP3, STEP4, ORTH1, ORTH2, RSTART              |
@@ -353,7 +353,7 @@ c
 c     %------------------------------%
 c     | Else this is the first step. |
 c     %------------------------------%
-c 
+c
 c     %--------------------------------------------------------------%
 c     |                                                              |
 c     |        A R N O L D I     I T E R A T I O N     L O O P       |
@@ -364,15 +364,15 @@ c
  1000 continue
 c
          if (msglvl .gt. 2) then
-            call ivout (logfil, 1, j, ndigit, 
+            call ivout (logfil, 1, [j], ndigit,
      &                  '_saitr: generating Arnoldi vector no.')
-            call dvout (logfil, 1, rnorm, ndigit, 
+            call dvout (logfil, 1, [rnorm], ndigit,
      &                  '_saitr: B-norm of the current residual =')
          end if
-c 
+c
 c        %---------------------------------------------------------%
-c        | Check for exact zero. Equivalent to determing whether a |
-c        | j-step Arnoldi factorization is present.                |
+c        | Check for exact zero. Equivalent to determining whether |
+c        | a j-step Arnoldi factorization is present.              |
 c        %---------------------------------------------------------%
 c
          if (rnorm .gt. zero) go to 40
@@ -384,10 +384,10 @@ c           | basis and continue the iteration.                 |
 c           %---------------------------------------------------%
 c
             if (msglvl .gt. 0) then
-               call ivout (logfil, 1, j, ndigit,
+               call ivout (logfil, 1, [j], ndigit,
      &                     '_saitr: ****** restart at step ******')
             end if
-c 
+c
 c           %---------------------------------------------%
 c           | ITRY is the loop variable that controls the |
 c           | maximum amount of times that a restart is   |
@@ -406,7 +406,7 @@ c           | If in reverse communication mode and |
 c           | RSTART = .true. flow returns here.   |
 c           %--------------------------------------%
 c
-            call dgetv0 (ido, bmat, itry, .false., n, j, v, ldv, 
+            call dgetv0 (ido, bmat, itry, .false., n, j, v, ldv,
      &                   resid, rnorm, ipntr, workd, ierr)
             if (ido .ne. 99) go to 9000
             if (ierr .lt. 0) then
@@ -425,7 +425,7 @@ c
                ido = 99
                go to 9000
             end if
-c 
+c
    40    continue
 c
 c        %---------------------------------------------------------%
@@ -447,12 +447,12 @@ c            | To scale both v_{j} and p_{j} carefully |
 c            | use LAPACK routine SLASCL               |
 c            %-----------------------------------------%
 c
-             call dlascl ('General', i, i, rnorm, one, n, 1, 
+             call dlascl ('General', i, i, rnorm, one, n, 1,
      &                    v(1,j), n, infol)
-             call dlascl ('General', i, i, rnorm, one, n, 1, 
+             call dlascl ('General', i, i, rnorm, one, n, 1,
      &                    workd(ipj), n, infol)
          end if
-c 
+c
 c        %------------------------------------------------------%
 c        | STEP 3:  r_{j} = OP*v_{j}; Note that p_{j} = B*v_{j} |
 c        | Note that this is not quite yet r_{j}. See STEP 4    |
@@ -466,14 +466,14 @@ c
          ipntr(2) = irj
          ipntr(3) = ipj
          ido = 1
-c 
+c
 c        %-----------------------------------%
 c        | Exit in order to compute OP*v_{j} |
 c        %-----------------------------------%
-c 
+c
          go to 9000
    50    continue
-c 
+c
 c        %-----------------------------------%
 c        | Back from reverse communication;  |
 c        | WORKD(IRJ:IRJ+N-1) := OP*v_{j}.   |
@@ -481,7 +481,7 @@ c        %-----------------------------------%
 c
          call arscnd (t3)
          tmvopx = tmvopx + (t3 - t2)
-c 
+c
          step3 = .false.
 c
 c        %------------------------------------------%
@@ -489,7 +489,7 @@ c        | Put another copy of OP*v_{j} into RESID. |
 c        %------------------------------------------%
 c
          call dcopy (n, workd(irj), 1, resid, 1)
-c 
+c
 c        %-------------------------------------------%
 c        | STEP 4:  Finish extending the symmetric   |
 c        |          Arnoldi to length j. If MODE = 2 |
@@ -507,17 +507,17 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %-------------------------------------%
 c           | Exit in order to compute B*OP*v_{j} |
 c           %-------------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
               call dcopy(n, resid, 1 , workd(ipj), 1)
          end if
    60    continue
-c 
+c
 c        %-----------------------------------%
 c        | Back from reverse communication;  |
 c        | WORKD(IPJ:IPJ+N-1) := B*OP*v_{j}. |
@@ -526,7 +526,7 @@ c
          if (bmat .eq. 'G') then
             call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
-         end if 
+         end if
 c
          step4 = .false.
 c
@@ -545,7 +545,7 @@ c           %----------------------------------%
 c
             wnorm = ddot (n, resid, 1, workd(ivj), 1)
             wnorm = sqrt(abs(wnorm))
-         else if (bmat .eq. 'G') then         
+         else if (bmat .eq. 'G') then
             wnorm = ddot (n, resid, 1, workd(ipj), 1)
             wnorm = sqrt(abs(wnorm))
          else if (bmat .eq. 'I') then
@@ -567,19 +567,19 @@ c        | WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.  |
 c        %------------------------------------------%
 c
          if (mode .ne. 2 ) then
-            call dgemv('T', n, j, one, v, ldv, workd(ipj), 1, zero, 
+            call dgemv('T', n, j, one, v, ldv, workd(ipj), 1, zero,
      &                  workd(irj), 1)
          else if (mode .eq. 2) then
-            call dgemv('T', n, j, one, v, ldv, workd(ivj), 1, zero, 
+            call dgemv('T', n, j, one, v, ldv, workd(ivj), 1, zero,
      &                  workd(irj), 1)
          end if
 c
 c        %--------------------------------------%
 c        | Orthgonalize r_{j} against V_{j}.    |
-c        | RESID contains OP*v_{j}. See STEP 3. | 
+c        | RESID contains OP*v_{j}. See STEP 3. |
 c        %--------------------------------------%
 c
-         call dgemv('N', n, j, -one, v, ldv, workd(irj), 1, one, 
+         call dgemv('N', n, j, -one, v, ldv, workd(irj), 1, one,
      &               resid, 1)
 c
 c        %--------------------------------------%
@@ -593,10 +593,10 @@ c
             h(j,1) = rnorm
          end if
          call arscnd (t4)
-c 
+c
          orth1 = .true.
          iter  = 0
-c 
+c
          call arscnd (t2)
          if (bmat .eq. 'G') then
             nbx = nbx + 1
@@ -604,17 +604,17 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %----------------------------------%
 c           | Exit in order to compute B*r_{j} |
 c           %----------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
             call dcopy (n, resid, 1, workd(ipj), 1)
          end if
    70    continue
-c 
+c
 c        %---------------------------------------------------%
 c        | Back from reverse communication if ORTH1 = .true. |
 c        | WORKD(IPJ:IPJ+N-1) := B*r_{j}.                    |
@@ -624,14 +624,14 @@ c
             call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
          end if
-c 
+c
          orth1 = .false.
 c
 c        %------------------------------%
 c        | Compute the B-norm of r_{j}. |
 c        %------------------------------%
 c
-         if (bmat .eq. 'G') then         
+         if (bmat .eq. 'G') then
             rnorm = ddot (n, resid, 1, workd(ipj), 1)
             rnorm = sqrt(abs(rnorm))
          else if (bmat .eq. 'I') then
@@ -655,7 +655,7 @@ c        %-----------------------------------------------------------%
 c
          if (rnorm .gt. 0.717*wnorm) go to 100
          nrorth = nrorth + 1
-c 
+c
 c        %---------------------------------------------------%
 c        | Enter the Iterative refinement phase. If further  |
 c        | refinement is necessary, loop back here. The loop |
@@ -668,7 +668,7 @@ c
          if (msglvl .gt. 2) then
             xtemp(1) = wnorm
             xtemp(2) = rnorm
-            call dvout (logfil, 2, xtemp, ndigit, 
+            call dvout (logfil, 2, xtemp, ndigit,
      &           '_saitr: re-orthonalization ; wnorm and rnorm are')
          end if
 c
@@ -677,7 +677,7 @@ c        | Compute V_{j}^T * B * r_{j}.                       |
 c        | WORKD(IRJ:IRJ+J-1) = v(:,1:J)'*WORKD(IPJ:IPJ+N-1). |
 c        %----------------------------------------------------%
 c
-         call dgemv ('T', n, j, one, v, ldv, workd(ipj), 1, 
+         call dgemv ('T', n, j, one, v, ldv, workd(ipj), 1,
      &               zero, workd(irj), 1)
 c
 c        %----------------------------------------------%
@@ -688,12 +688,12 @@ c        | v(:,1:J)*WORKD(IRJ:IRJ+J-1)*e'_j, but only   |
 c        | H(j,j) is updated.                           |
 c        %----------------------------------------------%
 c
-         call dgemv ('N', n, j, -one, v, ldv, workd(irj), 1, 
+         call dgemv ('N', n, j, -one, v, ldv, workd(irj), 1,
      &               one, resid, 1)
 c
          if (j .eq. 1  .or.  rstart) h(j,1) = zero
          h(j,2) = h(j,2) + workd(irj + j - 1)
-c 
+c
          orth2 = .true.
          call arscnd (t2)
          if (bmat .eq. 'G') then
@@ -702,12 +702,12 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %-----------------------------------%
 c           | Exit in order to compute B*r_{j}. |
 c           | r_{j} is the corrected residual.  |
 c           %-----------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
             call dcopy (n, resid, 1, workd(ipj), 1)
@@ -726,8 +726,8 @@ c
 c        %-----------------------------------------------------%
 c        | Compute the B-norm of the corrected residual r_{j}. |
 c        %-----------------------------------------------------%
-c 
-         if (bmat .eq. 'G') then         
+c
+         if (bmat .eq. 'G') then
              rnorm1 = ddot (n, resid, 1, workd(ipj), 1)
              rnorm1 = sqrt(abs(rnorm1))
          else if (bmat .eq. 'I') then
@@ -735,7 +735,7 @@ c
          end if
 c
          if (msglvl .gt. 0 .and. iter .gt. 0) then
-            call ivout (logfil, 1, j, ndigit,
+            call ivout (logfil, 1, [j], ndigit,
      &           '_saitr: Iterative refinement for Arnoldi residual')
             if (msglvl .gt. 2) then
                 xtemp(1) = rnorm
@@ -744,7 +744,7 @@ c
      &           '_saitr: iterative refinement ; rnorm and rnorm1 are')
             end if
          end if
-c 
+c
 c        %-----------------------------------------%
 c        | Determine if we need to perform another |
 c        | step of re-orthogonalization.           |
@@ -757,7 +757,7 @@ c           | No need for further refinement |
 c           %--------------------------------%
 c
             rnorm = rnorm1
-c 
+c
          else
 c
 c           %-------------------------------------------%
@@ -779,7 +779,7 @@ c
   95        continue
             rnorm = zero
          end if
-c 
+c
 c        %----------------------------------------------%
 c        | Branch here directly if iterative refinement |
 c        | wasn't necessary or after at most NITER_REF  |
@@ -787,13 +787,13 @@ c        | steps of iterative refinement.               |
 c        %----------------------------------------------%
 c
   100    continue
-c 
+c
          rstart = .false.
          orth2  = .false.
-c 
+c
          call arscnd (t5)
          titref = titref + (t5 - t4)
-c 
+c
 c        %----------------------------------------------------------%
 c        | Make sure the last off-diagonal element is non negative  |
 c        | If not perform a similarity transformation on H(1:j,1:j) |
@@ -802,13 +802,13 @@ c        %----------------------------------------------------------%
 c
          if (h(j,1) .lt. zero) then
             h(j,1) = -h(j,1)
-            if ( j .lt. k+np) then 
+            if ( j .lt. k+np) then
                call dscal(n, -one, v(1,j+1), 1)
             else
                call dscal(n, -one, resid, 1)
             end if
          end if
-c 
+c
 c        %------------------------------------%
 c        | STEP 6: Update  j = j+1;  Continue |
 c        %------------------------------------%
@@ -820,10 +820,10 @@ c
             ido = 99
 c
             if (msglvl .gt. 1) then
-               call dvout (logfil, k+np, h(1,2), ndigit, 
+               call dvout (logfil, k+np, h(1,2), ndigit,
      &         '_saitr: main diagonal of matrix H of step K+NP.')
                if (k+np .gt. 1) then
-               call dvout (logfil, k+np-1, h(2,1), ndigit, 
+               call dvout (logfil, k+np-1, h(2,1), ndigit,
      &         '_saitr: sub diagonal of matrix H of step K+NP.')
                end if
             end if
@@ -836,7 +836,7 @@ c        | Loop back to extend the factorization by another step. |
 c        %--------------------------------------------------------%
 c
       go to 1000
-c 
+c
 c     %---------------------------------------------------------------%
 c     |                                                               |
 c     |  E N D     O F     M A I N     I T E R A T I O N     L O O P  |

@@ -6,21 +6,11 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'CONVERGED',
-    'CONVERR',
-    'INPROGRESS',
     'RootResults',
-    'SIGNERR',
-    'TOMS748Solver',
-    'VALUEERR',
     'bisect',
     'brenth',
     'brentq',
-    'flag_map',
-    'namedtuple',
     'newton',
-    'operator',
-    'results_c',
     'ridder',
     'toms748',
 ]

@@ -3,10 +3,10 @@ from libc.math cimport fabs, exp, floor, isnan, M_PI, NAN, INFINITY
 import cython
 
 from . cimport sf_error
-from ._cephes cimport expm1, poch
 
-cdef extern from 'specfun_wrappers.h':
+cdef extern from 'xsf_wrappers.h':
     double hypU_wrap(double, double, double) nogil
+    double cephes_poch_wrap(double x, double m) nogil
 
 
 @cython.cdivision(True)
@@ -25,6 +25,8 @@ cdef inline double hyperu(double a, double b, double x) noexcept nogil:
             return INFINITY
         else:
             # DLMF 13.2.14-15 and 13.2.19-21
-            return poch(1.0 - b + a, -a)
-
+            return cephes_poch_wrap(1.0 - b + a, -a)
+    if b == 1 and x < 1 and -0.25 < a < 0.3:
+        # DLMF 13.3.7. Fixes gh-15650
+        return (x + 1 + 2*a)*hypU_wrap(a + 1, 1, x) - (a + 1)**2 * hypU_wrap(a + 2, 1, x)
     return hypU_wrap(a, b, x)

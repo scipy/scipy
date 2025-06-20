@@ -44,7 +44,7 @@ int cfill_diag(int n, NCformat *Astore)
     }
     if (fill)
     {
-	nzval_new = complexMalloc(nnz + fill);
+	nzval_new = singlecomplexMalloc(nnz + fill);
 	rowind_new = intMalloc(nnz + fill);
 	fill = 0;
 	for (i = 0; i < n; i++)
@@ -94,7 +94,7 @@ int cdominate(int n, NCformat *Astore)
     }
     if (fill)
     {
-	nzval_new = complexMalloc(nnz + fill);
+	nzval_new = singlecomplexMalloc(nnz + fill);
 	rowind_new = intMalloc(nnz+ fill);
 	fill = 0;
 	for (i = 0; i < n; i++)

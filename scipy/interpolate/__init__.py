@@ -5,13 +5,11 @@ Interpolation (:mod:`scipy.interpolate`)
 
 .. currentmodule:: scipy.interpolate
 
-Sub-package for objects used in interpolation.
+Sub-package for functions and objects used in interpolation.
 
-As listed below, this sub-package contains spline functions and classes,
-1-D and multidimensional (univariate and multivariate)
-interpolation classes, Lagrange and Taylor polynomial interpolators, and
-wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
-and DFITPACK functions.
+See the :ref:`user guide <tutorial-interpolate>` for recommendations on choosing a
+routine, and other usage details.
+
 
 Univariate interpolation
 ========================
@@ -19,50 +17,53 @@ Univariate interpolation
 .. autosummary::
    :toctree: generated/
 
-   interp1d
-   BarycentricInterpolator
-   KroghInterpolator
-   barycentric_interpolate
-   krogh_interpolate
-   pchip_interpolate
-   CubicHermiteSpline
+   make_interp_spline
+   CubicSpline
    PchipInterpolator
    Akima1DInterpolator
-   CubicSpline
+   FloaterHormannInterpolator
+   BarycentricInterpolator
+   KroghInterpolator
+   CubicHermiteSpline
+
+**Low-level data structures for univariate interpolation:**
+
+.. autosummary::
+   :toctree: generated/
+
    PPoly
    BPoly
+   BSpline
 
 
 Multivariate interpolation
 ==========================
 
-Unstructured data:
+**Unstructured data**
 
 .. autosummary::
    :toctree: generated/
 
-   griddata
    LinearNDInterpolator
    NearestNDInterpolator
    CloughTocher2DInterpolator
    RBFInterpolator
-   Rbf
-   interp2d
 
-For data on a grid:
+**For data on a grid:**
 
 .. autosummary::
    :toctree: generated/
 
-   interpn
    RegularGridInterpolator
-   RectBivariateSpline
 
 .. seealso::
 
-    `scipy.ndimage.map_coordinates`
+    `scipy.ndimage.map_coordinates`,
+    :ref:`An example wrapper for map_coordinates <tutorial-interpolate_cartesian-grids>`
 
-Tensor product polynomials:
+
+**Low-level data structures for tensor product polynomials and splines:**
+
 
 .. autosummary::
    :toctree: generated/
@@ -70,18 +71,44 @@ Tensor product polynomials:
    NdPPoly
    NdBSpline
 
-1-D Splines
-===========
+
+1-D spline smoothing and approximation
+======================================
 
 .. autosummary::
    :toctree: generated/
 
-   BSpline
-   make_interp_spline
    make_lsq_spline
    make_smoothing_spline
+   make_splrep
+   make_splprep
+   generate_knots
 
-Functional interface to FITPACK routines:
+Rational Approximation
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+   AAA
+
+
+Interfaces to FITPACK routines for 1D and 2D spline fitting
+===========================================================
+
+This section lists wrappers for `FITPACK <http://www.netlib.org/dierckx/>`__
+functionality for 1D and 2D smoothing splines. In most cases, users are better off
+using higher-level routines listed in previous sections.
+
+
+1D FITPACK splines
+------------------
+
+This package provides two sets of functionally equivalent wrappers: object-oriented and
+functional.
+
+**Functional FITPACK interface:**
+
 
 .. autosummary::
    :toctree: generated/
@@ -96,7 +123,7 @@ Functional interface to FITPACK routines:
    splantider
    insert
 
-Object-oriented FITPACK interface:
+**Object-oriented FITPACK interface:**
 
 .. autosummary::
    :toctree: generated/
@@ -106,11 +133,10 @@ Object-oriented FITPACK interface:
    LSQUnivariateSpline
 
 
+2D FITPACK splines
+------------------
 
-2-D Splines
-===========
-
-For data on a grid:
+**For data on a grid:**
 
 .. autosummary::
    :toctree: generated/
@@ -118,7 +144,7 @@ For data on a grid:
    RectBivariateSpline
    RectSphereBivariateSpline
 
-For unstructured data:
+**For unstructured data (OOP interface):**
 
 .. autosummary::
    :toctree: generated/
@@ -129,13 +155,14 @@ For unstructured data:
    LSQBivariateSpline
    LSQSphereBivariateSpline
 
-Low-level interface to FITPACK functions:
+**For unstructured data (functional interface):**
 
 .. autosummary::
    :toctree: generated/
 
    bisplrep
    bisplev
+
 
 Additional tools
 ================
@@ -147,27 +174,24 @@ Additional tools
    approximate_taylor_polynomial
    pade
 
+   interpn
+   griddata
+   barycentric_interpolate
+   krogh_interpolate
+   pchip_interpolate
+   Rbf
+   interp1d
+   interp2d
+
 .. seealso::
 
    `scipy.ndimage.map_coordinates`,
    `scipy.ndimage.spline_filter`,
-   `scipy.signal.resample`,
-   `scipy.signal.bspline`,
-   `scipy.signal.gauss_spline`,
-   `scipy.signal.qspline1d`,
-   `scipy.signal.cspline1d`,
-   `scipy.signal.qspline1d_eval`,
-   `scipy.signal.cspline1d_eval`,
-   `scipy.signal.qspline2d`,
-   `scipy.signal.cspline2d`.
 
-``pchip`` is an alias of `PchipInterpolator` for backward compatibility
-(should not be used in new code).
-"""
+"""  # noqa: E501
 from ._interpolate import *
 from ._fitpack_py import *
 
-# New interface to fitpack library:
 from ._fitpack2 import *
 
 from ._rbf import Rbf
@@ -181,6 +205,7 @@ from ._cubic import *
 from ._ndgriddata import *
 
 from ._bsplines import *
+from ._fitpack_repro import generate_knots, make_splrep, make_splprep
 
 from ._pade import *
 
@@ -188,8 +213,10 @@ from ._rgi import *
 
 from ._ndbspline import NdBSpline
 
+from ._bary_rational import *
+
 # Deprecated namespaces, to be removed in v2.0.0
-from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf, interpnd
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

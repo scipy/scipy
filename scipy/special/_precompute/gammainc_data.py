@@ -36,7 +36,7 @@ def gammainc(a, x, dps=50, maxterms=10**8):
 
     mpmath/functions/expintegrals.py#L134
 
-    in the mpmath github repository.
+    in the mpmath GitHub repository.
 
     """
     with mp.workdps(dps):
@@ -58,7 +58,7 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
 
     mpmath/functions/expintegrals.py#L187
 
-    in the mpmath github repository.
+    in the mpmath GitHub repository.
 
     """
     with mp.workdps(dps):

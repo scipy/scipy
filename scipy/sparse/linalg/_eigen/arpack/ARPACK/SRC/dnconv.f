@@ -3,7 +3,7 @@ c\BeginDoc
 c
 c\Name: dnconv
 c
-c\Description: 
+c\Description:
 c  Convergence testing for the nonsymmetric Arnoldi eigenvalue routine.
 c
 c\Usage:
@@ -44,16 +44,16 @@ c     dlapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
-c     Richard Lehoucq              CRPC / Rice University 
+c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
-c     Applied Mathematics 
-c     Rice University           
-c     Houston, Texas    
+c     Applied Mathematics
+c     Rice University
+c     Houston, Texas
 c
 c\Revision history:
 c     xx/xx/92: Version ' 2.1'
 c
-c\SCCS Information: @(#) 
+c\SCCS Information: @(#)
 c FILE: nconv.F   SID: 2.3   DATE OF SID: 4/20/96   RELEASE: 2
 c
 c\Remarks
@@ -106,7 +106,7 @@ c
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
-c 
+c
 c     %-------------------------------------------------------------%
 c     | Convergence test: unlike in the symmetric code, I am not    |
 c     | using things like refined error bounds and gap condition    |
@@ -133,10 +133,10 @@ c
          temp = max( eps23, dlapy2( ritzr(i), ritzi(i) ) )
          if (bounds(i) .le. tol*temp)   nconv = nconv + 1
    20 continue
-c 
+c
       call arscnd (t1)
       tnconv = tnconv + (t1 - t0)
-c 
+c
       return
 c
 c     %---------------%

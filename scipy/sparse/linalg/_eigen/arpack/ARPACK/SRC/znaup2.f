@@ -26,7 +26,7 @@ c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.
 c          If ISHIFT=0, NP is the number of shifts the user needs
-c          to provide via reverse comunication. 0 < NP < NCV-NEV.
+c          to provide via reverse communication. 0 < NP < NCV-NEV.
 c          NP may be less than NCV-NEV since a leading block of the current
 c          upper Hessenberg matrix has split off and contains "unwanted"
 c          Ritz values.
@@ -142,7 +142,7 @@ c     dvout    ARPACK utility routine that prints vectors.
 c     dlamch   LAPACK routine that determines machine constants.
 c     dlapy2   LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     zcopy    Level 1 BLAS that copies one vector to another .
-c     wzdotc    Level 1 BLAS that computes the scalar product of two vectors.
+c     zdotc    Level 1 BLAS that computes the scalar product of two vectors.
 c     zswap    Level 1 BLAS that swaps two vectors.
 c     dznrm2   Level 1 BLAS that computes the norm of a vector.
 c
@@ -247,16 +247,16 @@ c     | External functions |
 c     %--------------------%
 c
       Complex*16
-     &           wzdotc
+     &           zzdotc
       Double precision
      &           dznrm2 , dlamch , dlapy2
-      external   wzdotc , dznrm2 , dlamch , dlapy2
+      external   zzdotc , dznrm2 , dlamch , dlapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
 c     %---------------------%
 c
-      intrinsic  dimag , dble , min, max
+      intrinsic  aimag , dble , min, max
 c
 c     %-----------------------%
 c     | Executable Statements |
@@ -389,7 +389,7 @@ c
          iter = iter + 1
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, iter, ndigit,
+            call ivout (logfil, 1, [iter], ndigit,
      &           '_naup2: **** Start of major iteration number ****')
          end if
 c
@@ -402,9 +402,9 @@ c
          np  = kplusp - nev
 c
          if (msglvl .gt. 1) then
-            call ivout (logfil, 1, nev, ndigit,
+            call ivout (logfil, 1, [nev], ndigit,
      &     '_naup2: The length of the current Arnoldi factorization')
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &           '_naup2: Extend the Arnoldi factorization by')
          end if
 c
@@ -430,7 +430,7 @@ c
          update = .false.
 c
          if (msglvl .gt. 1) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &           '_naup2: Corresponding B-norm of the residual')
          end if
 c
@@ -489,8 +489,8 @@ c
 c
          do 25 i = 1, nev
             rtemp = max( eps23, dlapy2 ( dble (ritz(np+i)),
-     &                                  dimag (ritz(np+i)) ) )
-            if ( dlapy2 (dble (bounds(np+i)),dimag (bounds(np+i)))
+     &                                  aimag (ritz(np+i)) ) )
+            if ( dlapy2 (dble (bounds(np+i)),aimag (bounds(np+i)))
      &                 .le. tol*rtemp ) then
                nconv = nconv + 1
             end if
@@ -550,7 +550,7 @@ c           |  Use h( 3,1 ) as storage to communicate  |
 c           |  rnorm to zneupd  if needed               |
 c           %------------------------------------------%
 
-            h(3,1) = dcmplx (rnorm,rzero)
+            h(3,1) = cmplx (rnorm,rzero,Kind=Kind(0d0))
 c
 c           %----------------------------------------------%
 c           | Sort Ritz values so that converged Ritz      |
@@ -575,7 +575,7 @@ c           %--------------------------------------------------%
 c
             do 35 j = 1, nev0
                 rtemp = max( eps23, dlapy2 ( dble (ritz(j)),
-     &                                       dimag (ritz(j)) ) )
+     &                                       aimag (ritz(j)) ) )
                 bounds(j) = bounds(j)/rtemp
  35         continue
 c
@@ -596,7 +596,7 @@ c           %----------------------------------------------%
 c
             do 40 j = 1, nev0
                 rtemp = max( eps23, dlapy2 ( dble (ritz(j)),
-     &                                       dimag (ritz(j)) ) )
+     &                                       aimag (ritz(j)) ) )
                 bounds(j) = bounds(j)*rtemp
  40         continue
 c
@@ -658,7 +658,7 @@ c
          end if
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, nconv, ndigit,
+            call ivout (logfil, 1, [nconv], ndigit,
      &           '_naup2: no. of "converged" Ritz values at this iter.')
             if (msglvl .gt. 1) then
                kp(1) = nev
@@ -698,7 +698,7 @@ c
          end if
 c
          if (msglvl .gt. 2) then
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &                  '_naup2: The number of shifts to apply ')
             call zvout  (logfil, np, ritz, ndigit,
      &                  '_naup2: values of the shifts')
@@ -754,15 +754,15 @@ c
          end if
 c
          if (bmat .eq. 'G') then
-            cmpnorm = wzdotc  (n, resid, 1, workd, 1)
-            rnorm = sqrt(dlapy2 (dble (cmpnorm),dimag (cmpnorm)))
+            cmpnorm = zzdotc  (n, resid, 1, workd, 1)
+            rnorm = sqrt(dlapy2 (dble (cmpnorm),aimag (cmpnorm)))
          else if (bmat .eq. 'I') then
             rnorm = dznrm2 (n, resid, 1)
          end if
          cnorm = .false.
 c
          if (msglvl .gt. 2) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &      '_naup2: B-norm of residual for compressed factorization')
             call zmout  (logfil, nev, nev, h, ldh, ndigit,
      &        '_naup2: Compressed upper Hessenberg matrix H')

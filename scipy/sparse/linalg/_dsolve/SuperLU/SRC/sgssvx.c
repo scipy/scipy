@@ -243,7 +243,7 @@ at the top-level directory.
  *         to hold data structures for factors L and U.
  *         On exit, if fact is not 'F', L and U point to this array.
  *
- * lwork   (input) int
+ * lwork   (input) int_t
  *         Specifies the size of work array in bytes.
  *         = 0:  allocate space internally by system malloc;
  *         > 0:  use user-supplied work array of length lwork in bytes,
@@ -324,7 +324,7 @@ at the top-level directory.
  * mem_usage (output) mem_usage_t*
  *         Record the memory usage statistics, consisting of following fields:
  *         - for_lu (float)
- *           The amount of space used in bytes for L\\U data structures.
+ *           The amount of space used in bytes for L\U data structures.
  *         - total_needed (float)
  *           The amount of space needed in bytes to perform factorization.
  *         - expansions (int)
@@ -361,7 +361,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
        float *rcond, float *ferr, float *berr, 
        GlobalLU_t *Glu, mem_usage_t *mem_usage, SuperLUStat_t *stat, int_t *info )
 {
-
 
     DNformat  *Bstore, *Xstore;
     float    *Bmat, *Xmat;
@@ -409,13 +408,13 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
 #endif
 
     /* Test the input parameters */
-    if (options->Fact != DOFACT && options->Fact != SamePattern &&
-	options->Fact != SamePattern_SameRowPerm &&
-	options->Fact != FACTORED &&
-	options->Trans != NOTRANS && options->Trans != TRANS && 
-	options->Trans != CONJ &&
-	options->Equil != NO && options->Equil != YES)
-	*info = -1;
+    if ( (options->Fact != DOFACT && options->Fact != SamePattern &&
+	  options->Fact != SamePattern_SameRowPerm &&
+	  options->Fact != FACTORED) || 
+	 (options->Trans != NOTRANS && options->Trans != TRANS && 
+	  options->Trans != CONJ) ||
+	 (options->Equil != NO && options->Equil != YES) )
+	 *info = -1;
     else if ( A->nrow != A->ncol || A->nrow < 0 ||
 	      (A->Stype != SLU_NC && A->Stype != SLU_NR) ||
 	      A->Dtype != SLU_S || A->Mtype != SLU_GE )

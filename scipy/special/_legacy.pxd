@@ -11,13 +11,25 @@ from libc.math cimport isnan, isinf, NAN
 
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
-from .sph_harm cimport sph_harmonic
-from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
-                       nbdtr, nbdtri, pdtri, kn, yn,
-                       smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
-cdef extern from "amos_wrappers.h":
-    double cbesk_wrap_real_int(int n, double z) nogil
+cdef extern from "xsf_wrappers.h" nogil:
+    double cephes_bdtrc_wrap(double k, int n, double p)
+    double cephes_bdtr_wrap(double k, int n, double p)
+    double cephes_bdtri_wrap(double k, int n, double y)
+    double cephes_expn_wrap(int n, double x)
+    double cephes_nbdtrc_wrap(int k, int n, double p)
+    double cephes_nbdtr_wrap(int k, int n, double p)
+    double cephes_nbdtri_wrap(int k, int n, double p)
+    double cephes_pdtri_wrap(int k, double y)
+    double cephes_yn_wrap(int n, double x)
+    double cephes_smirnov_wrap(int n, double x)
+    double cephes_smirnovc_wrap(int n, double x)
+    double cephes_smirnovi_wrap(int n, double x)
+    double cephes_smirnovci_wrap(int n, double x)
+    double cephes_smirnovp_wrap(int n, double x)
+
+cdef extern from "xsf_wrappers.h":
+    double special_cyl_bessel_k_int(int n, double z) nogil
 
 cdef extern from "Python.h":
     # Purposefully ignore the raised PyError --- assume the ufunc will collect it
@@ -36,13 +48,6 @@ cdef inline void _legacy_deprecation(char *func_name, double x, double y) noexce
                                "non-integer arg n is deprecated, removed in SciPy 1.7.x",
                                1)
 
-cdef inline double complex sph_harmonic_unsafe(double m, double n,
-                                               double theta, double phi) noexcept nogil:
-    if isnan(m) or isnan(n):
-        return NAN
-    _legacy_cast_check("sph_harm", m, n)
-    return sph_harmonic(<int>m, <int> n, theta, phi)
-
 cdef inline double ellip_harmonic_unsafe(double h2, double k2, double n,
                                          double p, double l, double signm,
                                          double signn) noexcept nogil:
@@ -56,90 +61,90 @@ cdef inline double bdtr_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtr(k, <int>n, p)
+        return cephes_bdtr_wrap(k, <int>n, p)
 
 cdef inline double bdtrc_unsafe(double k, double n, double p) noexcept nogil:
     _legacy_deprecation("bdtrc", k, n)
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtrc(k, <int>n, p)
+        return cephes_bdtrc_wrap(k, <int>n, p)
 
 cdef inline double bdtri_unsafe(double k, double n, double p) noexcept nogil:
     _legacy_deprecation("bdtri", k, n)
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtri(k, <int>n, p)
+        return cephes_bdtri_wrap(k, <int>n, p)
 
 cdef inline double expn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("expn", n, 0)
-    return expn(<int>n, x)
+    return cephes_expn_wrap(<int>n, x)
 
 cdef inline double nbdtrc_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(k) or isnan(n):
         return NAN
     _legacy_cast_check("nbdtrc", k, n)
-    return nbdtrc(<int>k, <int>n, p)
+    return cephes_nbdtrc_wrap(<int>k, <int>n, p)
 
 cdef inline double nbdtr_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(k) or isnan(n):
         return NAN
     _legacy_cast_check("nbdtr", k, n)
-    return nbdtr(<int>k, <int>n, p)
+    return cephes_nbdtr_wrap(<int>k, <int>n, p)
 
 cdef inline double nbdtri_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(k) or isnan(n):
         return NAN
     _legacy_cast_check("nbdtri", k, n)
-    return nbdtri(<int>k, <int>n, p)
+    return cephes_nbdtri_wrap(<int>k, <int>n, p)
 
 cdef inline double pdtri_unsafe(double k, double y) noexcept nogil:
     if isnan(k):
         return k
     _legacy_cast_check("pdtri", k, 0)
-    return pdtri(<int>k, y)
+    return cephes_pdtri_wrap(<int>k, y)
 
 cdef inline double kn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("kn", n, 0)
-    return cbesk_wrap_real_int(<int>n, x)
+    return special_cyl_bessel_k_int(<int>n, x)
 
 cdef inline double yn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("yn", n, 0)
-    return yn(<int>n, x)
+    return cephes_yn_wrap(<int>n, x)
 
 cdef inline double smirnov_unsafe(double n, double e) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("smirnov", n, 0)
-    return smirnov(<int>n, e)
+    return cephes_smirnov_wrap(<int>n, e)
 
 cdef inline double smirnovc_unsafe(double n, double e) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("smirnovc", n, 0)
-    return smirnovc(<int>n, e)
+    return cephes_smirnovc_wrap(<int>n, e)
 
 cdef inline double smirnovp_unsafe(double n, double e) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("smirnovp", n, 0)
-    return smirnovp(<int>n, e)
+    return cephes_smirnovp_wrap(<int>n, e)
 
 cdef inline double smirnovi_unsafe(double n, double p) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("smirnovi", n, 0)
-    return smirnovi(<int>n, p)
+    return cephes_smirnovi_wrap(<int>n, p)
 
 cdef inline double smirnovci_unsafe(double n, double p) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("smirnovci", n, 0)
-    return smirnovci(<int>n, p)
+    return cephes_smirnovci_wrap(<int>n, p)

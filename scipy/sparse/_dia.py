@@ -11,16 +11,17 @@ from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (
-    isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
+    isdense, isscalarlike, isshape, upcast_char, getdtype, get_sum_dtype,
+    validateaxis, check_shape
 )
-from ._sparsetools import dia_matvec
+from ._sparsetools import dia_matmat, dia_matvec, dia_matvecs
 
 
 class _dia_base(_data_matrix):
     _format = 'dia'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == "dia":
@@ -64,21 +65,24 @@ class _dia_base(_data_matrix):
                     self.offsets = np.atleast_1d(offsets)
                     self._shape = check_shape(shape)
         else:
-            #must be dense, convert to COO first, then to DIA
+            # must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized form for"
-                        " %s_matrix constructor" % self.format) from e
+                raise ValueError("unrecognized form for "
+                                 f"{self.format}_matrix constructor") from e
+            if isinstance(self, sparray) and arg1.ndim != 2:
+                raise ValueError(f"DIA arrays don't support {arg1.ndim}D input. Use 2D")
             A = self._coo_container(arg1, dtype=dtype, shape=shape).todia()
             self.data = A.data
             self.offsets = A.offsets
             self._shape = check_shape(A.shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype)
 
-        #check format
+        # check format
         if self.offsets.ndim != 1:
             raise ValueError('offsets array must have rank 1')
 
@@ -86,21 +90,20 @@ class _dia_base(_data_matrix):
             raise ValueError('data array must have rank 2')
 
         if self.data.shape[0] != len(self.offsets):
-            raise ValueError('number of diagonals (%d) '
-                    'does not match the number of offsets (%d)'
-                    % (self.data.shape[0], len(self.offsets)))
-
+            raise ValueError(
+                f'number of diagonals ({self.data.shape[0]}) does not match the number '
+                f'of offsets ({len(self.offsets)})'
+            )
         if len(np.unique(self.offsets)) != len(self.offsets):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
         _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
-        ndiag = self.data.shape[0]
+        d = self.data.shape[0]
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements ({ndiag} diagonals) in {fmt} format>"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements ({d} diagonals) and shape {self.shape}>"
         )
 
     def _data_mask(self):
@@ -114,37 +117,36 @@ class _dia_base(_data_matrix):
         mask &= (offset_inds < num_cols)
         return mask
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DIA format"
+            )
         mask = self._data_mask()
         return np.count_nonzero(self.data[mask])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def _getnnz(self, axis=None):
         if axis is not None:
             raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DIA format")
-        M,N = self.shape
-        nnz = 0
-        for k in self.offsets:
-            if k > 0:
-                nnz += min(M,N-k)
-            else:
-                nnz += min(M+k,N)
-        return int(nnz)
+        M, N = self.shape
+        L = min(self.data.shape[1], N)
+        return int(np.maximum(np.minimum(M + self.offsets, L) -
+                              np.maximum(self.offsets, 0),
+                              0).sum())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
-        validateaxis(axis)
-
-        if axis is not None and axis < 0:
-            axis += 2
+        axis = validateaxis(axis)
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
         ret = None
 
-        if axis == 0:
+        if axis == (0,):
             mask = self._data_mask()
             x = (self.data * mask).sum(axis=0)
             if x.shape[0] == num_cols:
@@ -154,7 +156,7 @@ class _dia_base(_data_matrix):
                 res[:x.shape[0]] = x
             ret = self._ascontainer(res, dtype=res_dtype)
 
-        else:
+        else:  # axis is None or (1,)
             row_sums = np.zeros((num_rows, 1), dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
@@ -167,38 +169,115 @@ class _dia_base(_data_matrix):
 
             ret = self._ascontainer(row_sums.sum(axis=axis))
 
-        if out is not None and out.shape != ret.shape:
-            raise ValueError("dimensions do not match")
-
         return ret.sum(axis=(), dtype=dtype, out=out)
 
     sum.__doc__ = _spbase.sum.__doc__
 
-    def _add_sparse(self, other):
+    def _add_sparse(self, other, sub=False):
+        # If other is not DIA format, let them handle us instead.
+        if not isinstance(other, _dia_base):
+            return other._add_sparse(self)
 
-        # Check if other is also of type dia_array
-        if not isinstance(other, type(self)):
-            # If other is not of type dia_array, default to
-            # converting to csr_matrix, as is done in the _add_sparse
-            # method of parent class _spbase
-            return self.tocsr()._add_sparse(other)
+        # Fast path for exact equality of the sparsity structure.
+        if np.array_equal(self.offsets, other.offsets):
+            return self._with_data(self.data - other.data if sub else
+                                   self.data + other.data)
 
-        # The task is to compute m = self + other
-        # Start by making a copy of self, of the datatype
-        # that should result from adding self and other
-        dtype = np.promote_types(self.dtype, other.dtype)
-        m = self.astype(dtype, copy=True)
+        # Find the union of the offsets (which will be sorted and unique).
+        new_offsets = np.union1d(self.offsets, other.offsets)
+        self_idx = np.searchsorted(new_offsets, self.offsets)
+        other_idx = np.searchsorted(new_offsets, other.offsets)
 
-        # Then, add all the stored diagonals of other.
-        for d in other.offsets:
-            # Check if the diagonal has already been added.
-            if d in m.offsets:
-                # If the diagonal is already there, we need to take
-                # the sum of the existing and the new
-                m.setdiag(m.diagonal(d) + other.diagonal(d), d)
+        self_d = self.data.shape[1]
+        other_d = other.data.shape[1]
+        # Fast path for a sparsity structure where the final offsets are a
+        # permutation of the existing offsets and the diagonal lengths match.
+        if self_d == other_d and len(new_offsets) == len(self.offsets):
+            new_data = self.data[_invert_index(self_idx)]
+            if sub:
+                new_data[other_idx, :] -= other.data
             else:
-                m.setdiag(other.diagonal(d), d)
-        return m
+                new_data[other_idx, :] += other.data
+        elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            if sub:
+                new_data = -other.data[_invert_index(other_idx)]
+            else:
+                new_data = other.data[_invert_index(other_idx)]
+            new_data[self_idx, :] += self.data
+        else:
+            # Maximum diagonal length of the result.
+            d = min(self.shape[0] + new_offsets[-1], self.shape[1])
+
+            # Add all diagonals to a freshly allocated data array.
+            new_data = np.zeros(
+                (len(new_offsets), d),
+                dtype=np.result_type(self.data, other.data),
+            )
+            new_data[self_idx, :self_d] += self.data[:, :d]
+            if sub:
+                new_data[other_idx, :other_d] -= other.data[:, :d]
+            else:
+                new_data[other_idx, :other_d] += other.data[:, :d]
+        return self._dia_container((new_data, new_offsets), shape=self.shape)
+
+    def _sub_sparse(self, other):
+        # If other is not DIA format, use default handler.
+        if not isinstance(other, _dia_base):
+            return super()._sub_sparse(other)
+
+        return self._add_sparse(other, sub=True)
+
+    def _mul_scalar(self, other):
+        return self._with_data(self.data * other)
+
+    def multiply(self, other):
+        if isscalarlike(other):
+            return self._mul_scalar(other)
+
+        if isdense(other):
+            if other.ndim > 2:
+                return self.toarray() * other
+
+            # Use default handler for pathological cases.
+            if 0 in self.shape or 1 in self.shape or 0 in other.shape:
+                return super().multiply(other)
+
+            other = np.atleast_2d(other)
+            other_rows, other_cols = other.shape
+            rows, cols = self.shape
+            L = min(self.data.shape[1], cols)
+            data = self.data[:, :L].astype(np.result_type(self.data, other))
+            if other_rows == 1:
+                data *= other[0, :L]
+            elif other_rows != rows:
+                raise ValueError('inconsistent shapes')
+            else:
+                j = np.arange(L)
+                if L > rows:
+                    i = (j - self.offsets[:, None]) % rows
+                else:  # can use faster method
+                    i = j - self.offsets[:, None] % rows
+                if other_cols == 1:
+                    j = 0
+                elif other_cols != cols:
+                    raise ValueError('inconsistent shapes')
+                data *= other[i, j]
+            return self._with_data(data)
+
+        # If other is not DIA format or needs broadcasting (unreasonable
+        # use case for DIA anyway), use default handler.
+        if not isinstance(other, _dia_base) or other.shape != self.shape:
+            return super().multiply(other)
+
+        # Find common offsets (unique diagonals don't contribute)
+        # and indices corresponding to them in multiplicand and multiplier.
+        offsets, self_idx, other_idx = \
+            np.intersect1d(self.offsets, other.offsets,
+                           assume_unique=True, return_indices=True)
+        # Only overlapping length of diagonals can have non-zero products.
+        L = min(self.data.shape[1], other.data.shape[1])
+        data = self.data[self_idx, :L] * other.data[other_idx, :L]
+        return self._dia_container((data, offsets), shape=self.shape)
 
     def _matmul_vector(self, other):
         x = other
@@ -214,6 +293,29 @@ class _dia_base(_data_matrix):
                    x.ravel(), y.ravel())
 
         return y
+
+    def _matmul_multivector(self, other):
+        res = np.zeros((self.shape[0], other.shape[1]),
+                       dtype=np.result_type(self.data, other))
+        dia_matvecs(*self.shape, *self.data.shape, self.offsets, self.data,
+                    other.shape[1], other, res)
+        return res
+
+    def _matmul_sparse(self, other):
+        # If other is not DIA format, use default handler.
+        if not isinstance(other, _dia_base):
+            return super()._matmul_sparse(other)
+
+        # If any dimension is zero, return empty array immediately.
+        if 0 in self.shape or 0 in other.shape:
+            return self._dia_container((self.shape[0], other.shape[1]))
+
+        offsets, data = dia_matmat(*self.shape, *self.data.shape,
+                                   self.offsets, self.data,
+                                   other.shape[1], *other.data.shape,
+                                   other.offsets, other.data)
+        return self._dia_container((data.reshape(len(offsets), -1), offsets),
+                                   (self.shape[0], other.shape[1]))
 
     def _setdiag(self, values, k=0):
         M, N = self.shape
@@ -386,6 +488,13 @@ class _dia_base(_data_matrix):
     resize.__doc__ = _spbase.resize.__doc__
 
 
+def _invert_index(idx):
+    """Helper function to invert an index array."""
+    inv = np.zeros_like(idx)
+    inv[idx] = np.arange(len(idx))
+    return inv
+
+
 def isspmatrix_dia(x):
     """Is `x` of dia_matrix type?
 
@@ -453,6 +562,7 @@ class dia_array(_dia_base, sparray):
 
     Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse arrays with DIAgonal storage do not support slicing.
 
     Examples
     --------
@@ -528,6 +638,7 @@ class dia_matrix(spmatrix, _dia_base):
 
     Sparse matrices can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
+    Sparse matrices with DIAgonal storage do not support slicing.
 
     Examples
     --------

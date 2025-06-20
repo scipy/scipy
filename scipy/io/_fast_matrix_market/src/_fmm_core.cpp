@@ -2,6 +2,8 @@
 // Use of this source code is governed by the BSD 2-clause license found in the LICENSE.txt file.
 // SPDX-License-Identifier: BSD-2-Clause
 
+#include "_fmm_core.hpp"
+
 #include <fast_matrix_market/types.hpp>
 #include <cstdint>
 namespace fast_matrix_market {
@@ -15,8 +17,6 @@ namespace fast_matrix_market {
     }
 }
 #include <fast_matrix_market/fast_matrix_market.hpp>
-
-#include "_fmm_core.hpp"
 
 ////////////////////////////////////////////////
 //// Header methods
@@ -175,7 +175,7 @@ void write_header_only(write_cursor& cursor) {
 ////////////////////////////////////////////////
 
 
-PYBIND11_MODULE(_fmm_core, m) {
+PYBIND11_MODULE(_fmm_core, m, py::mod_gil_not_used()) {
     m.doc() = R"pbdoc(
         fast_matrix_market
     )pbdoc";

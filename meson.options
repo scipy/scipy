@@ -1,0 +1,16 @@
+option('blas', type: 'string', value: 'openblas',
+        description: 'option for BLAS library switching')
+option('lapack', type: 'string', value: 'openblas',
+        description: 'option for LAPACK library switching')
+option('use-g77-abi', type: 'boolean', value: false,
+        description: 'If set to true, forces using g77 compatibility wrappers ' +
+                     'for LAPACK functions. The default is to use gfortran ' +
+                     'ABI for all LAPACK libraries except MKL.')
+option('use-pythran', type: 'boolean', value: true,
+        description: 'If set to false, disables using Pythran (it falls back ' +
+                     'to either pure Python code or Cython code, depending on ' +
+                     'the implementation).')
+option('use-system-libraries', type: 'array',
+        choices : ['none', 'all', 'auto', 'boost.math', 'qhull'], value : ['none'],
+        description: 'Choose which system libraries for subprojects ' +
+                     'if they are available.')

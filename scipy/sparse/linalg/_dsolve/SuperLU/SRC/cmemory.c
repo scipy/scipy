@@ -679,13 +679,13 @@ cStackCompress(GlobalLU_t *Glu)
 void
 callocateA(int n, int_t nnz, singlecomplex **a, int_t **asub, int_t **xa)
 {
-    *a    = (singlecomplex *) complexMalloc(nnz);
+    *a    = (singlecomplex *) singlecomplexMalloc(nnz);
     *asub = (int_t *) intMalloc(nnz);
     *xa   = (int_t *) intMalloc(n+1);
 }
 
 
-singlecomplex *complexMalloc(size_t n)
+singlecomplex *singlecomplexMalloc(size_t n)
 {
     singlecomplex *buf;
     buf = (singlecomplex *) SUPERLU_MALLOC(n * (size_t) sizeof(singlecomplex)); 
@@ -695,7 +695,7 @@ singlecomplex *complexMalloc(size_t n)
     return (buf);
 }
 
-singlecomplex *complexCalloc(size_t n)
+singlecomplex *singlecomplexCalloc(size_t n)
 {
     singlecomplex *buf;
     register size_t i;

@@ -32,6 +32,7 @@ d_src = [
 ]
 
 c_src = [
+  'PROPACK/complex8/ccdotc.F',
   'PROPACK/complex8/cblasext.F',
   'PROPACK/complex8/cgemm_ovwr.F',
   'PROPACK/complex8/cgetu0.F',
@@ -52,6 +53,7 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
+  'PROPACK/complex16/zzdotc.f',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
@@ -89,25 +91,20 @@ foreach ele: elements
     ele[1],
     fortran_args: [
       fargs_propack,
-      fortran_ignore_warnings, 
+      fortran_ignore_warnings,
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
       _fflag_fpp,
-    ]
-  )
-
-  propack_module = custom_target('propack_module' + ele[0],
-    output: [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
-    input: ele[2],
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+    ],
+    gnu_symbol_visibility: 'hidden',
   )
 
   propacklib = py3.extension_module(ele[0],
-    propack_module,
-    link_with: [propack_lib, g77_abi_wrappers],
+    f2py_gen.process(ele[2]),
+    link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack, blas, fortranobject_dep],
+    dependencies: [lapack_dep, blas_dep, fortranobject_dep],
     link_args: version_link_args,
     install: true,
     link_language: 'fortran',

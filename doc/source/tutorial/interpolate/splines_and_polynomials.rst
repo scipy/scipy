@@ -51,6 +51,7 @@ Manipulating `PPoly` objects
 and antiderivatives, computing integrals and root-finding. For example, we
 tabulate the sine function and find the roots of its derivative.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import CubicSpline
     >>> x = np.linspace(0, 10, 71)
     >>> y = np.sin(x)
@@ -109,7 +110,7 @@ PCHIP interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
-    >>> y = (1 - m*np.sin(x)**2))**(-1/2)
+    >>> y = (1 - m*np.sin(x)**2)**(-1/2)
     >>> spl = PchipInterpolator(x, y)
 
 and integrate
@@ -198,14 +199,17 @@ of :math:`1, x, \cdots, x^k`.
 B-spline basis elements
 -----------------------
 
+The b-spline basis is used in a variety of applications which include interpolation,
+regression and curve representation.
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
 of usual monomials, :math:`x^m` with :math:`m=0, 1, \dots, k`.
 
-The b-spline basis is generally more computationally stable than the power basis
-and is useful for a variety of applications which include interpolation, regression
-and curve representation. The main feature is that these basis elements are
-*localized* and equal to zero outside of an interval defined by the *knot array*.
+The properties of b-splines are well described in the literature (see, for example,
+references listed in the `BSpline` docstring). For our purposes, it is enough to know
+that a b-spline function is uniquely defined by an array of coefficients and
+an array of the so-called *knots*, which may or may not coincide with the data points,
+``x``.
 
 Specifically, a b-spline basis element of degree ``k`` (e.g. ``k=3`` for cubics)
 is defined by :math:`k+2` knots and is zero outside of these knots.
@@ -259,7 +263,7 @@ at a given evaluation point, thus a design matrix built on b-splines has at most
 As an illustration, we consider a toy example. Suppose our data are
 one-dimensional and are confined to an interval :math:`[0, 6]`.
 We construct a 4-regular knot vector which corresponds to 7 data points and
-cubic, `k=3`, splines:
+cubic, ``k=3``, splines:
 
 >>> t = [0., 0., 0., 0., 2., 3., 4., 6., 6., 6., 6.]
 
@@ -272,8 +276,8 @@ and construct the design matrix in the sparse CSR format
 >>> from scipy.interpolate import BSpline
 >>> mat = BSpline.design_matrix(xnew, t, k=3)
 >>> mat
-<3x7 sparse array of type '<class 'numpy.float64'>'
-	with 12 stored elements in Compressed Sparse Row format>
+<Compressed Sparse Row sparse array of dtype 'float64'
+	with 12 stored elements and shape (3, 7)>
 
 Here each row of the design matrix corresponds to a value in the ``xnew`` array,
 and a row has no more than ``k+1 = 4`` non-zero elements; row ``j``
@@ -285,3 +289,49 @@ contains basis elements evaluated at ``xnew[j]``:
  [0.    0.111 0.556 0.333 0.    0.    0.   ]
  [0.    0.    0.125 0.75  0.125 0.    0.   ]]
 
+
+Bernstein polynomials, ``BPoly``
+================================
+
+For :math:`t \in [0, 1]`, Bernstein basis polynomials of degree :math:`k` are defined via
+
+.. math::
+
+    b(t; k, a) = C_k^a t^a (1-t)^{k - a}
+
+where :math:`C_k^a` is the binomial coefficient, and :math:`a=0, 1, \dots, k`, so that
+there are :math:`k+1` basis polynomials of degree :math:`k`.
+
+A ``BPoly`` object represents a *piecewise* Bernstein polynomial in terms of
+breakpoints, ``x``, and coefficients, ``c``: ``c[a, j]`` gives the coefficient for
+:math:`b(t; k, a)` for ``t`` on the interval between ``x[j]`` and ``x[j+1]``.
+
+The user interface of `BPoly` objects is very similar to that of `PPoly` objects:
+both can be evaluated, differentiated and integrated.
+
+One additional feature of `BPoly` objects is the alternative constructor,
+`BPoly.from_derivatives`, which constructs a `BPoly` object from data values and derivatives.
+Specifically, ``b = BPoly.from_derivatives(x, y)`` returns a callable that interpolates
+the provided values, ``b(x[i]) == y[i])``, and has the provided derivatives,
+``b(x[i], nu=j) == y[i][j]``.
+
+This operation is similar to `CubicHermiteSpline`, but it is more flexible in that
+it can handle varying numbers of derivatives at different data points; i.e., the ``y``
+argument can be a list of arrays of different lengths. See `BPoly.from_derivatives`
+for further discussion and examples.
+
+
+Conversion between bases
+========================
+
+In principle, all three bases for piecewise polynomials (the power basis, the Bernstein
+basis, and b-splines) are equivalent, and a polynomial in one basis can be converted
+into a different basis. One reason for converting between bases is that not all bases
+implement all operations. For instance, root-finding is only implemented for `PPoly`,
+and therefore to find roots of a `BSpline` object, you need to convert to `PPoly` first.
+See methods `PPoly.from_bernstein_basis`, `PPoly.from_spline`,
+`BPoly.from_power_basis`, and `BSpline.from_power_basis` for details about conversion.
+
+In floating-point arithmetic, though, conversions always incur some precision loss.
+Whether this is significant is problem-dependent, so it is therefore recommended to
+exercise caution when converting between bases.

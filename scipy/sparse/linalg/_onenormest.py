@@ -10,7 +10,7 @@ __all__ = ['onenormest']
 
 def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     """
-    Compute a lower bound of the 1-norm of a sparse matrix.
+    Compute a lower bound of the 1-norm of a sparse array.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse array.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator
@@ -68,9 +68,9 @@ def onenormest(A, t=2, itmax=5, compute_v=False, compute_w=False):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import onenormest
-    >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
     >>> A.toarray()
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
@@ -323,7 +323,7 @@ def _algorithm_2_2(A, AT, t):
 
 def _onenormest_core(A, AT, t, itmax):
     """
-    Compute a lower bound of the 1-norm of a sparse matrix.
+    Compute a lower bound of the 1-norm of a sparse array.
 
     Parameters
     ----------
@@ -340,7 +340,7 @@ def _onenormest_core(A, AT, t, itmax):
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse array.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator

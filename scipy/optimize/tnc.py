@@ -6,30 +6,8 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'CONSTANT',
-    'FCONVERGED',
-    'INFEASIBLE',
-    'LOCALMINIMUM',
-    'LSFAIL',
-    'MAXFUN',
-    'MSGS',
-    'MSG_ALL',
-    'MSG_EXIT',
-    'MSG_INFO',
-    'MSG_ITER',
-    'MSG_NONE',
-    'MSG_VERS',
-    'MemoizeJac',
-    'NOPROGRESS',
     'OptimizeResult',
-    'RCSTRINGS',
-    'USERABORT',
-    'XCONVERGED',
-    'array',
     'fmin_tnc',
-    'inf',
-    'moduleTNC',
-    'old_bound_to_new',
     'zeros',
 ]
 

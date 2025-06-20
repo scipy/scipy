@@ -4,10 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'readsav', 'DTYPE_DICT', 'RECTYPE_DICT', 'STRUCT_DICT',
-    'Pointer', 'ObjectPointer', 'AttrDict'
-]
+__all__ = ["readsav"]  # noqa: F822
 
 
 def __dir__():

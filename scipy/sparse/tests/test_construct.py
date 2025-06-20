@@ -7,11 +7,14 @@ from numpy.testing import (assert_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
-from scipy._lib._util import check_random_state
 
 from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
-                          sparray, spmatrix,
+                          csc_array, bsr_array,
+                          dia_array, dok_array,
+                          lil_array, csc_matrix,
+                          bsr_matrix, dia_matrix,
+                          lil_matrix, sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
 
@@ -20,23 +23,51 @@ sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 #TODO check whether format=XXX is respected
 
 
-def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def _sprandn(m, n, density=0.01, format="coo", dtype=None, rng=None):
     # Helper function for testing.
-    random_state = check_random_state(random_state)
-    data_rvs = random_state.standard_normal
-    return construct.random(m, n, density, format, dtype,
-                            random_state, data_rvs)
+    rng = np.random.default_rng(rng)
+    data_rvs = rng.standard_normal
+    return construct.random(m, n, density, format, dtype, rng, data_rvs)
 
 
-def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, rng=None):
     # Helper function for testing.
-    random_state = check_random_state(random_state)
-    data_sampler = random_state.standard_normal
+    rng = np.random.default_rng(rng)
+    data_sampler = rng.standard_normal
     return construct.random_array((m, n), density=density, format=format, dtype=dtype,
-                                  random_state=random_state, data_sampler=data_sampler)
+                                  rng=rng, data_sampler=data_sampler)
 
 
 class TestConstructUtils:
+
+    @pytest.mark.parametrize("cls", [
+        csc_array, csr_array, coo_array, bsr_array,
+        dia_array, dok_array, lil_array
+    ])
+    def test_singleton_array_constructor(self, cls):
+        with pytest.raises(
+            ValueError,
+            match=(
+                'scipy sparse array classes do not support '
+                'instantiation from a scalar'
+            )
+        ):
+            cls(0)
+
+    @pytest.mark.parametrize("cls", [
+        csc_matrix, csr_matrix, coo_matrix,
+        bsr_matrix, dia_matrix, lil_matrix
+    ])
+    def test_singleton_matrix_constructor(self, cls):
+        """
+        This test is for backwards compatibility post scipy 1.13.
+        The behavior observed here is what is to be expected
+        with the older matrix classes. This test comes with the
+        exception of dok_matrix, which was not working pre scipy1.12
+        (unlike the rest of these).
+        """
+        assert cls(0).shape == (1, 1)
+
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
@@ -204,16 +235,16 @@ class TestConstructUtils:
         #    diags([a, b, ...], [i, j, ...]) == diag(a, i) + diag(b, j) + ...
         #
 
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         for n_diags in [1, 2, 3, 4, 5, 10]:
-            n = 1 + n_diags//2 + np.random.randint(0, 10)
+            n = 1 + n_diags//2 + rng.randint(0, 10)
 
             offsets = np.arange(-n+1, n-1)
-            np.random.shuffle(offsets)
+            rng.shuffle(offsets)
             offsets = offsets[:n_diags]
 
-            diagonals = [np.random.rand(n - abs(q)) for q in offsets]
+            diagonals = [rng.rand(n - abs(q)) for q in offsets]
 
             mat = construct.diags(diagonals, offsets=offsets)
             dense_mat = sum([np.diag(x, j) for x, j in zip(diagonals, offsets)])
@@ -356,6 +387,14 @@ class TestConstructUtils:
         assert_array_equal(result.toarray(), expected)
         assert isinstance(result, spmatrix)
 
+    def test_kron_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kron(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kron([[0], [1]], [0, 1])
+
     def test_kron_large(self):
         n = 2**16
         a = construct.diags_array([1], shape=(1, n), offsets=n-1)
@@ -388,6 +427,14 @@ class TestConstructUtils:
         result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
         assert_array_equal(result, expected)
 
+    def test_kronsum_ndim_exceptions(self):
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum([[0], [1]], csr_array([0, 1]))
+        with pytest.raises(ValueError, match='requires 2D input'):
+            construct.kronsum(csr_array([0, 1]), [[0], [1]])
+        # no exception if sparse arrays are not input (spmatrix inferred)
+        construct.kronsum([[0, 1], [1, 0]], [2])
+
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_vstack(self, coo_cls):
         A = coo_cls([[1,2],[3,4]])
@@ -418,6 +465,25 @@ class TestConstructUtils:
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
+    def test_vstack_maintain64bit_idx_dtype(self):
+        # see gh-20389 v/hstack returns int32 idx_dtype with input int64 idx_dtype
+        X = csr_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = csc_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.indptr = X.indptr.astype(np.int64)
+        X.indices = X.indices.astype(np.int64)
+        assert construct.vstack([X, X]).indptr.dtype == np.int64
+        assert construct.hstack([X, X]).indptr.dtype == np.int64
+
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.vstack([X, X]).coords[0].dtype == np.int64
+        assert construct.hstack([X, X]).coords[0].dtype == np.int64
+
     def test_vstack_matrix_or_array(self):
         A = [[1,2],[3,4]]
         B = [[5,6]]
@@ -425,6 +491,29 @@ class TestConstructUtils:
         assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
+
+    def test_vstack_1d_with_2d(self):
+        # fixes gh-21064
+        arr = csr_array([[1, 0, 0], [0, 1, 0]])
+        arr1d = csr_array([1, 0, 0])
+        arr1dcoo = coo_array([1, 0, 0])
+        assert construct.vstack([arr, np.array([0, 0, 0])]).shape == (3, 3)
+        assert construct.hstack([arr1d, np.array([[0]])]).shape == (1, 4)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+        assert construct.vstack([arr1d, arr1d]).shape == (2, 3)
+
+        # check csr specialty stacking code like _stack_along_minor_axis
+        assert construct.hstack([arr, arr]).shape == (2, 6)
+        assert construct.hstack([arr1d, arr1d]).shape == (1, 6)
+
+        assert construct.hstack([arr1d, arr1dcoo]).shape == (1, 6)
+        assert construct.vstack([arr, arr1dcoo]).shape == (3, 3)
+        assert construct.vstack([arr1d, arr1dcoo]).shape == (2, 3)
+
+        with pytest.raises(ValueError, match="incompatible row dimensions"):
+            construct.hstack([arr, np.array([0, 0])])
+        with pytest.raises(ValueError, match="incompatible column dimensions"):
+            construct.vstack([arr, np.array([0, 0])])
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_hstack(self, coo_cls):
@@ -584,7 +673,8 @@ class TestConstructUtils:
         assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
         assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
+    @pytest.mark.thread_unsafe
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
@@ -612,7 +702,14 @@ class TestConstructUtils:
                           [0, 0, 6, 0],
                           [0, 0, 0, 7]])
 
-        assert_equal(construct.block_diag((A, B, C)).toarray(), expected)
+        ABC = construct.block_diag((A, B, C))
+        assert_equal(ABC.toarray(), expected)
+        assert ABC.coords[0].dtype == np.int32
+
+    def test_block_diag_idx_dtype(self):
+        X = coo_array([[1, 0, 0], [0, 1, 0], [0, 1, 0]])
+        X.coords = tuple(co.astype(np.int64) for co in X.coords)
+        assert construct.block_diag([X, X]).coords[0].dtype == np.int64
 
     def test_block_diag_scalar_1d_args(self):
         """ block_diag with scalar and 1d arguments """
@@ -624,7 +721,6 @@ class TestConstructUtils:
         B = coo_array([0,4])
         assert_array_equal(construct.block_diag([A, B]).toarray(),
                            [[1, 0, 3, 0, 0], [0, 0, 0, 0, 4]])
-
 
     def test_block_diag_1(self):
         """ block_diag with one matrix """
@@ -668,11 +764,10 @@ class TestConstructUtils:
                 assert_equal(x.shape, (5, 10))
                 assert_equal(x.nnz, 5)
 
-            x1 = f(5, 10, density=0.1, random_state=4321)
+            x1 = f(5, 10, density=0.1, rng=4321)
             assert_equal(x1.dtype, np.float64)
 
-            x2 = f(5, 10, density=0.1,
-                   random_state=np.random.RandomState(4321))
+            x2 = f(5, 10, density=0.1, rng=np.random.default_rng(4321))
 
             assert_array_equal(x1.data, x2.data)
             assert_array_equal(x1.row, x2.row)
@@ -689,45 +784,48 @@ class TestConstructUtils:
             assert_raises(ValueError, lambda: f(5, 10, 1.1))
             assert_raises(ValueError, lambda: f(5, 10, -0.1))
 
-    def test_rand(self):
+    @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
+    def test_rand(self, rng):
         # Simple distributional checks for sparse.rand.
-        random_states = [None, 4321, np.random.RandomState()]
-        try:
-            gen = np.random.default_rng()
-            random_states.append(gen)
-        except AttributeError:
-            pass
+        x = sprand(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.all(np.less_equal(0, x.data)))
+        assert_(np.all(np.less_equal(x.data, 1)))
 
-        for random_state in random_states:
-            x = sprand(10, 20, density=0.5, dtype=np.float64,
-                       random_state=random_state)
-            assert_(np.all(np.less_equal(0, x.data)))
-            assert_(np.all(np.less_equal(x.data, 1)))
-
-    def test_randn(self):
+    @pytest.mark.parametrize("rng", [None, 4321, np.random.default_rng(4321)])
+    def test_randn(self, rng):
         # Simple distributional checks for sparse.randn.
         # Statistically, some of these should be negative
         # and some should be greater than 1.
-        random_states = [None, 4321, np.random.RandomState()]
-        try:
-            gen = np.random.default_rng()
-            random_states.append(gen)
-        except AttributeError:
-            pass
-
-        for rs in random_states:
-            x = _sprandn(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
-            x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, random_state=rs)
-            assert_(np.any(np.less(x.data, 0)))
-            assert_(np.any(np.less(1, x.data)))
+        x = _sprandn(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
+        x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, rng=rng)
+        assert_(np.any(np.less(x.data, 0)))
+        assert_(np.any(np.less(1, x.data)))
 
     def test_random_accept_str_dtype(self):
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
         construct.random_array((10, 10), dtype='d')
+        construct.random_array((10, 10, 10), dtype='d')
+        construct.random_array((10, 10, 10, 10, 10), dtype='d')
+
+    def test_random_array_maintains_array_shape(self):
+        # preserve use of old random_state during SPEC 7 transition
+        arr = construct.random_array((0, 4), density=0.3, dtype=int, random_state=0)
+        assert arr.shape == (0, 4)
+
+        arr = construct.random_array((10, 10, 10), density=0.3, dtype=int, rng=0)
+        assert arr.shape == (10, 10, 10)
+
+        arr = construct.random_array((10, 10, 10, 10, 10), density=0.3, dtype=int,
+                                     rng=0)
+        assert arr.shape == (10, 10, 10, 10, 10)
+
+    def test_random_array_idx_dtype(self):
+        A = construct.random_array((10, 10))
+        assert A.coords[0].dtype == np.int32
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
@@ -742,6 +840,16 @@ class TestConstructUtils:
         shape = (2**33, 2**33)
         sparse_array = construct.random_array(shape, density=2.7105e-17)
         assert_equal(sparse_array.count_nonzero(),2000)
+
+        # for n-D
+        # check random_array
+        sparse_array = construct.random_array((10, 10, 10, 10), density=0.12658)
+        assert_equal(sparse_array.count_nonzero(),1266)
+        assert isinstance(sparse_array, sparray)
+        # check big size
+        shape = (2**33, 2**33, 2**33)
+        sparse_array = construct.random_array(shape, density=2.7105e-28)
+        assert_equal(sparse_array.count_nonzero(),172)
 
 
 def test_diags_array():

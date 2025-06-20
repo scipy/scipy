@@ -15,6 +15,32 @@
 
 namespace {
 
+template <typename T>
+class immortal {
+    alignas(T) std::byte storage[sizeof(T)];
+
+public:
+    template <typename... Args>
+    immortal(Args&&... args) {
+       // Construct new T in storage
+       new(&storage) T(std::forward<Args>(args)...);
+    }
+    ~immortal() {
+        // Intentionally don't call destructor
+    }
+
+    T* get() { return reinterpret_cast<T*>(&storage); }
+    const T* get() const { return reinterpret_cast<const T*>(&storage); }
+    const T* get_const() const { return reinterpret_cast<const T*>(&storage); }
+
+    const T* operator ->() const { return get(); }
+    T* operator ->() { return get(); }
+
+    T& operator*() { return *get(); }
+    const T& operator*() const { return *get(); }
+
+};
+
 /** Handle to a python object that automatically DECREFs */
 class py_ref {
   explicit py_ref(PyObject * object): obj_(object) {}
@@ -129,8 +155,8 @@ using global_state_t = std::unordered_map<std::string, global_backends>;
 using local_state_t = std::unordered_map<std::string, local_backends>;
 
 static py_ref BackendNotImplementedError;
-static global_state_t global_domain_map;
-thread_local global_state_t * current_global_state = &global_domain_map;
+static immortal<global_state_t> global_domain_map;
+thread_local global_state_t * current_global_state = global_domain_map.get();
 thread_local global_state_t thread_local_domain_map;
 thread_local local_state_t local_domain_map;
 
@@ -140,30 +166,30 @@ Using these with PyObject_GetAttr is faster than PyObject_GetAttrString which
 has to create a new python string internally.
  */
 struct {
-  py_ref ua_convert;
-  py_ref ua_domain;
-  py_ref ua_function;
+  immortal<py_ref> ua_convert;
+  immortal<py_ref> ua_domain;
+  immortal<py_ref> ua_function;
 
   bool init() {
-    ua_convert = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
-    if (!ua_convert)
+    *ua_convert = py_ref::steal(PyUnicode_InternFromString("__ua_convert__"));
+    if (!*ua_convert)
       return false;
 
-    ua_domain = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
-    if (!ua_domain)
+    *ua_domain = py_ref::steal(PyUnicode_InternFromString("__ua_domain__"));
+    if (!*ua_domain)
       return false;
 
-    ua_function = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
-    if (!ua_function)
+    *ua_function = py_ref::steal(PyUnicode_InternFromString("__ua_function__"));
+    if (!*ua_function)
       return false;
 
     return true;
   }
 
   void clear() {
-    ua_convert.reset();
-    ua_domain.reset();
-    ua_function.reset();
+    ua_convert->reset();
+    ua_domain->reset();
+    ua_function->reset();
   }
 } identifiers;
 
@@ -202,7 +228,7 @@ std::string domain_to_string(PyObject * domain) {
 
 Py_ssize_t backend_get_num_domains(PyObject * backend) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return -1;
 
@@ -225,7 +251,7 @@ enum class LoopReturn { Continue, Break, Error };
 template <typename Func>
 LoopReturn backend_for_each_domain(PyObject * backend, Func f) {
   auto domain =
-      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain.get()));
+      py_ref::steal(PyObject_GetAttr(backend, identifiers.ua_domain->get()));
   if (!domain)
     return LoopReturn::Error;
 
@@ -537,7 +563,7 @@ struct BackendState {
 
 /** Clean up global python references when the module is finalized. */
 void globals_free(void * /* self */) {
-  global_domain_map.clear();
+  global_domain_map->clear();
   BackendNotImplementedError.reset();
   identifiers.clear();
 }
@@ -550,7 +576,7 @@ void globals_free(void * /* self */) {
  * cleanup.
  */
 int globals_traverse(PyObject * self, visitproc visit, void * arg) {
-  for (const auto & kv : global_domain_map) {
+  for (const auto & kv : *global_domain_map) {
     const auto & globals = kv.second;
     PyObject * backend = globals.global.backend.get();
     Py_VISIT(backend);
@@ -563,7 +589,7 @@ int globals_traverse(PyObject * self, visitproc visit, void * arg) {
 }
 
 int globals_clear(PyObject * /* self */) {
-  global_domain_map.clear();
+  global_domain_map->clear();
   return 0;
 }
 
@@ -1170,7 +1196,7 @@ py_ref Function::canonicalize_kwargs(PyObject * kwargs) {
 
 py_func_args Function::replace_dispatchables(
     PyObject * backend, PyObject * args, PyObject * kwargs, PyObject * coerce) {
-  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert.get());
+  auto has_ua_convert = PyObject_HasAttr(backend, identifiers.ua_convert->get());
   if (!has_ua_convert) {
     return {py_ref::ref(args), py_ref::ref(kwargs)};
   }
@@ -1182,7 +1208,7 @@ py_func_args Function::replace_dispatchables(
 
   PyObject * convert_args[] = {backend, dispatchables.get(), coerce};
   auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-      identifiers.ua_convert.get(), convert_args,
+      identifiers.ua_convert->get(), convert_args,
       array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
   if (!res) {
     return {};
@@ -1287,7 +1313,7 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
             backend, reinterpret_cast<PyObject *>(this), new_args.args.get(),
             new_args.kwargs.get()};
         result = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_function.get(), args,
+            identifiers.ua_function->get(), args,
             array_size(args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
 
         // raise BackendNotImplemeted is equivalent to return NotImplemented
@@ -1499,7 +1525,7 @@ PyObject * get_state(PyObject * /* self */, PyObject * /* args */) {
 
   output->locals = local_domain_map;
   output->use_thread_local_globals =
-      (current_global_state != &global_domain_map);
+      (current_global_state != global_domain_map.get());
   output->globals = *current_global_state;
 
   return ref.release();
@@ -1523,7 +1549,7 @@ PyObject * set_state(PyObject * /* self */, PyObject * args) {
   bool use_thread_local_globals =
       (!reset_allowed) || state->use_thread_local_globals;
   current_global_state =
-      use_thread_local_globals ? &thread_local_domain_map : &global_domain_map;
+      use_thread_local_globals ? &thread_local_domain_map : global_domain_map.get();
 
   if (use_thread_local_globals)
     thread_local_domain_map = state->globals;
@@ -1554,7 +1580,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
   auto result = for_each_backend_in_domain(
       domain, [&](PyObject * backend, bool coerce_backend) {
         auto has_ua_convert =
-            PyObject_HasAttr(backend, identifiers.ua_convert.get());
+            PyObject_HasAttr(backend, identifiers.ua_convert->get());
 
         if (!has_ua_convert) {
           // If no __ua_convert__, assume it won't accept the type
@@ -1566,7 +1592,7 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
             (coerce && coerce_backend) ? Py_True : Py_False};
 
         auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
-            identifiers.ua_convert.get(), convert_args,
+            identifiers.ua_convert->get(), convert_args,
             array_size(convert_args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET,
             nullptr));
         if (!res) {
@@ -1817,6 +1843,10 @@ PyMODINIT_FUNC PyInit__uarray(void) {
 
   if (!identifiers.init())
     return nullptr;
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(m.get(), Py_MOD_GIL_NOT_USED);
+#endif
 
   return m.release();
 }

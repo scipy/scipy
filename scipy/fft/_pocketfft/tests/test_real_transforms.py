@@ -1,5 +1,6 @@
 from os.path import join, dirname
-from typing import Callable, Union
+from collections.abc import Callable
+from threading import Lock
 
 import numpy as np
 from numpy.testing import (
@@ -29,8 +30,8 @@ def is_longdouble_binary_compatible():
 def reference_data():
     # Matlab reference data
     MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
-    X = [MDATA['x%d' % i] for i in range(MDATA_COUNT)]
-    Y = [MDATA['y%d' % i] for i in range(MDATA_COUNT)]
+    X = [MDATA[f'x{i}'] for i in range(MDATA_COUNT)]
+    Y = [MDATA[f'y{i}'] for i in range(MDATA_COUNT)]
 
     # FFTW reference data: the data are organized as follows:
     #    * SIZES is an array containing all available sizes
@@ -83,6 +84,11 @@ def mdata_xy(request, reference_data):
     return x, y
 
 
+@pytest.fixture
+def ref_lock():
+    return Lock()
+
+
 def fftw_dct_ref(type, size, dt, reference_data):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
@@ -94,7 +100,7 @@ def fftw_dct_ref(type, size, dt, reference_data):
         data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
-    y = (data['dct_%d_%d' % (type, size)]).astype(dt)
+    y = (data[f'dct_{type}_{size}']).astype(dt)
     return x, y, dt
 
 
@@ -109,7 +115,7 @@ def fftw_dst_ref(type, size, dt, reference_data):
         data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
-    y = (data['dst_%d_%d' % (type, size)]).astype(dt)
+    y = (data[f'dst_{type}_{size}']).astype(dt)
     return x, y, dt
 
 
@@ -197,7 +203,7 @@ def test_complex(transform, dtype):
 
 
 DecMapType = dict[
-    tuple[Callable[..., np.ndarray], Union[type[np.floating], type[int]], int],
+    tuple[Callable[..., np.ndarray], type[np.floating] | type[int], int],
     int,
 ]
 
@@ -266,8 +272,10 @@ for k,v in dec_map.copy().items():
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 class TestDCT:
-    def test_definition(self, rdt, type, fftwdata_size, reference_data):
-        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
+    def test_definition(self, rdt, type, fftwdata_size,
+                        reference_data, ref_lock):
+        with ref_lock:
+            x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
         y = dct(x, type=type)
         assert_equal(y.dtype, dt)
         dec = dec_map[(dct, rdt, type)]
@@ -341,8 +349,9 @@ def test_dct4_definition_ortho(mdata_x, rdt):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idct_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
+def test_idct_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
     x = idct(yr, type=type)
     dec = dec_map[(idct, rdt, type)]
     assert_equal(x.dtype, dt)
@@ -351,8 +360,9 @@ def test_idct_definition(fftwdata_size, rdt, type, reference_data):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
+def test_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     y = dst(xr, type=type)
     dec = dec_map[(dst, rdt, type)]
     assert_equal(y.dtype, dt)
@@ -385,8 +395,9 @@ def test_dst4_definition_ortho(rdt, mdata_x):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idst_definition(fftwdata_size, rdt, type, reference_data):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
+def test_idst_definition(fftwdata_size, rdt, type, reference_data, ref_lock):
+    with ref_lock:
+        xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     x = idst(yr, type=type)
     dec = dec_map[(idst, rdt, type)]
     assert_equal(x.dtype, dt)
@@ -412,10 +423,10 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
     x2 = x.copy()
     routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
 
-    sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
-        routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
+    sig = (f"{routine.__name__}({x.dtype}{x.shape!r}, {None!r}, axis={axis!r}, "
+           f"overwrite_x={overwrite_x!r})")
     if not overwrite_x:
-        assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
+        assert_equal(x2, x, err_msg=f"spurious overwrite in {sig}")
 
 
 class Test_DCTN_IDCTN:

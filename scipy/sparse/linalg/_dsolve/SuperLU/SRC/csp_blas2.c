@@ -125,7 +125,7 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     Uval = Ustore->nzval;
     solve_ops = 0;
 
-    if ( !(work = complexCalloc(L->nrow)) )
+    if ( !(work = singlecomplexCalloc(L->nrow)) )
 	ABORT("Malloc fails for work in sp_ctrsv().");
     
     if ( strncmp(trans, "N", 1)==0 ) {	/* Form x := inv(A)*x. */

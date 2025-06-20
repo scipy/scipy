@@ -10,11 +10,11 @@
 
   Author: Hans Dembinski
 */
-
-
-#include "_rcont.h"
-#include "logfactorial.h"
 #include <math.h>
+#include <stdbool.h>
+
+#include "logfactorial.h"
+#include "_rcont.h"
 
 // helper function to access a 1D array like a C-style 2D array
 tab_t *ptr(tab_t *m, int nr, int nc, int ir, int ic)

@@ -57,8 +57,8 @@ class Arithmetic(Benchmark):
     ]
 
     def setup(self, format, XY, op):
-        matrices = dict(A=poisson2d(250, format=format),
-                        B=poisson2d(250, format=format)**2)
+        matrices = dict(A=poisson2d(250, format=format))
+        matrices['B'] = (matrices['A']**2).asformat(format)
 
         x = matrices[XY[0]]
         self.y = matrices[XY[1]]
@@ -206,14 +206,17 @@ class BlockDiagDenseConstruction(Benchmark):
 
 class BlockDiagSparseConstruction(Benchmark):
     param_names = ['num_matrices']
-    params = [100, 500, 1000, 1500, 2000]
+    params = [1000, 5000, 10000, 15000, 20000]
 
     def setup(self, num_matrices):
         self.matrices = []
         for i in range(num_matrices):
             rows = np.random.randint(1, 20)
             columns = np.random.randint(1, 20)
-            mat = np.random.randint(0, 10, (rows, columns))
+            density = 2e-3
+            nnz_per_row = int(density*columns)
+
+            mat = random_sparse(rows, columns, nnz_per_row)
             self.matrices.append(mat)
 
     def time_block_diag(self, num_matrices):
@@ -504,3 +507,18 @@ class Random(Benchmark):
     def time_rand(self, density):
         sparse.rand(self.nrows, self.ncols,
                     format=self.format, density=density)
+
+
+class Argmax(Benchmark):
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo'], [True, False]]
+    param_names = ['density', 'format', 'explicit']
+
+    def setup(self, density, format, explicit):
+        n = 1000
+
+        warnings.simplefilter('ignore', SparseEfficiencyWarning)
+
+        self.X = sparse.rand(n, n, format=format, density=density)
+
+    def time_argmax(self, density, format, explicit):
+        self.X.argmax(explicit=explicit)

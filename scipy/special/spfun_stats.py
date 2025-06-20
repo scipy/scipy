@@ -4,7 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = ['multigammaln', 'loggam']  # noqa: F822
+__all__ = ['multigammaln']  # noqa: F822
 
 
 def __dir__():

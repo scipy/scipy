@@ -12,6 +12,8 @@ class _FakeMatrix2:
         self._data = data
 
     def __array__(self, dtype=None, copy=None):
+        if copy:
+            return self._data.copy()
         return self._data
 
 

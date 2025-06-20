@@ -541,7 +541,7 @@ def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
                 "problem terminated successfully with a residual of {0:.1e}, "
                 "greater than the tolerance {1} required for the solution to "
                 "be considered feasible. Consider increasing the tolerance to "
-                "be greater than {0:.1e}. If this tolerance is unnaceptably "
+                "be greater than {0:.1e}. If this tolerance is unacceptably "
                 "large, the problem is likely infeasible.",
                 "The problem is unbounded, as the simplex algorithm found "
                 "a basic feasible solution from which there is a direction "

@@ -60,7 +60,7 @@ DEF _N_MXS = 20
 from . cimport _streams
 from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab._mio5_params as mio5p
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 
 
 cdef enum:
@@ -645,7 +645,7 @@ cdef class VarReader5:
 
         Returns
         -------
-        arr : ndarray or sparse matrix
+        arr : ndarray or sparse csc_array
         '''
         cdef:
             VarHeader5 header
@@ -674,7 +674,7 @@ cdef class VarReader5:
 
         Returns
         -------
-        arr : array or sparse array
+        arr : array or sparse csc_array
            read array
         '''
         cdef:
@@ -799,9 +799,7 @@ cdef class VarReader5:
         # stored in column order, this gives the column corresponding
         # to each rowind
 
-        return csc_matrix(
-            (data[:nnz], rowind[:nnz], indptr),
-            shape=(M, N))
+        return csc_array((data[:nnz], rowind[:nnz], indptr), shape=(M, N))
 
     cpdef cnp.ndarray read_char(self, VarHeader5 header):
         ''' Read char matrices from stream as arrays

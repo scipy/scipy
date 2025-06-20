@@ -10,9 +10,9 @@ from scipy import integrate
 from scipy.integrate._quadrature import _builtincoeffs
 from scipy import interpolate
 from scipy.interpolate import RectBivariateSpline
+import scipy._lib.array_api_extra as xpx
 import scipy.special as sc
-from scipy._lib._util import _lazywhere
-from .._distn_infrastructure import rv_continuous, _ShapeInfo
+from .._distn_infrastructure import rv_continuous, _ShapeInfo, rv_continuous_frozen
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
 from scipy._lib.doccer import inherit_docstring_from
@@ -456,13 +456,9 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
         return res3
 
     def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
-        res = _lazywhere(
-            beta == 0,
-            (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-            beta0func,
-            f2=otherwise,
-        )
-        return res
+        return xpx.apply_where(
+            beta == 0, (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+            beta0func, otherwise)
 
     alpha = np.broadcast_to(alpha, size)
     beta = np.broadcast_to(beta, size)
@@ -474,13 +470,9 @@ def _rvs_Z1(alpha, beta, size=None, random_state=None):
     bTH = beta * TH
     cosTH = np.cos(TH)
     tanTH = np.tan(TH)
-    res = _lazywhere(
-        alpha == 1,
-        (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
-        alpha1func,
-        f2=alphanot1func,
-    )
-    return res
+    return xpx.apply_where(
+        alpha == 1, (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+        alpha1func, alphanot1func)
 
 
 def _fitstart_S0(data):
@@ -815,6 +807,11 @@ class levy_stable_gen(rv_continuous):
     pdf_fft_n_points_two_power = None
     pdf_fft_interpolation_level = 3
     pdf_fft_interpolation_degree = 3
+
+    def __call__(self, *args, **params):
+        dist = levy_stable_frozen(self, *args, **params)
+        dist.parameterization = self.parameterization
+        return dist
 
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
@@ -1222,3 +1219,13 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
 
 
 levy_stable = levy_stable_gen(name="levy_stable")
+
+
+class levy_stable_frozen(rv_continuous_frozen):
+    @property
+    def parameterization(self):
+        return self.dist.parameterization
+
+    @parameterization.setter
+    def parameterization(self, value):
+        self.dist.parameterization = value

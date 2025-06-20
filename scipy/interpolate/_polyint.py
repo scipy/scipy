@@ -2,7 +2,8 @@ import warnings
 
 import numpy as np
 from scipy.special import factorial
-from scipy._lib._util import _asarray_validated, float_factorial, check_random_state
+from scipy._lib._util import (_asarray_validated, float_factorial, check_random_state,
+                              _transition_to_rng)
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate",
@@ -107,9 +108,9 @@ class _Interpolator1D:
     def _reshape_yi(self, yi, check=False):
         yi = np.moveaxis(np.asarray(yi), self._y_axis, 0)
         if check and yi.shape[1:] != self._y_extra_shape:
-            ok_shape = "{!r} + (N,) + {!r}".format(self._y_extra_shape[-self._y_axis:],
-                                                   self._y_extra_shape[:-self._y_axis])
-            raise ValueError("Data must be of shape %s" % ok_shape)
+            ok_shape = (f"{self._y_extra_shape[-self._y_axis:]!r} + (N,) + "
+                        f"{self._y_extra_shape[:-self._y_axis]!r}")
+            raise ValueError(f"Data must be of shape {ok_shape}")
         return yi.reshape((yi.shape[0], -1))
 
     def _set_yi(self, yi, xi=None, axis=None):
@@ -242,8 +243,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
 
 class KroghInterpolator(_Interpolator1DWithDerivatives):
-    """
-    Interpolating polynomial for a set of points.
+    """Krogh interpolator (C∞ smooth).
 
     The polynomial passes through all the pairs ``(xi, yi)``. One may
     additionally specify a number of derivatives at each point `xi`;
@@ -390,8 +390,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
 
 def krogh_interpolate(xi, yi, x, der=0, axis=0):
-    """
-    Convenience function for polynomial interpolation.
+    """Convenience function for Krogh interpolation.
 
     See `KroghInterpolator` for more details.
 
@@ -532,27 +531,23 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
 
 
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
-    r"""Interpolating polynomial for a set of points.
+    r"""Barycentric (Lagrange with improved stability) interpolator (C∞ smooth).
 
     Constructs a polynomial that passes through a given set of points.
     Allows evaluation of the polynomial and all its derivatives,
     efficient changing of the y-values to be interpolated,
-    and updating by adding more x- and y-values.
+    and updating by adding more x- and y-values. For numerical stability, a barycentric
+    representation is used rather than computing the coefficients of the polynomial
+    directly.
 
-    For reasons of numerical stability, this function does not compute
-    the coefficients of the polynomial.
-
-    The values `yi` need to be provided before the function is
-    evaluated, but none of the preprocessing depends on them, so rapid
-    updates are possible.
 
     Parameters
     ----------
     xi : array_like, shape (npoints, )
-        1-D array of x coordinates of the points the polynomial
+        1-D array of x-coordinates of the points the polynomial
         should pass through
     yi : array_like, shape (..., npoints, ...), optional
-        N-D array of y coordinates of the points the polynomial should pass through.
+        N-D array of y-coordinates of the points the polynomial should pass through.
         If None, the y values will be supplied later via the `set_y` method.
         The length of `yi` along the interpolation axis must be equal to the length
         of `xi`. Use the ``axis`` parameter to select correct axis.
@@ -563,32 +558,100 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the reuse of the weights `wi` if several interpolants
-        are being calculated using the same nodes `xi`, without re-computation.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+        are being calculated using the same nodes `xi`, without re-computation. This
+        also allows for computing the weights explicitly for some choices of
+        `xi` (see notes).
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `rng` is passed by keyword, types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+        If `rng` is already a ``Generator`` instance, then the provided instance is
+        used. Specify `rng` for repeatable interpolation.
+
+        If this argument `random_state` is passed by keyword,
+        legacy behavior for the argument `random_state` applies:
+
+        - If `random_state` is None (or `numpy.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `random_state` is an int, a new ``RandomState`` instance is used,
+          seeded with `random_state`.
+        - If `random_state` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        .. versionchanged:: 1.15.0
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator` this keyword was changed from `random_state` to `rng`.
+            For an interim period, both keywords will continue to work (only specify
+            one of them). After the interim period using the `random_state` keyword will emit
+            warnings. The behavior of the `random_state` and `rng` keywords is outlined above.
 
     Notes
     -----
-    This class uses a "barycentric interpolation" method that treats
-    the problem as a special case of rational function interpolation.
-    This algorithm is quite stable, numerically, but even in a world of
-    exact computation, unless the x coordinates are chosen very
-    carefully - Chebyshev zeros (e.g., cos(i*pi/n)) are a good choice -
-    polynomial interpolation itself is a very ill-conditioned process
-    due to the Runge phenomenon.
+    This method is a variant of Lagrange polynomial interpolation [1]_ based on [2]_.
+    Instead of using Lagrange's or Newton's formula, the polynomial is represented by
+    the barycentric formula
 
-    Based on Berrut and Trefethen 2004, "Barycentric Lagrange Interpolation".
+    .. math::
+
+        p(x) =
+        \frac{\sum_{i=1}^m\ w_i y_i / (x - x_i)}{\sum_{i=1}^m w_i / (x - x_i)},
+
+    where :math:`w_i` are the barycentric weights computed with the general formula
+
+    .. math::
+
+        w_i = \left( \prod_{k \neq i} x_i - x_k \right)^{-1}.
+
+    This is the same barycentric form used by `AAA` and `FloaterHormannInterpolator`.
+    However, in contrast, the weights :math:`w_i` are defined such that
+    :math:`p(x)` is a polynomial rather than a rational function.
+
+    The barycentric representation avoids many of the problems associated with
+    polynomial interpolation caused by floating-point arithmetic. However, it does not
+    avoid issues that are intrinsic to polynomial interpolation. Namely, if the
+    x-coordinates are equally spaced, then the weights can be computed explicitly using
+    the formula from [2]_
+
+    .. math::
+
+        w_i = (-1)^i {n \choose i},
+
+    where :math:`n` is the number of x-coordinates. As noted in [2]_, this means that
+    for large :math:`n` the weights vary by exponentially large factors, leading to the
+    Runge phenomenon.
+
+    To avoid this ill-conditioning, the x-coordinates should be clustered at the
+    endpoints of the interval. An excellent choice of points on the interval
+    :math:`[a,b]` are Chebyshev points of the second kind
+
+    .. math::
+
+        x_i = \frac{a + b}{2} + \frac{a - b}{2}\cos(i\pi/n).
+
+    in which case the weights can be computed explicitly as
+
+    .. math::
+
+        w_i = \begin{cases}
+                  (-1)^i/2 & i = 0,n \\
+                  (-1)^i   & \text{otherwise}
+              \end{cases}.
+
+    See [2]_ for more infomation. Note that for large :math:`n`, computing the weights
+    explicitly (see examples) will be faster than the generic formula.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Lagrange_polynomial
+    .. [2] Jean-Paul Berrut and Lloyd N. Trefethen, "Barycentric Lagrange
+           Interpolation", SIAM Review 2004 46:3, 501-517
+           :doi:`10.1137/S0036144502417715`
 
     Examples
     --------
     To produce a quintic barycentric interpolant approximating the function
     :math:`\sin x`, and its first four derivatives, using six randomly-spaced
-    nodes in :math:`(0, \frac{\pi}{2})`:
+    nodes in :math:`(0, \pi/2)`:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -608,21 +671,41 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> axs[4].set_xlabel(r"$x$")
     >>> axs[4].set_xticks([i * np.pi / 4 for i in range(5)],
     ...                   ["0", r"$\frac{\pi}{4}$", r"$\frac{\pi}{2}$", r"$\frac{3\pi}{4}$", r"$\pi$"])
-    >>> axs[0].set_ylabel("$f(x)$")
-    >>> axs[1].set_ylabel("$f'(x)$")
-    >>> axs[2].set_ylabel("$f''(x)$")
-    >>> axs[3].set_ylabel("$f^{(3)}(x)$")
-    >>> axs[4].set_ylabel("$f^{(4)}(x)$")
+    >>> for ax, label in zip(axs, ("$f(x)$", "$f'(x)$", "$f''(x)$", "$f^{(3)}(x)$", "$f^{(4)}(x)$")):
+    ...     ax.set_ylabel(label)
     >>> labels = ['Interpolation nodes', 'True function $f$', 'Barycentric interpolation']
     >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
+
+    Next, we show how using Chebyshev points of the second kind avoids the avoids the
+    Runge phenomenon. In this example, we also compute the weights explicitly.
+
+    >>> n = 20
+    >>> def f(x): return np.abs(x) + 0.5*x - x**2
+    >>> i = np.arange(n)
+    >>> x_cheb = np.cos(i*np.pi/(n - 1))  # Chebyshev points on [-1, 1]
+    >>> w_i_cheb = (-1.)**i  # Explicit formula for weights of Chebyshev points
+    >>> w_i_cheb[[0, -1]] /= 2
+    >>> p_cheb = BarycentricInterpolator(x_cheb, f(x_cheb), wi=w_i_cheb)
+    >>> x_equi = np.linspace(-1, 1, n)
+    >>> p_equi = BarycentricInterpolator(x_equi, f(x_equi))
+    >>> xx = np.linspace(-1, 1, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(xx, f(xx), label="Original Function")
+    >>> ax.plot(xx, p_cheb(xx), "--", label="Chebshev Points")
+    >>> ax.plot(xx, p_equi(xx), "--", label="Equally Spaced Points")
+    >>> ax.set(xlabel="$x$", ylabel="$f(x)$", xlim=[-1, 1])
+    >>> ax.legend()
+    >>> plt.show()
+
     """ # numpy/numpydoc#87  # noqa: E501
 
-    def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
+    @_transition_to_rng("random_state", replace_doc=False)
+    def __init__(self, xi, yi=None, axis=0, *, wi=None, rng=None):
         super().__init__(xi, yi, axis)
-        
-        random_state = check_random_state(random_state)
+
+        rng = check_random_state(rng)
 
         self.xi = np.asarray(xi, dtype=np.float64)
         self.set_yi(yi)
@@ -643,7 +726,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # these numerical stability improvements will be able to provide all
             # the points to the constructor.
             self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
-            permute = random_state.permutation(self.n, )
+            permute = rng.permutation(self.n, )
             inv_permute = np.zeros(self.n, dtype=np.int32)
             inv_permute[permute] = np.arange(self.n)
             self.wi = np.zeros(self.n)
@@ -862,9 +945,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         return self._diff_baryint._evaluate_derivatives(x, der-1, all_lower=False)
 
 
-def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
-    """
-    Convenience function for polynomial interpolation.
+def barycentric_interpolate(xi, yi, x, axis=0, *, der=0, rng=None):
+    """Convenience function for barycentric interpolation.
 
     Constructs a polynomial that passes through a given set of points,
     then evaluates the polynomial. For reasons of numerical stability,
@@ -887,13 +969,18 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
         The y coordinates of the points the polynomial should pass through.
     x : scalar or array_like
         Point or points at which to evaluate the interpolant.
+    axis : int, optional
+        Axis in the `yi` array corresponding to the x-coordinate values.
     der : int or list or None, optional
         How many derivatives to evaluate, or None for all potentially
         nonzero derivatives (that is, a number equal to the number
         of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
-    axis : int, optional
-        Axis in the `yi` array corresponding to the x-coordinate values.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -929,7 +1016,7 @@ def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
     >>> plt.show()
 
     """
-    P = BarycentricInterpolator(xi, yi, axis=axis)
+    P = BarycentricInterpolator(xi, yi, axis=axis, rng=rng)
     if der == 0:
         return P(x)
     elif _isscalar(der):

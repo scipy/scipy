@@ -356,6 +356,7 @@ def odds_ratio(table, *, kind='conditional'):
     --------
     scipy.stats.fisher_exact
     relative_risk
+    :ref:`hypothesis_odds_ratio` : Extended example
 
     Notes
     -----
@@ -375,10 +376,6 @@ def odds_ratio(table, *, kind='conditional'):
     .. [3] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
            Methods, Techniques, and Applications, CRC Press LLC, Boca
            Raton, Florida.
-    .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
-           Cardiovascular Events in Women and Men: A Sex-Specific
-           Meta-analysis of Randomized Controlled Trials."
-           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
@@ -405,50 +402,37 @@ def odds_ratio(table, *, kind='conditional'):
     given to the rows and columns of the table when interpreting the
     odds ratio.
 
-    In [4]_, the use of aspirin to prevent cardiovascular events in women
-    and men was investigated. The study notably concluded:
+    Consider a hypothetical example where it is hypothesized that exposure to a
+    certain chemical is associated with increased occurrence of a certain
+    disease. Suppose we have the following table for a collection of 410 people::
 
-        ...aspirin therapy reduced the risk of a composite of
-        cardiovascular events due to its effect on reducing the risk of
-        ischemic stroke in women [...]
+                exposed unexposed
+        cases        7       15
+        noncases    58      472
 
-    The article lists studies of various cardiovascular events. Let's
-    focus on the ischemic stoke in women.
-
-    The following table summarizes the results of the experiment in which
-    participants took aspirin or a placebo on a regular basis for several
-    years. Cases of ischemic stroke were recorded::
-
-                          Aspirin   Control/Placebo
-        Ischemic stroke     176           230
-        No stroke         21035         21018
-
-    The question we ask is "Is there evidence that the aspirin reduces the
-    risk of ischemic stroke?"
+    The question we ask is "Is exposure to the chemical associated with
+    increased risk of the disease?"
 
     Compute the odds ratio:
 
     >>> from scipy.stats.contingency import odds_ratio
-    >>> res = odds_ratio([[176, 230], [21035, 21018]])
+    >>> res = odds_ratio([[7, 15], [58, 472]])
     >>> res.statistic
-    0.7646037659999126
+    3.7836687705553493
 
-    For this sample, the odds of getting an ischemic stroke for those who have
-    been taking aspirin are 0.76 times that of those
-    who have received the placebo.
+    For this sample, the odds of getting the disease for those who have been
+    exposed to the chemical are almost 3.8 times that of those who have not been
+    exposed.
 
-    To make statistical inferences about the population under study,
-    we can compute the 95% confidence interval for the odds ratio:
+    We can compute the 95% confidence interval for the odds ratio:
 
     >>> res.confidence_interval(confidence_level=0.95)
-    ConfidenceInterval(low=0.6241234078749812, high=0.9354102892100372)
+    ConfidenceInterval(low=1.2514829132266785, high=10.363493716701269)
 
-    The 95% confidence interval for the conditional odds ratio is
-    approximately (0.62, 0.94).
+    The 95% confidence interval for the conditional odds ratio is approximately
+    (1.25, 10.4).
 
-    The fact that the entire 95% confidence interval falls below 1 supports
-    the authors' conclusion that the aspirin was associated with a
-    statistically significant reduction in ischemic stroke.
+    For a more detailed example, see :ref:`hypothesis_odds_ratio`.
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")

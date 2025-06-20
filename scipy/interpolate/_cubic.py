@@ -1,10 +1,6 @@
 """Interpolation algorithms using piecewise cubic polynomials."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-import warnings
+from typing import Literal
 
 import numpy as np
 
@@ -12,9 +8,6 @@ from scipy.linalg import solve, solve_banded
 
 from . import PPoly
 from ._polyint import _isscalar
-
-if TYPE_CHECKING:
-    from typing import Literal
 
 __all__ = ["CubicHermiteSpline", "PchipInterpolator", "pchip_interpolate",
            "Akima1DInterpolator", "CubicSpline"]
@@ -77,7 +70,7 @@ def prepare_input(x, y, axis, dydx=None):
 
 
 class CubicHermiteSpline(PPoly):
-    """Piecewise-cubic interpolator matching values and first derivatives.
+    """Piecewise cubic interpolator to fit values and first derivatives (C1 smooth).
 
     The result is represented as a `PPoly` instance.
 
@@ -122,6 +115,7 @@ class CubicHermiteSpline(PPoly):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -164,7 +158,7 @@ class CubicHermiteSpline(PPoly):
 
 
 class PchipInterpolator(CubicHermiteSpline):
-    r"""PCHIP 1-D monotonic cubic interpolation.
+    r"""PCHIP shape-preserving interpolator (C1 smooth).
 
     ``x`` and ``y`` are arrays of values used to approximate some function f,
     with ``y = f(x)``. The interpolant uses monotonic cubic splines
@@ -180,12 +174,6 @@ class PchipInterpolator(CubicHermiteSpline):
         A N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
@@ -198,7 +186,10 @@ class PchipInterpolator(CubicHermiteSpline):
     __call__
     derivative
     antiderivative
+    integrate
+    solve
     roots
+
 
     See Also
     --------
@@ -249,11 +240,9 @@ class PchipInterpolator(CubicHermiteSpline):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         if np.iscomplexobj(y):
             msg = ("`PchipInterpolator` only works with real values for `y`. "
-                   "Passing an array with a complex dtype for `y` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
-                   "the array before passing to `PchipInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to `PchipInterpolator`.")
+            raise ValueError(msg)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -342,12 +331,6 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in
-            SciPy 1.15.0. If you are trying to use the real components of
-            the passed array, use ``np.real`` on `yi`.
-
     x : scalar or array_like
         Of length M.
     der : int or list, optional
@@ -393,8 +376,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
 
 class Akima1DInterpolator(CubicHermiteSpline):
-    r"""
-    Akima interpolator
+    r"""Akima "visually pleasing" interpolator (C1 smooth).
 
     Fit piecewise cubic polynomials, given vectors x and y. The interpolation
     method by Akima uses a continuously differentiable sub-spline built from
@@ -409,12 +391,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
         N-D array of real values. The length of ``y`` along the interpolation axis
         must be equal to the length of ``x``. Use the ``axis`` parameter to
         select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
@@ -424,11 +400,18 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         .. versionadded:: 1.13.0
 
+    extrapolate : {bool, None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If None,
+        ``extrapolate`` is set to False.
+
     Methods
     -------
     __call__
     derivative
     antiderivative
+    integrate
+    solve
     roots
 
     See Also
@@ -493,7 +476,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     >>> ax.legend()
     >>> fig.show()
 
-    The overshoot that occured in ``"akima"`` has been avoided in ``"makima"``.
+    The overshoot that occurred in ``"akima"`` has been avoided in ``"makima"``.
 
     References
     ----------
@@ -505,7 +488,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima"):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
+                 extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
@@ -514,45 +498,55 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
         if np.iscomplexobj(y):
             msg = ("`Akima1DInterpolator` only works with real values for `y`. "
-                   "Passing an array with a complex dtype for `y` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
-                   "the array before passing to `Akima1DInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "If you are trying to use the real components of the passed array, "
+                   "use `np.real` on the array before passing to "
+                   "`Akima1DInterpolator`.")
+            raise ValueError(msg)
 
-        # determine slopes between breakpoints
-        m = np.empty((x.size + 3, ) + y.shape[1:])
-        dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
-        m[2:-2] = np.diff(y, axis=0) / dx
+        # Akima extrapolation historically False; parent class defaults to True.
+        extrapolate = False if extrapolate is None else extrapolate
 
-        # add two additional points on the left ...
-        m[1] = 2. * m[2] - m[3]
-        m[0] = 2. * m[1] - m[2]
-        # ... and on the right
-        m[-2] = 2. * m[-3] - m[-4]
-        m[-1] = 2. * m[-2] - m[-3]
-
-        # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
-        # defined. This is the fill value:
-        t = .5 * (m[3:] + m[:-3])
-        # get the denominator of the slope t
-        dm = np.abs(np.diff(m, axis=0))
-        if method == "makima":
-            pm = np.abs(m[1:] + m[:-1])
-            f1 = dm[2:] + 0.5 * pm[2:]
-            f2 = dm[:-2] + 0.5 * pm[:-2]
+        if y.shape[0] == 2:
+            # edge case: only have two points, use linear interpolation
+            xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
+            hk = xp[1:] - xp[:-1]
+            mk = (y[1:] - y[:-1]) / hk
+            t = np.zeros_like(y)
+            t[...] = mk
         else:
-            f1 = dm[2:]
-            f2 = dm[:-2]
-        f12 = f1 + f2
-        # These are the mask of where the slope at breakpoint is defined:
-        ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
-        x_ind, y_ind = ind[0], ind[1:]
-        # Set the slope at breakpoint
-        t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                  f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            # determine slopes between breakpoints
+            m = np.empty((x.size + 3, ) + y.shape[1:])
+            dx = dx[(slice(None), ) + (None, ) * (y.ndim - 1)]
+            m[2:-2] = np.diff(y, axis=0) / dx
 
-        super().__init__(x, y, t, axis=0, extrapolate=False)
+            # add two additional points on the left ...
+            m[1] = 2. * m[2] - m[3]
+            m[0] = 2. * m[1] - m[2]
+            # ... and on the right
+            m[-2] = 2. * m[-3] - m[-4]
+            m[-1] = 2. * m[-2] - m[-3]
+
+            # if m1 == m2 != m3 == m4, the slope at the breakpoint is not
+            # defined. This is the fill value:
+            t = .5 * (m[3:] + m[:-3])
+            # get the denominator of the slope t
+            dm = np.abs(np.diff(m, axis=0))
+            if method == "makima":
+                pm = np.abs(m[1:] + m[:-1])
+                f1 = dm[2:] + 0.5 * pm[2:]
+                f2 = dm[:-2] + 0.5 * pm[:-2]
+            else:
+                f1 = dm[2:]
+                f2 = dm[:-2]
+            f12 = f1 + f2
+            # These are the mask of where the slope at breakpoint is defined:
+            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            x_ind, y_ind = ind[0], ind[1:]
+            # Set the slope at breakpoint
+            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
+                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+
+        super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
 
     def extend(self, c, x, right=True):
@@ -573,7 +567,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
 
 class CubicSpline(CubicHermiteSpline):
-    """Cubic spline data interpolator.
+    """Piecewise cubic interpolator to fit values (C2 smooth).
 
     Interpolate data with a piecewise cubic polynomial which is twice
     continuously differentiable [1]_. The result is represented as a `PPoly`
@@ -615,7 +609,7 @@ class CubicSpline(CubicHermiteSpline):
         If `bc_type` is a 2-tuple, the first and the second value will be
         applied at the curve start and end respectively. The tuple values can
         be one of the previously mentioned strings (except 'periodic') or a
-        tuple `(order, deriv_values)` allowing to specify arbitrary
+        tuple ``(order, deriv_values)`` allowing to specify arbitrary
         derivatives at curve ends:
 
         * `order`: the derivative order, 1 or 2.
@@ -649,6 +643,7 @@ class CubicSpline(CubicHermiteSpline):
     derivative
     antiderivative
     integrate
+    solve
     roots
 
     See Also
@@ -787,8 +782,9 @@ class CubicSpline(CubicHermiteSpline):
                 b[1] = 3 * (dxr[0] * slope[1] + dxr[1] * slope[0])
                 b[2] = 2 * slope[1]
 
-                s = solve(A, b, overwrite_a=True, overwrite_b=True,
-                          check_finite=False)
+                m = b.shape[0]
+                s = solve(A, b.reshape(m, -1), overwrite_a=True, overwrite_b=True,
+                          check_finite=False).reshape(b.shape)
             elif n == 3 and bc[0] == 'periodic':
                 # In case when number of points is 3 we compute the derivatives
                 # manually
@@ -848,11 +844,15 @@ class CubicSpline(CubicHermiteSpline):
                     b2[-1] = -a_m2_m1
 
                     # s1 and s2 are the solutions of (n-2, n-2) system
-                    s1 = solve_banded((1, 1), Ac, b1, overwrite_ab=False,
+                    m = b1.shape[0]
+                    s1 = solve_banded((1, 1), Ac, b1.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s1 = s1.reshape(b1.shape)
 
-                    s2 = solve_banded((1, 1), Ac, b2, overwrite_ab=False,
+                    m = b2.shape[0]
+                    s2 = solve_banded((1, 1), Ac, b2.reshape(m, -1), overwrite_ab=False,
                                       overwrite_b=False, check_finite=False)
+                    s2 = s2.reshape(b2.shape)
 
                     # computing the s[n-2] solution:
                     s_m1 = ((b[-1] - a_m1_0 * s1[0] - a_m1_m2 * s1[-1]) /
@@ -894,8 +894,10 @@ class CubicSpline(CubicHermiteSpline):
                         A[-1, -2] = dx[-1]
                         b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
 
-                    s = solve_banded((1, 1), A, b, overwrite_ab=True,
+                    m = b.shape[0]
+                    s = solve_banded((1, 1), A, b.reshape(m, -1), overwrite_ab=True,
                                      overwrite_b=True, check_finite=False)
+                    s = s.reshape(b.shape)
 
         super().__init__(x, y, s, axis=0, extrapolate=extrapolate)
         self.axis = axis
@@ -959,8 +961,9 @@ class CubicSpline(CubicHermiteSpline):
                 deriv_value = np.asarray(deriv_value)
                 if deriv_value.shape != expected_deriv_shape:
                     raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
+                        f"`deriv_value` shape {deriv_value.shape} is not "
+                        f"the expected one {expected_deriv_shape}."
+                    )
 
                 if np.issubdtype(deriv_value.dtype, np.complexfloating):
                     y = y.astype(complex, copy=False)

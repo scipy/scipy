@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.linalg._svdp import _svdp
-from scipy.sparse import csr_matrix, csc_matrix
+from scipy.sparse import csr_array, csc_array
 
 
 # dtype_flavour to tolerance
@@ -33,7 +33,7 @@ _dtypes = tuple(_dtypes)  # type: ignore[assignment]
 
 def generate_matrix(constructor, n, m, f,
                     dtype=float, rseed=0, **kwargs):
-    """Generate a random sparse matrix"""
+    """Generate a random sparse array"""
     rng = np.random.RandomState(rseed)
     if is_complex_type(dtype):
         M = (- 5 + 10 * rng.rand(n, m)
@@ -58,7 +58,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
 
     u1, sigma1, vt1 = np.linalg.svd(M, full_matrices=False)
     u2, sigma2, vt2, _ = _svdp(Msp, k=k, which=which, irl_mode=irl_mode,
-                               tol=tol)
+                               tol=tol, rng=np.random.default_rng(0))
 
     # check the which
     if which.upper() == 'SM':
@@ -74,7 +74,7 @@ def check_svdp(n, m, constructor, dtype, k, irl_mode, which, f=0.8):
     assert_orthogonal(vt1.T, vt2.T, rtol=tol, atol=tol)
 
 
-@pytest.mark.parametrize('ctor', (np.array, csr_matrix, csc_matrix))
+@pytest.mark.parametrize('ctor', (np.array, csr_array, csc_array))
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (True, False))
 @pytest.mark.parametrize('which', ('LM', 'SM'))
@@ -89,9 +89,9 @@ def test_svdp(ctor, dtype, irl, which):
         check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
+@pytest.mark.xslow
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (False, True))
-@pytest.mark.timeout(120)  # True, complex64 > 60 s: prerel deps cov 64bit blas
 def test_examples(dtype, irl):
     # Note: atol for complex64 bumped from 1e-4 to 1e-3 due to test failures
     # with BLIS, Netlib, and MKL+AVX512 - see
@@ -115,7 +115,7 @@ def test_examples(dtype, irl):
             A = data['A_real'].item().astype(dtype)
 
     k = 200
-    u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
+    u, s, vh, _ = _svdp(A, k, irl_mode=irl, rng=np.random.default_rng(0))
 
     # complex example matrix has many repeated singular values, so check only
     # beginning non-repeated singular vectors to avoid permutations
@@ -142,24 +142,24 @@ def test_examples(dtype, irl):
 @pytest.mark.parametrize('shifts', (None, -10, 0, 1, 10, 70))
 @pytest.mark.parametrize('dtype', _dtypes[:2])
 def test_shifts(shifts, dtype):
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     n, k = 70, 10
-    A = np.random.random((n, n))
+    A = rng.random((n, n))
     if shifts is not None and ((shifts < 0) or (k > min(n-1-shifts, n))):
         with pytest.raises(ValueError):
-            _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True)
+            _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True, rng=rng)
     else:
-        _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True)
+        _svdp(A, k, shifts=shifts, kmax=5*k, irl_mode=True, rng=rng)
 
 
 @pytest.mark.slow
 @pytest.mark.xfail()
 def test_shifts_accuracy():
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     n, k = 70, 10
-    A = np.random.random((n, n)).astype(np.float64)
-    u1, s1, vt1, _ = _svdp(A, k, shifts=None, which='SM', irl_mode=True)
-    u2, s2, vt2, _ = _svdp(A, k, shifts=32, which='SM', irl_mode=True)
+    A = rng.random((n, n)).astype(np.float64)
+    u1, s1, vt1, _ = _svdp(A, k, shifts=None, which='SM', irl_mode=True, rng=rng)
+    u2, s2, vt2, _ = _svdp(A, k, shifts=32, which='SM', irl_mode=True, rng=rng)
     # shifts <= 32 doesn't agree with shifts > 32
     # Does agree when which='LM' instead of 'SM'
     assert_allclose(s1, s2)

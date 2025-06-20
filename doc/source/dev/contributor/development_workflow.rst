@@ -109,11 +109,11 @@ when it's time to submit a pull request.
 It's also a good idea to build this branch and run tests before continuing.
 Assuming you've followed one of the :ref:`building-from-source` pages to set up
 your development environment, you'll need to activate your development
-environment and then run tests (note that the ``dev.py test`` command will
+environment and then run tests (note that the ``spin test`` command will
 perform a build automatically if needed)::
 
    conda activate scipy-dev
-   python dev.py test -v
+   spin test -v
 
 .. _editing-workflow:
 
@@ -214,15 +214,28 @@ been added to ``upstream`` that affect your work. In this case, follow the
 Writing the commit message
 --------------------------
 
-Commit messages should be clear and follow a few basic rules.  Example::
+Commit messages should be clear and follow a few basic rules.
 
-   ENH: add functionality X to SciPy.<submodule>.
+Example::
+
+   MAINT/TST: fft: remove xp backend skips, test `fftfreq` `device`
 
    The first line of the commit message starts with a capitalized acronym
-   (options listed below) indicating what type of commit this is. Then a blank
-   line, then more text if needed.  Lines shouldn't be longer than 72
-   characters.  If the commit is related to a ticket, indicate that with
-   "See #3456", "See ticket 3456", "Closes #3456", or similar.
+   (or multiple, options listed below) indicating what type of commit this is.
+   Then a blank line, then more text if needed.
+   References to code names should be enclosed in backticks.
+   If changes are limited to certain submodules or functions, they should be
+   included after the acronym(s) - backticks are not needed here.
+
+Example::
+
+   BUG:sparse.linalg.gmres: add early exit when `x0` already solves problem
+
+   Lines shouldn't be longer than 72 characters. If the commit is related to an issue,
+   indicate that with "See gh-3456", "Closes gh-3456", or similar,
+   in the extended description.
+   However, if you are pushing many commits to a PR, you should avoid including
+   this in every commit message as it will clutter the linked issue.
 
 Describing the motivation for a change, the nature of a bug for bug fixes or
 some details on what an enhancement does are also good to include in a commit
@@ -259,7 +272,7 @@ has a nice help page that outlines the process for `filing pull requests`_.
 
 If your changes involve modifications to the API or addition/modification of a
 function, you should initiate a code review. This involves sending an email to
-the `SciPy mailing list`_ with a link to your PR along with a description of
+the `SciPy forum`_ with a link to your PR along with a description of
 and a motivation for your changes.
 
 .. _pr-checklist:
@@ -271,7 +284,7 @@ Checklist before submitting a PR
    :ref:`license-considerations`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
+-  Do all unit tests pass locally? See :ref:`the-spin-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.

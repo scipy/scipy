@@ -26,7 +26,7 @@ class Covariance:
 
     Examples
     --------
-    The `Covariance` class is is used by calling one of its
+    The `Covariance` class is used by calling one of its
     factory methods to create a `Covariance` object, then pass that
     representation of the `Covariance` matrix as a shape parameter of a
     multivariate distribution.
@@ -488,7 +488,9 @@ class CovViaPrecision(Covariance):
                 if self._cov_matrix is None else self._cov_matrix)
 
     def _colorize(self, x):
-        return linalg.solve_triangular(self._chol_P.T, x.T, lower=False).T
+        m = x.T.shape[0]
+        res = linalg.solve_triangular(self._chol_P.T, x.T.reshape(m, -1), lower=False)
+        return res.reshape(x.T.shape).T
 
 
 def _dot_diag(x, d):
@@ -549,8 +551,9 @@ class CovViaCholesky(Covariance):
         return self._factor @ self._factor.T
 
     def _whiten(self, x):
-        res = linalg.solve_triangular(self._factor, x.T, lower=True).T
-        return res
+        m = x.T.shape[0]
+        res = linalg.solve_triangular(self._factor, x.T.reshape(m, -1), lower=True)
+        return res.reshape(x.T.shape).T
 
     def _colorize(self, x):
         return x @ self._factor.T

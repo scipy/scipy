@@ -20,7 +20,7 @@ from scipy.sparse._sputils import is_pydata_spmatrix, isintlike
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg._interface import LinearOperator
-from scipy.sparse._construct import eye
+from scipy.sparse._construct import eye_array
 
 from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 
@@ -30,16 +30,16 @@ UPPER_TRIANGULAR = 'upper_triangular'
 
 def inv(A):
     """
-    Compute the inverse of a sparse matrix
+    Compute the inverse of a sparse arrays
 
     Parameters
     ----------
-    A : (M, M) sparse matrix
+    A : (M, M) sparse arrays
         square matrix to be inverted
 
     Returns
     -------
-    Ainv : (M, M) sparse matrix
+    Ainv : (M, M) sparse arrays
         inverse of `A`
 
     Notes
@@ -50,16 +50,16 @@ def inv(A):
 
     Examples
     --------
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import inv
-    >>> A = csc_matrix([[1., 0.], [1., 2.]])
+    >>> A = csc_array([[1., 0.], [1., 2.]])
     >>> Ainv = inv(A)
     >>> Ainv
-    <2x2 sparse matrix of type '<class 'numpy.float64'>'
-        with 3 stored elements in Compressed Sparse Column format>
+    <Compressed Sparse Column sparse array of dtype 'float64'
+        with 3 stored elements and shape (2, 2)>
     >>> A.dot(Ainv)
-    <2x2 sparse matrix of type '<class 'numpy.float64'>'
-        with 2 stored elements in Compressed Sparse Column format>
+    <Compressed Sparse Column sparse array of dtype 'float64'
+        with 2 stored elements and shape (2, 2)>
     >>> A.dot(Ainv).toarray()
     array([[ 1.,  0.],
            [ 0.,  1.]])
@@ -68,8 +68,8 @@ def inv(A):
 
     """
     # Check input
-    if not (scipy.sparse.issparse(A) or is_pydata_spmatrix(A)):
-        raise TypeError('Input must be a sparse matrix')
+    if not (issparse(A) or is_pydata_spmatrix(A)):
+        raise TypeError('Input must be a sparse arrays')
 
     # Use sparse direct solver to solve "AX = I" accurately
     I = _ident_like(A)
@@ -83,7 +83,7 @@ def _onenorm_matrix_power_nnm(A, p):
 
     Parameters
     ----------
-    A : a square ndarray or matrix or sparse matrix
+    A : a square ndarray or matrix or sparse arrays
         Input matrix with non-negative entries.
     p : non-negative integer
         The power to which the matrix is to be raised.
@@ -102,7 +102,7 @@ def _onenorm_matrix_power_nnm(A, p):
         raise ValueError('expected A to be like a square matrix')
 
     # Explicitly make a column vector so that this works when A is a
-    # numpy matrix (in addition to ndarray and sparse matrix).
+    # numpy matrix (in addition to ndarray and sparse arrays).
     v = np.ones((A.shape[0], 1), dtype=float)
     M = A.T
     for i in range(p):
@@ -277,7 +277,7 @@ def _onenormest_matrix_power(A, p,
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse arrays.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator
@@ -319,7 +319,7 @@ def _onenormest_product(operator_seq,
     Returns
     -------
     est : float
-        An underestimate of the 1-norm of the sparse matrix.
+        An underestimate of the 1-norm of the sparse arrays.
     v : ndarray, optional
         The vector such that ||Av||_1 == est*||v||_1.
         It can be thought of as an input to the linear operator
@@ -549,7 +549,7 @@ def expm(A):
 
     Parameters
     ----------
-    A : (M,M) array_like or sparse matrix
+    A : (M,M) array_like or sparse array
         2D Array or Matrix (sparse or dense) to be exponentiated
 
     Returns
@@ -572,17 +572,17 @@ def expm(A):
 
     Examples
     --------
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import expm
-    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A = csc_array([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
     >>> A.toarray()
     array([[1, 0, 0],
            [0, 2, 0],
            [0, 0, 3]], dtype=int64)
     >>> Aexp = expm(A)
     >>> Aexp
-    <3x3 sparse matrix of type '<class 'numpy.float64'>'
-        with 3 stored elements in Compressed Sparse Column format>
+    <Compressed Sparse Column sparse array of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
     >>> Aexp.toarray()
     array([[  2.71828183,   0.        ,   0.        ],
            [  0.        ,   7.3890561 ,   0.        ],
@@ -596,7 +596,7 @@ def _expm(A, use_exact_onenorm):
     # algorithms.
 
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
-    if isinstance(A, (list, tuple, np.matrix)):
+    if isinstance(A, list | tuple | np.matrix):
         A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
@@ -777,7 +777,7 @@ def _fragment_2_1(X, T, s):
     The argument X is modified in-place, but this modification is not the same
     as the returned value of the function.
     This function also takes pains to do things in ways that are compatible
-    with sparse matrices, for example by avoiding fancy indexing
+    with sparse arrays, for example by avoiding fancy indexing
     and by using methods of the matrices whenever possible instead of
     using functions of the numpy or scipy libraries themselves.
 
@@ -926,7 +926,7 @@ def matrix_power(A, power):
             raise ValueError('exponent must be >= 0')
 
         if power == 0:
-            return eye(M, dtype=A.dtype)
+            return eye_array(M, dtype=A.dtype)
 
         if power == 1:
             return A.copy()

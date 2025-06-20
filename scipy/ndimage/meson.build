@@ -9,8 +9,8 @@ py3.extension_module('_nd_image',
     'src/ni_splines.c',
     'src/ni_support.c'
   ],
-  include_directories: ['../_lib/src', '../_build_utils/src'],
-  dependencies: np_dep,
+  include_directories: ['../_build_utils/src'],
+  dependencies: [np_dep, ccallback_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/ndimage'
@@ -25,12 +25,21 @@ py3.extension_module('_ni_label',
   subdir: 'scipy/ndimage'
 )
 
+py3.extension_module('_rank_filter_1d',
+  'src/_rank_filter_1d.cpp',
+  link_args: version_link_args,
+  install: true,
+  dependencies: np_dep,
+  subdir: 'scipy/ndimage'
+)
+
 py3.extension_module('_ctest',
   'src/_ctest.c',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/ndimage'
+  subdir: 'scipy/ndimage',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_cytest',
@@ -39,12 +48,16 @@ py3.extension_module('_cytest',
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/ndimage'
+  subdir: 'scipy/ndimage',
+  install_tag: 'tests'
 )
 
 
 python_sources = [
   '__init__.py',
+  '_ndimage_api.py',
+  '_delegators.py',
+  '_support_alternative_backends.py',
   '_filters.py',
   '_fourier.py',
   '_interpolation.py',

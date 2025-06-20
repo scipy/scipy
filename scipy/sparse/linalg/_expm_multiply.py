@@ -94,7 +94,7 @@ def _ident_like(A):
     if scipy.sparse.issparse(A):
         # Creates a sparse matrix in dia format
         out = scipy.sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
-        if isinstance(A, scipy.sparse.spmatrix):
+        if scipy.sparse.issparse(A):
             return out.asformat(A.format)
         return scipy.sparse.dia_array(out).asformat(A.format)
     elif is_pydata_spmatrix(A):
@@ -115,7 +115,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     ----------
     A : transposable linear operator
         The operator whose exponential is of interest.
-    B : ndarray
+    B : ndarray, sparse array
         The matrix or vector to be multiplied by the matrix exponential of A.
     start : scalar, optional
         The starting time point of the sequence.
@@ -183,9 +183,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import expm, expm_multiply
-    >>> A = csc_matrix([[1, 0], [0, 1]])
+    >>> A = csc_array([[1, 0], [0, 1]])
     >>> A.toarray()
     array([[1, 0],
            [0, 1]], dtype=int64)
@@ -245,8 +245,8 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
+                         ' are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
@@ -443,7 +443,8 @@ class LazyOperatorNormInfo:
 
     def d(self, p):
         """
-        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` where :math:`||.||` is the 1-norm.
+        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)`
+        where :math:`||.||` is the 1-norm.
         """
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
@@ -645,8 +646,8 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
+        raise ValueError(f'shapes of matrices A {A.shape} and B {B.shape}'
+                         ' are incompatible')
     ident = _ident_like(A)
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     n = A.shape[0]
@@ -701,7 +702,12 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
-    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    action_t0 = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    if scipy.sparse.issparse(action_t0):
+        action_t0 = action_t0.toarray()
+    elif is_pydata_spmatrix(action_t0):
+        action_t0 = action_t0.todense()
+    X[0] = action_t0
 
     # Compute the expm action at the rest of the time points.
     if q <= s:

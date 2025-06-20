@@ -30,6 +30,7 @@ The variant that is implemented uses squeezes proportional to hat function ([1]_
 
 An example of using this method is shown below:
 
+    >>> import numpy as np
     >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from scipy.stats import norm
     >>> 
@@ -160,7 +161,7 @@ distribution:
     >>> dist2.callbacks = 0  # don't consider evaluations during setup
     >>> rvs = rng2.rvs(100000)
     >>> dist2.callbacks  # evaluations during sampling
-    84
+    84      # may vary
 
 As we can see, far fewer PDF evaluations are required during sampling when
 we increase the ``squeeze_hat_ratio``. The PPF-hat function is also more accurate:

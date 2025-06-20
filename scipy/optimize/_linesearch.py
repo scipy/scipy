@@ -13,7 +13,6 @@ Functions
 """
 from warnings import warn
 
-from scipy.optimize import _minpack2 as minpack2    # noqa: F401
 from ._dcsrch import DCSRCH
 import numpy as np
 
@@ -426,7 +425,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
                 msg = 'Rounding errors prevent the line search from converging'
             else:
                 msg = "The line search algorithm could not find a solution " + \
-                      "less than or equal to amax: %s" % amax
+                      f"less than or equal to amax: {amax}"
 
             warn(msg, LineSearchWarning, stacklevel=2)
             break

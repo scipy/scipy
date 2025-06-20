@@ -8,7 +8,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'bicg', 'bicgstab', 'cg', 'cgs', 'gcrotmk', 'gmres',
     'lgmres', 'lsmr', 'lsqr',
-    'minres', 'qmr', 'tfqmr', 'utils', 'iterative', 'test'
+    'minres', 'qmr', 'tfqmr', 'test'
 ]
 
 

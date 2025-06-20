@@ -18,7 +18,7 @@ from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_dense
 from scipy.optimize._remove_redundancy import _remove_redundancy_pivot_sparse
 from scipy.optimize._remove_redundancy import _remove_redundancy_id
 
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array
 
 
 def setup_module():
@@ -223,6 +223,6 @@ class TestRRID(RRCommonTests):
 
 class TestRRPivotSparse(RRCommonTests):
     def rr(self, A, b):
-        rr_res = _remove_redundancy_pivot_sparse(csc_matrix(A), b)
+        rr_res = _remove_redundancy_pivot_sparse(csc_array(A), b)
         A1, b1, status, message = rr_res
         return A1.toarray(), b1, status, message

@@ -16,7 +16,7 @@ def test_crosstab_basic(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 
@@ -65,7 +65,7 @@ def test_crosstab_levels(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 
@@ -85,7 +85,7 @@ def test_crosstab_extra_levels(sparse):
     assert_array_equal(avals, expected_avals)
     assert_array_equal(bvals, expected_bvals)
     if sparse:
-        assert_array_equal(count.A, expected_count)
+        assert_array_equal(count.toarray(), expected_count)
     else:
         assert_array_equal(count, expected_count)
 

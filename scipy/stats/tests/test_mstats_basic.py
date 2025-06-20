@@ -19,8 +19,9 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_array_almost_equal_nulp, assert_,
                                 assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-from scipy.stats import _mstats_basic
-
+from scipy.stats import _mstats_basic, _stats_py
+from scipy.conftest import skip_xp_invalid_arg
+from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -56,6 +57,7 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     assert_equal(x.dtype, dtype)
 
 
+@skip_xp_invalid_arg
 class TestGeoMean:
     def test_1d(self):
         a = [1, 2, 3, 4]
@@ -116,6 +118,7 @@ class TestGeoMean:
         check_equal_gmean(np.ma.array(a), desired)
 
 
+@skip_xp_invalid_arg
 class TestHarMean:
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
@@ -472,6 +475,10 @@ class TestCorr:
             res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
+    @skip_xp_invalid_arg
+    # mstats.pointbiserialr returns a NumPy float for the statistic, but converts
+    # it to a masked array with no masked elements before calling `special.betainc`,
+    # which won't accept masked arrays when `SCIPY_ARRAY_API=1`.
     def test_pointbiserial(self):
         x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
              0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
@@ -486,6 +493,7 @@ class TestCorr:
         check_named_results(res, attributes, ma=True)
 
 
+@skip_xp_invalid_arg
 class TestTrimming:
 
     def test_trim(self):
@@ -606,6 +614,7 @@ class TestTrimming:
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
 
+@skip_xp_invalid_arg
 class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
@@ -821,6 +830,7 @@ class TestPercentile:
         assert_equal(mstats.scoreatpercentile(x, 50), [1, 1, 1])
 
 
+@skip_xp_invalid_arg
 class TestVariability:
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
@@ -853,6 +863,7 @@ class TestVariability:
         assert_almost_equal(desired, y, decimal=12)
 
 
+@skip_xp_invalid_arg
 class TestMisc:
 
     def test_obrientransform(self):
@@ -910,7 +921,7 @@ def test_regress_simple():
     result = mstats.linregress(x, y)
 
     # Result is of a correct class and with correct fields
-    lr = stats._stats_mstats_common.LinregressResult
+    lr = _stats_py.LinregressResult
     assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
     check_named_results(result, attributes, ma=True)
@@ -1023,7 +1034,7 @@ def test_siegelslopes():
     y[:4] = 1000
     assert_equal(mstats.siegelslopes(y, x), (5.0, -3.0))
 
-    # if there are no outliers, results should be comparble to linregress
+    # if there are no outliers, results should be comparable to linregress
     x = np.arange(10)
     y = -2.3 + 0.3*x + stats.norm.rvs(size=10, random_state=231)
     slope_ols, intercept_ols, _, _, _ = stats.linregress(x, y)
@@ -1079,6 +1090,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
+@skip_xp_invalid_arg
 class TestNormalitytests:
 
     def test_vs_nonmasked(self):
@@ -1094,7 +1106,10 @@ class TestNormalitytests:
         mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
         x = [1, 2, 3, 4]
         for func, mfunc in zip(funcs, mfuncs):
-            assert_raises(ValueError, func, x)
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = func(x)
+                assert np.isnan(res.statistic)
+                assert np.isnan(res.pvalue)
             assert_raises(ValueError, mfunc, x)
 
     def test_axis_None(self):
@@ -1521,6 +1536,7 @@ class TestDescribe:
         assert_allclose(result.kurtosis, [-1.3, -2.0])
 
 
+@skip_xp_invalid_arg
 class TestCompareWithStats:
     """
     Class to compare mstats results with stats results.
@@ -1551,9 +1567,9 @@ class TestCompareWithStats:
     def generate_xy_sample(self, n):
         # This routine generates numpy arrays and corresponding masked arrays
         # with the same data, but additional masked values
-        np.random.seed(1234567)
-        x = np.random.randn(n)
-        y = x + np.random.randn(n)
+        rng = np.random.RandomState(1234567)
+        x = rng.randn(n)
+        y = x + rng.randn(n)
         xm = np.full(len(x) + 5, 1e16)
         ym = np.full(len(y) + 5, 1e16)
         xm[0:len(x)] = x
@@ -1833,6 +1849,7 @@ class TestCompareWithStats:
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "`kurtosistest` p-value may be inaccurate")
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:
@@ -1848,7 +1865,8 @@ class TestCompareWithStats:
         xm = np.ma.array(tmp, mask=mask)
         x_orig, xm_orig = x.copy(), xm.copy()
 
-        r = stats.find_repeats(x)
+        unique, unique_counts = np.unique(x, return_counts=True)
+        r = unique[unique_counts > 1], unique_counts[unique_counts > 1]
         rm = stats.mstats.find_repeats(xm)
 
         assert_equal(r, rm)

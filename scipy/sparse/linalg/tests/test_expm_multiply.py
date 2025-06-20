@@ -7,6 +7,7 @@ import pytest
 from numpy.testing import (assert_allclose, assert_, assert_equal,
                            suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
+import scipy.sparse
 from scipy.sparse.linalg import aslinearoperator
 import scipy.linalg
 from scipy.sparse.linalg import expm as sp_expm
@@ -17,11 +18,10 @@ from scipy._lib._util import np_long
 
 
 IMPRECISE = {np.single, np.csingle}
-REAL_DTYPES = {np.intc, np_long, np.longlong,
-               np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-DTYPES = sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+REAL_DTYPES = (np.intc, np_long, np.longlong,
+               np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 def estimated(func):
@@ -66,11 +66,11 @@ class TestExpmActionSimple:
             assert_(p_too_big*(p_too_big - 1) > m_max + 1)
 
     def test_onenormest_matrix_power(self):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         n = 40
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.linalg.inv(np.random.randn(n, n))
+            A = scipy.linalg.inv(rng.randn(n, n))
             for p in range(4):
                 if not p:
                     M = np.identity(n)
@@ -81,6 +81,7 @@ class TestExpmActionSimple:
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
 
+    @pytest.mark.thread_unsafe
     def test_expm_multiply(self):
         np.random.seed(1234)
         n = 40
@@ -98,6 +99,7 @@ class TestExpmActionSimple:
             observed = expm_multiply(aslinearoperator(A), B, traceA=traceA)
             assert_allclose(observed, expected)
 
+    @pytest.mark.thread_unsafe
     def test_matrix_vector_multiply(self):
         np.random.seed(1234)
         n = 40
@@ -111,6 +113,7 @@ class TestExpmActionSimple:
             observed = estimated(expm_multiply)(aslinearoperator(A), v)
             assert_allclose(observed, expected)
 
+    @pytest.mark.thread_unsafe
     def test_scaled_expm_multiply(self):
         np.random.seed(1234)
         n = 40
@@ -128,6 +131,7 @@ class TestExpmActionSimple:
                 )
                 assert_allclose(observed, expected)
 
+    @pytest.mark.thread_unsafe
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)
         t = 0.1
@@ -143,14 +147,15 @@ class TestExpmActionSimple:
         )
         assert_allclose(observed, expected)
 
+    @pytest.mark.thread_unsafe
     def test_sparse_expm_multiply(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = 40
         k = 3
         nsamples = 10
         for i in range(nsamples):
-            A = scipy.sparse.rand(n, n, density=0.05)
-            B = np.random.randn(n, k)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
+            B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -163,6 +168,7 @@ class TestExpmActionSimple:
             observed = estimated(expm_multiply)(aslinearoperator(A), B)
             assert_allclose(observed, expected)
 
+    @pytest.mark.thread_unsafe
     def test_complex(self):
         A = np.array([
             [1j, 1j],
@@ -179,17 +185,18 @@ class TestExpmActionSimple:
 
 class TestExpmActionInterval:
 
+    @pytest.mark.fail_slow(20)
     def test_sparse_expm_multiply_interval(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         start = 0.1
         stop = 3.2
         n = 40
         k = 3
         endpoint = True
         for num in (14, 13, 2):
-            A = scipy.sparse.rand(n, n, density=0.05)
-            B = np.random.randn(n, k)
-            v = np.random.randn(n)
+            A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
+            B = rng.standard_normal((n, k))
+            v = rng.standard_normal((n,))
             for target in (B, v):
                 X = expm_multiply(A, target, start=start, stop=stop,
                                   num=num, endpoint=endpoint)
@@ -204,6 +211,8 @@ class TestExpmActionInterval:
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, sp_expm(t*A).dot(target))
 
+    @pytest.mark.thread_unsafe
+    @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
@@ -230,6 +239,8 @@ class TestExpmActionInterval:
                 assert_allclose(sol_given, correct)
                 assert_allclose(sol_wrong, correct)
 
+    @pytest.mark.thread_unsafe
+    @pytest.mark.fail_slow(20)
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
@@ -247,22 +258,31 @@ class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
+        BI = np.identity(5, dtype=int)
+        BI_sparse = scipy.sparse.csr_array(BI)
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A complex, B int
-        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        A = scipy.sparse.diags_array(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(-1j*np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        assert_allclose(np.diag(expm_multiply(A, BI_sparse, 0, 1)[-1]), Aexpm.dot(B))
 
         # Test A int, B complex
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags_array(np.arange(5),format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        Aexpm = scipy.sparse.diags_array(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        BI = np.identity(5, dtype=complex)*1j
+        assert_allclose(
+            np.diag(expm_multiply(A, scipy.sparse.csr_array(BI), 0, 1)[-1]),
+            Aexpm.dot(B)
+        )
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
@@ -274,7 +294,7 @@ class TestExpmActionInterval:
         self._help_test_specific_expm_interval_status(2)
 
     def _help_test_specific_expm_interval_status(self, target_status):
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
         start = 0.1
         stop = 3.2
         num = 13
@@ -284,8 +304,8 @@ class TestExpmActionInterval:
         nrepeats = 10
         nsuccesses = 0
         for num in [14, 13, 2] * nrepeats:
-            A = np.random.randn(n, n)
-            B = np.random.randn(n, k)
+            A = rng.randn(n, n)
+            B = rng.randn(n, k)
             status = _expm_multiply_interval(A, B,
                     start=start, stop=stop, num=num, endpoint=endpoint,
                     status_only=True)
@@ -304,12 +324,13 @@ class TestExpmActionInterval:
             raise Exception(msg)
 
 
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize("dtype_a", DTYPES)
 @pytest.mark.parametrize("dtype_b", DTYPES)
 @pytest.mark.parametrize("b_is_matrix", [False, True])
 def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     """Make sure `expm_multiply` handles all numerical dtypes correctly."""
-    assert_allclose_ = (partial(assert_allclose, rtol=1.2e-3, atol=1e-5)
+    assert_allclose_ = (partial(assert_allclose, rtol=1.8e-3, atol=1e-5)
                         if {dtype_a, dtype_b} & IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data

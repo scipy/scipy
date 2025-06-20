@@ -3,9 +3,9 @@ c
 c\Name: zsortc
 c
 c\Description:
-c  Sorts the Complex*16 array in X into the order 
+c  Sorts the Complex*16 array in X into the order
 c  specified by WHICH and optionally applies the permutation to the
-c  Double precision  array Y. 
+c  Double precision  array Y.
 c
 c\Usage:
 c  call zsortc
@@ -15,7 +15,7 @@ c\Arguments
 c  WHICH   Character*2.  (Input)
 c          'LM' -> sort X into increasing order of magnitude.
 c          'SM' -> sort X into decreasing order of magnitude.
-c          'LR' -> sort X with real(X) in increasing algebraic order 
+c          'LR' -> sort X with real(X) in increasing algebraic order
 c          'SR' -> sort X with real(X) in decreasing algebraic order
 c          'LI' -> sort X with imag(X) in increasing algebraic order
 c          'SI' -> sort X with imag(X) in decreasing algebraic order
@@ -45,9 +45,9 @@ c\Author
 c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
-c     Applied Mathematics 
-c     Rice University           
-c     Houston, Texas 
+c     Applied Mathematics
+c     Rice University
+c     Houston, Texas
 c
 c     Adapted from the sort routine in LANSO.
 c
@@ -72,7 +72,7 @@ c     %-----------------%
 c     | Array Arguments |
 c     %-----------------%
 c
-      Complex*16     
+      Complex*16
      &           x(0:n-1), y(0:n-1)
 c
 c     %---------------%
@@ -80,9 +80,9 @@ c     | Local Scalars |
 c     %---------------%
 c
       integer    i, igap, j
-      Complex*16     
+      Complex*16
      &           temp
-      Double precision 
+      Double precision
      &           temp1, temp2
 c
 c     %--------------------%
@@ -96,14 +96,14 @@ c     %--------------------%
 c     | Intrinsic Functions |
 c     %--------------------%
        Intrinsic
-     &           dble, dimag
+     &           dble, aimag
 c
 c     %-----------------------%
 c     | Executable Statements |
 c     %-----------------------%
 c
       igap = n / 2
-c 
+c
       if (which .eq. 'LM') then
 c
 c        %--------------------------------------------%
@@ -119,8 +119,8 @@ c
 c
             if (j.lt.0) go to 30
 c
-            temp1 = dlapy2(dble(x(j)),dimag(x(j)))
-            temp2 = dlapy2(dble(x(j+igap)),dimag(x(j+igap)))
+            temp1 = dlapy2(dble(x(j)),aimag(x(j)))
+            temp2 = dlapy2(dble(x(j+igap)),aimag(x(j+igap)))
 c
             if (temp1.gt.temp2) then
                 temp = x(j)
@@ -156,14 +156,14 @@ c
 c
             if (j .lt. 0) go to 60
 c
-            temp1 = dlapy2(dble(x(j)),dimag(x(j)))
-            temp2 = dlapy2(dble(x(j+igap)),dimag(x(j+igap)))
+            temp1 = dlapy2(dble(x(j)),aimag(x(j)))
+            temp2 = dlapy2(dble(x(j+igap)),aimag(x(j+igap)))
 c
             if (temp1.lt.temp2) then
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -177,7 +177,7 @@ c
    60    continue
          igap = igap / 2
          go to 40
-c 
+c
       else if (which .eq. 'LR') then
 c
 c        %------------------------------------------------%
@@ -197,7 +197,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -211,7 +211,7 @@ c
    90    continue
          igap = igap / 2
          go to 70
-c 
+c
       else if (which .eq. 'SR') then
 c
 c        %------------------------------------------------%
@@ -230,7 +230,7 @@ c
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -244,7 +244,7 @@ c
   120    continue
          igap = igap / 2
          go to 100
-c 
+c
       else if (which .eq. 'LI') then
 c
 c        %--------------------------------------------%
@@ -259,7 +259,7 @@ c
 c
             if (j.lt.0) go to 150
 c
-            if (dimag(x(j)).gt.dimag(x(j+igap))) then
+            if (aimag(x(j)).gt.aimag(x(j+igap))) then
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
@@ -277,7 +277,7 @@ c
   150    continue
          igap = igap / 2
          go to 130
-c 
+c
       else if (which .eq. 'SI') then
 c
 c        %---------------------------------------------%
@@ -292,11 +292,11 @@ c
 c
             if (j.lt.0) go to 180
 c
-            if (dimag(x(j)).lt.dimag(x(j+igap))) then
+            if (aimag(x(j)).lt.aimag(x(j+igap))) then
                temp = x(j)
                x(j) = x(j+igap)
                x(j+igap) = temp
-c 
+c
                if (apply) then
                   temp = y(j)
                   y(j) = y(j+igap)
@@ -311,7 +311,7 @@ c
          igap = igap / 2
          go to 160
       end if
-c 
+c
  9000 continue
       return
 c

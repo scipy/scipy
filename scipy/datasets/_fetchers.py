@@ -1,3 +1,5 @@
+import sys
+
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 
@@ -27,8 +29,12 @@ def fetch_data(dataset_name, data_fetcher=data_fetcher):
         raise ImportError("Missing optional dependency 'pooch' required "
                           "for scipy.datasets module. Please use pip or "
                           "conda to install 'pooch'.")
+    # https://github.com/scipy/scipy/issues/21879
+    downloader = pooch.HTTPDownloader(
+        headers={"User-Agent": f"SciPy {sys.modules['scipy'].__version__}"}
+    )
     # The "fetch" method returns the full path to the downloaded data file.
-    return data_fetcher.fetch(dataset_name)
+    return data_fetcher.fetch(dataset_name, downloader=downloader)
 
 
 def ascent():
@@ -36,8 +42,8 @@ def ascent():
     Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy
     use in demos.
 
-    The image is derived from accent-to-the-top.jpg at
-    http://www.public-domain-image.com/people-public-domain-images-pictures/
+    The image is derived from
+    https://pixnio.com/people/accent-to-the-top
 
     Parameters
     ----------
@@ -55,7 +61,7 @@ def ascent():
     >>> ascent.shape
     (512, 512)
     >>> ascent.max()
-    255
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()
@@ -114,7 +120,7 @@ def electrocardiogram():
     >>> from scipy.datasets import electrocardiogram
     >>> ecg = electrocardiogram()
     >>> ecg
-    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385])
+    array([-0.245, -0.215, -0.185, ..., -0.405, -0.395, -0.385], shape=(108000,))
     >>> ecg.shape, ecg.mean(), ecg.std()
     ((108000,), -0.16510875, 0.5992473991177294)
 
@@ -178,7 +184,8 @@ def face(gray=False):
     """
     Get a 1024 x 768, color image of a raccoon face.
 
-    raccoon-procyon-lotor.jpg at http://www.public-domain-image.com
+    The image is derived from
+    https://pixnio.com/fauna-animals/raccoons/raccoon-procyon-lotor
 
     Parameters
     ----------
@@ -197,9 +204,7 @@ def face(gray=False):
     >>> face.shape
     (768, 1024, 3)
     >>> face.max()
-    255
-    >>> face.dtype
-    dtype('uint8')
+    np.uint8(255)
 
     >>> import matplotlib.pyplot as plt
     >>> plt.gray()

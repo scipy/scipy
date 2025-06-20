@@ -4,7 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = ['squeeze_element', 'chars_to_strings']  # noqa: F822
+__all__: list[str] = []
 
 
 def __dir__():

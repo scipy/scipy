@@ -4,6 +4,7 @@
 import numpy as np
 from scipy.sparse import issparse
 from scipy.sparse.linalg import svds
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 import scipy.sparse as sp
 
 from numpy import sqrt, abs
@@ -25,8 +26,8 @@ def norm(x, ord=None, axis=None):
 
     Parameters
     ----------
-    x : a sparse matrix
-        Input sparse matrix.
+    x : a sparse array
+        Input sparse array.
     ord : {non-zero int, inf, -inf, 'fro'}, optional
         Order of the norm (see table under ``Notes``). inf means numpy's
         `inf` object.
@@ -44,7 +45,7 @@ def norm(x, ord=None, axis=None):
     Notes
     -----
     Some of the ord are not implemented because some associated functions like,
-    _multi_svd_norm, are not yet available for sparse matrix.
+    _multi_svd_norm, are not yet available for sparse array.
 
     This docstring is modified based on numpy.linalg.norm.
     https://github.com/numpy/numpy/blob/main/numpy/linalg/linalg.py
@@ -52,7 +53,7 @@ def norm(x, ord=None, axis=None):
     The following norms can be calculated:
 
     =====  ============================
-    ord    norm for sparse matrices
+    ord    norm for sparse arrays
     =====  ============================
     None   Frobenius norm
     'fro'  Frobenius norm
@@ -77,7 +78,7 @@ def norm(x, ord=None, axis=None):
 
     Examples
     --------
-    >>> from scipy.sparse import *
+    >>> from scipy.sparse import csr_array, diags_array
     >>> import numpy as np
     >>> from scipy.sparse.linalg import norm
     >>> a = np.arange(9) - 4
@@ -89,7 +90,7 @@ def norm(x, ord=None, axis=None):
            [-1, 0, 1],
            [ 2, 3, 4]])
 
-    >>> b = csr_matrix(b)
+    >>> b = csr_array(b)
     >>> norm(b)
     7.745966692414834
     >>> norm(b, 'fro')
@@ -106,10 +107,11 @@ def norm(x, ord=None, axis=None):
     The matrix 2-norm or the spectral norm is the largest singular
     value, computed approximately and with limitations.
 
-    >>> b = diags([-1, 1], [0, 1], shape=(9, 10))
+    >>> b = diags_array([-1, 1], offsets=[0, 1], shape=(9, 10))
     >>> norm(b, 2)
     1.9753...
     """
+    x = convert_pydata_sparse_to_scipy(x, target_format="csr")
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
 
@@ -121,7 +123,7 @@ def norm(x, ord=None, axis=None):
     x = x.tocsr()
 
     if axis is None:
-        axis = (0, 1)
+        axis = tuple(range(x.ndim))
     elif not isinstance(axis, tuple):
         msg = "'axis' must be None, an integer or a tuple of integers"
         try:
@@ -132,7 +134,7 @@ def norm(x, ord=None, axis=None):
             raise TypeError(msg)
         axis = (int_axis,)
 
-    nd = 2
+    nd = x.ndim
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
@@ -148,13 +150,13 @@ def norm(x, ord=None, axis=None):
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
-            return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).max()
         elif ord == np.inf:
-            return abs(x).sum(axis=col_axis).max(axis=row_axis)[0,0]
+            return abs(x).sum(axis=col_axis).max()
         elif ord == -1:
-            return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
+            return abs(x).sum(axis=row_axis).min()
         elif ord == -np.inf:
-            return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
+            return abs(x).sum(axis=col_axis).min()
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
             return _sparse_frobenius_norm(x)

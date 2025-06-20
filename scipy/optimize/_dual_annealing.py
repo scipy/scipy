@@ -11,7 +11,7 @@ import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize, Bounds
 from scipy.special import gammaln
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 from scipy.optimize._constraints import new_bounds_to_old
 
 __all__ = ['dual_annealing']
@@ -38,21 +38,22 @@ class VisitingDistribution:
         makes the algorithm jump to a more distant region.
         The value range is (1, 3]. Its value is fixed for the life of the
         object.
-    rand_gen : {`~numpy.random.RandomState`, `~numpy.random.Generator`}
-        A `~numpy.random.RandomState`, `~numpy.random.Generator` object
-        for using the current state of the created random generator container.
+    rng_gen : {`~numpy.random.Generator`}
+        A `~numpy.random.Generator` object for generating new locations.
+        (can be a `~numpy.random.RandomState` object until SPEC007 transition
+         is fully complete).
 
     """
     TAIL_LIMIT = 1.e8
     MIN_VISIT_BOUND = 1.e-10
 
-    def __init__(self, lb, ub, visiting_param, rand_gen):
+    def __init__(self, lb, ub, visiting_param, rng_gen):
         # if you wish to make _visiting_param adjustable during the life of
         # the object then _factor2, _factor3, _factor5, _d1, _factor6 will
         # have to be dynamically calculated in `visit_fn`. They're factored
         # out here so they don't need to be recalculated all the time.
         self._visiting_param = visiting_param
-        self.rand_gen = rand_gen
+        self.rng_gen = rng_gen
         self.lower = lb
         self.upper = ub
         self.bound_range = ub - lb
@@ -79,7 +80,7 @@ class VisitingDistribution:
         if step < dim:
             # Changing all coordinates with a new visiting value
             visits = self.visit_fn(temperature, dim)
-            upper_sample, lower_sample = self.rand_gen.uniform(size=2)
+            upper_sample, lower_sample = self.rng_gen.uniform(size=2)
             visits[visits > self.TAIL_LIMIT] = self.TAIL_LIMIT * upper_sample
             visits[visits < -self.TAIL_LIMIT] = -self.TAIL_LIMIT * lower_sample
             x_visit = visits + x
@@ -94,9 +95,9 @@ class VisitingDistribution:
             x_visit = np.copy(x)
             visit = self.visit_fn(temperature, 1)[0]
             if visit > self.TAIL_LIMIT:
-                visit = self.TAIL_LIMIT * self.rand_gen.uniform()
+                visit = self.TAIL_LIMIT * self.rng_gen.uniform()
             elif visit < -self.TAIL_LIMIT:
-                visit = -self.TAIL_LIMIT * self.rand_gen.uniform()
+                visit = -self.TAIL_LIMIT * self.rng_gen.uniform()
             index = step - dim
             x_visit[index] = visit + x[index]
             a = x_visit[index] - self.lower[index]
@@ -110,7 +111,7 @@ class VisitingDistribution:
 
     def visit_fn(self, temperature, dim):
         """ Formula Visita from p. 405 of reference [2] """
-        x, y = self.rand_gen.normal(size=(dim, 2)).T
+        x, y = self.rng_gen.normal(size=(dim, 2)).T
 
         factor1 = np.exp(np.log(temperature) / (self._visiting_param - 1.0))
         factor4 = self._factor4_p * factor1
@@ -156,14 +157,14 @@ class EnergyState:
         self.upper = upper
         self.callback = callback
 
-    def reset(self, func_wrapper, rand_gen, x0=None):
+    def reset(self, func_wrapper, rng_gen, x0=None):
         """
         Initialize current location is the search domain. If `x0` is not
         provided, a random location within the bounds is generated.
         """
         if x0 is None:
-            self.current_location = rand_gen.uniform(self.lower, self.upper,
-                                                     size=len(self.lower))
+            self.current_location = rng_gen.uniform(self.lower, self.upper,
+                                                    size=len(self.lower))
         else:
             self.current_location = np.copy(x0)
         init_error = True
@@ -172,8 +173,7 @@ class EnergyState:
             self.current_energy = func_wrapper.fun(self.current_location)
             if self.current_energy is None:
                 raise ValueError('Objective function is returning None')
-            if (not np.isfinite(self.current_energy) or np.isnan(
-                    self.current_energy)):
+            if not np.isfinite(self.current_energy):
                 if reinit_counter >= EnergyState.MAX_REINIT_COUNT:
                     init_error = False
                     message = (
@@ -182,9 +182,9 @@ class EnergyState:
                         'trying new random parameters'
                     )
                     raise ValueError(message)
-                self.current_location = rand_gen.uniform(self.lower,
-                                                         self.upper,
-                                                         size=self.lower.size)
+                self.current_location = rng_gen.uniform(self.lower,
+                                                        self.upper,
+                                                        size=self.lower.size)
                 reinit_counter += 1
             else:
                 init_error = False
@@ -395,6 +395,9 @@ class LocalSearchWrapper:
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.jac = self.kwargs.get('jac', None)
+        self.hess = self.kwargs.get('hess', None)
+        self.hessp = self.kwargs.get('hessp', None)
+        self.kwargs.pop("args", None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -411,10 +414,19 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
-        elif callable(self.jac):
-            def wrapped_jac(x):
-                return self.jac(x, *args)
-            self.kwargs['jac'] = wrapped_jac
+        else:
+            if callable(self.jac):
+                def wrapped_jac(x):
+                    return self.jac(x, *args)
+                self.kwargs['jac'] = wrapped_jac
+            if callable(self.hess):
+                def wrapped_hess(x):
+                    return self.hess(x, *args)
+                self.kwargs['hess'] = wrapped_hess
+            if callable(self.hessp):
+                def wrapped_hessp(x, p):
+                    return self.hessp(x, p, *args)
+                self.kwargs['hessp'] = wrapped_hessp
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -437,10 +449,11 @@ class LocalSearchWrapper:
             return e, x_tmp
 
 
+@_transition_to_rng("seed", position_num=10)
 def dual_annealing(func, bounds, args=(), maxiter=1000,
                    minimizer_kwargs=None, initial_temp=5230.,
                    restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
-                   maxfun=1e7, seed=None, no_local_search=False,
+                   maxfun=1e7, rng=None, no_local_search=False,
                    callback=None, x0=None):
     """
     Find the global minimum of a function using Dual Annealing.
@@ -464,10 +477,15 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     maxiter : int, optional
         The maximum number of global search iterations. Default value is 1000.
     minimizer_kwargs : dict, optional
-        Extra keyword arguments to be passed to the local minimizer
-        (`minimize`). Some important options could be:
-        ``method`` for the minimizer method to use and ``args`` for
-        objective function additional arguments.
+        Keyword arguments to be passed to the local minimizer
+        (`minimize`). An important option could be ``method`` for the minimizer
+        method to use.
+        If no keyword arguments are provided, the local minimizer defaults to
+        'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
+        is specified, then the dict must contain all parameters required to
+        control the local minimization. `args` is ignored in this dict, as it is
+        passed automatically. `bounds` is not automatically passed on to the
+        local minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
@@ -491,15 +509,14 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done. Default value is 1e7.
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        Specify `seed` for repeatable minimizations. The random numbers
-        generated with this seed only affect the visiting distribution function
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a `Generator`.
+
+        Specify `rng` for repeatable minimizations. The random numbers
+        generated only affect the visiting distribution function
         and new coordinates generation.
     no_local_search : bool, optional
         If `no_local_search` is set to True, a traditional Generalized
@@ -509,12 +526,12 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         A callback function with signature ``callback(x, f, context)``,
         which will be called for all minima found.
         ``x`` and ``f`` are the coordinates and function value of the
-        latest minimum found, and ``context`` has value in [0, 1, 2], with the
-        following meaning:
+        latest minimum found, and ``context`` has one of the following
+        values:
 
-            - 0: minimum detected in the annealing process.
-            - 1: detection occurred in the local search process.
-            - 2: detection done in the dual annealing process.
+        - ``0``: minimum detected in the annealing process.
+        - ``1``: detection occurred in the local search process.
+        - ``2``: detection done in the dual annealing process.
 
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
@@ -582,7 +599,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     References
     ----------
     .. [1] Tsallis C. Possible generalization of Boltzmann-Gibbs
-        statistics. Journal of Statistical Physics, 52, 479-487 (1998).
+        statistics. Journal of Statistical Physics, 52, 479-487 (1988).
     .. [2] Tsallis C, Stariolo DA. Generalized Simulated Annealing.
         Physica A, 233, 395-406 (1996).
     .. [3] Xiang Y, Sun DY, Fan W, Gong XG. Generalized Simulated
@@ -650,19 +667,19 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     minimizer_wrapper = LocalSearchWrapper(
         bounds, func_wrapper, *args, **minimizer_kwargs)
 
-    # Initialization of random Generator for reproducible runs if seed provided
-    rand_state = check_random_state(seed)
+    # Initialization of random Generator for reproducible runs if rng provided
+    rng_gen = check_random_state(rng)
     # Initialization of the energy state
     energy_state = EnergyState(lower, upper, callback)
-    energy_state.reset(func_wrapper, rand_state, x0)
+    energy_state.reset(func_wrapper, rng_gen, x0)
     # Minimum value of annealing temperature reached to perform
     # re-annealing
     temperature_restart = initial_temp * restart_temp_ratio
     # VisitingDistribution instance
-    visit_dist = VisitingDistribution(lower, upper, visit, rand_state)
+    visit_dist = VisitingDistribution(lower, upper, visit, rng_gen)
     # Strategy chain instance
     strategy_chain = StrategyChain(accept, visit_dist, func_wrapper,
-                                   minimizer_wrapper, rand_state, energy_state)
+                                   minimizer_wrapper, rng_gen, energy_state)
     need_to_stop = False
     iteration = 0
     message = []
@@ -685,7 +702,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
                 break
             # Need a re-annealing process?
             if temperature < temperature_restart:
-                energy_state.reset(func_wrapper, rand_state)
+                energy_state.reset(func_wrapper, rng_gen)
                 break
             # starting strategy chain
             val = strategy_chain.run(i, temperature)

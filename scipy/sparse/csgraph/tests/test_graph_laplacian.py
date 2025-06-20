@@ -47,10 +47,10 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         sp_mat = mat
         mat = sp_mat.toarray()
     else:
-        sp_mat = sparse.csr_matrix(mat)
+        sp_mat = sparse.csr_array(mat)
 
     mat_copy = np.copy(mat)
-    sp_mat_copy = sparse.csr_matrix(sp_mat, copy=True)
+    sp_mat_copy = sparse.csr_array(sp_mat, copy=True)
 
     n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
@@ -161,11 +161,10 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-INT_DTYPES = {np.intc, np_long, np.longlong}
-REAL_DTYPES = {np.float32, np.float64, np.longdouble}
-COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
-# use sorted list to ensure fixed order of tests
-DTYPES = sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str)
+INT_DTYPES = (np.intc, np_long, np.longlong)
+REAL_DTYPES = (np.float32, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
+DTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -242,7 +241,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("copy", [True, False])
 def test_sparse_formats(fmt, normed, copy):
-    mat = sparse.diags([1, 1], [-1, 1], shape=(4, 4), format=fmt)
+    mat = sparse.diags_array([1, 1], offsets=[-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy)
 
 

@@ -1,6 +1,6 @@
 """Byrd-Omojokun Trust-Region SQP method."""
 
-from scipy.sparse import eye as speye
+from scipy.sparse import eye_array as speye
 from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
 import numpy as np
@@ -77,7 +77,21 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
     A = jac0
     S = scaling(x)
     # Get projections
-    Z, LS, Y = projections(A, factorization_method)
+    try:
+        Z, LS, Y = projections(A, factorization_method)
+    except ValueError as e:
+        if str(e) == "expected square matrix":
+            # can be the case if there are more equality
+            # constraints than independent variables
+            raise ValueError(
+                "The 'expected square matrix' error can occur if there are"
+                " more equality constraints than independent variables."
+                " Consider how your constraints are set up, or use"
+                " factorization_method='SVDFactorization'."
+            ) from e
+        else:
+            raise e
+
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
     # Compute Hessian
@@ -207,7 +221,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             H = lagr_hess(x, v)
             # Set Flag
             last_iteration_failed = False
-            # Otimality values
+            # Optimality values
             optimality = norm(c + A.T.dot(v), np.inf)
             constr_violation = norm(b, np.inf) if len(b) > 0 else 0
         else:

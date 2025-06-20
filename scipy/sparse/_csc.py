@@ -8,7 +8,7 @@ import numpy as np
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
-from ._sparsetools import csc_tocsr, expandptr
+from ._sparsetools import csr_tocsc, expandptr
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
@@ -49,7 +49,7 @@ class _csc_base(_cs_matrix):
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csc_tocsr(M, N,
+        csr_tocsc(N, M,
                   self.indptr.astype(idx_dtype),
                   self.indices.astype(idx_dtype),
                   self.data,
@@ -100,7 +100,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += M
         if i < 0 or i >= M:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(minor=i).tocsr()
 
     def _getcol(self, i):
@@ -112,7 +112,7 @@ class _csc_base(_cs_matrix):
         if i < 0:
             i += N
         if i < 0 or i >= N:
-            raise IndexError('index (%d) out of range' % i)
+            raise IndexError(f'index ({i}) out of range')
         return self._get_submatrix(major=i, copy=True)
 
     def _get_intXarray(self, row, col):
@@ -132,7 +132,10 @@ class _csc_base(_cs_matrix):
         return self._major_index_fancy(col)._minor_slice(row)
 
     def _get_arrayXint(self, row, col):
-        return self._get_submatrix(major=col)._minor_index_fancy(row)
+        res = self._get_submatrix(major=col)._minor_index_fancy(row)
+        if row.ndim > 1:
+            return res.reshape(row.shape)
+        return res
 
     def _get_arrayXslice(self, row, col):
         return self._major_slice(col)._minor_index_fancy(row)

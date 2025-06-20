@@ -1,10 +1,13 @@
 import math
+import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
+from scipy._lib._util import _apply_over_batch
+
 
 __all__ = ['toeplitz', 'circulant', 'hankel',
-           'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+           'hadamard', 'leslie', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix']
 
@@ -15,7 +18,7 @@ __all__ = ['toeplitz', 'circulant', 'hankel',
 
 
 def toeplitz(c, r=None):
-    """
+    r"""
     Construct a Toeplitz matrix.
 
     The Toeplitz matrix has constant diagonals, with c as its first column
@@ -25,14 +28,18 @@ def toeplitz(c, r=None):
     Parameters
     ----------
     c : array_like
-        First column of the matrix.  Whatever the actual shape of `c`, it
-        will be converted to a 1-D array.
+        First column of the matrix.
     r : array_like, optional
         First row of the matrix. If None, ``r = conjugate(c)`` is assumed;
         in this case, if c[0] is real, the result is a Hermitian matrix.
         r[0] is ignored; the first row of the returned matrix is
-        ``[c[0], r[1:]]``.  Whatever the actual shape of `r`, it will be
-        converted to a 1-D array.
+        ``[c[0], r[1:]]``.
+
+        .. warning::
+
+            Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
+            not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
+            before passing them to `toeplitz`.
 
     Returns
     -------
@@ -64,11 +71,19 @@ def toeplitz(c, r=None):
            [ 4.-1.j,  2.+3.j,  1.+0.j]])
 
     """
-    c = np.asarray(c).ravel()
+    c = np.asarray(c)
     if r is None:
         r = c.conjugate()
     else:
-        r = np.asarray(r).ravel()
+        r = np.asarray(r)
+
+    if c.ndim > 1 or r.ndim > 1:
+        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
+               "batch, not `ravel`ed. To preserve the existing behavior and silence "
+               "this warning, `ravel` arguments before passing them to `toeplitz`.")
+        warnings.warn(msg, FutureWarning, stacklevel=2)
+
+    c, r = c.ravel(), r.ravel()
     # Form a 1-D array containing a reversed c followed by r[1:] that could be
     # strided to give us toeplitz matrix.
     vals = np.concatenate((c[::-1], r[1:]))
@@ -83,13 +98,18 @@ def circulant(c):
 
     Parameters
     ----------
-    c : (N,) array_like
-        1-D array, the first column of the matrix.
+    c : (..., N,)  array_like
+        The first column(s) of the matrix. Multidimensional arrays are treated as a
+        batch: each slice along the last axis is the first column of an output matrix.
 
     Returns
     -------
-    A : (N, N) ndarray
-        A circulant matrix whose first column is `c`.
+    A : (..., N, N) ndarray
+        A circulant matrix whose first column is given by `c`.  For batch input, each
+        slice of shape ``(N, N)`` along the last two dimensions of the output
+        corresponds with a slice of shape ``(N,)`` along the last dimension of the
+        input.
+
 
     See Also
     --------
@@ -109,13 +129,28 @@ def circulant(c):
            [2, 1, 3],
            [3, 2, 1]])
 
+    >>> circulant([[1, 2, 3], [4, 5, 6]])
+    array([[[1, 3, 2],
+            [2, 1, 3],
+            [3, 2, 1]],
+           [[4, 6, 5],
+            [5, 4, 6],
+            [6, 5, 4]]])
     """
-    c = np.asarray(c).ravel()
+    c = np.atleast_1d(c)
+    batch_shape, N = c.shape[:-1], c.shape[-1]
+    # Need to use `prod(batch_shape)` instead of `-1` in case array has zero size
+    c = c.reshape(math.prod(batch_shape), N) if batch_shape else c
     # Form an extended array that could be strided to give circulant version
-    c_ext = np.concatenate((c[::-1], c[:0:-1]))
-    L = len(c)
-    n = c_ext.strides[0]
-    return as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n)).copy()
+    c_ext = np.concatenate((c[..., ::-1], c[..., :0:-1]), axis=-1).ravel()
+    L = c.shape[-1]
+    n = c_ext.strides[-1]
+    if c.ndim == 1:
+        A = as_strided(c_ext[L-1:], shape=(L, L), strides=(-n, n))
+    else:
+        m = c.shape[0]
+        A = as_strided(c_ext[L-1:], shape=(m, L, L), strides=(n*(2*L-1), -n, n))
+    return A.reshape(batch_shape + (N, N)).copy()
 
 
 def hankel(c, r=None):
@@ -123,8 +158,11 @@ def hankel(c, r=None):
     Construct a Hankel matrix.
 
     The Hankel matrix has constant anti-diagonals, with `c` as its
-    first column and `r` as its last row. If `r` is not given, then
-    `r = zeros_like(c)` is assumed.
+    first column and `r` as its last row. If the first element of `r`
+    differs from the last element of `c`, the first element of `r` is
+    replaced by the last element of `c` to ensure that anti-diagonals
+    remain constant. If `r` is not given, then `r = zeros_like(c)` is
+    assumed.
 
     Parameters
     ----------
@@ -232,6 +270,7 @@ def hadamard(n, dtype=int):
     return H
 
 
+@_apply_over_batch(("f", 1), ("s", 1))
 def leslie(f, s):
     """
     Create a Leslie matrix.
@@ -245,20 +284,19 @@ def leslie(f, s):
     f : (N,) array_like
         The "fecundity" coefficients.
     s : (N-1,) array_like
-        The "survival" coefficients, has to be 1-D.  The length of `s`
-        must be one less than the length of `f`, and it must be at least 1.
+        The "survival" coefficients. The length of `s` must be one less
+        than the length of `f`, and it must be at least 1.
 
     Returns
     -------
     L : (N, N) ndarray
         The array is zero except for the first row,
         which is `f`, and the first sub-diagonal, which is `s`.
-        The data-type of the array will be the data-type of ``f[0]+s[0]``.
+        The data-type of the array will be the data-type of
+        ``f[0]+s[0]``.
 
     Notes
     -----
-    .. versionadded:: 0.8.0
-
     The Leslie matrix is used to model discrete-time, age-structured
     population growth [1]_ [2]_. In a population with `n` age classes, two sets
     of parameters define a Leslie matrix: the `n` "fecundity coefficients",
@@ -286,76 +324,26 @@ def leslie(f, s):
     """
     f = np.atleast_1d(f)
     s = np.atleast_1d(s)
-    if f.ndim != 1:
-        raise ValueError("Incorrect shape for f.  f must be 1D")
-    if s.ndim != 1:
-        raise ValueError("Incorrect shape for s.  s must be 1D")
-    if f.size != s.size + 1:
-        raise ValueError("Incorrect lengths for f and s.  The length"
-                         " of s must be one less than the length of f.")
-    if s.size == 0:
+
+    if f.shape[-1] != s.shape[-1] + 1:
+        raise ValueError("Incorrect lengths for f and s. The length of s along "
+                         "the last axis must be one less than the length of f.")
+    if s.shape[-1] == 0:
         raise ValueError("The length of s must be at least 1.")
 
+    n = f.shape[-1]
     tmp = f[0] + s[0]
-    n = f.size
     a = np.zeros((n, n), dtype=tmp.dtype)
     a[0] = f
     a[list(range(1, n)), list(range(0, n - 1))] = s
     return a
 
 
-def kron(a, b):
-    """
-    Kronecker product.
-
-    The result is the block matrix::
-
-        a[0,0]*b    a[0,1]*b  ... a[0,-1]*b
-        a[1,0]*b    a[1,1]*b  ... a[1,-1]*b
-        ...
-        a[-1,0]*b   a[-1,1]*b ... a[-1,-1]*b
-
-    Parameters
-    ----------
-    a : (M, N) ndarray
-        Input array
-    b : (P, Q) ndarray
-        Input array
-
-    Returns
-    -------
-    A : (M*P, N*Q) ndarray
-        Kronecker product of `a` and `b`.
-
-    Examples
-    --------
-    >>> from numpy import array
-    >>> from scipy.linalg import kron
-    >>> kron(array([[1,2],[3,4]]), array([[1,1,1]]))
-    array([[1, 1, 1, 2, 2, 2],
-           [3, 3, 3, 4, 4, 4]])
-
-    """
-    # accommodate empty arrays
-    if a.size == 0 or b.size == 0:
-        m = a.shape[0] * b.shape[0]
-        n = a.shape[1] * b.shape[1]
-        return np.empty_like(a, shape=(m, n))
-
-    if not a.flags['CONTIGUOUS']:
-        a = np.reshape(a, a.shape)
-    if not b.flags['CONTIGUOUS']:
-        b = np.reshape(b, b.shape)
-    o = np.outer(a, b)
-    o = o.reshape(a.shape + b.shape)
-    return np.concatenate(np.concatenate(o, axis=1), axis=1)
-
-
 def block_diag(*arrs):
     """
-    Create a block diagonal matrix from provided arrays.
+    Create a block diagonal array from provided arrays.
 
-    Given the inputs `A`, `B` and `C`, the output will have these
+    For example, given 2-D inputs `A`, `B` and `C`, the output will have these
     arrays arranged on the diagonal::
 
         [[A, 0, 0],
@@ -364,15 +352,17 @@ def block_diag(*arrs):
 
     Parameters
     ----------
-    A, B, C, ... : array_like, up to 2-D
-        Input arrays.  A 1-D array or array_like sequence of length `n` is
-        treated as a 2-D array with shape ``(1,n)``.
+    A, B, C, ... : array_like
+        Input arrays.  A 1-D array or array_like sequence of length ``n`` is
+        treated as a 2-D array with shape ``(1, n)``. Any dimensions before
+        the last two are treated as batch dimensions; see :ref:`linalg_batch`.
 
     Returns
     -------
     D : ndarray
-        Array with `A`, `B`, `C`, ... on the diagonal. `D` has the
-        same dtype as `A`.
+        Array with `A`, `B`, `C`, ... on the diagonal of the last two
+        dimensions. `D` has the same dtype as the result type of the
+        inputs.
 
     Notes
     -----
@@ -380,7 +370,8 @@ def block_diag(*arrs):
     block diagonal matrix.
 
     Empty sequences (i.e., array-likes of zero size) will not be ignored.
-    Noteworthy, both [] and [[]] are treated as matrices with shape ``(1,0)``.
+    Noteworthy, both ``[]`` and ``[[]]`` are treated as matrices with shape
+    ``(1,0)``.
 
     Examples
     --------
@@ -417,18 +408,16 @@ def block_diag(*arrs):
         arrs = ([],)
     arrs = [np.atleast_2d(a) for a in arrs]
 
-    bad_args = [k for k in range(len(arrs)) if arrs[k].ndim > 2]
-    if bad_args:
-        raise ValueError("arguments in the following positions have dimension "
-                         "greater than 2: %s" % bad_args)
-
-    shapes = np.array([a.shape for a in arrs])
+    batch_shapes = [a.shape[:-2] for a in arrs]
+    batch_shape = np.broadcast_shapes(*batch_shapes)
+    arrs = [np.broadcast_to(a, batch_shape + a.shape[-2:]) for a in arrs]
     out_dtype = np.result_type(*[arr.dtype for arr in arrs])
-    out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
+    block_shapes = np.array([a.shape[-2:] for a in arrs])
+    out = np.zeros(batch_shape + tuple(np.sum(block_shapes, axis=0)), dtype=out_dtype)
 
     r, c = 0, 0
-    for i, (rr, cc) in enumerate(shapes):
-        out[r:r + rr, c:c + cc] = arrs[i]
+    for i, (rr, cc) in enumerate(block_shapes):
+        out[..., r:r + rr, c:c + cc] = arrs[i]
         r += rr
         c += cc
     return out
@@ -443,22 +432,26 @@ def companion(a):
 
     Parameters
     ----------
-    a : (N,) array_like
+    a : (..., N) array_like
         1-D array of polynomial coefficients. The length of `a` must be
         at least two, and ``a[0]`` must not be zero.
+        M-dimensional arrays are treated as a batch: each slice along the last
+        axis is a 1-D array of polynomial coefficients.
 
     Returns
     -------
-    c : (N-1, N-1) ndarray
-        The first row of `c` is ``-a[1:]/a[0]``, and the first
+    c : (..., N-1, N-1) ndarray
+        For 1-D input, the first row of `c` is ``-a[1:]/a[0]``, and the first
         sub-diagonal is all ones.  The data-type of the array is the same
         as the data-type of ``1.0*a[0]``.
+        For batch input, each slice of shape ``(N-1, N-1)`` along the last two
+        dimensions of the output corresponds with a slice of shape ``(N,)``
+        along the last dimension of the input.
 
     Raises
     ------
     ValueError
-        If any of the following are true: a) ``a.ndim != 1``;
-        b) ``a.size < 2``; c) ``a[0] == 0``.
+        If any of the following are true: a) ``a.shape[-1] < 2``; b) ``a[..., 0] == 0``.
 
     Notes
     -----
@@ -479,22 +472,19 @@ def companion(a):
 
     """
     a = np.atleast_1d(a)
+    n = a.shape[-1]
 
-    if a.ndim != 1:
-        raise ValueError("Incorrect shape for `a`.  `a` must be "
-                         "one-dimensional.")
+    if n < 2:
+        raise ValueError("The length of `a` along the last axis must be at least 2.")
 
-    if a.size < 2:
-        raise ValueError("The length of `a` must be at least 2.")
+    if np.any(a[..., 0] == 0):
+        raise ValueError("The first coefficient(s) of `a` (i.e. elements "
+                         "of `a[..., 0]`) must not be zero.")
 
-    if a[0] == 0:
-        raise ValueError("The first coefficient in `a` must not be zero.")
-
-    first_row = -a[1:] / (1.0 * a[0])
-    n = a.size
-    c = np.zeros((n - 1, n - 1), dtype=first_row.dtype)
-    c[0] = first_row
-    c[list(range(1, n - 1)), list(range(0, n - 2))] = 1
+    first_row = -a[..., 1:] / (1.0 * a[..., 0:1])
+    c = np.zeros(a.shape[:-1] + (n - 1, n - 1), dtype=first_row.dtype)
+    c[..., 0, :] = first_row
+    c[..., np.arange(1, n - 1), np.arange(0, n - 2)] = 1
     return c
 
 
@@ -677,9 +667,9 @@ def pascal(n, kind='symmetric', exact=True):
         If `exact` is True, the result is either an array of type
         numpy.uint64 (if n < 35) or an object array of Python long integers.
         If `exact` is False, the coefficients in the matrix are computed using
-        `scipy.special.comb` with `exact=False`. The result will be a floating
+        `scipy.special.comb` with ``exact=False``. The result will be a floating
         point array, and the values in the array will not be the exact
-        coefficients, but this version is much faster than `exact=True`.
+        coefficients, but this version is much faster than ``exact=True``.
 
     Returns
     -------
@@ -936,12 +926,16 @@ def fiedler(a):
 
     Parameters
     ----------
-    a : (n,) array_like
-        coefficient array
+    a : (..., n,) array_like
+        Coefficient array. N-dimensional arrays are treated as a batch:
+        each slice along the last axis is a 1-D coefficient array.
 
     Returns
     -------
-    F : (n, n) ndarray
+    F : (..., n, n) ndarray
+        Fiedler matrix. For batch input, each slice of shape ``(n, n)``
+        along the last two dimensions of the output corresponds with a
+        slice of shape ``(n,)`` along the last dimension of the input.
 
     See Also
     --------
@@ -991,8 +985,8 @@ def fiedler(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim != 1:
-        raise ValueError("Input 'a' must be a 1D array.")
+    if a.ndim > 1:
+        return np.apply_along_axis(fiedler, -1, a)
 
     if a.size == 0:
         return np.array([], dtype=float)
@@ -1011,14 +1005,18 @@ def fiedler_companion(a):
 
     Parameters
     ----------
-    a : (N,) array_like
+    a : (..., N) array_like
         1-D array of polynomial coefficients in descending order with a nonzero
         leading coefficient. For ``N < 2``, an empty array is returned.
+        N-dimensional arrays are treated as a batch: each slice along the last
+        axis is a 1-D array of polynomial coefficients.
 
     Returns
     -------
-    c : (N-1, N-1) ndarray
-        Resulting companion matrix
+    c : (..., N-1, N-1) ndarray
+        Resulting companion matrix. For batch input, each slice of shape
+        ``(N-1, N-1)`` along the last two dimensions of the output corresponds
+        with a slice of shape ``(N,)`` along the last dimension of the input.
 
     See Also
     --------
@@ -1026,8 +1024,9 @@ def fiedler_companion(a):
 
     Notes
     -----
-    Similar to `companion` the leading coefficient should be nonzero. In the case
-    the leading coefficient is not 1, other coefficients are rescaled before
+    Similar to `companion`, each leading coefficient along the last axis of the
+    input should be nonzero.
+    If the leading coefficient is not 1, other coefficients are rescaled before
     the array generation. To avoid numerical issues, it is best to provide a
     monic polynomial.
 
@@ -1055,8 +1054,8 @@ def fiedler_companion(a):
     """
     a = np.atleast_1d(a)
 
-    if a.ndim != 1:
-        raise ValueError("Input 'a' must be a 1-D array.")
+    if a.ndim > 1:
+        return np.apply_along_axis(fiedler_companion, -1, a)
 
     if a.size <= 2:
         if a.size == 2:
@@ -1089,8 +1088,9 @@ def convolution_matrix(a, n, mode='full'):
 
     Parameters
     ----------
-    a : (m,) array_like
-        The 1-D array to convolve.
+    a : (..., m) array_like
+        The 1-D array to convolve. N-dimensional arrays are treated as a
+        batch: each slice along the last axis is a 1-D array to convolve.
     n : int
         The number of columns in the resulting matrix.  It gives the length
         of the input to be convolved with `a`.  This is analogous to the
@@ -1102,7 +1102,7 @@ def convolution_matrix(a, n, mode='full'):
 
     Returns
     -------
-    A : (k, n) ndarray
+    A : (..., k, n) ndarray
         The convolution matrix whose row count `k` depends on `mode`::
 
             =======  =========================
@@ -1112,6 +1112,10 @@ def convolution_matrix(a, n, mode='full'):
             'same'   max(m, n)
             'valid'  max(m, n) - min(m, n) + 1
             =======  =========================
+
+        For batch input, each slice of shape ``(k, n)`` along the last two
+        dimensions of the output corresponds with a slice of shape ``(m,)``
+        along the last dimension of the input.
 
     See Also
     --------
@@ -1232,15 +1236,16 @@ def convolution_matrix(a, n, mode='full'):
         raise ValueError('n must be a positive integer.')
 
     a = np.asarray(a)
-    if a.ndim != 1:
-        raise ValueError('convolution_matrix expects a one-dimensional '
-                         'array as input')
+
     if a.size == 0:
         raise ValueError('len(a) must be at least 1.')
 
     if mode not in ('full', 'valid', 'same'):
         raise ValueError(
             "'mode' argument must be one of ('full', 'valid', 'same')")
+
+    if a.ndim > 1:
+        return np.apply_along_axis(lambda a: convolution_matrix(a, n, mode), -1, a)
 
     # create zero padded versions of the array
     az = np.pad(a, (0, n-1), 'constant')

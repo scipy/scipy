@@ -140,7 +140,7 @@ end subroutine <prefix><s,s,h,h>bmv
 subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,lower,ly)
   ! Computes a matrix-vector product for a symmetric matrix
   !
-  ! Calculate y <- alpha * A * x + beta * y, A is symmmetric in packed form.
+  ! Calculate y <- alpha * A * x + beta * y, A is symmetric in packed form.
 
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,ap,x+offx,&incx,&beta,y+offy,&incy)
   callprotoargument char*,F_INT*,<ctype6>*,<ctype6>*,<ctype6>*,F_INT*,<ctype6>*,<ctype6>*,F_INT*
@@ -174,7 +174,7 @@ end subroutine <prefix6><s,s,s,s,h,h>pmv
 subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lower,ly)
   ! Computes a matrix-vector product for a symmetric/hermitian matrix
   !
-  ! Calculate y <- alpha * A * x + beta * y, A is symmmetric/hermitian
+  ! Calculate y <- alpha * A * x + beta * y, A is symmetric/hermitian
 
   callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,a,&n,x+offx,&incx,&beta, &
        y+offy,&incy)

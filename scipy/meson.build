@@ -1,3 +1,5 @@
+fs = import('fs')
+
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
 if is_mingw and ff.get_id() != 'gcc'
@@ -26,6 +28,21 @@ if is_mingw
 endif
 
 thread_dep = dependency('threads', required: false)
+
+
+# Uses the `numpy-config` executable (or a user's numpy.pc pkg-config file).
+# Will work for numpy>=2.0, hence not required (it'll be a while until 2.0 is
+# our minimum supported version). Using this now to be able to detect the
+# version easily for >=2.0.
+_numpy_dep = dependency('numpy', required: false)
+f2py_freethreading_arg = []
+if _numpy_dep.found() and _numpy_dep.version().version_compare('>=2.1.0')
+  f2py_freethreading_arg = ['--free-threading']
+  message('f2py free-threading enabled')
+else
+  message('f2py free-threading disabled; need numpy >=2.1.0.')
+  message('See https://github.com/mesonbuild/meson/issues/14651')
+endif
 
 # NumPy include directory - needed in all submodules
 # The chdir is needed because within numpy there's an `import signal`
@@ -81,11 +98,9 @@ inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
 npymath_path = _incdir_numpy_abs / '..' / 'lib'
-npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.12.0')
+pybind11_dep = dependency('pybind11', version: '>=2.13.2')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -130,11 +145,85 @@ fortranobject_lib = static_library('_fortranobject',
   c_args: numpy_nodepr_api,
   dependencies: py3_dep,
   include_directories: [inc_np, inc_f2py],
+  gnu_symbol_visibility: 'hidden',
 )
 fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
   include_directories: [inc_np, inc_f2py],
 )
+
+cdata = configuration_data()
+
+# Test variable attribute to use for thread-local storage;
+# Adapted from `numpy/_core/meson.build`.
+check_tls_attrs = [
+  ['thread_local', 'HAVE_THREAD_LOCAL'],    # C23
+  ['_Thread_local', 'HAVE__THREAD_LOCAL'],  # C11/C17
+  ['__thread', 'HAVE__THREAD'],
+]
+if is_windows and not is_mingw
+  check_tls_attrs += ['__declspec(thread)', 'HAVE___DECLSPEC_THREAD_']
+endif
+f2py_tls_define = ''
+foreach tls_attrs: check_tls_attrs
+  attr = tls_attrs[0]
+  code = f'''
+    #pragma GCC diagnostic error "-Wattributes"
+    #pragma clang diagnostic error "-Wattributes"
+
+    int @attr@ foo;
+  '''
+  code += '''
+    int
+    main()
+    {
+      return 0;
+    }
+  '''
+  if cc.compiles(code, name: tls_attrs[0])
+    cdata.set10(tls_attrs[1], true)
+    f2py_tls_define = tls_attrs[0]
+  endif
+endforeach
+
+# Contains only TLS check results for now - name chosen for when more compiler
+# checks need adding in the future.
+scipy_config_h = configure_file(
+  input: 'scipy_config.h.in',
+  output: 'scipy_config.h',
+  configuration: cdata,
+  install: false
+)
+
+_f2py_c_args = [f'-DF2PY_THREAD_LOCAL_DECL=@f2py_tls_define@']
+fortranobject_dep = declare_dependency(
+  dependencies: fortranobject_dep,
+  compile_args: _f2py_c_args,
+)
+
+f2py = find_program('f2py')
+# It should be quite rare for the `f2py` executable to not be the one from
+# `numpy` installed in the Python env we are building for (unless we are
+# cross-compiling). If it is from a different env, that is still fine as long
+# as it's not too old. We are only using f2py as a code generator, and the
+# output is not dependent on platform or Python version (see gh-20612 for more
+# details).
+# This should be robust enough. If not, we can make this more complex, using
+# a fallback to `python -m f2py` rather than erroring out.
+f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
+if f2py_version.version_compare('<'+min_numpy_version)
+  error(f'Found f2py executable is too old: @f2py_version@')
+endif
+
+# Note: this generator cannot handle:
+# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
+# 2. targets with #include's (due to no `depend_files` - see feature request
+#    at meson#8295)
+f2py_gen = generator(generate_f2pymod,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'] + f2py_freethreading_arg,
+  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+)
+
 
 # TODO: 64-bit BLAS and LAPACK
 #
@@ -148,12 +237,36 @@ fortranobject_dep = declare_dependency(
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
 
+macOS13_3_or_later = false
+if host_machine.system() == 'darwin'
+  r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
+  sdkVersion = r.stdout().strip()
+
+  macOS13_3_or_later = sdkVersion.version_compare('>=13.3')
+endif
+
+_args_blas_lapack = []
+accelerate_flag = []
+generate_blas_wrappers = false
+if blas_name == 'accelerate'
+  if not macOS13_3_or_later
+    error('macOS Accelerate is only supported on macOS >=13.3')
+  endif
+  if cc.get_id() != 'clang'
+    warning('accelerate may not be properly detected with non-native Apple compiler due to https://github.com/mesonbuild/meson/issues/13608')
+  endif
+  _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
+  generate_blas_wrappers = true
+  accelerate_flag = '-a'
+endif
+
 # First try scipy-openblas, and if found don't look for cblas or lapack, we
 # know what's inside the scipy-openblas wheels already.
 if blas_name == 'openblas' or blas_name == 'auto'
   blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
   endif
 endif
 
@@ -164,6 +277,10 @@ if blas_name == 'openblas'
 elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
+blas_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: _args_blas_lapack
+)
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
   # ABI wrappers, so detect it and error out if we cannot find it.
@@ -175,7 +292,7 @@ else
   cblas = []
 endif
 
-if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+if 'mkl' in blas.name() or blas.name().to_lower() == 'accelerate' or blas_name == 'scipy-openblas'
   # For these libraries we know that they contain LAPACK, and it's desirable to
   # use that - no need to run the full detection twice.
   lapack = blas
@@ -184,6 +301,10 @@ elif lapack_name == 'openblas'
 else
   lapack = dependency(lapack_name)
 endif
+lapack_dep = declare_dependency(
+  dependencies: lapack,
+  compile_args: _args_blas_lapack
+)
 
 dependency_map = {
   'BLAS': blas,
@@ -202,40 +323,48 @@ if use_g77_abi
   g77_abi_wrappers = static_library(
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [py3_dep, cblas, blas, np_dep],
+    dependencies: [py3_dep, cblas, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: [py3_dep, blas, np_dep],
+    dependencies: [py3_dep, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
-generate_version = custom_target(
-  'generate-version',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: 'version.py',
-  input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir,
-  install_tag: 'python-runtime',
+# Generate version.py for sdist
+meson.add_dist_script(
+   ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py']
 )
+if not fs.exists('version.py')
+  generate_version = custom_target(
+    'generate-version',
+    install: true,
+    build_always_stale: true,
+    build_by_default: true,
+    output: 'version.py',
+    input: '../tools/gitversion.py',
+    command: ['../tools/gitversion.py', '--meson-dist', '--write', 'scipy/version.py'],
+    install_dir: scipy_dir,
+    install_tag: 'python-runtime',
+  )
+else
+  # When building from sdist, version.py exists and should be included
+  py3.install_sources(['version.py'], subdir : 'scipy')
+endif
 
 python_sources = [
   '__init__.py',
   '_distributor_init.py',
   'conftest.py',
-  'linalg.pxd',
-  'optimize.pxd',
-  'special.pxd',
 ]
 
-if blas_name == 'scipy-openblas'
+if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
 
@@ -244,42 +373,59 @@ py3.install_sources(
   subdir: 'scipy'
 )
 
-# Copy the main __init__.py and pxd files to the build dir.
+# Copy the main __init__.py to the build dir.
+# Some submodules (linalg, special, optimize) add pxd files to this.
 # Needed to trick Cython, it won't do a relative import outside a package
-fs = import('fs')
 #_cython_tree = declare_dependency(sources: [
-_cython_tree = [
-  fs.copyfile('__init__.py'),
-  fs.copyfile('linalg.pxd'),
-  fs.copyfile('optimize.pxd'),
-  fs.copyfile('special.pxd'),
-]
+_cython_tree = [fs.copyfile('__init__.py')]
 
 cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+
+  cython_shared_src = custom_target(
+    install: false,
+    output: '_cyutility.c',
+    command: [
+      cython, '-3', '--fast-fail', '-Xfreethreading_compatible=True',
+      '--generate-shared=' + meson.current_build_dir()/'_cyutility.c'
+    ],
+  )
+
+  cython_shared_module = py3.extension_module('_cyutility',
+    cython_shared_src,
+    subdir: 'scipy',
+    cython_args: cython_args,
+    install: true,
+    install_tag: 'python-runtime',
+  )
+
+  cython_args += ['--shared=scipy._cyutility']
+else
+  cython_shared_module = []
+endif
 cython_cplus_args = ['--cplus'] + cython_args
 
 cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : _cython_tree)
+  depends : [_cython_tree, cython_shared_module]
+)
 
 cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree])
+  depends : [_cython_tree, cython_shared_module]
+)
 
 if use_pythran
+  # TODO: add argument to mark extension modules as safe to run without the GIL,
+  #       once pythran supports that.
   pythran_gen = generator(pythran,
     arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
     output : '@BASENAME@.cpp',
   )
 endif
-
-# Used for templated C code (not Cython code since Cython is path-dependent)
-tempita_gen = generator(tempita,
-  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
-  output : '@BASENAME@',
-)
 
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
@@ -304,11 +450,14 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_unused_but_set_variable = cc.get_supported_arguments('-Wno-unused-but-set-variable')
 
 # C++ warning flags
+_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
+_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
+_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
@@ -356,7 +505,7 @@ fortran_ignore_warnings = ff.get_supported_arguments(
 # Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
 # code uses preprocessor statements, add this compile flag to it.
 _fflag_fpp = []
-if ff.get_id() == 'intel-cl'
+if ff.get_id() in ['intel-cl', 'intel-llvm-cl']
   if is_windows
     _fflag_fpp = ff.get_supported_arguments('/fpp')
   else
@@ -490,6 +639,17 @@ configure_file(
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes
 # better)
+subdir('_build_utils')
+# Update BLAS/LAPACK dependencies to include wrapper libs
+blas_dep = declare_dependency(
+  dependencies: blas_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
+lapack_dep = declare_dependency(
+  dependencies: lapack_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
+
 subdir('_lib')
 subdir('special')
 subdir('linalg')
@@ -497,15 +657,16 @@ subdir('sparse')
 subdir('stats')
 subdir('fft')
 subdir('io')
+subdir('optimize')
 subdir('spatial')
 subdir('cluster')
 subdir('constants')
 subdir('fftpack')
 subdir('integrate')
+subdir('differentiate')
 subdir('signal')
 subdir('interpolate')
 subdir('ndimage')
 subdir('odr')
-subdir('optimize')
 subdir('datasets')
 subdir('misc')

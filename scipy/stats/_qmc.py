@@ -1,6 +1,4 @@
 """Quasi-Monte Carlo engines and helpers."""
-from __future__ import annotations
-
 import copy
 import math
 import numbers
@@ -9,23 +7,22 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import (
-    Callable,
     ClassVar,
     Literal,
     overload,
     TYPE_CHECKING,
 )
+from collections.abc import Callable
 
 import numpy as np
 
+from scipy._lib._util import DecimalNumber, GeneratorType, IntNumber, SeedType
+
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import (
-        DecimalNumber, GeneratorType, IntNumber, SeedType
-    )
 
 import scipy.stats as stats
-from scipy._lib._util import rng_integers, _rng_spawn
+from scipy._lib._util import rng_integers, _rng_spawn, _transition_to_rng
 from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
@@ -60,6 +57,8 @@ def check_random_state(seed: GeneratorType) -> GeneratorType:
 
 
 # Based on scipy._lib._util.check_random_state
+# This is going to be removed at the end of the SPEC 7 transition,
+# so I'll just leave the argument name `seed` alone
 def check_random_state(seed=None):
     """Turn `seed` into a `numpy.random.Generator` instance.
 
@@ -77,9 +76,9 @@ def check_random_state(seed=None):
         Random number generator.
 
     """
-    if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
+    if seed is None or isinstance(seed, numbers.Integral | np.integer):
         return np.random.default_rng(seed)
-    elif isinstance(seed, (np.random.RandomState, np.random.Generator)):
+    elif isinstance(seed, np.random.RandomState | np.random.Generator):
         return seed
     else:
         raise ValueError(f'{seed!r} cannot be used to seed a'
@@ -87,9 +86,9 @@ def check_random_state(seed=None):
 
 
 def scale(
-    sample: npt.ArrayLike,
-    l_bounds: npt.ArrayLike,
-    u_bounds: npt.ArrayLike,
+    sample: "npt.ArrayLike",
+    l_bounds: "npt.ArrayLike",
+    u_bounds: "npt.ArrayLike",
     *,
     reverse: bool = False
 ) -> np.ndarray:
@@ -169,7 +168,7 @@ def scale(
         return (sample - lower) / (upper - lower)
 
 
-def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
+def _ensure_in_unit_hypercube(sample: "npt.ArrayLike") -> np.ndarray:
     """Ensure that sample is a 2D array and is within a unit hypercube
 
     Parameters
@@ -200,7 +199,7 @@ def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
 
 
 def discrepancy(
-        sample: npt.ArrayLike,
+        sample: "npt.ArrayLike",
         *,
         iterative: bool = False,
         method: Literal["CD", "WD", "MD", "L2-star"] = "CD",
@@ -267,7 +266,10 @@ def discrepancy(
     * ``MD``: Mixture Discrepancy - mix between CD/WD covering more criteria
     * ``L2-star``: L2-star discrepancy - like CD BUT variant to rotation
 
-    See [2]_ for precise definitions of each method.
+    Methods ``CD``, ``WD``, and ``MD`` implement the right hand side of equations
+    9, 10, and 18 of [2]_, respectively; the square root is not taken. On the
+    other hand, ``L2-star`` computes the quantity given by equation 10 of
+    [3]_ as implemented by subsequent equations; the square root is taken.
 
     Lastly, using ``iterative=True``, it is possible to compute the
     discrepancy as if we had :math:`n+1` samples. This is useful if we want
@@ -335,7 +337,7 @@ def discrepancy(
 
 
 def geometric_discrepancy(
-        sample: npt.ArrayLike,
+        sample: "npt.ArrayLike",
         method: Literal["mindist", "mst"] = "mindist",
         metric: str = "euclidean") -> float:
     """Discrepancy of a given sample based on its geometric properties.
@@ -396,7 +398,7 @@ def geometric_discrepancy(
     >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> rng = np.random.default_rng(191468432622931918890291693003068437394)
-    >>> sample = qmc.LatinHypercube(d=2, seed=rng).random(50)
+    >>> sample = qmc.LatinHypercube(d=2, rng=rng).random(50)
     >>> qmc.geometric_discrepancy(sample)
     0.03708161435687876
 
@@ -460,8 +462,8 @@ def geometric_discrepancy(
 
 
 def update_discrepancy(
-        x_new: npt.ArrayLike,
-        sample: npt.ArrayLike,
+        x_new: "npt.ArrayLike",
+        sample: "npt.ArrayLike",
         initial_disc: DecimalNumber) -> float:
     """Update the centered discrepancy with a new sample.
 
@@ -668,7 +670,7 @@ def n_primes(n: IntNumber) -> list[int]:
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+              953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
         big_number = 2000
@@ -682,7 +684,7 @@ def n_primes(n: IntNumber) -> list[int]:
 
 
 def _van_der_corput_permutations(
-    base: IntNumber, *, random_state: SeedType = None
+    base: IntNumber, *, rng: SeedType = None
 ) -> np.ndarray:
     """Permutations for scrambling a Van der Corput sequence.
 
@@ -690,11 +692,20 @@ def _van_der_corput_permutations(
     ----------
     base : int
         Base of the sequence.
-    random_state : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. During the transition, the behavior documented above is not
+            accurate; see `check_random_state` for actual behavior. After the
+            transition, this admonition can be removed.
 
     Returns
     -------
@@ -704,13 +715,13 @@ def _van_der_corput_permutations(
     Notes
     -----
     In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-    created for each positive integer `k` such that `1 - base**-k < 1`
+    created for each positive integer `k` such that ``1 - base**-k < 1``
     using floating-point arithmetic. For double precision floats, the
-    condition `1 - base**-k < 1` can also be written as `base**-k >
-    2**-54`, which makes it more apparent how many permutations we need
+    condition ``1 - base**-k < 1`` can also be written as ``base**-k >
+    2**-54``, which makes it more apparent how many permutations we need
     to create.
     """
-    rng = check_random_state(random_state)
+    rng = check_random_state(rng)
     count = math.ceil(54 / math.log2(base)) - 1
     permutations = np.repeat(np.arange(base)[None], count, axis=0)
     for perm in permutations:
@@ -725,8 +736,8 @@ def van_der_corput(
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
-        permutations: npt.ArrayLike | None = None,
-        seed: SeedType = None,
+        permutations: "npt.ArrayLike | None" = None,
+        rng: SeedType = None,
         workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
 
@@ -749,11 +760,11 @@ def van_der_corput(
         Default is True.
     permutations : array_like, optional
         Permutations used for scrambling.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     workers : int, optional
         Number of workers to use for parallel processing. If -1 is
         given all CPU threads are used. Default is 1.
@@ -775,7 +786,7 @@ def van_der_corput(
     if scramble:
         if permutations is None:
             permutations = _van_der_corput_permutations(
-                base=base, random_state=seed
+                base=base, rng=rng
             )
         else:
             permutations = np.asarray(permutations)
@@ -813,26 +824,36 @@ class QMCEngine(ABC):
           The process converges to equally spaced samples.
 
         .. versionadded:: 1.10.0
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
 
     Notes
     -----
     By convention samples are distributed over the half-open interval
     ``[0, 1)``. Instances of the class can access the attributes: ``d`` for
-    the dimension; and ``rng`` for the random number generator (used for the
-    ``seed``).
+    the dimension; and ``rng`` for the random number generator.
 
     **Subclassing**
 
     When subclassing `QMCEngine` to create a new sampler,  ``__init__`` and
     ``random`` must be redefined.
 
-    * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
-      does not take advantage of a ``seed`` (deterministic methods like
+    * ``__init__(d, rng=None)``: at least fix the dimension. If the sampler
+      does not take advantage of a ``rng`` (deterministic methods like
       Halton), this parameter can be omitted.
     * ``_random(n, *, workers=1)``: draw ``n`` from the engine. ``workers``
       is used for parallelism. See `Halton` for example.
@@ -850,8 +871,8 @@ class QMCEngine(ABC):
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed=None):
-    ...         super().__init__(d=d, seed=seed)
+    ...     def __init__(self, d, rng=None):
+    ...         super().__init__(d=d, rng=rng)
     ...
     ...
     ...     def _random(self, n=1, *, workers=1):
@@ -859,7 +880,7 @@ class QMCEngine(ABC):
     ...
     ...
     ...     def reset(self):
-    ...         super().__init__(d=self.d, seed=self.rng_seed)
+    ...         super().__init__(d=self.d, rng=self.rng_seed)
     ...         return self
     ...
     ...
@@ -891,25 +912,41 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
         d: IntNumber,
         *,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        rng: SeedType = None
+    ) -> None:
+        self._initialize(d, optimization=optimization, rng=rng)
+
+    # During SPEC 7 transition:
+    # `__init__` has to be wrapped with @_transition_to_rng decorator
+    # because it is public. Subclasses previously called `__init__`
+    # directly, but this was problematic because arguments passed to
+    # subclass `__init__` as `seed` would get passed to superclass
+    # `__init__` as `rng`, rejecting `RandomState` arguments.
+    def _initialize(
+        self,
+        d: IntNumber,
+        *,
+        optimization: Literal["random-cd", "lloyd"] | None = None,
+        rng: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer) or d < 0:
             raise ValueError('d must be a non-negative integer value')
 
         self.d = d
 
-        if isinstance(seed, np.random.Generator):
+        if isinstance(rng, np.random.Generator):
             # Spawn a Generator that we can own and reset.
-            self.rng = _rng_spawn(seed, 1)[0]
+            self.rng = _rng_spawn(rng, 1)[0]
         else:
             # Create our instance of Generator, does not need spawning
             # Also catch RandomState which cannot be spawned
-            self.rng = check_random_state(seed)
+            self.rng = check_random_state(rng)
         self.rng_seed = copy.deepcopy(self.rng)
 
         self.num_generated = 0
@@ -925,6 +962,7 @@ class QMCEngine(ABC):
             "maxiter": 10,
             "qhull_options": None,
         }
+        self._optimization = optimization
         self.optimization_method = _select_optimizer(optimization, config)
 
     @abstractmethod
@@ -964,9 +1002,9 @@ class QMCEngine(ABC):
 
     def integers(
         self,
-        l_bounds: npt.ArrayLike,
+        l_bounds: "npt.ArrayLike",
         *,
-        u_bounds: npt.ArrayLike | None = None,
+        u_bounds: "npt.ArrayLike | None" = None,
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
@@ -1044,7 +1082,7 @@ class QMCEngine(ABC):
 
         return sample
 
-    def reset(self) -> QMCEngine:
+    def reset(self) -> "QMCEngine":
         """Reset the engine to base state.
 
         Returns
@@ -1053,12 +1091,12 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        seed = copy.deepcopy(self.rng_seed)
-        self.rng = check_random_state(seed)
+        rng = copy.deepcopy(self.rng_seed)
+        self.rng = check_random_state(rng)
         self.num_generated = 0
         return self
 
-    def fast_forward(self, n: IntNumber) -> QMCEngine:
+    def fast_forward(self, n: IntNumber) -> "QMCEngine":
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -1082,14 +1120,16 @@ class Halton(QMCEngine):
     Pseudo-random number generator that generalize the Van der Corput sequence
     for multiple dimensions. The Halton sequence uses the base-two Van der
     Corput sequence for the first dimension, base-three for its second and
-    base-:math:`n` for its n-dimension.
+    base-:math:`p` for its :math:`n`-dimension, with :math:`p` the
+    :math:`n`'th prime.
 
     Parameters
     ----------
     d : int
         Dimension of the parameter space.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use random scrambling from [2]_. Otherwise no scrambling
+        is done.
         Default is True.
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
@@ -1106,18 +1146,29 @@ class Halton(QMCEngine):
           The process converges to equally spaced samples.
 
         .. versionadded:: 1.10.0
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
 
     Notes
     -----
     The Halton sequence has severe striping artifacts for even modestly
     large dimensions. These can be ameliorated by scrambling. Scrambling
     also supports replication-based error estimates and extends
-    applicabiltiy to unbounded integrands.
+    applicability to unbounded integrands.
 
     References
     ----------
@@ -1170,17 +1221,16 @@ class Halton(QMCEngine):
            [4.375     , 4.44444444]])
 
     """
-
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        rng: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True,
                            'optimization': optimization}
-        super().__init__(d=d, optimization=optimization, seed=seed)
-        self.seed = seed
+        super()._initialize(d=d, optimization=optimization, rng=rng)
 
         # important to have ``type(bdim) == int`` for performance reason
         self.base = [int(bdim) for bdim in n_primes(d)]
@@ -1197,7 +1247,7 @@ class Halton(QMCEngine):
         if self.scramble:
             for i, bdim in enumerate(self.base):
                 permutations = _van_der_corput_permutations(
-                    base=bdim, random_state=self.rng
+                    base=bdim, rng=self.rng
                 )
 
                 self._permutations[i] = permutations
@@ -1251,7 +1301,7 @@ class LatinHypercube(QMCEngine):
 
         .. note::
             Setting ``scramble=False`` does not ensure deterministic output.
-            For that, use the `seed` parameter.
+            For that, use the `rng` parameter.
 
         Default is True.
 
@@ -1284,11 +1334,25 @@ class LatinHypercube(QMCEngine):
 
         .. versionadded:: 1.8.0
 
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
+
+    See Also
+    --------
+    :ref:`quasi-monte-carlo`
 
     Notes
     -----
@@ -1343,49 +1407,42 @@ class LatinHypercube(QMCEngine):
        integration and visualization." Statistica Sinica, 1992.
     .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
        Journal of the American Statistical Association, 1993.
-    .. [9] Susan K. Seaholm et al. "Latin hypercube sampling and the
-       sensitivity analysis of a Monte Carlo epidemic model".
-       Int J Biomed Comput, 23(1-2), 97-112,
-       :doi:`10.1016/0020-7101(88)90067-0`, 1988.
+    .. [9] Seaholm, Susan K. et al. (1988). Latin hypercube sampling and the
+       sensitivity analysis of a Monte Carlo epidemic model. Int J Biomed
+       Comput, 23(1-2), 97-112. :doi:`10.1016/0020-7101(88)90067-0`
 
     Examples
     --------
-    In [9]_, a Latin Hypercube sampling strategy was used to sample a
-    parameter space to study the importance of each parameter of an epidemic
-    model. Such analysis is also called a sensitivity analysis.
-
-    Since the dimensionality of the problem is high (6), it is computationally
-    expensive to cover the space. When numerical experiments are costly,
-    QMC enables analysis that may not be possible if using a grid.
-
-    The six parameters of the model represented the probability of illness,
-    the probability of withdrawal, and four contact probabilities,
-    The authors assumed uniform distributions for all parameters and generated
-    50 samples.
-
-    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol, the
-    first step is to create a sample in the unit hypercube:
+    Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=6)
-    >>> sample = sampler.random(n=50)
+    >>> sampler = qmc.LatinHypercube(d=2)
+    >>> sample = sampler.random(n=5)
+    >>> sample
+    array([[0.1545328 , 0.53664833], # random
+            [0.84052691, 0.06474907],
+            [0.52177809, 0.93343721],
+            [0.68033825, 0.36265316],
+            [0.26544879, 0.61163943]])
 
-    Then the sample can be scaled to the appropriate bounds:
+    Compute the quality of the sample using the discrepancy criterion.
 
-    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
-    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
-    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+    >>> qmc.discrepancy(sample)
+    0.0196... # random
 
-    Such a sample was used to run the model 50 times, and a polynomial
-    response surface was constructed. This allowed the authors to study the
-    relative importance of each parameter across the range of
-    possibilities of every other parameter.
-    In this computer experiment, they showed a 14-fold reduction in the number
-    of samples required to maintain an error below 2% on their response surface
-    when compared to a grid sampling.
+    Samples can be scaled to bounds.
 
-    Below are other examples showing alternative ways to construct LHS
-    with even better coverage of the space.
+    >>> l_bounds = [0, 2]
+    >>> u_bounds = [10, 5]
+    >>> qmc.scale(sample, l_bounds, u_bounds)
+    array([[1.54532796, 3.609945 ], # random
+            [8.40526909, 2.1942472 ],
+            [5.2177809 , 4.80031164],
+            [6.80338249, 3.08795949],
+            [2.65448791, 3.83491828]])
+
+    Below are other examples showing alternative ways to construct LHS with
+    even better coverage of the space.
 
     Using a base LHS as a baseline.
 
@@ -1415,19 +1472,57 @@ class LatinHypercube(QMCEngine):
     orthogonal array based LHS. After optimization, the result would not
     be guaranteed to be of strength 2.
 
+    **Real-world example**
+
+    In [9]_, a Latin Hypercube sampling (LHS) strategy was used to sample a
+    parameter space to study the importance of each parameter of an epidemic
+    model. Such analysis is also called a sensitivity analysis.
+
+    Since the dimensionality of the problem is high (6), it is computationally
+    expensive to cover the space. When numerical experiments are costly, QMC
+    enables analysis that may not be possible if using a grid.
+
+    The six parameters of the model represented the probability of illness,
+    the probability of withdrawal, and four contact probabilities. The
+    authors assumed uniform distributions for all parameters and generated
+    50 samples.
+
+    Using `scipy.stats.qmc.LatinHypercube` to replicate the protocol,
+    the first step is to create a sample in the unit hypercube:
+
+    >>> from scipy.stats import qmc
+    >>> sampler = qmc.LatinHypercube(d=6)
+    >>> sample = sampler.random(n=50)
+
+    Then the sample can be scaled to the appropriate bounds:
+
+    >>> l_bounds = [0.000125, 0.01, 0.0025, 0.05, 0.47, 0.7]
+    >>> u_bounds = [0.000375, 0.03, 0.0075, 0.15, 0.87, 0.9]
+    >>> sample_scaled = qmc.scale(sample, l_bounds, u_bounds)
+
+    Such a sample was used to run the model 50 times, and a polynomial
+    response surface was constructed. This allowed the authors to study the
+    relative importance of each parameter across the range of possibilities
+    of every other parameter.
+
+    In this computer experiment, they showed a 14-fold reduction in the
+    number of samples required to maintain an error below 2% on their
+    response surface when compared to a grid sampling.
+
     """
 
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self, d: IntNumber, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        rng: SeedType = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
                            'optimization': optimization}
-        super().__init__(d=d, seed=seed, optimization=optimization)
+        super()._initialize(d=d, rng=rng, optimization=optimization)
         self.scramble = scramble
 
         lhs_method_strength = {
@@ -1495,21 +1590,20 @@ class LatinHypercube(QMCEngine):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
 
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
-                                    seed=self.rng)  # type: QMCEngine
+                                    rng=self.rng)  # type: QMCEngine
         for j in range(n_col):
             for k in range(p):
                 idx = oa_sample[:, j] == k
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
-                lhs_engine = lhs_engine.reset()
-
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore
+        return oa_lhs_sample[:, :self.d]
 
 
 class Sobol(QMCEngine):
@@ -1553,11 +1647,22 @@ class Sobol(QMCEngine):
           The process converges to equally spaced samples.
 
         .. versionadded:: 1.10.0
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
 
     Notes
     -----
@@ -1653,16 +1758,17 @@ class Sobol(QMCEngine):
 
     MAXDIM: ClassVar[int] = _MAXDIM
 
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        bits: IntNumber | None = None, seed: SeedType = None,
+        bits: IntNumber | None = None, rng: SeedType = None,
         optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
                            'optimization': optimization}
 
-        super().__init__(d=d, optimization=optimization, seed=seed)
+        super()._initialize(d=d, optimization=optimization, rng=rng)
         if d > self.MAXDIM:
             raise ValueError(
                 f"Maximum supported dimensionality is {self.MAXDIM}."
@@ -1670,6 +1776,7 @@ class Sobol(QMCEngine):
 
         self.bits = bits
         self.dtype_i: type
+        self.scramble = scramble
 
         if self.bits is None:
             self.bits = 30
@@ -1756,7 +1863,7 @@ class Sobol(QMCEngine):
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.", stacklevel=2)
+                              " n to be a power of 2.", stacklevel=3)
 
             if n == 1:
                 sample = self._first_point
@@ -1768,7 +1875,7 @@ class Sobol(QMCEngine):
                 )
                 sample = np.concatenate(
                     [self._first_point, sample]
-                )[:n]  # type: ignore[misc]
+                )[:n]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
@@ -1799,16 +1906,17 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 
-    def reset(self) -> Sobol:
+    def reset(self) -> "Sobol":
         """Reset the engine to base state.
 
         Returns
@@ -1821,7 +1929,7 @@ class Sobol(QMCEngine):
         self._quasi = self._shift.copy()
         return self
 
-    def fast_forward(self, n: IntNumber) -> Sobol:
+    def fast_forward(self, n: IntNumber) -> "Sobol":
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -1883,11 +1991,25 @@ class PoissonDisk(QMCEngine):
           The process converges to equally spaced samples.
 
         .. versionadded:: 1.10.0
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
+
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds of target sample data.
 
     Notes
     -----
@@ -1933,7 +2055,7 @@ class PoissonDisk(QMCEngine):
     >>>
     >>> rng = np.random.default_rng()
     >>> radius = 0.2
-    >>> engine = qmc.PoissonDisk(d=2, radius=radius, seed=rng)
+    >>> engine = qmc.PoissonDisk(d=2, radius=radius, rng=rng)
     >>> sample = engine.random(20)
 
     Visualizing the 2D sample and showing that no points are closer than
@@ -1961,6 +2083,7 @@ class PoissonDisk(QMCEngine):
 
     """
 
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
         self,
         d: IntNumber,
@@ -1969,14 +2092,16 @@ class PoissonDisk(QMCEngine):
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        rng: SeedType = None,
+        l_bounds: "npt.ArrayLike | None" = None,
+        u_bounds: "npt.ArrayLike | None" = None,
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
                            'hypersphere': hypersphere,
                            'ncandidates': ncandidates,
                            'optimization': optimization}
-        super().__init__(d=d, optimization=optimization, seed=seed)
+        super()._initialize(d=d, optimization=optimization, rng=rng)
 
         hypersphere_sample = {
             "volume": self._hypersphere_volume_sample,
@@ -2002,10 +2127,18 @@ class PoissonDisk(QMCEngine):
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
 
+        if u_bounds is None:
+            u_bounds = np.ones(d)
+        if l_bounds is None:
+            l_bounds = np.zeros(d)
+        self.l_bounds, self.u_bounds = _validate_bounds(
+            l_bounds=l_bounds, u_bounds=u_bounds, d=int(d)
+        )
+
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
             self.grid_size = (
-                np.ceil(np.ones(self.d) / self.cell_size)
+                np.ceil((self.u_bounds - self.l_bounds) / self.cell_size)
             ).astype(int)
 
         self._initialize_grid_pool()
@@ -2025,7 +2158,7 @@ class PoissonDisk(QMCEngine):
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
-        """Draw `n` in the interval ``[0, 1]``.
+        """Draw `n` in the interval ``[l_bounds, u_bounds]``.
 
         Note that it can return fewer samples if the space is full.
         See the note section of the class.
@@ -2045,15 +2178,18 @@ class PoissonDisk(QMCEngine):
             return np.empty((n, self.d))
 
         def in_limits(sample: np.ndarray) -> bool:
-            return (sample.max() <= 1.) and (sample.min() >= 0.)
+            for i in range(self.d):
+                if (sample[i] > self.u_bounds[i] or sample[i] < self.l_bounds[i]):
+                    return False
+            return True
 
         def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
             Check if there are samples closer than ``radius_squared`` to the
             `candidate` sample.
             """
-            indices = (candidate / self.cell_size).astype(int)
-            ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
+            ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
@@ -2077,7 +2213,7 @@ class PoissonDisk(QMCEngine):
 
         def add_sample(candidate: np.ndarray) -> None:
             self.sample_pool.append(candidate)
-            indices = (candidate / self.cell_size).astype(int)
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
@@ -2085,7 +2221,7 @@ class PoissonDisk(QMCEngine):
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
-            add_sample(self.rng.random(self.d))
+            add_sample(self.rng.uniform(self.l_bounds, self.u_bounds))
             num_drawn = 1
         else:
             num_drawn = 0
@@ -2115,7 +2251,7 @@ class PoissonDisk(QMCEngine):
         return np.array(curr_sample)
 
     def fill_space(self) -> np.ndarray:
-        """Draw ``n`` samples in the interval ``[0, 1]``.
+        """Draw ``n`` samples in the interval ``[l_bounds, u_bounds]``.
 
         Unlike `random`, this method will try to add points until
         the space is full. Depending on ``candidates`` (and to a lesser extent
@@ -2134,7 +2270,7 @@ class PoissonDisk(QMCEngine):
         """
         return self.random(np.inf)  # type: ignore[arg-type]
 
-    def reset(self) -> PoissonDisk:
+    def reset(self) -> "PoissonDisk":
         """Reset the engine to base state.
 
         Returns
@@ -2190,12 +2326,21 @@ class MultivariateNormalQMC:
         If True, use inverse transform instead of Box-Muller. Default is True.
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        Used only if `engine` is None.
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
 
     Examples
     --------
@@ -2208,12 +2353,16 @@ class MultivariateNormalQMC:
 
     """
 
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-            self, mean: npt.ArrayLike, cov: npt.ArrayLike | None = None, *,
-            cov_root: npt.ArrayLike | None = None,
+            self,
+            mean: "npt.ArrayLike",
+            cov: "npt.ArrayLike | None" = None,
+            *,
+            cov_root: "npt.ArrayLike | None" = None,
             inv_transform: bool = True,
             engine: QMCEngine | None = None,
-            seed: SeedType = None
+            rng: SeedType = None,
     ) -> None:
         mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
@@ -2254,8 +2403,12 @@ class MultivariateNormalQMC:
         else:
             engine_dim = d
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=engine_dim, scramble=True, bits=30, seed=seed
+                d=engine_dim, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != engine_dim:
@@ -2342,12 +2495,21 @@ class MultinomialQMC:
         Number of trials.
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        Used only if `engine` is None.
-        If `seed` is an int or None, a new `numpy.random.Generator` is
-        created using ``np.random.default_rng(seed)``.
-        If `seed` is already a ``Generator`` instance, then the provided
-        instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
+
+        .. versionchanged:: 1.15.0
+
+            As part of the `SPEC-007 <https://scientific-python.org/specs/spec-0007/>`_
+            transition from use of `numpy.random.RandomState` to
+            `numpy.random.Generator`, this keyword was changed from `seed` to
+            `rng`. For an interim period, both keywords will continue to work, although
+            only one may be specified at a time. After the interim period, function
+            calls using the `seed` keyword will emit warnings. Following a
+            deprecation period, the `seed` keyword will be removed.
 
     Examples
     --------
@@ -2375,10 +2537,14 @@ class MultinomialQMC:
 
     """
 
+    @_transition_to_rng('seed', replace_doc=False)
     def __init__(
-        self, pvals: npt.ArrayLike, n_trials: IntNumber,
-        *, engine: QMCEngine | None = None,
-        seed: SeedType = None
+        self,
+        pvals: "npt.ArrayLike",
+        n_trials: IntNumber,
+        *,
+        engine: QMCEngine | None = None,
+        rng: SeedType = None,
     ) -> None:
         self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
@@ -2387,8 +2553,12 @@ class MultinomialQMC:
             raise ValueError('Elements of pvals must sum to 1.')
         self.n_trials = n_trials
         if engine is None:
+            # Need this during SPEC 7 transition to prevent `RandomState`
+            # from being passed via `rng`.
+            kwarg = "seed" if isinstance(rng, np.random.RandomState) else "rng"
+            kwargs = {kwarg: rng}
             self.engine = Sobol(
-                d=1, scramble=True, bits=30, seed=seed
+                d=1, scramble=True, bits=30, **kwargs
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
@@ -2575,7 +2745,7 @@ def _lloyd_iteration(
 
 
 def _lloyd_centroidal_voronoi_tessellation(
-    sample: npt.ArrayLike,
+    sample: "npt.ArrayLike",
     *,
     tol: DecimalNumber = 1e-5,
     maxiter: IntNumber = 10,
@@ -2755,8 +2925,8 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
 
 
 def _validate_bounds(
-    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> tuple[np.ndarray, ...]:
+    l_bounds: "npt.ArrayLike", u_bounds: "npt.ArrayLike", d: int
+) -> "tuple[npt.NDArray[np.generic], npt.NDArray[np.generic]]":
     """Bounds input validation.
 
     Parameters

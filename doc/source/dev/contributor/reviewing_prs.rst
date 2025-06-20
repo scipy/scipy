@@ -45,9 +45,6 @@ Github as appropriate:
 
 This allows automatically tracking which PRs are in need of attention.
 
-The review status is listed at: https://pav.iki.fi/scipy-needs-work/
-The page can also be generated using https://github.com/pv/github-needs-work
-
 Some of the information is also visible on Github directly, although
 (as of Aug 2019) Github does not show which pull requests have been
 updated since the last review.
@@ -75,9 +72,9 @@ Assuming you set up your development environment according to
 
 build the code and test it::
 
-   python dev.py test -v
+   spin test -v
 
-and if you ``import`` SciPy from within IPython (start it with ``python dev.py
+and if you ``import`` SciPy from within IPython (start it with ``spin
 ipython``), you'll be importing the author's modified version of SciPy.
 
 If you want to collaborate with the author on their PR, you might instead
@@ -98,7 +95,7 @@ and create your own branch based on one of them::
 
 where ``BRANCH_NAME`` is the name of the branch you want to start from. This
 creates a copy of this branch (with the same name) in your local repository.
-If make changes to this branch and push to your GitHub repository
+If you make changes to this branch and push to your GitHub repository
 (``origin``), you can then create a pull request to merge your changes with the
 author's repository.
 

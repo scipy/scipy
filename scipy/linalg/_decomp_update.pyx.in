@@ -47,7 +47,7 @@ cimport cython
 cimport libc.stdlib
 cimport libc.limits
 cimport libc.float
-from libc.math cimport sqrt, fabs, hypot, M_SQRT1_2
+from libc.math cimport sqrt, M_SQRT1_2
 from libc.string cimport memset
 
 cimport numpy as cnp
@@ -71,6 +71,7 @@ from . cimport cython_blas as blas_pointers
 from . cimport cython_lapack as lapack_pointers
 
 import numpy as np
+from scipy._lib._util import _apply_over_batch
 
 #------------------------------------------------------------------------------
 # These are a set of fused type wrappers around the BLAS and LAPACK calls used.
@@ -288,7 +289,7 @@ cdef int to_lwork(blas_t a, blas_t b) noexcept nogil:
 
 cdef bint reorthx(int m, int n, blas_t* q, int* qs, bint qisF, int j, blas_t* u, blas_t* s) noexcept nogil:
     # U should be all zeros on entry., and m > 1
-    cdef blas_t unorm, snorm, wnorm, wpnorm, sigma_max, sigma_min, rc
+    cdef blas_t wnorm, wpnorm
     cdef char* T = 'T'
     cdef char* N = 'N'
     cdef char* C = 'C'
@@ -352,7 +353,6 @@ cdef int thin_qr_row_delete(int m, int n, blas_t* q, int* qs, bint qisF,
     cdef size_t usize = (m + 3*n + 1) * sizeof(blas_t)
     cdef blas_t* s
     cdef blas_t* u
-    cdef blas_t* s1
     cdef int us[2]
     cdef int ss[2]
     cdef blas_t c, sn, min_row_norm, row_norm
@@ -685,8 +685,7 @@ cdef int thin_qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r,
 cdef void qr_col_insert(int m, int n, blas_t* q, int* qs, blas_t* r, int* rs,
                         int k) noexcept nogil:
     cdef int j
-    cdef blas_t c, s, temp, tau
-    cdef blas_t* work
+    cdef blas_t c, s
 
     for j in range(m-2, k-1, -1):
         lartg(index2(r, rs, j, k), index2(r, rs, j+1, k), &c, &s)
@@ -1046,7 +1045,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
        find vectors s, w and scalar p such that u = Qs + pw where w is of unit
        length and orthogonal to the columns of q.
 
-       This function returns 0 or 1 on success, and 2 if the recipercal
+       This function returns 0 or 1 on success, and 2 if the reciprocal
        condition number of ``[q, u/||u||]`` is less than RCOND. This condition is
        important when inserting columns, because updating may not be meaningful
        if u is a linear combination of the columns of q.
@@ -1193,7 +1192,6 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus, int k):
     cdef int m = q.shape[0]
     cdef int n = q.shape[1]
     cdef int typecode = cnp.PyArray_TYPE(q)
-    cdef cnp.ndarray qTu
     cdef char* T = 'T'
     cdef char* C = 'C'
     cdef char* N = 'N'
@@ -1397,6 +1395,7 @@ cdef void* extract(cnp.ndarray arr, int* arrs) noexcept:
             arrs[1] = 0
     return cnp.PyArray_DATA(arr)
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('k', 0))
 @cython.embedsignature(True)
 def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
               check_finite=True):
@@ -1614,6 +1613,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
     else:
         raise ValueError("'which' must be either 'row' or 'col'")
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('k', 0))
 @cython.embedsignature(True)
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_finite=True):
     """
@@ -1878,8 +1878,6 @@ cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
 
 cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
-    cdef int j
-    cdef int q_flags = ARRAY_ANYORDER
     cdef int u_flags = cnp.NPY_ARRAY_BEHAVED_NS | cnp.NPY_ARRAY_ELEMENTSTRIDES
     cdef int typecode, m, n, p, info, p_eco, p_full
     cdef void* qptr
@@ -2030,6 +2028,7 @@ RCONDS = ['&frc', '&drc', '&cfrc', '&cdrc']
                     raise MemoryError("Unable to allocate memory for array")
         return q1, rnew
 
+@_apply_over_batch(('Q', 2), ('R', 2), ('u', '1|2'), ('v', '1|2'))
 @cython.embedsignature(True)
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     """

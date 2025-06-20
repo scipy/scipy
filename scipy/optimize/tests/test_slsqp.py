@@ -6,6 +6,7 @@ from numpy.testing import (assert_, assert_array_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
+import scipy
 
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
 
@@ -489,6 +490,9 @@ class TestSLSQP:
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
+    @pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name']
+                       == "intel-llvm",
+                       reason="Runtime warning due to floating point issues, not logic")
     def test_inconsistent_inequalities(self):
         # gh-7618
 
@@ -602,7 +606,40 @@ class TestSLSQP:
         def f(x):
             assert (x >= bounds.lb).all()
             return np.linalg.norm(x)
+        # The following should not raise any warnings which was the case, with the
+        # old Fortran code.
+        res = minimize(f, x0, method='SLSQP', bounds=bounds)
+        assert res.success
 
-        with pytest.warns(RuntimeWarning, match='x were outside bounds'):
-            res = minimize(f, x0, method='SLSQP', bounds=bounds)
-            assert res.success
+
+def test_slsqp_segfault_wrong_workspace_computation():
+    # See gh-14915
+    # This problem is not well-defined, however should not cause a segfault.
+    # The previous F77 workspace computation did not handle only equality-
+    # constrained problems correctly.
+    rng = np.random.default_rng(1742651087222879)
+    x = rng.uniform(size=[22,365])
+    target = np.linspace(0.9, 4.0, 50)
+
+    def metric(v, weights):
+        return [[0, 0],[1, 1]]
+
+    def efficient_metric(v, target):
+        def metric_a(weights):
+            return metric(v, weights)[1][0]
+
+        def metric_b(weights, v):
+            return metric(v, weights)[0][0]
+
+        constraints = ({'type': 'eq', 'fun': lambda x: metric_a(x) - target},
+                       {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+        weights = np.array([len(v)*[1./len(v)]])[0]
+        result = minimize(metric_b,
+                          weights,
+                          args=(v,),
+                          method='SLSQP',
+                          constraints=constraints)
+        return result
+
+    efficient_metric(x, target)
+

@@ -29,15 +29,15 @@ def parse_txt_data(filename):
     return np.array(data)
 
 
-def run_test(filename, funcs, args=[0]):
+def run_test(filename, funcs, args=[0]):  # noqa: B006
     nargs = len(args)
     if len(funcs) > 1 and nargs > 1:
         raise ValueError("nargs > 1 and len(funcs) > 1 not supported")
 
     data = parse_txt_data(filename)
     if data.shape[1] != len(funcs) + nargs:
-        raise ValueError("data has %d items / row, but len(funcs) = %d and "
-                         "nargs = %d" % (data.shape[1], len(funcs), nargs))
+        raise ValueError(f"data has {data.shape[1]} items / row, but "
+                         f"len(funcs) = {len(funcs)} and nargs = {nargs}")
 
     if nargs > 1:
         f = funcs[0]

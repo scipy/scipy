@@ -9,5 +9,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/cluster/tests'
+  subdir: 'scipy/cluster/tests',
+  install_tag: 'tests'
 )

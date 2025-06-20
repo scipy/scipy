@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
+from scipy._lib._util import _apply_over_batch
 from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
 from ._decomp_schur import schur
@@ -19,7 +20,7 @@ from ._decomp_lu import lu
 from ._decomp_qr import qr
 from ._decomp_qz import ordqz
 from ._decomp import _asarray_validated
-from ._special_matrices import kron, block_diag
+from ._special_matrices import block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -27,6 +28,7 @@ __all__ = ['solve_sylvester',
            'solve_continuous_are', 'solve_discrete_are']
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2))
 def solve_sylvester(a, b, q):
     """
     Computes a solution (X) to the Sylvester equation :math:`AX + XB = Q`.
@@ -80,6 +82,12 @@ def solve_sylvester(a, b, q):
     True
 
     """
+    # Accommodate empty a
+    if a.size == 0 or b.size == 0:
+        tdict = {'s': np.float32, 'd': np.float64,
+                 'c': np.complex64, 'z': np.complex128}
+        func, = get_lapack_funcs(('trsyl',), arrays=(a, b, q))
+        return np.empty(q.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
@@ -100,12 +108,12 @@ def solve_sylvester(a, b, q):
     y = scale*y
 
     if info < 0:
-        raise LinAlgError("Illegal value encountered in "
-                          "the %d term" % (-info,))
+        raise LinAlgError(f"Illegal value encountered in the {-info} term")
 
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
+@_apply_over_batch(('a', 2), ('q', 2))
 def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
@@ -166,11 +174,18 @@ def solve_continuous_lyapunov(a, q):
             r_or_c = complex
 
         if not np.equal(*_.shape):
-            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+            raise ValueError(f"Matrix {'aq'[ind]} should be square.")
 
     # Shape consistency check
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
+
+    # Accommodate empty array
+    if a.size == 0:
+        tdict = {'s': np.float32, 'd': np.float64,
+                 'c': np.complex64, 'z': np.complex128}
+        func, = get_lapack_funcs(('trsyl',), arrays=(a, q))
+        return np.empty(a.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
@@ -181,7 +196,7 @@ def solve_continuous_lyapunov(a, q):
     # Call the Sylvester equation solver
     trsyl = get_lapack_funcs('trsyl', (r, f))
 
-    dtype_string = 'T' if r_or_c == float else 'C'
+    dtype_string = 'T' if r_or_c is float else 'C'
     y, scale, info = trsyl(r, r, f, tranb=dtype_string)
 
     if info < 0:
@@ -210,7 +225,7 @@ def _solve_discrete_lyapunov_direct(a, q):
     `method=direct`. It is not supposed to be called directly.
     """
 
-    lhs = kron(a, a.conj())
+    lhs = np.kron(a, a.conj())
     lhs = np.eye(lhs.shape[0]) - lhs
     x = solve(lhs, q.flatten())
 
@@ -232,6 +247,7 @@ def _solve_discrete_lyapunov_bilinear(a, q):
     return solve_lyapunov(b.conj().transpose(), -c)
 
 
+@_apply_over_batch(('a', 2), ('q', 2))
 def solve_discrete_lyapunov(a, q, method=None):
     """
     Solves the discrete Lyapunov equation :math:`AXA^H - X + Q = 0`.
@@ -280,9 +296,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
-       University Press, 1994.  265.  Print.
-       http://doc1.lbfl.li/aca/FLMF037168.pdf
+    .. [1] "Lyapunov equation", Wikipedia,
+       https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -319,11 +334,12 @@ def solve_discrete_lyapunov(a, q, method=None):
     elif meth == 'bilinear':
         x = _solve_discrete_lyapunov_bilinear(a, q)
     else:
-        raise ValueError('Unknown solver %s' % method)
+        raise ValueError(f'Unknown solver {method}')
 
     return x
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
 def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     r"""
     Solves the continuous-time algebraic Riccati equation (CARE).
@@ -488,7 +504,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q[:2*m, n:].conj().T.dot(J[:2*m, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='lhp', overwrite_a=True,
                              overwrite_b=True, check_finite=False,
@@ -529,6 +545,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     return (x + x.conj().T)/2
 
 
+@_apply_over_batch(('a', 2), ('b', 2), ('q', 2), ('r', 2), ('e', 2), ('s', 2))
 def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     r"""
     Solves the discrete-time algebraic Riccati equation (DARE).
@@ -694,7 +711,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
 
     # Decide on which output type is needed for QZ
-    out_str = 'real' if r_or_c == float else 'complex'
+    out_str = 'real' if r_or_c is float else 'complex'
 
     _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
@@ -795,7 +812,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
             r_or_c = complex
 
         if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+            raise ValueError(f"Matrix {'aqr'[ind]} should be square.")
 
     # Shape consistency checks
     m, n = b.shape
@@ -809,8 +826,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     # Check if the data matrices q, r are (sufficiently) hermitian
     for ind, mat in enumerate((q, r)):
         if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
-            raise ValueError("Matrix {} should be symmetric/hermitian."
-                             "".format("qr"[ind]))
+            raise ValueError(f"Matrix {'qr'[ind]} should be symmetric/hermitian.")
 
     # Continuous time ARE should have a nonsingular r matrix.
     if eq_type == 'care':

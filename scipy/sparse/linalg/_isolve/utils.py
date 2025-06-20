@@ -47,7 +47,7 @@ def make_system(A, M, x0, b):
 
     Returns
     -------
-    (A, M, x, b, postprocess)
+    (A, M, x, b)
         A : LinearOperator
             matrix of the linear system
         M : LinearOperator
@@ -56,9 +56,6 @@ def make_system(A, M, x0, b):
             initial guess
         b : rank 1 ndarray
             right hand side
-        postprocess : function
-            converts the solution vector to the appropriate
-            type and dimensions (e.g. (N,1) matrix)
 
     """
     A_ = A
@@ -77,9 +74,6 @@ def make_system(A, M, x0, b):
 
     if b.dtype.char not in 'fdFD':
         b = b.astype('d')  # upcast non-FP types to double
-
-    def postprocess(x):
-        return x
 
     if hasattr(A,'dtype'):
         xtype = A.dtype.char
@@ -124,4 +118,4 @@ def make_system(A, M, x0, b):
                              f'x0 {x.shape} are incompatible')
         x = x.ravel()
 
-    return A, M, x, b, postprocess
+    return A, M, x, b

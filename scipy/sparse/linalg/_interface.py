@@ -26,8 +26,8 @@ how this linear operator multiplies with (operates on) a vector. We can now
 add this operator to a sparse matrix that stores only offsets from one::
 
     >>> from scipy.sparse.linalg._interface import aslinearoperator
-    >>> from scipy.sparse import csr_matrix
-    >>> offsets = csr_matrix([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
+    >>> from scipy.sparse import csr_array
+    >>> offsets = csr_array([[1, 0, 2], [0, -1, 0], [0, 0, 3]])
     >>> A = aslinearoperator(offsets) + Ones(offsets.shape)
     >>> A.dot([1, 2, 3])
     array([13,  4, 15])
@@ -55,14 +55,14 @@ __all__ = ['LinearOperator', 'aslinearoperator']
 class LinearOperator:
     """Common interface for performing matrix vector products
 
-    Many iterative methods (e.g. cg, gmres) do not need to know the
-    individual entries of a matrix to solve a linear system A*x=b.
+    Many iterative methods (e.g. `cg`, `gmres`) do not need to know the
+    individual entries of a matrix to solve a linear system ``A@x = b``.
     Such solvers only require the computation of matrix vector
-    products, A*v where v is a dense vector.  This class serves as
+    products, ``A@v`` where ``v`` is a dense vector.  This class serves as
     an abstract interface between iterative solvers and matrix-like
     objects.
 
-    To construct a concrete LinearOperator, either pass appropriate
+    To construct a concrete `LinearOperator`, either pass appropriate
     callables to the constructor of this class, or subclass it.
 
     A subclass must implement either one of the methods ``_matvec``
@@ -82,17 +82,17 @@ class LinearOperator:
     Parameters
     ----------
     shape : tuple
-        Matrix dimensions (M, N).
+        Matrix dimensions ``(M, N)``.
     matvec : callable f(v)
-        Returns returns A * v.
+        Returns returns ``A @ v``.
     rmatvec : callable f(v)
-        Returns A^H * v, where A^H is the conjugate transpose of A.
+        Returns ``A^H @ v``, where ``A^H`` is the conjugate transpose of ``A``.
     matmat : callable f(V)
-        Returns A * V, where V is a dense matrix with dimensions (N, K).
+        Returns ``A @ V``, where ``V`` is a dense matrix with dimensions ``(N, K)``.
     dtype : dtype
         Data type of the matrix.
     rmatmat : callable f(V)
-        Returns A^H * V, where V is a dense matrix with dimensions (M, K).
+        Returns ``A^H @ V``, where ``V`` is a dense matrix with dimensions ``(M, K)``.
 
     Attributes
     ----------
@@ -108,9 +108,17 @@ class LinearOperator:
 
     Notes
     -----
-    The user-defined matvec() function must properly handle the case
-    where v has shape (N,) as well as the (N,1) case.  The shape of
-    the return type is handled internally by LinearOperator.
+    The user-defined `matvec` function must properly handle the case
+    where ``v`` has shape ``(N,)`` as well as the ``(N,1)`` case.  The shape of
+    the return type is handled internally by `LinearOperator`.
+
+    It is highly recommended to explicitly specify the `dtype`, otherwise
+    it is determined automatically at the cost of a single matvec application
+    on ``int8`` zero vector using the promoted `dtype` of the output.
+    Python ``int`` could be difficult to automatically cast to numpy integers
+    in the definition of the `matvec` so the determination may be inaccurate.
+    It is assumed that `matmat`, `rmatvec`, and `rmatmat` would result in
+    the same dtype of the output given an ``int8`` input as `matvec`.
 
     LinearOperator instances can also be multiplied, added with each
     other and exponentiated, all lazily: the result of these operations
@@ -131,10 +139,10 @@ class LinearOperator:
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 _CustomLinearOperator with dtype=float64>
+    <2x2 _CustomLinearOperator with dtype=int8>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
-    >>> A * np.ones(2)
+    >>> A @ np.ones(2)
     array([ 2.,  3.])
 
     """
@@ -175,11 +183,25 @@ class LinearOperator:
         self.shape = shape
 
     def _init_dtype(self):
-        """Called from subclasses at the end of the __init__ routine.
+        """Determine the dtype by executing `matvec` on an `int8` test vector.
+
+        In `np.promote_types` hierarchy, the type `int8` is the smallest,
+        so we call `matvec` on `int8` and use the promoted dtype of the output
+        to set the default `dtype` of the `LinearOperator`.
+        We assume that `matmat`, `rmatvec`, and `rmatmat` would result in
+        the same dtype of the output given an `int8` input as `matvec`.
+
+        Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros(self.shape[-1])
-            self.dtype = np.asarray(self.matvec(v)).dtype
+            v = np.zeros(self.shape[-1], dtype=np.int8)
+            try:
+                matvec_v = np.asarray(self.matvec(v))
+            except OverflowError:
+                # Python large `int` promoted to `np.int64`or `np.int32`
+                self.dtype = np.dtype(int)
+            else:
+                self.dtype = matvec_v.dtype
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
@@ -205,7 +227,7 @@ class LinearOperator:
     def matvec(self, x):
         """Matrix-vector multiplication.
 
-        Performs the operation y=A*x where A is an MxN linear
+        Performs the operation y=A@x where A is an MxN linear
         operator and x is a column vector or 1-d array.
 
         Parameters
@@ -252,7 +274,7 @@ class LinearOperator:
     def rmatvec(self, x):
         """Adjoint matrix-vector multiplication.
 
-        Performs the operation y = A^H * x where A is an MxN linear
+        Performs the operation y = A^H @ x where A is an MxN linear
         operator and x is a column vector or 1-d array.
 
         Parameters
@@ -300,6 +322,10 @@ class LinearOperator:
         """Default implementation of _rmatvec; defers to adjoint."""
         if type(self)._adjoint == LinearOperator._adjoint:
             # _adjoint not overridden, prevent infinite recursion
+            if (hasattr(self, "_rmatmat")
+                    and type(self)._rmatmat != LinearOperator._rmatmat):
+                # Try to use _rmatmat as a fallback
+                return self._rmatmat(x.reshape(-1, 1)).reshape(-1)
             raise NotImplementedError
         else:
             return self.H.matvec(x)
@@ -307,7 +333,7 @@ class LinearOperator:
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
-        Performs the operation y=A*X where A is an MxN linear
+        Performs the operation y=A@X where A is an MxN linear
         operator and X dense N*K matrix or ndarray.
 
         Parameters
@@ -354,7 +380,7 @@ class LinearOperator:
     def rmatmat(self, X):
         """Adjoint matrix-matrix multiplication.
 
-        Performs the operation y = A^H * x where A is an MxN linear
+        Performs the operation y = A^H @ x where A is an MxN linear
         operator and x is a column vector or 1-d array, or 2-d array.
         The default implementation defers to the adjoint.
 
@@ -377,8 +403,7 @@ class LinearOperator:
             X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
 
         if X.shape[0] != self.shape[0]:
             raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
@@ -405,7 +430,7 @@ class LinearOperator:
             return self.H.matmat(X)
 
     def __call__(self, x):
-        return self*x
+        return self@x
 
     def __mul__(self, x):
         return self.dot(x)
@@ -445,8 +470,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __matmul__(self, other):
         if np.isscalar(other):
@@ -500,8 +524,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.T.matmat(x.T).T
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError(f'expected 1-d or 2-d array or matrix, got {x!r}')
 
     def __pow__(self, p):
         if np.isscalar(p):
@@ -528,7 +551,7 @@ class LinearOperator:
         else:
             dt = 'dtype=' + str(self.dtype)
 
-        return '<%dx%d %s with %s>' % (M, N, self.__class__.__name__, dt)
+        return f'<{M}x{N} {self.__class__.__name__} with {dt}>'
 
     def adjoint(self):
         """Hermitian adjoint.
@@ -718,7 +741,7 @@ class _ProductLinearOperator(LinearOperator):
 
     def _adjoint(self):
         A, B = self.args
-        return B.H * A.H
+        return B.H @ A.H
 
 
 class _ScaledLinearOperator(LinearOperator):
@@ -736,6 +759,7 @@ class _ScaledLinearOperator(LinearOperator):
         dtype = _get_dtype([A], [type(alpha)])
         super().__init__(dtype, A.shape)
         self.args = (A, alpha)
+        # Note: args[1] is alpha (a scalar), so use `*` below, not `@`
 
     def _matvec(self, x):
         return self.args[1] * self.args[0].matvec(x)
@@ -759,7 +783,7 @@ class _PowerLinearOperator(LinearOperator):
         if not isinstance(A, LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
-            raise ValueError('square LinearOperator expected, got %r' % A)
+            raise ValueError(f'square LinearOperator expected, got {A!r}')
         if not isintlike(p) or p < 0:
             raise ValueError('non-negative integer expected as p')
 
@@ -801,22 +825,22 @@ class MatrixLinearOperator(LinearOperator):
 
     def _adjoint(self):
         if self.__adj is None:
-            self.__adj = _AdjointMatrixOperator(self)
+            self.__adj = _AdjointMatrixOperator(self.A)
         return self.__adj
 
+
 class _AdjointMatrixOperator(MatrixLinearOperator):
-    def __init__(self, adjoint):
-        self.A = adjoint.A.T.conj()
-        self.__adjoint = adjoint
-        self.args = (adjoint,)
-        self.shape = adjoint.shape[1], adjoint.shape[0]
+    def __init__(self, adjoint_array):
+        self.A = adjoint_array.T.conj()
+        self.args = (adjoint_array,)
+        self.shape = adjoint_array.shape[1], adjoint_array.shape[0]
 
     @property
     def dtype(self):
-        return self.__adjoint.dtype
+        return self.args[0].dtype
 
     def _adjoint(self):
-        return self.__adjoint
+        return MatrixLinearOperator(self.args[0])
 
 
 class IdentityOperator(LinearOperator):
@@ -845,7 +869,7 @@ def aslinearoperator(A):
     'A' may be any of the following types:
      - ndarray
      - matrix
-     - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
+     - sparse array (e.g. csr_array, lil_array, etc.)
      - LinearOperator
      - An object with .shape and .matvec attributes
 

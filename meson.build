@@ -1,25 +1,31 @@
 project(
   'scipy',
   'c', 'cpp', 'cython',
-  # Note that the git commit hash cannot be added dynamically here (it is added
-  # in the dynamically generated and installed `scipy/version.py` though - see
-  # tools/version_utils.py
-  version: '1.14.0.dev0',
+  version: run_command(['tools/gitversion.py'], check: true).stdout().strip(),
   license: 'BSD-3',
-  meson_version: '>= 1.1.0',
+  meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
-    'fortran_std=legacy',
     'blas=openblas',
     'lapack=openblas'
   ],
 )
 
+meson.add_dist_script('tools/trim_sdist_content.py')
+
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
+
+min_numpy_version = '1.26.4'  # keep in sync with pyproject.toml
+min_python_version = '3.11'   # keep in sync with pyproject.toml
+
+python_version = py3.language_version()
+if python_version.version_compare(f'<@min_python_version@')
+  error(f'Minimum supported Python version is @min_python_version@, found @python_version@')
+endif
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
 # unexpected from-source builds there because we no longer provide wheels.
@@ -39,8 +45,12 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=8.0')
-    error('SciPy requires GCC >= 8.0')
+  if not cc.version().version_compare('>=9.1')
+    error('SciPy requires GCC >= 9.1')
+  endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=15.0')
+    error('SciPy requires clang >= 15.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
@@ -77,13 +87,22 @@ endif
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
 ff = meson.get_compiler('fortran')
+if ff.get_id() == 'gcc'
+  # -std=legacy is not supported by all Fortran compilers, but very useful with
+  # gfortran since it avoids a ton of warnings that we don't care about.
+  # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+  add_project_arguments('-std=legacy', language: 'fortran')
+endif
+
 if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
-if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
-  # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
-  add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
+if host_machine.system() == 'darwin'
+  if cc.has_link_argument('-Wl,-dead_strip')
+    # Allow linker to strip unused symbols
+    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+  endif
 endif
 
 # Intel compilers default to fast-math, so disable it if we detect Intel
@@ -113,8 +132,8 @@ elif ff.get_id() in ['intel-cl', 'intel-llvm-cl']
     '/assume:minus0'
   )
 endif
-add_project_arguments(_intel_cflags, language: ['c', 'cpp'])
-add_project_arguments(_intel_fflags, language: 'fortran')
+add_global_arguments(_intel_cflags, language: ['c', 'cpp'])
+add_global_arguments(_intel_fflags, language: 'fortran')
 
 # Hide symbols when building on Linux with GCC. For Python extension modules,
 # we only need `PyInit_*` to be public, anything else may cause problems. So we
@@ -140,6 +159,50 @@ if use_pythran
   # activation bug the default <prefix>/include/ may not be visible (see
   # gh-15698). Hence look for xsimd explicitly.
   xsimd_dep = dependency('xsimd', required: false)
+endif
+
+fs = import('fs')
+if not fs.exists('subprojects/xsf/README.md')
+  error('Missing the `xsf` submodule! Run `git submodule update --init` to fix this.')
+endif
+
+xsf = subproject('xsf')
+xsf_dep = xsf.get_variable('xsf_dep')
+
+use_system_libraries = get_option('use-system-libraries')
+all_system_libraries = false
+auto_system_libraries = false
+
+if use_system_libraries.contains('none')
+  use_system_libraries = ['none']
+elif use_system_libraries.contains('all')
+  all_system_libraries = true
+elif use_system_libraries.contains('auto')
+  auto_system_libraries = true 
+endif
+
+if all_system_libraries or use_system_libraries.contains('boost.math')
+  boost_math_dep = dependency('boost', version : '1.88.0')
+elif auto_system_libraries
+  boost_math_dep = dependency(
+    'boost', version : '1.88.0',
+    fallback : ['boost_math', 'boost_math_dep']
+  )
+else
+  boost_math = subproject('boost_math', version : '1.88.0')
+  boost_math_dep = boost_math.get_variable('boost_math_dep')
+endif
+
+if all_system_libraries or use_system_libraries.contains('qhull')
+  qhull_r_dep = dependency('qhull_r', version : '8.0.2')
+elif auto_system_libraries
+  qhull_r_dep = dependency(
+    'qhull_r', version : '8.0.2',
+    fallback : ['qhull_r', 'qhull_r_dep']
+  )
+else
+  qhull_r = subproject('qhull_r', version : '8.0.2')
+  qhull_r_dep = qhull_r.get_variable('qhull_r_dep')
 endif
 
 subdir('scipy')

@@ -3,6 +3,9 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_cython_tree += fs.copyfile('__init__.pxd')
+
+_generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -13,30 +16,19 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
   ],
-  # Set PYTHONPATH to import from _build_utils/_wrappers_common.py
-  env: {'PYTHONPATH': meson.global_source_root() / 'scipy/_build_utils'},
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/linalg',
   install_tag: 'devel'
 )
-
-# This dummy custom target is only needed to establish a dependency on
-# cython_linalg in a generator below. Adding that dependency directly yields
-# warnings about multiple outputs. And using `depends: cython_linalg[2]` does
-# not work, because that generator depends does not accept CustomTargetIndex,
-# only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
-cython_blas_pxd = custom_target(
-  output: '_dummy_cython_blas.pxd',
-  input: cython_linalg[2],
-  command: [py3, '-c', '"@INPUT@"'],
-)
+cython_blas_pxd = cython_linalg[2]
+cython_lapack_pxd = cython_linalg[3]
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
 linalg_init_cython_gen = generator(cython,
@@ -48,7 +40,7 @@ linalg_init_cython_gen = generator(cython,
 linalg_init_utils_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd, cython_lapack_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython,
@@ -60,7 +52,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'fblas_l1.pyf.src',
@@ -75,18 +67,16 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   fblas_module,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
 
 # flapack
-
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@'] + f2py_freethreading_arg,
   depend_files:
     [
       'flapack_user.pyf.src',
@@ -106,72 +96,34 @@ py3.extension_module('_flapack',
   flapack_module,
   c_args: [Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
-# _interpolative
-interpolative_module = custom_target('interpolative_module',
-  output: '_interpolativemodule.c',
-  input: 'interpolative.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+# _decomp_interpolative
+py3.extension_module('_decomp_interpolative',
+  linalg_cython_gen.process('_decomp_interpolative.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/linalg'
 )
 
-# id_dist contains a copy of FFTPACK, which has type mismatch warnings
-# that are hard to fix. This code is terrible and noisy during the build,
-# silence it completely.
-_suppress_all_warnings = ff.get_supported_arguments('-w')
-
-py3.extension_module('_interpolative',
+# batched linalg inv module
+py3.extension_module('_batched_linalg',
   [
-    'src/id_dist/src/dfft.f',
-    'src/id_dist/src/id_rand.f',
-    'src/id_dist/src/id_rtrans.f',
-    'src/id_dist/src/idd_frm.f',
-    'src/id_dist/src/idd_house.f',
-    'src/id_dist/src/idd_id.f',
-    'src/id_dist/src/idd_id2svd.f',
-    'src/id_dist/src/idd_qrpiv.f',
-    'src/id_dist/src/idd_sfft.f',
-    'src/id_dist/src/idd_snorm.f',
-    'src/id_dist/src/idd_svd.f',
-    'src/id_dist/src/iddp_aid.f',
-    'src/id_dist/src/iddp_asvd.f',
-    'src/id_dist/src/iddp_rid.f',
-    'src/id_dist/src/iddp_rsvd.f',
-    'src/id_dist/src/iddr_aid.f',
-    'src/id_dist/src/iddr_asvd.f',
-    'src/id_dist/src/iddr_rid.f',
-    'src/id_dist/src/iddr_rsvd.f',
-    'src/id_dist/src/idz_frm.f',
-    'src/id_dist/src/idz_house.f',
-    'src/id_dist/src/idz_id.f',
-    'src/id_dist/src/idz_id2svd.f',
-    'src/id_dist/src/idz_qrpiv.f',
-    'src/id_dist/src/idz_sfft.f',
-    'src/id_dist/src/idz_snorm.f',
-    'src/id_dist/src/idz_svd.f',
-    'src/id_dist/src/idzp_aid.f',
-    'src/id_dist/src/idzp_asvd.f',
-    'src/id_dist/src/idzp_rid.f',
-    'src/id_dist/src/idzp_rsvd.f',
-    'src/id_dist/src/idzr_aid.f',
-    'src/id_dist/src/idzr_asvd.f',
-    'src/id_dist/src/idzr_rid.f',
-    'src/id_dist/src/idzr_rsvd.f',
-    'src/id_dist/src/prini.f',
-    interpolative_module,
+    'src/_common_array_utils.hh',
+    'src/_linalg_inv.hh',
+    'src/_npymath.hh',
+    'src/_batched_linalg_module.cc'
   ],
-  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
-  link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
-  override_options: ['b_lto=false'],
+  dependencies: [np_dep, lapack_dep, blas_dep],
+  include_directories: ['../_build_utils/src'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
@@ -202,8 +154,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack, blas, np_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -216,8 +167,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack, blas, np_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -247,18 +197,23 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
-# _matfuncs_expm:
-_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
-  output: '_matfuncs_expm.pyx',
-  input: '_matfuncs_expm.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
+py3.extension_module('_matfuncs_expm',
+  [
+    '_matfuncs_expm.h',
+    '_matfuncs_expm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
+  install: true,
+  subdir: 'scipy/linalg'
 )
 
-py3.extension_module('_matfuncs_expm',
-  linalg_cython_gen.process(_matfuncs_expm_pyx),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
+py3.extension_module('_matfuncs_schur_sqrtm',
+  [
+    '_common_array_utils.h',
+    '_matfuncs_sqrtm.h',
+    '_matfuncs_sqrtm.c',
+  ],
+  dependencies: [np_dep, lapack_dep, blas_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -272,9 +227,26 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   subdir: 'scipy/linalg'
 )
 
+if use_pythran
+  py3.extension_module('_linalg_pythran',
+    pythran_gen.process('_linalg_pythran.py'),
+    cpp_args: cpp_args_pythran,
+    dependencies: [pythran_dep, np_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+else
+  py3.install_sources(
+    ['_linalg_pythran.py'],
+    subdir: 'scipy/linalg'
+  )
+endif
+
 
 python_sources = [
   '__init__.py',
+  '__init__.pxd',
   '_basic.py',
   '_cythonized_array_utils.pxd',
   '_cythonized_array_utils.pyi',
@@ -290,7 +262,6 @@ python_sources = [
   '_decomp_schur.py',
   '_decomp_svd.py',
   '_expm_frechet.py',
-  '_interpolative_backend.py',
   '_matfuncs.py',
   '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
@@ -341,6 +312,8 @@ py3.install_sources(
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd
 #]
+#py.install_sources(pxd_files)
+
 #custom_target('cython_blas_lapack_pxd',
 #  input : pxd_files,
 #  output : ['cython_blas2.pxd', 'cython_lapack2.pxd'],

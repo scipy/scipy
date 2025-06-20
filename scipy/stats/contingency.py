@@ -24,11 +24,12 @@ Functions for creating and analyzing contingency tables.
 from functools import reduce
 import math
 import numpy as np
-from ._stats_py import power_divergence
+from ._stats_py import power_divergence, _untabulate
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
 from ._odds_ratio import odds_ratio
 from scipy._lib._bunch import _make_tuple_bunch
+from scipy import stats
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
@@ -141,7 +142,7 @@ Chi2ContingencyResult = _make_tuple_bunch(
 )
 
 
-def chi2_contingency(observed, correction=True, lambda_=None):
+def chi2_contingency(observed, correction=True, lambda_=None, *, method=None):
     """Chi-square test of independence of variables in a contingency table.
 
     This function computes the chi-square statistic and p-value for the
@@ -169,6 +170,20 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         chi-squared statistic [2]_.  `lambda_` allows a statistic from the
         Cressie-Read power divergence family [3]_ to be used instead.  See
         `scipy.stats.power_divergence` for details.
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. Compatible only with
+        `correction=False`,  default `lambda_`, and two-way tables.
+        If `method` is an instance of `PermutationMethod`/`MonteCarloMethod`,
+        the p-value is computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed as documented in the notes.
+        Note that if `method` is an instance of `MonteCarloMethod`, the ``rvs``
+        attribute must be left unspecified; Monte Carlo samples are always drawn
+        using the ``rvs`` method of `scipy.stats.random_table`.
+
+        .. versionadded:: 1.15.0
+
 
     Returns
     -------
@@ -180,7 +195,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         pvalue : float
             The p-value of the test.
         dof : int
-            The degrees of freedom.
+            The degrees of freedom. NaN if `method` is not ``None``.
         expected_freq : ndarray, same shape as `observed`
             The expected frequencies, based on the marginal sums of the table.
 
@@ -192,6 +207,7 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     scipy.stats.power_divergence
     scipy.stats.barnard_exact
     scipy.stats.boschloo_exact
+    :ref:`hypothesis_chi2_contingency` : Extended example
 
     Notes
     -----
@@ -233,61 +249,13 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     .. [3] Cressie, N. and Read, T. R. C., "Multinomial Goodness-of-Fit
            Tests", J. Royal Stat. Soc. Series B, Vol. 46, No. 3 (1984),
            pp. 440-464.
-    .. [4] Berger, Jeffrey S. et al. "Aspirin for the Primary Prevention of
-           Cardiovascular Events in Women and Men: A Sex-Specific
-           Meta-analysis of Randomized Controlled Trials."
-           JAMA, 295(3):306-313, :doi:`10.1001/jama.295.3.306`, 2006.
 
     Examples
     --------
-    In [4]_, the use of aspirin to prevent cardiovascular events in women
-    and men was investigated. The study notably concluded:
-
-        ...aspirin therapy reduced the risk of a composite of
-        cardiovascular events due to its effect on reducing the risk of
-        ischemic stroke in women [...]
-
-    The article lists studies of various cardiovascular events. Let's
-    focus on the ischemic stoke in women.
-
-    The following table summarizes the results of the experiment in which
-    participants took aspirin or a placebo on a regular basis for several
-    years. Cases of ischemic stroke were recorded::
-
-                          Aspirin   Control/Placebo
-        Ischemic stroke     176           230
-        No stroke         21035         21018
-
-    Is there evidence that the aspirin reduces the risk of ischemic stroke?
-    We begin by formulating a null hypothesis :math:`H_0`:
-
-        The effect of aspirin is equivalent to that of placebo.
-
-    Let's assess the plausibility of this hypothesis with
-    a chi-square test.
+    A two-way example (2 x 3):
 
     >>> import numpy as np
     >>> from scipy.stats import chi2_contingency
-    >>> table = np.array([[176, 230], [21035, 21018]])
-    >>> res = chi2_contingency(table)
-    >>> res.statistic
-    6.892569132546561
-    >>> res.pvalue
-    0.008655478161175739
-
-    Using a significance level of 5%, we would reject the null hypothesis in
-    favor of the alternative hypothesis: "the effect of aspirin
-    is not equivalent to the effect of placebo".
-    Because `scipy.stats.contingency.chi2_contingency` performs a two-sided
-    test, the alternative hypothesis does not indicate the direction of the
-    effect. We can use `stats.contingency.odds_ratio` to support the
-    conclusion that aspirin *reduces* the risk of ischemic stroke.
-
-    Below are further examples showing how larger contingency tables can be
-    tested.
-
-    A two-way example (2 x 3):
-
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> res = chi2_contingency(obs)
     >>> res.statistic
@@ -325,6 +293,22 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     8.7584514426741897
     >>> res.pvalue
     0.64417725029295503
+
+    When the sum of the elements in a two-way table is small, the p-value
+    produced by the default asymptotic approximation may be inaccurate.
+    Consider passing a `PermutationMethod` or `MonteCarloMethod` as the
+    `method` parameter with `correction=False`.
+
+    >>> from scipy.stats import PermutationMethod
+    >>> obs = np.asarray([[12, 3],
+    ...                   [17, 16]])
+    >>> res = chi2_contingency(obs, correction=False)
+    >>> ref = chi2_contingency(obs, correction=False, method=PermutationMethod())
+    >>> res.pvalue, ref.pvalue
+    (0.0614122539870913, 0.1074)  # may vary
+
+    For a more detailed example, see :ref:`hypothesis_chi2_contingency`.
+
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
@@ -339,6 +323,9 @@ def chi2_contingency(observed, correction=True, lambda_=None):
         zeropos = list(zip(*np.nonzero(expected == 0)))[0]
         raise ValueError("The internally computed table of expected "
                          f"frequencies has a zero element at {zeropos}.")
+
+    if method is not None:
+        return _chi2_resampling_methods(observed, expected, correction, lambda_, method)
 
     # The degrees of freedom
     dof = expected.size - sum(expected.shape) + expected.ndim - 1
@@ -363,6 +350,72 @@ def chi2_contingency(observed, correction=True, lambda_=None):
                                    lambda_=lambda_)
 
     return Chi2ContingencyResult(chi2, p, dof, expected)
+
+
+def _chi2_resampling_methods(observed, expected, correction, lambda_, method):
+
+    if observed.ndim != 2:
+        message = 'Use of `method` is only compatible with two-way tables.'
+        raise ValueError(message)
+
+    if correction:
+        message = f'`{correction=}` is not compatible with `{method=}.`'
+        raise ValueError(message)
+
+    if lambda_ is not None:
+        message = f'`{lambda_=}` is not compatible with `{method=}.`'
+        raise ValueError(message)
+
+    if isinstance(method, stats.PermutationMethod):
+        res = _chi2_permutation_method(observed, expected, method)
+    elif isinstance(method, stats.MonteCarloMethod):
+        res = _chi2_monte_carlo_method(observed, expected, method)
+    else:
+        message = (f'`{method=}` not recognized; if provided, `method` must be an '
+                   'instance of `PermutationMethod` or `MonteCarloMethod`.')
+        raise ValueError(message)
+
+    return Chi2ContingencyResult(res.statistic, res.pvalue, np.nan, expected)
+
+
+def _chi2_permutation_method(observed, expected, method):
+    x, y = _untabulate(observed)
+    # `permutation_test` with `permutation_type='pairings' permutes the order of `x`,
+    # which pairs observations in `x` with different observations in `y`.
+    def statistic(x):
+        # crosstab the resample and compute the statistic
+        table = crosstab(x, y)[1]
+        return np.sum((table - expected)**2/expected)
+
+    return stats.permutation_test((x,), statistic, permutation_type='pairings',
+                                  alternative='greater', **method._asdict())
+
+
+def _chi2_monte_carlo_method(observed, expected, method):
+    method = method._asdict()
+
+    if method.pop('rvs', None) is not None:
+        message = ('If the `method` argument of `chi2_contingency` is an '
+                   'instance of `MonteCarloMethod`, its `rvs` attribute '
+                   'must be unspecified. Use the `MonteCarloMethod` `rng` argument '
+                   'to control the random state.')
+        raise ValueError(message)
+    rng = np.random.default_rng(method.pop('rng', None))
+
+    # `random_table.rvs` produces random contingency tables with the given marginals
+    # under the null hypothesis of independence
+    rowsums, colsums = stats.contingency.margins(observed)
+    X = stats.random_table(rowsums.ravel(), colsums.ravel(), seed=rng)
+    def rvs(size):
+        n_resamples = size[0]
+        return X.rvs(size=n_resamples).reshape(size)
+
+    expected = expected.ravel()
+    def statistic(table, axis):
+        return np.sum((table - expected)**2/expected, axis=axis)
+
+    return stats.monte_carlo_test(observed.ravel(), rvs, statistic,
+                                  alternative='greater', **method)
 
 
 def association(observed, method="cramer", correction=False, lambda_=None):

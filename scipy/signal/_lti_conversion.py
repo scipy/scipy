@@ -431,8 +431,9 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     >>> plt.show()
 
     """
-    if len(system) == 1:
-        return system.to_discrete()
+    if hasattr(system, 'to_discrete') and callable(system.to_discrete):
+        return system.to_discrete(dt=dt, method=method, alpha=alpha)
+
     if len(system) == 2:
         sysd = cont2discrete(tf2ss(system[0], system[1]), dt, method=method,
                              alpha=alpha)
@@ -519,7 +520,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     elif method == 'impulse':
         if not np.allclose(d, 0):
-            raise ValueError("Impulse method is only applicable"
+            raise ValueError("Impulse method is only applicable "
                              "to strictly proper systems")
 
         ad = linalg.expm(a * dt)
@@ -528,6 +529,6 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
         dd = c @ b * dt
 
     else:
-        raise ValueError("Unknown transformation method '%s'" % method)
+        raise ValueError(f"Unknown transformation method '{method}'")
 
     return ad, bd, cd, dd, dt

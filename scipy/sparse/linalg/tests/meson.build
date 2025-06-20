@@ -1,6 +1,7 @@
 py3.install_sources([
     '__init__.py',
     'propack_test_data.npz',
+    'test_funm_multiply_krylov.py',
     'test_expm_multiply.py',
     'test_interface.py',
     'test_matfuncs.py',
@@ -10,5 +11,6 @@ py3.install_sources([
     'test_pydata_sparse.py',
     'test_special_sparse_arrays.py'
   ],
-  subdir: 'scipy/sparse/linalg/tests'
+  subdir: 'scipy/sparse/linalg/tests',
+  install_tag: 'tests'
 )

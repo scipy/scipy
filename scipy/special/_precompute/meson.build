@@ -4,6 +4,7 @@ python_sources = [
   'expn_asy.py',
   'gammainc_asy.py',
   'gammainc_data.py',
+  'hyp2f1_data.py',
   'lambertw.py',
   'loggamma.py',
   'struve_convergence.py',

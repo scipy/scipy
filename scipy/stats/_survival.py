@@ -1,17 +1,13 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import warnings
 
 import numpy as np
 from scipy import special, interpolate, stats
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
-from scipy.stats import norm  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
-    from typing import Literal
     import numpy.typing as npt
 
 
@@ -241,7 +237,7 @@ class ECDFResult:
 
 
 def _iv_CensoredData(
-    sample: npt.ArrayLike | CensoredData, param_name: str = 'sample'
+    sample: "npt.ArrayLike | CensoredData", param_name: str = "sample"
 ) -> CensoredData:
     """Attempt to convert `sample` to `CensoredData`."""
     if not isinstance(sample, CensoredData):
@@ -253,7 +249,7 @@ def _iv_CensoredData(
     return sample
 
 
-def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
+def ecdf(sample: "npt.ArrayLike | CensoredData") -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
@@ -392,7 +388,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> res.cdf.plot(ax)
+    >>> res.sf.plot(ax)
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
@@ -488,8 +484,8 @@ class LogRankResult:
 
 
 def logrank(
-    x: npt.ArrayLike | CensoredData,
-    y: npt.ArrayLike | CensoredData,
+    x: "npt.ArrayLike | CensoredData",
+    y: "npt.ArrayLike | CensoredData",
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
     r"""Compare the survival distributions of two samples via the logrank test.
@@ -629,9 +625,9 @@ def logrank(
 
     >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
-    -2.73799...
+    -2.73799
     >>> res.pvalue
-    0.00618...
+    0.00618
 
     The p-value is less than 1%, so we can consider the data to be evidence
     against the null hypothesis in favor of the alternative that there is a
@@ -681,6 +677,7 @@ def logrank(
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
-    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative)
+    norm = stats._stats_py._SimpleNormal()
+    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative, xp=np)
 
     return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])

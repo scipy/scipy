@@ -40,11 +40,12 @@ import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
-from scipy.sparse._sputils import isdense, is_pydata_spmatrix
+from scipy.sparse._sputils import (
+    convert_pydata_sparse_to_scipy, isdense, is_pydata_spmatrix,
+)
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
-
 from . import _arpack
 arpack_int = _arpack.timing.nbx.dtype
 
@@ -275,9 +276,13 @@ class ArpackError(RuntimeError):
     ARPACK error
     """
 
-    def __init__(self, info, infodict=_NAUPD_ERRORS):
+    def __init__(self, info, infodict=None):
+        if infodict is None:
+            infodict = _NAUPD_ERRORS
+
         msg = infodict.get(info, "Unknown error")
-        RuntimeError.__init__(self, "ARPACK error %d: %s" % (info, msg))
+        super().__init__(f"ARPACK error {info}: {msg}")
+
 
 
 class ArpackNoConvergence(ArpackError):
@@ -311,15 +316,19 @@ class _ArpackParams:
     def __init__(self, n, k, tp, mode=1, sigma=None,
                  ncv=None, v0=None, maxiter=None, which="LM", tol=0):
         if k <= 0:
-            raise ValueError("k must be positive, k=%d" % k)
+            raise ValueError(f"k must be positive, k={k}")
 
         if maxiter is None:
             maxiter = n * 10
         if maxiter <= 0:
-            raise ValueError("maxiter must be positive, maxiter=%d" % maxiter)
+            raise ValueError(f"maxiter must be positive, maxiter={maxiter}")
 
         if tp not in 'fdFD':
-            raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
+            # Use `float64` libraries from integer dtypes.
+            if np.can_cast(tp, 'd'):
+                tp = 'd'
+            else:
+                raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy
@@ -502,19 +511,18 @@ class _SymmetricArpackParams(_ArpackParams):
                 self.B = M_matvec
                 self.bmat = 'G'
         else:
-            raise ValueError("mode=%i not implemented" % mode)
+            raise ValueError(f"mode={mode} not implemented")
 
         if which not in _SEUPD_WHICH:
-            raise ValueError("which must be one of %s"
-                             % ' '.join(_SEUPD_WHICH))
+            raise ValueError(f"which must be one of {' '.join(_SEUPD_WHICH)}")
         if k >= n:
-            raise ValueError("k must be less than ndim(A), k=%d" % k)
+            raise ValueError(f"k must be less than ndim(A), k={k}")
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k:
-            raise ValueError("ncv must be k<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -685,19 +693,18 @@ class _UnsymmetricArpackParams(_ArpackParams):
                 self.bmat = 'G'
                 self.OP = lambda x: self.OPa(M_matvec(x))
         else:
-            raise ValueError("mode=%i not implemented" % mode)
+            raise ValueError(f"mode={mode} not implemented")
 
         if which not in _NEUPD_WHICH:
-            raise ValueError("Parameter which must be one of %s"
-                             % ' '.join(_NEUPD_WHICH))
+            raise ValueError(f"Parameter which must be one of {' '.join(_NEUPD_WHICH)}")
         if k >= n - 1:
-            raise ValueError("k must be less than ndim(A)-1, k=%d" % k)
+            raise ValueError(f"k must be less than ndim(A)-1, k={k}")
 
         _ArpackParams.__init__(self, n, k, tp, mode, sigma,
                                ncv, v0, maxiter, which, tol)
 
         if self.ncv > n or self.ncv <= k + 1:
-            raise ValueError("ncv must be k+1<ncv<=n, ncv=%s" % self.ncv)
+            raise ValueError(f"ncv must be k+1<ncv<=n, ncv={self.ncv}")
 
         # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
         self.workd = _aligned_zeros(3 * n, self.tp)
@@ -725,7 +732,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                           self.ipntr, self.workd, self.workl, self.info)
             self.ido, self.tol, self.resid, self.v, \
                 self.iparam, self.ipntr, self.info = results
-                
+
         else:
             results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
                                           self.tol, self.resid, self.v, self.iparam,
@@ -733,7 +740,7 @@ class _UnsymmetricArpackParams(_ArpackParams):
                                           self.rwork, self.info)
             self.ido, self.tol, self.resid, self.v, \
                 self.iparam, self.ipntr, self.info = results
-                
+
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
@@ -898,15 +905,6 @@ class _UnsymmetricArpackParams(_ArpackParams):
         else:
             return d
 
-
-def _aslinearoperator_with_dtype(m):
-    m = aslinearoperator(m)
-    if not hasattr(m, 'dtype'):
-        x = np.zeros(m.shape[1])
-        m.dtype = (m * x).dtype
-    return m
-
-
 class SpLuInv(LinearOperator):
     """
     SpLuInv:
@@ -982,9 +980,10 @@ class IterInv(LinearOperator):
     def _matvec(self, x):
         b, info = self.ifunc(self.M, x, tol=self.tol)
         if info != 0:
-            raise ValueError("Error in inverting M: function "
-                             "%s did not converge (info = %i)."
-                             % (self.ifunc.__name__, info))
+            raise ValueError(
+                f"Error in inverting M: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
+            )
         return b
 
 
@@ -1029,9 +1028,10 @@ class IterOpInv(LinearOperator):
     def _matvec(self, x):
         b, info = self.ifunc(self.OP, x, tol=self.tol)
         if info != 0:
-            raise ValueError("Error in inverting [A-sigma*M]: function "
-                             "%s did not converge (info = %i)."
-                             % (self.ifunc.__name__, info))
+            raise ValueError(
+                f"Error in inverting [A-sigma*M]: function {self.ifunc.__name__} "
+                f"did not converge (info = {info})."
+            )
         return b
 
     @property
@@ -1080,13 +1080,13 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
         else:
-            return IterOpInv(_aslinearoperator_with_dtype(A),
+            return IterOpInv(aslinearoperator(A),
                              M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not issparse(A) and not is_pydata_spmatrix(A)) or
                 (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(A))):
-            return IterOpInv(_aslinearoperator_with_dtype(A),
-                             _aslinearoperator_with_dtype(M),
+            return IterOpInv(aslinearoperator(A),
+                             aslinearoperator(M),
                              sigma, tol=tol).matvec
         elif isdense(A) or isdense(M):
             return LuInv(A - sigma * M).matvec
@@ -1256,6 +1256,8 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
+    A = convert_pydata_sparse_to_scipy(A)
+    M = convert_pydata_sparse_to_scipy(M)
     if A.shape[0] != A.shape[1]:
         raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
@@ -1269,7 +1271,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     n = A.shape[0]
 
     if k <= 0:
-        raise ValueError("k=%d must be greater than 0." % k)
+        raise ValueError(f"k={k} must be greater than 0.")
 
     if k >= n - 1:
         warnings.warn("k >= N - 1 for N * N square matrix. "
@@ -1290,7 +1292,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         return eig(A, b=M, right=return_eigenvectors)
 
     if sigma is None:
-        matvec = _aslinearoperator_with_dtype(A).matvec
+        matvec = aslinearoperator(A).matvec
 
         if OPinv is not None:
             raise ValueError("OPinv should not be specified "
@@ -1313,9 +1315,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
-                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv = aslinearoperator(Minv)
                 Minv_matvec = Minv.matvec
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
     else:
         #sigma is not None: shift-invert mode
         if np.issubdtype(A.dtype, np.complexfloating):
@@ -1332,19 +1334,19 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             raise ValueError("OPpart must be one of ('r','i')")
 
-        matvec = _aslinearoperator_with_dtype(A).matvec
+        matvec = aslinearoperator(A).matvec
         if Minv is not None:
             raise ValueError("Minv should not be specified when sigma is")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                            hermitian=False, tol=tol)
         else:
-            OPinv = _aslinearoperator_with_dtype(OPinv)
+            OPinv = aslinearoperator(OPinv)
             Minv_matvec = OPinv.matvec
         if M is None:
             M_matvec = None
         else:
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
 
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
@@ -1425,16 +1427,19 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         unspecified.  This is computed internally via a (sparse) LU
         decomposition for explicit matrices A & M, or via an iterative
         solver if either A or M is a general linear operator.
-        Alternatively, the user can supply the matrix or operator OPinv,
+        Alternatively, the user can supply the matrix or operator `OPinv`,
         which gives ``x = OPinv @ b = [A - sigma * M]^-1 @ b``.
+        Regardless of the selected mode (normal, cayley, or buckling),
+        `OPinv` should always be supplied as ``OPinv = [A - sigma * M]^-1``.
+
         Note that when sigma is specified, the keyword 'which' refers to
         the shifted eigenvalues ``w'[i]`` where:
 
-            if mode == 'normal', ``w'[i] = 1 / (w[i] - sigma)``.
+            if ``mode == 'normal'``: ``w'[i] = 1 / (w[i] - sigma)``.
 
-            if mode == 'cayley', ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
+            if ``mode == 'cayley'``:  ``w'[i] = (w[i] + sigma) / (w[i] - sigma)``.
 
-            if mode == 'buckling', ``w'[i] = w[i] / (w[i] - sigma)``.
+            if ``mode == 'buckling'``: ``w'[i] = w[i] / (w[i] - sigma)``.
 
         (see further discussion in 'mode' below)
     v0 : ndarray, optional
@@ -1566,8 +1571,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     # complex Hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
-            raise ValueError("mode=%s cannot be used with "
-                             "complex matrix A" % mode)
+            raise ValueError(f"mode={mode} cannot be used with complex matrix A")
         if which == 'BE':
             raise ValueError("which='BE' cannot be used with complex matrix A")
         elif which == 'LA':
@@ -1618,7 +1622,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
     if sigma is None:
-        A = _aslinearoperator_with_dtype(A)
+        A = aslinearoperator(A)
         matvec = A.matvec
 
         if OPinv is not None:
@@ -1638,9 +1642,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
-                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv = aslinearoperator(Minv)
                 Minv_matvec = Minv.matvec
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
     else:
         # sigma is not None: shift-invert mode
         if Minv is not None:
@@ -1654,12 +1658,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                OPinv = _aslinearoperator_with_dtype(OPinv)
+                OPinv = aslinearoperator(OPinv)
                 Minv_matvec = OPinv.matvec
             if M is None:
                 M_matvec = None
             else:
-                M = _aslinearoperator_with_dtype(M)
+                M = aslinearoperator(M)
                 M_matvec = M.matvec
 
         # buckling mode
@@ -1669,27 +1673,27 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
-            matvec = _aslinearoperator_with_dtype(A).matvec
+                Minv_matvec = aslinearoperator(OPinv).matvec
+            matvec = aslinearoperator(A).matvec
             M_matvec = None
 
         # cayley-transform mode
         elif mode == 'cayley':
             mode = 5
-            matvec = _aslinearoperator_with_dtype(A).matvec
+            matvec = aslinearoperator(A).matvec
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
+                Minv_matvec = aslinearoperator(OPinv).matvec
             if M is None:
                 M_matvec = None
             else:
-                M_matvec = _aslinearoperator_with_dtype(M).matvec
+                M_matvec = aslinearoperator(M).matvec
 
         # unrecognized mode
         else:
-            raise ValueError("unrecognized mode '%s'" % mode)
+            raise ValueError(f"unrecognized mode '{mode}'")
 
     params = _SymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                     M_matvec, Minv_matvec, sigma,

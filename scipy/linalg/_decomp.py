@@ -16,17 +16,14 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
            'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf']
 
-import warnings
-
 import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 _I = np.array(1j, dtype='F')
@@ -114,6 +111,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     return w, vr
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
         overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     """
@@ -283,11 +281,10 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-@_deprecate_positional_args(version="1.14.0")
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
-         overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-         check_finite=True, subset_by_index=None, subset_by_value=None,
-         driver=None):
+         overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+         subset_by_value=None, driver=None):
     """
     Solve a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -355,16 +352,6 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    turbo : bool, optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `turbo` is deprecated in favour of
-                ``driver=gvd`` keyword instead and will be removed in SciPy
-                1.14.0.
-    eigvals : tuple (lo, hi), optional, deprecated
-            .. deprecated:: 1.5.0
-                `eigh` keyword argument `eigvals` is deprecated in favour of
-                `subset_by_index` keyword instead and will be removed in SciPy
-                1.14.0.
 
     Returns
     -------
@@ -460,17 +447,6 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     (5, 1)
 
     """
-    if turbo is not _NoValue:
-        warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
-                      "driver=gvd' keyword instead and will be removed in "
-                      "SciPy 1.14.0.",
-                      DeprecationWarning, stacklevel=2)
-    if eigvals is not _NoValue:
-        warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
-                      "'subset_by_index' keyword instead and will be removed "
-                      "in SciPy 1.14.0.",
-                      DeprecationWarning, stacklevel=2)
-
     # set lower
     uplo = 'L' if lower else 'U'
     # Set job for Fortran routines
@@ -516,18 +492,11 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
         cplx = True if iscomplexobj(b1) else (cplx or False)
         drv_args.update({'overwrite_b': overwrite_b, 'itype': type})
 
-    # backwards-compatibility handling
-    subset_by_index = subset_by_index if (eigvals in (None, _NoValue)) else eigvals
-
     subset = (subset_by_index is not None) or (subset_by_value is not None)
 
     # Both subsets can't be given
     if subset_by_index and subset_by_value:
         raise ValueError('Either index or value subset can be requested.')
-
-    # Take turbo into account if all conditions are met otherwise ignore
-    if turbo not in (None, _NoValue) and b is not None:
-        driver = 'gvx' if subset else 'gvd'
 
     # Check indices if given
     if subset_by_index:
@@ -689,6 +658,7 @@ def _check_select(select, select_range, max_ev, max_len):
     return select, vl, vu, il, iu, max_ev
 
 
+@_apply_over_batch(('a_band', 2))
 def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
                select='a', select_range=None, max_ev=0, check_finite=True):
     """
@@ -868,6 +838,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigvals(a, b=None, overwrite_a=False, check_finite=True,
             homogeneous_eigvals=False):
     """
@@ -943,11 +914,10 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-@_deprecate_positional_args(version="1.14.0")
+@_apply_over_batch(('a', 2), ('b', 2))
 def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
-             overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
-             check_finite=True, subset_by_index=None, subset_by_value=None,
-             driver=None):
+             overwrite_b=False, type=1, check_finite=True, subset_by_index=None,
+             subset_by_value=None, driver=None):
     """
     Solves a standard or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -1010,15 +980,6 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section of
         `scipy.linalg.eigh`.
-    turbo : bool, optional, deprecated
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `turbo` is deprecated in favor of
-            ``driver=gvd`` option and will be removed in SciPy 1.14.0.
-
-    eigvals : tuple (lo, hi), optional
-        .. deprecated:: 1.5.0
-            'eigvalsh' keyword argument `eigvals` is deprecated in favor of
-            `subset_by_index` option and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -1066,13 +1027,13 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
 
     """
-    return eigh(a, b=b, lower=lower, eigvals_only=True,
-                overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type,
-                check_finite=check_finite, subset_by_index=subset_by_index,
-                subset_by_value=subset_by_value, driver=driver)
+    return eigh(a, b=b, lower=lower, eigvals_only=True, overwrite_a=overwrite_a,
+                overwrite_b=overwrite_b, type=type, check_finite=check_finite,
+                subset_by_index=subset_by_index, subset_by_value=subset_by_value,
+                driver=driver)
 
 
+@_apply_over_batch(('a_band', 2))
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                    select='a', select_range=None, check_finite=True):
     """
@@ -1166,6 +1127,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
+@_apply_over_batch(('d', 1), ('e', 1))
 def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
                          check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1210,9 +1172,9 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         and ``|a|`` is the 1-norm of the matrix ``a``.
     lapack_driver : str
         LAPACK function to use, can be 'auto', 'stemr', 'stebz',  'sterf',
-        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
-        and 'stebz' otherwise. 'sterf' and 'stev' can only be used when
-        ``select='a'``.
+        'stev', or 'stevd'. When 'auto' (default), it will use 'stevd' if
+        ``select='a'`` and 'stebz' otherwise. 'sterf' and 'stev' can only
+        be used when ``select='a'``.
 
     Returns
     -------
@@ -1247,6 +1209,7 @@ def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
+@_apply_over_batch(('d', 1), ('e', 1))
 def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
                      check_finite=True, tol=0., lapack_driver='auto'):
     """
@@ -1294,7 +1257,7 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         and ``|a|`` is the 1-norm of the matrix ``a``.
     lapack_driver : str
         LAPACK function to use, can be 'auto', 'stemr', 'stebz', 'sterf',
-        or 'stev'. When 'auto' (default), it will use 'stemr' if ``select='a'``
+        'stev', or 'stevd'. When 'auto' (default), it will use 'stevd' if ``select='a'``
         and 'stebz' otherwise. When 'stebz' is used to find the eigenvalues and
         ``eigvals_only=False``, then a second LAPACK call (to ``?STEIN``) is
         used to find the corresponding eigenvectors. 'sterf' can only be
@@ -1352,12 +1315,12 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         select, select_range, 0, d.size)
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be str')
-    drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
+    drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev', 'stevd')
     if lapack_driver not in drivers:
         raise ValueError(f'lapack_driver must be one of {drivers}, '
                          f'got {lapack_driver}')
     if lapack_driver == 'auto':
-        lapack_driver = 'stemr' if select == 0 else 'stebz'
+        lapack_driver = 'stevd' if select == 0 else 'stebz'
 
     # Quick exit for 1x1 case
     if len(d) == 1:
@@ -1386,6 +1349,11 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     elif lapack_driver == 'stev':
         if select != 0:
             raise ValueError('stev can only be used when select == "a"')
+        w, v, info = func(d, e, compute_v=compute_v)
+        m = len(w)
+    elif lapack_driver == 'stevd':
+        if select != 0:
+            raise ValueError('stevd can only be used when select == "a"')
         w, v, info = func(d, e, compute_v=compute_v)
         m = len(w)
     elif lapack_driver == 'stebz':
@@ -1429,12 +1397,12 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
 def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
     """Check info return value."""
     if info < 0:
-        raise ValueError('illegal value in argument %d of internal %s'
-                         % (-info, driver))
+        raise ValueError(f'illegal value in argument {-info} of internal {driver}')
     if info > 0 and positive:
         raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
+@_apply_over_batch(('a', 2))
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     """
     Compute Hessenberg form of a matrix.
@@ -1529,6 +1497,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
 def cdf2rdf(w, v):
     """
+    Complex diagonal form to real diagonal block form.
+
     Converts complex eigenvalues ``w`` and eigenvectors ``v`` to real
     eigenvalues in a block diagonal form ``wr`` and the associated real
     eigenvectors ``vr``, such that::

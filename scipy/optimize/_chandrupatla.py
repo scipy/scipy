@@ -1,10 +1,16 @@
+import math
 import numpy as np
-from ._zeros_py import _xtol, _rtol, _iter
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
+from scipy._lib._array_api import xp_copy
 
-def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
-                  fatol=None, frtol=0, maxiter=_iter, callback=None):
+# TODO:
+# - (maybe?) don't use fancy indexing assignment
+# - figure out how to replace the new `try`/`except`s
+
+
+def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
+                  fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar
@@ -33,6 +39,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         See Notes for details.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
+        The default is the maximum possible number of bisections within
+        the (normal) floating point numbers of the relevant dtype.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -84,9 +92,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     ``fun(xmin) <= fatol + abs(fmin0) * frtol``. This is equivalent to the
     termination condition described in [1]_ with ``xrtol = 4e-10``,
     ``xatol = 1e-5``, and ``fatol = frtol = 0``. The default values are
-    ``xatol = 2e-12``, ``xrtol = 4 * np.finfo(float).eps``, ``frtol = 0``,
-    and ``fatol`` is the smallest normal number of the ``dtype`` returned
-    by ``func``.
+    ``xatol = 4*tiny``, ``xrtol = 4*eps``, ``frtol = 0``, and ``fatol = tiny``,
+    where ``eps`` and ``tiny`` are the precision and smallest normal number
+    of the result ``dtype`` of function inputs and outputs.
 
     References
     ----------
@@ -123,15 +131,19 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
 
     # Initialization
     temp = eim._initialize(func, (a, b), args)
-    func, xs, fs, args, shape, dtype = temp
+    func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
-    status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
+    status = xp.full_like(x1, eim._EINPROGRESS,
+                          dtype=xp.int32)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
-    xatol = _xtol if xatol is None else xatol
-    xrtol = _rtol if xrtol is None else xrtol
-    fatol = np.finfo(dtype).tiny if fatol is None else fatol
-    frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
+    finfo = xp.finfo(dtype)
+    xatol = 4*finfo.smallest_normal if xatol is None else xatol
+    xrtol = 4*finfo.eps if xrtol is None else xrtol
+    fatol = finfo.smallest_normal if fatol is None else fatol
+    frtol = frtol * xp.minimum(xp.abs(f1), xp.abs(f2))
+    maxiter = (math.log2(finfo.max) - math.log2(finfo.smallest_normal)
+               if maxiter is None else maxiter)
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
                        xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
                        nit=nit, nfev=nfev, status=status)
@@ -147,8 +159,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     def post_func_eval(x, f, work):
         # [1] Figure 1 (first diamond and boxes)
         # Note: y/n are reversed in figure; compare to BASIC in appendix
-        work.x3, work.f3 = work.x2.copy(), work.f2.copy()
-        j = np.sign(f) == np.sign(work.f1)
+        work.x3, work.f3 = (xp.asarray(work.x2, copy=True),
+                            xp.asarray(work.f2, copy=True))
+        j = xp.sign(f) == xp.sign(work.f1)
         nj = ~j
         work.x3[j], work.f3[j] = work.x1[j], work.f1[j]
         work.x2[nj], work.f2[nj] = work.x1[nj], work.f1[nj]
@@ -159,31 +172,40 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         # Check for all terminal conditions and record statuses.
 
         # See [1] Section 4 (first two sentences)
-        i = np.abs(work.f1) < np.abs(work.f2)
-        work.xmin = np.choose(i, (work.x2, work.x1))
-        work.fmin = np.choose(i, (work.f2, work.f1))
-        stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
+        i = xp.abs(work.f1) < xp.abs(work.f2)
+        work.xmin = xp.where(i, work.x1, work.x2)
+        work.fmin = xp.where(i, work.f1, work.f2)
+        stop = xp.zeros_like(work.x1, dtype=xp.bool)  # termination condition met
 
-        # This is the convergence criterion used in bisect. Chandrupatla's
-        # criterion is equivalent to this except with a factor of 4 on `xrtol`.
-        work.dx = abs(work.x2 - work.x1)
-        work.tol = abs(work.xmin) * work.xrtol + work.xatol
-        i = work.dx < work.tol
-        # Modify in place to incorporate tolerance on function value. Note that
-        # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
-        # where `f1` and `f2` are the function evaluated at the original ends of
-        # the bracket.
-        i |= np.abs(work.fmin) <= work.fatol + work.frtol
+        # If function value tolerance is met, report successful convergence,
+        # regardless of other conditions. Note that `frtol` has been redefined
+        # as `frtol = frtol * minimum(f1, f2)`, where `f1` and `f2` are the
+        # function evaluated at the original ends of the bracket.
+        i = xp.abs(work.fmin) <= work.fatol + work.frtol
         work.status[i] = eim._ECONVERGED
         stop[i] = True
 
-        i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._ESIGNERR
+        # If the bracket is no longer valid, report failure (unless a function
+        # tolerance is met, as detected above).
+        i = (xp.sign(work.f1) == xp.sign(work.f2)) & ~stop
+        NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
+        work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True
 
-        i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
-               & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._EVALUEERR
+        # If the abscissae are non-finite or either function value is NaN,
+        # report failure.
+        x_nonfinite = ~(xp.isfinite(work.x1) & xp.isfinite(work.x2))
+        f_nan = xp.isnan(work.f1) & xp.isnan(work.f2)
+        i = (x_nonfinite | f_nan) & ~stop
+        work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._EVALUEERR
+        stop[i] = True
+
+        # This is the convergence criterion used in bisect. Chandrupatla's
+        # criterion is equivalent to this except with a factor of 4 on `xrtol`.
+        work.dx = xp.abs(work.x2 - work.x1)
+        work.tol = xp.abs(work.xmin) * work.xrtol + work.xatol
+        i = work.dx < work.tol
+        work.status[i] = eim._ECONVERGED
         stop[i] = True
 
         return stop
@@ -191,32 +213,34 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     def post_termination_check(work):
         # [1] Figure 1 (third diamond and boxes / Equation 1)
         xi1 = (work.x1 - work.x2) / (work.x3 - work.x2)
-        phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
         alpha = (work.x3 - work.x1) / (work.x2 - work.x1)
-        j = ((1 - np.sqrt(1 - xi1)) < phi1) & (phi1 < np.sqrt(xi1))
+        j = ((1 - xp.sqrt(1 - xi1)) < phi1) & (phi1 < xp.sqrt(xi1))
 
         f1j, f2j, f3j, alphaj = work.f1[j], work.f2[j], work.f3[j], alpha[j]
-        t = np.full_like(alpha, 0.5)
+        t = xp.full_like(alpha, 0.5)
         t[j] = (f1j / (f1j - f2j) * f3j / (f3j - f2j)
                 - alphaj * f1j / (f3j - f1j) * f2j / (f2j - f3j))
 
         # [1] Figure 1 (last box; see also BASIC in appendix with comment
         # "Adjust T Away from the Interval Boundary")
         tl = 0.5 * work.tol / work.dx
-        work.t = np.clip(t, tl, 1 - tl)
+        work.t = xp.clip(t, tl, 1 - tl)
 
     def customize_result(res, shape):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
         i = res['xl'] < res['xr']
-        res['xl'] = np.choose(i, (xr, xl))
-        res['xr'] = np.choose(i, (xl, xr))
-        res['fl'] = np.choose(i, (fr, fl))
-        res['fr'] = np.choose(i, (fl, fr))
+        res['xl'] = xp.where(i, xl, xr)
+        res['xr'] = xp.where(i, xr, xl)
+        res['fl'] = xp.where(i, fl, fr)
+        res['fr'] = xp.where(i, fr, fl)
         return shape
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp=xp)
 
 
 def _chandrupatla_iv(func, args, xatol, xrtol,
@@ -229,6 +253,7 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     if not np.iterable(args):
         args = (args,)
 
+    # tolerances are floats, not arrays; OK to use NumPy
     tols = np.asarray([xatol if xatol is not None else 1,
                        xrtol if xrtol is not None else 1,
                        fatol if fatol is not None else 1,
@@ -237,9 +262,10 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
             or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError('Tolerances must be non-negative scalars.')
 
-    maxiter_int = int(maxiter)
-    if maxiter != maxiter_int or maxiter < 0:
-        raise ValueError('`maxiter` must be a non-negative integer.')
+    if maxiter is not None:
+        maxiter_int = int(maxiter)
+        if maxiter != maxiter_int or maxiter < 0:
+            raise ValueError('`maxiter` must be a non-negative integer.')
 
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
@@ -336,7 +362,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     or ``(f1 - 2*f2 + f3)/2 <= abs(f2)*frtol + fatol``. Note that first of
     these differs from the termination conditions described in [1]_. The
     default values of `xrtol` is the square root of the precision of the
-    appropriate dtype, and ``xatol=fatol = frtol`` is the smallest normal
+    appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
     number of the appropriate dtype.
 
     References
@@ -371,23 +397,23 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     # Initialization
     xs = (x1, x2, x3)
     temp = eim._initialize(func, xs, args)
-    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
-    phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio
-    status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
+    phi = xp.asarray(0.5 + 0.5*5**0.5, dtype=dtype)[()]  # golden ratio
+    status = xp.full_like(x1, eim._EINPROGRESS, dtype=xp.int32)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
-    fatol = np.finfo(dtype).tiny if fatol is None else fatol
-    frtol = np.finfo(dtype).tiny if frtol is None else frtol
-    xatol = np.finfo(dtype).tiny if xatol is None else xatol
-    xrtol = np.sqrt(np.finfo(dtype).eps) if xrtol is None else xrtol
+    fatol = xp.finfo(dtype).smallest_normal if fatol is None else fatol
+    frtol = xp.finfo(dtype).smallest_normal if frtol is None else frtol
+    xatol = xp.finfo(dtype).smallest_normal if xatol is None else xatol
+    xrtol = math.sqrt(xp.finfo(dtype).eps) if xrtol is None else xrtol
 
     # Ensure that x1 < x2 < x3 initially.
-    xs, fs = np.vstack((x1, x2, x3)), np.vstack((f1, f2, f3))
-    i = np.argsort(xs, axis=0)
-    x1, x2, x3 = np.take_along_axis(xs, i, axis=0)
-    f1, f2, f3 = np.take_along_axis(fs, i, axis=0)
-    q0 = x3.copy()  # "At the start, q0 is set at x3..." ([1] after (7))
+    xs, fs = xp.stack((x1, x2, x3)), xp.stack((f1, f2, f3))
+    i = xp.argsort(xs, axis=0)
+    x1, x2, x3 = xp.take_along_axis(xs, i, axis=0)  # data-apis/array-api#808
+    f1, f2, f3 = xp.take_along_axis(fs, i, axis=0)  # data-apis/array-api#808
+    q0 = xp_copy(x3)  # "At the start, q0 is set at x3..." ([1] after (7))
 
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
                        xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
@@ -415,14 +441,14 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
         # "If Q1 and Q0 are sufficiently close... Q1 is accepted if it is
         # sufficiently away from the inside point x2"
-        i = abs(q1 - work.q0) < 0.5 * abs(x21)  # [1] (7)
+        i = xp.abs(q1 - work.q0) < 0.5 * xp.abs(x21)  # [1] (7)
         xi = q1[i]
         # Later, after (9), "If the point Q1 is in a +/- xtol neighborhood of
         # x2, the new point is chosen in the larger interval at a distance
         # tol away from x2."
         # See also QBASIC code after "Accept Ql adjust if close to X2".
-        j = abs(q1[i] - work.x2[i]) <= work.xtol[i]
-        xi[j] = work.x2[i][j] + np.sign(x32[i][j]) * work.xtol[i][j]
+        j = xp.abs(q1[i] - work.x2[i]) <= work.xtol[i]
+        xi[j] = work.x2[i][j] + xp.sign(x32[i][j]) * work.xtol[i][j]
 
         # "If condition (7) is not satisfied, golden sectioning of the larger
         # interval is carried out to introduce the new point."
@@ -440,7 +466,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # point. In QBASIC code, see "IF SGN(X-X2) = SGN(X3-X2) THEN...".
         # There is an awful lot of data copying going on here; this would
         # probably benefit from code optimization or implementation in Pythran.
-        i = np.sign(x - work.x2) == np.sign(work.x3 - work.x2)
+        i = xp.sign(x - work.x2) == xp.sign(work.x3 - work.x2)
         xi, x1i, x2i, x3i = x[i], work.x1[i], work.x2[i], work.x3[i],
         fi, f1i, f2i, f3i = f[i], work.f1[i], work.f2[i], work.f3[i]
         j = fi > f2i
@@ -463,17 +489,17 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     def check_termination(work):
         # Check for all terminal conditions and record statuses.
-        stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
+        stop = xp.zeros_like(work.x1, dtype=bool)  # termination condition met
 
         # Bracket is invalid; stop and don't return minimizer/minimum
         i = ((work.f2 > work.f1) | (work.f2 > work.f3))
-        work.x2[i], work.f2[i] = np.nan, np.nan
+        work.x2[i], work.f2[i] = xp.nan, xp.nan
         stop[i], work.status[i] = True, eim._ESIGNERR
 
         # Non-finite values; stop and don't return minimizer/minimum
-        finite = np.isfinite(work.x1+work.x2+work.x3+work.f1+work.f2+work.f3)
+        finite = xp.isfinite(work.x1+work.x2+work.x3+work.f1+work.f2+work.f3)
         i = ~(finite | stop)
-        work.x2[i], work.f2[i] = np.nan, np.nan
+        work.x2[i], work.f2[i] = xp.nan, xp.nan
         stop[i], work.status[i] = True, eim._EVALUEERR
 
         # [1] Section 3 "Points 1 and 3 are interchanged if necessary to make
@@ -481,7 +507,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # Note: I had used np.choose; this is much faster. This would be a good
         # place to save e.g. `work.x3 - work.x2` for reuse, but I tried and
         # didn't notice a speed boost, so let's keep it simple.
-        i = abs(work.x3 - work.x2) < abs(work.x2 - work.x1)
+        i = xp.abs(work.x3 - work.x2) < xp.abs(work.x2 - work.x1)
         temp = work.x1[i]
         work.x1[i] = work.x3[i]
         work.x3[i] = temp
@@ -491,13 +517,13 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
         # [1] Section 3 (bottom of page 212)
         # "We set a tolerance value xtol..."
-        work.xtol = abs(work.x2) * work.xrtol + work.xatol  # [1] (8)
+        work.xtol = xp.abs(work.x2) * work.xrtol + work.xatol  # [1] (8)
         # "The convergence based on interval is achieved when..."
         # Note: Equality allowed in case of `xtol=0`
-        i = abs(work.x3 - work.x2) <= 2 * work.xtol  # [1] (9)
+        i = xp.abs(work.x3 - work.x2) <= 2 * work.xtol  # [1] (9)
 
         # "We define ftol using..."
-        ftol = abs(work.f2) * work.frtol + work.fatol  # [1] (10)
+        ftol = xp.abs(work.f2) * work.frtol + work.fatol  # [1] (10)
         # "The convergence based on function values is achieved when..."
         # Note 1: modify in place to incorporate tolerance on function value.
         # Note 2: factor of 2 is not in the text; see QBASIC start of DO loop
@@ -512,13 +538,14 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     def customize_result(res, shape):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
-        i = res['xl'] < res['xr']
-        res['xl'] = np.choose(i, (xr, xl))
-        res['xr'] = np.choose(i, (xl, xr))
-        res['fl'] = np.choose(i, (fr, fl))
-        res['fr'] = np.choose(i, (fl, fr))
+        i = res['xl'] >= res['xr']
+        res['xl'] = xp.where(i, xr, xl)
+        res['xr'] = xp.where(i, xl, xr)
+        res['fl'] = xp.where(i, fr, fl)
+        res['fr'] = xp.where(i, fl, fr)
         return shape
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp=xp)

@@ -5,16 +5,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'cKDTree',
-    'cKDTreeNode',
-    'coo_entries',
-    'operator',
-    'ordered_pairs',
-    'os',
-    'scipy',
-    'threading',
-]
+__all__ = ["cKDTree"]  # noqa: F822
 
 
 def __dir__():

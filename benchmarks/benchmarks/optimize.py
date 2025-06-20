@@ -88,16 +88,15 @@ class _BenchOptimizers(Benchmark):
             return
         print("")
         print("=========================================================")
-        print("Optimizer benchmark: %s" % (self.function_name))
-        print("dimensions: %d, extra kwargs: %s" %
-              (results[0].ndim, str(self.minimizer_kwargs)))
-        print("averaged over %d starting configurations" % (results[0].ntrials))
+        print(f"Optimizer benchmark: {self.function_name}")
+        print(f"dimensions: {results[0].ndim}, "
+              f"extra kwargs: {str(self.minimizer_kwargs)}")
+        print(f"averaged over {results[0].ntrials} starting configurations")
         print("  Optimizer    nfail   nfev    njev    nhev    time")
         print("---------------------------------------------------------")
         for res in results:
-            print("%11s  | %4d  | %4d  | %4d  | %4d  | %.6g" %
-                  (res.name, res.nfail, res.mean_nfev,
-                   res.mean_njev, res.mean_nhev, res.mean_time))
+            print(f"{res.name:11s}  | {res.nfail:4d}  | {res.mean_nfev:4d}  | "
+                  f"{res.mean_njev:4d}  | {res.mean_nhev:4d}  | {res.mean_time:.6g}")
 
     def average_results(self):
         """group the results by minimizer and average over the runs"""
@@ -273,8 +272,8 @@ class _BenchOptimizers(Benchmark):
 
         # L-BFGS-B, BFGS, trust-constr, SLSQP can use gradients, but examine
         # performance when numerical differentiation is used.
-        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
-                         'trust-constr', 'SLSQP']
+        fonly_methods = ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
+                         'L-BFGS-B', 'BFGS', 'trust-constr', 'SLSQP']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -316,7 +315,7 @@ class BenchSmoothUnbounded(Benchmark):
         ['rosenbrock_slow', 'rosenbrock_nograd', 'rosenbrock', 'rosenbrock_tight',
          'simple_quadratic', 'asymmetric_quadratic',
          'sin_1d', 'booth', 'beale', 'LJ'],
-        ["COBYLA", 'Powell', 'nelder-mead',
+        ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
          'trust-krylov', 'trust-constr'],
@@ -429,9 +428,10 @@ class BenchSmoothUnbounded(Benchmark):
         # scipy.optimize.check_grad(s.get_energy, s.get_gradient,
         #                           np.random.uniform(-2,2,3*4))
         natoms = 4
-        b = _BenchOptimizers("%d atom Lennard Jones potential" % (natoms),
-                             fun=s.fun, der=s.der, hess=None)
-        for i in range(10):
+        b = _BenchOptimizers(
+            f"{natoms} atom Lennard Jones potential", fun=s.fun, der=s.der, hess=None
+        )
+        for _ in range(10):
             b.bench_run(np.random.uniform(-2, 2, natoms*3), methods=methods)
         return b
 
@@ -479,6 +479,7 @@ class BenchLeastSquares(Benchmark):
 # `export SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...` to run specific tests
 # `export SCIPY_GLOBAL_BENCH_NUMTRIALS=10` to specify n_iterations, default 100
 #
+# then run `spin bench -s optimize.BenchGlobal`
 # Note that it can take several hours to run; intermediate output
 # can be found under benchmarks/global-bench-results.json
 
@@ -488,7 +489,7 @@ class BenchGlobal(Benchmark):
     Benchmark the global optimizers using the go_benchmark_functions
     suite
     """
-    timeout = 300
+    timeout = 180
 
     _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
@@ -506,7 +507,7 @@ class BenchGlobal(Benchmark):
         _enabled_functions = list(_functions.keys())
 
     params = [
-        list(_functions.keys()),
+        _enabled_functions,
         ["success%", "<nfev>", "average time"],
         ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
@@ -599,7 +600,8 @@ class BenchDFO(Benchmark):
 
     params = [
         list(range(53)),  # adjust which problems to solve
-        ["COBYLA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B", "BFGS",
+        ["COBYLA", "COBYQA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B",
+         "BFGS",
          "trust-constr"],  # note: methods must also be listed in bench_run
         ["mean_nfev", "min_obj"],  # defined in average_results
     ]

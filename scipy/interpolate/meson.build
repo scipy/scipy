@@ -92,10 +92,11 @@ fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
   fortran_args: _fflag_Wno_maybe_uninitialized,
   override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
 )
 
-py3.extension_module('interpnd',
-  spt_cython_gen.process('interpnd.pyx'),
+py3.extension_module('_interpnd',
+  spt_cython_gen.process('_interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -120,14 +121,22 @@ py3.extension_module('_rgi_cython',
   subdir: 'scipy/interpolate'
 )
 
-py3.extension_module('_bspl',
-  cython_gen.process('_bspl.pyx'),
-  c_args: cython_c_args,
-  include_directories: 'src/',
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/interpolate'
+__fitpack_lib = static_library('__fitpack',
+    ['src/__fitpack.h', 'src/__fitpack.cc'],
+    dependencies:[lapack, np_dep, py3_dep],
+)
+
+__fitpack_dep = declare_dependency(
+    link_with: __fitpack_lib,
+)
+
+py3.extension_module('_dierckx',
+    ['src/_dierckxmodule.cc'],
+    include_directories: 'src/',
+    dependencies: [np_dep, __fitpack_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/interpolate'
 )
 
 # TODO: Add flags for 64 bit ints
@@ -142,18 +151,12 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
-dfitpack_module = custom_target('dfitpack_module',
-  output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
-  input: 'src/fitpack.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 # TODO: Add flags for 64 bit ints
-py3.extension_module('dfitpack',
-  dfitpack_module,
+py3.extension_module('_dfitpack',
+  f2py_gen.process('src/dfitpack.pyf'),
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   link_with: [fitpack_lib],
   override_options: ['b_lto=false'],
   install: true,
@@ -180,10 +183,12 @@ endif
 py3.install_sources([
     '__init__.py',
     '_bsplines.py',
+    '_bary_rational.py',
     '_cubic.py',
     '_fitpack_impl.py',
     '_fitpack_py.py',
     '_fitpack2.py',
+    '_fitpack_repro.py',
     '_interpolate.py',
     '_ndgriddata.py',
     '_pade.py',
@@ -192,10 +197,12 @@ py3.install_sources([
     '_rbfinterp.py',
     '_rgi.py',
     '_ndbspline.py',
+    'dfitpack.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',
     'ndgriddata.py',
+    'interpnd.py',
     'polyint.py',
     'rbf.py'
   ],

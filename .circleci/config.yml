@@ -76,14 +76,14 @@ jobs:
           command: |
             pip install numpy cython pybind11 pythran ninja meson
             pip install -r requirements/doc.txt
-            pip install mpmath gmpy2 "asv>=0.6.0" click rich-click doit pydevtool pooch threadpoolctl
+            pip install mpmath gmpy2 "asv>=0.6.0" pooch threadpoolctl spin
             # extra benchmark deps
             pip install pyfftw cffi pytest
 
       - run:
           name: build SciPy
           command: |
-            python dev.py build -j2
+            spin build -j2
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
@@ -115,8 +115,8 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
-            python dev.py --no-build doc 2>&1 | tee sphinx_log.txt
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            spin docs -j2 2>&1 | tee sphinx_log.txt
 
       - run:
           name: Check sphinx log for warnings (which are treated as errors)
@@ -148,7 +148,7 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
@@ -176,8 +176,22 @@ jobs:
           no_output_timeout: 25m
           command: |
             sudo apt-get install -y wamerican-small
-            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
-            python dev.py --no-build refguide-check
+            export PYTHONPATH=$PWD/build-install/usr/lib/python3.11/site-packages
+            spin refguide-check
+
+      - run:
+          name: smoke-docs
+          no_output_timeout: 35m
+          command: |
+            pip install matplotlib hypothesis
+            pip install scipy-doctest
+            spin smoke-docs
+
+      - run:
+          name: smoke-tutorials
+          no_output_timeout: 10m
+          command: |
+            spin smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.

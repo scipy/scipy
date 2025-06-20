@@ -5,8 +5,24 @@
 #ifndef ROUND_H
 #define ROUND_H
 
+#if defined(__cplusplus)
+#include <cmath>
+using std::isnan;
+#endif
+
 #include <math.h>
-#include "cephes/dd_idefs.h"
+
+
+/* Computes fl(a+b) and err(a+b).  */
+static inline double two_sum(double a, double b, double *err)
+{
+    volatile double s = a + b;
+    volatile double c = s - a;
+    volatile double d = b - c;
+    volatile double e = s - c;
+    *err = (a - e) + d;
+    return s;
+}
 
 
 double add_round_up(double a, double b)

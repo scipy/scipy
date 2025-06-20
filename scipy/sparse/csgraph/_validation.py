@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import issparse
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 from scipy.sparse.csgraph._tools import (
     csgraph_to_dense, csgraph_from_dense,
@@ -18,7 +18,12 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
     if not (csr_output or dense_output):
         raise ValueError("Internal: dense or csr output must be true")
 
-    csgraph = convert_pydata_sparse_to_scipy(csgraph)
+    accept_fv = [null_value_in]
+    if infinity_null:
+        accept_fv.append(np.inf)
+    if nan_null:
+        accept_fv.append(np.nan)
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=accept_fv)
 
     # if undirected and csc storage, then transposing in-place
     # is quicker than later converting to csr.
@@ -27,7 +32,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
 
     if issparse(csgraph):
         if csr_output:
-            csgraph = csr_matrix(csgraph, dtype=DTYPE, copy=copy_if_sparse)
+            csgraph = csgraph.tocsr(copy=copy_if_sparse).astype(DTYPE, copy=False)
         else:
             csgraph = csgraph_to_dense(csgraph, null_value=null_value_out)
     elif np.ma.isMaskedArray(csgraph):

@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
@@ -100,7 +100,6 @@ class TestLeslie:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
-        assert_raises(ValueError, leslie, [3, 4, 5], [[1, 1], [2, 2]])
         assert_raises(ValueError, leslie, [1, 2], [1, 2])
         assert_raises(ValueError, leslie, [1], [])
 
@@ -115,7 +114,6 @@ class TestLeslie:
 class TestCompanion:
 
     def test_bad_shapes(self):
-        assert_raises(ValueError, companion, [[1, 1], [2, 2]])
         assert_raises(ValueError, companion, [0, 4, 5])
         assert_raises(ValueError, companion, [1])
         assert_raises(ValueError, companion, [])
@@ -131,6 +129,16 @@ class TestCompanion:
         expected = array([
             [-2.5, 5.0],
             [1.0, 0.0]])
+        assert_array_equal(c, expected)
+
+        c = companion([(1.0, 2.0, 3.0),
+                       (4.0, 5.0, 6.0)])
+        expected = array([
+            ([-2.00, -3.00],
+             [+1.00, +0.00]),
+            ([-1.25, -1.50],
+             [+1.00, +0.00])
+        ])
         assert_array_equal(c, expected)
 
 
@@ -163,9 +171,6 @@ class TestBlockDiag:
 
         a = block_diag([2, 3], 4)
         assert_array_equal(a, [[2, 3, 0], [0, 0, 4]])
-
-    def test_bad_arg(self):
-        assert_raises(ValueError, block_diag, [[[1]]])
 
     def test_no_args(self):
         a = block_diag()
@@ -200,30 +205,6 @@ class TestBlockDiag:
                                [0, 0, 2, 3, 0, 0],
                                [0, 0, 4, 5, 0, 0],
                                [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
 
 
 class TestHelmert:
@@ -490,8 +471,7 @@ def test_invpascal():
         # precision when n is greater than 18.  Instead we'll cast both to
         # object arrays, and then multiply.
         e = ip.astype(object).dot(p.astype(object))
-        assert_array_equal(e, eye(n), err_msg="n=%d  kind=%r exact=%r" %
-                                              (n, kind, exact))
+        assert_array_equal(e, eye(n), err_msg=f"n={n}  kind={kind!r} exact={exact!r}")
 
     kinds = ['symmetric', 'lower', 'upper']
 
@@ -571,11 +551,6 @@ class TestConvolutionMatrix:
         with pytest.raises(ValueError, match='n must be a positive integer'):
             convolution_matrix([1, 2, 3], 0)
 
-    def test_bad_first_arg(self):
-        # first arg must be a 1d array, otherwise ValueError
-        with pytest.raises(ValueError, match='one-dimensional'):
-            convolution_matrix(1, 4)
-
     def test_empty_first_arg(self):
         # first arg must have at least one value
         with pytest.raises(ValueError, match=r'len\(a\)'):
@@ -601,3 +576,30 @@ class TestConvolutionMatrix:
             A = convolution_matrix(a, nv, mode)
         y2 = A @ v
         assert_array_almost_equal(y1, y2)
+
+
+@pytest.mark.fail_slow(5)  # `leslie` has an import in the function
+@pytest.mark.parametrize('f, args', [(circulant, ()),
+                                     (companion, ()),
+                                     (convolution_matrix, (5, 'same')),
+                                     (fiedler, ()),
+                                     (fiedler_companion, ()),
+                                     (leslie, (np.arange(9),)),
+                                     (toeplitz, (np.arange(9),)),
+                                     ])
+def test_batch(f, args):
+    rng = np.random.default_rng(283592436523456)
+    batch_shape = (2, 3)
+    m = 10
+    A = rng.random(batch_shape + (m,))
+
+    if f in {toeplitz}:
+        message = "Beginning in SciPy 1.17, multidimensional input will be..."
+        with pytest.warns(FutureWarning, match=message):
+            f(A, *args)
+        return
+
+    res = f(A, *args)
+    ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
+    ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
+    assert_allclose(res, ref)

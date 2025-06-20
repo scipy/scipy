@@ -15,9 +15,8 @@ The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
-
-Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
-------------------------------------------------------------------------------
+Local minimization of multivariate scalar functions (:func:`minimize`)
+----------------------------------------------------------------------
 
 The :func:`minimize` function provides a common interface to unconstrained
 and constrained minimization algorithms for multivariate scalar functions
@@ -40,8 +39,11 @@ and must return a float value. The exact calling signature must be
 ``f(x, *args)`` where ``x`` represents a numpy array and ``args``
 a tuple of additional arguments supplied to the objective function.
 
+Unconstrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In the example below, the :func:`minimize` routine is used
 with the *Nelder-Mead* simplex algorithm (selected through the ``method``
@@ -125,7 +127,7 @@ Another alternative is to use :py:func:`functools.partial`.
     [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 In order to converge more quickly to the solution, this routine uses
 the gradient of the objective function. If the gradient is not given
@@ -177,8 +179,7 @@ through the ``jac`` parameter as illustrated below.
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Avoiding Redundant Calculation
-""""""""""""""""""""""""""""""
+**Avoiding Redundant Calculation**
 
 It is common for the objective function and its gradient to share parts of the
 calculation. For instance, consider the following problem.
@@ -244,7 +245,7 @@ simple situations, this can be accomplished with the
 
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Newton-Conjugate Gradient algorithm is a modified Newton's
 method and uses a conjugate gradient algorithm to (approximately) invert
@@ -275,8 +276,7 @@ or a function to compute the product of the Hessian with an arbitrary
 vector.
 
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
 The Hessian of the Rosenbrock function is
 
@@ -324,8 +324,7 @@ the function using Newton-CG method is shown in the following example:
     array([1.,  1.,  1.,  1.,  1.])
 
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
 For larger minimization problems, storing the entire Hessian matrix can
 consume considerable time and memory. The Newton-CG algorithm only needs
@@ -378,7 +377,7 @@ according to the authors, deals more effectively with this problematic situation
 and will be described next.
 
 Trust-Region Newton-Conjugate-Gradient Algorithm (``method='trust-ncg'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The ``Newton-CG`` method is a line search method: it finds a direction
 of search minimizing a quadratic approximation of the function and then uses
@@ -401,9 +400,7 @@ model with the real function. This family of methods is known as trust-region me
 The ``trust-ncg`` algorithm is a trust-region method that uses a conjugate gradient algorithm
 to solve the trust-region subproblem [NW]_.
 
-
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -417,8 +414,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -433,7 +429,7 @@ Hessian product example:
     array([1., 1., 1., 1., 1.])
 
 Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
 suitable for large-scale problems as it uses the hessian only as linear
@@ -455,8 +451,7 @@ For indefinite problems it is usually better to use this method as it reduces
 the number of nonlinear iterations at the expense of few more matrix-vector
 products per subproblem solve in comparison to the ``trust-ncg`` method.
 
-Full Hessian example:
-"""""""""""""""""""""
+**Full Hessian example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hess=rosen_hess,
@@ -470,8 +465,7 @@ Full Hessian example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Hessian product example:
-""""""""""""""""""""""""
+**Hessian product example**
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hessp=rosen_hess_p,
@@ -496,7 +490,7 @@ Hessian product example:
 
 
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
@@ -537,15 +531,15 @@ example using the Rosenbrock function follows:
 
 .. _tutorial-sqlsp:
 
-Constrained minimization of multivariate scalar functions (:func:`minimize`)
-----------------------------------------------------------------------------
+Constrained minimization
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
-to be defined using slightly different structures. The method ``'trust-constr'`` requires
+The :func:`minimize` function provides several algorithms for constrained minimization,
+namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
+to be defined using slightly different structures. The methods ``'trust-constr'``, ``'COBYQA'``, and ``'COBYLA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
-:func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
-require constraints to be defined  as a sequence of dictionaries, with keys
+:func:`NonlinearConstraint`. Method ``'SLSQP'``, on the other hand,
+requires constraints to be defined as a sequence of dictionaries, with keys
 ``type``, ``fun`` and ``jac``.
 
 As an example let us consider the constrained minimization of the Rosenbrock function:
@@ -566,7 +560,7 @@ for which only the first and fourth constraints are active.
 
 
 Trust-Region Constrained Algorithm (``method='trust-constr'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 The trust-region constrained method deals with constrained minimization problems of the form:
 
@@ -585,9 +579,7 @@ The implementation is based on [EQSQP]_ for equality-constraint problems and on 
 for problems with inequality constraints. Both are trust-region type algorithms suitable
 for large-scale problems.
 
-
-Defining Bounds Constraints:
-""""""""""""""""""""""""""""
+**Defining Bounds Constraints**
 
 The bound constraints  :math:`0 \leq  x_0  \leq 1` and :math:`-0.5 \leq  x_1  \leq 2.0`
 are defined using a :func:`Bounds` object.
@@ -595,8 +587,7 @@ are defined using a :func:`Bounds` object.
     >>> from scipy.optimize import Bounds
     >>> bounds = Bounds([0, -0.5], [1.0, 2.0])
 
-Defining Linear Constraints:
-""""""""""""""""""""""""""""
+**Defining Linear Constraints**
 
 The constraints :math:`x_0 + 2 x_1 \leq 1`
 and :math:`2 x_0 + x_1 = 1` can be written in the linear constraint standard format:
@@ -614,8 +605,7 @@ and defined using a :func:`LinearConstraint` object.
     >>> from scipy.optimize import LinearConstraint
     >>> linear_constraint = LinearConstraint([[1, 2], [2, 1]], [-np.inf, 1], [1, 1])
 
-Defining Nonlinear Constraints:
-"""""""""""""""""""""""""""""""
+**Defining Nonlinear Constraints**
 The nonlinear constraint:
 
 .. math::
@@ -691,9 +681,7 @@ be provided by the user or defined using :class:`HessianUpdateStrategy`.
 
     >>> nonlinear_constraint = NonlinearConstraint(cons_f, -np.inf, 1, jac='2-point', hess=BFGS())
 
-
-Solving the Optimization Problem:
-"""""""""""""""""""""""""""""""""
+**Solving the Optimization Problem**
 The optimization problem is solved using:
 
     >>> x0 = np.array([0.5, 0])
@@ -755,7 +743,7 @@ and the gradient with finite differences.
     optimization. SIAM Journal on Optimization 8.3: 682-706.
 
 Sequential Least SQuares Programming (SLSQP) Algorithm (``method='SLSQP'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 The SLSQP method deals with constrained minimization problems of the form:
 
 .. math::
@@ -800,6 +788,116 @@ And the optimization problem is solved with:
 
 Most of the options available for the method ``'trust-constr'`` are not available
 for ``'SLSQP'``.
+
+Local minimization solver comparison
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 15 20 20 15 15 15
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+     - Utilizes Sparsity
+   * - CG
+     -
+     -
+     - ✓
+     -
+     -
+   * - BFGS
+     -
+     -
+     - ✓
+     -
+     -
+   * - dogleg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-ncg
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-krylov
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - trust-exact
+     -
+     -
+     - ✓
+     - ✓
+     -
+   * - Newton-CG
+     -
+     -
+     - ✓
+     - ✓
+     - ✓
+   * - Nelder-Mead
+     - ✓
+     -
+     -
+     -
+     -
+   * - Powell
+     - ✓
+     -
+     -
+     -
+     -
+   * - L-BFGS-B
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - TNC
+     - ✓
+     -
+     - ✓
+     -
+     -
+   * - COBYLA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - COBYQA
+     - ✓
+     - ✓
+     -
+     -
+     -
+   * - SLSQP
+     - ✓
+     - ✓
+     - ✓
+     -
+     -
+   * - trust-constr
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+
+.. _tutorial_optimize_global:
 
 Global optimization
 -------------------
@@ -915,6 +1013,50 @@ We'll now plot all found minima on a heatmap of the function::
    :align: center
    :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
+
+Comparison of Global Optimizers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Find a solver that meets your requirements using the table below.
+If there are multiple candidates, try several and see which ones best
+meet your needs (e.g. execution time, objective function value).
+
+.. list-table::
+   :widths: 20 15 15 20 20
+   :header-rows: 1
+
+   * - Solver
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Uses Gradient
+     - Uses Hessian
+   * - basinhopping
+     -
+     -
+     - (✓)
+     - (✓)
+   * - direct
+     - ✓
+     -
+     -
+     -
+   * - dual_annealing
+     - ✓
+     -
+     - (✓)
+     - (✓)
+   * - differential_evolution
+     - ✓
+     - ✓
+     -
+     -
+   * - shgo
+     - ✓
+     - ✓
+     - (✓)
+     - (✓)
+
+(✓) = Depending on the chosen local minimizer
 
 Least-squares minimization (:func:`least_squares`)
 --------------------------------------------------
@@ -1104,6 +1246,7 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     >>> res = minimize_scalar(j1, bounds=(4, 7), method='bounded')
     >>> res.x
     5.33144184241
+
 
 
 Custom minimizers
@@ -1596,7 +1739,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result.message)
-    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)
+    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.
@@ -1865,3 +2008,125 @@ For more MILP tutorials, see the Jupyter notebooks on SciPy Cookbooks:
 
 - `Compressed Sensing l1 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_1.ipynb>`_
 - `Compressed Sensing l0 program <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/LinearAndMixedIntegerLinearProgramming/compressed_sensing_milp_tutorial_2.ipynb>`_
+
+
+Parallel execution support
+---------------------------
+
+Some SciPy optimization methods, such as :func:`differential_evolution`, offer
+parallelization through the use of a ``workers`` keyword.
+
+For :func:`differential_evolution` there are two loops (iteration) levels in the
+algorithm. The outer loop represents successive generations of a population. This
+loop can't be parallelized. For a given generation candidate solutions are generated
+that have to be compared against existing population members. The fitness of the
+candidate solution can be done in a loop, but it's also possible to parallelize the
+calculation.
+
+Parallelization is also possible in other optimization algorithms. For example in
+various :func:`minimize` methods numerical differentiation is used to estimate
+derivatives. For a simple gradient calculation using two-point forward differences a
+total of ``N + 1`` objective function calculations have to be done, where ``N`` is the
+number of parameters. These are just small perturbations around a given location
+(the +1). Those ``N + 1`` calculations are also parallelizable. The calculation of
+numerical derivatives are used by the minimization algorithm to generate new steps.
+
+Each optimization algorithm is quite different in how they work, but they often have
+locations where multiple objective function calculations are required before the
+algorithm does something else. Those locations are what can be parallelized.
+There are therefore common characteristics in how ``workers`` is used. These
+commonalities are described below.
+
+If an int is supplied then a :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` is
+created, with the object's :func:`map` method being used to evaluate solutions in
+parallel. With this approach it is mandatory that the objective function is pickleable.
+Lambda functions do not meet that requirement.
+
+::
+
+    >>> import numpy as np
+    >>> from scipy.optimize import rosen, differential_evolution, Bounds
+    >>> bnds = Bounds([0., 0., 0.], [10., 10., 10.])
+    >>> res = differential_evolution(rosen, bnds, workers=2, updating='deferred')
+
+It is also possible to use a map-like callable as a worker. Here the map-like function
+is provided with a series of vectors that the optimization algorithm provides.
+The map-like function needs to evaluate each vector against the objective function.
+In the following example we use :class:`multiprocessing.Pool <multiprocessing.pool.Pool>`
+as the map-like. As before, the objective function still needs to be pickleable.
+This example is semantically identical to the previous example.
+
+::
+
+    >>> from multiprocessing import Pool
+    >>> with Pool(2) as pwl:
+    ...     res = differential_evolution(rosen, bnds, workers=pwl.map, updating='deferred')
+
+It can be an advantage to use this pattern because the Pool can be re-used for further
+calculations - there is a significant amount of overhead in creating those objects.
+Alternatives to :class:`multiprocessing.Pool <multiprocessing.pool.Pool>` include the
+`mpi4py <https://mpi4py.readthedocs.io/en/stable/>`_ package, which enables parallel
+processing on clusters.
+
+In Scipy 1.16.0 the ``workers`` keyword was introduced to selected :func:`minimize`
+methods. Here parallelization is typically applied during numerical differentiation.
+Either of the two approaches outlined above can be used, although it's strongly
+advised to supply the map-like callable due to the overhead of creating new processes.
+Performance gains will only be made if the objective function is expensive to
+calculate.
+Let's compare how much parallelization can help compared to the serial version. To
+simulate a slow function we use the ``time`` package.
+
+::
+
+    >>> import time
+    >>> def slow_func(x):
+    ...     time.sleep(0.0002)
+    ...     return rosen(x)
+
+Examine the serial minimization first::
+
+    In [1]: rng = np.random.default_rng()
+
+    In [2]: x0 = rng.uniform(low=0.0, high=10.0, size=(20,))
+
+    In [3]: %timeit minimize(slow_func, x0, method='L-BFGS-B')  # serial approach
+    365 ms ± 6.17 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
+
+Now the parallel version::
+
+    In [4]: with Pool() as pwl:  # parallel approach
+    ...         %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':pwl.map})
+    70.5 ms ± 146 μs per loop (mean ± std. dev. of 7 runs, 1 loop each)  # may vary
+
+If the objective function can be vectorized, then a map-like can be used to take
+advantage of vectorization during function evaluation. Vectorization means that the
+objective function can carry out the required calculations in a single (rather than
+multiple) call, which is typically very efficient::
+
+    In [5]: def vectorized_maplike(fun, iterable):
+    ...         arr = np.array([i for i in iter(iterable)])   # arr.shape = (S, N)
+    ...         arr_t = arr.T                                 # arr_t.shape = (N, S)
+    ...         r = slow_func(arr_t)                          # calculation vectorized over S
+    ...         return r
+
+    In [6]: %timeit minimize(slow_func, x0, method='L-BFGS-B', options={'workers':vectorized_maplike})
+    38.9 ms ± 734 μs per loop (mean ± std. dev. of 7 runs, 10 loops each)  # may vary
+
+There are several important points to note about this example:
+
+* The iterable represents the series of parameter vectors that the algorithm wishes
+  to be evaluated.
+* The iterable is first converted to an iterator, before being made into an array via
+  a list comprehension. This allows the iterable to be a generator, list, array, etc.
+* Within the map-like the calculation is done using ``slow_func`` instead of using
+  ``fun``. The map-like is actually supplied with a wrapped version of the objective
+  function. The wrapping is used to detect various types of common user errors,
+  including checking whether the objective function returns a scalar. If ``fun`` is
+  used then a :class:`RuntimeError` will result, because ``fun(arr_t)`` will be a 1-D
+  array and not a scalar. We therefore use ``slow_func`` directly.
+* ``arr.T`` is sent to the objective function. This is because ``arr.shape == (S, N)``,
+  where ``S`` is the number of parameter vectors to evaluate and ``N`` is the number of
+  variables. For ``slow_func`` vectorization occurs on ``(N, S)`` shaped arrays.
+* This approach is not needed for :func:`differential_evolution` as that minimizer
+  already has a keyword for vectorization.

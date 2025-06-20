@@ -376,9 +376,9 @@ class RotationSpline:
 
         if len(times) != len(rotations):
             raise ValueError("Expected number of rotations to be equal to "
-                             "number of timestamps given, got {} rotations "
-                             "and {} timestamps."
-                             .format(len(rotations), len(times)))
+                             "number of timestamps given, "
+                             f"got {len(rotations)} rotations "
+                             f"and {len(times)} timestamps.")
 
         dt = np.diff(times)
         if np.any(dt <= 0):

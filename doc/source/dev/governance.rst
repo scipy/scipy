@@ -28,7 +28,7 @@ documentation, designs, or other work to the Project. Anyone can be a
 Contributor. Contributors can be affiliated with any legal entity or
 none. Contributors participate in the project by submitting, reviewing,
 and discussing GitHub Pull Requests and Issues and participating in open
-and public Project discussions on GitHub, mailing lists, and other
+and public Project discussions on GitHub, forums, and other
 channels. The foundation of Project participation is openness and
 transparency.
 
@@ -74,17 +74,17 @@ Pauli Virtanen. As Dictator, the BDFL has the authority to make all final
 decisions for The Project. As Benevolent, the BDFL, in practice, chooses to
 defer that authority to the consensus of the community discussion channels and
 the Steering Council (see below). It is expected, and in the past has been the
-case, that the BDFL will only rarely assert his/her final authority. Because
+case, that the BDFL will only rarely assert their final authority. Because
 rarely used, we refer to BDFL’s final authority as a “special” or “overriding”
 vote. When it does occur, the BDFL override typically happens in situations
 where there is a deadlock in the Steering Council or if the Steering Council
 asks the BDFL to make a decision on a specific matter. To ensure the
 benevolence of the BDFL, The Project encourages others to fork the project if
 they disagree with the overall direction the BDFL is taking. The BDFL may
-delegate his/her authority on a particular decision or set of decisions to
-any other Council member at his/her discretion.
+delegate their authority on a particular decision or set of decisions to
+any other Council member at their discretion.
 
-The BDFL can appoint his/her successor, but it is expected that the Steering
+The BDFL can appoint their successor, but it is expected that the Steering
 Council would be consulted on this decision. If the BDFL is unable to appoint a
 successor, the Steering Council will make this decision - preferably by
 consensus, but if needed, by a majority vote.
@@ -146,7 +146,7 @@ active over the last two years.
 
 When considering potential Members, the Council will look at candidates with a
 comprehensive view of their contributions. This will include, but is not limited
-to, code, code review, infrastructure work, mailing list and chat participation,
+to, code, code review, infrastructure work, forum and chat participation,
 community help/building, education and outreach, design work, etc. We are
 deliberately not setting arbitrary quantitative metrics (like “100 commits in
 this repo”) to avoid encouraging behavior that plays to the metrics rather than
@@ -178,7 +178,7 @@ Council Chair
 ~~~~~~~~~~~~~
 
 The Chair will be appointed by the Steering Council. The Chair can stay on as
-long as he/she wants, but may step down at any time and will listen to
+long as they want, but may step down at any time and will listen to
 serious calls to do so (similar to the BDFL role). The Chair will be
 responsible for:
 
@@ -186,10 +186,10 @@ responsible for:
   the :ref:`scipy-roadmap`) bi-yearly, around mid-April and mid-October.
 - At the same times of the year, summarizing any relevant
   organizational updates and issues in the preceding period, and asking for
-  feedback/suggestions on the mailing list.
+  feedback/suggestions on the forum.
 - Ensuring the composition of the Steering Council stays current.
 - Ensuring matters discussed in private by the Steering Council get
-  summarized on the mailing list to keep the Community informed.
+  summarized on the forum to keep the Community informed.
 - Ensuring other important organizational documents (e.g., Code of Conduct,
   Fiscal Sponsorship Agreement) stay current after they are added.
 
@@ -224,7 +224,7 @@ All members of the Council, BDFL included, shall disclose to the rest of the
 Council any conflict of interest they may have. Members with a conflict of
 interest in a particular issue may participate in Council discussions on that
 issue, but must recuse themselves from voting on the issue. If the BDFL has
-recused his/herself for a particular decision, the Council will appoint a
+recused themself for a particular decision, the Council will appoint a
 substitute BDFL for that decision.
 
 Private communications of the Council

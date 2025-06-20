@@ -1,19 +1,22 @@
 # mypy: disable-error-code="attr-defined"
 import pytest
 import numpy as np
-from numpy import cos, sin, pi
-from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_, suppress_warnings)
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 from hypothesis import given
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as hyp_num
 
-from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
+from scipy.integrate import (romb, newton_cotes,
                              cumulative_trapezoid, trapezoid,
-                             quad, simpson, fixed_quad, AccuracyWarning,
+                             quad, simpson, fixed_quad,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
-from scipy import stats, special
+
+from scipy import stats, special, integrate
+from scipy.conftest import skip_xp_invalid_arg
+from scipy._lib._array_api_no_0d import xp_assert_close
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 class TestFixedQuad:
@@ -32,58 +35,9 @@ class TestFixedQuad:
         assert_allclose(got, expected, rtol=1e-12)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
-
-    def test_quadrature(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8))
-        table_val = 0.30614353532540296487
-        assert_almost_equal(val, table_val, decimal=7)
-
-    def test_quadrature_rtol(self):
-        def myfunc(x, n, z):       # Bessel function integrand
-            return 1e90 * cos(n*x-z*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, (2, 1.8), rtol=1e-10)
-        table_val = 1e90 * 0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
-
-    def test_quadrature_miniter(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        table_val = 0.30614353532540296487
-        for miniter in [5, 52]:
-            val, err = quadrature(myfunc, 0, pi, (2, 1.8), miniter=miniter)
-            assert_almost_equal(val, table_val, decimal=7)
-            assert_(err < 1.0)
-
-    def test_quadrature_single_args(self):
-        def myfunc(x, n):
-            return 1e90 * cos(n*x-1.8*sin(x))/pi
-        val, err = quadrature(myfunc, 0, pi, args=2, rtol=1e-10)
-        table_val = 1e90 * 0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
-
-    def test_romberg(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc, 0, pi, args=(2, 1.8))
-        table_val = 0.30614353532540296487
-        assert_almost_equal(val, table_val, decimal=7)
-
-    def test_romberg_rtol(self):
-        # Typical function with two extra arguments:
-        def myfunc(x, n, z):       # Bessel function integrand
-            return 1e19*cos(n*x-z*sin(x))/pi
-        val = romberg(myfunc, 0, pi, args=(2, 1.8), rtol=1e-10)
-        table_val = 1e19*0.30614353532540296487
-        assert_allclose(val, table_val, rtol=1e-10)
 
     def test_romb(self):
         assert_equal(romb(np.arange(17)), 128)
@@ -95,19 +49,6 @@ class TestQuadrature:
         val = romb(y)
         val2, err = quad(lambda x: np.cos(0.2*x), x.min(), x.max())
         assert_allclose(val, val2, rtol=1e-8, atol=0)
-
-        # should be equal to romb with 2**k+1 samples
-        with suppress_warnings() as sup:
-            sup.filter(AccuracyWarning, "divmax .4. exceeded")
-            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
-        assert_allclose(val, val3, rtol=1e-12, atol=0)
-
-    def test_non_dtype(self):
-        # Check that we work fine with functions returning float
-        import math
-        valmath = romberg(math.sin, 0, 1)
-        expected_val = 0.45969769413185085
-        assert_almost_equal(valmath, expected_val, decimal=7)
 
     def test_newton_cotes(self):
         """Test the first few degrees, for evenly spaced points."""
@@ -148,40 +89,29 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
-    # ignore the DeprecationWarning emitted by the even kwd
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_simpson(self):
         y = np.arange(17)
         assert_equal(simpson(y), 128)
         assert_equal(simpson(y, dx=0.5), 64)
         assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
 
-        y = np.arange(4)
-        x = 2**y
-        assert_equal(simpson(y, x=x, even='avg'), 13.875)
-        assert_equal(simpson(y, x=x, even='first'), 13.75)
-        assert_equal(simpson(y, x=x, even='last'), 14)
-
-        # `even='simpson'`
         # integral should be exactly 21
         x = np.linspace(1, 4, 4)
         def f(x):
             return x**2
 
-        assert_allclose(simpson(f(x), x=x, even='simpson'), 21.0)
-        assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
+        assert_allclose(simpson(f(x), x=x), 21.0)
 
         # integral should be exactly 114
         x = np.linspace(1, 7, 4)
-        assert_allclose(simpson(f(x), dx=2.0, even='simpson'), 114)
-        assert_allclose(simpson(f(x), dx=2.0, even='avg'), 115 + 1/3)
+        assert_allclose(simpson(f(x), dx=2.0), 114)
 
-        # `even='simpson'`, test multi-axis behaviour
+        # test multi-axis behaviour
         a = np.arange(16).reshape(4, 4)
         x = np.arange(64.).reshape(4, 4, 4)
         y = f(x)
         for i in range(3):
-            r = simpson(y, x=x, even='simpson', axis=i)
+            r = simpson(y, x=x, axis=i)
             it = np.nditer(a, flags=['multi_index'])
             for _ in it:
                 idx = list(it.multi_index)
@@ -192,11 +122,10 @@ class TestQuadrature:
         # test when integration axis only has two points
         x = np.arange(16).reshape(8, 2)
         y = f(x)
-        for even in ['simpson', 'avg', 'first', 'last']:
-            r = simpson(y, x=x, even=even, axis=-1)
+        r = simpson(y, x=x, axis=-1)
 
-            integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
-            assert_allclose(r, integral)
+        integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
+        assert_allclose(r, integral)
 
         # odd points, test multi-axis behaviour
         a = np.arange(25).reshape(5, 5)
@@ -227,7 +156,7 @@ class TestQuadrature:
         zero_axis = [0.0, 0.0, 0.0, 0.0]
         default_axis = [170 + 1/3] * 3   # 8**3 / 3 - 1/3
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
-        # the following should be exact for even='simpson'
+        # the following should be exact
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
         x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
@@ -237,13 +166,6 @@ class TestQuadrature:
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
-    def test_simpson_deprecations(self):
-        x = np.linspace(0, 3, 4)
-        y = x**2
-        with pytest.deprecated_call(match="The 'even' keyword is deprecated"):
-            simpson(y, x=x, even='first')
-        with pytest.deprecated_call(match="use keyword arguments"):
-            simpson(y, x)
 
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):
@@ -256,13 +178,6 @@ class TestQuadrature:
         result = simpson(y, axis=-1)
         expected = simpson(np.array(y, dtype=np.float64), axis=-1)
         assert_equal(result, expected)
-
-
-@pytest.mark.parametrize('func', [romberg, quadrature])
-def test_deprecate_integrator(func):
-    message = f"`scipy.integrate.{func.__name__}` is deprecated..."
-    with pytest.deprecated_call(match=message):
-        func(np.exp, 0, 1)
 
 
 class TestCumulative_trapezoid:
@@ -343,12 +258,11 @@ class TestCumulative_trapezoid:
     @pytest.mark.parametrize(
         "initial", [1, 0.5]
     )
-    def test_initial_warning(self, initial):
+    def test_initial_error(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
         y = np.linspace(0, 10, num=10)
-        with pytest.deprecated_call(match="`initial`"):
-            res = cumulative_trapezoid(y, initial=initial)
-        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2])
+        with pytest.raises(ValueError, match="`initial`"):
+            cumulative_trapezoid(y, initial=initial)
 
     def test_zero_len_y(self):
         with pytest.raises(ValueError, match="At least one point is required"):
@@ -356,50 +270,79 @@ class TestCumulative_trapezoid:
 
 
 class TestTrapezoid:
-    def test_simple(self):
-        x = np.arange(-10, 10, .1)
-        r = trapezoid(np.exp(-.5 * x ** 2) / np.sqrt(2 * np.pi), dx=0.1)
+    def test_simple(self, xp):
+        x = xp.arange(-10, 10, .1)
+        r = trapezoid(xp.exp(-.5 * x ** 2) / xp.sqrt(2 * xp.asarray(xp.pi)), dx=0.1)
         # check integral of normal equals 1
-        assert_allclose(r, 1)
+        xp_assert_close(r, xp.asarray(1.0))
 
-    def test_ndim(self):
-        x = np.linspace(0, 1, 3)
-        y = np.linspace(0, 2, 8)
-        z = np.linspace(0, 3, 13)
+    @skip_xp_backends('jax.numpy',
+                      reason="JAX arrays do not support item assignment")
+    def test_ndim(self, xp):
+        x = xp.linspace(0, 1, 3)
+        y = xp.linspace(0, 2, 8)
+        z = xp.linspace(0, 3, 13)
 
-        wx = np.ones_like(x) * (x[1] - x[0])
+        wx = xp.ones_like(x) * (x[1] - x[0])
         wx[0] /= 2
         wx[-1] /= 2
-        wy = np.ones_like(y) * (y[1] - y[0])
+        wy = xp.ones_like(y) * (y[1] - y[0])
         wy[0] /= 2
         wy[-1] /= 2
-        wz = np.ones_like(z) * (z[1] - z[0])
+        wz = xp.ones_like(z) * (z[1] - z[0])
         wz[0] /= 2
         wz[-1] /= 2
 
         q = x[:, None, None] + y[None,:, None] + z[None, None,:]
 
-        qx = (q * wx[:, None, None]).sum(axis=0)
-        qy = (q * wy[None, :, None]).sum(axis=1)
-        qz = (q * wz[None, None, :]).sum(axis=2)
+        qx = xp.sum(q * wx[:, None, None], axis=0)
+        qy = xp.sum(q * wy[None, :, None], axis=1)
+        qz = xp.sum(q * wz[None, None, :], axis=2)
 
         # n-d `x`
         r = trapezoid(q, x=x[:, None, None], axis=0)
-        assert_allclose(r, qx)
+        xp_assert_close(r, qx)
         r = trapezoid(q, x=y[None,:, None], axis=1)
-        assert_allclose(r, qy)
+        xp_assert_close(r, qy)
         r = trapezoid(q, x=z[None, None,:], axis=2)
-        assert_allclose(r, qz)
+        xp_assert_close(r, qz)
 
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
-        assert_allclose(r, qx)
+        xp_assert_close(r, qx)
         r = trapezoid(q, x=y, axis=1)
-        assert_allclose(r, qy)
+        xp_assert_close(r, qy)
         r = trapezoid(q, x=z, axis=2)
-        assert_allclose(r, qz)
+        xp_assert_close(r, qz)
 
-    def test_masked(self):
+    @skip_xp_backends('jax.numpy',
+                      reason="JAX arrays do not support item assignment")
+    def test_gh21908(self, xp):
+        # extended testing for n-dim arrays
+        x = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+        y = xp.reshape(xp.linspace(0, 29, 30), (3, 10))
+
+        out0 = xp.linspace(200, 380, 10)
+        xp_assert_close(trapezoid(y, x=x, axis=0), out0)
+        xp_assert_close(trapezoid(y, x=xp.asarray([0, 10., 20.]), axis=0), out0)
+        # x needs to be broadcastable against y
+        xp_assert_close(
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[:, None], axis=0),
+            out0
+        )
+        with pytest.raises(Exception):
+            # x is not broadcastable against y
+            trapezoid(y, x=xp.asarray([0, 10., 20.])[None, :], axis=0)
+
+        out1 = xp.asarray([ 40.5, 130.5, 220.5])
+        xp_assert_close(trapezoid(y, x=x, axis=1), out1)
+        xp_assert_close(
+            trapezoid(y, x=xp.linspace(0, 9, 10), axis=1),
+            out1
+        )
+
+    @skip_xp_invalid_arg
+    def test_masked(self, xp):
         # Testing that masked arrays behave as if the function is 0 where
         # masked
         x = np.arange(5)
@@ -415,8 +358,20 @@ class TestTrapezoid:
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
 
+    @skip_xp_backends(np_only=True,
+                      reason='array-likes only supported for NumPy backend')
+    def test_array_like(self, xp):
+        x = list(range(5))
+        y = [t * t for t in x]
+        xarr = xp.asarray(x, dtype=xp.float64)
+        yarr = xp.asarray(y, dtype=xp.float64)
+        res = trapezoid(y, x)
+        resarr = trapezoid(yarr, xarr)
+        xp_assert_close(res, resarr)
+
 
 class TestQMCQuad:
+    @pytest.mark.thread_unsafe
     def test_input_validation(self):
         message = "`func` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -453,8 +408,9 @@ class TestQMCQuad:
         with pytest.raises(TypeError, match=message):
             qmc_quad(lambda x: 1, [0, 0], [1, 1], log=10)
 
-    def basic_test(self, n_points=2**8, n_estimates=8, signs=np.ones(2)):
-
+    def basic_test(self, n_points=2**8, n_estimates=8, signs=None):
+        if signs is None:
+            signs = np.ones(2)
         ndim = 2
         mean = np.zeros(ndim)
         cov = np.eye(ndim)
@@ -492,6 +448,7 @@ class TestQMCQuad:
     def test_sign(self, signs):
         self.basic_test(signs=signs)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize("log", [False, True])
     def test_zero(self, log):
         message = "A lower limit was equal to an upper limit, so"
@@ -674,6 +631,9 @@ class TestCumulativeSimpson:
         # `simpson` uses the trapezoidal rule
         return theoretical_difference
 
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.thread_unsafe
+    @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
             np.float64,
@@ -700,10 +660,12 @@ class TestCumulativeSimpson:
             y, x=np.arange(y.shape[-1])
         )
         np.testing.assert_allclose(
-            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
+            res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:], atol=1e-16
         )
 
-
+    @pytest.mark.fail_slow(10)
+    @pytest.mark.thread_unsafe
+    @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
             np.float64,
@@ -737,3 +699,32 @@ class TestCumulativeSimpson:
         np.testing.assert_allclose(
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
+
+class TestLebedev:
+    def test_input_validation(self):
+        # only certain rules are available
+        message = "Order n=-1 not available..."
+        with pytest.raises(NotImplementedError, match=message):
+            integrate.lebedev_rule(-1)
+
+    def test_quadrature(self):
+        # Test points/weights to integrate an example function
+
+        def f(x):
+            return np.exp(x[0])
+
+        x, w = integrate.lebedev_rule(15)
+        res = w @ f(x)
+        ref = 14.7680137457653  # lebedev_rule reference [3]
+        assert_allclose(res, ref, rtol=1e-14)
+        assert_allclose(np.sum(w), 4 * np.pi)
+
+    @pytest.mark.parametrize('order', list(range(3, 32, 2)) + list(range(35, 132, 6)))
+    def test_properties(self, order):
+        x, w = integrate.lebedev_rule(order)
+        # dispersion should be maximal; no clear spherical mean
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.directional_stats(x.T, axis=0)
+            assert_allclose(res.mean_resultant_length, 0, atol=1e-15)
+        # weights should sum to 4*pi (surface area of unit sphere)
+        assert_allclose(np.sum(w), 4*np.pi)

@@ -140,12 +140,38 @@ Deprecated features
 - Complex dtypes in ``PchipInterpolator`` and ``Akima1DInterpolator`` have
   been deprecated and will raise an error in SciPy 1.15.0. If you are trying
   to use the real components of the passed array, use ``np.real`` on ``y``.
+- Non-integer values of ``n`` together with ``exact=True`` are deprecated for
+  `scipy.special.factorial`.
 
+
+*********************
+Expired Deprecations
+*********************
+There is an ongoing effort to follow through on long-standing deprecations.
+The following previously deprecated features are affected:
+
+- ``scipy.signal.{lsim2,impulse2,step2}`` have been removed in favour of
+  ``scipy.signal.{lsim,impulse,step}``.
+- Window functions can no longer be imported from the `scipy.signal` namespace and
+  instead should be accessed through either `scipy.signal.windows` or
+  `scipy.signal.get_window`.
+- `scipy.sparse` no longer supports multi-Ellipsis indexing
+- ``scipy.signal.{bspline,quadratic,cubic}`` have been removed in favour of alternatives
+  in `scipy.interpolate`.
+- ``scipy.linalg.tri{,u,l}`` have been removed in favour of ``numpy.tri{,u,l}``.
+- Non-integer arrays in `scipy.special.factorial` with ``exact=True`` now raise an
+  error.
+- Functions from NumPy's main namespace which were exposed in SciPy's main
+  namespace, such as ``numpy.histogram`` exposed by ``scipy.histogram``, have
+  been removed from SciPy's main namespace. Please use the functions directly
+  from ``numpy``. This was originally performed for SciPy 1.12.0 however was missed from
+  the release notes so is included here for completeness.
 
 
 ******************************
 Backwards incompatible changes
 ******************************
+
 
 *************
 Other changes

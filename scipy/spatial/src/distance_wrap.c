@@ -33,7 +33,7 @@
  */
 
 #if !defined(__clang__) && defined(__GNUC__) && defined(__GNUC_MINOR__)
-#if __GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+#if !defined(__APPLE__) && (__GNUC__ >= 5 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
 /* enable auto-vectorizer */
 #pragma GCC optimize("tree-vectorize")
 /* float associativity required to vectorize reductions */
@@ -844,6 +844,17 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__distance_wrap(void)
 {
+    PyObject *module;
+
     import_array();
-    return PyModule_Create(&moduledef);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return module;
+    }
+
+#if Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(module, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return module;
 }

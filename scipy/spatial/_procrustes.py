@@ -94,7 +94,7 @@ def procrustes(data1, data2):
     >>> b = np.array([[4, -2], [4, -4], [4, -6], [2, -6]], 'd')
     >>> mtx1, mtx2, disparity = procrustes(a, b)
     >>> round(disparity)
-    0.0
+    0
 
     """
     mtx1 = np.array(data1, dtype=np.float64, copy=True)

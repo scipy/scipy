@@ -2,17 +2,19 @@ import itertools
 import os
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose, assert_,
-                           assert_almost_equal, assert_array_almost_equal)
+from scipy._lib._array_api import (
+    xp_assert_equal, xp_assert_close, assert_almost_equal, assert_array_almost_equal
+)
 from pytest import raises as assert_raises
 import pytest
 from scipy._lib._testutils import check_free_memory
 
 from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import make_splrep
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate._dfitpack import regrid_smth
 from scipy.interpolate._fitpack2 import dfitpack_int
 
 
@@ -78,6 +80,15 @@ class TestSmokeTests:
                 err = norm2(f1(tt, d) - splev(tt, tck, d)) / norm2(f1(tt, d))
                 assert err < tol
 
+            # smoke test make_splrep
+            if not per:
+                spl = make_splrep(x, v, k=k, s=s, xb=xb, xe=xe)
+                if len(spl.t) == len(tck[0]):
+                    xp_assert_close(spl.t, tck[0], atol=1e-15)
+                    xp_assert_close(spl.c, tck[1][:spl.c.size], atol=1e-13)
+                else:
+                    assert k == 5   # knot length differ in some k=5 cases
+
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
         x = np.linspace(a, b, N+1)    # nodes
@@ -99,7 +110,7 @@ class TestSmokeTests:
             d = 0
             for dr in r[1]:
                 tol = err_est(k, d)
-                assert_allclose(dr, f1(dx, d), atol=0, rtol=tol)
+                xp_assert_close(dr, f1(dx, d), atol=0, rtol=tol)
                 d = d+1
             k = k+1
 
@@ -137,8 +148,8 @@ class TestSmokeTests:
         k = 3
         tck = splrep(x, v, s=0, k=3)
         roots = sproot(tck)
-        assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
-        assert_allclose(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
+        xp_assert_close(splev(roots, tck), np.zeros(len(roots)), atol=1e-10, rtol=1e-10)
+        xp_assert_close(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
 
     @pytest.mark.parametrize('N', [20, 50])
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
@@ -191,9 +202,9 @@ class TestSplev:
         y = [4,5,6,7,8]
         tck = splrep(x, y)
         z = splev([1], tck)
-        assert_equal(z.shape, (1,))
+        assert z.shape == (1,)
         z = splev(1, tck)
-        assert_equal(z.shape, ())
+        assert z.shape == ()
 
     def test_2d_shape(self):
         x = [1, 2, 3, 4, 5]
@@ -204,7 +215,7 @@ class TestSplev:
         z = splev(t, tck)
         z0 = splev(t[0], tck)
         z1 = splev(t[1], tck)
-        assert_equal(z, np.vstack((z0, z1)))
+        xp_assert_equal(z, np.vstack((z0, z1)))
 
     def test_extrapolation_modes(self):
         # test extrapolation modes
@@ -231,16 +242,16 @@ class TestSplder:
         self.spl = splrep(x, y)
 
         # double check that knots are non-uniform
-        assert_(np.ptp(np.diff(self.spl[0])) > 0)
+        assert np.ptp(np.diff(self.spl[0])) > 0
 
     def test_inverse(self):
         # Check that antiderivative + derivative is identity.
         for n in range(5):
             spl2 = splantider(self.spl, n)
             spl3 = splder(spl2, n)
-            assert_allclose(self.spl[0], spl3[0])
-            assert_allclose(self.spl[1], spl3[1])
-            assert_equal(self.spl[2], spl3[2])
+            xp_assert_close(self.spl[0], spl3[0])
+            xp_assert_close(self.spl[1], spl3[1])
+            assert self.spl[2] == spl3[2]
 
     def test_splder_vs_splev(self):
         # Check derivative vs. FITPACK
@@ -257,9 +268,9 @@ class TestSplder:
             spl2 = splder(self.spl, n)
             dy2 = splev(xx, spl2)
             if n == 1:
-                assert_allclose(dy, dy2, rtol=2e-6)
+                xp_assert_close(dy, dy2, rtol=2e-6)
             else:
-                assert_allclose(dy, dy2)
+                xp_assert_close(dy, dy2)
 
     def test_splantider_vs_splint(self):
         # Check antiderivative vs. FITPACK
@@ -273,7 +284,7 @@ class TestSplder:
             for x2 in xx:
                 y1 = splint(x1, x2, self.spl)
                 y2 = splev(x2, spl2) - splev(x1, spl2)
-                assert_allclose(y1, y2)
+                xp_assert_close(np.asarray(y1), np.asarray(y2))
 
     def test_order0_diff(self):
         assert_raises(ValueError, splder, self.spl, 4)
@@ -302,9 +313,9 @@ class TestSplder:
             spl2 = splantider((t, c2, k), n)
             spl3 = splder(spl2, n)
 
-            assert_allclose(t, spl3[0])
-            assert_allclose(c2, spl3[1])
-            assert_equal(k, spl3[2])
+            xp_assert_close(t, spl3[0])
+            xp_assert_close(c2, spl3[1])
+            assert k == spl3[2]
 
 
 class TestSplint:
@@ -319,13 +330,14 @@ class TestSplint:
 
         # integrate directly: $\int_0^6 x^3 dx = 6^4 / 4$
         res = splint(0, 6, (t, c, k))
-        assert_allclose(res, 6**4 / 4, atol=1e-15)
+        expected = 6**4 / 4
+        assert abs(res - expected) < 1e-13
 
         # check that the coefficients past len(t) - k - 1 are ignored
         c0 = c.copy()
-        c0[len(t)-k-1:] = np.nan
+        c0[len(t) - k - 1:] = np.nan
         res0 = splint(0, 6, (t, c0, k))
-        assert_allclose(res0, 6**4 / 4, atol=1e-15)
+        assert abs(res0 - expected) < 1e-13
 
         # however, all other coefficients *are* used
         c0[6] = np.nan
@@ -334,7 +346,8 @@ class TestSplint:
         # check that the coefficient array can have length `len(t) - k - 1`
         c1 = c[:len(t) - k - 1]
         res1 = splint(0, 6, (t, c1, k))
-        assert_allclose(res1, 6**4 / 4, atol=1e-15)
+        assert (res1 - expected) < 1e-13
+
 
         # however shorter c arrays raise. The error from f2py is a
         # `dftipack.error`, which is an Exception but not ValueError etc.
@@ -375,7 +388,7 @@ class TestBisplrep:
         x, y = np.meshgrid(x, y)
         z = np.zeros_like(x)
         tck = bisplrep(x, y, z, kx=3, ky=3, s=0)
-        assert_allclose(bisplev(0.5, 0.5, tck), 0.0)
+        xp_assert_close(bisplev(0.5, 0.5, tck), 0.0)
 
 
 def test_dblint():
@@ -388,10 +401,10 @@ def test_dblint():
     tck = list(rect.tck)
     tck.extend(rect.degrees)
 
-    assert_almost_equal(dblint(0, 1, 0, 1, tck), 1)
-    assert_almost_equal(dblint(0, 0.5, 0, 1, tck), 0.25)
-    assert_almost_equal(dblint(0.5, 1, 0, 1, tck), 0.75)
-    assert_almost_equal(dblint(-100, 100, -100, 100, tck), 1)
+    assert abs(dblint(0, 1, 0, 1, tck) - 1) < 1e-10
+    assert abs(dblint(0, 0.5, 0, 1, tck) - 0.25) < 1e-10
+    assert abs(dblint(0.5, 1, 0, 1, tck) - 0.75) < 1e-10
+    assert abs(dblint(-100, 100, -100, 100, tck) - 1) < 1e-10
 
 
 def test_splev_der_k():
@@ -406,8 +419,10 @@ def test_splev_der_k():
     x = np.array([-3, 0, 2.5, 3])
 
     # an explicit form of the linear spline
-    assert_allclose(splev(x, tck), c[0] + (c[1] - c[0]) * x/t[2])
-    assert_allclose(splev(x, tck, 1), (c[1]-c[0]) / t[2])
+    xp_assert_close(splev(x, tck), c[0] + (c[1] - c[0]) * x/t[2])
+    xp_assert_close(splev(x, tck, 1),
+                    np.ones_like(x) * (c[1] - c[0]) / t[2]
+    )
 
     # now check a random spline vs splder
     np.random.seed(1234)
@@ -417,7 +432,7 @@ def test_splev_der_k():
 
     x = [t[0] - 1., t[-1] + 1.]
     tck2 = splder((t, c, k), k)
-    assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+    xp_assert_close(splev(x, (t, c, k), k), splev(x, tck2))
 
 
 def test_splprep_segfault():
@@ -499,5 +514,6 @@ def test_spalde_nc():
     k = 3
 
     res = spalde(x, (t, c, k))
+    res = np.vstack(res)
     res_splev = np.asarray([splev(x, (t, c, k), nu) for nu in range(4)])
-    assert_allclose(res, res_splev.T, atol=1e-15)
+    xp_assert_close(res, res_splev.T, atol=1e-15)

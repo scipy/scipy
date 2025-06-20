@@ -171,9 +171,9 @@ def test_random_state(method, kwargs):
     assert_equal(rng1.rvs(100), rng2.rvs(100))
 
     # global seed
-    np.random.seed(123)
+    rng = np.random.RandomState(123)
     rng1 = Method(**kwargs)
-    rvs1 = rng1.rvs(100)
+    rvs1 = rng1.rvs(100, random_state=rng)
     np.random.seed(None)
     rng2 = Method(**kwargs, random_state=123)
     rvs2 = rng2.rvs(100)
@@ -375,6 +375,7 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
+    @pytest.mark.thread_unsafe
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
         w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
@@ -502,6 +503,7 @@ class TestTransformedDensityRejection:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
+    @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex):
         with suppress_warnings() as sup:
             # filter the warnings thrown by UNU.RAN
@@ -927,6 +929,7 @@ class TestNumericalInversePolynomial:
         assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist, u_resolution=1e-10)
@@ -1064,6 +1067,7 @@ class TestNumericalInverseHermite:
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
     @pytest.mark.parametrize("order", [3, 5])
+    @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex, order):
         rng = NumericalInverseHermite(dist, order=order, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
@@ -1108,6 +1112,7 @@ class TestNumericalInverseHermite:
         #     pytest.skip("Tested separately")
         self.basic_test_all_scipy_dists(distname, shapes)
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_basic_truncnorm_gh17155(self):
         self.basic_test_all_scipy_dists("truncnorm", (0.1, 2))
@@ -1132,6 +1137,7 @@ class TestNumericalInverseHermite:
 
     @pytest.mark.parametrize('rng', rngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
+    @pytest.mark.thread_unsafe
     def test_RVS(self, rng, size_in, size_out):
         dist = StandardNormal()
         fni = NumericalInverseHermite(dist)
@@ -1203,6 +1209,7 @@ class TestNumericalInverseHermite:
         assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInverseHermite(dist, u_resolution=1e-10)
@@ -1353,6 +1360,7 @@ class TestSimpleRatioUniforms:
 
     @pytest.mark.parametrize("dist, mv_ex",
                              zip(dists, mvs))
+    @pytest.mark.thread_unsafe
     def test_basic(self, dist, mv_ex):
         rng = SimpleRatioUniforms(dist, mode=dist.mode, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
@@ -1375,9 +1383,6 @@ class TestSimpleRatioUniforms:
 
 
 class TestRatioUniforms:
-    """ Tests for rvs_ratio_uniforms.
-    """
-
     def test_rv_generation(self):
         # use KS test to check distribution of rvs
         # normal distribution
@@ -1426,8 +1431,8 @@ class TestRatioUniforms:
         umax = np.sqrt(f(0))
         gen1 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=1234)
         r1 = gen1.rvs(10)
-        np.random.seed(1234)
-        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v)
+        rng = np.random.RandomState(1234)
+        gen2 = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=rng)
         r2 = gen2.rvs(10)
         assert_equal(r1, r2)
 

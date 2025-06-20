@@ -6,8 +6,8 @@ Examples::
     $ python check_installation.py install_directory_name
 
         install_directory_name:
-            the relative path to the directory where SciPy is installed after
-            building and running `meson install`.
+            the relative path from the root of the repo to the directory where
+            SciPy is installed (for `spin` usually "build-install")
 
 Notes
 =====
@@ -21,11 +21,15 @@ meant for use in CI so it's not like many files will be missing at once.
 import os
 import glob
 import sys
+from get_submodule_paths import get_submodule_paths
 
 
 CUR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 ROOT_DIR = os.path.dirname(CUR_DIR)
 SCIPY_DIR = os.path.join(ROOT_DIR, 'scipy')
+
+
+submodule_paths = get_submodule_paths()
 
 
 # Files whose installation path will be different from original one
@@ -34,33 +38,44 @@ changed_installed_path = {
         'scipy/_lib/tests/test_scipy_version.py'
 }
 
-# We do not want the following tests to be checked
-exception_list_test_files = [
-    "_lib/array_api_compat/tests/test_all.py",
-    "_lib/array_api_compat/tests/test_array_namespace.py",
-    "_lib/array_api_compat/tests/test_common.py",
-    "_lib/array_api_compat/tests/test_isdtype.py",
-    "_lib/array_api_compat/tests/test_vendoring.py",
-]
 
-
-def main(install_dir):
+def main(install_dir, no_tests):
     INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
     if not os.path.exists(INSTALLED_DIR):
         raise ValueError(f"Provided install dir {INSTALLED_DIR} does not exist")
 
     scipy_test_files = get_test_files(SCIPY_DIR)
+    scipy_test_extension_modules = get_test_files(INSTALLED_DIR, "so")
     installed_test_files = get_test_files(INSTALLED_DIR)
+
+    if no_tests:
+        if len(scipy_test_extension_modules) > 0:
+            raise Exception(f"{scipy_test_extension_modules.values()} "
+                            "should not be installed but "
+                            "are found in the installation directory.")
+    else:
+        if len(scipy_test_extension_modules) == 0:
+            raise Exception("Test for extension modules should be "
+                            "installed but are not found in the "
+                            "installation directory.")
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
-        if test_file in exception_list_test_files:
+        if no_tests:
+            if test_file in installed_test_files:
+                raise Exception(f"{test_file} should not be installed but "
+                        "is found in the installation directory.")
             continue
 
         if test_file not in installed_test_files.keys():
-            raise Exception("%s is not installed" % scipy_test_files[test_file])
+            raise Exception(f"{scipy_test_files[test_file]} is not installed; "
+                            f"either install it or add `{test_file}` to the "
+                            "exception list in `tools/check_installation.py`")
 
-    print("----------- All the test files were installed --------------")
+    if no_tests:
+        print("----------- No test files were installed --------------")
+    else:
+        print("----------- All the test files were installed --------------")
 
     scipy_pyi_files = get_pyi_files(SCIPY_DIR)
     installed_pyi_files = get_pyi_files(INSTALLED_DIR)
@@ -68,9 +83,11 @@ def main(install_dir):
     # Check *.pyi files detected in repo are installed
     for pyi_file in scipy_pyi_files.keys():
         if pyi_file not in installed_pyi_files.keys():
-            raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
+            if no_tests and "test" in scipy_pyi_files[pyi_file]:
+                continue
+            raise Exception(f"{scipy_pyi_files[pyi_file]} is not installed")
 
-    print("----------- All the .pyi files were installed --------------")
+    print("----------- All the necessary .pyi files were installed --------------")
 
 
 def get_suffix_path(current_path, levels=1):
@@ -81,13 +98,15 @@ def get_suffix_path(current_path, levels=1):
     return os.path.relpath(current_path, current_new)
 
 
-def get_test_files(dir):
+def get_test_files(dir, ext="py"):
     test_files = dict()
-    for path in glob.glob(f'{dir}/**/test_*.py', recursive=True):
+    underscore = "_" if ext == "so" else ""
+    for path in glob.glob(f'{dir}/**/{underscore}test_*.{ext}', recursive=True):
+        if any(submodule_path in path for submodule_path in submodule_paths):
+            continue
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
-        if "highspy" not in suffix_path:
-            test_files[suffix_path] = path
+        test_files[suffix_path] = path
 
     return test_files
 
@@ -102,9 +121,12 @@ def get_pyi_files(dir):
 
 
 if __name__ == '__main__':
-    if not len(sys.argv) == 2:
+    if len(sys.argv) < 2:
         raise ValueError("Incorrect number of input arguments, need "
                          "check_installation.py relpath/to/installed/scipy")
 
     install_dir = sys.argv[1]
-    main(install_dir)
+    no_tests = False
+    if len(sys.argv) == 3:
+        no_tests = sys.argv[2] == "--no-tests"
+    main(install_dir, no_tests)

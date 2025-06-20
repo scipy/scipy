@@ -26,16 +26,16 @@ SOFTWARE.
 Check that test names start with `test`, and that test classes start with
 `Test`.
 """
-from __future__ import annotations
-
 import ast
 import os
 from pathlib import Path
 import sys
 from collections.abc import Iterator, Sequence
 import itertools
+from get_submodule_paths import get_submodule_paths
 
 PRAGMA = "# skip name check"
+submodule_paths = get_submodule_paths()
 
 
 def _find_names(node: ast.Module) -> Iterator[str]:
@@ -71,7 +71,9 @@ def is_misnamed_test_func(
         and node.name
         not in ("teardown_method", "setup_method",
                 "teardown_class", "setup_class",
-                "setup_module", "teardown_module")
+                "setup_module", "teardown_module",
+                "_test_dependency",  # array_api_compat.tests.test_no_dependencies
+            )
     )
 
 
@@ -139,7 +141,7 @@ def main(content: str, file: str) -> int:
                         Path("scipy").rglob("**/tests/**/test*.py"),
                         ["scipy/_lib/_testutils.py"],
                     ):
-                        with open(os.path.join(_file)) as fd:
+                        with open(os.path.join(_file), encoding="utf-8") as fd:
                             _content = fd.read()
                         if f"self.{_node.name}" in _content:
                             should_continue = True
@@ -161,7 +163,9 @@ if __name__ == "__main__":
     path = Path("scipy").rglob("**/tests/**/test*.py")
 
     for file in path:
-        filename = os.path.basename(file)
+        if any(submodule_path in str(file.absolute()) for submodule_path in
+               submodule_paths):
+            continue
         with open(file, encoding="utf-8") as fd:
             content = fd.read()
         ret |= main(content, file)

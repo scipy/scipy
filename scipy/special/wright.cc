@@ -75,14 +75,17 @@
 
 extern "C" {
 #include <math.h>
-#include "sf_error.h"
 #include "_round.h"
 }
 
 #include <cmath>
 #include <cfloat>
 
+#include "sf_error.h"
+
 using std::complex;
+using std::isinf;
+using std::isnan;
 
 #define TWOITERTOL DBL_EPSILON
 

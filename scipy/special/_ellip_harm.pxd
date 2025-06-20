@@ -69,7 +69,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
 
     cdef double s2, alpha, beta, gamma, lamba_romain, pp, psi, t1, tol, vl, vu
     cdef CBLAS_INT r, tp, j, size, i, info, lwork, liwork, c, iu
-    cdef Py_UNICODE t
+    cdef Py_UCS4 t
 
     r = n/2
     alpha = h2
@@ -98,7 +98,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                + (sizeof(CBLAS_INT)*(2*size + liwork)))
     bufferp[0] = buffer
     if not buffer:
-        sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
+        sf_error.error("ellip_harm", sf_error.MEMORY, "failed to allocate memory")
         return NULL
 
     cdef double *g = <double *>buffer
@@ -166,7 +166,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
              &size, isuppz, work, &lwork, iwork, &liwork, &info)
 
     if info != 0:
-        sf_error.error("ellip_harm", sf_error.NO_RESULT, "failed to allocate memory")
+        sf_error.error("ellip_harm", sf_error.MEMORY, "failed to allocate memory")
         return NULL
 
     for i in range(0, size):

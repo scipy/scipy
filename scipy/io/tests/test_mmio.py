@@ -2,6 +2,7 @@ from tempfile import mkdtemp
 import os
 import io
 import shutil
+import threading
 import textwrap
 
 import numpy as np
@@ -19,6 +20,8 @@ import scipy.io._fast_matrix_market as fmm
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
 
+pytestmark = pytest.mark.thread_unsafe
+
 
 # Run the entire test suite on both _mmio and _fast_matrix_market implementations
 @pytest.fixture(scope='module', params=(scipy.io._mmio, fmm), autouse=True)
@@ -33,7 +36,7 @@ def implementations(request):
 
 class TestMMIOArray:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -42,20 +45,22 @@ class TestMMIOArray:
     def check(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(a, b)
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn)
+        b = mmread(self.fn, spmatrix=False)
         assert_equal(a, b)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
         self.check_exact(array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'array', typeval, 'general'))
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_32bit_integer(self, typeval, dtype):
         a = array([[2**31-1, 2**31-2], [2**31-3, 2**31-4]], dtype=dtype)
@@ -127,6 +132,7 @@ class TestMMIOArray:
         a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
+    @pytest.mark.fail_slow(10)
     def test_bad_number_of_array_header_fields(self):
         s = """\
             %%MatrixMarket matrix array real general
@@ -156,7 +162,7 @@ class TestMMIOArray:
 
 class TestMMIOSparseCSR(TestMMIOArray):
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -165,120 +171,126 @@ class TestMMIOSparseCSR(TestMMIOArray):
     def check(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(a.toarray(), b.toarray())
 
     def check_exact(self, a, info):
         mmwrite(self.fn, a)
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn)
+        b = mmread(self.fn, spmatrix=False)
         assert_equal(a.toarray(), b.toarray())
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_integer(self, typeval, dtype):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [3, 4]], dtype=dtype),
+        self.check_exact(scipy.sparse.csr_array([[1, 2], [3, 4]], dtype=dtype),
                          (2, 2, 4, 'coordinate', typeval, 'general'))
 
     def test_32bit_integer(self):
-        a = scipy.sparse.csr_matrix(array([[2**31-1, -2**31+2],
-                                           [2**31-3, 2**31-4]],
-                                          dtype=np.int32))
+        a = scipy.sparse.csr_array(array([[2**31-1, -2**31+2],
+                                          [2**31-3, 2**31-4]],
+                                         dtype=np.int32))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
     def test_64bit_integer(self):
-        a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
-                                           [-2**63+2, 2**63-2]],
-                                          dtype=np.int64))
+        a = scipy.sparse.csr_array(array([[2**32+1, 2**32+1],
+                                          [-2**63+2, 2**63-2]],
+                                         dtype=np.int64))
         if (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite:
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
     def test_32bit_unsigned_integer(self):
-        a = scipy.sparse.csr_matrix(array([[2**31-1, 2**31-2],
-                                           [2**31-3, 2**31-4]],
-                                          dtype=np.uint32))
+        a = scipy.sparse.csr_array(array([[2**31-1, 2**31-2],
+                                          [2**31-3, 2**31-4]],
+                                         dtype=np.uint32))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
     def test_64bit_unsigned_integer(self):
-        a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
-                                           [2**64-2, 2**64-1]],
-                                          dtype=np.uint64))
+        a = scipy.sparse.csr_array(array([[2**32+1, 2**32+1],
+                                          [2**64-2, 2**64-1]],
+                                         dtype=np.uint64))
         self.check_exact(a, (2, 2, 4, 'coordinate', 'unsigned-integer', 'general'))
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_upper_triangle_integer(self, typeval, dtype):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 1], [0, 0]], dtype=dtype),
+        self.check_exact(scipy.sparse.csr_array([[0, 1], [0, 0]], dtype=dtype),
                          (2, 2, 1, 'coordinate', typeval, 'general'))
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_lower_triangle_integer(self, typeval, dtype):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 0], [1, 0]], dtype=dtype),
+        self.check_exact(scipy.sparse.csr_array([[0, 0], [1, 0]], dtype=dtype),
                          (2, 2, 1, 'coordinate', typeval, 'general'))
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_rectangular_integer(self, typeval, dtype):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2, 3], [4, 5, 6]], dtype=dtype),
+        self.check_exact(scipy.sparse.csr_array([[1, 2, 3], [4, 5, 6]], dtype=dtype),
                          (2, 3, 6, 'coordinate', typeval, 'general'))
 
     def test_simple_rectangular_float(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [3.5, 4], [5, 6]]),
+        self.check(scipy.sparse.csr_array([[1, 2], [3.5, 4], [5, 6]]),
                    (3, 2, 6, 'coordinate', 'real', 'general'))
 
     def test_simple_float(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [3, 4.0]]),
+        self.check(scipy.sparse.csr_array([[1, 2], [3, 4.0]]),
                    (2, 2, 4, 'coordinate', 'real', 'general'))
 
     def test_simple_complex(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2], [3, 4j]]),
+        self.check(scipy.sparse.csr_array([[1, 2], [3, 4j]]),
                    (2, 2, 4, 'coordinate', 'complex', 'general'))
 
     @pytest.mark.parametrize('typeval, dtype', parametrize_args)
     def test_simple_symmetric_integer(self, typeval, dtype):
-        self.check_exact(scipy.sparse.csr_matrix([[1, 2], [2, 4]], dtype=dtype),
+        self.check_exact(scipy.sparse.csr_array([[1, 2], [2, 4]], dtype=dtype),
                          (2, 2, 3, 'coordinate', typeval, 'symmetric'))
 
     def test_simple_skew_symmetric_integer(self):
-        self.check_exact(scipy.sparse.csr_matrix([[0, 2], [-2, 0]]),
+        self.check_exact(scipy.sparse.csr_array([[0, 2], [-2, 0]]),
                          (2, 2, 1, 'coordinate', 'integer', 'skew-symmetric'))
 
     def test_simple_skew_symmetric_float(self):
-        self.check(scipy.sparse.csr_matrix(array([[0, 2], [-2.0, 0]], 'f')),
+        self.check(scipy.sparse.csr_array(array([[0, 2], [-2.0, 0]], 'f')),
                    (2, 2, 1, 'coordinate', 'real', 'skew-symmetric'))
 
     def test_simple_hermitian_complex(self):
-        self.check(scipy.sparse.csr_matrix([[1, 2+3j], [2-3j, 4]]),
+        self.check(scipy.sparse.csr_array([[1, 2+3j], [2-3j, 4]]),
                    (2, 2, 3, 'coordinate', 'complex', 'hermitian'))
 
     def test_random_symmetric_float(self):
         sz = (20, 20)
         a = np.random.random(sz)
         a = a + transpose(a)
-        a = scipy.sparse.csr_matrix(a)
+        a = scipy.sparse.csr_array(a)
         self.check(a, (20, 20, 210, 'coordinate', 'real', 'symmetric'))
 
     def test_random_rectangular_float(self):
         sz = (20, 15)
         a = np.random.random(sz)
-        a = scipy.sparse.csr_matrix(a)
+        a = scipy.sparse.csr_array(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
 
     def test_simple_pattern(self):
-        a = scipy.sparse.csr_matrix([[0, 1.5], [3.0, 2.5]])
+        a = scipy.sparse.csr_array([[0, 1.5], [3.0, 2.5]])
         p = np.zeros_like(a.toarray())
         p[a.toarray() > 0] = 1
         info = (2, 2, 3, 'coordinate', 'pattern', 'general')
         mmwrite(self.fn, a, field='pattern')
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn)
+        b = mmread(self.fn, spmatrix=False)
         assert_array_almost_equal(p, b.toarray())
+        assert not scipy.sparse.isspmatrix(b)
+
+        b = mmread(self.fn, spmatrix=True)
+        assert scipy.sparse.isspmatrix(b)
+        b = mmread(self.fn)  # chk default
+        assert scipy.sparse.isspmatrix(b)
 
     def test_gh13634_non_skew_symmetric_int(self):
-        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99]], dtype=np.int32)
+        a = scipy.sparse.csr_array([[1, 2], [-2, 99]], dtype=np.int32)
         self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
 
     def test_gh13634_non_skew_symmetric_float(self):
-        a = scipy.sparse.csr_matrix([[1, 2], [-2, 99.]], dtype=np.float32)
+        a = scipy.sparse.csr_array([[1, 2], [-2, 99.]], dtype=np.float32)
         self.check(a, (2, 2, 4, 'coordinate', 'real', 'general'))
 
 
@@ -350,7 +362,7 @@ _over64bit_integer_sparse_example = '''\
 
 class TestMMIOReadLargeIntegers:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -364,7 +376,7 @@ class TestMMIOReadLargeIntegers:
             or over64):
             assert_raises(OverflowError, mmread, self.fn)
         else:
-            b = mmread(self.fn)
+            b = mmread(self.fn, spmatrix=False)
             if not dense:
                 b = b.toarray()
             assert_equal(a, b)
@@ -549,7 +561,7 @@ _empty_lines_example = '''\
 
 class TestMMIOCoordinate:
     def setup_method(self):
-        self.tmpdir = mkdtemp()
+        self.tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
     def teardown_method(self):
@@ -560,7 +572,7 @@ class TestMMIOCoordinate:
         f.write(example)
         f.close()
         assert_equal(mminfo(self.fn), info)
-        b = mmread(self.fn).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_read_general(self):
@@ -620,13 +632,13 @@ class TestMMIOCoordinate:
     def test_empty_write_read(self):
         # https://github.com/scipy/scipy/issues/1410 (Trac #883)
 
-        b = scipy.sparse.coo_matrix((10, 10))
+        b = scipy.sparse.coo_array((10, 10))
         mmwrite(self.fn, b)
 
         assert_equal(mminfo(self.fn),
                      (10, 10, 0, 'coordinate', 'real', 'symmetric'))
         a = b.toarray()
-        b = mmread(self.fn).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_bzip2_py3(self):
@@ -640,17 +652,17 @@ class TestMMIOCoordinate:
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
+        b = scipy.sparse.coo_array((V, (I, J)), shape=(5, 5))
 
         mmwrite(self.fn, b)
 
-        fn_bzip2 = "%s.bz2" % self.fn
+        fn_bzip2 = f"{self.fn}.bz2"
         with open(self.fn, 'rb') as f_in:
             f_out = bz2.BZ2File(fn_bzip2, 'wb')
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_bzip2).toarray()
+        a = mmread(fn_bzip2, spmatrix=False).toarray()
         assert_array_almost_equal(a, b.toarray())
 
     def test_gzip_py3(self):
@@ -664,17 +676,17 @@ class TestMMIOCoordinate:
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
+        b = scipy.sparse.coo_array((V, (I, J)), shape=(5, 5))
 
         mmwrite(self.fn, b)
 
-        fn_gzip = "%s.gz" % self.fn
+        fn_gzip = f"{self.fn}.gz"
         with open(self.fn, 'rb') as f_in:
             f_out = gzip.open(fn_gzip, 'wb')
             f_out.write(f_in.read())
             f_out.close()
 
-        a = mmread(fn_gzip).toarray()
+        a = mmread(fn_gzip, spmatrix=False).toarray()
         assert_array_almost_equal(a, b.toarray())
 
     def test_real_write_read(self):
@@ -682,14 +694,14 @@ class TestMMIOCoordinate:
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
 
-        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
+        b = scipy.sparse.coo_array((V, (I, J)), shape=(5, 5))
 
         mmwrite(self.fn, b)
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'real', 'general'))
         a = b.toarray()
-        b = mmread(self.fn).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_complex_write_read(self):
@@ -698,14 +710,14 @@ class TestMMIOCoordinate:
         V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
 
-        b = scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5))
+        b = scipy.sparse.coo_array((V, (I, J)), shape=(5, 5))
 
         mmwrite(self.fn, b)
 
         assert_equal(mminfo(self.fn),
                      (5, 5, 8, 'coordinate', 'complex', 'general'))
         a = b.toarray()
-        b = mmread(self.fn).toarray()
+        b = mmread(self.fn, spmatrix=False).toarray()
         assert_array_almost_equal(a, b)
 
     def test_sparse_formats(self, tmp_path):
@@ -718,18 +730,18 @@ class TestMMIOCoordinate:
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
         V = array([1.0, 6.0, 10.5, 0.015, 250.5, -280.0, 33.32, 12.0])
-        mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
+        mats.append(scipy.sparse.coo_array((V, (I, J)), shape=(5, 5)))
 
         V = array([1.0 + 3j, 6.0 + 2j, 10.50 + 0.9j, 0.015 + -4.4j,
                    250.5 + 0j, -280.0 + 5j, 33.32 + 6.4j, 12.00 + 0.8j])
-        mats.append(scipy.sparse.coo_matrix((V, (I, J)), shape=(5, 5)))
+        mats.append(scipy.sparse.coo_array((V, (I, J)), shape=(5, 5)))
 
         for mat in mats:
             expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
                 fname = tmpdir / (fmt + '.mtx')
                 mmwrite(fname, mat.asformat(fmt))
-                result = mmread(fname).toarray()
+                result = mmread(fname, spmatrix=False).toarray()
                 assert_array_almost_equal(result, expected)
 
     def test_precision(self):
@@ -739,15 +751,15 @@ class TestMMIOCoordinate:
             for precision in test_precisions:
                 # construct sparse matrix with test value at last main diagonal
                 n = 10**precision + 1
-                A = scipy.sparse.dok_matrix((n, n))
+                A = scipy.sparse.dok_array((n, n))
                 A[n-1, n-1] = value
                 # write matrix with test precision and read again
                 mmwrite(self.fn, A, precision=precision)
-                A = scipy.io.mmread(self.fn)
+                A = scipy.io.mmread(self.fn, spmatrix=False)
                 # check for right entries in matrix
                 assert_array_equal(A.row, [n-1])
                 assert_array_equal(A.col, [n-1])
-                assert_allclose(A.data, [float('%%.%dg' % precision % value)])
+                assert_allclose(A.data, [float(f'{value:.{precision}g}')])
 
     def test_bad_number_of_coordinate_header_fields(self):
         s = """\
@@ -770,7 +782,8 @@ class TestMMIOCoordinate:
 def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
-                       "1 1 -2.1846000000000e+02  0.0000000000000e+00"))
+                       "1 1 -2.1846000000000e+02  0.0000000000000e+00"),
+           spmatrix=False)
 
 
 def test_gh18123(tmp_path):
@@ -782,7 +795,17 @@ def test_gh18123(tmp_path):
     test_file = tmp_path / "test.mtx"
     with open(test_file, "w") as f:
         f.writelines(lines)
-    mmread(test_file)
+    mmread(test_file, spmatrix=False)
+
+def test_mtx_append(tmp_path):
+    a = mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
+                           " 1 1 1\n"
+                           "1 1 -2.1846000000000e+02  0.0000000000000e+00"),
+               spmatrix=False)
+    test_writefile = tmp_path / "test_mtx"
+    test_readfile  = tmp_path / "test_mtx.mtx"
+    mmwrite(test_writefile, a)
+    mmread(test_readfile, spmatrix=False)
 
 
 def test_threadpoolctl():
@@ -800,3 +823,9 @@ def test_threadpoolctl():
 
     with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
         assert_equal(fmm.PARALLELISM, 2)
+
+
+def test_gh21999_file_not_exist():
+    tmpdir = mkdtemp(suffix=str(threading.get_native_id()))
+    wrong_fn = os.path.join(tmpdir, 'not_exist_test_file.mtx')
+    assert_raises(FileNotFoundError, mmread, wrong_fn)

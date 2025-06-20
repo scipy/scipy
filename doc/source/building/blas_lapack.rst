@@ -16,7 +16,7 @@ BLAS/LAPACK on Linux distros, and can be dynamically switched between
 implementations on conda-forge), use::
 
     $ # for a development build
-    $ python dev.py build -C-Dblas=blas -C-Dlapack=lapack
+    $ spin build -S-Dblas=blas -S-Dlapack=lapack
 
     $ # to build and install a wheel
     $ python -m build -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
@@ -26,7 +26,20 @@ implementations on conda-forge), use::
     $ python -m pip -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 Other options that should work (as long as they're installed with
-``pkg-config`` or CMake support) include ``mkl``, ``atlas`` and ``blis``.
+``pkg-config`` or CMake support) include ``mkl``, ``atlas``, ``blis`` and
+``accelerate``.
+
+Note that both Accelerate and ``scipy-openblas`` have flags in ``spin``
+that are easier to remember, since they're commonly used for development::
+
+    $ spin build --with-accelerate
+    $ spin build --with-scipy-openblas
+
+The ``-Dlapack`` flag isn't needed for Accelerate, MKL or ``scipy-openblas``,
+since we can be sure that BLAS and LAPACK are the same for those options.
+E.g., to create a wheel with Accelerate (on macOS >=13.3 only), use::
+
+    $ python -m build -Csetup-args=-Dblas=accelerate
 
 
 Using pkg-config to detect libraries in a nonstandard location
@@ -80,7 +93,7 @@ user wants to override this autodetection mechanism for building against plain
 ``libblas``/``liblapack`` (this is what conda-forge does for example), use the
 ``-Duse-g77-abi=true`` build option. E.g.,::
 
-    $ python -m build -C-Duse-g77-abi=true -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack 
+    $ python -m build -C-Duse-g77-abi=true -Csetup-args=-Dblas=blas -Csetup-args=-Dlapack=lapack
 
 
 Work-in-progress
@@ -94,4 +107,3 @@ of the box:
   LP64 (32-bit integer size) BLAS/LAPACK.
 - Automatically selecting from multiple possible BLAS and LAPACK options, with
   a user-provided order of precedence
-

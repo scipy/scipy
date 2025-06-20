@@ -56,8 +56,9 @@ _configtest.c
 
 # Python files #
 ################
-# build directory
+# build directories
 build
+build-*
 # sphinx build directory
 doc/_build
 # cython files
@@ -85,7 +86,6 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/
 .mesonpy/
 
 # doit
@@ -106,6 +106,10 @@ doc/source/.jupyterlite.doit.db
 ################
 .cache/
 .pytest_cache/
+
+# GitHub cache #
+################
+gh_cache.json
 
 # mypy cache #
 ##############
@@ -138,6 +142,7 @@ Thumbs.db
 doc/frontpage/build
 doc/source/reference/generated
 **/.ipynb_checkpoints
+doc/source/_contents
 
 # Things specific to this project #
 ###################################
@@ -146,7 +151,9 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.github/workflows/.pixi
 .openblas
+scipy-openblas.pc
 scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
@@ -218,8 +225,6 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/linalg/_matfuncs_sqrtm_triu.cpp
-scipy/linalg/_matfuncs_expm.c
-scipy/linalg/_matfuncs_expm.pyx
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -227,7 +232,6 @@ scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/_group_columns.cpp
 scipy/optimize/lbfgsb_src/_lbfgsbmodule.c
 scipy/optimize/lbfgsb_src/_lbfgsb-f2pywrappers.f
-scipy/optimize/minpack2/_minpack2module.c
 scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
@@ -235,8 +239,6 @@ scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
 scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
-scipy/signal/_spectral.c
-scipy/signal/_spectral.cpp
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_max_len_seq_inner.cpp
 scipy/signal/_sosfilt.c
@@ -247,7 +249,7 @@ scipy/signal/_bspline_util.c
 scipy/sparse/_csparsetools.c
 scipy/sparse/_csparsetools.pyx
 scipy/sparse/csgraph/_min_spanning_tree.c
-scipy/sparse/csgraph/_shortest_path.c
+scipy/sparse/csgraph/_shortest_path.cxx
 scipy/sparse/csgraph/_tools.c
 scipy/sparse/csgraph/_traversal.c
 scipy/sparse/csgraph/_flow.c
@@ -293,11 +295,8 @@ scipy/special/_ufuncs_cxx.pxd
 scipy/special/_ufuncs_cxx.pyx
 scipy/special/_ufuncs_cxx_defs.h
 scipy/special/_ufuncs_defs.h
-scipy/special/_ufuncs.pyi
 scipy/special/cython_special.c
 scipy/special/cython_special.h
-scipy/special/cython_special.pxd
-scipy/special/cython_special.pyx
 scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
 scipy/special/ellint_carlson_cpp_lite/Makefile
@@ -325,5 +324,3 @@ scipy/optimize/_group_columns.c
 scipy/optimize/cython_optimize/_zeros.c
 scipy/optimize/cython_optimize/_zeros.pyx
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
-scipy/optimize/_highs/cython/src/_highs_wrapper.cxx
-scipy/optimize/_highs/cython/src/_highs_constants.cxx

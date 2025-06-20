@@ -18,9 +18,9 @@ going and where help is needed most.
 
 General
 -------
-This roadmap will be evolving together with SciPy.  Updates can be submitted as
-pull requests.  For large or disruptive changes you may want to discuss
-those first on the scipy-dev mailing list.
+This roadmap will be evolving together with SciPy. Updates can be submitted as
+pull requests. For large or disruptive changes you may want to discuss
+those first on the scipy-dev forum.
 
 
 API changes
@@ -78,13 +78,17 @@ Pythran is still an optional build dependency, and can be disabled with
 happen it must be clear that the maintenance burden is low enough.
 
 
-Use of venerable Fortran libraries
-``````````````````````````````````
+Use of Fortran libraries
+````````````````````````
 SciPy owes a lot of its success to relying on wrapping well established
-Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). Some of these
-libraries are aging well, others less so. We should audit our use of these
-libraries with respect to the maintenance effort, the functionality, and the
-existence of (possibly partial) alternatives, *including those inside SciPy*.
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). The Fortran 77
+that these libraries are written in is quite hard to maintain, and the use
+of Fortran is problematic for many reasons; e.g., it makes our wheel builds
+much harder to maintain, it has repeatedly been problematic for supporting
+new platforms like macOS arm64 and Windows on Arm, and it is highly problematic
+for Pyodide's SciPy support. Our goal is to remove all Fortran code from SciPy
+by replacing the functionality with code written in other languages. Progress
+towards this goal is tracked in `gh-18566 <https://github.com/scipy/scipy/issues/18566>`__.
 
 
 Continuous integration
@@ -108,7 +112,7 @@ checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
 (see `this issue <https://github.com/multi-build/multibuild/issues/162>`__).
 An effort should be made to slim down where possible, and not add new large
 files. In the future, things that are being considered (very tentatively) and
-may help are separating out the bundled` ``libopenblas`` and removing support
+may help are separating out the bundled ``libopenblas`` and removing support
 for ``long double``.
 
 
@@ -123,8 +127,26 @@ feature requests.
 
 constants
 `````````
-This module is basically done, low-maintenance and without open issues.
+This module needs only periodic updates to the numerical values.
 
+differentiate
+`````````````
+This module was added with the understanding that its scope would be limited.
+The goal is to provide basic differentiation of black-box functions, not
+replicate all features of existing differentiation tools. With that in mind,
+items for future work include:
+
+- Improve support for callables that accept additional arguments (e.g. add
+  ``*args`` to ``jacobian`` and ``hessian``). Note that this is not trivial
+  due to the way elements of the arrays are eliminated when their corresponding
+  calculations have converged.
+- Improve implementation of `scipy.differentiate.hessian`: rather than chaining
+  first-order differentiation, use a second-order differentiation stencil.
+- Consider the addition of an option to use relative step sizes.
+- Consider generalizing the approach to use "polynomial extrapolation"; i.e.,
+  rather than estimating derivatives of a given order from the minimal number
+  of function evaluations, use a least-squares approach to improve robustness
+  to numerical noise.
 
 fft
 ````
@@ -133,40 +155,56 @@ This module is in good shape.
 
 integrate
 `````````
-Needed for ODE solvers:
-
-- Documentation is pretty bad, needs fixing
-- A new ODE solver interface  (``solve_ivp``) was added in SciPy 1.0.0.
-  In the future we can consider (soft-)deprecating the older API.
-
-The numerical integration functions are in good shape.  Support for integrating
-complex-valued functions and integrating multiple intervals (see `gh-3325
-<https://github.com/scipy/scipy/issues/3325>`__) could be added.
+- Complete the feature set of the new ``cubature`` function, and add an interface
+  tailored to one-dimensional integrals.
+- Migrate functions for generating quadrature rule points and weights from `special`,
+  improve their reliability, and add support for other important rules.
+- Complete the feature set of ``solve_ivp``, including all functionality of the
+  ``odeint`` interface.
+- Gracefully sunset superseded functions and classes.
 
 
 interpolate
 ```````````
 
-*Spline fitting*: we need spline fitting routines with better user control. This
-includes 
 
-    - user-selectable alternatives for the smoothing criteria (manual,
-      cross-validation etc); gh-16653 makes a start in this direction;
+*FITPACK replacements*
 
-    - several strategies for knot placement, both manual and automatic (using
-      algorithms by Dierckx, de Boor, possibly other). 
+We need to finish providing functional equivalents of the FITPACK Fortran library.
+The aim is to reimplement the algorithmic content of the FITPACK monolith in a
+modular fashion, to allow better user control and extensibility.
+To this end, we need
 
-Once we have a reasonably feature complete set, we can start taking a long look
-at the future of the venerable FITPACK Fortran library, which currently is the
-only way of constructing smoothing splines in SciPy.
+- 1D splines: add the periodic spline fitting to `make_splrep` function.
+- 2D splines: provide functional replacements of the `BivariateSpline` family
+  of classes for scattered and gridded data.  
 
-*Scalability and performance*: For the FITPACK-based functionality, the data
-size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
-For N-D scattered interpolators (which are QHull based) and N-D regular grid
-interpolators we need to check performance on large data sets and improve
-where lacking (gh-16483 makes progress in this direction).
+Once we have a feature-complete set of replacements, we can gracefully sunset
+our use of FITPACK.
 
-*Ideas for new features*: NURBS support could be added.
+*Ideas for new features*
+
+
+- add the ability to construct smoothing splines with variable number of knots
+  to `make_smoothing_spline`. Currently, `make_smoothing_spline` always uses all
+  data points for the knot vector.
+- experiment with user-selectable smoothing criteria: add the P-splines penalty
+  form to complement the 2nd derivative penalty of `make_smoothing_spline` and
+  jumps of the 3rd derivative of `make_splrep`
+- investigate ways of vectorizing the spline construction for batches of the
+  independent variable. This class of features has been requested by
+  `scipy.stats` developers
+- allow specifying the boundary conditions for spline fitting.
+- investigate constrained spline fitting problems which the FITPACK library was
+  providing in Fortran, but were never exposed to the python interfaces
+- NURBS support can be added if there is sufficient user interest
+
+*Scalability and performance*
+
+We need to check performance on large data sets and improve where lacking. This
+is relevant for both regular grid N-D interpolators and QHull-based scattered
+N-D interpolators. For the latter ones, we additionally need to investigate if
+we can improve on the 32-bit integer limitations of the QHull library.
 
 
 io
@@ -196,6 +234,8 @@ Ideas for new features:
 
 - Add type-generic wrappers in the Cython BLAS and LAPACK
 - Make many of the linear algebra routines into gufuncs
+- Complete support for batched operations (see
+  `gh-21466 <https://github.com/scipy/scipy/issues/21466>`__)
 
 **BLAS and LAPACK**
 
@@ -203,31 +243,21 @@ The Python and Cython interfaces to BLAS and LAPACK in ``scipy.linalg`` are one
 of the most important things that SciPy provides. In general ``scipy.linalg``
 is in good shape, however we can make a number of improvements:
 
-1. Library support. Our released wheels now ship with OpenBLAS, which is
-   currently the only feasible performant option (ATLAS is too slow, MKL cannot
-   be the default due to licensing issues, Accelerate support is dropped
-   because Apple doesn't update Accelerate anymore). OpenBLAS isn't very stable
-   though, sometimes its releases break things and it has issues with threading
-   (currently the only issue for using SciPy with PyPy3).  We need at the very
-   least better support for debugging OpenBLAS issues, and better documentation
-   on how to build SciPy with it.  An option is to use BLIS for a BLAS
-   interface (see `numpy gh-7372 <https://github.com/numpy/numpy/issues/7372>`__).
-
-2. Support for newer LAPACK features.  In SciPy 1.2.0 we increased the minimum
-   supported version of LAPACK to 3.4.0.  Now that we dropped Python 2.7, we
-   can increase that version further (MKL + Python 2.7 was the blocker for
-   >3.4.0 previously) and start adding support for new features in LAPACK.
+1. Add support for ILP64 (64-bit) BLAS and LAPACK (see
+   `gh-21889 <https://github.com/scipy/scipy/issues/21889>`__)
+2. Unify the two sets of low-level BLAS/LAPACK wrappers, probably dropping the
+   ``f2py``-based ones (see
+   `gh-20682 <https://github.com/scipy/scipy/issues/20682>`__)
+3. Improve and document the various ways we link to BLAS and LAPACK from C
+   and C++ code internally in SciPy (see
+   `gh-20002 <https://github.com/scipy/scipy/issues/20002>`__ and
+   `gh-21130 <https://github.com/scipy/scipy/pull/21130>`__)
 
 
 misc
 ````
-``scipy.misc`` will be removed as a public module.  Most functions in it have
-been moved to another submodule or deprecated.  The few that are left:
-
-- ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
-  with more extensive functionality for numerical differentiation.
-- ``ascent``, ``face``, ``electrocardiogram`` : remove or move to the
-  appropriate subpackages (e.g. ``scipy.ndimage``, ``scipy.signal``).
+All features have been removed from ``scipy.misc``, and the namespace itself
+will eventually be removed.
 
 
 ndimage
@@ -272,23 +302,14 @@ maintenance.  No major plans or wishes here.
 
 optimize
 ````````
-Overall this module is in good shape. Two good global optimizers were added in
-1.2.0; large-scale optimizers is still a gap that could be filled.  Other
-things that are needed:
+We aim to continuously improve the set of optimizers provided by this module.
+For large scale problems, the state of the art continues to advance and we aim
+to keep up by leveraging implementations from domain-specific libraries like
+HiGHS and PRIMA. Other areas for future work include the following.
 
-- Many ideas for additional functionality (e.g. integer constraints) in
-  ``linprog``, see `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
-- Add functionality to the benchmark suite to compare results more easily
-  (e.g. with summary plots).
-- deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
-  preferred.
-- ``scipy.optimize`` has an extensive set of benchmarks for accuracy and speed of
-  the global optimizers. That has allowed adding new optimizers (``shgo`` and
-  ``dual_annealing``) with significantly better performance than the existing
-  ones.  The ``optimize`` benchmark system itself is slow and hard to use
-  however; we need to make it faster and make it easier to compare performance of
-  optimizers via plotting performance profiles.
-
+- Improve the interfaces of existing optimizers (e.g. ``shgo``).
+- Improve usability of the benchmark system, and add features for comparing
+  results more easily (e.g. summary plots).
 
 signal
 ``````
@@ -316,11 +337,6 @@ stable conversions to and from other filter representations. SOS filters could
 be considered as the default filtering method for ltisys objects, for their
 numerical stability.
 
-*Wavelets*: what's there now doesn't make much sense.  Continuous wavelets
-only at the moment - decide whether to completely rewrite or remove them.
-Discrete wavelet transforms are out of scope (PyWavelets does a good job
-for those).
-
 
 sparse
 ``````
@@ -330,20 +346,24 @@ some point).
 
 What we want is sparse arrays that act like ``numpy.ndarray``. Initial
 support for a new set of classes (``csr_array`` et al.) was added in SciPy
-``1.8.0`` and stabilized in ``1.12.0`` when construction functions for
-arrays were added. Support for 1-D array is expected in ``1.13.0``.
+``1.8.0`` and stabilized in ``1.12.0`` with construction functions for
+arrays, ``1.14.0`` with 1D array support and ``1.15.0`` with 1D indexing.
+The sparse array codebase now supports all sparse matrix features and in
+addition supports 1D arrays and the first steps toward nD arrays.
+There is a transition guide to help users and libraries convert their code
+to sparse arrays.
 
-Next steps toward sparse array support:
+Next steps toward sparse array conversion:
 
-- Extend sparse array API to 1-D arrays.
+- Extend sparse array API to nD arrays.
     - Support for COO, CSR and DOK formats.
-    - CSR 1D support for min-max, indexing, arithmetic.
+    - Some COO features exist in 1.15.
+- Introduce support for broadcasting in operations where sparse formats
+  can effectively do that.
 - Help other libraries convert to sparse arrays from sparse matrices.
-  Create transition guide and helpful scripts to flag code that needs
-  further examination. NetworkX, scikit-learn and scikit-image are in
+  NetworkX, dipy, scikit-image, pyamg, cvxpy and scikit-learn are in
   progress or have completed conversion to sparse arrays.
-- After sparse array code is mature (~1 release cycle?) add deprecation
-  warnings for sparse matrix.
+- Add deprecation warnings for sparse matrix.
 - Work with NumPy on deprecation/removal of ``numpy.matrix``.
 - Deprecate and then remove sparse matrix in favor of sparse array.
 - Start API shift of construction function names (``diags``, ``block``, etc.)
@@ -377,7 +397,6 @@ This module is in good shape.
 sparse.linalg
 `````````````
 There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
-``_propack`` is new in 1.8.0, TBD how robust it will turn out to be.
 
 ``_isolve``:
 
@@ -442,50 +461,18 @@ may also be included in SciPy, especially if no other widely used and
 well-supported package covers the topic.  Also note that *some* duplication
 with downstream projects is inevitable and not necessarily a bad thing.)
 
-In addition to the items described in the :ref:`scipy-roadmap`, the following
-improvements will help SciPy better serve this role.
+The following improvements will help SciPy better serve this role.
 
-- Add fundamental and widely used hypothesis tests, such as:
-
-  - post hoc tests (e.g. Dunnett's test)
-  - the various types of analysis of variance (ANOVA):
-
-    - two-way ANOVA (single replicate, uniform number of replicates, variable
-      number of replicates)
-    - multiway ANOVA (i.e. generalize two-way ANOVA)
-    - nested ANOVA
-    - analysis of covariance (ANCOVA)
-
-  Also, provide an infrastructure for implementing hypothesis tests.
-- Add additional tools for meta-analysis
-- Add tools for survival analysis
-- Speed up random variate sampling (method ``rvs``) of distributions, 
-  leveraging ``scipy.stats.sampling`` where appropriate
-- Expand QMC capabilities and performance
-- Enhance the `fit` method of the continuous probability distributions:
-
-  - Expand the options for fitting to include:
-
-    - maximal product spacings
-    - method of L-moments / probability weighted moments
-
-  - Include measures of goodness-of-fit in the results
-  - Handle censored data (e.g. merge `gh-13699 <https://github.com/scipy/scipy/pull/13699>`__)
-
-- Implement additional widely used continuous and discrete probability
-  distributions, e.g. mixture distributions.
-
-- Improve the core calculations provided by SciPy's probability distributions
-  so they can robustly handle wide ranges of parameter values.  Specifically,
-  replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in ``scipy.special`` with Boost implementations as in
-  `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
-
-In addition, we should:
-
-- Continue work on making the function signatures of ``stats`` and
-  ``stats.mstats`` more consistent, and add tests to ensure that that
-  remains the case.
-- Improve statistical tests: return confidence intervals for the test
-  statistic, and implement exact p-value calculations - considering the
-  possibility of ties - where computationally feasible.
+- Improve statistical tests: include methods for generating confidence
+  intervals, and implement exact and randomized p-value calculations -
+  considering the possibility of ties - where computationally feasible.
+- Extend the new univariate distribution infrastructure, adding support
+  for discrete distributions and circular continuous distributions.
+  Add a selection of the most widely used statistical distributions
+  under the new infrastructure, performing rigorous accuracy testing
+  and documenting the results. Enable users to create custom distributions
+  that leverage the new infrastructure.
+- Improve the multivariate distribution infrastructure to ensure a
+  consistent API, thorough testing, and complete documentation.
+- Continue to make the APIs of functions more consistent, with standard
+  support for batched calculations, NaN policies, and dtype preservation.

@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 import numpy as np
 from scipy import optimize, stats
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 
 
 def _combine_bounds(name, user_bounds, shape_domain, integral):
@@ -433,7 +433,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
         The object has the following method:
 
         nllf(params=None, data=None)
-            By default, the negative log-likehood function at the fitted
+            By default, the negative log-likelihood function at the fitted
             `params` for the given `data`. Accepts a tuple containing
             alternative shapes, location, and scale of the distribution and
             an array of alternative data.
@@ -532,7 +532,7 @@ def fit(dist, data, bounds=None, *, guess=None, method='mle',
     >>> rng = np.random.default_rng(767585560716548)
     >>> def optimizer(fun, bounds, *, integrality):
     ...     return differential_evolution(fun, bounds, strategy='best2bin',
-    ...                                   seed=rng, integrality=integrality)
+    ...                                   rng=rng, integrality=integrality)
     >>> bounds = [(0, 30), (0, 1)]
     >>> res4 = stats.fit(dist, data, bounds, optimizer=optimizer)
     >>> res4.params
@@ -738,9 +738,10 @@ GoodnessOfFitResult = namedtuple('GoodnessOfFitResult',
                                   'null_distribution'))
 
 
+@_transition_to_rng('random_state')
 def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                     guessed_params=None, statistic='ad', n_mc_samples=9999,
-                    random_state=None):
+                    rng=None):
     r"""
     Perform a goodness of fit test comparing data to a distribution family.
 
@@ -762,19 +763,21 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         A dictionary containing name-value pairs of known distribution
         parameters. Monte Carlo samples are randomly drawn from the
         null-hypothesized distribution with these values of the parameters.
-        Before the statistic is evaluated for each Monte Carlo sample, only
-        remaining unknown parameters of the null-hypothesized distribution
-        family are fit to the samples; the known parameters are held fixed.
-        If all parameters of the distribution family are known, then the step
-        of fitting the distribution family to each sample is omitted.
+        Before the statistic is evaluated for the observed `data` and each
+        Monte Carlo sample, only remaining unknown parameters of the
+        null-hypothesized distribution family are fit to the samples; the
+        known parameters are held fixed. If all parameters of the distribution
+        family are known, then the step of fitting the distribution family to
+        each sample is omitted.
     fit_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         that have already been fit to the data, e.g. using `scipy.stats.fit`
         or the ``fit`` method of `dist`. Monte Carlo samples are drawn from the
         null-hypothesized distribution with these specified values of the
-        parameter. On those Monte Carlo samples, however, these and all other
-        unknown parameters of the null-hypothesized distribution family are
-        fit before the statistic is evaluated.
+        parameter. However, these and all other unknown parameters of the
+        null-hypothesized distribution family are always fit to the sample,
+        whether that is the observed `data` or a Monte Carlo sample, before
+        the statistic is evaluated.
     guessed_params : dict, optional
         A dictionary containing name-value pairs of distribution parameters
         which have been guessed. These parameters are always considered as
@@ -797,18 +800,11 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
         sample size of each is the same as the given `data`.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate the Monte Carlo
-        samples.
-
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then the provided instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
 
     Returns
     -------
@@ -983,7 +979,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> loc, scale = np.mean(x), np.std(x, ddof=1)
     >>> cdf = stats.norm(loc, scale).cdf
     >>> stats.ks_1samp(x, cdf)
-    KstestResult(statistic=0.1119257570456813, pvalue=0.2827756409939257)
+    KstestResult(statistic=0.1119257570456813,
+                 pvalue=0.2827756409939257,
+                 statistic_location=0.7751845155861765,
+                 statistic_sign=-1)
 
     An advantage of the KS-test is that the p-value - the probability of
     obtaining a value of the test statistic under the null hypothesis as
@@ -993,7 +992,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     >>> known_params = {'loc': loc, 'scale': scale}
     >>> res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
-    ...                             statistic='ks', random_state=rng)
+    ...                             statistic='ks', rng=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.2788)
 
@@ -1027,7 +1026,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     as described above. This is where `goodness_of_fit` excels.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ks',
-    ...                             random_state=rng)
+    ...                             rng=rng)
     >>> res.statistic, res.pvalue
     (0.1119257570456813, 0.0196)
 
@@ -1059,7 +1058,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     estimate it directly.
 
     >>> res = stats.goodness_of_fit(stats.norm, x, statistic='ad',
-    ...                             random_state=rng)
+    ...                             rng=rng)
     >>> res.statistic, res.pvalue
     (1.2139573337497467, 0.0034)
 
@@ -1075,7 +1074,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     >>> rng = np.random.default_rng()
     >>> x = stats.chi(df=2.2, loc=0, scale=2).rvs(size=1000, random_state=rng)
     >>> res = stats.goodness_of_fit(stats.rayleigh, x, statistic='cvm',
-    ...                             known_params={'loc': 0}, random_state=rng)
+    ...                             known_params={'loc': 0}, rng=rng)
 
     This executes fairly quickly, but to check the reliability of the ``fit``
     method, we should inspect the fit result.
@@ -1115,9 +1114,9 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     """
     args = _gof_iv(dist, data, known_params, fit_params, guessed_params,
-                   statistic, n_mc_samples, random_state)
+                   statistic, n_mc_samples, rng)
     (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-     guessed_rfd_params, statistic, n_mc_samples_int, random_state) = args
+     guessed_rfd_params, statistic, n_mc_samples_int, rng) = args
 
     # Fit null hypothesis distribution to data
     nhd_fit_fun = _get_fit_fun(dist, data, guessed_nhd_params,
@@ -1126,7 +1125,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     nhd_dist = dist(*nhd_vals)
 
     def rvs(size):
-        return nhd_dist.rvs(size=size, random_state=random_state)
+        return nhd_dist.rvs(size=size, random_state=rng)
 
     # Define statistic
     fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
@@ -1237,9 +1236,10 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max(axis=-1)
 
 
-def _kolmogorov_smirnov(dist, data, axis):
-    x = np.sort(data, axis=-1)
+def _kolmogorov_smirnov(dist, data, axis=-1):
+    x = np.sort(data, axis=axis)
     cdfvals = dist.cdf(x)
+    cdfvals = np.moveaxis(cdfvals, axis, -1)
     Dplus = _compute_dplus(cdfvals)  # always works along last axis
     Dminus = _compute_dminus(cdfvals)
     return np.maximum(Dplus, Dminus)
@@ -1295,7 +1295,7 @@ _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
 
 
 def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
-            n_mc_samples, random_state):
+            n_mc_samples, rng):
 
     if not isinstance(dist, stats.rv_continuous):
         message = ("`dist` must be a (non-frozen) instance of "
@@ -1345,7 +1345,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
         message = "`n_mc_samples` must be an integer."
         raise TypeError(message)
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     return (dist, data, fixed_nhd_params, fixed_rfd_params, guessed_nhd_params,
-            guessed_rfd_params, statistic, n_mc_samples_int, random_state)
+            guessed_rfd_params, statistic, n_mc_samples_int, rng)

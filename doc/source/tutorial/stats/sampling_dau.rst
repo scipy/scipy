@@ -26,7 +26,7 @@ constructing the tables is O(N).
     >>> urng = np.random.default_rng()
     >>> rng = DiscreteAliasUrn(pv, random_state=urng)
     >>> rng.rvs()
-    0
+    0      # may vary
 
 By default, the probability vector is indexed starting at 0. However, this
 can be changed by passing a ``domain`` parameter. When ``domain`` is given
@@ -36,7 +36,7 @@ distribution from ``(0, len(pv))`` to ``(domain[0]``, ``domain[0] + len(pv))``.
 
    >>> rng = DiscreteAliasUrn(pv, domain=(10, 13), random_state=urng)
    >>> rng.rvs()
-   12
+   12    # may vary
 
 The method also works when no probability vector but a PMF is given.
 In that case, a bounded (finite) domain must also be given either by
@@ -54,7 +54,7 @@ method in the distribution object:
     >>> dist = Distribution(2)
     >>> rng = DiscreteAliasUrn(dist, random_state=urng)
     >>> rng.rvs()
-    10
+    10    # may vary
 
 .. plot::
     :alt: " "
@@ -114,7 +114,7 @@ table which can be changed by passing a ``urn_factor`` parameter.
     >>> urn_factor = 2
     >>> rng = DiscreteAliasUrn(pv, urn_factor=urn_factor, random_state=urng)
     >>> rng.rvs()
-    2
+    2    # may vary
 
 .. note:: It is recommended to keep this parameter under 2.
 

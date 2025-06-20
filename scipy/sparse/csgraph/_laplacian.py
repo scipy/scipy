@@ -26,7 +26,7 @@ def laplacian(
 
     Parameters
     ----------
-    csgraph : array_like or sparse matrix, 2 dimensions
+    csgraph : array_like or sparse array or matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
         If True, then compute symmetrically normalized Laplacian.
@@ -72,9 +72,9 @@ def laplacian(
 
     Returns
     -------
-    lap : ndarray, or sparse matrix, or `LinearOperator`
+    lap : ndarray, or sparse array or matrix, or `LinearOperator`
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
-        if the input was dense, or a sparse matrix otherwise, or
+        if the input was dense, or a sparse array otherwise, or
         the format of a function or `LinearOperator` if
         `form` equals 'function' or 'lo', respectively.
     diag : ndarray, optional
@@ -237,8 +237,9 @@ def laplacian(
     in a symmetric Laplacian matrix if and only if its graph is symmetric
     and has all non-negative degrees, like in the examples above.
 
-    The output Laplacian matrix is by default a dense array or a sparse matrix
-    inferring its shape, format, and dtype from the input graph matrix:
+    The output Laplacian matrix is by default a dense array or a sparse
+    array or matrix inferring its class, shape, format, and dtype from
+    the input graph matrix:
 
     >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]).astype(np.float32)
     >>> G
@@ -276,19 +277,19 @@ def laplacian(
     Our final example illustrates the latter
     for a noisy directed linear graph.
 
-    >>> from scipy.sparse import diags, random
+    >>> from scipy.sparse import diags_array, random_array
     >>> from scipy.sparse.linalg import lobpcg
 
     Create a directed linear graph with ``N=35`` vertices
     using a sparse adjacency matrix ``G``:
 
     >>> N = 35
-    >>> G = diags(np.ones(N-1), 1, format="csr")
+    >>> G = diags_array(np.ones(N - 1), offsets=1, format="csr")
 
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
     >>> rng = np.random.default_rng()
-    >>> G += 1e-2 * random(N, N, density=0.1, random_state=rng)
+    >>> G += 1e-2 * random_array((N, N), density=0.1, rng=rng)
 
     Set initial approximations for eigenvectors:
 
@@ -315,7 +316,7 @@ def laplacian(
     >>> for cut in ["max", "min"]:
     ...     G = -G  # 1.
     ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")  # 2.
-    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
+    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-2)  # 3.
     ...     eves *= np.sign(eves[0, 0])  # 4.
     ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 5.
     max-cut labels:

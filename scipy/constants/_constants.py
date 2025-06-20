@@ -7,16 +7,16 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
 
-from __future__ import annotations
-
 import math as _math
 from typing import TYPE_CHECKING, Any
 
 from ._codata import value as _cd
-import numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+from scipy._lib._array_api import array_namespace, _asarray, xp_capabilities
+
 
 """
 BasSw 2006
@@ -110,7 +110,7 @@ c = speed_of_light = _cd('speed of light in vacuum')
 mu_0 = _cd('vacuum mag. permeability')
 epsilon_0 = _cd('vacuum electric permittivity')
 h = Planck = _cd('Planck constant')
-hbar = h / (2 * pi)
+hbar = _cd('reduced Planck constant')
 G = gravitational_constant = _cd('Newtonian constant of gravitation')
 g = _cd('standard acceleration of gravity')
 e = elementary_charge = _cd('elementary charge')
@@ -225,8 +225,9 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
+@xp_capabilities()
 def convert_temperature(
-    val: npt.ArrayLike,
+    val: "npt.ArrayLike",
     old_scale: str,
     new_scale: str,
 ) -> Any:
@@ -269,19 +270,21 @@ def convert_temperature(
     array([ 233.15,  313.15])
 
     """
+    xp = array_namespace(val)
+    _val = _asarray(val, xp=xp, subok=True)
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
-        tempo = np.asanyarray(val) + zero_Celsius
+        tempo = _val + zero_Celsius
     elif old_scale.lower() in ['kelvin', 'k']:
-        tempo = np.asanyarray(val)
+        tempo = _val
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
+        tempo = (_val - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = np.asanyarray(val) * 5 / 9
+        tempo = _val * 5 / 9
     else:
-        raise NotImplementedError("%s scale is unsupported: supported scales "
-                                  "are Celsius, Kelvin, Fahrenheit, and "
-                                  "Rankine" % old_scale)
+        raise NotImplementedError(f"{old_scale=} is unsupported: supported scales "
+                                   "are Celsius, Kelvin, Fahrenheit, and "
+                                   "Rankine")
     # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
         res = tempo - zero_Celsius
@@ -292,9 +295,9 @@ def convert_temperature(
     elif new_scale.lower() in ['rankine', 'r']:
         res = tempo * 9 / 5
     else:
-        raise NotImplementedError("'%s' scale is unsupported: supported "
-                                  "scales are 'Celsius', 'Kelvin', "
-                                  "'Fahrenheit', and 'Rankine'" % new_scale)
+        raise NotImplementedError(f"{new_scale=} is unsupported: supported "
+                                   "scales are 'Celsius', 'Kelvin', "
+                                   "'Fahrenheit', and 'Rankine'")
 
     return res
 
@@ -302,7 +305,8 @@ def convert_temperature(
 # optics
 
 
-def lambda2nu(lambda_: npt.ArrayLike) -> Any:
+@xp_capabilities()
+def lambda2nu(lambda_: "npt.ArrayLike") -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -329,10 +333,12 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / np.asanyarray(lambda_)
+    xp = array_namespace(lambda_)
+    return c / _asarray(lambda_, xp=xp, subok=True)
 
 
-def nu2lambda(nu: npt.ArrayLike) -> Any:
+@xp_capabilities()
+def nu2lambda(nu: "npt.ArrayLike") -> Any:
     """
     Convert optical frequency to wavelength.
 
@@ -359,4 +365,5 @@ def nu2lambda(nu: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / np.asanyarray(nu)
+    xp = array_namespace(nu)
+    return c / _asarray(nu, xp=xp, subok=True)

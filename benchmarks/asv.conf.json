@@ -24,7 +24,11 @@
     //     "PIP_NO_BUILD_ISOLATION=false python -m pip install . --no-deps --no-index -w {build_cache_dir} {build_dir}"
     // ],
 
-    // The base URL to "how a commit for the project.
+    "build_command": [
+        "python -m build --wheel -o {build_cache_dir} {build_dir}"
+    ],
+
+    // The base URL to show a commit for the project.
     "show_commit_url": "https://github.com/scipy/scipy/commit/",
 
     // The Pythons you'd like to test against.  If not provided, defaults
@@ -57,8 +61,8 @@
     // If missing or the empty string, the tool will be automatically
     // determined by looking for tools on the PATH environment
     // variable.
-    // "environment_type": "virtualenv",
-    "environment_type": "mamba",
+    "environment_type": "virtualenv",
+    // "environment_type": "mamba",
     "build_cache_size": 10,
 
     // The directory (relative to the current directory) that raw benchmark

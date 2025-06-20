@@ -1,10 +1,14 @@
+import warnings
 import numpy as np
-from scipy._lib._util import _get_nan
+
+from scipy._lib._array_api import array_namespace, xp_device, _length_nonmasked
+import scipy._lib.array_api_extra as xpx
+
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """
@@ -91,31 +95,32 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     array([1.05109361, 0.31428986, 0.146483  ])
 
     """
+    xp = array_namespace(a)
+    a = xp.asarray(a)
+
     # `nan_policy` and `keepdims` are handled by `_axis_nan_policy`
-    n = a.shape[axis]
-    NaN = _get_nan(a)
+    if axis is None:
+        a = xp.reshape(a, (-1,))
+        axis = 0
 
-    if a.size == 0 or ddof > n:
-        # Handle as a special case to avoid spurious warnings.
-        # The return values, if any, are all nan.
-        shp = np.asarray(a.shape)
-        shp = np.delete(shp, axis)
-        result = np.full(shp, fill_value=NaN)
-        return result[()]
+    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
 
-    mean_a = a.mean(axis)
+    with (np.errstate(divide='ignore', invalid='ignore'), warnings.catch_warnings()):
+        warnings.simplefilter("ignore")
+        mean_a = xp.mean(a, axis=axis)
+        std_a = xp.std(a, axis=axis)
+        correction = (n / (n - ddof))**0.5  # we may need uncorrected std below
+        result = std_a * correction / mean_a
 
-    if ddof == n:
-        # Another special case.  Result is either inf or nan.
-        std_a = a.std(axis=axis, ddof=0)
-        result = np.full_like(std_a, fill_value=NaN)
-        i = std_a > 0
-        result[i] = np.inf
-        result[i] = np.copysign(result[i], mean_a[i])
-        return result[()]
+    def special_case(std_a, mean_a):
+        # xref data-apis/array-api-extra#196
+        mxp = array_namespace(std_a, mean_a)
+        # `_xp_inf` is a workaround for torch.copysign not accepting a scalar yet,
+        # xref data-apis/array-api-compat#271
+        _xp_inf = mxp.asarray(mxp.inf, dtype=mean_a.dtype, device=xp_device(mean_a))
+        return mxp.where(std_a > 0, mxp.copysign(_xp_inf, mean_a), mxp.nan)
 
-    with np.errstate(divide='ignore', invalid='ignore'):
-        std_a = a.std(axis, ddof=ddof)
-        result = std_a / mean_a
+    result = xpx.apply_where((ddof == n), (std_a, mean_a),
+                             special_case, fill_value=result)
 
-    return result[()]
+    return result[()] if result.ndim == 0 else result

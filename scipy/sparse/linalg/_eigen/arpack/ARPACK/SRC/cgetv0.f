@@ -2,13 +2,13 @@ c\BeginDoc
 c
 c\Name: cgetv0
 c
-c\Description: 
+c\Description:
 c  Generate a random initial residual vector for the Arnoldi process.
-c  Force the residual vector to be in the range of the operator OP.  
+c  Force the residual vector to be in the range of the operator OP.
 c
 c\Usage:
 c  call cgetv0
-c     ( IDO, BMAT, ITRY, INITV, N, J, V, LDV, RESID, RNORM, 
+c     ( IDO, BMAT, ITRY, INITV, N, J, V, LDV, RESID, RNORM,
 c       IPNTR, WORKD, IERR )
 c
 c\Arguments
@@ -35,7 +35,7 @@ c          B = 'I' -> standard eigenvalue problem A*x = lambda*x
 c          B = 'G' -> generalized eigenvalue problem A*x = lambda*B*x
 c
 c  ITRY    Integer.  (INPUT)
-c          ITRY counts the number of times that cgetv0 is called.  
+c          ITRY counts the number of times that cgetv0 is called.
 c          It should be set to 1 on the initial call to cgetv0.
 c
 c  INITV   Logical variable.  (INPUT)
@@ -54,11 +54,11 @@ c          The first J-1 columns of V contain the current Arnoldi basis
 c          if this is a "restart".
 c
 c  LDV     Integer.  (INPUT)
-c          Leading dimension of V exactly as declared in the calling 
+c          Leading dimension of V exactly as declared in the calling
 c          program.
 c
 c  RESID   Complex array of length N.  (INPUT/OUTPUT)
-c          Initial residual vector to be generated.  If RESID is 
+c          Initial residual vector to be generated.  If RESID is
 c          provided, force RESID into the range of the operator OP.
 c
 c  RNORM   Real scalar.  (OUTPUT)
@@ -91,19 +91,19 @@ c
 c\Routines called:
 c     arscnd  ARPACK utility routine for timing.
 c     cvout   ARPACK utility routine that prints vectors.
-c     clarnv  LAPACK routine for generating a random vector. 
+c     clarnv  LAPACK routine for generating a random vector.
 c     cgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     ccopy   Level 1 BLAS that copies one vector to another.
-c     wcdotc   Level 1 BLAS that computes the scalar product of two vectors.
-c     scnrm2  Level 1 BLAS that computes the norm of a vector. 
+c     cdotc   Level 1 BLAS that computes the scalar product of two vectors.
+c     scnrm2  Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
 c     Dept. of Computational &     Houston, Texas
-c     Applied Mathematics 
-c     Rice University           
-c     Houston, Texas            
+c     Applied Mathematics
+c     Rice University
+c     Houston, Texas
 c
 c\SCCS Information: @(#)
 c FILE: getv0.F   SID: 2.3   DATE OF SID: 08/27/96   RELEASE: 2
@@ -112,10 +112,10 @@ c\EndLib
 c
 c-----------------------------------------------------------------------
 c
-      subroutine cgetv0 
-     &   ( ido, bmat, itry, initv, n, j, v, ldv, resid, rnorm, 
+      subroutine cgetv0
+     &   ( ido, bmat, itry, initv, n, j, v, ldv, resid, rnorm,
      &     ipntr, workd, ierr )
-c 
+c
 c     %----------------------------------------------------%
 c     | Include files for debugging and timing information |
 c     %----------------------------------------------------%
@@ -174,11 +174,11 @@ c     %--------------------%
 c     | External Functions |
 c     %--------------------%
 c
-      Real 
+      Real
      &           scnrm2, slapy2
       Complex
-     &           wcdotc
-      external   wcdotc, scnrm2, slapy2
+     &           ccdotc
+      external   ccdotc, scnrm2, slapy2
 c
 c     %-----------------%
 c     | Data Statements |
@@ -205,7 +205,7 @@ c
       end if
 c
       if (ido .eq.  0) then
-c 
+c
 c        %-------------------------------%
 c        | Initialize timing statistics  |
 c        | & message level for debugging |
@@ -213,7 +213,7 @@ c        %-------------------------------%
 c
          call arscnd (t0)
          msglvl = mgetv0
-c 
+c
          ierr   = 0
          iter   = 0
          first  = .FALSE.
@@ -232,38 +232,40 @@ c
             idist = 2
             call clarnv (idist, iseed, n, resid)
          end if
-c 
+c
 c        %----------------------------------------------------------%
 c        | Force the starting vector into the range of OP to handle |
 c        | the generalized problem when B is possibly (singular).   |
 c        %----------------------------------------------------------%
 c
          call arscnd (t2)
-         if (bmat .eq. 'G') then
+         if (itry .eq. 1) then
             nopx = nopx + 1
             ipntr(1) = 1
             ipntr(2) = n + 1
             call ccopy (n, resid, 1, workd, 1)
             ido = -1
             go to 9000
+         else if (itry .gt. 1 .and. bmat .eq. 'G') then
+            call ccopy (n, resid, 1, workd(n + 1), 1)
          end if
       end if
-c 
+c
 c     %----------------------------------------%
-c     | Back from computing B*(initial-vector) |
+c     | Back from computing OP*(initial-vector) |
 c     %----------------------------------------%
 c
       if (first) go to 20
 c
 c     %-----------------------------------------------%
-c     | Back from computing B*(orthogonalized-vector) |
+c     | Back from computing OP*(orthogonalized-vector) |
 c     %-----------------------------------------------%
 c
       if (orth)  go to 40
-c 
+c
       call arscnd (t3)
       tmvopx = tmvopx + (t3 - t2)
-c 
+c
 c     %------------------------------------------------------%
 c     | Starting vector is now in the range of OP; r = OP*r; |
 c     | Compute B-norm of starting vector.                   |
@@ -271,9 +273,9 @@ c     %------------------------------------------------------%
 c
       call arscnd (t2)
       first = .TRUE.
+      if (itry .eq. 1) call ccopy (n, workd(n + 1), 1, resid, 1)
       if (bmat .eq. 'G') then
          nbx = nbx + 1
-         call ccopy (n, workd(n+1), 1, resid, 1)
          ipntr(1) = n + 1
          ipntr(2) = 1
          ido = 2
@@ -281,17 +283,17 @@ c
       else if (bmat .eq. 'I') then
          call ccopy (n, resid, 1, workd, 1)
       end if
-c 
+c
    20 continue
 c
       if (bmat .eq. 'G') then
          call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
-c 
+c
       first = .FALSE.
       if (bmat .eq. 'G') then
-          cnorm  = wcdotc (n, resid, 1, workd, 1)
+          cnorm  = ccdotc (n, resid, 1, workd, 1)
           rnorm0 = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
            rnorm0 = scnrm2(n, resid, 1)
@@ -303,7 +305,7 @@ c     | Exit if this is the very first Arnoldi step |
 c     %---------------------------------------------%
 c
       if (j .eq. 1) go to 50
-c 
+c
 c     %----------------------------------------------------------------
 c     | Otherwise need to B-orthogonalize the starting vector against |
 c     | the current Arnoldi basis using Gram-Schmidt with iter. ref.  |
@@ -319,11 +321,11 @@ c
       orth = .TRUE.
    30 continue
 c
-      call cgemv ('C', n, j-1, one, v, ldv, workd, 1, 
+      call cgemv ('C', n, j-1, one, v, ldv, workd, 1,
      &            zero, workd(n+1), 1)
-      call cgemv ('N', n, j-1, -one, v, ldv, workd(n+1), 1, 
+      call cgemv ('N', n, j-1, -one, v, ldv, workd(n+1), 1,
      &            one, resid, 1)
-c 
+c
 c     %----------------------------------------------------------%
 c     | Compute the B-norm of the orthogonalized starting vector |
 c     %----------------------------------------------------------%
@@ -339,16 +341,16 @@ c
       else if (bmat .eq. 'I') then
          call ccopy (n, resid, 1, workd, 1)
       end if
-c 
+c
    40 continue
 c
       if (bmat .eq. 'G') then
          call arscnd (t3)
          tmvbx = tmvbx + (t3 - t2)
       end if
-c 
+c
       if (bmat .eq. 'G') then
-         cnorm = wcdotc (n, resid, 1, workd, 1)
+         cnorm = ccdotc (n, resid, 1, workd, 1)
          rnorm = sqrt(slapy2(real(cnorm),aimag(cnorm)))
       else if (bmat .eq. 'I') then
          rnorm = scnrm2(n, resid, 1)
@@ -359,14 +361,14 @@ c     | Check for further orthogonalization. |
 c     %--------------------------------------%
 c
       if (msglvl .gt. 2) then
-          call svout (logfil, 1, rnorm0, ndigit, 
+          call svout (logfil, 1, [rnorm0], ndigit,
      &                '_getv0: re-orthonalization ; rnorm0 is')
-          call svout (logfil, 1, rnorm, ndigit, 
+          call svout (logfil, 1, [rnorm], ndigit,
      &                '_getv0: re-orthonalization ; rnorm is')
       end if
 c
       if (rnorm .gt. 0.717*rnorm0) go to 50
-c 
+c
       iter = iter + 1
       if (iter .le. 1) then
 c
@@ -388,11 +390,11 @@ c
          rnorm = rzero
          ierr = -1
       end if
-c 
+c
    50 continue
 c
       if (msglvl .gt. 0) then
-         call svout (logfil, 1, rnorm, ndigit,
+         call svout (logfil, 1, [rnorm], ndigit,
      &        '_getv0: B-norm of initial / restarted starting vector')
       end if
       if (msglvl .gt. 2) then
@@ -400,10 +402,10 @@ c
      &        '_getv0: initial / restarted starting vector')
       end if
       ido = 99
-c 
+c
       call arscnd (t1)
       tgetv0 = tgetv0 + (t1 - t0)
-c 
+c
  9000 continue
       return
 c

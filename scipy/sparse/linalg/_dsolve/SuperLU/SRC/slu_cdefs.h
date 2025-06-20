@@ -234,8 +234,8 @@ extern void    cSetRWork (int, int, singlecomplex *, singlecomplex **, singlecom
 extern void    cLUWorkFree (int *, singlecomplex *, GlobalLU_t *);
 extern int_t   cLUMemXpand (int, int_t, MemType, int_t *, GlobalLU_t *);
 
-extern singlecomplex  *complexMalloc(size_t);
-extern singlecomplex  *complexCalloc(size_t);
+extern singlecomplex  *singlecomplexMalloc(size_t);
+extern singlecomplex  *singlecomplexCalloc(size_t);
 extern float  *floatMalloc(size_t);
 extern float  *floatCalloc(size_t);
 extern int_t   cmemory_usage(const int_t, const int_t, const int_t, const int);

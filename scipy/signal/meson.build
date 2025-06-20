@@ -1,10 +1,10 @@
 py3.extension_module('_sigtools',
   [
-    '_firfilter.c',
-    '_sigtoolsmodule.c',
-    '_medianfilter.c',
-    tempita_gen.process('_correlate_nd.c.in'),
-    tempita_gen.process('_lfilter.c.in'),
+    '_firfilter.cc',
+    '_sigtoolsmodule.cc',
+    '_medianfilter.cc',
+    '_lfilter.cc',
+    '_correlate_nd.cc'
   ],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -22,27 +22,9 @@ if use_pythran
     install: true,
     subdir: 'scipy/signal'
   )
-
-  py3.extension_module('_spectral',
-    pythran_gen.process('_spectral.py'),
-    cpp_args: cpp_args_pythran,
-    dependencies: [pythran_dep, np_dep],
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
 else
   py3.extension_module('_max_len_seq_inner',
     [cython_gen.process('_max_len_seq_inner.pyx')],
-    c_args: cython_c_args,
-    dependencies: np_dep,
-    link_args: version_link_args,
-    install: true,
-    subdir: 'scipy/signal'
-  )
-
-  py3.extension_module('_spectral',
-    [cython_gen.process('_spectral.pyx')],
     c_args: cython_c_args,
     dependencies: np_dep,
     link_args: version_link_args,
@@ -70,8 +52,7 @@ endforeach
 
 py3.extension_module('_spline',
   [
-    '_splinemodule.c',
-    tempita_gen.process('_bspline_util.c.in'),
+    '_splinemodule.cc',
   ],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -81,8 +62,11 @@ py3.extension_module('_spline',
 
 py3.install_sources([
     '__init__.py',
+    '_support_alternative_backends.py',
+    '_signal_api.py',
+    '_delegators.py',
     '_arraytools.py',
-    '_bsplines.py',
+    '_spline_filters.py',
     '_czt.py',
     '_filter_design.py',
     '_fir_filter_design.py',
@@ -90,10 +74,12 @@ py3.install_sources([
     '_ltisys.py',
     '_max_len_seq.py',
     '_peak_finding.py',
+    '_polyutils.py',
     '_savitzky_golay.py',
     '_short_time_fft.py',
     '_signaltools.py',
     '_spectral_py.py',
+    '_spline.pyi',
     '_upfirdn.py',
     '_waveforms.py',
     '_wavelets.py',
@@ -106,7 +92,7 @@ py3.install_sources([
     'spectral.py',
     'spline.py',
     'waveforms.py',
-    'wavelets.py'
+    'wavelets.py',
   ],
   subdir: 'scipy/signal'
 )

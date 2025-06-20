@@ -10,8 +10,6 @@ import numpy as np
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
-error = _quadpack.error
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.
@@ -122,9 +120,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     tplquad : triple integral
     nquad : n-dimensional integrals (uses `quad` recursively)
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
@@ -216,9 +211,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For the 'cos' and 'sin' weighting, additional inputs and outputs are
     available.
 
-    For finite integration limits, the integration is performed using a
-    Clenshaw-Curtis method which uses Chebyshev moments. For repeated
-    calculations, these moments are saved in the output dictionary:
+    For weighted integrals with finite integration limits, the integration
+    is performed using a Clenshaw-Curtis method, which uses Chebyshev moments.
+    For repeated calculations, these moments are saved in the output dictionary:
 
     'momcom'
         The maximum level of Chebyshev moments that have been computed,
@@ -289,7 +284,8 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is performed using a 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -628,7 +624,7 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
 def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                  limlst, limit, maxp1,weight, wvar, wopts):
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
-        raise ValueError("%s not a recognized weighting function." % weight)
+        raise ValueError(f"{weight} not a recognized weighting function.")
 
     strdict = {'cos':1,'sin':2,'alg':1,'alg-loga':2,'alg-logb':3,'alg-log':4}
 
@@ -727,9 +723,6 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     tplquad : triple integral
     nquad : N-dimensional integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
@@ -753,7 +746,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -860,14 +854,11 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     See Also
     --------
     quad : Adaptive quadrature using QUADPACK
-    quadrature : Adaptive Gaussian quadrature
     fixed_quad : Fixed-order Gaussian quadrature
     dblquad : Double integrals
     nquad : N-dimensional integrals
     romb : Integrators for sampled data
     simpson : Integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
     scipy.special : For coefficients and roots of orthogonal polynomials
 
     Notes
@@ -888,7 +879,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
@@ -1045,7 +1037,6 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     quad : 1-D numerical integration
     dblquad, tplquad : double and triple integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
 
     Notes
     -----
@@ -1078,7 +1069,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         is an integrator based on globally adaptive interval
         subdivision in connection with extrapolation, which will
         eliminate the effects of integrand singularities of
-        several types.
+        several types. The integration is is performed using a 21-point Gauss-Kronrod 
+        quadrature within each subinterval.
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as

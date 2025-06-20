@@ -37,7 +37,7 @@ at the top-level directory.
  *
  *   SGSCON estimates the reciprocal of the condition number of a general 
  *   real matrix A, in either the 1-norm or the infinity-norm, using   
- *   the LU factorization computed by SGETRF.   *
+ *   the LU factorization computed by SGSTRF.   *
  *
  *   An estimate is obtained for norm(inv(A)), and the reciprocal of the   
  *   condition number is computed as   

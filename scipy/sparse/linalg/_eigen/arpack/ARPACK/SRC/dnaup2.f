@@ -26,7 +26,7 @@ c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.
 c          If ISHIFT=0, NP is the number of shifts the user needs
-c          to provide via reverse comunication. 0 < NP < NCV-NEV.
+c          to provide via reverse communication. 0 < NP < NCV-NEV.
 c          NP may be less than NCV-NEV for two reasons. The first, is
 c          to keep complex conjugate pairs of "wanted" Ritz values
 c          together. The second, is that a leading block of the current
@@ -388,7 +388,7 @@ c
          iter = iter + 1
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, iter, ndigit,
+            call ivout (logfil, 1, [iter], ndigit,
      &           '_naup2: **** Start of major iteration number ****')
          end if
 c
@@ -401,9 +401,9 @@ c
          np  = kplusp - nev
 c
          if (msglvl .gt. 1) then
-            call ivout (logfil, 1, nev, ndigit,
+            call ivout (logfil, 1, [nev], ndigit,
      &     '_naup2: The length of the current Arnoldi factorization')
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &           '_naup2: Extend the Arnoldi factorization by')
          end if
 c
@@ -435,7 +435,7 @@ c
          update = .false.
 c
          if (msglvl .gt. 1) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &           '_naup2: Corresponding B-norm of the residual')
          end if
 c
@@ -598,7 +598,7 @@ c
 c
 c           %----------------------------------------------------%
 c           | Sort the Ritz values according to the scaled Ritz  |
-c           | esitmates.  This will push all the converged ones  |
+c           | estimates.  This will push all the converged ones  |
 c           | towards the front of ritzr, ritzi, bounds          |
 c           | (in the case when NCONV < NEV.)                    |
 c           %----------------------------------------------------%
@@ -689,7 +689,7 @@ c
          end if
 c
          if (msglvl .gt. 0) then
-            call ivout (logfil, 1, nconv, ndigit,
+            call ivout (logfil, 1, [nconv], ndigit,
      &           '_naup2: no. of "converged" Ritz values at this iter.')
             if (msglvl .gt. 1) then
                kp(1) = nev
@@ -708,7 +708,7 @@ c
          if (ishift .eq. 0) then
 c
 c           %-------------------------------------------------------%
-c           | User specified shifts: reverse comminucation to       |
+c           | User specified shifts: reverse communication to       |
 c           | compute the shifts. They are returned in the first    |
 c           | 2*NP locations of WORKL.                              |
 c           %-------------------------------------------------------%
@@ -741,7 +741,7 @@ c
          end if
 c
          if (msglvl .gt. 2) then
-            call ivout (logfil, 1, np, ndigit,
+            call ivout (logfil, 1, [np], ndigit,
      &                  '_naup2: The number of shifts to apply ')
             call dvout  (logfil, np, ritzr, ndigit,
      &                  '_naup2: Real part of the shifts')
@@ -807,7 +807,7 @@ c
          cnorm = .false.
 c
          if (msglvl .gt. 2) then
-            call dvout  (logfil, 1, rnorm, ndigit,
+            call dvout  (logfil, 1, [rnorm], ndigit,
      &      '_naup2: B-norm of residual for compressed factorization')
             call dmout  (logfil, nev, nev, h, ldh, ndigit,
      &        '_naup2: Compressed upper Hessenberg matrix H')

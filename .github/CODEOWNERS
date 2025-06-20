@@ -20,7 +20,7 @@ environment.yml  @rgommers
 meson*  @rgommers
 
 # Dev CLI
-dev.py  @rgommers
+spin  @rgommers
 
 # SciPy submodules (please keep in alphabetical order)
 scipy/fft/  @peterbell10
@@ -57,7 +57,6 @@ benchmarks/asv.conf.json  @larsoner
 # CI config
 .circleci/  @larsoner
 .github/workflows/  @larsoner @andyfaff
-.cirrus.star  @larsoner @andyfaff
 
 # Doc
 requirements/doc.txt  @tupui

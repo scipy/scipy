@@ -65,6 +65,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
    optimize.minimize-cobyla
+   optimize.minimize-cobyqa
    optimize.minimize-slsqp
    optimize.minimize-trustconstr
    optimize.minimize-dogleg
@@ -239,6 +240,14 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
+   
+Elementwise Minimization and Root Finding
+=========================================
+
+.. toctree::
+   :maxdepth: 3
+
+   optimize.elementwise
 
 Linear programming / MILP
 =========================

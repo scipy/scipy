@@ -29,10 +29,6 @@ def generate_requirement_file(name, req_list, *, extra_list=None):
     comment = "# scikit-umfpack  # circular dependency issues"
     req_list = [comment if x == "scikit-umfpack" else x for x in req_list]
 
-    # remove once gmpy2 supports Python 3.12
-    comment = "# gymp2  # does not yet support Python 3.12"
-    req_list = [comment if x == "gmpy2" else x for x in req_list]
-
     if name == "build":
         req_list = [x for x in req_list if "numpy" not in x]
         req_list.append("ninja")

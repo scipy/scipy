@@ -34,7 +34,7 @@ Your brother Kyle is the analytical one. He answers:
    :math:`\sigma = \sqrt{n p (1 - p)}`, where :math:`p = 0.5` is the
    probability of heads and :math:`n=100` is the number of flips. The
    probability of :math:`x=45` heads can be approximated as the
-   cumulative density function :math:`F(x)` of this normal distribution.
+   cumulative distribution function :math:`F(x)` of this normal distribution.
    Specifically:
 
 .. math::
@@ -48,12 +48,12 @@ Your brother Kyle is the analytical one. He answers:
     >>> std = math.sqrt(n*p*(1-p))
     >>> # CDF of the normal distribution. (Unfortunately, Kyle forgets a continuity correction that would produce a more accurate answer.)
     >>> prob = 0.5 * (1 + math.erf((x - mean) / (std * math.sqrt(2))))
-    >>> print(f"The normal approximation estimates the probability as {prob}")
-    The normal approximation estimates the probability as 0.15865525393145713
+    >>> print(f"The normal approximation estimates the probability as {prob:.3f}")
+    The normal approximation estimates the probability as 0.159
 
 You are a little more practical, so you decide to take a computational
 approach (or more precisely, a Monte Carlo approach): just simulate many
-sequences of coin tosses, count the number of heads in each toss,
+sequences of coin tosses, count the number of heads in each sequence,
 and estimate the probability as the fraction of sequences in which the
 count does not exceed 45.
 
@@ -63,8 +63,8 @@ count does not exceed 45.
     >>> simulation = rng.random(size=(n, N)) < p  # False for tails, True for heads
     >>> counts = np.sum(simulation, axis=0)  # count the number of heads each trial
     >>> prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
-    >>> print(f"The Monte Carlo approach estimates the probability as {prob}")
-    The Monte Carlo approach estimates the probability as 0.18348
+    >>> print(f"The Monte Carlo approach estimates the probability as {prob:.3f}")
+    The Monte Carlo approach estimates the probability as 0.187
 
 The demon replies:
 
@@ -84,7 +84,7 @@ The demon replies:
     The correct answer is approximately 0.18410080866334788
 
 As your soul is being eaten, you take solace in the knowledge that your
-simple Monte Carlo approach was more accurate than the normal
+simple Monte Carlo approach was more accurate than Kyle's normal
 approximation. This is not uncommon: when an exact answer is unknown,
 often a computational approximation is more accurate than an analytical
 approximation. Also, it's easy for demons to invent questions for which

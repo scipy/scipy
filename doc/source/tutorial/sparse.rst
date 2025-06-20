@@ -26,10 +26,10 @@ Sparse arrays are a special kind of array where only a few locations in the arra
        [0, 4, 1, 0],
        [0, 0, 5, 0]])
    >>> sparse
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-         with 5 stored elements in COOrdinate format>
+   <COOrdinate sparse array of dtype 'int64'
+        with 5 stored elements and shape (3, 4)>
 
-Note that in our dense array, we have five nonzero values. For example, ``2`` is at location ``0,3``, and ``4`` is at location ``1,1``. All of the other values are zero. The sparse array records these five values *explicitly* (see the ``5 stored elements in COOrdinate format``), and then represents all of the remaining zeros as *implicit* values. 
+Note that in our dense array, we have five nonzero values. For example, ``2`` is at location ``0,3``, and ``4`` is at location ``1,1``. All of the other values are zero. The sparse array records these five values *explicitly* (see the ``5 stored elements and shape (3, 4)``), and then represents all of the remaining zeros as *implicit* values. 
 
 Most sparse array methods work in a similar fashion to dense array methods: 
 
@@ -78,8 +78,8 @@ But, other formats, such as the Compressed Sparse Row (CSR) :func:`csr_array()` 
 Sometimes, `scipy.sparse` will return a different sparse matrix format than the input sparse matrix format. For example, the dot product of two sparse arrays in COO format will be a CSR format array: 
 
    >>> sparse @ sparse.T
-   <3x3 sparse array of type '<class 'numpy.int64'>'
-        with 5 stored elements in Compressed Sparse Row format>
+   <Compressed Sparse Row sparse array of dtype 'int64'
+        with 5 stored elements and shape (3, 3)>
 
 This change occurs because `scipy.sparse` will change the format of input sparse arrays in order to use the most efficient computational method. 
 
@@ -112,8 +112,8 @@ Using these, we can now define a sparse array without building a dense array fir
 
    >>> csr = sp.sparse.csr_array((data, (row, col)))
    >>> csr
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 5 stored elements in Compressed Sparse Row format>
+   <Compressed Sparse Row sparse array of dtype 'int64'
+        with 5 stored elements and shape (3, 4)>
 
 Different classes have different constructors, but the :func:`scipy.sparse.csr_array`, :func:`scipy.sparse.csc_array`, and :func:`scipy.sparse.coo_array` allow for this style of construction. 
 
@@ -132,8 +132,8 @@ Then, our sparse array will have *six* stored elements, not five:
 
    >>> csr = sp.sparse.csr_array((data, (row, col)))
    >>> csr
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 6 stored elements in Compressed Sparse Row format>
+   <Compressed Sparse Row sparse array of dtype 'int64'
+        with 6 stored elements and shape (3, 4)>
 
 The "extra" element is our *explicit zero*. The two are still identical when converted back into a dense array, because dense arrays represent *everything* explicitly: 
 
@@ -149,12 +149,12 @@ The "extra" element is our *explicit zero*. The two are still identical when con
 But, for sparse arithmetic, linear algebra, and graph methods, the value at ``2,3`` will be considered an *explicit zero*. To remove this explicit zero, we can use the ``csr.eliminate_zeros()`` method. This operates on the sparse array *in place*, and removes any zero-value stored elements: 
 
    >>> csr
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 6 stored elements in Compressed Sparse Row format>
+   <Compressed Sparse Row sparse array of dtype 'int64'
+        with 6 stored elements and shape (3, 4)>
    >>> csr.eliminate_zeros()
    >>> csr
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 5 stored elements in Compressed Sparse Row format>
+   <Compressed Sparse Row sparse array of dtype 'int64'
+        with 5 stored elements and shape (3, 4)>
 
 Before ``csr.eliminate_zeros()``, there were six stored elements. After, there are only five stored elements. 
 
@@ -168,8 +168,8 @@ In this case, we can see that there are *two* ``data`` values that correspond to
 
    >>> dupes = sp.sparse.coo_array((data, (row, col)))
    >>> dupes
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 6 stored elements in COOrdinate format>
+   <COOrdinate sparse array of dtype 'int64'
+        with 6 stored elements and shape (3, 4)>
 
 Note that there are six stored elements in this sparse array, despite only having five unique locations where data occurs. When these arrays are converted back to dense arrays, the duplicate values are summed. So, at location ``1,1``, the dense array will contain the sum of duplicate stored entries, ``1 + 3``: 
 
@@ -182,8 +182,8 @@ To remove duplicate values within the sparse array itself and thus reduce the nu
 
    >>> dupes.sum_duplicates()
    >>> dupes
-   <3x4 sparse array of type '<class 'numpy.int64'>'
-        with 5 stored elements in COOrdinate format>
+   <COOrdinate sparse array of dtype 'int64'
+        with 5 stored elements and shape (3, 4)>
 
 Now there are only five stored elements in our sparse array, and it is identical to the array we have been working with throughout this guide: 
    

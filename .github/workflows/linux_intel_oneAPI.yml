@@ -1,0 +1,109 @@
+name: Intel oneAPI tests
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+# The environment variable LINUX_BASEKIT_URL and LINUX_HPCKIT_URL
+# store the URL for downloading Intel oneAPI.
+# Reference - https://github.com/oneapi-src/oneapi-ci/blob/b4a96bd1888c130fcb73524d2b77b90f43681cbc/.github/workflows/build_all.yml#L11-L12
+env:
+  LINUX_CPPKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/189a6c48-72de-4bef-a43c-eb1ee49787d6/intel-cpp-essentials-2025.0.1.27_offline.sh
+  LINUX_FORTRANKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/9e86b555-f238-4dea-b4b2-01b243e42483/intel-fortran-essentials-2025.0.1.27_offline.sh
+  LINUX_HPCKIT_URL: https://registrationcenter-download.intel.com/akdlm/IRC_NAS/b7f71cf2-8157-4393-abae-8cea815509f7/intel-oneapi-hpc-toolkit-2025.0.1.47_offline.sh
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
+  icx_icpx_ifx_mkl:
+    name: py3.12, spin
+    needs: get_commit_message
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+
+      - name: cache install
+        id: cache-install
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+              /opt/intel/oneapi/
+          key: install-${{ env.LINUX_CPPKIT_URL }}-${{ env.LINUX_FORTRANKIT_URL }}-${{ env.LINUX_HPCKIT_URL }}-compiler
+      - name: Install oneAPI CPP kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_CPPKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_CPPKIT_URL
+      - name: Install oneAPI Fortran kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_FORTRANKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_FORTRANKIT_URL
+      - name: Install oneAPI HPC kit
+        if: steps.cache-install.outputs.cache-hit != 'true'
+        run: |
+          printenv LINUX_HPCKIT_URL
+          bash tools/install_intel_oneAPI_linux.sh $LINUX_HPCKIT_URL
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@505e6394dae86d6a5c7fbb6e3fb8938e3e863830 # v3.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+          channel-priority: true
+          activate-environment: scipy-dev
+          use-only-tar-bz2: false
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          use-mamba: true
+
+      - name: Update Conda Environment
+        shell: bash -l {0}
+        run: |
+          conda activate scipy-dev
+          conda install -c conda-forge pkg-config meson meson-python ninja numpy cython pybind11 pytest pytest-xdist pytest-timeout pooch hypothesis spin
+
+      - name: Initialise Intel oneAPI and Build SciPy
+        shell: bash -l {0}
+        run: |
+          . /opt/intel/oneapi/setvars.sh --force
+          conda activate scipy-dev
+          # Note that we have to install Pythran from PyPI to avoid pulling in compilers
+          # from conda-forge (those may break Intel Fortran, which rely on system GCC/Clang,
+          # xref https://github.com/conda-forge/pythran-feedstock/issues/77).
+          pip install pythran
+          unset FFLAGS
+          CC=icx CXX=icpx FC=ifx spin build -- -Dblas=mkl-dynamic-lp64-iomp -Dlapack=mkl-dynamic-lp64-iomp
+
+      - name: Test scipy
+        shell: bash -l {0}
+        run: |
+          . /opt/intel/oneapi/setvars.sh --force
+          conda activate scipy-dev
+          spin test

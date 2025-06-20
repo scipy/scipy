@@ -501,7 +501,7 @@ Pull requests for 1.1.0
 * `#8179 <https://github.com/scipy/scipy/pull/8179>`__: TST: Added pdist to asv spatial benchmark suite
 * `#8180 <https://github.com/scipy/scipy/pull/8180>`__: TST: ensure constraint test improved
 * `#8183 <https://github.com/scipy/scipy/pull/8183>`__: 0d conj correlate
-* `#8186 <https://github.com/scipy/scipy/pull/8186>`__: BUG: special: fix derivative of `spherical_jn(1, 0)`
+* `#8186 <https://github.com/scipy/scipy/pull/8186>`__: BUG: special: fix derivative of ``spherical_jn(1, 0)``
 * `#8194 <https://github.com/scipy/scipy/pull/8194>`__: Fix warning message
 * `#8196 <https://github.com/scipy/scipy/pull/8196>`__: BUG: correctly handle inputs with nan's and ties in spearmanr
 * `#8198 <https://github.com/scipy/scipy/pull/8198>`__: MAINT: stats.triang edge case fixes #6036

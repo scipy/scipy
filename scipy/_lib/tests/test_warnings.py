@@ -40,7 +40,21 @@ class FindFuncs(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
         if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
-            if node.args[0].value == "ignore":
+            # get first argument of the `args` node of the filter call
+            match node.args[0]:
+                case ast.Constant() as c:
+                    argtext = c.value
+                case ast.JoinedStr() as js:
+                    # if we get an f-string, discard the templated pieces, which
+                    # are likely the type or specific message; we're interested
+                    # in the action, which is less likely to use a template
+                    argtext = "".join(
+                        x.value for x in js.values if isinstance(x, ast.Constant)
+                    )
+                case _:
+                    raise ValueError("unknown ast node type")
+            # check if filter is set to ignore
+            if argtext == "ignore":
                 self.bad_filters.append(
                     f"{self.__filename}:{node.lineno}")
 
@@ -81,6 +95,7 @@ def warning_calls():
     return bad_filters, bad_stacklevels
 
 
+@pytest.mark.fail_slow(40)
 @pytest.mark.slow
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
@@ -100,10 +115,16 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('optimize', '_nnls.py'),
         os.path.join('signal', '_ltisys.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
+        os.path.join('special', '_basic.py'),  # gh-21801
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
         os.path.join('stats', '_continuous_distns.py'),
         os.path.join('stats', '_binned_statistic.py'),  # gh-19345
+        os.path.join('stats', '_stats_py.py'),  # gh-20743
+        os.path.join('stats', '_variation.py'),  # gh-22827
+        os.path.join('stats', 'tests', 'test_axis_nan_policy.py'),  # gh-20694
         os.path.join('_lib', '_util.py'),  # gh-19341
+        os.path.join('sparse', 'linalg', '_dsolve', 'linsolve.py'),  # gh-17924
+        "conftest.py",
     )
     bad_filters = [item for item in bad_filters if item.split(':')[0] not in
                    allowed_filters]
@@ -115,23 +136,3 @@ def test_warning_calls_filters(warning_calls):
             "found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 
-
-@pytest.mark.slow
-@pytest.mark.xfail(reason="stacklevels currently missing")
-def test_warning_calls_stacklevels(warning_calls):
-    bad_filters, bad_stacklevels = warning_calls
-
-    msg = ""
-
-    if bad_filters:
-        msg += ("warning ignore filter should not be used, instead, use\n"
-                "numpy.testing.suppress_warnings (in tests only);\n"
-                "found in:\n    {}".format("\n    ".join(bad_filters)))
-        msg += "\n\n"
-
-    if bad_stacklevels:
-        msg += "warnings should have an appropriate stacklevel:\n    {}".format(
-                "\n    ".join(bad_stacklevels))
-
-    if msg:
-        raise AssertionError(msg)

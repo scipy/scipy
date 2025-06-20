@@ -6,6 +6,7 @@ from numpy.testing import (assert_array_equal, assert_allclose,
 from copy import deepcopy
 from scipy.stats.sampling import FastGeneratorInversion
 from scipy import stats
+from scipy._lib._testutils import IS_MUSL
 
 
 def test_bad_args():
@@ -132,6 +133,7 @@ def test_u_error(distname, args):
     assert u_error <= 1e-10
 
 
+@pytest.mark.xslow
 @pytest.mark.xfail(reason="geninvgauss CDF is not accurate")
 def test_geninvgauss_uerror():
     dist = stats.geninvgauss(3.2, 1.5)
@@ -139,7 +141,10 @@ def test_geninvgauss_uerror():
     err = rng.evaluate_error(size=10_000, random_state=67982)
     assert err[0] < 1e-10
 
+
 # TODO: add more distributions
+@pytest.mark.skipif(IS_MUSL, reason="Hits RecursionError, see gh-23172")
+@pytest.mark.fail_slow(5)
 @pytest.mark.parametrize(("distname, args"), [("beta", (0.11, 0.11))])
 def test_error_extreme_params(distname, args):
     # take extreme parameters where u-error might not be below the tolerance

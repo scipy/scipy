@@ -23,6 +23,68 @@ class TestHyperu:
     def test_nan_inputs(self, a, b, x):
         assert np.isnan(sc.hyperu(a, b, x)) == np.any(np.isnan([a, b, x]))
 
+    @pytest.mark.parametrize(
+        'a,b,x,expected',
+        [(0.21581740448533887, 1.0, 1e-05, 3.6030558839391325),
+         (0.21581740448533887, 1.0, 0.00021544346900318823, 2.8783254988948976),
+         (0.21581740448533887, 1.0, 0.004641588833612777, 2.154928216691109),
+         (0.21581740448533887, 1.0, 0.1, 1.446546638718792),
+         (0.0030949064301273865, 1.0, 1e-05, 1.0356696454116199),
+         (0.0030949064301273865, 1.0, 0.00021544346900318823, 1.0261510362481985),
+         (0.0030949064301273865, 1.0, 0.004641588833612777, 1.0166326903402296),
+         (0.0030949064301273865, 1.0, 0.1, 1.0071174207698674),
+         (0.1509924314279033, 1.0, 1e-05, 2.806173846998948),
+         (0.1509924314279033, 1.0, 0.00021544346900318823, 2.3092158526816124),
+         (0.1509924314279033, 1.0, 0.004641588833612777, 1.812905980588048),
+         (0.1509924314279033, 1.0, 0.1, 1.3239738117634872),
+         (-0.010678995342969011, 1.0, 1e-05, 0.8775194903781114),
+         (-0.010678995342969011, 1.0, 0.00021544346900318823, 0.9101008998540128),
+         (-0.010678995342969011, 1.0, 0.004641588833612777, 0.9426854294058609),
+         (-0.010678995342969011, 1.0, 0.1, 0.9753065150174902),
+         (-0.06556622211831487, 1.0, 1e-05, 0.26435429752668904),
+         (-0.06556622211831487, 1.0, 0.00021544346900318823, 0.4574756033875781),
+         (-0.06556622211831487, 1.0, 0.004641588833612777, 0.6507121093358457),
+         (-0.06556622211831487, 1.0, 0.1, 0.8453129788602187),
+         (-0.21628242470175185, 1.0, 1e-05, -1.2318314201114489),
+         (-0.21628242470175185, 1.0, 0.00021544346900318823, -0.6704694233529538),
+         (-0.21628242470175185, 1.0, 0.004641588833612777, -0.10795098653682857),
+         (-0.21628242470175185, 1.0, 0.1, 0.4687227684115524)]
+    )
+    def test_gh_15650_mp(self, a, b, x, expected):
+        # See https://github.com/scipy/scipy/issues/15650
+        # b == 1, |a| < 0.25, 0 < x < 1
+        #
+        # This purpose of this test is to check the accuracy of results
+        # in the region that was impacted by gh-15650.
+        #
+        # Reference values computed with mpmath using the script:
+        #
+        # import itertools as it
+        # import numpy as np
+        #
+        # from mpmath import mp
+        #
+        # rng = np.random.default_rng(1234)
+        #
+        # cases = []
+        # for a, x in it.product(
+        #         np.random.uniform(-0.25, 0.25, size=6),
+        #         np.logspace(-5, -1, 4),
+        # ):
+        #     with mp.workdps(100):
+        #         cases.append((float(a), 1.0, float(x), float(mp.hyperu(a, 1.0, x))))
+        assert_allclose(sc.hyperu(a, b, x), expected, rtol=1e-13)
+
+    def test_gh_15650_sanity(self):
+        # The purpose of this test is to sanity check hyperu in the region that
+        # was impacted by gh-15650 by making sure there are no excessively large
+        # results, as were reported there.
+        a = np.linspace(-0.5, 0.5, 500)
+        x = np.linspace(1e-6, 1e-1, 500)
+        a, x = np.meshgrid(a, x)
+        results = sc.hyperu(a, 1.0, x)
+        assert np.all(np.abs(results) < 1e3)
+
 
 class TestHyp1f1:
 
@@ -116,6 +178,38 @@ class TestHyp1f1:
     @pytest.mark.parametrize('a', [-3, -2])
     def test_x_zero_a_and_b_neg_ints_and_a_ge_b(self, a):
         assert sc.hyp1f1(a, -3, 0) == 1
+
+    # In the following tests with complex z, the reference values
+    # were computed with mpmath.hyp1f1(a, b, z), and verified with
+    # Wolfram Alpha Hypergeometric1F1(a, b, z), except for the
+    # case a=0.1, b=1, z=7-24j, where Wolfram Alpha reported
+    # "Standard computation time exceeded".  That reference value
+    # was confirmed in an online Matlab session, with the commands
+    #
+    #  > format long
+    #  > hypergeom(0.1, 1, 7-24i)
+    #  ans =
+    #   -3.712349651834209 + 4.554636556672912i
+    #
+    @pytest.mark.parametrize(
+        'a, b, z, ref',
+        [(-0.25, 0.5, 1+2j, 1.1814553180903435-1.2792130661292984j),
+         (0.25, 0.5, 1+2j, 0.24636797405707597+1.293434354945675j),
+         (25, 1.5, -2j, -516.1771262822523+407.04142751922024j),
+         (12, -1.5, -10+20j, -5098507.422706547-1341962.8043508842j),
+         pytest.param(
+             10, 250, 10-15j, 1.1985998416598884-0.8613474402403436j,
+             marks=pytest.mark.xfail,
+         ),
+         pytest.param(
+             0.1, 1, 7-24j, -3.712349651834209+4.554636556672913j,
+             marks=pytest.mark.xfail,
+         )
+         ],
+    )
+    def test_complex_z(self, a, b, z, ref):
+        h = sc.hyp1f1(a, b, z)
+        assert_allclose(h, ref, rtol=4e-15)
 
     # The "legacy edge cases" mentioned in the comments in the following
     # tests refers to the behavior of hyp1f1(a, b, x) when b is a nonpositive

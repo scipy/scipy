@@ -2,7 +2,7 @@
 import numpy as np
 from numpy.testing import assert_
 import numpy.testing as npt
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_array
 from scipy.sparse.csgraph import minimum_spanning_tree
 
 
@@ -25,7 +25,7 @@ def test_minimum_spanning_tree():
     expected = np.asarray(expected)
 
     # Ensure minimum spanning tree code gives this expected output.
-    csgraph = csr_matrix(graph)
+    csgraph = csr_array(graph)
     mintree = minimum_spanning_tree(csgraph)
     mintree_array = mintree.toarray()
     npt.assert_array_equal(mintree_array, expected,
@@ -45,7 +45,7 @@ def test_minimum_spanning_tree():
 
         # Create a random graph.
         graph = 3 + np.random.random((N, N))
-        csgraph = csr_matrix(graph)
+        csgraph = csr_array(graph)
 
         # The spanning tree has at most N - 1 edges.
         mintree = minimum_spanning_tree(csgraph)
@@ -54,7 +54,7 @@ def test_minimum_spanning_tree():
         # Set the sub diagonal to 1 to create a known spanning tree.
         idx = np.arange(N-1)
         graph[idx,idx+1] = 1
-        csgraph = csr_matrix(graph)
+        csgraph = csr_array(graph)
         mintree = minimum_spanning_tree(csgraph)
 
         # We expect to see this pattern in the spanning tree and otherwise

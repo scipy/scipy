@@ -1,7 +1,7 @@
 """
-=====================================
-Sparse matrices (:mod:`scipy.sparse`)
-=====================================
+===================================
+Sparse arrays (:mod:`scipy.sparse`)
+===================================
 
 .. currentmodule:: scipy.sparse
 
@@ -10,6 +10,7 @@ Sparse matrices (:mod:`scipy.sparse`)
 
    sparse.csgraph
    sparse.linalg
+   sparse.migration_to_sparray
 
 SciPy 2-D sparse array package for numeric data.
 
@@ -26,23 +27,33 @@ SciPy 2-D sparse array package for numeric data.
      element-wise multiplication (just like with NumPy arrays).  To
      make code work with both arrays and matrices, use ``x @ y`` for
      matrix multiplication.
-   - Operations such as `sum`, that used to produce dense matrices, now
+   - Operations such as ``sum``, that used to produce dense matrices, now
      produce arrays, whose multiplication behavior differs similarly.
-   - Sparse arrays currently must be two-dimensional.  This also means
-     that all *slicing* operations on these objects must produce
-     two-dimensional results, or they will result in an error. This
-     will be addressed in a future version.
+   - Sparse arrays use array style *slicing* operations, returning scalars,
+     1D, or 2D sparse arrays. If you need 2D results, use an appropriate index.
+     E.g. ``A[:, i, None]`` or ``A[:, [i]]``.
+   - All index arrays for a given sparse array should be of same dtype.
+     For example, for CSR format, ``indices`` and ``indptr`` should have
+     the same dtype. For COO, each array in `coords` should have same dtype.
 
    The construction utilities (`eye`, `kron`, `random`, `diags`, etc.)
-   have not yet been ported, but their results can be wrapped into arrays::
+   have appropriate replacements (see :ref:`sparse-construction-functions`).
 
-     A = csr_array(eye(3))
+   For more information see
+   :ref:`Migration from spmatrix to sparray <migration_to_sparray>`.
 
-Contents
-========
+
+Submodules
+==========
+
+.. autosummary::
+
+   csgraph - Compressed sparse graph routines
+   linalg - Sparse linear algebra routines
+
 
 Sparse array classes
---------------------
+====================
 
 .. autosummary::
    :toctree: generated/
@@ -56,8 +67,58 @@ Sparse array classes
    lil_array - Row-based list of lists sparse array
    sparray - Sparse array base class
 
+.. _sparse-construction-functions:
+
+Building sparse arrays
+----------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   diags_array - Return a sparse array from diagonals
+   eye_array - Sparse MxN array whose k-th diagonal is all ones
+   random_array - Random values in a given shape array
+   block_array - Build a sparse array from sub-blocks
+
+.. _combining-arrays:
+
+Combining arrays
+----------------
+
+.. autosummary::
+   :toctree: generated/
+
+   kron - Kronecker product of two sparse arrays
+   kronsum - Kronecker sum of sparse arrays
+   block_diag - Build a block diagonal sparse array
+   tril - Lower triangular portion of a sparse array
+   triu - Upper triangular portion of a sparse array
+   hstack - Stack sparse arrays horizontally (column wise)
+   vstack - Stack sparse arrays vertically (row wise)
+
+Sparse tools
+------------
+
+.. autosummary::
+   :toctree: generated/
+
+   save_npz - Save a sparse array to a file using ``.npz`` format.
+   load_npz - Load a sparse array from a file using ``.npz`` format.
+   find - Return the indices and values of the nonzero elements
+   get_index_dtype - determine a good dtype for index arrays.
+   safely_cast_index_arrays - cast index array dtype or raise if shape too big
+
+Identifying sparse arrays
+-------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   issparse - Check if the argument is a sparse object (array or matrix).
+
+
 Sparse matrix classes
----------------------
+=====================
 
 .. autosummary::
    :toctree: generated/
@@ -71,20 +132,8 @@ Sparse matrix classes
    lil_matrix - Row-based list of lists sparse matrix
    spmatrix - Sparse matrix base class
 
-Functions
----------
-
-Building sparse arrays:
-
-.. autosummary::
-   :toctree: generated/
-
-   diags_array - Return a sparse array from diagonals
-   eye_array - Sparse MxN array whose k-th diagonal is all ones
-   random_array - Random values in a given shape array
-   block_array - Build a sparse array from sub-blocks
-
-Building sparse matrices:
+Building sparse matrices
+------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -97,40 +146,10 @@ Building sparse matrices:
    random - Random values in a given shape matrix
    rand - Random values in a given shape matrix (old interface)
 
-Building larger structures from smaller (array or matrix)
+**Combining matrices use the same functions as for** :ref:`combining-arrays`.
 
-.. autosummary::
-   :toctree: generated/
-
-   kron - kronecker product of two sparse matrices
-   kronsum - kronecker sum of sparse matrices
-   block_diag - Build a block diagonal sparse matrix
-   tril - Lower triangular portion of a matrix in sparse format
-   triu - Upper triangular portion of a matrix in sparse format
-   hstack - Stack sparse matrices horizontally (column wise)
-   vstack - Stack sparse matrices vertically (row wise)
-
-Save and load sparse matrices:
-
-.. autosummary::
-   :toctree: generated/
-
-   save_npz - Save a sparse matrix/array to a file using ``.npz`` format.
-   load_npz - Load a sparse matrix/array from a file using ``.npz`` format.
-
-Sparse tools:
-
-.. autosummary::
-   :toctree: generated/
-
-   find
-
-Identifying sparse arrays:
-
-- use `isinstance(A, sp.sparse.sparray)` to check whether an array or matrix.
-- use `A.format == 'csr'` to check the sparse format
-
-Identifying sparse matrices:
+Identifying sparse matrices
+---------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -145,16 +164,9 @@ Identifying sparse matrices:
    isspmatrix_coo
    isspmatrix_dia
 
-Submodules
-----------
 
-.. autosummary::
-
-   csgraph - Compressed sparse graph routines
-   linalg - sparse linear algebra routines
-
-Exceptions
-----------
+Warnings
+========
 
 .. autosummary::
    :toctree: generated/
@@ -168,59 +180,57 @@ Usage information
 
 There are seven available sparse array types:
 
-    1. `csc_array`: Compressed Sparse Column format
-    2. `csr_array`: Compressed Sparse Row format
-    3. `bsr_array`: Block Sparse Row format
-    4. `lil_array`: List of Lists format
-    5. `dok_array`: Dictionary of Keys format
-    6. `coo_array`: COOrdinate format (aka IJV, triplet format)
-    7. `dia_array`: DIAgonal format
+    1. csc_array: Compressed Sparse Column format
+    2. csr_array: Compressed Sparse Row format
+    3. bsr_array: Block Sparse Row format
+    4. lil_array: List of Lists format
+    5. dok_array: Dictionary of Keys format
+    6. coo_array: COOrdinate format (aka IJV, triplet format)
+    7. dia_array: DIAgonal format
 
-To construct an array efficiently, use either `dok_array` or `lil_array`.
-The `lil_array` class supports basic slicing and fancy indexing with a
-similar syntax to NumPy arrays. As illustrated below, the COO format
-may also be used to efficiently construct arrays. Despite their
-similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
-functions directly on these arrays because NumPy may not properly convert
-them for computations, leading to unexpected (and incorrect) results. If you
-do want to apply a NumPy function to these arrays, first check if SciPy has
-its own implementation for the given sparse array class, or **convert the
-sparse array to a NumPy array** (e.g., using the ``toarray`` method of the
-class) first before applying the method.
+To construct an array efficiently, use any of `coo_array`,
+`dok_array` or `lil_array`. `dok_array` and `lil_array`
+support basic slicing and fancy indexing with a similar syntax
+to NumPy arrays. The COO format does not support indexing (yet)
+but can also be used to efficiently construct arrays using coord
+and value info.
 
-To perform manipulations such as multiplication or inversion, first
-convert the array to either CSC or CSR format. The `lil_array` format is
-row-based, so conversion to CSR is efficient, whereas conversion to CSC
-is less so.
+Despite their similarity to NumPy arrays, it is **strongly discouraged**
+to use NumPy functions directly on these arrays because NumPy typically
+treats them as generic Python objects rather than arrays, leading to
+unexpected (and incorrect) results. If you do want to apply a NumPy
+function to these arrays, first check if SciPy has its own implementation
+for the given sparse array class, or **convert the sparse array to
+a NumPy array** (e.g., using the `toarray` method of the class)
+before applying the method.
 
 All conversions among the CSR, CSC, and COO formats are efficient,
 linear-time operations.
 
+To perform manipulations such as multiplication or inversion, first
+convert the array to either CSC or CSR format. The `lil_array`
+format is row-based, so conversion to CSR is efficient, whereas
+conversion to CSC is less so.
+
 Matrix vector product
 ---------------------
-To do a vector product between a sparse array and a vector simply use
-the array ``dot`` method, as described in its docstring:
+
+To do a vector product between a 2D sparse array and a vector use
+the matmul operator (i.e., ``@``) which performs a dot product (like the
+``dot`` method):
 
 >>> import numpy as np
 >>> from scipy.sparse import csr_array
 >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
 >>> v = np.array([1, 0, -1])
->>> A.dot(v)
+>>> A @ v
 array([ 1, -3, -1], dtype=int64)
-
-.. warning:: As of NumPy 1.7, ``np.dot`` is not aware of sparse arrays,
-  therefore using it will result on unexpected results or errors.
-  The corresponding dense array should be obtained first instead:
-
-  >>> np.dot(A.toarray(), v)
-  array([ 1, -3, -1], dtype=int64)
-
-  but then all the performance advantages would be lost.
 
 The CSR format is especially suitable for fast matrix vector products.
 
 Example 1
 ---------
+
 Construct a 1000x1000 `lil_array` and add some values to it:
 
 >>> from scipy.sparse import lil_array
@@ -230,7 +240,6 @@ Construct a 1000x1000 `lil_array` and add some values to it:
 
 >>> A = lil_array((1000, 1000))
 >>> A[0, :100] = rand(100)
->>> A[1, 100:200] = A[0, :100]
 >>> A.setdiag(rand(1000))
 
 Now convert it to CSR format and solve A x = b for x:
@@ -247,7 +256,7 @@ is the same:
 Now we can compute norm of the error with:
 
 >>> err = norm(x-x_)
->>> err < 1e-10
+>>> err < 1e-9
 True
 
 It should be small :)
@@ -290,6 +299,7 @@ sorted indices are required (e.g., when passing data to other libraries).
 # Nathan Bell, and Jake Vanderplas.
 
 import warnings as _warnings
+import importlib as _importlib
 
 from ._base import *
 from ._csr import *
@@ -303,9 +313,8 @@ from ._construct import *
 from ._extract import *
 from ._matrix import spmatrix
 from ._matrix_io import *
+from ._sputils import get_index_dtype, safely_cast_index_arrays
 
-# For backward compatibility with v0.19.
-from . import csgraph
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
@@ -313,11 +322,28 @@ from . import (
     lil, sparsetools, sputils
 )
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+_submodules = ["csgraph", "linalg"]
+
+__all__ = [s for s in dir() if not s.startswith('_')] + _submodules
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
 msg = 'the matrix subclass is not the recommended way'
 _warnings.filterwarnings('ignore', message=msg)
+
+def __dir__():
+   return __all__
+
+
+def __getattr__(name):
+    if name in _submodules:
+        return _importlib.import_module(f'scipy.sparse.{name}')
+    else:
+        try:
+            return globals()[name]
+        except KeyError:
+            raise AttributeError(
+                f"Module 'scipy.sparse' has no attribute '{name}'"
+            )
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

@@ -1,10 +1,14 @@
 import pytest
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal,
-                           assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal)
+from numpy.testing import (assert_equal, 
+                           assert_array_equal,
+)
 
-from scipy.ndimage import convolve1d
+from scipy._lib._array_api import (
+    assert_almost_equal, assert_array_almost_equal, xp_assert_close
+)
+
+from scipy.ndimage import convolve1d   # type: ignore[attr-defined]
 
 from scipy.signal import savgol_coeffs, savgol_filter
 from scipy.signal._savitzky_golay import _polyder
@@ -57,19 +61,19 @@ def alt_sg_coeffs(window_length, polyorder, pos):
 def test_sg_coeffs_trivial():
     # Test a trivial case of savgol_coeffs: polyorder = window_length - 1
     h = savgol_coeffs(1, 0)
-    assert_allclose(h, [1])
+    xp_assert_close(h, [1.0])
 
     h = savgol_coeffs(3, 2)
-    assert_allclose(h, [0, 1, 0], atol=1e-10)
+    xp_assert_close(h, [0.0, 1, 0], atol=1e-10)
 
     h = savgol_coeffs(5, 4)
-    assert_allclose(h, [0, 0, 1, 0, 0], atol=1e-10)
+    xp_assert_close(h, [0.0, 0, 1, 0, 0], atol=1e-10)
 
     h = savgol_coeffs(5, 4, pos=1)
-    assert_allclose(h, [0, 0, 0, 1, 0], atol=1e-10)
+    xp_assert_close(h, [0.0, 0, 0, 1, 0], atol=1e-10)
 
     h = savgol_coeffs(5, 4, pos=1, use='dot')
-    assert_allclose(h, [0, 1, 0, 0, 0], atol=1e-10)
+    xp_assert_close(h, [0.0, 1, 0, 0, 0], atol=1e-10)
 
 
 def compare_coeffs_to_alt(window_length, order):
@@ -79,9 +83,10 @@ def compare_coeffs_to_alt(window_length, order):
     for pos in [None] + list(range(window_length)):
         h1 = savgol_coeffs(window_length, order, pos=pos, use='dot')
         h2 = alt_sg_coeffs(window_length, order, pos=pos)
-        assert_allclose(h1, h2, atol=1e-10,
-                        err_msg=("window_length = %d, order = %d, pos = %s" %
-                                 (window_length, order, pos)))
+        xp_assert_close(
+            h1, h2, atol=1e-10,
+            err_msg=f"window_length = {window_length}, order = {order}, pos = {pos}"
+        )
 
 
 def test_sg_coeffs_compare():
@@ -105,19 +110,19 @@ def test_sg_coeffs_exact():
     y = 0.5 * x ** 3 - x
     h = savgol_coeffs(window_length, polyorder)
     y0 = convolve1d(y, h)
-    assert_allclose(y0[halflen:-halflen], y[halflen:-halflen])
+    xp_assert_close(y0[halflen:-halflen], y[halflen:-halflen])
 
     # Check the same input, but use deriv=1.  dy is the exact result.
     dy = 1.5 * x ** 2 - 1
     h = savgol_coeffs(window_length, polyorder, deriv=1, delta=delta)
     y1 = convolve1d(y, h)
-    assert_allclose(y1[halflen:-halflen], dy[halflen:-halflen])
+    xp_assert_close(y1[halflen:-halflen], dy[halflen:-halflen])
 
     # Check the same input, but use deriv=2. d2y is the exact result.
     d2y = 3.0 * x
     h = savgol_coeffs(window_length, polyorder, deriv=2, delta=delta)
     y2 = convolve1d(y, h)
-    assert_allclose(y2[halflen:-halflen], d2y[halflen:-halflen])
+    xp_assert_close(y2[halflen:-halflen], d2y[halflen:-halflen])
 
 
 def test_sg_coeffs_deriv():
@@ -129,11 +134,11 @@ def test_sg_coeffs_deriv():
     d2x = np.full_like(i, 0.5)
     for pos in range(x.size):
         coeffs0 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot')
-        assert_allclose(coeffs0.dot(x), x[pos], atol=1e-10)
+        xp_assert_close(coeffs0.dot(x), x[pos], atol=1e-10)
         coeffs1 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=1)
-        assert_allclose(coeffs1.dot(x), dx[pos], atol=1e-10)
+        xp_assert_close(coeffs1.dot(x), dx[pos], atol=1e-10)
         coeffs2 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=2)
-        assert_allclose(coeffs2.dot(x), d2x[pos], atol=1e-10)
+        xp_assert_close(coeffs2.dot(x), d2x[pos], atol=1e-10)
 
 
 def test_sg_coeffs_deriv_gt_polyorder():
@@ -168,7 +173,7 @@ def test_sg_coeffs_even_window_length():
     window_lengths = [4, 6, 8, 10, 12, 14, 16]
     for length in window_lengths:
         h_p_d = savgol_coeffs(length, 0, 0)
-        assert_allclose(h_p_d, 1/length)
+        xp_assert_close(h_p_d, np.ones_like(h_p_d) / length)
 
     # Verify with closed forms
     # deriv=1, polyorder=1, 2
@@ -186,16 +191,16 @@ def test_sg_coeffs_even_window_length():
         expected_output = [h_p_d_closed_form_1(k, m)
                            for k in range(-m + 1, m + 1)][::-1]
         actual_output = savgol_coeffs(length, 1, 1)
-        assert_allclose(expected_output, actual_output)
+        xp_assert_close(expected_output, actual_output)
         actual_output = savgol_coeffs(length, 2, 1)
-        assert_allclose(expected_output, actual_output)
+        xp_assert_close(expected_output, actual_output)
 
         expected_output = [h_p_d_closed_form_2(k, m)
                            for k in range(-m + 1, m + 1)][::-1]
         actual_output = savgol_coeffs(length, 2, 2)
-        assert_allclose(expected_output, actual_output)
+        xp_assert_close(expected_output, actual_output)
         actual_output = savgol_coeffs(length, 3, 2)
-        assert_allclose(expected_output, actual_output)
+        xp_assert_close(expected_output, actual_output)
 
 #--------------------------------------------------------------------
 # savgol_filter tests
@@ -228,13 +233,13 @@ def test_sg_filter_basic():
     # Some basic test cases for savgol_filter().
     x = np.array([1.0, 2.0, 1.0])
     y = savgol_filter(x, 3, 1, mode='constant')
-    assert_allclose(y, [1.0, 4.0 / 3, 1.0])
+    xp_assert_close(y, [1.0, 4.0 / 3, 1.0])
 
     y = savgol_filter(x, 3, 1, mode='mirror')
-    assert_allclose(y, [5.0 / 3, 4.0 / 3, 5.0 / 3])
+    xp_assert_close(y, [5.0 / 3, 4.0 / 3, 5.0 / 3])
 
     y = savgol_filter(x, 3, 1, mode='wrap')
-    assert_allclose(y, [4.0 / 3, 4.0 / 3, 4.0 / 3])
+    xp_assert_close(y, [4.0 / 3, 4.0 / 3, 4.0 / 3])
 
 
 def test_sg_filter_2d():
@@ -243,10 +248,10 @@ def test_sg_filter_2d():
     expected = np.array([[1.0, 4.0 / 3, 1.0],
                          [2.0, 8.0 / 3, 2.0]])
     y = savgol_filter(x, 3, 1, mode='constant')
-    assert_allclose(y, expected)
+    xp_assert_close(y, expected)
 
     y = savgol_filter(x.T, 3, 1, mode='constant', axis=0)
-    assert_allclose(y, expected.T)
+    xp_assert_close(y, expected.T)
 
 
 def test_sg_filter_interp_edges():
@@ -270,15 +275,15 @@ def test_sg_filter_interp_edges():
     window_length = 7
 
     y = savgol_filter(x, window_length, 3, axis=-1, mode='interp')
-    assert_allclose(y, x, atol=1e-12)
+    xp_assert_close(y, x, atol=1e-12)
 
     y1 = savgol_filter(x, window_length, 3, axis=-1, mode='interp',
                        deriv=1, delta=delta)
-    assert_allclose(y1, dx, atol=1e-12)
+    xp_assert_close(y1, dx, atol=1e-12)
 
     y2 = savgol_filter(x, window_length, 3, axis=-1, mode='interp',
                        deriv=2, delta=delta)
-    assert_allclose(y2, d2x, atol=1e-12)
+    xp_assert_close(y2, d2x, atol=1e-12)
 
     # Transpose everything, and test again with axis=0.
 
@@ -287,15 +292,15 @@ def test_sg_filter_interp_edges():
     d2x = d2x.T
 
     y = savgol_filter(x, window_length, 3, axis=0, mode='interp')
-    assert_allclose(y, x, atol=1e-12)
+    xp_assert_close(y, x, atol=1e-12)
 
     y1 = savgol_filter(x, window_length, 3, axis=0, mode='interp',
                        deriv=1, delta=delta)
-    assert_allclose(y1, dx, atol=1e-12)
+    xp_assert_close(y1, dx, atol=1e-12)
 
     y2 = savgol_filter(x, window_length, 3, axis=0, mode='interp',
                        deriv=2, delta=delta)
-    assert_allclose(y2, d2x, atol=1e-12)
+    xp_assert_close(y2, d2x, atol=1e-12)
 
 
 def test_sg_filter_interp_edges_3d():
@@ -314,30 +319,30 @@ def test_sg_filter_interp_edges_3d():
     dz = np.array([dx1, dx2, dx3])
 
     y = savgol_filter(z, 7, 3, axis=-1, mode='interp', delta=delta)
-    assert_allclose(y, z, atol=1e-10)
+    xp_assert_close(y, z, atol=1e-10)
 
     dy = savgol_filter(z, 7, 3, axis=-1, mode='interp', deriv=1, delta=delta)
-    assert_allclose(dy, dz, atol=1e-10)
+    xp_assert_close(dy, dz, atol=1e-10)
 
     # z has shape (3, 21, 2)
     z = np.array([x1.T, x2.T, x3.T])
     dz = np.array([dx1.T, dx2.T, dx3.T])
 
     y = savgol_filter(z, 7, 3, axis=1, mode='interp', delta=delta)
-    assert_allclose(y, z, atol=1e-10)
+    xp_assert_close(y, z, atol=1e-10)
 
     dy = savgol_filter(z, 7, 3, axis=1, mode='interp', deriv=1, delta=delta)
-    assert_allclose(dy, dz, atol=1e-10)
+    xp_assert_close(dy, dz, atol=1e-10)
 
     # z has shape (21, 3, 2)
     z = z.swapaxes(0, 1).copy()
     dz = dz.swapaxes(0, 1).copy()
 
     y = savgol_filter(z, 7, 3, axis=0, mode='interp', delta=delta)
-    assert_allclose(y, z, atol=1e-10)
+    xp_assert_close(y, z, atol=1e-10)
 
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
-    assert_allclose(dy, dz, atol=1e-10)
+    xp_assert_close(dy, dz, atol=1e-10)
 
 
 def test_sg_filter_valid_window_length_3d():

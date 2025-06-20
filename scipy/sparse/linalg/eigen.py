@@ -7,10 +7,8 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'ArpackError', 'ArpackNoConvergence', 'ArpackError',
-    'eigs', 'eigsh', 'lobpcg', 'svds', 'arpack', 'test'
+    'eigs', 'eigsh', 'lobpcg', 'svds', 'test'
 ]
-
-eigen_modules = ['arpack']
 
 
 def __dir__():

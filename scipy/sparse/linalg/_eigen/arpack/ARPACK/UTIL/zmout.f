@@ -74,34 +74,34 @@
                   IF (K1.NE.N) THEN
                      WRITE( LOUT, 9994 )I, ( A( I, J ), J = K1, K2 )
                   ELSE
-                     WRITE( LOUT, 9984 )I, ( A( I, J ), J = K1, K2 ) 
+                     WRITE( LOUT, 9984 )I, ( A( I, J ), J = K1, K2 )
                   END IF
    30          CONTINUE
    40       CONTINUE
 *
          ELSE IF( NDIGIT.LE.6 ) THEN
-            DO 60 K1 = 1, N, 2 
+            DO 60 K1 = 1, N, 2
                K2 = MIN0( N, K1+1 )
                WRITE( LOUT, 9997 )( ICOL, I, I = K1, K2 )
                DO 50 I = 1, M
                   IF (K1.NE.N) THEN
                      WRITE( LOUT, 9993 )I, ( A( I, J ), J = K1, K2 )
-                  ELSE 
-                     WRITE( LOUT, 9983 )I, ( A( I, J ), J = K1, K2 ) 
+                  ELSE
+                     WRITE( LOUT, 9983 )I, ( A( I, J ), J = K1, K2 )
                   END IF
    50          CONTINUE
    60       CONTINUE
 *
          ELSE IF( NDIGIT.LE.8 ) THEN
-            DO 80 K1 = 1, N, 2 
+            DO 80 K1 = 1, N, 2
                K2 = MIN0( N, K1+1 )
                WRITE( LOUT, 9996 )( ICOL, I, I = K1, K2 )
                DO 70 I = 1, M
                   IF (K1.NE.N) THEN
                      WRITE( LOUT, 9992 )I, ( A( I, J ), J = K1, K2 )
                   ELSE
-                     WRITE( LOUT, 9982 )I, ( A( I, J ), J = K1, K2 ) 
-                  END IF 
+                     WRITE( LOUT, 9982 )I, ( A( I, J ), J = K1, K2 )
+                  END IF
    70          CONTINUE
    80       CONTINUE
 *
@@ -124,20 +124,20 @@
                K2 = MIN0( N, K1+3 )
                WRITE( LOUT, 9998 )( ICOL, I, I = K1, K2 )
                DO 110 I = 1, M
-                  IF ((K1+3).LE.N) THEN 
+                  IF ((K1+3).LE.N) THEN
                      WRITE( LOUT, 9974 )I, ( A( I, J ), J = K1, K2 )
                   ELSE IF ((K1+3-N).EQ.1) THEN
                      WRITE( LOUT, 9964 )I, ( A( I, J ), J = k1, K2 )
                   ELSE IF ((K1+3-N).EQ.2) THEN
                      WRITE( LOUT, 9954 )I, ( A( I, J ), J = K1, K2 )
                   ELSE IF ((K1+3-N).EQ.3) THEN
-                     WRITE( LOUT, 9944 )I, ( A( I, J ), J = K1, K2 ) 
+                     WRITE( LOUT, 9944 )I, ( A( I, J ), J = K1, K2 )
                   END IF
   110          CONTINUE
   120       CONTINUE
 *
          ELSE IF( NDIGIT.LE.6 ) THEN
-            DO 140 K1 = 1, N, 3 
+            DO 140 K1 = 1, N, 3
                K2 = MIN0( N, K1+ 2)
                WRITE( LOUT, 9997 )( ICOL, I, I = K1, K2 )
                DO 130 I = 1, M
@@ -185,14 +185,14 @@
  9998 FORMAT( 11X, 4( 9X, 3A1, I4, 9X ) )
  9997 FORMAT( 10X, 4( 11X, 3A1, I4, 11X ) )
  9996 FORMAT( 10X, 3( 13X, 3A1, I4, 13X ) )
- 9995 FORMAT( 12X, 2( 18x, 3A1, I4, 18X ) ) 
+ 9995 FORMAT( 12X, 2( 18x, 3A1, I4, 18X ) )
 *
 *========================================================
 *              FORMAT FOR 72 COLUMN
 *========================================================
 *
 *            DISPLAY 4 SIGNIFICANT DIGITS
-* 
+*
  9994 FORMAT( 1X, ' Row', I4, ':', 1X, 1P,2('(',D10.3,',',D10.3,')  ') )
  9984 FORMAT( 1X, ' Row', I4, ':', 1X, 1P,1('(',D10.3,',',D10.3,')  ') )
 *

@@ -7,11 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'OptimizeResult',
-    'RLock',
     'fmin_cobyla',
-    'functools',
-    'izip',
-    'synchronized',
 ]
 
 def __dir__():

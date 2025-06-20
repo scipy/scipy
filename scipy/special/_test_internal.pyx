@@ -23,15 +23,13 @@ cdef extern from "_round.h":
     int FE_DOWNWARD
 
 
-cdef extern from "cephes/dd_real.h":
+cdef extern from "dd_real_wrappers.h" nogil:
     cdef struct double2:
-        pass
-    double2 dd_create(double, double)
-    double dd_hi(double2)
-    double dd_lo(double2)
-    double2 dd_exp(const double2 a)
-    double2 dd_log(const double2 a)
-    double2 dd_expm1(const double2 a)
+        double hi
+        double lo
+    double2 dd_create(double a, double b)
+    double2 dd_exp(const double2* x)
+    double2 dd_log(const double2* x)
 
 
 def have_fenv():
@@ -51,7 +49,7 @@ def have_fenv():
     return have_setround
 
 
-def random_double(size):
+def random_double(size, rng):
     # This code is a little hacky to work around some issues:
     # - randint doesn't have a dtype keyword until 1.11
     #   and the default dtype of randint is np.dtype(int)
@@ -61,15 +59,15 @@ def random_double(size):
     #   >>> np.random.randint(low=low, high=high)
     #   fails in NumPy 1.10.4 (note that the 'high' value in randint
     #   is exclusive); this is fixed in 1.11.
-    x = np.random.randint(low=0, high=2**16, size=4*size)
+    x = rng.randint(low=0, high=2**16, size=4*size)
     return x.astype(np.uint16).view(np.float64)
 
 
-def test_add_round(size, mode):
+def test_add_round(size, mode, rng):
     cdef:
         int i, old_round, status
-        double[:] sample1 = random_double(size)
-        double[:] sample2 = random_double(size)
+        double[:] sample1 = random_double(size, rng)
+        double[:] sample2 = random_double(size, rng)
         double res, std
 
     nfail = 0
@@ -111,17 +109,11 @@ def test_add_round(size, mode):
 
 def _dd_exp(double xhi, double xlo):
     cdef double2 x = dd_create(xhi, xlo)
-    cdef double2 y = dd_exp(x)
-    return dd_hi(y), dd_lo(y)
+    cdef double2 y = dd_exp(&x)
+    return y.hi, y.lo
 
 
 def _dd_log(double xhi, double xlo):
     cdef double2 x = dd_create(xhi, xlo)
-    cdef double2 y = dd_log(x)
-    return dd_hi(y), dd_lo(y)
-
-
-def _dd_expm1(double xhi, double xlo):
-    cdef double2 x = dd_create(xhi, xlo)
-    cdef double2 y = dd_expm1(x)
-    return dd_hi(y), dd_lo(y)
+    cdef double2 y = dd_log(&x)
+    return y.hi, y.lo

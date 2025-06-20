@@ -19,8 +19,6 @@ def test_bandwidth_dtypes():
 def test_bandwidth_non2d_input():
     A = np.array([1, 2, 3])
     raises(ValueError, bandwidth, A)
-    A = np.array([[[1, 2, 3], [4, 5, 6]]])
-    raises(ValueError, bandwidth, A)
 
 
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']
@@ -35,6 +33,17 @@ def test_bandwidth_square_inputs(T):
     R[[x for x in range(1, n)], [x for x in range(n-1)]] = 1
     R[[x for x in range(k, n)], [x for x in range(n-k)]] = 1
     assert bandwidth(R) == (k, k)
+    A = np.array([
+        [1, 1, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 1, 1],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+    ])
+    assert bandwidth(A) == (2, 2)
 
 
 @pytest.mark.parametrize('T', [x for x in np.typecodes['All']

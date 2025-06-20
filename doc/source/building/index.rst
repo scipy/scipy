@@ -125,18 +125,18 @@ your system.
 
         brew install gfortran openblas pkg-config
 
+    To allow the build tools to find OpenBLAS, you must run::
+
+        brew info openblas | grep PKG_CONFIG_PATH
+
+    This will give you a command starting with ``export PKG_CONFIG_PATH=``, which
+    you must run.
+
     .. note::
 
-        ``export PKG_CONFIG_PATH="/opt/homebrew/opt/openblas/lib/pkgconfig"``
-        may need to be used in order for the build system to detect OpenBlas.
-
-    .. note::
-
-        As of SciPy >=1.2.0, we do not support compiling against the system
-        Accelerate library for BLAS and LAPACK. It does not support a sufficiently
-        recent LAPACK interface. This is planned to change in 2023, because macOS
-        13.3 introduced a major upgrade to Accelerate which resolved all known
-        issues.
+        As of SciPy 1.14.0, we have added support for the Accelerate library
+        for BLAS and LAPACK. It requires macOS 13.3 or greater. To build with
+        Accelerate instead of OpenBLAS, see :ref:`blas-lapack-selection`.
 
   .. tab-item:: Windows
     :sync: windows
@@ -230,7 +230,7 @@ Otherwise, conda is recommended.
 .. note::
 
     If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
+    Miniforge_; any conda flavor will work though.
 
 Building from source to use SciPy
 `````````````````````````````````
@@ -278,7 +278,7 @@ Building from source to use SciPy
 
 
 
-.. _the-dev-py-interface:
+.. _the-spin-interface:
 
 Building from source for SciPy development
 ``````````````````````````````````````````
@@ -295,8 +295,8 @@ Then you want to do the following:
 1. Create a dedicated development environment (virtual environment or conda
    environment),
 2. Install all needed dependencies (*build*, and also *test*, *doc* and
-   *optional* dependencies), 
-3. Build SciPy with our ``dev.py`` developer interface.
+   *optional* dependencies),
+3. Build SciPy with our ``spin`` developer interface.
 
 Step (3) is always the same, steps (1) and (2) are different between conda and
 virtual environments:
@@ -352,7 +352,7 @@ virtual environments:
         ::
 
           python -m venv venv
-          .\venv\Scripts\activate
+          venv\Scripts\Activate.ps1
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
@@ -363,43 +363,43 @@ virtual environments:
        # Alternatively, you can install just the dependencies for certain
        # development tasks:
 
-       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       # Build and dev dependencies (for `spin {build, lint, mypy}`)
        python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       # Doc dependencies (for `spin {doc, refguide-check}`)
        python -m pip install -r requirements/doc.txt
 
-       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       # Test dependencies (for `spin {test, bench, refguide-check}`)
        python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 
-    python dev.py build
+    spin build
 
 This will install SciPy inside the repository (by default in a
-``build-install`` directory). You can then run tests (``python dev.py test``),
-drop into IPython (``python dev.py ipython``), or take other development steps
-like build the html documentation or running benchmarks. The ``dev.py``
-interface is self-documenting, so please see ``python dev.py --help`` and
-``python dev.py <subcommand> --help`` for detailed guidance.
+``build-install`` directory). You can then run tests (``spin test``),
+drop into IPython (``spin ipython``), or take other development steps
+like build the html documentation or running benchmarks. The ``spin``
+interface is self-documenting, so please see ``spin --help`` and
+``spin <subcommand> --help`` for detailed guidance.
 
 
 .. admonition:: IDE support & editable installs
 
-    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    While the ``spin`` interface is our recommended way of working on SciPy,
     it has one limitation: because of the custom install location, SciPy
-    installed using ``dev.py`` will not be recognized automatically within an
+    installed using ``spin`` will not be recognized automatically within an
     IDE (e.g., for running a script via a "run" button, or setting breakpoints
     visually). This will work better with an *in-place build* (or "editable
     install").
 
     Editable installs are supported. It is important to understand that **you
-    may use either an editable install or dev.py in a given repository clone,
+    may use either an editable install or spin in a given repository clone,
     but not both**. If you use editable installs, you have to use ``pytest``
-    and other development tools directly instead of using ``dev.py``.
+    and other development tools directly instead of using ``spin``.
 
     To use an editable install, ensure you start from a clean repository (run
-    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
+    ``git clean -xdf`` if you've built with ``spin`` before) and have all
     dependencies set up correctly as described higher up on this page. Then
     do::
 
@@ -417,6 +417,16 @@ interface is self-documenting, so please see ``python dev.py --help`` and
 
     See the meson-python_ documentation on editable installs for more details
     on how things work under the hood.
+
+
+Installing static type stubs
+----------------------------
+
+If you would like to install static type stubs to aid your development of SciPy,
+you can include the ``scipy-stubs`` package in your development environment.
+It is available on PyPI and conda-forge - see the scipy-stubs_ installation guide.
+
+.. _scipy-stubs: https://github.com/jorenham/scipy-stubs?tab=readme-ov-file#installation
 
 
 Customizing builds
@@ -442,5 +452,5 @@ Background information
    distutils_equivalents
 
 
-.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _Miniforge: https://github.com/conda-forge/miniforge#miniforge
 .. _meson-python: https://mesonbuild.com/meson-python/

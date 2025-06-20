@@ -31,10 +31,6 @@ cdef extern from "<limits.h>":
 
 __all__ = ['cKDTree']
 
-cdef extern from *:
-    int NPY_LIKELY(int)
-    int NPY_UNLIKELY(int)
-
 
 # C++ implementations
 # ===================
@@ -188,7 +184,7 @@ cdef class coo_entries:
         _dtype = [('i',np.intp),('j',np.intp),('v',np.float64)]
         res_dtype = np.dtype(_dtype, align = True)
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.uint8)
@@ -211,7 +207,7 @@ cdef class coo_entries:
             coo_entry *pr
             dict res_dict
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             res_dict = dict()
             for k in range(n):
@@ -261,7 +257,7 @@ cdef class ordered_pairs:
             np.uintp_t uintptr
             np.intp_t n
         n = <np.intp_t> self.buf.size()
-        if NPY_LIKELY(n > 0):
+        if (n > 0):
             pr = self.buf.data()
             uintptr = <np.uintp_t> (<void*> pr)
             dtype = np.dtype(np.intp)
@@ -480,7 +476,7 @@ cdef class cKDTree:
         The n data points of dimension m to be indexed. This array is
         not copied unless this is necessary to produce a contiguous
         array of doubles. The data are also copied if the kd-tree is built
-        with `copy_data=True`.
+        with ``copy_data=True``.
     leafsize : positive int
         The number of points at which the algorithm switches over to
         brute-force.
@@ -557,7 +553,7 @@ cdef class cKDTree:
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be of shape (n, m), where there are"
+            raise ValueError("data must be of shape (n, m), where there are "
                              "n points of dimension m")
 
         if not np.isfinite(data).all():
@@ -1076,7 +1072,7 @@ cdef class cKDTree:
         results = n * [None]
         for i in range(n):
             m = <np.intp_t> (vvres[i].size())
-            if NPY_LIKELY(m > 0):
+            if (m > 0):
                 tmp = m * [None]
                 cur = vvres[i].data()
                 for j in range(m):
@@ -1284,7 +1280,7 @@ cdef class cKDTree:
 
         where the brackets represents counting pairs between two data sets
         in a finite bin around ``r`` (distance), corresponding to setting
-        `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
+        ``cumulative=False``, and ``f = float(len(D)) / float(len(R))`` is the
         ratio between number of objects from data and random.
 
         The algorithm implemented here is loosely based on the dual-tree

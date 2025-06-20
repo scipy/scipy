@@ -4,7 +4,7 @@ import numpy as np
 from .arpack import _arpack  # type: ignore[attr-defined]
 from . import eigsh
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _transition_to_rng
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
@@ -19,7 +19,7 @@ def _herm(x):
 
 
 def _iv(A, k, ncv, tol, which, v0, maxiter,
-        return_singular, solver, random_state):
+        return_singular, solver, rng):
 
     # input validation/standardization for `solver`
     # out of order because it's needed for other parameters
@@ -30,9 +30,8 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
     # input validation/standardization for `A`
     A = aslinearoperator(A)  # this takes care of some input validation
-    if not (np.issubdtype(A.dtype, np.complexfloating)
-            or np.issubdtype(A.dtype, np.floating)):
-        message = "`A` must be of floating or complex floating data type."
+    if not np.issubdtype(A.dtype, np.number):
+        message = "`A` must be of numeric data type."
         raise ValueError(message)
     if math.prod(A.shape) == 0:
         message = "`A` must not be empty."
@@ -91,15 +90,16 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
     if return_singular not in rs_options:
         raise ValueError(f"`return_singular_vectors` must be in {rs_options}.")
 
-    random_state = check_random_state(random_state)
+    rng = check_random_state(rng)
 
     return (A, k, ncv, tol, which, v0, maxiter,
-            return_singular, solver, random_state)
+            return_singular, solver, rng)
 
 
+@_transition_to_rng("random_state", position_num=9)
 def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
          maxiter=None, return_singular_vectors=True,
-         solver='arpack', random_state=None, options=None):
+         solver='arpack', rng=None, options=None):
     """
     Partial singular value decomposition of a sparse matrix.
 
@@ -159,17 +159,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             :ref:`'lobpcg' <sparse.linalg.svds-lobpcg>`, and
             :ref:`'propack' <sparse.linalg.svds-propack>` are supported.
             Default: `'arpack'`.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    rng : `numpy.random.Generator`, optional
+        Pseudorandom number generator state. When `rng` is None, a new
+        `numpy.random.Generator` is created using entropy from the
+        operating system. Types other than `numpy.random.Generator` are
+        passed to `numpy.random.default_rng` to instantiate a ``Generator``.
     options : dict, optional
         A dictionary of solver-specific options. No solver-specific options
         are currently supported; this parameter is reserved for future use.
@@ -264,7 +258,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> vT = v.T
     >>> A = u @ np.diag(s) @ vT
     >>> A = A.astype(np.float32)
-    >>> u2, s2, vT2 = svds(A, k=2, random_state=rng)
+    >>> u2, s2, vT2 = svds(A, k=2, rng=rng)
     >>> np.allclose(s2, s)
     True
 
@@ -291,21 +285,21 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     The next example follows that of 'sklearn.decomposition.TruncatedSVD'.
 
-    >>> rng = np.random.RandomState(0)
+    >>> rng = np.random.default_rng(0)
     >>> X_dense = rng.random(size=(100, 100))
     >>> X_dense[:, 2 * np.arange(50)] = 0
-    >>> X = sparse.csr_matrix(X_dense)
-    >>> _, singular_values, _ = svds(X, k=5, random_state=rng)
+    >>> X = sparse.csr_array(X_dense)
+    >>> _, singular_values, _ = svds(X, k=5, rng=rng)
     >>> print(singular_values)
-    [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
+    [ 4.3221...  4.4043...  4.4907...  4.5858... 35.4549...]
 
     The function can be called without the transpose of the input matrix
     ever explicitly constructed.
 
     >>> rng = np.random.default_rng(102524723947864966825913730119128190974)
-    >>> G = sparse.rand(8, 9, density=0.5, random_state=rng)
+    >>> G = sparse.random_array((8, 9), density=0.5, rng=rng)
     >>> Glo = aslinearoperator(G)
-    >>> _, singular_values_svds, _ = svds(Glo, k=5, random_state=rng)
+    >>> _, singular_values_svds, _ = svds(Glo, k=5, rng=rng)
     >>> _, singular_values_svd, _ = linalg.svd(G.toarray())
     >>> np.allclose(singular_values_svds, singular_values_svd[-4::-1])
     True
@@ -432,14 +426,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...                              np.arange(1, 4)) / n)
     >>> np.allclose(s, se, atol=1e-3)
     True
-    >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-6))
+    >>> np.allclose(np.abs(u), np.abs(ue), atol=1e-6)
     True
 
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
-               solver, random_state)
+               solver, rng)
     (A, k, ncv, tol, which, v0, maxiter,
-     return_singular_vectors, solver, random_state) = args
+     return_singular_vectors, solver, rng) = args
 
     largest = (which == 'LM')
     n, m = A.shape
@@ -478,7 +472,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            X = random_state.standard_normal(size=(min(A.shape), k))
+            X = rng.standard_normal(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
@@ -489,7 +483,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         irl_mode = (which == 'SM')
         res = _svdp(A, k=k, tol=tol**2, which=which, maxiter=None,
                     compute_u=jobu, compute_v=jobv, irl_mode=irl_mode,
-                    kmax=maxiter, v0=v0, random_state=random_state)
+                    kmax=maxiter, v0=v0, rng=rng)
 
         u, s, vh, _ = res  # but we'll ignore bnd, the last output
 
@@ -511,7 +505,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     elif solver == 'arpack' or solver is None:
         if v0 is None:
-            v0 = random_state.standard_normal(size=(min(A.shape),))
+            v0 = rng.standard_normal(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
         # arpack do not guarantee exactly orthonormal eigenvectors

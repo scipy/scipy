@@ -69,7 +69,7 @@ _LPProblem.__doc__ = \
 
         For mixed integrality constraints, supply an array of shape `c.shape`.
         To infer a constraint on each decision variable from shorter inputs,
-        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+        the argument will be broadcast to `c.shape` using `np.broadcast_to`.
 
         This argument is currently used only by the ``'highs'`` method and
         ignored otherwise.
@@ -136,9 +136,9 @@ def _check_sparse_inputs(options, meth, A_ub, A_eq):
     # This is an undocumented option for unit testing sparse presolve
     _sparse_presolve = options.pop('_sparse_presolve', False)
     if _sparse_presolve and A_eq is not None:
-        A_eq = sps.coo_matrix(A_eq)
+        A_eq = sps.coo_array(A_eq)
     if _sparse_presolve and A_ub is not None:
-        A_ub = sps.coo_matrix(A_ub)
+        A_ub = sps.coo_array(A_ub)
 
     sparse_constraint = sps.issparse(A_eq) or sps.issparse(A_ub)
 
@@ -169,17 +169,17 @@ def _format_A_constraints(A, n_x, sparse_lhs=False):
         The number of variables in the linear programming problem.
     sparse_lhs : bool
         Whether either of `A_ub` or `A_eq` are sparse. If true return a
-        coo_matrix instead of a numpy array.
+        coo_array instead of a numpy array.
 
     Returns
     -------
-    np.ndarray or sparse.coo_matrix
+    np.ndarray or sparse.coo_array
         2-D array such that ``A @ x`` gives the values of the upper-bound
         (in)equality constraints at ``x``.
 
     """
     if sparse_lhs:
-        return sps.coo_matrix(
+        return sps.coo_array(
             (0, n_x) if A is None else A, dtype=float, copy=True
         )
     elif A is None:
@@ -1116,8 +1116,8 @@ def _get_Abc(lp, c0):
 
     if sps.issparse(A_eq):
         sparse = True
-        A_eq = sps.csr_matrix(A_eq)
-        A_ub = sps.csr_matrix(A_ub)
+        A_eq = sps.csr_array(A_eq)
+        A_ub = sps.csr_array(A_ub)
 
         def hstack(blocks):
             return sps.hstack(blocks, format="csr")
@@ -1125,8 +1125,8 @@ def _get_Abc(lp, c0):
         def vstack(blocks):
             return sps.vstack(blocks, format="csr")
 
-        zeros = sps.csr_matrix
-        eye = sps.eye
+        zeros = sps.csr_array
+        eye = sps.eye_array
     else:
         sparse = False
         hstack = np.hstack
@@ -1175,8 +1175,8 @@ def _get_Abc(lp, c0):
         shape = (n_bounds, A_ub.shape[1])
         if sparse:
             idxs = (np.arange(n_bounds), i_newub)
-            A_ub = vstack((A_ub, sps.csr_matrix((np.ones(n_bounds), idxs),
-                                                shape=shape)))
+            A_ub = vstack((A_ub, sps.csr_array((np.ones(n_bounds), idxs),
+                                               shape=shape)))
         else:
             A_ub = vstack((A_ub, np.zeros(shape)))
             A_ub[np.arange(m_ub, A_ub.shape[0]), i_newub] = 1
@@ -1213,10 +1213,8 @@ def _get_Abc(lp, c0):
     lb_shift = lbs[lb_some].astype(float)
     c0 += np.sum(lb_shift * c[i_shift])
     if sparse:
-        b = b.reshape(-1, 1)
         A = A.tocsc()
-        b -= (A[:, i_shift] * sps.diags(lb_shift)).sum(axis=1)
-        b = b.ravel()
+        b -= (A[:, i_shift] @ sps.diags_array(lb_shift)).sum(axis=1)
     else:
         b -= (A[:, i_shift] * lb_shift).sum(axis=1)
     if x0 is not None:
@@ -1249,7 +1247,7 @@ def _autoscale(A, b, c, x0):
             R = R.toarray().flatten()
         R[R == 0] = 1
         R = 1/_round_to_power_of_two(R)
-        A = sps.diags(R)*A if sps.issparse(A) else A*R.reshape(m, 1)
+        A = sps.diags_array(R)@A if sps.issparse(A) else A*R.reshape(m, 1)
         b = b*R
 
         C = np.max(np.abs(A), axis=0)
@@ -1257,7 +1255,7 @@ def _autoscale(A, b, c, x0):
             C = C.toarray().flatten()
         C[C == 0] = 1
         C = 1/_round_to_power_of_two(C)
-        A = A*sps.diags(C) if sps.issparse(A) else A*C
+        A = A@sps.diags_array(C) if sps.issparse(A) else A*C
         c = c*C
 
     b_scale = np.max(np.abs(b)) if b.size > 0 else 1
@@ -1409,9 +1407,10 @@ def _postsolve(x, postsolve_args, complete=False):
         x = rev(x)
 
     fun = x.dot(c)
-    slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
-    # report residuals of ORIGINAL EQ constraints
-    con = b_eq - A_eq.dot(x)
+    with np.errstate(invalid="ignore"):
+        slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
+        # report residuals of ORIGINAL EQ constraints
+        con = b_eq - A_eq.dot(x)
 
     return x, fun, slack, con
 

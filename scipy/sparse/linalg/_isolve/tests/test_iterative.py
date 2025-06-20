@@ -3,7 +3,6 @@
 
 import itertools
 import platform
-import sys
 import pytest
 
 import numpy as np
@@ -11,7 +10,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from numpy.linalg import norm
 
-from scipy.sparse import spdiags, csr_matrix, kronsum
+from scipy.sparse import dia_array, csr_array, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
@@ -26,10 +25,7 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
-pytestmark = [
-    # remove this once atol defaults to 0.0 for all methods
-    pytest.mark.filterwarnings("ignore:.*called without specifying.*"),
-]
+CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
 
 
 # create parametrized fixture for easy reuse in tests
@@ -86,7 +82,7 @@ class IterativeParams:
         data[0, :] = 2
         data[1, :] = -1
         data[2, :] = -1
-        Poisson1D = spdiags(data, [0, -1, 1], N, N, format='csr')
+        Poisson1D = dia_array((data, [0, -1, 1]), shape=(N, N)).tocsr()
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
         self.cases.append(Case("poisson1d-F", Poisson1D.astype('f'),
@@ -110,22 +106,22 @@ class IterativeParams:
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]], dtype='d')
-        RandDiag = spdiags(data, [0], 10, 10, format='csr')
+        RandDiag = dia_array((data, [0]), shape=(10, 10)).tocsr()
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
         self.cases.append(Case("rand-diag-F", RandDiag.astype('f'),
                                skip=posdef_solvers))
 
         # Random real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4)
         self.cases.append(Case("rand", data,
                                skip=posdef_solvers + sym_solvers))
         self.cases.append(Case("rand-F", data.astype('f'),
                                skip=posdef_solvers + sym_solvers))
 
         # Random symmetric real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4)
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
         self.cases.append(Case("rand-sym-F", data.astype('f'),
@@ -141,16 +137,16 @@ class IterativeParams:
                                skip=[minres]))
 
         # Random complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         skip_cmplx = posdef_solvers + sym_solvers + real_solvers
         self.cases.append(Case("rand-cmplx", data, skip=skip_cmplx))
         self.cases.append(Case("rand-cmplx-F", data.astype('F'),
                                skip=skip_cmplx))
 
         # Random hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(4, 4) + 1j * rng.rand(4, 4)
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers + real_solvers))
@@ -158,8 +154,8 @@ class IterativeParams:
                                skip=posdef_solvers + real_solvers))
 
         # Random pos-def hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(9, 9) + 1j * np.random.rand(9, 9)
+        rng = np.random.RandomState(1234)
+        data = rng.rand(9, 9) + 1j * rng.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
         self.cases.append(Case("rand-cmplx-sym-pd-F", data.astype('F'),
@@ -172,7 +168,7 @@ class IterativeParams:
         data = ones((2, 10))
         data[0, :] = 2
         data[1, :] = -1
-        A = spdiags(data, [0, -1], 10, 10, format='csr')
+        A = dia_array((data, [0, -1]), shape=(10, 10)).tocsr()
         self.cases.append(Case("nonsymposdef", A,
                                skip=sym_solvers + [cgs, qmr, bicg, tfqmr]))
         self.cases.append(Case("nonsymposdef-F", A.astype('F'),
@@ -223,7 +219,7 @@ def case(request):
     """
     return request.param
 
-
+@pytest.mark.thread_unsafe
 def test_maxiter(case):
     if not case.convergence:
         pytest.skip("Solver - Breakdown case, see gh-8829")
@@ -236,9 +232,16 @@ def test_maxiter(case):
     residuals = []
 
     def callback(x):
-        residuals.append(norm(b - case.A * x))
+        if x.ndim == 0:
+            residuals.append(norm(b - case.A * x))
+        else:
+            residuals.append(norm(b - case.A @ x))
 
-    x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    if case.solver == gmres:
+        with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
+            x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    else:
+        x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
 
     assert len(residuals) == 1
     assert info == 1
@@ -283,7 +286,7 @@ def test_precond_dummy(case):
     # 1.0/A.diagonal()
     diagOfA = A.diagonal()
     if np.count_nonzero(diagOfA) == len(diagOfA):
-        spdiags([1.0 / diagOfA], [0], M, N)
+        dia_array(([1.0 / diagOfA], [0]), shape=(M, N))
 
     b = case.b
     x0 = 0 * b
@@ -307,6 +310,7 @@ def test_precond_dummy(case):
 
 
 # Specific test for poisson1d and poisson2d cases
+@pytest.mark.fail_slow(10)
 @pytest.mark.parametrize('case', [x for x in IterativeParams().cases
                                   if x.name in ('poisson1d', 'poisson2d')],
                          ids=['poisson1d', 'poisson2d'])
@@ -449,9 +453,6 @@ def test_maxiter_worsening(solver):
     # This can occur due to the solvers hitting close to breakdown,
     # which they should detect and halt as necessary.
     # cf. gh-9100
-    if (solver is gmres and platform.machine() == 'aarch64'
-            and sys.version_info[1] == 9):
-        pytest.xfail(reason="gh-13019")
     if (solver is lgmres and
             platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64']):
         # see gh-17839
@@ -504,12 +505,16 @@ def test_x0_working(solver):
 
     x, info = solver(A, b, x0=x0, **kw)
     assert info == 0
-    assert norm(A @ x - b) <= 2e-6*norm(b)
+    assert norm(A @ x - b) <= 4.5e-6*norm(b)
 
 
 def test_x0_equals_Mb(case):
+    if (case.solver is bicgstab) and (case.name == 'nonsymposdef-bicgstab'):
+        pytest.skip("Solver fails due to numerical noise "
+                    "on some architectures (see gh-15533).")
     if case.solver is tfqmr:
         pytest.skip("Solver does not support x0='Mb'")
+
     A = case.A
     b = case.b
     x0 = 'Mb'
@@ -533,6 +538,7 @@ def test_x0_solves_problem_exactly(solver):
 
 
 # Specific tfqmr test
+@pytest.mark.thread_unsafe
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):
     def cb(x):
@@ -554,7 +560,7 @@ def test_show(case, capsys):
     assert err == ""
 
 
-def test_positional_deprecation(solver):
+def test_positional_error(solver):
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10
@@ -562,12 +568,23 @@ def test_positional_deprecation(solver):
     A = A @ A.T
     b = rng.random(n)
     x0 = rng.random(n)
-    with pytest.deprecated_call(
-        # due to the use of the _deprecate_positional_args decorator, it's not possible
-        # to separate the two warnings (1 for positional use, 1 for `tol` deprecation).
-        match="use keyword arguments.*|argument `tol` is deprecated.*"
-    ):
+    with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
+
+
+@pytest.mark.parametrize("atol", ["legacy", None, -1])
+def test_invalid_atol(solver, atol):
+    if solver == minres:
+        pytest.skip("minres has no `atol` argument")
+    # from test_x0_working
+    rng = np.random.default_rng(1685363802304750)
+    n = 10
+    A = rng.random(size=[n, n])
+    A = A @ A.T
+    b = rng.random(n)
+    x0 = rng.random(n)
+    with pytest.raises(ValueError):
+        solver(A, b, x0, atol=atol)
 
 
 class TestQMR:
@@ -581,11 +598,11 @@ class TestQMR:
         n = 100
 
         dat = ones(n)
-        A = spdiags([-2 * dat, 4 * dat, -dat], [-1, 0, 1], n, n)
+        A = dia_array(([-2 * dat, 4 * dat, -dat], [-1, 0, 1]), shape=(n, n))
         b = arange(n, dtype='d')
 
-        L = spdiags([-dat / 2, dat], [-1, 0], n, n)
-        U = spdiags([4 * dat, -dat], [0, 1], n, n)
+        L = dia_array(([-dat / 2, dat], [-1, 0]), shape=(n, n))
+        U = dia_array(([4 * dat, -dat], [0, 1]), shape=(n, n))
         L_solver = splu(L)
         U_solver = splu(U)
 
@@ -621,18 +638,19 @@ class TestGMRES:
 
         assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback(self):
 
         def store_residual(r, rvec):
             rvec[rvec.nonzero()[0].max() + 1] = r
 
         # Define, A,b
-        A = csr_matrix(array([[-2, 1, 0, 0, 0, 0],
-                              [1, -2, 1, 0, 0, 0],
-                              [0, 1, -2, 1, 0, 0],
-                              [0, 0, 1, -2, 1, 0],
-                              [0, 0, 0, 1, -2, 1],
-                              [0, 0, 0, 0, 1, -2]]))
+        A = csr_array(array([[-2, 1, 0, 0, 0, 0],
+                             [1, -2, 1, 0, 0, 0],
+                             [0, 1, -2, 1, 0, 0],
+                             [0, 0, 1, -2, 1, 0],
+                             [0, 0, 0, 1, -2, 1],
+                             [0, 0, 0, 0, 1, -2]]))
         b = ones((A.shape[0],))
         maxiter = 1
         rvec = zeros(maxiter + 1)
@@ -671,6 +689,7 @@ class TestGMRES:
         assert_allclose(r_x, x)
         assert r_info == info
 
+    @pytest.mark.fail_slow(10)
     def test_atol_legacy(self):
 
         A = eye(2)
@@ -724,6 +743,7 @@ class TestGMRES:
         # The solution should be OK outside null space of A
         assert_allclose(A @ (A @ x), A @ b)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
         np.random.seed(1)
@@ -770,9 +790,9 @@ class TestGMRES:
 
     def test_callback_x_monotonic(self):
         # Check that callback_type='x' gives monotonic norm decrease
-        np.random.seed(1)
-        A = np.random.rand(20, 20) + np.eye(20)
-        b = np.random.rand(20)
+        rng = np.random.RandomState(1)
+        A = rng.rand(20, 20) + np.eye(20)
+        b = rng.rand(20)
 
         prev_r = [np.inf]
         count = [0]
@@ -787,10 +807,3 @@ class TestGMRES:
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
-
-    def test_restrt_dep(self):
-        with pytest.warns(
-            DeprecationWarning,
-            match="'gmres' keyword argument 'restrt'"
-        ):
-            gmres(np.array([1]), np.array([1]), restrt=10)

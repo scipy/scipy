@@ -2,8 +2,8 @@ c\BeginDoc
 c
 c\Name: znaitr
 c
-c\Description: 
-c  Reverse communication interface for applying NP additional steps to 
+c\Description:
+c  Reverse communication interface for applying NP additional steps to
 c  a K step nonsymmetric Arnoldi factorization.
 c
 c  Input:  OP*V_{k}  -  V_{k}*H = r_{k}*e_{k}^T
@@ -19,7 +19,7 @@ c  computed and returned.
 c
 c\Usage:
 c  call znaitr
-c     ( IDO, BMAT, N, K, NP, NB, RESID, RNORM, V, LDV, H, LDH, 
+c     ( IDO, BMAT, N, K, NP, NB, RESID, RNORM, V, LDV, H, LDH,
 c       IPNTR, WORKD, INFO )
 c
 c\Arguments
@@ -61,8 +61,8 @@ c  NP      Integer.  (INPUT)
 c          Number of additional Arnoldi steps to take.
 c
 c  NB      Integer.  (INPUT)
-c          Blocksize to be used in the recurrence.          
-c          Only work for NB = 1 right now.  The goal is to have a 
+c          Blocksize to be used in the recurrence.
+c          Only work for NB = 1 right now.  The goal is to have a
 c          program that implement both the block and non-block method.
 c
 c  RESID   Complex*16 array of length N.  (INPUT/OUTPUT)
@@ -74,37 +74,37 @@ c          B-norm of the starting residual on input.
 c          B-norm of the updated residual r_{k+p} on output.
 c
 c  V       Complex*16 N by K+NP array.  (INPUT/OUTPUT)
-c          On INPUT:  V contains the Arnoldi vectors in the first K 
+c          On INPUT:  V contains the Arnoldi vectors in the first K
 c          columns.
 c          On OUTPUT: V contains the new NP Arnoldi vectors in the next
 c          NP columns.  The first K columns are unchanged.
 c
 c  LDV     Integer.  (INPUT)
-c          Leading dimension of V exactly as declared in the calling 
+c          Leading dimension of V exactly as declared in the calling
 c          program.
 c
 c  H       Complex*16 (K+NP) by (K+NP) array.  (INPUT/OUTPUT)
 c          H is used to store the generated upper Hessenberg matrix.
 c
 c  LDH     Integer.  (INPUT)
-c          Leading dimension of H exactly as declared in the calling 
+c          Leading dimension of H exactly as declared in the calling
 c          program.
 c
 c  IPNTR   Integer array of length 3.  (OUTPUT)
-c          Pointer to mark the starting locations in the WORK for 
+c          Pointer to mark the starting locations in the WORK for
 c          vectors used by the Arnoldi iteration.
 c          -------------------------------------------------------------
 c          IPNTR(1): pointer to the current operand vector X.
 c          IPNTR(2): pointer to the current result vector Y.
-c          IPNTR(3): pointer to the vector B * X when used in the 
+c          IPNTR(3): pointer to the vector B * X when used in the
 c                    shift-and-invert mode.  X is the current operand.
 c          -------------------------------------------------------------
-c          
+c
 c  WORKD   Complex*16 work array of length 3*N.  (REVERSE COMMUNICATION)
 c          Distributed array to be used in the basic Arnoldi iteration
-c          for reverse communication.  The calling program should not 
+c          for reverse communication.  The calling program should not
 c          use WORKD as temporary workspace during the iteration !!!!!!
-c          On input, WORKD(1:N) = B*RESID and is used to save some 
+c          On input, WORKD(1:N) = B*RESID and is used to save some
 c          computation at the first step.
 c
 c  INFO    Integer.  (OUTPUT)
@@ -124,7 +124,7 @@ c\References:
 c  1. D.C. Sorensen, "Implicit Application of Polynomial Filters in
 c     a k-Step Arnoldi Method", SIAM J. Matr. Anal. Apps., 13 (1992),
 c     pp 357-385.
-c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly 
+c  2. R.B. Lehoucq, "Analysis and Implementation of an Implicitly
 c     Restarted Arnoldi Iteration", Rice University Technical Report
 c     TR95-13, Department of Computational and Applied Mathematics.
 c
@@ -143,29 +143,29 @@ c     dlapy2  LAPACK routine to compute sqrt(x**2+y**2) carefully.
 c     zgemv   Level 2 BLAS routine for matrix vector multiplication.
 c     zaxpy   Level 1 BLAS that computes a vector triad.
 c     zcopy   Level 1 BLAS that copies one vector to another .
-c     wzdotc   Level 1 BLAS that computes the scalar product of two vectors. 
+c     zdotc   Level 1 BLAS that computes the scalar product of two vectors.
 c     zscal   Level 1 BLAS that scales a vector.
-c     zdscal  Level 1 BLAS that scales a complex vector by a real number. 
+c     zdscal  Level 1 BLAS that scales a complex vector by a real number.
 c     dznrm2  Level 1 BLAS that computes the norm of a vector.
 c
 c\Author
 c     Danny Sorensen               Phuong Vu
 c     Richard Lehoucq              CRPC / Rice University
-c     Dept. of Computational &     Houston, Texas 
-c     Applied Mathematics 
-c     Rice University           
-c     Houston, Texas 
-c 
+c     Dept. of Computational &     Houston, Texas
+c     Applied Mathematics
+c     Rice University
+c     Houston, Texas
+c
 c\SCCS Information: @(#)
 c FILE: naitr.F   SID: 2.3   DATE OF SID: 8/27/96   RELEASE: 2
 c
 c\Remarks
 c  The algorithm implemented is:
-c  
+c
 c  restart = .false.
-c  Given V_{k} = [v_{1}, ..., v_{k}], r_{k}; 
+c  Given V_{k} = [v_{1}, ..., v_{k}], r_{k};
 c  r_{k} contains the initial residual vector even for k = 0;
-c  Also assume that rnorm = || B*r_{k} || and B*r_{k} are already 
+c  Also assume that rnorm = || B*r_{k} || and B*r_{k} are already
 c  computed by the calling program.
 c
 c  betaj = rnorm ; p_{k+1} = B*r_{k} ;
@@ -173,7 +173,7 @@ c  For  j = k+1, ..., k+np  Do
 c     1) if ( betaj < tol ) stop or restart depending on j.
 c        ( At present tol is zero )
 c        if ( restart ) generate a new starting vector.
-c     2) v_{j} = r(j-1)/betaj;  V_{j} = [V_{j-1}, v_{j}];  
+c     2) v_{j} = r(j-1)/betaj;  V_{j} = [V_{j-1}, v_{j}];
 c        p_{j} = p_{j}/betaj
 c     3) r_{j} = OP*v_{j} where OP is defined as in znaupd
 c        For shift-invert mode p_{j} = B*v_{j} is already available.
@@ -188,7 +188,7 @@ c        If (rnorm > 0.717*wnorm) accept step and go back to 1)
 c     5) Re-orthogonalization step:
 c        s = V_{j}'*B*r_{j}
 c        r_{j} = r_{j} - V_{j}*s;  rnorm1 = || r_{j} ||
-c        alphaj = alphaj + s_{j};   
+c        alphaj = alphaj + s_{j};
 c     6) Iterative refinement step:
 c        If (rnorm1 > 0.717*rnorm) then
 c           rnorm = rnorm1
@@ -198,7 +198,7 @@ c           rnorm = rnorm1
 c           If this is the first time in step 6), go to 5)
 c           Else r_{j} lies in the span of V_{j} numerically.
 c              Set r_{j} = 0 and rnorm = 0; go to 1)
-c        EndIf 
+c        EndIf
 c  End Do
 c
 c\EndLib
@@ -206,7 +206,7 @@ c
 c-----------------------------------------------------------------------
 c
       subroutine znaitr
-     &   (ido, bmat, n, k, np, nb, resid, rnorm, v, ldv, h, ldh, 
+     &   (ido, bmat, n, k, np, nb, resid, rnorm, v, ldv, h, ldh,
      &    ipntr, workd, info)
 c
 c     %----------------------------------------------------%
@@ -241,7 +241,7 @@ c
      &           one, zero
       Double precision
      &           rone, rzero
-      parameter (one = (1.0D+0, 0.0D+0), zero = (0.0D+0, 0.0D+0), 
+      parameter (one = (1.0D+0, 0.0D+0), zero = (0.0D+0, 0.0D+0),
      &           rone = 1.0D+0, rzero = 0.0D+0)
 c
 c     %--------------%
@@ -258,7 +258,7 @@ c
       logical    first, orth1, orth2, rstart, step3, step4
       integer    ierr, i, infol, ipj, irj, ivj, iter, itry, j, msglvl,
      &           jj
-      Double precision            
+      Double precision
      &           ovfl, smlnum, tst1, ulp, unfl, betaj,
      &           temp1, rnorm1, wnorm
       Complex*16
@@ -272,7 +272,7 @@ c     %----------------------%
 c     | External Subroutines |
 c     %----------------------%
 c
-      external   zaxpy, zcopy, zscal, zdscal, zgemv, zgetv0, 
+      external   zaxpy, zcopy, zscal, zdscal, zgemv, zgetv0,
      &           dlabad, zvout, zmout, ivout, arscnd
 c
 c     %--------------------%
@@ -280,16 +280,16 @@ c     | External Functions |
 c     %--------------------%
 c
       Complex*16
-     &           wzdotc 
-      Double precision            
+     &           zzdotc
+      Double precision
      &           dlamch,  dznrm2, zlanhs, dlapy2
-      external   wzdotc, dznrm2, zlanhs, dlamch, dlapy2
+      external   zzdotc, dznrm2, zlanhs, dlamch, dlapy2
 c
 c     %---------------------%
 c     | Intrinsic Functions |
 c     %---------------------%
 c
-      intrinsic  dimag, dble, max, sqrt 
+      intrinsic  aimag, dble, max, sqrt
 c
 c     %-----------------%
 c     | Data statements |
@@ -320,7 +320,7 @@ c
       end if
 c
       if (ido .eq. 0) then
-c 
+c
 c        %-------------------------------%
 c        | Initialize timing statistics  |
 c        | & message level for debugging |
@@ -328,7 +328,7 @@ c        %-------------------------------%
 c
          call arscnd (t0)
          msglvl = mcaitr
-c 
+c
 c        %------------------------------%
 c        | Initial call to this routine |
 c        %------------------------------%
@@ -344,7 +344,7 @@ c
          irj    = ipj   + n
          ivj    = irj   + n
       end if
-c 
+c
 c     %-------------------------------------------------%
 c     | When in reverse communication mode one of:      |
 c     | STEP3, STEP4, ORTH1, ORTH2, RSTART              |
@@ -374,16 +374,16 @@ c     |        A R N O L D I     I T E R A T I O N     L O O P       |
 c     |                                                              |
 c     | Note:  B*r_{j-1} is already in WORKD(1:N)=WORKD(IPJ:IPJ+N-1) |
 c     %--------------------------------------------------------------%
- 
+
  1000 continue
 c
          if (msglvl .gt. 1) then
-            call ivout (logfil, 1, j, ndigit, 
+            call ivout (logfil, 1, [j], ndigit,
      &                  '_naitr: generating Arnoldi vector number')
-            call dvout (logfil, 1, rnorm, ndigit, 
+            call dvout (logfil, 1, [rnorm], ndigit,
      &                  '_naitr: B-norm of the current residual is')
          end if
-c 
+c
 c        %---------------------------------------------------%
 c        | STEP 1: Check if the B norm of j-th residual      |
 c        | vector is zero. Equivalent to determine whether   |
@@ -400,16 +400,16 @@ c           | basis and continue the iteration.                 |
 c           %---------------------------------------------------%
 c
             if (msglvl .gt. 0) then
-               call ivout (logfil, 1, j, ndigit,
+               call ivout (logfil, 1, [j], ndigit,
      &                     '_naitr: ****** RESTART AT STEP ******')
             end if
-c 
+c
 c           %---------------------------------------------%
 c           | ITRY is the loop variable that controls the |
 c           | maximum amount of times that a restart is   |
 c           | attempted. NRSTRT is used by stat.h         |
 c           %---------------------------------------------%
-c 
+c
             betaj  = rzero
             nrstrt = nrstrt + 1
             itry   = 1
@@ -423,7 +423,7 @@ c           | If in reverse communication mode and |
 c           | RSTART = .true. flow returns here.   |
 c           %--------------------------------------%
 c
-            call zgetv0 (ido, bmat, itry, .false., n, j, v, ldv, 
+            call zgetv0 (ido, bmat, itry, .false., n, j, v, ldv,
      &                   resid, rnorm, ipntr, workd, ierr)
             if (ido .ne. 99) go to 9000
             if (ierr .lt. 0) then
@@ -442,7 +442,7 @@ c
                ido = 99
                go to 9000
             end if
-c 
+c
    40    continue
 c
 c        %---------------------------------------------------------%
@@ -466,7 +466,7 @@ c            %-----------------------------------------%
 c
              call zlascl ('General', i, i, rnorm, rone,
      &                    n, 1, v(1,j), n, infol)
-             call zlascl ('General', i, i, rnorm, rone,  
+             call zlascl ('General', i, i, rnorm, rone,
      &                    n, 1, workd(ipj), n, infol)
          end if
 c
@@ -483,14 +483,14 @@ c
          ipntr(2) = irj
          ipntr(3) = ipj
          ido = 1
-c 
+c
 c        %-----------------------------------%
 c        | Exit in order to compute OP*v_{j} |
 c        %-----------------------------------%
-c 
-         go to 9000 
+c
+         go to 9000
    50    continue
-c 
+c
 c        %----------------------------------%
 c        | Back from reverse communication; |
 c        | WORKD(IRJ:IRJ+N-1) := OP*v_{j}   |
@@ -499,7 +499,7 @@ c        %----------------------------------%
 c
          call arscnd (t3)
          tmvopx = tmvopx + (t3 - t2)
- 
+
          step3 = .false.
 c
 c        %------------------------------------------%
@@ -507,7 +507,7 @@ c        | Put another copy of OP*v_{j} into RESID. |
 c        %------------------------------------------%
 c
          call zcopy (n, workd(irj), 1, resid, 1)
-c 
+c
 c        %---------------------------------------%
 c        | STEP 4:  Finish extending the Arnoldi |
 c        |          factorization to length j.   |
@@ -520,17 +520,17 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %-------------------------------------%
 c           | Exit in order to compute B*OP*v_{j} |
 c           %-------------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
             call zcopy (n, resid, 1, workd(ipj), 1)
          end if
    60    continue
-c 
+c
 c        %----------------------------------%
 c        | Back from reverse communication; |
 c        | WORKD(IPJ:IPJ+N-1) := B*OP*v_{j} |
@@ -541,7 +541,7 @@ c
             call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
          end if
-c 
+c
          step4 = .false.
 c
 c        %-------------------------------------%
@@ -549,9 +549,9 @@ c        | The following is needed for STEP 5. |
 c        | Compute the B-norm of OP*v_{j}.     |
 c        %-------------------------------------%
 c
-         if (bmat .eq. 'G') then  
-             cnorm = wzdotc (n, resid, 1, workd(ipj), 1)
-             wnorm = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
+         if (bmat .eq. 'G') then
+             cnorm = zzdotc (n, resid, 1, workd(ipj), 1)
+             wnorm = sqrt( dlapy2(dble(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
              wnorm = dznrm2(n, resid, 1)
          end if
@@ -569,24 +569,24 @@ c        %------------------------------------------%
 c        | Compute the j Fourier coefficients w_{j} |
 c        | WORKD(IPJ:IPJ+N-1) contains B*OP*v_{j}.  |
 c        %------------------------------------------%
-c 
+c
          call zgemv ('C', n, j, one, v, ldv, workd(ipj), 1,
      &               zero, h(1,j), 1)
 c
 c        %--------------------------------------%
 c        | Orthogonalize r_{j} against V_{j}.   |
-c        | RESID contains OP*v_{j}. See STEP 3. | 
+c        | RESID contains OP*v_{j}. See STEP 3. |
 c        %--------------------------------------%
 c
          call zgemv ('N', n, j, -one, v, ldv, h(1,j), 1,
      &               one, resid, 1)
 c
-         if (j .gt. 1) h(j,j-1) = dcmplx(betaj, rzero)
+         if (j .gt. 1) h(j,j-1) = cmplx(betaj, rzero, Kind=Kind(0d0))
 c
          call arscnd (t4)
-c 
+c
          orth1 = .true.
-c 
+c
          call arscnd (t2)
          if (bmat .eq. 'G') then
             nbx = nbx + 1
@@ -594,17 +594,17 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %----------------------------------%
 c           | Exit in order to compute B*r_{j} |
 c           %----------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
             call zcopy (n, resid, 1, workd(ipj), 1)
-         end if 
+         end if
    70    continue
-c 
+c
 c        %---------------------------------------------------%
 c        | Back from reverse communication if ORTH1 = .true. |
 c        | WORKD(IPJ:IPJ+N-1) := B*r_{j}.                    |
@@ -614,20 +614,20 @@ c
             call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
          end if
-c 
+c
          orth1 = .false.
 c
 c        %------------------------------%
 c        | Compute the B-norm of r_{j}. |
 c        %------------------------------%
 c
-         if (bmat .eq. 'G') then         
-            cnorm = wzdotc (n, resid, 1, workd(ipj), 1)
-            rnorm = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
+         if (bmat .eq. 'G') then
+            cnorm = zzdotc (n, resid, 1, workd(ipj), 1)
+            rnorm = sqrt( dlapy2(dble(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
             rnorm = dznrm2(n, resid, 1)
          end if
-c 
+c
 c        %-----------------------------------------------------------%
 c        | STEP 5: Re-orthogonalization / Iterative refinement phase |
 c        | Maximum NITER_ITREF tries.                                |
@@ -650,20 +650,20 @@ c
 c
          iter  = 0
          nrorth = nrorth + 1
-c 
+c
 c        %---------------------------------------------------%
 c        | Enter the Iterative refinement phase. If further  |
 c        | refinement is necessary, loop back here. The loop |
 c        | variable is ITER. Perform a step of Classical     |
 c        | Gram-Schmidt using all the Arnoldi vectors V_{j}  |
 c        %---------------------------------------------------%
-c 
+c
    80    continue
 c
          if (msglvl .gt. 2) then
             rtemp(1) = wnorm
             rtemp(2) = rnorm
-            call dvout (logfil, 2, rtemp, ndigit, 
+            call dvout (logfil, 2, rtemp, ndigit,
      &      '_naitr: re-orthogonalization; wnorm and rnorm are')
             call zvout (logfil, j, h(1,j), ndigit,
      &                  '_naitr: j-th column of H')
@@ -674,7 +674,7 @@ c        | Compute V_{j}^T * B * r_{j}.                       |
 c        | WORKD(IRJ:IRJ+J-1) = v(:,1:J)'*WORKD(IPJ:IPJ+N-1). |
 c        %----------------------------------------------------%
 c
-         call zgemv ('C', n, j, one, v, ldv, workd(ipj), 1, 
+         call zgemv ('C', n, j, one, v, ldv, workd(ipj), 1,
      &               zero, workd(irj), 1)
 c
 c        %---------------------------------------------%
@@ -684,10 +684,10 @@ c        | The correction to H is v(:,1:J)*H(1:J,1:J)  |
 c        | + v(:,1:J)*WORKD(IRJ:IRJ+J-1)*e'_j.         |
 c        %---------------------------------------------%
 c
-         call zgemv ('N', n, j, -one, v, ldv, workd(irj), 1, 
+         call zgemv ('N', n, j, -one, v, ldv, workd(irj), 1,
      &               one, resid, 1)
          call zaxpy (j, one, workd(irj), 1, h(1,j), 1)
-c 
+c
          orth2 = .true.
          call arscnd (t2)
          if (bmat .eq. 'G') then
@@ -696,16 +696,16 @@ c
             ipntr(1) = irj
             ipntr(2) = ipj
             ido = 2
-c 
+c
 c           %-----------------------------------%
 c           | Exit in order to compute B*r_{j}. |
 c           | r_{j} is the corrected residual.  |
 c           %-----------------------------------%
-c 
+c
             go to 9000
          else if (bmat .eq. 'I') then
             call zcopy (n, resid, 1, workd(ipj), 1)
-         end if 
+         end if
    90    continue
 c
 c        %---------------------------------------------------%
@@ -715,21 +715,21 @@ c
          if (bmat .eq. 'G') then
             call arscnd (t3)
             tmvbx = tmvbx + (t3 - t2)
-         end if 
+         end if
 c
 c        %-----------------------------------------------------%
 c        | Compute the B-norm of the corrected residual r_{j}. |
 c        %-----------------------------------------------------%
-c 
-         if (bmat .eq. 'G') then         
-             cnorm  = wzdotc (n, resid, 1, workd(ipj), 1)
-             rnorm1 = sqrt( dlapy2(dble(cnorm),dimag(cnorm)) )
+c
+         if (bmat .eq. 'G') then
+             cnorm  = zzdotc (n, resid, 1, workd(ipj), 1)
+             rnorm1 = sqrt( dlapy2(dble(cnorm),aimag(cnorm)) )
          else if (bmat .eq. 'I') then
              rnorm1 = dznrm2(n, resid, 1)
          end if
-c 
+c
          if (msglvl .gt. 0 .and. iter .gt. 0 ) then
-            call ivout (logfil, 1, j, ndigit,
+            call ivout (logfil, 1, [j], ndigit,
      &           '_naitr: Iterative refinement for Arnoldi residual')
             if (msglvl .gt. 2) then
                 rtemp(1) = rnorm
@@ -757,7 +757,7 @@ c           | angle of less than arcCOS(0.717)      |
 c           %---------------------------------------%
 c
             rnorm = rnorm1
-c 
+c
          else
 c
 c           %-------------------------------------------%
@@ -776,24 +776,24 @@ c           %-------------------------------------------------%
 c
             do 95 jj = 1, n
                resid(jj) = zero
-  95        continue 
+  95        continue
             rnorm = rzero
          end if
-c 
+c
 c        %----------------------------------------------%
 c        | Branch here directly if iterative refinement |
 c        | wasn't necessary or after at most NITER_REF  |
 c        | steps of iterative refinement.               |
 c        %----------------------------------------------%
-c 
+c
   100    continue
-c 
+c
          rstart = .false.
          orth2  = .false.
-c 
+c
          call arscnd (t5)
          titref = titref + (t5 - t4)
-c 
+c
 c        %------------------------------------%
 c        | STEP 6: Update  j = j+1;  Continue |
 c        %------------------------------------%
@@ -804,27 +804,27 @@ c
             tcaitr = tcaitr + (t1 - t0)
             ido = 99
             do 110 i = max(1,k), k+np-1
-c     
+c
 c              %--------------------------------------------%
 c              | Check for splitting and deflation.         |
 c              | Use a standard test as in the QR algorithm |
 c              | REFERENCE: LAPACK subroutine zlahqr        |
 c              %--------------------------------------------%
-c     
-               tst1 = dlapy2(dble(h(i,i)),dimag(h(i,i)))
-     &              + dlapy2(dble(h(i+1,i+1)), dimag(h(i+1,i+1)))
+c
+               tst1 = dlapy2(dble(h(i,i)),aimag(h(i,i)))
+     &              + dlapy2(dble(h(i+1,i+1)), aimag(h(i+1,i+1)))
                if( tst1.eq.dble(zero) )
      &              tst1 = zlanhs( '1', k+np, h, ldh, workd(n+1) )
-               if( dlapy2(dble(h(i+1,i)),dimag(h(i+1,i))) .le. 
-     &                    max( ulp*tst1, smlnum ) ) 
+               if( dlapy2(dble(h(i+1,i)),aimag(h(i+1,i))) .le.
+     &                    max( ulp*tst1, smlnum ) )
      &             h(i+1,i) = zero
  110        continue
-c     
+c
             if (msglvl .gt. 2) then
-               call zmout (logfil, k+np, k+np, h, ldh, ndigit, 
+               call zmout (logfil, k+np, k+np, h, ldh, ndigit,
      &          '_naitr: Final upper Hessenberg matrix H of order K+NP')
             end if
-c     
+c
             go to 9000
          end if
 c
@@ -833,7 +833,7 @@ c        | Loop back to extend the factorization by another step. |
 c        %--------------------------------------------------------%
 c
       go to 1000
-c 
+c
 c     %---------------------------------------------------------------%
 c     |                                                               |
 c     |  E N D     O F     M A I N     I T E R A T I O N     L O O P  |

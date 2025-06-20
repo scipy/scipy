@@ -13,16 +13,17 @@ Integrating functions, given function object
 
    quad          -- General purpose integration
    quad_vec      -- General purpose integration of vector-valued functions
+   cubature      -- General purpose multi-dimensional integration of array-valued functions
    dblquad       -- General purpose double integration
    tplquad       -- General purpose triple integration
    nquad         -- General purpose N-D integration
+   tanhsinh      -- General purpose elementwise integration
    fixed_quad    -- Integrate func(x) using Gaussian quadrature of order n
-   quadrature    -- Integrate with given tolerance using Gaussian quadrature
-   romberg       -- Integrate func using Romberg integration
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   lebedev_rule
    qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
-   AccuracyWarning  -- Warning on issues during quadrature integration
+
 
 Integrating functions, given fixed samples
 ==========================================
@@ -41,6 +42,14 @@ Integrating functions, given fixed samples
 
    :mod:`scipy.special` for orthogonal polynomials (special) for Gaussian
    quadrature roots and weights for other weighting factors and regions.
+
+Summation
+=========
+
+.. autosummary::
+   :toctree: generated/
+
+   nsum
 
 Solving initial value problems for ODE systems
 ==============================================
@@ -99,6 +108,9 @@ from ._bvp import solve_bvp
 from ._ivp import (solve_ivp, OdeSolution, DenseOutput,
                    OdeSolver, RK23, RK45, DOP853, Radau, BDF, LSODA)
 from ._quad_vec import quad_vec
+from ._tanhsinh import nsum, tanhsinh
+from ._cubature import cubature
+from ._lebedev import lebedev_rule
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import dop, lsoda, vode, odepack, quadpack

@@ -6,19 +6,17 @@ from numpy.linalg import LinAlgError
 from scipy.linalg import get_blas_funcs
 from .iterative import _get_atol_rtol
 from .utils import make_system
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from ._gcrotmk import _fgmres
 
 __all__ = ['lgmres']
 
 
-@_deprecate_positional_args(version="1.14.0")
-def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
+def lgmres(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
-           prepend_outer_v=False, atol=None, rtol=1e-5):
+           prepend_outer_v=False):
     """
-    Solve a matrix equation using the LGMRES algorithm.
+    Solve ``Ax = b`` with the LGMRES algorithm.
 
     The LGMRES algorithm [1]_ [2]_ is designed to avoid some problems
     in the convergence in restarted GMRES, and often converges in fewer
@@ -26,7 +24,7 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
 
     Parameters
     ----------
-    A : {sparse matrix, ndarray, LinearOperator}
+    A : {sparse array, ndarray, LinearOperator}
         The real or complex N-by-N matrix of the linear system.
         Alternatively, ``A`` can be a linear operator which can
         produce ``Ax`` using, e.g.,
@@ -38,16 +36,11 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
-        The default is ``rtol=1e-5``, the default for ``atol`` is ``rtol``.
-
-        .. warning::
-
-           The default value for ``atol`` will be changed to ``0.0`` in
-           SciPy 1.14.0.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
-    M : {sparse matrix, ndarray, LinearOperator}, optional
+    M : {sparse array, ndarray, LinearOperator}, optional
         Preconditioner for A.  The preconditioner should approximate the
         inverse of A.  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
@@ -77,11 +70,6 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     prepend_outer_v : bool, optional
         Whether to put outer_v augmentation vectors before Krylov iterates.
         In standard LGMRES, prepend_outer_v=False.
-    tol : float, optional, deprecated
-
-        .. deprecated:: 1.12.0
-           `lgmres` keyword argument ``tol`` is deprecated in favor of ``rtol``
-           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -121,9 +109,9 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import lgmres
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> A = csc_array([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
     >>> x, exitCode = lgmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
@@ -131,7 +119,7 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-    A,M,x,b,postprocess = make_system(A,M,x0,b)
+    A,M,x,b = make_system(A,M,x0,b)
 
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
@@ -147,12 +135,12 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
 
     b_norm = nrm2(b)
 
-    # we call this to get the right atol/rtol and raise warnings as necessary
-    atol, rtol = _get_atol_rtol('lgmres', b_norm, tol, atol, rtol)
+    # we call this to get the right atol/rtol and raise errors as necessary
+    atol, rtol = _get_atol_rtol('lgmres', b_norm, atol, rtol)
 
     if b_norm == 0:
         x = b
-        return (postprocess(x), 0)
+        return (x, 0)
 
     ptol_max_factor = 1.0
 
@@ -182,7 +170,7 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
         if inner_res_0 == 0:
             rnorm = nrm2(r_outer)
             raise RuntimeError("Preconditioner returned a zero vector; "
-                               "|v| ~ %.1g, |M v| = 0" % rnorm)
+                               f"|v| ~ {rnorm:.1g}, |M v| = 0")
 
         v0 = scal(1.0/inner_res_0, v0)
 
@@ -204,7 +192,7 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
-            return postprocess(x), k_outer + 1
+            return x, k_outer + 1
 
         # Inner loop tolerance control
         if pres > ptol:
@@ -237,6 +225,6 @@ def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
         x += dx
     else:
         # didn't converge ...
-        return postprocess(x), maxiter
+        return x, maxiter
 
-    return postprocess(x), 0
+    return x, 0

@@ -1,9 +1,12 @@
 import pytest
+import platform
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_, assert_allclose,
                            assert_equal)
-from scipy.sparse import csr_matrix
+from scipy._lib._gcutils import assert_deallocated
+from scipy._lib._util import MapWrapper
+from scipy.sparse import csr_array
 from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._differentiable_functions import (ScalarFunction,
                                                       VectorFunction,
@@ -127,6 +130,67 @@ class TestScalarFunction(TestCase):
         assert_array_equal(analit.ngev+approx.ngev, ngev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(g_analit, g_approx)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.0, 0.3])
+        ex = ExScalarFunction()
+        ex2 = ExScalarFunction()
+        with MapWrapper(2) as mapper:
+            approx = ScalarFunction(ex.fun, x0, (), '2-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '2-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            approx = ScalarFunction(ex.fun, x0, (), '3-point',
+                                    ex.hess, None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), '3-point',
+                                           ex2.hess, None, (-np.inf, np.inf),
+                                          )
+            assert_allclose(approx.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.grad(x0), ex.grad(x0))
+            assert_allclose(approx_series.hess(x0), ex.hess(x0))
+            assert_allclose(approx.hess(x0), ex.hess(x0))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex = ExScalarFunction()
+            ex2 = ExScalarFunction()
+            x1 = np.array([3.0, 4.0])
+
+            approx = ScalarFunction(ex.fun, x0, (), ex.grad,
+                                    '3-point', None, (-np.inf, np.inf),
+                                    workers=mapper)
+            approx_series = ScalarFunction(ex2.fun, x0, (), ex2.grad,
+                                           '3-point', None, (-np.inf, np.inf),
+                                           )
+            assert_allclose(approx.grad(x1), ex.grad(x1))
+            assert_allclose(approx_series.grad(x1), ex.grad(x1))
+            approx_series.hess(x1)
+            approx.hess(x1)
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.ngev, approx_series.ngev)
+            assert_equal(approx_series.ngev, ex2.ngev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
 
     def test_fun_and_grad(self):
         ex = ExScalarFunction()
@@ -285,6 +349,7 @@ class TestScalarFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # Scalar_Function should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -416,8 +481,9 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.nfev, nfev)
         assert_array_equal(ex.njev, njev)
         assert_array_equal(analit.njev, njev)
-        approx = VectorFunction(ex.fun, x0, '2-point', ex.hess, None, None,
-                                (-np.inf, np.inf), None)
+        # create with defaults for the keyword arguments, to
+        # ensure that the defaults work
+        approx = VectorFunction(ex.fun, x0, '2-point', ex.hess)
         nfev += 3
         assert_array_equal(ex.nfev, nfev)
         assert_array_equal(analit.nfev+approx.nfev, nfev)
@@ -497,6 +563,94 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(analit.njev+approx.njev, njev)
         assert_array_almost_equal(f_analit, f_approx)
         assert_array_almost_equal(J_analit, J_approx)
+
+    def test_updating_on_initial_setup(self):
+        # Check that memoisation works with the freshly created VectorFunction
+        # On initialization vf.f_updated attribute wasn't being set correctly.
+        x0 = np.array([2.5, 3.0])
+        ex = ExVectorialFunction()
+        vf = VectorFunction(ex.fun, x0, ex.jac, ex.hess)
+        assert vf.f_updated
+        assert vf.nfev == 1
+        assert vf.njev == 1
+        assert ex.nfev == 1
+        assert ex.njev == 1
+        vf.fun(x0)
+        vf.jac(x0)
+        assert vf.nfev == 1
+        assert vf.njev == 1
+        assert ex.nfev == 1
+        assert ex.njev == 1
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers(self):
+        x0 = np.array([2.5, 3.0])
+        ex = ExVectorialFunction()
+        ex2 = ExVectorialFunction()
+        v = np.array([1.0, 2.0])
+
+        with MapWrapper(2) as mapper:
+            approx = VectorFunction(ex.fun, x0, '2-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '2-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, '3-point',
+                                    ex.hess, None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, '3-point',
+                                           ex2.hess, None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.hess(x0, v), ex.hess(x0, v))
+            assert_allclose(approx.hess(x0, v), ex.hess(x0, v))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
+            assert_equal(approx_series.nhev, ex2.nhev)
+
+            # The following tests are somewhat redundant because the LinearOperator
+            # produced by VectorFunction.hess does not use any parallelisation.
+            # The tests are left for completeness, in case that situation changes.
+            ex.nfev = ex.njev = ex.nhev = 0
+            ex2.nfev = ex2.njev = ex2.nhev = 0
+            approx = VectorFunction(ex.fun, x0, ex.jac,
+                                    '2-point', None, None, (-np.inf, np.inf),
+                                    False, workers=mapper)
+            approx_series = VectorFunction(ex2.fun, x0, ex2.jac,
+                                           '2-point', None, None, (-np.inf, np.inf),
+                                           False)
+            assert_allclose(approx.jac(x0), ex.jac(x0))
+            assert_allclose(approx_series.jac(x0), ex.jac(x0))
+
+            H_analit = ex2.hess(x0, v)
+            H_approx_series = approx_series.hess(x0, v)
+            H_approx = approx.hess(x0, v)
+            x = [5, 2.0]
+            assert_allclose(H_approx.dot(x), H_analit.dot(x))
+            assert_allclose(H_approx_series.dot(x), H_analit.dot(x))
+
+            assert_equal(approx.nfev, approx_series.nfev)
+            assert_equal(approx_series.nfev, ex2.nfev)
+            assert_equal(approx.njev, approx_series.njev)
+            assert_equal(approx.nhev, approx_series.nhev)
 
     def test_finite_difference_hess_linear_operator(self):
         ex = ExVectorialFunction()
@@ -626,6 +780,39 @@ class TestVectorialFunction(TestCase):
         assert_array_equal(ex.nhev, nhev)
         assert_array_equal(analit.nhev+approx.nhev, nhev)
 
+        # Test VectorFunction.hess_wrapped with J0=None
+        x = np.array([1.5, 0.5])
+        v = np.array([1.0, 2.0])
+        njev_before = approx.hess_wrapped.njev
+        H = approx.hess_wrapped(x, v, J0=None)
+        assert isinstance(H, LinearOperator)
+        # The njev counter should be incremented by exactly 1
+        assert approx.hess_wrapped.njev == njev_before + 1
+
+    def test_fgh_overlap(self):
+        # VectorFunction.fun/jac should return copies to internal attributes
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+
+        vf = VectorFunction(ex.fun, x0, '3-point', ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+        f = vf.fun(np.array([1.1, 0.1]))
+        J = vf.jac([1.1, 0.1])
+        assert vf.f is not f
+        assert vf.J is not J
+        assert_equal(f, vf.f)
+        assert_equal(J, vf.J)
+
+        vf = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                            (-np.inf, np.inf), None)
+        f = vf.fun(np.array([1.1, 0.1]))
+        J = vf.jac([1.1, 0.1])
+        assert vf.f is not f
+        assert vf.J is not J
+        assert_equal(f, vf.f)
+        assert_equal(J, vf.J)
+
+    @pytest.mark.thread_unsafe
     def test_x_storage_overlap(self):
         # VectorFunction should not store references to arrays, it should
         # store copies - this checks that updating an array in-place causes
@@ -682,6 +869,44 @@ class TestVectorialFunction(TestCase):
         res = vf.jac(x0)
         assert res.dtype == np.float32
 
+    def test_sparse_analytic_jac(self):
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+        def sparse_adapter(func):
+            def inner(x):
+                f_x = func(x)
+                return csr_array(f_x)
+            return inner
+
+        # jac(x) returns dense jacobian
+        vf1 = VectorFunction(ex.fun, x0, ex.jac, ex.hess, None, None,
+                            (-np.inf, np.inf), sparse_jacobian=None)
+        # jac(x) returns sparse jacobian, but sparse_jacobian=False requests dense
+        vf2 = VectorFunction(ex.fun, x0, sparse_adapter(ex.jac), ex.hess, None, None,
+                            (-np.inf, np.inf), sparse_jacobian=False)
+
+        res1 = vf1.jac(x0 + 1)
+        res2 = vf2.jac(x0 + 1)
+        assert_equal(res1, res2)
+
+    def test_sparse_numerical_jac(self):
+        ex = ExVectorialFunction()
+        x0 = np.array([1.0, 0.0])
+        N = len(x0)
+
+        # normal dense numerical difference
+        vf1 = VectorFunction(ex.fun, x0, '2-point', ex.hess, None, None,
+                             (-np.inf, np.inf), sparse_jacobian=None)
+        # use sparse numerical difference, but ask it to be converted to dense
+        finite_diff_jac_sparsity = csr_array(np.ones((N, N)))
+        vf2 = VectorFunction(ex.fun, x0, '2-point', ex.hess, None,
+                             finite_diff_jac_sparsity, (-np.inf, np.inf),
+                             sparse_jacobian=False)
+
+        res1 = vf1.jac(x0 + 1)
+        res2 = vf2.jac(x0 + 1)
+        assert_equal(res1, res2)
+
 
 def test_LinearVectorFunction():
     A_dense = np.array([
@@ -689,7 +914,7 @@ def test_LinearVectorFunction():
         [0, 4, 2]
     ])
     x0 = np.zeros(3)
-    A_sparse = csr_matrix(A_dense)
+    A_sparse = csr_array(A_dense)
     x = np.array([1, -1, 0])
     v = np.array([-1, 1])
     Ax = np.array([-3, -4])
@@ -756,3 +981,45 @@ def test_IdentityVectorFunction():
     assert_array_equal(f2.jac(x), np.eye(3))
 
     assert_array_equal(f1.hess(x, v).toarray(), np.zeros((3, 3)))
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+def test_ScalarFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    ex = ExScalarFunction()
+    x0 = np.zeros(3)
+    with assert_deallocated(lambda: ScalarFunction(ex.fun, x0, (), ex.grad,
+                            ex.hess, None, (-np.inf, np.inf))):
+        pass
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+def test_VectorFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    ex = ExVectorialFunction()
+    x0 = [1.0, 0.0]
+    with assert_deallocated(lambda: VectorFunction(ex.fun, x0, ex.jac,
+                            ex.hess, None, None, (-np.inf, np.inf), None)):
+        pass
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == "PyPy",
+    reason="assert_deallocate not available on PyPy"
+)
+def test_LinearVectorFunctionNoReferenceCycle():
+    """Regression test for gh-20768."""
+    A_dense = np.array([
+        [-1, 2, 0],
+        [0, 4, 2]
+    ])
+    x0 = np.zeros(3)
+    A_sparse = csr_array(A_dense)
+    with assert_deallocated(lambda: LinearVectorFunction(A_sparse, x0, None)):
+        pass

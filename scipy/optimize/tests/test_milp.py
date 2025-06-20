@@ -2,6 +2,7 @@
 Unit test for Mixed Integer Linear Programming
 """
 import re
+import sys
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
@@ -11,6 +12,8 @@ from .test_linprog import magic_square
 from scipy.optimize import milp, Bounds, LinearConstraint
 from scipy import sparse
 
+
+_IS_32BIT = (sys.maxsize < 2**32)
 
 def test_milp_iv():
 
@@ -252,8 +255,7 @@ def test_milp_5():
     assert_allclose(res.fun, -12)
 
 
-@pytest.mark.slow
-@pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
+@pytest.mark.xslow
 def test_milp_6():
     # solve a larger MIP with only equality constraints
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
@@ -292,7 +294,9 @@ def test_infeasible_prob_16609():
 _msg_time = "Time limit reached. (HiGHS Status 13:"
 _msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
-
+@pytest.mark.thread_unsafe
+# See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
+@pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
 @pytest.mark.slow
@@ -383,3 +387,73 @@ def test_mip_rel_gap_passdown():
     # check that differences between solution gaps are declining
     # monotonically with the mip_rel_gap parameter.
     assert np.all(np.diff(sol_mip_gaps) < 0)
+
+@pytest.mark.xfail(reason='Upstream / Wrapper issue, see gh-20116')
+def test_large_numbers_gh20116():
+    h = 10 ** 12
+    A = np.array([[100.4534, h], [100.4534, -h]])
+    b = np.array([h, 0])
+    constraints = LinearConstraint(A=A, ub=b)
+    bounds = Bounds([0, 0], [1, 1])
+    c = np.array([0, 0])
+    res = milp(c=c, constraints=constraints, bounds=bounds, integrality=1)
+    assert res.status == 0
+    assert np.all(A @ res.x < b)
+
+
+def test_presolve_gh18907():
+    from scipy.optimize import milp
+    import numpy as np
+    inf = np.inf
+
+    # set up problem
+    c = np.array([-0.85850509, -0.82892676, -0.80026454, -0.63015535, -0.5099006,
+                  -0.50077193, -0.4894404, -0.47285865,  -0.39867774, -0.38069646,
+                  -0.36733012, -0.36733012, -0.35820411, -0.31576141, -0.20626091,
+                  -0.12466144, -0.10679516, -0.1061887, -0.1061887, -0.1061887,
+                  -0., -0., -0., -0., 0., 0., 0., 0.])
+
+    A = np.array([[1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+                   1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                   1., 0., 0., 0., 0., 0., 1., 0., 0., 0., -25., -0., -0., -0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                   -1., 0., 0., 0., 0., 0., -1., 0., 0., 0., 2., 0., 0., 0.],
+                  [0., 0., 0., 0., 1., 1., 1., 1., 0., 1., 0., 0., 0., 0., 0.,
+                   0., 0., 0., 0., 0., 0., 0., 0., 0., -0., -25., -0., -0.],
+                  [0., 0., 0., 0., -1., -1., -1., -1., 0., -1., 0., 0., 0.,
+                   0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 2., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                   0., 0., 1., 1., 1., 0., 0., 0., 0., -0., -0., -25., -0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                   0., 0., -1., -1., -1., 0., 0., 0., 0., 0., 0., 2., 0.],
+                  [1., 1., 1., 1., 0., 0., 0., 0., 1., 0., 1., 1., 1., 1., 0.,
+                   1., 1., 0., 0., 0., 0., 1., 1., 1., -0., -0., -0., -25.],
+                  [-1., -1., -1., -1., 0., 0., 0., 0., -1., 0., -1., -1., -1., -1.,
+                   0., -1., -1., 0., 0., 0., 0., -1., -1., -1., 0., 0., 0., 2.]])
+    bl = np.array([-inf, -inf, -inf, -inf, -inf, -inf, -inf, -inf, -inf])
+    bu = np.array([100., 0., 0., 0., 0., 0., 0., 0., 0.])
+    constraints = LinearConstraint(A, bl, bu)
+    integrality = 1
+    bounds = (0, 1)
+    r1 = milp(c=c, constraints=constraints, integrality=integrality, bounds=bounds,
+              options={'presolve': True})
+    r2 = milp(c=c, constraints=constraints, integrality=integrality, bounds=bounds,
+              options={'presolve': False})
+    assert r1.status == r2.status
+    assert_allclose(r1.x, r2.x)
+
+    # another example from the same issue
+    bounds = Bounds(lb=0, ub=1)
+    integrality = [1, 1, 0, 0]
+    c = [10, 9.52380952, -1000, -952.38095238]
+    A = [[1, 1, 0, 0], [0, 0, 1, 1], [200, 0, 0, 0], [0, 200, 0, 0],
+         [0, 0, 2000, 0], [0, 0, 0, 2000], [-1, 0, 1, 0], [-1, -1, 0, 1]]
+    ub = [1, 1, 200, 200, 1000, 1000, 0, 0]
+    constraints = LinearConstraint(A, ub=ub)
+    r1 = milp(c=c, constraints=constraints,  bounds=bounds,
+              integrality=integrality, options={"presolve": False})
+    r2 = milp(c=c, constraints=constraints,  bounds=bounds,
+              integrality=integrality, options={"presolve": False})
+    assert r1.status == r2.status
+    assert_allclose(r1.x, r2.x)

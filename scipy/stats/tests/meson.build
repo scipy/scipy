@@ -3,12 +3,15 @@ py3.install_sources([
     'common_tests.py',
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
-    'test_boost_ufuncs.py',
     'test_censored_data.py',
     'test_contingency.py',
+    'test_continued_fraction.py',
+    'test_continuous.py',
     'test_continuous_basic.py',
     'test_continuous_fit_censored.py',
+    'test_correlation.py',
     'test_crosstab.py',
+    'test_device_dtype.py',
     'test_discrete_basic.py',
     'test_discrete_distns.py',
     'test_distributions.py',
@@ -17,6 +20,8 @@ py3.install_sources([
     'test_fit.py',
     'test_hypotests.py',
     'test_kdeoth.py',
+    'test_marray.py',
+    'test_mgc.py',
     'test_morestats.py',
     'test_mstats_basic.py',
     'test_mstats_extras.py',
@@ -24,6 +29,7 @@ py3.install_sources([
     'test_multivariate.py',
     'test_odds_ratio.py',
     'test_qmc.py',
+    'test_quantile.py',
     'test_rank.py',
     'test_relative_risk.py',
     'test_resampling.py',
@@ -34,7 +40,8 @@ py3.install_sources([
     'test_tukeylambda_stats.py',
     'test_variation.py'
   ],
-  subdir: 'scipy/stats/tests'
+  subdir: 'scipy/stats/tests',
+  install_tag: 'tests'
 )
 
 subdir('data')

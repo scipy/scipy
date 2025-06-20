@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 import numpy as np
 
-from scipy._lib._util import _asarray_validated
+from scipy._lib._util import _asarray_validated, _apply_over_batch
 from scipy.linalg import block_diag, LinAlgError
 from .lapack import _compute_lwork, get_lapack_funcs
 
@@ -80,6 +80,13 @@ def cossin(X, p=None, q=None, separate=False,
         (``m-q`` x ``m-q``) orthogonal/unitary matrices. If ``separate=True``,
         this contains the tuple of ``(V1H, V2H)``.
 
+    Notes
+    -----
+    The documentation is written assuming array arguments are of specified
+    "core" shapes. However, array argument(s) of this function may have additional
+    "batch" dimensions prepended to the core shape. In this case, the array is treated
+    as a batch of lower-dimensional slices; see :ref:`linalg_batch` for details.
+
     References
     ----------
     .. [1] Brian D. Sutton. Computing the complete CS decomposition. Numer.
@@ -111,16 +118,17 @@ def cossin(X, p=None, q=None, separate=False,
         p = 1 if p is None else int(p)
         q = 1 if q is None else int(q)
         X = _asarray_validated(X, check_finite=True)
-        if not np.equal(*X.shape):
+        if not np.equal(*X.shape[-2:]):
             raise ValueError("Cosine Sine decomposition only supports square"
-                             f" matrices, got {X.shape}")
-        m = X.shape[0]
+                             f" matrices, got {X.shape[-2:]}")
+        m = X.shape[-2]
         if p >= m or p <= 0:
-            raise ValueError(f"invalid p={p}, 0<p<{X.shape[0]} must hold")
+            raise ValueError(f"invalid p={p}, 0<p<{X.shape[-2]} must hold")
         if q >= m or q <= 0:
-            raise ValueError(f"invalid q={q}, 0<q<{X.shape[0]} must hold")
+            raise ValueError(f"invalid q={q}, 0<q<{X.shape[-2]} must hold")
 
-        x11, x12, x21, x22 = X[:p, :q], X[:p, q:], X[p:, :q], X[p:, q:]
+        x11, x12, x21, x22 = (X[..., :p, :q], X[..., :p, q:],
+                              X[..., p:, :q], X[..., p:, q:])
     elif not isinstance(X, Iterable):
         raise ValueError("When p and q are None, X must be an Iterable"
                          " containing the subblocks of X")
@@ -128,30 +136,37 @@ def cossin(X, p=None, q=None, separate=False,
         if len(X) != 4:
             raise ValueError("When p and q are None, exactly four arrays"
                              f" should be in X, got {len(X)}")
-
         x11, x12, x21, x22 = (np.atleast_2d(x) for x in X)
-        for name, block in zip(["x11", "x12", "x21", "x22"],
-                               [x11, x12, x21, x22]):
-            if block.shape[1] == 0:
-                raise ValueError(f"{name} can't be empty")
-        p, q = x11.shape
-        mmp, mmq = x22.shape
 
-        if x12.shape != (p, mmq):
-            raise ValueError(f"Invalid x12 dimensions: desired {(p, mmq)}, "
-                             f"got {x12.shape}")
+    return _cossin(x11, x12, x21, x22, separate=separate, swap_sign=swap_sign,
+                   compute_u=compute_u, compute_vh=compute_vh)
 
-        if x21.shape != (mmp, q):
-            raise ValueError(f"Invalid x21 dimensions: desired {(mmp, q)}, "
-                             f"got {x21.shape}")
 
-        if p + mmp != q + mmq:
-            raise ValueError("The subblocks have compatible sizes but "
-                             "don't form a square array (instead they form a"
-                             " {}x{} array). This might be due to missing "
-                             "p, q arguments.".format(p + mmp, q + mmq))
+@_apply_over_batch(('x11', 2), ('x12', 2), ('x21', 2), ('x22', 2))
+def _cossin(x11, x12, x21, x22, separate, swap_sign, compute_u, compute_vh):
 
-        m = p + mmp
+    for name, block in zip(["x11", "x12", "x21", "x22"],
+                           [x11, x12, x21, x22]):
+        if block.shape[1] == 0:
+            raise ValueError(f"{name} can't be empty")
+    p, q = x11.shape
+    mmp, mmq = x22.shape
+
+    if x12.shape != (p, mmq):
+        raise ValueError(f"Invalid x12 dimensions: desired {(p, mmq)}, "
+                         f"got {x12.shape}")
+
+    if x21.shape != (mmp, q):
+        raise ValueError(f"Invalid x21 dimensions: desired {(mmp, q)}, "
+                         f"got {x21.shape}")
+
+    if p + mmp != q + mmq:
+        raise ValueError("The subblocks have compatible sizes but "
+                         "don't form a square array (instead they form a"
+                          f" {p + mmp}x{q + mmq} array). This might be "
+                          "due to missing p, q arguments.")
+
+    m = p + mmp
 
     cplx = any([np.iscomplexobj(x) for x in [x11, x12, x21, x22]])
     driver = "uncsd" if cplx else "orcsd"
@@ -208,7 +223,7 @@ def cossin(X, p=None, q=None, separate=False,
 
     CS[p:p + n22, q:q + n22] = Id[:n22, :n22]
     CS[n11:n11 + r, n11:n11 + r] = c
-    CS[p + n22:p + n22 + r, r + n21 + n22:2 * r + n21 + n22] = c
+    CS[p + n22:p + n22 + r, n11 + r + n21 + n22:2 * r + n11 + n21 + n22] = c
 
     xs = n11
     xe = n11 + r

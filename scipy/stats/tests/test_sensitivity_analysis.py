@@ -74,6 +74,7 @@ class TestSobolIndices:
         AB = sample_AB(A=A, B=B)
         assert_allclose(AB, ref)
 
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     @pytest.mark.parametrize(
         'func',
@@ -85,7 +86,7 @@ class TestSobolIndices:
         res = sobol_indices(
             func=func, n=4096,
             dists=self.dists,
-            random_state=rng
+            rng=rng
         )
 
         if func.__name__ == 'f_ishigami_vec':
@@ -140,7 +141,7 @@ class TestSobolIndices:
             stats.uniform(loc=-np.pi, scale=2*np.pi)
         ]
 
-        A, B = sample_A_B(n=n, dists=dists, random_state=rng)
+        A, B = sample_A_B(n=n, dists=dists, rng=rng)
         AB = sample_AB(A=A, B=B)
 
         func = {
@@ -149,18 +150,27 @@ class TestSobolIndices:
             'f_AB': f_ishigami(AB).reshape((3, 1, -1))
         }
 
+        # preserve use of old random_state during SPEC 7 transition
         res = sobol_indices(
             func=func, n=n,
             dists=dists,
-            random_state=rng
+            rng=rng
         )
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
 
         res = sobol_indices(
             func=func, n=n,
-            random_state=rng
+            rng=rng
         )
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
+        # Ideally should be exactly equal but since f_ishigami
+        # uses floating point operations, so exact equality
+        # might not be possible (due to flakiness in computation).
+        # So, assert_allclose is used with default parameters
+        # Regression test for https://github.com/scipy/scipy/issues/21383
+        assert_allclose(f_ishigami(A).reshape(1, -1), func['f_A'])
+        assert_allclose(f_ishigami(B).reshape(1, -1), func['f_B'])
+        assert_allclose(f_ishigami(AB).reshape((3, 1, -1)), func['f_AB'])
 
     def test_method(self, ishigami_ref_indices):
         def jansen_sobol(f_A, f_B, f_AB):
@@ -179,7 +189,7 @@ class TestSobolIndices:
             func=f_ishigami, n=4096,
             dists=self.dists,
             method=jansen_sobol,
-            random_state=rng
+            rng=rng
         )
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
@@ -194,7 +204,7 @@ class TestSobolIndices:
             func=f_ishigami, n=8,
             dists=self.dists,
             method=jansen_sobol_typed,
-            random_state=rng
+            rng=rng
         )
 
     def test_normalization(self, ishigami_ref_indices):
@@ -202,7 +212,7 @@ class TestSobolIndices:
         res = sobol_indices(
             func=lambda x: f_ishigami(x) + 1000, n=4096,
             dists=self.dists,
-            random_state=rng
+            rng=rng
         )
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-2)
@@ -219,7 +229,7 @@ class TestSobolIndices:
         res = sobol_indices(
             func=f_ishigami_vec_const, n=4096,
             dists=self.dists,
-            random_state=rng
+            rng=rng
         )
 
         ishigami_vec_indices = [
@@ -236,7 +246,7 @@ class TestSobolIndices:
         res = sobol_indices(
             func=f_ishigami, n=2**19,  # 524288
             dists=self.dists,
-            random_state=rng
+            rng=rng
         )
 
         assert_allclose(res.first_order, ishigami_ref_indices[0], atol=1e-4)

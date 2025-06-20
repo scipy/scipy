@@ -3,13 +3,16 @@ from itertools import product
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
+import pytest
 from pytest import raises as assert_raises
 
-from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
+from scipy._lib._util import MapWrapper, _ScalarFunctionWrapper
+from scipy.sparse import csr_array, csc_array, lil_array
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
     group_columns, _eps_for_method, _compute_absolute_step)
+from scipy.optimize import rosen
 
 
 def test_group_columns():
@@ -22,7 +25,7 @@ def test_group_columns():
         [0, 0, 0, 0, 1, 1],
         [0, 0, 0, 0, 0, 0]
     ]
-    for transform in [np.asarray, csr_matrix, csc_matrix, lil_matrix]:
+    for transform in [np.asarray, csr_array, csc_array, lil_array]:
         A = transform(structure)
         order = np.arange(6)
         groups_true = np.array([0, 1, 2, 0, 1, 2])
@@ -184,7 +187,25 @@ class TestApproxDerivativesDense:
             x[0] ** 3 * x[1] ** -0.5
         ])
 
+    def fun_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
+        return np.array([
+            x[0] * np.sin(x[1]),
+            x[1] * np.cos(x[0]),
+            x[0] ** 3 * x[1] ** -0.5
+        ])
+
     def jac_vector_vector(self, x):
+        return np.array([
+            [np.sin(x[1]), x[0] * np.cos(x[1])],
+            [-x[1] * np.sin(x[0]), np.cos(x[0])],
+            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
+        ])
+
+    def jac_vector_vector_with_arg(self, x, arg):
+        """Used to test passing custom arguments with check_derivative()"""
+        assert arg == 42
         return np.array([
             [np.sin(x[1]), x[0] * np.cos(x[1])],
             [-x[1] * np.sin(x[0]), np.cos(x[0])],
@@ -249,15 +270,51 @@ class TestApproxDerivativesDense:
 
     def test_scalar_vector(self):
         x0 = 0.5
-        jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
-                                       method='2-point')
-        jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0)
+        with MapWrapper(2) as mapper:
+            jac_diff_2 = approx_derivative(self.fun_scalar_vector, x0,
+                                           method='2-point', workers=mapper)
+        jac_diff_3 = approx_derivative(self.fun_scalar_vector, x0, workers=map)
         jac_diff_4 = approx_derivative(self.fun_scalar_vector, x0,
-                                       method='cs')
+                                       method='cs', workers=None)
         jac_true = self.jac_scalar_vector(np.atleast_1d(x0))
         assert_allclose(jac_diff_2, jac_true, rtol=1e-6)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-9)
         assert_allclose(jac_diff_4, jac_true, rtol=1e-12)
+
+    @pytest.mark.fail_slow(5.0)
+    def test_workers_evaluations_and_nfev(self):
+        # check that nfev consumed by approx_derivative is tracked properly
+        # and that parallel evaluation is same as series
+        x0 = [0.5, 1.5, 2.0]
+        with MapWrapper(2) as mapper:
+            md2, mdct2 = approx_derivative(rosen, x0,
+                                           method='2-point', workers=mapper,
+                                           full_output=True)
+            md3, mdct3 = approx_derivative(rosen, x0,
+                                           workers=mapper, full_output=True)
+        # supply a number for workers. This is not normally recommended
+        # for upstream workers as setting up processes incurs a large overhead
+        md4, mdct4 = approx_derivative(rosen, x0,
+                                       method='cs', workers=2,
+                                       full_output=True)
+
+        sfr = _ScalarFunctionWrapper(rosen)
+        d2, dct2 = approx_derivative(sfr, x0, method='2-point', full_output=True)
+        assert_equal(dct2['nfev'], sfr.nfev)
+        sfr.nfev = 0
+        d3, dct3 = approx_derivative(sfr, x0, full_output=True)
+        assert_equal(dct3['nfev'], sfr.nfev)
+        sfr.nfev = 0
+        d4, dct4 = approx_derivative(sfr, x0, method='cs', full_output=True)
+        assert_equal(dct4['nfev'], sfr.nfev)
+
+        assert_equal(mdct2['nfev'], dct2['nfev'])
+        assert_equal(mdct3['nfev'], dct3['nfev'])
+        assert_equal(mdct4['nfev'], dct4['nfev'])
+        # also check that gradients are equivalent
+        assert_equal(md2, d2)
+        assert_equal(md3, d3)
+        assert_equal(md4, d4)
 
     def test_vector_scalar(self):
         x0 = np.array([100.0, -0.5])
@@ -290,8 +347,9 @@ class TestApproxDerivativesDense:
         jac_diff_2 = approx_derivative(self.fun_vector_vector, x0,
                                        method='2-point')
         jac_diff_3 = approx_derivative(self.fun_vector_vector, x0)
-        jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
-                                       method='cs')
+        with MapWrapper(2) as mapper:
+            jac_diff_4 = approx_derivative(self.fun_vector_vector, x0,
+                                           method='cs', workers=mapper)
         jac_true = self.jac_vector_vector(x0)
         assert_allclose(jac_diff_2, jac_true, rtol=1e-5)
         assert_allclose(jac_diff_3, jac_true, rtol=1e-6)
@@ -500,6 +558,14 @@ class TestApproxDerivativesDense:
                                     self.jac_zero_jacobian, x0)
         assert_(accuracy == 0)
 
+    def test_check_derivative_with_kwargs(self):
+        x0 = np.array([-10.0, 10])
+        accuracy = check_derivative(self.fun_vector_vector_with_arg,
+                                    self.jac_vector_vector_with_arg,
+                                    x0,
+                                    kwargs={'arg': 42})
+        assert_(accuracy < 1e-9)
+
 
 class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
@@ -543,6 +609,7 @@ class TestApproxDerivativeSparse:
 
         return A
 
+    @pytest.mark.fail_slow(5)
     def test_all(self):
         A = self.structure(self.n)
         order = np.arange(self.n)
@@ -550,19 +617,22 @@ class TestApproxDerivativeSparse:
         np.random.shuffle(order)
         groups_2 = group_columns(A, order)
 
-        for method, groups, l, u in product(
-                ['2-point', '3-point', 'cs'], [groups_1, groups_2],
-                [-np.inf, self.lb], [np.inf, self.ub]):
-            J = approx_derivative(self.fun, self.x0, method=method,
-                                  bounds=(l, u), sparsity=(A, groups))
-            assert_(isinstance(J, csr_matrix))
-            assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
+        with MapWrapper(2) as mapper:
+            for method, groups, l, u, mf in product(
+                    ['2-point', '3-point', 'cs'], [groups_1, groups_2],
+                    [-np.inf, self.lb], [np.inf, self.ub], [map, mapper]):
+                J = approx_derivative(self.fun, self.x0, method=method,
+                                      bounds=(l, u), sparsity=(A, groups),
+                                      workers=mf)
+                assert_(isinstance(J, csr_array))
+                assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
-            rel_step = np.full_like(self.x0, 1e-8)
-            rel_step[::2] *= -1
-            J = approx_derivative(self.fun, self.x0, method=method,
-                                  rel_step=rel_step, sparsity=(A, groups))
-            assert_allclose(J.toarray(), self.J_true, rtol=1e-5)
+                rel_step = np.full_like(self.x0, 1e-8)
+                rel_step[::2] *= -1
+                J = approx_derivative(self.fun, self.x0, method=method,
+                                      rel_step=rel_step, sparsity=(A, groups),
+                                      workers=mf)
+                assert_allclose(J.toarray(), self.J_true, rtol=1e-5)
 
     def test_no_precomputed_groups(self):
         A = self.structure(self.n)
@@ -581,7 +651,7 @@ class TestApproxDerivativeSparse:
 
     def test_check_derivative(self):
         def jac(x):
-            return csr_matrix(self.jac(x))
+            return csr_array(self.jac(x))
 
         accuracy = check_derivative(self.fun, jac, self.x0,
                                     bounds=(self.lb, self.ub))

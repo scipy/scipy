@@ -8,6 +8,7 @@ from scipy.linalg._cythonized_array_utils cimport (
     )
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
 from libc.stdlib cimport malloc, free
+from scipy._lib._util import _apply_over_batch
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 
@@ -89,6 +90,7 @@ cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noe
 # ============================================================================
 
 
+@_apply_over_batch(('a', 2))
 @cython.embedsignature(True)
 def bandwidth(a):
     """Return the lower and upper bandwidth of a 2D numeric array.
@@ -198,7 +200,8 @@ cdef inline (int, int) band_check_internal_c(const np_numeric_t[:, ::1]A) noexce
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        if upper_band == c:
+        # If existing band falls outside matrix; we are done
+        if r + 1 + upper_band > m - 1:
             break
 
     return lower_band, upper_band
@@ -229,12 +232,14 @@ cdef inline (int, int) band_check_internal_noncontig(const np_numeric_t[:, :]A) 
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        if upper_band == c:
+        # If existing band falls outside matrix; we are done
+        if r + 1 + upper_band > m - 1:
             break
 
     return lower_band, upper_band
 
 
+@_apply_over_batch(('a', 2))
 @cython.embedsignature(True)
 def issymmetric(a, atol=None, rtol=None):
     """Check if a square 2D array is symmetric.
@@ -365,6 +370,7 @@ cdef inline bint is_sym_her_real_noncontig_internal(const np_numeric_t[:, :]A) n
     return True
 
 
+@_apply_over_batch(('a', 2))
 @cython.embedsignature(True)
 def ishermitian(a, atol=None, rtol=None):
     """Check if a square 2D array is Hermitian.
@@ -476,7 +482,7 @@ def is_sym_her_complex_c(const np_complex_numeric_t[:, ::1]A):
     return s
 
 @cython.initializedcheck(False)
-def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
+def is_sym_her_complex_noncontig(const np_complex_numeric_t[:, :]A):
     cdef bint s
     with nogil:
         s = is_sym_her_complex_noncontig_internal(A)

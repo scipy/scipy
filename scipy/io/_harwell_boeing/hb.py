@@ -21,11 +21,10 @@ features are:
 import warnings
 
 import numpy as np
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_array, csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
-__all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
-           "HBMatrixType"]
+__all__ = ["hb_read", "hb_write"]
 
 
 class MalformedHeader(Exception):
@@ -49,7 +48,7 @@ class HBInfo:
 
         Parameters
         ----------
-        m : sparse matrix
+        m : sparse array or matrix
             the HBInfo instance will derive its parameters from m
         title : str
             Title to put in the HB header
@@ -97,8 +96,8 @@ class HBInfo:
             elif values.dtype.kind in np.typecodes["AllFloat"]:
                 tp = "real"
             else:
-                raise NotImplementedError("type %s for values not implemented"
-                                          % values.dtype)
+                raise NotImplementedError(
+                    f"type {values.dtype} for values not implemented")
             mxtype = HBMatrixType(tp, "unsymmetric", "assembled")
         else:
             raise ValueError("mxtype argument not handled yet.")
@@ -139,7 +138,7 @@ class HBInfo:
         line = fid.readline().strip("\n")
         if not len(line) > 72:
             raise ValueError("Expected at least 72 characters for first line, "
-                             "got: \n%s" % line)
+                             f"got: \n{line}")
         title = line[:72]
         key = line[72:]
 
@@ -147,7 +146,7 @@ class HBInfo:
         line = fid.readline().strip("\n")
         if not len(line.rstrip()) >= 56:
             raise ValueError("Expected at least 56 characters for second line, "
-                             "got: \n%s" % line)
+                             f"got: \n{line}")
         total_nlines = _expect_int(line[:14])
         pointer_nlines = _expect_int(line[14:28])
         indices_nlines = _expect_int(line[28:42])
@@ -165,8 +164,8 @@ class HBInfo:
         # Third line
         line = fid.readline().strip("\n")
         if not len(line) >= 70:
-            raise ValueError("Expected at least 72 character for third line, got:\n"
-                             "%s" % line)
+            raise ValueError(f"Expected at least 72 character for third line, "
+                             f"got:\n{line}")
 
         mxtype_s = line[:3].upper()
         if not len(mxtype_s) == 3:
@@ -175,30 +174,31 @@ class HBInfo:
         mxtype = HBMatrixType.from_fortran(mxtype_s)
         if mxtype.value_type not in ["real", "integer"]:
             raise ValueError("Only real or integer matrices supported for "
-                             "now (detected %s)" % mxtype)
+                             f"now (detected {mxtype})")
         if not mxtype.structure == "unsymmetric":
             raise ValueError("Only unsymmetric matrices supported for "
-                             "now (detected %s)" % mxtype)
+                             f"now (detected {mxtype})")
         if not mxtype.storage == "assembled":
             raise ValueError("Only assembled matrices supported for now")
 
         if not line[3:14] == " " * 11:
-            raise ValueError("Malformed data for third line: %s" % line)
+            raise ValueError(f"Malformed data for third line: {line}")
 
         nrows = _expect_int(line[14:28])
         ncols = _expect_int(line[28:42])
         nnon_zeros = _expect_int(line[42:56])
         nelementals = _expect_int(line[56:70])
         if not nelementals == 0:
-            raise ValueError("Unexpected value %d for nltvl (last entry of line 3)"
-                             % nelementals)
-
+            raise ValueError(
+                f"Unexpected value {nelementals} for nltvl (last entry of line 3)"
+            )
+        
         # Fourth line
         line = fid.readline().strip("\n")
 
         ct = line.split()
         if not len(ct) == 3:
-            raise ValueError("Expected 3 formats, got %s" % ct)
+            raise ValueError(f"Expected 3 formats, got {ct}")
 
         return cls(title, key,
                    total_nlines, pointer_nlines, indices_nlines, values_nlines,
@@ -212,8 +212,6 @@ class HBInfo:
             pointer_format_str, indices_format_str, values_format_str,
             right_hand_sides_nlines=0, nelementals=0):
         """Do not use this directly, but the class ctrs (from_* functions)."""
-        self.title = title
-        self.key = key
         if title is None:
             title = "No Title"
         if len(title) > 72:
@@ -222,8 +220,10 @@ class HBInfo:
         if key is None:
             key = "|No Key"
         if len(key) > 8:
-            warnings.warn("key is > 8 characters (key is %s)" % key,
+            warnings.warn(f"key is > 8 characters (key is {key})",
                           LineOverflow, stacklevel=3)
+        self.title = title
+        self.key = key
 
         self.total_nlines = total_nlines
         self.pointer_nlines = pointer_nlines
@@ -233,13 +233,13 @@ class HBInfo:
         parser = FortranFormatParser()
         pointer_format = parser.parse(pointer_format_str)
         if not isinstance(pointer_format, IntFormat):
-            raise ValueError("Expected int format for pointer format, got %s"
-                             % pointer_format)
+            raise ValueError("Expected int format for pointer format, got "
+                             f"{pointer_format}")
 
         indices_format = parser.parse(indices_format_str)
         if not isinstance(indices_format, IntFormat):
-            raise ValueError("Expected int format for indices format, got %s" %
-                             indices_format)
+            raise ValueError("Expected int format for indices format, got "
+                             f"{indices_format}")
 
         values_format = parser.parse(values_format_str)
         if isinstance(values_format, ExpFormat):
@@ -283,18 +283,13 @@ class HBInfo:
         """Gives the header corresponding to this instance as a string."""
         header = [self.title.ljust(72) + self.key.ljust(8)]
 
-        header.append("%14d%14d%14d%14d" %
-                      (self.total_nlines, self.pointer_nlines,
-                       self.indices_nlines, self.values_nlines))
-        header.append("%14s%14d%14d%14d%14d" %
-                      (self.mxtype.fortran_format.ljust(14), self.nrows,
-                       self.ncols, self.nnon_zeros, 0))
+        header.append(f"{self.total_nlines:14d}{self.pointer_nlines:14d}{self.indices_nlines:14d}{self.values_nlines:14d}")
+        header.append(f"{self.mxtype.fortran_format.ljust(14):14s}{self.nrows:14d}{self.ncols:14d}{self.nnon_zeros:14d}{0:14d}")
 
         pffmt = self.pointer_format.fortran_format
         iffmt = self.indices_format.fortran_format
         vffmt = self.values_format.fortran_format
-        header.append("%16s%16s%20s" %
-                      (pffmt.ljust(16), iffmt.ljust(16), vffmt.ljust(20)))
+        header.append(f"{pffmt.ljust(16):16s}{iffmt.ljust(16):16s}{vffmt.ljust(20):20s}")
         return "\n".join(header)
 
 
@@ -324,11 +319,7 @@ def _read_hb_data(content, header):
     val = np.fromstring(val_string,
             dtype=header.values_dtype, sep=' ')
 
-    try:
-        return csc_matrix((val, ind-1, ptr-1),
-                          shape=(header.nrows, header.ncols))
-    except ValueError as e:
-        raise e
+    return csc_array((val, ind-1, ptr-1), shape=(header.nrows, header.ncols))
 
 
 def _write_data(m, fid, header):
@@ -396,7 +387,7 @@ class HBMatrixType:
             storage = cls._f2q_storage[fmt[2]]
             return cls(value_type, structure, storage)
         except KeyError as e:
-            raise ValueError("Unrecognized format %s" % fmt) from e
+            raise ValueError(f"Unrecognized format {fmt}") from e
 
     def __init__(self, value_type, structure, storage="assembled"):
         self.value_type = value_type
@@ -404,11 +395,11 @@ class HBMatrixType:
         self.storage = storage
 
         if value_type not in self._q2f_type:
-            raise ValueError("Unrecognized type %s" % value_type)
+            raise ValueError(f"Unrecognized type {value_type}")
         if structure not in self._q2f_structure:
-            raise ValueError("Unrecognized structure %s" % structure)
+            raise ValueError(f"Unrecognized structure {structure}")
         if storage not in self._q2f_storage:
-            raise ValueError("Unrecognized storage %s" % storage)
+            raise ValueError(f"Unrecognized storage {storage}")
 
     @property
     def fortran_format(self):
@@ -467,7 +458,7 @@ class HBFile:
         return _write_data(m, self._fid, self._hb_info)
 
 
-def hb_read(path_or_open_file):
+def hb_read(path_or_open_file, *, spmatrix=True):
     """Read HB-format file.
 
     Parameters
@@ -475,11 +466,13 @@ def hb_read(path_or_open_file):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before reading.
+    spmatrix : bool, optional (default: True)
+        If ``True``, return sparse ``coo_matrix``. Otherwise return ``coo_array``.
 
     Returns
     -------
-    data : scipy.sparse.csc_matrix instance
-        The data read from the HB file as a sparse matrix.
+    data : csc_array or csc_matrix
+        The data read from the HB file as a sparse array.
 
     Notes
     -----
@@ -495,24 +488,29 @@ def hb_read(path_or_open_file):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_matrix, eye
-    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> from scipy.sparse import csr_array, eye
+    >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-      (0, 0)	1.0
-      (1, 1)	1.0
-      (2, 2)	1.0
-
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     def _get_matrix(fid):
         hb = HBFile(fid)
         return hb.read_matrix()
 
     if hasattr(path_or_open_file, 'read'):
-        return _get_matrix(path_or_open_file)
+        data = _get_matrix(path_or_open_file)
     else:
         with open(path_or_open_file) as f:
-            return _get_matrix(f)
+            data = _get_matrix(f)
+    if spmatrix:
+        return csc_matrix(data)
+    return data
 
 
 def hb_write(path_or_open_file, m, hb_info=None):
@@ -523,8 +521,8 @@ def hb_write(path_or_open_file, m, hb_info=None):
     path_or_open_file : path-like or file-like
         If a file-like object, it is used as-is. Otherwise, it is opened
         before writing.
-    m : sparse-matrix
-        the sparse matrix to write
+    m : sparse array or matrix
+        the sparse array to write
     hb_info : HBInfo
         contains the meta-data for write
 
@@ -546,14 +544,16 @@ def hb_write(path_or_open_file, m, hb_info=None):
     We can read and write a harwell-boeing format file:
 
     >>> from scipy.io import hb_read, hb_write
-    >>> from scipy.sparse import csr_matrix, eye
-    >>> data = csr_matrix(eye(3))  # create a sparse matrix
+    >>> from scipy.sparse import csr_array, eye
+    >>> data = csr_array(eye(3))  # create a sparse array
     >>> hb_write("data.hb", data)  # write a hb file
-    >>> print(hb_read("data.hb"))  # read a hb file
-      (0, 0)	1.0
-      (1, 1)	1.0
-      (2, 2)	1.0
-
+    >>> print(hb_read("data.hb", spmatrix=False))  # read a hb file
+    <Compressed Sparse Column sparse array of dtype 'float64'
+        with 3 stored elements and shape (3, 3)>
+        Coords	Values
+        (0, 0)	1.0
+        (1, 1)	1.0
+        (2, 2)	1.0
     """
     m = m.tocsc(copy=False)
 

@@ -5,12 +5,11 @@ Authors:
    Ed Schofield, Nov 2005
    Andrew Straw, April 2008
 
-To run it in its simplest form::
-  nosetests test_optimize.py
-
 """
 import itertools
+import inspect
 import platform
+import threading
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
@@ -19,6 +18,7 @@ from numpy.testing import (assert_allclose, assert_equal,
 import pytest
 from pytest import raises as assert_raises
 
+import scipy
 from scipy import optimize
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import (MINIMIZE_METHODS,
@@ -34,6 +34,12 @@ from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
                           csr_array, csc_array)
+from scipy._lib._array_api_no_0d import xp_assert_equal
+from scipy._lib._array_api import make_xp_test_case
+from scipy._lib._util import MapWrapper
+
+lazy_xp_modules = [optimize]
+
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -49,6 +55,7 @@ def test_check_grad():
 
     r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
+    # SPEC-007 leave one call with seed to check it still works
     r = optimize.check_grad(expit, der_expit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
@@ -56,14 +63,14 @@ def test_check_grad():
     r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
     r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6,
-                            direction='random', seed=1234)
+                            direction='random', rng=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
     r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1) - 0)
     assert r > 1e-7
     r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1,
-                                direction='random', seed=1234) - 0)
+                                direction='random', rng=1234) - 0)
     assert r > 1e-7
 
     def x_sinx(x):
@@ -75,16 +82,16 @@ def test_check_grad():
     x0 = np.arange(0, 2, 0.2)
 
     r = optimize.check_grad(x_sinx, der_x_sinx, x0,
-                            direction='random', seed=1234)
+                            direction='random', rng=1234)
     assert_almost_equal(r, 0)
 
     assert_raises(ValueError, optimize.check_grad,
                   x_sinx, der_x_sinx, x0,
-                  direction='random_projection', seed=1234)
+                  direction='random_projection', rng=1234)
 
     # checking can be done for derivatives of vector valued functions
     r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
-                            direction='all', seed=1234)
+                            direction='all', rng=1234)
     assert r < 5e-7
 
 
@@ -104,22 +111,32 @@ class CheckOptimize:
         self.startparams = np.zeros(3, np.float64)
         self.solution = np.array([0., -0.524869316, 0.487525860])
         self.maxiter = 1000
-        self.funccalls = 0
-        self.gradcalls = 0
-        self.trace = []
+        self.funccalls = threading.local()
+        self.gradcalls = threading.local()
+        self.trace = threading.local()
 
     def func(self, x):
-        self.funccalls += 1
-        if self.funccalls > 6000:
+        if not hasattr(self.funccalls, 'c'):
+            self.funccalls.c = 0
+
+        if not hasattr(self.gradcalls, 'c'):
+            self.gradcalls.c = 0
+
+        self.funccalls.c += 1
+        if self.funccalls.c > 6000:
             raise RuntimeError("too many iterations in optimization routine")
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         f = logZ - np.dot(self.K, x)
-        self.trace.append(np.copy(x))
+        if not hasattr(self.trace, 't'):
+            self.trace.t = []
+        self.trace.t.append(np.copy(x))
         return f
 
     def grad(self, x):
-        self.gradcalls += 1
+        if not hasattr(self.gradcalls, 'c'):
+            self.gradcalls.c = 0
+        self.gradcalls.c += 1
         log_pdot = np.dot(self.F, x)
         logZ = np.log(sum(np.exp(log_pdot)))
         p = np.exp(log_pdot - logZ)
@@ -160,11 +177,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 9, self.funccalls
-        assert self.gradcalls == 7, self.gradcalls
+        assert self.funccalls.c == 9, self.funccalls.c
+        assert self.gradcalls.c == 7, self.gradcalls.c
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[2:4],
+        assert_allclose(self.trace.t[2:4],
                         [[0, -0.5, 0.5],
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
@@ -205,11 +222,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 10, self.funccalls
-        assert self.gradcalls == 8, self.gradcalls
+        assert self.funccalls.c == 10, self.funccalls.c
+        assert self.gradcalls.c == 8, self.gradcalls.c
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[6:8],
+        assert_allclose(self.trace.t[6:8],
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
@@ -334,8 +351,8 @@ class CheckOptimizeParameterized(CheckOptimize):
         # machines, and when using e.g., MKL, data alignment
         # etc., affect the rounding error.
         #
-        assert self.funccalls <= 116 + 20, self.funccalls
-        assert self.gradcalls == 0, self.gradcalls
+        assert self.funccalls.c <= 116 + 20, self.funccalls.c
+        assert self.gradcalls.c == 0, self.gradcalls.c
 
     @pytest.mark.xfail(reason="This part of test_powell fails on some "
                        "platforms, but the solution returned by powell is "
@@ -384,7 +401,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                     method='Powell', options=opts)
             params, func_calls = (res['x'], res['nfev'])
 
-            assert func_calls == self.funccalls
+            assert func_calls == self.funccalls.c
             assert_allclose(self.func(params), self.func(self.solution),
                             atol=1e-6, rtol=1e-5)
 
@@ -394,8 +411,8 @@ class CheckOptimizeParameterized(CheckOptimize):
             # affect the rounding error.
             # It takes 155 calls on my machine, but we can add the same +20
             # margin as is used in `test_powell`
-            assert self.funccalls <= 155 + 20
-            assert self.gradcalls == 0
+            assert self.funccalls.c <= 155 + 20
+            assert self.gradcalls.c == 0
 
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
@@ -419,11 +436,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 167, self.funccalls
-        assert self.gradcalls == 0, self.gradcalls
+        assert self.funccalls.c == 167, self.funccalls.c
+        assert self.gradcalls.c == 0, self.gradcalls.c
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[76:78],
+        assert_allclose(self.trace.t[76:78],
                         [[0.1928968, -0.62780447, 0.35166118],
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
@@ -459,11 +476,11 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.17.0. Don't allow them to increase.
-        assert self.funccalls == 100, self.funccalls
-        assert self.gradcalls == 0, self.gradcalls
+        assert self.funccalls.c == 100, self.funccalls.c
+        assert self.gradcalls.c == 0, self.gradcalls.c
 
         # Ensure that the function behaves the same; this is from SciPy 0.15.0
-        assert_allclose(self.trace[50:52],
+        assert_allclose(self.trace.t[50:52],
                         [[0.14687474, -0.5103282, 0.48252111],
                          [0.14474003, -0.5282084, 0.48743951]],
                         atol=1e-14, rtol=1e-7)
@@ -569,14 +586,14 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 7, self.funccalls
-        assert self.gradcalls <= 22, self.gradcalls  # 0.13.0
+        assert self.funccalls.c == 7, self.funccalls.c
+        assert self.gradcalls.c <= 22, self.gradcalls.c  # 0.13.0
         # assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
         # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
         # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[3:5],
+        assert_allclose(self.trace.t[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
@@ -604,13 +621,13 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls <= 7, self.funccalls  # gh10673
-        assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
+        assert self.funccalls.c <= 7, self.funccalls.c  # gh10673
+        assert self.gradcalls.c <= 18, self.gradcalls.c  # 0.9.0
         # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
         # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[3:5],
+        assert_allclose(self.trace.t[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
@@ -638,16 +655,35 @@ class CheckOptimizeParameterized(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls <= 7, self.funccalls  # gh10673
-        assert self.gradcalls <= 18, self.gradcalls  # 0.9.0
+        assert self.funccalls.c <= 7, self.funccalls.c  # gh10673
+        assert self.gradcalls.c <= 18, self.gradcalls.c  # 0.9.0
         # assert self.gradcalls == 18, self.gradcalls  # 0.8.0
         # assert self.gradcalls == 22, self.gradcalls  # 0.7.0
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
-        assert_allclose(self.trace[3:5],
+        assert_allclose(self.trace.t[3:5],
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
+
+    def test_cobyqa(self):
+        # COBYQA method.
+        if self.use_wrapper:
+            res = optimize.minimize(
+                self.func,
+                self.startparams,
+                method='cobyqa',
+                options={'maxiter': self.maxiter, 'disp': self.disp},
+            )
+            assert_allclose(res.fun, self.func(self.solution), atol=1e-6)
+
+            # Ensure that function call counts are 'known good'; these are from
+            # SciPy 1.14.0. Don't allow them to increase. The exact evaluation
+            # count is sensitive to numerical error and floating-point
+            # computations are not bit-for-bit reproducible across machines. It
+            # takes 45 calls on my machine, but we can add the same +20 margin
+            # as is used in `test_powell`
+            assert self.funccalls.c <= 45 + 20, self.funccalls.c
 
 
 def test_maxfev_test():
@@ -741,6 +777,7 @@ def test_neldermead_adaptive():
     assert_equal(res.success, True)
 
 
+@pytest.mark.thread_unsafe
 def test_bounded_powell_outsidebounds():
     # With the bounded Powell method if you start outside the bounds the final
     # should still be within the bounds (provided that the user doesn't make a
@@ -772,6 +809,7 @@ def test_bounded_powell_outsidebounds():
     assert_equal(res.status, 4)
 
 
+@pytest.mark.thread_unsafe
 def test_bounded_powell_vs_powell():
     # here we test an example where the bounded Powell method
     # will return a different result than the standard Powell
@@ -1026,12 +1064,12 @@ class TestOptimizeSimple(CheckOptimize):
 
         # Ensure that function call counts are 'known good'; these are from
         # SciPy 0.7.0. Don't allow them to increase.
-        assert self.funccalls == 7, self.funccalls
-        assert self.gradcalls == 5, self.gradcalls
+        assert self.funccalls.c == 7, self.funccalls.c
+        assert self.gradcalls.c == 5, self.gradcalls.c
 
         # Ensure that the function behaves the same; this is from SciPy 0.7.0
         # test fixed in gh10673
-        assert_allclose(self.trace[3:5],
+        assert_allclose(self.trace.t[3:5],
                         [[8.117083e-16, -5.196198e-01, 4.897617e-01],
                          [0., -0.52489628, 0.48753042]],
                         atol=1e-14, rtol=1e-7)
@@ -1084,7 +1122,7 @@ class TestOptimizeSimple(CheckOptimize):
         assert_equal(res.status, 1)
         assert res.success is False
         assert_equal(res.message,
-                     'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT')
+                     'STOP: TOTAL NO. OF ITERATIONS REACHED LIMIT')
 
     def test_minimize_l_bfgs_b(self):
         # Minimize with L-BFGS-B method
@@ -1094,23 +1132,23 @@ class TestOptimizeSimple(CheckOptimize):
                               options=opts)
         assert_allclose(self.func(r.x), self.func(self.solution),
                         atol=1e-6)
-        assert self.gradcalls == r.njev
+        assert self.gradcalls.c == r.njev
 
-        self.funccalls = self.gradcalls = 0
+        self.funccalls.c = self.gradcalls.c = 0
         # approximate jacobian
         ra = optimize.minimize(self.func, self.startparams,
                                method='L-BFGS-B', options=opts)
         # check that function evaluations in approximate jacobian are counted
         # assert_(ra.nfev > r.nfev)
-        assert self.funccalls == ra.nfev
+        assert self.funccalls.c == ra.nfev
         assert_allclose(self.func(ra.x), self.func(self.solution),
                         atol=1e-6)
 
-        self.funccalls = self.gradcalls = 0
+        self.funccalls.c = self.gradcalls.c = 0
         # approximate jacobian
         ra = optimize.minimize(self.func, self.startparams, jac='3-point',
                                method='L-BFGS-B', options=opts)
-        assert self.funccalls == ra.nfev
+        assert self.funccalls.c == ra.nfev
         assert_allclose(self.func(ra.x), self.func(self.solution),
                         atol=1e-6)
 
@@ -1229,19 +1267,20 @@ class TestOptimizeSimple(CheckOptimize):
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
                        'newton-cg', 'l-bfgs-b', 'tnc',
-                       'cobyla', 'slsqp']:
-            if method in ('nelder-mead', 'powell', 'cobyla'):
+                       'cobyla', 'cobyqa', 'slsqp']:
+            if method in ('nelder-mead', 'powell', 'cobyla', 'cobyqa'):
                 jac = None
             else:
                 jac = dfunc
 
-            sol1 = optimize.minimize(func, [1, 1], jac=jac, tol=1e-10,
+            sol1 = optimize.minimize(func, [2, 2], jac=jac, tol=1e-10,
                                      method=method)
-            sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
+            sol2 = optimize.minimize(func, [2, 2], jac=jac, tol=1.0,
                                      method=method)
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
@@ -1281,6 +1320,8 @@ class TestOptimizeSimple(CheckOptimize):
 
             if method == 'tnc':
                 kwargs['options'] = dict(maxfun=100)
+            elif method == 'cobyla':
+                kwargs['options'] = dict(maxiter=100)
             else:
                 kwargs['options'] = dict(maxiter=5)
 
@@ -1311,7 +1352,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
-                                        'tnc', 'cobyla', 'slsqp'])
+                                        'tnc', 'cobyla', 'cobyqa', 'slsqp'])
     def test_no_increase(self, method):
         # Check that the solver doesn't return a value worse than the
         # initial point.
@@ -1328,7 +1369,7 @@ class TestOptimizeSimple(CheckOptimize):
         f0 = func(x0)
         jac = bad_grad
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
-        if method in ['nelder-mead', 'powell', 'cobyla']:
+        if method in ['nelder-mead', 'powell', 'cobyla', 'cobyqa']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
                                 options=options)
@@ -1355,7 +1396,8 @@ class TestOptimizeSimple(CheckOptimize):
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
                                         'Newton-CG', 'L-BFGS-B', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+                                        'trust-exact', 'trust-krylov',
+                                        'cobyqa'])
     def test_respect_maxiter(self, method):
         # Check that the number of iterations equals max_iter, assuming
         # convergence doesn't establish before
@@ -1385,7 +1427,10 @@ class TestOptimizeSimple(CheckOptimize):
         # method specific tests
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
+        elif method == 'cobyqa':
+            assert sol.status == 6  # Iteration limit reached
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
     def test_runtime_warning(self, method):
@@ -1511,12 +1556,15 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
-    def test_nan_values(self, method):
+                                        'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
+    def test_nan_values(self, method, num_parallel_threads):
+        if num_parallel_threads > 1 and method == 'cobyqa':
+            pytest.skip('COBYQA does not support concurrent execution')
+
         # Check nan values result to failed exit status
-        np.random.seed(1234)
+        rng = np.random.RandomState(1234)
 
         count = [0]
 
@@ -1528,7 +1576,7 @@ class TestOptimizeSimple(CheckOptimize):
             if count[0] > 2:
                 return np.nan
             else:
-                return np.random.rand()
+                return rng.rand()
 
         def grad(x):
             return np.array([1.0])
@@ -1561,9 +1609,9 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
                                         'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
+                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
     def test_duplicate_evaluations(self, method):
         # check that there are no duplicate evaluations for any methods
         jac = hess = None
@@ -1580,8 +1628,8 @@ class TestOptimizeSimple(CheckOptimize):
             optimize.minimize(self.func, self.startparams,
                               method=method, jac=jac, hess=hess)
 
-        for i in range(1, len(self.trace)):
-            if np.array_equal(self.trace[i - 1], self.trace[i]):
+        for i in range(1, len(self.trace.t)):
+            if np.array_equal(self.trace.t[i - 1], self.trace.t[i]):
                 raise RuntimeError(
                     f"Duplicate evaluations made by {method}")
 
@@ -1636,11 +1684,35 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(**kwargs, callback=callback_interface)
         if method == 'nelder-mead':
             maxiter = maxiter + 1  # nelder-mead counts differently
-        ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+        if method == 'cobyqa':
+            ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
+            assert res.nfev == ref.nfev == maxiter
+        elif method == 'cobyla':
+            # COBYLA calls the callback once per iteration, not once per function
+            # evaluation, so this test is not applicable. However we can test
+            # the COBYLA status to verify that res stopped back on the callback
+            # and ref stopped based on the iteration limit.
+            # COBYLA requires at least n+2 function evaluations
+            maxiter = max(maxiter, len(kwargs['x0'])+2)
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.status == 30
+            assert res.message == ("Return from COBYLA because the callback function "
+                                   "requested termination")
+            assert ref.status == 3
+            assert ref.message == ("Return from COBYLA because the objective function "
+                                   "has been evaluated MAXFUN times.")
+            # Return early because res/ref will be unequal for COBYLA for the reasons
+            # mentioned above.
+            return
+        else:
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.nit == ref.nit == maxiter
         assert res.fun == ref.fun
         assert_equal(res.x, ref.x)
-        assert res.nit == ref.nit == maxiter
-        assert res.status == (3 if method == 'trust-constr' else 99)
+        assert res.status == (3 if method in [
+            'trust-constr',
+            'cobyqa',
+        ] else 99)
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -1648,7 +1720,8 @@ class TestOptimizeSimple(CheckOptimize):
             optimize.minimize(lambda x: x, np.ones((2, 1)))
 
     @pytest.mark.parametrize('method', ('nelder-mead', 'l-bfgs-b', 'tnc',
-                                        'powell', 'cobyla', 'trust-constr'))
+                                        'powell', 'cobyla', 'cobyqa',
+                                        'trust-constr'))
     def test_minimize_invalid_bounds(self, method):
         def f(x):
             return np.sum(x**2)
@@ -1663,6 +1736,7 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
     def test_minimize_warnings_gh1953(self, method):
         # test that minimize methods produce warnings rather than just using
@@ -1683,7 +1757,7 @@ class TestOptimizeSimple(CheckOptimize):
 
 @pytest.mark.parametrize(
     'method',
-    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead', 'cobyqa']
 )
 def test_minimize_with_scalar(method):
     # checks that minimize works with a scalar being provided to it.
@@ -2036,6 +2110,7 @@ class TestOptimizeScalar:
         res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
+    @pytest.mark.thread_unsafe
     @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])
     def test_minimize_scalar_warnings_gh1953(self, method):
         # test that minimize_scalar methods produce warnings rather than just
@@ -2392,15 +2467,38 @@ def test_powell_limits():
     optimize.minimize(fun=func, x0=[0.5], method='powell', bounds=bounds)
 
 
-class TestRosen:
+def test_powell_output():
+    funs = [rosen, lambda x: np.array(rosen(x)), lambda x: np.array([rosen(x)])]
+    for fun in funs:
+        res = optimize.minimize(fun, x0=[0.6, 20], method='Powell')
+        assert np.isscalar(res.fun)
 
-    def test_hess(self):
+
+class TestRosen:
+    @make_xp_test_case(optimize.rosen)
+    def test_rosen(self, xp):
+        # integer input should be promoted to the default floating type
+        x = xp.asarray([1, 1, 1])
+        xp_assert_equal(optimize.rosen(x),
+                        xp.asarray(0.))
+
+    @make_xp_test_case(optimize.rosen_der)
+    def test_rosen_der(self, xp):
+        x = xp.asarray([1, 1, 1, 1])
+        xp_assert_equal(optimize.rosen_der(x),
+                        xp.zeros_like(x, dtype=xp.asarray(1.).dtype))
+
+    @make_xp_test_case(optimize.rosen_hess, optimize.rosen_hess_prod)
+    def test_hess_prod(self, xp):
+        one = xp.asarray(1.)
+
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p). See gh-1775.
-        x = np.array([3, 4, 5])
-        p = np.array([2, 2, 2])
+        x = xp.asarray([3, 4, 5])
+        p = xp.asarray([2, 2, 2])
         hp = optimize.rosen_hess_prod(x, p)
-        dothp = np.dot(optimize.rosen_hess(x), p)
-        assert_equal(hp, dothp)
+        p = xp.astype(p, one.dtype)
+        dothp = optimize.rosen_hess(x) @ p
+        xp_assert_equal(hp, dothp)
 
 
 def himmelblau(p):
@@ -2464,6 +2562,7 @@ class TestOptimizeResultAttributes:
         self.hessp = optimize.rosen_hess_prod
         self.bounds = [(0., 10.), (0., 10.)]
 
+    @pytest.mark.fail_slow(2)
     def test_attributes_present(self):
         attributes = ['nit', 'nfev', 'x', 'success', 'status', 'fun',
                       'message']
@@ -2553,6 +2652,7 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
+    @pytest.mark.fail_slow(10)
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -2564,6 +2664,7 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
+    @pytest.mark.thread_unsafe
     def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
@@ -2583,6 +2684,8 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
+@pytest.mark.thread_unsafe
+@pytest.mark.fail_slow(20)
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -2623,13 +2726,16 @@ class TestIterationLimits:
     # number of iterations or evaluations. And that it does not succeed
     # by exceeding the limits.
     def setup_method(self):
-        self.funcalls = 0
+        self.funcalls = threading.local()
 
     def slow_func(self, v):
-        self.funcalls += 1
+        if not hasattr(self.funcalls, 'c'):
+            self.funcalls.c = 0
+        self.funcalls.c += 1
         r, t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0], v[1])
         return np.sin(r*20 + t)+r*0.5
 
+    @pytest.mark.fail_slow(10)
     def test_neldermead_limit(self):
         self.check_limits("Nelder-Mead", 200)
 
@@ -2639,11 +2745,11 @@ class TestIterationLimits:
     def check_limits(self, method, default_iters):
         for start_v in [[0.1, 0.1], [1, 1], [2, 2]]:
             for mfev in [50, 500, 5000]:
-                self.funcalls = 0
+                self.funcalls.c = 0
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxfev": mfev})
-                assert self.funcalls == res["nfev"]
+                assert self.funcalls.c == res["nfev"]
                 if res["success"]:
                     assert res["nfev"] < mfev
                 else:
@@ -2657,23 +2763,23 @@ class TestIterationLimits:
                 else:
                     assert res["nit"] >= mit
             for mfev, mit in [[50, 50], [5000, 5000], [5000, np.inf]]:
-                self.funcalls = 0
+                self.funcalls.c = 0
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxiter": mit,
                                                  "maxfev": mfev})
-                assert self.funcalls == res["nfev"]
+                assert self.funcalls.c == res["nfev"]
                 if res["success"]:
                     assert res["nfev"] < mfev and res["nit"] <= mit
                 else:
                     assert res["nfev"] >= mfev or res["nit"] >= mit
             for mfev, mit in [[np.inf, None], [None, np.inf]]:
-                self.funcalls = 0
+                self.funcalls.c = 0
                 res = optimize.minimize(self.slow_func, start_v,
                                         method=method,
                                         options={"maxiter": mit,
                                                  "maxfev": mfev})
-                assert self.funcalls == res["nfev"]
+                assert self.funcalls.c == res["nfev"]
                 if res["success"]:
                     if mfev is None:
                         assert res["nfev"] < default_iters*2
@@ -2695,7 +2801,7 @@ def test_result_x_shape_when_len_x_is_one():
         return np.array([[2.]])
 
     methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'L-BFGS-B', 'TNC',
-               'COBYLA', 'SLSQP']
+               'COBYLA', 'COBYQA', 'SLSQP']
     for method in methods:
         res = optimize.minimize(fun, np.array([0.1]), method=method)
         assert res.x.shape == (1,)
@@ -2711,10 +2817,12 @@ def test_result_x_shape_when_len_x_is_one():
 
 class FunctionWithGradient:
     def __init__(self):
-        self.number_of_calls = 0
+        self.number_of_calls = threading.local()
 
     def __call__(self, x):
-        self.number_of_calls += 1
+        if not hasattr(self.number_of_calls, 'c'):
+            self.number_of_calls.c = 0
+        self.number_of_calls.c += 1
         return np.sum(x**2), 2 * x
 
 
@@ -2728,17 +2836,17 @@ def test_memoize_jac_function_before_gradient(function_with_gradient):
 
     x0 = np.array([1.0, 2.0])
     assert_allclose(memoized_function(x0), 5.0)
-    assert function_with_gradient.number_of_calls == 1
+    assert function_with_gradient.number_of_calls.c == 1
 
     assert_allclose(memoized_function.derivative(x0), 2 * x0)
-    assert function_with_gradient.number_of_calls == 1, \
+    assert function_with_gradient.number_of_calls.c == 1, \
         "function is not recomputed " \
         "if gradient is requested after function value"
 
     assert_allclose(
         memoized_function(2 * x0), 20.0,
         err_msg="different input triggers new computation")
-    assert function_with_gradient.number_of_calls == 2, \
+    assert function_with_gradient.number_of_calls.c == 2, \
         "different input triggers new computation"
 
 
@@ -2747,17 +2855,17 @@ def test_memoize_jac_gradient_before_function(function_with_gradient):
 
     x0 = np.array([1.0, 2.0])
     assert_allclose(memoized_function.derivative(x0), 2 * x0)
-    assert function_with_gradient.number_of_calls == 1
+    assert function_with_gradient.number_of_calls.c == 1
 
     assert_allclose(memoized_function(x0), 5.0)
-    assert function_with_gradient.number_of_calls == 1, \
+    assert function_with_gradient.number_of_calls.c == 1, \
         "function is not recomputed " \
         "if function value is requested after gradient"
 
     assert_allclose(
         memoized_function.derivative(2 * x0), 4 * x0,
         err_msg="different input triggers new computation")
-    assert function_with_gradient.number_of_calls == 2, \
+    assert function_with_gradient.number_of_calls.c == 2, \
         "different input triggers new computation"
 
 
@@ -2773,13 +2881,13 @@ def test_memoize_jac_with_bfgs(function_with_gradient):
     x0 = np.array([1.0, 0.5])
     scalar_function = ScalarFunction(
         memoized_function, x0, (), jac, hess, None, None)
-    assert function_with_gradient.number_of_calls == 1
+    assert function_with_gradient.number_of_calls.c == 1
 
     scalar_function.fun(x0 + 0.1)
-    assert function_with_gradient.number_of_calls == 2
+    assert function_with_gradient.number_of_calls.c == 2
 
     scalar_function.fun(x0 + 0.2)
-    assert function_with_gradient.number_of_calls == 3
+    assert function_with_gradient.number_of_calls.c == 3
 
 
 def test_gh12696():
@@ -2793,8 +2901,8 @@ def test_gh12696():
 
 def setup_test_equal_bounds():
 
-    np.random.seed(0)
-    x0 = np.random.rand(4)
+    rng = np.random.RandomState(0)
+    x0 = rng.rand(4)
     lb = np.array([0, 2, -1, -1.0])
     ub = np.array([3, 2, 2, -1.0])
     i_eb = (lb == ub)
@@ -2815,6 +2923,10 @@ def setup_test_equal_bounds():
 
     def callback(x, *args):
         check_x(x)
+
+    def callback2(intermediate_result):
+        assert isinstance(intermediate_result, OptimizeResult)
+        check_x(intermediate_result.x)
 
     def constraint1(x):
         check_x(x, check_values=False)
@@ -2866,7 +2978,7 @@ def setup_test_equal_bounds():
                    ([c1b, c2b], [c1b, c2b]))
 
     # test with and without callback function
-    callbacks = (None, callback)
+    callbacks = (None, callback, callback2)
 
     data = {"methods": methods, "kwds": kwds, "bound_types": bound_types,
             "constraints": constraints, "callbacks": callbacks,
@@ -2880,6 +2992,9 @@ eb_data = setup_test_equal_bounds()
 
 # This test is about handling fixed variables, not the accuracy of the solvers
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
+@pytest.mark.xfail(scipy.show_config(mode='dicts')['Compilers']['fortran']['name'] ==
+                   "intel-llvm",
+                   reason="Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
 @pytest.mark.parametrize('bound_type', eb_data["bound_types"])
@@ -2902,6 +3017,12 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     test_constraints, reference_constraints = constraints
     if test_constraints and not method == 'SLSQP':
         pytest.skip('Only SLSQP supports nonlinear constraints')
+
+    if method in ['SLSQP', 'TNC'] and callable(callback):
+        sig = inspect.signature(callback)
+        if 'intermediate_result' in set(sig.parameters):
+            pytest.skip("SLSQP, TNC don't support intermediate_result")
+
     # reference constraints always have analytical jacobian
     # if test constraints are not the same, we'll need finite differences
     fd_needed = (test_constraints != reference_constraints)
@@ -2918,7 +3039,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=1.5e-6)
+    assert_allclose(res.fun, expected.fun, rtol=2e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
@@ -3136,14 +3257,145 @@ def test_gh12594():
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
 
+def test_gh12513_trustregion_exact_infinite_loop():
+    # gh-12513 reported that optimize.minimize might hang when
+    # method='trust-exact', using the option ``subproblem_maxiter``,
+    # this can be avoided.
+    H = np.array(
+        [[3.67335930e01, -2.52334820e02, 1.15477558e01, -1.19933725e-03,
+          -2.06408851e03, -2.05821411e00, -2.52334820e02, -6.52076924e02,
+          -2.71362566e-01, -1.98885126e00, 1.22085415e00, 2.30220713e00,
+          -9.71278532e-02, -5.11210123e-01, -1.00399562e00, 1.43319679e-01,
+          6.03815471e00, -6.38719934e-02, 1.65623929e-01],
+         [-2.52334820e02, 1.76757312e03, -9.92814996e01, 1.06533600e-02,
+          1.44442941e04, 1.43811694e01, 1.76757312e03, 4.56694461e03,
+          2.22263363e00, 1.62977318e01, -7.81539315e00, -1.24938012e01,
+          6.74029088e-01, 3.22802671e00, 5.14978971e00, -9.58561209e-01,
+          -3.92199895e01, 4.47201278e-01, -1.17866744e00],
+         [1.15477558e01, -9.92814996e01, 3.63872363e03, -4.40007197e-01,
+          -9.55435081e02, -1.13985105e00, -9.92814996e01, -2.58307255e02,
+          -5.21335218e01, -3.77485107e02, -6.75338369e01, -1.89457169e02,
+          5.67828623e00, 5.82402681e00, 1.72734354e01, -4.29114840e00,
+          -7.84885258e01, 3.17594634e00, 2.45242852e00],
+         [-1.19933725e-03, 1.06533600e-02, -4.40007197e-01, 5.73576663e-05,
+          1.01563710e-01, 1.18838745e-04, 1.06533600e-02, 2.76535767e-02,
+          6.25788669e-03, 4.50699620e-02, 8.64152333e-03, 2.27772377e-02,
+          -8.51026855e-04, 1.65316383e-04, 1.38977551e-03, 5.51629259e-04,
+          1.38447755e-02, -5.17956723e-04, -1.29260347e-04],
+         [-2.06408851e03, 1.44442941e04, -9.55435081e02, 1.01563710e-01,
+          1.23101825e05, 1.26467259e02, 1.44442941e04, 3.74590279e04,
+          2.18498571e01, 1.60254460e02, -7.52977260e01, -1.17989623e02,
+          6.58253160e00, 3.14949206e01, 4.98527190e01, -9.33338661e00,
+          -3.80465752e02, 4.33872213e00, -1.14768816e01],
+         [-2.05821411e00, 1.43811694e01, -1.13985105e00, 1.18838745e-04,
+          1.26467259e02, 1.46226198e-01, 1.43811694e01, 3.74509252e01,
+          2.76928748e-02, 2.03023837e-01, -8.84279903e-02, -1.29523344e-01,
+          8.06424434e-03, 3.83330661e-02, 5.81579023e-02, -1.12874980e-02,
+          -4.48118297e-01, 5.15022284e-03, -1.41501894e-02],
+         [-2.52334820e02, 1.76757312e03, -9.92814996e01, 1.06533600e-02,
+          1.44442941e04, 1.43811694e01, 1.76757312e03, 4.56694461e03,
+          2.22263363e00, 1.62977318e01, -7.81539315e00, -1.24938012e01,
+          6.74029088e-01, 3.22802671e00, 5.14978971e00, -9.58561209e-01,
+          -3.92199895e01, 4.47201278e-01, -1.17866744e00],
+         [-6.52076924e02, 4.56694461e03, -2.58307255e02, 2.76535767e-02,
+          3.74590279e04, 3.74509252e01, 4.56694461e03, 1.18278398e04,
+          5.82242837e00, 4.26867612e01, -2.03167952e01, -3.22894255e01,
+          1.75705078e00, 8.37153730e00, 1.32246076e01, -2.49238529e00,
+          -1.01316422e02, 1.16165466e00, -3.09390862e00],
+         [-2.71362566e-01, 2.22263363e00, -5.21335218e01, 6.25788669e-03,
+          2.18498571e01, 2.76928748e-02, 2.22263363e00, 5.82242837e00,
+          4.36278066e01, 3.14836583e02, -2.04747938e01, -3.05535101e01,
+          -1.24881456e-01, 1.15775394e01, 4.06907410e01, -1.39317748e00,
+          -3.90902798e01, -9.71716488e-02, 1.06851340e-01],
+         [-1.98885126e00, 1.62977318e01, -3.77485107e02, 4.50699620e-02,
+          1.60254460e02, 2.03023837e-01, 1.62977318e01, 4.26867612e01,
+          3.14836583e02, 2.27255216e03, -1.47029712e02, -2.19649109e02,
+          -8.83963155e-01, 8.28571708e01, 2.91399776e02, -9.97382920e00,
+          -2.81069124e02, -6.94946614e-01, 7.38151960e-01],
+         [1.22085415e00, -7.81539315e00, -6.75338369e01, 8.64152333e-03,
+          -7.52977260e01, -8.84279903e-02, -7.81539315e00, -2.03167952e01,
+          -2.04747938e01, -1.47029712e02, 7.83372613e01, 1.64416651e02,
+          -4.30243758e00, -2.59579610e01, -6.25644064e01, 6.69974667e00,
+          2.31011701e02, -2.68540084e00, 5.44531151e00],
+         [2.30220713e00, -1.24938012e01, -1.89457169e02, 2.27772377e-02,
+          -1.17989623e02, -1.29523344e-01, -1.24938012e01, -3.22894255e01,
+          -3.05535101e01, -2.19649109e02, 1.64416651e02, 3.75893031e02,
+          -7.42084715e00, -4.56437599e01, -1.11071032e02, 1.18761368e01,
+          4.78724142e02, -5.06804139e00, 8.81448081e00],
+         [-9.71278532e-02, 6.74029088e-01, 5.67828623e00, -8.51026855e-04,
+          6.58253160e00, 8.06424434e-03, 6.74029088e-01, 1.75705078e00,
+          -1.24881456e-01, -8.83963155e-01, -4.30243758e00, -7.42084715e00,
+          9.62009425e-01, 1.53836355e00, 2.23939458e00, -8.01872920e-01,
+          -1.92191084e01, 3.77713908e-01, -8.32946970e-01],
+         [-5.11210123e-01, 3.22802671e00, 5.82402681e00, 1.65316383e-04,
+          3.14949206e01, 3.83330661e-02, 3.22802671e00, 8.37153730e00,
+          1.15775394e01, 8.28571708e01, -2.59579610e01, -4.56437599e01,
+          1.53836355e00, 2.63851056e01, 7.34859767e01, -4.39975402e00,
+          -1.12015747e02, 5.11542219e-01, -2.64962727e00],
+         [-1.00399562e00, 5.14978971e00, 1.72734354e01, 1.38977551e-03,
+          4.98527190e01, 5.81579023e-02, 5.14978971e00, 1.32246076e01,
+          4.06907410e01, 2.91399776e02, -6.25644064e01, -1.11071032e02,
+          2.23939458e00, 7.34859767e01, 2.36535458e02, -1.09636675e01,
+          -2.72152068e02, 6.65888059e-01, -6.29295273e00],
+         [1.43319679e-01, -9.58561209e-01, -4.29114840e00, 5.51629259e-04,
+          -9.33338661e00, -1.12874980e-02, -9.58561209e-01, -2.49238529e00,
+          -1.39317748e00, -9.97382920e00, 6.69974667e00, 1.18761368e01,
+          -8.01872920e-01, -4.39975402e00, -1.09636675e01, 1.16820748e00,
+          3.00817252e01, -4.51359819e-01, 9.82625204e-01],
+         [6.03815471e00, -3.92199895e01, -7.84885258e01, 1.38447755e-02,
+          -3.80465752e02, -4.48118297e-01, -3.92199895e01, -1.01316422e02,
+          -3.90902798e01, -2.81069124e02, 2.31011701e02, 4.78724142e02,
+          -1.92191084e01, -1.12015747e02, -2.72152068e02, 3.00817252e01,
+          1.13232557e03, -1.33695932e01, 2.22934659e01],
+         [-6.38719934e-02, 4.47201278e-01, 3.17594634e00, -5.17956723e-04,
+          4.33872213e00, 5.15022284e-03, 4.47201278e-01, 1.16165466e00,
+          -9.71716488e-02, -6.94946614e-01, -2.68540084e00, -5.06804139e00,
+          3.77713908e-01, 5.11542219e-01, 6.65888059e-01, -4.51359819e-01,
+          -1.33695932e01, 4.27994168e-01, -5.09020820e-01],
+         [1.65623929e-01, -1.17866744e00, 2.45242852e00, -1.29260347e-04,
+          -1.14768816e01, -1.41501894e-02, -1.17866744e00, -3.09390862e00,
+          1.06851340e-01, 7.38151960e-01, 5.44531151e00, 8.81448081e00,
+          -8.32946970e-01, -2.64962727e00, -6.29295273e00, 9.82625204e-01,
+          2.22934659e01, -5.09020820e-01, 4.09964606e00]]
+    )
+    J = np.array([
+        -2.53298102e-07, 1.76392040e-06, 1.74776130e-06, -4.19479903e-10,
+        1.44167498e-05, 1.41703911e-08, 1.76392030e-06, 4.96030153e-06,
+        -2.35771675e-07, -1.68844985e-06, 4.29218258e-07, 6.65445159e-07,
+        -3.87045830e-08, -3.17236594e-07, -1.21120169e-06, 4.59717313e-08,
+        1.67123246e-06, 1.46624675e-08, 4.22723383e-08
+    ])
+
+    def fun(x):
+        return np.dot(np.dot(x, H), x) / 2 + np.dot(x, J)
+
+    def jac(x):
+        return np.dot(x, H) + J
+
+    def hess(x):
+        return H
+
+    x0 = np.zeros(19)
+
+    res = optimize.minimize(
+        fun,
+        x0,
+        jac=jac,
+        hess=hess,
+        method="trust-exact",
+        options={"gtol": 1e-6, "subproblem_maxiter": 10},
+    )
+    assert res.success
+    assert abs(fun(res.x)) < 1e-5
+
 
 @pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
 @pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
                                          coo_array, csr_array, csc_array])
 def test_sparse_hessian(method, sparse_type):
     # gh-8792 reported an error for minimization with `newton_cg` when `hess`
-    # returns a sparse matrix. Check that results are the same whether `hess`
-    # returns a dense or sparse matrix for optimization methods that accept
+    # returns a sparse array. Check that results are the same whether `hess`
+    # returns a dense or sparse array for optimization methods that accept
     # sparse Hessian matrices.
 
     def sparse_rosen_hess(x):
@@ -3161,3 +3413,54 @@ def test_sparse_hessian(method, sparse_type):
     assert res_dense.nfev == res_sparse.nfev
     assert res_dense.njev == res_sparse.njev
     assert res_dense.nhev == res_sparse.nhev
+
+
+@pytest.mark.parametrize('workers', [None, 2])
+@pytest.mark.parametrize(
+    'method',
+    ['l-bfgs-b',
+     'bfgs',
+     'slsqp',
+     'trust-constr',
+     'Newton-CG',
+     'CG',
+     'tnc',
+     'trust-ncg',
+     'trust-krylov'])
+class TestWorkers:
+
+    def setup_method(self):
+        self.x0 = np.array([1.0, 2.0, 3.0])
+
+    def test_smoke(self, workers, method):
+        # checks parallelised optimization output is same as serial
+        workers = workers or map
+
+        kwds = {'jac': None, 'hess': None}
+        if method in ['Newton-CG', 'trust-ncg', 'trust-krylov']:
+            #  methods that require a callable jac
+            kwds['jac'] = rosen_der
+            kwds['hess'] = '2-point'
+
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, options={"workers":mf}, method=method, **kwds
+            )
+        res_default = optimize.minimize(
+            rosen, self.x0, method=method, **kwds
+        )
+        assert_equal(res.x, res_default.x)
+        assert_equal(res.nfev, res_default.nfev)
+
+    def test_equal_bounds(self, workers, method):
+        workers = workers or map
+        if method not in ['l-bfgs-b', 'slsqp', 'trust-constr', 'tnc']:
+            pytest.skip(f"{method} cannot use bounds")
+
+        bounds = Bounds([0, 2.0, 0.], [10., 2.0, 10.])
+        with MapWrapper(workers) as mf:
+            res = optimize.minimize(
+                rosen, self.x0, bounds=bounds, options={"workers": mf}, method=method
+            )
+        assert res.success
+        assert_allclose(res.x[1], 2.0)
