@@ -62,6 +62,9 @@ class _csr_base(_cs_matrix):
 
     def tocoo(self, copy=False):
         A = super().tocoo(copy=copy)
+        # CSR-to-COO conversion always preserves [non-]canonicity
+        # (indices sorting, presense of duplicate elements).
+        # Handled here instead of _cs_matrix because CSC-to-COO generally does not.
         A.has_canonical_format = self.has_canonical_format
         return A
 
