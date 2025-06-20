@@ -404,17 +404,17 @@ class RigidTransform:
 
         Notes
         -----
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation
-        vector ``[tx, ty, tz]``. As rotation matrices must be proper
-        orthogonal, the rotation component is orthonormalized using singular
-        value decomposition before initialization.
+        where ``R`` is a 3x3 rotation matrix and ``t = [tx, ty, tz]`` is a 3x1
+        translation vector. As rotation matrices must be proper orthogonal, the
+        rotation component is orthonormalized using singular value decomposition
+        before initialization.
 
         Examples
         --------
@@ -933,15 +933,15 @@ class RigidTransform:
     def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``.
+        where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector.
 
         Returns
         -------
@@ -989,17 +989,17 @@ class RigidTransform:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``. This function returns the rotation
-        corresponding to this rotation matrix ``r = Rotation.from_matrix(R)``
-        and the translation vector ``t``.
+        Where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector. This function
+        returns the rotation corresponding to this rotation matrix
+        ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
         Take a transform ``tf`` and a vector ``v``. When applying the transform
         to the vector, the result is the same as if the transform was applied
@@ -1272,9 +1272,10 @@ class RigidTransform:
     def __mul__(self, other: RigidTransform) -> RigidTransform:
         """Compose this transform with the other.
 
-        If `p` and `q` are two transforms, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of transformation matrices,
-        the composition can be expressed as ``p.as_matrix() @ q.as_matrix()``.
+        If ``p`` and ``q`` are two transforms, then the composition of '``q``
+        followed by ``p``' is equivalent to ``p * q``. In terms of
+        transformation matrices, the composition can be expressed as
+        ``p.as_matrix() @ q.as_matrix()``.
 
         In terms of translations and rotations, the composition when applied to
         a vector ``v`` is equivalent to
