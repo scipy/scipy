@@ -15,10 +15,12 @@ import scipy._lib.array_api_extra as xpx
 
 from scipy._lib._array_api import (
     array_namespace,
+    is_marray,
     xp_size,
     xp_vector_norm,
     xp_promote,
-    is_marray,
+    xp_result_type,
+    xp_device,
     xp_ravel,
     _length_nonmasked,
 )
@@ -226,7 +228,7 @@ def mvsdist(data):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2, *, axis=None):
     r"""
@@ -331,7 +333,7 @@ def kstat(data, n=2, *, axis=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+    lambda x: x, result_to_tuple=lambda x, _: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
@@ -988,10 +990,11 @@ def boxcox_llf(lmb, data, *, axis=0, keepdims=False, nan_policy='propagate'):
 
 
 @_axis_nan_policy_factory(lambda x: x, n_outputs=1, default_axis=0,
-                          result_to_tuple=lambda x: (x,))
+                          result_to_tuple=lambda x, _: (x,))
 def _boxcox_llf(data, axis=0, *, lmb):
     xp = array_namespace(data)
-    lmb, data = xp_promote(lmb, data, force_floating=True, xp=xp)
+    dtype = xp_result_type(lmb, data, force_floating=True, xp=xp)
+    data = xp.asarray(data, dtype=dtype)
     N = data.shape[axis]
     if N == 0:
         return _get_nan(data, xp=xp)
@@ -2941,7 +2944,8 @@ def bartlett(*samples, axis=0):
         samples = _broadcast_arrays(samples, axis=axis, xp=xp)
         samples = [xp.moveaxis(sample, axis, -1) for sample in samples]
 
-    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp), dtype=sample.dtype)
+    Ni = [xp.asarray(_length_nonmasked(sample, axis=-1, xp=xp),
+                     dtype=sample.dtype, device=xp_device(sample))
           for sample in samples]
     Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
@@ -2959,7 +2963,7 @@ def bartlett(*samples, axis=0):
              * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k)))
     T = numer / denom
 
-    chi2 = _SimpleChi2(xp.asarray(k-1))
+    chi2 = _SimpleChi2(xp.asarray(k-1, dtype=dtype, device=xp_device(T)))
     pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
 
     T = xp.clip(T, min=0., max=xp.inf)
@@ -3505,7 +3509,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
-def wilcoxon_result_unpacker(res):
+def wilcoxon_result_unpacker(res, _):
     if hasattr(res, 'zstatistic'):
         return res.statistic, res.pvalue, res.zstatistic
     else:
@@ -4002,7 +4006,7 @@ def _circfuncs_common(samples, period, xp=None):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
@@ -4095,7 +4099,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
@@ -4189,7 +4193,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
 @_axis_nan_policy_factory(
     lambda x: x, n_outputs=1, default_axis=None,
-    result_to_tuple=lambda x: (x,)
+    result_to_tuple=lambda x, _: (x,)
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):

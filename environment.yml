@@ -56,10 +56,6 @@ dependencies:
   - threadpoolctl
   # For CLI
   - spin
-  - rich-click
-  - click
-  - doit>=0.36.0
-  - pydevtool
   # For linting
   - ruff>=0.0.292
   - cython-lint

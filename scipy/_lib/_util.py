@@ -11,9 +11,8 @@ from types import ModuleType
 from typing import Literal, TypeAlias, TypeVar
 
 import numpy as np
-from scipy._lib._array_api import (Array, array_namespace, is_lazy_array,
-                                   is_numpy, is_marray, xp_result_device,
-                                   xp_size, xp_result_type)
+from scipy._lib._array_api import (Array, array_namespace, is_lazy_array, is_numpy,
+                                   is_marray, xp_size, xp_result_device, xp_result_type)
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._sparse import issparse
 
@@ -766,6 +765,13 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         np.random.default_rng = orig_fun
 
 
+@contextmanager
+def ignore_warns(expected_warning, *, match=None):
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", match, expected_warning)
+        yield
+
+
 def _rng_html_rewrite(func):
     """Rewrite the HTML rendering of ``np.random.default_rng``.
 
@@ -835,59 +841,11 @@ def _first_nonnan(a, axis):
     return np.take_along_axis(a, k, axis=axis)
 
 
-def _nan_allsame(a, axis, keepdims=False):
-    """
-    Determine if the values along an axis are all the same.
-
-    nan values are ignored.
-
-    `a` must be a numpy array.
-
-    `axis` is assumed to be normalized; that is, 0 <= axis < a.ndim.
-
-    For an axis of length 0, the result is True.  That is, we adopt the
-    convention that ``allsame([])`` is True. (There are no values in the
-    input that are different.)
-
-    `True` is returned for slices that are all nan--not because all the
-    values are the same, but because this is equivalent to ``allsame([])``.
-
-    Examples
-    --------
-    >>> from numpy import nan, array
-    >>> a = array([[ 3.,  3., nan,  3.],
-    ...            [ 1., nan,  2.,  4.],
-    ...            [nan, nan,  9., -1.],
-    ...            [nan,  5.,  4.,  3.],
-    ...            [ 2.,  2.,  2.,  2.],
-    ...            [nan, nan, nan, nan]])
-    >>> _nan_allsame(a, axis=1, keepdims=True)
-    array([[ True],
-           [False],
-           [False],
-           [False],
-           [ True],
-           [ True]])
-    """
-    if axis is None:
-        if a.size == 0:
-            return True
-        a = a.ravel()
-        axis = 0
-    else:
-        shp = a.shape
-        if shp[axis] == 0:
-            shp = shp[:axis] + (1,)*keepdims + shp[axis + 1:]
-            return np.full(shp, fill_value=True, dtype=bool)
-    a0 = _first_nonnan(a, axis=axis)
-    return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
-
-
 def _contains_nan(
     a: Array,
     nan_policy: Literal["propagate", "raise", "omit"] = "propagate",
     *,
-    xp_omit_okay: bool = False, 
+    xp_omit_okay: bool = False,
     xp: ModuleType | None = None,
 ) -> Array | bool:
     # Regarding `xp_omit_okay`: Temporarily, while `_axis_nan_policy` does not

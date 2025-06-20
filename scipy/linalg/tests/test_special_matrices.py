@@ -8,7 +8,7 @@ from pytest import raises as assert_raises
 from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
-                          companion, kron, block_diag,
+                          companion, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
                           fiedler, fiedler_companion, eigvals,
                           convolution_matrix)
@@ -205,36 +205,6 @@ class TestBlockDiag:
                                [0, 0, 2, 3, 0, 0],
                                [0, 0, 4, 5, 0, 0],
                                [0, 0, 6, 7, 0, 0]])
-
-
-class TestKron:
-    @pytest.mark.thread_unsafe
-    def test_dep(self):
-        with pytest.deprecated_call(match="`kron`"):
-            kron(np.array([[1, 2],[3, 4]]),np.array([[1, 1, 1]]))
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
-        assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
-                                     [3, 3, 3, 4, 4, 4]]))
-
-        m1 = array([[1, 2], [3, 4]])
-        m2 = array([[10], [11]])
-        a = kron(m1, m2)
-        expected = array([[10, 20],
-                          [11, 22],
-                          [30, 40],
-                          [33, 44]])
-        assert_array_equal(a, expected)
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_empty(self):
-        m1 = np.empty((0, 2))
-        m2 = np.empty((1, 3))
-        a = kron(m1, m2)
-        assert_allclose(a, np.empty((0, 6)))
 
 
 class TestHelmert:
@@ -608,7 +578,6 @@ class TestConvolutionMatrix:
         assert_array_almost_equal(y1, y2)
 
 
-@pytest.mark.thread_unsafe
 @pytest.mark.fail_slow(5)  # `leslie` has an import in the function
 @pytest.mark.parametrize('f, args', [(circulant, ()),
                                      (companion, ()),
