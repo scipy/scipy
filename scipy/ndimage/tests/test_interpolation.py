@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from numpy.testing import suppress_warnings
 from scipy._lib._array_api import (
-    _asarray, assert_array_almost_equal,
+    xp_asarray, assert_array_almost_equal,
     is_jax, np_compat,
     xp_assert_equal, xp_assert_close,
 )
@@ -547,9 +547,9 @@ class TestMapCoordinates:
 
     @skip_xp_backends("jax.numpy", reason="`order` is required in jax")
     def test_map_coordinates03(self, xp):
-        data = _asarray([[4, 1, 3, 2],
-                         [7, 6, 8, 5],
-                         [3, 5, 3, 6]], order='F', xp=xp)
+        data = xp_asarray([[4, 1, 3, 2],
+                           [7, 6, 8, 5],
+                           [3, 5, 3, 6]], order='F', xp=xp)
         idx = np.indices(data.shape) - 1
         idx = xp.asarray(idx)
         out = ndimage.map_coordinates(data, idx)

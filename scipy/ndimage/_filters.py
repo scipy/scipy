@@ -580,8 +580,8 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     >>> correlate1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
     array([ 8, 26,  8, 12,  7, 28, 36,  9])
     """
-    input = np.asarray(input)
-    weights = np.asarray(weights)
+    input = xp_asarray(input, xp=np)
+    weights = xp_asarray(weights, xp=np)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
@@ -594,7 +594,7 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                                             output, cval, **kwargs)
 
     output = _ni_support._get_output(output, input)
-    weights = np.asarray(weights, dtype=np.float64)
+    weights = xp_asarray(weights, dtype=np.float64, xp=np)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError('no filter weights given')
     if not weights.flags.contiguous:
@@ -640,7 +640,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     >>> convolve1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
     array([14, 24,  4, 13, 12, 36, 27,  0])
     """
-    weights = np.asarray(weights)
+    weights = xp_asarray(weights, xp=np)
     weights = weights[::-1]
     origin = -origin
     if not weights.shape[0] & 1:
@@ -837,7 +837,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _ni_support._get_output(output, input)
 
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -909,7 +909,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -967,7 +967,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
 
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -1014,7 +1014,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _ni_support._get_output(output, input)
     axes = _ni_support._check_axes(axes, input.ndim)
     if len(axes) > 0:
@@ -1111,7 +1111,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
 
     def derivative2(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
@@ -1172,7 +1172,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _ni_support._get_output(output, input)
     axes = _ni_support._check_axes(axes, input.ndim)
     if len(axes) > 0:
@@ -1232,7 +1232,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
 
     def derivative(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
@@ -1247,8 +1247,8 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution, axes):
-    input = np.asarray(input)
-    weights = np.asarray(weights)
+    input = xp_asarray(input, xp=np)
+    weights = xp_asarray(weights, xp=np)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
@@ -1264,7 +1264,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                                             weights, output, cval, **kwargs)
 
     axes = _ni_support._check_axes(axes, input.ndim)
-    weights = np.asarray(weights, dtype=np.float64)
+    weights = xp_asarray(weights, dtype=np.float64, xp=np)
 
     # expand weights and origins if num_axes < input.ndim
     weights = _expand_footprint(input.ndim, axes, weights, "weights")
@@ -1523,7 +1523,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     >>> uniform_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
@@ -1596,7 +1596,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     output = _ni_support._get_output(output, input,
                                      complex_output=input.dtype.kind == 'c')
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -1658,7 +1658,7 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     >>> minimum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([2, 0, 0, 0, 1, 1, 0, 0])
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
@@ -1715,7 +1715,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     >>> maximum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([8, 8, 8, 4, 9, 9, 9, 9])
     """
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
@@ -1741,7 +1741,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError("no footprint provided")
             separable = True
         else:
-            footprint = np.asarray(footprint, dtype=bool)
+            footprint = xp_asarray(footprint, dtype=bool, xp=np)
             if not footprint.any():
                 raise ValueError("All-zero footprint is not supported.")
             if footprint.all():
@@ -1751,13 +1751,13 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             else:
                 separable = False
     else:
-        structure = np.asarray(structure, dtype=np.float64)
+        structure = xp_asarray(structure, dtype=np.float64, xp=np)
         separable = False
         if footprint is None:
             footprint = np.ones(structure.shape, bool)
         else:
-            footprint = np.asarray(footprint, dtype=bool)
-    input = np.asarray(input)
+            footprint = xp_asarray(footprint, dtype=bool, xp=np)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError("Complex type not supported")
     output = _ni_support._get_output(output, input)
@@ -1926,7 +1926,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=3)
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -1937,7 +1937,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         sizes = _ni_support._normalize_sequence(size, num_axes)
         footprint = np.ones(sizes, dtype=bool)
     else:
-        footprint = np.asarray(footprint, dtype=bool)
+        footprint = xp_asarray(footprint, dtype=bool, xp=np)
     # expand origins, footprint and modes if num_axes < input.ndim
     footprint = _expand_footprint(input.ndim, axes, footprint)
     origins = _expand_origin(input.ndim, axes, origin)
@@ -2244,7 +2244,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
@@ -2379,7 +2379,7 @@ def generic_filter(input, function, size=None, footprint=None,
                       UserWarning, stacklevel=2)
     if extra_keywords is None:
         extra_keywords = {}
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -2390,7 +2390,7 @@ def generic_filter(input, function, size=None, footprint=None,
         sizes = _ni_support._normalize_sequence(size, num_axes)
         footprint = np.ones(sizes, dtype=bool)
     else:
-        footprint = np.asarray(footprint, dtype=bool)
+        footprint = xp_asarray(footprint, dtype=bool, xp=np)
 
     # expand origins, footprint if num_axes < input.ndim
     footprint = _expand_footprint(input.ndim, axes, footprint)
