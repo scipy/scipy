@@ -135,7 +135,8 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
-                                   is_lazy_array, xp_capabilities, xp_copy)
+                                   is_lazy_array, xp_capabilities, xp_copy,
+                                   SCIPY_ARRAY_API)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
@@ -3809,8 +3810,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     return (((uiva + uivb) / 2), uwa + uwb, h, max_dist)
 
 
-@xp_capabilities(cpu_only=True,
-                 warnings=[("dask.array", "see notes"), ("jax.numpy", "see notes")])
+@xp_capabilities()
 def is_isomorphic(T1, T2):
     """
     Determine if two different cluster assignments are equivalent.
@@ -3827,11 +3827,6 @@ def is_isomorphic(T1, T2):
     b : bool
         Whether the flat cluster assignments `T1` and `T2` are
         equivalent.
-
-    Notes
-    -----
-    *Array API support (experimental):* If the input is a lazy Array (e.g. Dask
-    or JAX), the return value will be a 0-dimensional bool Array.
 
     See Also
     --------
@@ -3888,26 +3883,24 @@ def is_isomorphic(T1, T2):
     if T1.shape != T2.shape:
         raise ValueError('T1 and T2 must have the same number of elements.')
 
-    def py_is_isomorphic(T1, T2):
-        d1 = {}
-        d2 = {}
-        for t1, t2 in zip(T1, T2):
-            if t1 in d1:
-                if t2 not in d2:
-                    return False
-                if d1[t1] != t2 or d2[t2] != t1:
-                    return False
-            elif t2 in d2:
-                return False
-            else:
-                d1[t1] = t2
-                d2[t2] = t1
-        return True
+    # For each pair of (i, j) indices, test that
+    # T1[i] == T1[j] <--> T2[i] == T2[j]
+    # In other words, if the same symbol appears multiple times in T1,
+    # then a potentially different symbol must also be repeated in the same
+    # positions in T2, and vice versa.
 
-    res = xpx.lazy_apply(py_is_isomorphic, T1, T2,
-                         shape=(), dtype=xp.bool,
-                         as_numpy=True, xp=xp)
-    return res if is_lazy_array(res) else bool(res)
+    # O(n*log(n)) algorithm.
+    # It is also possible to write a O(n) algorithm on top of unique_all(),
+    # but in practice it's much slower even for large clusters.
+    idx = xp.argsort(T1)
+    T1 = xp.take(T1, idx)
+    T2 = xp.take(T2, idx)
+    changes1 = T1 != xp.roll(T1, -1)
+    changes2 = T2 != xp.roll(T2, -1)
+    res = xp.all(changes1 == changes2)
+    # Return type was bool up to 1.16.0.
+    # Vectorization changed it to np.bool_, which is backwards incompatible.
+    return res if SCIPY_ARRAY_API else bool(res)
 
 
 @lazy_cython
