@@ -5140,9 +5140,9 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         for data, ofsets, nnz, ref in self.ill_cases():
             for shape in [(2, 2), (0, 2), (2, 0)]:
                 if data is None:
-                    A = dia_array(shape)
+                    A = self.dia_container(shape)
                 else:
-                    A = dia_array((data, ofsets), shape=shape)
+                    A = self.dia_container((data, ofsets), shape=shape)
                 if 0 in shape:
                     nnz = 0
                 assert A._getnnz() == nnz
@@ -5198,30 +5198,30 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         # test format and cases not covered by common add tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp + Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A + B)
 
         Csp = Bsp + Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B + A)
 
     def test_sub_sparse(self):
         # test format and cases not covered by common sub tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp - Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A - B)
 
         Csp = Bsp - Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B - A)
 
         Bsp = Bsp.asformat('csr')
@@ -5248,8 +5248,8 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         B = array([[11, 12],
                    [13, 14],
                    [15, 16]])
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
         Asp.data[Asp.data == 0] = -1  # poison outside elements
         Bsp.data[Bsp.data == 0] = -1
         assert_array_equal(Asp.toarray(), A)
@@ -5257,21 +5257,21 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
         C = A @ B
         Csp = Asp @ Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-1, 0, 1])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         C = B @ A
         Csp = Bsp @ Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         # short data and that order of input offsets doesn't matter
-        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
-        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+        Asp = self.dia_container(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = self.dia_container(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
 
         Csp = Asp @ Bsp
         assert_array_equal(Csp.offsets, array([-3, 0]))
