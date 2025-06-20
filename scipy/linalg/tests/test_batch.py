@@ -496,6 +496,23 @@ class TestBatch:
                 xij = linalg.solve_toeplitz(c_or_cr_ij, bij)
                 assert_allclose(x[i, j], xij)
 
+    @pytest.mark.parametrize('separate_r', [False, True])
+    @pytest.mark.parametrize('xdim', [(5,), (5, 4), (2, 3, 5, 4)])
+    @pytest.mark.parametrize('dtype', floating)
+    def test_matmul_toeplitz(self, separate_r, xdim, dtype):
+        rng = np.random.default_rng(8342310302941288912051)
+        c = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        r = get_random((2, 3, 5), dtype=dtype, rng=rng)
+        c_or_cr = (c, r) if separate_r else c
+        x = get_random(xdim, dtype=dtype, rng=rng)
+        res = linalg.matmul_toeplitz(c_or_cr, x)
+        if separate_r:
+            ref = linalg.toeplitz(c, r) @ x
+        else:
+            ref = linalg.toeplitz(c) @ x
+        atol = 1e-6 if dtype in {np.float32, np.complex64} else 1e-12
+        assert_allclose(res, ref, atol=atol)
+
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
     def test_cho_solve(self, bdim, dtype):

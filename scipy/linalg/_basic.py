@@ -4,6 +4,7 @@
 # w/ additions by Travis Oliphant, March 2002
 #              and Jake Vanderplas, August 2012
 
+import warnings
 from warnings import warn
 from itertools import product
 import numpy as np
