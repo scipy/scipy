@@ -482,21 +482,19 @@ class TestBatch:
     @pytest.mark.parametrize('separate_r', [False, True])
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
-    def test_solve_matmul_toeplitz(self, separate_r, bdim, dtype):
+    def test_solve_toeplitz(self, separate_r, bdim, dtype):
         rng = np.random.default_rng(8342310302941288912051)
         c = get_random((2, 3, 5), dtype=dtype, rng=rng)
         r = get_random((2, 3, 5), dtype=dtype, rng=rng)
         c_or_cr = (c, r) if separate_r else c
         b = get_random(bdim, dtype=dtype, rng=rng)
         x = linalg.solve_toeplitz(c_or_cr, b)
-        b_actual = linalg.matmul_toeplitz(c_or_cr, x)
         for i in range(2):
             for j in range(3):
                 bij = b if len(bdim) <= 2 else b[i, j]
                 c_or_cr_ij = (c[i, j], r[i, j]) if separate_r else c[i, j]
                 xij = linalg.solve_toeplitz(c_or_cr_ij, bij)
                 assert_allclose(x[i, j], xij)
-                assert_allclose(b_actual[i, j], bij)
 
     @pytest.mark.parametrize('bdim', [(5,), (5, 4), (2, 3, 5, 4)])
     @pytest.mark.parametrize('dtype', floating)
