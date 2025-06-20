@@ -5526,6 +5526,10 @@ class norminvgauss_gen(rv_continuous):
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq + gamma) / sq
 
+    def _cdf(self, x, a, b):
+        # Use 1 - sf(x) for numerical stability instead of integrating from -inf to x
+        return 1.0 - self._sf(x, a, b)
+
     def _sf(self, x, a, b):
         if np.isscalar(x):
             # If x is a scalar, then so are a and b.
