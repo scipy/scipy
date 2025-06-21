@@ -1706,6 +1706,7 @@ class LinprogCommonTests:
             sup.filter(RuntimeWarning, "overflow encountered...")
             sup.filter(RuntimeWarning, "invalid value encountered...")
             sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+            sup.filter(LinAlgWarning, "An ill-conditioned...")
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
@@ -2176,6 +2177,7 @@ class TestLinprogIPSpecific:
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             sup.filter(OptimizeWarning, "Solving system with option...")
             sup.filter(LinAlgWarning, "Ill-conditioned matrix...")
+            sup.filter(LinAlgWarning, "An ill-conditioned matrix...")
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
                           options={"ip": True, "disp": True})
             # ip code is independent of sparse/dense
