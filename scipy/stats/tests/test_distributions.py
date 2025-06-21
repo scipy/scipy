@@ -1258,6 +1258,37 @@ class TestNormInvGauss:
         vals = stats.norminvgauss.ppf(x_test, a, b)
         assert_allclose(x_test, stats.norminvgauss.cdf(vals, a, b))
 
+    def test_cdf_precision_large_x(self):
+        """Test for norminvgauss CDF precision bug with large x values.
+        
+        Regression test for gh-XXXXX: norminvgauss.cdf(x) returns
+        incorrect tiny values for large x instead of values close to 1.0.
+        
+        The bug occurs because the default _cdf implementation integrates
+        from -∞ to x, which fails for large x due to numerical precision
+        issues, while the custom _sf method works correctly.
+        """
+        # Test symmetric case (b=0) where mathematical properties are clearest
+        a, b = 1.0, 0.0
+        dist = stats.norminvgauss(a, b)
+        
+        # Test points where the bug is most severe
+        x_values = [20, 30, 50]
+        
+        for x in x_values:
+            # The fundamental relationship cdf(x) + sf(x) = 1.0 must hold
+            cdf_x = dist.cdf(x)
+            sf_x = dist.sf(x)
+            sum_val = cdf_x + sf_x
+            
+            assert_allclose(sum_val, 1.0, rtol=1e-10, atol=1e-15,
+                           err_msg=f"cdf({x}) + sf({x}) = {sum_val}, expected 1.0")
+            
+            # For large positive x, cdf(x) should be very close to 1.0
+            assert_allclose(cdf_x, 1.0, rtol=1e-10, atol=1e-14,
+                           err_msg=f"cdf({x}) = {cdf_x}, expected ≈ 1.0")
+        
+
 
 class TestGeom:
     def setup_method(self):
