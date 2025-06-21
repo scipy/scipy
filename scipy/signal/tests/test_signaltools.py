@@ -3388,8 +3388,7 @@ class TestHilbert:
         x = xp.arange(8.0)
         assert_raises(ValueError, hilbert, x, N=0)
 
-    @pytest.mark.parametrize('workers', [None, 2])
-    def test_hilbert_theoretical(self, xp, workers):
+    def test_hilbert_theoretical(self, xp):
         # test cases by Ariel Rokem
         decimal = 14
 
@@ -3401,7 +3400,7 @@ class TestHilbert:
         a3 = xp.cos(2 * t)
         a = xp.stack([a0, a1, a2, a3])
 
-        h = hilbert(a, workers=workers)
+        h = hilbert(a)
         h_abs = xp.abs(h)
 
         h_angle = xp.atan2(xp.imag(h), xp.real(h)) #  np.angle(h)
