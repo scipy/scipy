@@ -615,14 +615,8 @@ def correlation(u, v, w=None, centered=True):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -655,10 +649,8 @@ def correlation(u, v, w=None, centered=True):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if np.iscomplexobj(u) or np.iscomplexobj(v):
-        message = (
-            "Complex `u` and `v` are deprecated and will raise an error in "
-            "SciPy 1.17.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        msg = "`u` and `v` must be real."
+        raise TypeError(msg)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
@@ -702,14 +694,8 @@ def cosine(u, v, w=None):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
