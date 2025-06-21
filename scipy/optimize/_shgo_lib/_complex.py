@@ -183,6 +183,7 @@ class Complex:
             self.V = VertexCacheIndex()
 
         self.V_non_symm = []  # List of non-symmetric vertices
+        self.split_edge = cache(self._split_edge)
 
     def __call__(self):
         return self.H
@@ -995,8 +996,7 @@ class Complex:
                 d_v0v1.connect(d_v1v2)
         return
 
-    @cache
-    def split_edge(self, v1, v2):
+    def _split_edge(self, v1, v2):
         v1 = self.V[v1]
         v2 = self.V[v2]
         # Destroy original edge, if it exists:
