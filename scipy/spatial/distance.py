@@ -650,7 +650,7 @@ def correlation(u, v, w=None, centered=True):
     v = _validate_vector(v)
     if np.iscomplexobj(u) or np.iscomplexobj(v):
         msg = "`u` and `v` must be real."
-        raise ValueError(msg)
+        raise TypeError(msg)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
