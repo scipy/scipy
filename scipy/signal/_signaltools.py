@@ -1669,14 +1669,6 @@ def medfilt(volume, kernel_size=None):
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
 
-    Notes
-    -----
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
-
-    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
-    the specialised function `scipy.signal.medfilt2d` may be faster.
-
     """
     xp = array_namespace(volume)
     volume = xp.asarray(volume)
