@@ -5421,12 +5421,10 @@ class Test_ttest_ind_permutations:
 
 @pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
-    # for tests that are performed on variations of the t-test such as
-    # permutations and trimming
+    # for tests that are performed on variations of the t-test (e.g. trimmed)
     @pytest.mark.xslow()
-    @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
-                                      {'trim': .2}, {}],
-                             ids=["permutations", "trim", "basic"])
+    @pytest.mark.parametrize("kwds", [{'trim': .2}, {}],
+                             ids=["trim", "basic"])
     @pytest.mark.parametrize('equal_var', [True, False],
                              ids=['equal_var', 'unequal_var'])
     def test_ttest_many_dims(self, kwds, equal_var):
