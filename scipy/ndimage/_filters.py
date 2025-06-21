@@ -232,7 +232,9 @@ def vectorized_filter(input, function, *, size=None, footprint=None, output=None
         We adjust `size` to the number of dimensions indicated by `axes`.
         For instance, if `axes` is ``(0, 2, 1)`` and ``n`` is passed for ``size``,
         then the effective `size` is ``(n, n, n)``.
-    %(output)s
+    output : array, optional
+        The array in which to place the output. By default, an array of the dtype
+        returned by `function` will be created.
     mode : {'reflect', 'constant', 'nearest', 'mirror', 'wrap'}, optional
         The `mode` parameter determines how the input array is extended
         beyond its boundaries. Default is 'reflect'. Behavior for each valid
