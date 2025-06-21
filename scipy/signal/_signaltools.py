@@ -2465,7 +2465,7 @@ def deconvolve(signal, divisor):
     return quot, rem
 
 
-def hilbert(x, N=None, axis=-1, workers=None):
+def hilbert(x, N=None, axis=-1):
     r"""FFT-based computation of the analytic signal.
 
     The analytic signal is calculated by zeroing out the negative frequencies and
@@ -2474,6 +2474,9 @@ def hilbert(x, N=None, axis=-1, workers=None):
     signal.
     
     The transformation is done along the last axis by default.
+
+    For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
 
     Parameters
     ----------
@@ -2484,10 +2487,6 @@ def hilbert(x, N=None, axis=-1, workers=None):
         ``N`` along ``axis``.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``. See ``scipy.fft.fft()``
-        for more details.
 
     Returns
     -------
@@ -2574,20 +2573,17 @@ def hilbert(x, N=None, axis=-1, workers=None):
     if N <= 0:
         raise ValueError("N must be positive.")
 
-    Xf = sp_fft.fft(x, N, axis=axis, workers=workers)
-    if x.ndim > 1:
-         axis = axis % x.ndim
-         ind = [slice(None)] * axis
-    else:
-        ind = []
+    Xf = sp_fft.fft(x, N, axis=axis)
+    Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        Xf[tuple(ind + [slice(1, N // 2)])] *= 2.0
-        Xf[tuple(ind + [slice(N // 2 + 1, N)])] = 0.0
+        Xf[..., 1: N // 2] *= 2.0
+        Xf[..., N // 2 + 1:N] = 0.0
     else:
-        Xf[tuple(ind + [slice(1, (N + 1) // 2)])] *= 2.0
-        Xf[tuple(ind + [slice((N + 1) // 2, N)])] = 0.0
+        Xf[..., 1:(N + 1) // 2] *= 2.0
+        Xf[..., (N + 1) // 2:N] = 0.0
 
-    x = sp_fft.ifft(Xf, axis=axis, workers=workers)
+    Xf = xp.moveaxis(Xf, -1, axis)
+    x = sp_fft.ifft(Xf, axis=axis)
     return x
 
 
