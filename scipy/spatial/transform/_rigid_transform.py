@@ -521,9 +521,8 @@ class RigidTransform:
         >>> len(tf)
         2
         """
-        # TODO: Should this not raise a TypeError?
         if not isinstance(rotation, Rotation):
-            raise ValueError(
+            raise TypeError(
                 "Expected `rotation` to be a `Rotation` instance, "
                 f"got {type(rotation)}."
             )

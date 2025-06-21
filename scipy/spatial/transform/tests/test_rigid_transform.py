@@ -1009,7 +1009,7 @@ def test_input_validation(xp):
             RigidTransform(matrix, normalize=True)
 
     # Test non-Rotation input
-    with pytest.raises(ValueError,
+    with pytest.raises(TypeError,
                        match="Expected `rotation` to be a `Rotation` instance"):
         RigidTransform.from_rotation(xp.eye(3))
 
