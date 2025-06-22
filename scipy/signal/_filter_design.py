@@ -773,9 +773,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     """
     xp = array_namespace(*system, w)
-    b, a = map(xp.asarray, system)
-    b = xpx.atleast_nd(b, ndim=1, xp=xp)
-    a = xpx.atleast_nd(a, ndim=1, xp=xp)
+    b, a = map(np.atleast_1d, system)
 
     if w is None:
         # For backwards compatibility
@@ -785,15 +783,13 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
 
     if _is_int_type(w):
         if whole:
-            w = xp.linspace(0, 2 * xp.pi, w, endpoint=False)
+            w = np.linspace(0, 2 * pi, w, endpoint=False)
         else:
-            w = xp.linspace(0, xp.pi, w, endpoint=False)
+            w = np.linspace(0, pi, w, endpoint=False)
     else:
-        w = xp.asarray(w)
-        w = xpx.atleast_nd(w, ndim=1, xp=xp)
-        w = 2 * xp.pi * w / fs
+        w = np.atleast_1d(w)
+        w = 2*pi*w/fs
 
-    b, a, w = map(np.asarray, (b, a, w))
     c = np.convolve(b, np.conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
