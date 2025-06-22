@@ -795,9 +795,8 @@ as shown in the following example.
     >>> Ax = np.array([0.2, 0.8, 0.6])               # signal amplitudes
     >>> t = np.linspace(0.0, Tp, N, endpoint=False)  # time in s (one segment)
     >>> f = rfftfreq(M*N, Ts)                        # frequency in Hz
-    >>> x = np.zeros(M*N)
-    >>> x[:N] = np.sum(Ax[:,np.newaxis]*np.cos(2.0*np.pi*np.outer(Fx,t)), axis=0)
-    >>> yr = rfft(x)
+    >>> x = np.sum(Ax[:,np.newaxis]*np.cos(2.0*np.pi*np.outer(Fx,t)), axis=0)
+    >>> yr = rfft(x, M*N)
     >>> ya = 20.0*np.log10(2.0/N * np.abs(yr))
     >>>
     >>> # plot ya vs. f in the range [0, Fs/2]
@@ -858,7 +857,7 @@ two bin frequencies, and the amplitude in these two bins is scaled
 by :math:`2/\pi`, i.e., it appears 4 dB below the actual peak.
 The side peaks are close to integer-plus-half multiples of :math:`F_p`
 relative to :math:`F_x.`
-When the spectrum is plotted in dB, the envelop of the spectral leakage
+When the spectrum is plotted in dB, the envelope of the spectral leakage
 near the main peak takes the form of a negative logarithmic function,
 which falls by 6 dB (or 1 bit in log2) per doubling of the distance
 from the main peak.
@@ -899,8 +898,8 @@ the Blackman window and the Dolph–Chebyshev window with 100 dB attenuation.
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(figsize=(7,4))
     >>> fig.tight_layout()
-    >>> ax.plot(n, windows.blackman(N), 'g', label='blackman')
-    >>> ax.plot(n, windows.chebwin(N, at=100), 'r', label='cheb(100)')
+    >>> ax.plot(n, windows.blackman(N, sym=False), 'g', label='blackman')
+    >>> ax.plot(n, windows.chebwin(N, at=100, sym=False), 'r', label='cheb(100)')
     >>> ax.legend()
     >>>
     >>> # decorations
@@ -914,7 +913,7 @@ Their spectrum, which shows also their spectral leakage pattern,
 is calculated and plotted with the following code:
 
 .. plot::
-    :alt: "This code generates calculates and plots the spectrum of three windows: (1) the rectangular window, (2) the  Blackman window, and (3) the Dolph–Chebyshev window with 100 dB attenuation. The main axes shows the spectrum at integer-plus-half bin width, which is approximately equal to the envelop of the spectral leakage. An inset axes shows a detail of the spectrum for the first 6 bins."
+    :alt: "This code generates calculates and plots the spectrum of three windows: (1) the rectangular window, (2) the  Blackman window, and (3) the Dolph–Chebyshev window with 100 dB attenuation. The main axes shows the spectrum at integer-plus-half bin width, which is approximately equal to the envelope of the spectral leakage. An inset axes shows a detail of the spectrum for the first 6 bins."
 
     >>> from scipy.fft import rfft, rfftfreq
     >>> from scipy.signal import windows
@@ -922,14 +921,14 @@ is calculated and plotted with the following code:
     >>> M = 10   # number of segments
     >>> N = 400  # window length
     >>> f = rfftfreq(M*N, 1.0/N)  # normalized frequency
-    >>> x = np.zeros((3, M*N))    # space for 3 windows
-    >>> x[0,:N] = np.ones(N)
-    >>> x[1,:N] = windows.blackman(N)
-    >>> x[2,:N] = windows.chebwin(N, at=100)
-    >>> yr = rfft(x, axis=1)
+    >>> x = np.zeros((3, N))      # space for 3 windows
+    >>> x[0,:] = np.ones(N)
+    >>> x[1,:] = windows.blackman(N, sym=False)
+    >>> x[2,:] = windows.chebwin(N, at=100, sym=False)
+    >>> yr = rfft(x, M*N, axis=1)
     >>> eps = np.spacing(1.0)
     >>> ya = 20.0*np.log10(eps + np.abs(yr) / np.sum(x, axis=1, keepdims=True))
-    >>> # envelop of ya
+    >>> # envelope of ya
     >>> fm = f[:-1].reshape(-1,M)
     >>> yam = ya[:,:-1].reshape(3,-1,M)
     >>> ke = np.argmax(yam, axis=-1)
@@ -969,7 +968,7 @@ by the sum of the window sequence).
 The inset shows the amplitude for the first few bins.
 As it is seen, the amplitude has large variation over the continuous frequency,
 due to the zero values at or near every bin frequency.
-The main plot shows the envelop of the amplitude vs. frequency,
+The main plot shows the envelope of the amplitude vs. frequency,
 which is also the worst-case pattern for the spectral leakage.
 
 These three windows are applied to a signal as shown below.
@@ -990,9 +989,9 @@ These three windows are applied to a signal as shown below.
     >>> t = np.linspace(0.0, Tp, N, endpoint=False)  # time in s
     >>> f = rfftfreq(N, Ts)                          # frequency in Hz
     >>> w = np.empty((3, N))                         # space for 3 windows
-    >>> w[0,:N] = np.ones(N)
-    >>> w[1,:N] = windows.blackman(N)
-    >>> w[2,:N] = windows.chebwin(N, at=100)
+    >>> w[0,:] = np.ones(N)
+    >>> w[1,:] = windows.blackman(N, sym=False)
+    >>> w[2,:] = windows.chebwin(N, at=100, sym=False)
     >>> x = w * np.sum(Ax[:,np.newaxis]*np.cos(2.0*np.pi*np.outer(Fx,t)), axis=0)
     >>> yr = rfft(x, axis=1)
     >>> eps = np.spacing(1.0)
