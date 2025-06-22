@@ -1594,7 +1594,7 @@ class TestSomeDistanceFunctions:
     def test_corr_dep_complex(self, func):
         x = [1+0j, 2+0j]
         y = [3+0j, 4+0j]
-        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+        with pytest.raises(TypeError, match="real"):
             func(x, y)
 
     def test_mahalanobis(self):
