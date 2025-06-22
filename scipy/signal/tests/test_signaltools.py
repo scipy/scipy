@@ -1295,7 +1295,7 @@ class TestMedFilt:
         # us into wrong memory if used (but it does not need to be used)
         dummy = xp.arange(10, dtype=xp.float64)
         a = dummy[5:6]
-        a.strides = 16
+        a = np.lib.stride_tricks.as_strided(a, strides=(16,))
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
     @skip_xp_backends(
