@@ -554,8 +554,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
             t[ind] = m[(x_ind + 1,) + y_ind] + (
-                    (f2[ind] / f12[ind]) * (
-                        m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind]))
+                (f2[ind] / f12[ind])
+                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis
