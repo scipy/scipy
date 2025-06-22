@@ -891,7 +891,7 @@ the Blackman window and the Dolph–Chebyshev window with 100 dB attenuation.
     >>> fig, ax = plt.subplots(figsize=(7,4))
     >>> fig.tight_layout()
     >>> ax.plot(n, windows.blackman(N, sym=False), 'g', label='blackman')
-    >>> ax.plot(n, windows.chebwin(N, at=100, sym=False), 'r', label='cheb(100)')
+    >>> ax.plot(n, windows.chebwin(N, at=100), 'r', label='cheb(100)')
     >>> ax.legend()
     >>>
     >>> # decorations
@@ -916,7 +916,7 @@ is calculated and plotted with the following code:
     >>> x = np.zeros((3, N))      # space for 3 windows
     >>> x[0,:] = np.ones(N)
     >>> x[1,:] = windows.blackman(N, sym=False)
-    >>> x[2,:] = windows.chebwin(N, at=100, sym=False)
+    >>> x[2,:] = windows.chebwin(N, at=100)
     >>> yr = rfft(x, M*N, axis=1)
     >>> eps = np.spacing(1.0)
     >>> ya = 20.0*np.log10(eps + np.abs(yr) / np.sum(x, axis=1, keepdims=True))
@@ -983,7 +983,7 @@ These three windows are applied to a signal as shown below.
     >>> w = np.empty((3, N))                         # space for 3 windows
     >>> w[0,:] = np.ones(N)
     >>> w[1,:] = windows.blackman(N, sym=False)
-    >>> w[2,:] = windows.chebwin(N, at=100, sym=False)
+    >>> w[2,:] = windows.chebwin(N, at=100)
     >>> x = w * np.sum(Ax[:,np.newaxis]*np.cos(2.0*np.pi*np.outer(Fx,t)), axis=0)
     >>> yr = rfft(x, axis=1)
     >>> eps = np.spacing(1.0)
