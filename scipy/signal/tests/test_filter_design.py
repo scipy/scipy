@@ -1586,7 +1586,6 @@ class TestLp2bs:
 class TestBilinear:
     """Tests for function `signal.bilinear`. """
 
-    @skip_xp_backends(np_only=True)
     def test_exceptions(self):
         """Raise all exceptions in `bilinear()`. """
         with pytest.raises(ValueError, match="Parameter a is not .*"):
@@ -1847,7 +1846,6 @@ class TestBilinear_zpk:
 
 class TestPrototypeType:
 
-    @skip_xp_backends(np_only=True)
     def test_output_type(self):
         # Prototypes should consistently output arrays, not lists
         # https://github.com/scipy/scipy/pull/441
@@ -2135,7 +2133,6 @@ class TestCheb1ord:
         assert N == 8
         assert math.isclose(Wn, 4800.0, rel_tol=1e-15)
 
-    @skip_xp_backends(np_only=True)
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
             cheb1ord(0.2, 0.3, 3, 2)
@@ -2159,7 +2156,6 @@ class TestCheb1ord:
         n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert not (wn == w2).all()
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         wp = 0.2
         ws = 0.3
@@ -2267,7 +2263,6 @@ class TestCheb2ord:
         assert N == 9
         assert math.isclose(Wn, 103.4874609145164, rel_tol=1e-15)
 
-    @skip_xp_backends(np_only=True)
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
             cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 2)
@@ -2291,7 +2286,6 @@ class TestCheb2ord:
         n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
         assert not (wn == w1).all()
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         wp = 0.2
         ws = 0.3
@@ -2411,7 +2405,6 @@ class TestEllipord:
         assert N == 7
         xp_assert_close(Wn, xp.asarray([590.3293117737195, 2400]), rtol=1e-5)
 
-    @skip_xp_backends(np_only=True)
     def test_invalid_input(self):
         with pytest.raises(ValueError) as exc_info:
             ellipord(0.2, 0.5, 3, 2)
@@ -2432,7 +2425,6 @@ class TestEllipord:
         n, wn = ellipord(xp.asarray([0.1, 0.6]), xp.asarray([0.2, 0.5]), 3, 60)
         assert n == 5
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         wp = 0.2
         ws = 0.3
@@ -2888,7 +2880,6 @@ class TestBessel:
                 delay = -xp.diff(unwr_h) / xp.diff(w)
                 assert math.isclose(delay[0], 1/w0, rel_tol=1e-4)
 
-    @skip_xp_backends(np_only=True)
     def test_norm_factor(self):
         mpmath_values = {
             1: 1.0, 2: 1.361654128716130520, 3: 1.755672368681210649,
@@ -2909,16 +2900,13 @@ class TestBessel:
             z, p, k = besselap(N, 'delay')
             xp_assert_close(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
 
-    @skip_xp_backends(np_only=True)
     def test_bessel_poly(self):
         xp_assert_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
         xp_assert_equal(_bessel_poly(4, True), [1, 10, 45, 105, 105])
 
-    @skip_xp_backends(np_only=True)
     def test_bessel_zeros(self):
         xp_assert_equal(_bessel_zeros(0), [])
 
-    @skip_xp_backends(np_only=True)
     def test_invalid(self):
         assert_raises(ValueError, besselap, 5, 'nonsense')
         assert_raises(ValueError, besselap, -5)
@@ -2926,7 +2914,6 @@ class TestBessel:
         assert_raises(ValueError, _bessel_poly, -3)
         assert_raises(ValueError, _bessel_poly, 3.3)
 
-    @skip_xp_backends(np_only=True)
     @pytest.mark.fail_slow(10)
     def test_fs_param(self):
         for norm in ('phase', 'mag', 'delay'):
@@ -3200,7 +3187,6 @@ class TestButter:
         xp_assert_close(b, b2, rtol=1e-14)
         xp_assert_close(a, a2, rtol=1e-14)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
             for N in (0, 1, 2, 3, 10):
@@ -3475,7 +3461,6 @@ class TestCheby1:
         xp_assert_close(b, b2, rtol=1e-14)
         xp_assert_close(a, a2, rtol=1e-14)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
             for N in (0, 1, 2, 3, 10):
@@ -3775,7 +3760,6 @@ class TestCheby2:
         xp_assert_close(b, b2, rtol=5e-14)
         xp_assert_close(a, a2, rtol=5e-14)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
             for N in (0, 1, 2, 3, 10):
@@ -4096,7 +4080,6 @@ class TestEllip:
         xp_assert_close(b, b2, rtol=1e-6)
         xp_assert_close(a, a2, rtol=1e-4)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_param(self):
         for fs in (900, 900.1, 1234.567):
             for N in (0, 1, 2, 3, 10):
@@ -4115,7 +4098,6 @@ class TestEllip:
                             for ba1_, ba2_ in zip(ba1, ba2):
                                 xp_assert_close(ba1_, ba2_)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             iirnotch(0.06, 30, fs=np.array([10, 20]))
@@ -4200,8 +4182,7 @@ class TestIIRNotch:
         # the frequency response should be very close to 0
         assert math.isclose(xp.abs(hp[2]), 0.0, abs_tol=1e-10)
 
-    @skip_xp_backends(np_only=True)
-    def test_errors(self, xp):
+    def test_errors(self):
         # Exception should be raised if w0 > 1 or w0 <0
         assert_raises(ValueError, iirnotch, w0=2, Q=30)
         assert_raises(ValueError, iirnotch, w0=-1, Q=30)
@@ -4465,7 +4446,6 @@ class TestIIRComb:
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
         assert xp.abs(response[0]) < 1e-10
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             iircomb(1000, 30, fs=np.array([10, 20]))
@@ -4476,8 +4456,7 @@ class TestIIRComb:
 
 class TestIIRDesign:
 
-    @skip_xp_backends(np_only=True)
-    def test_exceptions(self, xp):
+    def test_exceptions(self):
         with pytest.raises(ValueError, match="the same shape"):
             iirdesign(0.2, [0.1, 0.3], 1, 40)
         with pytest.raises(ValueError, match="the same shape"):
@@ -4591,8 +4570,7 @@ class TestIIRDesign:
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
 
-    @skip_xp_backends(np_only=True)
-    def test_fs_validation(self, xp):
+    def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
@@ -4636,7 +4614,6 @@ class TestIIRFilter:
         iirfilter(20, xp.asarray([1000000000, 1100000000]), btype='bp',
                       analog=False, fs=6250000000)
 
-    @skip_xp_backends(np_only=True)
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
         assert_raises(ValueError, iirfilter, 1, [0.1, 0.9], btype='low')
@@ -4644,7 +4621,6 @@ class TestIIRFilter:
         assert_raises(ValueError, iirfilter, 1, 0.2, btype='bp')
         assert_raises(ValueError, iirfilter, 1, 400, btype='bs', analog=True)
 
-    @skip_xp_backends(np_only=True)
     def test_invalid_wn_range(self):
         # For digital filters, 0 <= Wn <= 1
         assert_raises(ValueError, iirfilter, 1, 2, btype='low')
@@ -4674,7 +4650,6 @@ class TestIIRFilter:
         sos2 = iirfilter(N=1, Wn=xp.asarray(1), btype='low', analog=True, output='sos')
         assert_array_almost_equal(sos, sos2)
 
-    @skip_xp_backends(np_only=True)
     def test_wn1_ge_wn0(self):
         # gh-15773: should raise error if Wn[0] >= Wn[1]
         with pytest.raises(ValueError,
@@ -4814,7 +4789,6 @@ class TestGroupDelay:
         # robustness on other platforms.
         assert_array_almost_equal_nulp(np.asarray(gdtest), np.asarray(gdref), nulp=16)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
             group_delay((1, 1), fs=np.array([10, 20]))
@@ -4920,7 +4894,6 @@ class TestGammatone:
         xp_assert_close(b, b2, atol=1e-10, rtol=5e-5)
         xp_assert_close(a, a2, atol=1e-10, rtol=5e-5)
 
-    @skip_xp_backends(np_only=True)
-    def test_fs_validation(self, xp):
+    def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
-            gammatone(440, 'iir', fs=xp.asarray([10, 20]))
+            gammatone(440, 'iir', fs=np.asarray([10, 20]))
