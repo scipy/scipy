@@ -3028,7 +3028,6 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     xp_assert_close(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 @pytest.mark.fail_slow(10)
 def test_choose_conv_method(xp):
@@ -3061,10 +3060,6 @@ def test_choose_conv_method(xp):
 @skip_xp_backends(np_only=True)
 def test_choose_conv_method_2(xp):
     for mode in ['valid', 'same', 'full']:
-        x = [Decimal(3), Decimal(2)]
-        h = [Decimal(1), Decimal(4)]
-        assert choose_conv_method(x, h, mode=mode) == 'direct'
-
         n = 10
         for not_fft_conv_supp in ["complex256", "complex192"]:
             if hasattr(np, not_fft_conv_supp):
