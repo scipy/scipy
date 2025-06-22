@@ -2314,7 +2314,6 @@ class TestLinearFilterFloat64(_TestLinearFilter):
     dtype = 'float64'
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 class TestLinearFilterFloatExtended(_TestLinearFilter):
     dtype = np.dtype('g')
@@ -2328,29 +2327,11 @@ class TestLinearFilterComplex128(_TestLinearFilter):
     dtype = 'complex128'
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 class TestLinearFilterComplexExtended(_TestLinearFilter):
     dtype = np.dtype('G')
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-class TestLinearFilterDecimal(_TestLinearFilter):
-    dtype = np.dtype('O')
-
-    def type(self, x):
-        return Decimal(str(x))
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-class TestLinearFilterObject(_TestLinearFilter):
-    dtype = np.dtype('O')
-    type = float
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @skip_xp_backends(np_only=True)
 def test_lfilter_bad_object(xp):
     # lfilter: object arrays with non-numeric objects raise TypeError.
@@ -2368,15 +2349,14 @@ def test_lfilter_notimplemented_input(xp):
     assert_raises(NotImplementedError, lfilter, [2,3], [4,5], [1,2,3,4,5])
 
 
-class _TestCorrelateReal:
-
-    def _get_assertion(self, dt):
-        """Use np.testing while object arrays are a thing."""
-        if dt == Decimal:
-            return np.testing.assert_array_almost_equal
-        else:
-            return assert_array_almost_equal
-
+@pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
+                                "uint32", "int32",
+                                "uint64", "int64",
+                                "float32", "float64",
+                               ])
+@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
+@skip_xp_backends("jax.numpy", reason="fails all around")
+class TestCorrelateReal:
     def _setup_rank1(self, dt, xp):
         a = xp.linspace(0, 3, 4, dtype=dt)
         b = xp.linspace(1, 2, 2, dtype=dt)
@@ -2405,42 +2385,32 @@ class _TestCorrelateReal:
 
     @skip_xp_backends(np_only=True, reason="order='F'")
     def test_method(self, dt, xp):
-        if dt == Decimal:
-            method = choose_conv_method([Decimal(4)], [Decimal(3)])
-            assert method == 'direct'
-        else:
-            dt = getattr(xp, dt)
+        dt = getattr(xp, dt)
 
-            a, b, y_r = self._setup_rank3(dt, xp)
-            y_fft = correlate(a, b, method='fft')
-            y_direct = correlate(a, b, method='direct')
+        a, b, y_r = self._setup_rank3(dt, xp)
+        y_fft = correlate(a, b, method='fft')
+        y_direct = correlate(a, b, method='direct')
 
-            assert_array_almost_equal(y_r,
-                                      y_fft,
-                                      decimal=self.equal_tolerance_fft(y_fft.dtype),)
-            assert_array_almost_equal(y_r,
-                                      y_direct,
-                                      decimal=self.equal_tolerance(y_direct.dtype),)
-            assert y_fft.dtype == dt
-            assert y_direct.dtype == dt
+        assert_array_almost_equal(y_r, y_fft,
+                                  decimal=self.equal_tolerance_fft(y_fft.dtype),)
+        assert_array_almost_equal(y_r, y_direct,
+                                  decimal=self.equal_tolerance(y_direct.dtype),)
+        assert y_fft.dtype == dt
+        assert y_direct.dtype == dt
 
     def test_rank1_valid(self, dt, xp):
         if is_torch(xp) and dt in ["uint16", "uint32", "uint64"]:
            pytest.skip("torch does not support unsigned ints")
 
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
-        _assert_almost_equal = self._get_assertion(dt)
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'valid')
-        _assert_almost_equal(y, y_r[1:4])
+        assert_allclose(y, y_r[1:4])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        if  y_r.dtype != object:
-            _assert_almost_equal(y, xp.flip(y_r[1:4]))
-        else:
-            _assert_almost_equal(y, y_r[1:4][::-1])
+        assert_allclose(y, y_r[1:4][::-1])
         assert y.dtype == dt
 
     def test_rank1_same(self, dt, xp):
@@ -2451,8 +2421,7 @@ class _TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'same')
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[:-1])
+        assert_allclose(y, y_r[:-1])
         assert y.dtype == dt
 
     def test_rank1_full(self, dt, xp):
@@ -2463,8 +2432,7 @@ class _TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'full')
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r)
+        assert_allclose(y, y_r)
         assert y.dtype == dt
 
     def _setup_rank3(self, dt, xp):
@@ -2502,14 +2470,12 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b, "valid")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[1:2, 2:4, 3:5])
+        assert_allclose(y, y_r[1:2, 2:4, 3:5])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, "valid")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
+        assert_allclose(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
         assert y.dtype == dt
 
     @skip_xp_backends(np_only=True, reason="order='F'")
@@ -2517,8 +2483,7 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b, "same")
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r[0:-1, 1:-1, 1:-2])
+        assert_allclose(y, y_r[0:-1, 1:-1, 1:-2])
         assert y.dtype == dt
 
     @skip_xp_backends(np_only=True, reason="order='F'")
@@ -2526,27 +2491,8 @@ class _TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b)
-        _assert_almost_equal = self._get_assertion(dt)
-        _assert_almost_equal(y, y_r)
+        assert_allclose(y, y_r)
         assert y.dtype == dt
-
-
-@pytest.mark.parametrize('dt', ["uint8", "int8", "uint16", "int16",
-                                "uint32", "int32",
-                                "uint64", "int64",
-                                "float32", "float64",
-                               ])
-@skip_xp_backends(cpu_only=True, exceptions=['cupy'])
-@skip_xp_backends("jax.numpy", reason="fails all around")
-class TestCorrelateReal(_TestCorrelateReal):
-    pass
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True, reason="object arrays")
-@pytest.mark.parametrize('dt', [Decimal])
-class TestCorrelateRealDecimal(_TestCorrelateReal):
-    pass
 
 
 class TestCorrelate:
@@ -4245,32 +4191,6 @@ class TestVectorstrength:
         events = 1.
         period = -1
         assert_raises(ValueError, vectorstrength, events, period)
-
-
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
-@skip_xp_backends(np_only=True)
-@pytest.mark.parametrize('func', (sosfilt, lfilter))
-def test_nonnumeric_dtypes(func, xp):
-    x = [Decimal(1), Decimal(2), Decimal(3)]
-    b = [Decimal(1), Decimal(2), Decimal(3)]
-    a = [Decimal(1), Decimal(2), Decimal(3)]
-    x = np.array(x)
-    assert x.dtype.kind == 'O'
-    desired = lfilter(np.array(b, float), np.array(a, float), x.astype(float))
-    if func is sosfilt:
-        actual = sosfilt([b + a], x)
-    else:
-        actual = lfilter(b, a, x)
-    assert all(isinstance(x, Decimal) for x in actual)
-    assert_allclose(actual.astype(float), desired.astype(float))
-    # Degenerate cases
-    if func is lfilter:
-        args = [1., 1.]
-    else:
-        args = [tf2sos(1., 1.)]
-
-    with pytest.raises(ValueError, match='must be at least 1-D'):
-        func(*args, x=1.)
 
 
 # XXX: restore testing on CuPy, where possible. Multiple issues in this test:
