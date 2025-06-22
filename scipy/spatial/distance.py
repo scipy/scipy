@@ -615,14 +615,8 @@ def correlation(u, v, w=None, centered=True):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -655,10 +649,8 @@ def correlation(u, v, w=None, centered=True):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if np.iscomplexobj(u) or np.iscomplexobj(v):
-        message = (
-            "Complex `u` and `v` are deprecated and will raise an error in "
-            "SciPy 1.17.0.")
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        msg = "`u` and `v` must be real."
+        raise TypeError(msg)
     if w is not None:
         w = _validate_weights(w)
         w = w / w.sum()
@@ -702,14 +694,8 @@ def cosine(u, v, w=None):
     ----------
     u : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `u` is deprecated and will raise an error in SciPy 1.17.0
     v : (N,) array_like of floats
         Input array.
-
-        .. deprecated:: 1.15.0
-           Complex `v` is deprecated and will raise an error in SciPy 1.17.0
     w : (N,) array_like of floats, optional
         The weights for each value in `u` and `v`. Default is None,
         which gives each value a weight of 1.0
@@ -2294,7 +2280,8 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
     X = _asarray(X)
     if X.ndim != 2:
-        raise ValueError(f'A 2-dimensional array must be passed. (Shape was {X.shape}).')
+        raise ValueError('A 2-dimensional array must be passed. '
+                         f'(Shape was {X.shape}).')
 
     n = X.shape[0]
     return xpx.lazy_apply(_np_pdist, X, out,
@@ -2303,7 +2290,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
                           kwargs.pop('V', None),
                           kwargs.pop('VI', None),
                           # See src/distance_pybind.cpp::pdist
-                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype, 
+                          shape=((n * (n - 1)) // 2, ), dtype=X.dtype,
                           as_numpy=True, metric=metric, **kwargs)
 
 
@@ -2706,7 +2693,7 @@ def num_obs_dm(d):
     --------
     Find the number of original observations corresponding
     to a square redundant distance matrix d.
-    
+
     >>> from scipy.spatial.distance import num_obs_dm
     >>> d = [[0, 100, 200], [100, 0, 150], [200, 150, 0]]
     >>> num_obs_dm(d)
@@ -2736,7 +2723,7 @@ def num_obs_y(Y):
     --------
     Find the number of original observations corresponding to a
     condensed distance matrix Y.
-    
+
     >>> from scipy.spatial.distance import num_obs_y
     >>> Y = [1, 2, 3.5, 7, 10, 4]
     >>> num_obs_y(Y)

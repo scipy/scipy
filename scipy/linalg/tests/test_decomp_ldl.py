@@ -1,21 +1,20 @@
+import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    tril, triu_indices_from, spacing, float32, float64,
                    complex64, complex128)
 from numpy.exceptions import ComplexWarning
-from numpy.random import rand, randint, seed
 from scipy.linalg import ldl
 import pytest
-from pytest import raises as assert_raises, warns
 
 
-@pytest.mark.thread_unsafe
 def test_args():
     A = eye(3)
     # Nonsquare array
-    assert_raises(ValueError, ldl, A[:, :2])
+    with pytest.raises(ValueError):
+        ldl(A[:, :2])
     # Complex matrix with imaginary diagonal entries with "hermitian=True"
-    with warns(ComplexWarning):
+    with pytest.warns(ComplexWarning):
         ldl(A*1j)
 
 
@@ -71,13 +70,13 @@ def test_simple():
 
 
 def test_permutations():
-    seed(1234)
+    rng = np.random.default_rng(1234)
     for _ in range(10):
-        n = randint(1, 100)
+        n = rng.integers(1, 100)
         # Random real/complex array
-        x = rand(n, n) if randint(2) else rand(n, n) + rand(n, n)*1j
+        x = rng.random((n, n)) + 0 if rng.integers(2) else rng.random((n, n))*1j
         x = x + x.conj().T
-        x += eye(n)*randint(5, 1e6)
+        x += eye(n)*rng.integers(5, 1e6)
         l_ind = tril_indices_from(x, k=-1)
         u_ind = triu_indices_from(x, k=1)
 
@@ -94,12 +93,12 @@ def test_permutations():
 @pytest.mark.parametrize("dtype", [float32, float64])
 @pytest.mark.parametrize("n", [30, 150])
 def test_ldl_type_size_combinations_real(n, dtype):
-    seed(1234)
+    rng = np.random.default_rng(1234)
     msg = (f"Failed for size: {n}, dtype: {dtype}")
 
-    x = rand(n, n).astype(dtype)
+    x = rng.random((n, n)).astype(dtype)
     x = x + x.T
-    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    x += eye(n, dtype=dtype)*dtype(rng.integers(5, 1e6))
 
     l, d1, p = ldl(x)
     u, d2, p = ldl(x, lower=0)
@@ -111,14 +110,14 @@ def test_ldl_type_size_combinations_real(n, dtype):
 @pytest.mark.parametrize("dtype", [complex64, complex128])
 @pytest.mark.parametrize("n", [30, 150])
 def test_ldl_type_size_combinations_complex(n, dtype):
-    seed(1234)
+    rng = np.random.default_rng(1234)
     msg1 = (f"Her failed for size: {n}, dtype: {dtype}")
     msg2 = (f"Sym failed for size: {n}, dtype: {dtype}")
 
     # Complex hermitian upper/lower
-    x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
+    x = (rng.random((n, n))+1j*rng.random((n, n))).astype(dtype)
     x = x+x.conj().T
-    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    x += eye(n, dtype=dtype)*dtype(rng.integers(5, 1e6))
 
     l, d1, p = ldl(x)
     u, d2, p = ldl(x, lower=0)
@@ -127,9 +126,9 @@ def test_ldl_type_size_combinations_complex(n, dtype):
     assert_allclose(u.dot(d2).dot(u.conj().T), x, rtol=rtol, err_msg=msg1)
 
     # Complex symmetric upper/lower
-    x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
+    x = (rng.random((n, n))+1j*rng.random((n, n))).astype(dtype)
     x = x+x.T
-    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    x += eye(n, dtype=dtype)*dtype(rng.integers(5, 1e6))
 
     l, d1, p = ldl(x, hermitian=0)
     u, d2, p = ldl(x, lower=0, hermitian=0)

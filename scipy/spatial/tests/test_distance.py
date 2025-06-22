@@ -1594,7 +1594,7 @@ class TestSomeDistanceFunctions:
     def test_corr_dep_complex(self, func):
         x = [1+0j, 2+0j]
         y = [3+0j, 4+0j]
-        with pytest.deprecated_call(match="Complex `u` and `v` are deprecated"):
+        with pytest.raises(TypeError, match="real"):
             func(x, y)
 
     def test_mahalanobis(self):
@@ -2229,6 +2229,18 @@ def test_immutable_input(metric):
     x.setflags(write=False)
     with maybe_deprecated(metric):
         getattr(scipy.spatial.distance, metric)(x, x, w=x)
+
+
+def test_gh_23109():
+    a = np.array([0, 0, 1, 1])
+    b = np.array([0, 1, 1, 0])
+    w = np.asarray([1.5, 1.2, 0.7, 1.3])
+    expected = yule(a, b, w=w)
+    assert_allclose(expected, 1.1954022988505748)
+    actual = cdist(np.atleast_2d(a),
+                   np.atleast_2d(b),
+                   metric='yule', w=w)
+    assert_allclose(actual, expected)
 
 
 class TestJaccard:

@@ -93,12 +93,12 @@ class BaseQRdeltas:
         self.atol = 10 * np.finfo(self.dtype).eps
 
     def generate(self, type, mode='full'):
-        np.random.seed(29382)
+        rng = np.random.default_rng(29382)
         shape = {'sqr': (8, 8), 'tall': (12, 7), 'fat': (7, 12),
                  'Mx1': (8, 1), '1xN': (1, 8), '1x1': (1, 1)}[type]
-        a = np.random.random(shape)
+        a = rng.random(shape)
         if np.iscomplexobj(self.dtype.type(1)):
-            b = np.random.random(shape)
+            b = rng.random(shape)
             a = a + 1j * b
         a = a.astype(self.dtype)
         q, r = linalg.qr(a, mode=mode)
@@ -634,9 +634,8 @@ class BaseQRinsert(BaseQRdeltas):
         a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
-        rng = np.random.RandomState(1234)
+        rng = np.random.default_rng(1234)
 
-        # super call set the seed...
         if which == 'row':
             if p == 1:
                 u = rng.random(a.shape[1])
@@ -648,7 +647,7 @@ class BaseQRinsert(BaseQRdeltas):
             else:
                 u = rng.random((a.shape[0], p))
         else:
-            ValueError('which should be either "row" or "col"')
+            raise ValueError('which should be either "row" or "col"')
 
         if np.iscomplexobj(self.dtype.type(1)):
             b = rng.random(u.shape)
@@ -1177,19 +1176,19 @@ class BaseQRupdate(BaseQRdeltas):
     def generate(self, type, mode='full', p=1):
         a, q, r = super().generate(type, mode)
 
-        # super call set the seed...
+        rng = np.random.default_rng(1234)
         if p == 1:
-            u = np.random.random(q.shape[0])
-            v = np.random.random(r.shape[1])
+            u = rng.random(q.shape[0])
+            v = rng.random(r.shape[1])
         else:
-            u = np.random.random((q.shape[0], p))
-            v = np.random.random((r.shape[1], p))
+            u = rng.random((q.shape[0], p))
+            v = rng.random((r.shape[1], p))
 
         if np.iscomplexobj(self.dtype.type(1)):
-            b = np.random.random(u.shape)
+            b = rng.random(u.shape)
             u = u + 1j * b
 
-            c = np.random.random(v.shape)
+            c = rng.random(v.shape)
             v = v + 1j * c
 
         u = u.astype(self.dtype)
@@ -1671,7 +1670,7 @@ def test_form_qTu():
             check_form_qTu(qo, qs, uo, us, 2, d)
 
 def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
-    np.random.seed(47)
+    rng = np.random.default_rng(47)
     if u_shape == 1 and u_ndim == 1:
         u_shape = (q_shape[0],)
     else:
@@ -1679,13 +1678,13 @@ def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     dtype = np.dtype(dtype)
 
     if dtype.char in 'fd':
-        q = np.random.random(q_shape)
-        u = np.random.random(u_shape)
+        q = rng.random(q_shape)
+        u = rng.random(u_shape)
     elif dtype.char in 'FD':
-        q = np.random.random(q_shape) + 1j*np.random.random(q_shape)
-        u = np.random.random(u_shape) + 1j*np.random.random(u_shape)
+        q = rng.random(q_shape) + 1j*rng.random(q_shape)
+        u = rng.random(u_shape) + 1j*rng.random(u_shape)
     else:
-        ValueError("form_qTu doesn't support this dtype")
+        raise ValueError("form_qTu doesn't support this dtype")
 
     q = np.require(q, dtype, q_order)
     if u_order != 'A':

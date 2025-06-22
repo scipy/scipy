@@ -360,7 +360,6 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
@@ -503,7 +502,7 @@ def linkcode_resolve(domain, info):
         lineno = None
 
     if lineno:
-        linespec = f"#L{0}-L{1}".format(lineno, lineno + len(source) - 1)
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
     else:
         linespec = ""
 

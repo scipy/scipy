@@ -1,7 +1,4 @@
 fs = import('fs')
-if not fs.exists('boost_math/README.md')
-  error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
-endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -115,6 +112,7 @@ python_sources = [
   '_array_api.py',
   '_array_api_compat_vendor.py',
   '_array_api_no_0d.py',
+  '_array_api_override.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
