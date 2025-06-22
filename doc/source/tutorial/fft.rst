@@ -8,17 +8,15 @@ Fourier Transforms (:mod:`scipy.fft`)
 .. contents::
 
 
-Fourier analysis is a method which decomposes a function into periodic
-components, and reconstructs it from those components.
-When both the function and its Fourier transform are discretized,
-it is called the "Discrete Fourier Transform" (DFT).
-The DFT has become a mainstay of numerical computing in part because
-of a fast algorithm for computing it, with complexity
-:math:`O(n\,{\rm log}\,n),` called the "Fast Fourier Transform" (FFT).
-This algorithm was known to Gauss (1805) and was brought to light in its
-current form by Cooley and Tukey [CT65]_. Press et al. [NR07]_ provide an
-accessible introduction to Fourier analysis and its applications.
-
+Fourier analysis refers to techniques for decomposing functions into periodic
+components as well as synthesising functions from such periodic components. The
+"Discrete Fourier Transform" (DFT) calculates discrete frequency components from a
+sequence of equidistant samples representing an input function. The DFT has become a
+mainstay of numerical computing in part because it can be efficiently implemented with
+a complexity of :math:`O(n \log n)` by an algorithm called the "Fast Fourier Transform"
+(FFT). This algorithm was known to Gauss (1805) and was brought to light in its current
+form by Cooley and Tukey [CT65]_. Press et al. [NR07]_ provide an accessible
+introduction to Fourier analysis and its applications.
 
 .. _tutorial_FFT:
 
@@ -28,89 +26,83 @@ Fast Fourier transforms
 1-D DFT
 _______
 
-The DFT of a complex sequence :math:`x[n]` of length :math:`N,`
-is another complex sequence :math:`y[k]` of length :math:`N,`
-defined as
+The DFT of a complex-valued sequence :math:`x[n]` of length :math:`N,` is defined as
 
 .. math::
 
-    y[k] = \sum_{n=0}^{N-1} e^{-j 2 \pi k n / N} x[n] \, .
+    y[k] = \sum_{n=0}^{N-1} e^{-j 2 \pi k n / N} x[n] \, ,
 
-The inverse transform is
+where :math:`y[k]` is also a complex-valued sequence of length :math:`N`. Due to the
+periodicity of the complex exponential, the DFT is :math:`N`-periodic, i.e.,
+:math:`y[k+lN] = y[k]`, :math:`l\in\mathbb{Z}`. The inverse transform is given by
 
 .. math::
 
     x[n] = \frac{1}{N} \sum_{k=0}^{N-1} e^{j 2 \pi k n / N} y[k] \, .
 
-DFT and its inverse are linear transforms in :math:`\mathcal{C}^N,`
-with a symmetric transformation matrix.
-The transformation matrix of the inverse DFT is the complex conjugate
-of the transformation matrix of DFT, divided by :math:`N.`
+Note that the :math:`N`-periodicity holds also for inverse DFT values, i.e.,
+:math:`x[n+lN] = x[n]`, :math:`l\in\mathbb{Z}`.
+
+Since the DFT is a linear transform in :math:`\mathbb{C}^N`, it can be expressed as a
+symmetric :math:`N\times N` transformation matrix :math:`\mathbf{F}` with elements
+:math:`F[k,n] = e^{-j 2 \pi k n / N}`. The transformation matrix of the inverse DFT
+:math:`\mathbf{F}^{-1} = \overline{\mathbf{F}^T}/N` is the conjugate transpose of
+:math:`\mathbf{F}` divided by :math:`N`.
 
 It can be shown that
 
 .. math::
 
-    y[0] = \sum_{n=0}^{N-1} x[n] \, ,\quad
-    x[0] = \frac{1}{N} \sum_{k=0}^{N-1} y[k] \, ,\quad
-    \sum_{n=0}^{N-1} |x[n]|^2 = \frac{1}{N} \sum_{k=0}^{N-1} |y[k]|^2 \, .
+    y[0] = \sum_{n=0}^{N-1} x[n] \ ,\quad
+    x[0] = \frac{1}{N} \sum_{k=0}^{N-1} y[k] \ ,\quad
+    \sum_{n=0}^{N-1} |x[n]|^2 = \frac{1}{N} \sum_{k=0}^{N-1} |y[k]|^2
 
-The DFT and its inverse can be calculated by means of :func:`fft`
-and :func:`ifft`, respectively, as shown in the following example.
+The DFT and its inverse can be calculated by utilizing the :func:`fft`
+and :func:`ifft` functions, as illustrated in the following example:
 
->>> from scipy.fft import fft, ifft
 >>> import numpy as np
->>> x = np.array([1.0, 2.0, -1.0, -1.5, 1.5, 0.5])
+>>> from scipy.fft import fft, ifft
+...
+>>> x = np.array([2. , 1.5, 0.5, 0. , 0.5, 1.5])
 >>> y = fft(x)
 >>> y
-array([ 2.5-0.j        ,  3.5+0.8660254j , -2. -3.46410162j,
-        0.5-0.j        , -2. +3.46410162j,  3.5-0.8660254j ])
->>> ifft(y)
-array([ 1. +0.j,  2. +0.j, -1. +0.j, -1.5+0.j,  1.5-0.j,  0.5+0.j])
->>>
->>> # the following are equal for any complex x
+array([6.-0.j, 3.+0.j, 0.+0.j, 0.-0.j, 0.-0.j, 3.-0.j])
+>>> ifft(y)  # equals x, but is complex-valued
+array([2. +0.j, 1.5+0.j, 0.5+0.j, 0. +0.j, 0.5-0.j, 1.5+0.j])
+>>> # the following are equal for any complex x:
 >>> np.isclose(ifft(x), fft(x.conj()).conj()/len(x))
 array([ True,  True,  True,  True,  True,  True])
 >>> y[0], np.sum(x)
-(2.5-0j, 2.5)
+(np.complex128(6-0j), np.float64(6.0))
 >>> x[0], np.mean(y)
-(1.0, 1+3.700743415417188e-17j)
+(np.float64(2.0), np.complex128(2+0j))
 >>> np.sum(np.abs(x)**2), np.mean(np.abs(y)**2)
-(10.75, 10.75)
+(np.float64(9.0), np.float64(9.0))
 
-The sequences :math:`x[n]` and :math:`y[k]` in the previous example
-are shown graphically below.
+The following example illustrates the connection between the Fourier series
 
-.. plot::
-    :alt: "This code generates a plot of the sequences x[n], Re y[[k], Im y[k]. The value at each point is shown with a marker and with a vertical bar from the horizontal axis."
+.. math::
 
-    >>> from scipy.fft import fft
-    >>> import numpy as np
-    >>> x = np.array([1.0, 2.0, -1.0, -1.5, 1.5, 0.5])
-    >>> y = fft(x)
-    >>> n = np.r_[:len(x)]
-    >>> k = np.r_[:len(y)]  # same as n
-    >>>
-    >>> # plot x, Re y, Im y
-    >>> import matplotlib.pyplot as plt
-    >>> fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(7,3))
-    >>> fig.tight_layout()
-    >>> ax[0].scatter(n, x)
-    >>> ax[1].scatter(k, y.real)
-    >>> ax[2].scatter(k, y.imag)
-    >>>
-    >>> # decorations
-    >>> ax[0].plot(np.outer([1, 1], n), np.outer([0, 1], x), 'b')
-    >>> ax[1].plot(np.outer([1, 1], k), np.outer([0, 1], y.real), 'b')
-    >>> ax[2].plot(np.outer([1, 1], k), np.outer([0, 1], y.imag), 'b')
-    >>> ax[0].set_title('x[n]')
-    >>> ax[1].set_title('Re y[k]')
-    >>> ax[2].set_title('Im y[k]')
-    >>> for i in (0, 1, 2):
-    ...     ax[i].set_xlim(-1, 6)
-    ...     ax[i].set_ylim(-4, 4)
-    ...     ax[i].grid()
-    >>> plt.show()
+    x(t) = \sum_{k\in\mathbb{Z}} c_k\, e^{j 2 \pi k t}
+
+and the DFT. :math:`x(t)` may be interpreted as a two-dimensional parametric closed
+curve :math:`x: t\in[0, 1] \mapsto \mathbb{C}`, where the real and the imaginary part
+of :math:`x(t)` represent represent the two dimensions. This curve is sampled at
+equistant intervals, i.e., :math:`x[n] := x(n/N)` and the Fourier coefficents
+:math:`c_k = y[k] / N` can be efficiently calculated using a DFT. Here, a curve,
+representing the greek letter ω, is generated from 17 non-zero DFT values. The
+:func:`ifft`
+function is used to calculate the 31 sample values :math:`x[n]` and a Fourier series is
+used to interpolate between those samples:
+
+.. plot:: tutorial/examples/fft_ParemetricClosedCurve.py
+    :alt: This code generates from DFT values a plot of a parametric closed curve
+          representing the greek letter omega.
+
+The samples are depicted as dots and the value of the parameter :math:`t` is encoded in
+the color of the curve. Note that the `~scipy.signal.resample` function, which uses the
+:func:`fft`/:func:`ifft` functions internally, can be used as a more efficient
+alternative for calculating the Fourier expansion for each interpolation value.
 
 
 In the usual case in which :math:`x[n]` is real, the subsequence
