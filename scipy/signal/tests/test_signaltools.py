@@ -281,15 +281,6 @@ class TestConvolve:
         assert_raises(ValueError, convolve, [1], [[2]])
         assert_raises(ValueError, convolve, [3], 2)
 
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            convolve(a, b)
-
 
 @skip_xp_backends(cpu_only=True, exceptions=['cupy'])
 class TestConvolve2d:
@@ -2313,14 +2304,6 @@ class _TestLinearFilter:
             lfilter(b, a, data)
         )
 
-    @skip_xp_backends(np_only=True)
-    @pytest.mark.thread_unsafe
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            lfilter(a, b, [1, 2, 3, 4])
 
 
 class TestLinearFilterFloat32(_TestLinearFilter):
@@ -2615,14 +2598,6 @@ class TestCorrelate:
         xp_assert_close(correlate(a, b, mode='full'), xp.asarray([6, 17, 32, 23, 12]))
         xp_assert_close(correlate(a, b, mode='valid'), xp.asarray([32]))
 
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, xp):
-        # gh-21211
-        a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-        b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            correlate(a, b)
 
 
 @skip_xp_backends(np_only=True, reason="accepts ints, return numpy array")
@@ -3137,18 +3112,7 @@ def test_choose_conv_method(xp):
         assert choose_conv_method(x, h, mode=mode) == 'direct'
 
 
-@pytest.mark.thread_unsafe
 @skip_xp_backends(np_only=True)
-def test_choose_conv_dtype_deprecation(xp):
-    # gh-21211
-    a = np.asarray([1, 2, 3, 6, 5, 3], dtype=object)
-    b = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-    with pytest.deprecated_call(match="dtype=object is not supported"):
-        choose_conv_method(a, b)
-
-
-@skip_xp_backends(np_only=True)
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_choose_conv_method_2(xp):
     for mode in ['valid', 'same', 'full']:
         x = [Decimal(3), Decimal(2)]
@@ -4553,15 +4517,6 @@ class TestSOSFilt:
 
         _, zf = sosfilt(sos, xp.ones(40, dtype=dt), zi=zi.tolist())
         xp_assert_close(zf, zi, rtol=1e-13, check_dtype=False)
-
-    @pytest.mark.thread_unsafe
-    @skip_xp_backends(np_only=True)
-    def test_dtype_deprecation(self, dt, xp):
-        # gh-21211
-        sos = np.asarray([1, 2, 3, 1, 5, 3], dtype=object).reshape(1, 6)
-        x = np.asarray([2, 3, 4, 5, 3, 4, 2, 2, 1], dtype=object)
-        with pytest.deprecated_call(match="dtype=object is not supported"):
-            sosfilt(sos, x)
 
 
 @skip_xp_backends(cpu_only=True, reason='lfilter is CPU-only compiled code')
