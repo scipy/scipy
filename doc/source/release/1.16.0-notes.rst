@@ -245,6 +245,8 @@ Deprecated features
 - `scipy.stats.multinomial` now emits a ``FutureWarning`` if the rows of ``p``
   do not sum to ``1.0``. This condition will produce NaNs beginning in SciPy
   1.18.0.
+- The ``disp`` and ``iprint`` arguments of the ``l-bfgs-b`` solver of `scipy.optimize`
+  have been deprecated, and will be removed in SciPy 1.18.0.
 
 ********************
 Expired Deprecations
@@ -357,7 +359,7 @@ Authors
 * Jake Bowhay (127)
 * Matthew Brett (1)
 * Dietrich Brunn (53)
-* Evgeni Burovski (252)
+* Evgeni Burovski (254)
 * Christine P. Chai (12) +
 * Gayatri Chakkithara (1) +
 * Saransh Chopra (2) +
@@ -371,7 +373,7 @@ Authors
 * Matthew H Flamm (1)
 * Karthik Viswanath Ganti (1) +
 * Neil Girdhar (1)
-* Ralf Gommers (159)
+* Ralf Gommers (162)
 * Rohit Goswami (4)
 * Saarthak Gupta (4) +
 * Matt Haberland (326)
@@ -383,7 +385,7 @@ Authors
 * Yongcai Huang (2) +
 * Lukas Huber (1) +
 * Yuji Ikeda (2) +
-* Guido Imperiale (104) +
+* Guido Imperiale (105) +
 * Robert Kern (2)
 * Harin Khakhi (2) +
 * Agriya Khetarpal (4)
@@ -416,8 +418,8 @@ Authors
 * Giacomo Petrillo (1)
 * Victor PM (10) +
 * pmav99 (1) +
-* Ilhan Polat (73)
-* Tyler Reddy (112)
+* Ilhan Polat (74)
+* Tyler Reddy (128)
 * Érico Nogueira Rolim (1) +
 * Pamphile Roy (10)
 * Mikhail Ryazanov (6)
@@ -652,6 +654,8 @@ Issues closed for 1.16.0
 * `#23068 <https://github.com/scipy/scipy/issues/23068>`__: BUG: sparse: ``!=`` operator with csr matrices
 * `#23109 <https://github.com/scipy/scipy/issues/23109>`__: BUG: spatial.distance.cdist: wrong result in Yule metric
 * `#23169 <https://github.com/scipy/scipy/issues/23169>`__: BUG: special.betainc: evaluates incorrectly to nan when ``b=0``
+* `#23184 <https://github.com/scipy/scipy/issues/23184>`__: BUG: min Python version enforcement in 1.16.x series? (and main)
+* `#23186 <https://github.com/scipy/scipy/issues/23186>`__: BUG: scipy.optimize minimize routine does not show info logs...
 
 ************************
 Pull requests for 1.16.0
@@ -1123,5 +1127,11 @@ Pull requests for 1.16.0
 * `#23127 <https://github.com/scipy/scipy/pull/23127>`__: DOC: fix linkcode_resolve line-number anchors
 * `#23131 <https://github.com/scipy/scipy/pull/23131>`__: REL: set 1.16.0rc3 unreleased
 * `#23134 <https://github.com/scipy/scipy/pull/23134>`__: BUG: linalg.lapack: fix incorrectly sized work array for {c,z}syrti
+* `#23144 <https://github.com/scipy/scipy/pull/23144>`__: MAINT: array types: array-api-strict got stricter
 * `#23146 <https://github.com/scipy/scipy/pull/23146>`__: DOC: stats.Mixture: add example
+* `#23164 <https://github.com/scipy/scipy/pull/23164>`__: MAINT: backports and prep for 1.16.0 "final"
 * `#23170 <https://github.com/scipy/scipy/pull/23170>`__: TST: add all SciPy-specific pytest markers to ``scipy/conftest.py``
+* `#23178 <https://github.com/scipy/scipy/pull/23178>`__: CI: skip JAX 0.6.2
+* `#23180 <https://github.com/scipy/scipy/pull/23180>`__: CI: remove free-threading workarounds in wheel builds
+* `#23189 <https://github.com/scipy/scipy/pull/23189>`__: BLD: implement build-time version check for minimum Python version
+* `#23197 <https://github.com/scipy/scipy/pull/23197>`__: DEP: optimize: Add deprecation warnings to L-BFGS-B ``disp``\...

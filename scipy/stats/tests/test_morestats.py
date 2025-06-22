@@ -2053,13 +2053,13 @@ class TestBoxcox_llf:
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
         llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
-        llf_0 = xp.asarray([
+        llf_0 = xp.stack([
             stats.boxcox_llf(1, data[:, 0]),
             stats.boxcox_llf(1, data[:, 1]),
         ])
         xp_assert_close(llf_axis_0, llf_0)
         llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
-        llf_1 = xp.asarray([
+        llf_1 = xp.stack([
             stats.boxcox_llf(1, data[0, :]),
             stats.boxcox_llf(1, data[1, :]),
         ])
@@ -2732,11 +2732,11 @@ class TestCircFuncs:
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
         res = circfunc(x, high=360, axis=0)
         ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),

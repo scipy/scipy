@@ -204,15 +204,8 @@ jobs:
 
       #     echo "CIBW_BEFORE_TEST=$DEPS0" >> "$GITHUB_ENV"
 
-      - name: Disable build isolation for python free-threaded version
-        if: endsWith(matrix.python[0], 't')
-        shell: bash
-        run: |
-          CIBW="pip; args: --no-build-isolation"
-          echo "CIBW_BUILD_FRONTEND=$CIBW" >> "$GITHUB_ENV"
-
       - name: Build wheels
-        uses: pypa/cibuildwheel@d04cacbc9866d432033b1d09142936e6a0e2121a # v2.23.2
+        uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
