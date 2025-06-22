@@ -5419,7 +5419,6 @@ class Test_ttest_ind_permutations:
             stats.ttest_ind([1, 2, 3], [4, 5, 6], method='migratory')
 
 
-@pytest.mark.filterwarnings("ignore:Arguments...:DeprecationWarning")
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test (e.g. trimmed)
     @pytest.mark.xslow()
