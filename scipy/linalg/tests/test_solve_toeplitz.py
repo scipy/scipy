@@ -56,6 +56,8 @@ def test_native_list_arguments():
     desired = solve(toeplitz(c, r=r), y)
     assert_allclose(actual, desired)
 
+# FIXME: use np.linalg.LinAlgError instead once pythran supports it
+LinAlgErrors = (np.linalg.LinAlgError, RuntimeError)
 
 def test_zero_diag_error():
     # The Levinson-Durbin implementation fails when the diagonal is zero.
@@ -65,7 +67,7 @@ def test_zero_diag_error():
     r = random.randn(n)
     y = random.randn(n)
     c[0] = 0
-    assert_raises(np.linalg.LinAlgError,
+    assert_raises(LinAlgErrors,
         solve_toeplitz, (c, r), b=y)
 
 
@@ -75,7 +77,7 @@ def test_wikipedia_counterexample():
     random = np.random.RandomState(1234)
     c = [2, 2, 1]
     y = random.randn(3)
-    assert_raises(np.linalg.LinAlgError, solve_toeplitz, c, b=y)
+    assert_raises(LinAlgErrors, solve_toeplitz, c, b=y)
 
 
 def test_reflection_coeffs():
