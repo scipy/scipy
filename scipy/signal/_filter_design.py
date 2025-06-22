@@ -5351,6 +5351,8 @@ def iirnotch(w0, Q, fs=2.0, *, xp=None, device=None):
 
         .. versionadded:: 1.2.0
 
+    %(xp_device_snippet)s
+
     Returns
     -------
     b, a : ndarray, ndarray
@@ -5431,6 +5433,8 @@ def iirpeak(w0, Q, fs=2.0, *, xp=None, device=None):
         The sampling frequency of the digital system.
 
         .. versionadded:: 1.2.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5603,6 +5607,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False, xp=None, device=No
         on [0, w0, 2*w0, ...] (passing zero frequency) and vice versa.
 
         .. versionadded:: 1.9.0
+
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -5811,6 +5817,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device
     fs : float, optional
         The sampling frequency of the signal. `freq` must be between
         0 and ``fs/2``. Default is 2.
+    %(xp_device_snippet)s
 
     Returns
     -------
@@ -6033,7 +6040,9 @@ device: any
 }
 
 
-_names = [x for x in ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap"]]
+_names = ["buttap", "cheb1ap", "cheb2ap", "ellipap", "besselap",
+          "iirnotch", "iirpeak", "gammatone",
+]
 for name in _names:
     window = vars()[name]
     window.__doc__ = doccer.docformat(window.__doc__, _xp_device_snippet)
