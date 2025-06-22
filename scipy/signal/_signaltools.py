@@ -2483,8 +2483,8 @@ def hilbert(x, N=None, axis=-1):
     x : array_like
         Signal data.  Must be real.
     N : int, optional
-        Number of Fourier components. ``x`` is cropped or zero-padded to length
-        ``N`` along ``axis``.  Default: ``x.shape[axis]``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axis`.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
 
