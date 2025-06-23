@@ -2817,7 +2817,7 @@ class TestFiltFilt:
         if is_jax(xp) and self.filtfilt_kind == 'sos':
             pytest.skip(reason='sosfilt works in-place')
 
-        zpk = tf2zpk([1, 2, 3], [1, 2, 3])
+        zpk = tf2zpk(xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 3e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
@@ -2834,7 +2834,7 @@ class TestFiltFilt:
         xhigh = xp.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
-        zpk = butter(8, 0.125, output='zpk')
+        zpk = butter(8, xp.asarray(0.125), output='zpk')
         # r is the magnitude of the largest pole.
         r = np.abs(zpk[1]).max()
         eps = 1e-5
@@ -2868,7 +2868,7 @@ class TestFiltFilt:
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
         x = xp.asarray(x)
-        zpk = butter(3, 0.125, output='zpk')
+        zpk = butter(3, xp.asarray(0.125), output='zpk')
         y0 = self.filtfilt(zpk, x, padlen=0, axis=0, xp=xp)
         y1 = self.filtfilt(
             zpk, xp.asarray(np.swapaxes(x, 0, 1)), padlen=0, axis=1, xp=xp
