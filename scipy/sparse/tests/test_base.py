@@ -2997,15 +2997,7 @@ class _TestSlicingAssign:
             assert_array_equal(np.zeros((4,3)) + A[0,0], B.toarray())
 
             A = B / 10
-            C = A[None, 0, :]
-#            print("\nBefore  Assignment:")
-#            print(f"RHS: {C.coords=}\n{C.data=}")
-#            print(f"Untouched A and B: {B.coords=}\n{B.data=}\n{A.coords=}\n{A.data=}")
             B[:-1,0] = A[None,0,:].T
-#            print("After Assignment:")
-#            print(f"{B.coords=}\n{B.data=}")
-#            print(f"{A[0,:].toarray().T=}\n{B[:-1,0].toarray()=}")
-#            print("now check test")
             assert_array_equal(A[0,:].toarray().T, B[:-1,0].toarray())
 
     def test_slice_assignment(self):

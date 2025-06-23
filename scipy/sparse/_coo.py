@@ -530,7 +530,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
         index, new_shape, arr_int_pos, none_pos = self._validate_indices(key)
 
         # handle int, slice and int-array indices
-        accum=np.ones(len(self.data), dtype=np.bool)
+        accum=np.ones(len(self.data), dtype=np.bool_)
         slice_coords = []
         arr_coords = []
         arr_indices = []
@@ -704,7 +704,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                     # compute the raveled coords of the array part of x_coords.
                     # Used to build the new coords from the index arrays.
                     x_arr_coo = x_coords[pos:pos + len(arr_shape)]
-                    # could call np.ravel_multi_index but _ravel_coords avoids some overflow
+                    # could use np.ravel_multi_index but _ravel_coords avoids overflow
                     x_arr_coo_ravel = _ravel_coords(x_arr_coo, arr_shape)
                     break
 
@@ -750,7 +750,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
     def _zero_many(self, index):
         # handle int, slice and integer-array indices
         # accum accumulates a bool array of nonzeros that match index
-        accum=np.ones(len(self.data), dtype=np.bool)
+        accum=np.ones(len(self.data), dtype=np.bool_)
         arr_coords = []
         arr_indices = []
         for i, (idx, co) in enumerate(zip(index, self.coords)):

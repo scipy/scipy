@@ -14,7 +14,8 @@ from .common import Benchmark, safe_import
 with safe_import():
     from scipy import sparse
     from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
-                              dok_matrix, rand, SparseEfficiencyWarning)
+                              dok_matrix, rand, SparseEfficiencyWarning,
+                              coo_array)
 
 
 def random_sparse(m, n, nnz_per_row):
@@ -262,7 +263,7 @@ class Getset(Benchmark):
     params = [
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
-        ['csr', 'csc', 'lil', 'dok']
+        ['csr', 'csc', 'lil', 'dok', 'coo']
     ]
     param_names = ['N', 'sparsity pattern', 'format']
     unit = "seconds"
@@ -292,6 +293,8 @@ class Getset(Benchmark):
             v = float(v)
 
         base = A.asformat(format)
+        if format == 'coo':
+            base = coo_array(A)
 
         self.m = base.copy()
         self.i = i
