@@ -1681,7 +1681,6 @@ class TestBilinear:
         assert_array_almost_equal_nulp(b_z, b_zref, 3)
         assert_array_almost_equal_nulp(a_z, a_zref, 3)
 
-    @skip_xp_backends(np_only=True)
     def test_fs_validation(self):
         b = [0.14879732743343033]
         a = [1, 0.54552236880522209, 0.14879732743343033]
@@ -4775,13 +4774,13 @@ class TestGroupDelay:
                            1.5707963267948966,
                            2.356194490192345 ])
         gdref =  xp.asarray([0.18759548150354619,
-                          0.17999770352712252,
-                          0.23598047471879877,
-                          0.46539443069907194,
-                          1.9511492420564165 ,
-                          3.478129975138865  ,
-                          0.6228594960517333 ,
-                          0.27067831839471224])
+                             0.17999770352712252,
+                             0.23598047471879877,
+                             0.46539443069907194,
+                             1.9511492420564165 ,
+                             3.478129975138865  ,
+                             0.6228594960517333 ,
+                             0.27067831839471224])
         b = xp.asarray([alpha, 1])
         a = xp.asarray([1, alpha.conjugate()])
         gdtest = group_delay((b, a), wref)[1]

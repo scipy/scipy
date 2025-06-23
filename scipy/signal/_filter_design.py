@@ -5561,7 +5561,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0, *, xp=None, device=None):
         b = gain * xp.asarray([1.0, -2.0*math.cos(w0), 1.0], device=device)
     else:
         b = (1.0 - gain) * xp.asarray([1.0, 0.0, -1.0], device=device)
-    a = xp.asarray([1.0, -2.0 * gain * math.cos(w0), (2.0*gain - 1.0)])
+    a = xp.asarray([1.0, -2.0 * gain * math.cos(w0), (2.0*gain - 1.0)], device=device)
 
     return b, a
 
@@ -5916,7 +5916,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None, *, xp=None, device
         scale_factor /= float_factorial(order - 1)
         scale_factor /= fs
         b = b * scale_factor
-        a = xp.asarray([1.0])
+        a = xp.asarray([1.0], device=device)
 
     # Calculate IIR gammatone filter
     elif ftype == 'iir':
