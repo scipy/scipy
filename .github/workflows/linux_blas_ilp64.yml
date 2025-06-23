@@ -59,10 +59,10 @@ jobs:
     - name: Build with defaults (LP64)
       run: |
         pkg-config --libs mkl-dynamic-lp64-seq  # check link flags
-        python dev.py build -C-Dblas=mkl
+        spin build -S-Dblas=mkl
 
     - name: Test
-      run: python dev.py test -j 2
+      run: spin test -j 2
 
 
   mkl-ilp64:
@@ -89,10 +89,10 @@ jobs:
     - name: Build with ILP64
       run: |
         pkg-config --libs mkl-dynamic-ilp64-seq  # check link flags
-        python dev.py build -C-Dblas=mkl -C-Duse-ilp64=true
+        spin build -S-Dblas=mkl -S-Duse-ilp64=true
 
     - name: Test
-      run: python dev.py test -j 2
+      run: spin test -j 2
 
 
   scipy-openblas-ilp64:
@@ -115,15 +115,15 @@ jobs:
         pip install -r requirements/dev.txt
         pip install git+https://github.com/numpy/meson.git@main-numpymeson
         pip install scipy-openblas32 scipy-openblas64
-        # dev.py does this for scipy-openblas32
+        # spin does this for scipy-openblas32
         python -c'import scipy_openblas64 as so64; print(so64.get_pkg_config())' > scipy-openblas64.pc
         export PKG_CONFIG_PATH=`pwd`
 
     - name: Build with ILP64
       run: |
-        python dev.py build --with-scipy-openblas -C-Duse-ilp64=true
+        spin build --with-scipy-openblas -S-Duse-ilp64=true
 
     - name: Test
-      run: python dev.py test -j 2
+      run: spin test -j 2
 
 
