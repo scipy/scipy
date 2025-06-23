@@ -14,6 +14,7 @@ import pytest
 
 from scipy.io import (FortranFile,
                       _test_fortran,
+                      _test_fortran_py,
                       FortranEOFError,
                       FortranFormattingError)
 
@@ -131,7 +132,6 @@ def test_fortranfile_write_mixed_record(tmpdir):
         for aa, bb in zip(a, b):
             assert_equal(bb, aa)
 
-
 def test_fortran_roundtrip(tmpdir, io_lock):
     filename = path.join(str(tmpdir), str(threading.get_native_id()),
                          'test.dat')
@@ -145,7 +145,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T)
     with io_lock:
-        a2 = _test_fortran.read_unformatted_double(m, n, k, filename)
+        a2 = _test_fortran_py.read_unformatted_double(m, n, k, filename)
 
     with FortranFile(filename, 'r') as f:
         a3 = f.read_record('(2,3,5)f8').T
@@ -158,7 +158,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T)
     with io_lock:
-        a2 = _test_fortran.read_unformatted_int(m, n, k, filename)
+        a2 = _test_fortran_py.read_unformatted_int(m, n, k, filename)
     with FortranFile(filename, 'r') as f:
         a3 = f.read_record('(2,3,5)i4').T
     assert_equal(a2, a)
@@ -171,7 +171,7 @@ def test_fortran_roundtrip(tmpdir, io_lock):
     with FortranFile(filename, 'w') as f:
         f.write_record(a.T, b.T)
     with io_lock:
-        a2, b2 = _test_fortran.read_unformatted_mixed(m, n, k, filename)
+        a2, b2 = _test_fortran_py.read_unformatted_mixed(m, n, k, filename)
     with FortranFile(filename, 'r') as f:
         a3, b3 = f.read_record('(3,5)f8', '2i4')
         a3 = a3.T
