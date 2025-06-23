@@ -1176,10 +1176,11 @@ def test_3d_coo_get():
 
 def test_newaxis_get():
     A = coo_array(np.arange(4 * 5 * 6).reshape((4, 5, 6)))
-    assert_equal(A[:5, 3:, 1].toarray(), A.toarray()[:5, 3:, 1])
-    assert_equal(A[None, :5, 1:3, None, 1].toarray(), A.toarray()[None, :5, 1:3, None, 1])
-    assert_equal(A[None, :5, 3:, 1, None].toarray(), A.toarray()[None, :5, 3:, 1, None])
-    assert_equal(A[None, :5, ..., None].toarray(), A.toarray()[None, :5, ..., None])
+    D = A.toarray()
+    assert_equal(A[:5, 3:, 1].toarray(), D[:5, 3:, 1])
+    assert_equal(A[None, :5, 1:3, None, 1].toarray(), D[None, :5, 1:3, None, 1])
+    assert_equal(A[None, :5, 3:, 1, None].toarray(), D[None, :5, 3:, 1, None])
+    assert_equal(A[None, :5, ..., None].toarray(), D[None, :5, ..., None])
 
 
 def test_newaxis_set():
@@ -1319,7 +1320,7 @@ keys = [
     ("split-arrays-some-first-some-last",
         ([[2, 1, 0]], slice(1, 4, 2), slice(None, 3, None), 0, [[2], [1], [0]])
     ),
-    # test that we are not creating duplicate entries for duplicate values in array index
+    # test we are not creating duplicate entries for duplicate values in array index
     ("duplicate-array-entries-split-arrays",
         (slice(None, 4, None), [[2, 1, 0], [2, 1, 1]], [[2, 1, 0], [3, 4, 4]],
          slice(None, None, None), 1)
@@ -1353,17 +1354,17 @@ def test_bool_get():
     assert_equal(A[A > 5000].toarray(), D[D > 5000])
     assert_equal(A[A < -1].toarray(), D[D < -1])
 
-    bool0 = A[:, 0, 0, 0, 0] > 50
-    bool1 = A[0, :, 0, 0, 0] > 50
+    bi0 = A[:, 0, 0, 0, 0] > 50
+    bi1 = A[0, :, 0, 0, 0] > 50
 
-    idx = (bool0, slice(2, 3, None), [1], slice(None, 2, 2), bool0)
-    idxnp = (bool0.toarray(), slice(2, 3, 1), [1], slice(0, 2, 2), bool0.toarray())
+    idx = (bi0, slice(2, 3, None), [1], slice(None, 2, 2), bi0)
+    idxnp = (bi0.toarray(), slice(2, 3, 1), [1], slice(0, 2, 2), bi0.toarray())
     result = D[idxnp]
     assert_equal(A[idx].toarray(), result)
     assert_equal(A[idxnp].toarray(), result)
 
-    idx = (slice(2, 3, None), bool1, bool1, slice(None, 2, 2), [1])
-    idxnp = (slice(2, 3, None), bool1.toarray(), bool1.toarray(), slice(None, 2, 2), [1])
+    idx = (slice(2, 3, None), bi1, bi1, slice(None, 2, 2), [1])
+    idxnp = (slice(2, 3, None), bi1.toarray(), bi1.toarray(), slice(None, 2, 2), [1])
     result = D[idxnp]
     assert_equal(A[idx].toarray(), result)
 
@@ -1382,7 +1383,6 @@ def test_bool_set():
 
     A, D = A_orig.copy(), D_orig.copy()
     bool0 = A[:, 0, 0, 0, 0] > 50
-    bool1 = A[0, :, 0, 0, 0] > 50
     idx = (bool0, slice(2, 3, None), [1], slice(None, 2, 2), bool0)
     idxnp = (bool0.toarray(), slice(2, 3, 1), [1], slice(0, 2, 2), bool0.toarray())
 
