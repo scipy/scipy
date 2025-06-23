@@ -2409,7 +2409,7 @@ class TestCorrelateReal:
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        assert_array_almost_equal(y, y_r[1:4][::-1])
+        assert_array_almost_equal(y, xp.flip(y_r[1:4]))
         assert y.dtype == dt
 
     def test_rank1_same(self, dt, xp):
