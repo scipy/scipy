@@ -19,6 +19,7 @@ py3.install_sources([
     '_idl.py',
     '_mmio.py',
     '_netcdf.py',
+    '_test_fortran_py.py',
     'harwell_boeing.py',
     'idl.py',
     'mmio.py',
