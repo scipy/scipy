@@ -2,7 +2,6 @@ import sys
 import math
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from decimal import Decimal
 from itertools import product
 from math import gcd
 
