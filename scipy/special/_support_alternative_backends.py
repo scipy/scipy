@@ -295,6 +295,8 @@ _special_funcs = (
     _FuncInfo(_ufuncs.i1e, 1),
     _FuncInfo(_ufuncs.log_ndtr, 1),
     _FuncInfo(_ufuncs.logit, 1),
+    _FuncInfo(_ufuncs.gamma, 1,
+              xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])),
     _FuncInfo(_ufuncs.gammaln, 1),
     _FuncInfo(_ufuncs.gammainc, 2),
     _FuncInfo(_ufuncs.gammaincc, 2),

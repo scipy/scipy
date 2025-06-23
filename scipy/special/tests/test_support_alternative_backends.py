@@ -39,6 +39,8 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
         # For betaln, nan mismatches can occur at negative integer a or b of
         # sufficiently large magnitude.
         or (is_jax(xp) and f_name == 'betaln')
+        # Inconsistent behavior for negative n, where expn is not defined without
+        # taking analytic continuation.
         or (f_name == 'expn')
     ):
         positive_only = True
@@ -49,6 +51,11 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
         return positive_only, dtypes
 
     # Integer-specific issues from this point onwards
+
+    if f_name in {'gamma'} and is_cupy(xp):
+        # CuPy has not yet updated gamma pole behavior to match
+        # https://github.com/scipy/scipy/pull/21827.
+        positive_only = True
 
     if ((is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
         or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
