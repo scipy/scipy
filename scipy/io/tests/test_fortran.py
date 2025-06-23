@@ -13,7 +13,6 @@ import numpy as np
 import pytest
 
 from scipy.io import (FortranFile,
-                      _test_fortran,
                       _test_fortran_py,
                       FortranEOFError,
                       FortranFormattingError)

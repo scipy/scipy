@@ -24,7 +24,8 @@ def read_unformatted_mixed(m, n, k, filename):
     - a double precision array a(m, n)
     - an integer array b(k)
 
-    Assumes a single write(10) a, b was used and file is wrapped with Fortran record markers.
+    Assumes a single write(10) a, b was used and file is wrapped
+    with Fortran record markers.
 
     Returns:
         a: np.ndarray of shape (m, n) with dtype float64
@@ -48,8 +49,10 @@ def read_unformatted_mixed(m, n, k, filename):
 
 def read_unformatted_int(m, n, k, filename):
     """
-    Read a Fortran unformatted binary file containing a 3D integer array (m, n, k).
-    Assumes the array is written with a single write(10) a and wrapped with record markers.
+    Read a Fortran unformatted binary file
+    containing a 3D integer array (m, n, k).
+    Assumes the array is written with a single
+    write(10) a and wrapped with record markers.
 
     Returns:
         np.ndarray: 3D array of shape (m, n, k) with dtype int32
