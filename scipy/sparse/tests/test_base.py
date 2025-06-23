@@ -3513,21 +3513,23 @@ class _TestFancyMultidim:
             (np.array([[1, 2, 3]]), np.array([[3], [4], [2]])),
             (np.array([1, 2, 3]), np.array([[3], [4], [2]])),
             (np.array([[1, 2, 3], [3, 4, 2]]), np.array([[5, 6, 3], [2, 3, 1]])),
-            # These inputs generate 3-D outputs
-            # (np.array([[[1], [2], [3]], [[3], [4], [2]]]),
-            #  np.array([[[5], [6], [3]], [[2], [3], [1]]])),
         ]
 
         np.random.seed(1234)
         D = self.asdense(np.random.rand(5, 7))
         S = self.spcreator(D)
 
+        # These inputs generate 3-D outputs
+        if S.format == 'coo':
+            IandJ.append(
+                (np.array([[[1], [2], [3]], [[3], [4], [2]]]),
+                 np.array([[[5], [6], [3]], [[2], [3], [1]]]))
+            )
+
         for I, J in IandJ:
             SIJ = S[I, J]
             DIJ = D[I, J]
-            if issparse(SIJ):
-                SIJ = SIJ.toarray()
-            assert_equal(SIJ, DIJ)
+            assert_equal(toarray(SIJ), DIJ)
 
             I_bad = I + 5
             J_bad = J + 7
@@ -3536,47 +3538,11 @@ class _TestFancyMultidim:
             assert_raises(IndexError, S.__getitem__, (I, J_bad))
 
             if S.format != 'coo':
-#            if np.array([I, I]).ndim <= 1:
-#                assert_equal(S[[I, I], :].toarray(), D[[I, I], :])
-#            else:
                     assert_raises(IndexError, S.__getitem__, ([I, I], slice(None)))
-#            if np.array([J, J]).ndim <= 1:
-#                assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
-#            else:
                     assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
             else:
                 assert_equal(S[[I, I], :].toarray(), D[[I, I], :])
                 assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
-
-#        for I, J in IandJ[:1]:
-#            assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
-#
-#        for I, J in IandJ[1:]:
-#            assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
-
-#   IandJ = [
-#       (np.array([[1], [2], [3]]), np.array([3, 4, 2])),
-#       (np.array([[1], [2], [3]]), np.array([[3, 4, 2]])),
-#       (np.array([[1, 2, 3]]), np.array([[3], [4], [2]])),
-#       (np.array([1, 2, 3]), np.array([[3], [4], [2]])),
-#       (np.array([[1, 2, 3], [3, 4, 2]]),
-#        np.array([[5, 6, 3], [2, 3, 1]]))
-#   ]
-#
-#   @pytest.mark.parametrize(["I", "J"], IandJ[:1])
-#   def test_me(self, I, J):
-#       np.random.seed(1234)
-#       D = self.asdense(np.random.rand(5, 7))
-#       S = self.spcreator(D)
-#       HHH = S.__getitem__((slice(None), [J, J]))
-#       assert_equal(S[:, [J, J]].toarray(), D[:, [J, J]])
-#
-#   @pytest.mark.parametrize(["I", "J"], IandJ[1:])
-#   def test_me2(self, I, J):
-#       np.random.seed(1234)
-#       D = self.asdense(np.random.rand(5, 7))
-#       S = self.spcreator(D)
-#       assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
 
 
 class _TestFancyMultidimAssign:

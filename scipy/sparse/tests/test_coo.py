@@ -119,16 +119,6 @@ def test_1d_tuple_constructor_with_shape():
     assert res.shape == (4,)
     assert_equal(res.toarray(), np.array([0, 9, 8, 0]))
 
-def test_non_subscriptability():
-    coo_2d = coo_array((2, 2))
-
-    #with pytest.raises(TypeError,
-    #                   match="coo_array assignment is not implemented yet"):
-    coo_2d[0, 0] = 1
-
-    # should not raise
-    coo_2d[0, :]
-
 def test_reshape_overflow():
     # see gh-22353 : new idx_dtype can need to be int64 instead of int32
     M, N = (1045507, 523266)
@@ -1245,7 +1235,6 @@ keys = [
 @pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
 def test_2d_coo_set(A, D, idx):
     D[idx] = A[idx] = -D[idx]
-    print(f"A:{A.coords=}\n{A.data=}\n{A.toarray()=}")
     assert_equal(A.toarray(), D)
 
 
@@ -1275,9 +1264,7 @@ keys = [
 
 @pytest.mark.parametrize(["A", "D", "idx"], [(A, D, idx) for idx in keys])
 def test_3d_coo_set(A, D, idx):
-    print(f"PRELIM: {A[idx].shape=} {D[idx].shape=}")
     D[idx] = A[idx] = -99
-    print(f"{A.toarray()=}\n{D=}")
     assert_equal(A.toarray(), D)
 
 
@@ -1332,13 +1319,7 @@ keys = [
 
 @pytest.mark.parametrize(["A", "D", "ix", "msg"], [(A, D, ix, msg) for msg, ix in keys])
 def test_5d_coo_set(A, D, ix, msg):
-    print(f"PRELIM: {A[ix].shape=} {D[ix].shape=}")
     D[ix] = A[ix] = -99
-#    print(f"{A.toarray()=}\n{D=}")
-    print(f"{(A == -99).nonzero()=}")
-    print(f"{(A==-99).nonzero()[0].shape=}")
-    print(f"{(D == -99).nonzero()=}")
-    print(f"{(D==-99).nonzero()[0].shape=}")
     assert_equal(A.toarray(), D, err_msg=f"\nTest of: {msg}\n")
 
 

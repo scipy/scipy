@@ -243,10 +243,7 @@ class IndexMixin:
                 ellps_pos = i
             elif idx is None:
                 index_1st.append(idx)
-            elif isinstance(idx, slice):
-                index_1st.append(idx)
-                prelim_ndim += 1
-            elif isintlike(idx):
+            elif isinstance(idx, slice) or isintlike(idx):
                 index_1st.append(idx)
                 prelim_ndim += 1
             elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
