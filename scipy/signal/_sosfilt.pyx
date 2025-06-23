@@ -27,8 +27,7 @@ cdef void _sosfilt_float(DTYPE_floating_t [:, ::1] sos,
     cdef DTYPE_floating_t[:, ::1] zi_slice
     cdef DTYPE_floating_t const_1 = 1.0
 
-    # jumping through a few memoryview hoops to reduce array lookups,
-    # the original version is still in the gil version below.
+    # jumping through a few memoryview hoops to reduce array lookups
     for i in xrange(n_signals):
         zi_slice = zi[i, :, :]
         for n in xrange(n_samples):
