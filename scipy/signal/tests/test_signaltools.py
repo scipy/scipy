@@ -2404,12 +2404,12 @@ class TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'valid')
-        assert_allclose(y, y_r[1:4])
+        assert_array_almost_equal(y, y_r[1:4])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        assert_allclose(y, y_r[1:4][::-1])
+        assert_array_almost_equal(y, y_r[1:4][::-1])
         assert y.dtype == dt
 
     def test_rank1_same(self, dt, xp):
@@ -2420,7 +2420,7 @@ class TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'same')
-        assert_allclose(y, y_r[:-1])
+        assert_array_almost_equal(y, y_r[:-1])
         assert y.dtype == dt
 
     def test_rank1_full(self, dt, xp):
@@ -2431,7 +2431,7 @@ class TestCorrelateReal:
 
         a, b, y_r = self._setup_rank1(dt, xp)
         y = correlate(a, b, 'full')
-        assert_allclose(y, y_r)
+        assert_array_almost_equal(y, y_r)
         assert y.dtype == dt
 
     def _setup_rank3(self, dt, xp):
@@ -2469,12 +2469,12 @@ class TestCorrelateReal:
         dt = getattr(xp, dt) if isinstance(dt, str) else dt
         a, b, y_r = self._setup_rank3(dt, xp)
         y = correlate(a, b, "valid")
-        assert_allclose(y, y_r[1:2, 2:4, 3:5])
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
         assert y.dtype == dt
 
         # See gh-5897
         y = correlate(b, a, "valid")
-        assert_allclose(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
         assert y.dtype == dt
 
     @skip_xp_backends(np_only=True, reason="order='F'")
