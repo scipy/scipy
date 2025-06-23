@@ -39,6 +39,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
         # For betaln, nan mismatches can occur at negative integer a or b of
         # sufficiently large magnitude.
         or (is_jax(xp) and f_name == 'betaln')
+        or (f_name == 'expn')
     ):
         positive_only = True
     else:
@@ -58,7 +59,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy'))
-             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc',
+             or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln')))
     ):
         pytest.xfail("dtypes do not match")
@@ -80,28 +81,48 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
-@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
+@pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'int64'])
 @pytest.mark.parametrize(
     'func,nfo', [make_xp_pytest_param(i.wrapper, i) for i in _special_funcs])
-def test_support_alternative_backends(xp, func, nfo, dtype, shapes):
-    positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, nfo.name, [dtype])
-    dtype_np = getattr(np, dtype)
-    dtype_xp = getattr(xp, dtype)
+def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
+    paramtypes = nfo.paramtypes
+    if paramtypes is None:
+        paramtypes = ('real', ) * nfo.n_args
+        dtypes = (base_dtype, ) * nfo.n_args
+    else:
+        dtypes = tuple('int64' if type_ == "int" else base_dtype for type_ in paramtypes)
+
+    positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
+        xp, nfo.name, dtypes)
+
+    dtypes_np = [getattr(np, dtype) for dtype in dtypes]
+    dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
 
     shapes = shapes[:nfo.n_args]
     rng = np.random.default_rng(984254252920492019)
-    if 'int' in dtype:
-        iinfo = np.iinfo(dtype_np)
-        rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
-    else:
-        rand = rng.standard_normal
-    args_np = [rand(size=shape, dtype=dtype_np) for shape in shapes]
+    args_np = []
+    for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, paramtypes, shapes):
+        if 'int' in dtype and type_ != 'int':
+            iinfo = np.iinfo(dtype_np)
+            rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
+        elif type_ == 'int':
+            # If a special function actually expects integers for a particular
+            # parameter, it probably won't work well with very large values.
+            rand = partial(rng.integers, -100, 101)
+        else:
+            rand = rng.standard_normal
+        args_np.append(rand(size=shape, dtype=dtype_np))
     if positive_only:
         args_np = [np.abs(arg) for arg in args_np]
 
-    args_xp = [xp.asarray(arg, dtype=dtype_xp) for arg in args_np]
-    args_np = [np.asarray(arg, dtype=dtype_np_ref) for arg in args_np]
+    args_xp = [
+        xp.asarray(arg, dtype=dtype_xp)
+        for arg, dtype_xp in zip(args_np, dtypes_xp)
+    ]
+    args_np = [
+        np.asarray(arg, dtype=dtype_np_ref)
+        for arg, dtype_np_ref in zip(args_np, dtypes_np_ref)
+    ]
 
     if is_dask(xp):
         # We're using map_blocks to dispatch the function to Dask.
@@ -124,6 +145,8 @@ def test_support_alternative_backends(xp, func, nfo, dtype, shapes):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
+    if func.__name__ in {'expn'}:
+        pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
@@ -164,6 +187,8 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
 def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
+    if func.__name__ in {'expn'}:
+        pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
         xp, nfo.name, [dtype])
@@ -217,14 +242,22 @@ def test_doc(func):
     assert func.__doc__.count(match) == 1
 
 
-@pytest.mark.parametrize('func,n_args',
-                         [(nfo.wrapper, nfo.n_args) for nfo in _special_funcs])
-def test_ufunc_kwargs(func, n_args):
+@pytest.mark.parametrize(
+    'func,n_args,paramtypes',
+    [(nfo.wrapper, nfo.n_args, nfo.paramtypes) for nfo in _special_funcs]
+)
+def test_ufunc_kwargs(func, n_args, paramtypes):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
+    if paramtypes is None:
+        paramtypes = ("real", ) * n_args
     # out=
-    args = [np.asarray([.1, .2])] * n_args
+    args = [
+        np.asarray([.1, .2]) if type_ == "real"
+        else np.asarray([1, 2])
+        for type_ in paramtypes
+    ]
     out = np.empty(2)
     y = func(*args, out=out)
     xp_assert_close(y, out)

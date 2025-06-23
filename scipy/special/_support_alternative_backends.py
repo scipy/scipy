@@ -32,6 +32,9 @@ class _FuncInfo:
         [ModuleType, ModuleType | None], Callable | None
     ] | None = None
     alt_names_map: dict[str, str] | None = None
+    # General families of input types used for testing purposes.
+    # Currently only "int" and "real" are supported.
+    paramtypes: tuple[str] | None = None
 
     @property
     def name(self):
@@ -283,6 +286,9 @@ _special_funcs = (
     _FuncInfo(_ufuncs.entr, 1),
     _FuncInfo(_ufuncs.expi, 1),
     _FuncInfo(_ufuncs.expit, 1),
+    _FuncInfo(_ufuncs.expn, 2,
+              xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy']),
+               paramtypes=("int", "real")),
     _FuncInfo(_ufuncs.i0, 1),
     _FuncInfo(_ufuncs.i0e, 1),
     _FuncInfo(_ufuncs.i1, 1),
