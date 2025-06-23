@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 from types import EllipsisType, ModuleType
 
 import numpy as np
@@ -318,9 +318,10 @@ class Rotation:
     ):
         xp = array_namespace(quat)
         quat = self._to_array(quat, xp)
-        # Legacy behavior for cython backend: Differentiate between single quat and batched quats
-        # We only use this for the cython backend. The Array API backend uses broadcasting by
-        # default and hence returns the correct shape without additional logic
+        # Legacy behavior for cython backend: Differentiate between single quat and
+        # batched quats. We only use this for the cython backend. The Array API backend
+        # uses broadcasting by default and hence returns the correct shape without
+        # additional logic
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
@@ -775,7 +776,8 @@ class Rotation:
         ----------
         .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
         .. [2] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
-               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132.
+               10.1007/BF03546304.
 
         Examples
         --------
@@ -822,7 +824,7 @@ class Rotation:
         >>> r = R.from_davenport(axes, 'extrinsic', [90, 45, 30], degrees=True)
         >>> r.as_quat()
         [ 0.701057,  0.430459, -0.092296,  0.560986]
-        """
+        """  # noqa: E501
         backend = backend_registry.get(array_namespace(axes))
         quat = backend.from_davenport(axes, order, angles, degrees)
         return cls(quat, normalize=False, copy=False)
@@ -832,12 +834,12 @@ class Rotation:
         """Initialize from Modified Rodrigues Parameters (MRPs).
 
         MRPs are a 3 dimensional vector co-directional to the axis of rotation and whose
-        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
-        (in radians) [1]_.
+        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of
+        rotation (in radians) [1]_.
 
-        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
-        rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
-        it is past 180 degrees.
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the
+        angle of rotation does not exceed 180 degrees, i.e. switching the direction of
+        the rotation when it is past 180 degrees.
 
         Parameters
         ----------
@@ -1264,7 +1266,8 @@ class Rotation:
         References
         ----------
         .. [1] Shuster, Malcolm & Markley, Landis. (2003). Generalization of
-               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132. 10.1007/BF03546304.
+               the Euler Angles. Journal of the Astronautical Sciences. 51. 123-132.
+               10.1007/BF03546304.
         .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
                conversion: A direct, general and computationally efficient method.
                PLoS ONE 17(11): e0276302. 10.1371/journal.pone.0276302
@@ -1322,13 +1325,13 @@ class Rotation:
         """Represent as Modified Rodrigues Parameters (MRPs).
 
         MRPs are a 3 dimensional vector co-directional to the axis of rotation and whose
-        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
-        (in radians) [1]_.
+        magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of
+        rotation (in radians) [1]_.
 
-        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
-        rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
-        it is past 180 degrees. This function will always return MRPs corresponding to a rotation
-        of less than or equal to 180 degrees.
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the
+        angle of rotation does not exceed 180 degrees, i.e. switching the direction of
+        the rotation when it is past 180 degrees. This function will always return MRPs
+        corresponding to a rotation of less than or equal to 180 degrees.
 
         Returns
         -------
@@ -1561,8 +1564,17 @@ class Rotation:
         """
         xp = array_namespace(self._quat)
         vectors = xp.asarray(vectors, device=device(self._quat), dtype=self._quat.dtype)
+        single_vector = vectors.ndim == 1
+        # Numpy optimization: The Cython backend typing requires us to have fixed
+        # dimensions, so for the Numpy case we always broadcast the vector to 2D.
+        if vectors.ndim > 2 or vectors.shape[-1] != 3:
+            raise ValueError(
+                f"Expected input of shape (3,) or (P, 3), got {vectors.shape}."
+            )
+        if is_numpy(xp):
+            vectors = xpx.atleast_nd(vectors, ndim=2, xp=xp)
         result = self._backend.apply(self._quat, vectors, inverse=inverse)
-        if self._single and vectors.ndim == 1:
+        if self._single and single_vector:
             return result[0, ...]
         return result
 
@@ -1963,9 +1975,10 @@ class Rotation:
            <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
            on Wikipedia.
         """
-        # DECISION: We create groups as numpy arrays only. We have no nice way of specifying the
-        # array framework here. Another option would be to pass in an array_module argument, but
-        # that would change the function signature, and having modules as argument feels off.
+        # DECISION: We create groups as numpy arrays only. We have no nice way of
+        # specifying the array framework here. Another option would be to pass in an
+        # array_module argument, but that would change the function signature, and
+        # having modules as argument feels off.
         return create_group(cls, group, axis=axis)
 
     def __getitem__(self, indexer: int | slice | EllipsisType | None) -> Rotation:
@@ -2036,15 +2049,17 @@ class Rotation:
             raise TypeError("Single rotation is not subscriptable.")
         is_array = isinstance(indexer, type(self._quat))
         # Masking is only specified in the Array API when the array is the sole index
-        # TODO: Getting xp on every call may be expensive. Check if we can make access to xp more
-        # efficient. Should we store a self._xp attribute?
-        # TODO: This special case handling is mainly a result of Array API limitations. Ideally we
-        # would get rid of them altogether and converge to [indexer, ...] indexing.
+        # TODO: Getting xp on every call may be expensive. Check if we can make access
+        # to xp more efficient. Should we store a self._xp attribute?
+        # TODO: This special case handling is mainly a result of Array API limitations.
+        # Ideally we would get rid of them altogether and converge to [indexer, ...]
+        # indexing.
         xp = array_namespace(self._quat)
         if is_array and indexer.dtype == xp.bool:
             return Rotation(self._quat[indexer], normalize=False)
         if is_array and (indexer.dtype == xp.int64 or indexer.dtype == xp.int32):
-            # Array API limitation: Integer index arrays are only allowed with integer indices
+            # Array API limitation: Integer index arrays are only allowed with integer
+            # indices
             all_ind = xp.arange(4)
             indexer = xp.reshape(indexer, (indexer.shape[0], 1))
             return Rotation(self._quat[indexer, all_ind], normalize=False)
@@ -2152,9 +2167,9 @@ class Rotation:
 
         """
         # DECISION: How do we handle random numbers in other frameworks?
-        # TODO: The array API does not have a unified random interface. This method only creates
-        # numpy arrays. If we do want to support other frameworks, we need a way to handle other rng
-        # implementations.
+        # TODO: The array API does not have a unified random interface. This method only
+        # creates numpy arrays. If we do want to support other frameworks, we need a way
+        # to handle other rng implementations.
         sample = cython_backend.random(num, rng)
         return cls(sample, normalize=True, copy=False)
 
@@ -2420,12 +2435,14 @@ class Rotation:
 
         The return array dtype follows the following rules:
         - If quat is an ArrayLike or NumPy array, we always promote to float64
-        - If quat is an Array from frameworks other than NumPy, we preserve the dtype if it is
-          float32. Otherwise, we promote to the result type of combining float32 and float64
+        - If quat is an Array from frameworks other than NumPy, we preserve the dtype if
+          it is float32. Otherwise, we promote to the result type of combining float32
+          and float64
 
-        The first rule is required by the cython backend signatures that expect cython.double views.
-        The second rule is necessary to promote non-floating arrays to the correct type in
-        frameworks that may not support double precision (e.g. jax by default).
+        The first rule is required by the cython backend signatures that expect
+        cython.double views. The second rule is necessary to promote non-floating arrays
+        to the correct type in frameworks that may not support double precision (e.g.
+        jax by default).
         """
         dtype = xp_result_type(quat, xp=xp, force_floating=True)
         quat = xp.asarray(quat, dtype=dtype)
@@ -2523,16 +2540,15 @@ class Slerp:
         times = np.asarray(times)
         if times.ndim != 1:
             raise ValueError(
-                "Expected times to be specified in a 1 "
-                "dimensional array, got {} "
-                "dimensions.".format(times.ndim)
+                "Expected times to be specified in a 1 dimensional array, got "
+                f"{times.ndim} dimensions."
             )
 
         if times.shape[0] != len(rotations):
             raise ValueError(
-                "Expected number of rotations to be equal to "
-                "number of timestamps given, got {} rotations "
-                "and {} timestamps.".format(len(rotations), times.shape[0])
+                "Expected number of rotations to be equal to number of timestamps "
+                f"given, got {len(rotations)} rotations and {times.shape[0]} "
+                "timestamps."
             )
         self.times = times
         self.timedelta = np.diff(times)
@@ -2575,7 +2591,7 @@ class Slerp:
         if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 1)):
             raise ValueError(
                 "Interpolation times must be within the range "
-                "[{}, {}], both inclusive.".format(self.times[0], self.times[-1])
+                f"[{self.times[0]}, {self.times[-1]}], both inclusive."
             )
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]

@@ -916,6 +916,7 @@ def as_euler(double[:, :] quat, seq, bint degrees=False) -> double[:, :]:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
+    # See https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0276302
     # Adapt the algorithm for our case by reversing both axis sequence and
     # angles for intrinsic rotations when needed
 
@@ -1053,7 +1054,7 @@ def magnitude(double[:, :] quat) -> double[:, :]:
 @cython.embedsignature(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def approx_equal(double[:, :] quat, double[:, :] other,  atol = None, bint degrees=False) -> bool[:]:
+def approx_equal(double[:, :] quat, double[:, :] other, atol = None, bint degrees=False) -> bool[:]:
     len_self = len(quat)
     len_other = len(other)
     if not(len_self == 1 or len_other == 1 or len_self == len_other):
@@ -1155,19 +1156,9 @@ def reduce(double[:, :] quat, left=None, right=None):
 
 @cython.embedsignature(True)
 @cython.boundscheck(False)
-def apply(double[:, :] quat, vectors, bint inverse=False) -> double[:, :]:
-    vectors = np.asarray(vectors)
-    if vectors.ndim > 2 or vectors.shape[-1] != 3:
-        raise ValueError("Expected input of shape (3,) or (P, 3), "
-                            "got {}.".format(vectors.shape))
-
-    if vectors.shape == (3,):
-        vectors = vectors[None, :]
-
-    cdef double[:, :, :] matrix = as_matrix(quat)
-
-    n_vectors = vectors.shape[0]
-    n_rotations = quat.shape[0]
+def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double[:, :]:
+    cdef Py_ssize_t n_vectors = len(vectors)
+    cdef Py_ssize_t n_rotations = len(quat)
 
     if n_vectors != 1 and n_rotations != 1 and n_vectors != n_rotations:
         raise ValueError("Expected equal numbers of rotations and vectors "
@@ -1175,12 +1166,22 @@ def apply(double[:, :] quat, vectors, bint inverse=False) -> double[:, :]:
                             "{} rotations and {} vectors.".format(
                             n_rotations, n_vectors))
 
-    if inverse:
-        result = np.einsum('ikj,ik->ij', matrix, vectors)
-    else:
-        result = np.einsum('ijk,ik->ij', matrix, vectors)
+    cdef np.ndarray matrix = as_matrix(quat)
 
-    return result
+    if inverse:
+        matrix = np.swapaxes(matrix, -1, -2)
+
+    if n_vectors == 1 and n_rotations == 1:
+        return np.matmul(matrix, vectors[0])
+
+    if n_rotations == 1:
+        # Single rotation/many vectors, use matmul for speed: The axes argument
+        # is such that the input arguments don't need to be transposed and the
+        # output argument is contineous in memory.
+        return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
+
+    # for stacks of matrices einsum is faster
+    return np.einsum('ijk,ik->ij', matrix, vectors)
 
 
 @cython.embedsignature(True)
