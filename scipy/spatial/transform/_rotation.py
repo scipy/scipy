@@ -1975,10 +1975,8 @@ class Rotation:
            <https://en.wikipedia.org/wiki/Point_groups_in_three_dimensions>`_
            on Wikipedia.
         """
-        # DECISION: We create groups as numpy arrays only. We have no nice way of
-        # specifying the array framework here. Another option would be to pass in an
-        # array_module argument, but that would change the function signature, and
-        # having modules as argument feels off.
+        # TODO: We defer the implementation of groups for arbitrary Array API frameworks
+        # to the follow-up PR that adds general Array API support for Rotations.
         return create_group(cls, group, axis=axis)
 
     def __getitem__(self, indexer: int | slice | EllipsisType | None) -> Rotation:
