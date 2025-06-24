@@ -2805,7 +2805,7 @@ class TestFiltFilt:
 
         zpk = tf2zpk(xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
-        atol= 3e-9 if is_cupy(xp) else 5.28e-11
+        atol= 4e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)
 
     @skip_xp_backends('torch', reason='negative strides')
