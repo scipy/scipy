@@ -74,3 +74,12 @@ open.
 If you are new to contributing to open source, `this
 guide <https://opensource.guide/how-to-contribute/>`__ helps explain why, what,
 and how to get involved.
+
+## Propsed Particle Filter optimization
+
+This contribution proposes a sparse particle filter configuration with the following parameters:
+
+-**Particle Count**
+-**Resampling Strategy**
+-**Noise Model**
+-**State Estimation**
