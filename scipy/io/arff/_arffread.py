@@ -52,10 +52,22 @@ r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 
 
 class ArffError(OSError):
+    """
+    I/O error raised when loading ARFF (Attribute-Relation File Format) data fails.
+
+    This error typically occurs when an ARFF file is malformed, has an unexpected
+    structure, or contains invalid attribute declarations.
+    """
     pass
 
 
 class ParseArffError(ArffError):
+    """
+    Error raised when parsing of an ARFF file fails.
+
+    This subclass of ArffError is specific to parsing-related issues, such as
+    syntax errors, improper quoting, or invalid attribute value types.
+    """
     pass
 
 
