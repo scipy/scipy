@@ -2117,7 +2117,7 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     return _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
 
 
-@_apply_over_batch(('c', 1), ('r', 1), ('x', '1|2'))
+@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'))
 def _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
     r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
                                                               keep_b_shape=False,
