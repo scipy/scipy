@@ -10,6 +10,7 @@ from scipy._lib._array_api import (
     xp_promote, xp_capabilities, SCIPY_ARRAY_API
 )
 import scipy._lib.array_api_extra as xpx
+from . import _basic
 from . import _ufuncs
 
 
@@ -31,10 +32,24 @@ class _FuncInfo:
     generic_impl: Callable[
         [ModuleType, ModuleType | None], Callable | None
     ] | None = None
+    # Handle case where a backend uses an alternative name for a function.
+    # Should map backend names to alternative function names.
     alt_names_map: dict[str, str] | None = None
     # General families of input types used for testing purposes.
     # Currently only "int" and "real" are supported.
     paramtypes: tuple[str] | None = None
+    # Some special functions are not ufuncs and ufunc-specific tests
+    # should not be applied to these.
+    is_ufunc: bool = True
+    # Some non-ufunc special functions take only scalars for some arguments.
+    # If so, scalar_only should be a tuple of the same length as the number
+    # of arguments,with value True if the corresponding argument is scalar-only.
+    # Can also take a dict mapping backends to such tuples if an argument being
+    # scalar only is backend specific.
+    scalar_only: dict[str, tuple[bool]] | tuple[bool] | None = None
+    positive_only: dict[str, tuple[bool]] | tuple[bool] | bool = False
+    # Some special functions produce 0d arrays.
+    produces_0d: bool = False
 
     @property
     def name(self):
@@ -302,6 +317,9 @@ _special_funcs = (
     _FuncInfo(_ufuncs.gammaincc, 2),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
+    _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,
+              scalar_only={"torch": [True, False]}, produces_0d=True,
+              positive_only={"torch": [True, False]}),
     _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
     _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr),

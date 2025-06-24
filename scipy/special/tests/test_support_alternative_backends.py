@@ -9,7 +9,7 @@ from packaging import version
 from scipy import special
 from scipy.special._support_alternative_backends import _special_funcs
 from scipy._lib._array_api_no_0d import xp_assert_close
-from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_torch,
+from scipy._lib._array_api import (is_cupy, is_dask, is_jax, is_numpy, is_torch,
                                    make_xp_pytest_param, make_xp_test_case,
                                    xp_default_dtype)
 from scipy._lib.array_api_compat import numpy as np
@@ -21,18 +21,33 @@ pytestmark = pytest.mark.array_api_backends
 lazy_xp_modules = [special]
 
 
-def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
+def _get_native_namespace_name(xp):
+    if is_cupy(xp):
+        return "cupy"
+    if is_dask(xp):
+        return "dask.array"
+    if is_jax(xp):
+        return "jax.numpy"
+    if is_numpy(xp):
+        return "numpy"
+    if is_torch(xp):
+        return "torch"
+    return "???"
+
+
+def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
     """Skip tests for specific intersections of scipy.special functions 
     vs. backends vs. dtypes vs. devices.
     Also suggest bespoke tweaks.
 
     Returns
     -------
-    positive_only : bool
+    positive_only : list[bool]
         Whether you should exclusively test positive inputs.
     dtypes_np_ref : list[str]
         The dtypes to use for the reference NumPy arrays.
     """
+    f_name = nfo.name
     if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
         # gh-20972
         or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')
@@ -45,7 +60,14 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     ):
         positive_only = True
     else:
-        positive_only = False
+        if isinstance(nfo.positive_only, dict):
+            positive_only = nfo.positive_only.get(
+                _get_native_namespace_name(xp), False
+            )
+        else:
+            positive_only = nfo.positive_only
+    if isinstance(positive_only, bool):
+        positive_only = [positive_only]*nfo.n_args
 
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
@@ -55,7 +77,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
     if f_name in {'gamma'} and is_cupy(xp):
         # CuPy has not yet updated gamma pole behavior to match
         # https://github.com/scipy/scipy/pull/21827.
-        positive_only = True
+        positive_only = [True]
 
     if ((is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
         or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
@@ -65,9 +87,10 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
 
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
-        and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy'))
+        and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
-                                           'rel_entr', 'xlogy', 'betaln')))
+                                           'rel_entr', 'xlogy', 'betaln',
+                                           'polygamma')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -86,6 +109,7 @@ def _skip_or_tweak_alternative_backends(xp, f_name, dtypes):
 
 
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
+@pytest.mark.filterwarnings("ignore:overflow encountered:RuntimeWarning")
 @pytest.mark.parametrize('shapes', [[(0,)]*4, [tuple()]*4, [(10,)]*4,
                                     [(10,), (11, 1), (12, 1, 1), (13, 1, 1, 1)]])
 @pytest.mark.parametrize('base_dtype', ['float32', 'float64', 'int64'])
@@ -100,7 +124,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         dtypes = tuple('int64' if type_ == "int" else base_dtype for type_ in paramtypes)
 
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, nfo.name, dtypes)
+        xp, nfo, dtypes)
 
     dtypes_np = [getattr(np, dtype) for dtype in dtypes]
     dtypes_xp = [getattr(xp, dtype) for dtype in dtypes]
@@ -108,6 +132,16 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     shapes = shapes[:nfo.n_args]
     rng = np.random.default_rng(984254252920492019)
     args_np = []
+
+    # Handle cases where this an argument which only takes scalar values.
+    scalar_only = nfo.scalar_only
+    if isinstance(nfo.scalar_only, dict):
+        scalar_only = nfo.scalar_only.get(_get_native_namespace_name(xp))
+
+    if scalar_only is not None:
+        shapes = [shape if not cond else None
+                  for shape, cond in zip(shapes, scalar_only)]
+
     for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, paramtypes, shapes):
         if 'int' in dtype and type_ != 'int':
             iinfo = np.iinfo(dtype_np)
@@ -119,8 +153,9 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
         else:
             rand = rng.standard_normal
         args_np.append(rand(size=shape, dtype=dtype_np))
-    if positive_only:
-        args_np = [np.abs(arg) for arg in args_np]
+    args_np = [
+        np.abs(arg) if cond else arg for arg, cond in zip(args_np, positive_only)
+    ]
 
     args_xp = [
         xp.asarray(arg, dtype=dtype_xp)
@@ -143,7 +178,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 
     # When dtype_np is integer, the output dtype can be float
     atol = 0 if ref.dtype.kind in 'iu' else 10 * np.finfo(ref.dtype).eps
-    xp_assert_close(res, xp.asarray(ref), atol=atol)
+    xp_assert_close(res, xp.asarray(ref), atol=atol, check_0d=nfo.produces_0d)
 
 
 @pytest.mark.parametrize(
@@ -152,12 +187,12 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
-    if func.__name__ in {'expn'}:
+    if func.__name__ in {'expn', 'polygamma'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
-        xp, nfo.name, dtypes)
+        xp, nfo, dtypes)
 
     rng = np.random.default_rng(984254252920492019)
     iinfo = np.iinfo(np.int64)
@@ -167,8 +202,9 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
         rng.standard_normal(size=1, dtype=np.float32),
         rng.standard_normal(size=1, dtype=np.float64),
     ][:nfo.n_args]
-    if positive_only:
-        args_np = [np.abs(arg) for arg in args_np]
+    args_np = [
+        np.abs(arg) if cond else arg for arg, cond in zip(args_np, positive_only)
+    ]
 
     args_xp = [xp.asarray(arg, dtype=dtype_xp)
                for arg, dtype_xp in zip(args_np, dtypes_xp)]
@@ -194,11 +230,11 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
 def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
-    if func.__name__ in {'expn'}:
+    if func.__name__ in {'expn', 'polygamma'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
-        xp, nfo.name, [dtype])
+        xp, nfo, [dtype])
     dtype_np = getattr(np, dtype)
     dtype_xp = getattr(xp, dtype)
 
@@ -206,7 +242,7 @@ def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
     # Most failures are due to NaN or infinity; uncomment to suppress them
     # elements['allow_infinity'] = False
     # elements['allow_nan'] = False
-    if positive_only:
+    if any(positive_only):
         elements['min_value'] = 0
 
     shapes, _ = data.draw(
@@ -250,13 +286,16 @@ def test_doc(func):
 
 
 @pytest.mark.parametrize(
-    'func,n_args,paramtypes',
-    [(nfo.wrapper, nfo.n_args, nfo.paramtypes) for nfo in _special_funcs]
+    'func,n_args,paramtypes,is_ufunc',
+    [(nfo.wrapper, nfo.n_args, nfo.paramtypes, nfo.is_ufunc)
+     for nfo in _special_funcs]
 )
-def test_ufunc_kwargs(func, n_args, paramtypes):
+def test_ufunc_kwargs(func, n_args, paramtypes, is_ufunc):
     """Test that numpy-specific out= and dtype= keyword arguments
     of ufuncs still work when SCIPY_ARRAY_API is set.
     """
+    if not is_ufunc:
+        pytest.skip(f"{func.__name__} is not a ufunc.")
     if paramtypes is None:
         paramtypes = ("real", ) * n_args
     # out=
