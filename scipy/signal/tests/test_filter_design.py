@@ -382,6 +382,19 @@ class TestTf2Sos:
         sos2 = tf2sos(b, a, analog=analog)
         assert_array_almost_equal(sos, sos2, decimal=4)
 
+    def test_gh_23221(self):
+        # Tests that this tf2sos call below does not produce ComplexWarnings
+        # This test is specific for scipy==1.6.0: later scipy versions do not produce
+        # the warning.
+        with suppress_warnings():
+            warnings.simplefilter("error")
+            tf2sos([0.21860986786301265, -0.4372197357260253, -0.2186098678630126,
+                    0.8744394714520509,  -0.21860986786301248, -0.4372197357260253,
+                    0.21860986786301265],
+                   [1., -4.18323041786553, 6.829924151626914, -5.407777865686045,
+                    2.0773105450802336,  -0.33482732571537893,  0.0186009178695853 ]
+            )
+
 
 @skip_xp_backends(
     cpu_only=True, reason="XXX zpk2sos is numpy-only", exceptions=['cupy']
