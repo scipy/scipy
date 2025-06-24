@@ -1177,7 +1177,7 @@ def apply(double[:, :] quat, double[:, :] vectors, bint inverse=False) -> double
     if n_rotations == 1:
         # Single rotation/many vectors, use matmul for speed: The axes argument
         # is such that the input arguments don't need to be transposed and the
-        # output argument is contineous in memory.
+        # output argument is continuous in memory.
         return np.matmul(matrix, vectors, axes=[(-2, -1), (-1, -2), (-1, -2)])[0]
 
     # for stacks of matrices einsum is faster
