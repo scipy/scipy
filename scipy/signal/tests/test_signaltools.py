@@ -1649,7 +1649,7 @@ class TestResample:
             x[0] = 0
             x[-1] = 0
 
-            h = signal.firwin(31, 1. / down_factor, window='hamming')
+            h = signal.firwin(31, xp.asarray(1. / down_factor), window='hamming')
             h = xp.asarray(h)   # XXX: convert firwin
             yf = filtfilt(h, 1.0, x, padtype='constant')[::down_factor]
 
@@ -2803,7 +2803,7 @@ class TestFiltFilt:
         if is_jax(xp) and self.filtfilt_kind == 'sos':
             pytest.skip(reason='sosfilt works in-place')
 
-        zpk = tf2zpk(xp.asarray([1, 2, 3]), xp.asarray([1, 2, 3]))
+        zpk = tf2zpk(xp.asarray([1., 2, 3]), xp.asarray([1, 2, 3]))
         out = self.filtfilt(zpk, xp.arange(12), xp=xp)
         atol= 4e-9 if is_cupy(xp) else 5.28e-11
         xp_assert_close(out, xp.arange(12, dtype=xp.float64), atol=atol)

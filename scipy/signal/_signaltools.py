@@ -4741,8 +4741,8 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     """
     xp = array_namespace(b, a, x)
 
-    b = np.atleast_1d(b)
-    a = np.atleast_1d(a)
+    b = np.atleast_1d(np.asarray(b))
+    a = np.atleast_1d(np.asarray(a))
     x = np.asarray(x)
 
     if method not in ["pad", "gust"]:
