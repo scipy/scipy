@@ -216,7 +216,7 @@ void dia_matvecs(const I A_rows,
             if (k < 0 or k >= k_end)
                 continue;
             // element at i-th row, k-th column in A
-            const T a = (A_data + npy_intp(A_L) * n)[k];
+            const T a = A_data[npy_intp(A_L) * n + k];
             // k-th row in B
             const T* B_row = B_data + npy_intp(B_cols) * k;
             // loop over columns in current output row
@@ -281,7 +281,7 @@ I dia_tocsr(const I n_rows,
                     j = i + offsets[n]; // column
             if (j < 0 or j >= j_end)
                 continue;
-            const T x = (data + npy_intp(L) * n)[j];
+            const T x = data[npy_intp(L) * n + j];
             if (x != 0) {
                 indices[nnz] = j;
                 csr_data[nnz] = x;
