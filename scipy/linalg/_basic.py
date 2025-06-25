@@ -794,12 +794,6 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     and ``r`` as its first row. If ``r`` is not given, ``r == conjugate(c)`` is
     assumed.
 
-    .. warning::
-
-        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-        before passing them to `solve_toeplitz`.
-
     Parameters
     ----------
     c_or_cr : array_like or tuple of (array_like, array_like)
@@ -866,8 +860,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     return _solve_toeplitz(c, r, b, check_finite)
 
 
-# Can uncomment when `solve_toeplitz` deprecation is done (SciPy 1.17)
-# @_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
+@_apply_over_batch(('c', 1), ('r', 1), ('b', '1|2'))
 def _solve_toeplitz(c, r, b, check_finite):
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         (c, r), b, check_finite, keep_b_shape=True)
@@ -1974,15 +1967,6 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         c = _asarray_validated(c_or_cr, check_finite=check_finite)
         r = c.conjugate()
 
-    if c.ndim > 1 or r.ndim > 1:
-        msg = ("Beginning in SciPy 1.17, multidimensional input will be treated as a "
-               "batch, not `ravel`ed. To preserve the existing behavior and silence "
-               "this warning, `ravel` arguments before passing them to "
-               "`toeplitz`, `matmul_toeplitz`, and `solve_toeplitz`.")
-        warnings.warn(msg, FutureWarning, stacklevel=2)
-        c = c.ravel()
-        r = r.ravel()
-
     if b is None:
         raise ValueError('`b` must be an array, not None.')
 
@@ -2014,12 +1998,6 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     The Toeplitz matrix has constant diagonals, with c as its first column
     and r as its first row. If r is not given, ``r == conjugate(c)`` is
     assumed.
-
-    .. warning::
-
-        Beginning in SciPy 1.17, multidimensional input will be treated as a batch,
-        not ``ravel``\ ed. To preserve the existing behavior, ``ravel`` arguments
-        before passing them to `matmul_toeplitz`.
 
     Parameters
     ----------
@@ -2134,9 +2112,16 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     """
 
     from ..fft import fft, ifft, rfft, irfft
+    c, r = c_or_cr if isinstance(c_or_cr, tuple) else (c_or_cr, np.conjugate(c_or_cr))
 
-    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops(
-        c_or_cr, x, check_finite, keep_b_shape=False, enforce_square=False)
+    return _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft)
+
+
+@_apply_over_batch(('r', 1), ('c', 1), ('x', '1|2'))
+def _matmul_toepltiz(r, c, x, workers, check_finite, fft, ifft, rfft, irfft):
+    r, c, x, dtype, x_shape = _validate_args_for_toeplitz_ops((c, r), x, check_finite,
+                                                              keep_b_shape=False,
+                                                              enforce_square=False)
     n, m = x.shape
 
     T_nrows = len(c)
