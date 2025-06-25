@@ -398,7 +398,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1).
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1).
 
     These sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
@@ -459,7 +459,7 @@ def sh_jacobi(n, p, q, monic=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
     Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
