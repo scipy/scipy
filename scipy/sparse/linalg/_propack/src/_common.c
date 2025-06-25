@@ -1,4 +1,4 @@
-#include "propack/_common.h"
+#include "_common.h"
 
 
 // ============================================================================
@@ -6,22 +6,22 @@
 // https://prng.di.unimi.it/xoshiro256plus.c
 
 static uint64_t rol64(uint64_t x, int k) {
-	return (x << k) | (x >> (64 - k));
+    return (x << k) | (x >> (64 - k));
 }
 
 static uint64_t xoshiro256p(uint64_t* s) {
-	uint64_t const result = s[0] + s[3];
-	uint64_t const t = s[1] << 17;
+    uint64_t const result = s[0] + s[3];
+    uint64_t const t = s[1] << 17;
 
-	s[2] ^= s[0];
-	s[3] ^= s[1];
-	s[1] ^= s[2];
-	s[0] ^= s[3];
+    s[2] ^= s[0];
+    s[3] ^= s[1];
+    s[1] ^= s[2];
+    s[0] ^= s[3];
 
-	s[2] ^= t;
-	s[3] = rol64(s[3], 45);
+    s[2] ^= t;
+    s[3] = rol64(s[3], 45);
 
-	return result;
+    return result;
 }
 
 double random_double(uint64_t* state) {
@@ -155,6 +155,165 @@ void supdate_nu(
             *numax = fmaxf(*numax, fabsf(nu[k]));
         }
         nu[j-1] = 1.0f;
+    }
+}
+
+
+void dbsvdstep(const int jobu, const int jobv, int m, int n, int k, double sigma, double* D, double* E, double* U, int ldu, double* V, int ldv)
+{
+    int int1 = 1;
+    double c, s, r;
+    // Perform an implicit LQ SVD sweep with shift sigma.
+    if (k < 2) { return; }
+
+    // Compute the initial rotation based on B*B^T - sigma^2
+    double x = D[0]*D[0] - sigma*sigma;
+    double y = E[0]*D[0];
+
+    // Chase the bulge down the lower bidiagonal with Givens rotations.
+    // Below "y" is the bulge and "x" is the element used to eliminate it.
+    for (int i = 0; i < k-1; i++) {
+        if (i > 0)
+        {
+            dlartg_(&x, &y, &c, &s, &E[i-1]);
+        } else {
+            dlartg_(&x, &y, &c, &s, &r);
+        }
+        x = c*D[i] + s*E[i];
+        E[i] = -s*D[i] + c*E[i];
+        D[i] = x;
+        y = s*D[i+1];
+        D[i+1] = c*D[i+1];
+
+        if ((jobu) && (m > 0))
+        {
+            drot_(&m, &U[i*ldu], &int1, &U[(i+1)*ldu], &int1, &c, &s);
+        }
+
+        dlartg_(&x, &y, &c, &s, &D[i]);
+        x = c*E[i] + s*D[i+1];
+        D[i+1] = -s*E[i] + c*D[i+1];
+        E[i] = x;
+        y = s*E[i+1];
+        E[i+1] = c*E[i+1];
+
+        if ((jobv) && (n > 0))
+        {
+            drot_(&n, &V[i*ldv], &int1, &V[(i+1)*ldv], &int1, &c, &s);
+        }
+    }
+
+    dlartg_(&x, &y, &c, &s, &E[k-2]);
+    x = c*D[k-1] + s*E[k-1];
+    E[k-1] = -s*D[k-1] + c*E[k-1];
+    D[k-1] = x;
+
+    if ((jobu) && (m > 0))
+    {
+        drot_(&m, &U[(k-1)*ldu], &int1, &U[k*ldu], &int1, &c, &s);
+    }
+
+    return;
+}
+
+
+void dbdqr(const int ignorelast, const int jobq, const int n, double* D, double* E, double* c1, double* c2, double* Qt, int ldq)
+{
+    double dbl1 = 1.0, dbl0 = 0.0, cs, sn, r;
+    if (n < 1) { return; }
+
+    if (jobq)
+    {
+        // Reset Qt to the identity matrix.
+        dlaset_("A", &n, &n, &dbl0, &dbl1, Qt, &ldq);
+    }
+    for (int i = 0; i < n-1; i++)
+    {
+        dlartg_(&D[i], &E[i], &cs, &sn, &r);
+        D[i] = r;
+        E[i] = sn*D[i+1];
+        D[i+1] = cs*D[i+1];
+        if (jobq)
+        {
+            // Apply the Givens rotation to Qt.
+            for (int j = 0; j <= i; j++)
+            {
+                Qt[i+1 + j*ldq] = -sn*Qt[i + j*ldq];
+                Qt[i + j*ldq] = cs*Qt[i + j*ldq];
+            }
+            Qt[i + (i+1)*ldq] = sn;
+            Qt[i+1 + (i+1)*ldq] = cs;
+        }
+    }
+    if (!ignorelast)
+    {
+        dlartg_(&D[n-1], &E[n-1], &cs, &sn, &r);
+        D[n-1] = r;
+        E[n-1] = 0.0;
+        *c1 = sn;
+        *c2 = cs;
+        if (jobq)
+        {
+            // Apply the last Givens rotation to Qt.
+            for (int j = 0; j < n-1; j++)
+            {
+                Qt[n-1 + j*ldq] = -sn*Qt[n-2 + j*ldq];
+                Qt[n-2 + j*ldq] = cs*Qt[n-2 + j*ldq];
+            }
+            Qt[n-2 + (n-1)*ldq] = sn;
+            Qt[n-1 + (n-1)*ldq] = cs;
+        }
+    }
+
+    return;
+}
+
+
+void drefinebounds(const int n, const int k, double* restrict theta, double* restrict bound, const double tol, const double eps34)
+{
+    double gap = 0.0;
+    if (k < 2) { return; };
+    for (int i = 0; i < k; i++)
+    {
+        for (int pm1 = -1; pm1 <= 1; pm1 += 2)
+        {
+            if ((pm1 == 1) && (i == k-1))
+            {
+                if (fabs(theta[i] - theta[i-pm1) < eps34*(theta[i]))
+                {
+                    if ((bound[i + pm1] > tol) && (bound[i + pm1] > tol))
+                    {
+                        bound[i + pm1] = hypot(bound[i], bound[i + pm1]);
+                        bound[i] = 0.0;
+                    }
+                }
+            } 
+        }
+    }
+    for (int i = 0; i < k; i++)
+    {
+        if ((i < k-1) || (k == n))
+        {
+            // We cannot compute a reliable value for the gap of the last
+            // Ritz value unless we know it is an approximation to the 
+            // smallest singular value (k.eq.n). In this case we can take the 
+            // distance to the next bigger one as the gap, which can really 
+            // save us from getting stuck on matrices with a single isolated tiny 
+            // singular value.
+            if (i == 0)
+            {
+                gap = fabs(theta[i] - theta[i+1]) - fmax(bound[i], bound[i+1]);
+            } else if (i == n-1) {
+                gap = fabs(theta[i-1] - theta[i]) - fmax(bound[i-1], bound[i]);
+            } else {
+                gap = fabs(theta[i] - theta[i+1]) - fmax(bound[i], bound[i+1]);
+                gap = fmin(gap, fabs(theta[i-1] - theta[i]) - fmax(bound[i-1], bound[i]));
+            }
+            if (gap > bound[i])
+            {
+                bound[i] = bound[i] * (bound[i] / gap);
+            }
+        }
     }
 }
 
