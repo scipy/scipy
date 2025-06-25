@@ -392,7 +392,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     r"""Gauss-Jacobi (shifted) quadrature.
 
     Compute the sample points and weights for Gauss-Jacobi (shifted)
-    quadrature. The sample points are the roots of the nth degree
+    quadrature. The sample points are the roots of the n-th degree
     shifted Jacobi polynomial
 
     .. math::
@@ -461,7 +461,7 @@ def sh_jacobi(n, p, q, monic=False):
         G_n^{(p, q)}(x)
           = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
 
-    where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
     Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
     `sh_chebyu`, not only the argument is shifted. See 22.2.2
     in [AS]_ for details.
