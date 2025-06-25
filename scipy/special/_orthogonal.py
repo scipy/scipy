@@ -398,7 +398,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1).
+          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1).
 
     These sample points and weights correctly integrate polynomials of
     degree :math:`2n - 1` or less over the interval :math:`[0, 1]` with
@@ -459,7 +459,7 @@ def sh_jacobi(n, p, q, monic=False):
     .. math::
 
         G_n^{(p, q)}(x)
-          = \frac{n!\Gamma(n+p)}{\Gamma(2n+p)} P_n^{(p - q, q - 1)}(2x - 1),
+          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
     Note that here, in contrast to `sh_legendre`, `sh_chebyt`, and
@@ -1632,10 +1632,8 @@ def gegenbauer(n, alpha, monic=False):
     >>> plt.show()
 
     """
-    if not np.isfinite(alpha) or alpha <= -0.5 :
-        raise ValueError("`alpha` must be a finite number greater than -1/2")
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
-    if monic or n == 0:
+    if monic:
         return base
     #  Abrahmowitz and Stegan 22.5.20
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
@@ -2415,7 +2413,7 @@ def roots_legendre(n, mu=False):
 
     with inverse::
 
-        t = (b - a)/2 * x + (a + b)/2
+        t = (b - a)/2 * x + (a + 2)/2
 
     Then::
 
