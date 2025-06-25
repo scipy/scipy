@@ -471,7 +471,7 @@ def sh_jacobi(n, p, q, monic=False):
     n : int
         Degree of the polynomial.
     p : float
-        Parameter, must have :math:`p > q - 1`.
+        Parameter, must satisfy :math:`p - q > 1`.
     q : float
         Parameter, must be greater than 0.
     monic : bool, optional
