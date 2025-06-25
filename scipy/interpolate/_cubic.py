@@ -236,6 +236,9 @@ class PchipInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         if np.iscomplexobj(y):
@@ -487,6 +490,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
            https://blogs.mathworks.com/cleve/2019/04/29/makima-piecewise-cubic-interpolation/
 
     """
+
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
 
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
