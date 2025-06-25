@@ -3897,10 +3897,7 @@ def is_isomorphic(T1, T2):
     T2 = xp.take(T2, idx)
     changes1 = T1 != xp.roll(T1, -1)
     changes2 = T2 != xp.roll(T2, -1)
-    res = xp.all(changes1 == changes2)
-    # Return type was bool up to 1.16.0.
-    # Vectorization changed it to np.bool_, which is backwards incompatible.
-    return res if SCIPY_ARRAY_API else bool(res)
+    return xp.all(changes1 == changes2)
 
 
 @lazy_cython
