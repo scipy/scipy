@@ -784,10 +784,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             f'Running benchmarks on SciPy {np_ver}',
             bold=True, fg="bright_green"
         )
-        cmd = [
-            'asv', 'run', '--dry-run',
-            '--show-stderr', '--python=same',
-            '--quick'] + bench_args
+        cmd = ['asv', 'run', '--dry-run', '--show-stderr', '--python=same'] + bench_args
         _run_asv(cmd)
     else:
         # Ensure that we don't have uncommited changes
@@ -801,7 +798,7 @@ def bench(ctx, tests, submodule, compare, verbose, quick,
             )
 
         cmd_compare = [
-            'asv', 'continuous', '--factor', '1.05', '--quick'
+            'asv', 'continuous', '--factor', '1.05'
         ] + bench_args + [commit_a, commit_b]
         _run_asv(cmd_compare)
 
