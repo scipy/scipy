@@ -135,8 +135,7 @@ import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 from scipy._lib._array_api import (_asarray, array_namespace, is_dask,
-                                   is_lazy_array, xp_capabilities, xp_copy,
-                                   SCIPY_ARRAY_API)
+                                   is_lazy_array, xp_capabilities, xp_copy)
 from scipy._lib._disjoint_set import DisjointSet
 import scipy._lib.array_api_extra as xpx
 
