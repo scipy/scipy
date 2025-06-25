@@ -1,138 +1,36 @@
-# cython: cpow=True
+from __future__ import annotations
+
+from collections.abc import Iterable
+from types import EllipsisType, ModuleType
+from collections.abc import Callable
 
 import numpy as np
-from ._rotation import Rotation, compose_quat
 
-cimport numpy as np
-cimport cython
-
-np.import_array()
-
-
-cdef _create_skew_matrix(vec):
-    """Create skew-symmetric (aka cross-product) matrix for stack of vectors."""
-    result = np.zeros((len(vec), 3, 3))
-    result[:, 0, 1] = -vec[:, 2]
-    result[:, 0, 2] = vec[:, 1]
-    result[:, 1, 0] = vec[:, 2]
-    result[:, 1, 2] = -vec[:, 0]
-    result[:, 2, 0] = -vec[:, 1]
-    result[:, 2, 1] = vec[:, 0]
-    return result
+from scipy._lib._array_api import (
+    array_namespace,
+    is_numpy,
+    ArrayLike,
+    Array,
+)
+from scipy.spatial.transform import Rotation
+import scipy.spatial.transform._rigid_transform_cy as cython_backend
+import scipy._lib.array_api_extra as xpx
+from scipy._lib.array_api_compat import device
+from scipy._lib._array_api import xp_promote
 
 
-cdef _compute_se3_exp_translation_transform(rot_vec):
-    """Compute the transformation matrix from the se3 translation part to SE3
-    translation.
+__all__ = ["RigidTransform"]
 
-    The transformation matrix depends on the rotation vector.
-    """
-    angle = np.linalg.norm(rot_vec, axis=1)
-    mask = angle < 1e-3
-
-    k1 = np.empty(len(rot_vec))
-    k1[mask] = 0.5 - angle[mask]**2 / 24 + angle[mask]**4 / 720
-    k1[~mask] = (1.0 - np.cos(angle[~mask])) / angle[~mask]**2
-
-    k2 = np.empty(len(rot_vec))
-    k2[mask] = 1/6 - angle[mask]**2 / 120 + angle[mask]**4 / 5040
-    k2[~mask] = (angle[~mask] - np.sin(angle[~mask])) / angle[~mask]**3
-
-    s = _create_skew_matrix(rot_vec)
-
-    return np.identity(3) + k1[:, None, None] * s + k2[:, None, None] * s @ s
+backend_registry = {array_namespace(np.empty(0)): cython_backend}
 
 
-cdef _compute_se3_log_translation_transform(rot_vec):
-    """Compute the transformation matrix from SE3 translation to the se3
-    translation part.
-
-    It is the inverse of `_compute_se3_exp_translation_transform` in a closed
-    analytical form.
-    """
-    angle = np.linalg.norm(rot_vec, axis=1)
-    mask = angle < 1e-3
-
-    k = np.empty(len(rot_vec))
-    k[mask] = 1/12 + angle[mask]**2 / 720 + angle[mask]**4 / 30240
-    k[~mask] = (1 - 0.5 * angle[~mask] / np.tan(0.5 * angle[~mask])) / angle[~mask]**2
-
-    s = _create_skew_matrix(rot_vec)
-
-    return np.identity(3) - 0.5 * s + k[:, None, None] * s @ s
-
-
-def normalize_dual_quaternion(dual_quat):
+def normalize_dual_quaternion(dual_quat: ArrayLike) -> Array:
     """Normalize dual quaternion."""
-    real, dual = _normalize_dual_quaternion(
-        dual_quat[..., :4], dual_quat[..., 4:])
-    return np.concatenate((real, dual), axis=-1)
+    xp = array_namespace(dual_quat)
+    return backend_registry[xp].normalize_dual_quaternion(dual_quat)
 
 
-cdef _normalize_dual_quaternion(real_part, dual_part):
-    """Ensure that unit norm of the dual quaternion.
-
-    The norm is a dual number and must be 1 + 0 * epsilon, which means that
-    the real quaternion must have unit norm and the dual quaternion must be
-    orthogonal to the real quaternion.
-    """
-    real_part = np.copy(real_part)
-    dual_part = np.copy(dual_part)
-
-    real_norm = np.linalg.norm(real_part, axis=1)
-
-    # special case: real quaternion is 0, we set it to identity
-    zero_real_mask = real_norm == 0.0
-    real_part[zero_real_mask, :4] = [0., 0., 0., 1.]
-    real_norm[zero_real_mask] = 1.0
-
-    # 1. ensure unit real quaternion
-    real_part /= real_norm[:, np.newaxis]
-    dual_part /= real_norm[:, np.newaxis]
-
-    # 2. ensure orthogonality of real and dual quaternion
-    dual_part -= np.sum(real_part * dual_part, axis=1)[:, np.newaxis] * real_part
-
-    return real_part, dual_part
-
-
-def _create_transformation_matrix(translations, rotation_matrices, single):
-    """Create a matrix from translations and rotation matrices.
-
-    Parameters
-    ----------
-    translations : array_like, shape (N, 3) or (3,)
-        A stack of translation vectors.
-    rotation_matrices : array_like, shape (N, 3, 3) or (3, 3)
-        A stack of rotation matrices.
-    single : bool
-        Whether the output should be a single matrix or a stack of matrices.
-
-    Returns
-    -------
-    matrix : numpy.ndarray, shape (N, 4, 4)
-        A stack of transformation matrices.
-    """
-    if translations.ndim == 1:
-        translations = translations[np.newaxis, ...]
-    if rotation_matrices.ndim == 2:
-        rotation_matrices = rotation_matrices[np.newaxis, ...]
-    if not len(rotation_matrices) == len(translations):
-        raise ValueError("The number of rotation matrices and translations must "
-                         "be the same.")
-
-    matrix = np.empty((len(translations), 4, 4), dtype=float)
-    matrix[:, :3, :3] = rotation_matrices
-    matrix[:, :3, 3] = translations
-    matrix[:, 3, :3] = 0.0
-    matrix[:, 3, 3] = 1.0
-    if single:
-        return matrix[0]
-    else:
-        return matrix
-
-
-cdef class RigidTransform:
+class RigidTransform:
     """Rigid transform in 3 dimensions.
 
     This class provides an interface to initialize from and represent rigid
@@ -443,10 +341,7 @@ cdef class RigidTransform:
     >>> plt.show()
     """
 
-    cdef double[:, :, :] _matrix
-    cdef bint _single
-
-    def __init__(self, matrix, normalize=True, copy=True):
+    def __init__(self, matrix: ArrayLike, normalize: bool = True, copy: bool = True):
         """Initialize from a 4x4 transformation matrix.
 
         Rotations are not meant to be initialized directly. Please use one of
@@ -470,48 +365,23 @@ cdef class RigidTransform:
         -------
         transform : `RigidTransform` instance
         """
-        self._single = False
-        matrix = np.asarray(matrix, dtype=float)
+        xp = array_namespace(matrix)
+        self._xp = xp
+        matrix = xp_promote(matrix, force_floating=True, xp=xp)
+        if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
+            raise ValueError(
+                "Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
+                f"got {matrix.shape}."
+            )
+        # We only need the _single flag for the cython backend. The Array API backend
+        # uses broadcasting by default and hence returns the correct shape without
+        # additional _single logic
+        self._single = matrix.ndim == 2 and is_numpy(xp)
+        if self._single:
+            matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
 
-        if (matrix.ndim not in [2, 3]
-                or matrix.shape[-1] != 4
-                or matrix.shape[-2] != 4):
-            raise ValueError("Expected `matrix` to have shape (4, 4), or (N, 4, 4), "
-                             f"got {matrix.shape}.")
-
-        # If a single transformation matrix is given, convert it to a
-        # 2D 1 x 4 x 4 matrix but set self._single to True so that we can
-        # return appropriate objects in the `to_...` methods
-        if matrix.shape == (4, 4):
-            matrix = matrix[None, :, :]
-            self._single = True
-
-        if normalize or copy:
-            matrix = matrix.copy()
-
-        # Rigid transforms have the following matrix representation:
-        # [R | t]
-        # [0 | 1]
-        # where R is a 3x3 orthonormal rotation matrix and t is a 3x1 translation
-        # vector. The last row is always [0, 0, 0, 1] exactly
-
-        # Check the last row. Exact match is required, as this last row should
-        # not accumulate floating point error during composition.
-        last_row_ok = np.all(matrix[:, 3, :] == np.array([0, 0, 0, 1]), axis=1)
-        if np.any(~last_row_ok):
-            ind = np.where(~last_row_ok)[0][0]
-            raise ValueError(f"Expected last row of transformation matrix {ind} to be "
-                             f"exactly [0, 0, 0, 1], got {matrix[ind, 3, :]}.")
-
-        # The Rotation.from_matrix() method orthogonalizes the rotation
-        # component of the transformation matrix. While this does have some
-        # overhead in converting a rotation matrix to a quaternion and back, it
-        # allows for skipping singular value decomposition for near-orthogonal
-        # matrices, which is a computationally expensive operation.
-        if normalize:
-            matrix[:, :3, :3] = Rotation.from_matrix(matrix[:, :3, :3]).as_matrix()
-
-        self._matrix = matrix
+        self._backend = backend_registry[xp]
+        self._matrix = self._backend.from_matrix(matrix, normalize, copy)
 
     def __repr__(self):
         m = f"{self.as_matrix()!r}".splitlines()
@@ -519,9 +389,8 @@ cdef class RigidTransform:
         m[1:] = [" " * 27 + m[i] for i in range(1, len(m))]
         return "RigidTransform.from_matrix(" + "\n".join(m) + ")"
 
-    @cython.embedsignature(True)
     @classmethod
-    def from_matrix(cls, matrix):
+    def from_matrix(cls, matrix: ArrayLike) -> RigidTransform:
         """Initialize from a 4x4 transformation matrix.
 
         Parameters
@@ -536,17 +405,17 @@ cdef class RigidTransform:
 
         Notes
         -----
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation
-        vector ``[tx, ty, tz]``. As rotation matrices must be proper
-        orthogonal, the rotation component is orthonormalized using singular
-        value decomposition before initialization.
+        where ``R`` is a 3x3 rotation matrix and ``t = [tx, ty, tz]`` is a 3x1
+        translation vector. As rotation matrices must be proper orthogonal, the
+        rotation component is orthonormalized using singular value decomposition
+        before initialization.
 
         Examples
         --------
@@ -598,9 +467,8 @@ cdef class RigidTransform:
         """
         return cls(matrix, normalize=True, copy=True)
 
-    @cython.embedsignature(True)
     @classmethod
-    def from_rotation(cls, rotation):
+    def from_rotation(cls, rotation: Rotation) -> RigidTransform:
         """Initialize from a rotation, without a translation.
 
         When applying this transform to a vector ``v``, the result is the
@@ -655,22 +523,18 @@ cdef class RigidTransform:
         2
         """
         if not isinstance(rotation, Rotation):
-            raise ValueError("Expected `rotation` to be a `Rotation` instance, "
-                             f"got {type(rotation)}.")
-        rotmat = rotation.as_matrix()
-        if rotation.single:
-            rotmat = rotmat[None, :, :]
-        num_transforms = len(rotmat)
-        matrix = np.zeros((num_transforms, 4, 4), dtype=float)
-        matrix[:, :3, :3] = rotmat
-        matrix[:, 3, 3] = 1
-        if rotation.single:
-            matrix = matrix[0]
-        return cls(matrix, normalize=False, copy=False)
+            raise TypeError(
+                "Expected `rotation` to be a `Rotation` instance, "
+                f"got {type(rotation)}."
+            )
+        quat = rotation.as_quat()
+        xp = array_namespace(quat)
+        backend = backend_registry[xp]
+        matrix = backend.from_rotation(quat)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
-    @cython.embedsignature(True)
     @classmethod
-    def from_translation(cls, translation):
+    def from_translation(cls, translation: ArrayLike) -> RigidTransform:
         """Initialize from a translation numpy array, without a rotation.
 
         When applying this transform to a vector ``v``, the result is the same
@@ -732,30 +596,15 @@ cdef class RigidTransform:
         >>> len(tf)
         2
         """
-        translation = np.asarray(translation, dtype=float)
+        xp = array_namespace(translation)
+        backend = backend_registry[xp]
+        matrix = backend.from_translation(translation)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
-        if translation.ndim not in [1, 2] or translation.shape[-1] != 3:
-            raise ValueError("Expected `translation` to have shape (3,), or (N, 3), "
-                             f"got {translation.shape}.")
-
-        # If a single translation vector is given, convert it to a 2D 1 x 3 matrix
-        single = False
-        if translation.shape == (3,):
-            translation = translation[None, :]
-            single = True
-
-        num_translations = translation.shape[0]
-
-        matrix = np.repeat(np.eye(4, dtype=float)[None, :, :], num_translations, axis=0)
-        matrix[:, :3, 3] = translation
-
-        if single:
-            matrix = matrix[0]
-        return cls(matrix, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
     @classmethod
-    def from_components(cls, translation, rotation):
+    def from_components(
+        cls, translation: ArrayLike, rotation: Rotation
+    ) -> RigidTransform:
         """Initialize a rigid transform from translation and rotation
         components.
 
@@ -820,9 +669,8 @@ cdef class RigidTransform:
         """
         return cls.from_translation(translation) * cls.from_rotation(rotation)
 
-    @cython.embedsignature(True)
     @classmethod
-    def from_exp_coords(cls, exp_coords):
+    def from_exp_coords(cls, exp_coords: ArrayLike) -> RigidTransform:
         r"""Initialize from exponential coordinates of transform.
 
         This implements the exponential map that converts 6-dimensional real
@@ -903,30 +751,21 @@ cdef class RigidTransform:
         >>> (tf_trans * tf_rot).as_exp_coords()
         array([0.5, 0.3, 0.1, 3.64305882, -1.25879559, 4.46109265])
         """
-        exp_coords = np.asarray(exp_coords, dtype=float)
-
+        xp = array_namespace(exp_coords)
+        exp_coords = xp_promote(exp_coords, force_floating=True, xp=xp)
         if exp_coords.ndim not in [1, 2] or exp_coords.shape[-1] != 6:
             raise ValueError(
                 "Expected `exp_coords` to have shape (6,), or (N, 6), "
-                f"got {exp_coords.shape}.")
+                f"got {exp_coords.shape}."
+            )
+        backend = backend_registry[xp]
+        matrix = backend.from_exp_coords(exp_coords)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
-        single = exp_coords.ndim == 1
-        exp_coords = np.atleast_2d(exp_coords)
-
-        rot_vec = exp_coords[:, :3]
-        rotations = Rotation.from_rotvec(rot_vec)
-
-        translations = np.einsum('ijk,ik->ij',
-                                 _compute_se3_exp_translation_transform(rot_vec),
-                                 exp_coords[:, 3:])
-        matrix = _create_transformation_matrix(translations, rotations.as_matrix(),
-                                               single)
-
-        return cls(matrix, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
     @classmethod
-    def from_dual_quat(cls, dual_quat, *, scalar_first=False):
+    def from_dual_quat(
+        cls, dual_quat: ArrayLike, *, scalar_first: bool = False
+    ) -> RigidTransform:
         """Initialize from a unit dual quaternion.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -972,35 +811,13 @@ cdef class RigidTransform:
         >>> tf.single
         True
         """
-        dual_quat = np.asarray(dual_quat, dtype=float)
+        xp = array_namespace(dual_quat)
+        backend = backend_registry[xp]
+        matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
-        if dual_quat.ndim not in [1, 2] or dual_quat.shape[-1] != 8:
-            raise ValueError(
-                "Expected `dual_quat` to have shape (8,), or (N, 8), "
-                f"got {dual_quat.shape}.")
-
-        single = dual_quat.ndim == 1
-        dual_quat = np.atleast_2d(dual_quat)
-
-        real_part = dual_quat[:, :4]
-        dual_part = dual_quat[:, 4:]
-        if scalar_first:
-            real_part = np.roll(real_part, -1, axis=1)
-            dual_part = np.roll(dual_part, -1, axis=1)
-
-        real_part, dual_part = _normalize_dual_quaternion(real_part, dual_part)
-
-        rotation = Rotation.from_quat(real_part)
-        translation = 2.0 * np.asarray(
-            compose_quat(dual_part, rotation.inv().as_quat()))[:, :3]
-        matrix = _create_transformation_matrix(translation, rotation.as_matrix(),
-                                               single)
-
-        return cls(matrix, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
     @classmethod
-    def identity(cls, num=None):
+    def identity(cls, num: int | None = None) -> RigidTransform:
         """Initialize an identity transform.
 
         Composition with the identity transform has no effect, and
@@ -1067,16 +884,18 @@ cdef class RigidTransform:
         >>> len(tf)
         2
         """
-        if num is None:  # single
-            return cls(np.eye(4, dtype=float), normalize=False, copy=False)
+        if num is None:
+            matrix = np.eye(4)
         else:
-            return cls(np.eye(4, dtype=float)[None, :, :].repeat(num, axis=0),
-                       normalize=False, copy=False)
+            matrix = np.tile(np.eye(4), (num, 1, 1))
+        # No need for a backend call here since identity is easy to construct and we are
+        # currently not offering a backend-specific identity matrix
+        return cls._from_raw_matrix(matrix, array_namespace(matrix))
 
-
-    @cython.embedsignature(True)
     @classmethod
-    def concatenate(cls, transforms):
+    def concatenate(
+        cls, transforms: RigidTransform | Iterable[RigidTransform]
+    ) -> RigidTransform:
         """
         Concatenate a sequence of `RigidTransform` objects into a
         single object.
@@ -1103,28 +922,28 @@ cdef class RigidTransform:
                [3., 0., 0.]])
         """
         if isinstance(transforms, RigidTransform):
-            return cls(transforms._matrix, normalize=False, copy=True)
-
+            return cls(transforms.as_matrix(), normalize=False, copy=True)
         if not all(isinstance(x, RigidTransform) for x in transforms):
             raise TypeError("input must contain RigidTransform objects only")
 
-        ms = [x.as_matrix()[np.newaxis, :, :] if x.single else x.as_matrix()
-              for x in transforms]
-        return cls(np.concatenate(ms), normalize=False, copy=False)
+        xp = array_namespace(transforms[0].as_matrix())
+        matrix = xp.concat(
+            [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
+        )
+        return cls._from_raw_matrix(matrix, xp, None)
 
-    @cython.embedsignature(True)
-    def as_matrix(self):
+    def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``.
+        where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector.
 
         Returns
         -------
@@ -1162,27 +981,26 @@ cdef class RigidTransform:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
+        matrix = self._xp.asarray(self._matrix, copy=True)
         if self._single:
-            return np.array(self._matrix[0])
-        else:
-            return np.array(self._matrix)
+            return matrix[0, ...]
+        return matrix
 
-    @cython.embedsignature(True)
-    def as_components(self):
+    def as_components(self) -> tuple[Array, Rotation]:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``. This function returns the rotation
-        corresponding to this rotation matrix ``r = Rotation.from_matrix(R)``
-        and the translation vector ``t``.
+        Where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector. This function
+        returns the rotation corresponding to this rotation matrix
+        ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
         Take a transform ``tf`` and a vector ``v``. When applying the transform
         to the vector, the result is the same as if the transform was applied
@@ -1229,8 +1047,7 @@ cdef class RigidTransform:
         """
         return self.translation, self.rotation
 
-    @cython.embedsignature(True)
-    def as_exp_coords(self):
+    def as_exp_coords(self) -> Array:
         """Return the exponential coordinates of the transform.
 
         This implements the logarithmic map that converts SE(3) to 6-dimensional
@@ -1256,21 +1073,12 @@ cdef class RigidTransform:
         >>> Tf.identity().as_exp_coords()
         array([0., 0., 0., 0., 0., 0.])
         """
-        exp_coords = np.empty((self._matrix.shape[0], 6), dtype=float)
-        rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
-        rot_vec = rotations.as_rotvec()
-        exp_coords[:, :3] = rot_vec
-        exp_coords[:, 3:] = np.einsum('ijk,ik->ij',
-                                      _compute_se3_log_translation_transform(rot_vec),
-                                      self._matrix[:, :3, 3])
-
+        exp_coords = self._backend.as_exp_coords(self._matrix)
         if self._single:
-            return exp_coords[0]
-        else:
-            return exp_coords
+            exp_coords = exp_coords[0, ...]
+        return exp_coords
 
-    @cython.embedsignature(True)
-    def as_dual_quat(self, *, scalar_first=False):
+    def as_dual_quat(self, *, scalar_first: bool = False) -> Array:
         """Return the dual quaternion representation of the transform.
 
         Unit dual quaternions encode orientation in a real unit quaternion
@@ -1306,29 +1114,12 @@ cdef class RigidTransform:
         >>> Tf.identity().as_dual_quat(scalar_first=True)
         array([1., 0., 0., 0., 0., 0., 0., 0.])
         """
-        rotations = Rotation.from_matrix(self._matrix[:, :3, :3])
-        real_parts = rotations.as_quat()
-
-        pure_translation_quats = np.empty((len(self._matrix), 4), dtype=float)
-        pure_translation_quats[:, :3] = self._matrix[:, :3, 3]
-        pure_translation_quats[:, 3] = 0.0
-
-        dual_parts = 0.5 * np.asarray(
-            compose_quat(pure_translation_quats, real_parts))
-
-        if scalar_first:
-            real_parts = np.roll(real_parts, 1, axis=1)
-            dual_parts = np.roll(dual_parts, 1, axis=1)
-
-        dual_quats = np.hstack((real_parts, dual_parts))
-
+        dual_quat = self._backend.as_dual_quat(self._matrix, scalar_first=scalar_first)
         if self._single:
-            return dual_quats[0]
-        else:
-            return dual_quats
+            dual_quat = dual_quat[0]
+        return dual_quat
 
-    @cython.embedsignature(True)
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of transforms in this object.
 
         Multiple transforms can be stored in a single instance.
@@ -1356,13 +1147,15 @@ cdef class RigidTransform:
             ...
         TypeError: Single transform has no len().
         """
-        if self._single:
-            raise TypeError("Single transform has no len().")
-
+        # We don't use self._single here because we also want to raise an error for
+        # Array API backends that call len() on single RigidTransform objects.
+        if self.single:
+            raise TypeError("Single transform has no len")
         return self._matrix.shape[0]
 
-    @cython.embedsignature(True)
-    def __getitem__(self, indexer):
+    def __getitem__(
+        self, indexer: int | slice | EllipsisType | None | ArrayLike
+    ) -> RigidTransform:
         """Extract transform(s) at given index(es) from this object.
 
         Creates a new `RigidTransform` instance containing a subset of
@@ -1413,15 +1206,30 @@ cdef class RigidTransform:
         array([[0., 0., 0.],
                [2., 0., 0.]])
         """
-        if self._single:
+        if self.single:
             raise TypeError("Single transform is not subscriptable.")
 
-        # Convert memoryview to numpy array before indexing:
-        arr = np.asarray(self._matrix)
-        return self.__class__(arr[indexer], copy=False)
+        is_array = isinstance(indexer, type(self._matrix))
+        xp = self._xp
+        # Masking is only specified in the Array API when the array is the sole index
+        # This special case handling is necessary to support boolean indexing and
+        # integer array indexing with take (see
+        # https://github.com/data-apis/array-api/pull/900#issuecomment-2674432480)
+        # Ideally we would converge to [indexer, ...] indexing, but this is not
+        # supported for now.
+        if is_array and indexer.dtype == xp.bool:
+            return RigidTransform(self._matrix[indexer], normalize=False)
+        if is_array and xp.isdtype(indexer.dtype, "integral"):
+            return RigidTransform(
+                xp.take(self._matrix, indexer, axis=0), normalize=False
+            )
+        return RigidTransform(self._matrix[indexer, ...], normalize=False)
 
-    @cython.embedsignature(True)
-    def __setitem__(self, indexer, value):
+    def __setitem__(
+        self,
+        indexer: int | slice | EllipsisType | None | ArrayLike,
+        value: RigidTransform,
+    ):
         """Set transform(s) at given index(es) in this object.
 
         Parameters
@@ -1452,23 +1260,21 @@ cdef class RigidTransform:
                [1., 0., 0.],
                [2., 0., 0.]])
         """
-        if self._single:
+        if self.single:
             raise TypeError("Single transform is not subscriptable.")
 
-        if not isinstance(value, self.__class__):
+        if not isinstance(value, RigidTransform):
             raise TypeError("value must be a RigidTransform object")
 
-        arr = np.asarray(self._matrix)
-        arr[indexer] = value.as_matrix()
-        self._matrix = arr
+        self._matrix = self._backend.setitem(self._matrix, indexer, value.as_matrix())
 
-    @cython.embedsignature(True)
-    def __mul__(RigidTransform self, RigidTransform other):
+    def __mul__(self, other: RigidTransform) -> RigidTransform:
         """Compose this transform with the other.
 
-        If `p` and `q` are two transforms, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of transformation matrices,
-        the composition can be expressed as ``p.as_matrix() @ q.as_matrix()``.
+        If ``p`` and ``q`` are two transforms, then the composition of '``q``
+        followed by ``p``' is equivalent to ``p * q``. In terms of
+        transformation matrices, the composition can be expressed as
+        ``p.as_matrix() @ q.as_matrix()``.
 
         In terms of translations and rotations, the composition when applied to
         a vector ``v`` is equivalent to
@@ -1539,21 +1345,16 @@ cdef class RigidTransform:
         >>> len(tf)
         2
         """
-        len_self = len(self._matrix)
-        len_other = len(other._matrix)
-        if not(len_self == 1 or len_other == 1 or len_self == len_other):
-            raise ValueError("Expected equal number of transforms in both or a "
-                             "single transform in either object, got "
-                             f"{len_self} transforms in first and {len_other}"
-                             "transforms in second object.")
+        if not isinstance(other, RigidTransform):
+            raise TypeError("other must be a RigidTransform object")
 
-        result = np.matmul(self._matrix, other._matrix)
+        matrix = self._backend.compose_transforms(self._matrix, other._matrix)
+        # Only necessary for cython. Array API broadcasting handles this by default
         if self._single and other._single:
-            result = result[0]
-        return self.__class__(result, copy=False)
+            matrix = matrix[0, ...]
+        return RigidTransform(matrix, normalize=True, copy=False)
 
-    @cython.embedsignature(True)
-    def __pow__(RigidTransform self, float n):
+    def __pow__(self, n: float) -> RigidTransform:
         """Compose this transform with itself `n` times.
 
         A rigid transform `p` when raised to non-integer powers can be thought
@@ -1651,21 +1452,12 @@ cdef class RigidTransform:
                [0., 0., 1., 3.],
                [0., 0., 0., 1.]])
         """
-        # Exact short-cuts
-        if n == 0:
-            return self.__class__.identity(None if self._single else len(self._matrix))
-        elif n == -1:
-            return self.inv()
-        elif n == 1:
-            if self._single:
-                return self.__class__(self._matrix[0], copy=True)
-            else:
-                return self.__class__(self._matrix, copy=True)
-        else:
-            return self.__class__.from_exp_coords(self.as_exp_coords() * n)
+        matrix = self._backend.pow(self._matrix, n)
+        if self._single:
+            matrix = matrix[0, ...]
+        return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
-    @cython.embedsignature(True)
-    def inv(self):
+    def inv(self) -> RigidTransform:
         """Invert this transform.
 
         Composition of a transform with its inverse results in an identity
@@ -1723,15 +1515,12 @@ cdef class RigidTransform:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        r_inv = np.swapaxes(self._matrix[:, :3, :3], 1, 2)  # Transpose to invert
-        # This einsum performs element-wise matrix multiplication
-        t_inv = -np.einsum('ijk,ik->ij', r_inv, self._matrix[:, :3, 3])
+        matrix = self._backend.inv(self._matrix)
+        if self._single:
+            matrix = matrix[0, ...]
+        return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
-        matrix = _create_transformation_matrix(t_inv, r_inv, self._single)
-        return self.__class__(matrix, normalize=False, copy=False)
-
-    @cython.embedsignature(True)
-    def apply(self, vector, inverse=False):
+    def apply(self, vector: ArrayLike, inverse: bool = False) -> Array:
         """Apply the transform to a vector.
 
         If the original frame transforms to the final frame by this transform,
@@ -1819,37 +1608,19 @@ cdef class RigidTransform:
         >>> tf.apply([1, 0, 0], inverse=True)
         array([-1.73205081, -1.        , -3.        ])
         """
-        vector = np.asarray(vector, dtype=float)
-        if vector.ndim not in [1, 2] or vector.shape[-1] != 3:
-            raise ValueError("Expected vector to have shape (N, 3), or (3,), "
-                             f"got {vector.shape}.")
+        # We do not use the cached xp here to catch cases where matrix and vector have
+        # different xp instances.
+        xp = array_namespace(self._matrix, vector)
+        vector = xp.asarray(
+            vector, dtype=self._matrix.dtype, device=device(self._matrix)
+        )
+        result = self._backend.apply(self._matrix, vector, inverse)
+        if self._single and vector.ndim == 1:
+            result = result[0, ...]
+        return result
 
-        vector_single = False
-        if vector.ndim == 1:
-            vector = vector[None, :]
-            vector_single = True
-
-        vector = np.hstack([vector, np.ones((vector.shape[0], 1))])
-
-        if inverse:
-            m = self.inv().as_matrix()
-            if self._single:
-                m = m[None, :, :]
-        else:
-            m = self._matrix
-
-        # This einsum performs matrix multiplication of each of the (4, 4)
-        # matrices in `m` with the (4,) vectors in `vector`, with proper
-        # broadcasting for different dimensions of `m` and `vector`.
-        res = np.einsum('ijk,ik->ij', m, vector)[:, :3]
-        if self._single and vector_single:
-            return res[0]
-        else:
-            return res
-
-    @cython.embedsignature(True)
     @property
-    def rotation(self):
+    def rotation(self) -> Rotation:
         """Return the rotation component of the transform.
 
         A transform is a composition of a rotation and a translation, such that
@@ -1877,12 +1648,10 @@ cdef class RigidTransform:
         """
         if self._single:
             return Rotation.from_matrix(self._matrix[0, :3, :3])
-        else:
-            return Rotation.from_matrix(self._matrix[:, :3, :3])
+        return Rotation.from_matrix(self._matrix[..., :3, :3])
 
-    @cython.embedsignature(True)
     @property
-    def translation(self):
+    def translation(self) -> Array:
         """Return the translation component of the transform.
 
         A transform is a composition of a rotation and a translation, such that
@@ -1909,13 +1678,11 @@ cdef class RigidTransform:
         True
         """
         if self._single:
-            return np.array(self._matrix[0, :3, 3])
-        else:
-            return np.array(self._matrix[:, :3, 3])
+            return self._xp.asarray(self._matrix[0, :3, 3], copy=True)
+        return self._xp.asarray(self._matrix[..., :3, 3], copy=True)
 
-    @cython.embedsignature(True)
     @property
-    def single(self):
+    def single(self) -> bool:
         """Whether this instance represents a single transform.
 
         Single transforms are not subscriptable, and do not have a length.
@@ -1926,4 +1693,36 @@ cdef class RigidTransform:
             True if this instance represents a single transform, False
             otherwise.
         """
-        return self._single
+        return self._single or self._matrix.ndim == 2
+
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        """Reduce the RigidTransform for pickling.
+
+        We store modules inside RigidTransforms which cannot be pickled. To circumvent
+        this, we pickle only the matrix and restore the cached modules from the matrix
+        type in `from_matrix`.
+        """
+        matrix = self._matrix
+        if self._single:
+            matrix = matrix[0, ...]
+        return (self.__class__.from_matrix, (matrix,))
+
+    @staticmethod
+    def _from_raw_matrix(
+        matrix: Array, xp: ModuleType, backend: ModuleType | None = None
+    ) -> RigidTransform:
+        """Create a RigidTransform skipping all sanitization steps.
+
+        This method is is intended for internal, performant creation of RigidTransforms
+        with matrices that are guaranteed to be valid.
+        """
+        tf = RigidTransform.__new__(RigidTransform)
+        tf._single = matrix.ndim == 2 and is_numpy(xp)
+        if tf._single:
+            matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
+        tf._matrix = matrix
+        tf._xp = xp
+        if backend is None:
+            backend = backend_registry[xp]
+        tf._backend = backend
+        return tf
