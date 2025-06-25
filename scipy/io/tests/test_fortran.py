@@ -137,6 +137,10 @@ def read_unformatted_double(m, n, k, filename):
 
     Returns:
         np.ndarray of shape (m, n, k) with dtype float64
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L1-L9
     """
     with open(filename.strip(), 'rb') as f:
         f.read(4)  # Skip initial 4-byte record marker
@@ -160,6 +164,10 @@ def read_unformatted_mixed(m, n, k, filename):
     Returns:
         a: np.ndarray of shape (m, n) with dtype float64
         b: np.ndarray of shape (k,) with dtype int32
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L21-L30
     """
     with open(filename.strip(), 'rb') as f:
         f.read(4)  # Skip initial 4-byte record marker
@@ -186,6 +194,10 @@ def read_unformatted_int(m, n, k, filename):
 
     Returns:
         np.ndarray: 3D array of shape (m, n, k) with dtype int32
+
+    Reference:
+        Fortran implementation:
+        https://github.com/scipy/scipy/blob/maintenance/1.15.x/scipy/io/_test_fortran.f#L11-L19
     """
     with open(filename.strip(), 'rb') as f:
         f.read(4)  # Skip Fortran record marker at start
