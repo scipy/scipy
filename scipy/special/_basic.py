@@ -19,8 +19,7 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all,
-                           legendre_p_all)
+from ._multiufuncs import (assoc_legendre_p_all)
 from scipy._lib.deprecation import _deprecated
 
 
@@ -61,7 +60,6 @@ __all__ = [
     'kvp',
     'lmbda',
     'lpmn',
-    'lpn',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -2039,29 +2037,6 @@ def euler(n):
     else:
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
-
-
-@_deprecated(__DEPRECATION_MSG_1_15.format("lpn", "legendre_p_all"))
-def lpn(n, z):
-    """Legendre function of the first kind.
-
-    Compute sequence of Legendre functions of the first kind (polynomials),
-    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
-
-    See also special.legendre for polynomial class.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.legendre_p_all` instead.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    """
-
-    return legendre_p_all(n, z, diff_n=1)
 
 
 def lqn(n, z):

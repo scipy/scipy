@@ -485,7 +485,6 @@ which provide a more flexible and consistent interface.
 
    lpmv                       -- Associated Legendre function of integer order and real degree.
    clpmn                      -- Associated Legendre function of the first kind for complex arguments.
-   lpn                        -- Legendre function of the first kind.
    lqn                        -- Legendre function of the second kind.
    lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.

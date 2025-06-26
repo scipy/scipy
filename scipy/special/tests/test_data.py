@@ -5,7 +5,7 @@ from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (
-    lpn, lpmn, lpmv, lqn, lqmn, eval_legendre, eval_hermite,
+    lpmn, lpmv, lqn, lqmn, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
@@ -82,11 +82,6 @@ def assoc_legendre_p_boost_(nu, mu, x):
 
 def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
-
-def lpn_(n, x):
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        return lpn(n.astype('l'), x)[0][-1]
 
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
@@ -210,10 +205,6 @@ BOOST_TESTS = [
         data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=5e-14, vectorized=False),
         data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=3e-13, vectorized=False),
-        data(lpn_, 'legendre_p_ipp-legendre_p',
-             (0,1), 2, rtol=5e-14, vectorized=False),
-        data(lpn_, 'legendre_p_large_ipp-legendre_p_large',
              (0,1), 2, rtol=3e-13, vectorized=False),
         data(eval_legendre_ld, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=6e-14),

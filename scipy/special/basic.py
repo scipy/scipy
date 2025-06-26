@@ -48,7 +48,6 @@ __all__ = [  # noqa: F822
     'kvp',
     'lmbda',
     'lpmn',
-    'lpn',
     'lqmn',
     'lqn',
     'mathieu_a',

@@ -10,13 +10,6 @@ from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
     assoc_legendre_p_all, sph_legendre_p, sph_legendre_p_all)
 
-# The functions lpn, lpmn, clpmn, appearing below are
-# deprecated in favor of legendre_p_all, assoc_legendre_p_all, and
-# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn)
-# respectively. The deprecated functions listed above are implemented as
-# shims around their respective replacements. The replacements are tested
-# separately, but tests for the deprecated functions remain to verify the
-# correctness of the shims.
 
 # Base polynomials come from Abrahmowitz and Stegan
 class TestLegendre:
@@ -33,20 +26,6 @@ class TestLegendre:
         assert_almost_equal(leg3.c, np.array([5,0,-3,0])/2.0)
         assert_almost_equal(leg4.c, np.array([35,0,-30,0,3])/8.0)
         assert_almost_equal(leg5.c, np.array([63,0,-70,0,15,0])/8.0)
-
-    @pytest.mark.parametrize('n', [1, 2, 3, 4, 5])
-    @pytest.mark.parametrize('zr', [0.5241717, 12.80232, -9.699001,
-                                    0.5122437, 0.1714377])
-    @pytest.mark.parametrize('zi', [9.766818, 0.2999083, 8.24726, -22.84843,
-                                    -0.8792666])
-    def test_lpn_against_clpmn(self, n, zr, zi):
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            reslpn = special.lpn(n, zr + zi*1j)
-            resclpmn = special.clpmn(0, n, zr+zi*1j)
-
-        assert_allclose(reslpn[0], resclpmn[0][0])
-        assert_allclose(reslpn[1], resclpmn[1][0])
 
 class TestLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
@@ -83,13 +62,6 @@ class TestLegendreP:
         err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
         np.testing.assert_allclose(err, 0, atol=1e-10)
 
-    def test_legacy(self):
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            p, pd = special.lpn(2, 0.5)
-
-        assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
-        assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
 
 class TestAssocLegendreP:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
@@ -850,7 +822,7 @@ class TestLegendreFunctions:
         assert_array_almost_equal(lqf,(np.array([0.5493, -0.7253, -0.8187]),
                                        np.array([1.3333, 1.216, -0.8427])),4)
 
-    @pytest.mark.parametrize("function", [special.lpn, special.lqn])
+    @pytest.mark.parametrize("function", [special.lqn])
     @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
     @pytest.mark.parametrize("z_complex", [False, True])
     @pytest.mark.parametrize("z_inexact", [False, True])
