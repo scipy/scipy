@@ -48,6 +48,8 @@ class _FuncInfo:
     # scalar only is backend specific.
     scalar_only: dict[str, tuple[bool]] | tuple[bool] | None = None
     positive_only: dict[str, tuple[bool]] | tuple[bool] | bool = False
+    # Some functions may not work well with very large integer valued arguments.
+    test_large_ints: bool = True
     # Some special functions produce 0d arrays.
     produces_0d: bool = False
 
@@ -311,7 +313,7 @@ _special_funcs = (
               # Inconsistent behavior for negative n. expn is not defined here without
               # taking analytic continuation.
               positive_only=True,
-              paramtypes=("int", "real")),
+              paramtypes=("int", "real"), test_large_ints=False),
     _FuncInfo(_ufuncs.i0, 1),
     _FuncInfo(_ufuncs.i0e, 1),
     _FuncInfo(_ufuncs.i1, 1),
@@ -330,7 +332,7 @@ _special_funcs = (
     _FuncInfo(_ufuncs.ndtri, 1),
     _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,
               scalar_only={"torch": [True, False]}, produces_0d=True,
-              positive_only={"torch": [True, False]}),
+              positive_only={"torch": [True, False]}, test_large_ints=False),
     _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
     _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr),
@@ -340,6 +342,9 @@ _special_funcs = (
                   skip_backends=[("jax.numpy", "no scipy.optimize support")]),
               generic_impl=_stdtrit),
     _FuncInfo(_ufuncs.xlogy, 2, generic_impl=_xlogy),
+    _FuncInfo(_basic.zeta, 2, is_ufunc=False,
+              positive_only={'jax.numpy': [True, True], 'torch': [True, False]},
+              test_large_ints=False),
 )
 
 # Override ufuncs.

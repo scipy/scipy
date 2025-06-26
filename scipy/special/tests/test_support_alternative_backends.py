@@ -73,10 +73,11 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
 
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
-        and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma'))
+        and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
+                                          'zeta'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
-                                           'polygamma')))
+                                           'polygamma', 'zeta')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -129,12 +130,10 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
                   for shape, cond in zip(shapes, scalar_only)]
 
     for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, paramtypes, shapes):
-        if 'int' in dtype and type_ != 'int':
+        if 'int' in dtype and nfo.test_large_ints:
             iinfo = np.iinfo(dtype_np)
             rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
-        elif type_ == 'int':
-            # If a special function actually expects integers for a particular
-            # parameter, it probably won't work well with very large values.
+        elif 'int' in dtype:
             rand = partial(rng.integers, -100, 101)
         else:
             rand = rng.standard_normal
