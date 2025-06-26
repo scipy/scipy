@@ -1795,8 +1795,8 @@ class Rotation:
         magnitude = self._backend.magnitude(self._quat)
         if self._single:
             # Special handling for numpy and single rotations. self._single is only set
-            # if xp is numpy. We therefore now that magnitude is a numpy array and that
-            # it contains a single element. Previously this code returned a Python
+            # if xp is numpy. We therefore know that magnitude is a numpy array and
+            # that it contains a single element. Previously this code returned a Python
             # float in that case. Here we return a numpy float64 scalar. All other
             # Array API libraries return 0d arrays instead.
             # See https://github.com/scipy/scipy/pull/23198#issuecomment-3003757848
