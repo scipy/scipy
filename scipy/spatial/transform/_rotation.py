@@ -1807,7 +1807,7 @@ class Rotation:
             # float in that case. Here we return a numpy float64 scalar. All other
             # Array API libraries return 0d arrays instead.
             # See https://github.com/scipy/scipy/pull/23198#issuecomment-3003757848
-            return magnitude[0].item()
+            return magnitude[0]
         return magnitude
 
     def approx_equal(
