@@ -1710,66 +1710,6 @@ class TestSystematic:
             atol=1e-10,
         )
 
-    def test_legenp_complex_2(self):
-        def clpnm(n, m, z):
-            try:
-                with suppress_warnings() as sup:
-                    sup.filter(category=DeprecationWarning)
-                    return sc.clpmn(m.real, n.real, z, type=2)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=2)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
-    def test_legenp_complex_3(self):
-        def clpnm(n, m, z):
-            try:
-                with suppress_warnings() as sup:
-                    sup.filter(category=DeprecationWarning)
-                    return sc.clpmn(m.real, n.real, z, type=3)[0][-1,-1]
-            except ValueError:
-                return np.nan
-
-        def legenp(n, m, z):
-            if abs(z) < 1e-15:
-                # mpmath has bad performance here
-                return np.nan
-            return exception_to_nan(mpmath.legenp)(int(n.real), int(m.real), z, type=3)
-
-        # mpmath is quite slow here
-        x = np.array([-2, -0.99, -0.5, 0, 1e-5, 0.5, 0.99, 20, 2e3])
-        y = np.array([-1e3, -0.5, 0.5, 1.3])
-        z = (x[:,None] + 1j*y[None,:]).ravel()
-
-        assert_mpmath_equal(
-            clpnm,
-            legenp,
-            [FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg([-2, -1, 0, 1, 2, 10]),
-             FixedArg(z)],
-            rtol=1e-6,
-            n=500,
-        )
-
     @pytest.mark.xfail(run=False, reason="apparently picks wrong function at |z| > 1")
     def test_legenq(self):
         def lqnm(n, m, z):

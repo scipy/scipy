@@ -14,7 +14,6 @@ __all__ = [  # noqa: F822
     'bernoulli',
     'berp_zeros',
     'bi_zeros',
-    'clpmn',
     'comb',
     'digamma',
     'diric',

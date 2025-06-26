@@ -32,7 +32,6 @@ __all__ = [
     'bernoulli',
     'berp_zeros',
     'bi_zeros',
-    'clpmn',
     'comb',
     'digamma',
     'diric',
@@ -1785,92 +1784,6 @@ def lpmn(m, n, z):
         pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
 
     return p, pd
-
-
-@_deprecated(__DEPRECATION_MSG_1_15.format("clpmn", "assoc_legendre_p_all"))
-def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind for complex arguments.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please use `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like, float or complex
-        Input value.
-    type : int, optional
-       takes values 2 or 3
-       2: cut on the real axis ``|x| > 1``
-       3: cut on the real axis ``-1 < x < 1`` (default)
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders ``0..m`` and degrees ``0..n``
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders ``0..m`` and degrees ``0..n``
-
-    See Also
-    --------
-    lpmn: associated Legendre functions of the first kind for real z
-
-    Notes
-    -----
-    By default, i.e. for ``type=3``, phase conventions are chosen according
-    to [1]_ such that the function is analytic. The cut lies on the interval
-    (-1, 1). Approaching the cut from above or below in general yields a phase
-    factor with respect to Ferrer's function of the first kind
-    (cf. `lpmn`).
-
-    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
-    on the interval (-1, 1) in the complex plane yields Ferrer's function
-    of the first kind.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.21
-
-    """
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if not (type == 2 or type == 3):
-        raise ValueError("type must be either 2 or 3.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    if not np.iscomplexobj(z):
-        z = np.asarray(z, dtype=complex)
-
-    out, out_jac = assoc_legendre_p_all(n, abs(m), z, branch_cut=type, diff_n=1)
-    out = np.swapaxes(out, 0, 1)
-    out_jac = np.swapaxes(out_jac, 0, 1)
-
-    if (m >= 0):
-        out = out[:(m + 1)]
-        out_jac = out_jac[:(m + 1)]
-    else:
-        out = np.insert(out[:(m - 1):-1], 0, out[0], axis=0)
-        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis=0)
-
-    return out, out_jac
 
 
 def lqmn(m, n, z):

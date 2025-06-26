@@ -5711,8 +5711,6 @@ add_newdoc("lpmv",
     --------
     lpmn : Compute the associated Legendre function for all orders
            ``0, ..., m`` and degrees ``0, ..., n``.
-    clpmn : Compute the associated Legendre function at complex
-            arguments.
 
     Notes
     -----

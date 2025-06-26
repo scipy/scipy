@@ -5,8 +5,6 @@
 #include "sf_error.h"
 
 extern const char *lpn_all_doc;
-extern const char *lpmn_doc;
-extern const char *clpmn_doc;
 extern const char *lqn_doc;
 extern const char *lqmn_doc;
 extern const char *rctj_doc;

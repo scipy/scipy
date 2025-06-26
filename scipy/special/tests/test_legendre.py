@@ -4,7 +4,7 @@ import numpy as np
 
 import pytest
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, suppress_warnings)
+    suppress_warnings)
 
 from scipy import special
 from scipy.special import (legendre_p, legendre_p_all, assoc_legendre_p,
@@ -665,95 +665,6 @@ class TestSphLegendreP:
             rtol=1e-05, atol=1e-08)
 
 class TestLegendreFunctions:
-    def test_clpmn(self):
-        z = 0.5+0.3j
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            clp = special.clpmn(2, 2, z, 3)
-
-        assert_array_almost_equal(clp,
-                   (np.array([[1.0000, z, 0.5*(3*z*z-1)],
-                           [0.0000, np.sqrt(z*z-1), 3*z*np.sqrt(z*z-1)],
-                           [0.0000, 0.0000, 3*(z*z-1)]]),
-                    np.array([[0.0000, 1.0000, 3*z],
-                           [0.0000, z/np.sqrt(z*z-1), 3*(2*z*z-1)/np.sqrt(z*z-1)],
-                           [0.0000, 0.0000, 6*z]])),
-                    7)
-
-    def test_clpmn_close_to_real_2(self):
-        eps = 1e-10
-        m = 1
-        n = 3
-        x = 0.5
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
-            clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
-
-        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
-                                  np.array([special.lpmv(m, n, x),
-                                         special.lpmv(m, n, x)]),
-                                  7)
-
-    def test_clpmn_close_to_real_3(self):
-        eps = 1e-10
-        m = 1
-        n = 3
-        x = 0.5
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
-            clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
-
-        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
-                                  np.array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
-                                         special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
-                                  7)
-
-    def test_clpmn_across_unit_circle(self):
-        eps = 1e-7
-        m = 1
-        n = 1
-        x = 1j
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            for type in [2, 3]:
-                assert_almost_equal(special.clpmn(m, n, x+1j*eps, type)[0][m, n],
-                                special.clpmn(m, n, x-1j*eps, type)[0][m, n], 6)
-
-    def test_inf(self):
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            for z in (1, -1):
-                for n in range(4):
-                    for m in range(1, n):
-                        lp = special.clpmn(m, n, z)
-                        assert np.isinf(lp[1][1,1:]).all()
-                        lp = special.lpmn(m, n, z)
-                        assert np.isinf(lp[1][1,1:]).all()
-
-    def test_deriv_clpmn(self):
-        # data inside and outside of the unit circle
-        zvals = [0.5+0.5j, -0.5+0.5j, -0.5-0.5j, 0.5-0.5j,
-                 1+1j, -1+1j, -1-1j, 1-1j]
-        m = 2
-        n = 3
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-            for type in [2, 3]:
-                for z in zvals:
-                    for h in [1e-3, 1e-3j]:
-                        approx_derivative = (special.clpmn(m, n, z+0.5*h, type)[0]
-                                            - special.clpmn(m, n, z-0.5*h, type)[0])/h
-                        assert_allclose(special.clpmn(m, n, z, type)[1],
-                                        approx_derivative,
-                                        rtol=1e-4)
-
     """
     @pytest.mark.parametrize("m_max", [3])
     @pytest.mark.parametrize("n_max", [5])
@@ -872,7 +783,7 @@ class TestLegendreFunctions:
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
 
-    @pytest.mark.parametrize("function", [special.clpmn, special.lqmn])
+    @pytest.mark.parametrize("function", [special.lqmn])
     @pytest.mark.parametrize(
         "m,n",
         [(0, 1), (1, 2), (1, 4), (3, 8), (11, 16), (19, 32)]
