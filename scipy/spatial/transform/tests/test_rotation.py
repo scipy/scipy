@@ -1945,6 +1945,20 @@ def test_slerp_call_scalar_time(xp):
     assert xp.allclose(delta.magnitude(), 0, atol=1e-16)
 
 
+def test_multiplication(xp):
+    r1 = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
+    r2 = Rotation.from_quat(xp.asarray([0, 0, 0, 1]))
+    r3 = r1 * r2
+    assert xp.allclose(r3.as_quat(), xp.asarray([0, 0, 0, 1]))
+    
+    # Check that multiplication with other types fails
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        r1 * 2
+    # Check that __mul__ returns NotImplemented so that other types can implement
+    # __rmul__. See https://github.com/scipy/scipy/issues/21541
+    assert r1.__mul__(1) is NotImplemented
+
+
 def test_multiplication_stability(xp):
     qs = Rotation.random(50, rng=0)
     qs = Rotation.from_quat(xp.asarray(qs.as_quat()))

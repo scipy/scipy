@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from types import EllipsisType, ModuleType
+from types import EllipsisType, ModuleType, NotImplementedType
 
 import numpy as np
 
@@ -1578,7 +1578,7 @@ class Rotation:
             return result[0, ...]
         return result
 
-    def __mul__(self, other: Rotation) -> Rotation:
+    def __mul__(self, other: Rotation) -> Rotation | NotImplementedType:
         """Compose this rotation with the other.
 
         If `p` and `q` are two rotations, then the composition of 'q followed
@@ -1645,6 +1645,13 @@ class Rotation:
                [ 0.33721128, -0.26362477,  0.26362477,  0.86446082]])
 
         """
+        # Check that other is a Rotation object. We want to return NotImplemented
+        # instead of raising an error to allow other types to implement __rmul__.
+        # Python will then automatically try to delegate the multiplication to the
+        # other type.
+        # See https://github.com/scipy/scipy/issues/21541
+        if not isinstance(other, Rotation):
+            return NotImplemented
         if not broadcastable(self._quat.shape, other._quat.shape):
             raise ValueError(
                 "Expected equal number of rotations in both or a single "
