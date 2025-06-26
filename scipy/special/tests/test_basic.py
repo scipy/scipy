@@ -4223,53 +4223,6 @@ class TestRound:
         rndrl = (10,10,10,11)
         assert_array_equal(rnd,rndrl)
 
-# sph_harm is deprecated and is implemented as a shim around sph_harm_y.
-# The following two tests are maintained to verify the correctness of the shim.
-
-def test_sph_harm():
-    # Tests derived from tables in
-    # https://en.wikipedia.org/wiki/Table_of_spherical_harmonics
-    sh = special.sph_harm
-    pi = np.pi
-    exp = np.exp
-    sqrt = np.sqrt
-    sin = np.sin
-    cos = np.cos
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        assert_array_almost_equal(sh(0,0,0,0),
-               0.5/sqrt(pi))
-        assert_array_almost_equal(sh(-2,2,0.,pi/4),
-               0.25*sqrt(15./(2.*pi)) *
-               (sin(pi/4))**2.)
-        assert_array_almost_equal(sh(-2,2,0.,pi/2),
-               0.25*sqrt(15./(2.*pi)))
-        assert_array_almost_equal(sh(2,2,pi,pi/2),
-               0.25*sqrt(15/(2.*pi)) *
-               exp(0+2.*pi*1j)*sin(pi/2.)**2.)
-        assert_array_almost_equal(sh(2,4,pi/4.,pi/3.),
-               (3./8.)*sqrt(5./(2.*pi)) *
-               exp(0+2.*pi/4.*1j) *
-               sin(pi/3.)**2. *
-               (7.*cos(pi/3.)**2.-1))
-        assert_array_almost_equal(sh(4,4,pi/8.,pi/6.),
-               (3./16.)*sqrt(35./(2.*pi)) *
-               exp(0+4.*pi/8.*1j)*sin(pi/6.)**4.)
-
-
-def test_sph_harm_ufunc_loop_selection():
-    # see https://github.com/scipy/scipy/issues/4895
-    dt = np.dtype(np.complex128)
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        assert_equal(special.sph_harm(0, 0, 0, 0).dtype, dt)
-        assert_equal(special.sph_harm([0], 0, 0, 0).dtype, dt)
-        assert_equal(special.sph_harm(0, [0], 0, 0).dtype, dt)
-        assert_equal(special.sph_harm(0, 0, [0], 0).dtype, dt)
-        assert_equal(special.sph_harm(0, 0, 0, [0]).dtype, dt)
-        assert_equal(special.sph_harm([0], [0], [0], [0]).dtype, dt)
-
-
 class TestStruve:
     def _series(self, v, z, n=100):
         """Compute Struve function & error estimate from its power series."""
@@ -4808,8 +4761,3 @@ class TestLegendreDeprecation:
         message = f"`scipy.special.{xlpmn.__name__}` is deprecated..."
         with pytest.deprecated_call(match=message):
             _ = xlpmn(1, 1, 0)
-
-    def test_warn_sph_harm(self):
-        msg = "`scipy.special.sph_harm` is deprecated..."
-        with pytest.deprecated_call(match=msg):
-            _ = special.sph_harm(1, 1, 0, 0)

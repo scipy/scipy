@@ -956,11 +956,6 @@ Available functions
         double complex spence(double complex)
         double spence(double)
 
-- :py:func:`~scipy.special.sph_harm`::
-
-        double complex sph_harm(double, double, double, double)
-        double complex sph_harm(long, long, double, double)
-
 - :py:func:`~scipy.special.stdtr`::
 
         double stdtr(double, double)
@@ -1250,9 +1245,6 @@ cdef extern from r"xsf_wrappers.h":
 
     npy_long special_sph_bessel_k_jac(npy_long, npy_double) nogil
     npy_cdouble special_csph_bessel_k_jac(npy_long, npy_cdouble) nogil
-
-    npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
-    npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
 
     npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
     npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
@@ -3534,17 +3526,6 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
             return NAN
         else:
             return NAN
-
-cpdef double complex sph_harm(dlp_number_t x0, dlp_number_t x1, double x2, double x3) noexcept nogil:
-    """See the documentation for scipy.special.sph_harm"""
-    if dlp_number_t is double:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm_unsafe(x0, x1, x2, x3))
-    elif dlp_number_t is long:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    elif dlp_number_t is Py_ssize_t:
-        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
-    else:
-        return NAN
 
 cpdef double stdtr(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.stdtr"""
