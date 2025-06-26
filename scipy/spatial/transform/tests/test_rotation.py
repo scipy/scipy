@@ -1084,10 +1084,10 @@ def test_magnitude(xp):
 def test_magnitude_single_rotation(xp):
     r = Rotation.from_quat(xp.eye(4))
     result1 = r[0].magnitude()
-    xp_assert_close(result1, xp.asarray(xp.pi))
+    xp_assert_close(result1, xp.pi)
 
     result2 = r[3].magnitude()
-    xp_assert_close(result2, xp.asarray(0.0))
+    xp_assert_close(result2, 0.0)
 
 
 def test_approx_equal(xp):
@@ -1123,7 +1123,7 @@ def test_mean(xp):
     thetas = xp.linspace(0, xp.pi / 2, 100)
     for t in thetas:
         r = Rotation.from_rotvec(t * axes)
-        xp_assert_close(r.mean().magnitude(), xp.asarray(0.0), atol=1e-10)
+        xp_assert_close(r.mean().magnitude(), 0.0, atol=1e-10)
 
 
 def test_weighted_mean(xp):
@@ -1136,7 +1136,7 @@ def test_weighted_mean(xp):
 
         r = Rotation.from_rotvec(t * axes)
         m = r.mean()
-        xp_assert_close((m * mw.inv()).magnitude(), xp.asarray(0.0), atol=1e-10)
+        xp_assert_close((m * mw.inv()).magnitude(), 0.0, atol=1e-10)
 
 
 def test_mean_invalid_weights(xp):
@@ -1697,7 +1697,7 @@ def test_align_vectors_antiparallel(xp):
     for a, b in zip(as_to_test, bs_to_test):
         a, b = xp.asarray(a), xp.asarray(b)
         R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
-        xp_assert_close(R.magnitude(), xp.asarray(xp.pi), atol=atol)
+        xp_assert_close(R.magnitude(), xp.pi, atol=atol)
         xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
     # Test exact rotations near 180 deg
