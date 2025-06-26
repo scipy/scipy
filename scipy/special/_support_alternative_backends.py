@@ -283,7 +283,10 @@ _needs_betainc = xp_capabilities(cpu_only=True, exceptions=['jax.numpy', 'cupy']
 _special_funcs = (
     _FuncInfo(_ufuncs.betainc, 3, _needs_betainc),
     _FuncInfo(_ufuncs.betaincc, 3, _needs_betainc, generic_impl=_betaincc),
-    _FuncInfo(_ufuncs.betaln, 2),
+    _FuncInfo(_ufuncs.betaln, 2,
+              # For betaln, nan mismatches can occur at negative integer a or b of
+              # sufficiently large magnitude.
+              positive_only={'jax.numpy': True}),
     _FuncInfo(_ufuncs.binom, 2,
               xp_capabilities(
                   cpu_only=True,
@@ -294,7 +297,9 @@ _special_funcs = (
               )
     ),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
-    _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc),
+    _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc,
+              # gh-20972
+              positive_only={'cupy': True, 'jax.numpy': True, 'torch': True}),
     _FuncInfo(_ufuncs.erf, 1),
     _FuncInfo(_ufuncs.erfc, 1),
     _FuncInfo(_ufuncs.erfinv, 1),
@@ -303,7 +308,10 @@ _special_funcs = (
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(_ufuncs.expn, 2,
               xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy']),
-               paramtypes=("int", "real")),
+              # Inconsistent behavior for negative n. expn is not defined here without
+              # taking analytic continuation.
+              positive_only=True,
+              paramtypes=("int", "real")),
     _FuncInfo(_ufuncs.i0, 1),
     _FuncInfo(_ufuncs.i0e, 1),
     _FuncInfo(_ufuncs.i1, 1),
@@ -314,7 +322,10 @@ _special_funcs = (
               xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])),
     _FuncInfo(_ufuncs.gammaln, 1),
     _FuncInfo(_ufuncs.gammainc, 2),
-    _FuncInfo(_ufuncs.gammaincc, 2),
+    _FuncInfo(
+        _ufuncs.gammaincc, 2,
+        # google/jax#20699
+        positive_only={'jax.numpy': True}),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
     _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,

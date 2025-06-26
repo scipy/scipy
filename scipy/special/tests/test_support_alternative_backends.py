@@ -48,24 +48,10 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
         The dtypes to use for the reference NumPy arrays.
     """
     f_name = nfo.name
-    if ((is_jax(xp) and f_name == 'gammaincc')  # google/jax#20699
-        # gh-20972
-        or ((is_cupy(xp) or is_jax(xp) or is_torch(xp)) and f_name == 'chdtrc')
-        # For betaln, nan mismatches can occur at negative integer a or b of
-        # sufficiently large magnitude.
-        or (is_jax(xp) and f_name == 'betaln')
-        # Inconsistent behavior for negative n, where expn is not defined without
-        # taking analytic continuation.
-        or (f_name == 'expn')
-    ):
-        positive_only = True
+    if isinstance(nfo.positive_only, dict):
+        positive_only = nfo.positive_only.get(_get_native_namespace_name(xp), False)
     else:
-        if isinstance(nfo.positive_only, dict):
-            positive_only = nfo.positive_only.get(
-                _get_native_namespace_name(xp), False
-            )
-        else:
-            positive_only = nfo.positive_only
+        positive_only = nfo.positive_only
     if isinstance(positive_only, bool):
         positive_only = [positive_only]*nfo.n_args
 
