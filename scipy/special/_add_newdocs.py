@@ -5707,11 +5707,6 @@ add_newdoc("lpmv",
     pmv : scalar or ndarray
         Value of the associated Legendre function.
 
-    See Also
-    --------
-    lpmn : Compute the associated Legendre function for all orders
-           ``0, ..., m`` and degrees ``0, ..., n``.
-
     Notes
     -----
     Note that this implementation includes the Condon-Shortley phase.

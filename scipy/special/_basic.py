@@ -19,8 +19,6 @@ from ._gufuncs import _lqn, _lqmn, _rctj, _rcty
 from ._input_validation import _nonneg_int_or_fail
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufuncs import (assoc_legendre_p_all)
-from scipy._lib.deprecation import _deprecated
 
 
 __all__ = [
@@ -58,7 +56,6 @@ __all__ = [
     'kerp_zeros',
     'kvp',
     'lmbda',
-    'lpmn',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -84,11 +81,6 @@ __all__ = [
     'zeta'
 ]
 
-
-__DEPRECATION_MSG_1_15 = (
-    "`scipy.special.{}` is deprecated as of SciPy 1.15.0 and will be "
-    "removed in SciPy 1.17.0. Please use `scipy.special.{}` instead."
-)
 
 # mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
 _FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
@@ -1704,86 +1696,6 @@ def mathieu_odd_coef(m, q):
     b = mathieu_b(m, q)
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
-
-
-@_deprecated(__DEPRECATION_MSG_1_15.format("lpmn", "assoc_legendre_p_all"))
-def lpmn(m, n, z):
-    """Sequence of associated Legendre functions of the first kind.
-
-    Computes the associated Legendre function of the first kind of order m and
-    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
-    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
-    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
-
-    This function takes a real argument ``z``. For complex arguments ``z``
-    use clpmn instead.
-
-    .. deprecated:: 1.15.0
-        This function is deprecated and will be removed in SciPy 1.17.0.
-        Please `scipy.special.assoc_legendre_p_all` instead.
-
-    Parameters
-    ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : array_like
-        Input value.
-
-    Returns
-    -------
-    Pmn_z : (m+1, n+1) array
-       Values for all orders 0..m and degrees 0..n
-    Pmn_d_z : (m+1, n+1) array
-       Derivatives for all orders 0..m and degrees 0..n
-
-    See Also
-    --------
-    clpmn: associated Legendre functions of the first kind for complex z
-
-    Notes
-    -----
-    In the interval (-1, 1), Ferrer's function of the first kind is
-    returned. The phase convention used for the intervals (1, inf)
-    and (-inf, -1) is such that the result is always real.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-    .. [2] NIST Digital Library of Mathematical Functions
-           https://dlmf.nist.gov/14.3
-
-    """
-
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    if (abs(m) > n):
-        raise ValueError("m must be <= n.")
-
-    if np.iscomplexobj(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
-
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-
-    branch_cut = np.where(np.abs(z) <= 1, 2, 3)
-
-    p, pd = assoc_legendre_p_all(n, abs(m), z, branch_cut=branch_cut, diff_n=1)
-    p = np.swapaxes(p, 0, 1)
-    pd = np.swapaxes(pd, 0, 1)
-
-    if (m >= 0):
-        p = p[:(m + 1)]
-        pd = pd[:(m + 1)]
-    else:
-        p = np.insert(p[:(m - 1):-1], 0, p[0], axis=0)
-        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis=0)
-
-    return p, pd
 
 
 def lqmn(m, n, z):

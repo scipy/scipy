@@ -485,7 +485,6 @@ which provide a more flexible and consistent interface.
 
    lpmv                       -- Associated Legendre function of integer order and real degree.
    lqn                        -- Legendre function of the second kind.
-   lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics

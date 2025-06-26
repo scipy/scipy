@@ -307,22 +307,6 @@ class TestAssocLegendreP:
             np.testing.assert_allclose(p_jac[:, m], 0)
             np.testing.assert_allclose(p_jac[:, -m], 0)
 
-    @pytest.mark.parametrize("m_max", [3, 5, 10])
-    @pytest.mark.parametrize("n_max", [10])
-    def test_legacy(self, m_max, n_max):
-        x = 0.5
-        p, p_jac = assoc_legendre_p_all(n_max, m_max, x, diff_n=1)
-
-        with suppress_warnings() as sup:
-            sup.filter(category=DeprecationWarning)
-
-            p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
-            for m in range(m_max + 1):
-                np.testing.assert_allclose(p_legacy[m], p[:, m])
-
-            p_legacy, p_jac_legacy = special.lpmn(-m_max, n_max, x)
-            for m in range(m_max + 1):
-                np.testing.assert_allclose(p_legacy[m], p[:, -m])
 
 class TestMultiAssocLegendreP:
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
