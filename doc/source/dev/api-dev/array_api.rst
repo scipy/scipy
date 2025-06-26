@@ -101,21 +101,13 @@ variable is set:
 - `scipy.fft`
 - `scipy.io`
 - `scipy.ndimage`
+- `scipy.special`
 - `scipy.stats`
 
 Individual functions in the above modules provide a capability table in the
 documentation like the one below. If the table is absent, the function does not
 yet support backends other than NumPy.
 
-Additionally, support is provided in `scipy.special` for the following functions, even
-if they do not have a capability table in the documentation:
-`scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
-`scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
-`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
-`scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
-`scipy.special.logit`, `scipy.special.expit`, `scipy.special.entr`,
-`scipy.special.rel_entr`, `scipy.special.rel_entr`, `scipy.special.xlogy`,
-and `scipy.special.chdtrc`.
 
 Example capabilities table
 --------------------------
@@ -259,7 +251,7 @@ Adding tests
 ------------
 
 To run a test on multiple array backends, you should add the ``xp`` fixture to it,
-which is valued to the currently tested array namespace. 
+which is valued to the currently tested array namespace.
 
 The following pytest markers are available:
 
@@ -286,7 +278,7 @@ The following pytest markers are available:
 * ``array_api_backends``: this marker is automatically added by the ``xp`` fixture to
   all tests that use it. This is useful e.g. to select all and only such tests::
 
-    python dev.py test -b all -m array_api_backends
+    spin test -b all -m array_api_backends
 
 ``scipy._lib._array_api`` contains array-agnostic assertions such as ``xp_assert_close``
 which can be used to replace assertions from `numpy.testing`.
@@ -320,7 +312,7 @@ The following examples demonstrate how to use the markers::
 
 Passing names of backends into ``exceptions`` means that they will not be skipped
 by ``cpu_only=True`` or ``eager_only=True``. This is useful when delegation
-is implemented for some, but not all, non-CPU backends, and the CPU code path 
+is implemented for some, but not all, non-CPU backends, and the CPU code path
 requires conversion to NumPy for compiled code::
 
   # array-api-strict and CuPy will always be skipped, for the given reasons.
@@ -332,17 +324,17 @@ requires conversion to NumPy for compiled code::
   def test_toto(self, xp):
       ...
 
-After applying these markers, ``dev.py test`` can be used with the new option
+After applying these markers, ``spin test`` can be used with the new option
 ``-b`` or ``--array-api-backend``::
 
-  python dev.py test -b numpy -b torch -s cluster
+  spin test -b numpy -b torch -s cluster
 
 This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
 that has multiple devices with a non-default device, a second environment
 variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
 values depend on the array library under test, e.g. for PyTorch, valid values are
 ``"cpu", "cuda", "mps"``. To run the test suite with the PyTorch MPS
-backend, use: ``SCIPY_DEVICE=mps python dev.py test -b torch``.
+backend, use: ``SCIPY_DEVICE=mps spin test -b torch``.
 
 Note that there is a GitHub Actions workflow which tests with array-api-strict,
 PyTorch, and JAX on CPU.

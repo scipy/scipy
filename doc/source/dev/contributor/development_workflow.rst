@@ -109,11 +109,11 @@ when it's time to submit a pull request.
 It's also a good idea to build this branch and run tests before continuing.
 Assuming you've followed one of the :ref:`building-from-source` pages to set up
 your development environment, you'll need to activate your development
-environment and then run tests (note that the ``dev.py test`` command will
+environment and then run tests (note that the ``spin test`` command will
 perform a build automatically if needed)::
 
    conda activate scipy-dev
-   python dev.py test -v
+   spin test -v
 
 .. _editing-workflow:
 
@@ -284,7 +284,7 @@ Checklist before submitting a PR
    :ref:`license-considerations`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
+-  Do all unit tests pass locally? See :ref:`the-spin-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.

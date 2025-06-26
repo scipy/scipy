@@ -1,6 +1,7 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
+from types import GenericAlias
 
 import numpy as np
 from numpy import array, asarray, intp, poly1d, searchsorted
@@ -592,6 +593,9 @@ class interp1d(_Interpolator1D):
 class _PPolyBase:
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)

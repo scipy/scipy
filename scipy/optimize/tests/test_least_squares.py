@@ -400,6 +400,7 @@ class BaseMixin:
                                 method=self.method)
             assert_allclose(res.x, x_opt)
 
+    @pytest.mark.parallel_threads(4)  # 0.4 GiB per thread RAM usage
     @pytest.mark.fail_slow(5.0)
     def test_workers(self):
         serial = least_squares(fun_trivial, 2.0, method=self.method)

@@ -530,51 +530,6 @@ struct RogerstanimotoDistance {
     }
 };
 
-struct Kulczynski1Distance {
-    template <typename T>
-    struct Acc {
-        Acc(): ntt(0), ndiff(0) {}
-        T ntt, ndiff;
-    };
-
-    template <typename T>
-    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = (x != 0) & (y != 0);
-            acc.ndiff = (x != 0) != (y != 0);
-            return acc;
-        },
-        [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.ntt / acc.ndiff;
-        },
-        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = a.ntt + b.ntt;
-            acc.ndiff = a.ndiff + b.ndiff;
-            return acc;
-        });
-    }
-
-    template <typename T>
-    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = w * ((x != 0) & (y != 0));
-            acc.ndiff = w * ((x != 0) != (y != 0));
-            return acc;
-        },
-        [](const Acc<T>& acc) INLINE_LAMBDA {
-            return acc.ntt / acc.ndiff;
-        },
-        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = a.ntt + b.ntt;
-            acc.ndiff = a.ndiff + b.ndiff;
-            return acc;
-        });
-    }
-};
 
 struct RussellRaoDistance {
     template <typename T>
@@ -616,56 +571,6 @@ struct RussellRaoDistance {
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
             acc.ntt = a.ntt + b.ntt;
-            acc.n = a.n + b.n;
-            return acc;
-        });
-    }
-};
-
-struct SokalmichenerDistance {
-    template <typename T>
-    struct Acc {
-        Acc(): ntt(0), ndiff(0), n(0) {}
-        T ntt, ndiff, n;
-    };
-
-    template <typename T>
-    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
-        transform_reduce_2d_<4>(out, x, y, [](T x, T y) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = (x != 0) & (y != 0);
-            acc.ndiff = (x != 0) != (y != 0);
-            acc.n = 1;
-            return acc;
-        },
-        [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.ndiff + acc.n);
-        },
-        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = a.ntt + b.ntt;
-            acc.ndiff = a.ndiff + b.ndiff;
-            acc.n = a.n + b.n;
-            return acc;
-        });
-    }
-
-    template <typename T>
-    void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y, StridedView2D<const T> w) const {
-        transform_reduce_2d_(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = w * ((x != 0) & (y != 0));
-            acc.ndiff = w * ((x != 0) != (y != 0));
-            acc.n = w;
-            return acc;
-        },
-        [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (2 * acc.ndiff) / (acc.ndiff + acc.n);
-        },
-        [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
-            Acc<T> acc;
-            acc.ntt = a.ntt + b.ntt;
-            acc.ndiff = a.ndiff + b.ndiff;
             acc.n = a.n + b.n;
             return acc;
         });
@@ -722,7 +627,7 @@ struct YuleDistance {
     template <typename T>
     struct Acc {
         Acc(): ntt(0), nft(0), nff(0), ntf(0) {}
-        intptr_t ntt, nft, nff, ntf;
+        T ntt, nft, nff, ntf;
     };
 
     template <typename T>
@@ -736,7 +641,7 @@ struct YuleDistance {
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            intptr_t half_R = acc.ntf * acc.nft;
+            T half_R = acc.ntf * acc.nft;
             return (2. * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
@@ -754,13 +659,13 @@ struct YuleDistance {
         transform_reduce_2d_<2>(out, x, y, w, [](T x, T y, T w) INLINE_LAMBDA {
             Acc<T> acc;
             acc.ntt = w * ((x != 0) & (y != 0));
-            acc.ntf = w * ((x != 0) & (!(y != 0)));
-            acc.nft = w * ((!(x != 0)) & (y != 0));
-            acc.nff = w * ((!(x != 0)) & (!(y != 0)));
+            acc.ntf = w * ((x != 0) & (y == 0));
+            acc.nft = w * ((x == 0) & (y != 0));
+            acc.nff = w * ((x == 0) & (y == 0));
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            intptr_t half_R = acc.ntf * acc.nft;
+            T half_R = acc.ntf * acc.nft;
             return (2. * half_R) / (acc.ntt * acc.nff + half_R + (half_R == 0));
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {

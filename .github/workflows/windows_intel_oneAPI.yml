@@ -30,7 +30,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   msvc_ifx_blas:
-    name: py3.11, dev.py
+    name: py3.11, spin
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -96,7 +96,7 @@ jobs:
           call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat"
           set FC=ifx
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          spin build -C-Duse-pythran=false -C--vsenv
+          spin build -S-Duse-pythran=false -S--vsenv
 
       # "import scipy; scipy.test();" fails because
       # scipy/sparse/linalg/_eigen/arpack crashes.

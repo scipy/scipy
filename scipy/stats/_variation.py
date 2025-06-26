@@ -1,13 +1,14 @@
+import warnings
 import numpy as np
 
-from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_device, _length_nonmasked
+import scipy._lib.array_api_extra as xpx
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,)
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x, _: (x,)
 )
 def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """
@@ -96,31 +97,30 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     """
     xp = array_namespace(a)
     a = xp.asarray(a)
+
     # `nan_policy` and `keepdims` are handled by `_axis_nan_policy`
-    # `axis=None` is only handled for NumPy backend
     if axis is None:
         a = xp.reshape(a, (-1,))
         axis = 0
 
-    n = a.shape[axis]
+    n = xp.asarray(_length_nonmasked(a, axis=axis), dtype=a.dtype, device=xp_device(a))
 
-    if a.size == 0 or ddof > n:
-        # Handle as a special case to avoid spurious warnings.
-        # The return values, if any, are all nan.
-        shape = list(a.shape)
-        shape.pop(axis)
-        return _get_nan(a, shape=tuple(shape), xp=xp)
+    with (np.errstate(divide='ignore', invalid='ignore'), warnings.catch_warnings()):
+        warnings.simplefilter("ignore")
+        mean_a = xp.mean(a, axis=axis)
+        std_a = xp.std(a, axis=axis)
+        correction = (n / (n - ddof))**0.5  # we may need uncorrected std below
+        result = std_a * correction / mean_a
 
-    mean_a = xp.mean(a, axis=axis)
+    def special_case(std_a, mean_a):
+        # xref data-apis/array-api-extra#196
+        mxp = array_namespace(std_a, mean_a)
+        # `_xp_inf` is a workaround for torch.copysign not accepting a scalar yet,
+        # xref data-apis/array-api-compat#271
+        _xp_inf = mxp.asarray(mxp.inf, dtype=mean_a.dtype, device=xp_device(mean_a))
+        return mxp.where(std_a > 0, mxp.copysign(_xp_inf, mean_a), mxp.nan)
 
-    if ddof == n:
-        # Another special case.  Result is either inf or nan.
-        std_a = xp.std(a, axis=axis, correction=0)
-        result = xp.where(std_a > 0, xp.copysign(xp.inf, mean_a), xp.nan)
-        return result[()] if result.ndim == 0 else result
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        std_a = xp.std(a, axis=axis, correction=ddof)
-        result = std_a / mean_a
+    result = xpx.apply_where((ddof == n), (std_a, mean_a),
+                             special_case, fill_value=result)
 
     return result[()] if result.ndim == 0 else result

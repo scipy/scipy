@@ -236,6 +236,9 @@ class PchipInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, extrapolate=None):
         x, _, y, axis, _ = prepare_input(x, y, axis)
         if np.iscomplexobj(y):
@@ -488,6 +491,9 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
+    # PchipInterpolator is not generic in scipy-stubs
+    __class_getitem__ = None
+
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima",
                  extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
@@ -538,13 +544,25 @@ class Akima1DInterpolator(CubicHermiteSpline):
             else:
                 f1 = dm[2:]
                 f2 = dm[:-2]
+
+            # makima is more numerically stable for small f12,
+            # so a finite cutoff should not improve any behavior
+            # however, akima has a qualitative discontinuity near f12=0
+            # a finite cutoff moves it, but cannot remove it.
+            # the cutoff break_mult could be made a keyword argument
+            # method='akima' also benefits from a check for m2=m3
+            break_mult = 1.e-9
+
             f12 = f1 + f2
+
             # These are the mask of where the slope at breakpoint is defined:
-            ind = np.nonzero(f12 > 1e-9 * np.max(f12, initial=-np.inf))
+            ind = np.nonzero(f12 > break_mult * np.max(f12, initial=-np.inf))
             x_ind, y_ind = ind[0], ind[1:]
             # Set the slope at breakpoint
-            t[ind] = (f1[ind] * m[(x_ind + 1,) + y_ind] +
-                    f2[ind] * m[(x_ind + 2,) + y_ind]) / f12[ind]
+            t[ind] = m[(x_ind + 1,) + y_ind] + (
+                (f2[ind] / f12[ind])
+                * (m[(x_ind + 2,) + y_ind] - m[(x_ind + 1,) + y_ind])
+            )
 
         super().__init__(x, y, t, axis=0, extrapolate=extrapolate)
         self.axis = axis

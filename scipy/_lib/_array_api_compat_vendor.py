@@ -3,7 +3,7 @@
 # to override functions of array_api_compat.
 
 from .array_api_compat import *  # noqa: F403
-from ._array_api import array_namespace as scipy_array_namespace
+from ._array_api_override import array_namespace as scipy_array_namespace
 
 # overrides array_api_compat.array_namespace inside array-api-extra
 array_namespace = scipy_array_namespace  # type: ignore[assignment]

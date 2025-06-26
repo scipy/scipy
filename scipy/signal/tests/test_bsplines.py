@@ -182,6 +182,11 @@ class TestBSplines:
             signal.cspline1d_eval(cj, xp.asarray(newx), dx=dx, x0=x[0]), newy
         )
 
+        with pytest.raises(ValueError,
+                            match="Spline coefficients 'cj' must not be empty."):
+            signal.cspline1d_eval(xp.asarray([], dtype=xp.float64), 
+                                  xp.asarray([0.0], dtype=xp.float64))
+
     @skip_xp_backends(cpu_only=True)
     def test_qspline1d_eval(self, xp):
         xp_assert_close(signal.qspline1d_eval(xp.asarray([0., 0]), xp.asarray([0.])),
@@ -210,6 +215,11 @@ class TestBSplines:
             cj, xp.asarray(newx, dtype=xp.float64), dx=dx, x0=x[0]
         )
         xp_assert_close(r, newy)
+
+        with pytest.raises(ValueError, 
+                           match="Spline coefficients 'cj' must not be empty."):
+            signal.qspline1d_eval(xp.asarray([], dtype=xp.float64), 
+                                  xp.asarray([0.0], dtype=xp.float64))
 
 
 # i/o dtypes with scipy 1.9.1, likely fixed by backwards compat

@@ -56,8 +56,9 @@ _configtest.c
 
 # Python files #
 ################
-# build directory
+# build directories
 build
+build-*
 # sphinx build directory
 doc/_build
 # cython files
@@ -85,7 +86,6 @@ pip-wheel-metadata
 #########
 .mesonpy-native-file.ini
 installdir/
-build-install/
 .mesonpy/
 
 # doit
@@ -153,6 +153,7 @@ benchmarks/html
 benchmarks/scipy-benchmarks
 .github/workflows/.pixi
 .openblas
+scipy-openblas.pc
 scipy/_distributor_init_local.py
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
@@ -256,19 +257,6 @@ scipy/sparse/csgraph/_matching.c
 scipy/sparse/csgraph/_reordering.c
 scipy/sparse/linalg/dsolve/umfpack/_umfpack.py
 scipy/sparse/linalg/dsolve/umfpack/_umfpack_wrap.c
-scipy/sparse/linalg/_eigen/arpack/_arpack-f2pywrappers.f
-scipy/sparse/linalg/_eigen/arpack/_arpackmodule.c
-scipy/sparse/linalg/_eigen/arpack/arpack.pyf
-scipy/sparse/linalg/_isolve/iterative/BiCGREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/BiCGSTABREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/CGREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/CGSREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/GMRESREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/QMRREVCOM.f
-scipy/sparse/linalg/_isolve/iterative/STOPTEST2.f
-scipy/sparse/linalg/_isolve/iterative/_iterative.pyf
-scipy/sparse/linalg/_isolve/iterative/_iterativemodule.c
-scipy/sparse/linalg/_isolve/iterative/getbreak.f
 scipy/sparse/sparsetools/bsr_impl.h
 scipy/sparse/sparsetools/csc_impl.h
 scipy/sparse/sparsetools/csr_impl.h

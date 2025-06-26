@@ -103,7 +103,8 @@ class TestQuantile:
     @skip_xp_backends(cpu_only=True, reason="PyTorch doesn't have `betainc`.")
     @pytest.mark.parametrize('axis', [0, 1])
     @pytest.mark.parametrize('keepdims', [False, True])
-    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate', 'marray'])
+    # Test with `marray` again when `asarray` supports `device`
+    @pytest.mark.parametrize('nan_policy', ['omit', 'propagate'])  # 'marray'
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     @pytest.mark.parametrize('method', ['linear', 'harrell-davis'])
     def test_against_reference(self, axis, keepdims, nan_policy, dtype, method, xp):
@@ -165,7 +166,7 @@ class TestQuantile:
          ([], [0.5, 0.6], np.full(2, np.nan), {}),
          (np.arange(1, 28).reshape((3, 3, 3)), 0.5, [[[14.]]],
           {'axis': None, 'keepdims': True}),
-         ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]], 
+         ([[1, 2], [3, 4]], [0.25, 0.5, 0.75], [[1.75, 2.5, 3.25]],
           {'axis': None, 'keepdims': True}),])
     def test_edge_cases(self, x, p, ref, kwargs, xp):
         default_dtype = xp_default_dtype(xp)

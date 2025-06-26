@@ -8,7 +8,6 @@ exclude = [
     "benchmarks",
     "build*",
     "doc",
-    "dev.py",
     "subprojects",
     "tools",
     "scipy/_build_utils",

@@ -6,6 +6,7 @@ from numpy.testing import (assert_array_equal, assert_allclose,
 from copy import deepcopy
 from scipy.stats.sampling import FastGeneratorInversion
 from scipy import stats
+from scipy._lib._testutils import IS_MUSL
 
 
 def test_bad_args():
@@ -142,6 +143,7 @@ def test_geninvgauss_uerror():
 
 
 # TODO: add more distributions
+@pytest.mark.skipif(IS_MUSL, reason="Hits RecursionError, see gh-23172")
 @pytest.mark.fail_slow(5)
 @pytest.mark.parametrize(("distname, args"), [("beta", (0.11, 0.11))])
 def test_error_extreme_params(distname, args):

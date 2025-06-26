@@ -94,7 +94,7 @@ tests, benchmarks, and correct code style.
 
     Alternatively, you may run the linter manually::
 
-      python dev.py lint
+      spin lint
 
     Most IDEs and text editors also have settings that can help you
     follow PEP8, for example by translating tabs by four spaces. More

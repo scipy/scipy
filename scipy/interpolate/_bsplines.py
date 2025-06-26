@@ -1,5 +1,6 @@
 import operator
 from math import prod
+from types import GenericAlias
 
 import numpy as np
 from scipy._lib._util import normalize_axis_index
@@ -205,6 +206,10 @@ class BSpline:
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
 
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
@@ -2124,7 +2129,7 @@ def _compute_optimal_gcv_parameter(X, wE, y, w):
             else:
                 raise ValueError(f"Unable to find minimum of the GCV "
                                  f"function: {gcv_est.message}")
-        return gcv_est 
+        return gcv_est
     else:
         # trailing dims must have been flattened already.
         raise RuntimeError("Internal error. Please report it to scipy developers.")

@@ -20,7 +20,7 @@ environment.yml  @rgommers
 meson*  @rgommers
 
 # Dev CLI
-dev.py  @rgommers
+spin  @rgommers
 
 # SciPy submodules (please keep in alphabetical order)
 scipy/fft/  @peterbell10

@@ -1,6 +1,7 @@
 """Module for RBF interpolation."""
 import warnings
 from itertools import combinations_with_replacement
+from types import GenericAlias
 
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -283,6 +284,9 @@ class RBFInterpolator:
     >>> plt.show()
 
     """
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
 
     def __init__(self, y, d,
                  neighbors=None,

@@ -1497,6 +1497,8 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
 def cdf2rdf(w, v):
     """
+    Complex diagonal form to real diagonal block form.
+
     Converts complex eigenvalues ``w`` and eigenvectors ``v`` to real
     eigenvalues in a block diagonal form ``wr`` and the associated real
     eigenvectors ``vr``, such that::

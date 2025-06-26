@@ -27,7 +27,7 @@ from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
 
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, is_torch
 from scipy._lib._array_api_no_0d import (
     xp_assert_close,
     xp_assert_equal,
@@ -2053,13 +2053,13 @@ class TestBoxcox_llf:
     def test_axis(self, xp):
         data = xp.asarray([[100, 200], [300, 400]])
         llf_axis_0 = stats.boxcox_llf(1, data, axis=0)
-        llf_0 = xp.asarray([
+        llf_0 = xp.stack([
             stats.boxcox_llf(1, data[:, 0]),
             stats.boxcox_llf(1, data[:, 1]),
         ])
         xp_assert_close(llf_axis_0, llf_0)
         llf_axis_1 = stats.boxcox_llf(1, data, axis=1)
-        llf_1 = xp.asarray([
+        llf_1 = xp.stack([
             stats.boxcox_llf(1, data[0, :]),
             stats.boxcox_llf(1, data[1, :]),
         ])
@@ -2732,11 +2732,11 @@ class TestCircFuncs:
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
         res = circfunc(x, high=360, axis=0)
         ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
-        xp_assert_close(res, xp.asarray(ref))
+        xp_assert_close(res, xp.stack(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -3242,6 +3242,8 @@ class TestCommonAxis:
                                       (stats.kstat, {'n': 2}),
                                       (stats.variation, {})])
     def test_axis(self, case, xp):
+        if is_torch(xp) and case[0] == stats.variation:
+            pytest.xfail(reason="copysign doesn't accept scalar array-api-compat#271")
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
         x = xp.asarray(rng.random((6, 7)))

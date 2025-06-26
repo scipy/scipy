@@ -5100,6 +5100,26 @@ class Mixture(_ProbabilityDistribution):
     .. [1] Mixture distribution, *Wikipedia*,
            https://en.wikipedia.org/wiki/Mixture_distribution
 
+
+    Examples
+    --------
+    A mixture of normal distributions:
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> import matplotlib.pyplot as plt
+    >>> X1 = stats.Normal(mu=-2, sigma=1)
+    >>> X2 = stats.Normal(mu=2, sigma=1)
+    >>> mixture = stats.Mixture([X1, X2], weights=[0.4, 0.6])
+    >>> print(f'mean: {mixture.mean():.2f}, '
+    ...       f'median: {mixture.median():.2f}, '
+    ...       f'mode: {mixture.mode():.2f}')
+    mean: 0.40, median: 1.04, mode: 2.00
+    >>> x = np.linspace(-10, 10, 300)
+    >>> plt.plot(x, mixture.pdf(x))
+    >>> plt.title('PDF of normal distribution mixture')
+    >>> plt.show()
+
     """
     # Todo:
     # Add support for array shapes, weights
