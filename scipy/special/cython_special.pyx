@@ -132,6 +132,7 @@ Available functions
 - :py:func:`~scipy.special.btdtria`::
 
         double btdtria(double, double, double)
+        float btdtria(float, float, float)
 
 - :py:func:`~scipy.special.btdtrib`::
 
@@ -1397,10 +1398,6 @@ from ._boxcox cimport boxcox1p as _func_boxcox1p
 ctypedef double _proto_boxcox1p_t(double, double) noexcept nogil
 cdef _proto_boxcox1p_t *_proto_boxcox1p_t_var = &_func_boxcox1p
 
-from ._cdflib_wrappers cimport btdtria as _func_btdtria
-ctypedef double _proto_btdtria_t(double, double, double) noexcept nogil
-cdef _proto_btdtria_t *_proto_btdtria_t_var = &_func_btdtria
-
 from ._cdflib_wrappers cimport btdtrib as _func_btdtrib
 ctypedef double _proto_btdtrib_t(double, double, double) noexcept nogil
 cdef _proto_btdtrib_t *_proto_btdtrib_t_var = &_func_btdtrib
@@ -1955,6 +1952,18 @@ cpdef df_number_t betaincinv(df_number_t x0, df_number_t x1, df_number_t x2) noe
         else:
             return NAN
 
+cpdef df_number_t btdtria(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
+    """See the documentation for scipy.special.btdtria"""
+    if df_number_t is float:
+        return (<float(*)(float, float, float) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_float)(x0, x1, x2)
+    elif df_number_t is double:
+        return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_ibeta_inva_double)(x0, x1, x2)
+    else:
+        if df_number_t is double:
+            return NAN
+        else:
+            return NAN
+
 cpdef df_number_t betainccinv(df_number_t x0, df_number_t x1, df_number_t x2) noexcept nogil:
     """See the documentation for scipy.special.betainccinv"""
     if df_number_t is float:
@@ -1982,10 +1991,6 @@ cpdef double boxcox(double x0, double x1) noexcept nogil:
 cpdef double boxcox1p(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox1p"""
     return _func_boxcox1p(x0, x1)
-
-cpdef double btdtria(double x0, double x1, double x2) noexcept nogil:
-    """See the documentation for scipy.special.btdtria"""
-    return _func_btdtria(x0, x1, x2)
 
 cpdef double btdtrib(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.btdtrib"""

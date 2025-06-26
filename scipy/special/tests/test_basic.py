@@ -177,9 +177,6 @@ class TestCephes:
     def test_besselpoly(self):
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
-    def test_btdtria(self):
-        assert_equal(cephes.btdtria(1,1,1),5.0)
-
     def test_btdtrib(self):
         assert_equal(cephes.btdtrib(1,1,1),5.0)
 
@@ -1383,11 +1380,13 @@ class TestBetaInc:
           0.9688708782196045),
          # gh-12796:
          (4, 99997, 0.0001947841578892121, 0.999995)])
-    def test_betainc_betaincinv(self, a, b, x, p):
+    def test_betainc_betaincinv_btdtria(self, a, b, x, p):
         p1 = special.betainc(a, b, x)
         assert_allclose(p1, p, rtol=1e-15)
         x1 = special.betaincinv(a, b, p)
         assert_allclose(x1, x, rtol=5e-13)
+        a1 = special.btdtria(p, b, x)
+        assert_allclose(a1, a, rtol=1e-13)
 
     # Expected values computed with mpmath:
     #     from mpmath import mp
@@ -1440,13 +1439,14 @@ class TestBetaInc:
         assert_allclose(x, ref, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
-                                      special.betaincc, special.betainccinv])
+                                      special.btdtria, special.betaincc,
+                                      special.betainccinv])
     @pytest.mark.parametrize('args', [(-1.0, 2, 0.5), (1.5, -2.0, 0.5),
                                       (1.5, 2.0, -0.3), (1.5, 2.0, 1.1)])
     def test_betainc_domain_errors(self, func, args):
         with special.errstate(domain='raise'):
             with pytest.raises(special.SpecialFunctionError, match='domain'):
-                special.betainc(*args)
+                func(*args)
 
     @pytest.mark.parametrize(
         "args,expected",
