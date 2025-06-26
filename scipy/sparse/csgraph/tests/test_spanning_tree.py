@@ -6,6 +6,8 @@ import numpy.testing as npt
 from scipy.sparse import csr_array, coo_array
 from scipy.sparse.csgraph import minimum_spanning_tree
 
+from scipy._lib._array_api import xp_assert_close
+
 
 def test_minimum_spanning_tree():
 
@@ -94,7 +96,7 @@ def test_mst_with_various_index_dtypes(dtype):
         [0, 0, 0]
     ], dtype=float)
 
-    npt.assert_array_almost_equal(mst.toarray(), expected)
+    xp_assert_close(mst.toarray(), expected)
 
     # COO array
     data = np.array([1.0, 4.0, 3.0, 2.0, 5.0], dtype=float)
@@ -123,4 +125,4 @@ def test_mst_with_various_index_dtypes(dtype):
     expected[3, 4] = 2.0
     expected[4, 5] = 5.0
 
-    npt.assert_array_almost_equal(mst.toarray(), expected)
+    xp_assert_close(mst.toarray(), expected)
