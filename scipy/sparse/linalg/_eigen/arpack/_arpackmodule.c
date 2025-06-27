@@ -33,7 +33,7 @@ static PyObject* arpack_error;
 
 typedef enum {
     FIELD_INT,
-    FIELD_FLOAT,
+    FIELD_FLOATING,
 } FieldType;
 
 typedef struct {
@@ -42,57 +42,68 @@ typedef struct {
     FieldType type;
 } GenericField;
 
-// for ease of use in offsetof, which needs a type
-typedef struct ARPACK_arnoldi_update_vars_s ARPACK_arnoldi_update_vars;
-// field names of `ARPACK_arnoldi_update_vars_s`, see
+// ARPACK has two structs that are part of the function signature and thus the API/ABI.
+// They only differ in whether some floating fiealds are single or double precision, but
+// because they're at the beginning of the struct (thus influencing the offsets of the
+// fields for everything else), we cannot use a unified approach for both of them. see
 // https://github.com/scipy/scipy/blob/main/scipy/sparse/linalg/_eigen/arpack/ARPACK/_arpack.h
-static const GenericField arpack_fields[] = {
-    // floats
-    {"tol",          offsetof(ARPACK_arnoldi_update_vars, tol),           FIELD_FLOAT},
-    {"getv0_rnorm0", offsetof(ARPACK_arnoldi_update_vars, getv0_rnorm0),  FIELD_FLOAT},
-    {"aitr_betaj",   offsetof(ARPACK_arnoldi_update_vars, aitr_betaj),    FIELD_FLOAT},
-    {"aitr_rnorm1",  offsetof(ARPACK_arnoldi_update_vars, aitr_rnorm1),   FIELD_FLOAT},
-    {"aitr_wnorm",   offsetof(ARPACK_arnoldi_update_vars, aitr_wnorm),    FIELD_FLOAT},
-    {"aup2_rnorm",   offsetof(ARPACK_arnoldi_update_vars, aup2_rnorm),    FIELD_FLOAT},
-    // enums
-    {"which",        offsetof(ARPACK_arnoldi_update_vars, which),         FIELD_INT},
-    {"ido",          offsetof(ARPACK_arnoldi_update_vars, ido),           FIELD_INT},
-    // ints
-    {"info",         offsetof(ARPACK_arnoldi_update_vars, info),          FIELD_INT},
-    {"bmat",         offsetof(ARPACK_arnoldi_update_vars, bmat),          FIELD_INT},
-    {"mode",         offsetof(ARPACK_arnoldi_update_vars, mode),          FIELD_INT},
-    {"n",            offsetof(ARPACK_arnoldi_update_vars, n),             FIELD_INT},
-    {"ncv",          offsetof(ARPACK_arnoldi_update_vars, ncv),           FIELD_INT},
-    {"nev",          offsetof(ARPACK_arnoldi_update_vars, nev),           FIELD_INT},
-    {"shift",        offsetof(ARPACK_arnoldi_update_vars, shift),         FIELD_INT},
-    {"maxiter",      offsetof(ARPACK_arnoldi_update_vars, maxiter),       FIELD_INT},
-    {"nconv",        offsetof(ARPACK_arnoldi_update_vars, nconv),         FIELD_INT},
-    {"iter",         offsetof(ARPACK_arnoldi_update_vars, iter),          FIELD_INT},
-    {"np",           offsetof(ARPACK_arnoldi_update_vars, np),            FIELD_INT},
-    {"getv0_first",  offsetof(ARPACK_arnoldi_update_vars, getv0_first),   FIELD_INT},
-    {"getv0_iter",   offsetof(ARPACK_arnoldi_update_vars, getv0_iter),    FIELD_INT},
-    {"getv0_itry",   offsetof(ARPACK_arnoldi_update_vars, getv0_itry),    FIELD_INT},
-    {"getv0_orth",   offsetof(ARPACK_arnoldi_update_vars, getv0_orth),    FIELD_INT},
-    {"aitr_iter",    offsetof(ARPACK_arnoldi_update_vars, aitr_iter),     FIELD_INT},
-    {"aitr_j",       offsetof(ARPACK_arnoldi_update_vars, aitr_j),        FIELD_INT},
-    {"aitr_orth1",   offsetof(ARPACK_arnoldi_update_vars, aitr_orth1),    FIELD_INT},
-    {"aitr_orth2",   offsetof(ARPACK_arnoldi_update_vars, aitr_orth2),    FIELD_INT},
-    {"aitr_restart", offsetof(ARPACK_arnoldi_update_vars, aitr_restart),  FIELD_INT},
-    {"aitr_step3",   offsetof(ARPACK_arnoldi_update_vars, aitr_step3),    FIELD_INT},
-    {"aitr_step4",   offsetof(ARPACK_arnoldi_update_vars, aitr_step4),    FIELD_INT},
-    {"aitr_ierr",    offsetof(ARPACK_arnoldi_update_vars, aitr_ierr),     FIELD_INT},
-    {"aup2_initv",   offsetof(ARPACK_arnoldi_update_vars, aup2_initv),    FIELD_INT},
-    {"aup2_iter",    offsetof(ARPACK_arnoldi_update_vars, aup2_iter),     FIELD_INT},
-    {"aup2_getv0",   offsetof(ARPACK_arnoldi_update_vars, aup2_getv0),    FIELD_INT},
-    {"aup2_cnorm",   offsetof(ARPACK_arnoldi_update_vars, aup2_cnorm),    FIELD_INT},
-    {"aup2_kplusp",  offsetof(ARPACK_arnoldi_update_vars, aup2_kplusp),   FIELD_INT},
-    {"aup2_nev0",    offsetof(ARPACK_arnoldi_update_vars, aup2_nev0),     FIELD_INT},
-    {"aup2_np0",     offsetof(ARPACK_arnoldi_update_vars, aup2_np0),      FIELD_INT},
-    {"aup2_numcnv",  offsetof(ARPACK_arnoldi_update_vars, aup2_numcnv),   FIELD_INT},
-    {"aup2_update",  offsetof(ARPACK_arnoldi_update_vars, aup2_update),   FIELD_INT},
-    {"aup2_ushift",  offsetof(ARPACK_arnoldi_update_vars, aup2_ushift),   FIELD_INT},
+
+// for offsetof, which needs a type
+typedef struct ARPACK_arnoldi_update_vars_s ARPACK_arnoldi_update_vars_s;
+typedef struct ARPACK_arnoldi_update_vars_d ARPACK_arnoldi_update_vars_d;
+
+// to avoid duplication, use a macro so we define the fields only once; this needs to match the
+// names (though not necessarily the order) of the fields in ARPACK_arnoldi_update_vars_{s,d}
+#define DEFINE_ARPACK_FIELDS(suffix) \
+static const GenericField arpack_fields_##suffix[] = { \
+    {"tol",          offsetof(ARPACK_arnoldi_update_vars_##suffix, tol),           FIELD_FLOATING}, \
+    {"getv0_rnorm0", offsetof(ARPACK_arnoldi_update_vars_##suffix, getv0_rnorm0),  FIELD_FLOATING}, \
+    {"aitr_betaj",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_betaj),    FIELD_FLOATING}, \
+    {"aitr_rnorm1",  offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_rnorm1),   FIELD_FLOATING}, \
+    {"aitr_wnorm",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_wnorm),    FIELD_FLOATING}, \
+    {"aup2_rnorm",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_rnorm),    FIELD_FLOATING}, \
+    {"which",        offsetof(ARPACK_arnoldi_update_vars_##suffix, which),         FIELD_INT}, \
+    {"ido",          offsetof(ARPACK_arnoldi_update_vars_##suffix, ido),           FIELD_INT}, \
+    {"info",         offsetof(ARPACK_arnoldi_update_vars_##suffix, info),          FIELD_INT}, \
+    {"bmat",         offsetof(ARPACK_arnoldi_update_vars_##suffix, bmat),          FIELD_INT}, \
+    {"mode",         offsetof(ARPACK_arnoldi_update_vars_##suffix, mode),          FIELD_INT}, \
+    {"n",            offsetof(ARPACK_arnoldi_update_vars_##suffix, n),             FIELD_INT}, \
+    {"ncv",          offsetof(ARPACK_arnoldi_update_vars_##suffix, ncv),           FIELD_INT}, \
+    {"nev",          offsetof(ARPACK_arnoldi_update_vars_##suffix, nev),           FIELD_INT}, \
+    {"shift",        offsetof(ARPACK_arnoldi_update_vars_##suffix, shift),         FIELD_INT}, \
+    {"maxiter",      offsetof(ARPACK_arnoldi_update_vars_##suffix, maxiter),       FIELD_INT}, \
+    {"nconv",        offsetof(ARPACK_arnoldi_update_vars_##suffix, nconv),         FIELD_INT}, \
+    {"iter",         offsetof(ARPACK_arnoldi_update_vars_##suffix, iter),          FIELD_INT}, \
+    {"np",           offsetof(ARPACK_arnoldi_update_vars_##suffix, np),            FIELD_INT}, \
+    {"getv0_first",  offsetof(ARPACK_arnoldi_update_vars_##suffix, getv0_first),   FIELD_INT}, \
+    {"getv0_iter",   offsetof(ARPACK_arnoldi_update_vars_##suffix, getv0_iter),    FIELD_INT}, \
+    {"getv0_itry",   offsetof(ARPACK_arnoldi_update_vars_##suffix, getv0_itry),    FIELD_INT}, \
+    {"getv0_orth",   offsetof(ARPACK_arnoldi_update_vars_##suffix, getv0_orth),    FIELD_INT}, \
+    {"aitr_iter",    offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_iter),     FIELD_INT}, \
+    {"aitr_j",       offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_j),        FIELD_INT}, \
+    {"aitr_orth1",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_orth1),    FIELD_INT}, \
+    {"aitr_orth2",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_orth2),    FIELD_INT}, \
+    {"aitr_restart", offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_restart),  FIELD_INT}, \
+    {"aitr_step3",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_step3),    FIELD_INT}, \
+    {"aitr_step4",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_step4),    FIELD_INT}, \
+    {"aitr_ierr",    offsetof(ARPACK_arnoldi_update_vars_##suffix, aitr_ierr),     FIELD_INT}, \
+    {"aup2_initv",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_initv),    FIELD_INT}, \
+    {"aup2_iter",    offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_iter),     FIELD_INT}, \
+    {"aup2_getv0",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_getv0),    FIELD_INT}, \
+    {"aup2_cnorm",   offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_cnorm),    FIELD_INT}, \
+    {"aup2_kplusp",  offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_kplusp),   FIELD_INT}, \
+    {"aup2_nev0",    offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_nev0),     FIELD_INT}, \
+    {"aup2_np0",     offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_np0),      FIELD_INT}, \
+    {"aup2_numcnv",  offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_numcnv),   FIELD_INT}, \
+    {"aup2_update",  offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_update),   FIELD_INT}, \
+    {"aup2_ushift",  offsetof(ARPACK_arnoldi_update_vars_##suffix, aup2_ushift),   FIELD_INT}, \
 };
-#define ARPACK_FIELD_COUNT (sizeof(arpack_fields) / sizeof(arpack_fields[0]))
+
+// s = single precision; d = double precision
+DEFINE_ARPACK_FIELDS(s)
+DEFINE_ARPACK_FIELDS(d)
+// by construction, same number of fields
+#define ARPACK_FIELD_COUNT (sizeof(arpack_fields_s) / sizeof(arpack_fields_s[0]))
 
 
 static PyObject*
@@ -134,7 +145,7 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
     for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
-        const char* name = arpack_fields[i].name;
+        const char* name = arpack_fields_s[i].name;
         PyObject* obj = PyDict_GetItemString(input_dict, name);
         if (!obj) {
             PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
@@ -143,13 +154,13 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
         // Use &Vars to get the struct's address; cast to char* so offset is in bytes,
         // not in units of the field's type (e.g. int or float).
         char* base = (char*)&Vars;
-        void* ptr = base + arpack_fields[i].offset;
+        void* ptr = base + arpack_fields_s[i].offset;
 
-        switch (arpack_fields[i].type) {
+        switch (arpack_fields_s[i].type) {
             case FIELD_INT:
                 *(int*)ptr = (int)PyLong_AsLong(obj);
                 break;
-            case FIELD_FLOAT:
+            case FIELD_FLOATING:
                 *(float*)ptr = (float)PyFloat_AsDouble(obj);
                 break;
             default:
@@ -162,16 +173,16 @@ snaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     // Unpack the struct back to the dictionary
     for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
-        const char* name = arpack_fields[i].name;
+        const char* name = arpack_fields_s[i].name;
         // see above
-        void* ptr = (char*)&Vars + arpack_fields[i].offset;
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
         PyObject* obj = NULL;
-        switch (arpack_fields[i].type) {
+        switch (arpack_fields_s[i].type) {
             case FIELD_INT:
                 obj = PyLong_FromLong((long)(*(int*)ptr));
                 break;
-            case FIELD_FLOAT:
+            case FIELD_FLOATING:
                 obj = PyFloat_FromDouble((double)(*(float*)ptr));
                 break;
             default:
@@ -225,49 +236,52 @@ dnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-    Vars.name = PyFloat_AsDouble(name##_obj);
-    STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-    Vars.name = (int)PyLong_AsLong(name##_obj);
-    STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     // Call ARPACK function
     ARPACK_dnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
-    #define X(name) do { \
-            PyObject* tmp_##name = PyFloat_FromDouble(Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-            Py_XDECREF(tmp_##name); \
-            PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-                Py_XDECREF(tmp_##name); \
-                PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        PyObject* obj = NULL;
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                obj = PyLong_FromLong((long)(*(int*)ptr));
+                break;
+            case FIELD_FLOATING:
+                obj = PyFloat_FromDouble(*(double*)ptr);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+
+        if (!obj || PyDict_SetItemString(input_dict, name, obj) < 0) {
+            Py_XDECREF(obj);
+            PyErr_Format(arpack_error, "Setting '%s' failed.", name);
+        }
+        Py_DECREF(obj);
+    }
 
     Py_RETURN_NONE;
 }
