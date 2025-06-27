@@ -3589,20 +3589,21 @@ class TestMakeSplrep:
         self._test_default_s(x, y, k)
 
     @pytest.mark.thread_unsafe
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system")
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
+        s = 1e-50
         if self.bc_type == 'periodic':
             x = np.linspace(0, 2*np.pi, 14)
             y = np.sin(x)
+            s = 1e-31 if sys.maxsize <= 2**32 else 1e-50
         else:
             x = np.arange(14)
             y = x**3
 
         with suppress_warnings() as sup:
             r = sup.record(RuntimeWarning)
-            tck = splrep(x, y, k=3, s=1e-50, per=(self.bc_type == 'periodic'))
-            spl = make_splrep(x, y, k=3, s=1e-50, bc_type=self.bc_type)
+            tck = splrep(x, y, k=3, s=s, per=(self.bc_type == 'periodic'))
+            spl = make_splrep(x, y, k=3, s=s, bc_type=self.bc_type)
             assert len(r) == 2
             xp_assert_close(spl.t, tck[0])
             xp_assert_close(np.r_[spl.c, [0]*(spl.k+1)],
