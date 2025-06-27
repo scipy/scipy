@@ -3458,7 +3458,6 @@ class TestMakeSplrepBase:
         xp_assert_close(spl_auto.c, spl_t.c, atol=1e-15)
         assert spl_auto.k == spl_t.k
 
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system")
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
     def test_with_knots(self, k):
         x, y, s = self._get_xykt()
@@ -3497,7 +3496,6 @@ class TestMakeSplrepBase:
                             tck[1], atol=5e-13)
 
     @pytest.mark.parametrize("k", [1, 2, 3])
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system")
     def test_shape(self, k):
         # make sure coefficients have the right shape (not extra dims)
         n = 10
@@ -3717,7 +3715,6 @@ class TestMakeSplrepPeriodic(TestMakeSplrepBase):
         assert spl.t.shape[0] == 2*(k+1)
 
     @pytest.mark.parametrize("k", [1, 2, 3, 4, 5, 6])
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system")
     def test_s0_vs_not(self, k):
         # check that the shapes are consistent
         n = 10
@@ -3732,7 +3729,6 @@ class TestMakeSplrepPeriodic(TestMakeSplrepBase):
 
         assert spl_0.t.shape[0] == n + 2 * k
 
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="Segfaults on 32-bit system")
     def test_periodic_with_periodic_data(self):
         N = 10
         a, b = 0, 2*np.pi
