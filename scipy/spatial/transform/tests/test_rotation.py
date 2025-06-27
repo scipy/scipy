@@ -25,9 +25,17 @@ import scipy._lib.array_api_extra as xpx
 import pickle
 import copy
 
+
 # Registering Rotation as a pytree node for JAX is required for jit-compilation of
 # functions that use Rotation as an input argument or return type.
-register_rotation_as_pytree_node()
+try:
+    register_rotation_as_pytree_node()
+except ImportError:  # JAX is not installed on the testing machine
+    pass
+
+
+pytestmark = pytest.mark.skip_xp_backends("dask.array",
+                                          reason="No full linalg extension support")
 
 
 def basis_vec(axis):
