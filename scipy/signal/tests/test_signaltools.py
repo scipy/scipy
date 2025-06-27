@@ -3577,7 +3577,7 @@ class TestHilbert2:
         x = xp.arange(xp.prod(shape)).reshape(shape)
         xh_old = _hilbert2(x)
         xh = hilbert2(x)
-        assert_allclose(xh_old, xh)
+        xp_assert_close(xh_old, xh)
 
 
 class TestEnvelope:
