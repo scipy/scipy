@@ -799,7 +799,6 @@ from ._multiufuncs import *
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,

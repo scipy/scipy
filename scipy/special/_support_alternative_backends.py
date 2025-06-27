@@ -11,6 +11,7 @@ from scipy._lib._array_api import (
 )
 import scipy._lib.array_api_extra as xpx
 from . import _basic
+from . import _spfun_stats
 from . import _ufuncs
 
 
@@ -47,6 +48,8 @@ class _FuncInfo:
     # Can also take a dict mapping backends to such tuples if an argument being
     # scalar only is backend specific.
     scalar_only: dict[str, tuple[bool]] | tuple[bool] | None = None
+    # Some functions which seem to be scalar only accept 0d arrays.
+    scalar_or_0d_only: dict[str, tuple[bool]] | tuple[bool] | None = None
     positive_only: dict[str, tuple[bool]] | tuple[bool] | bool = False
     # Some functions may not work well with very large integer valued arguments.
     test_large_ints: bool = True
@@ -328,10 +331,20 @@ _special_funcs = (
         _ufuncs.gammaincc, 2,
         # google/jax#20699
         positive_only={'jax.numpy': True}),
+    _FuncInfo(_spfun_stats.multigammaln, 2,
+              is_ufunc=False,
+              scalar_only={"cupy": [False, True],
+                           "jax.numpy": [False, True],
+                           "torch": [False, True]},
+              scalar_or_0d_only={"array_api_strict": [False, True],
+                                 "numpy": [False, True],
+                                 "dask.array": [False, True],
+                                 "marray": [False, True]},
+              paramtypes=('real', 'int'), test_large_ints=False, positive_only=True),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
     _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,
-              scalar_only={"torch": [True, False]}, produces_0d=True,
+              scalar_or_0d_only={"torch": [True, False]}, produces_0d=True,
               positive_only={"torch": [True, False]}, test_large_ints=False),
     _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
