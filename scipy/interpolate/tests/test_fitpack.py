@@ -1,6 +1,5 @@
 import itertools
 import os
-import sys
 
 import numpy as np
 from scipy._lib._array_api import (
