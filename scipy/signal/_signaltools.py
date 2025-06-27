@@ -2538,11 +2538,13 @@ def hilbert2(x, N=None, axes=(0, 1)):
     ----------
     x : array_like
         2-D signal data.
-    N : int, optional
+    N : int or tuple of two ints, optional
         Number of output samples. `x` is initially cropped or zero-padded to length
         `N` along `axis`.  Default: ``x.shape[i] for i in axes``
     axes : tuple of two ints, optional
         Axes along which to do the transformation.  Default: (0, 1).
+
+        .. versionadded:: 1.16.1
 
     Returns
     -------
