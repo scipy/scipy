@@ -3459,7 +3459,7 @@ class TestHilbert2:
             x = sp_fft.ifft2(Xf * h, axes=(0, 1))
             return x
 
-        x = xp.arange(xp.prod(shape)).reshape(shape)
+        x = xp.arange(shape[0] * shape[1]).reshape(shape)
         xh_old = _hilbert2(x)
         xh = hilbert2(x)
         xp_assert_close(xh_old, xh)
