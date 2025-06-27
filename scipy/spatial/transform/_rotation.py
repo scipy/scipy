@@ -6,6 +6,7 @@ from types import EllipsisType, ModuleType, NotImplementedType
 import numpy as np
 
 import scipy.spatial.transform._rotation_cy as cython_backend
+import scipy.spatial.transform._rotation_xp as xp_backend
 from scipy.spatial.transform._rotation_groups import create_group
 from scipy._lib._array_api import (
     array_namespace,
@@ -13,6 +14,7 @@ from scipy._lib._array_api import (
     is_numpy,
     ArrayLike,
     xp_result_type,
+    is_lazy_array,
 )
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
@@ -325,7 +327,7 @@ class Rotation:
         self._single = quat.ndim == 1 and is_numpy(xp)
         if self._single:
             quat = xpx.atleast_nd(quat, ndim=2, xp=xp)
-        self._backend = backend_registry.get(xp)
+        self._backend = backend_registry.get(xp, xp_backend)
         self._quat: Array = self._backend.from_quat(
             quat, normalize=normalize, copy=copy, scalar_first=scalar_first
         )
@@ -533,7 +535,7 @@ class Rotation:
 
         .. versionadded:: 1.4.0
         """
-        backend = backend_registry.get(array_namespace(matrix))
+        backend = backend_registry.get(array_namespace(matrix), xp_backend)
         quat = backend.from_matrix(matrix)
         return cls(quat, normalize=False, copy=False)
 
@@ -602,7 +604,7 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(rotvec))
+        backend = backend_registry.get(array_namespace(rotvec), xp_backend)
         quat = backend.from_rotvec(rotvec, degrees=degrees)
         return cls(quat, normalize=False, copy=False)
 
@@ -700,7 +702,7 @@ class Rotation:
         (2, 4)
 
         """
-        backend = backend_registry.get(array_namespace(angles))
+        backend = backend_registry.get(array_namespace(angles), xp_backend)
         quat = backend.from_euler(seq, angles, degrees=degrees)
         return cls(quat, normalize=False, copy=False)
 
@@ -825,7 +827,7 @@ class Rotation:
         >>> r.as_quat()
         [ 0.701057,  0.430459, -0.092296,  0.560986]
         """  # noqa: E501
-        backend = backend_registry.get(array_namespace(axes))
+        backend = backend_registry.get(array_namespace(axes), xp_backend)
         quat = backend.from_davenport(axes, order, angles, degrees)
         return cls(quat, normalize=False, copy=False)
 
@@ -894,7 +896,7 @@ class Rotation:
         (1, 3)
 
         """
-        backend = backend_registry.get(array_namespace(mrp))
+        backend = backend_registry.get(array_namespace(mrp), xp_backend)
         quat = backend.from_mrp(mrp)
         return cls(quat, normalize=False, copy=False)
 
@@ -2187,9 +2189,9 @@ class Rotation:
     @classmethod
     def align_vectors(
         cls,
-        a: Array,
-        b: Array,
-        weights: Array | None = None,
+        a: ArrayLike,
+        b: ArrayLike,
+        weights: ArrayLike | None = None,
         return_sensitivity: bool = False,
     ) -> tuple[Rotation, float] | tuple[Rotation, float, Array]:
         """Estimate a rotation to optimally align two sets of vectors.
@@ -2389,7 +2391,7 @@ class Rotation:
         array([[0., 1., 0.],
                [0., 1., 2.]])
         """
-        backend = backend_registry.get(array_namespace(a))
+        backend = backend_registry.get(array_namespace(a), xp_backend)
         q, rssd, sensitivity = backend.align_vectors(a, b, weights, return_sensitivity)
         if return_sensitivity:
             return cls(q, normalize=False, copy=False), rssd, sensitivity
@@ -2401,7 +2403,7 @@ class Rotation:
     def __setstate__(self, state: tuple[Array, bool]):
         quat, single = state
         xp = array_namespace(quat)
-        self._backend = backend_registry.get(xp)
+        self._backend = backend_registry.get(xp, xp_backend)
         self._quat = xp.asarray(quat, copy=True)
         self._single = single
 
@@ -2541,14 +2543,16 @@ class Slerp:
 
     """
 
-    def __init__(self, times, rotations):
+    def __init__(self, times: ArrayLike, rotations: Rotation):
         if not isinstance(rotations, Rotation):
             raise TypeError("`rotations` must be a `Rotation` instance.")
 
         if rotations.single or len(rotations) <= 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
-        times = np.asarray(times)
+        q = rotations.as_quat()
+        xp = array_namespace(q)
+        times = xp.asarray(times, device=device(q), dtype=q.dtype)
         if times.ndim != 1:
             raise ValueError(
                 "Expected times to be specified in a 1 dimensional array, got "
@@ -2562,15 +2566,21 @@ class Slerp:
                 "timestamps."
             )
         self.times = times
-        self.timedelta = np.diff(times)
+        self.timedelta = xp.diff(times)
 
-        if np.any(self.timedelta <= 0):
+        # We cannot check for values for lazy backends, so we cannot raise an error on
+        # timedelta < 0 for lazy backends. Instead, we set timedelta to nans
+        if is_lazy_array(self.timedelta):
+            mask = xp.any(self.timedelta <= 0)
+            self.timedelta = xp.where(mask, xp.asarray(xp.nan), self.timedelta)
+            self.times = xp.where(mask, xp.asarray(xp.nan), self.times)
+        elif xp.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
         self.rotations = rotations[:-1]
         self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
 
-    def __call__(self, times):
+    def __call__(self, times: ArrayLike) -> Rotation:
         """Interpolate rotations.
 
         Compute the interpolated rotations at the given `times`.
@@ -2587,31 +2597,71 @@ class Slerp:
             Object containing the rotations computed at given `times`.
 
         """
+        xp = array_namespace(self.times)
         # Clearly differentiate from self.times property
-        compute_times = np.asarray(times)
+        compute_times = xp.asarray(
+            times, device=device(self.times), dtype=self.times.dtype
+        )
         if compute_times.ndim > 1:
             raise ValueError("`times` must be at most 1-dimensional.")
 
         single_time = compute_times.ndim == 0
-        compute_times = np.atleast_1d(compute_times)
+        compute_times = xpx.atleast_nd(compute_times, ndim=1, xp=xp)
 
         # side = 'left' (default) excludes t_min.
-        ind = np.searchsorted(self.times, compute_times) - 1
+        ind = xp.searchsorted(self.times, compute_times) - 1
         # Include t_min. Without this step, index for t_min equals -1
-        ind[compute_times == self.times[0]] = 0
-        if np.any(np.logical_or(ind < 0, ind > len(self.rotations) - 1)):
-            raise ValueError(
-                "Interpolation times must be within the range "
-                f"[{self.times[0]}, {self.times[-1]}], both inclusive."
-            )
+        ind = xp.where(compute_times == self.times[0], xp.asarray(0), ind)
+        # We cannot error out on invalid indices for jit compiled code. To not produce
+        # an index error, we set the index to 0 in case it is out of bounds, and later
+        # set the result to nan.
+        invalid_ind = xp.logical_or(ind < 0, ind > len(self.rotations) - 1)
+        if is_lazy_array(invalid_ind):
+            ind = xp.where(invalid_ind, xp.asarray(0), ind)
+        else:
+            if xp.any(invalid_ind):
+                raise ValueError(
+                    "Interpolation times must be within the range "
+                    f"[{self.times[0]}, {self.times[-1]}], both inclusive."
+                )
 
         alpha = (compute_times - self.times[ind]) / self.timedelta[ind]
+        alpha = xp.where(invalid_ind, xp.asarray(xp.nan), alpha)
 
+        # TODO: Change indexing once integer arrays + ellipsis are supported by the
+        # Array API
         result = self.rotations[ind] * Rotation.from_rotvec(
-            self.rotvecs[ind] * alpha[:, None]
+            self.rotvecs[ind[:, None], xp.arange(3)] * alpha[:, None]
         )
 
         if single_time:
             result = result[0]
 
         return result
+
+
+# TODO: This should be done in JAX, not in scipy
+def register_rotation_as_pytree_node():
+    """Register Rotation as a pytree node for JAX.
+
+    This is necessary to make Rotation compatible as input argument and return type for
+    jit-compiled functions.
+    """
+    from jax.tree_util import register_pytree_node
+
+    def rot_unflatten(_, c):
+        # Optimization: We do not want to call __init__ here because it would perform
+        # normalizations twice. More importantly, it would call the non-jitted Array API
+        # backend and therefore incur a significant performance hit
+        r = Rotation.__new__(Rotation)
+        # Someone could have registered a different backend for jax, so we attempt to
+        # fetch the updated backend here. If not, we fall back to the Array API backend.
+        r._backend = backend_registry.get(array_namespace(c[0]), xp_backend)
+        r._quat = c[0]
+        # We set _single to False for jax because the Array API backend supports
+        # broadcasting by default and hence returns the correct shape without the
+        # _single workaround
+        r._single = False
+        return r
+
+    register_pytree_node(Rotation, lambda v: ((v._quat,), None), rot_unflatten)
