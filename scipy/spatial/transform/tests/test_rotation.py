@@ -1523,8 +1523,6 @@ def test_align_vectors_rssd_sensitivity(xp):
     a = xp.asarray([[0, 1, 0], [0, 1, 1], [0, 1, 1]])
     b = xp.asarray([[1, 0, 0], [1, 1.1, 0], [1, 0.9, 0]])
     rot, rssd, sens = Rotation.align_vectors(a, b, return_sensitivity=True)
-    print(rssd, rssd_expected)
-    print(rssd.shape, rssd_expected.shape)
     xp_assert_close(rssd, rssd_expected, atol=atol)
     xp_assert_close(sens, sens_expected, atol=atol)
 
