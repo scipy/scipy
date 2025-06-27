@@ -17,19 +17,7 @@
     #define ARPACK_cplxf(real, imag) ((real) + (imag)*I)
 #endif
 
-#define PYERR(errobj,message) {PyErr_SetString(errobj,message); return NULL;}
 static PyObject* arpack_error;
-
-// The following macros are used to define the field names in the ARPACK struct.
-#define STRUCT_INEXACT_FIELD_NAMES X(tol) X(getv0_rnorm0) X(aitr_betaj) X(aitr_rnorm1) X(aitr_wnorm) X(aup2_rnorm)
-#define STRUCT_INT_FIELD_NAMES X(ido) X(which) X(bmat) X(info) X(iter) X(maxiter) X(mode) \
-                               X(n) X(nconv) X(ncv) X(nev) X(np) \
-                               X(shift) X(getv0_first) X(getv0_iter) X(getv0_itry) X(getv0_orth) \
-                               X(aitr_iter) X(aitr_j) X(aitr_orth1) X(aitr_orth2) X(aitr_restart) \
-                               X(aitr_step3) X(aitr_step4) X(aitr_ierr) X(aup2_initv) X(aup2_iter) \
-                               X(aup2_getv0) X(aup2_cnorm) X(aup2_kplusp) X(aup2_nev0) X(aup2_np0) \
-                               X(aup2_numcnv) X(aup2_update) X(aup2_ushift)
-#define STRUCT_FIELD_NAMES STRUCT_INT_FIELD_NAMES STRUCT_INEXACT_FIELD_NAMES
 
 typedef enum {
     FIELD_INT,
@@ -328,49 +316,52 @@ cnaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (float)PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(float*)ptr = (float)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     // Call ARPACK function
     ARPACK_cnaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
 
     // Unpack the struct back to the dictionary
-    #define X(name) do { \
-            PyObject* tmp_##name = PyFloat_FromDouble((double)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-            Py_XDECREF(tmp_##name); \
-            PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-                Py_XDECREF(tmp_##name); \
-                PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        PyObject* obj = NULL;
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                obj = PyLong_FromLong((long)(*(int*)ptr));
+                break;
+            case FIELD_FLOATING:
+                obj = PyFloat_FromDouble((double)(*(float*)ptr));
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+
+        if (!obj || PyDict_SetItemString(input_dict, name, obj) < 0) {
+            Py_XDECREF(obj);
+            PyErr_Format(arpack_error, "Setting '%s' failed.", name);
+        }
+        Py_DECREF(obj);
+    }
 
     Py_RETURN_NONE;
 }
@@ -415,49 +406,52 @@ znaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     // Call ARPACK function
     ARPACK_znaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl, rwork);
 
     // Unpack the struct back to the dictionary
-    #define X(name) do { \
-            PyObject* tmp_##name = PyFloat_FromDouble(Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-            Py_XDECREF(tmp_##name); \
-            PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-                Py_XDECREF(tmp_##name); \
-                PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        PyObject* obj = NULL;
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                obj = PyLong_FromLong((long)(*(int*)ptr));
+                break;
+            case FIELD_FLOATING:
+                obj = PyFloat_FromDouble(*(double*)ptr);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+
+        if (!obj || PyDict_SetItemString(input_dict, name, obj) < 0) {
+            Py_XDECREF(obj);
+            PyErr_Format(arpack_error, "Setting '%s' failed.", name);
+        }
+        Py_DECREF(obj);
+    }
 
     Py_RETURN_NONE;
 }
@@ -520,24 +514,25 @@ sneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (float)PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
-
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(float*)ptr = (float)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_sneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
@@ -602,23 +597,25 @@ dneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_dneupd(&Vars, want_ev, howmny, select, dr, di, z, ldz, sigmar, sigmai, workev, resid, v, ldv, ipntr, workd, workl);
 
@@ -679,25 +676,28 @@ cneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     ldv = (int)PyArray_DIMS(ap_v)[0];
     ldz = (int)PyArray_DIMS(ap_z)[0];
     ARPACK_CPLXF_TYPE sigmaC = ARPACK_cplxf((float)sigma.real, (float)sigma.imag);
+
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (float)PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(float*)ptr = (float)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_cneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
 
@@ -757,25 +757,28 @@ zneupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     ldv = (int)PyArray_DIMS(ap_v)[0];
     ldz = (int)PyArray_DIMS(ap_z)[0];
     ARPACK_CPLX_TYPE sigmaC = ARPACK_cplx(sigma.real, sigma.imag);
+
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_zneupd(&Vars, want_ev, howmny, select, d, z, ldz, sigmaC, workev, resid, v, ldv, ipntr, workd, workl, rwork);
 
@@ -821,49 +824,52 @@ ssaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (float)PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(float*)ptr = (float)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     // Call ARPACK function
     ARPACK_ssaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
-    // Unpack the struct back to the dictionary
-    #define X(name) do { \
-            PyObject* tmp_##name = PyFloat_FromDouble((double)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-            Py_XDECREF(tmp_##name); \
-            PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        // see above
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-                Py_XDECREF(tmp_##name); \
-                PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        PyObject* obj = NULL;
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                obj = PyLong_FromLong((long)(*(int*)ptr));
+                break;
+            case FIELD_FLOATING:
+                obj = PyFloat_FromDouble((double)(*(float*)ptr));
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+
+        if (!obj || PyDict_SetItemString(input_dict, name, obj) < 0) {
+            Py_XDECREF(obj);
+            PyErr_Format(arpack_error, "Setting '%s' failed.", name);
+        }
+        Py_DECREF(obj);
+    }
 
     Py_RETURN_NONE;
 }
@@ -904,49 +910,52 @@ dsaupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
     // Declare and Initialize the ARPACK struct that will be populated from dict with zeros
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-    Vars.name = PyFloat_AsDouble(name##_obj);
-    STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-    PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-    if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-    Vars.name = (int)PyLong_AsLong(name##_obj);
-    STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     // Call ARPACK function
     ARPACK_dsaupd(&Vars, resid, v, Vars.n, ipntr, workd, workl);
 
     // Unpack the struct back to the dictionary
-    #define X(name) do { \
-            PyObject* tmp_##name = PyFloat_FromDouble(Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-            Py_XDECREF(tmp_##name); \
-            PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) do { \
-            PyObject* tmp_##name = PyLong_FromLong((long)Vars.name); \
-            if ((!tmp_##name) || (PyDict_SetItemString(input_dict, #name, tmp_##name) < 0)) { \
-                Py_XDECREF(tmp_##name); \
-                PYERR(arpack_error, "Setting '" #name "' failed."); \
-            } \
-            Py_DECREF(tmp_##name); \
-        } while (0);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        PyObject* obj = NULL;
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                obj = PyLong_FromLong((long)(*(int*)ptr));
+                break;
+            case FIELD_FLOATING:
+                obj = PyFloat_FromDouble(*(double*)ptr);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+
+        if (!obj || PyDict_SetItemString(input_dict, name, obj) < 0) {
+            Py_XDECREF(obj);
+            PyErr_Format(arpack_error, "Setting '%s' failed.", name);
+        }
+        Py_DECREF(obj);
+    }
 
     Py_RETURN_NONE;
 }
@@ -999,24 +1008,25 @@ sseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     struct ARPACK_arnoldi_update_vars_s Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_s[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_s[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (float)PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
-
+        switch (arpack_fields_s[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(float*)ptr = (float)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_sseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
 
@@ -1072,23 +1082,25 @@ dseupd_wrap(PyObject* Py_UNUSED(dummy), PyObject* args)
 
     struct ARPACK_arnoldi_update_vars_d Vars = {0};
 
-    #define X(name) Vars.name = 0;
-    STRUCT_FIELD_NAMES
-    #undef X
+    for (size_t i = 0; i < ARPACK_FIELD_COUNT; ++i) {
+        const char* name = arpack_fields_d[i].name;
+        PyObject* obj = PyDict_GetItemString(input_dict, name);
+        if (!obj) {
+            PyErr_Format(arpack_error, "%s not found in the dictionary.", name);
+        }
+        void* ptr = (char*)&Vars + arpack_fields_d[i].offset;
 
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = PyFloat_AsDouble(name##_obj);
-        STRUCT_INEXACT_FIELD_NAMES
-    #undef X
-
-    #define X(name) \
-        PyObject* name##_obj = PyDict_GetItemString(input_dict, #name); \
-        if (!name##_obj) { PYERR(arpack_error, #name " not found in the dictionary."); } \
-        Vars.name = (int)PyLong_AsLong(name##_obj);
-        STRUCT_INT_FIELD_NAMES
-    #undef X
+        switch (arpack_fields_d[i].type) {
+            case FIELD_INT:
+                *(int*)ptr = (int)PyLong_AsLong(obj);
+                break;
+            case FIELD_FLOATING:
+                *(double*)ptr = (double)PyFloat_AsDouble(obj);
+                break;
+            default:
+                PyErr_Format(arpack_error, "Unknown field type for %s", name);
+        }
+    }
 
     ARPACK_dseupd(&Vars, want_ev, howmny, select, d, z, ldz, sigma, resid, v, ldv, ipntr, workd, workl);
 
