@@ -365,6 +365,16 @@ _special_funcs = (
                   cpu_only=True, exceptions=['cupy'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.ellipk, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.ellipkm1, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.erf, 1),
     _FuncInfo(_ufuncs.erfc, 1),
     _FuncInfo(_ufuncs.erfinv, 1),
