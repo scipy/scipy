@@ -339,6 +339,11 @@ _special_funcs = (
     _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc,
               # gh-20972
               positive_only={'cupy': True, 'jax.numpy': True, 'torch': True}),
+    _FuncInfo(_ufuncs.cbrt, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.erf, 1),
     _FuncInfo(_ufuncs.erfc, 1),
     _FuncInfo(_ufuncs.erfinv, 1),
