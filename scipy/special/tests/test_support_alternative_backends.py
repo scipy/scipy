@@ -83,6 +83,9 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
         # https://github.com/scipy/scipy/pull/21827.
         positive_only = [True]
 
+    if f_name == 'multigammaln':
+        pytest.skip("multigammaln raises for out of domain inputs.")
+
     if ((is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
         or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
         or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr'})
