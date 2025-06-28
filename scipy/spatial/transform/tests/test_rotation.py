@@ -49,7 +49,8 @@ def basis_vec(axis):
 
 
 def rotation_to_xp(r: Rotation, xp):
-    return Rotation.from_quat(xp.asarray(r.as_quat()))
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    return Rotation.from_quat(xp.asarray(r.as_quat(), dtype=dtype))
 
 
 def test_init_non_array():
@@ -361,9 +362,10 @@ def test_matrix_calculation_pipeline(xp):
 
 
 def test_from_matrix_ortho_output(xp):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     rnd = np.random.RandomState(0)
-    mat = xp.asarray(rnd.random_sample((100, 3, 3)))
+    mat = xp.asarray(rnd.random_sample((100, 3, 3)), dtype=dtype)
     dets = xp.linalg.det(mat)
     for i in range(dets.shape[0]):
         # Make sure we have a right-handed rotation matrix
@@ -532,6 +534,8 @@ def test_malformed_2d_from_rotvec(xp):
 
 
 def test_as_generic_rotvec(xp):
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-15 if dtype == xp.float64 else 1e-7
     quat = xp.asarray([
             [1, 2, -1, 0.5],
             [1, -1, 1, 0.0003],
@@ -543,7 +547,7 @@ def test_as_generic_rotvec(xp):
     angle = xp_vector_norm(rotvec, axis=-1)
 
     xp_assert_close(quat[:, 3], xp.cos(angle / 2))
-    xp_assert_close(xp.linalg.cross(rotvec, quat[:, :3]), xp.zeros((3, 3)), atol=1e-15)
+    xp_assert_close(xp.linalg.cross(rotvec, quat[:, :3]), xp.zeros((3, 3)), atol=atol)
 
 
 def test_as_rotvec_single_1d_input(xp):
@@ -933,7 +937,8 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = xp.asarray([
@@ -963,7 +968,8 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     angles = xp.asarray([
@@ -990,6 +996,7 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
 
 
 def test_inv(xp):
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     atol = 1e-12
     rnd = np.random.RandomState(0)
     n = 10
@@ -997,10 +1004,10 @@ def test_inv(xp):
     p = Rotation.random(num=n, random_state=rnd)
     p_mat = p.as_matrix()
     q_mat = p.inv().as_matrix()
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+    p = rotation_to_xp(p, xp)
 
-    result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat))
-    result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat))
+    result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat), dtype=dtype)
+    result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat), dtype=dtype)
 
     eye3d = xp.empty((n, 3, 3))
     eye3d = xpx.at(eye3d)[..., :3, :3].set(xp.eye(3))
@@ -1010,10 +1017,10 @@ def test_inv(xp):
 
 
 def test_inv_single_rotation(xp):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     rng = np.random.default_rng(146972845698875399755764481408308808739)
-    p = Rotation.random(rng=rng)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+    p = rotation_to_xp(Rotation.random(rng=rng), xp)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -1026,8 +1033,7 @@ def test_inv_single_rotation(xp):
     xp_assert_close(res1, eye, atol=atol)
     xp_assert_close(res2, eye, atol=atol)
 
-    x = Rotation.random(num=1, rng=rng)
-    x = Rotation.from_quat(xp.asarray(x.as_quat()))
+    x = rotation_to_xp(Rotation.random(num=1, rng=rng), xp)
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -1044,25 +1050,24 @@ def test_inv_single_rotation(xp):
 
 def test_identity_magnitude(xp):
     n = 10
-    r = Rotation.identity(n)
-    r = Rotation.from_quat(xp.asarray(r.as_quat()))
+    r = rotation_to_xp(Rotation.identity(n), xp)
     expected = xp.zeros(n)
     xp_assert_close(r.magnitude(), expected)
     xp_assert_close(r.inv().magnitude(), expected)
 
 
 def test_single_identity_magnitude(xp):
-    r = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    r = rotation_to_xp(Rotation.identity(), xp)
     assert r.magnitude() == 0
     assert r.inv().magnitude() == 0
 
 
 def test_identity_invariance(xp):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     n = 10
-    p = Rotation.random(n, rng=0)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
-    q = Rotation.from_quat(xp.asarray(Rotation.identity(n).as_quat()))
+    p = rotation_to_xp(Rotation.random(n, rng=0), xp)
+    q = rotation_to_xp(Rotation.identity(n), xp)
     result = p * q
     xp_assert_close(p.as_quat(), result.as_quat())
 
@@ -1071,12 +1076,11 @@ def test_identity_invariance(xp):
 
 
 def test_single_identity_invariance(xp):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
     n = 10
-    p = Rotation.random(n, rng=0)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
-
-    q = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    p = rotation_to_xp(Rotation.random(n, rng=0), xp)
+    q = rotation_to_xp(Rotation.identity(), xp)
     result = p * q
     xp_assert_close(p.as_quat(), result.as_quat())
 
@@ -1108,8 +1112,8 @@ def test_approx_equal(xp):
     p = Rotation.random(10, rng=rng)
     q = Rotation.random(10, rng=rng)
     r_mag = (p * q.inv()).magnitude()
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
-    q = Rotation.from_quat(xp.asarray(q.as_quat()))
+    p = rotation_to_xp(p, xp)
+    q = rotation_to_xp(q, xp)
     # ensure we get mix of Trues and Falses
     atol = xp.asarray(np.median(r_mag))
     xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
@@ -1179,14 +1183,15 @@ def test_reduction_none_indices(xp):
 
 
 def test_reduction_scalar_calculation(xp):
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     l_np = Rotation.random(5, rng=rng)
     r_np = Rotation.random(10, rng=rng)
     p_np = Rotation.random(7, rng=rng)
-    l = Rotation.from_quat(xp.asarray(l_np.as_quat()))
-    r = Rotation.from_quat(xp.asarray(r_np.as_quat()))
-    p = Rotation.from_quat(xp.asarray(p_np.as_quat()))
+    l = rotation_to_xp(l_np, xp)
+    r = rotation_to_xp(r_np, xp)
+    p = rotation_to_xp(p_np, xp)
     reduced, left_best, right_best = p.reduce(l, r, return_indices=True)
 
     # Loop implementation of the vectorized calculation in Rotation.reduce
@@ -1273,6 +1278,7 @@ def test_apply_multiple_rotations_single_point(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
         [0, -1, 0],
@@ -1284,7 +1290,7 @@ def test_apply_multiple_rotations_single_point(xp):
         [0, 0, -1],
         [0, 1, 0]
     ])
-    mat = xp.asarray(mat)
+    mat = xp.asarray(mat, dtype=dtype)
     r = Rotation.from_matrix(mat)
 
     v1 = xp.asarray([1, 2, 3])
@@ -1307,6 +1313,7 @@ def test_apply_multiple_rotations_multiple_points(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
         [0, -1, 0],
@@ -1318,7 +1325,7 @@ def test_apply_multiple_rotations_multiple_points(xp):
         [0, 0, -1],
         [0, 1, 0]
     ])
-    mat = xp.asarray(mat)
+    mat = xp.asarray(mat, dtype=dtype)
     r = Rotation.from_matrix(mat)
 
     v = xp.asarray([[1, 2, 3], [4, 5, 6]])
@@ -1413,22 +1420,22 @@ def test_setitem_single(xp):
 
 def test_setitem_slice(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
-    r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
-    r2 = Rotation.from_quat(xp.asarray(Rotation.random(5, rng=rng).as_quat()))
+    r1 = rotation_to_xp(Rotation.random(10, rng=rng), xp)
+    r2 = rotation_to_xp(Rotation.random(5, rng=rng), xp)
     r1[1:6] = r2
     xp_assert_equal(r1[1:6].as_quat(), r2.as_quat())
 
 
 def test_setitem_integer(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
-    r1 = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=rng).as_quat()))
-    r2 = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
+    r1 = rotation_to_xp(Rotation.random(10, rng=rng), xp)
+    r2 = rotation_to_xp(Rotation.random(rng=rng), xp)
     r1[1] = r2
     xp_assert_equal(r1[1].as_quat(), r2.as_quat())
 
 
 def test_setitem_wrong_type(xp):
-    r = Rotation.from_quat(xp.asarray(Rotation.random(10, rng=0).as_quat()))
+    r = rotation_to_xp(Rotation.random(10, rng=0), xp)
     with pytest.raises(TypeError, match='Rotation object'):
         r[0] = 1
 
@@ -1468,11 +1475,13 @@ def test_align_vectors_no_rotation(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
-    x = xp.asarray([[1, 2, 3], [4, 5, 6]])
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-5
+    x = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
     y = xp.asarray(x, copy=True)
 
     r, rssd = Rotation.align_vectors(x, y)
-    xp_assert_close(r.as_matrix(), xp.eye(3), atol=1e-12)
+    xp_assert_close(r.as_matrix(), xp.eye(3), atol=atol)
     xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-6)
 
 
@@ -1482,14 +1491,16 @@ def test_align_vectors_no_noise(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-7 if dtype == xp.float64 else 2e-3
     rng = np.random.default_rng(14697284569885399755764481408308808739)
-    c = Rotation.from_quat(xp.asarray(Rotation.random(rng=rng).as_quat()))
+    c = rotation_to_xp(Rotation.random(rng=rng), xp)
     b = xp.asarray(rng.normal(size=(5, 3)))
     a = c.apply(b)
 
     est, rssd = Rotation.align_vectors(a, b)
     xp_assert_close(c.as_quat(), est.as_quat())
-    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-7)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=atol)
 
 
 def test_align_vectors_improper_rotation(xp):
@@ -1498,6 +1509,8 @@ def test_align_vectors_improper_rotation(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-7 if dtype == xp.float64 else 1e-3
     # Tests correct logic for issue #10444
     x = xp.asarray([[0.89299824, -0.44372674, 0.0752378],
                     [0.60221789, -0.47564102, -0.6411702]])
@@ -1506,7 +1519,7 @@ def test_align_vectors_improper_rotation(xp):
 
     est, rssd = Rotation.align_vectors(x, y)
     xp_assert_close(x, est.apply(y), atol=1e-6)
-    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-7)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=atol)
 
 
 def test_align_vectors_rssd_sensitivity(xp):
@@ -1552,6 +1565,7 @@ def test_align_vectors_noise(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     n_vectors = 100
     rot = rotation_to_xp(Rotation.random(rng=rng), xp)
@@ -1562,10 +1576,7 @@ def test_align_vectors_noise(xp):
     sigma = np.deg2rad(1)
     tolerance = 1.5 * sigma
     noise = Rotation.from_rotvec(
-        xp.asarray(rng.normal(
-            size=(n_vectors, 3),
-            scale=sigma
-        ))
+        xp.asarray(rng.normal(size=(n_vectors, 3), scale=sigma), dtype=dtype)
     )
 
     # Attitude errors must preserve norm. Hence apply individual random
@@ -1679,7 +1690,8 @@ def test_align_vectors_align_constrain(xp):
     # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
     # is aligned with the +Z A axis (residual of the [0, 1, 1] secondary a
     # vector)
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     b = xp.asarray([[1, 0, 0], [1, 1, 0]])
     a = xp.asarray([[0.0, 1, 0], [0, 1, 1]])
     m_expected = xp.asarray([[0.0, 0, 1],
@@ -1688,7 +1700,7 @@ def test_align_vectors_align_constrain(xp):
     R, rssd = Rotation.align_vectors(a, b, weights=xp.asarray([xp.inf, 1]))
     xp_assert_close(R.as_matrix(), m_expected, atol=atol)
     xp_assert_close(R.apply(b), a, atol=atol)  # Pri and sec align exactly
-    assert xpx.isclose(rssd, 0.0, atol=atol, xp=xp)
+    xp_assert_close(rssd, xp.asarray(0.0)[()], atol=atol)
 
     # Do the same but with an inexact secondary rotation
     b = xp.asarray([[1, 0, 0], [1, 2, 0]])
@@ -1785,8 +1797,9 @@ def test_align_vectors_antiparallel(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     # Test exact 180 deg rotation
-    atol = 1e-12
+    atol = 1e-12 if dtype == xp.float64 else 1e-7
 
     align_vectors = Rotation.align_vectors
     if is_jax(xp):
@@ -1799,7 +1812,7 @@ def test_align_vectors_antiparallel(xp):
 
     bs_to_test = np.array([[-a[0], a[1]] for a in as_to_test])
     for a, b in zip(as_to_test, bs_to_test):
-        a, b = xp.asarray(a), xp.asarray(b)
+        a, b = xp.asarray(a, dtype=dtype), xp.asarray(b, dtype=dtype)
         R, _ = align_vectors(a, b, weights=[xp.inf, 1])
         xp_assert_close(R.magnitude(), xp.asarray(xp.pi)[()], atol=atol)
         xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
@@ -1830,14 +1843,15 @@ def test_align_vectors_primary_only(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
-    atol = 1e-12
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-5
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
 
     for mat_a, mat_b in zip(mats_a, mats_b):
         # Get random 3-element unit vectors
-        a = xp.asarray(mat_a[0])
-        b = xp.asarray(mat_b[0])
+        a = xp.asarray(mat_a[0], dtype=dtype)
+        b = xp.asarray(mat_b[0], dtype=dtype)
 
         # Compare to align_vectors with primary only
         R, rssd = Rotation.align_vectors(a, b)
@@ -2074,10 +2088,8 @@ def test_multiplication(xp):
 
 
 def test_multiplication_stability(xp):
-    qs = Rotation.random(50, rng=0)
-    qs = Rotation.from_quat(xp.asarray(qs.as_quat()))
-    rs = Rotation.random(1000, rng=1)
-    rs = Rotation.from_quat(xp.asarray(rs.as_quat()))
+    qs = rotation_to_xp(Rotation.random(50, rng=0), xp)
+    rs = rotation_to_xp(Rotation.random(1000, rng=1), xp)
     expected = xp.ones(len(rs))
     # TODO: Check why jax iteration over qs is slower than using for q in qs.
     for i in range(len(qs)):
@@ -2086,16 +2098,15 @@ def test_multiplication_stability(xp):
 
 
 def test_pow(xp):
-    atol = 1e-14
-    p = Rotation.random(10, rng=0)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-14 if dtype == xp.float64 else 1e-6
+    p = rotation_to_xp(Rotation.random(10, rng=0), xp)
     p_inv = p.inv()
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
         # Test accuracy
         q = p ** n
-        r = Rotation.identity(10)
-        r = Rotation.from_quat(xp.asarray(r.as_quat()))
+        r = rotation_to_xp(Rotation.identity(10), xp)
         for _ in range(abs(n)):
             if n > 0:
                 r = r * p
@@ -2125,8 +2136,7 @@ def test_pow(xp):
 
 
 def test_pow_errors(xp):
-    p = Rotation.random(rng=0)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+    p = rotation_to_xp(Rotation.random(rng=0), xp)
     with pytest.raises(NotImplementedError, match='modulus not supported'):
         pow(p, 1, 1)
 
@@ -2197,8 +2207,7 @@ def test_as_euler_contiguous():
 
 
 def test_concatenate(xp):
-    rotation = Rotation.random(10, rng=0)
-    rotation = Rotation.from_quat(xp.asarray(rotation.as_quat()))
+    rotation = rotation_to_xp(Rotation.random(10, rng=0), xp)
     sizes = [1, 2, 3, 1, 3]
     starts = [0] + list(np.cumsum(sizes))
     split = [rotation[i:i + n] for i, n in zip(starts, sizes)]
@@ -2213,7 +2222,7 @@ def test_concatenate(xp):
     assert rotation is not result
 
     # Test Rotation input for single rotations
-    rot = Rotation.from_quat(xp.asarray(Rotation.identity().as_quat()))
+    rot = rotation_to_xp(Rotation.identity(), xp)
     result = Rotation.concatenate(rot)
     xp_assert_equal(rot.as_quat(), result.as_quat())
 
@@ -2333,6 +2342,7 @@ def test_as_davenport(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2350,9 +2360,9 @@ def test_as_davenport(xp):
         angles[:, 1] = angles_middle - lamb
         for order in ['extrinsic', 'intrinsic']:
             ax = ax_lamb if order == "intrinsic" else xp.flip(ax_lamb, axis=0)
-            rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
-            angles_dav = rot.as_davenport(xp.asarray(ax), order)
-            xp_assert_close(angles_dav, xp.asarray(angles))
+            rot = Rotation.from_davenport(ax, order, xp.asarray(angles, dtype=dtype))
+            angles_dav = rot.as_davenport(ax, order)
+            xp_assert_close(angles_dav, xp.asarray(angles, dtype=dtype))
 
 
 @pytest.mark.thread_unsafe
@@ -2362,6 +2372,8 @@ def test_as_davenport_degenerate(xp):
         # Enable once 14.0 is released
         pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
 
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
     rnd = np.random.RandomState(0)
@@ -2383,46 +2395,49 @@ def test_as_davenport_degenerate(xp):
         angles[:, 1] = angles_middle - lamb
         for order in ['extrinsic', 'intrinsic']:
             ax = ax_lamb if order == 'intrinsic' else xp.flip(ax_lamb, axis=0)
-            rot = Rotation.from_davenport(xp.asarray(ax), order, angles)
+            rot = Rotation.from_davenport(ax, order, xp.asarray(angles, dtype=dtype))
             with eager_warns(UserWarning, match="Gimbal lock", xp=xp):
-                angles_dav = rot.as_davenport(xp.asarray(ax), order)
+                angles_dav = rot.as_davenport(ax, order)
             mat_expected = rot.as_matrix()
-            rot_estimated = Rotation.from_davenport(xp.asarray(ax), order, angles_dav)
+            rot_estimated = Rotation.from_davenport(ax, order, angles_dav)
             mat_estimated = rot_estimated.as_matrix()
-            xp_assert_close(mat_expected, mat_estimated, atol=1e-12)
+            xp_assert_close(mat_expected, mat_estimated, atol=atol)
 
 
 def test_compare_from_davenport_from_euler(xp):
+    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
 
     # symmetric sequences
+    rtol = 1e-12 if dtype == xp.float64 else 1e-5
     angles[:, 0] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
     angles[:, 1] = rnd.uniform(low=0, high=np.pi, size=(n,))
     angles[:, 2] = rnd.uniform(low=-np.pi, high=np.pi, size=(n,))
+    angles = xp.asarray(angles, dtype=dtype)
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join([seq_tuple[0], seq_tuple[1], seq_tuple[0]])
-            ax = [basis_vec(i) for i in seq]
+            ax = xp.asarray([basis_vec(i) for i in seq], dtype=dtype)
             if order == 'intrinsic':
                 seq = seq.upper()
-            eul = Rotation.from_euler(seq, xp.asarray(angles))
-            dav = Rotation.from_davenport(xp.asarray(ax), order, xp.asarray(angles))
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
             xp_assert_close(eul.as_quat(canonical=True), dav.as_quat(canonical=True),
-                            rtol=1e-12)
+                            rtol=rtol)
 
     # asymmetric sequences
-    angles[:, 1] -= np.pi / 2
+    angles = xpx.at(angles)[:, 1].set(angles[:, 1] - np.pi / 2)
     for order in ['extrinsic', 'intrinsic']:
         for seq_tuple in permutations('xyz'):
             seq = ''.join(seq_tuple)
-            ax = [basis_vec(i) for i in seq]
+            ax = xp.asarray([basis_vec(i) for i in seq], dtype=dtype)
             if order == 'intrinsic':
                 seq = seq.upper()
-            eul = Rotation.from_euler(seq, xp.asarray(angles))
-            dav = Rotation.from_davenport(xp.asarray(ax), order, xp.asarray(angles))
-            xp_assert_close(eul.as_quat(), dav.as_quat(), rtol=1e-12)
+            eul = Rotation.from_euler(seq, angles)
+            dav = Rotation.from_davenport(ax, order, angles)
+            xp_assert_close(eul.as_quat(), dav.as_quat(), rtol=rtol)
 
 
 def test_compare_as_davenport_as_euler(xp):
@@ -2535,8 +2550,7 @@ def test_zero_rotation_multiplication(xp):
     assert len(r_mult) == 0
 
     msg_rotation_error = "Expected equal number of rotations"
-    r2 = Rotation.random(2)
-    r2 = Rotation.from_quat(xp.asarray(r2.as_quat()))
+    r2 = rotation_to_xp(Rotation.random(2), xp)
     with pytest.raises(ValueError, match=msg_rotation_error):
         r0 * r2
 
@@ -2554,11 +2568,11 @@ def test_zero_rotation_concatentation(xp):
     r1 = r.concatenate([r1, r])
     assert len(r1) == 1
 
-    r3 = Rotation.from_quat(xp.asarray(Rotation.random(3).as_quat()))
+    r3 = rotation_to_xp(Rotation.random(3), xp)
     r3 = r.concatenate([r3, r])
     assert len(r3) == 3
 
-    r4 = Rotation.from_quat(xp.asarray(Rotation.random(4).as_quat()))
+    r4 = rotation_to_xp(Rotation.random(4), xp)
     r4 = r.concatenate([r, r4])
     r4 = r.concatenate([r, r4])
     assert len(r4) == 4
@@ -2595,11 +2609,11 @@ def test_zero_rotation_approx_equal(xp):
     assert r.approx_equal(r0).shape == (0,)
     r1 = Rotation.from_quat(xp.asarray([0.0, 0, 0, 1]))
     assert r.approx_equal(r1).shape == (0,)
-    r2 = Rotation.from_quat(xp.asarray(Rotation.random().as_quat()))
+    r2 = rotation_to_xp(Rotation.random(), xp)
     assert r2.approx_equal(r).shape == (0,)
 
     approx_msg = "Expected equal number of rotations"
-    r3 = Rotation.from_quat(xp.asarray(Rotation.random(2).as_quat()))
+    r3 = rotation_to_xp(Rotation.random(2), xp)
     with pytest.raises(ValueError, match=approx_msg):
         r.approx_equal(r3)
 
@@ -2633,7 +2647,7 @@ def test_zero_rotation_get_set(xp):
 
 
 def test_boolean_indexes(xp):
-    r = Rotation.from_quat(xp.asarray(Rotation.random(3).as_quat()))
+    r = rotation_to_xp(Rotation.random(3), xp)
 
     r0 = r[xp.asarray([False, False, False])]
     assert len(r0) == 0

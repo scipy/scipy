@@ -8,7 +8,7 @@ that work with any Array API-compatible backend.
 # https://github.com/jax-ml/jax/blob/d695aa4c63ffcebefce52794427c46bad576680c/jax/_src/scipy/spatial/transform.py.
 import re
 import warnings
-from types import EllipsisType, ModuleType
+from types import EllipsisType
 
 import numpy as np
 from scipy._lib._array_api import (
@@ -16,8 +16,8 @@ from scipy._lib._array_api import (
     Array,
     ArrayLike,
     is_lazy_array,
-    is_numpy,
     xp_vector_norm,
+    xp_result_type,
 )
 from scipy._lib.array_api_compat import device
 import scipy._lib.array_api_extra as xpx
@@ -44,9 +44,8 @@ def from_quat(
 def from_matrix(matrix: Array) -> Array:
     xp = array_namespace(matrix)
     _device = device(matrix)
-    matrix = xp.asarray(
-        matrix, dtype=fast_xp_result_type(matrix, xp=xp), device=_device, copy=True
-    )
+    dtype = xp_result_type(matrix, force_floating=True, xp=xp)
+    matrix = xp.asarray(matrix, dtype=dtype, device=_device, copy=True)
     # Only non-lazy backends raise an error for non-positive determinants.
     mask = xp.linalg.det(matrix) <= 0
     if not is_lazy_array(mask) and xp.any(mask):
@@ -134,7 +133,8 @@ def from_matrix(matrix: Array) -> Array:
 
 def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
     xp = array_namespace(rotvec)
-    rotvec = xp.asarray(rotvec, dtype=fast_xp_result_type(rotvec, xp=xp), copy=True)
+    dtype = xp_result_type(rotvec, force_floating=True, xp=xp)
+    rotvec = xp.asarray(rotvec, dtype=dtype, copy=True)
     # TODO: Relax the shape check once we support proper broadcasting
     if rotvec.ndim not in [1, 2] or rotvec.shape[-1] != 3:
         raise ValueError(
@@ -160,7 +160,8 @@ def from_rotvec(rotvec: Array, degrees: bool = False) -> Array:
 
 def from_mrp(mrp: Array) -> Array:
     xp = array_namespace(mrp)
-    mrp = xp.asarray(mrp, dtype=fast_xp_result_type(mrp), copy=True)
+    dtype = xp_result_type(mrp, force_floating=True, xp=xp)
+    mrp = xp.asarray(mrp, dtype=dtype, copy=True)
     if mrp.ndim not in [1, 2] or mrp.shape[len(mrp.shape) - 1] != 3:
         raise ValueError(
             f"Expected `mrp` to have shape (3,) or (N, 3), got {mrp.shape}"
@@ -191,7 +192,8 @@ def from_euler(seq: str, angles: Array, degrees: bool = False) -> Array:
     if any(seq[i] == seq[i + 1] for i in range(num_axes - 1)):
         raise ValueError(f"Expected consecutive axes to be different, got {seq}")
 
-    angles = xp.asarray(angles, dtype=fast_xp_result_type(angles, xp=xp), copy=True)
+    dtype = xp_result_type(angles, force_floating=True, xp=xp)
+    angles = xp.asarray(angles, dtype=dtype, copy=True)
     angles, is_single = _format_angles(angles, degrees, num_axes)
     axes = [_elementary_basis_index(x) for x in seq.lower()]
     q = _elementary_quat_compose(angles, axes, intrinsic)
@@ -203,7 +205,7 @@ def from_davenport(
 ) -> Array:
     xp = array_namespace(axes)
     _device = device(axes)
-    _dtype = fast_xp_result_type(axes, xp=xp)
+    dtype = xp_result_type(axes, force_floating=True, xp=xp)
     if order in ["e", "extrinsic"]:  # Must be static, cannot be jitted
         extrinsic = True
     elif order in ["i", "intrinsic"]:
@@ -213,10 +215,10 @@ def from_davenport(
             "order should be 'e'/'extrinsic' for extrinsic sequences or 'i'/"
             f"'intrinsic' for intrinsic sequences, got {order}"
         )
-    axes = xp.asarray(axes, dtype=_dtype, copy=True)
+    axes = xp.asarray(axes, dtype=dtype, copy=True)
     # Angles could be a scalar, so we first need to convert it to an array before
     # promoting
-    angles = xp.asarray(angles, dtype=_dtype, copy=True)
+    angles = xp.asarray(angles, dtype=dtype, copy=True)
 
     axes = xpx.atleast_nd(axes, ndim=2, xp=xp)
     if axes.shape[-1] != 3:
@@ -378,8 +380,8 @@ def as_davenport(
     quat: Array, axes: ArrayLike, order: str, degrees: bool = False
 ) -> Array:
     xp = array_namespace(quat)
-    _dtype = fast_xp_result_type(axes, xp=xp)
-    axes = xp.asarray(axes, dtype=_dtype, copy=True)
+    dtype = xp_result_type(axes, force_floating=True, xp=xp)
+    axes = xp.asarray(axes, dtype=dtype, copy=True)
 
     # Check argument validity
     if order in ["e", "extrinsic"]:
@@ -462,16 +464,16 @@ def approx_equal(
 def mean(quat: Array, weights: Array | None = None) -> Array:
     xp = array_namespace(quat)
     _device = device(quat)
-    _dtype = fast_xp_result_type(quat, xp=xp)
+    dtype = xp_result_type(quat, force_floating=True, xp=xp)
     if quat.shape[0] == 0:
         raise ValueError("Mean of an empty rotation set is undefined.")
 
     # Branching code is okay for checks that include meta info such as shapes and types
     if weights is None:
-        weights = xp.ones(quat.shape[:-1], dtype=_dtype, device=_device)
+        weights = xp.ones(quat.shape[:-1], dtype=dtype, device=_device)
         weights = xpx.atleast_nd(weights, ndim=1, xp=xp)
     else:
-        weights = xp.asarray(weights, dtype=_dtype, copy=True, device=_device)
+        weights = xp.asarray(weights, dtype=dtype, copy=True, device=_device)
     if not is_lazy_array(weights) and xp.any(weights < 0):
         raise ValueError("`weights` must be non-negative.")
 
@@ -611,8 +613,9 @@ def align_vectors(
 ) -> tuple[Array, Array, Array]:
     xp = array_namespace(a)
     # Check input vectors
-    a_original = xp.asarray(a, dtype=fast_xp_result_type(a, xp=xp), copy=True)
-    b_original = xp.asarray(b, dtype=fast_xp_result_type(b, xp=xp), copy=True)
+    dtype = xp_result_type(a, force_floating=True, xp=xp)
+    a_original = xp.asarray(a, dtype=dtype, copy=True)
+    b_original = xp.asarray(b, dtype=dtype, copy=True)
     # TODO: This function does not support broadcasting yet.
     a = xpx.atleast_nd(a_original, ndim=2, xp=xp)
     b = xpx.atleast_nd(b_original, ndim=2, xp=xp)
@@ -1032,9 +1035,8 @@ def _elementary_quat_compose(angles: Array, axes: list[int], intrinsic: bool) ->
 
 def _make_elementary_quat(axis: int, angle: Array, device) -> Array:
     xp = array_namespace(angle)
-    quat = xp.zeros(
-        (*angle.shape, 4), dtype=fast_xp_result_type(angle, xp=xp), device=device
-    )
+    dtype = xp_result_type(angle, force_floating=True, xp=xp)
+    quat = xp.zeros((*angle.shape, 4), dtype=dtype, device=device)
     quat = xpx.at(quat)[..., 3].set(xp.cos(angle / 2.0))
     quat = xpx.at(quat)[..., axis].set(xp.sin(angle / 2.0))
     return quat
@@ -1121,28 +1123,6 @@ def broadcastable(shape_a: tuple[int, ...], shape_b: tuple[int, ...]) -> bool:
     return all(
         (m == n) or (m == 1) or (n == 1) for m, n in zip(shape_a[::-1], shape_b[::-1])
     )
-
-
-# TODO: Remove if this is not needed
-def fast_xp_result_type(a: ArrayLike, xp: ModuleType | None = None):
-    """Fast version of xp_result_type.
-
-    xp.result_type is significantly faster than xp_result_type (1e5x faster). For large
-    arrays, this dominates performance. Therefore, we use xp.result_type. This lacks the
-    option to force floating point types, so we catch promotion errors from integer
-    types and use the result type of float32 and float64 in this case.
-
-    For NumPy, we always promote to float64.
-    """
-    if xp is None:
-        xp = array_namespace(a)
-    if is_numpy(xp):
-        return xp.float64
-    else:
-        try:
-            return xp.result_type(a.dtype, xp.float64)
-        except TypeError:
-            return xp.result_type(xp.float32, xp.float64)
 
 
 def _split_rotation(q, xp):
