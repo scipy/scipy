@@ -306,6 +306,12 @@ _special_funcs = (
               paramtypes=("real", "int", "real")),
     _FuncInfo(_ufuncs.betainc, 3, _needs_betainc),
     _FuncInfo(_ufuncs.betaincc, 3, _needs_betainc, generic_impl=_betaincc),
+    _FuncInfo(_ufuncs.betaincinv, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False, positive_only=True),
     _FuncInfo(_ufuncs.betaln, 2,
               # For betaln, nan mismatches can occur at negative integer a or b of
               # sufficiently large magnitude.

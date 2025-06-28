@@ -73,6 +73,9 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
     if isinstance(positive_only, bool):
         positive_only = [positive_only]*nfo.n_args
 
+    if f_name in {'betaincinv'} and is_cupy(xp):
+        pytest.xfail("CuPy uses different convention for out of domain input.")
+
     if not any('int' in dtype for dtype in dtypes):
         return positive_only, dtypes
 
