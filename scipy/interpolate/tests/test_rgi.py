@@ -369,7 +369,6 @@ class TestRegularGridInterpolator:
         assert_array_equal(result, wanted)
 
 
-
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
         # Along the axis it's linear interpolation; away from the length-1
