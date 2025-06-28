@@ -4,7 +4,6 @@ import itertools
 import math
 import threading
 import copy
-import sys
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -3478,11 +3477,10 @@ class TestMakeSplrepBase:
     @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
-        s = 1e-50
+        s = 1e-31
         if self.bc_type == 'periodic':
             x = np.linspace(0, 2*np.pi, 14)
             y = np.sin(x)
-            s = 1e-31 if sys.maxsize <= 2**32 else 1e-50
         else:
             x = np.arange(14)
             y = x**3
