@@ -340,6 +340,12 @@ _special_funcs = (
                   cpu_only=True, exceptions=['cupy'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.cosdg, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
     _FuncInfo(_ufuncs.chdtr, 2, generic_impl=_chdtr),
     _FuncInfo(_ufuncs.chdtrc, 2, generic_impl=_chdtrc,
               # gh-20972
