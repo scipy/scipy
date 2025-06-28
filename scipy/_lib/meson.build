@@ -122,7 +122,6 @@ python_sources = [
   '_pep440.py',
   '_sparse.py',
   '_testutils.py',
-  '_threadsafety.py',
   '_tmpdirs.py',
   '_util.py',
   'decorator.py',
@@ -220,7 +219,7 @@ py3.install_sources(
   [
     'array_api_extra/src/array_api_extra/_lib/_utils/__init__.py',
     'array_api_extra/src/array_api_extra/_lib/_utils/_compat.py',
-    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.pyi',    
+    'array_api_extra/src/array_api_extra/_lib/_utils/_compat.pyi',
     'array_api_extra/src/array_api_extra/_lib/_utils/_helpers.py',
     'array_api_extra/src/array_api_extra/_lib/_utils/_typing.py',
     'array_api_extra/src/array_api_extra/_lib/_utils/_typing.pyi',
