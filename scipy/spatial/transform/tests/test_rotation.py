@@ -14,11 +14,13 @@ from scipy._lib._array_api import (
     is_jax,
     is_array_api_strict,
     is_cupy,
+    is_torch,
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
-    xp_default_dtype
+    xp_default_dtype,
+    xp_device
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -994,11 +996,10 @@ def test_inv(xp):
     n = 10
     # preserve use of old random_state during SPEC 7 transition
     p = Rotation.random(num=n, random_state=rnd)
-    p = Rotation.from_quat(xp.asarray(p.as_quat()))
-    q = p.inv()
-
     p_mat = p.as_matrix()
-    q_mat = q.as_matrix()
+    q_mat = p.inv().as_matrix()
+    p = Rotation.from_quat(xp.asarray(p.as_quat()))
+
     result1 = xp.asarray(np.einsum("...ij,...jk->...ik", p_mat, q_mat))
     result2 = xp.asarray(np.einsum("...ij,...jk->...ik", q_mat, p_mat))
 
@@ -1107,12 +1108,12 @@ def test_approx_equal(xp):
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = Rotation.random(10, rng=rng)
     q = Rotation.random(10, rng=rng)
+    r_mag = (p * q.inv()).magnitude()
     p = Rotation.from_quat(xp.asarray(p.as_quat()))
     q = Rotation.from_quat(xp.asarray(q.as_quat()))
-    r = p * q.inv()
-    r_mag = r.magnitude()
-    atol = xp.asarray(np.median(r_mag))  # ensure we get mix of Trues and Falses
-    xp_assert_equal(p.approx_equal(q, atol), (r_mag < atol))
+    # ensure we get mix of Trues and Falses
+    atol = xp.asarray(np.median(r_mag))
+    xp_assert_equal(p.approx_equal(q, atol), (xp.asarray(r_mag) < atol))
 
 
 @pytest.mark.thread_unsafe
@@ -1787,6 +1788,7 @@ def test_align_vectors_antiparallel(xp):
 
     # Test exact 180 deg rotation
     atol = 1e-12
+
     as_to_test = np.array([[[1.0, 0, 0], [0, 1, 0]],
                            [[0, 1, 0], [1, 0, 0]],
                            [[0, 0, 1], [0, 1, 0]]])
@@ -1806,6 +1808,11 @@ def test_align_vectors_antiparallel(xp):
     as_to_test = []
     for dR in dRs:
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
+
+    # GPU computation in torch is less accurate
+    if is_torch(xp) and xp_device(xp.asarray(0)).type != "cpu":
+        atol = 1e-7
+
     for a in as_to_test:
         a, b = xp.asarray(a), xp.asarray(b)
         R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
@@ -1831,7 +1838,7 @@ def test_align_vectors_primary_only(xp):
         # Compare to align_vectors with primary only
         R, rssd = Rotation.align_vectors(a, b)
         xp_assert_close(R.apply(b), a, atol=atol)
-        assert np.isclose(rssd, 0, atol=atol)
+        xp_assert_close(rssd, xp.asarray(0.0)[()], atol=atol)
 
 
 def test_align_vectors_array_like():
