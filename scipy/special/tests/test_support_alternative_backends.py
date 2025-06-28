@@ -207,7 +207,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln'}:
+    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
@@ -250,7 +250,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
 def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln'}:
+    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
@@ -332,6 +332,12 @@ def test_ufunc_kwargs(func, n_args, paramtypes, is_ufunc):
     out = np.empty(2, dtype=np.float32)
     y = func(*args, out=out)
     xp_assert_close(y, out)
+
+    if func.__name__ == "bdtr":
+        # The below function evaluation will trigger a deprecation warning
+        # with dtype=np.float32. This will go away if the trigger is actually
+        # pulled on the deprecation.
+        return
 
     # dtype=
     y = func(*args, dtype=np.float32)
