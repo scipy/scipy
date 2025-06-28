@@ -211,7 +211,7 @@ class Logistic(ContinuousDistribution):
 
     """
     _x_support = _RealInterval(endpoints=(-inf, inf))
-    _variable =_x_param = _RealParameter('x', domain=_x_support, typical=(-9, 9))
+    _variable = _x_param = _RealParameter('x', domain=_x_support, typical=(-9, 9))
     _parameterizations = ()
 
     _scale = np.pi / np.sqrt(3)
