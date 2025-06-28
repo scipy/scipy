@@ -1,4 +1,5 @@
 import math
+import os
 
 import pytest
 
@@ -14,13 +15,11 @@ from scipy._lib._array_api import (
     is_jax,
     is_array_api_strict,
     is_cupy,
-    is_torch,
     is_lazy_array,
     xp_vector_norm,
     xp_assert_close,
     eager_warns,
     xp_default_dtype,
-    xp_device
 )
 import scipy._lib.array_api_extra as xpx
 
@@ -1789,6 +1788,11 @@ def test_align_vectors_antiparallel(xp):
     # Test exact 180 deg rotation
     atol = 1e-12
 
+    align_vectors = Rotation.align_vectors
+    if is_jax(xp):
+        import jax
+        align_vectors = jax.jit(align_vectors)
+
     as_to_test = np.array([[[1.0, 0, 0], [0, 1, 0]],
                            [[0, 1, 0], [1, 0, 0]],
                            [[0, 0, 1], [0, 1, 0]]])
@@ -1796,7 +1800,7 @@ def test_align_vectors_antiparallel(xp):
     bs_to_test = np.array([[-a[0], a[1]] for a in as_to_test])
     for a, b in zip(as_to_test, bs_to_test):
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
+        R, _ = align_vectors(a, b, weights=[xp.inf, 1])
         xp_assert_close(R.magnitude(), xp.asarray(xp.pi)[()], atol=atol)
         xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
@@ -1810,13 +1814,13 @@ def test_align_vectors_antiparallel(xp):
         as_to_test.append(np.array([dR.apply(a[0]), a[1]]))
 
     # GPU computation in torch is less accurate
-    if is_torch(xp) and xp_device(xp.asarray(0)).type != "cpu":
+    if os.environ.get("SCIPY_DEVICE") == "cuda":
         atol = 1e-7
 
     for a in as_to_test:
         a, b = xp.asarray(a), xp.asarray(b)
-        R, _ = Rotation.align_vectors(a, b, weights=[xp.inf, 1])
-        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        R, _ = align_vectors(a, b, weights=[xp.inf, 1])
+        R2, _ = align_vectors(a, b, weights=[1e10, 1])
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
