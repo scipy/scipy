@@ -375,10 +375,35 @@ _special_funcs = (
                   cpu_only=True, exceptions=['cupy'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.entr, 1),
     _FuncInfo(_ufuncs.erf, 1),
     _FuncInfo(_ufuncs.erfc, 1),
+    _FuncInfo(_ufuncs.erfcx, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.erfinv, 1),
-    _FuncInfo(_ufuncs.entr, 1),
+    _FuncInfo(_ufuncs.exp1, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.exp10, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.exp2, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.exprel, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.expi, 1),
     _FuncInfo(_ufuncs.expit, 1),
     _FuncInfo(_ufuncs.expn, 2,
@@ -387,20 +412,125 @@ _special_funcs = (
               # taking analytic continuation.
               positive_only=True,
               paramtypes=("int", "real"), test_large_ints=False),
-    _FuncInfo(_ufuncs.i0, 1),
-    _FuncInfo(_ufuncs.i0e, 1),
-    _FuncInfo(_ufuncs.i1, 1),
-    _FuncInfo(_ufuncs.i1e, 1),
-    _FuncInfo(_ufuncs.log_ndtr, 1),
-    _FuncInfo(_ufuncs.logit, 1),
+    _FuncInfo(_ufuncs.fdtr, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.fdtrc, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.fdtri, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.gamma, 1,
               xp_capabilities(cpu_only=True, exceptions=['cupy', 'jax.numpy'])),
-    _FuncInfo(_ufuncs.gammaln, 1),
     _FuncInfo(_ufuncs.gammainc, 2),
     _FuncInfo(
         _ufuncs.gammaincc, 2,
         # google/jax#20699
         positive_only={'jax.numpy': True}),
+    _FuncInfo(_ufuncs.gammainccinv, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.gammaincinv, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.gammaln, 1),
+    _FuncInfo(_ufuncs.gammasgn, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.gdtr, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.gdtrc, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.huber, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.inv_boxcox, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.inv_boxcox1p, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.i0, 1),
+    _FuncInfo(_ufuncs.i0e, 1),
+    _FuncInfo(_ufuncs.i1, 1),
+    _FuncInfo(_ufuncs.i1e, 1),
+    _FuncInfo(_ufuncs.j0, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.j1, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.k0, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.k0e, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.k1, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.k1e, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.kl_div, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.log_ndtr, 1),
+    _FuncInfo(_ufuncs.loggamma, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.logit, 1),
+    _FuncInfo(_ufuncs.lpmv, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
     _FuncInfo(_spfun_stats.multigammaln, 2,
               is_ufunc=False,
               scalar_only={"cupy": [False, True],
@@ -411,23 +541,105 @@ _special_funcs = (
                                  "dask.array": [False, True],
                                  "marray": [False, True]},
               paramtypes=('real', 'int'), test_large_ints=False, positive_only=True),
+    _FuncInfo(_ufuncs.nbdtr, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              paramtypes=('int', 'int', 'real'),
+              positive_only=(True, True, True)),
+    _FuncInfo(_ufuncs.nbdtrc, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              paramtypes=('int', 'int', 'real'),
+              positive_only=(True, True, True)),
+    _FuncInfo(_ufuncs.nbdtri, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              paramtypes=('int', 'int', 'real'),
+              positive_only=(True, True, True)),
     _FuncInfo(_ufuncs.ndtr, 1),
     _FuncInfo(_ufuncs.ndtri, 1),
+    _FuncInfo(_ufuncs.pdtr, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              positive_only=(True, True)),
+    _FuncInfo(_ufuncs.pdtrc, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              positive_only=(True, True)),
+    _FuncInfo(_ufuncs.pdtri, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              paramtypes=('int', 'real'),
+              positive_only=(True, True)),
+    _FuncInfo(_ufuncs.poch, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.pseudo_huber, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,
               scalar_or_0d_only={"torch": [True, False]}, produces_0d=True,
               positive_only={"torch": [True, False]}, test_large_ints=False),
     _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
+    _FuncInfo(_ufuncs.radian, 3,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.rel_entr, 2, generic_impl=_rel_entr),
+    _FuncInfo(_ufuncs.rgamma, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
+    _FuncInfo(_ufuncs.sindg, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
     _FuncInfo(_ufuncs.stdtr,  2, _needs_betainc, generic_impl=_stdtr),
     _FuncInfo(_ufuncs.stdtrit, 2,
               xp_capabilities(
                   cpu_only=True, exceptions=['cupy'],  # needs betainc
                   skip_backends=[("jax.numpy", "no scipy.optimize support")]),
               generic_impl=_stdtrit),
+    _FuncInfo(_ufuncs.tandg, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.xlog1py, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.xlogy, 2, generic_impl=_xlogy),
     _FuncInfo(_basic.zeta, 2, is_ufunc=False,
               positive_only={'jax.numpy': [True, True], 'torch': [True, False]},
               test_large_ints=False),
+    _FuncInfo(_ufuncs.zetac, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")])),
 )
 
 # Override ufuncs.

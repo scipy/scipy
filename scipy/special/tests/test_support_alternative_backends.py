@@ -81,7 +81,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
 
     # Integer-specific issues from this point onwards
 
-    if f_name in {'gamma'} and is_cupy(xp):
+    if f_name in {'gamma', 'gammasgn'} and is_cupy(xp):
         # CuPy has not yet updated gamma pole behavior to match
         # https://github.com/scipy/scipy/pull/21827.
         positive_only = [True]
@@ -98,7 +98,7 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
     # int/float mismatched args support is sketchy
     if (any('float' in dtype for dtype in dtypes)
         and ((is_torch(xp) and f_name in ('rel_entr', 'xlogy', 'polygamma',
-                                          'zeta'))
+                                          'zeta', 'xlog1py'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
                                            'polygamma', 'zeta')))
@@ -210,7 +210,8 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
 @pytest.mark.filterwarnings("ignore:invalid value encountered:RuntimeWarning:dask")
 def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     """Test mix-n-match of int and float arguments"""
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri'}:
+    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
+                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
     dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
@@ -253,7 +254,8 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     "ignore:overflow encountered:RuntimeWarning:array_api_strict"
 )
 def test_support_alternative_backends_hypothesis(xp, func, nfo, data):
-    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri'}:
+    if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
+                         'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
     dtype = data.draw(strategies.sampled_from(['float32', 'float64', 'int64']))
     positive_only, [dtype_np_ref] = _skip_or_tweak_alternative_backends(
