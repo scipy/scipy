@@ -72,6 +72,7 @@ def laplacian(
         Default: False, for backward compatibility.
     variant : 'repelling', 'opposing' or 'unsigned'
         Specifies the method used to compute vertex degrees.
+        All variants are the same in the case of non-negative edge weights.
         Detailed discussions on the reasoning behind each type of variant
         can be found in [2].:
 
