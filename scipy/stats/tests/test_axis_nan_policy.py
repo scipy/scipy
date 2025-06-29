@@ -501,6 +501,18 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
 
     assert_allclose(res_nd, res_1d, rtol=1e-14)
 
+# nan should not raise a RuntimeWarning in np.mean()
+# but does on mips64el, triggering failure in some test cases
+# see https://github.com/scipy/scipy/issues/22360
+# and https://github.com/numpy/numpy/issues/23158
+def skip_unexpected_nan_RuntimeWarning():
+    try:
+        # should not raise RuntimeWarning
+        with np.errstate(all='raise'):
+            x = np.asarray([1, 2, np.nan])
+            np.mean(x)
+    except RuntimeWarning:
+        pytest.skip("nan raises unexpected RuntimeWarning in numpy")
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
@@ -515,6 +527,20 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
     if not unpacker:
         def unpacker(res):
             return res
+
+    # skip if nan emits unexpected RuntimeWarning in np.mean()
+    # seen on mips64el, https://github.com/scipy/scipy/issues/22360
+    # Only affects nan_policy "mixed-propagate" for selected hypotests
+    if data_generator=="mixed" and nan_policy=="propagate":
+        # only skip affected hypotests
+        if hypotest.__name__ in ["iqr", "ttest_ci",
+                                 "xp_mean_1samp", "xp_mean_2samp", "xp_var",
+                                 "weightedtau", "weightedtau_weighted"]:
+            skip_unexpected_nan_RuntimeWarning()
+    # mixed-omit-xp_var is also affected, via subtract
+    if (data_generator=="mixed" and nan_policy=="omit"
+        and hypotest.__name__=="xp_var"):
+        skip_unexpected_nan_RuntimeWarning()
 
     rng = np.random.default_rng(0)
 
