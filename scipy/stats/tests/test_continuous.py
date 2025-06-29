@@ -1446,6 +1446,36 @@ class TestMakeDistribution:
             assert repr(dist(beta=2)) == "HalfGeneralizedNormal(beta=np.float64(2.0))"
         assert 'HalfGeneralizedNormal' in dist.__doc__
 
+    def test_custom_distribution_repr_str(self):
+            # Create a custom distribution class
+            class MyLogUniform:
+                @property
+                def __make_distribution_version__(self):
+                    return "1.16.0"
+
+                @property
+                def parameters(self):
+                    return {'a': {'endpoints': (0, np.inf), 
+                                  'inclusive': (False, False)},
+                            'b': {'endpoints': ('a', np.inf), 
+                                  'inclusive': (False, False)}}
+
+                @property
+                def support(self):
+                    return 'a', 'b'
+
+                def pdf(self, x, a, b):
+                    return 1 / (x * (np.log(b) - np.log(a)))
+
+            LogUniform = stats.make_distribution(MyLogUniform())
+            dist_instance = LogUniform(a=2.0, b=3.0)
+
+            # Test __str__ method
+            assert str(dist_instance) == 'MyLogUniform(a=2.0, b=3.0)'
+            # Test __repr__ method
+            assert repr(dist_instance) == \
+                'MyLogUniform(a=np.float64(2.0), b=np.float64(3.0))'
+
 
 class TestTransforms:
 
