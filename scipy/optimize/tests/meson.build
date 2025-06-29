@@ -20,6 +20,7 @@ py3.install_sources([
     'test_direct.py',
     'test_extending.py',
     'test_hessian_update_strategy.py',
+    'test_highs_wrapper.py',
     'test_isotonic_regression.py',
     'test_lbfgsb_hessinv.py',
     'test_lbfgsb_setulb.py',
