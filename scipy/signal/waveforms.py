@@ -5,8 +5,8 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
-    'unit_impulse',
+    'sawtooth', 'sawtooth_rfft', 'square', 'square_rfft', 'gausspulse', 'chirp',
+    'sweep_poly', 'unit_impulse',
 ]
 
 
