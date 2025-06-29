@@ -124,7 +124,6 @@ python_sources = [
   '_testutils.py',
   '_tmpdirs.py',
   '_util.py',
-  'decorator.py',
   'deprecation.py',
   'doccer.py',
   'uarray.py',
