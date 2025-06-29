@@ -1231,7 +1231,7 @@ const char *xlogy_doc = R"(
     binary classification problems and is defined as:
 
     .. math::
-        L = \frac{1}{n} \sum_{i=0}^n -[y_i*log({y_{pred}}_i) + (1-y_i)*log(1-{y_{pred}}_i)]
+        L = \frac{1}{n} \sum_{i=0}^n -[y_i*\log({y_{pred}}_i) + (1-y_i)*\log(1-{y_{pred}}_i)]
 
     We can define the parameters `x` and `y` as y and y_pred respectively.
     y is the array of the actual labels which over here can be either 0 or 1.
