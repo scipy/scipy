@@ -5118,46 +5118,71 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
     def ill_cases(self):
         # Ill-formed inputs and reference 2 x 2 outputs for testing _getnnz()
-        # and tocsr(): list of tuples (data, offsets, nnz, dense array)
+        # and tocsr(): list of tuples
+        # (data, offsets, nnz, dense array, case description)
 
         d1 = [[1]]        # diagonal shorter than width
         d3 = [[1, 2, 3]]  # diagonal longer than width
 
-        return [(d1, [-1], 1, [[0, 0], [1, 0]]),  # within
-                (d1, [1],  0, [[0, 0], [0, 0]]),  # above (but within if full)
-                (d1, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d1, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                (d3, [-1], 1, [[0, 0], [1, 0]]),  # within (only head)
-                (d3, [1],  1, [[0, 2], [0, 0]]),  # within (only tail)
-                (d3, [3],  0, [[0, 0], [0, 0]]),  # all above
-                (d3, [-3], 0, [[0, 0], [0, 0]]),  # all below
-                # empty
-                (None, None, 0, [[0, 0], [0, 0]]),
-                # explicit zeros
-                ([[0, 0]], [0], 2, [[0, 0], [0, 0]]),
-                # overfilled shorter-diagonal, out of order
+        return [(d1, [-1], 1, [[0, 0], [1, 0]],
+                 'shorter diagonal within'),
+                (d1, [1],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal above (but within if full)'),
+                (d1, [3],  0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements above'),
+                (d1, [-3], 0, [[0, 0], [0, 0]],
+                 'shorter diagonal, all elements below'),
+                (d3, [-1], 1, [[0, 0], [1, 0]],
+                 'longer diagonal within (only head)'),
+                (d3, [1],  1, [[0, 2], [0, 0]],
+                 'longer diagonal within (only tail)'),
+                (d3, [3],  0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements above'),
+                (d3, [-3], 0, [[0, 0], [0, 0]],
+                 'longer diagonal, all elements below'),
+                (None, None, 0, [[0, 0], [0, 0]],
+                 'empty input'),
+                ([[0, 0]], [0], 2, [[0, 0], [0, 0]],
+                 'explicit zeros'),
                 (np.arange(1, 1 + 7).reshape((7, 1)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 2, [[1, 0], [5, 0]]),
-                # overfilled longer-diagonal, out of order
+                 2, [[1, 0], [5, 0]],
+                 'overfilled shorter-diagonal, out of order'),
                 (np.arange(1, 1 + 7 * 3).reshape((7, 3)),
                  [0, 1, 2, 3, -1, -2, -3],
-                 4, [[1, 5], [13, 2]])]
+                 4, [[1, 5], [13, 2]],
+                 'overfilled longer-diagonal, out of order')]
 
     def test_getnnz(self):
-        for data, ofsets, nnz, ref in self.ill_cases():
+        for data, ofsets, nnz, ref, case in self.ill_cases():
             for shape in [(2, 2), (0, 2), (2, 0)]:
                 if data is None:
-                    A = dia_array(shape)
+                    A = self.dia_container(shape)
                 else:
-                    A = dia_array((data, ofsets), shape=shape)
+                    A = self.dia_container((data, ofsets), shape=shape)
                 if 0 in shape:
                     nnz = 0
-                assert A._getnnz() == nnz
+                assert A._getnnz() == nnz, 'case: ' + case
 
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
         pass
+
+    def test_tocsr(self):
+        # test bound checks (other pathological cases are tested by
+        # TestConstructUtils::test_spdiags, and normal operation is ensured by
+        # many other tests here using .toarray())
+        for data, ofsets, _, r, case in self.ill_cases():
+            for shape in [(2, 2), (0, 2), (2, 0)]:
+                if data is None:
+                    A = self.dia_container(shape)
+                else:
+                    A = self.dia_container((data, ofsets), shape=shape)
+                B = A.tocsr()
+                ref = np.array(r)[:shape[0], :shape[1]]
+                nnz = np.count_nonzero(ref)
+                assert B.nnz == nnz
+                assert_array_equal(B.toarray(), ref, err_msg='case: ' + case)
 
     def test_convert_gh14555(self):
         # regression test for gh-14555
@@ -5190,30 +5215,30 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         # test format and cases not covered by common add tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp + Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A + B)
 
         Csp = Bsp + Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B + A)
 
     def test_sub_sparse(self):
         # test format and cases not covered by common sub tests
         A = diag([1, 2])
         B = A + diag([3], 1)
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
 
         Csp = Asp - Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), A - B)
 
         Csp = Bsp - Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), B - A)
 
         Bsp = Bsp.asformat('csr')
@@ -5240,8 +5265,8 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         B = array([[11, 12],
                    [13, 14],
                    [15, 16]])
-        Asp = dia_matrix(A)
-        Bsp = dia_matrix(B)
+        Asp = self.dia_container(A)
+        Bsp = self.dia_container(B)
         Asp.data[Asp.data == 0] = -1  # poison outside elements
         Bsp.data[Bsp.data == 0] = -1
         assert_array_equal(Asp.toarray(), A)
@@ -5249,21 +5274,21 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
 
         C = A @ B
         Csp = Asp @ Bsp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-1, 0, 1])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         C = B @ A
         Csp = Bsp @ Asp
-        assert isinstance(Csp, dia_matrix)
+        assert isinstance(Csp, self.dia_container)
         assert_array_equal(Csp.toarray(), C)
         assert_array_equal(Csp.offsets, [-2, -1, 0, 1, 2])
-        assert_array_equal(Csp.data, dia_matrix(C).data)
+        assert_array_equal(Csp.data, self.dia_container(C).data)
 
         # short data and that order of input offsets doesn't matter
-        Asp = dia_matrix(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
-        Bsp = dia_matrix(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
+        Asp = self.dia_container(([[0., 1., 2.], [3., 4., 5.]], [1, -2]), (5, 5))
+        Bsp = self.dia_container(([[6., 7., 8.], [0., 0., 9.]], [-1, 2]), (5, 5))
 
         Csp = Asp @ Bsp
         assert_array_equal(Csp.offsets, array([-3, 0]))
