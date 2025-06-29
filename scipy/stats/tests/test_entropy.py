@@ -234,6 +234,13 @@ class TestDifferentialEntropy:
         with pytest.raises(ValueError, match=message):
             stats.differential_entropy(x, method='ekki-ekki')
 
+    def test_window_length_is_none(self, xp):
+        rng = np.random.default_rng(358923459826738562)
+        x = xp.asarray(rng.random(size=10))
+        ref = stats.differential_entropy(x)
+        res = stats.differential_entropy(x, window_length=None)
+        xp_assert_close(res, ref, rtol=0.005)
+
     @methods
     def test_consistency(self, method, xp):
         # test that method is a consistent estimator

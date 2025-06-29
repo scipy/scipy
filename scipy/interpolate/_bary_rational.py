@@ -25,6 +25,7 @@
 
 import warnings
 import operator
+from types import GenericAlias
 
 import numpy as np
 import scipy
@@ -35,6 +36,10 @@ __all__ = ["AAA", "FloaterHormannInterpolator"]
 
 class _BarycentricRational:
     """Base class for barycentric representation of a rational function."""
+
+    # generic type compatibility with scipy-stubs
+    __class_getitem__ = classmethod(GenericAlias)
+
     def __init__(self, x, y, **kwargs):
         # input validation
         z = np.asarray(x)

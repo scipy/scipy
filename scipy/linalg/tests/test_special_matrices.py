@@ -593,12 +593,6 @@ def test_batch(f, args):
     m = 10
     A = rng.random(batch_shape + (m,))
 
-    if f in {toeplitz}:
-        message = "Beginning in SciPy 1.17, multidimensional input will be..."
-        with pytest.warns(FutureWarning, match=message):
-            f(A, *args)
-        return
-
     res = f(A, *args)
     ref = np.asarray([f(a, *args) for a in A.reshape(-1, m)])
     ref = ref.reshape(A.shape[:-1] + ref.shape[-2:])
