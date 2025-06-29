@@ -45,8 +45,6 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
-from scipy._lib.decorator import decorator
-
 IS_COLAB = ('google.colab' in sys.modules)
 
 
@@ -141,29 +139,39 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                 raise AssertionError("downcast limited")
             return arr.astype(np.intp)
 
-    @decorator
-    def deco(func, *a, **kw):
+    def decorator(func):
         backup = []
         modules = [scipy.sparse._bsr, scipy.sparse._coo, scipy.sparse._csc,
                    scipy.sparse._csr, scipy.sparse._dia, scipy.sparse._dok,
                    scipy.sparse._lil, scipy.sparse._sputils,
                    scipy.sparse._compressed, scipy.sparse._construct]
-        try:
-            for mod in modules:
-                backup.append((mod, 'get_index_dtype',
-                               getattr(mod, 'get_index_dtype', None)))
-                setattr(mod, 'get_index_dtype', new_get_index_dtype)
-                if downcast_maxval is not None:
-                    backup.append((mod, 'downcast_intp_index',
-                                   getattr(mod, 'downcast_intp_index', None)))
-                    setattr(mod, 'downcast_intp_index', new_downcast_intp_index)
-            return func(*a, **kw)
-        finally:
-            for mod, name, oldfunc in backup:
-                if oldfunc is not None:
-                    setattr(mod, name, oldfunc)
 
-    return deco
+        @functools.wraps(func)
+        def wrapper(*a, **kw):
+            try:
+                for mod in modules:
+                    backup.append((
+                        mod,
+                        'get_index_dtype',
+                        getattr(mod, 'get_index_dtype', None)
+                    ))
+                    setattr(mod, 'get_index_dtype', new_get_index_dtype)
+
+                    if downcast_maxval is not None:
+                        backup.append((
+                            mod,
+                            'downcast_intp_index',
+                            getattr(mod, 'downcast_intp_index', None)
+                        ))
+                        setattr(mod, 'downcast_intp_index', new_downcast_intp_index)
+
+                return func(*a, **kw)
+            finally:
+                for mod, name, oldfunc in backup:
+                    if oldfunc is not None:
+                        setattr(mod, name, oldfunc)
+        return wrapper
+    return decorator
 
 
 def toarray(a):
@@ -4470,7 +4478,7 @@ class TestCSRMatrix(_MatrixMixin, TestCSR):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             return csr_matrix(*args, **kwargs)
-    
+
 def test_spmatrix_subscriptable():
     result = csr_matrix[np.int8]
     assert isinstance(result, GenericAlias)
@@ -5056,7 +5064,7 @@ class TestCOO(sparse_test_class(getset=False,
         # Using __ne__ and nnz instead
         assert_((mat1.reshape((1001, 3000001), order='C') != mat2).nnz == 0)
         assert_((mat2.reshape((3000001, 1001), order='F') != mat1).nnz == 0)
-    
+
 class TestCOOMatrix(_MatrixMixin, TestCOO):
     spcreator = coo_matrix
 
