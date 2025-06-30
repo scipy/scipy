@@ -1690,6 +1690,16 @@ class TestBilinear:
         with pytest.raises(ValueError, match="Sampling.*be none"):
             bilinear(b, a, fs=None)
 
+    def test_zpk2tf_with_multi_dimensional_array(self):
+            z = np.array([[1, 2], [3, 4]])  # Multi-dimensional input
+            p = np.array([1, 2])
+            k = 1
+            b, a = zpk2tf(z, p, k)
+            assert b.shape == (2, 3)
+            assert a.shape == (3,)
+            assert np.all(b[0] == np.poly(z[0]))  # Check first row of b
+            assert np.all(a == np.poly(p))
+
 
 class TestLp2lp_zpk:
 
