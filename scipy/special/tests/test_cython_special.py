@@ -273,7 +273,6 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.smirnov, cython_special.smirnov, ('ld', 'dd'), None),
     (special.smirnovi, cython_special.smirnovi, ('ld', 'dd'), None),
     (special.spence, cython_special.spence, ('d', 'D'), None),
-    (special.sph_harm, cython_special.sph_harm, ('lldd', 'dddd'), None),
     (special.stdtr, cython_special.stdtr, ('dd',), None),
     (special.stdtridf, cython_special.stdtridf, ('dd',), None),
     (special.stdtrit, cython_special.stdtrit, ('dd',), None),
