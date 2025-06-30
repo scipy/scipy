@@ -3562,7 +3562,7 @@ class TestMakeSplrepBase:
     @pytest.mark.thread_unsafe
     def test_s_too_small(self):
         # both splrep and make_splrep warn that "s too small": ier=2
-        s = 1e-31
+        s = 1e-30
         if self.bc_type == 'periodic':
             x = np.linspace(0, 2*np.pi, 14)
             y = np.sin(x)
