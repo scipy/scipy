@@ -117,7 +117,7 @@ def spline_filter1d(input, order=3, axis=-1, output=np.float64,
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     complex_output = np.iscomplexobj(input)
     output = _ni_support._get_output(output, input,
                                      complex_output=complex_output)
@@ -192,7 +192,7 @@ def spline_filter(input, order=3, output=np.float64, mode='mirror'):
     """
     if order < 2 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     complex_output = np.iscomplexobj(input)
     output = _ni_support._get_output(output, input,
                                      complex_output=complex_output)
@@ -338,7 +338,7 @@ def geometric_transform(input, mapping, output_shape=None,
         extra_keywords = {}
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if output_shape is None:
         output_shape = input.shape
     if input.ndim < 1 or len(output_shape) < 1:
@@ -445,7 +445,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     coordinates = np.asarray(coordinates)
     if np.iscomplexobj(coordinates):
         raise TypeError('Complex type not supported')
@@ -592,7 +592,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if output_shape is None:
         if isinstance(output, np.ndarray):
             output_shape = output.shape
@@ -730,7 +730,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
     complex_output = np.iscomplexobj(input)
@@ -833,7 +833,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
-    input = np.asarray(input)
+    input = xp_asarray(input, xp=np)
     if input.ndim < 1:
         raise RuntimeError('input and output rank must be > 0')
     zoom = _ni_support._normalize_sequence(zoom, input.ndim)
