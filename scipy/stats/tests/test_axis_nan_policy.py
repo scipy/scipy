@@ -537,6 +537,10 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                  "xp_mean_1samp", "xp_mean_2samp", "xp_var",
                                  "weightedtau", "weightedtau_weighted"]:
             skip_nan_unexpected_exception()
+    # all_nans-propagate-ttest_ci is also affected, via scalar multiply
+    if (data_generator=="all_nans" and nan_policy=="propagate"
+        and hypotest.__name__=="ttest_ci"):
+        skip_nan_unexpected_exception()
     # mixed-omit-xp_var is also affected, via subtract
     if (data_generator=="mixed" and nan_policy=="omit"
         and hypotest.__name__=="xp_var"):
