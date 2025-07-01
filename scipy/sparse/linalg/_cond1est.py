@@ -45,9 +45,9 @@ def cond1est(A):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse import csc_array
     >>> from scipy.sparse.linalg import cond1est
-    >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
+    >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
     >>> A.toarray()
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
