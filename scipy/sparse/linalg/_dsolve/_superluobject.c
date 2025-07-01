@@ -106,7 +106,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 }
 
 
-static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
+static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
     volatile int info;
@@ -220,7 +220,7 @@ static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"invnormest", (PyCFunction) SuperLU_invnormest, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"normest_inv", (PyCFunction) SuperLU_normest_inv, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */

@@ -65,7 +65,7 @@ class TestCond1Est:
     def test_invnormest(self, ord, dtype):
         A = self.generate_matrix(5, dtype)
         true_invnorm = np.linalg.norm(np.linalg.inv(A.toarray()), ord=ord)
-        est_invnorm = spla.invnormest(A, ord=ord)
+        est_invnorm = spla.normest_inv(A, ord=ord)
         assert_allclose(est_invnorm, true_invnorm)
 
     # @pytest.mark.parametrize("dtype",
@@ -82,5 +82,5 @@ class TestCond1Est:
     def test_error_unsupported_norm(self):
         A = self.generate_matrix(5, np.float64)
         with assert_raises(ValueError):
-            spla.splu(A).invnormest(ord=2)
+            spla.splu(A).normest_inv(ord=2)
         
