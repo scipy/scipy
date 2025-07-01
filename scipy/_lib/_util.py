@@ -351,6 +351,13 @@ def _transition_to_rng(old_name, *, position_num=None, end_version=None,
 
             return fun(*args, **kwargs)
 
+        # Add the old parameter name to the function signature
+        wrapped_signature = inspect.signature(fun)
+        wrapper.__signature__ = wrapped_signature.replace(parameters=[
+            *wrapped_signature.parameters.values(),
+            inspect.Parameter(old_name, inspect.Parameter.KEYWORD_ONLY, default=None),
+        ])
+
         if replace_doc:
             doc = FunctionDoc(wrapper)
             parameter_names = [param.name for param in doc['Parameters']]
