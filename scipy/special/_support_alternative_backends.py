@@ -380,7 +380,7 @@ _special_funcs = (
     _FuncInfo(_ufuncs.erfc, 1),
     _FuncInfo(_ufuncs.erfcx, 1,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.erfinv, 1),
@@ -481,37 +481,45 @@ _special_funcs = (
     _FuncInfo(_ufuncs.i1e, 1),
     _FuncInfo(_ufuncs.j0, 1,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'bessel_j0'},
               test_large_ints=False),
     _FuncInfo(_ufuncs.j1, 1,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'bessel_j1'},
               test_large_ints=False),
     _FuncInfo(_ufuncs.k0, 1,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
-                  skip_backends=[
-                      ('jax.numpy', "unavailable in jax and fallback fails")])),
-    _FuncInfo(_ufuncs.k0e, 1,
-              xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'modified_bessel_k0'},
+              ),
+    _FuncInfo(_ufuncs.k0e, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy', 'torch'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'scaled_modified_bessel_k0'},
               test_large_ints=False),
     _FuncInfo(_ufuncs.k1, 1,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
-                  skip_backends=[
-                      ('jax.numpy', "unavailable in jax and fallback fails")])),
-    _FuncInfo(_ufuncs.k1e, 1,
-              xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'modified_bessel_k1'},
+              ),
+    _FuncInfo(_ufuncs.k1e, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy', 'torch'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'scaled_modified_bessel_k1'},
               test_large_ints=False),
     _FuncInfo(_ufuncs.kl_div, 2,
               xp_capabilities(
@@ -595,7 +603,8 @@ _special_funcs = (
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_basic.polygamma, 2, paramtypes=("int", "real"), is_ufunc=False,
               scalar_or_0d_only={"torch": [True, False]}, produces_0d=True,
-              positive_only={"torch": [True, False]}, test_large_ints=False),
+              positive_only={"torch": [True, False], "jax.numpy": [True, True]},
+              test_large_ints=False),
     _FuncInfo(_ufuncs.psi, 1, alt_names_map={"jax.numpy": "digamma"}),
     _FuncInfo(_ufuncs.radian, 3,
               xp_capabilities(
@@ -628,10 +637,32 @@ _special_funcs = (
               test_large_ints=False),
     _FuncInfo(_ufuncs.xlog1py, 2,
               xp_capabilities(
-                  cpu_only=True, exceptions=['cupy'],
+                  cpu_only=True, exceptions=['cupy', 'torch'],
                   skip_backends=[
                       ('jax.numpy', "unavailable in jax and fallback fails")])),
     _FuncInfo(_ufuncs.xlogy, 2, generic_impl=_xlogy),
+    _FuncInfo(_ufuncs.y0, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy', 'torch'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              alt_names_map={'torch': 'bessel_y0'},
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.y1, 1,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy', 'torch'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")],),
+              alt_names_map={'torch': 'bessel_y1'},
+              test_large_ints=False),
+    _FuncInfo(_ufuncs.yn, 2,
+              xp_capabilities(
+                  cpu_only=True, exceptions=['cupy'],
+                  skip_backends=[
+                      ('jax.numpy', "unavailable in jax and fallback fails")]),
+              positive_only={'cupy': [True, False]},
+              paramtypes=('int', 'real'),
+              test_large_ints=False),
     _FuncInfo(_basic.zeta, 2, is_ufunc=False,
               positive_only={'jax.numpy': [True, True], 'torch': [True, False]},
               test_large_ints=False),

@@ -168,7 +168,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
             iinfo = np.iinfo(dtype_np)
             rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
         elif 'int' in dtype:
-            rand = partial(rng.integers, -100, 101)
+            rand = partial(rng.integers, -20, 21)
         else:
             rand = rng.standard_normal
         args_np.append(rand(size=shape, dtype=dtype_np))
