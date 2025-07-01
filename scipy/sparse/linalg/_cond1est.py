@@ -2,62 +2,7 @@ import numpy as np
 
 from scipy.sparse.linalg import norm, splu
 
-__all__ = ['normest_inv', 'cond1est']
-
-
-def normest_inv(A, ord=None):
-    """Compute an estimate of the norm of the inverse of a sparse matrix.
-
-    Parameters
-    ----------
-    A : sparray or LinearOperator
-        A square, sparse matrix. Any matrix not in CSC format will be converted
-        internally, and raise a SparseEfficiencyWarning.
-    ord : {1, inf}, optional
-        Order of the norm. If None, defaults to the 1-norm. inf means numpy's
-        `inf` object.
-
-    Returns
-    -------
-    est : float
-        An estimate of the norm of the matrix inverse.
-
-    See Also
-    --------
-    norm : Compute the norm of a sparse matrix.
-    numpy.linalg.norm : Compute the norm of a dense matrix.
-    cond1est : Compute an estimate for the reciprocal of the condition number
-        of a sparse matrix.
-    splu : Compute the LU decomposition of a sparse matrix.
-
-    Notes
-    -----
-    This function computes an LU decomposition using SuperLU, and then runs the
-    appropriate ``gscon``[0]_ procedure for the data type. Use
-    ``SuperLU.normest_inv`` if you already have an LU decomposition.
-
-    .. versionadded:: 1.17.0
-
-    References
-    ----------
-    .. [0] https://portal.nersc.gov/project/sparse/superlu/superlu_code_html/dgscon_8c.html
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import csc_array
-    >>> from scipy.sparse.linalg import normest_inv
-    >>> A = csc_array([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
-    >>> A.toarray()
-    array([[ 1.,  0.,  0.],
-           [ 5.,  8.,  2.],
-           [ 0., -1.,  0.]])
-    >>> normest_inv(A, ord=1)
-    5.0
-    >>> np.linalg.norm(np.linalg.inv(A.toarray()), ord=1)
-    np.float64(5.0)
-    """
-    return splu(A).normest_inv(ord=ord)
+__all__ = ['cond1est']
 
 
 def cond1est(A):
@@ -76,7 +21,7 @@ def cond1est(A):
 
     See Also
     --------
-    normest_inv : Compute an estimate for the norm of the matrix inverse.
+    SuperLU.normest_inv : Compute an estimate for the norm of the matrix inverse.
     numpy.linalg.cond : Compute the condition number of a dense matrix.
 
     Notes
@@ -86,9 +31,9 @@ def cond1est(A):
     .. math:: \kappa(A) = \left\| A \right\|_1 \left\| A^{-1} \right\|_1.
 
     This function computes the 1-norm of the matrix and a lower bound estimate
-    for the 1-norm of the inverse using ``normest_inv``. It is similar to 
-    ``np.linalg.cond(A, p=1)`` for dense matrices, but given that this function
-    uses an estimate, results will not be identical, especially for
+    for the 1-norm of the inverse using ``SuperLU.normest_inv``. It is similar
+    to ``np.linalg.cond(A, p=1)`` for dense matrices, but given that this
+    function uses an estimate, results will not be identical, especially for
     ill-conditioned matrices.
 
     .. versionadded:: 1.17.0
@@ -124,7 +69,7 @@ def cond1est(A):
     norm_A = norm(A, 1)
 
     try:
-        norm_A_inv = normest_inv(A, ord=1)
+        norm_A_inv = splu(A).normest_inv(ord=1)
     except RuntimeError as e:
         if "Factor is exactly singular" in str(e):
             return np.inf
