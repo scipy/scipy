@@ -43,8 +43,7 @@ def invnormest(A, ord=None):
     >>> float(np.linalg.norm(np.linalg.inv(A.toarray()), ord=1))
     5.0
     """
-    lu = splu(A)
-    return lu.invnormest(ord=ord)
+    return splu(A).invnormest(ord=ord)
 
 
 def cond1est(A):
