@@ -4,7 +4,7 @@ from scipy.sparse.linalg._onenormest import onenormest
 __all__ = ['invnormest', 'cond1est']
 
 
-def invnormest(A, norm="1"):
+def invnormest(A, ord=None):
     """Compute an estimate for the norm of the inverse of a sparse matrix.
 
     Parameters
@@ -12,8 +12,9 @@ def invnormest(A, norm="1"):
     A : sparray or LinearOperator
         A square, sparse matrix. Any matrix not in CSC format will be converted
         internally, and raise a SparseEfficiencyWarning.
-    norm : string, optional
-        "1"/"0" [default] computes the 1-norm, "I" computes the inf-norm.
+    ord : {1, inf}, optional
+        Order of the norm. If None, defaults to the 1-norm. inf means numpy's
+        `inf` object.
 
     Returns
     -------
@@ -22,9 +23,9 @@ def invnormest(A, norm="1"):
 
     Notes
     -----
-    Computes an LU decomposition and runs the gscon procedure from SuperLU.
-    Use scipy.sparse.linalg.SuperLU.invnormest if you already have an LU 
-    decomposition.
+    This function computes an LU decomposition using SuperLU, and then runs the
+    appropriate `gscon` procedure for the data type. Use `SuperLU.invnormest`
+    if you already have an LU decomposition.
 
     Examples
     --------
@@ -36,13 +37,13 @@ def invnormest(A, norm="1"):
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
            [ 0., -1.,  0.]])
-    >>> invnormest(A, norm="1")
+    >>> invnormest(A, ord=1)
     5.0
     >>> float(np.linalg.norm(np.linalg.inv(A.toarray()), ord=1))
     5.0
     """
     lu = splu(A)
-    return lu.invnormest(norm=norm)
+    return lu.invnormest(ord=ord)
 
 
 def cond1est(A):
@@ -82,4 +83,4 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     45.0
     """
-    return onenormest(A) * invnormest(A)
+    return onenormest(A) * invnormest(A, ord=1)
