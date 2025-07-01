@@ -111,10 +111,10 @@ static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
 {
     volatile int info;
     volatile double rcond;
-    const char* volatile norm = "1";
+    PyObject* volatile ord_obj = NULL;  /* hold the "ord" argument */
     char norm_c;
     volatile SuperLUStat_t stat = { 0 };
-    static char *kwlist[] = { "norm", NULL };
+    static char *kwlist[] = { "ord", NULL };
     volatile jmp_buf *jmpbuf_ptr;
     SLU_BEGIN_THREADS_DEF;
 
@@ -123,17 +123,38 @@ static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|s", kwlist, &norm))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &ord_obj))
         return NULL;
 
-    // norm should be a single-character string
-    int singlechar = (norm[0] != 0 || norm[1] == 0);
-    if (singlechar && (norm[0] == '0' || norm[0] == '1')){
+    /* Parse the "ord" argument, which specifies the norm to use.
+     * If not given, we default to '1' (the 1-norm).
+     */
+    if (ord_obj == NULL || ord_obj == Py_None) {
         norm_c = '1';
-    } else if (singlechar && norm[0] == 'I'){
-        norm_c = 'I';
+    } else if (PyLong_Check(ord_obj)) {  /* check if it's an integer */
+        long ord_val = PyLong_AsLong(ord_obj);
+        if (ord_val == -1 && PyErr_Occurred()) {
+            return NULL;  /* conversion error */
+        }
+        if (ord_val == 1) {
+            norm_c = '1';
+        } else {
+            PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
+            return NULL;
+        }
+    } else if (PyFloat_Check(ord_obj)) {  /* check if it's a float (np.inf) */
+        double ord_val = PyFloat_AsDouble(ord_obj);
+        if (ord_val == -1.0 && PyErr_Occurred()) {
+            return NULL;  /* conversion error */
+        }
+        if (ord_val == NPY_INFINITY) {
+            norm_c = 'I';  /* infinity norm */
+        } else {
+            PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
+            return NULL;
+        }
     } else {
-        PyErr_SetString(PyExc_ValueError, "norm must be \"0\", \"1\", or \"I\"");
+        PyErr_SetString(PyExc_TypeError, "ord must be 1 or np.inf");
         return NULL;
     }
 
