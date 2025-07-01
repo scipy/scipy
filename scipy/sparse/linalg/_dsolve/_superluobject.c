@@ -106,7 +106,7 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 }
 
 
-static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
+static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
     volatile int info;
@@ -188,7 +188,7 @@ static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
     }
 
     StatFree((SuperLUStat_t *)&stat);
-    return PyFloat_FromDouble(rcond);
+    return PyFloat_FromDouble(1.0 / rcond);
 
   fail:
     XStatFree((SuperLUStat_t *)&stat);
@@ -199,7 +199,7 @@ static PyObject *SuperLU_rinvnormest(SuperLUObject * self, PyObject * args,
  */
 PyMethodDef SuperLU_methods[] = {
     {"solve", (PyCFunction) SuperLU_solve, METH_VARARGS | METH_KEYWORDS, NULL},
-    {"rinvnormest", (PyCFunction) SuperLU_rinvnormest, METH_VARARGS | METH_KEYWORDS, NULL},
+    {"invnormest", (PyCFunction) SuperLU_invnormest, METH_VARARGS | METH_KEYWORDS, NULL},
     {"__class_getitem__", Py_GenericAlias, METH_CLASS | METH_O,
         "For generic type compatibility with scipy-stubs"},
     {NULL, NULL}                /* sentinel */
