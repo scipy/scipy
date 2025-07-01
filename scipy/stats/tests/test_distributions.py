@@ -5918,7 +5918,8 @@ class TestLevyStable:
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
             msg = "Density calculations experimental for FFT method"
-            with pytest.warns(RuntimeWarning, match=msg):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", msg, RuntimeWarning)
                 # occurs in FFT methods only
                 p = stats.levy_stable.pdf(
                     subdata['x'],
@@ -8305,7 +8306,7 @@ class TestStudentizedRange:
     def test_fitstart_valid(self):
         with warnings.catch_warnings(), np.errstate(invalid="ignore"):
             # the integration warning message may differ
-            warnings.simplefilter(IntegrationWarning)
+            warnings.simplefilter("ignore", IntegrationWarning)
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
 

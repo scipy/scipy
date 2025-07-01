@@ -127,9 +127,10 @@ def geometric_slerp(
     Nonetheless, one of the ambiguous paths is returned along
     with a warning:
 
+    >>> import warnings
     >>> opposite_pole = np.array([-1, 0])
     >>> with warnings.catch_warnings():
-    ...     warnings.filterwarnings("ignore", UserWarning)
+    ...     warnings.simplefilter("ignore", UserWarning)
     ...     geometric_slerp(start,
     ...                     opposite_pole,
     ...                     t_vals)

@@ -587,8 +587,7 @@ if HAVE_SCPDT:
             np.random.seed(None)
             with warnings.catch_warnings():
                 if test and test.name in known_warnings:
-                    warnings.simplefilter('ignore',
-                                            **known_warnings[test.name])
+                    warnings.filterwarnings('ignore', **known_warnings[test.name])
                     yield
                 elif test and test.name in legit:
                     yield
