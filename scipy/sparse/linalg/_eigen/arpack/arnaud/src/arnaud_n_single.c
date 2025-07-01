@@ -1,6 +1,7 @@
-#include "_arpack_n_single.h"
+#include "arnaud_n_single.h"
+#include <float.h>
 
-typedef int ARPACK_compare_cfunc(const float, const float, const float, const float);
+typedef int ARNAUD_compare_cfunc(const float, const float, const float, const float);
 
 static int sortc_LM(const float, const float, const float, const float);
 static int sortc_SM(const float, const float, const float, const float);
@@ -9,20 +10,20 @@ static int sortc_SR(const float, const float, const float, const float);
 static int sortc_LI(const float, const float, const float, const float);
 static int sortc_SI(const float, const float, const float, const float);
 
-static const float unfl = 1.1754943508222875e-38;
-// static const float ovfl = 1.0 / 1.1754943508222875e-38;
-static const float ulp = 1.1920928955078125e-07;
+static const float unfl = FLT_MIN;    // 1.1754943508222875e-38;
+// static const float ovfl = FLT_MAX; // 1.0 / 1.1754943508222875e-38;
+static const float ulp = FLT_EPSILON; // 1.1920928955078125e-07;
 
-static void snaup2(struct ARPACK_arnoldi_update_vars_s*, float*, float*, int, float*, int, float*, float*, float*, float*, int, float*, int*, float*);
+static void snaup2(struct ARNAUD_state_s*, float*, float*, int, float*, int, float*, float*, float*, float*, int, float*, int*, float*);
 static void snconv(int n, float* ritzr, float* ritzi, float* bounds, const float tol, int* nconv);
 static void sneigh(float*,int,float*,int,float*,float*,float*,float*,int,float*,int*);
-static void snaitr(struct ARPACK_arnoldi_update_vars_s*,int,int,float*,float*,float*,int,float*,int,int*,float*);
+static void snaitr(struct ARNAUD_state_s*,int,int,float*,float*,float*,int,float*,int,int*,float*);
 static void snapps(int,int*,int,float*,float*,float*,int,float*,int,float*,float*,int,float*,float*);
-static void sngets(struct ARPACK_arnoldi_update_vars_s*,int*,int*,float*,float*,float*);
-static void ssortc(const enum ARPACK_which w, const int apply, const int n, float* xreal, float* ximag, float* y);
-static void sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j, float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd);
+static void sngets(struct ARNAUD_state_s*,int*,int*,float*,float*,float*);
+static void ssortc(const enum ARNAUD_which w, const int apply, const int n, float* xreal, float* ximag, float* y);
+static void sgetv0(struct ARNAUD_state_s *V, int initv, int n, int j, float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd);
 
-enum ARPACK_neupd_type {
+enum ARNAUD_neupd_type {
     REGULAR = 0,
     SHIFTI,
     REALPART,
@@ -31,7 +32,7 @@ enum ARPACK_neupd_type {
 
 
 void
-ARPACK_sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int* select,
+ARNAUD_sneupd(struct ARNAUD_state_s *V, int rvec, int howmny, int* select,
        float* dr, float* di, float* z, int ldz, float sigmar, float sigmai,
        float* workev, float* resid, float* v, int ldv, int* ipntr, float* workd,
        float* workl)
@@ -43,7 +44,7 @@ ARPACK_sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
     int ierr = 0, int1 = 1, tmp_int = 0, nconv2 = 0, outncv;
     float conds, rnorm, sep, temp, temp1, dbl0 = 0.0, dbl1 = 1.0, dblm1 = -1.0;
     float vl[1] = { 0.0 };
-    enum ARPACK_neupd_type TYP;
+    enum ARNAUD_neupd_type TYP;
 
     if (V->nconv <= 0) {
         ierr = -14;
@@ -506,7 +507,7 @@ ARPACK_sneupd(struct ARPACK_arnoldi_update_vars_s *V, int rvec, int howmny, int*
 }
 
 void
-ARPACK_snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v,
+ARNAUD_snaupd(struct ARNAUD_state_s *V, float* resid, float* v,
               int ldv, int* ipntr, float* workd, float* workl)
 {
     int bounds, ih, iq, iw, j, ldh, ldq, next, iritzi, iritzr;
@@ -605,11 +606,11 @@ ARPACK_snaupd(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v,
 }
 
 void
-snaup2(struct ARPACK_arnoldi_update_vars_s *V, float* resid, float* v, int ldv,
+snaup2(struct ARNAUD_state_s *V, float* resid, float* v, int ldv,
        float* h, int ldh, float* ritzr, float* ritzi, float* bounds,
        float* q, int ldq, float* workl, int* ipntr, float* workd)
 {
-    enum ARPACK_which temp_which;
+    enum ARNAUD_which temp_which;
     int int1 = 1, j, tmp_int;
     const float eps23 = powf(ulp, 2.0 / 3.0);
     float temp = 0.0;
@@ -825,7 +826,7 @@ LINE20:
         //  except that the sort is done in the opposite
         //  order.
 
-        // Translation note: Is this all because ARPACK did not have complex sort?
+        // Translation note: Is this all because ARNAUD did not have complex sort?
 
         if (V->which == which_LM) { temp_which = which_SR; }
         if (V->which == which_SM) { temp_which = which_LR; }
@@ -1146,7 +1147,7 @@ sneigh(float* rnorm, int n, float* h, int ldh, float* ritzr, float* ritzi,
 }
 
 void
-snaitr(struct ARPACK_arnoldi_update_vars_s *V, int k, int np, float* resid, float* rnorm,
+snaitr(struct ARNAUD_state_s *V, int k, int np, float* resid, float* rnorm,
        float* v, int ldv, float* h, int ldh, int* ipntr, float* workd)
 {
     int i = 0, infol, ipj, irj, ivj, jj, n, tmp_int;
@@ -1769,7 +1770,7 @@ snapps(int n, int* kev, int np, float* shiftr, float* shifti, float* v,
 
 
 void
-sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
+sngets(struct ARNAUD_state_s *V, int* kev, int* np,
        float* ritzr, float* ritzi, float* bounds)
 {
 
@@ -1835,7 +1836,7 @@ sngets(struct ARPACK_arnoldi_update_vars_s *V, int* kev, int* np,
 }
 
 void
-sgetv0(struct ARPACK_arnoldi_update_vars_s *V, int initv, int n, int j,
+sgetv0(struct ARNAUD_state_s *V, int initv, int n, int j,
        float* v, int ldv, float* resid, float* rnorm, int* ipntr, float* workd)
 {
     int jj, int1 = 1;
@@ -1997,11 +1998,11 @@ LINE40:
 }
 
 void
-ssortc(const enum ARPACK_which w, const int apply, const int n, float* xreal, float* ximag, float* y)
+ssortc(const enum ARNAUD_which w, const int apply, const int n, float* xreal, float* ximag, float* y)
 {
     int i, igap, j;
     float temp;
-    ARPACK_compare_cfunc *f;
+    ARNAUD_compare_cfunc *f;
 
     switch (w)
     {
