@@ -57,16 +57,16 @@ class TestCond1Est:
 
         return A.tocsc()
 
-    # @pytest.mark.parametrize("norm", [1, np.inf])
-    # @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    # # @pytest.mark.parametrize("dtype",
-    # #     [np.float32, np.float64, np.complex64, np.complex128]
-    # # )  # FIXME complex fails
-    # def test_invnormest(self, norm, dtype):
-    #     A = self.generate_matrix(5, dtype)
-    #     true_invnorm = 1 / np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm)
-    #     est_invnorm = spla.invnormest(A, norm="1" if norm==1 else "I")
-    #     assert_allclose(est_invnorm, true_invnorm)
+    # @pytest.mark.parametrize("dtype",
+    #     [np.float32, np.float64, np.complex64, np.complex128]
+    # )  # FIXME complex fails
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize("ord", [1, np.inf])
+    def test_invnormest(self, ord, dtype):
+        A = self.generate_matrix(5, dtype)
+        true_invnorm = np.linalg.norm(np.linalg.inv(A.toarray()), ord=ord)
+        est_invnorm = spla.invnormest(A, ord=ord)
+        assert_allclose(est_invnorm, true_invnorm)
 
     # @pytest.mark.parametrize("dtype",
     #     [np.float32, np.float64, np.complex64, np.complex128]
@@ -90,5 +90,5 @@ class TestCond1Est:
     def test_error_unsupported_norm(self):
         A = self.generate_matrix(5, np.float64)
         with assert_raises(ValueError):
-            spla.splu(A).invnormest(norm="2")
+            spla.splu(A).invnormest(ord=2)
         
