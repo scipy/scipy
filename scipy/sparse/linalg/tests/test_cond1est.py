@@ -1,4 +1,4 @@
-"""Test functions for the sparse.linalg._rinvnormest module
+"""Test functions for the sparse.linalg._cond1est module
 """
 
 import numpy as np
@@ -7,7 +7,7 @@ import pytest
 import scipy.linalg
 import scipy.sparse.linalg
 
-class TestRinvnormest:
+class TestCond1Est:
     def generate_matrix(self, n, dtype):
         rng = np.random.default_rng(789002319)
         rvs = rng.random
@@ -22,11 +22,11 @@ class TestRinvnormest:
 
     @pytest.mark.parametrize("norm", [1, np.inf])
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
-    def test_rinvnormest(self, norm, dtype):
+    def test_invnormest(self, norm, dtype):
         A = self.generate_matrix(5, dtype)
-        true_rinvnorm = 1/np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm)
-        est_rinvnorm = scipy.sparse.linalg.rinvnormest(A, norm="1" if norm==1 else "I")
-        assert_allclose(est_rinvnorm, true_rinvnorm)
+        true_invnorm = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm)
+        est_invnorm = scipy.sparse.linalg.invnormest(A, norm="1" if norm==1 else "I")
+        assert_allclose(est_invnorm, true_invnorm)
 
     @pytest.mark.parametrize("dtype", [np.float32, np.float64, np.complex64, np.complex128])
     def test_cond1normest(self, dtype):
@@ -38,7 +38,7 @@ class TestRinvnormest:
     def test_error_unsupported_norm(self):
         A = self.generate_matrix(5, np.float64)
         with assert_raises(ValueError):
-            scipy.sparse.linalg.splu(A).rinvnormest(norm="2")
+            scipy.sparse.linalg.splu(A).invnormest(norm="2")
         
 
 
