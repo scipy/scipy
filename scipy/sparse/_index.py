@@ -27,7 +27,7 @@ class IndexMixin:
     This class provides common dispatching and validation logic for indexing.
     """
     def __getitem__(self, key):
-        index, new_shape = self._validate_indices(key)
+        index, new_shape = _validate_indices(key, self.shape, self.format)
 
         # 1D array
         if len(index) == 1:
@@ -122,7 +122,7 @@ class IndexMixin:
         return res
 
     def __setitem__(self, key, x):
-        index, _ = self._validate_indices(key)
+        index, _ = _validate_indices(key, self.shape, self.format)
 
         # 1D array
         if len(index) == 1:
@@ -289,11 +289,12 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _validate_indices(self, key):
+def _validate_indices(key, self_shape, self_format):
     """Returns two tuples: (index tuple, requested shape tuple)"""
+    self_ndim = len(self_shape)
     # single ellipsis
     if key is Ellipsis:
-        return (slice(None),) * self.ndim, self.shape
+        return (slice(None),) * self_ndim, self_shape
 
     if not isinstance(key, tuple):
         key = [key]
@@ -311,7 +312,7 @@ def _validate_indices(self, key):
         elif isinstance(idx, slice) or isintlike(idx):
             index_1st.append(idx)
             prelim_ndim += 1
-        elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
+        elif (ix := _compatible_boolean_index(idx, self_ndim)) is not None:
             index_1st.append(ix)
             prelim_ndim += ix.ndim
         elif issparse(idx):
@@ -323,7 +324,7 @@ def _validate_indices(self, key):
         else:  # dense array
             index_1st.append(np.asarray(idx))
             prelim_ndim += 1
-    ellip_slices = (self.ndim - prelim_ndim) * [slice(None)]
+    ellip_slices = (self_ndim - prelim_ndim) * [slice(None)]
     if ellip_slices:
         if ellps_pos is None:
             index_1st.extend(ellip_slices)
@@ -340,12 +341,12 @@ def _validate_indices(self, key):
             idx_shape.append(1)
         elif isinstance(idx, slice):
             index.append(idx)
-            Ms = self._shape[index_ndim]
+            Ms = self_shape[index_ndim]
             len_slice = len(range(*idx.indices(Ms)))
             idx_shape.append(len_slice)
             index_ndim += 1
         elif isintlike(idx):
-            N = self._shape[index_ndim]
+            N = self_shape[index_ndim]
             if not (-N <= idx < N):
                 raise IndexError(f'index ({idx}) out of range')
             idx = int(idx + N if idx < 0 else idx)
@@ -355,7 +356,7 @@ def _validate_indices(self, key):
         elif idx.dtype.kind == 'b':
             ix = idx
             tmp_ndim = index_ndim + ix.ndim
-            mid_shape = self._shape[index_ndim:tmp_ndim]
+            mid_shape = self_shape[index_ndim:tmp_ndim]
             if ix.shape != mid_shape:
                 raise IndexError(
                     f"bool index {i} has shape {mid_shape} instead of {ix.shape}"
@@ -364,14 +365,14 @@ def _validate_indices(self, key):
             array_indices.extend(range(index_ndim, tmp_ndim))
             index_ndim = tmp_ndim
         else:  # dense array
-            N = self._shape[index_ndim]
-            idx = self._asindices(idx, N)
+            N = self_shape[index_ndim]
+            idx = _asindices(idx, N, self_format)
             index.append(idx)
             array_indices.append(index_ndim)
             index_ndim += 1
-    if index_ndim > self.ndim:
+    if index_ndim > self_ndim:
         raise IndexError(
-            f'invalid index ndim. Array is {self.ndim}D. Index needs {index_ndim}D'
+            f'invalid index ndim. Array is {self_ndim}D. Index needs {index_ndim}D'
         )
     if len(array_indices) > 1:
         idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
@@ -391,35 +392,39 @@ def _validate_indices(self, key):
     return tuple(index), tuple(idx_shape)
 
 
-def _asindices(self, idx, length):
+def _asindices(idx, length, format):
     """Convert `idx` to a valid index for an axis with a given length.
 
     Subclasses that need special validation can override this method.
     """
     try:
-        x = np.asarray(idx)
+        ix = np.asarray(idx)
     except (ValueError, TypeError, MemoryError) as e:
         raise IndexError('invalid index') from e
 
-    if x.ndim not in (1, 2):
+    if format != "coo" and ix.ndim not in (1, 2):
         raise IndexError('Index dimension must be 1 or 2')
 
-    if x.size == 0:
-        return x
+    # LIL routines handle bounds-checking for us, so don't do it here.
+    if format == "lil":
+        return ix
+
+    if ix.size == 0:
+        return ix
 
     # Check bounds
-    max_indx = x.max()
+    max_indx = ix.max()
     if max_indx >= length:
         raise IndexError(f'index ({max_indx}) out of range')
 
-    min_indx = x.min()
+    min_indx = ix.min()
     if min_indx < 0:
         if min_indx < -length:
             raise IndexError(f'index ({min_indx}) out of range')
-        if x is idx or not x.flags.owndata:
-            x = x.copy()
-        x[x < 0] += length
-    return x
+        if ix is idx or not ix.flags.owndata:
+            ix = ix.copy()
+        ix[ix < 0] += length
+    return ix
 
 
 def _compatible_boolean_index(idx, desired_ndim):
