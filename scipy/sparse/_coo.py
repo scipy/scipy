@@ -530,13 +530,13 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
         index, new_shape, arr_int_pos, none_pos = self._validate_indices(key)
 
         # handle int, slice and int-array indices
-        accum=np.ones(len(self.data), dtype=np.bool_)
+        index_mask = np.ones(len(self.data), dtype=np.bool_)
         slice_coords = []
         arr_coords = []
         arr_indices = []
         for i, (idx, co) in enumerate(zip(index, self.coords)):
             if isinstance(idx, int):
-                accum &= (co == idx)
+                index_mask &= (co == idx)
             elif isinstance(idx, slice):
                 if idx == slice(None):
                     slice_coords.append(co)
@@ -548,21 +548,21 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                         else:
                             in_range = (co >= start) & (co < stop)
                         new_ix, m = np.divmod(co - start, step)
-                        accum &= (m == 0) & in_range
+                        index_mask &= (m == 0) & in_range
                     else:
                         in_range = (co >= start) & (co < stop)
                         new_ix = co - start
-                        accum &= in_range
+                        index_mask &= in_range
                     slice_coords.append(new_ix)
             else:  # array
                 arr_coords.append(co)
                 arr_indices.append(idx)
         # shortcut for scalar output
         if new_shape == ():
-            return self.data[accum].sum().astype(self.dtype, copy=False)
+            return self.data[index_mask].sum().astype(self.dtype, copy=False)
 
-        new_coords = [co[accum] for co in slice_coords]
-        new_data = self.data[accum]
+        new_coords = [co[index_mask] for co in slice_coords]
+        new_data = self.data[index_mask]
 
         # handle array indices
         if arr_indices:
@@ -571,7 +571,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
             keyarr = np.array(arr_indices).reshape(len(arr_indices), -1).T
 
             # arr_coords.T is old_NNZ by #array indices
-            arr_coords = np.array([co[accum] for co in arr_coords])
+            arr_coords = np.array([co[index_mask] for co in arr_coords])
             # found is arr_size x old_NNZ. True means coords match all arr_indices
             found = (keyarr[:, None, :] == arr_coords.T).all(axis=2)
             arr_ix, arr_co = found.nonzero()
@@ -749,13 +749,13 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _zero_many(self, index):
         # handle int, slice and integer-array indices
-        # accum accumulates a bool array of nonzeros that match index
-        accum=np.ones(len(self.data), dtype=np.bool_)
+        # index_mask accumulates a bool array of nonzeros that match index
+        index_mask=np.ones(len(self.data), dtype=np.bool_)
         arr_coords = []
         arr_indices = []
         for i, (idx, co) in enumerate(zip(index, self.coords)):
             if isinstance(idx, int):
-                accum &= (co == idx)
+                index_mask &= (co == idx)
             elif isinstance(idx, slice) and idx != slice(None):
                 start, stop, step = idx.indices(self.shape[i])
                 if step != 1:
@@ -764,31 +764,31 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                     else:
                         in_range = (co >= start) & (co < stop)
                     m = np.mod(co - start, step)
-                    accum &= (m == 0) & in_range
+                    index_mask &= (m == 0) & in_range
                 else:
                     in_range = (co >= start) & (co < stop)
-                    accum &= in_range
+                    index_mask &= in_range
             elif isinstance(idx, slice) and idx == slice(None):
-                # slice is full axis so no changes to accum
+                # slice is full axis so no changes to index_mask
                 pass
             else:  # array
                 arr_coords.append(co)
                 arr_indices.append(idx)
 
-        # array indices action on accum indicates which nozeros match array indices
+        # array indices action on index_mask indicates which nozeros match array indices
         if arr_indices:
             keyarr = np.array(arr_indices).reshape(len(arr_indices), -1).T
-            short_arr_coords = np.array([co[accum] for co in arr_coords])
+            short_arr_coords = np.array([co[index_mask] for co in arr_coords])
             # found is arr_size x shortened_NNZ. True means coords match all arr_indices
             found = (keyarr[:, None, :] == short_arr_coords.T).all(axis=2)
             _, arr_coo = found.nonzero()
-            arr_accum = np.zeros_like(accum)
-            arr_accum[accum.nonzero()[0][arr_coo]] = True
-            accum &= arr_accum
+            arr_index_mask = np.zeros_like(index_mask)
+            arr_index_mask[index_mask.nonzero()[0][arr_coo]] = True
+            index_mask &= arr_index_mask
 
         # remove matching coords and data to set them to zero
-        pruned_coords = [co[~accum] for co in self.coords]
-        pruned_data = self.data[~accum]
+        pruned_coords = [co[~index_mask] for co in self.coords]
+        pruned_data = self.data[~index_mask]
         return pruned_data, pruned_coords
 
     def sum_duplicates(self) -> None:
