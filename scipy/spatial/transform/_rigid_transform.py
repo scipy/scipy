@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from types import EllipsisType
+from types import EllipsisType, ModuleType
+from collections.abc import Callable
 
 import numpy as np
 
@@ -12,7 +13,6 @@ from scipy._lib._array_api import (
     Array,
 )
 from scipy.spatial.transform import Rotation
-
 import scipy.spatial.transform._rigid_transform_cy as cython_backend
 import scipy._lib.array_api_extra as xpx
 from scipy._lib.array_api_compat import device
@@ -366,6 +366,7 @@ class RigidTransform:
         transform : `RigidTransform` instance
         """
         xp = array_namespace(matrix)
+        self._xp = xp
         matrix = xp_promote(matrix, force_floating=True, xp=xp)
         if matrix.ndim not in (2, 3) or matrix.shape[-2:] != (4, 4):
             raise ValueError(
@@ -404,17 +405,17 @@ class RigidTransform:
 
         Notes
         -----
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 rotation matrix and ``t`` is a 3x1 translation
-        vector ``[tx, ty, tz]``. As rotation matrices must be proper
-        orthogonal, the rotation component is orthonormalized using singular
-        value decomposition before initialization.
+        where ``R`` is a 3x3 rotation matrix and ``t = [tx, ty, tz]`` is a 3x1
+        translation vector. As rotation matrices must be proper orthogonal, the
+        rotation component is orthonormalized using singular value decomposition
+        before initialization.
 
         Examples
         --------
@@ -521,16 +522,16 @@ class RigidTransform:
         >>> len(tf)
         2
         """
-        # TODO: Should this not raise a TypeError?
         if not isinstance(rotation, Rotation):
-            raise ValueError(
+            raise TypeError(
                 "Expected `rotation` to be a `Rotation` instance, "
                 f"got {type(rotation)}."
             )
         quat = rotation.as_quat()
         xp = array_namespace(quat)
-        matrix = backend_registry[xp].from_rotation(quat)
-        return cls(matrix, normalize=False, copy=False)
+        backend = backend_registry[xp]
+        matrix = backend.from_rotation(quat)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
     @classmethod
     def from_translation(cls, translation: ArrayLike) -> RigidTransform:
@@ -596,8 +597,9 @@ class RigidTransform:
         2
         """
         xp = array_namespace(translation)
-        matrix = backend_registry[xp].from_translation(translation)
-        return cls(matrix, normalize=False, copy=False)
+        backend = backend_registry[xp]
+        matrix = backend.from_translation(translation)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
     @classmethod
     def from_components(
@@ -756,8 +758,9 @@ class RigidTransform:
                 "Expected `exp_coords` to have shape (6,), or (N, 6), "
                 f"got {exp_coords.shape}."
             )
-        matrix = backend_registry[xp].from_exp_coords(exp_coords)
-        return cls(matrix, normalize=False, copy=False)
+        backend = backend_registry[xp]
+        matrix = backend.from_exp_coords(exp_coords)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
     @classmethod
     def from_dual_quat(
@@ -809,10 +812,9 @@ class RigidTransform:
         True
         """
         xp = array_namespace(dual_quat)
-        matrix = backend_registry[xp].from_dual_quat(
-            dual_quat, scalar_first=scalar_first
-        )
-        return cls(matrix, normalize=False, copy=False)
+        backend = backend_registry[xp]
+        matrix = backend.from_dual_quat(dual_quat, scalar_first=scalar_first)
+        return cls._from_raw_matrix(matrix, xp, backend)
 
     @classmethod
     def identity(cls, num: int | None = None) -> RigidTransform:
@@ -888,7 +890,7 @@ class RigidTransform:
             matrix = np.tile(np.eye(4), (num, 1, 1))
         # No need for a backend call here since identity is easy to construct and we are
         # currently not offering a backend-specific identity matrix
-        return cls(matrix, normalize=False, copy=False)
+        return cls._from_raw_matrix(matrix, array_namespace(matrix))
 
     @classmethod
     def concatenate(
@@ -928,20 +930,20 @@ class RigidTransform:
         matrix = xp.concat(
             [xpx.atleast_nd(x.as_matrix(), ndim=3, xp=xp) for x in transforms]
         )
-        return cls(matrix, normalize=False)
+        return cls._from_raw_matrix(matrix, xp, None)
 
     def as_matrix(self) -> Array:
         """Return a copy of the matrix representation of the transform.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``.
+        where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector.
 
         Returns
         -------
@@ -979,8 +981,7 @@ class RigidTransform:
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]]])
         """
-        xp = array_namespace(self._matrix)  # TODO: Maybe reduce overhead by storing xp?
-        matrix = xp.asarray(self._matrix, copy=True)
+        matrix = self._xp.asarray(self._matrix, copy=True)
         if self._single:
             return matrix[0, ...]
         return matrix
@@ -989,17 +990,17 @@ class RigidTransform:
         """Return the translation and rotation components of the transform,
         where the rotation is applied first, followed by the translation.
 
-        4x4 rigid transformation matrices are of the form:
+        4x4 rigid transformation matrices are of the form::
 
-        ..
+            [       tx]
+            [   R   ty]
+            [       tz]
+            [ 0 0 0  1]
 
-            [R | t]
-            [0 | 1]
-
-        Where ``R`` is a 3x3 orthonormal rotation matrix and ``t`` is a 3x1
-        translation vector ``[tx, ty, tz]``. This function returns the rotation
-        corresponding to this rotation matrix ``r = Rotation.from_matrix(R)``
-        and the translation vector ``t``.
+        Where ``R`` is a 3x3 orthonormal rotation matrix and
+        ``t = [tx, ty, tz]`` is a 3x1 translation vector. This function
+        returns the rotation corresponding to this rotation matrix
+        ``r = Rotation.from_matrix(R)`` and the translation vector ``t``.
 
         Take a transform ``tf`` and a vector ``v``. When applying the transform
         to the vector, the result is the same as if the transform was applied
@@ -1209,9 +1210,7 @@ class RigidTransform:
             raise TypeError("Single transform is not subscriptable.")
 
         is_array = isinstance(indexer, type(self._matrix))
-        # TODO: Getting xp on every call may be expensive. Check if we can make access
-        # to xp more efficient. Should we store a self._xp attribute? What about pickle?
-        xp = array_namespace(self._matrix)
+        xp = self._xp
         # Masking is only specified in the Array API when the array is the sole index
         # This special case handling is necessary to support boolean indexing and
         # integer array indexing with take (see
@@ -1272,9 +1271,10 @@ class RigidTransform:
     def __mul__(self, other: RigidTransform) -> RigidTransform:
         """Compose this transform with the other.
 
-        If `p` and `q` are two transforms, then the composition of 'q followed
-        by p' is equivalent to `p * q`. In terms of transformation matrices,
-        the composition can be expressed as ``p.as_matrix() @ q.as_matrix()``.
+        If ``p`` and ``q`` are two transforms, then the composition of '``q``
+        followed by ``p``' is equivalent to ``p * q``. In terms of
+        transformation matrices, the composition can be expressed as
+        ``p.as_matrix() @ q.as_matrix()``.
 
         In terms of translations and rotations, the composition when applied to
         a vector ``v`` is equivalent to
@@ -1455,7 +1455,7 @@ class RigidTransform:
         matrix = self._backend.pow(self._matrix, n)
         if self._single:
             matrix = matrix[0, ...]
-        return RigidTransform(matrix, normalize=False, copy=False)
+        return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
     def inv(self) -> RigidTransform:
         """Invert this transform.
@@ -1518,7 +1518,7 @@ class RigidTransform:
         matrix = self._backend.inv(self._matrix)
         if self._single:
             matrix = matrix[0, ...]
-        return RigidTransform(matrix, normalize=False, copy=False)
+        return RigidTransform._from_raw_matrix(matrix, self._xp, self._backend)
 
     def apply(self, vector: ArrayLike, inverse: bool = False) -> Array:
         """Apply the transform to a vector.
@@ -1608,6 +1608,8 @@ class RigidTransform:
         >>> tf.apply([1, 0, 0], inverse=True)
         array([-1.73205081, -1.        , -3.        ])
         """
+        # We do not use the cached xp here to catch cases where matrix and vector have
+        # different xp instances.
         xp = array_namespace(self._matrix, vector)
         vector = xp.asarray(
             vector, dtype=self._matrix.dtype, device=device(self._matrix)
@@ -1675,10 +1677,9 @@ class RigidTransform:
         >>> np.allclose(tf.translation, t)
         True
         """
-        xp = array_namespace(self._matrix)
         if self._single:
-            return xp.asarray(self._matrix[0, :3, 3], copy=True)
-        return xp.asarray(self._matrix[..., :3, 3], copy=True)
+            return self._xp.asarray(self._matrix[0, :3, 3], copy=True)
+        return self._xp.asarray(self._matrix[..., :3, 3], copy=True)
 
     @property
     def single(self) -> bool:
@@ -1693,3 +1694,35 @@ class RigidTransform:
             otherwise.
         """
         return self._single or self._matrix.ndim == 2
+
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        """Reduce the RigidTransform for pickling.
+
+        We store modules inside RigidTransforms which cannot be pickled. To circumvent
+        this, we pickle only the matrix and restore the cached modules from the matrix
+        type in `from_matrix`.
+        """
+        matrix = self._matrix
+        if self._single:
+            matrix = matrix[0, ...]
+        return (self.__class__.from_matrix, (matrix,))
+
+    @staticmethod
+    def _from_raw_matrix(
+        matrix: Array, xp: ModuleType, backend: ModuleType | None = None
+    ) -> RigidTransform:
+        """Create a RigidTransform skipping all sanitization steps.
+
+        This method is is intended for internal, performant creation of RigidTransforms
+        with matrices that are guaranteed to be valid.
+        """
+        tf = RigidTransform.__new__(RigidTransform)
+        tf._single = matrix.ndim == 2 and is_numpy(xp)
+        if tf._single:
+            matrix = xpx.atleast_nd(matrix, ndim=3, xp=xp)
+        tf._matrix = matrix
+        tf._xp = xp
+        if backend is None:
+            backend = backend_registry[xp]
+        tf._backend = backend
+        return tf

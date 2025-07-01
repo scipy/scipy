@@ -1295,7 +1295,7 @@ class TestMedFilt:
         # us into wrong memory if used (but it does not need to be used)
         dummy = xp.arange(10, dtype=xp.float64)
         a = dummy[5:6]
-        a.strides = 16
+        a = np.lib.stride_tricks.as_strided(a, strides=(16,))
         xp_assert_close(signal.medfilt(a, 1),  xp.asarray([5.]))
 
     @skip_xp_backends(
@@ -3467,6 +3467,15 @@ class TestHilbert:
                            9.444121133484362e-17 - 0.79252210110103j])
         a0hilb = xp.asarray(a0hilb)
         assert_almost_equal(aan[0, :], a0hilb, 14, err_msg='N regression')
+
+    def test_hilbert_axis_3d(self, xp):
+        a = xp.reshape(xp.arange(3 * 5 * 7, dtype=xp.float64), (3, 5, 7))
+        # test axis
+        aa = hilbert(a, axis=-1)
+        for axis in [0, 1]:
+            aap = hilbert(xp.moveaxis(a, -1, axis), axis=axis)
+            aap = xp.moveaxis(aap, axis, -1)
+            xp_assert_equal(aa, aap)
 
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_hilbert_types(self, dtype, xp):

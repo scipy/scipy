@@ -5,11 +5,6 @@ The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
 
-Name: Decorator
-Files: scipy/_lib/decorator.py
-License: 2-clause BSD
-  For details, see the header inside scipy/_lib/decorator.py
-
 Name: fast_matrix_market
 Files: scipy/io/_fast_matrix_market/*
 License: 2-clause BSD

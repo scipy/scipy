@@ -62,14 +62,6 @@ SeedType: TypeAlias = IntNumber | _RNG | None
 
 GeneratorType = TypeVar("GeneratorType", bound=_RNG)
 
-# Since Generator was introduced in numpy 1.17, the following condition is needed for
-# backward compatibility
-try:
-    from numpy.random import Generator as Generator
-except ImportError:
-    class Generator:  # type: ignore[no-redef]
-        pass
-
 
 def _lazyselect(condlist, choicelist, arrays, default=0):
     """
@@ -734,7 +726,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         size-shaped array of random integers from the appropriate distribution,
         or a single such random int if size not provided.
     """
-    if isinstance(gen, Generator):
+    if isinstance(gen, np.random.Generator):
         return gen.integers(low, high=high, size=size, dtype=dtype,
                             endpoint=endpoint)
     else:
@@ -807,38 +799,6 @@ def _argmin(a, keepdims=False, axis=None):
     if keepdims and axis is not None:
         res = np.expand_dims(res, axis=axis)
     return res
-
-
-def _first_nonnan(a, axis):
-    """
-    Return the first non-nan value along the given axis.
-
-    If a slice is all nan, nan is returned for that slice.
-
-    The shape of the return value corresponds to ``keepdims=True``.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> nan = np.nan
-    >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
-    >>> _first_nonnan(a, axis=0)
-    array([[3., 3., 2., 3.]])
-    >>> _first_nonnan(a, axis=1)
-    array([[ 3.],
-           [ 1.],
-           [ 9.],
-           [ 5.],
-           [ 2.],
-           [nan]])
-    """
-    k = _argmin(np.isnan(a), axis=axis, keepdims=True)
-    return np.take_along_axis(a, k, axis=axis)
 
 
 def _contains_nan(
