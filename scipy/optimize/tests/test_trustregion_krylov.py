@@ -2,7 +2,6 @@
 Unit tests for Krylov space trust-region subproblem solver.
 
 """
-import pytest
 import numpy as np
 from scipy.optimize._trlib import (get_trlib_quadratic_subproblem)
 from numpy.testing import (assert_,

@@ -128,8 +128,8 @@ def geometric_slerp(
     with a warning:
 
     >>> opposite_pole = np.array([-1, 0])
-    >>> with np.testing.suppress_warnings() as sup:
-    ...     sup.filter(UserWarning)
+    >>> with warnings.catch_warnings():
+    ...     warnings.filterwarnings("ignore", UserWarning)
     ...     geometric_slerp(start,
     ...                     opposite_pole,
     ...                     t_vals)

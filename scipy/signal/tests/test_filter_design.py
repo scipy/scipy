@@ -7,9 +7,7 @@ from itertools import product
 
 from scipy._lib import _pep440
 import numpy as np
-from numpy.testing import (
-    assert_array_almost_equal_nulp, assert_warns, suppress_warnings
-)
+from numpy.testing import assert_array_almost_equal_nulp
 import pytest
 from pytest import raises as assert_raises
 from scipy._lib._array_api import (
@@ -213,7 +211,7 @@ class TestTf2zpk:
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
         # filter coefficients.
-        with suppress_warnings():
+        with warnings.catch_warnings():
             warnings.simplefilter("error", BadCoefficients)
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
 
@@ -4711,7 +4709,8 @@ class TestGroupDelay:
 
         w = xp.asarray([0.1 * xp.pi, 0.25 * xp.pi, -0.5 * xp.pi, -0.8 * xp.pi])
 
-        w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
+        with pytest.warns(UserWarning):
+            w, gd = group_delay((b, a), w=w)
 
     def test_backward_compat(self, xp):
         # For backward compatibility, test if None act as a wrapper for default

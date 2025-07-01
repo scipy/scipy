@@ -464,8 +464,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         # warning depends on slice
         elif (nan_policy == 'omit' and data_generator == "mixed"
               and hypotest not in too_small_special_case_funcs):
-            with np.testing.suppress_warnings() as sup:
-                sup.filter(SmallSampleWarning, too_small_1d_omit)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", too_small_1d_omit, SmallSampleWarning)
                 res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
         # shouldn't complain if there are no NaNs
         else:
@@ -782,9 +782,11 @@ def test_check_empty_inputs():
                 output = stats._axis_nan_policy._check_empty_inputs(samples,
                                                                     axis)
                 if output is not None:
-                    with np.testing.suppress_warnings() as sup:
-                        sup.filter(RuntimeWarning, "Mean of empty slice.")
-                        sup.filter(RuntimeWarning, "invalid value encountered")
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings(
+                            "ignore", "Mean of empty slice.", RuntimeWarning)
+                        warnings.filterwarnings(
+                            "ignore", "invalid value encountered", RuntimeWarning)
                         reference = samples[0].mean(axis=axis)
                     np.testing.assert_equal(output, reference)
 
@@ -869,9 +871,11 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 # sample statistic. Use np.mean as a reference.
                 concat = stats._axis_nan_policy._broadcast_concatenate(samples, axis,
                                                                        paired=paired)
-                with np.testing.suppress_warnings() as sup:
-                    sup.filter(RuntimeWarning, "Mean of empty slice.")
-                    sup.filter(RuntimeWarning, "invalid value encountered")
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore", "Mean of empty slice.", RuntimeWarning)
+                    warnings.filterwarnings(
+                        "ignore", "invalid value encountered", RuntimeWarning)
                     expected = np.mean(concat, axis=axis) * np.nan
                     mask = np.isnan(expected)
                     expected = [np.asarray(expected.copy()) for i in range(n_outputs)]
@@ -888,9 +892,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     with pytest.warns(SmallSampleWarning, match=message):
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 else:
-                    with np.testing.suppress_warnings() as sup:
+                    with warnings.catch_warnings():
                         # f_oneway special case
-                        sup.filter(SmallSampleWarning, "all input arrays have length 1")
+                        msg = "all input arrays have length 1"
+                        warnings.filterwarnings("ignore", msg, SmallSampleWarning)
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 res = unpacker(res)
 
@@ -1333,9 +1338,9 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     a_masked3 = np.ma.masked_array(a, mask=(mask_a1 | mask_a2))
     b_masked3 = np.ma.masked_array(b, mask=(mask_b1 | mask_b2))
 
-    with np.testing.suppress_warnings() as sup:
+    with warnings.catch_warnings():
         message = 'invalid value encountered'
-        sup.filter(RuntimeWarning, message)
+        warnings.filterwarnings("ignore", message, RuntimeWarning)
         res = func(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
         res1 = func(a_masked1, weights=b_masked1, nan_policy="omit", axis=axis)
         res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)

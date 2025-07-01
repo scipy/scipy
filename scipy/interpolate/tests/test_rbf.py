@@ -9,8 +9,6 @@ from numpy import linspace, sin, cos, exp, allclose
 from scipy.interpolate._rbf import Rbf
 from scipy._lib._testutils import _run_concurrent_barrier
 
-import pytest
-
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')

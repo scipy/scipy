@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from typing import Literal
 
 import numpy as np
-import numpy.testing as npt
 import pytest
 import hypothesis
 
@@ -103,8 +102,8 @@ def pytest_runtest_setup(item):
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441
-    with npt.suppress_warnings() as sup:
-        sup.filter(pytest.PytestUnraisableExceptionWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", pytest.PytestUnraisableExceptionWarning)
 
         try:
             from threadpoolctl import threadpool_limits
@@ -588,7 +587,7 @@ if HAVE_SCPDT:
             np.random.seed(None)
             with warnings.catch_warnings():
                 if test and test.name in known_warnings:
-                    warnings.filterwarnings('ignore',
+                    warnings.simplefilter('ignore',
                                             **known_warnings[test.name])
                     yield
                 elif test and test.name in legit:

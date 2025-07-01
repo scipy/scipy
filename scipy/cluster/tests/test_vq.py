@@ -1,10 +1,11 @@
 import math
 import sys
+import warnings
 from copy import deepcopy
 from threading import Lock
 
 import numpy as np
-from numpy.testing import assert_array_equal, suppress_warnings
+from numpy.testing import assert_array_equal
 import pytest
 from pytest import raises as assert_raises
 
@@ -273,10 +274,13 @@ class TestKMeans:
                             [-2.31149087, -0.05160469]])
 
         kmeans(data, initk)
-        with suppress_warnings() as sup:
-            sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmeans with a "
-                       "different initialization")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                ("One of the clusters is empty. Re-run kmeans with a different "
+                 "initialization"),
+                UserWarning,
+            )
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -338,8 +342,8 @@ class TestKMeans:
         kmeans2(data[:, 1], k, minit='++', rng=rng)  # special case (1-D)
 
         # minit='random' can give warnings, filter those
-        with suppress_warnings() as sup:
-            sup.filter(message="One of the clusters is empty. Re-run.")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "One of the clusters is empty. Re-run.")
             kmeans2(data, k, minit='random', rng=rng)
             kmeans2(data[:, 1], k, minit='random', rng=rng)  # special case (1-D)
 

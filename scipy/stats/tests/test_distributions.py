@@ -13,9 +13,8 @@ import platform
 
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
-                           assert_allclose, assert_, assert_warns,
-                           assert_array_less, suppress_warnings,
-                           assert_array_max_ulp, IS_PYPY)
+                           assert_allclose, assert_,
+                           assert_array_less, assert_array_max_ulp, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -5918,12 +5917,9 @@ class TestLevyStable:
             stats.levy_stable.pdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
-            with suppress_warnings() as sup:
+            msg = "Density calculations experimental for FFT method"
+            with pytest.warns(RuntimeWarning, match=msg):
                 # occurs in FFT methods only
-                sup.record(
-                    RuntimeWarning,
-                    "Density calculations experimental for FFT method.*"
-                )
                 p = stats.levy_stable.pdf(
                     subdata['x'],
                     subdata['alpha'],
@@ -6066,12 +6062,12 @@ class TestLevyStable:
             stats.levy_stable.cdf_default_method = default_method
             subdata = data[filter_func(data)
                            ] if filter_func is not None else data
-            with suppress_warnings() as sup:
-                sup.record(
-                    RuntimeWarning,
-                    'Cumulative density calculations experimental for FFT'
-                    + ' method. Use piecewise method instead.*'
-                )
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    'ignore',
+                    ('Cumulative density calculations experimental for FFT'
+                     ' method. Use piecewise method instead.'),
+                    RuntimeWarning)
                 p = stats.levy_stable.cdf(
                     subdata['x'],
                     subdata['alpha'],
@@ -6164,8 +6160,8 @@ class TestLevyStable:
                 .25, .5, 1
             ]
         )
-        with np.errstate(all='ignore'), suppress_warnings() as sup:
-            sup.filter(
+        with np.errstate(all='ignore'), warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
                 category=RuntimeWarning,
                 message="Density calculation unstable.*"
             )
@@ -7025,8 +7021,8 @@ class TestExpect:
     @pytest.mark.thread_unsafe
     def test_zipf(self):
         # Test that there is no infinite loop even if the sum diverges
-        assert_warns(RuntimeWarning, stats.zipf.expect,
-                     lambda x: x**2, (2,))
+        with pytest.warns(RuntimeWarning):
+            stats.zipf.expect(lambda x: x**2, (2,))
 
     def test_discrete_kwds(self):
         # check that discrete expect accepts keywords to control the summation
@@ -8307,9 +8303,9 @@ class TestStudentizedRange:
 
     @pytest.mark.xslow
     def test_fitstart_valid(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        with warnings.catch_warnings(), np.errstate(invalid="ignore"):
             # the integration warning message may differ
-            sup.filter(IntegrationWarning)
+            warnings.simplefilter(IntegrationWarning)
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
 
@@ -8694,12 +8690,17 @@ def test_ksone_fit_freeze():
          -0.06037974, 0.37670779, -0.21684405])
 
     with np.errstate(invalid='ignore'):
-        with suppress_warnings() as sup:
-            sup.filter(IntegrationWarning,
-                       "The maximum number of subdivisions .50. has been "
-                       "achieved.")
-            sup.filter(RuntimeWarning,
-                       "floating point number truncated to an integer")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The maximum number of subdivisions .50. has been achieved.",
+                IntegrationWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                "floating point number truncated to an integer",
+                RuntimeWarning,
+            )
             stats.ksone.fit(d)
 
 
