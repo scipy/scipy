@@ -76,15 +76,7 @@ class TestCond1Est:
     def test_cond1est(self, dtype, singular):
         A = self.generate_matrix(5, dtype=dtype, singular=singular)
         true_cond1norm = np.linalg.cond(A.toarray(), p=1)
-
-        try:
-            est_cond1norm = spla.cond1est(A)
-        except RuntimeError as e:
-            if singular and "Factor is exactly singular" in str(e):
-                pytest.xfail(reason="Expected singular matrix")
-            else:
-                raise e
-
+        est_cond1norm = spla.cond1est(A)
         assert_allclose(est_cond1norm, true_cond1norm)
 
     def test_error_unsupported_norm(self):

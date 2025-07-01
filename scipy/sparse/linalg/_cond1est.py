@@ -1,3 +1,5 @@
+import numpy as np
+
 from scipy.sparse.linalg import norm, splu
 
 __all__ = ['invnormest', 'cond1est']
@@ -82,4 +84,23 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     45.0
     """
-    return norm(A, 1) * invnormest(A, ord=1)
+    M, N = A.shape
+
+    if M != N:
+        raise ValueError("Matrix must be square.")
+
+    if M == 0:
+        raise ValueError("Condition number of an empty matrix is undefined.")
+
+    # Compute the 1-norm of A exactly
+    norm_A = norm(A, 1)
+
+    try:
+        norm_A_inv = invnormest(A, ord=1)
+    except RuntimeError as e:
+        if "Factor is exactly singular" in str(e):
+            return np.inf
+        else:
+            raise e
+
+    return norm_A * norm_A_inv
