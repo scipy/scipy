@@ -1,5 +1,7 @@
 import warnings
 
+import pytest
+
 import numpy as np
 from pytest import raises as assert_raises
 from scipy._lib._array_api import(
