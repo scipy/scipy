@@ -5,6 +5,11 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
+.. toctree::
+   :hidden:
+
+   special.cython_special
+
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
