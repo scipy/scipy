@@ -9,7 +9,7 @@ py3.install_sources([
     'test_onenormest.py',
     'test_propack.py',
     'test_pydata_sparse.py',
-    'test_rinvnormest.py',
+    'test_cond1est.py',
     'test_special_sparse_arrays.py'
   ],
   subdir: 'scipy/sparse/linalg/tests',

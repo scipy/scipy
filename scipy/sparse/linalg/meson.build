@@ -6,7 +6,7 @@ py3.install_sources([
     '_matfuncs.py',
     '_norm.py',
     '_onenormest.py',
-    '_rinvnormest.py',
+    '_cond1est.py',
     '_svdp.py',
     '_special_sparse_arrays.py',
     'dsolve.py',
