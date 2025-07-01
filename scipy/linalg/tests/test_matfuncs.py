@@ -460,6 +460,13 @@ class TestSqrtM:
         np.fill_diagonal(M, 1)
         assert np.isrealobj(sqrtm(M))
 
+    def test_gh23278(self):
+        M = np.array([[1., 0., 0.], [0, 1, -1j], [0, 1j, 2]])
+        sq = sqrtm(M)
+        assert_allclose(sq @ sq, M, atol=1e-14)
+        sq = sqrtm(M.astype(np.complex64))
+        assert_allclose(sq @ sq, M, atol=1e-6)
+
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.eye(10, dtype=np.uint8)
         assert sqrtm(M).dtype == np.float64
