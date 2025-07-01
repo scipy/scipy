@@ -86,12 +86,17 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
         # https://github.com/scipy/scipy/pull/21827.
         positive_only = [True]
 
+    if f_name in {'poch'} and is_jax(xp):
+        # Jax uses a different convention at gamma poles.
+        positive_only = [True, True]
+
     if f_name == 'multigammaln':
         pytest.skip("multigammaln raises for out of domain inputs.")
 
     if ((is_torch(xp) and f_name in {'gammainc', 'gammaincc'})
         or (is_cupy(xp) and f_name in {'stdtr', 'i0e', 'i1e'})
-        or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr'})
+        or (is_jax(xp) and f_name in {'stdtr', 'ndtr', 'ndtri', 'log_ndtr', 'hyp1f1',
+                                      'hyp2f1', 'spence', 'kl_div'})
     ):
         pytest.skip(f"`{f_name}` does not support integer types")
 
@@ -101,7 +106,8 @@ def _skip_or_tweak_alternative_backends(xp, nfo, dtypes):
                                           'zeta', 'xlog1py'))
              or (is_jax(xp) and f_name in ('gammainc', 'gammaincc', 'expn',
                                            'rel_entr', 'xlogy', 'betaln',
-                                           'polygamma', 'zeta')))
+                                           'polygamma', 'zeta', 'poch',
+                                           'xlog1py')))
     ):
         pytest.xfail("dtypes do not match")
 
@@ -152,6 +158,10 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     if isinstance(scalar_or_0d_only, dict):
         scalar_or_0d_only = scalar_or_0d_only.get(_get_native_namespace_name(xp))
 
+    test_large_ints = nfo.test_large_ints
+    if isinstance(nfo.test_large_ints, dict):
+        test_large_ints = test_large_ints.get(_get_native_namespace_name(xp), False)
+
     if scalar_only is None:
         scalar_only = [False] * nfo.n_args
     if scalar_or_0d_only is None:
@@ -164,7 +174,7 @@ def test_support_alternative_backends(xp, func, nfo, base_dtype, shapes):
     shapes = [shape if not cond else None for shape, cond in zip(shapes, no_shape)]
 
     for dtype, dtype_np, type_, shape in zip(dtypes, dtypes_np, paramtypes, shapes):
-        if 'int' in dtype and nfo.test_large_ints:
+        if 'int' in dtype and test_large_ints:
             iinfo = np.iinfo(dtype_np)
             rand = partial(rng.integers, iinfo.min, iinfo.max + 1)
         elif 'int' in dtype:
@@ -213,8 +223,8 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     if func.__name__ in {'expn', 'polygamma', 'multigammaln', 'bdtr', 'bdtrc', 'bdtri',
                          'nbdtr', 'nbdtrc', 'nbdtri', 'pdtri'}:
         pytest.skip(f"dtypes for {func.__name__} make it a bad fit for this test.")
-    dtypes = ['int64', 'float32', 'float64'][:nfo.n_args]
-    dtypes_xp = [xp.int64, xp.float32, xp.float64][:nfo.n_args]
+    dtypes = ['int64', 'float32', 'float64', 'float64'][:nfo.n_args]
+    dtypes_xp = [xp.int64, xp.float32, xp.float64, xp.float64][:nfo.n_args]
     positive_only, dtypes_np_ref = _skip_or_tweak_alternative_backends(
         xp, nfo, dtypes)
 
@@ -224,6 +234,7 @@ def test_support_alternative_backends_mismatched_dtypes(xp, func, nfo):
     args_np = [
         randint(size=1, dtype=np.int64),
         rng.standard_normal(size=1, dtype=np.float32),
+        rng.standard_normal(size=1, dtype=np.float64),
         rng.standard_normal(size=1, dtype=np.float64),
     ][:nfo.n_args]
     args_np = [
