@@ -590,11 +590,13 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
 
         if none_pos:
             if new_coords:
-                coord_like = new_coords[0]
+                coord_like = np.zeros_like(new_coords[0])
             else:
                 coord_like = np.zeros(len(new_data), dtype=self.coords[0].dtype)
-            for i in none_pos:
-                new_coords.insert(i, np.zeros_like(coord_like))
+            new_coords.insert(none_pos[0], coord_like)
+            if len(none_pos) > 1:
+                for i in none_pos[1:]:
+                    new_coords.insert(i, coord_like.copy())
         return coo_array((new_data, new_coords), shape=new_shape, dtype=self.dtype)
 
     def __setitem__(self, key, x):
