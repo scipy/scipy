@@ -145,10 +145,21 @@ jmp_buf *superlu_python_jmpbuf(void);
     SuperLUStat_t *h, int *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
 
-void sgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
-void dgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
-void cgscon(char*, SuperMatrix*, SuperMatrix*, float, float*, SuperLUStat_t*, int*);
-void zgscon(char*, SuperMatrix*, SuperMatrix*, double, double*, SuperLUStat_t*, int*);
+
+/* Explicitly declare the SuperLU functions for each data type.
+ *
+ * These functions are defined in 'SuperLU/SRC/slu_[sdcz]defs.h', but we get
+ * "conflicting type" errors if we include those headers here.
+ */
+void sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            float anorm, float *rcond, SuperLUStat_t *stat, int *info);
+void dgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            double anorm, double *rcond, SuperLUStat_t *stat, int *info);
+void cgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            float anorm, float *rcond, SuperLUStat_t *stat, int *info);
+void zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+            double anorm, double *rcond, SuperLUStat_t *stat, int *info);
+
 
 #define Create_Dense_Matrix_ARGS                               \
     SuperMatrix *a, int b, int c, void *d, int e,              \
