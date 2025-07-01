@@ -172,8 +172,6 @@ static PyObject *SuperLU_invnormest(SuperLUObject * self, PyObject * args,
         goto fail;
     }
     float rcond_float;
-    /* TODO replace these "1.0" with `anorm` computed by `lacon2`, so that we
-     * return the actual condition number. */
     switch(self->type) {
         case NPY_FLOAT:
             sgscon(
