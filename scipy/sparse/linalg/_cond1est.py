@@ -1,5 +1,4 @@
-from scipy.sparse.linalg import splu
-from scipy.sparse.linalg._onenormest import onenormest
+from scipy.sparse.linalg import norm, splu
 
 __all__ = ['invnormest', 'cond1est']
 
@@ -83,4 +82,4 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     45.0
     """
-    return onenormest(A) * invnormest(A, ord=1)
+    return norm(A, 1) * invnormest(A, ord=1)
