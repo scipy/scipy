@@ -1,50 +1,49 @@
 from scipy.sparse.linalg import splu
-from scipy.sparse.linalg._onenormest import *
+from scipy.sparse.linalg._onenormest import onenormest
 
-__all__ = ['rinvnormest', 'cond1est']
+__all__ = ['invnormest', 'cond1est']
 
 
-def rinvnormest(A, norm="1"):
-    """
-    Compute an estimate for the reciprocal of the norm of the inverse 
-    of a sparse matrix.
+def invnormest(A, norm="1"):
+    """Compute an estimate for the norm of the inverse of a sparse matrix.
 
     Parameters
     ----------
-    A : ndarray or other linear operator
-        A sparse matrix for which an LU matrix can be computed. CSC would
-        be most efficient.
+    A : sparray or LinearOperator
+        A square, sparse matrix. Any matrix not in CSC format will be converted
+        internally, and raise a SparseEfficiencyWarning.
     norm : string, optional
         "1"/"0" [default] computes the 1-norm, "I" computes the inf-norm.
 
     Returns
     -------
     est : float
-        An estimate of the norm of the inverse matrix.
+        An estimate of the norm of the matrix inverse.
 
     Notes
     -----
     Computes an LU decomposition and runs the gscon procedure from SuperLU.
-    Use scipy.sparse.linalg.SuperLU.rinvnormest if you already have an LU 
+    Use scipy.sparse.linalg.SuperLU.invnormest if you already have an LU 
     decomposition.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
-    >>> from scipy.sparse.linalg import rinvnormest
+    >>> from scipy.sparse.linalg import invnormest
     >>> A = csc_matrix([[1., 0., 0.], [5., 8., 2.], [0., -1., 0.]], dtype=float)
     >>> A.toarray()
     array([[ 1.,  0.,  0.],
            [ 5.,  8.,  2.],
            [ 0., -1.,  0.]])
-    >>> rinvnormest(A,norm="1")
-    0.2
-    >>> 1/np.linalg.norm(np.linalg.inv(A.toarray()), ord=1)
-    0.2
+    >>> invnormest(A, norm="1")
+    5.0
+    >>> float(np.linalg.norm(np.linalg.inv(A.toarray()), ord=1))
+    5.0
     """
-    lu_decomposition = splu(A)
-    return lu_decomposition.rinvnormest(norm=norm)
+    lu = splu(A)
+    return lu.invnormest(norm=norm)
+
 
 def cond1est(A):
     """
@@ -65,7 +64,7 @@ def cond1est(A):
     Notes
     -----
     Computes an LU decomposition and runs the gscon procedure from SuperLU.
-    Use scipy.sparse.linalg.SuperLU.rinvnormest if you already have an LU 
+    Use scipy.sparse.linalg.SuperLU.invnormest if you already have an LU 
     decomposition.
 
     Examples
@@ -83,4 +82,4 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     45.0
     """
-    return onenormest(A)/rinvnormest(A)
+    return onenormest(A) * invnormest(A)
