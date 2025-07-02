@@ -325,21 +325,28 @@ class IndexMixin:
                 arr_int_pos.append(index_ndim)
                 array_indices.append(index_ndim)
                 index_ndim += 1
-        if array_indices:
-            # raises if arrays not broadcastable to a single shape
-            # arr_shape == () if no arrays in index
-            arr_shape = np.broadcast_shapes(*[index[i].shape for i in array_indices])
-            for i in array_indices:
-                index[i] = np.broadcast_to(index[i], arr_shape)
-
-            # array_indices implies arr_int_pos has at least one element
+        if len(array_indices) > 1:
+            idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
+            if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
+                shapes = " ".join(str(ix.shape) for ix in idx_arrays)
+                msg = (f'shape mismatch: indexing arrays could not be broadcast '
+                       f'together with shapes {shapes}')
+                raise IndexError(msg)
+            # replace array indices with broadcast versions
+            for i, arr in zip(array_indices, idx_arrays):
+                index[i] = arr
+            arr_shape = idx_arrays[0].shape
+            # len(array_indices) implies arr_int_pos has at least one element
             # if arrays and ints not adjacent, move to front of shape
             if len(arr_int_pos) != (arr_int_pos[-1] - arr_int_pos[0] + 1):
                 idx_shape = list(arr_shape) + idx_shape
             else:
                 arr_pos = arr_int_pos[0]
                 idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
-        assert len(index) == self.ndim
+        elif len(array_indices) == 1:
+            arr_index = array_indices[0]
+            arr_shape = list(index[arr_index].shape)
+            idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
         return tuple(index), tuple(idx_shape), arr_int_pos, none_positions
 
     def _asindices(self, idx, length):
