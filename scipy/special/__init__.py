@@ -5,6 +5,11 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
+.. toctree::
+   :hidden:
+
+   special.cython_special
+
 Almost all of the functions below accept NumPy arrays as input
 arguments as well as single numbers. This means they follow
 broadcasting and automatic array-looping rules. Technically,
@@ -484,11 +489,7 @@ which provide a more flexible and consistent interface.
    :toctree: generated/
 
    lpmv                       -- Associated Legendre function of integer order and real degree.
-   sph_harm                   -- Compute spherical harmonics.
-   clpmn                      -- Associated Legendre function of the first kind for complex arguments.
-   lpn                        -- Legendre function of the first kind.
    lqn                        -- Legendre function of the second kind.
-   lpmn                       -- Sequence of associated Legendre functions of the first kind.
    lqmn                       -- Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal harmonics

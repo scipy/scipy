@@ -5,7 +5,7 @@ from numpy.testing import suppress_warnings
 import pytest
 
 from scipy.special import (
-    lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,
+    lpmv, lqn, lqmn, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
@@ -56,15 +56,6 @@ def data_local(func, dataname, *a, **kw):
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
 
 
-# The functions lpn, lpmn, clpmn, and sph_harm appearing below are
-# deprecated in favor of legendre_p_all, assoc_legendre_p_all,
-# assoc_legendre_p_all (assoc_legendre_p_all covers lpmn and clpmn),
-# and sph_harm_y respectively. The deprecated functions listed above are
-# implemented as shims around their respective replacements. The replacements
-# are tested separately, but tests for the deprecated functions remain to
-# verify the correctness of the shims.
-
-
 def ellipk_(k):
     return ellipk(k*k)
 
@@ -92,18 +83,8 @@ def assoc_legendre_p_boost_(nu, mu, x):
 def legendre_p_via_assoc_(nu, x):
     return lpmv(0, nu, x)
 
-def lpn_(n, x):
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        return lpn(n.astype('l'), x)[0][-1]
-
 def lqn_(n, x):
     return lqn(n.astype('l'), x)[0][-1]
-
-def legendre_p_via_lpmn(n, x):
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        return lpmn(0, n, x)[0][0,-1]
 
 def legendre_q_via_lqmn(n, x):
     return lqmn(0, n, x)[0][0,-1]
@@ -199,12 +180,6 @@ def spherical_jn_(n, x):
 def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
 
-def sph_harm_(m, n, theta, phi):
-    with suppress_warnings() as sup:
-        sup.filter(category=DeprecationWarning)
-        y = sph_harm(m, n, theta, phi)
-    return (y.real, y.imag)
-
 def cexpm1(x, y):
     z = expm1(x + 1j*y)
     return z.real, z.imag
@@ -222,14 +197,6 @@ BOOST_TESTS = [
              (0,1), 2, rtol=1e-11),
         data(legendre_p_via_assoc_, 'legendre_p_large_ipp-legendre_p_large',
              (0,1), 2, rtol=9.6e-14),
-        data(legendre_p_via_lpmn, 'legendre_p_ipp-legendre_p',
-             (0,1), 2, rtol=5e-14, vectorized=False),
-        data(legendre_p_via_lpmn, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=3e-13, vectorized=False),
-        data(lpn_, 'legendre_p_ipp-legendre_p',
-             (0,1), 2, rtol=5e-14, vectorized=False),
-        data(lpn_, 'legendre_p_large_ipp-legendre_p_large',
-             (0,1), 2, rtol=3e-13, vectorized=False),
         data(eval_legendre_ld, 'legendre_p_ipp-legendre_p',
              (0,1), 2, rtol=6e-14),
         data(eval_legendre_ld, 'legendre_p_large_ipp-legendre_p_large',
@@ -512,13 +479,6 @@ BOOST_TESTS = [
              (2,0,1), 3, rtol=3e-5),
         data(chndtr, 'nccs_big_ipp-nccs_big',
              (2,0,1), 3, rtol=5e-4, knownfailure='chndtr inaccurate some points'),
-
-        data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic',
-             (1,0,3,2), (4,5), rtol=5e-11,
-             param_filter=(lambda p: np.ones(p.shape, '?'),
-                           lambda p: np.ones(p.shape, '?'),
-                           lambda p: np.logical_and(p < 2*np.pi, p >= 0),
-                           lambda p: np.logical_and(p < np.pi, p >= 0))),
 
         data(spherical_jn_, 'sph_bessel_data_ipp-sph_bessel_data',
              (0,1), 2, rtol=1e-13),
