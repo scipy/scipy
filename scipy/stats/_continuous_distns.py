@@ -935,23 +935,25 @@ class beta_gen(rv_continuous):
             log_term = sum_ab*np.log1p(a/b) + np.log(b) - 2*np.log(sum_ab)
             return t1 + t2 + log_term
 
-        def threshold_large(v):
-            if v == 1.0:
-                return 1000
-
-            j = np.log10(v)
-            digits = int(j)
-            d = int(v / 10 ** digits) + 2
-            return d*10**(7 + j)
-
-        if a >= 4.96e6 and b >= 4.96e6:
-            return asymptotic_ab_large(a, b)
-        elif a <= 4.9e6 and b - a >= 1e6 and b >= threshold_large(a):
-            return asymptotic_b_large(a, b)
-        elif b <= 4.9e6 and a - b >= 1e6 and a >= threshold_large(b):
+        def asymptotic_a_large(a, b):
             return asymptotic_b_large(b, a)
-        else:
-            return regular(a, b)
+
+        def threshold_large(v):
+            j = np.log10(v)
+            d = (v / 10 ** j) + 2
+            return xpx.apply_where(v != 1.0, (d, j), lambda d_, j_: d_ * 10**(7 + j_), fill_value=1000)
+
+        threshold_a = threshold_large(a)
+        threshold_b = threshold_large(b)
+        return _lazyselect([np.logical_and(a >= 4.96e6, b >= 4.96e6),
+                            np.logical_and(np.logical_and(a <= 4.9e6, b - a >= 1e6), b >= threshold_a),
+                            np.logical_and(np.logical_and(b <= 4.9e6, a - b >= 1e6), a >= threshold_b),
+                            np.logical_and(a < 4.9e6, b < 4.9e6)
+                           ],
+                           [asymptotic_ab_large, asymptotic_b_large,
+                            asymptotic_a_large, regular],
+                           [a, b]
+        )
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')

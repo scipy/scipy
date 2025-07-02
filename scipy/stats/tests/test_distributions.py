@@ -5003,6 +5003,13 @@ class TestBeta:
         #     return float(entropy)
         assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
 
+    def test_entropy_broadcasting(self):
+        # gh-23127 reported that the entropy method of the beta
+        # distribution did not broadcast correctly.
+        beta_dist = stats.make_distribution(stats.beta)
+        b = beta_dist(a=np.zeros(10), b=np.ones(10))
+        b.entropy()
+
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
