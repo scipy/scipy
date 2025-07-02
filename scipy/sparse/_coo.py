@@ -567,14 +567,24 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
         # handle array indices
         if arr_indices:
             arr_shape = arr_indices[0].shape  # already broadcast in validate_indices
-            # keyarr is arr_size by #array indices
-            keyarr = np.array(arr_indices).reshape(len(arr_indices), -1).T
-
-            # arr_coords.T is old_NNZ by #array indices
-            arr_coords = np.array([co[index_mask] for co in arr_coords])
-            # found is arr_size x old_NNZ. True means coords match all arr_indices
-            found = (keyarr[:, None, :] == arr_coords.T).all(axis=2)
-            arr_ix, arr_co = found.nonzero()
+            # There are three dimensions required to check array indices against coords
+            # Their lengths are described as:
+            # a) number of indices that are arrays - arr_dim
+            # b) number of coords to check - masked_nnz (already masked by slices)
+            # c) size of the index arrays - arr_size
+            # Note for this, integer indices are treated like slices, not like arrays.
+            #
+            # Goal:
+            # Find new_coords and index positions that match across all arr_dim axes.
+            # Approach: Track matches using bool array. Size: masked_nnz by arr_size.
+            # True means all arr_indices match at that coord and index position.
+            # Equate with broadcasting and check for all equal across (arr_dim) axis 0.
+            # 1st array is "keyarr" (arr_dim by 1 by arr_size) from arr_indices.
+            # 2nd array is "arr_coords" (arr_dim by masked_nnz by 1) from arr_coords.
+            keyarr = np.array(arr_indices).reshape(len(arr_indices), 1, -1)
+            arr_coords = np.array([co[index_mask] for co in arr_coords])[:, :, None]
+            found = (keyarr == arr_coords).all(axis=0)
+            arr_co, arr_ix = found.nonzero()
             new_data = new_data[arr_co]
             new_coords = [co[arr_co] for co in new_coords]
             new_arr_coords = list(np.unravel_index(arr_ix, shape=arr_shape))
@@ -670,10 +680,15 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                 x_coords = x.nonzero()
                 x_data = x[x_coords]
 
-        # approach:
-        # set indexed values to zero (drop from `self.coords` and `self.data`)
+        # Approach:
+        # Set indexed values to zero (drop from `self.coords` and `self.data`)
         # create new coords and data arrays for setting nonzeros
         # concatenate old (undropped) values with new coords and data
+
+        ## Possible alternative: Create a mask for existing nonzeros that match
+        ## the key. Overwrite those values using the mask. Create another mask
+        ## for the new nonzeros that match the key. Create coords and data for
+        ## those and concatenate with the old ones.
 
         old_data, old_coords = self._zero_many(index)
 
@@ -777,13 +792,12 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
                 arr_coords.append(co)
                 arr_indices.append(idx)
 
-        # array indices action on index_mask indicates which nozeros match array indices
+        # match array indices with masked coords. See comments in __getitem__
         if arr_indices:
-            keyarr = np.array(arr_indices).reshape(len(arr_indices), -1).T
-            short_arr_coords = np.array([co[index_mask] for co in arr_coords])
-            # found is arr_size x shortened_NNZ. True means coords match all arr_indices
-            found = (keyarr[:, None, :] == short_arr_coords.T).all(axis=2)
-            _, arr_coo = found.nonzero()
+            keyarr = np.array(arr_indices).reshape(len(arr_indices), 1, -1)
+            arr_coords = np.array([co[index_mask] for co in arr_coords])[:, :, None]
+            found = (keyarr == arr_coords).all(axis=0)
+            arr_coo, _ = found.nonzero()
             arr_index_mask = np.zeros_like(index_mask)
             arr_index_mask[index_mask.nonzero()[0][arr_coo]] = True
             index_mask &= arr_index_mask
