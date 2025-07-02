@@ -57,6 +57,9 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     np.float64(45.0)
     """
+    if A.ndim != 2:
+        raise ValueError("Input must be a 2-dimensional matrix.")
+
     M, N = A.shape
 
     if M != N:
