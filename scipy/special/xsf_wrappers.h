@@ -124,9 +124,6 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
 double special_rgamma(double x);
 npy_cdouble special_crgamma(npy_cdouble z);
 
-npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
-npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
-
 double special_ellipk(double m);
 
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);

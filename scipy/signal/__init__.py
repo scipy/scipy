@@ -3,6 +3,11 @@
 Signal processing (:mod:`scipy.signal`)
 =======================================
 
+.. toctree::
+   :hidden:
+
+   signal.windows
+
 Convolution
 ===========
 
