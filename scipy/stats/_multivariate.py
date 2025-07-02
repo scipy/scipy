@@ -1583,6 +1583,17 @@ class matrix_t_gen(multi_rv_generic):
     :math:`\mathrm{df}` is the degrees of freedom,
     and :math:`\Gamma_n` is the multivariate gamma function.
 
+    These equivalent formulations come from the identity
+    :math:`\det\left( I_m + A B \right) = \det\left( I_n + B A \right)`
+    for :math:`m \times n` arrays :math:`A` and :math:`B^T`
+    and the fact that
+    :math:`\gamma_n(\mathrm{df} + m) / \gamma_n(\mathrm{df})` is equal to
+    :math:`\gamma_m(\mathrm{df} + n) / \gamma_m(\mathrm{df})`,
+    where
+    :math:`\gamma_m(\mathrm{df}) = 2^{m(m-1)/2}
+           \Gamma_m\left( (\mathrm{df} + m - 1) / 2 \right)`
+   denotes a normalized multivariate gamma function.
+
     When :math:`\mathrm{df} = 1` this distribution is known as the matrix
     variate Cauchy.
 
@@ -1941,13 +1952,18 @@ class matrix_t_gen(multi_rv_generic):
         Notes
         -----
         %(_matt_doc_callparams_note)s
+
+        This method takes advantage of the two equivalent expressions of the
+        probability density function. It samples a Cholesky factor of a
+        random variate of the appropriate inverse Wishart distribution using
+        the smaller of the row/column dimensions.
         """
         size = int(size)
         dims, mean, row_spread, col_spread, df = self._process_parameters(
             mean, row_spread, col_spread, df
         )
         random_state = self._get_random_state(random_state)
-        # see scipy.stats.matrix_normal.rvs around line 1320
+        # see scipy.stats.matrix_normal.rvs
         std_norm = random_state.standard_normal(
             size=(dims[1], size, dims[0])
         ).transpose(1, 2, 0)
