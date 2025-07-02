@@ -1580,12 +1580,13 @@ class matrix_t_gen(multi_rv_generic):
     where :math:`\mathrm{M}` is the mean,
     :math:`\Sigma` is the row-wise spread matrix,
     :math:`\Omega` is the column-wise matrix,
-    and :math:`\mathrm{df}` is the degrees of freedom.
+    :math:`\mathrm{df}` is the degrees of freedom,
+    and :math:`\Gamma_n` is the multivariate gamma function.
 
     When :math:`\mathrm{df} = 1` this distribution is known as the matrix
     variate Cauchy.
 
-    .. versionadded:: 1.16.0
+    .. versionadded:: 1.17.0
 
     References
     ----------
@@ -1597,23 +1598,26 @@ class matrix_t_gen(multi_rv_generic):
 
     >>> import numpy as np
     >>> from scipy.stats import matrix_t
-    >>> M = np.arange(6).reshape(3,2); M
+    >>> M = np.arange(6).reshape(3,2)
+    >>> M
     array([[0, 1],
            [2, 3],
            [4, 5]])
-    >>> Sigma = np.diag([1,2,3]); Sigma
+    >>> Sigma = np.diag([1,2,3])
+    >>> Sigma
     array([[1, 0, 0],
            [0, 2, 0],
            [0, 0, 3]])
-    >>> Omega = 0.3*np.identity(2); Omega
+    >>> Omega = 0.3*np.identity(2)
+    >>> Omega
     array([[ 0.3,  0. ],
            [ 0. ,  0.3]])
-    >>> X = M + 0.1; X
+    >>> X = M + 0.1
+    >>> X
     array([[ 0.1,  1.1],
            [ 2.1,  3.1],
            [ 4.1,  5.1]])
-    >>> df = 3; df
-    3
+    >>> df = 3
     >>> matrix_t.pdf(X, mean=M, row_spread=Sigma, col_spread=Omega, df=df)
     0.9972880280135796
 
