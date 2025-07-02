@@ -53,9 +53,8 @@ class FindFuncs(ast.NodeVisitor):
                     )
                 case _:
                     raise ValueError("unknown ast node type")
-            # check if filter is set to ignore
-            any_tests = any(p.name.endswith("tests") for p in self.__filename.parents)
-            if argtext == "ignore" and not any_tests:
+            # check if filter is set to ignore outside of test code
+            if argtext == "ignore" and "tests" not in self.__filename.parts:
                 self.bad_filters.append(
                     f"{self.__filename}:{node.lineno}")
 
