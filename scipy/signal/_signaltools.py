@@ -1073,7 +1073,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     shape_ret = [ret.shape[i] if i not in fft_axes else
                  ret.shape[i]*ret.shape[i-1]
                  for i in range(ret.ndim) if i not in split_axes]
-    ret = xp.reshape(ret, shape_ret)
+    ret = xp.reshape(ret, tuple(shape_ret))
 
     # Slice to the correct size.
     slice_final = tuple([slice(islice) for islice in shape_final])
@@ -1668,14 +1668,6 @@ def medfilt(volume, kernel_size=None):
     --------
     scipy.ndimage.median_filter
     scipy.signal.medfilt2d
-
-    Notes
-    -----
-    The more general function `scipy.ndimage.median_filter` has a more
-    efficient implementation of a median filter and therefore runs much faster.
-
-    For 2-dimensional images with ``uint8``, ``float32`` or ``float64`` dtypes,
-    the specialised function `scipy.signal.medfilt2d` may be faster.
 
     """
     xp = array_namespace(volume)
@@ -2476,19 +2468,23 @@ def deconvolve(signal, divisor):
 def hilbert(x, N=None, axis=-1):
     r"""FFT-based computation of the analytic signal.
 
-    The analytic signal is calculated by filtering out the negative frequencies and
+    The analytic signal is calculated by zeroing out the negative frequencies and
     doubling the amplitudes of the positive frequencies in the FFT domain.
     The imaginary part of the result is the hilbert transform of the real-valued input
     signal.
     
     The transformation is done along the last axis by default.
 
+    For numpy arrays, `scipy.fft.set_workers` can be used to change the number of
+    workers used for the FFTs.
+
     Parameters
     ----------
     x : array_like
         Signal data.  Must be real.
     N : int, optional
-        Number of Fourier components.  Default: ``x.shape[axis]``
+        Number of output samples. `x` is initially cropped or zero-padded to length
+        `N` along `axis`.  Default: ``x.shape[axis]``
     axis : int, optional
         Axis along which to do the transformation.  Default: -1.
 
@@ -2578,19 +2574,16 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = xp.zeros(N, dtype=Xf.dtype)
+    Xf = xp.moveaxis(Xf, axis, -1)
     if N % 2 == 0:
-        h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
+        Xf[..., 1: N // 2] *= 2.0
+        Xf[..., N // 2 + 1:N] = 0.0
     else:
-        h[0] = 1
-        h[1:(N + 1) // 2] = 2
+        Xf[..., 1:(N + 1) // 2] *= 2.0
+        Xf[..., (N + 1) // 2:N] = 0.0
 
-    if x.ndim > 1:
-        ind = [xp.newaxis] * x.ndim
-        ind[axis] = slice(None)
-        h = h[tuple(ind)]
-    x = sp_fft.ifft(Xf * h, axis=axis)
+    Xf = xp.moveaxis(Xf, -1, axis)
+    x = sp_fft.ifft(Xf, axis=axis)
     return x
 
 

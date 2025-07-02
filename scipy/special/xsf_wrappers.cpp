@@ -30,7 +30,6 @@
 #include <xsf/trig.h>
 #include <xsf/wright_bessel.h>
 #include <xsf/zeta.h>
-#include "xsf_special.h"
 
 #include <xsf/cephes/cbrt.h>
 #include <xsf/cephes/erfinv.h>
@@ -287,14 +286,6 @@ npy_cdouble special_cloggamma(npy_cdouble z) { return to_ccomplex(xsf::loggamma(
 
 npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
     return to_ccomplex(xsf::lambertw(to_complex(z), k, tol));
-}
-
-npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(m, n, theta, phi));
-}
-
-npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
-    return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
 double cephes_expm1_wrap(double x) { return xsf::cephes::expm1(x); }
