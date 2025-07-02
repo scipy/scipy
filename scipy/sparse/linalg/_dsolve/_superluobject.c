@@ -109,13 +109,9 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
-    volatile int info;
-    volatile float rcond_float;
-    volatile double rcond;
-    PyObject* volatile ord_obj = NULL;  /* hold the "ord" argument */
-    char norm_c;
-    volatile SuperLUStat_t stat = { 0 };
     static char *kwlist[] = { "ord", NULL };
+    PyObject* volatile ord_obj = NULL;  /* hold the "ord" argument */
+
     volatile jmp_buf *jmpbuf_ptr;
     SLU_BEGIN_THREADS_DEF;
 
@@ -130,25 +126,27 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     /* Parse the "ord" argument, which specifies the norm to use.
      * If not given, we default to '1' (the 1-norm).
      */
+    char norm_c;
+
     if (ord_obj == NULL || ord_obj == Py_None) {
         norm_c = '1';
     } else if (PyLong_Check(ord_obj)) {  /* check if it's an integer */
-        long ord_val = PyLong_AsLong(ord_obj);
-        if (ord_val == -1 && PyErr_Occurred()) {
+        long ord = PyLong_AsLong(ord_obj);
+        if (ord == -1 && PyErr_Occurred()) {
             return NULL;  /* conversion error */
         }
-        if (ord_val == 1) {
+        if (ord == 1) {
             norm_c = '1';
         } else {
             PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
             return NULL;
         }
     } else if (PyFloat_Check(ord_obj)) {  /* check if it's a float (np.inf) */
-        double ord_val = PyFloat_AsDouble(ord_obj);
-        if (ord_val == -1.0 && PyErr_Occurred()) {
+        double ord = PyFloat_AsDouble(ord_obj);
+        if (ord == -1.0 && PyErr_Occurred()) {
             return NULL;  /* conversion error */
         }
-        if (ord_val == NPY_INFINITY) {
+        if (ord == NPY_INFINITY) {
             norm_c = 'I';  /* infinity norm */
         } else {
             PyErr_SetString(PyExc_ValueError, "ord must be 1 or np.inf");
@@ -164,6 +162,8 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
         goto fail;
     }
 
+    /* Output from gscon */
+    volatile SuperLUStat_t stat = { 0 };
     StatInit((SuperLUStat_t *)&stat);
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
@@ -175,26 +175,31 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
         goto fail;
     }
 
+    /* Outputs from gscon */
+    volatile float rnormf;
+    volatile double rnormd;
+    volatile int info;
+
     switch (self->type) {
         case NPY_FLOAT:
             sgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0f,
-                (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
+                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_DOUBLE:
             dgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0,
-                (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_CFLOAT:
             cgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0f,
-                (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
+                (float *)&rnormf, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         case NPY_CDOUBLE:
             zgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0,
-                (double *)&rcond, (SuperLUStat_t *)&stat, (int *)&info);
+                (double *)&rnormd, (SuperLUStat_t *)&stat, (int *)&info);
             break;
         default: 
             PyErr_SetString(PyExc_ValueError, "unsupported data type");
@@ -215,11 +220,11 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
      * of the matrix. Return a numpy scalar with the appropriate type.
      */
     if (self->type == NPY_FLOAT || self->type == NPY_CFLOAT) {
-        float cond = 1.0 / rcond_float;
-        return PyArray_Scalar(&cond, PyArray_DescrFromType(NPY_FLOAT), NULL);
+        float normf = 1.0 / rnormf;
+        return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
     } else {
-        double cond = 1.0 / rcond;
-        return PyArray_Scalar(&cond, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+        double normd = 1.0 / rnormd;
+        return PyArray_Scalar(&normd, PyArray_DescrFromType(NPY_DOUBLE), NULL);
     }
 
   fail:
