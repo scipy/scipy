@@ -1655,7 +1655,7 @@ class matrix_t_gen(multi_rv_generic):
             self.__doc__, matrix_t_docdict_params
         )
 
-    def __call__(self, mean=None, row_spread=None, col_spread=None, df=None, seed=None):
+    def __call__(self, mean=None, row_spread=1, col_spread=1, df=None, seed=None):
         """Create a frozen matrix t distribution.
 
         See `matrix_t_frozen` for more information.
