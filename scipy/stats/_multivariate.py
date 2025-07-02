@@ -1501,8 +1501,7 @@ matrix_t_docdict_noparams = {
 
 
 class matrix_t_gen(multi_rv_generic):
-    r"""
-    A matrix t-random variable.
+    r"""A matrix t-random variable.
 
     The `mean` keyword specifies the mean.
     The `row_spread` keyword specifies the row-wise spread matrix.
@@ -1584,15 +1583,24 @@ class matrix_t_gen(multi_rv_generic):
     and :math:`\Gamma_n` is the multivariate gamma function.
 
     These equivalent formulations come from the identity
-    :math:`\det\left( I_m + A B \right) = \det\left( I_n + B A \right)`
+
+    .. math::
+
+        \det\left( I_m + A B \right) = \det\left( I_n + B A \right)
+
     for :math:`m \times n` arrays :math:`A` and :math:`B^T`
     and the fact that
-    :math:`\gamma_n(\mathrm{df} + m) / \gamma_n(\mathrm{df})` is equal to
+    :math:`\gamma_n(\mathrm{df} + m) / \gamma_n(\mathrm{df})`
+    is equal to
     :math:`\gamma_m(\mathrm{df} + n) / \gamma_m(\mathrm{df})`,
     where
-    :math:`\gamma_m(\mathrm{df}) = 2^{m(m-1)/2}
-           \Gamma_m\left( (\mathrm{df} + m - 1) / 2 \right)`
-   denotes a normalized multivariate gamma function.
+
+    .. math::
+
+        \gamma_m(\mathrm{df}) = 2^{m(m-1)/2}
+        \Gamma_m\left( (\mathrm{df} + m - 1) / 2 \right)
+
+    denotes a normalized multivariate gamma function.
 
     When :math:`\mathrm{df} = 1` this distribution is known as the matrix
     variate Cauchy.
