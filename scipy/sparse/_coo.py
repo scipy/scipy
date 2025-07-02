@@ -612,6 +612,7 @@ class _coo_base(_data_matrix, _minmax_mixin, IndexMixin):
     def __setitem__(self, key, x):
         # enact self[key] = x
         index, new_shape, arr_int_pos, none_pos = self._validate_indices(key)
+        print(f"{key=} {index=} {new_shape=}")
 
         # remove None's at beginning of index. Should not impact indexing coords
         # and will mistakenly align with x_coord columns if not removed.

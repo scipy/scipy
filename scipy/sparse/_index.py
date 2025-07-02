@@ -7,7 +7,7 @@ from ._base import sparray, issparse
 INT_TYPES = (int, np.integer)
 
 
-def _broadcast_arrays(a, b):
+def _broadcast_arrays(*arrays):
     """
     Same as np.broadcast_arrays(a, b) but old writeability rules.
 
@@ -16,10 +16,10 @@ def _broadcast_arrays(a, b):
     Retain the old writeability rules, as our Cython code assumes
     the old behavior.
     """
-    x, y = np.broadcast_arrays(a, b)
-    x.flags.writeable = a.flags.writeable
-    y.flags.writeable = b.flags.writeable
-    return x, y
+    broadcast_arrays = np.broadcast_arrays(*arrays)
+    for x, a in zip(broadcast_arrays, arrays):
+        x.flags.writeable = a.flags.writeable
+    return broadcast_arrays
 
 
 class IndexMixin:
@@ -344,9 +344,9 @@ class IndexMixin:
                 arr_pos = arr_int_pos[0]
                 idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
         elif len(array_indices) == 1:
-            arr_index = array_indices[0]
-            arr_shape = list(index[arr_index].shape)
-            idx_shape = idx_shape[:arr_index] + arr_shape + idx_shape[arr_index:]
+            arr_shape = index[array_indices[0]].shape
+            arr_pos = arr_int_pos[0]
+            idx_shape = idx_shape[:arr_pos] + list(arr_shape) + idx_shape[arr_pos:]
         return tuple(index), tuple(idx_shape), arr_int_pos, none_positions
 
     def _asindices(self, idx, length):
