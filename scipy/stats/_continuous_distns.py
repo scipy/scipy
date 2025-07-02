@@ -939,8 +939,8 @@ class beta_gen(rv_continuous):
             return asymptotic_b_large(b, a)
 
         def threshold_large(v):
-            j = np.log10(v)
-            d = (v / 10 ** j) + 2
+            j = np.floor(np.log10(v))
+            d = np.floor(v / 10 ** j) + 2
             return xpx.apply_where(v != 1.0, (d, j), lambda d_, j_: d_ * 10**(7 + j_),
                                    fill_value=1000)
 
