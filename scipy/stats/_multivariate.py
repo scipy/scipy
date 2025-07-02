@@ -1672,8 +1672,6 @@ class matrix_t_gen(multi_rv_generic):
         # Process row-wise spread
         row_spread = np.asarray(row_spread, dtype=float)
         if row_spread.ndim == 0:
-            if np.isnan(row_spread).any():
-                row_spread = np.identity(1)
             if mean is not None:
                 row_spread = row_spread * np.identity(meanshape[0])
             else:
@@ -1692,8 +1690,6 @@ class matrix_t_gen(multi_rv_generic):
         # Process column-wise spread
         col_spread = np.asarray(col_spread, dtype=float)
         if col_spread.ndim == 0:
-            if np.isnan(col_spread).any():
-                col_spread = np.identity(1)
             if mean is not None:
                 col_spread = col_spread * np.identity(meanshape[1])
             else:
