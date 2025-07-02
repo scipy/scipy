@@ -3,21 +3,105 @@
 import numpy as np
 import pytest
 
-from numpy.testing import assert_allclose, assert_raises
+from numpy.testing import assert_allclose
 from scipy import sparse
-from scipy.sparse import linalg as spla
+from scipy.sparse.linalg import splu, cond1est
 
-# TODO try different matrix sizes and densities (parametrize entire class by N)
 # TODO run many trials for a given seed
-# TODO try both invertible and non-invertible (ensure cond1est == np.inf)
-# TODO test with empty matrices
-# TODO test with single element matrices
+# TODO try different densities
 # TODO test with identity matrix (should return 1.0)
 # TODO test for failure on dense matrices
-# TODO test with complex matrices
+
+SEED = 565656  # arbitrary rng seed for reproducibility
+
+# FIXME complex fails tests
+# DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
+# DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
+
+DTYPE_PARAMS = [np.float32, np.float64]
+DTYPE_IDS = ['float32', 'float64']
+
+# TODO vary N
+N = 5  # arbitrary size for the matrices in tests
+
+@pytest.fixture(params=DTYPE_PARAMS, ids=DTYPE_IDS)
+def dtype(request):
+    """Fixture to provide the data type for tests.
+
+    Parameters
+    ----------
+    request : pytest.FixtureRequest
+        The request object for the fixture.
+
+    Returns
+    -------
+    dtype : data-type
+        The data type to be used in the tests.
+    """
+    return request.param
 
 
-def generate_matrix(N, dtype=None, singular=False):
+@pytest.fixture
+def empty_matrix(dtype):
+    """Define an empty CSC matrix."""
+    return sparse.csc_array((0, 0), dtype=dtype)
+
+
+@pytest.fixture
+def zero_matrix(dtype):
+    """Define a square CSC matrix with non-zero shape, but all zero entries."""
+    return sparse.csc_array((N, N), dtype=dtype)
+
+
+@pytest.fixture
+def singleton_matrix(dtype):
+    """Define a CSC matrix with a single non-zero element."""
+    return sparse.csc_array([[2]], dtype=dtype)
+
+
+@pytest.fixture
+def array_1D(dtype):
+    """Define a 1D array as a sparse matrix."""
+    return sparse.coo_array(np.arange(N), dtype=dtype)
+
+
+@pytest.fixture
+def array_ND(dtype):
+    """Define a non-singular ND array as a sparse matrix."""
+    A = sparse.random_array(
+        (N + 3, N, N),
+        dtype=dtype,
+        density=0.5,
+        random_state=SEED
+    ).toarray()
+
+    # Make each slice non-singular
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            A[i, j, j] = N + i + j
+
+    return sparse.coo_array(A)  # CSC format is only for 2D
+
+
+@pytest.fixture
+def array_rect(dtype):
+    """Define a rectangular array as a sparse matrix."""
+    return sparse.random_array(
+        (N + 2, N),
+        density=0.5,
+        dtype=dtype,
+        format='csc',
+        random_state=SEED
+    )
+
+
+@pytest.fixture
+def identity_matrix(dtype):
+    """Define an identity matrix as a sparse matrix."""
+    return sparse.csc_array(sparse.eye_array(N, dtype=dtype))
+
+
+def generate_matrix(N, dtype=None, singular='non'):
     """Generate a random sparse matrix of size N x N.
 
     Parameters
@@ -27,72 +111,157 @@ def generate_matrix(N, dtype=None, singular=False):
     dtype : data-type, optional
         Data type of the matrix elements (default is None, which uses
         float64).
-    singular : bool, optional
-        If True, the matrix will be singular (default is False, which
-        creates an invertible matrix).
+    singular : str in {'exactly', 'nearly', 'non'}, optional
+        If 'exactly', the matrix will be exactly singular (infinite
+        condition number). If 'nearly', the matrix will be invertible, but
+        ill-conditioned (with a very large condition number). The default is
+        'non', which creates an invertible, well-conditioned matrix.
 
     Returns
     -------
     result : (N, N) sparse.csc_matrix
         A random sparse matrix in Compressed Sparse Column (CSC) format.
     """
-    rng = np.random.default_rng(789002319)
-
     A = sparse.random_array(
         (N, N),
         density=0.5,
         format="lil",
         dtype=dtype,
-        random_state=rng,
+        random_state=SEED,
     )
 
-    if singular:
-        # NOTE we can vary this value to control the condition number.
-        # * 0 would make it *exactly* singular, so cond = np.inf.
-        # * ~1e±10 would make it very ill-conditioned.
-        A[0] = 0  # make it exactly singular
+    if singular == 'exactly':
+        A[0] = 0
+    elif singular == 'nearly':
+        eps = np.finfo(dtype).eps
+        A[0] = eps * eps
     else:
-        A.setdiag(N * (1 + np.arange(N)))  # make it invertible
+        A.setdiag(N * (1 + np.arange(N)))
 
     return A.tocsc()
 
 
+@pytest.mark.parametrize("ord", [1, np.inf])
 class TestNormEstInv:
-    """Test the normest_inv method of SuperLU."""
+    def test_error_unsupported_norm(self, dtype, ord):
+        if ord != 1:
+            pytest.skip(reason="No need to test for every ord value.")
 
-    def test_error_unsupported_norm(self):
-        """Test that an error is raised for unsupported inputs."""
-        A = generate_matrix(5, dtype=np.float64)
-        with assert_raises(ValueError):
-            spla.splu(A).normest_inv(ord=2)
+        A = generate_matrix(N, dtype=dtype)
+        with pytest.raises(ValueError, match="ord must be 1 or np.inf"):
+            splu(A).normest_inv(ord=2)
 
-    # @pytest.mark.parametrize("dtype",
-    #     [np.float32, np.float64, np.complex64, np.complex128]
-    # )  # FIXME complex fails
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    @pytest.mark.parametrize("ord", [1, np.inf])
-    def test_normest_inv(self, ord, dtype):
-        A = generate_matrix(5, dtype)
+    # FIXME returns 1.0 instead of 0.0
+    @pytest.mark.xfail(reason="Empty matrix returns 1.0 instead of 0.0")
+    def test_empty_matrix(self, empty_matrix, ord):
+        """Test that an empty matrix returns 0."""
+        assert_allclose(splu(empty_matrix).normest_inv(ord=ord), 0)
+
+    def test_zero_matrix(self, zero_matrix, ord):
+        with pytest.raises(RuntimeError, match="Factor is exactly singular"):
+            splu(zero_matrix).normest_inv(ord=ord)
+
+    def test_singleton_matrix(self, singleton_matrix, dtype, ord):
+        # Check that we output the correct data type
+        out_type = (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
+        assert_allclose(
+            splu(singleton_matrix).normest_inv(ord=ord),
+            np.array(0.5).astype(out_type),
+            strict=True
+        )
+
+    def test_identity_matrix(self, identity_matrix, dtype, ord):
+        # Check that we output the correct data type
+        out_type = (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
+        assert_allclose(
+            splu(identity_matrix).normest_inv(ord=ord),
+            np.array(1.0).astype(out_type),
+            strict=True
+        )
+
+    def test_exactly_singular_matrix(self, dtype, ord):
+        A = generate_matrix(N, dtype=dtype, singular='exactly')
+        with pytest.raises(RuntimeError, match="Factor is exactly singular"):
+            splu(A).normest_inv(ord=ord)
+
+    def test_nearly_singular_matrix(self, dtype, ord):
+        A = generate_matrix(N, dtype=dtype, singular='nearly')
+        norm_A_inv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=ord)
+        assert_allclose(splu(A).normest_inv(ord=ord), norm_A_inv, strict=True)
+
+    def test_1D_array(self, array_1D, ord):
+        with pytest.raises(
+            ValueError,
+            match="Cannot convert. CSC format must be 2D. Got 1D"
+        ):
+            splu(array_1D).normest_inv(ord=ord)
+
+    def test_ND_array(self, array_ND, ord):
+        with pytest.raises(
+            ValueError,
+            match="Cannot convert. CSC format must be 2D. Got 3D"
+        ):
+            splu(array_ND).normest_inv(ord=ord)
+
+    def test_rectangular_array(self, array_rect, ord):
+        with pytest.raises(ValueError, match="can only factor square matrices"):
+            splu(array_rect).normest_inv(ord=ord)
+
+    def test_random_nonsingular_matrix(self, dtype, ord):
+        A = generate_matrix(N, dtype)
         true_invnorm = np.linalg.norm(np.linalg.inv(A.toarray()), ord=ord)
-        est_invnorm = spla.splu(A).normest_inv(ord=ord)
+        est_invnorm = splu(A).normest_inv(ord=ord)
         assert_allclose(est_invnorm, true_invnorm)
 
 
-
 class TestCond1Est:
-    """Test the cond1est function."""
+    def test_empty_matrix(self, empty_matrix):
+        """Test that an empty matrix raises an error."""
+        with pytest.raises(
+            ValueError,
+            match="Condition number of an empty matrix is undefined"
+        ):
+            cond1est(empty_matrix)
 
-    def test_empty_matrix(self):
-        """Test that an error is raised for an empty matrix."""
-        pass
+    def test_zero_matrix(self, zero_matrix):
+        assert(cond1est(zero_matrix) == np.inf)
 
-    # @pytest.mark.parametrize("dtype",
-    #     [np.float32, np.float64, np.complex64, np.complex128]
-    # )  # FIXME complex fails
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    @pytest.mark.parametrize("singular", [True, False])
-    def test_cond1est(self, dtype, singular):
-        A = generate_matrix(5, dtype=dtype, singular=singular)
-        true_cond1norm = np.linalg.cond(A.toarray(), p=1)
-        est_cond1norm = spla.cond1est(A)
-        assert_allclose(est_cond1norm, true_cond1norm)
+    def test_singleton_matrix(self, singleton_matrix, dtype):
+        assert_allclose(cond1est(singleton_matrix), 1.0)
+
+    def test_identity_matrix(self, identity_matrix, dtype):
+        # Check that we output the correct data type
+        assert_allclose(cond1est(identity_matrix), 1.0)
+
+    def test_exactly_singular_matrix(self, dtype):
+        A = generate_matrix(N, dtype=dtype, singular='exactly')
+        assert(cond1est(A) == np.inf)
+
+    def test_nearly_singular_matrix(self, dtype):
+        A = generate_matrix(N, dtype=dtype, singular='nearly')
+        cond_A = np.linalg.cond(np.linalg.inv(A.toarray()), p=1)
+        assert_allclose(cond1est(A), cond_A, strict=True, rtol=1e-6)
+
+    def test_1D_array(self, array_1D):
+        with pytest.raises(
+            ValueError,
+            match="Input must be a 2-dimensional matrix."
+        ):
+            cond1est(array_1D)
+
+    def test_ND_array(self, array_ND):
+        with pytest.raises(
+            ValueError,
+            match="Input must be a 2-dimensional matrix."
+        ):
+            cond1est(array_ND)
+
+    def test_rectangular_array(self, array_rect):
+        with pytest.raises(ValueError, match="Matrix must be square."):
+            cond1est(array_rect)
+
+    def test_random_nonsingular_matrix(self, dtype):
+        A = generate_matrix(N, dtype)
+        cond_A = np.linalg.cond(A.toarray(), p=1)
+        cond_A_est = cond1est(A)
+        assert_allclose(cond_A_est, cond_A, strict=True)
