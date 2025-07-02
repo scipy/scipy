@@ -110,6 +110,7 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
     volatile int info;
+    volatile float rcond_float;
     volatile double rcond;
     PyObject* volatile ord_obj = NULL;  /* hold the "ord" argument */
     char norm_c;
@@ -166,18 +167,19 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     StatInit((SuperLUStat_t *)&stat);
 
     jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+
     SLU_BEGIN_THREADS;
+
     if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
         SLU_END_THREADS;
         goto fail;
     }
-    float rcond_float;
-    switch(self->type) {
+
+    switch (self->type) {
         case NPY_FLOAT:
             sgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0f,
                 (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
-                rcond = rcond_float;
             break;
         case NPY_DOUBLE:
             dgscon(
@@ -188,7 +190,6 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
             cgscon(
                 (char *)&norm_c, &self->L, &self->U, 1.0f,
                 (float *)&rcond_float, (SuperLUStat_t *)&stat, (int *)&info);
-                rcond = rcond_float;
             break;
         case NPY_CDOUBLE:
             zgscon(
@@ -199,6 +200,7 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
             PyErr_SetString(PyExc_ValueError, "unsupported data type");
             return NULL;
     }
+
     SLU_END_THREADS;
 
     if (info) {
@@ -208,7 +210,17 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     }
 
     StatFree((SuperLUStat_t *)&stat);
-    return PyFloat_FromDouble(1.0 / rcond);
+
+    /* The norm is always a real float or double, depending on the type
+     * of the matrix. Return a numpy scalar with the appropriate type.
+     */
+    if (self->type == NPY_FLOAT || self->type == NPY_CFLOAT) {
+        float cond = 1.0 / rcond_float;
+        return PyArray_Scalar(&cond, PyArray_DescrFromType(NPY_FLOAT), NULL);
+    } else {
+        double cond = 1.0 / rcond;
+        return PyArray_Scalar(&cond, PyArray_DescrFromType(NPY_DOUBLE), NULL);
+    }
 
   fail:
     XStatFree((SuperLUStat_t *)&stat);
