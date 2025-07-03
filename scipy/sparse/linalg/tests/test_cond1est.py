@@ -9,7 +9,6 @@ from scipy.sparse.linalg import splu, cond1est
 
 # TODO run many trials for a given seed
 # TODO try different densities
-# TODO test for failure on dense matrices
 
 SEED = 565656  # arbitrary rng seed for reproducibility
 
@@ -233,6 +232,11 @@ class TestNormEstInv:
 
 
 class TestCond1Est:
+    def test_dense_matrix(self, dtype):
+        A = generate_matrix(N, dtype).toarray()
+        with pytest.raises(TypeError, match="Input is not a sparse matrix."):
+            cond1est(A)
+
     def test_empty_matrix(self, empty_matrix):
         """Test that an empty matrix raises an error."""
         with pytest.raises(
