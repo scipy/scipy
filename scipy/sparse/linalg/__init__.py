@@ -33,7 +33,7 @@ Matrix norms
 
    norm -- Norm of a sparse matrix
    onenormest -- Estimate the 1-norm of a sparse matrix
-   invnormest -- Estimate the 1- or inf-norm of the inverse of a sparse matrix
+   cond1est -- Estimate the condition number of a sparse matrix in 1-norm
 
 Solving linear problems
 -----------------------
