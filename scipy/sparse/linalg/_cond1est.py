@@ -1,5 +1,6 @@
 import numpy as np
 
+from scipy.sparse import issparse
 from scipy.sparse.linalg import norm, splu
 
 __all__ = ['cond1est']
@@ -57,6 +58,10 @@ def cond1est(A):
     >>> np.linalg.cond(A.toarray(), p=1)
     np.float64(45.0)
     """
+    if not issparse(A):
+       raise TypeError("Input is not a sparse matrix. "
+                       "Use np.linalg.cond for dense matrices.")
+
     if A.ndim != 2:
         raise ValueError("Input must be a 2-dimensional matrix.")
 
