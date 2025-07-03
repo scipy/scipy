@@ -12,6 +12,7 @@
 
 #include "_superluobject.h"
 #include <ctype.h>
+#include <stdbool.h>
 
 
 /***********************************************************************
@@ -157,11 +158,13 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
         return NULL;
     }
 
+    const bool return_float = (self->type == NPY_FLOAT || self->type == NPY_CFLOAT);
+
     /* Check for empty matrix */
     if ((self->L.nrow == 0 && self->L.ncol == 0) ||
         (self->U.nrow == 0 && self->U.ncol == 0)) {
         /* Empty matrix, return 0.0 */
-        if (self->type == NPY_FLOAT || self->type == NPY_CFLOAT) {
+        if (return_float) {
             float normf = 0.0f;
             return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
         } else {
@@ -232,7 +235,7 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     /* The norm is always a real float or double, depending on the type
      * of the matrix. Return a numpy scalar with the appropriate type.
      */
-    if (self->type == NPY_FLOAT || self->type == NPY_CFLOAT) {
+    if (return_float) {
         float normf = 1.0 / rnormf;
         return PyArray_Scalar(&normf, PyArray_DescrFromType(NPY_FLOAT), NULL);
     } else {
