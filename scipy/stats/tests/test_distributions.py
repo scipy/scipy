@@ -5002,6 +5002,19 @@ class TestBeta:
         #     return float(entropy)
         assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
 
+    def test_entropy_broadcasting(self):
+        # gh-23127 reported that the entropy method of the beta
+        # distribution did not broadcast correctly.
+        Beta = stats.make_distribution(stats.beta)
+        a = np.asarray([5e6, 100, 1e9, 10])
+        b = np.asarray([5e6, 1e9, 100, 20])
+        res = Beta(a=a, b=b).entropy()
+        ref = np.asarray([Beta(a=a[0], b=b[0]).entropy(),
+                          Beta(a=a[1], b=b[1]).entropy(),
+                          Beta(a=a[2], b=b[2]).entropy(),
+                          Beta(a=a[3], b=b[3]).entropy()])
+        assert_allclose(res, ref)
+
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
