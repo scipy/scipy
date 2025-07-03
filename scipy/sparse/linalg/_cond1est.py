@@ -13,12 +13,12 @@ def cond1est(A):
     ----------
     A : ndarray or other linear operator
         A square, sparse matrix. Any matrix not in CSC format will be converted
-        internally, and raise a SparseEfficiencyWarning.
+        internally, and raise a ``SparseEfficiencyWarning``.
 
     Returns
     -------
     cond : float
-        An estimate of the condition number of A in the 1-norm.
+        An estimate of the condition number of ``A`` in the 1-norm.
 
     See Also
     --------
@@ -27,7 +27,7 @@ def cond1est(A):
 
     Notes
     -----
-    The condition number is defined as[0]_:
+    The condition number is defined as [0]_:
 
     .. math:: \kappa(A) = \left\| A \right\|_1 \left\| A^{-1} \right\|_1.
 
@@ -41,7 +41,8 @@ def cond1est(A):
 
     References
     ----------
-    .. [0] https://en.wikipedia.org/wiki/Condition_number
+    .. [0] "Condition Number", Wikipedia, 
+           https://en.wikipedia.org/wiki/Condition_number
 
     Examples
     --------
