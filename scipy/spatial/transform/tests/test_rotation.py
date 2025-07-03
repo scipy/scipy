@@ -38,6 +38,13 @@ except ImportError:  # JAX is not installed on the testing machine
 pytestmark = pytest.mark.skip_xp_backends("dask.array",
                                           reason="No full linalg extension support")
 
+# See https://github.com/data-apis/array-api-compat/issues/316
+# Enable once 14.0 is released
+skip_cupy_13 = pytest.mark.skip_xp_backends(
+    "cupy",
+    reason="Test requires array.mT which cupy does not support as of 13.4.1."
+)
+
 
 def basis_vec(axis):
     if axis == 'x':
@@ -49,7 +56,7 @@ def basis_vec(axis):
 
 
 def rotation_to_xp(r: Rotation, xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     return Rotation.from_quat(xp.asarray(r.as_quat(), dtype=dtype))
 
 
@@ -362,7 +369,7 @@ def test_matrix_calculation_pipeline(xp):
 
 
 def test_from_matrix_ortho_output(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     rnd = np.random.RandomState(0)
     mat = xp.asarray(rnd.random_sample((100, 3, 3)), dtype=dtype)
@@ -534,7 +541,7 @@ def test_malformed_2d_from_rotvec(xp):
 
 
 def test_as_generic_rotvec(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-15 if dtype == xp.float64 else 1e-7
     quat = xp.asarray([
             [1, 2, -1, 0.5],
@@ -937,7 +944,7 @@ def test_as_euler_symmetric_axes(xp, seq_tuple, intrinsic):
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -968,7 +975,7 @@ def test_as_euler_degenerate_asymmetric_axes(xp, seq_tuple, intrinsic):
 @pytest.mark.parametrize("seq_tuple", permutations("xyz"))
 @pytest.mark.parametrize("intrinsic", (False, True))
 def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -996,7 +1003,7 @@ def test_as_euler_degenerate_symmetric_axes(xp, seq_tuple, intrinsic):
 
 
 def test_inv(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12
     rnd = np.random.RandomState(0)
     n = 10
@@ -1017,7 +1024,7 @@ def test_inv(xp):
 
 
 def test_inv_single_rotation(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     p = rotation_to_xp(Rotation.random(rng=rng), xp)
@@ -1063,7 +1070,7 @@ def test_single_identity_magnitude(xp):
 
 
 def test_identity_invariance(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     n = 10
     p = rotation_to_xp(Rotation.random(n, rng=0), xp)
@@ -1076,7 +1083,7 @@ def test_identity_invariance(xp):
 
 
 def test_single_identity_invariance(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-7
     n = 10
     p = rotation_to_xp(Rotation.random(n, rng=0), xp)
@@ -1183,7 +1190,7 @@ def test_reduction_none_indices(xp):
 
 
 def test_reduction_scalar_calculation(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     l_np = Rotation.random(5, rng=rng)
@@ -1213,12 +1220,8 @@ def test_reduction_scalar_calculation(xp):
     xp_assert_close(mag, xp.zeros(len(p)), atol=atol)
 
 
+@skip_cupy_13
 def test_apply_single_rotation_single_point(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     mat = xp.asarray([
         [0, -1, 0],
         [1, 0, 0],
@@ -1246,12 +1249,8 @@ def test_apply_single_rotation_single_point(xp):
     xp_assert_close(r_2d.apply(v_2d, inverse=True), v2d_inverse)
 
 
+@skip_cupy_13
 def test_apply_single_rotation_multiple_points(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     mat = xp.asarray([
         [0, -1, 0],
         [1, 0, 0],
@@ -1272,13 +1271,9 @@ def test_apply_single_rotation_multiple_points(xp):
     xp_assert_close(r2.apply(v, inverse=True), v_inverse)
 
 
+@skip_cupy_13
 def test_apply_multiple_rotations_single_point(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
         [0, -1, 0],
@@ -1307,13 +1302,9 @@ def test_apply_multiple_rotations_single_point(xp):
     xp_assert_close(r.apply(v2, inverse=True), v_inverse)
 
 
+@skip_cupy_13
 def test_apply_multiple_rotations_multiple_points(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     mat = np.empty((2, 3, 3))
     mat[0] = np.array([
         [0, -1, 0],
@@ -1336,12 +1327,8 @@ def test_apply_multiple_rotations_multiple_points(xp):
     xp_assert_close(r.apply(v, inverse=True), v_inverse)
 
 
+@skip_cupy_13
 def test_apply_shapes(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     vector0 = xp.asarray([1.0, 2.0, 3.0])
     vector1 = xpx.atleast_nd(vector0, ndim=2)
     vector2 = xp.stack([vector0, vector0])
@@ -1469,13 +1456,9 @@ def test_random_rotation_shape():
     assert_equal(Rotation.random(5, rng=rng).as_quat().shape, (5, 4))
 
 
+@skip_cupy_13
 def test_align_vectors_no_rotation(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-5
     x = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=dtype)
     y = xp.asarray(x, copy=True)
@@ -1485,13 +1468,9 @@ def test_align_vectors_no_rotation(xp):
     xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=1e-6)
 
 
+@skip_cupy_13
 def test_align_vectors_no_noise(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-7 if dtype == xp.float64 else 2e-3
     rng = np.random.default_rng(14697284569885399755764481408308808739)
     c = rotation_to_xp(Rotation.random(rng=rng), xp)
@@ -1503,13 +1482,9 @@ def test_align_vectors_no_noise(xp):
     xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=atol)
 
 
+@skip_cupy_13
 def test_align_vectors_improper_rotation(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-7 if dtype == xp.float64 else 1e-3
     # Tests correct logic for issue #10444
     x = xp.asarray([[0.89299824, -0.44372674, 0.0752378],
@@ -1522,12 +1497,8 @@ def test_align_vectors_improper_rotation(xp):
     xp_assert_close(rssd, xp.asarray(0.0)[()], check_shape=False, atol=atol)
 
 
+@skip_cupy_13
 def test_align_vectors_rssd_sensitivity(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     rssd_expected = xp.asarray(0.141421356237308)[()]
     sens_expected = xp.asarray([[0.2, 0. , 0.],
                                 [0. , 1.5, 1.],
@@ -1540,12 +1511,8 @@ def test_align_vectors_rssd_sensitivity(xp):
     xp_assert_close(sens, sens_expected, atol=atol)
 
 
+@skip_cupy_13
 def test_align_vectors_scaled_weights(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     n = 10
     a = xp.asarray(Rotation.random(n, rng=0).apply([1, 0, 0]))
     b = xp.asarray(Rotation.random(n, rng=1).apply([1, 0, 0]))
@@ -1559,13 +1526,9 @@ def test_align_vectors_scaled_weights(xp):
     xp_assert_close(cov1, cov2)
 
 
+@skip_cupy_13
 def test_align_vectors_noise(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     rng = np.random.default_rng(146972845698875399755764481408308808739)
     n_vectors = 100
     rot = rotation_to_xp(Rotation.random(rng=rng), xp)
@@ -1680,17 +1643,13 @@ def test_align_vectors_invalid_input(xp):
                         Rotation.align_vectors(a, b, return_sensitivity=True)
 
 
+@skip_cupy_13
 def test_align_vectors_align_constrain(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     # Align the primary +X B axis with the primary +Y A axis, and rotate about
     # it such that the +Y B axis (residual of the [1, 1, 0] secondary b vector)
     # is aligned with the +Z A axis (residual of the [0, 1, 1] secondary a
     # vector)
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     b = xp.asarray([[1, 0, 0], [1, 1, 0]])
     a = xp.asarray([[0.0, 1, 0], [0, 1, 1]])
@@ -1721,12 +1680,8 @@ def test_align_vectors_align_constrain(xp):
     assert xpx.isclose(rssd, rssd_expected, atol=atol, xp=xp)
 
 
+@skip_cupy_13
 def test_align_vectors_near_inf(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     # align_vectors should return near the same result for high weights as for
     # infinite weights. rssd will be different with floating point error on the
     # exactly aligned vector being multiplied by a large non-infinite weight
@@ -1762,12 +1717,8 @@ def test_align_vectors_near_inf(xp):
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=1e-4)
 
 
+@skip_cupy_13
 def test_align_vectors_parallel(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     atol = 1e-12
     a = xp.asarray([[1.0, 0, 0], [0, 1, 0]])
     b = xp.asarray([[0.0, 1, 0], [0, 1, 0]])
@@ -1791,13 +1742,9 @@ def test_align_vectors_parallel(xp):
     xp_assert_close(R.apply(b[0, ...]), a[0, ...], atol=atol)
 
 
+@skip_cupy_13
 def test_align_vectors_antiparallel(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     # Test exact 180 deg rotation
     atol = 1e-12 if dtype == xp.float64 else 1e-7
 
@@ -1837,13 +1784,9 @@ def test_align_vectors_antiparallel(xp):
         xp_assert_close(R.as_matrix(), R2.as_matrix(), atol=atol)
 
 
+@skip_cupy_13
 def test_align_vectors_primary_only(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-5
     mats_a = Rotation.random(100, rng=0).as_matrix()
     mats_b = Rotation.random(100, rng=1).as_matrix()
@@ -2098,7 +2041,7 @@ def test_multiplication_stability(xp):
 
 
 def test_pow(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-14 if dtype == xp.float64 else 1e-6
     p = rotation_to_xp(Rotation.random(10, rng=0), xp)
     p_inv = p.inv()
@@ -2336,13 +2279,9 @@ def test_from_davenport_array_like():
     assert np.all(r_expected.approx_equal(r, atol=1e-12))
 
 
+@skip_cupy_13
 def test_as_davenport(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2366,13 +2305,9 @@ def test_as_davenport(xp):
 
 
 @pytest.mark.thread_unsafe
+@skip_cupy_13
 def test_as_davenport_degenerate(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     atol = 1e-12 if dtype == xp.float64 else 1e-6
     # Since we cannot check for angle equality, we check for rotation matrix
     # equality
@@ -2405,7 +2340,7 @@ def test_as_davenport_degenerate(xp):
 
 
 def test_compare_from_davenport_from_euler(xp):
-    dtype = xp.__array_namespace_info__().default_dtypes()["real floating"]
+    dtype = xpx.default_dtype(xp)
     rnd = np.random.RandomState(0)
     n = 100
     angles = np.empty((n, 3))
@@ -2513,12 +2448,8 @@ def test_zero_rotation_representation(xp):
     assert r.as_davenport(xp.eye(3), "extrinsic").shape == (0, 3)
 
 
+@skip_cupy_13
 def test_zero_rotation_array_rotation(xp):
-    if is_cupy(xp):
-        # See https://github.com/data-apis/array-api-compat/issues/316
-        # Enable once 14.0 is released
-        pytest.skip("Test requires array.mT which cupy does not support as of 13.4.1.")
-
     r = Rotation.from_quat(xp.zeros((0, 4)))
 
     v = xp.asarray([1, 2, 3])
