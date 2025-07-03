@@ -107,6 +107,12 @@ static PyObject *SuperLU_solve(SuperLUObject * self, PyObject * args,
 }
 
 
+static bool is_empty_matrix(const SuperMatrix * A)
+{
+    return (A->nrow == 0 && A->ncol == 0);
+}
+
+
 static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
                                PyObject * kwds)
 {
@@ -161,8 +167,7 @@ static PyObject *SuperLU_normest_inv(SuperLUObject * self, PyObject * args,
     const bool return_float = (self->type == NPY_FLOAT || self->type == NPY_CFLOAT);
 
     /* Check for empty matrix */
-    if ((self->L.nrow == 0 && self->L.ncol == 0) ||
-        (self->U.nrow == 0 && self->U.ncol == 0)) {
+    if (is_empty_matrix(&self->L) && is_empty_matrix(&self->U)) {
         /* Empty matrix, return 0.0 */
         if (return_float) {
             float normf = 0.0f;
