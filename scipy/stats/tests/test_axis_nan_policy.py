@@ -511,8 +511,8 @@ def skip_nan_unexpected_exception():
         with np.errstate(all='raise'):
             x = np.asarray([1, 2, np.nan])
             np.mean(x)
-    except:
-        pytest.skip("nan raises unexpected exception in numpy")
+    except Exception as e:
+        pytest.skip(f"nan raises unexpected {e.__class__.__name__} in numpy")
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
