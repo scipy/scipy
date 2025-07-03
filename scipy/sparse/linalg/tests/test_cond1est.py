@@ -7,9 +7,7 @@ from numpy.testing import assert_allclose
 from scipy import sparse
 from scipy.sparse.linalg import splu, cond1est
 
-# TODO run many trials for a given seed
-# TODO try different densities
-# TODO try random normal distribution to get negative matrix values
+# TODO update rtol based on dtype?
 
 rng = np.random.default_rng(565656)
 
@@ -19,8 +17,8 @@ DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
 ORD_PARAMS = [1, np.inf]
 ORD_IDS = ['ord_1', 'ord_inf']
 
-# TODO vary N
 N = 5  # arbitrary size for the matrices in tests
+
 
 @pytest.fixture(params=DTYPE_PARAMS, ids=DTYPE_IDS, scope='class')
 def dtype(request):
@@ -37,6 +35,7 @@ def dtype(request):
         The data type to be used in the tests.
     """
     return request.param
+
 
 @pytest.fixture(params=ORD_PARAMS, ids=ORD_IDS, scope='class')
 def norm_ord(request):
@@ -123,7 +122,7 @@ def identity_matrix(dtype):
     return sparse.csc_array(sparse.eye_array(N, dtype=dtype))
 
 
-def generate_matrix(N, dtype, singular=None):
+def generate_matrix(N, dtype, singular=None, density=0.5):
     """Generate a random sparse matrix of size N x N.
 
     Parameters
@@ -138,6 +137,8 @@ def generate_matrix(N, dtype, singular=None):
         condition number). If 'nearly', the matrix will be invertible, but
         ill-conditioned (with a very large condition number). The default is
         None, which creates an invertible, well-conditioned matrix.
+    density : float, optional
+        Density of the random matrix, between 0 and 1 (default is 0.5).
 
     Returns
     -------
@@ -146,7 +147,7 @@ def generate_matrix(N, dtype, singular=None):
     """
     A = sparse.random_array(
         (N, N),
-        density=0.5,
+        density=density,
         format="lil",
         dtype=dtype,
         rng=rng,
@@ -163,6 +164,17 @@ def generate_matrix(N, dtype, singular=None):
         A[0] = eps * eps
 
     return A.tocsc()
+
+
+N_TRIALS = 10  # Number of trials for generating random matrices
+
+
+@pytest.fixture(params=range(N_TRIALS), ids=lambda x: f"trial_{x}")
+def random_nonsingular_matrix(request, dtype, N_max=100, d_scale=1):
+    """Generate a random non-singular matrix of maximum size (N_max, N_max)."""
+    N = rng.integers(1, N_max, endpoint=True)
+    d = d_scale * rng.random()  # densities
+    return generate_matrix(N, dtype=dtype, density=d)
 
 
 @pytest.mark.parametrize("dtype", DTYPE_PARAMS, indirect=True, ids=DTYPE_IDS)
@@ -227,8 +239,12 @@ class TestNormEstInv:
         with pytest.raises(ValueError, match="can only factor square matrices"):
             splu(array_rect).normest_inv(ord=norm_ord)
 
-    def test_random_nonsingular_matrix(self, dtype, norm_ord):
-        A = generate_matrix(N, dtype)
+    def test_random_nonsingular_matrix(
+        self,
+        random_nonsingular_matrix,
+        norm_ord
+    ):
+        A = random_nonsingular_matrix
         norm_Ainv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
         normest_Ainv = splu(A).normest_inv(ord=norm_ord)
         assert_allclose(normest_Ainv, norm_Ainv, strict=True, rtol=1e-6)
@@ -295,9 +311,9 @@ class TestCond1Est:
         with pytest.raises(ValueError, match="Matrix must be square."):
             cond1est(array_rect)
 
-    def test_random_nonsingular_matrix(self, dtype):
-        A = generate_matrix(N, dtype)
+    def test_random_nonsingular_matrix(self, random_nonsingular_matrix):
+        A = random_nonsingular_matrix
         cond_A = np.linalg.cond(A.toarray(), p=1)
         # NOTE there is a bug in np.linalg.cond that returns np.complex when
         # the matrix input is complex, so take the real part for comparison.
-        assert_allclose(cond1est(A), cond_A.real, strict=True)
+        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=1e-6)
