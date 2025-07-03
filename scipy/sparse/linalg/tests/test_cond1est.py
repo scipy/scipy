@@ -9,15 +9,12 @@ from scipy.sparse.linalg import splu, cond1est
 
 # TODO run many trials for a given seed
 # TODO try different densities
+# TODO try random normal distribution to get negative matrix values
 
 SEED = 565656  # arbitrary rng seed for reproducibility
 
-# FIXME complex fails tests
-# DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
-# DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
-
-DTYPE_PARAMS = [np.float32, np.float64]
-DTYPE_IDS = ['float32', 'float64']
+DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
+DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
 
 ORD_PARAMS = [1, np.inf]
 ORD_IDS = ['ord_1', 'ord_inf']
@@ -262,7 +259,9 @@ class TestCond1Est:
     def test_nearly_singular_matrix(self, dtype):
         A = generate_matrix(N, dtype, singular='nearly')
         cond_A = np.linalg.cond(np.linalg.inv(A.toarray()), p=1)
-        assert_allclose(cond1est(A), cond_A, strict=True, rtol=1e-6)
+        # NOTE there is a bug in np.linalg.cond that returns np.complex when
+        # the matrix input is complex, so take the real part for comparison.
+        assert_allclose(cond1est(A), cond_A.real, strict=True, rtol=1e-6)
 
     def test_1D_array(self, array_1D):
         with pytest.raises(
@@ -285,5 +284,6 @@ class TestCond1Est:
     def test_random_nonsingular_matrix(self, dtype):
         A = generate_matrix(N, dtype)
         cond_A = np.linalg.cond(A.toarray(), p=1)
-        cond_A_est = cond1est(A)
-        assert_allclose(cond_A_est, cond_A, strict=True)
+        # NOTE there is a bug in np.linalg.cond that returns np.complex when
+        # the matrix input is complex, so take the real part for comparison.
+        assert_allclose(cond1est(A), cond_A.real, strict=True)
