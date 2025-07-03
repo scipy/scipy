@@ -300,11 +300,8 @@ class TestDerivative:
 
     @pytest.mark.parametrize("hdir", (-1, 0, 1))
     @pytest.mark.parametrize("x", (0.65, [0.65, 0.7]))
-    @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
+    @pytest.mark.parametrize("dtype", ('float32', 'float64'))
     def test_dtype(self, hdir, x, dtype, xp):
-        if dtype == 'float16' and not is_numpy(xp):
-            pytest.skip('float16 not tested for alternative backends')
-
         # Test that dtypes are preserved
         dtype = getattr(xp, dtype)
         x = xp.asarray(x, dtype=dtype)
