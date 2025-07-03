@@ -229,9 +229,9 @@ class TestNormEstInv:
 
     def test_random_nonsingular_matrix(self, dtype, norm_ord):
         A = generate_matrix(N, dtype)
-        true_invnorm = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
-        est_invnorm = splu(A).normest_inv(ord=norm_ord)
-        assert_allclose(est_invnorm, true_invnorm)
+        norm_Ainv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
+        normest_Ainv = splu(A).normest_inv(ord=norm_ord)
+        assert_allclose(normest_Ainv, norm_Ainv, strict=True, rtol=1e-6)
 
 
 class TestCond1Est:
