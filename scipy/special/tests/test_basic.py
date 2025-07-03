@@ -22,6 +22,7 @@ import itertools
 import operator
 import platform
 import sys
+import warnings
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -32,8 +33,7 @@ import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose, assert_array_almost_equal_nulp,
-        suppress_warnings)
+        assert_, assert_allclose, assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
@@ -564,8 +564,9 @@ class TestCephes:
         c = complex
         assert_equal(log1p(0 + 0j), 0 + 0j)
         assert_equal(log1p(c(-1, 0)), c(-np.inf, 0))
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(log1p(c(1, np.inf)), c(np.inf, np.pi/2))
             assert_equal(log1p(c(1, np.nan)), c(np.nan, np.nan))
             assert_allclose(log1p(c(-np.inf, 1)), c(np.inf, np.pi))
@@ -831,8 +832,9 @@ class TestCephes:
         assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+        with warnings.catch_warnings():
+            msg = "floating point number truncated to an integer"
+            warnings.filterwarnings("ignore", msg, RuntimeWarning)
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
@@ -2431,8 +2433,8 @@ class TestFactorialFunctions:
                         special.factorialk(n_ref, k=3, **kw))
         def _check_inf(n):
             # produce inf of same type/dimension
-            with suppress_warnings() as sup:
-                sup.filter(RuntimeWarning)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
                 shaped_inf = n / 0
             assert_func(special.factorial(n, **kw), shaped_inf)
             assert_func(special.factorial2(n, **kw), shaped_inf)
@@ -4380,8 +4382,9 @@ def test_agm_simple():
 
 def test_legacy():
     # Legacy behavior: truncating arguments to integers
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "floating point number truncated to an integer", RuntimeWarning)
         assert_equal(special.expn(1, 0.3), special.expn(1.8, 0.3))
         assert_equal(special.nbdtrc(1, 2, 0.3), special.nbdtrc(1.8, 2.8, 0.3))
         assert_equal(special.nbdtr(1, 2, 0.3), special.nbdtr(1.8, 2.8, 0.3))

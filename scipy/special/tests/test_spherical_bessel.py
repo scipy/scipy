@@ -1,9 +1,11 @@
 #
 # Tests of spherical Bessel functions.
 #
+import warnings
+
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_allclose,
-                           assert_array_almost_equal, suppress_warnings)
+                           assert_array_almost_equal)
 import pytest
 from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 
@@ -44,8 +46,9 @@ class TestSphericalJn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(spherical_jn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_jn_large_arg_1(self):
@@ -101,8 +104,9 @@ class TestSphericalYn:
         # https://dlmf.nist.gov/10.52.E3
         n = 7
         x = np.array([-inf + 0j, inf + 0j, inf*(1+1j)])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "invalid value encountered in multiply", RuntimeWarning)
             assert_allclose(spherical_yn(n, x), np.array([0, 0, inf*(1+1j)]))
 
     def test_spherical_yn_at_zero(self):

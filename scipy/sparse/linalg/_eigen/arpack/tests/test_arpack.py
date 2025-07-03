@@ -1,9 +1,10 @@
 import threading
 import itertools
+import warnings
 
 import numpy as np
 
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import pytest
 
@@ -618,8 +619,8 @@ def test_eigs_for_k_greater():
     eig_tuple1 = eig(A, b=M_dense)
     eig_tuple2 = eig(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigs(A, M=M_dense, k=3), eig_tuple1)
         assert_equal(eigs(A, M=M_dense, k=4), eig_tuple1)
@@ -646,8 +647,8 @@ def test_eigsh_for_k_greater():
     eig_tuple1 = eigh(A, b=M_dense)
     eig_tuple2 = eigh(A, b=M_sparse)
 
-    with suppress_warnings() as sup:
-        sup.filter(RuntimeWarning)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         assert_equal(eigsh(A, M=M_dense, k=4), eig_tuple1)
         assert_equal(eigsh(A, M=M_dense, k=5), eig_tuple1)

@@ -1,11 +1,12 @@
 """Test functions for the sparse.linalg._expm_multiply module."""
+import warnings
+
 from functools import partial
 from itertools import product
 
 import numpy as np
 import pytest
-from numpy.testing import (assert_allclose, assert_, assert_equal,
-                           suppress_warnings)
+from numpy.testing import (assert_allclose, assert_, assert_equal)
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.sparse
 from scipy.sparse.linalg import aslinearoperator
@@ -157,12 +158,18 @@ class TestExpmActionSimple:
             A = scipy.sparse.random_array((n, n), density=0.05, rng=rng)
             B = rng.standard_normal((n, k))
             observed = expm_multiply(A, B)
-            with suppress_warnings() as sup:
-                sup.filter(SparseEfficiencyWarning,
-                           "splu converted its input to CSC format")
-                sup.filter(SparseEfficiencyWarning,
-                           "spsolve is more efficient when sparse b is in the"
-                           " CSC matrix format")
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    "splu converted its input to CSC format",
+                    SparseEfficiencyWarning,
+                )
+                warnings.filterwarnings(
+                    "ignore",
+                    "spsolve is more efficient when sparse b is in the "
+                    "CSC matrix format",
+                    SparseEfficiencyWarning,
+                )
                 expected = sp_expm(A).dot(B)
             assert_allclose(observed, expected)
             observed = estimated(expm_multiply)(aslinearoperator(A), B)
@@ -202,12 +209,18 @@ class TestExpmActionInterval:
                                   num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
                                       num=num, endpoint=endpoint)
-                with suppress_warnings() as sup:
-                    sup.filter(SparseEfficiencyWarning,
-                               "splu converted its input to CSC format")
-                    sup.filter(SparseEfficiencyWarning,
-                               "spsolve is more efficient when sparse b is in"
-                               " the CSC matrix format")
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore",
+                        "splu converted its input to CSC format",
+                        SparseEfficiencyWarning,
+                    )
+                    warnings.filterwarnings(
+                        "ignore",
+                        "spsolve is more efficient when sparse b is in"
+                        " the CSC matrix format",
+                        SparseEfficiencyWarning,
+                    )
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, sp_expm(t*A).dot(target))
 
