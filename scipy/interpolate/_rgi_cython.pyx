@@ -25,12 +25,10 @@ def evaluate_linear_2d(const double_or_complex[:, :] values, # cannot declare as
         long num_points = indices.shape[1]      # XXX: npy_intp?
         long i0, i1, point
         double_or_complex y0, y1, result
-    assert out.shape[0] == num_points
 
     if grid[0].shape[0] == grid[1].shape[0] == 1:
         # single grid point along both axes: no interpolation
         for point in range(num_points):
-            assert indices[0, point] == indices[1, point] == -1
             out[point] = values[0, 0]
     elif grid[1].shape[0] == 1:
         # single grid line along axis=1: linear interpolation along axis=0 alone
