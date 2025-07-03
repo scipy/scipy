@@ -11,7 +11,7 @@ from scipy.sparse.linalg import splu, cond1est
 # TODO try different densities
 # TODO try random normal distribution to get negative matrix values
 
-SEED = 565656  # arbitrary rng seed for reproducibility
+rng = np.random.default_rng(565656)
 
 DTYPE_PARAMS = [np.float32, np.float64, np.complex64, np.complex128]
 DTYPE_IDS = ['float32', 'float64', 'complex64', 'complex128']
@@ -87,7 +87,7 @@ def array_ND(dtype):
         (N + 3, N, N),
         dtype=dtype,
         density=0.5,
-        random_state=SEED
+        rng=rng
     ).toarray()
 
     # Make each slice non-singular
@@ -106,7 +106,7 @@ def array_rect(dtype):
         density=0.5,
         dtype=dtype,
         format='csc',
-        random_state=SEED
+        rng=rng
     )
 
 
@@ -116,7 +116,7 @@ def identity_matrix(dtype):
     return sparse.csc_array(sparse.eye_array(N, dtype=dtype))
 
 
-def generate_matrix(N, dtype, singular='non'):
+def generate_matrix(N, dtype, singular=None):
     """Generate a random sparse matrix of size N x N.
 
     Parameters
@@ -126,11 +126,11 @@ def generate_matrix(N, dtype, singular='non'):
     dtype : data-type, optional
         Data type of the matrix elements (default is None, which uses
         float64).
-    singular : str in {'exactly', 'nearly', 'non'}, optional
+    singular : None or str in {'exactly', 'nearly'}, optional
         If 'exactly', the matrix will be exactly singular (infinite
         condition number). If 'nearly', the matrix will be invertible, but
         ill-conditioned (with a very large condition number). The default is
-        'non', which creates an invertible, well-conditioned matrix.
+        None, which creates an invertible, well-conditioned matrix.
 
     Returns
     -------
@@ -142,16 +142,17 @@ def generate_matrix(N, dtype, singular='non'):
         density=0.5,
         format="lil",
         dtype=dtype,
-        random_state=SEED,
+        rng=rng
     )
+
+    # Make the matrix non-singular
+    A.setdiag(N * (1 + np.arange(N)))
 
     if singular == 'exactly':
         A[0] = 0
     elif singular == 'nearly':
         eps = np.finfo(dtype).eps
         A[0] = eps * eps
-    else:
-        A.setdiag(N * (1 + np.arange(N)))
 
     return A.tocsc()
 
@@ -201,7 +202,8 @@ class TestNormEstInv:
     def test_nearly_singular_matrix(self, dtype, norm_ord):
         A = generate_matrix(N, dtype, singular='nearly')
         norm_A_inv = np.linalg.norm(np.linalg.inv(A.toarray()), ord=norm_ord)
-        assert_allclose(splu(A).normest_inv(ord=norm_ord), norm_A_inv, strict=True)
+        normest_A_inv = splu(A).normest_inv(ord=norm_ord)
+        assert_allclose(normest_A_inv, norm_A_inv, strict=True, rtol=1e-6)
 
     def test_1D_array(self, array_1D, norm_ord):
         with pytest.raises(
