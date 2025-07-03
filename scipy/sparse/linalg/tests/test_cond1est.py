@@ -91,8 +91,7 @@ def array_ND(dtype):
         (N + 3, N, N),
         dtype=dtype,
         density=0.5,
-        rng=rng,
-        data_sampler=rng.normal
+        rng=rng
     ).toarray()
 
     # Make each slice non-singular
@@ -111,8 +110,7 @@ def array_rect(dtype):
         density=0.5,
         dtype=dtype,
         format='csc',
-        rng=rng,
-        data_sampler=rng.normal
+        rng=rng
     )
 
 
@@ -145,13 +143,44 @@ def generate_matrix(N, dtype, singular=None, density=0.5):
     result : (N, N) sparse.csc_matrix
         A random sparse matrix in Compressed Sparse Column (CSC) format.
     """
+
+    def data_sampler(size):
+        """Sample random data for the sparse matrix.
+
+        Samples data uniformly from the range (-1, 1) for floating-point dtypes
+        and (-i, i) for complex dtypes, where i is the imaginary unit.
+
+        Parameters
+        ----------
+        size : tuple of int
+            Size of the data to be sampled.
+
+        Returns
+        -------
+        vals : ndarray
+            Sampled data of the specified size and dtype.
+
+        Raises
+        ------
+        ValueError : If ``dtype`` is not supported for data sampling.
+        """
+        if np.issubdtype(dtype, np.floating):
+            vals = rng.uniform(size=size)
+            return 2 * vals - 1
+        elif np.issubdtype(dtype, np.complexfloating):
+            real_vals = rng.uniform(size=size)
+            imag_vals = rng.uniform(size=size)
+            return (2 * real_vals - 1) + 1j * (2 * imag_vals - 1)
+        else:
+            raise ValueError(f"Unsupported dtype for data sampling: {dtype}")
+
     A = sparse.random_array(
         (N, N),
         density=density,
         format="lil",
         dtype=dtype,
         rng=rng,
-        data_sampler=rng.normal
+        data_sampler=data_sampler
     )
 
     # Make the matrix non-singular
