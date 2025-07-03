@@ -946,12 +946,10 @@ class beta_gen(rv_continuous):
 
         threshold_a = threshold_large(a)
         threshold_b = threshold_large(b)
-        return _lazyselect([np.logical_and(a >= 4.96e6, b >= 4.96e6),
-                            np.logical_and(np.logical_and(a <= 4.9e6, b - a >= 1e6),
-                                           b >= threshold_a),
-                            np.logical_and(np.logical_and(b <= 4.9e6, a - b >= 1e6),
-                                           a >= threshold_b),
-                            np.logical_and(a < 4.9e6, b < 4.9e6)
+        return _lazyselect([(a >= 4.96e6) & (b >= 4.96e6),
+                            (a <= 4.9e6) & (b - a >= 1e6) & (b >= threshold_a),
+                            (b <= 4.9e6) & (a - b >= 1e6) & (a >= threshold_b),
+                            (a < 4.9e6) & (b < 4.9e6)
                            ],
                            [asymptotic_ab_large, asymptotic_b_large,
                             asymptotic_a_large, regular],
