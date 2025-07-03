@@ -92,7 +92,8 @@ def array_ND(dtype):
         (N + 3, N, N),
         dtype=dtype,
         density=0.5,
-        rng=rng
+        rng=rng,
+        data_sampler=rng.normal
     ).toarray()
 
     # Make each slice non-singular
@@ -111,7 +112,8 @@ def array_rect(dtype):
         density=0.5,
         dtype=dtype,
         format='csc',
-        rng=rng
+        rng=rng,
+        data_sampler=rng.normal
     )
 
 
@@ -147,7 +149,8 @@ def generate_matrix(N, dtype, singular=None):
         density=0.5,
         format="lil",
         dtype=dtype,
-        rng=rng
+        rng=rng,
+        data_sampler=rng.normal
     )
 
     # Make the matrix non-singular
