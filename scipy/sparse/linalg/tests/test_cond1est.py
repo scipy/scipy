@@ -38,7 +38,6 @@ def dtype(request):
     """
     return request.param
 
-
 @pytest.fixture(params=ORD_PARAMS, ids=ORD_IDS, scope='class')
 def norm_ord(request):
     """Fixture to provide the norm order for tests.
@@ -54,6 +53,12 @@ def norm_ord(request):
         The norm order to be used in the tests.
     """
     return request.param
+
+
+@pytest.fixture
+def return_dtype(dtype):
+    """Fixture to return the appropriate data type for output."""
+    return (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
 
 
 @pytest.fixture
@@ -176,21 +181,17 @@ class TestNormEstInv:
         with pytest.raises(RuntimeError, match="Factor is exactly singular"):
             splu(zero_matrix).normest_inv(ord=norm_ord)
 
-    def test_singleton_matrix(self, singleton_matrix, dtype, norm_ord):
-        # Check that we output the correct data type
-        out_type = (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
+    def test_singleton_matrix(self, singleton_matrix, dtype, norm_ord, return_dtype):
         assert_allclose(
             splu(singleton_matrix).normest_inv(ord=norm_ord),
-            np.array(0.5).astype(out_type),
+            np.array(0.5, dtype=return_dtype),
             strict=True
         )
 
-    def test_identity_matrix(self, identity_matrix, dtype, norm_ord):
-        # Check that we output the correct data type
-        out_type = (np.float32 if (dtype in {np.float32, np.complex64}) else np.float64)
+    def test_identity_matrix(self, identity_matrix, dtype, norm_ord, return_dtype):
         assert_allclose(
             splu(identity_matrix).normest_inv(ord=norm_ord),
-            np.array(1.0).astype(out_type),
+            np.array(1.0, dtype=return_dtype),
             strict=True
         )
 
@@ -247,12 +248,20 @@ class TestCond1Est:
     def test_zero_matrix(self, zero_matrix):
         assert(cond1est(zero_matrix) == np.inf)
 
-    def test_singleton_matrix(self, singleton_matrix, dtype):
-        assert_allclose(cond1est(singleton_matrix), 1.0)
+    def test_singleton_matrix(self, singleton_matrix, dtype, return_dtype):
+        assert_allclose(
+            cond1est(singleton_matrix),
+            np.array(1.0, dtype=return_dtype),
+            strict=True
+        )
 
-    def test_identity_matrix(self, identity_matrix, dtype):
+    def test_identity_matrix(self, identity_matrix, dtype, return_dtype):
         # Check that we output the correct data type
-        assert_allclose(cond1est(identity_matrix), 1.0)
+        assert_allclose(
+            cond1est(identity_matrix),
+            np.array(1.0, dtype=return_dtype),
+            strict=True
+        )
 
     def test_exactly_singular_matrix(self, dtype):
         A = generate_matrix(N, dtype, singular='exactly')
