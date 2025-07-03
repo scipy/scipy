@@ -171,8 +171,6 @@ class TestNormEstInv:
         with pytest.raises(ValueError, match="ord must be 1 or np.inf"):
             splu(A).normest_inv(ord=2)
 
-    # FIXME returns 1.0 instead of 0.0
-    @pytest.mark.xfail(reason="Empty matrix returns 1.0 instead of 0.0")
     def test_empty_matrix(self, empty_matrix, norm_ord):
         """Test that an empty matrix returns 0."""
         assert_allclose(splu(empty_matrix).normest_inv(ord=norm_ord), 0)
